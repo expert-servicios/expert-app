@@ -1,0 +1,55 @@
+name: Temporary RU-007a fallback fixer
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.head_ref == 'feat/ru-007-kia-russian-locale-contract'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Replace transliterated Russian fallback exactly
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('lib/ai/kia/kia-decision-engine.ts')
+          text = path.read_text(encoding='utf-8-sig')
+          old = """function russianSafeMessage(nextAction: KiaDecision['nextAction']): string {
+            if (nextAction === 'ask_one_question') return 'Ya Kia, asistentka EXPERT. Utochnite pozhaluysta, chto vam nuzhno?';
+            if (nextAction === 'show_menu') return 'Ya Kia, asistentka EXPERT. Vyberite podkhodyashchiy variant.';
+            if (nextAction === 'get_case_status') return 'Ya Kia, asistentka EXPERT. Proveryu vash vopros po delu.';
+            return 'Ya Kia, asistentka EXPERT. Pomogayu s etim shagom.';
+          }"""
+          new = """function russianSafeMessage(nextAction: KiaDecision['nextAction']): string {
+            if (nextAction === 'ask_one_question') return 'Я Kia, виртуальная помощница EXPERT. Уточните, пожалуйста, что именно вам нужно?';
+            if (nextAction === 'show_menu') return 'Я Kia, виртуальная помощница EXPERT. Выберите подходящий вариант.';
+            if (nextAction === 'get_case_status') return 'Я Kia, виртуальная помощница EXPERT. Проверю информацию по вашему делу.';
+            return 'Я Kia, виртуальная помощница EXPERT. Помогу вам со следующим шагом.';
+          }"""
+          if old not in text:
+            raise SystemExit('Expected transliterated fallback block was not found; refusing to edit.')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+      - name: Commit fallback fix when changed
+        shell: bash
+        run: |
+          if git diff --quiet -- lib/ai/kia/kia-decision-engine.ts; then
+            echo "Fallback already corrected."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/ai/kia/kia-decision-engine.ts
+          git commit -m "fix: use Cyrillic Russian Kia safety fallback"
+          git push origin HEAD:${{ github.head_ref }}
