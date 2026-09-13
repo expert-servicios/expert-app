@@ -1,4 +1,10 @@
-import type { LeadAttribution, LeadSource } from '@/lib/marketing/acquisition-taxonomy';
+import type {
+  CustomerType,
+  HoldedUsage,
+  LeadAttribution,
+  LeadIntent,
+  LeadSource,
+} from '@/lib/marketing/acquisition-taxonomy';
 import type { SupportedLocale } from '@/lib/i18n/config';
 
 export const ACQUISITION_STORAGE_KEY = 'expert_acquisition_v1';
@@ -30,9 +36,48 @@ export function inferLeadSource(utmSource: string | null | undefined, utmMedium:
   return 'direct';
 }
 
+export function inferRouteContext(pathname: string): {
+  intent?: LeadIntent;
+  customerType?: CustomerType;
+} {
+  const normalized = pathname.replace(/^\/(ru|en)(?=\/|$)/, '') || '/';
+
+  if (normalized === '/autonomo' || normalized.startsWith('/servicios/empresas-autonomos/alta')) {
+    return { intent: 'open_business_in_spain', customerType: 'autonomo' };
+  }
+  if (normalized === '/sl' || normalized.includes('constitucion')) {
+    return { intent: 'open_business_in_spain', customerType: 'sl' };
+  }
+  if (normalized === '/holded' || normalized.startsWith('/holded/')) {
+    return { intent: 'start_using_holded' };
+  }
+  if (normalized === '/academy' || normalized.startsWith('/academy/')) {
+    return { intent: 'learn_self_management' };
+  }
+  if (normalized === '/planes') {
+    return { intent: 'organize_existing_business' };
+  }
+  if (normalized === '/verifactu') {
+    return { intent: 'organize_existing_business' };
+  }
+  if (normalized === '/konsultatsiya' || normalized === '/nalogi' || normalized === '/uslugi' || normalized.startsWith('/servicios/')) {
+    return { intent: 'resolve_specific_issue' };
+  }
+  if (normalized === '/para-asesorias') {
+    return { intent: 'change_advisor_or_system', customerType: 'advisory' };
+  }
+
+  return {};
+}
+
 function safeString(value: string | null, max: number): string | undefined {
   const normalized = value?.trim();
   return normalized ? normalized.slice(0, max) : undefined;
+}
+
+function parseHoldedUsage(value: string | null): HoldedUsage | undefined {
+  if (value === 'yes' || value === 'no' || value === 'unknown') return value;
+  return undefined;
 }
 
 function readStored(): Partial<LeadAttribution> | null {
@@ -69,19 +114,21 @@ export function captureClientAttribution(): LeadAttribution | null {
 
   const params = new URLSearchParams(window.location.search);
   const stored = readStored();
+  const routeContext = inferRouteContext(window.location.pathname);
   const hasCurrentCampaign = Boolean(
     params.get('utm_source') ||
     params.get('utm_medium') ||
     params.get('utm_campaign') ||
     params.get('campaign'),
   );
+  const explicitHoldedUsage = parseHoldedUsage(params.get('uses_holded'));
 
   const attribution: LeadAttribution = {
     locale: localeFromPath(window.location.pathname),
     source: hasCurrentCampaign
       ? inferLeadSource(params.get('utm_source'), params.get('utm_medium'))
       : stored?.source ?? 'direct',
-    usesHolded: stored?.usesHolded ?? 'unknown',
+    usesHolded: explicitHoldedUsage ?? stored?.usesHolded ?? 'unknown',
     originPath: stored?.originPath ?? window.location.pathname.slice(0, 500),
     ...(safeString(params.get('utm_source'), 120) || stored?.utmSource
       ? { utmSource: safeString(params.get('utm_source'), 120) ?? stored?.utmSource }
@@ -95,8 +142,10 @@ export function captureClientAttribution(): LeadAttribution | null {
     ...(safeString(params.get('campaign'), 120) || safeString(params.get('utm_campaign'), 120) || stored?.campaign
       ? { campaign: safeString(params.get('campaign'), 120) ?? safeString(params.get('utm_campaign'), 120) ?? stored?.campaign }
       : {}),
-    ...(stored?.intent ? { intent: stored.intent } : {}),
-    ...(stored?.customerType ? { customerType: stored.customerType } : {}),
+    ...(routeContext.intent || stored?.intent ? { intent: routeContext.intent ?? stored?.intent } : {}),
+    ...(routeContext.customerType || stored?.customerType
+      ? { customerType: routeContext.customerType ?? stored?.customerType }
+      : {}),
   };
 
   persistAttribution(attribution);
