@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { getService } from '@/lib/services/service-registry';
 import { resolveCompanyCommercialCoverage, type CompanyCoverageSource } from '@/lib/subscriptions/company-commercial-coverage';
+import { resolveKiaLocale, type KiaLocale } from './kia-locale';
 import { retrieveKiaMemories, type KiaMemory } from './kia-memory-retriever';
 
 export interface KiaContextInput {
@@ -31,7 +32,7 @@ export interface KiaContext {
     phone: string | null;
     clientId: string | null;
     leadId: string | null;
-    language: 'es' | 'ru';
+    language: KiaLocale;
   };
   profile: {
     profileCompleted: boolean;
@@ -79,10 +80,6 @@ export interface KiaContext {
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
-function detectLanguage(text: string | null | undefined): 'es' | 'ru' {
-  return /[\u0400-\u04FF]/.test(text ?? '') ? 'ru' : 'es';
-}
-
 export async function buildKiaContext(input: KiaContextInput): Promise<KiaContext> {
   const admin = getSupabaseAdmin();
   const phone = input.phone ?? null;
@@ -120,6 +117,8 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
     ? directCases
     : contactCases.length > 0 ? contactCases : directCases;
 
+  const latestConversationMessage = input.latestMessage ?? conversation[conversation.length - 1]?.text;
+
   return {
     contact: {
       status: contact?.status ?? (clientId ? 'client' : leadId ? 'lead' : 'unknown'),
@@ -128,7 +127,10 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
       phone,
       clientId,
       leadId,
-      language: detectLanguage(input.latestMessage ?? conversation[conversation.length - 1]?.text),
+      language: resolveKiaLocale({
+        preferredLanguage: profile?.preferredLanguage,
+        latestMessage: latestConversationMessage,
+      }),
     },
     profile: profile ? {
       profileCompleted: profile.profileCompleted,
@@ -158,7 +160,7 @@ async function loadProfile(admin: AdminClient, clientId: string | null, contact:
   if (!clientId) return null;
   const { data } = await admin
     .from('profiles')
-    .select('id, full_name, email, profile_completed, billing_ready, habitual_address_ready, active_company_id')
+    .select('id, full_name, email, profile_completed, billing_ready, habitual_address_ready, active_company_id, preferred_language')
     .eq('id', clientId)
     .maybeSingle();
 
@@ -167,6 +169,7 @@ async function loadProfile(admin: AdminClient, clientId: string | null, contact:
     return {
       name: contact.name,
       email: contact.email,
+      preferredLanguage: null,
       profileCompleted: contact.profileCompleted,
       billingReady: contact.billingReady,
       habitualAddressReady: contact.habitualAddressReady,
@@ -177,6 +180,7 @@ async function loadProfile(admin: AdminClient, clientId: string | null, contact:
   return {
     name: data.full_name as string | null,
     email: data.email as string | null,
+    preferredLanguage: data.preferred_language as string | null,
     profileCompleted: Boolean(data.profile_completed),
     billingReady: Boolean(data.billing_ready),
     habitualAddressReady: Boolean(data.habitual_address_ready),
