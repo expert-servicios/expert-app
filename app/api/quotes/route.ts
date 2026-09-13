@@ -6,6 +6,7 @@ import { quoteReceivedClient, quoteReceivedAdmin } from '@/lib/email/templates';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 import { notifyAdmins } from '@/lib/integrations/push';
+import { buildLeadAttributionFields } from '@/lib/marketing/server-attribution';
 
 const quoteRequestSchema = z.object({
   hp_url: z.string().optional(),
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
     const serviceList = validated.services.join(', ');
     const descriptionText = validated.description?.trim() || 'No se proporcionaron detalles adicionales.';
     const supabaseAdmin = getSupabaseAdmin();
+    const attributionFields = buildLeadAttributionFields(request);
 
     const { data: lead, error: leadError } = await supabaseAdmin
       .from('leads')
@@ -73,7 +75,10 @@ export async function POST(request: NextRequest) {
         country: 'ES',
         urgency: 'media',
         message: descriptionText,
-        state: 'new'
+        state: 'new',
+        source: attributionFields.source,
+        source_key: attributionFields.source_key,
+        metadata: attributionFields.metadata,
       })
       .select('id')
       .single();
