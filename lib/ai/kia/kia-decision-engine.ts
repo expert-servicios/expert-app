@@ -441,10 +441,10 @@ function repairUserMessageLanguage(message: string, locale: 'es' | 'ru', nextAct
 }
 
 function russianSafeMessage(nextAction: KiaDecision['nextAction']): string {
-  if (nextAction === 'ask_one_question') return 'Ya Kia, asistentka EXPERT. Utochnite pozhaluysta, chto vam nuzhno?';
-  if (nextAction === 'show_menu') return 'Ya Kia, asistentka EXPERT. Vyberite podkhodyashchiy variant.';
-  if (nextAction === 'get_case_status') return 'Ya Kia, asistentka EXPERT. Proveryu vash vopros po delu.';
-  return 'Ya Kia, asistentka EXPERT. Pomogayu s etim shagom.';
+  if (nextAction === 'ask_one_question') return 'Я Kia, виртуальная помощница EXPERT. Уточните, пожалуйста, что именно вам нужно?';
+  if (nextAction === 'show_menu') return 'Я Kia, виртуальная помощница EXPERT. Выберите подходящий вариант.';
+  if (nextAction === 'get_case_status') return 'Я Kia, виртуальная помощница EXPERT. Проверю информацию по вашему делу.';
+  return 'Я Kia, виртуальная помощница EXPERT. Помогу вам со следующим шагом.';
 }
 
 function spanishSafeMessage(nextAction: KiaDecision['nextAction']): string {
