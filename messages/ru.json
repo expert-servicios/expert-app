@@ -1,0 +1,40 @@
+{
+  "common": {
+    "brand": "EXPERT",
+    "language": "Язык",
+    "continue": "Продолжить",
+    "back": "Назад"
+  },
+  "navigation": {
+    "home": "Главная",
+    "services": "Услуги",
+    "plans": "Тарифы",
+    "academy": "Academy",
+    "contact": "Контакты"
+  },
+  "credentials": {
+    "holdedSolutionPartner": "Holded Solution Partner",
+    "holdedAccreditedAdvisory": "Asesoría Holded acreditada",
+    "aeatSocialCollaborator": "Colaborador social de la Agencia Tributaria",
+    "academyPrivateTraining": "EXPERT Business Academy — частное обучение (formación privada/no reglada)"
+  },
+  "holded": {
+    "verticalName": "Holded на русском",
+    "title": "Внедрение, миграция и обучение работе с Holded",
+    "description": "Настройте Holded и научитесь работать с системой при профессиональном сопровождении EXPERT."
+  },
+  "academy": {
+    "title": "EXPERT Business Academy",
+    "description": "Практическое обучение для понимания и самостоятельного управления бизнесом в Испании.",
+    "privateTrainingNotice": "Частное нерегулируемое обучение (formación privada/no reglada)."
+  },
+  "funnel": {
+    "question": "Что вы хотите сделать?",
+    "openBusiness": "Открыть бизнес в Испании",
+    "organizeBusiness": "Лучше организовать работу действующего бизнеса",
+    "changeAdvisor": "Сменить gestoría или систему управления",
+    "startHolded": "Начать работать с Holded",
+    "learnSelfManagement": "Научиться самостоятельно управлять бизнесом",
+    "resolveIssue": "Решить конкретный налоговый, трудовой или административный вопрос"
+  }
+}
