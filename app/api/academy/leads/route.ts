@@ -8,6 +8,7 @@ import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 import { notifyAdmins } from '@/lib/integrations/push';
+import { buildLeadAttributionFields } from '@/lib/marketing/server-attribution';
 
 const academyLeadSchema = z.object({
   hp_url: z.string().optional(),
@@ -78,6 +79,9 @@ export async function POST(request: NextRequest) {
       `Idioma preferido: ${validated.language}`,
       `Interés certificación oficial ADGD0210: ${validated.certificationInterest ? 'Sí' : 'No'}`,
     ].filter(Boolean);
+    const attributionFields = buildLeadAttributionFields(request, {
+      existingMetadata: { academy_preferred_language: validated.language },
+    });
 
     const { data: lead, error: leadError } = await admin
       .from('leads')
@@ -92,6 +96,9 @@ export async function POST(request: NextRequest) {
         urgency: 'media',
         message: messageParts.join(' · '),
         state: 'new',
+        source: attributionFields.source,
+        source_key: attributionFields.source_key,
+        metadata: attributionFields.metadata,
       })
       .select('id')
       .single();
@@ -106,11 +113,6 @@ export async function POST(request: NextRequest) {
       programName: program.name,
       programPath: getAcademyProgramPath(program.slug),
       paymentUrl: program.paymentLink ?? undefined,
-      // Prefer the program's own static brochure (downloadHref) when it has
-      // one — e.g. Gestión Laboral Integral's PDF correctly shows 9 modules
-      // + 5 tutoring hours. The generated endpoint always renders the
-      // Programa Superior's 16-module layout, which is wrong for other
-      // programs, so it's only a fallback for ones without a dedicated PDF.
       programPdfUrl: program.downloadHref
         ? `${getPublicAppUrl()}${program.downloadHref}`
         : `${getPublicAppUrl()}/api/academy/programa-pdf?slug=${program.slug}`,
