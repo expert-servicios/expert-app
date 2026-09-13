@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { EXPERT_IDENTITY } from '@/config/identity';
 import { RU_COMMERCIAL_DATA } from '@/lib/i18n/ru-commercial-data';
 import { RU_PUBLIC_CONTENT } from '@/lib/i18n/ru-public-content';
 import { MONTHLY_PLANS_KNOWLEDGE } from '@/lib/data/kia-knowledge/monthly-plans';
@@ -50,10 +51,13 @@ describe('RU commercial pages', () => {
     expect(RU_COMMERCIAL_DATA.academy?.notice?.text).toContain('не представляем программу как официальный государственный диплом');
   });
 
-  it('keeps Holded untranslated and exposes the agreed public EXPERT contact', () => {
+  it('keeps Holded untranslated and uses the canonical public EXPERT identity', () => {
     expect(commercialSource).not.toContain('Холдед');
-    expect(pageSource).toContain('Holded Solution Partner');
-    expect(pageSource).toContain('Colaborador social de la Agencia Tributaria');
-    expect(pageSource).toContain('info@expertconsulting.es');
+    expect(EXPERT_IDENTITY.credentials.holdedSolutionPartner).toBe('Holded Solution Partner');
+    expect(EXPERT_IDENTITY.credentials.aeatSocialCollaborator).toBe('Colaborador social de la Agencia Tributaria');
+    expect(EXPERT_IDENTITY.publicEmail).toBe('info@expertconsulting.es');
+    expect(pageSource).toContain('EXPERT_IDENTITY.credentials.holdedSolutionPartner');
+    expect(pageSource).toContain('EXPERT_IDENTITY.credentials.aeatSocialCollaborator');
+    expect(pageSource).toContain('EXPERT_IDENTITY.publicEmail');
   });
 });
