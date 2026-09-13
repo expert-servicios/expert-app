@@ -13,17 +13,32 @@ type StripeSummary = {
   last_activity_at: string | null;
 };
 
+type Attribution = {
+  locale: 'es' | 'ru' | 'en';
+  source: string;
+  campaign?: string;
+  intent?: string;
+  customerType?: string;
+  usesHolded: string;
+  originPath?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+};
+
 type Lead = {
   id: string;
   name: string;
   email: string | null;
   phone: string | null;
   source: string | null;
+  source_key?: string | null;
   created_at: string;
   lifecycle_stage: string;
   stripe_activity: string;
   marketing_status: string;
   last_stripe_activity_at: string | null;
+  attribution: Attribution | null;
   stripe_summary: StripeSummary;
 };
 
@@ -41,6 +56,13 @@ type ApiResponse = {
     abandoned: number;
     marketing_consented: number;
     marketing_unknown: number;
+    ru_funnel: {
+      total: number;
+      prospects: number;
+      customers: number;
+      paid: number;
+      subscribed: number;
+    };
   };
 };
 
@@ -67,6 +89,15 @@ const marketingLabels: Record<string, string> = {
   blocked: 'Bloqueado',
 };
 
+const intentLabels: Record<string, string> = {
+  open_business_in_spain: 'Abrir negocio en España',
+  organize_existing_business: 'Organizar negocio existente',
+  change_advisor_or_system: 'Cambiar asesoría o sistema',
+  start_using_holded: 'Empezar con Holded',
+  learn_self_management: 'Aprender autogestión',
+  resolve_specific_issue: 'Resolver asunto concreto',
+};
+
 function one(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] ?? '' : value ?? '';
 }
@@ -86,6 +117,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
   const lifecycle = one(params.lifecycle);
   const activity = one(params.activity);
   const marketing = one(params.marketing);
+  const locale = one(params.locale);
   const page = Math.max(1, Number(one(params.page)) || 1);
 
   const apiQuery = new URLSearchParams({ page: String(page), limit: '50' });
@@ -93,6 +125,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
   if (lifecycle) apiQuery.set('lifecycle', lifecycle);
   if (activity) apiQuery.set('activity', activity);
   if (marketing) apiQuery.set('marketing', marketing);
+  if (locale) apiQuery.set('locale', locale);
 
   const data = await fetchWithCookies<ApiResponse>(`/api/admin/leads?${apiQuery.toString()}`);
   const loadFailed = data === null;
@@ -100,6 +133,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
   const stats = data?.stats ?? {
     total: 0, leads: 0, prospects: 0, customers: 0, former_customers: 0,
     subscribed: 0, paid: 0, abandoned: 0, marketing_consented: 0, marketing_unknown: 0,
+    ru_funnel: { total: 0, prospects: 0, customers: 0, paid: 0, subscribed: 0 },
   };
   const pagination = data?.pagination ?? { page: 1, limit: 50, total: 0, pages: 1 };
 
@@ -115,7 +149,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#c88b25]">CRM EXPERT</p>
               <h1 className="mt-1 font-serif text-3xl font-bold text-[#07111d]">Contactos y leads</h1>
               <p className="mt-1 text-sm text-[#526171]">
-                Leads operativos, historial Stripe y elegibilidad de marketing en una sola vista.
+                Leads operativos, atribución comercial, historial Stripe y elegibilidad de marketing.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -146,7 +180,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
           </div>
         )}
 
-        <div className="mb-5 grid gap-3 rounded-2xl border border-[#ded2bf] bg-white p-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_auto]">
+        <div className="mb-5 grid gap-3 rounded-2xl border border-[#ded2bf] bg-white p-4 lg:grid-cols-[1.4fr_repeat(4,0.8fr)_auto]">
           <form className="contents" action="/admin/leads">
             <label className="relative block">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8a7f71]" />
@@ -173,6 +207,12 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
               <option value="unsubscribed">Baja</option>
               <option value="blocked">Bloqueado</option>
             </select>
+            <select name="locale" defaultValue={locale} className="rounded-xl border border-[#d8cbb5] bg-[#fffdf8] px-3 py-2.5 text-sm">
+              <option value="">Todos los idiomas</option>
+              <option value="es">ES</option>
+              <option value="ru">RU</option>
+              <option value="en">EN</option>
+            </select>
             <button className="rounded-xl bg-[#07111d] px-4 py-2.5 text-sm font-bold text-white">Filtrar</button>
           </form>
         </div>
@@ -191,6 +231,30 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
               <p className="mt-1 text-xs text-[#6f665b]">{note}</p>
             </div>
           ))}
+        </div>
+
+        <div className="mb-5 rounded-2xl border border-[#d8cbb5] bg-[#07111d] p-5 text-white">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Funnel RU</p>
+              <h2 className="mt-1 font-serif text-xl font-bold">Captación rusoparlante</h2>
+            </div>
+            <p className="text-xs text-white/55">Solo leads con atribución RU registrada; histórico legacy no se reetiqueta.</p>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
+            {[
+              ['Entradas', stats.ru_funnel.total],
+              ['Prospectos', stats.ru_funnel.prospects],
+              ['Clientes', stats.ru_funnel.customers],
+              ['Pagados', stats.ru_funnel.paid],
+              ['Suscritos', stats.ru_funnel.subscribed],
+            ].map(([label, value]) => (
+              <div key={String(label)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                <p className="font-serif text-2xl font-bold text-[#F8F6F1]">{value}</p>
+                <p className="mt-1 text-[11px] uppercase tracking-wide text-white/55">{label}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         {loadFailed ? (
@@ -253,7 +317,17 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
                         {lead.marketing_status === 'unknown' && <p className="mt-2 max-w-48 text-[11px] leading-4 text-[#8b8174]">No habilitado para campañas.</p>}
                       </td>
                       <td className="px-4 py-4">
-                        <p className="text-xs font-semibold text-[#29384a]">{lead.source ?? 'manual/web'}</p>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {lead.attribution?.locale && (
+                            <span className="rounded-full border border-[#d8cbb5] bg-[#fffdf8] px-2 py-0.5 text-[10px] font-bold uppercase text-[#8a6111]">
+                              {lead.attribution.locale}
+                            </span>
+                          )}
+                          <p className="text-xs font-semibold text-[#29384a]">{lead.source ?? 'manual/web'}</p>
+                        </div>
+                        {lead.attribution?.campaign && <p className="mt-1 text-[11px] text-[#6f665b]">Campaña: {lead.attribution.campaign}</p>}
+                        {lead.attribution?.intent && <p className="mt-1 text-[11px] text-[#6f665b]">Intención: {intentLabels[lead.attribution.intent] ?? lead.attribution.intent}</p>}
+                        {lead.attribution?.originPath && <p className="mt-1 max-w-64 truncate text-[11px] text-[#8b8174]" title={lead.attribution.originPath}>Ruta: {lead.attribution.originPath}</p>}
                         <p className="mt-1 text-[11px] text-[#8b8174]">{new Date(lead.created_at).toLocaleDateString('es-ES')}</p>
                       </td>
                     </tr>
@@ -266,10 +340,10 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
               <span>{pagination.total} resultados · página {pagination.page} de {pagination.pages}</span>
               <div className="flex gap-2">
                 {pagination.page > 1 && (
-                  <Link className="rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 font-semibold" href={buildPath({ q, lifecycle, activity, marketing, page: String(pagination.page - 1) })}>Anterior</Link>
+                  <Link className="rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 font-semibold" href={buildPath({ q, lifecycle, activity, marketing, locale, page: String(pagination.page - 1) })}>Anterior</Link>
                 )}
                 {pagination.page < pagination.pages && (
-                  <Link className="rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 font-semibold" href={buildPath({ q, lifecycle, activity, marketing, page: String(pagination.page + 1) })}>Siguiente</Link>
+                  <Link className="rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 font-semibold" href={buildPath({ q, lifecycle, activity, marketing, locale, page: String(pagination.page + 1) })}>Siguiente</Link>
                 )}
               </div>
             </div>
