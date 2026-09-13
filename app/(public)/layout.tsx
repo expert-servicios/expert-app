@@ -8,6 +8,7 @@ import { CalBadge } from '@/components/site/CalBadge';
 import { CartProvider } from '@/contexts/CartContext';
 import { CartSidebar } from '@/components/cart/CartSidebar';
 import { LanguageSwitcher } from '@/components/i18n/LanguageSwitcher';
+import { AcquisitionTracker } from '@/components/marketing/AcquisitionTracker';
 import { isLocalePubliclyEnabled } from '@/lib/i18n/feature-flags';
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
@@ -15,6 +16,7 @@ const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
     <CartProvider>
+      <AcquisitionTracker />
       {RECAPTCHA_SITE_KEY && (
         <Script
           id="recaptcha-v3"
