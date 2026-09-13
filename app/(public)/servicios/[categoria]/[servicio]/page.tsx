@@ -189,7 +189,7 @@ export default async function ServicioDetallePage({
 
           {service.duration && (
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 rounded-2xl border border-white/12 px-4 py-2.5">
+              <div className="flex items-center gap-2 border border-white/12 px-4 py-2.5">
                 <Clock className="h-4 w-4 text-[#D4A017]" />
                 <span className="text-sm text-white/70">{service.duration}</span>
               </div>
@@ -201,29 +201,29 @@ export default async function ServicioDetallePage({
               <AddToCartButton
                 item={cartItem}
                 label={service.checkoutLabel ?? 'Añadir a la cesta'}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60"
               />
             ) : (
               <Link
                 href={budgetHref}
-                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]"
+                className="inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]"
               >
                 Solicitar presupuesto
               </Link>
             )}
             <Link
               href={complexBudgetHref}
-              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#D4A017] px-8 py-3 text-sm font-semibold text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
+              className="inline-flex min-h-12 items-center justify-center border border-[#D4A017] px-8 py-3 text-sm font-semibold text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
             >
               Caso complejo
             </Link>
             <Link
               href={selfGuidedHref}
-              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-[#D4A017] hover:text-[#D4A017]"
+              className="inline-flex min-h-12 items-center justify-center border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-[#D4A017] hover:text-[#D4A017]"
             >
               Hazlo por tu cuenta
             </Link>
-            <FreeMeetingButton className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-white/50 hover:text-white">
+            <FreeMeetingButton className="inline-flex min-h-12 items-center justify-center border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-white/50 hover:text-white">
               Reunión gratuita 15 min
             </FreeMeetingButton>
           </div>
@@ -268,13 +268,13 @@ export default async function ServicioDetallePage({
             {(service.servicePriceDetail || service.officialFee) && (
               <div className="grid gap-4 md:grid-cols-2">
                 {service.servicePriceDetail && (
-                  <div className="rounded-2xl border border-[#D4A017]/25 bg-white p-5">
+                  <div className="border border-[#D4A017]/25 bg-white p-5">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4A017]">Precio del servicio</p>
                     <p className="mt-2 text-sm leading-6 text-[#23364D]">{service.servicePriceDetail}</p>
                   </div>
                 )}
                 {service.officialFee && (
-                  <div className="rounded-2xl border border-[#D4A017]/25 bg-white p-5">
+                  <div className="border border-[#D4A017]/25 bg-white p-5">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4A017]">Tasa oficial</p>
                     <p className="mt-2 text-sm leading-6 text-[#23364D]">{service.officialFee}</p>
                   </div>
@@ -287,7 +287,7 @@ export default async function ServicioDetallePage({
                 <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">Puntos clave</h2>
                 <div className="mt-5 grid gap-4">
                   {service.keyPoints.map((point) => (
-                    <div key={point.title} className="rounded-2xl border border-[#D4A017]/20 bg-white p-5">
+                    <div key={point.title} className="border border-[#D4A017]/20 bg-white p-5">
                       <div className="flex items-start gap-3">
                         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#D4A017]" />
                         <div>
@@ -334,7 +334,7 @@ export default async function ServicioDetallePage({
                 <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">Documentación necesaria</h2>
                 <div className="mt-5 grid gap-4">
                   {service.documents.map((group) => (
-                    <div key={group.title} className="rounded-2xl border border-[#D4A017]/20 bg-white p-5">
+                    <div key={group.title} className="border border-[#D4A017]/20 bg-white p-5">
                       <div className="flex items-center gap-2.5">
                         <FileText className="h-4 w-4 text-[#D4A017]" />
                         <h3 className="font-semibold text-[#0D1B2A]">{group.title}</h3>
@@ -359,7 +359,7 @@ export default async function ServicioDetallePage({
                 <ol className="mt-6 space-y-4">
                   {service.process.map((step, index) => (
                     <li key={step.title} className="grid grid-cols-[40px_1fr] gap-4">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#D4A017] text-sm font-bold text-[#0D1B2A]">
+                      <span className="flex h-10 w-10 items-center justify-center bg-[#D4A017] text-sm font-bold text-[#0D1B2A]">
                         {index + 1}
                       </span>
                       <div className="pt-1">
@@ -375,7 +375,7 @@ export default async function ServicioDetallePage({
             {(service.notIncluded?.length || service.reviewBeforeHiring?.length) ? (
               <div className="grid gap-6 md:grid-cols-2">
                 {service.notIncluded && service.notIncluded.length > 0 && (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5">
+                  <div className="border border-amber-200 bg-amber-50/60 p-5">
                     <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-amber-700">No incluido</p>
                     <ul className="space-y-2.5">
                       {service.notIncluded.map((item) => (
@@ -388,7 +388,7 @@ export default async function ServicioDetallePage({
                   </div>
                 )}
                 {service.reviewBeforeHiring && service.reviewBeforeHiring.length > 0 && (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5">
+                  <div className="border border-amber-200 bg-amber-50/60 p-5">
                     <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-amber-700">Conviene revisar antes</p>
                     <ul className="space-y-2.5">
                       {service.reviewBeforeHiring.map((item) => (
@@ -403,7 +403,7 @@ export default async function ServicioDetallePage({
               </div>
             ) : null}
 
-            <section className="rounded-2xl bg-[#0D1B2A] p-6 text-white md:p-7">
+            <section className="bg-[#0D1B2A] p-6 text-white md:p-7">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Elegir vía</p>
               <h2 className="mt-3 font-serif text-2xl font-bold">Servicio completo, presupuesto complejo, formación o reunión gratuita</h2>
               <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -453,7 +453,7 @@ export default async function ServicioDetallePage({
             </section>
 
             {relatedArticles.length > 0 && (
-              <div className="rounded-2xl border border-[#D4A017]/20 bg-white p-6">
+              <div className="border border-[#D4A017]/20 bg-white p-6">
                 <div className="mb-4 flex items-center gap-2.5">
                   <Newspaper className="h-4 w-4 text-[#D4A017]" />
                   <h2 className="font-serif text-xl font-bold text-[#0D1B2A]">Artículos relacionados</h2>
@@ -463,7 +463,7 @@ export default async function ServicioDetallePage({
                     <Link
                       key={art.slug}
                       href={`/blog/${art.slug}`}
-                      className="rounded-xl border border-[#D4A017]/15 bg-[#F8F6F1] p-4 transition hover:border-[#D4A017]"
+                      className="border border-[#D4A017]/15 bg-[#F8F6F1] p-4 transition hover:border-[#D4A017]"
                     >
                       <p className="font-semibold text-[#0D1B2A]">{art.title}</p>
                       <p className="mt-1 text-sm text-[#23364D]">{art.excerpt}</p>
@@ -475,7 +475,7 @@ export default async function ServicioDetallePage({
             )}
 
             {service.finalCta && (
-              <div className="rounded-2xl border border-[#D4A017]/30 bg-[#D4A017]/8 p-7">
+              <div className="border border-[#D4A017]/30 bg-[#D4A017]/8 p-7">
                 <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">{service.finalCta.title}</h2>
                 <p className="mt-3 text-sm leading-7 text-[#23364D]">{service.finalCta.text}</p>
                 <div className="mt-6 flex flex-wrap gap-3">
@@ -483,17 +483,17 @@ export default async function ServicioDetallePage({
                     <AddToCartButton
                       item={cartItem}
                       label="Añadir a la cesta"
-                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
+                      className="inline-flex min-h-11 items-center justify-center gap-2 bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
                     />
                   ) : (
-                    <Link href={budgetHref} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]">
+                    <Link href={budgetHref} className="inline-flex min-h-11 items-center justify-center bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]">
                       Solicitar presupuesto
                     </Link>
                   )}
-                  <Link href={selfGuidedHref} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#0D1B2A] px-8 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#0D1B2A] hover:text-white">
+                  <Link href={selfGuidedHref} className="inline-flex min-h-11 items-center justify-center border border-[#0D1B2A] px-8 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#0D1B2A] hover:text-white">
                     Hazlo por tu cuenta
                   </Link>
-                  <FreeMeetingButton className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#0D1B2A] px-8 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#0D1B2A] hover:text-white">
+                  <FreeMeetingButton className="inline-flex min-h-11 items-center justify-center border border-[#0D1B2A] px-8 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#0D1B2A] hover:text-white">
                     Reunión gratuita 15 min
                   </FreeMeetingButton>
                 </div>
@@ -517,7 +517,8 @@ export default async function ServicioDetallePage({
 
           <aside className="space-y-5 lg:sticky lg:top-6">
 
-            <div className="overflow-hidden rounded-2xl border border-[#D4A017]/30 bg-white">
+            {/* CTA card */}
+            <div className="overflow-hidden border border-[#D4A017]/30 bg-white">
               {service.price && (
                 <div className="border-b border-[#D4A017]/20 bg-[#D4A017]/8 px-6 py-4">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">Precio</p>
@@ -532,35 +533,35 @@ export default async function ServicioDetallePage({
                   <AddToCartButton
                     item={cartItem}
                     label="Añadir a la cesta"
-                    className="inline-flex w-full min-h-11 items-center justify-center gap-2 rounded-xl bg-[#D4A017] px-4 py-2.5 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
+                    className="inline-flex w-full min-h-11 items-center justify-center gap-2 bg-[#D4A017] px-4 py-2.5 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
                   />
                 ) : (
                   <Link
                     href={budgetHref}
-                    className="block w-full rounded-xl bg-[#D4A017] px-4 py-2.5 text-center text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]"
+                    className="block w-full bg-[#D4A017] px-4 py-2.5 text-center text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]"
                   >
                     Solicitar presupuesto
                   </Link>
                 )}
                 <Link
                   href={complexBudgetHref}
-                  className="block w-full rounded-xl border border-[#D4A017]/30 px-4 py-2.5 text-center text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
+                  className="block w-full border border-[#D4A017]/30 px-4 py-2.5 text-center text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
                 >
                   Caso complejo
                 </Link>
                 <Link
                   href={selfGuidedHref}
-                  className="block w-full rounded-xl border border-[#D4A017]/30 px-4 py-2.5 text-center text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
+                  className="block w-full border border-[#D4A017]/30 px-4 py-2.5 text-center text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
                 >
                   Hazlo por tu cuenta
                 </Link>
-                <FreeMeetingButton className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D4A017]/30 px-4 py-2.5 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5">
+                <FreeMeetingButton className="flex w-full items-center justify-center gap-2 border border-[#D4A017]/30 px-4 py-2.5 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5">
                   <CalendarCheck className="h-4 w-4 text-[#D4A017]" />
                   Reunión gratuita 15 min
                 </FreeMeetingButton>
                 <a
                   href="https://wa.me/34669045528"
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#D4A017]/30 px-4 py-2.5 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
+                  className="flex w-full items-center justify-center gap-2 border border-[#D4A017]/30 px-4 py-2.5 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
                 >
                   <MessageCircle className="h-4 w-4 text-[#D4A017]" />
                   Preguntar por WhatsApp
@@ -572,7 +573,7 @@ export default async function ServicioDetallePage({
             </div>
 
             {service.requirements && service.requirements.length > 0 && (
-              <div className="rounded-2xl border border-[#D4A017]/20 bg-white p-5">
+              <div className="border border-[#D4A017]/20 bg-white p-5">
                 <div className="mb-4 flex items-center gap-2.5">
                   <ListChecks className="h-4 w-4 text-[#D4A017]" />
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#23364D]">Requisitos principales</p>
@@ -589,7 +590,7 @@ export default async function ServicioDetallePage({
             )}
 
             {service.requiredDocs && service.requiredDocs.length > 0 && (
-              <div className="rounded-2xl border border-[#D4A017]/20 bg-white p-5">
+              <div className="border border-[#D4A017]/20 bg-white p-5">
                 <div className="mb-4 flex items-center gap-2.5">
                   <FileText className="h-4 w-4 text-[#D4A017]" />
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#23364D]">Documentación necesaria</p>
@@ -606,7 +607,7 @@ export default async function ServicioDetallePage({
             )}
 
             {relatedDocs.length > 0 && (
-              <div className="rounded-2xl border border-[#D4A017]/20 bg-white p-5">
+              <div className="border border-[#D4A017]/20 bg-white p-5">
                 <div className="mb-4 flex items-center gap-2.5">
                   <BookOpen className="h-4 w-4 text-[#D4A017]" />
                   <p className="text-[10px] font-bold uppercase tracking-wider text-[#23364D]">Guías y documentación</p>
@@ -616,7 +617,7 @@ export default async function ServicioDetallePage({
                     <Link
                       key={doc.slug}
                       href={`/docs/${doc.slug}`}
-                      className="block rounded-xl border border-[#D4A017]/12 bg-[#F8F6F1] p-3.5 transition hover:border-[#D4A017]/40"
+                      className="block border border-[#D4A017]/12 bg-[#F8F6F1] p-3.5 transition hover:border-[#D4A017]/40"
                     >
                       <p className="text-sm font-semibold text-[#0D1B2A]">{doc.title}</p>
                       {doc.excerpt && <p className="mt-1 text-xs leading-4 text-[#23364D]">{doc.excerpt}</p>}
@@ -627,14 +628,14 @@ export default async function ServicioDetallePage({
             )}
 
             {relatedServices.length > 0 && (
-              <div className="rounded-2xl border border-[#D4A017]/20 bg-white p-5">
+              <div className="border border-[#D4A017]/20 bg-white p-5">
                 <p className="mb-4 text-[10px] font-bold uppercase tracking-wider text-[#23364D]">Otros servicios del área</p>
                 <ul className="space-y-1">
                   {relatedServices.map((s) => (
                     <li key={s.slug}>
                       <Link
                         href={`/servicios/${categoria}/${s.slug}`}
-                        className="flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-[#0D1B2A] transition hover:bg-[#F8F6F1] hover:text-[#D4A017]"
+                        className="flex items-center gap-2 px-2 py-2 text-sm font-medium text-[#0D1B2A] transition hover:bg-[#F8F6F1] hover:text-[#D4A017]"
                       >
                         <span className="text-[#D4A017]/50">→</span>
                         {s.name}
@@ -644,7 +645,7 @@ export default async function ServicioDetallePage({
                 </ul>
                 <Link
                   href={`/servicios/${categoria}`}
-                  className="mt-3 block rounded-lg px-2 py-2 text-sm font-bold text-[#D4A017] transition hover:text-[#F2C14E]"
+                  className="mt-3 block px-2 py-2 text-sm font-bold text-[#D4A017] transition hover:text-[#F2C14E]"
                 >
                   Ver todos los servicios →
                 </Link>
