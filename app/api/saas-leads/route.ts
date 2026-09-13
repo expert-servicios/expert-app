@@ -5,6 +5,7 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { saasLeadSchema } from '@/lib/schemas/saas-lead';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
+import { readRequestAttribution } from '@/lib/marketing/server-attribution';
 
 function parseRecipients(value: string) {
   return value
@@ -51,6 +52,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Verificación anti-spam fallida. Inténtalo de nuevo.' }, { status: 400 });
     }
 
+    const acquisition = readRequestAttribution(request);
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.from('saas_leads').insert({
       name: input.name,
@@ -65,7 +67,8 @@ export async function POST(request: NextRequest) {
       source: input.source,
       metadata: {
         user_agent: request.headers.get('user-agent'),
-        referer: request.headers.get('referer')
+        referer: request.headers.get('referer'),
+        ...(acquisition ? { acquisition } : {})
       }
     });
 
@@ -80,7 +83,12 @@ export async function POST(request: NextRequest) {
         to: adminRecipients,
         eventType: 'saas_lead.received',
         ...saasLeadReceivedAdmin(input),
-        metadata: { source: input.source, email: input.email, company_name: input.companyName }
+        metadata: {
+          source: input.source,
+          email: input.email,
+          company_name: input.companyName,
+          ...(acquisition ? { locale: acquisition.locale, campaign: acquisition.campaign ?? null } : {})
+        }
       }),
       sendEmail({
         to: input.email,
