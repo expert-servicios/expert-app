@@ -1,7 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 import { Award, Briefcase, CheckCircle2, ShieldCheck, Sparkles, Users } from 'lucide-react';
+import { EXPERT_IDENTITY } from '@/config/identity';
 
-export const siteName = 'EXPERT';
+export const siteName = EXPERT_IDENTITY.brandName;
 
 export const navLinks = [
   { label: 'Inicio', href: '/' },
@@ -20,14 +21,20 @@ export const heroCopy = {
     'Trámites fiscales, legales y administrativos con gestión integral, atención cercana y entrega rápida de resultado.',
   primaryAction: { label: 'Soy empresa', href: '/servicios/empresas-autonomos' },
   secondaryAction: { label: 'Soy particular', href: '/servicios/declaraciones-impuestos' },
-  highlights: ['+20 años de experiencia', 'Colaboradora social AEAT', 'Holded Solution Partner']
+  highlights: [
+    '+20 años de experiencia',
+    EXPERT_IDENTITY.credentials.aeatSocialCollaborator,
+    EXPERT_IDENTITY.credentials.holdedSolutionPartner,
+    EXPERT_IDENTITY.credentials.holdedAccreditedAdvisory,
+  ]
 } as const;
 
 export const trustItems: Array<{ label: string; Icon: LucideIcon }> = [
   { label: '+20 años de experiencia', Icon: Award },
-  { label: 'Colaboradora social AEAT', Icon: ShieldCheck },
+  { label: EXPERT_IDENTITY.credentials.aeatSocialCollaborator, Icon: ShieldCheck },
   { label: 'Camerfirma', Icon: CheckCircle2 },
-  { label: 'Holded Solution Partner', Icon: Briefcase }
+  { label: EXPERT_IDENTITY.credentials.holdedSolutionPartner, Icon: Briefcase },
+  { label: EXPERT_IDENTITY.credentials.holdedAccreditedAdvisory, Icon: CheckCircle2 },
 ];
 
 export const serviceCategories = [
@@ -119,8 +126,9 @@ export const reviewCards = [
 ] as const;
 
 export const accreditationItems = [
-  { label: 'Agencia Tributaria' },
-  { label: 'Holded' },
+  { label: EXPERT_IDENTITY.credentials.aeatSocialCollaborator },
+  { label: EXPERT_IDENTITY.credentials.holdedSolutionPartner },
+  { label: EXPERT_IDENTITY.credentials.holdedAccreditedAdvisory },
   { label: 'Camerfirma' },
   { label: 'Punto PAE' },
   { label: 'Generalitat Valenciana' }
@@ -149,7 +157,7 @@ export const footerLinks = {
   ],
   contact: [
     { label: 'WhatsApp', href: '/contacto' },
-    { label: 'Email', href: 'mailto:info@expertconsulting.es' }
+    { label: 'Email', href: `mailto:${EXPERT_IDENTITY.publicEmail}` }
   ]
 } as const;
 
