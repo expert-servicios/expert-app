@@ -11,7 +11,7 @@ export default function RuPublicLayout({ children }: { children: ReactNode }) {
 
   return (
     <NextIntlClientProvider locale="ru" messages={getMessages('ru')}>
-      {children}
+      <div lang="ru">{children}</div>
     </NextIntlClientProvider>
   );
 }
