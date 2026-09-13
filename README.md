@@ -1,17 +1,33 @@
 # EXPERT Platform
 
-EXPERT es una plataforma operativa digital para asesorias, gestorias y despachos profesionales. Las asesorias son los clientes: contratan EXPERT para digitalizar y automatizar su operativa — expedientes, documentos, empresas, pagos, comunicaciones y cumplimiento fiscal.
+EXPERT es una plataforma operativa digital para asesorias, gestorias y despachos profesionales. Las asesorias son los clientes SaaS: contratan EXPERT para digitalizar y automatizar su operativa — expedientes, documentos, empresas, pagos, comunicaciones y cumplimiento fiscal.
 
 Tenant inicial y caso de uso de referencia: EXPERT ESTUDIOS PROFESIONALES, SLU.
+
+La misma aplicacion sirve tambien la web comercial del tenant EXPERT para clientes finales. Esta superficie B2C/B2B directo no debe confundirse con la oferta SaaS para despachos:
+
+- cliente final EXPERT: web publica general y, progresivamente, `/ru/...` y `/en/...`;
+- asesorias/gestorias que contratan la plataforma: `/para-asesorias` y flujos SaaS multi-tenant.
 
 ## Datos base
 
 - Dominio canonico: `expertconsulting.es`
-- Email principal: `soy@expertconsulting.es`
+- Email publico EXPERT: `info@expertconsulting.es`
+- Email profesional Ksenia: `soy@kseniailicheva.com`
 - WhatsApp Business: `+34 669 04 55 28`
 - Empresa: `EXPERT ESTUDIOS PROFESIONALES, SLU`
 - CIF: `B44991776`
 - Direccion: `C/ Pintor Agrassot, 19 - 03110 Mutxamel (Alicante)`
+
+## Credenciales y nomenclatura protegida
+
+- `Holded` es nombre propio y debe escribirse siempre exactamente asi; no se traduce, translitera ni declina.
+- Credencial: `Holded Solution Partner`.
+- Credencial: `Asesoría Holded acreditada`.
+- Condicion institucional: `Colaborador social de la Agencia Tributaria`.
+- Formacion: `EXPERT Business Academy — formación privada/no reglada` mientras no exista una acreditacion oficial adicional.
+
+La fuente de verdad de estos datos de identidad esta en `config/identity.ts`.
 
 ## Stack
 
@@ -27,10 +43,11 @@ Tenant inicial y caso de uso de referencia: EXPERT ESTUDIOS PROFESIONALES, SLU.
 
 ## Estructura
 
-- `app/(public)`: web publica orientada a asesorias como clientes.
+- `app/(public)`: web publica; combina captacion del tenant EXPERT con la superficie SaaS claramente separada en `/para-asesorias`.
 - `app/(protected)`: portal operativo (admin y dashboard cliente) con Kia Copiloto flotante.
 - `app/api`: endpoints de negocio, webhooks e integraciones.
 - `apps/holded-mcp`: conector MCP independiente para Holded.
+- `config/identity.ts`: identidad, contactos y credenciales protegidas.
 - `lib/ai/kia`: motor Kia, context builder, tools, health checks y auditor.
 - `lib/integrations`: adaptadores de Supabase, Stripe, Resend, Holded y WhatsApp.
 - `lib/schemas`: validaciones Zod.
@@ -42,10 +59,10 @@ Tenant inicial y caso de uso de referencia: EXPERT ESTUDIOS PROFESIONALES, SLU.
 
 ## Flujo operativo core
 
-1. Asesoria contrata EXPERT y se configura su tenant.
+1. Asesoria contrata EXPERT y se configura su tenant, o un cliente final contrata un servicio/plan del tenant EXPERT.
 2. Admin crea o importa expediente para un cliente.
 3. Stripe confirma pago cuando aplica.
-4. Supabase crea `order` y `case`; Holded sincroniza contacto y factura.
+4. Supabase crea `order` y `case`; Holded sincroniza contacto y factura cuando corresponde.
 5. Resend notifica al cliente final por email; WhatsApp envia avisos salientes.
 6. Cliente gestiona documentos desde el portal seguro.
 7. Admin opera desde la bandeja operativa con NBA (Next Best Actions).
@@ -73,7 +90,8 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 
 RESEND_API_KEY=
 RESEND_WEBHOOK_SECRET=
-RESEND_FROM_EMAIL=soy@expertconsulting.es
+# Configurar solo con un remitente verificado en Resend/DNS.
+RESEND_FROM_EMAIL=
 
 HOLDED_API_KEY=
 HOLDED_SYNC_ENABLED=true
@@ -96,7 +114,7 @@ CAL_WEBHOOK_SECRET=
 CAL_API_KEY=
 
 NEXT_PUBLIC_APP_URL=https://expertconsulting.es
-ADMIN_EMAILS=soy@expertconsulting.es
+ADMIN_EMAILS=info@expertconsulting.es,soy@kseniailicheva.com
 ```
 
 ## Panel admin
@@ -112,4 +130,4 @@ ADMIN_EMAILS=soy@expertconsulting.es
 
 ## Estado actual
 
-P0 de seguridad completado. Bloque actual: ejecutar `docs/improvement-plan.md` — IMP-013 (dominio canonico), IMP-003 (proteccion endpoints publicos), IMP-023 (CI), IMP-022 (Kia widget copiloto), IMP-021 (web publica para asesorias) e IMP-014 (tenant-ready).
+P0 de seguridad completado. La estrategia de internacionalizacion y la vertical `Holded на русском` se documentan en `docs/holded-ru-academy-strategy.md` y `docs/ru-technical-backlog.md`. La implementacion se realiza mediante PRs pequenos, sin duplicar productos ni precios por idioma y sin modificar produccion sin preflight cuando haya DDL.
