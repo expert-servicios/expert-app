@@ -1,7 +1,8 @@
 import type { LeadAttribution, LeadSource } from '@/lib/marketing/acquisition-taxonomy';
 import type { SupportedLocale } from '@/lib/i18n/config';
 
-const STORAGE_KEY = 'expert_acquisition_v1';
+export const ACQUISITION_STORAGE_KEY = 'expert_acquisition_v1';
+export const ACQUISITION_COOKIE_NAME = 'expert_acquisition';
 
 function localeFromPath(pathname: string): SupportedLocale {
   if (pathname === '/ru' || pathname.startsWith('/ru/')) return 'ru';
@@ -9,9 +10,9 @@ function localeFromPath(pathname: string): SupportedLocale {
   return 'es';
 }
 
-function sourceFromParams(params: URLSearchParams): LeadSource {
-  const source = (params.get('utm_source') ?? '').trim().toLowerCase();
-  const medium = (params.get('utm_medium') ?? '').trim().toLowerCase();
+export function inferLeadSource(utmSource: string | null | undefined, utmMedium: string | null | undefined): LeadSource {
+  const source = (utmSource ?? '').trim().toLowerCase();
+  const medium = (utmMedium ?? '').trim().toLowerCase();
 
   if (source === 'telegram') return 'telegram';
   if (source === 'whatsapp' || source === 'wa') return 'whatsapp';
@@ -37,12 +38,29 @@ function safeString(value: string | null, max: number): string | undefined {
 function readStored(): Partial<LeadAttribution> | null {
   if (typeof window === 'undefined') return null;
   try {
-    const raw = window.sessionStorage.getItem(STORAGE_KEY);
+    const raw = window.sessionStorage.getItem(ACQUISITION_STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     return parsed && typeof parsed === 'object' ? parsed as Partial<LeadAttribution> : null;
   } catch {
     return null;
+  }
+}
+
+function persistAttribution(attribution: LeadAttribution) {
+  if (typeof window === 'undefined') return;
+  const serialized = JSON.stringify(attribution);
+
+  try {
+    window.sessionStorage.setItem(ACQUISITION_STORAGE_KEY, serialized);
+  } catch {
+    // Attribution must never block navigation or a lead form.
+  }
+
+  try {
+    document.cookie = `${ACQUISITION_COOKIE_NAME}=${encodeURIComponent(serialized)}; Path=/; SameSite=Lax`;
+  } catch {
+    // The first-party cookie is best-effort; sessionStorage remains the client fallback.
   }
 }
 
@@ -60,7 +78,9 @@ export function captureClientAttribution(): LeadAttribution | null {
 
   const attribution: LeadAttribution = {
     locale: localeFromPath(window.location.pathname),
-    source: hasCurrentCampaign ? sourceFromParams(params) : stored?.source ?? 'direct',
+    source: hasCurrentCampaign
+      ? inferLeadSource(params.get('utm_source'), params.get('utm_medium'))
+      : stored?.source ?? 'direct',
     usesHolded: stored?.usesHolded ?? 'unknown',
     originPath: stored?.originPath ?? window.location.pathname.slice(0, 500),
     ...(safeString(params.get('utm_source'), 120) || stored?.utmSource
@@ -79,12 +99,7 @@ export function captureClientAttribution(): LeadAttribution | null {
     ...(stored?.customerType ? { customerType: stored.customerType } : {}),
   };
 
-  try {
-    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(attribution));
-  } catch {
-    // Attribution must never block navigation or a lead form.
-  }
-
+  persistAttribution(attribution);
   return attribution;
 }
 
