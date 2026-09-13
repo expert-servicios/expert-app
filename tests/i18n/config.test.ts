@@ -5,7 +5,11 @@ import {
   isSupportedLocale,
   normalizeLocale,
 } from '@/lib/i18n/config';
-import { isLocalePubliclyEnabled, shouldIndexLocale } from '@/lib/i18n/feature-flags';
+import {
+  isLocaleIndexingEnabled,
+  isLocalePubliclyEnabled,
+  shouldIndexLocale,
+} from '@/lib/i18n/feature-flags';
 
 describe('locale configuration', () => {
   afterEach(() => {
@@ -25,19 +29,31 @@ describe('locale configuration', () => {
     expect(normalizeLocale(undefined)).toBe('es');
   });
 
-  it('keeps RU and EN unpublished by default', () => {
+  it('keeps RU and EN unpublished and non-indexable by default', () => {
     expect(isLocalePubliclyEnabled('es')).toBe(true);
     expect(isLocalePubliclyEnabled('ru')).toBe(false);
     expect(isLocalePubliclyEnabled('en')).toBe(false);
+    expect(isLocaleIndexingEnabled('ru')).toBe(false);
     expect(shouldIndexLocale('ru')).toBe(false);
   });
 
-  it('enables each localized surface only through its explicit public flag', () => {
+  it('allows preview visibility without enabling search indexing', () => {
     vi.stubEnv('NEXT_PUBLIC_RU_ENABLED', 'true');
-    vi.stubEnv('NEXT_PUBLIC_EN_ENABLED', '1');
 
     expect(isLocalePubliclyEnabled('ru')).toBe(true);
-    expect(isLocalePubliclyEnabled('en')).toBe(true);
+    expect(isLocaleIndexingEnabled('ru')).toBe(false);
+    expect(shouldIndexLocale('ru')).toBe(false);
+  });
+
+  it('indexes a localized surface only when both release gates are enabled', () => {
+    vi.stubEnv('NEXT_PUBLIC_RU_ENABLED', 'true');
+    vi.stubEnv('NEXT_PUBLIC_RU_INDEX_ENABLED', '1');
+    vi.stubEnv('NEXT_PUBLIC_EN_ENABLED', 'true');
+    vi.stubEnv('NEXT_PUBLIC_EN_INDEX_ENABLED', 'on');
+
+    expect(isLocalePubliclyEnabled('ru')).toBe(true);
+    expect(isLocaleIndexingEnabled('ru')).toBe(true);
     expect(shouldIndexLocale('ru')).toBe(true);
+    expect(shouldIndexLocale('en')).toBe(true);
   });
 });
