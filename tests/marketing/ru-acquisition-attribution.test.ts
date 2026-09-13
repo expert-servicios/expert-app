@@ -14,6 +14,7 @@ describe('RU acquisition attribution', () => {
     });
     expect(inferRouteContext('/ru/holded')).toEqual({ intent: 'start_using_holded' });
     expect(inferRouteContext('/ru/academy')).toEqual({ intent: 'learn_self_management' });
+    expect(inferRouteContext('/ru/plany')).toEqual({ intent: 'organize_existing_business' });
     expect(inferRouteContext('/ru/verifactu')).toEqual({ intent: 'organize_existing_business' });
   });
 
