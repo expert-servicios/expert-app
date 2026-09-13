@@ -19,6 +19,7 @@ const quoteApi = source('app/api/quotes/route.ts');
 const academyApi = source('app/api/academy/leads/route.ts');
 const saasApi = source('app/api/saas-leads/route.ts');
 const kiaContext = source('lib/ai/kia/kia-context-builder.ts');
+const kiaPolicy = source('lib/ai/kia/prompts/kia-core-policy.ts');
 const commercial = source('lib/i18n/ru-commercial-data.ts');
 
 const ruFiles = [
@@ -53,8 +54,8 @@ describe('RU release gate', () => {
   });
 
   it('persists language preference without inferring it from nationality', () => {
-    expect(switcher).toContain('expert_locale');
     expect(switcher).toContain('/api/preferences/language');
+    expect(languageApi).toContain("COOKIE_NAME = 'expert_locale'");
     expect(languageApi).toContain(".from('profiles')");
     expect(languageApi).toContain('preferred_language');
     expect(languageApi.toLowerCase()).not.toContain('nationality');
@@ -102,9 +103,11 @@ describe('RU release gate', () => {
     expect(RU_PUBLIC_CONTENT.verifactu.description).toContain('VERI*FACTU — одна из предусмотренных моделей');
   });
 
-  it('passes RU preference into Kia context while keeping jurisdiction independent', () => {
+  it('passes RU preference into Kia context while keeping jurisdiction independent from language', () => {
     expect(kiaContext).toContain('preferred_language');
-    expect(kiaContext).toContain('language');
-    expect(kiaContext).toContain('jurisdiction');
+    expect(kiaContext).toContain('language: resolveKiaLocale');
+    expect(kiaPolicy).toContain('IDIOMA: El idioma elegido por el usuario no implica nacionalidad, residencia fiscal ni jurisdiccion');
+    expect(kiaPolicy).toContain('JURISDICCION:');
+    expect(kiaPolicy).toContain('derecho ruso, ucraniano u otro derecho extranjero');
   });
 });
