@@ -1,17 +1,18 @@
 'use client';
 
 import { useEffect } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { captureClientAttribution } from '@/lib/marketing/client-attribution';
 
 export function AcquisitionTracker() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const search = searchParams.toString();
 
   useEffect(() => {
+    // Read window.location.search inside the capture helper. Avoid useSearchParams here
+    // because this tracker lives in the shared public layout and must not force every
+    // statically generated page behind a Suspense boundary.
     captureClientAttribution();
-  }, [pathname, search]);
+  }, [pathname]);
 
   return null;
 }
