@@ -1,7 +1,8 @@
 import Link from 'next/link';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, ExternalLink, ShieldCheck } from 'lucide-react';
 import { LanguageSwitcher } from '@/components/i18n/LanguageSwitcher';
 import { RU_PUBLIC_CONTENT } from '@/lib/i18n/ru-public-content';
+import { RU_COMMERCIAL_DATA } from '@/lib/i18n/ru-commercial-data';
 import {
   getLocalizedPublicHref,
   type PublicRouteKey,
@@ -16,6 +17,13 @@ const NAV: Array<{ route: PublicRouteKey; label: string }> = [
   { route: 'consultation', label: 'Консультация' },
 ];
 
+const TRUST_ITEMS = [
+  'Holded Solution Partner',
+  'Asesoría Holded acreditada',
+  'Colaborador social de la Agencia Tributaria',
+  'EXPERT Business Academy · частное обучение',
+] as const;
+
 export function RuPublicPage({
   routeKey,
   ruEnabled,
@@ -26,6 +34,7 @@ export function RuPublicPage({
   enEnabled: boolean;
 }) {
   const content = RU_PUBLIC_CONTENT[routeKey];
+  const commercial = RU_COMMERCIAL_DATA[routeKey];
   const primaryHref = routeKey === 'consultation'
     ? getLocalizedPublicHref('consultation', 'es')
     : getLocalizedPublicHref(content.primaryRoute, 'ru');
@@ -72,6 +81,16 @@ export function RuPublicPage({
           </div>
         </section>
 
+        <section className="border-b border-[#D4A017]/20 bg-[#FFFDF8] px-5 py-5 sm:px-8">
+          <div className="mx-auto flex max-w-5xl flex-wrap gap-x-6 gap-y-3 text-xs font-semibold text-[#4D5A68]">
+            {TRUST_ITEMS.map((item) => (
+              <span key={item} className="inline-flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-[#D4A017]" /> {item}
+              </span>
+            ))}
+          </div>
+        </section>
+
         <section className="px-5 py-14 sm:px-8 md:py-20">
           <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-3">
             {content.bullets.map((bullet) => (
@@ -81,7 +100,67 @@ export function RuPublicPage({
               </article>
             ))}
           </div>
-          <p className="mx-auto mt-10 max-w-5xl text-sm leading-6 text-[#5F6B78]">
+        </section>
+
+        {commercial?.offers && commercial.offers.length > 0 && (
+          <section className="border-y border-[#0D1B2A]/10 bg-white px-5 py-16 sm:px-8 md:py-20">
+            <div className="mx-auto max-w-6xl">
+              <div className="max-w-3xl">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4A017]">EXPERT · единый каталог</p>
+                <h2 className="mt-3 font-serif text-3xl font-bold">{commercial.offerTitle ?? 'Варианты работы'}</h2>
+                {commercial.offerIntro && <p className="mt-4 leading-7 text-[#5F6B78]">{commercial.offerIntro}</p>}
+              </div>
+              <div className="mt-9 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                {commercial.offers.map((offer) => (
+                  <article key={`${offer.title}-${offer.href}`} className="flex flex-col border border-[#D4A017]/25 bg-[#F8F6F1] p-6">
+                    {offer.badge && <p className="text-[11px] font-bold uppercase tracking-wider text-[#B47B13]">{offer.badge}</p>}
+                    <h3 className="mt-2 font-serif text-xl font-bold">{offer.title}</h3>
+                    <p className="mt-3 flex-1 text-sm leading-6 text-[#5F6B78]">{offer.description}</p>
+                    {offer.price && <p className="mt-5 font-serif text-2xl font-bold text-[#0D1B2A]">{offer.price}</p>}
+                    <Link href={offer.href} className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#9B6810] hover:underline">
+                      Подробнее <ExternalLink className="h-3.5 w-3.5" />
+                    </Link>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {commercial?.sections && commercial.sections.length > 0 && (
+          <section className="px-5 py-16 sm:px-8 md:py-20">
+            <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
+              {commercial.sections.map((section) => (
+                <article key={section.title} className="border border-[#0D1B2A]/10 bg-[#FFFDF8] p-7">
+                  <h2 className="font-serif text-2xl font-bold">{section.title}</h2>
+                  <p className="mt-4 leading-7 text-[#5F6B78]">{section.text}</p>
+                  {section.items && section.items.length > 0 && (
+                    <ul className="mt-5 space-y-3">
+                      {section.items.map((item) => (
+                        <li key={item} className="flex gap-2 text-sm leading-6 text-[#344252]">
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A017]" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {commercial?.notice && (
+          <section className="px-5 pb-16 sm:px-8 md:pb-20">
+            <div className="mx-auto max-w-5xl border-l-4 border-[#D4A017] bg-[#0D1B2A] p-6 text-[#F8F6F1]">
+              <p className="font-serif text-xl font-bold">{commercial.notice.title}</p>
+              <p className="mt-2 text-sm leading-7 text-[#F8F6F1]/75">{commercial.notice.text}</p>
+            </div>
+          </section>
+        )}
+
+        <section className="px-5 pb-14 sm:px-8 md:pb-20">
+          <p className="mx-auto max-w-5xl border-t border-[#0D1B2A]/10 pt-8 text-sm leading-6 text-[#5F6B78]">
             Информация относится к сопровождению и услугам EXPERT в Испании. Язык страницы не определяет гражданство, налоговое резидентство или применимое право клиента.
           </p>
         </section>
@@ -89,7 +168,10 @@ export function RuPublicPage({
 
       <footer className="border-t border-white/10 bg-[#0D1B2A] px-5 py-9 text-sm text-[#F8F6F1]/70 sm:px-8">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
-          <p>EXPERT · Holded Solution Partner · Asesoría Holded acreditada</p>
+          <div>
+            <p>EXPERT · Holded Solution Partner · Asesoría Holded acreditada</p>
+            <a href="mailto:info@expertconsulting.es" className="mt-1 block hover:text-[#D4A017]">info@expertconsulting.es</a>
+          </div>
           <div className="flex gap-4">
             <Link href="/contacto" className="hover:text-[#D4A017]">Контакты</Link>
             <Link href="/aviso-legal" className="hover:text-[#D4A017]">Юридическая информация</Link>
