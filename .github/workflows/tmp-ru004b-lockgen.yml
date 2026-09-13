@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   lockfile:
@@ -26,6 +26,19 @@ jobs:
 
       - name: Generate reproducible lockfile
         run: npm install 'next-intl@^4.14.4' --save --package-lock-only
+
+      - name: Commit generated package files when changed
+        shell: bash
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "Package files already reproducible; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "build: add next-intl with reproducible lockfile"
+          git push origin HEAD:${{ github.head_ref }}
 
       - name: Upload package files
         uses: actions/upload-artifact@v4
