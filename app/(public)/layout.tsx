@@ -7,6 +7,8 @@ import { WhatsAppChatWidget } from '@/components/site/WhatsAppChatWidget';
 import { CalBadge } from '@/components/site/CalBadge';
 import { CartProvider } from '@/contexts/CartContext';
 import { CartSidebar } from '@/components/cart/CartSidebar';
+import { LanguageSwitcher } from '@/components/i18n/LanguageSwitcher';
+import { isLocalePubliclyEnabled } from '@/lib/i18n/feature-flags';
 
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
@@ -21,6 +23,10 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         />
       )}
       <Header />
+      <LanguageSwitcher
+        ruEnabled={isLocalePubliclyEnabled('ru')}
+        enEnabled={isLocalePubliclyEnabled('en')}
+      />
       {children}
       <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#D4A017] to-transparent" />
       <Footer />

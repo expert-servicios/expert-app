@@ -11,10 +11,18 @@ export function isLocalePubliclyEnabled(locale: SupportedLocale): boolean {
   return enabled(process.env.NEXT_PUBLIC_EN_ENABLED);
 }
 
+export function isLocaleIndexingEnabled(locale: SupportedLocale): boolean {
+  if (locale === 'es') return true;
+  if (!isLocalePubliclyEnabled(locale)) return false;
+  if (locale === 'ru') return enabled(process.env.NEXT_PUBLIC_RU_INDEX_ENABLED);
+  return enabled(process.env.NEXT_PUBLIC_EN_INDEX_ENABLED);
+}
+
 /**
- * Localized pages stay non-indexable until their release gate is explicitly enabled.
- * Spanish remains the canonical default locale and is always indexable.
+ * Visibility and SEO release are deliberately separate. A localized surface can
+ * be enabled for preview/review while remaining noindex until its content is
+ * approved for public search.
  */
 export function shouldIndexLocale(locale: SupportedLocale): boolean {
-  return isLocalePubliclyEnabled(locale);
+  return isLocaleIndexingEnabled(locale);
 }
