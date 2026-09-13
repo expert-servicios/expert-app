@@ -1,0 +1,37 @@
+name: Temporary RU-004b lockfile generator
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  lockfile:
+    if: github.head_ref == 'feat/ru-004b-next-intl-runtime'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Generate reproducible lockfile
+        run: npm install 'next-intl@^4.14.4' --save --package-lock-only
+
+      - name: Upload package files
+        uses: actions/upload-artifact@v4
+        with:
+          name: ru004b-package-files
+          path: |
+            package.json
+            package-lock.json
+          retention-days: 1
