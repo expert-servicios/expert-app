@@ -54,7 +54,7 @@ export function inferRouteContext(pathname: string): {
   if (normalized === '/academy' || normalized.startsWith('/academy/')) {
     return { intent: 'learn_self_management' };
   }
-  if (normalized === '/planes') {
+  if (normalized === '/planes' || normalized === '/plany') {
     return { intent: 'organize_existing_business' };
   }
   if (normalized === '/verifactu') {
