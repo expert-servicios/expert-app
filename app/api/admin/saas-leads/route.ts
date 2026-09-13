@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { attributionFromMetadata } from '@/lib/marketing/server-attribution';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     let query = admin
       .from('saas_leads')
-      .select('id,name,email,phone,company_name,client_count_range,current_tools,operational_problem,pilot_interest,status,source,created_at')
+      .select('id,name,email,phone,company_name,client_count_range,current_tools,operational_problem,pilot_interest,status,source,metadata,created_at')
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -32,7 +33,12 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
     if (error) throw error;
 
-    return NextResponse.json({ leads: data ?? [] });
+    return NextResponse.json({
+      leads: (data ?? []).map((lead) => ({
+        ...lead,
+        attribution: attributionFromMetadata(lead.metadata),
+      })),
+    });
   } catch (error) {
     console.error('[admin/saas-leads] GET error:', error);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminClient } from '@/lib/auth/require-admin';
+import { attributionFromMetadata } from '@/lib/marketing/server-attribution';
 
 const LIFECYCLE_STAGES = ['lead', 'prospect', 'customer', 'former_customer'] as const;
 const STRIPE_ACTIVITIES = ['no_activity', 'abandoned', 'paid', 'subscribed'] as const;
 const MARKETING_STATUSES = ['unknown', 'consented', 'unsubscribed', 'blocked'] as const;
+const ATTRIBUTION_LOCALES = ['es', 'ru', 'en'] as const;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function positiveInt(raw: string | null, fallback: number, max: number) {
@@ -20,6 +22,16 @@ function sanitizeSearch(raw: string) {
     .slice(0, 100);
 }
 
+function localeFilter(locale: string | null) {
+  return locale && ATTRIBUTION_LOCALES.includes(locale as (typeof ATTRIBUTION_LOCALES)[number])
+    ? locale as (typeof ATTRIBUTION_LOCALES)[number]
+    : null;
+}
+
+function withLocale<T extends { contains: (column: string, value: Record<string, unknown>) => T }>(query: T, locale: string) {
+  return query.contains('metadata', { acquisition: { locale } });
+}
+
 export async function GET(request: NextRequest) {
   try {
     const admin = await requireAdminClient(request);
@@ -31,12 +43,13 @@ export async function GET(request: NextRequest) {
     const lifecycle = url.searchParams.get('lifecycle');
     const activity = url.searchParams.get('activity');
     const marketing = url.searchParams.get('marketing');
+    const locale = localeFilter(url.searchParams.get('locale'));
     const search = sanitizeSearch(url.searchParams.get('q') ?? '');
 
     let query = admin
       .from('leads')
       .select(
-        'id,name,email,phone,client_type,category,service,country,state,source,created_at,updated_at,lifecycle_stage,stripe_activity,marketing_status,marketing_consent_at,marketing_source,first_stripe_activity_at,last_stripe_activity_at',
+        'id,name,email,phone,client_type,category,service,country,state,source,source_key,metadata,created_at,updated_at,lifecycle_stage,stripe_activity,marketing_status,marketing_consent_at,marketing_source,first_stripe_activity_at,last_stripe_activity_at',
         { count: 'exact' },
       )
       .order('last_stripe_activity_at', { ascending: false, nullsFirst: false })
@@ -52,11 +65,33 @@ export async function GET(request: NextRequest) {
     if (marketing && MARKETING_STATUSES.includes(marketing as (typeof MARKETING_STATUSES)[number])) {
       query = query.eq('marketing_status', marketing);
     }
+    if (locale) {
+      query = query.contains('metadata', { acquisition: { locale } });
+    }
     if (search) {
       query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
     }
 
-    const [listResult, totalResult, leadsResult, prospectsResult, customersResult, formerResult, subscribedResult, paidResult, abandonedResult, consentedResult, unknownResult] = await Promise.all([
+    const ruBase = () => withLocale(admin.from('leads').select('id', { count: 'exact', head: true }), 'ru');
+
+    const [
+      listResult,
+      totalResult,
+      leadsResult,
+      prospectsResult,
+      customersResult,
+      formerResult,
+      subscribedResult,
+      paidResult,
+      abandonedResult,
+      consentedResult,
+      unknownResult,
+      ruTotalResult,
+      ruProspectsResult,
+      ruCustomersResult,
+      ruPaidResult,
+      ruSubscribedResult,
+    ] = await Promise.all([
       query,
       admin.from('leads').select('id', { count: 'exact', head: true }),
       admin.from('leads').select('id', { count: 'exact', head: true }).eq('lifecycle_stage', 'lead'),
@@ -68,6 +103,11 @@ export async function GET(request: NextRequest) {
       admin.from('leads').select('id', { count: 'exact', head: true }).eq('stripe_activity', 'abandoned'),
       admin.from('leads').select('id', { count: 'exact', head: true }).eq('marketing_status', 'consented'),
       admin.from('leads').select('id', { count: 'exact', head: true }).eq('marketing_status', 'unknown'),
+      ruBase(),
+      ruBase().eq('lifecycle_stage', 'prospect'),
+      ruBase().eq('lifecycle_stage', 'customer'),
+      ruBase().eq('stripe_activity', 'paid'),
+      ruBase().eq('stripe_activity', 'subscribed'),
     ]);
 
     if (listResult.error) throw listResult.error;
@@ -83,6 +123,11 @@ export async function GET(request: NextRequest) {
       abandonedResult,
       consentedResult,
       unknownResult,
+      ruTotalResult,
+      ruProspectsResult,
+      ruCustomersResult,
+      ruPaidResult,
+      ruSubscribedResult,
     ];
     const statsError = statsResults.find((result) => result.error)?.error;
     if (statsError) throw statsError;
@@ -133,6 +178,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       leads: leads.map((lead) => ({
         ...lead,
+        attribution: attributionFromMetadata(lead.metadata),
         stripe_summary: summaries.get(lead.id) ?? {
           customer_count: 0,
           active_subscription: false,
@@ -160,6 +206,13 @@ export async function GET(request: NextRequest) {
         abandoned: abandonedResult.count ?? 0,
         marketing_consented: consentedResult.count ?? 0,
         marketing_unknown: unknownResult.count ?? 0,
+        ru_funnel: {
+          total: ruTotalResult.count ?? 0,
+          prospects: ruProspectsResult.count ?? 0,
+          customers: ruCustomersResult.count ?? 0,
+          paid: ruPaidResult.count ?? 0,
+          subscribed: ruSubscribedResult.count ?? 0,
+        },
       },
     });
   } catch (error) {
