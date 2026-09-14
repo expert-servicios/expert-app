@@ -82,9 +82,7 @@ describe('RU release gate', () => {
 
   it('protects the Holded spelling across Russian-facing content', () => {
     expect(HOLDED_BRAND_NAME).toBe('Holded');
-    for (const forbidden of ['Холдед', 'Холед', 'Холд', 'Хоулдед', 'ХолдэД']) {
-      expect(ruFiles).not.toContain(forbidden);
-    }
+    expect(ruFiles).not.toMatch(/холд(?:ед|эд)?|холед|хоулдед/iu);
     expect(ruFiles).toContain('Holded');
   });
 
@@ -99,6 +97,7 @@ describe('RU release gate', () => {
 
   it('keeps Academy private/non-regulated and SIF terminology explicit', () => {
     expect(RU_PUBLIC_CONTENT.academy.description).toContain('Частное нерегулируемое обучение');
+    expect(ruShell).toContain('RU_MESSAGES.credentials.academyPrivateTraining');
     expect(RU_PUBLIC_CONTENT.verifactu.eyebrow).toContain('SIF');
     expect(RU_PUBLIC_CONTENT.verifactu.description).toContain('VERI*FACTU — одна из предусмотренных моделей');
   });
