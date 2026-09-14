@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, ExternalLink, ShieldCheck } from 'lucide-react';
+import { EXPERT_IDENTITY } from '@/config/identity';
 import { LanguageSwitcher } from '@/components/i18n/LanguageSwitcher';
 import { RU_PUBLIC_CONTENT } from '@/lib/i18n/ru-public-content';
 import { RU_COMMERCIAL_DATA } from '@/lib/i18n/ru-commercial-data';
+import { getMessages } from '@/lib/i18n/messages';
 import {
   getLocalizedPublicHref,
   type PublicRouteKey,
@@ -17,11 +19,13 @@ const NAV: Array<{ route: PublicRouteKey; label: string }> = [
   { route: 'consultation', label: 'Консультация' },
 ];
 
+const RU_MESSAGES = getMessages('ru');
+
 const TRUST_ITEMS = [
-  'Holded Solution Partner',
-  'Asesoría Holded acreditada',
-  'Colaborador social de la Agencia Tributaria',
-  'EXPERT Business Academy · частное обучение',
+  EXPERT_IDENTITY.credentials.holdedSolutionPartner,
+  EXPERT_IDENTITY.credentials.holdedAccreditedAdvisory,
+  EXPERT_IDENTITY.credentials.aeatSocialCollaborator,
+  RU_MESSAGES.credentials.academyPrivateTraining,
 ] as const;
 
 export function RuPublicPage({
@@ -169,8 +173,9 @@ export function RuPublicPage({
       <footer className="border-t border-white/10 bg-[#0D1B2A] px-5 py-9 text-sm text-[#F8F6F1]/70 sm:px-8">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4">
           <div>
-            <p>EXPERT · Holded Solution Partner · Asesoría Holded acreditada</p>
-            <a href="mailto:info@expertconsulting.es" className="mt-1 block hover:text-[#D4A017]">info@expertconsulting.es</a>
+            <p>{EXPERT_IDENTITY.credentials.holdedSolutionPartner} · {EXPERT_IDENTITY.credentials.holdedAccreditedAdvisory}</p>
+            <a href={`mailto:${EXPERT_IDENTITY.publicEmail}`} className="mt-1 block hover:text-[#D4A017]">{EXPERT_IDENTITY.publicEmail}</a>
+            <a href={`tel:${EXPERT_IDENTITY.phoneE164}`} className="mt-1 block hover:text-[#D4A017]">WhatsApp / Tel. {EXPERT_IDENTITY.phoneDisplay}</a>
           </div>
           <div className="flex gap-4">
             <Link href="/contacto" className="hover:text-[#D4A017]">Контакты</Link>
