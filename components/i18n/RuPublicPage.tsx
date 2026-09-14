@@ -4,6 +4,7 @@ import { EXPERT_IDENTITY } from '@/config/identity';
 import { LanguageSwitcher } from '@/components/i18n/LanguageSwitcher';
 import { RU_PUBLIC_CONTENT } from '@/lib/i18n/ru-public-content';
 import { RU_COMMERCIAL_DATA } from '@/lib/i18n/ru-commercial-data';
+import { getMessages } from '@/lib/i18n/messages';
 import {
   getLocalizedPublicHref,
   type PublicRouteKey,
@@ -18,11 +19,13 @@ const NAV: Array<{ route: PublicRouteKey; label: string }> = [
   { route: 'consultation', label: 'Консультация' },
 ];
 
+const RU_MESSAGES = getMessages('ru');
+
 const TRUST_ITEMS = [
   EXPERT_IDENTITY.credentials.holdedSolutionPartner,
   EXPERT_IDENTITY.credentials.holdedAccreditedAdvisory,
   EXPERT_IDENTITY.credentials.aeatSocialCollaborator,
-  EXPERT_IDENTITY.credentials.academy,
+  RU_MESSAGES.credentials.academyPrivateTraining,
 ] as const;
 
 export function RuPublicPage({
