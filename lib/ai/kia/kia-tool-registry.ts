@@ -105,7 +105,7 @@ export function isKiaToolSafeForAutonomousExecution(name: string): boolean {
 
 export function resolveKiaToolDefinitions(context: KiaToolAuthorizationContext): KiaToolDefinition[] {
   const requested = context.requestedNames?.length ? new Set(context.requestedNames) : null;
-  const maxRiskRank = RISK_RANK[context.maxRiskTier ?? 'R5'];
+  const maxRiskRank = RISK_RANK[context.maxRiskTier ?? 'R1'];
   const allowedEffects = context.allowedEffects ? new Set(context.allowedEffects) : null;
 
   return getKiaToolRegistry()
