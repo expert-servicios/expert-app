@@ -97,6 +97,6 @@ describe('KIA actor capability resolver', () => {
     expect(getEnabledKiaPolicyFeatureFlags({
       KIA_OPERATOR_MODE_ENABLED: 'true',
       KIA_INTERNAL_ADMIN_MODE_ENABLED: 'FALSE',
-    } as NodeJS.ProcessEnv)).toEqual(['kia_operator_mode']);
+    })).toEqual(['kia_operator_mode']);
   });
 });
