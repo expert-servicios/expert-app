@@ -14,6 +14,16 @@ describe('KIA authoritative tool registry', () => {
     expect(isKiaToolAuthorized('totally_unknown_tool', { channel: 'dashboard' })).toBe(false);
   });
 
+  it('cannot authorize a registered tool omitted from the caller allowlist', () => {
+    const context = {
+      channel: 'dashboard' as const,
+      requestedNames: ['get_user_expedientes'],
+    };
+
+    expect(isKiaToolAuthorized('get_user_expedientes', context)).toBe(true);
+    expect(isKiaToolAuthorized('get_holded_invoices', context)).toBe(false);
+  });
+
   it('can constrain model-visible tools to autonomous R0/R1 reads', () => {
     const tools = resolveKiaToolDefinitions({
       channel: 'dashboard',
