@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { KiaDecision } from '@/lib/ai/kia/kia-output-schema';
 import type { KiaProviderRequest } from '@/lib/ai/kia/kia-provider-router';
-import { KIA_EVAL_CASES } from '@/lib/ai/kia/evals/kia-eval-cases';
+import { KIA_CORE_EVAL_CASES } from '@/lib/ai/kia/evals/kia-eval-cases';
 import {
   estimateProviderResultCost,
   runKiaBaselineVsResponsesShadow,
@@ -39,7 +39,7 @@ afterEach(() => {
 describe('KIA baseline vs Responses shadow', () => {
   it('keeps baseline authoritative and performs no provider call when shadow is disabled', async () => {
     vi.stubEnv('KIA_OPENAI_RESPONSES_SHADOW_ENABLED', 'false');
-    const evalCase = KIA_EVAL_CASES.find((item) => item.id === 'dashboard-own-cases-es');
+    const evalCase = KIA_CORE_EVAL_CASES.find((item) => item.id === 'dashboard-own-cases');
     expect(evalCase).toBeDefined();
 
     const result = await runKiaBaselineVsResponsesShadow({
