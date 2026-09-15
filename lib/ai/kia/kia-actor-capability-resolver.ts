@@ -10,6 +10,10 @@ import {
 } from './kia-policy-profiles';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
+type KiaPolicyFeatureFlagEnv = {
+  KIA_OPERATOR_MODE_ENABLED?: string;
+  KIA_INTERNAL_ADMIN_MODE_ENABLED?: string;
+};
 
 export interface KiaActorCapabilitySnapshot {
   userId: string;
@@ -133,7 +137,7 @@ export function toKiaPolicyActorContext(snapshot: KiaActorCapabilitySnapshot): K
   };
 }
 
-export function getEnabledKiaPolicyFeatureFlags(env: NodeJS.ProcessEnv = process.env): string[] {
+export function getEnabledKiaPolicyFeatureFlags(env: KiaPolicyFeatureFlagEnv = process.env): string[] {
   const enabled: string[] = [];
   if (env.KIA_OPERATOR_MODE_ENABLED?.toLowerCase() === 'true') enabled.push('kia_operator_mode');
   if (env.KIA_INTERNAL_ADMIN_MODE_ENABLED?.toLowerCase() === 'true') enabled.push('kia_internal_admin_mode');
