@@ -118,6 +118,7 @@ export function resolveKiaToolDefinitions(context: KiaToolAuthorizationContext):
 }
 
 export function isKiaToolAuthorized(name: string, context: KiaToolAuthorizationContext): boolean {
+  if (context.requestedNames?.length && !context.requestedNames.includes(name)) return false;
   return resolveKiaToolDefinitions({ ...context, requestedNames: [name] }).some((tool) => tool.name === name);
 }
 
