@@ -4,6 +4,7 @@ import {
   resolveCompanyCommercialCoverage,
   type CompanyCommercialCoverage,
 } from '@/lib/subscriptions/company-commercial-coverage';
+import { loadKiaAuthoritativeGrants } from './kia-authoritative-grants';
 import {
   resolveKiaExplicitGrants,
   type KiaExplicitGrant,
@@ -88,6 +89,15 @@ export async function resolveKiaActorCapabilities(input: {
     coverage = await resolveCompanyCommercialCoverage(input.admin, input.clientId, input.companyId);
   }
 
+  const authoritativeGrants = input.explicitGrants ?? (profile
+    ? await loadKiaAuthoritativeGrants({
+        admin: input.admin,
+        userId: input.userId,
+        tenantId: profile.tenant_id ?? null,
+        companyId: input.companyId ?? null,
+      })
+    : []);
+
   return deriveKiaActorCapabilities({
     userId: input.userId,
     clientId: input.clientId,
@@ -96,7 +106,7 @@ export async function resolveKiaActorCapabilities(input: {
     membership,
     coverage,
     featureFlags: input.featureFlags,
-    explicitGrants: input.explicitGrants,
+    explicitGrants: authoritativeGrants,
     now: input.now,
   });
 }
