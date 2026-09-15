@@ -39,6 +39,15 @@ describe('KIA shadow sampler', () => {
     expect(result.sampled).toBe(true);
   });
 
+  it('allows the canonical dashboard waba_reply task only after the same R0/R1 guards', () => {
+    vi.stubEnv('KIA_OPENAI_RESPONSES_SHADOW_ENABLED', 'true');
+    vi.stubEnv('KIA_OPENAI_RESPONSES_SHADOW_SAMPLE_RATE', '1');
+    const decision: KiaDecision = { ...baseDecision, taskType: 'waba_reply' };
+    const result = decideKiaShadowSampling({ taskType: 'waba_reply', decision, sampleKey: 'dashboard-safe' });
+    expect(result.eligible).toBe(true);
+    expect(result.sampled).toBe(true);
+  });
+
   it('rejects decisions requiring human approval', () => {
     vi.stubEnv('KIA_OPENAI_RESPONSES_SHADOW_ENABLED', 'true');
     vi.stubEnv('KIA_OPENAI_RESPONSES_SHADOW_SAMPLE_RATE', '1');

@@ -6,7 +6,7 @@
  * Auth: usuario autenticado (cookie de sesión Supabase SSR).
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
@@ -18,6 +18,11 @@ import {
   buildKiaPresentationContext,
 } from '@/lib/ai/kia/kia-presentation-context-builder';
 import { loadKiaAuthoritativeCaseStatuses } from '@/lib/ai/kia/kia-authoritative-case-status';
+import { buildKiaSystemPrompt } from '@/lib/ai/kia/kia-system-prompt';
+import { KIA_DECISION_JSON_SCHEMA } from '@/lib/ai/kia/kia-output-schema';
+import { KIA_TOOL_DEFINITIONS } from '@/lib/ai/kia/kia-tool-definitions';
+import { redactSensitiveText, safeErrorMessage, stableHash } from '@/lib/ai/kia/kia-redaction';
+import { runSampledKiaShadow } from '@/lib/ai/kia/evals/kia-shadow-sampler';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -192,6 +197,47 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 },
     );
+  }
+
+  // M2.3: sampled Responses shadow runs only after the primary response lifecycle.
+  // It never changes result, never executes candidate tools and is fail-silent.
+  if (!result.usedFallback && result.providerResult) {
+    const shadowTaskType = result.decision.taskType;
+    const shadowTools = KIA_TOOL_DEFINITIONS.filter((tool) =>
+      LEGACY_DASHBOARD_SAFE_TOOLS.includes(tool.name as (typeof LEGACY_DASHBOARD_SAFE_TOOLS)[number]),
+    );
+    const shadowRequest = {
+      taskType: shadowTaskType,
+      systemPrompt: buildKiaSystemPrompt({
+        locale: 'es',
+        channel: 'dashboard',
+        taskType: shadowTaskType,
+      }),
+      responseSchema: KIA_DECISION_JSON_SCHEMA,
+      tools: shadowTools,
+      messages: [{ role: 'user' as const, content: redactSensitiveText(message) }],
+      maxTokens: 900,
+      temperature: 0.2,
+    };
+    const shadowSampleKey = stableHash({
+      userId: user.id,
+      companyScope,
+      sessionId: effectiveSessionId ?? null,
+      message,
+    });
+
+    after(async () => {
+      try {
+        await runSampledKiaShadow({
+          request: shadowRequest,
+          baselineDecision: result.decision,
+          baselineProviderResult: result.providerResult,
+          sampleKey: shadowSampleKey,
+        });
+      } catch (err) {
+        console.warn('[KiaCopilot] shadow sampling failed:', safeErrorMessage(err));
+      }
+    });
   }
 
   const authoritativeCaseStatuses = result.decision.intent === 'case_status'
