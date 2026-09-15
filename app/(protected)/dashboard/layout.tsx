@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 import { createServerClient } from '@supabase/ssr';
 import { DashboardNav } from '@/components/dashboard/DashboardNav';
 import { MobileNav } from '@/components/dashboard/MobileNav';
-import { KiaCopilotPanel } from '@/components/dashboard/KiaCopilotPanel';
 import { SubscriptionOnboardingStatus } from '@/components/dashboard/SubscriptionOnboardingStatus';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
@@ -53,7 +52,6 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         {children}
       </div>
       <MobileNav />
-      <KiaCopilotPanel />
     </div>
   );
 }
