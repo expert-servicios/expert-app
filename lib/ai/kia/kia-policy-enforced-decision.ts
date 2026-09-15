@@ -6,20 +6,51 @@ import {
   resolveKiaPolicyProfile,
   type KiaPolicyProfileName,
 } from './kia-policy-profiles';
-import { resolveKiaToolDefinitions } from './kia-tool-registry';
+import {
+  resolveKiaToolDefinitions,
+  type KiaToolAuthorizationContext,
+} from './kia-tool-registry';
+
+export type KiaResolvedPolicyAuthorization = {
+  ok: true;
+  authorization: KiaToolAuthorizationContext;
+  toolNames: string[];
+} | {
+  ok: false;
+  reason: string;
+};
+
+export function resolveKiaPolicyAuthorization(
+  profileName: KiaPolicyProfileName,
+  actor: KiaActorCapabilitySnapshot,
+): KiaResolvedPolicyAuthorization {
+  const resolved = resolveKiaPolicyProfile(profileName, toKiaPolicyActorContext(actor));
+  if (!resolved.ok) return { ok: false, reason: resolved.reason ?? 'policy_denied' };
+
+  const authorization = policyProfileToToolAuthorization(resolved.profile);
+  const toolNames = resolveKiaToolDefinitions(authorization).map((tool) => tool.name);
+
+  return {
+    ok: true,
+    authorization: {
+      channel: authorization.channel,
+      requestedNames: [...toolNames],
+      maxRiskTier: authorization.maxRiskTier,
+      allowedEffects: authorization.allowedEffects ? [...authorization.allowedEffects] : undefined,
+      autonomousOnly: authorization.autonomousOnly,
+    },
+    toolNames,
+  };
+}
 
 export function resolveKiaPolicyToolNames(
   profileName: KiaPolicyProfileName,
   actor: KiaActorCapabilitySnapshot,
 ): { ok: true; toolNames: string[] } | { ok: false; reason: string } {
-  const resolved = resolveKiaPolicyProfile(profileName, toKiaPolicyActorContext(actor));
-  if (!resolved.ok) return { ok: false, reason: resolved.reason ?? 'policy_denied' };
-
-  const toolNames = resolveKiaToolDefinitions(
-    policyProfileToToolAuthorization(resolved.profile),
-  ).map((tool) => tool.name);
-
-  return { ok: true, toolNames };
+  const resolved = resolveKiaPolicyAuthorization(profileName, actor);
+  return resolved.ok
+    ? { ok: true, toolNames: resolved.toolNames }
+    : resolved;
 }
 
 export async function runPolicyEnforcedKiaDecision(
@@ -27,13 +58,17 @@ export async function runPolicyEnforcedKiaDecision(
   actor: KiaActorCapabilitySnapshot,
   input: Parameters<typeof runKiaDecision>[0],
 ): Promise<Awaited<ReturnType<typeof runKiaDecision>>> {
-  const policy = resolveKiaPolicyToolNames(profileName, actor);
+  const policy = resolveKiaPolicyAuthorization(profileName, actor);
   if (!policy.ok) {
     throw new Error(`KIA policy denied: ${policy.reason}`);
   }
 
+  // The caller cannot widen the profile: visibility is reduced to the exact
+  // policy-resolved names. The full authorization snapshot is retained here
+  // for M4.6b propagation into the engine's pre-execution barrier.
   return runKiaDecision({
     ...input,
+    channel: policy.authorization.channel,
     allowedToolNames: policy.toolNames,
   });
 }
