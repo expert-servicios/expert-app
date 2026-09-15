@@ -99,7 +99,7 @@ describe('Anthropic Messages runtime adapter', () => {
   });
 
   it('uses the native Messages endpoint and current Anthropic headers', async () => {
-    const fetchImpl = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+    const fetchMock = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
       expect(init?.headers).toEqual(expect.objectContaining({
         'x-api-key': 'test-key',
         'anthropic-version': '2023-06-01',
@@ -113,7 +113,8 @@ describe('Anthropic Messages runtime adapter', () => {
           input: { version: '1.0', userMessage: 'OK' },
         }],
       }), { status: 200, headers: { 'content-type': 'application/json' } });
-    }) as typeof fetch;
+    });
+    const fetchImpl = fetchMock as unknown as typeof fetch;
 
     const result = await runAnthropicMessagesRequest(request, {
       apiKey: 'test-key',
@@ -121,8 +122,8 @@ describe('Anthropic Messages runtime adapter', () => {
       fetchImpl,
     });
 
-    expect(fetchImpl).toHaveBeenCalledOnce();
-    expect(String(fetchImpl.mock.calls[0]?.[0])).toBe('https://api.anthropic.com/v1/messages');
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe('https://api.anthropic.com/v1/messages');
     expect(result.parsedJson).toEqual({ version: '1.0', userMessage: 'OK' });
   });
 });
