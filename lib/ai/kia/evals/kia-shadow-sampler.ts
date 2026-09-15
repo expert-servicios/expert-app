@@ -2,8 +2,11 @@ import type { KiaDecision, KiaTaskType } from '../kia-output-schema';
 import type { KiaProviderRequest, KiaProviderResult } from '../kia-provider-router';
 import { stableHash } from '../kia-redaction';
 import { getKiaToolPolicy } from '../kia-tool-registry';
-import type { KiaEvalCase } from './kia-eval-types';
-import { runKiaBaselineVsResponsesShadow } from './kia-shadow-comparison';
+import {
+  buildTriProviderParityCase,
+  runKiaTriProviderEval,
+  type KiaTriProviderCandidate,
+} from './kia-tri-provider-eval';
 
 const SAFE_TASKS: KiaTaskType[] = [
   'waba_reply',
@@ -14,6 +17,8 @@ const SAFE_TASKS: KiaTaskType[] = [
   'checkout_decision',
 ];
 
+type ShadowProvider = 'openai' | 'anthropic';
+
 export interface KiaShadowSamplingDecision {
   eligible: boolean;
   sampled: boolean;
@@ -22,29 +27,44 @@ export interface KiaShadowSamplingDecision {
   rate: number;
 }
 
-export interface KiaShadowTelemetry {
-  event: 'kia.shadow.comparison';
-  inputHash: string;
-  baselineHash: string;
+export interface KiaShadowProviderTelemetry {
+  provider: ShadowProvider;
+  sampled: boolean;
+  inputHash?: string;
   candidateHash?: string;
-  taskType: KiaTaskType;
-  baselineProvider: string;
-  baselineModel: string;
   candidateModel?: string;
-  baselineScore: number;
   candidateScore?: number;
   scoreDelta?: number;
   regression?: boolean;
   improvement?: boolean;
-  baselineCostUsd?: number;
   candidateCostUsd?: number;
   candidateLatencyMs?: number;
   candidateError?: string;
 }
 
+export interface KiaShadowTelemetry {
+  event: 'kia.shadow.tri_provider_comparison';
+  taskType: KiaTaskType;
+  baselineHash: string;
+  baselineProvider: string;
+  baselineModel: string;
+  baselineScore: number;
+  baselineCostUsd?: number;
+  openai: KiaShadowProviderTelemetry;
+  anthropic: KiaShadowProviderTelemetry;
+}
+
 export function getKiaShadowSampleRate(): number {
-  const parsed = Number(process.env.KIA_OPENAI_RESPONSES_SHADOW_SAMPLE_RATE ?? '0.05');
-  if (!Number.isFinite(parsed)) return 0.05;
+  return getKiaProviderShadowSampleRate('openai');
+}
+
+export function getKiaProviderShadowSampleRate(provider: ShadowProvider): number {
+  const envName = provider === 'openai'
+    ? 'KIA_OPENAI_RESPONSES_SHADOW_SAMPLE_RATE'
+    : 'KIA_ANTHROPIC_MESSAGES_SHADOW_SAMPLE_RATE';
+  const fallback = provider === 'openai' ? 0.05 : 0.01;
+  const parsed = Number(process.env[envName] ?? String(fallback));
+  if (!Number.isFinite(parsed)) return fallback;
   return Math.max(0, Math.min(1, parsed));
 }
 
@@ -53,10 +73,22 @@ export function decideKiaShadowSampling(input: {
   decision: KiaDecision;
   sampleKey: unknown;
 }): KiaShadowSamplingDecision {
-  const rate = getKiaShadowSampleRate();
-  const bucket = hashBucket(input.sampleKey);
+  return decideKiaProviderShadowSampling({ ...input, provider: 'openai' });
+}
 
-  if (process.env.KIA_OPENAI_RESPONSES_SHADOW_ENABLED?.toLowerCase() !== 'true') {
+export function decideKiaProviderShadowSampling(input: {
+  provider: ShadowProvider;
+  taskType: KiaTaskType;
+  decision: KiaDecision;
+  sampleKey: unknown;
+}): KiaShadowSamplingDecision {
+  const rate = getKiaProviderShadowSampleRate(input.provider);
+  const bucket = hashBucket({ provider: input.provider, sampleKey: input.sampleKey });
+  const enabled = input.provider === 'openai'
+    ? process.env.KIA_OPENAI_RESPONSES_SHADOW_ENABLED?.toLowerCase() === 'true'
+    : process.env.KIA_ANTHROPIC_MESSAGES_SHADOW_ENABLED?.toLowerCase() === 'true';
+
+  if (!enabled) {
     return { eligible: false, sampled: false, reason: 'shadow_disabled', bucket, rate };
   }
   if (!SAFE_TASKS.includes(input.taskType)) {
@@ -92,69 +124,68 @@ export async function runSampledKiaShadow(input: {
   baselineProviderResult?: KiaProviderResult;
   sampleKey: unknown;
 }): Promise<KiaShadowTelemetry | null> {
-  const sampling = decideKiaShadowSampling({
+  const openaiSampling = decideKiaProviderShadowSampling({
+    provider: 'openai',
     taskType: input.request.taskType,
     decision: input.baselineDecision,
     sampleKey: input.sampleKey,
   });
-  if (!sampling.sampled) return null;
+  const anthropicSampling = decideKiaProviderShadowSampling({
+    provider: 'anthropic',
+    taskType: input.request.taskType,
+    decision: input.baselineDecision,
+    sampleKey: input.sampleKey,
+  });
 
-  const evalCase = buildBaselineParityCase(input.baselineDecision);
-  const result = await runKiaBaselineVsResponsesShadow({
-    evalCase,
+  if (!openaiSampling.sampled && !anthropicSampling.sampled) return null;
+
+  const result = await runKiaTriProviderEval({
+    evalCase: buildTriProviderParityCase(input.baselineDecision),
     request: input.request,
     baseline: {
       decision: input.baselineDecision,
       providerResult: input.baselineProviderResult,
     },
+    providerEnabled: {
+      openai: openaiSampling.sampled,
+      anthropic: anthropicSampling.sampled,
+    },
   });
 
   const telemetry: KiaShadowTelemetry = {
-    event: 'kia.shadow.comparison',
-    inputHash: result.inputHash,
-    baselineHash: result.baselineHash,
-    candidateHash: result.candidateHash,
+    event: 'kia.shadow.tri_provider_comparison',
     taskType: input.request.taskType,
+    baselineHash: result.baselineHash,
     baselineProvider: result.baseline.provider,
     baselineModel: result.baseline.model,
-    candidateModel: result.candidate?.model,
     baselineScore: result.baseline.scores.overall,
-    candidateScore: result.candidate?.scores.overall,
-    scoreDelta: result.comparison?.scoreDelta,
-    regression: result.comparison?.regression,
-    improvement: result.comparison?.improvement,
     baselineCostUsd: result.baseline.estimatedCostUsd,
-    candidateCostUsd: result.candidate?.estimatedCostUsd,
-    candidateLatencyMs: result.candidate?.latencyMs,
-    candidateError: result.candidate?.error,
+    openai: candidateTelemetry('openai', openaiSampling.sampled, result.openai),
+    anthropic: candidateTelemetry('anthropic', anthropicSampling.sampled, result.anthropic),
   };
 
-  // Intentionally no prompts, responses, client IDs, company IDs or tool arguments.
   console.info('[Kia shadow telemetry]', telemetry);
   return telemetry;
 }
 
-function buildBaselineParityCase(decision: KiaDecision): KiaEvalCase {
-  const observedTools = decision.toolRequests.map((tool) => tool.toolName);
+function candidateTelemetry(
+  provider: ShadowProvider,
+  sampled: boolean,
+  candidate: KiaTriProviderCandidate,
+): KiaShadowProviderTelemetry {
   return {
-    id: `shadow-parity-${decision.taskType}`,
-    title: 'Runtime shadow parity check',
-    domain: 'general',
-    criticality: 'medium',
-    taskType: decision.taskType,
-    channel: 'dashboard',
-    locale: 'es',
-    message: '[redacted-shadow-parity]',
-    expectation: {
-      intents: [decision.intent],
-      nextActions: [decision.nextAction],
-      requiredTools: observedTools,
-      allowedTools: observedTools,
-      expectedManualReview: decision.requiresManualReview,
-      expectedMeeting: decision.requiresMeeting,
-      maxToolRiskTier: 'R1',
-      forbiddenToolEffects: ['draft', 'write', 'external_action'],
-    },
+    provider,
+    sampled,
+    inputHash: candidate.inputHash,
+    candidateHash: candidate.outputHash,
+    candidateModel: candidate.eval?.model,
+    candidateScore: candidate.eval?.scores.overall,
+    scoreDelta: candidate.comparison?.scoreDelta,
+    regression: candidate.comparison?.regression,
+    improvement: candidate.comparison?.improvement,
+    candidateCostUsd: candidate.estimatedCostUsd,
+    candidateLatencyMs: candidate.latencyMs,
+    candidateError: candidate.error ?? candidate.eval?.error,
   };
 }
 
