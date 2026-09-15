@@ -4,6 +4,7 @@ import { getService } from '@/lib/services/service-registry';
 import { resolveCompanyCommercialCoverage, type CompanyCoverageSource } from '@/lib/subscriptions/company-commercial-coverage';
 import { resolveKiaLocale, type KiaLocale } from './kia-locale';
 import { retrieveKiaMemories, type KiaMemory } from './kia-memory-retriever';
+import { loadKiaMemoryV2Context, mergeKiaMemoryContexts } from './kia-memory-v2-context';
 
 export interface KiaContextInput {
   channel: 'waba' | 'admin' | 'email' | 'dashboard' | 'document';
@@ -90,8 +91,9 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
 
   const openAiKey = (typeof process !== 'undefined' ? process.env.OPENAI_API_KEY : undefined)?.trim() ?? '';
   const shouldLoadMemories = Boolean(openAiKey && input.latestMessage && (phone || clientId || leadId));
+  const memoryV2ReadEnabled = process.env.KIA_MEMORY_V2_READ_ENABLED?.toLowerCase() === 'true';
 
-  const [profile, company, service, documents, conversation, selectedMessage, accounting, memories] = await Promise.all([
+  const [profile, company, service, documents, conversation, selectedMessage, accounting, legacyMemories] = await Promise.all([
     loadProfile(admin, clientId, contact),
     loadCompany(admin, clientId, resolvedCompanyId),
     loadService(input.serviceSlug),
@@ -103,6 +105,22 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
       ? retrieveKiaMemories({ query: input.latestMessage!, clientId, leadId, phone, openAiApiKey: openAiKey, supabase: admin }).catch(() => [] as KiaMemory[])
       : Promise.resolve([] as KiaMemory[]),
   ]);
+
+  let memories = legacyMemories;
+  if (memoryV2ReadEnabled && openAiKey && input.latestMessage) {
+    const memoryV2 = await loadKiaMemoryV2Context({
+      query: input.latestMessage,
+      openAiApiKey: openAiKey,
+      supabase: admin,
+      clientId,
+      leadId,
+      phone,
+      companyId: resolvedCompanyId,
+      caseId: input.caseId ?? null,
+      principal: 'kia',
+    }).catch(() => []);
+    memories = mergeKiaMemoryContexts(legacyMemories, memoryV2);
+  }
 
   const contactCases = (contact?.openCases ?? []).slice(0, 5).map((c) => ({
     id: c.id,
