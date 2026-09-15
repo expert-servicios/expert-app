@@ -4,7 +4,7 @@ const EMAIL_RE = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
 const PHONE_RE = /(?<!\d)(?:\+?\d[\s().-]?){8,16}(?!\d)/g;
 const IBAN_RE = /\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b/gi;
 const API_KEY_RE = /\b(?:sk|rk|pk|whsec|xoxb|AIza|key|token)[A-Za-z0-9_\-]{16,}\b/g;
-const PEM_RE = /-----BEGIN [A-Z0-9 ]+(?:PRIVATE KEY|CERTIFICATE)-----[\s\S]*?-----END [A-Z0-9 ]+(?:PRIVATE KEY|CERTIFICATE)-----/gi;
+const PEM_RE = /-----BEGIN [^-\r\n]*(?:PRIVATE KEY|CERTIFICATE)-----[\s\S]*?-----END [^-\r\n]*(?:PRIVATE KEY|CERTIFICATE)-----/gi;
 const PKCS12_FILENAME_RE = /\b[^\s]+\.(?:p12|pfx)\b/gi;
 const OTP_RE = /\b(?:otp|pin|clave|cl@ve|sms|verification code|codigo de verificacion|código de verificación)\s*[:=-]?\s*\d{4,10}\b/gi;
 
