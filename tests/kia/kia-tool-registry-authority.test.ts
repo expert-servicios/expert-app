@@ -24,6 +24,12 @@ describe('KIA authoritative tool registry', () => {
     expect(isKiaToolAuthorized('get_holded_invoices', context)).toBe(false);
   });
 
+  it('defaults the authorization ceiling to R1', () => {
+    const implicit = resolveKiaToolDefinitions({ channel: 'dashboard' });
+    const explicit = resolveKiaToolDefinitions({ channel: 'dashboard', maxRiskTier: 'R1' });
+    expect(implicit.map((tool) => tool.name)).toEqual(explicit.map((tool) => tool.name));
+  });
+
   it('can constrain model-visible tools to autonomous R0/R1 reads', () => {
     const tools = resolveKiaToolDefinitions({
       channel: 'dashboard',
