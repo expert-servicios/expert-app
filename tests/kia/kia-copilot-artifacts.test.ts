@@ -159,8 +159,8 @@ describe('canonical KIA widget artifact integration', () => {
     expect(widget).toContain('setSessionId(undefined)');
   });
 
-  it('documents the existing duplicate copilot surface until parity cutover', () => {
+  it('renders only the canonical KIA widget across protected dashboard routes', () => {
     expect(protectedLayout).toContain('<KiaCopilotWidget />');
-    expect(dashboardLayout).toContain('<KiaCopilotPanel />');
+    expect(dashboardLayout).not.toContain('KiaCopilotPanel');
   });
 });
