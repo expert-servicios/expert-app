@@ -22,7 +22,7 @@ describe('KIA KADM3 transactional action service', () => {
 
   it('serializes idempotent creation per tenant/key and creates the initial event atomically', () => {
     expect(migration).toContain('pg_advisory_xact_lock');
-    expect(migration).toContain("idempotency_key = p_idempotency_key");
+    expect(migration).toContain('idempotency_key = p_idempotency_key');
     expect(migration).toContain("'action_created'");
     expect(migration).toContain('insert into public.administrative_action_events');
   });
@@ -36,11 +36,11 @@ describe('KIA KADM3 transactional action service', () => {
 
   it('duplicates KADM1 transition enforcement in the database fail-closed', () => {
     expect(migration).toContain('kia_administrative_transition_allowed');
-    expect(migration).toContain("when 'completed'").toBe(false);
-    expect(migration).toContain("when 'cancelled'").toBe(false);
-    expect(migration).toContain("when 'failed_safe'").toBe(false);
-    expect(migration).toContain("when 'expired'").toBe(false);
-    expect(migration).toContain("else false");
+    expect(migration).not.toContain("when 'completed' then");
+    expect(migration).not.toContain("when 'cancelled' then");
+    expect(migration).not.toContain("when 'failed_safe' then");
+    expect(migration).not.toContain("when 'expired' then");
+    expect(migration).toContain('else false');
     expect(migration).toContain('KIA_ACTION_INVALID_TRANSITION');
   });
 
