@@ -54,7 +54,9 @@ export function buildAnthropicMessagesBody(
     })),
   };
 
-  if (typeof request.temperature === 'number') body.temperature = request.temperature;
+  // Sonnet 5 rejects non-default sampling parameters. KIA's provider-neutral
+  // temperature is intentionally ignored here; model behaviour is controlled
+  // through instructions and Anthropic's current adaptive-thinking defaults.
 
   if (tools.length > 0) {
     body.tools = tools;
