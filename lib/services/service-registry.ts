@@ -3,37 +3,33 @@ import { hasSpecificViabilityCheck } from '@/lib/data/viability-checks';
 import { getReadinessCheck, hasReadinessCheck } from '@/lib/data/service-readiness-checks';
 
 export type ServiceFlowType =
-  | 'viability'            // shows ViabilityButton (juridical/fiscal eligibility check)
-  | 'readiness'            // shows ReadinessButton (technical preparation check)
-  | 'direct_checkout'      // goes straight to checkout
-  | 'quote'                // no checkout, request-a-quote flow
-  | 'subscription_readiness'; // monthly plans with readiness check
+  | 'viability'
+  | 'readiness'
+  | 'direct_checkout'
+  | 'quote'
+  | 'subscription_readiness';
 
 export interface ServiceRegistryEntry {
-  slug          : string;
-  name          : string;
-  categoria     : string;
-  price         : string | undefined;
-  stripePriceId : string | undefined;
-  hasViability  : boolean;
-  hasCheckout   : boolean;
-  /** Determined flow type for this service */
-  flowType      : ServiceFlowType;
-  /** Whether a ReadinessCheck exists for this slug */
-  hasReadiness  : boolean;
-  /** Slug to use when looking up the ReadinessCheck (defaults to service slug) */
-  readinessSlug : string;
-  /** True for Holded services that need an active Holded licence */
+  slug: string;
+  name: string;
+  categoria: string;
+  price: string | undefined;
+  stripePriceId: string | undefined;
+  hasViability: boolean;
+  hasCheckout: boolean;
+  flowType: ServiceFlowType;
+  hasReadiness: boolean;
+  readinessSlug: string;
   requiresHoldedLicense: boolean;
-  /** True for Holded API-integration services */
-  requiresHoldedApi    : boolean;
-  /** True for recurring monthly plan services */
-  isSubscription       : boolean;
-  /** True when checkout must validate an active Holded connection */
+  requiresHoldedApi: boolean;
+  isSubscription: boolean;
+  /**
+   * Whether checkout itself must reject the user until Holded is connected.
+   * Monthly plans deliberately return false: Holded is connected during the
+   * post-purchase onboarding before the subscription becomes operational.
+   */
   requiresHoldedConnectionBeforeCheckout: boolean;
-  /** True when profile completion is required before checkout */
   requiresProfileCompleted: boolean;
-  /** True when billing data is required before checkout */
   requiresBillingReady: boolean;
 }
 
@@ -68,8 +64,8 @@ function resolveFlowType(slug: string, categoria: string): ServiceFlowType {
   if (QUOTE_PLAN_SLUGS.has(slug)) return 'quote';
   if (MONTHLY_PLAN_SLUGS.has(slug)) return 'subscription_readiness';
   if (HOLDED_SLUGS.has(slug) || categoria === 'holded') return 'readiness';
-  if (hasSpecificViabilityCheck(slug))                   return 'viability';
-  if (hasReadinessCheck(slug))                           return 'readiness';
+  if (hasSpecificViabilityCheck(slug)) return 'viability';
+  if (hasReadinessCheck(slug)) return 'readiness';
   return 'direct_checkout';
 }
 
@@ -79,24 +75,25 @@ function buildRegistry(): Map<string, ServiceRegistryEntry> {
     const flowType = resolveFlowType(svc.slug, svc.categoria);
     const isMonthlyPlan = MONTHLY_PLAN_SLUGS.has(svc.slug);
     map.set(svc.slug, {
-      slug                : svc.slug,
-      name                : svc.name,
-      categoria           : svc.categoria,
-      price               : svc.price,
-      stripePriceId       : svc.stripePriceId,
-      hasViability        : hasSpecificViabilityCheck(svc.slug),
-      hasCheckout         : Boolean(svc.stripePriceId),
+      slug: svc.slug,
+      name: svc.name,
+      categoria: svc.categoria,
+      price: svc.price,
+      stripePriceId: svc.stripePriceId,
+      hasViability: hasSpecificViabilityCheck(svc.slug),
+      hasCheckout: Boolean(svc.stripePriceId),
       flowType,
-      hasReadiness        : hasReadinessCheck(svc.slug),
-      readinessSlug       : svc.slug,
+      hasReadiness: hasReadinessCheck(svc.slug),
+      readinessSlug: svc.slug,
       requiresHoldedLicense: HOLDED_SLUGS.has(svc.slug) || isMonthlyPlan,
-      requiresHoldedApi   : HOLDED_API_SLUGS.has(svc.slug) || isMonthlyPlan,
-      isSubscription      : isMonthlyPlan,
-      requiresHoldedConnectionBeforeCheckout: isMonthlyPlan,
+      requiresHoldedApi: HOLDED_API_SLUGS.has(svc.slug) || isMonthlyPlan,
+      isSubscription: isMonthlyPlan,
+      requiresHoldedConnectionBeforeCheckout: false,
       requiresProfileCompleted: isMonthlyPlan || Boolean(svc.stripePriceId),
       requiresBillingReady: isMonthlyPlan || Boolean(svc.stripePriceId),
     });
   }
+
   for (const slug of MONTHLY_PLAN_SLUGS) {
     if (map.has(slug)) continue;
     const readiness = getReadinessCheck(slug);
@@ -115,11 +112,12 @@ function buildRegistry(): Map<string, ServiceRegistryEntry> {
       requiresHoldedLicense: true,
       requiresHoldedApi: true,
       isSubscription: true,
-      requiresHoldedConnectionBeforeCheckout: true,
+      requiresHoldedConnectionBeforeCheckout: false,
       requiresProfileCompleted: true,
       requiresBillingReady: true,
     });
   }
+
   for (const slug of QUOTE_PLAN_SLUGS) {
     if (map.has(slug)) continue;
     map.set(slug, {
