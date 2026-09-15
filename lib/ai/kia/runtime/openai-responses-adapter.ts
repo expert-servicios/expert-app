@@ -46,13 +46,13 @@ export function buildOpenAiResponsesBody(
 ): Record<string, unknown> {
   const body: Record<string, unknown> = {
     model,
-    input: [
-      { role: 'system', content: request.systemPrompt },
-      ...request.messages.map((message) => ({ role: message.role, content: message.content })),
-    ],
+    instructions: request.systemPrompt,
+    input: request.messages.map((message) => ({
+      role: message.role,
+      content: message.content,
+    })),
     max_output_tokens: request.maxTokens ?? 900,
     store: false,
-    parallel_tool_calls: true,
   };
 
   const effort = normalizeEffort(request.effort);
@@ -77,6 +77,7 @@ export function buildOpenAiResponsesBody(
       parameters: tool.input_schema,
       strict: tool.strict === true,
     }));
+    body.parallel_tool_calls = true;
   }
 
   return body;
