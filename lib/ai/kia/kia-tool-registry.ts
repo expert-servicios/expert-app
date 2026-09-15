@@ -1,6 +1,7 @@
+import type { KiaChannel } from './kia-output-schema';
 import { KIA_TOOL_DEFINITIONS, type KiaToolDefinition } from './kia-tool-definitions';
 
-export type KiaToolRiskTier = 'R0' | 'R1' | 'R2' | 'R3' | 'R4';
+export type KiaToolRiskTier = 'R0' | 'R1' | 'R2' | 'R3' | 'R4' | 'R5';
 export type KiaToolEffect = 'read' | 'draft' | 'write' | 'external_action';
 export type KiaToolCapability =
   | 'identity'
@@ -20,9 +21,19 @@ export interface KiaToolPolicy {
   effect: KiaToolEffect;
   capability: KiaToolCapability;
   requiresHumanApproval: boolean;
-  allowedChannels: Array<'waba' | 'admin' | 'email' | 'dashboard' | 'document'>;
+  allowedChannels: KiaChannel[];
   description?: string;
 }
+
+export interface KiaToolAuthorizationContext {
+  channel: KiaChannel;
+  requestedNames?: string[];
+  maxRiskTier?: KiaToolRiskTier;
+  allowedEffects?: KiaToolEffect[];
+  autonomousOnly?: boolean;
+}
+
+const RISK_RANK: Record<KiaToolRiskTier, number> = { R0: 0, R1: 1, R2: 2, R3: 3, R4: 4, R5: 5 };
 
 const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>> = {
   resolve_contact_context:            policy('R0', 'read',  'identity'),
@@ -81,22 +92,37 @@ export function getKiaToolRegistry(): Array<KiaToolDefinition & KiaToolPolicy> {
 }
 
 export function getKiaToolsForCapability(capability: KiaToolCapability): string[] {
-  return getKiaToolRegistry()
-    .filter((tool) => tool.capability === capability)
-    .map((tool) => tool.name);
+  return getKiaToolRegistry().filter((tool) => tool.capability === capability).map((tool) => tool.name);
 }
 
 export function isKiaToolSafeForAutonomousExecution(name: string): boolean {
   const tool = getKiaToolPolicy(name);
   if (!tool) return false;
-  return tool.effect === 'read' && (tool.riskTier === 'R0' || tool.riskTier === 'R1') && !tool.requiresHumanApproval;
+  return tool.effect === 'read'
+    && (tool.riskTier === 'R0' || tool.riskTier === 'R1')
+    && !tool.requiresHumanApproval;
+}
+
+export function resolveKiaToolDefinitions(context: KiaToolAuthorizationContext): KiaToolDefinition[] {
+  const requested = context.requestedNames?.length ? new Set(context.requestedNames) : null;
+  const maxRiskRank = RISK_RANK[context.maxRiskTier ?? 'R1'];
+  const allowedEffects = context.allowedEffects ? new Set(context.allowedEffects) : null;
+
+  return getKiaToolRegistry()
+    .filter((tool) => !requested || requested.has(tool.name))
+    .filter((tool) => tool.allowedChannels.includes(context.channel))
+    .filter((tool) => RISK_RANK[tool.riskTier] <= maxRiskRank)
+    .filter((tool) => !allowedEffects || allowedEffects.has(tool.effect))
+    .filter((tool) => !context.autonomousOnly || isKiaToolSafeForAutonomousExecution(tool.name))
+    .map(({ name, description, input_schema, strict }) => ({ name, description, input_schema, strict }));
+}
+
+export function isKiaToolAuthorized(name: string, context: KiaToolAuthorizationContext): boolean {
+  if (context.requestedNames?.length && !context.requestedNames.includes(name)) return false;
+  return resolveKiaToolDefinitions({ ...context, requestedNames: [name] }).some((tool) => tool.name === name);
 }
 
 export function assertKiaToolRegistryComplete(): void {
-  const missing = KIA_TOOL_DEFINITIONS
-    .map((tool) => tool.name)
-    .filter((name) => !POLICY_BY_TOOL[name]);
-  if (missing.length > 0) {
-    throw new Error(`KIA tools missing policy metadata: ${missing.join(', ')}`);
-  }
+  const missing = KIA_TOOL_DEFINITIONS.map((tool) => tool.name).filter((name) => !POLICY_BY_TOOL[name]);
+  if (missing.length > 0) throw new Error(`KIA tools missing policy metadata: ${missing.join(', ')}`);
 }
