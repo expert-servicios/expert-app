@@ -6,6 +6,7 @@ import type { KiaEvalCase } from './kia-eval-types';
 import { runKiaBaselineVsResponsesShadow } from './kia-shadow-comparison';
 
 const SAFE_TASKS: KiaTaskType[] = [
+  'waba_reply',
   'company_status_summary',
   'next_best_action',
   'readiness_reasoning',
