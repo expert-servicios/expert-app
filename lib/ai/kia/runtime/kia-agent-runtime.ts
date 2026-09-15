@@ -4,6 +4,7 @@ import {
   type KiaRuntimeCapability,
   type KiaRuntimeProvider,
 } from '../kia-capability-router';
+import { runAnthropicMessagesRequest } from './anthropic-messages-adapter';
 import { runOpenAiResponsesRequest } from './openai-responses-adapter';
 
 export interface KiaRuntimeRequest {
@@ -48,12 +49,20 @@ export async function runKiaAgentRuntime(
     };
   }
 
+  if (provider === 'anthropic') {
+    const result = await runAnthropicMessagesRequest(request.providerRequest);
+    return {
+      provider,
+      result,
+      usedFallback: request.preferredProvider != null && request.preferredProvider !== provider,
+      ...(result.error ? { error: result.error } : {}),
+    };
+  }
+
   return {
     provider,
     result: null,
     usedFallback: request.preferredProvider != null && request.preferredProvider !== provider,
-    error: provider === 'anthropic'
-      ? 'Anthropic agent-runtime adapter is not active yet'
-      : 'Deterministic runtime must be invoked through a domain executor',
+    error: 'Deterministic runtime must be invoked through a domain executor',
   };
 }
