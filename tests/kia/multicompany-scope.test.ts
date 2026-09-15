@@ -15,11 +15,12 @@ describe('KIA multi-company scope', () => {
     expect(route).toContain("error: companyId ? 'company_forbidden' : 'active_company_invalid'");
   });
 
-  it('keeps the legacy dashboard endpoint on a customer-safe tool allowlist', () => {
+  it('keeps the dashboard on the policy-enforced customer-safe tool surface', () => {
     const route = source('app/api/ai/kia/route.ts');
-    expect(route).toContain('LEGACY_DASHBOARD_SAFE_TOOLS');
-    expect(route).toContain('allowedToolNames: [...LEGACY_DASHBOARD_SAFE_TOOLS]');
-    expect(route).not.toMatch(/LEGACY_DASHBOARD_SAFE_TOOLS[\s\S]*?'get_accounting_snapshot'/);
+    expect(route).toContain("resolveKiaPolicyToolNames('client_dashboard', actor)");
+    expect(route).toContain("runPolicyEnforcedKiaDecision('client_dashboard', actor");
+    expect(route).not.toContain('LEGACY_DASHBOARD_SAFE_TOOLS');
+    expect(route).not.toContain('allowedToolNames: [...LEGACY_DASHBOARD_SAFE_TOOLS]');
   });
 
   it('reuses one authorized company for coverage, company and accounting context', () => {
