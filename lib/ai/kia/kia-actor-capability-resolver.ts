@@ -137,7 +137,12 @@ export function toKiaPolicyActorContext(snapshot: KiaActorCapabilitySnapshot): K
   };
 }
 
-export function getEnabledKiaPolicyFeatureFlags(env: KiaPolicyFeatureFlagEnv = process.env): string[] {
+export function getEnabledKiaPolicyFeatureFlags(
+  env: KiaPolicyFeatureFlagEnv = {
+    KIA_OPERATOR_MODE_ENABLED: process.env.KIA_OPERATOR_MODE_ENABLED,
+    KIA_INTERNAL_ADMIN_MODE_ENABLED: process.env.KIA_INTERNAL_ADMIN_MODE_ENABLED,
+  },
+): string[] {
   const enabled: string[] = [];
   if (env.KIA_OPERATOR_MODE_ENABLED?.toLowerCase() === 'true') enabled.push('kia_operator_mode');
   if (env.KIA_INTERNAL_ADMIN_MODE_ENABLED?.toLowerCase() === 'true') enabled.push('kia_internal_admin_mode');
