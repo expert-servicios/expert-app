@@ -37,6 +37,7 @@ export async function runKiaTriProviderEval(params: {
   request: KiaProviderRequest;
   baseline: KiaBaselineObservationInput;
   runCandidate?: CandidateRunner;
+  providerEnabled?: Partial<Record<'openai' | 'anthropic', boolean>>;
 }): Promise<KiaTriProviderEvalResult> {
   const baselineProvider = params.baseline.providerResult?.provider ?? 'legacy-kia';
   const baselineModel = params.baseline.providerResult?.model ?? 'deterministic/unknown';
@@ -60,10 +61,15 @@ export async function runKiaTriProviderEval(params: {
   });
 
   const runner = params.runCandidate ?? defaultCandidateRunner;
+  const openaiEnabled = params.providerEnabled?.openai
+    ?? envEnabled('KIA_OPENAI_RESPONSES_SHADOW_ENABLED');
+  const anthropicEnabled = params.providerEnabled?.anthropic
+    ?? envEnabled('KIA_ANTHROPIC_MESSAGES_SHADOW_ENABLED');
+
   const [openai, anthropic] = await Promise.all([
     evaluateCandidate({
       provider: 'openai',
-      enabled: envEnabled('KIA_OPENAI_RESPONSES_SHADOW_ENABLED'),
+      enabled: openaiEnabled,
       evalCase: params.evalCase,
       request: params.request,
       baseline,
@@ -71,7 +77,7 @@ export async function runKiaTriProviderEval(params: {
     }),
     evaluateCandidate({
       provider: 'anthropic',
-      enabled: envEnabled('KIA_ANTHROPIC_MESSAGES_SHADOW_ENABLED'),
+      enabled: anthropicEnabled,
       evalCase: params.evalCase,
       request: params.request,
       baseline,
