@@ -5,6 +5,10 @@ import {
   type CompanyCommercialCoverage,
 } from '@/lib/subscriptions/company-commercial-coverage';
 import {
+  resolveKiaExplicitGrants,
+  type KiaExplicitGrant,
+} from './kia-explicit-grants';
+import {
   normalizeKiaActorRole,
   type KiaPolicyActorContext,
 } from './kia-policy-profiles';
@@ -28,6 +32,8 @@ export interface KiaActorCapabilitySnapshot {
   planCapabilities: string[];
   scopes: string[];
   featureFlags: string[];
+  acceptedGrantIds: string[];
+  rejectedGrantIds: string[];
 }
 
 interface DeriveActorCapabilityInput {
@@ -45,6 +51,8 @@ interface DeriveActorCapabilityInput {
   } | null;
   coverage?: CompanyCommercialCoverage | null;
   featureFlags?: string[];
+  explicitGrants?: KiaExplicitGrant[];
+  now?: Date;
 }
 
 export async function resolveKiaActorCapabilities(input: {
@@ -53,6 +61,8 @@ export async function resolveKiaActorCapabilities(input: {
   clientId: string;
   companyId?: string | null;
   featureFlags?: string[];
+  explicitGrants?: KiaExplicitGrant[];
+  now?: Date;
 }): Promise<KiaActorCapabilitySnapshot> {
   const { data: profile, error: profileError } = await input.admin
     .from('profiles')
@@ -86,12 +96,15 @@ export async function resolveKiaActorCapabilities(input: {
     membership,
     coverage,
     featureFlags: input.featureFlags,
+    explicitGrants: input.explicitGrants,
+    now: input.now,
   });
 }
 
 export function deriveKiaActorCapabilities(input: DeriveActorCapabilityInput): KiaActorCapabilitySnapshot {
   const role = normalizeKiaActorRole(input.profile?.role);
   const active = Boolean(input.profile) && input.profile?.status !== 'inactive';
+  const tenantId = input.profile?.tenant_id ?? null;
   const companyId = input.companyId ?? null;
   const companyMember = Boolean(companyId && input.membership && input.membership.company_id === companyId);
   const coverage = companyMember ? input.coverage ?? null : null;
@@ -112,12 +125,24 @@ export function deriveKiaActorCapabilities(input: DeriveActorCapabilityInput): K
     if (role === ROLES.ADMIN || role === ROLES.OWNER) scopes.add('kia:staff:read');
   }
 
+  const explicit = active
+    ? resolveKiaExplicitGrants(input.explicitGrants, {
+        userId: input.userId,
+        tenantId,
+        companyId,
+        now: input.now,
+      })
+    : { planCapabilities: [], scopes: [], acceptedGrantIds: [], rejectedGrantIds: (input.explicitGrants ?? []).map((grant) => grant.id).sort() };
+
+  for (const capability of explicit.planCapabilities) planCapabilities.add(capability);
+  for (const scope of explicit.scopes) scopes.add(scope);
+
   return {
     userId: input.userId,
     clientId: input.clientId,
     role,
     active,
-    tenantId: input.profile?.tenant_id ?? null,
+    tenantId,
     companyId,
     companyMember,
     companyMembershipRole: companyMember ? input.membership?.role ?? null : null,
@@ -125,6 +150,8 @@ export function deriveKiaActorCapabilities(input: DeriveActorCapabilityInput): K
     planCapabilities: [...planCapabilities].sort(),
     scopes: [...scopes].sort(),
     featureFlags: [...new Set(input.featureFlags ?? [])].sort(),
+    acceptedGrantIds: explicit.acceptedGrantIds,
+    rejectedGrantIds: explicit.rejectedGrantIds,
   };
 }
 
