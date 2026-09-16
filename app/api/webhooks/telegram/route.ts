@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { resolveVerifiedTelegramIdentity } from '@/lib/ai/kia/kia-channel-identity';
+import { consumeTelegramLinkCode } from '@/lib/ai/kia/kia-telegram-linking';
 import {
   getEnabledKiaPolicyFeatureFlags,
   resolveKiaActorCapabilities,
@@ -46,14 +47,48 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = getSupabaseAdmin();
+  const parts = inbound.text.split(/\s+/);
+  const command = parts[0]?.toLowerCase();
+  const telegramToolsEnabled = process.env.KIA_TELEGRAM_TOOLS_ENABLED?.toLowerCase() === 'true';
+
+  if (command === '/link') {
+    const code = parts[1]?.trim();
+    if (!code) {
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'Falta el código de vinculación. Genera uno desde tu sesión EXPERT y envía /link CÓDIGO.',
+      });
+      return NextResponse.json({ ok: true, linked: false, reason: 'missing_link_code' });
+    }
+
+    try {
+      await consumeTelegramLinkCode({
+        admin,
+        code,
+        externalUserId: inbound.userId,
+        externalChatId: inbound.chatId,
+        externalUsername: inbound.username,
+      });
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: '✅ Telegram vinculado y verificado con tu identidad EXPERT. Ya puedes hablar con KIA en este chat.',
+      });
+      return NextResponse.json({ ok: true, linked: true });
+    } catch (err) {
+      console.warn('[Telegram link] consumption failed:', safeErrorMessage(err));
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'No se ha podido completar la vinculación. El código puede ser inválido, haber caducado, estar usado o pertenecer a otra identidad. Genera un código nuevo desde EXPERT.',
+      });
+      return NextResponse.json({ ok: true, linked: false, reason: 'link_rejected' });
+    }
+  }
+
   const identity = await resolveVerifiedTelegramIdentity({
     admin,
     externalUserId: inbound.userId,
     externalChatId: inbound.chatId,
   }).catch(() => null);
-
-  const command = inbound.text.split(/\s+/, 1)[0]?.toLowerCase();
-  const telegramToolsEnabled = process.env.KIA_TELEGRAM_TOOLS_ENABLED?.toLowerCase() === 'true';
 
   if (command === '/start' || command === '/help') {
     await sendTelegramMessage({
@@ -62,6 +97,7 @@ export async function POST(request: NextRequest) {
         '<b>KIA · EXPERT</b>',
         'Canal Telegram conectado en modo seguro.',
         '/status — comprobar conexión, identidad y tools',
+        '/link CÓDIGO — vincular este Telegram con una sesión EXPERT autenticada',
         identity
           ? `Identidad EXPERT verificada. Chat KIA: activo. Tools R0/R1 read: ${telegramToolsEnabled ? 'activadas' : 'bloqueadas por feature flag'}.`
           : 'Identidad EXPERT aún no vinculada o no verificada. KIA permanece bloqueada.',
@@ -83,7 +119,7 @@ export async function POST(request: NextRequest) {
   if (!identity) {
     await sendTelegramMessage({
       chatId: inbound.chatId,
-      text: 'Mensaje recibido. KIA permanece bloqueada porque esta identidad Telegram no está vinculada y verificada en EXPERT.',
+      text: 'Mensaje recibido. KIA permanece bloqueada porque esta identidad Telegram no está vinculada y verificada en EXPERT. Genera un código en EXPERT y usa /link CÓDIGO.',
     });
     return NextResponse.json({ ok: true, identityLinked: false, routed: false });
   }
