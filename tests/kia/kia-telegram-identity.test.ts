@@ -6,7 +6,7 @@ function source(relativePath: string): string {
   return fs.readFileSync(path.join(process.cwd(), relativePath), 'utf8');
 }
 
-describe('KIA M7.2b Telegram identity binding', () => {
+describe('KIA M7.2b/M7.2c Telegram identity and routing', () => {
   it('requires active verified binding with matching Telegram user and chat ids', () => {
     const resolver = source('lib/ai/kia/kia-channel-identity.ts');
     expect(resolver).toContain(".eq('external_user_id', params.externalUserId)");
@@ -26,10 +26,14 @@ describe('KIA M7.2b Telegram identity binding', () => {
     expect(migration).not.toContain('webhook_secret');
   });
 
-  it('does not route free-form Telegram messages into KIA yet', () => {
+  it('routes only verified Telegram identities through policy-enforced KIA', () => {
     const route = source('app/api/webhooks/telegram/route.ts');
     expect(route).toContain('resolveVerifiedTelegramIdentity');
-    expect(route).not.toContain('runPolicyEnforcedKiaDecision');
+    expect(route).toContain('if (!identity)');
+    expect(route).toContain('actor.tenantId !== identity.tenantId');
+    expect(route).toContain("resolveKiaPolicyToolNames('telegram_verified', actor)");
+    expect(route).toContain("runPolicyEnforcedKiaDecision('telegram_verified', actor");
+    expect(route).toContain('KIA_TELEGRAM_TOOLS_ENABLED');
     expect(route).not.toContain('runKiaOrchestratedDecision');
   });
 });
