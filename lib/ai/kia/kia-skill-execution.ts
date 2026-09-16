@@ -4,6 +4,7 @@ import {
   getKiaToolsForCapability,
   resolveKiaToolDefinitions,
   type KiaToolAuthorizationContext,
+  type KiaToolEffect,
   type KiaToolRiskTier,
 } from './kia-tool-registry';
 
@@ -20,6 +21,20 @@ export interface KiaSkillAuthorizationResolution {
   skill: KiaSkillDefinition | null;
   authorization: KiaToolAuthorizationContext;
   toolNames: string[];
+}
+
+export interface KiaSkillExecutionTrace {
+  version: '1.0';
+  requestedTaskType: KiaTaskType;
+  selectionBasis: 'requested_task';
+  skillId: string | null;
+  skillVersion: string | null;
+  preferredSubAgentId: string | null;
+  effectiveToolNames: string[];
+  effectiveMaxRiskTier: KiaToolRiskTier | null;
+  effectiveAllowedEffects: KiaToolEffect[] | null;
+  autonomousOnly: boolean;
+  lateClassificationFailClosed: boolean;
 }
 
 function lowerRiskTier(a: KiaToolRiskTier | undefined, b: KiaToolRiskTier): KiaToolRiskTier {
@@ -74,5 +89,27 @@ export function resolveKiaSkillAuthorization(params: {
       requestedNames: [...toolNames],
     },
     toolNames,
+  };
+}
+
+export function buildKiaSkillExecutionTrace(params: {
+  taskType: KiaTaskType;
+  resolution: KiaSkillAuthorizationResolution;
+  lateClassificationFailClosed?: boolean;
+}): KiaSkillExecutionTrace {
+  return {
+    version: '1.0',
+    requestedTaskType: params.taskType,
+    selectionBasis: 'requested_task',
+    skillId: params.resolution.skill?.id ?? null,
+    skillVersion: params.resolution.skill?.version ?? null,
+    preferredSubAgentId: params.resolution.skill?.preferredSubAgentId ?? null,
+    effectiveToolNames: [...params.resolution.toolNames],
+    effectiveMaxRiskTier: params.resolution.authorization.maxRiskTier ?? null,
+    effectiveAllowedEffects: params.resolution.authorization.allowedEffects
+      ? [...params.resolution.authorization.allowedEffects]
+      : null,
+    autonomousOnly: params.resolution.authorization.autonomousOnly === true,
+    lateClassificationFailClosed: params.lateClassificationFailClosed === true,
   };
 }

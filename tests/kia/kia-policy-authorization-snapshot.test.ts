@@ -50,14 +50,14 @@ describe('KIA policy authorization snapshot', () => {
     });
   });
 
-  it('overrides caller channel and allowlist after skill narrowing and input spread', () => {
+  it('overrides caller channel and allowlist after effective authorization and input spread', () => {
     const source = readFileSync(
       resolve(process.cwd(), 'lib/ai/kia/kia-policy-enforced-decision.ts'),
       'utf8',
     );
     const spread = source.indexOf('...input');
-    const channel = source.indexOf('channel: skillAuthorization.authorization.channel');
-    const allowlist = source.indexOf('allowedToolNames: skillAuthorization.toolNames');
+    const channel = source.indexOf('channel: effectiveAuthorization.channel');
+    const allowlist = source.indexOf('allowedToolNames: effectiveToolNames');
 
     expect(spread).toBeGreaterThan(-1);
     expect(channel).toBeGreaterThan(spread);
