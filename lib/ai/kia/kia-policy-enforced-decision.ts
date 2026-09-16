@@ -97,6 +97,8 @@ export async function runPolicyEnforcedKiaDecision(
     lateClassificationFailClosed,
   });
 
+  console.info('[KIA skill execution]', executionTrace);
+
   const result = await runKiaDecision({
     ...input,
     channel: effectiveAuthorization.channel,
