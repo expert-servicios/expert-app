@@ -91,6 +91,7 @@ const TASK_TYPE_TO_SUB_AGENT: Record<KiaTaskType, string | null> = {
   next_best_action:            null,
   checkout_decision:           null,
   lead_client_decision:        null,
+  chat_reply:                  null,
   waba_reply:                  null,
   admin_ai_compose:            null,
   generate_report:             null,
