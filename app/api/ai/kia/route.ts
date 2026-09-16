@@ -150,9 +150,6 @@ export async function POST(request: NextRequest) {
   let effectiveSessionId = sessionId;
   let effectiveHistory = history;
 
-  // A client component can survive router.refresh() when the active company is
-  // switched. Bind each KIA session to the company scope server-side so stale
-  // history from another entity can never enter the new company's context.
   if (sessionId) {
     const { data: existingSession, error: sessionError } = await admin
       .from('kia_sessions')
@@ -182,7 +179,7 @@ export async function POST(request: NextRequest) {
   let result;
   try {
     result = await runPolicyEnforcedKiaDecision('client_dashboard', actor, {
-      taskType   : 'waba_reply',
+      taskType   : 'chat_reply',
       channel    : 'dashboard',
       message,
       locale     : 'es',
@@ -213,8 +210,6 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // M2.3: sampled shadow remains read-only and receives exactly the same
-  // policy-resolved tool surface as the primary dashboard request.
   if (!result.usedFallback && result.providerResult) {
     const shadowTaskType = result.decision.taskType;
     const allowedShadowToolNames = new Set(dashboardPolicy.toolNames);
