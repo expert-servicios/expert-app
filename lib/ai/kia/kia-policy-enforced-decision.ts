@@ -6,7 +6,10 @@ import {
   resolveKiaPolicyProfile,
   type KiaPolicyProfileName,
 } from './kia-policy-profiles';
-import { resolveKiaSkillAuthorization } from './kia-skill-execution';
+import {
+  buildKiaSkillExecutionTrace,
+  resolveKiaSkillAuthorization,
+} from './kia-skill-execution';
 import {
   resolveKiaToolDefinitions,
   type KiaToolAuthorizationContext,
@@ -58,30 +61,57 @@ export async function runPolicyEnforcedKiaDecision(
   profileName: KiaPolicyProfileName,
   actor: KiaActorCapabilitySnapshot,
   input: Parameters<typeof runKiaDecision>[0],
-): Promise<Awaited<ReturnType<typeof runKiaDecision>>> {
+): Promise<Awaited<ReturnType<typeof runKiaDecision>> & {
+  executionTrace: ReturnType<typeof buildKiaSkillExecutionTrace>;
+}> {
   const policy = resolveKiaPolicyAuthorization(profileName, actor);
   if (!policy.ok) {
     throw new Error(`KIA policy denied: ${policy.reason}`);
   }
 
-  const skillAuthorization = resolveKiaSkillAuthorization({
+  const initialSkillAuthorization = resolveKiaSkillAuthorization({
     taskType: input.taskType,
     policyAuthorization: policy.authorization,
     policyToolNames: policy.toolNames,
   });
 
-  // Skills are a second, narrowing layer. They can reduce tool visibility and
-  // risk but never widen the immutable policy authorization resolved for actor.
-  return runKiaDecision({
+  // waba_reply can be reclassified after the engine starts. Until M7 moves
+  // orchestration after classification, tools fail closed instead of inheriting
+  // a broad profile before the final domain skill is known.
+  const lateClassificationFailClosed = input.taskType === 'waba_reply' && !initialSkillAuthorization.skill;
+  const effectiveToolNames = lateClassificationFailClosed
+    ? []
+    : initialSkillAuthorization.toolNames;
+  const effectiveAuthorization = {
+    ...initialSkillAuthorization.authorization,
+    requestedNames: [...effectiveToolNames],
+  };
+
+  const executionTrace = buildKiaSkillExecutionTrace({
+    taskType: input.taskType,
+    resolution: {
+      ...initialSkillAuthorization,
+      authorization: effectiveAuthorization,
+      toolNames: [...effectiveToolNames],
+    },
+    lateClassificationFailClosed,
+  });
+
+  const result = await runKiaDecision({
     ...input,
-    channel: skillAuthorization.authorization.channel,
-    allowedToolNames: skillAuthorization.toolNames,
+    channel: effectiveAuthorization.channel,
+    allowedToolNames: effectiveToolNames,
     toolAuthorization: {
-      maxRiskTier: skillAuthorization.authorization.maxRiskTier,
-      allowedEffects: skillAuthorization.authorization.allowedEffects
-        ? [...skillAuthorization.authorization.allowedEffects]
+      maxRiskTier: effectiveAuthorization.maxRiskTier,
+      allowedEffects: effectiveAuthorization.allowedEffects
+        ? [...effectiveAuthorization.allowedEffects]
         : undefined,
-      autonomousOnly: skillAuthorization.authorization.autonomousOnly,
+      autonomousOnly: effectiveAuthorization.autonomousOnly,
     },
   });
+
+  return {
+    ...result,
+    executionTrace,
+  };
 }
