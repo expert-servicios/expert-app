@@ -38,7 +38,8 @@ describe('audited Holded/KIA boundaries', () => {
 
   it('keeps the legacy v1 Holded client read-only and concurrency-safe', () => {
     const client = source('lib/integrations/holded/holded-client.ts');
-    expect(client).toContain("type HoldedPermissions } from './holded-permissions'");
+    expect(client).toContain("from './holded-permissions'");
+    expect(client).toContain('export type { HoldedPermissions }');
     expect(client).toContain('let nextRequestAt = 0');
     expect(client).toContain('const reservedAt = Math.max(now, nextRequestAt)');
     expect(client).not.toContain("key: 'writeInbox', probe:");
