@@ -128,6 +128,12 @@ export const kiaToolValidators = {
     endDate: z.string().optional(),
     ...holdedLaborPageSchema,
   }).strict(),
+  run_labor_payroll_diagnostics: z.object({
+    employeeId: z.string().min(1).max(200),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+    limit: z.number().int().min(1).max(100).default(50),
+  }).strict(),
   generate_company_report: z.object({
     reportType: z.enum(['empresa_status']).default('empresa_status'),
     period: z.string().optional(),
@@ -180,6 +186,7 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_holded_employee_contract: 'Read one Holded employee and their active contract for the already-authorized active company. Read-only.',
   get_holded_payslips: 'List calculated Holded payroll payslips for the already-authorized active company. Keeps payslips separate from salary records.',
   get_holded_salary_records: 'List Holded manual salary accounting records for the already-authorized active company. Keeps salary records separate from calculated payslips.',
+  run_labor_payroll_diagnostics: 'Build a structured read-only payroll diagnostic for one employee from Holded employee, active contract, calculated payslips, contribution bases, IRPF evidence, payment state and separate salary records. Does not recalculate or modify payroll.',
   generate_company_report: 'Generate a visual company status report (IVA, cash flow, anomalies, bank balances) and return a link the client can open. Requires active Holded integration.',
   extract_invoice_ocr: 'Extract structured invoice data (vendor, amount, VAT, date, invoice number) from an image using GPT-4o vision. Use when user sends a photo of an invoice or receipt.',
   create_kia_decision_log: 'Persist a Kia decision log. Usually executed by backend automatically.',
