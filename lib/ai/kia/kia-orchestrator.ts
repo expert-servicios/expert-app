@@ -80,7 +80,8 @@ function selectionBasis(params: {
 }
 
 function shouldClassifyChat(input: Parameters<typeof runKiaDecision>[0]): boolean {
-  return input.taskType === 'chat_reply' && input.channel === 'dashboard';
+  return input.taskType === 'chat_reply'
+    && (input.channel === 'dashboard' || input.channel === 'telegram');
 }
 
 export async function runKiaOrchestratedDecision(params: {
@@ -115,11 +116,15 @@ export async function runKiaOrchestratedDecision(params: {
     policyToolNames: params.policyToolNames,
   });
 
-  // Chat ambiguity fails closed for tools while preserving a conversational
-  // task so the engine can ask one clarifying question safely.
+  // Conversational entrypoints fail closed for tools when classification is
+  // ambiguous, unavailable, or does not resolve a concrete skill. The model
+  // can still answer conversationally, but it cannot inherit the whole policy
+  // surface by default.
   const needsClarification = classification?.needsClarify === true && classification.ambiguityScore >= 0.7;
+  const unresolvedChat = shouldClassifyChat(input) && (!classification || plan.skillId === null);
+  const orchestrationFailClosed = needsClarification || unresolvedChat;
   const effectiveTaskType = needsClarification ? 'chat_reply' : plan.resolvedTaskType;
-  const effectiveToolNames = needsClarification ? [] : plan.toolNames;
+  const effectiveToolNames = orchestrationFailClosed ? [] : plan.toolNames;
   const effectiveAuthorization: KiaToolAuthorizationContext = {
     ...plan.authorization,
     requestedNames: [...effectiveToolNames],
@@ -141,7 +146,7 @@ export async function runKiaOrchestratedDecision(params: {
       authorization: effectiveAuthorization,
       toolNames: [...effectiveToolNames],
     },
-    lateClassificationFailClosed: needsClarification,
+    lateClassificationFailClosed: orchestrationFailClosed,
   });
 
   console.info('[KIA orchestration]', executionTrace);
