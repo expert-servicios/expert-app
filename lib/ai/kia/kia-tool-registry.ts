@@ -73,7 +73,7 @@ function policy(
     effect,
     capability,
     requiresHumanApproval,
-    allowedChannels: ['waba', 'admin', 'email', 'dashboard', 'document'],
+    allowedChannels: ['waba', 'telegram', 'admin', 'email', 'dashboard', 'document'],
   };
 }
 

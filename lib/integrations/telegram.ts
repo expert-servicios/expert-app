@@ -72,6 +72,13 @@ export function isConfiguredTelegramAdminChat(chatId: string): boolean {
   return Boolean(adminChatId && adminChatId === chatId);
 }
 
+export function escapeTelegramHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 /** Sends a Telegram message. Best-effort: resolves silently if not configured or on failure. */
 export async function sendTelegramMessage({ chatId, text }: TelegramOutbound): Promise<void> {
   const token = getBotToken();

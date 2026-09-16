@@ -80,7 +80,18 @@ function selectionBasis(params: {
 }
 
 function shouldClassifyChat(input: Parameters<typeof runKiaDecision>[0]): boolean {
-  return input.taskType === 'chat_reply' && input.channel === 'dashboard';
+  return input.taskType === 'chat_reply'
+    && (input.channel === 'dashboard' || input.channel === 'telegram');
+}
+
+export function shouldFailClosedChatOrchestration(params: {
+  chatEntrypoint: boolean;
+  classificationResolved: boolean;
+  skillId: string | null;
+  needsClarification: boolean;
+}): boolean {
+  return params.needsClarification
+    || (params.chatEntrypoint && (!params.classificationResolved || params.skillId === null));
 }
 
 export async function runKiaOrchestratedDecision(params: {
@@ -115,11 +126,15 @@ export async function runKiaOrchestratedDecision(params: {
     policyToolNames: params.policyToolNames,
   });
 
-  // Chat ambiguity fails closed for tools while preserving a conversational
-  // task so the engine can ask one clarifying question safely.
   const needsClarification = classification?.needsClarify === true && classification.ambiguityScore >= 0.7;
+  const orchestrationFailClosed = shouldFailClosedChatOrchestration({
+    chatEntrypoint: shouldClassifyChat(input),
+    classificationResolved: classification !== null,
+    skillId: plan.skillId,
+    needsClarification,
+  });
   const effectiveTaskType = needsClarification ? 'chat_reply' : plan.resolvedTaskType;
-  const effectiveToolNames = needsClarification ? [] : plan.toolNames;
+  const effectiveToolNames = orchestrationFailClosed ? [] : plan.toolNames;
   const effectiveAuthorization: KiaToolAuthorizationContext = {
     ...plan.authorization,
     requestedNames: [...effectiveToolNames],
@@ -141,7 +156,7 @@ export async function runKiaOrchestratedDecision(params: {
       authorization: effectiveAuthorization,
       toolNames: [...effectiveToolNames],
     },
-    lateClassificationFailClosed: needsClarification,
+    lateClassificationFailClosed: orchestrationFailClosed,
   });
 
   console.info('[KIA orchestration]', executionTrace);
