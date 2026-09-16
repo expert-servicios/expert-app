@@ -16,7 +16,11 @@ import {
 } from './kia-output-schema';
 import type { KiaToolResult } from './kia-tool-definitions';
 import { executeKiaToolCall } from './kia-tool-executor';
-import { isKiaToolAuthorized, resolveKiaToolDefinitions } from './kia-tool-registry';
+import {
+  isKiaToolAuthorized,
+  resolveKiaToolDefinitions,
+  type KiaToolAuthorizationContext,
+} from './kia-tool-registry';
 import { defaultEffortForTask, modelForTask, runKiaProviderRequest, type KiaProviderResult } from './kia-provider-router';
 import { classifyKiaIntent, type KiaIntentClassification } from './kia-intent-classifier';
 import { judgeKiaDecision, JUDGE_REQUIRED_ACTIONS } from './kia-judge-validator';
@@ -57,6 +61,7 @@ export async function runKiaDecision(input: {
   allowTools?: boolean;
   forceToolExecution?: boolean;
   allowedToolNames?: string[];
+  toolAuthorization?: Pick<KiaToolAuthorizationContext, 'maxRiskTier' | 'allowedEffects' | 'autonomousOnly'>;
   mediaUrl?: string;
   mediaType?: string;
   onProgress?: KiaProgressCallback;
@@ -93,10 +98,12 @@ export async function runKiaDecision(input: {
     console.error('[KiaDecision] official source context failed:', safeErrorMessage(err));
     return '';
   });
-  const allowedToolDefinitions = resolveKiaToolDefinitions({
+  const effectiveToolAuthorization: KiaToolAuthorizationContext = {
+    ...input.toolAuthorization,
     channel: input.channel,
     requestedNames: input.allowedToolNames,
-  });
+  };
+  const allowedToolDefinitions = resolveKiaToolDefinitions(effectiveToolAuthorization);
   const mediaInfo = input.mediaUrl ? { url: input.mediaUrl, type: input.mediaType ?? 'image/jpeg' } : null;
 
   const memoriesBlock = formatMemoriesForContext(context.memories ?? []);
@@ -205,10 +212,7 @@ export async function runKiaDecision(input: {
           }
           const iterResults = await Promise.all(
             decision.toolRequests.map((req: KiaToolRequest) => {
-              const authorized = isKiaToolAuthorized(req.toolName, {
-                channel: input.channel,
-                requestedNames: input.allowedToolNames,
-              });
+              const authorized = isKiaToolAuthorized(req.toolName, effectiveToolAuthorization);
               if (!authorized) {
                 return Promise.resolve({
                   toolName: req.toolName,
@@ -337,7 +341,6 @@ export async function runKiaDecision(input: {
   decision = finalizeDecisionPresentation(decision, input.channel, locale);
 
   const totalCost = costEstimates.length ? sumCostEstimates(costEstimates) : null;
-
   await saveKiaDecisionLog({
     decision,
     channel: input.channel,
@@ -757,112 +760,4 @@ function normalizeStringArray(value: unknown, fallback: string[]): string[] {
   if (!Array.isArray(value)) return fallback;
   const result = value.map(String).map((item) => item.trim()).filter(Boolean);
   return result.length ? result : fallback;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
-}
-
-async function tryRepairDecision(input: {
-  taskType: KiaTaskType;
-  systemPrompt: string;
-  badOutput: string;
-  context: KiaContext;
-  locale: 'es' | 'ru';
-}): Promise<{ decision: KiaDecision | null; providerResult?: KiaProviderResult }> {
-  try {
-    const repair = await runKiaProviderRequest({
-      taskType: input.taskType,
-      systemPrompt: input.systemPrompt,
-      messages: [{
-        role: 'user',
-        content: [
-          'Repara la salida anterior y devuelve UNICAMENTE JSON KiaDecision valido.',
-          'No inventes datos. Si no puedes reparar, usa nextAction=needs_review.',
-          '<bad_output>',
-          input.badOutput.slice(0, 4000),
-          '</bad_output>',
-          '<context>',
-          JSON.stringify(redactJson(input.context), null, 2),
-          '</context>',
-        ].join('\n'),
-      }],
-      responseSchema: KIA_DECISION_JSON_SCHEMA,
-      effort: 'low',
-      maxTokens: 800,
-      temperature: 0,
-    });
-    return { decision: parseDecision(repair, input.taskType, input.context, input.locale), providerResult: repair };
-  } catch {
-    return { decision: null };
-  }
-}
-
-async function retryAvoidingRepetition(input: {
-  taskType: KiaTaskType;
-  systemPrompt: string;
-  message: string;
-  context: KiaContext;
-  locale: 'es' | 'ru';
-  repeatedText: string;
-}): Promise<{ decision: KiaDecision | null; providerResult?: KiaProviderResult }> {
-  try {
-    const providerResult = await runKiaProviderRequest({
-      taskType: input.taskType,
-      systemPrompt: input.systemPrompt,
-      messages: [{
-        role: 'user',
-        content: [
-          'La respuesta candidata era demasiado parecida a una respuesta previa.',
-          'Genera una nueva KiaDecision JSON valida con userMessage claramente distinto.',
-          '<current_user_message>',
-          input.message,
-          '</current_user_message>',
-          '<repeated_previous_reply>',
-          input.repeatedText.slice(0, 1200),
-          '</repeated_previous_reply>',
-          '<context>',
-          JSON.stringify(redactJson(input.context), null, 2),
-          '</context>',
-        ].join('\n'),
-      }],
-      responseSchema: KIA_DECISION_JSON_SCHEMA,
-      effort: 'low',
-      maxTokens: 800,
-      temperature: 0.45,
-    });
-    return { decision: parseDecision(providerResult, input.taskType, input.context, input.locale), providerResult };
-  } catch {
-    return { decision: null };
-  }
-}
-
-function heuristicDecision(taskType: KiaTaskType, message: string, context: KiaContext): KiaDecision {
-  const lower = message.toLowerCase();
-  const isHolded = lower.includes('holded') || context.service?.requiresHolded;
-  const wantsCheckout = /\b(contratar|pagar|checkout|precio|comprar)\b/i.test(message);
-  const wantsCall = /\b(cita|llamada|reunion|hablar)\b/i.test(message);
-  const nextAction = wantsCall ? 'book_call' : wantsCheckout ? 'send_login_link' : isHolded ? 'run_readiness' : 'reply_only';
-  return {
-    version: '1.0',
-    taskType,
-    contactStatus: context.contact.status,
-    intent: wantsCheckout ? 'checkout' : wantsCall ? 'book_call' : isHolded ? 'readiness' : 'unknown',
-    userMessage: wantsCall
-      ? 'Puedes reservar una llamada de 15 minutos desde el portal seguro.'
-      : wantsCheckout
-        ? 'Para avanzar sin errores, entra en el portal seguro y completa tus datos antes de contratar.'
-        : 'Te oriento con la informacion disponible.',
-    nextAction,
-    quickReplies: [],
-    toolRequests: [],
-    dataToSave: {},
-    confidence: 0.65,
-    requiresMeeting: wantsCall,
-    requiresManualReview: false,
-    decisionSummary: 'Decision heuristica en modo eval, sin proveedor IA externo.',
-    rulesApplied: ['eval_mode', 'no_needs_review_for_commercial_flow'],
-    missingData: [],
-    warnings: [],
-  };
 }
