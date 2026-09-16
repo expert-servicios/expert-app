@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient } from '@/lib/integrations/supabase';
 import { createHoldedClientFromRawKey } from '@/lib/integrations/holded/holded-client';
+import { detectHoldedLaborPermissions } from '@/lib/integrations/holded/holded-labor-permissions';
+import { forceHoldedReadOnly } from '@/lib/integrations/holded/holded-permissions';
 import { holdedErrorMessage } from '@/lib/integrations/holded/holded-errors';
 
 const bodySchema = z.object({
@@ -22,11 +24,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'API key inválida o demasiado corta' }, { status: 400 });
     }
 
-    // Raw key used only for this test — never logged, never stored here
+    // Raw key used only for this test — never logged, never stored here.
     const client = createHoldedClientFromRawKey(parsed.data.apiKey);
-    const result = await client.testConnection();
+    const [result, laborPermissions] = await Promise.all([
+      client.testConnection(),
+      detectHoldedLaborPermissions(parsed.data.apiKey),
+    ]);
 
-    return NextResponse.json(result);
+    const permissions = forceHoldedReadOnly({
+      ...result.permissions,
+      ...laborPermissions,
+    });
+
+    return NextResponse.json({ ...result, permissions });
   } catch (err) {
     const msg = holdedErrorMessage(err);
     console.error('[holded/test] connection failed:', msg);
