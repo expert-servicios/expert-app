@@ -25,7 +25,7 @@ describe('Holded labor API v2 client', () => {
   });
 
   it('uses Bearer authentication and never puts the API key in the URL', async () => {
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({ data: [], cursor: null, has_more: false }), {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ items: [], cursor: null, has_more: false }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     }));
@@ -46,10 +46,12 @@ describe('Holded labor API v2 client', () => {
 
   it('reads the active contract through the v2 employee endpoint', async () => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify({
-      employee: 'emp-1',
+      contractType: 100,
+      startDate: '2026-01-01T00:00:00Z',
+      employee: 'Oksana Kukhar',
       scheduleHours: 10,
       salary: 420,
-      salaryInterval: 'month',
+      salaryInterval: 'monthly',
       salaryPayments: 14,
     }), {
       status: 200,
@@ -67,7 +69,25 @@ describe('Holded labor API v2 client', () => {
 
   it('lists payslips with employee/date filters and cursor pagination', async () => {
     fetchMock.mockResolvedValue(new Response(JSON.stringify({
-      data: [{ id: 'pay-1', employee_id: 'emp-1', net: '350.00' }],
+      items: [{
+        id: 'pay-1',
+        employee_id: 'emp-1',
+        employee_name: 'Oksana Kukhar',
+        payslip_kind: 'nomina_ordinaria',
+        date: '2026-09-30',
+        period_start: '2026-09-01',
+        period_end: '2026-09-30',
+        total_days: 30,
+        description: 'September 2026',
+        tags: [],
+        accounting_account_id: null,
+        is_draft: true,
+        net_salary: '350.00',
+        total_company_cost: '500.00',
+        payment_total: '0.00',
+        payment_pending: '350.00',
+        payment_status: 'PENDING',
+      }],
       cursor: 'next-cursor',
       has_more: true,
     }), {
@@ -78,8 +98,10 @@ describe('Holded labor API v2 client', () => {
     const client = buildHoldedV2Client('key');
     const page = await client.listPayslips({
       employeeId: 'emp-1',
-      startDate: '2026-09-01',
-      endDate: '2026-09-30',
+      startDate: '2026-09-01T00:00:00Z',
+      endDate: '2026-09-30T23:59:59Z',
+      kind: 'nomina_ordinaria',
+      isDraft: true,
       limit: 20,
       cursor: 'abc',
     });
@@ -87,18 +109,35 @@ describe('Holded labor API v2 client', () => {
     const [url] = fetchMock.mock.calls[0] as [string];
     expect(url).toContain('/api/v2/payslips?');
     expect(url).toContain('employee_id=emp-1');
-    expect(url).toContain('start_date=2026-09-01');
-    expect(url).toContain('end_date=2026-09-30');
+    expect(url).toContain('start_date=2026-09-01T00%3A00%3A00Z');
+    expect(url).toContain('end_date=2026-09-30T23%3A59%3A59Z');
+    expect(url).toContain('kind=nomina_ordinaria');
+    expect(url).toContain('is_draft=true');
     expect(url).toContain('cursor=abc');
-    expect(page.data[0].id).toBe('pay-1');
+    expect(page.items[0].id).toBe('pay-1');
     expect(page.cursor).toBe('next-cursor');
     expect(page.has_more).toBe(true);
   });
 
   it('distinguishes salary records from calculated payslips', async () => {
-    fetchMock.mockResolvedValue(new Response(JSON.stringify([
-      { id: 'salary-1', employee_id: 'emp-1', is_draft: false },
-    ]), {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({
+      items: [{
+        id: 'salary-1',
+        employee_id: 'emp-1',
+        employee_name: 'Oksana Kukhar',
+        date: '2026-08-31',
+        description: 'August payroll import',
+        tags: [],
+        accounting_account_id: null,
+        is_draft: false,
+        total_payable: '500.00',
+        payment_total: '500.00',
+        payment_pending: '0.00',
+        payment_status: 'PAID',
+      }],
+      cursor: null,
+      has_more: false,
+    }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     }));
@@ -108,9 +147,22 @@ describe('Holded labor API v2 client', () => {
 
     const [url] = fetchMock.mock.calls[0] as [string];
     expect(url).toContain('/api/v2/salary-records?');
-    expect(page.data).toHaveLength(1);
-    expect(page.data[0].id).toBe('salary-1');
+    expect(page.items).toHaveLength(1);
+    expect(page.items[0].id).toBe('salary-1');
     expect(page.has_more).toBe(false);
+  });
+
+  it('clamps page size to Holded v2 documented maximum', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ items: [], cursor: null, has_more: false }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }));
+
+    const client = buildHoldedV2Client('key');
+    await client.listEmployees({ limit: 999 });
+
+    const [url] = fetchMock.mock.calls[0] as [string];
+    expect(url).toContain('limit=200');
   });
 
   it('downloads PDFs without exposing credentials', async () => {
@@ -147,7 +199,12 @@ describe('Holded labor API v2 client', () => {
       crmUrl: 'https://api.holded.com/api/crm/v1',
       projectsUrl: 'https://api.holded.com/api/projects/v1',
     });
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({ id: 'emp-1' }), {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({
+      id: 'emp-1', name: 'Oksana', last_name: 'Kukhar', full_name: 'Oksana Kukhar',
+      code: '001', email: 'oksana@example.com', phone: null, mobile: null,
+      workplace_id: 'work-1', social_security_number: 'x', current_contract: null,
+      job_title: 'Auxiliar', terminated: null, payroll_accounts: {},
+    }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     }));
