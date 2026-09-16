@@ -63,12 +63,19 @@ export async function runPolicyEnforcedKiaDecision(
     throw new Error(`KIA policy denied: ${policy.reason}`);
   }
 
-  // The caller cannot widen the profile: visibility is reduced to the exact
-  // policy-resolved names. The full authorization snapshot is retained here
-  // for M4.6b propagation into the engine's pre-execution barrier.
+  // The caller cannot widen the profile. M4.6b propagates the immutable
+  // policy-resolved constraints into both tool visibility and the engine's
+  // pre-execution authorization barrier.
   return runKiaDecision({
     ...input,
     channel: policy.authorization.channel,
     allowedToolNames: policy.toolNames,
+    toolAuthorization: {
+      maxRiskTier: policy.authorization.maxRiskTier,
+      allowedEffects: policy.authorization.allowedEffects
+        ? [...policy.authorization.allowedEffects]
+        : undefined,
+      autonomousOnly: policy.authorization.autonomousOnly,
+    },
   });
 }
