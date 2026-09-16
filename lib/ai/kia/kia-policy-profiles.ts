@@ -8,6 +8,7 @@ import type {
 
 export type KiaPolicyProfileName =
   | 'client_dashboard'
+  | 'telegram_verified'
   | 'shadow_read_only'
   | 'professional_operator'
   | 'internal_admin';
@@ -52,6 +53,18 @@ const POLICY_PROFILES: Record<KiaPolicyProfileName, KiaPolicyProfileDefinition> 
     autonomousOnly: true,
     requiredPlanCapabilities: [],
     requiredScopes: [],
+    requiredFeatureFlags: [],
+  },
+  telegram_verified: {
+    name: 'telegram_verified',
+    channel: 'telegram',
+    allowedRoles: [ROLES.CLIENT, ROLES.TENANT_ADMIN, ROLES.ADMIN, ROLES.OWNER],
+    maxRiskTier: 'R1',
+    futureRiskCeiling: 'R1',
+    allowedEffects: ['read'],
+    autonomousOnly: true,
+    requiredPlanCapabilities: [],
+    requiredScopes: ['kia:authenticated'],
     requiredFeatureFlags: [],
   },
   shadow_read_only: {
