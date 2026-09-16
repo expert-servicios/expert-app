@@ -18,7 +18,7 @@ export const KIA_TASK_TYPES = [
 
 export type KiaTaskType = (typeof KIA_TASK_TYPES)[number];
 
-export const KIA_CHANNELS = ['waba', 'telegram', 'admin', 'email', 'dashboard', 'document'] as const;
+export const KIA_CHANNELS = ['waba', 'admin', 'email', 'dashboard', 'document'] as const;
 export type KiaChannel = (typeof KIA_CHANNELS)[number];
 
 export const KIA_CONTACT_STATUSES = ['lead', 'client', 'unknown'] as const;
@@ -119,7 +119,7 @@ export type KiaToolRequest = z.infer<typeof kiaToolRequestSchema>;
 export const documentClassificationDecisionSchema = z.object({
   documentType: z.string().min(1),
   documentSubtype: z.string().nullable(),
-  confidence: z.number().min(0).max(1),
+  confidence: z.number().min(1),
   suggestedClientId: z.string().uuid().nullable(),
   suggestedCompanyId: z.string().uuid().nullable(),
   suggestedCaseId: z.string().uuid().nullable(),
