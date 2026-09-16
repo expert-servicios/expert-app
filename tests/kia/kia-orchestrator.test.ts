@@ -15,9 +15,9 @@ const policyAuthorization = {
 };
 
 describe('KIA M7 orchestration plan', () => {
-  it('aligns WABA viability classification with fiscal skill, subagent and restricted tools', () => {
+  it('aligns dashboard chat viability classification with fiscal skill, subagent and restricted tools', () => {
     const plan = resolveKiaOrchestrationPlan({
-      requestedTaskType: 'waba_reply',
+      requestedTaskType: 'chat_reply',
       resolvedTaskType: 'viability_reasoning',
       detectedIntent: 'viability',
       policyAuthorization: { ...policyAuthorization, allowedEffects: ['read'] },
