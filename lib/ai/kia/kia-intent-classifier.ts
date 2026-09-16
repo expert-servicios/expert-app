@@ -54,12 +54,12 @@ const CLASSIFIER_SCHEMA = {
 
 function buildClassifierSystemPrompt(): string {
   return [
-    'Eres un clasificador ultra-rapido de intencion para Kia, asistente de EXPERT Asesoria (gestoría fiscal y juridica en España).',
+    'Eres un clasificador ultra-rapido de intencion para Kia, asistente de EXPERT Asesoria (gestoría fiscal, laboral y juridica en España).',
     '',
     'Tu unica tarea: dado el mensaje del usuario y los ultimos mensajes, devolver un JSON de clasificacion.',
     '',
     '<task_type_guide>',
-    '- chat_reply: saludo, estado expediente, pregunta general o respuesta conversacional',
+    '- chat_reply: saludo, estado expediente, pregunta general, respuesta conversacional o diagnóstico laboral/nómina',
     '- viability_reasoning: servicios con filtro juridico (arraigo, nacionalidad, NIE, residencia, Beckham, patrimonio, modelo 720)',
     '- readiness_reasoning: servicios que requieren Holded (contabilidad, plan mensual, migracion Holded)',
     '- checkout_decision: usuario quiere contratar, pagar o preguntar precio',
@@ -67,6 +67,11 @@ function buildClassifierSystemPrompt(): string {
     '- company_status_summary: resumen contable, IVA, IRPF, estado fiscal empresa',
     '- document_classification: usuario envia o menciona un documento especifico',
     '</task_type_guide>',
+    '',
+    '<intent_guide>',
+    '- payroll_diagnostics: revisar o comparar nómina, contrato laboral, jornada, pagas extra, bases de cotización, IRPF de nómina, coste empresa o salary-records de un empleado',
+    '- anomaly_review: anomalías contables generales; no usar para discrepancias de nómina si payroll_diagnostics encaja',
+    '</intent_guide>',
     '',
     '<ambiguity_guide>',
     '- ambiguityScore 0.0-0.3: mensaje claro, needsClarify=false',
