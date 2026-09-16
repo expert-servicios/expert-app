@@ -1,4 +1,5 @@
 import type { KiaTaskType } from './kia-output-schema';
+import { selectKiaSkill } from './kia-skill-registry';
 
 export interface KiaSubAgentProfile {
   id: string;
@@ -95,12 +96,22 @@ const TASK_TYPE_TO_SUB_AGENT: Record<KiaTaskType, string | null> = {
   generate_report:             null,
 };
 
+export function getKiaSubAgentProfile(id: string | null | undefined): KiaSubAgentProfile | null {
+  return id ? (SUB_AGENT_MAP[id] ?? null) : null;
+}
+
 export function selectSubAgentProfile(params: {
   taskType: KiaTaskType;
   detectedIntent?: string;
 }): KiaSubAgentProfile | null {
+  const skill = selectKiaSkill({
+    taskType: params.taskType,
+    detectedIntent: params.detectedIntent,
+  });
+  const skillProfile = getKiaSubAgentProfile(skill?.preferredSubAgentId);
+  if (skillProfile) return skillProfile;
+
   const byIntent = params.detectedIntent ? INTENT_TO_SUB_AGENT[params.detectedIntent] : null;
   const byTask = TASK_TYPE_TO_SUB_AGENT[params.taskType];
-  const profileId = byIntent ?? byTask;
-  return profileId ? (SUB_AGENT_MAP[profileId] ?? null) : null;
+  return getKiaSubAgentProfile(byIntent ?? byTask);
 }
