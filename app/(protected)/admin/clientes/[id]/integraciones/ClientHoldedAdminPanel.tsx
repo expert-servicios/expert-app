@@ -54,6 +54,16 @@ export function ClientHoldedAdminPanel({ clientId }: { clientId: string }) {
   const integration = useMemo(() => data?.integrations.find((item) => item.provider === 'holded' && item.company_id === companyId && item.status !== 'revoked') ?? null, [data, companyId]);
   const company = data?.companies.find((item) => item.id === companyId) ?? null;
 
+  function selectCompany(nextCompanyId: string) {
+    setCompanyId(nextCompanyId);
+    setApiKey('');
+    setShowKey(false);
+    setConsent(false);
+    setLaborConsent(false);
+    setError('');
+    setNotice('');
+  }
+
   async function action(payload: Record<string, unknown>) {
     setBusy(true); setError(''); setNotice('');
     try {
@@ -88,7 +98,7 @@ export function ClientHoldedAdminPanel({ clientId }: { clientId: string }) {
         </div>
 
         <label className="mt-5 block text-sm font-semibold text-[#29384a]">Entidad
-          <select value={companyId} onChange={(e) => { setCompanyId(e.target.value); setError(''); setNotice(''); }} className="mt-2 w-full rounded-xl border border-[#d8cbb5] bg-white px-3 py-3 text-sm">
+          <select value={companyId} onChange={(e) => selectCompany(e.target.value)} className="mt-2 w-full rounded-xl border border-[#d8cbb5] bg-white px-3 py-3 text-sm">
             {data?.companies.map((item) => <option key={item.id} value={item.id}>{item.name}{item.nif ? ` · ${item.nif}` : ''}</option>)}
           </select>
         </label>
@@ -101,10 +111,7 @@ export function ClientHoldedAdminPanel({ clientId }: { clientId: string }) {
             <div className="flex gap-2"><button type="button" disabled={busy} onClick={() => void action({ action: 'test_stored', companyId })} className="inline-flex items-center gap-1.5 rounded-xl border border-green-300 bg-white px-3 py-2 text-xs font-bold text-green-900"><ShieldCheck className="h-3.5 w-3.5" />Probar conexión</button><button type="button" disabled={busy} onClick={() => { if (window.confirm('¿Desconectar Holded de esta entidad? La credencial cifrada se eliminará.')) void action({ action: 'disconnect', companyId }); }} className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-700"><Unplug className="h-3.5 w-3.5" />Desconectar</button></div>
           </div>
           {integration.last_error && <p className="mt-4 rounded-xl bg-white px-4 py-3 text-sm text-red-700">Último error: {integration.last_error}</p>}
-          <div className="mt-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-800">Permisos efectivos</p>
-            <div className="flex flex-wrap gap-2">{Object.entries(integration.permissions_enabled ?? {}).filter(([, value]) => value).map(([key]) => <span key={key} className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-green-800">{key}</span>)}</div>
-          </div>
+          <div className="mt-4"><p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-800">Permisos efectivos</p><div className="flex flex-wrap gap-2">{Object.entries(integration.permissions_enabled ?? {}).filter(([, value]) => value).map(([key]) => <span key={key} className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-green-800">{key}</span>)}</div></div>
         </section>
       ) : (
         <section className="rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
