@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const KIA_TASK_TYPES = [
+  'chat_reply',
   'waba_reply',
   'admin_ai_compose',
   'document_classification',
