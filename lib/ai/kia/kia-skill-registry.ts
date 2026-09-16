@@ -50,6 +50,18 @@ const KIA_SKILLS: readonly KiaSkillDefinition[] = [
     enabled: true,
   },
   {
+    id: 'labor.payroll_diagnostics',
+    version: '1.0',
+    domain: 'labor',
+    description: 'Diagnostica coherencia de empleado, contrato y nomina Holded en modo lectura, separando hechos, incidencias y puntos de revision profesional.',
+    intents: ['payroll_diagnostics'],
+    taskTypes: [],
+    preferredSubAgentId: 'labor',
+    requiredToolCapabilities: ['client_data', 'holded_hr_read'],
+    maxRiskTier: 'R1',
+    enabled: true,
+  },
+  {
     id: 'documents.case_review',
     version: '1.0',
     domain: 'documents',

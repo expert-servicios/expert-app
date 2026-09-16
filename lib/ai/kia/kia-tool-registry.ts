@@ -59,6 +59,7 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_holded_employee_contract:       policy('R1', 'read',  'holded_hr_read'),
   get_holded_payslips:                policy('R1', 'read',  'holded_hr_read'),
   get_holded_salary_records:          policy('R1', 'read',  'holded_hr_read'),
+  run_labor_payroll_diagnostics:      policy('R1', 'read',  'holded_hr_read'),
   generate_company_report:            policy('R1', 'read',  'reporting'),
   extract_invoice_ocr:                policy('R1', 'read',  'documents'),
   create_kia_decision_log:            policy('R0', 'write', 'internal_operations'),

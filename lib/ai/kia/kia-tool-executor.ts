@@ -11,6 +11,7 @@ import { generateCompanyReport } from '@/lib/reports/report-generator';
 import { extractInvoiceOcr, type InvoiceMediaType } from './kia-ocr-extractor';
 import { executeKiaHoldedLaborTool, type KiaHoldedLaborToolName } from './kia-holded-labor-tools';
 import { resolveKiaCompanyHoldedAccess } from './kia-holded-access';
+import { executeLaborPayrollDiagnostics } from './kia-labor-payroll-diagnostics';
 
 const HOLDED_LABOR_TOOL_NAMES = new Set<KiaHoldedLaborToolName>([
   'get_holded_employees',
@@ -23,6 +24,10 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
   try {
     const args = validateKiaToolArguments(toolCall.name, toolCall.arguments);
     const admin = getSupabaseAdmin();
+
+    if (toolCall.name === 'run_labor_payroll_diagnostics') {
+      return executeLaborPayrollDiagnostics(args, context, admin);
+    }
 
     if (HOLDED_LABOR_TOOL_NAMES.has(toolCall.name as KiaHoldedLaborToolName)) {
       return executeKiaHoldedLaborTool(toolCall.name as KiaHoldedLaborToolName, args, context, admin);
