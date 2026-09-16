@@ -6,9 +6,70 @@ function getAdminChatId(): string | undefined {
   return process.env.TELEGRAM_ADMIN_CHAT_ID?.trim() || undefined;
 }
 
+function getWebhookSecret(): string | undefined {
+  return process.env.TELEGRAM_WEBHOOK_SECRET?.trim() || undefined;
+}
+
 export interface TelegramOutbound {
   chatId: string;
   text: string;
+}
+
+export interface TelegramInboundMessage {
+  updateId: number;
+  messageId: number;
+  chatId: string;
+  userId: string | null;
+  username: string | null;
+  text: string;
+}
+
+export function isTelegramWebhookAuthorized(secretHeader: string | null): boolean {
+  const expected = getWebhookSecret();
+  if (!expected || !secretHeader) return false;
+  return secretHeader === expected;
+}
+
+export function parseTelegramInboundMessage(payload: unknown): TelegramInboundMessage | null {
+  if (!payload || typeof payload !== 'object') return null;
+  const update = payload as {
+    update_id?: unknown;
+    message?: {
+      message_id?: unknown;
+      text?: unknown;
+      chat?: { id?: unknown };
+      from?: { id?: unknown; username?: unknown };
+    };
+  };
+  const message = update.message;
+  if (
+    typeof update.update_id !== 'number' ||
+    !message ||
+    typeof message.message_id !== 'number' ||
+    typeof message.text !== 'string' ||
+    (typeof message.chat?.id !== 'number' && typeof message.chat?.id !== 'string')
+  ) {
+    return null;
+  }
+
+  const trimmed = message.text.trim();
+  if (!trimmed) return null;
+
+  return {
+    updateId: update.update_id,
+    messageId: message.message_id,
+    chatId: String(message.chat?.id),
+    userId: typeof message.from?.id === 'number' || typeof message.from?.id === 'string'
+      ? String(message.from.id)
+      : null,
+    username: typeof message.from?.username === 'string' ? message.from.username : null,
+    text: trimmed,
+  };
+}
+
+export function isConfiguredTelegramAdminChat(chatId: string): boolean {
+  const adminChatId = getAdminChatId();
+  return Boolean(adminChatId && adminChatId === chatId);
 }
 
 /** Sends a Telegram message. Best-effort: resolves silently if not configured or on failure. */
