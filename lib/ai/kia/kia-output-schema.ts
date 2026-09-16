@@ -18,7 +18,7 @@ export const KIA_TASK_TYPES = [
 
 export type KiaTaskType = (typeof KIA_TASK_TYPES)[number];
 
-export const KIA_CHANNELS = ['waba', 'admin', 'email', 'dashboard', 'document'] as const;
+export const KIA_CHANNELS = ['waba', 'telegram', 'admin', 'email', 'dashboard', 'document'] as const;
 export type KiaChannel = (typeof KIA_CHANNELS)[number];
 
 export const KIA_CONTACT_STATUSES = ['lead', 'client', 'unknown'] as const;
