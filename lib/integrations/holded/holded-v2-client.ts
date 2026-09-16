@@ -9,53 +9,53 @@ const DEFAULT_PAGE_SIZE = 50;
 let lastCallAt = 0;
 
 export interface HoldedV2Page<T> {
-  data: T[];
+  items: T[];
   cursor: string | null;
   has_more: boolean;
 }
 
 export interface HoldedV2CurrentContractSummary {
-  id?: string;
-  type?: string | null;
-  start_date?: string | null;
-  end_date?: string | null;
-  job_title?: string | null;
-  schedule_hours?: number | null;
-  schedule_mode?: string | null;
-  working_days?: string[];
-  salary?: string | null;
-  salary_interval?: string | null;
-  salary_payments?: number | null;
-  salary_extra?: Array<Record<string, unknown>>;
+  id: string;
+  type: string;
+  start_date: string | null;
+  end_date: string | null;
+  job_title: string;
+  schedule_hours: number | null;
+  schedule_mode: string;
+  working_days: string[];
+  salary: string | null;
+  salary_interval: string;
+  salary_payments: number | null;
+  salary_extra: Array<Record<string, unknown>>;
   [key: string]: unknown;
 }
 
 export interface HoldedV2Employee {
   id: string;
   holded_user_id?: string | null;
-  name?: string;
-  last_name?: string;
-  full_name?: string;
-  code?: string;
-  email?: string;
-  phone?: string | null;
-  mobile?: string | null;
-  workplace_id?: string;
-  social_security_number?: string;
-  current_contract?: HoldedV2CurrentContractSummary | null;
-  job_title?: string;
-  terminated?: number | null;
-  payroll_accounts?: Record<string, Record<string, string | null>>;
+  name: string;
+  last_name: string;
+  full_name: string;
+  code: string;
+  email: string;
+  phone: string | null;
+  mobile: string | null;
+  workplace_id: string;
+  social_security_number: string;
+  current_contract: HoldedV2CurrentContractSummary | null;
+  job_title: string;
+  terminated: number | null;
+  payroll_accounts: Record<string, Record<string, string | null>>;
   [key: string]: unknown;
 }
 
 export interface HoldedV2ActiveContract {
-  employee?: string;
-  nif?: string;
-  contractType?: number;
+  employee?: string | null;
+  nif?: string | null;
+  contractType: number;
   contributionType?: string | null;
   royalDecree?: string | null;
-  startDate?: string;
+  startDate: string;
   seniorityDate?: string | null;
   endDate?: string | null;
   educationalLevel?: string | null;
@@ -68,34 +68,50 @@ export interface HoldedV2ActiveContract {
   vacationDays?: number | null;
   isManuallyActivated?: boolean | null;
   workModality?: string | null;
-  salary?: number;
-  salaryInterval?: string;
+  salary: number;
+  salaryInterval: string;
   salaryPayments?: number | null;
   [key: string]: unknown;
 }
 
 export interface HoldedV2Payslip {
   id: string;
-  employee_id?: string;
-  employee_name?: string;
-  liquidation_period_start_date?: string;
-  liquidation_period_end_date?: string;
-  status?: string;
+  employee_id: string | null;
+  employee_name: string;
+  payslip_kind: 'nomina_ordinaria' | 'gratificacion_no_cuantificable' | 'finiquito' | 'atrasos' | string;
+  date: string;
+  period_start: string | null;
+  period_end: string | null;
+  total_days: number;
+  description: string;
+  tags: string[];
+  accounting_account_id: string | null;
+  is_draft: boolean;
+  net_salary: string;
+  total_company_cost: string;
+  payment_total: string;
+  payment_pending: string;
+  payment_status: 'PENDING' | 'PAID' | 'PARTIALLY_PAID' | string;
   earnings?: unknown[];
   deductions?: unknown[];
   employer_contributions?: unknown[];
   contribution_bases?: Record<string, unknown>;
-  net?: string;
   [key: string]: unknown;
 }
 
 export interface HoldedV2SalaryRecord {
   id: string;
-  employee_id?: string;
-  employee_name?: string;
-  date?: string;
-  is_draft?: boolean;
-  description?: string | null;
+  employee_id: string | null;
+  employee_name: string;
+  date: string;
+  description: string;
+  tags: string[];
+  accounting_account_id: string | null;
+  is_draft: boolean;
+  total_payable: string;
+  payment_total: string;
+  payment_pending: string;
+  payment_status: 'PENDING' | 'PAID' | 'PARTIALLY_PAID' | string;
   lines?: unknown[];
   [key: string]: unknown;
 }
@@ -112,6 +128,8 @@ export interface HoldedV2Client {
     employeeId?: string;
     startDate?: string;
     endDate?: string;
+    kind?: string;
+    isDraft?: boolean;
     limit?: number;
     cursor?: string;
   }): Promise<HoldedV2Page<HoldedV2Payslip>>;
@@ -150,21 +168,16 @@ function buildHeaders(apiKey: string, accept = 'application/json'): HeadersInit 
 }
 
 function normalizePage<T>(raw: unknown): HoldedV2Page<T> {
-  if (Array.isArray(raw)) {
-    return { data: raw as T[], cursor: null, has_more: false };
-  }
-
   const obj = (raw ?? {}) as {
-    data?: unknown;
+    items?: unknown;
     cursor?: unknown;
     has_more?: unknown;
-    hasMore?: unknown;
   };
 
   return {
-    data: Array.isArray(obj.data) ? (obj.data as T[]) : [],
+    items: Array.isArray(obj.items) ? (obj.items as T[]) : [],
     cursor: typeof obj.cursor === 'string' && obj.cursor.length > 0 ? obj.cursor : null,
-    has_more: obj.has_more === true || obj.hasMore === true,
+    has_more: obj.has_more === true,
   };
 }
 
@@ -182,6 +195,8 @@ function buildPaginatedUrl(
     employeeId?: string;
     startDate?: string;
     endDate?: string;
+    kind?: string;
+    isDraft?: boolean;
   },
 ): string {
   const search = new URLSearchParams();
@@ -191,6 +206,8 @@ function buildPaginatedUrl(
   appendIfPresent(search, 'employee_id', params.employeeId);
   appendIfPresent(search, 'start_date', params.startDate);
   appendIfPresent(search, 'end_date', params.endDate);
+  appendIfPresent(search, 'kind', params.kind);
+  if (typeof params.isDraft === 'boolean') search.set('is_draft', String(params.isDraft));
   return `${HOLDED_V2_BASE}${path}?${search.toString()}`;
 }
 
@@ -264,6 +281,8 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
         employeeId: params.employeeId,
         startDate: params.startDate,
         endDate: params.endDate,
+        kind: params.kind,
+        isDraft: params.isDraft,
         limit: params.limit,
         cursor: params.cursor,
       });
