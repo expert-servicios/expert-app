@@ -116,24 +116,19 @@ export async function POST(request: NextRequest) {
       ...laborPermissions,
     } as Partial<HoldedPermissions>);
 
-    // Legacy callers that omit permissionsEnabled keep the historical accounting
-    // read surface, but sensitive labor reads remain disabled until explicit consent.
     const requestedPermissions: Partial<HoldedPermissions> = permissionsEnabled ?? {
       ...detectedPermissions,
       laborEmployeesRead: false,
       laborPayrollsRead: false,
     };
-    const enabledPermissions = intersectHoldedReadPermissions(
-      detectedPermissions,
-      requestedPermissions,
-    );
+    const enabledPermissions = intersectHoldedReadPermissions(detectedPermissions, requestedPermissions);
 
     const encryptedApiKey = encryptSecret(apiKey);
     const last4 = keyLast4(apiKey);
 
     const existing = await admin
       .from('client_integrations')
-      .select('id')
+      .select('id, client_id')
       .eq('provider', 'holded')
       .eq('company_id', companyId)
       .neq('status', 'revoked')
@@ -156,10 +151,18 @@ export async function POST(request: NextRequest) {
       disconnected_at: null,
       updated_at: now,
       company_id: companyId,
-      client_id: user.id,
+      // Company-scoped membership is the authorization boundary. Do not grant
+      // durable direct ownership to whichever member happens to reconnect it.
+      client_id: existing.data?.client_id ?? null,
     };
 
     if (existing.data?.id) {
+      const { data: previousSecret } = await admin
+        .from('client_integration_secrets')
+        .select('encrypted_api_key')
+        .eq('integration_id', existing.data.id)
+        .maybeSingle();
+
       const { error: secretError } = await admin
         .from('client_integration_secrets')
         .upsert({ integration_id: existing.data.id, encrypted_api_key: encryptedApiKey, updated_at: now });
@@ -177,15 +180,19 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (updateError || !updated) {
+        const rollback = previousSecret?.encrypted_api_key
+          ? await admin.from('client_integration_secrets').upsert({
+              integration_id: existing.data.id,
+              encrypted_api_key: previousSecret.encrypted_api_key,
+              updated_at: now,
+            })
+          : await admin.from('client_integration_secrets').delete().eq('integration_id', existing.data.id);
+        if (rollback.error) console.error('[holded/connect] CRITICAL secret rollback error:', rollback.error.message);
         console.error('[holded/connect] update error:', updateError?.message);
         return NextResponse.json({ error: 'Error actualizando integración' }, { status: 500 });
       }
 
-      return NextResponse.json({
-        ok: true,
-        integration: updated,
-        warnings: testResult.warnings,
-      });
+      return NextResponse.json({ ok: true, integration: updated, warnings: testResult.warnings });
     }
 
     const { data: inserted, error: insertError } = await admin
@@ -209,11 +216,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Error guardando credencial segura' }, { status: 500 });
     }
 
-    return NextResponse.json({
-      ok: true,
-      integration: inserted,
-      warnings: testResult.warnings,
-    });
+    return NextResponse.json({ ok: true, integration: inserted, warnings: testResult.warnings });
   } catch (err) {
     console.error('[holded/connect] unexpected error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
