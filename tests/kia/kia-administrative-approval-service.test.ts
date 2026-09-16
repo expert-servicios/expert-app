@@ -30,11 +30,20 @@ describe('KIA KADM4 administrative approvals', () => {
     expect(service).not.toContain('p_token: input.token');
   });
 
-  it('enforces expiry and one-time consumption', () => {
+  it('binds approvals to the exact action row version and state to prevent replay', () => {
+    expect(migration).toContain("'action_row_version', v_action.row_version");
+    expect(migration).toContain("'action_state', v_action.state");
+    expect(migration).toContain('KIA_APPROVAL_ACTION_VERSION_MISMATCH');
+    expect(migration).toContain("(a.metadata ->> 'action_row_version') = v_current.row_version::text");
+    expect(migration).toContain("(a.metadata ->> 'action_state') = v_current.state");
+  });
+
+  it('enforces expiry, expected approver, and one-time consumption', () => {
     expect(migration).toContain("v_approval.decision <> 'pending'");
     expect(migration).toContain('v_approval.consumed_at is not null');
     expect(migration).toContain('KIA_APPROVAL_ALREADY_USED');
     expect(migration).toContain('KIA_APPROVAL_EXPIRED');
+    expect(migration).toContain('KIA_APPROVAL_WRONG_APPROVER');
     expect(migration).toContain("decision = 'approved'");
     expect(migration).toContain('consumed_at = now()');
   });
