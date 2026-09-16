@@ -1,4 +1,4 @@
--- KIA KADM4: expiring approvals bound to exact action snapshots.
+-- KIA KADM4: expiring approvals bound to exact action snapshots and action versions.
 -- Raw approval tokens remain application-side; only SHA-256 hashes are stored.
 
 create or replace function public.kia_request_administrative_approval(
@@ -66,7 +66,10 @@ begin
     v_action.action_snapshot_hash,
     p_token_hash,
     p_expires_at,
-    coalesce(p_metadata, '{}'::jsonb)
+    coalesce(p_metadata, '{}'::jsonb) || jsonb_build_object(
+      'action_row_version', v_action.row_version,
+      'action_state', v_action.state
+    )
   )
   returning * into v_approval;
 
@@ -129,6 +132,10 @@ begin
     raise exception 'KIA_ACTION_NOT_FOUND';
   end if;
 
+  if p_decided_by is null then
+    raise exception 'KIA_APPROVER_REQUIRED';
+  end if;
+
   select * into v_approval
   from public.administrative_action_approvals
   where action_id = p_action_id
@@ -147,14 +154,20 @@ begin
   end if;
 
   if v_approval.expires_at <= now() then
-    update public.administrative_action_approvals
-    set decision = 'expired', decided_at = coalesce(decided_at, now())
-    where id = v_approval.id;
     raise exception 'KIA_APPROVAL_EXPIRED';
+  end if;
+
+  if v_approval.requested_from is not null and v_approval.requested_from <> p_decided_by then
+    raise exception 'KIA_APPROVAL_WRONG_APPROVER';
   end if;
 
   if v_approval.action_snapshot_hash <> v_action.action_snapshot_hash then
     raise exception 'KIA_APPROVAL_SNAPSHOT_MISMATCH';
+  end if;
+
+  if (v_approval.metadata ->> 'action_row_version') is distinct from v_action.row_version::text
+     or (v_approval.metadata ->> 'action_state') is distinct from v_action.state then
+    raise exception 'KIA_APPROVAL_ACTION_VERSION_MISMATCH';
   end if;
 
   if p_approval_type = 'user_auth_resume' and v_action.state <> 'awaiting_user_auth' then
@@ -195,7 +208,8 @@ begin
     jsonb_build_object(
       'approval_id', v_approval.id,
       'approval_type', v_approval.approval_type,
-      'action_snapshot_hash', v_approval.action_snapshot_hash
+      'action_snapshot_hash', v_approval.action_snapshot_hash,
+      'row_version', v_action.row_version
     )
   );
 
@@ -260,6 +274,8 @@ begin
         and a.consumed_at is not null
         and a.expires_at > a.consumed_at
         and a.action_snapshot_hash = v_current.action_snapshot_hash
+        and (a.metadata ->> 'action_row_version') = v_current.row_version::text
+        and (a.metadata ->> 'action_state') = v_current.state
     ) into v_has_approval;
 
     if not v_has_approval then
