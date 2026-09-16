@@ -4,35 +4,39 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { encryptSecret, keyLast4 } from '@/lib/security/encryption';
 import { isEncryptionConfigured, createHoldedClientFromRawKey } from '@/lib/integrations/holded/holded-client';
 import { detectHoldedLaborPermissions } from '@/lib/integrations/holded/holded-labor-permissions';
-import { forceHoldedReadOnly, type HoldedPermissions } from '@/lib/integrations/holded/holded-permissions';
+import {
+  intersectHoldedReadPermissions,
+  normalizeDetectedHoldedPermissions,
+  type HoldedPermissions,
+} from '@/lib/integrations/holded/holded-permissions';
 import { holdedErrorMessage } from '@/lib/integrations/holded/holded-errors';
 
 const permissionsSchema = z.object({
-  contacts        : z.boolean().default(false),
-  salesInvoices   : z.boolean().default(false),
+  contacts: z.boolean().default(false),
+  salesInvoices: z.boolean().default(false),
   purchaseInvoices: z.boolean().default(false),
-  taxes           : z.boolean().default(false),
-  bankAccounts    : z.boolean().default(false),
-  bankMovements   : z.boolean().default(false),
-  inboxDocuments  : z.boolean().default(false),
-  writeInbox      : z.boolean().default(false),
+  taxes: z.boolean().default(false),
+  bankAccounts: z.boolean().default(false),
+  bankMovements: z.boolean().default(false),
+  inboxDocuments: z.boolean().default(false),
+  writeInbox: z.literal(false).optional().default(false),
   accountingReports: z.boolean().default(false),
   accountingEntries: z.boolean().default(false),
-  laborEmployeesRead: z.boolean().optional(),
-  laborPayrollsRead: z.boolean().optional(),
-  laborEmployeesWrite: z.literal(false).optional(),
-  laborPayrollsWrite: z.literal(false).optional(),
-});
+  laborEmployeesRead: z.boolean().optional().default(false),
+  laborPayrollsRead: z.boolean().optional().default(false),
+  laborEmployeesWrite: z.literal(false).optional().default(false),
+  laborPayrollsWrite: z.literal(false).optional().default(false),
+}).strict();
 
 const bodySchema = z.object({
-  apiKey            : z.string().min(8).max(256).trim(),
-  companyId         : z.string().uuid().optional(),
+  apiKey: z.string().min(8).max(256).trim(),
+  companyId: z.string().uuid().optional(),
   permissionsEnabled: permissionsSchema.optional(),
-  consentVersion    : z.string().max(20).optional().default('1.0'),
-  consentAt         : z.string().datetime().optional(),
-});
+  consentVersion: z.string().max(20).optional().default('1.1'),
+  consentAt: z.string().datetime().optional(),
+}).strict();
 
-const SAFE_COLUMNS = 'id,provider,mode,api_key_last4,permissions_detected,status,sync_mode,last_sync_at,last_success_at,last_error,created_at,updated_at';
+const SAFE_COLUMNS = 'id,provider,mode,api_key_last4,permissions_detected,permissions_enabled,status,sync_mode,last_sync_at,last_success_at,last_error,consent_at,consent_version,created_at,updated_at';
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,37 +50,43 @@ export async function POST(request: NextRequest) {
       console.error('[holded/connect] SECRET_ENCRYPTION_KEY not configured — refusing connection');
       return NextResponse.json(
         { error: 'El servidor no está configurado para almacenar claves de forma segura. Contacta con el administrador.' },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
     const body = await request.json().catch(() => null);
     const parsed = bodySchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: 'API key inválida' }, { status: 400 });
+      return NextResponse.json({ error: 'API key o permisos inválidos' }, { status: 400 });
     }
 
     const { apiKey, companyId: bodyCompanyId, permissionsEnabled, consentVersion, consentAt } = parsed.data;
+    const admin = getSupabaseAdmin();
 
-    const { data: profile } = await getSupabaseAdmin()
+    const { data: profile } = await admin
       .from('profiles')
       .select('active_company_id')
       .eq('id', user.id)
       .single();
 
     const companyId = bodyCompanyId ?? profile?.active_company_id ?? null;
+    if (!companyId) {
+      return NextResponse.json({ error: 'Selecciona una empresa antes de conectar Holded' }, { status: 409 });
+    }
 
-    if (companyId) {
-      const { data: membership } = await getSupabaseAdmin()
-        .from('profile_companies')
-        .select('role')
-        .eq('company_id', companyId)
-        .eq('profile_id', user.id)
-        .single();
+    const { data: membership, error: membershipError } = await admin
+      .from('profile_companies')
+      .select('role')
+      .eq('company_id', companyId)
+      .eq('profile_id', user.id)
+      .maybeSingle();
 
-      if (!membership) {
-        return NextResponse.json({ error: 'No tienes acceso a esta empresa' }, { status: 403 });
-      }
+    if (membershipError) {
+      console.error('[holded/connect] membership error:', membershipError.message);
+      return NextResponse.json({ error: 'No se pudo comprobar el acceso a la empresa' }, { status: 500 });
+    }
+    if (!membership) {
+      return NextResponse.json({ error: 'No tienes acceso a esta empresa' }, { status: 403 });
     }
 
     const client = createHoldedClientFromRawKey(apiKey);
@@ -90,63 +100,75 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       return NextResponse.json(
         { error: `No se pudo conectar con Holded: ${holdedErrorMessage(err)}` },
-        { status: 502 }
+        { status: 502 },
       );
     }
 
     if (!testResult.ok) {
       return NextResponse.json(
         { error: 'La API key de Holded no es válida o no tiene permisos suficientes', warnings: testResult.warnings },
-        { status: 422 }
+        { status: 422 },
       );
     }
 
-    const detectedPermissions = forceHoldedReadOnly({
+    const detectedPermissions = normalizeDetectedHoldedPermissions({
       ...testResult.permissions,
       ...laborPermissions,
-    } as HoldedPermissions);
+    } as Partial<HoldedPermissions>);
 
-    const enabledPermissions = forceHoldedReadOnly({
+    // Legacy callers that omit permissionsEnabled keep the historical accounting
+    // read surface, but sensitive labor reads remain disabled until explicit consent.
+    const requestedPermissions: Partial<HoldedPermissions> = permissionsEnabled ?? {
       ...detectedPermissions,
-      ...(permissionsEnabled ?? {}),
-      laborEmployeesRead: permissionsEnabled?.laborEmployeesRead ?? detectedPermissions.laborEmployeesRead,
-      laborPayrollsRead: permissionsEnabled?.laborPayrollsRead ?? detectedPermissions.laborPayrollsRead,
-      laborEmployeesWrite: false,
-      laborPayrollsWrite: false,
-    } as HoldedPermissions);
+      laborEmployeesRead: false,
+      laborPayrollsRead: false,
+    };
+    const enabledPermissions = intersectHoldedReadPermissions(
+      detectedPermissions,
+      requestedPermissions,
+    );
 
     const encryptedApiKey = encryptSecret(apiKey);
     const last4 = keyLast4(apiKey);
-    const admin = getSupabaseAdmin();
 
     const existing = await admin
       .from('client_integrations')
       .select('id')
       .eq('provider', 'holded')
+      .eq('company_id', companyId)
       .neq('status', 'revoked')
-      .eq(companyId ? 'company_id' : 'client_id', companyId ?? user.id)
       .maybeSingle();
 
     const now = new Date().toISOString();
     const upsertPayload = {
-      provider            : 'holded',
-      mode                : 'client_account',
-      api_key_last4       : last4,
+      provider: 'holded',
+      mode: 'client_account',
+      api_key_last4: last4,
       permissions_detected: detectedPermissions,
-      permissions_enabled : enabledPermissions,
-      consent_at          : consentAt ?? now,
-      consent_version     : consentVersion ?? '1.0',
-      status              : 'active',
-      sync_mode           : 'read_only',
-      last_success_at     : now,
-      last_error          : null,
-      connected_by        : user.id,
-      disconnected_at     : null,
-      updated_at          : now,
-      ...(companyId ? { company_id: companyId } : { client_id: user.id }),
+      permissions_enabled: enabledPermissions,
+      consent_at: consentAt ?? now,
+      consent_version: consentVersion ?? '1.1',
+      status: 'active',
+      sync_mode: 'read_only',
+      last_success_at: now,
+      last_error: null,
+      connected_by: user.id,
+      disconnected_at: null,
+      updated_at: now,
+      company_id: companyId,
+      client_id: user.id,
     };
 
     if (existing.data?.id) {
+      const { error: secretError } = await admin
+        .from('client_integration_secrets')
+        .upsert({ integration_id: existing.data.id, encrypted_api_key: encryptedApiKey, updated_at: now });
+
+      if (secretError) {
+        console.error('[holded/connect] secret upsert error:', secretError.message);
+        return NextResponse.json({ error: 'Error guardando credencial segura' }, { status: 500 });
+      }
+
       const { data: updated, error: updateError } = await admin
         .from('client_integrations')
         .update(upsertPayload)
@@ -157,15 +179,6 @@ export async function POST(request: NextRequest) {
       if (updateError || !updated) {
         console.error('[holded/connect] update error:', updateError?.message);
         return NextResponse.json({ error: 'Error actualizando integración' }, { status: 500 });
-      }
-
-      const { error: secretError } = await admin
-        .from('client_integration_secrets')
-        .upsert({ integration_id: existing.data.id, encrypted_api_key: encryptedApiKey, updated_at: now });
-
-      if (secretError) {
-        console.error('[holded/connect] secret upsert error:', secretError.message);
-        return NextResponse.json({ error: 'Error guardando credencial segura' }, { status: 500 });
       }
 
       return NextResponse.json({
