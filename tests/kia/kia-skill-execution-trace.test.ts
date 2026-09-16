@@ -14,22 +14,28 @@ const policyAuthorization = {
   autonomousOnly: true,
 };
 
-describe('KIA M6.3 skill execution trace', () => {
-  it('captures selected skill identity and effective authorization without user data', () => {
+describe('KIA skill execution trace', () => {
+  it('captures resolved orchestration identity and effective authorization without user data', () => {
     const resolution = resolveKiaSkillAuthorization({
       taskType: 'viability_reasoning',
+      detectedIntent: 'viability',
       policyAuthorization: { ...policyAuthorization, allowedEffects: ['read'] },
       policyToolNames: [...policyAuthorization.requestedNames],
     });
     const trace = buildKiaSkillExecutionTrace({
-      taskType: 'viability_reasoning',
+      taskType: 'waba_reply',
+      resolvedTaskType: 'viability_reasoning',
+      detectedIntent: 'viability',
+      selectionBasis: 'resolved_intent',
       resolution,
     });
 
     expect(trace).toMatchObject({
       version: '1.0',
-      requestedTaskType: 'viability_reasoning',
-      selectionBasis: 'requested_task',
+      requestedTaskType: 'waba_reply',
+      resolvedTaskType: 'viability_reasoning',
+      detectedIntent: 'viability',
+      selectionBasis: 'resolved_intent',
       skillId: 'fiscal.viability',
       skillVersion: '1.0',
       preferredSubAgentId: 'fiscal',
@@ -42,37 +48,32 @@ describe('KIA M6.3 skill execution trace', () => {
     expect(JSON.stringify(trace)).not.toContain('message');
   });
 
-  it('supports an explicit fail-closed late-classification marker', () => {
+  it('keeps backward-compatible requested-task defaults', () => {
     const resolution = resolveKiaSkillAuthorization({
-      taskType: 'waba_reply',
+      taskType: 'viability_reasoning',
       policyAuthorization: { ...policyAuthorization, allowedEffects: ['read'] },
       policyToolNames: [...policyAuthorization.requestedNames],
     });
     const trace = buildKiaSkillExecutionTrace({
-      taskType: 'waba_reply',
-      resolution: {
-        ...resolution,
-        authorization: { ...resolution.authorization, requestedNames: [] },
-        toolNames: [],
-      },
-      lateClassificationFailClosed: true,
+      taskType: 'viability_reasoning',
+      resolution,
     });
 
-    expect(trace.skillId).toBeNull();
-    expect(trace.effectiveToolNames).toEqual([]);
-    expect(trace.lateClassificationFailClosed).toBe(true);
+    expect(trace.resolvedTaskType).toBe('viability_reasoning');
+    expect(trace.detectedIntent).toBeNull();
+    expect(trace.selectionBasis).toBe('requested_task');
   });
 
-  it('wires waba_reply to fail closed before late intent classification', () => {
+  it('wires orchestration trace after classification instead of pre-classification WABA narrowing', () => {
     const source = readFileSync(
-      resolve(process.cwd(), 'lib/ai/kia/kia-policy-enforced-decision.ts'),
+      resolve(process.cwd(), 'lib/ai/kia/kia-orchestrator.ts'),
       'utf8',
     );
 
-    expect(source).toContain("input.taskType === 'waba_reply' && !initialSkillAuthorization.skill");
-    expect(source).toContain('lateClassificationFailClosed');
-    expect(source).toContain('? []');
-    expect(source).toContain("console.info('[KIA skill execution]', executionTrace)");
+    expect(source).toContain('const resolvedTaskType = resolveTaskAfterClassification');
+    expect(source).toContain('const plan = resolveKiaOrchestrationPlan({');
+    expect(source).toContain('selectionBasis: selectionBasis(plan)');
+    expect(source).toContain("console.info('[KIA orchestration]', executionTrace)");
     expect(source).toContain('executionTrace,');
   });
 });
