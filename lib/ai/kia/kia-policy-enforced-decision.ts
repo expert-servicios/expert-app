@@ -6,6 +6,7 @@ import {
   resolveKiaPolicyProfile,
   type KiaPolicyProfileName,
 } from './kia-policy-profiles';
+import { resolveKiaSkillAuthorization } from './kia-skill-execution';
 import {
   resolveKiaToolDefinitions,
   type KiaToolAuthorizationContext,
@@ -63,19 +64,24 @@ export async function runPolicyEnforcedKiaDecision(
     throw new Error(`KIA policy denied: ${policy.reason}`);
   }
 
-  // The caller cannot widen the profile. M4.6b propagates the immutable
-  // policy-resolved constraints into both tool visibility and the engine's
-  // pre-execution authorization barrier.
+  const skillAuthorization = resolveKiaSkillAuthorization({
+    taskType: input.taskType,
+    policyAuthorization: policy.authorization,
+    policyToolNames: policy.toolNames,
+  });
+
+  // Skills are a second, narrowing layer. They can reduce tool visibility and
+  // risk but never widen the immutable policy authorization resolved for actor.
   return runKiaDecision({
     ...input,
-    channel: policy.authorization.channel,
-    allowedToolNames: policy.toolNames,
+    channel: skillAuthorization.authorization.channel,
+    allowedToolNames: skillAuthorization.toolNames,
     toolAuthorization: {
-      maxRiskTier: policy.authorization.maxRiskTier,
-      allowedEffects: policy.authorization.allowedEffects
-        ? [...policy.authorization.allowedEffects]
+      maxRiskTier: skillAuthorization.authorization.maxRiskTier,
+      allowedEffects: skillAuthorization.authorization.allowedEffects
+        ? [...skillAuthorization.authorization.allowedEffects]
         : undefined,
-      autonomousOnly: policy.authorization.autonomousOnly,
+      autonomousOnly: skillAuthorization.authorization.autonomousOnly,
     },
   });
 }
