@@ -48,17 +48,9 @@ describe('KIA Holded labor tools', () => {
   });
 
   it('does not accept companyId as a labor tool argument', () => {
-    expect(() => validateKiaToolArguments('get_holded_employees', {
-      companyId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-    })).toThrow();
-    expect(() => validateKiaToolArguments('get_holded_employee_contract', {
-      employeeId: 'emp-1',
-      companyId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-    })).toThrow();
-    expect(() => validateKiaToolArguments('run_labor_payroll_diagnostics', {
-      employeeId: 'emp-1',
-      companyId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-    })).toThrow();
+    expect(() => validateKiaToolArguments('get_holded_employees', { companyId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' })).toThrow();
+    expect(() => validateKiaToolArguments('get_holded_employee_contract', { employeeId: 'emp-1', companyId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' })).toThrow();
+    expect(() => validateKiaToolArguments('run_labor_payroll_diagnostics', { employeeId: 'emp-1', companyId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' })).toThrow();
   });
 
   it('requires an active company and permissions_enabled at the Holded boundary', () => {
@@ -79,18 +71,22 @@ describe('KIA Holded labor tools', () => {
     expect(labor).not.toMatch(/\.(create|update|delete|post|put)\w*\(/i);
   });
 
-  it('builds diagnostics from employee, contract, calculated payslips and separate salary records', () => {
+  it('delegates payroll reasoning to a pure defensive engine', () => {
     const diagnostic = source('lib/ai/kia/kia-labor-payroll-diagnostics.ts');
+    const engine = source('lib/ai/kia/kia-labor-payroll-engine.ts');
     expect(diagnostic).toContain("resolveKiaCompanyHoldedAccess(admin, context, 'laborEmployeesRead')");
     expect(diagnostic).toContain('permissionsEnabled.laborPayrollsRead !== true');
     expect(diagnostic).toContain('client.getEmployee(employeeId)');
     expect(diagnostic).toContain('client.getActiveContract(employeeId)');
     expect(diagnostic).toContain('client.listPayslips');
     expect(diagnostic).toContain('client.listSalaryRecords');
-    expect(diagnostic).toContain('contribution_bases');
-    expect(diagnostic).toContain('detectIrpf');
+    expect(diagnostic).toContain('analyzeLaborPayrollSnapshot');
     expect(diagnostic).toContain("source: 'holded_api_v2_read_only'");
+    expect(engine).toContain('detectIrpf');
+    expect(engine).toContain('Array.isArray(payslip.deductions)');
+    expect(engine).toContain('isPlainRecord(payslip.contributionBases)');
     expect(diagnostic).not.toMatch(/\.(create|update|delete|post|put)\w*\(/i);
+    expect(engine).not.toMatch(/\.(create|update|delete|post|put)\w*\(/i);
   });
 
   it('removes client fallback from existing KIA Holded data tools', () => {
