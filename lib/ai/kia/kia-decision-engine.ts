@@ -761,3 +761,111 @@ function normalizeStringArray(value: unknown, fallback: string[]): string[] {
   const result = value.map(String).map((item) => item.trim()).filter(Boolean);
   return result.length ? result : fallback;
 }
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+async function tryRepairDecision(input: {
+  taskType: KiaTaskType;
+  systemPrompt: string;
+  badOutput: string;
+  context: KiaContext;
+  locale: 'es' | 'ru';
+}): Promise<{ decision: KiaDecision | null; providerResult?: KiaProviderResult }> {
+  try {
+    const repair = await runKiaProviderRequest({
+      taskType: input.taskType,
+      systemPrompt: input.systemPrompt,
+      messages: [{
+        role: 'user',
+        content: [
+          'Repara la salida anterior y devuelve UNICAMENTE JSON KiaDecision valido.',
+          'No inventes datos. Si no puedes reparar, usa nextAction=needs_review.',
+          '<bad_output>',
+          input.badOutput.slice(0, 4000),
+          '</bad_output>',
+          '<context>',
+          JSON.stringify(redactJson(input.context), null, 2),
+          '</context>',
+        ].join('\n'),
+      }],
+      responseSchema: KIA_DECISION_JSON_SCHEMA,
+      effort: 'low',
+      maxTokens: 800,
+      temperature: 0,
+    });
+    return { decision: parseDecision(repair, input.taskType, input.context, input.locale), providerResult: repair };
+  } catch {
+    return { decision: null };
+  }
+}
+
+async function retryAvoidingRepetition(input: {
+  taskType: KiaTaskType;
+  systemPrompt: string;
+  message: string;
+  context: KiaContext;
+  locale: 'es' | 'ru';
+  repeatedText: string;
+}): Promise<{ decision: KiaDecision | null; providerResult?: KiaProviderResult }> {
+  try {
+    const providerResult = await runKiaProviderRequest({
+      taskType: input.taskType,
+      systemPrompt: input.systemPrompt,
+      messages: [{
+        role: 'user',
+        content: [
+          'La respuesta candidata era demasiado parecida a una respuesta previa.',
+          'Genera una nueva KiaDecision JSON valida con userMessage claramente distinto.',
+          '<current_user_message>',
+          input.message,
+          '</current_user_message>',
+          '<repeated_previous_reply>',
+          input.repeatedText.slice(0, 1200),
+          '</repeated_previous_reply>',
+          '<context>',
+          JSON.stringify(redactJson(input.context), null, 2),
+          '</context>',
+        ].join('\n'),
+      }],
+      responseSchema: KIA_DECISION_JSON_SCHEMA,
+      effort: 'low',
+      maxTokens: 800,
+      temperature: 0.45,
+    });
+    return { decision: parseDecision(providerResult, input.taskType, input.context, input.locale), providerResult };
+  } catch {
+    return { decision: null };
+  }
+}
+
+function heuristicDecision(taskType: KiaTaskType, message: string, context: KiaContext): KiaDecision {
+  const lower = message.toLowerCase();
+  const isHolded = lower.includes('holded') || context.service?.requiresHolded;
+  const wantsCheckout = /\b(contratar|pagar|checkout|precio|comprar)\b/i.test(message);
+  const wantsCall = /\b(cita|llamada|reunion|hablar)\b/i.test(message);
+  const nextAction = wantsCall ? 'book_call' : wantsCheckout ? 'send_login_link' : isHolded ? 'run_readiness' : 'reply_only';
+  return {
+    version: '1.0',
+    taskType,
+    contactStatus: context.contact.status,
+    intent: wantsCheckout ? 'checkout' : wantsCall ? 'book_call' : isHolded ? 'readiness' : 'unknown',
+    userMessage: wantsCall
+      ? 'Puedes reservar una llamada de 15 minutos desde el portal seguro.'
+      : wantsCheckout
+        ? 'Para avanzar sin errores, entra en el portal seguro y completa tus datos antes de contratar.'
+        : 'Te oriento con la informacion disponible.',
+    nextAction,
+    quickReplies: [],
+    toolRequests: [],
+    dataToSave: {},
+    confidence: 0.65,
+    requiresMeeting: wantsCall,
+    requiresManualReview: false,
+    decisionSummary: 'Decision heuristica en modo eval, sin proveedor IA externo.',
+    rulesApplied: ['eval_mode', 'no_needs_review_for_commercial_flow'],
+    missingData: [],
+    warnings: [],
+  };
+}
