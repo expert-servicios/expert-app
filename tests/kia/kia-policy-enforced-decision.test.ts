@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ROLES } from '@/lib/auth/roles';
 import { deriveKiaActorCapabilities } from '@/lib/ai/kia/kia-actor-capability-resolver';
@@ -57,5 +59,29 @@ describe('KIA policy-enforced decision', () => {
     });
     expect(resolveKiaPolicyToolNames('internal_admin', actor))
       .toMatchObject({ ok: false, reason: 'missing_scope' });
+  });
+
+  it('propagates the full immutable authorization snapshot into visibility and execution barriers', () => {
+    const wrapper = readFileSync(
+      resolve(process.cwd(), 'lib/ai/kia/kia-policy-enforced-decision.ts'),
+      'utf8',
+    );
+    const engine = readFileSync(
+      resolve(process.cwd(), 'lib/ai/kia/kia-decision-engine.ts'),
+      'utf8',
+    );
+
+    expect(wrapper).toContain('toolAuthorization: {');
+    expect(wrapper).toContain('maxRiskTier: policy.authorization.maxRiskTier');
+    expect(wrapper).toContain('allowedEffects: policy.authorization.allowedEffects');
+    expect(wrapper).toContain('autonomousOnly: policy.authorization.autonomousOnly');
+
+    expect(engine).toContain("toolAuthorization?: Pick<KiaToolAuthorizationContext, 'maxRiskTier' | 'allowedEffects' | 'autonomousOnly'>");
+    expect(engine).toContain('const effectiveToolAuthorization: KiaToolAuthorizationContext = {');
+    expect(engine).toContain('...input.toolAuthorization');
+    expect(engine).toContain('channel: input.channel');
+    expect(engine).toContain('requestedNames: input.allowedToolNames');
+    expect(engine).toContain('resolveKiaToolDefinitions(effectiveToolAuthorization)');
+    expect(engine).toContain('isKiaToolAuthorized(req.toolName, effectiveToolAuthorization)');
   });
 });

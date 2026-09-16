@@ -16,7 +16,11 @@ import {
 } from './kia-output-schema';
 import type { KiaToolResult } from './kia-tool-definitions';
 import { executeKiaToolCall } from './kia-tool-executor';
-import { isKiaToolAuthorized, resolveKiaToolDefinitions } from './kia-tool-registry';
+import {
+  isKiaToolAuthorized,
+  resolveKiaToolDefinitions,
+  type KiaToolAuthorizationContext,
+} from './kia-tool-registry';
 import { defaultEffortForTask, modelForTask, runKiaProviderRequest, type KiaProviderResult } from './kia-provider-router';
 import { classifyKiaIntent, type KiaIntentClassification } from './kia-intent-classifier';
 import { judgeKiaDecision, JUDGE_REQUIRED_ACTIONS } from './kia-judge-validator';
@@ -57,6 +61,7 @@ export async function runKiaDecision(input: {
   allowTools?: boolean;
   forceToolExecution?: boolean;
   allowedToolNames?: string[];
+  toolAuthorization?: Pick<KiaToolAuthorizationContext, 'maxRiskTier' | 'allowedEffects' | 'autonomousOnly'>;
   mediaUrl?: string;
   mediaType?: string;
   onProgress?: KiaProgressCallback;
@@ -93,10 +98,12 @@ export async function runKiaDecision(input: {
     console.error('[KiaDecision] official source context failed:', safeErrorMessage(err));
     return '';
   });
-  const allowedToolDefinitions = resolveKiaToolDefinitions({
+  const effectiveToolAuthorization: KiaToolAuthorizationContext = {
+    ...input.toolAuthorization,
     channel: input.channel,
     requestedNames: input.allowedToolNames,
-  });
+  };
+  const allowedToolDefinitions = resolveKiaToolDefinitions(effectiveToolAuthorization);
   const mediaInfo = input.mediaUrl ? { url: input.mediaUrl, type: input.mediaType ?? 'image/jpeg' } : null;
 
   const memoriesBlock = formatMemoriesForContext(context.memories ?? []);
@@ -205,10 +212,7 @@ export async function runKiaDecision(input: {
           }
           const iterResults = await Promise.all(
             decision.toolRequests.map((req: KiaToolRequest) => {
-              const authorized = isKiaToolAuthorized(req.toolName, {
-                channel: input.channel,
-                requestedNames: input.allowedToolNames,
-              });
+              const authorized = isKiaToolAuthorized(req.toolName, effectiveToolAuthorization);
               if (!authorized) {
                 return Promise.resolve({
                   toolName: req.toolName,
@@ -337,7 +341,6 @@ export async function runKiaDecision(input: {
   decision = finalizeDecisionPresentation(decision, input.channel, locale);
 
   const totalCost = costEstimates.length ? sumCostEstimates(costEstimates) : null;
-
   await saveKiaDecisionLog({
     decision,
     channel: input.channel,
