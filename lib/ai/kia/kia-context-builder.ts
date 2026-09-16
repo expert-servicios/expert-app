@@ -7,7 +7,7 @@ import { retrieveKiaMemories, type KiaMemory } from './kia-memory-retriever';
 import { loadKiaMemoryV2Context, mergeKiaMemoryContexts } from './kia-memory-v2-context';
 
 export interface KiaContextInput {
-  channel: 'waba' | 'admin' | 'email' | 'dashboard' | 'document';
+  channel: 'waba' | 'telegram' | 'admin' | 'email' | 'dashboard' | 'document';
   phone?: string;
   email?: string;
   userId?: string;
