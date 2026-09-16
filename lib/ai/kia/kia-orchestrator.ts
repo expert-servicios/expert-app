@@ -84,6 +84,16 @@ function shouldClassifyChat(input: Parameters<typeof runKiaDecision>[0]): boolea
     && (input.channel === 'dashboard' || input.channel === 'telegram');
 }
 
+export function shouldFailClosedChatOrchestration(params: {
+  chatEntrypoint: boolean;
+  classificationResolved: boolean;
+  skillId: string | null;
+  needsClarification: boolean;
+}): boolean {
+  return params.needsClarification
+    || (params.chatEntrypoint && (!params.classificationResolved || params.skillId === null));
+}
+
 export async function runKiaOrchestratedDecision(params: {
   input: Parameters<typeof runKiaDecision>[0];
   policyAuthorization: KiaToolAuthorizationContext;
@@ -116,13 +126,13 @@ export async function runKiaOrchestratedDecision(params: {
     policyToolNames: params.policyToolNames,
   });
 
-  // Conversational entrypoints fail closed for tools when classification is
-  // ambiguous, unavailable, or does not resolve a concrete skill. The model
-  // can still answer conversationally, but it cannot inherit the whole policy
-  // surface by default.
   const needsClarification = classification?.needsClarify === true && classification.ambiguityScore >= 0.7;
-  const unresolvedChat = shouldClassifyChat(input) && (!classification || plan.skillId === null);
-  const orchestrationFailClosed = needsClarification || unresolvedChat;
+  const orchestrationFailClosed = shouldFailClosedChatOrchestration({
+    chatEntrypoint: shouldClassifyChat(input),
+    classificationResolved: classification !== null,
+    skillId: plan.skillId,
+    needsClarification,
+  });
   const effectiveTaskType = needsClarification ? 'chat_reply' : plan.resolvedTaskType;
   const effectiveToolNames = orchestrationFailClosed ? [] : plan.toolNames;
   const effectiveAuthorization: KiaToolAuthorizationContext = {
