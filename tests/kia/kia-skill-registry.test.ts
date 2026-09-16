@@ -10,7 +10,7 @@ describe('KIA M6.1 skill registry', () => {
   it('is internally valid and has unique enabled skills', () => {
     expect(() => assertKiaSkillRegistryValid()).not.toThrow();
     const skills = getKiaSkillRegistry();
-    expect(skills.length).toBeGreaterThanOrEqual(4);
+    expect(skills.length).toBeGreaterThanOrEqual(5);
     expect(new Set(skills.map((skill) => skill.id)).size).toBe(skills.length);
   });
 
@@ -30,6 +30,23 @@ describe('KIA M6.1 skill registry', () => {
       maxRiskTier: 'R1',
     });
     expect(selected?.requiredToolCapabilities).toContain('holded_read');
+  });
+
+  it('selects labor payroll diagnostics by explicit intent', () => {
+    const selected = selectKiaSkill({
+      taskType: 'chat_reply',
+      detectedIntent: 'payroll_diagnostics',
+    });
+    expect(selected).toMatchObject({
+      id: 'labor.payroll_diagnostics',
+      domain: 'labor',
+      preferredSubAgentId: 'labor',
+      maxRiskTier: 'R1',
+    });
+    expect(selected?.requiredToolCapabilities).toEqual(expect.arrayContaining([
+      'client_data',
+      'holded_hr_read',
+    ]));
   });
 
   it('keeps operational skills read-oriented and below R2', () => {
