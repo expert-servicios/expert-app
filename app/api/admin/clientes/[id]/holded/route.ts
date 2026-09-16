@@ -4,6 +4,8 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { isStaffRole } from '@/lib/auth/roles';
 import { encryptSecret, decryptSecret, keyLast4 } from '@/lib/security/encryption';
 import { createHoldedClientFromRawKey, isEncryptionConfigured } from '@/lib/integrations/holded/holded-client';
+import { detectHoldedLaborPermissions } from '@/lib/integrations/holded/holded-labor-permissions';
+import { forceHoldedReadOnly, type HoldedPermissions } from '@/lib/integrations/holded/holded-permissions';
 import { holdedErrorMessage } from '@/lib/integrations/holded/holded-errors';
 
 const bodySchema = z.discriminatedUnion('action', [
@@ -54,6 +56,21 @@ async function getIntegration(admin: ReturnType<typeof getSupabaseAdmin>, compan
   return data;
 }
 
+async function detectAllPermissions(rawApiKey: string) {
+  const client = createHoldedClientFromRawKey(rawApiKey);
+  const [testResult, laborPermissions] = await Promise.all([
+    client.testConnection(),
+    detectHoldedLaborPermissions(rawApiKey),
+  ]);
+  return {
+    ...testResult,
+    permissions: forceHoldedReadOnly({
+      ...testResult.permissions,
+      ...laborPermissions,
+    } as HoldedPermissions),
+  };
+}
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const auth = await requireStaff(request);
@@ -90,10 +107,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (parsed.data.action === 'connect') {
       if (!isEncryptionConfigured()) return NextResponse.json({ error: 'Cifrado de credenciales no configurado' }, { status: 503 });
-      const client = createHoldedClientFromRawKey(parsed.data.apiKey);
       let testResult;
       try {
-        testResult = await client.testConnection();
+        testResult = await detectAllPermissions(parsed.data.apiKey);
       } catch (error) {
         return NextResponse.json({ error: `No se pudo conectar con Holded: ${holdedErrorMessage(error)}` }, { status: 502 });
       }
@@ -153,7 +169,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (secretError || !secret?.encrypted_api_key) return NextResponse.json({ error: 'No se encontró la credencial cifrada de Holded' }, { status: 409 });
     let result;
     try {
-      result = await createHoldedClientFromRawKey(decryptSecret(secret.encrypted_api_key)).testConnection();
+      const rawApiKey = decryptSecret(secret.encrypted_api_key);
+      const [baseResult, laborPermissions] = await Promise.all([
+        createHoldedClientFromRawKey(decryptSecret(secret.encrypted_api_key)).testConnection(),
+        detectHoldedLaborPermissions(rawApiKey),
+      ]);
+      result = {
+        ...baseResult,
+        permissions: forceHoldedReadOnly({
+          ...baseResult.permissions,
+          ...laborPermissions,
+        } as HoldedPermissions),
+      };
     } catch (error) {
       const message = holdedErrorMessage(error);
       await admin.from('client_integrations').update({ last_error: message, updated_at: new Date().toISOString() }).eq('id', integration.id);
@@ -162,6 +189,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const now = new Date().toISOString();
     const { data: updated } = await admin.from('client_integrations').update({
       permissions_detected: result.permissions,
+      permissions_enabled: forceHoldedReadOnly({
+        ...result.permissions,
+        ...(integration.permissions_enabled ?? {}),
+        laborEmployeesRead: (integration.permissions_enabled as Record<string, unknown> | null)?.laborEmployeesRead as boolean | undefined ?? result.permissions.laborEmployeesRead,
+        laborPayrollsRead: (integration.permissions_enabled as Record<string, unknown> | null)?.laborPayrollsRead as boolean | undefined ?? result.permissions.laborPayrollsRead,
+        laborEmployeesWrite: false,
+        laborPayrollsWrite: false,
+      } as HoldedPermissions),
       last_success_at: result.ok ? now : integration.last_success_at,
       last_error: result.ok ? null : result.warnings.join('; '),
       updated_at: now,

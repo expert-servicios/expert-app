@@ -1,19 +1,9 @@
 'use client';
 
 import { Check, X, AlertTriangle } from 'lucide-react';
+import type { HoldedPermissions } from '@/lib/integrations/holded/holded-permissions';
 
-export interface HoldedPermissions {
-  contacts          : boolean;
-  salesInvoices     : boolean;
-  purchaseInvoices  : boolean;
-  taxes             : boolean;
-  bankAccounts      : boolean;
-  bankMovements     : boolean;
-  inboxDocuments    : boolean;
-  writeInbox        : boolean;
-  accountingReports : boolean;
-  accountingEntries : boolean;
-}
+export type { HoldedPermissions } from '@/lib/integrations/holded/holded-permissions';
 
 const PERMISSION_LABELS: Array<{ key: keyof HoldedPermissions; label: string; required: boolean }> = [
   { key: 'salesInvoices',     label: 'Facturas emitidas',               required: true  },
@@ -25,6 +15,8 @@ const PERMISSION_LABELS: Array<{ key: keyof HoldedPermissions; label: string; re
   { key: 'bankAccounts',      label: 'Cuentas bancarias',               required: false },
   { key: 'bankMovements',     label: 'Movimientos bancarios',           required: false },
   { key: 'inboxDocuments',    label: 'Bandeja de entrada',              required: false },
+  { key: 'laborEmployeesRead', label: 'Empleados y contratos (solo lectura)', required: false },
+  { key: 'laborPayrollsRead', label: 'Nóminas y registros salariales (solo lectura)', required: false },
 ];
 
 interface Props {
