@@ -61,9 +61,13 @@ describe('KIA policy-enforced decision', () => {
       .toMatchObject({ ok: false, reason: 'missing_scope' });
   });
 
-  it('propagates effective authorization into visibility and execution barriers', () => {
+  it('passes the immutable policy ceiling into post-classification orchestration', () => {
     const wrapper = readFileSync(
       resolve(process.cwd(), 'lib/ai/kia/kia-policy-enforced-decision.ts'),
+      'utf8',
+    );
+    const orchestrator = readFileSync(
+      resolve(process.cwd(), 'lib/ai/kia/kia-orchestrator.ts'),
       'utf8',
     );
     const engine = readFileSync(
@@ -71,18 +75,15 @@ describe('KIA policy-enforced decision', () => {
       'utf8',
     );
 
-    expect(wrapper).toContain('const initialSkillAuthorization = resolveKiaSkillAuthorization({');
-    expect(wrapper).toContain('const effectiveAuthorization = {');
-    expect(wrapper).toContain('toolAuthorization: {');
-    expect(wrapper).toContain('maxRiskTier: effectiveAuthorization.maxRiskTier');
-    expect(wrapper).toContain('allowedEffects: effectiveAuthorization.allowedEffects');
-    expect(wrapper).toContain('autonomousOnly: effectiveAuthorization.autonomousOnly');
+    expect(wrapper).toContain('return runKiaOrchestratedDecision({');
+    expect(wrapper).toContain('policyAuthorization: {');
+    expect(wrapper).toContain('policyToolNames: [...policy.toolNames]');
+    expect(orchestrator).toContain('const resolvedTaskType = resolveTaskAfterClassification');
+    expect(orchestrator).toContain('const plan = resolveKiaOrchestrationPlan({');
+    expect(orchestrator).toContain('allowedToolNames: effectiveToolNames');
+    expect(orchestrator).toContain('maxRiskTier: effectiveAuthorization.maxRiskTier');
 
     expect(engine).toContain("toolAuthorization?: Pick<KiaToolAuthorizationContext, 'maxRiskTier' | 'allowedEffects' | 'autonomousOnly'>");
-    expect(engine).toContain('const effectiveToolAuthorization: KiaToolAuthorizationContext = {');
-    expect(engine).toContain('...input.toolAuthorization');
-    expect(engine).toContain('channel: input.channel');
-    expect(engine).toContain('requestedNames: input.allowedToolNames');
     expect(engine).toContain('resolveKiaToolDefinitions(effectiveToolAuthorization)');
     expect(engine).toContain('isKiaToolAuthorized(req.toolName, effectiveToolAuthorization)');
   });

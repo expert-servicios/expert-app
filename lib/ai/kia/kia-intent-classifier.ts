@@ -59,7 +59,7 @@ function buildClassifierSystemPrompt(): string {
     'Tu unica tarea: dado el mensaje del usuario y los ultimos mensajes, devolver un JSON de clasificacion.',
     '',
     '<task_type_guide>',
-    '- waba_reply: saludo, estado expediente, pregunta general, respuesta a quickReply',
+    '- chat_reply: saludo, estado expediente, pregunta general o respuesta conversacional',
     '- viability_reasoning: servicios con filtro juridico (arraigo, nacionalidad, NIE, residencia, Beckham, patrimonio, modelo 720)',
     '- readiness_reasoning: servicios que requieren Holded (contabilidad, plan mensual, migracion Holded)',
     '- checkout_decision: usuario quiere contratar, pagar o preguntar precio',
@@ -74,7 +74,6 @@ function buildClassifierSystemPrompt(): string {
     '- ambiguityScore 0.7-1.0: genuinamente ambiguo, needsClarify=true',
     '- needsClarify=true SOLO si no puedes determinar la tarea ni el servicio con confianza',
     '- saludos, presentaciones y "hola" son ambiguityScore=0.3, needsClarify=false',
-    '- si el usuario ya eligio una opcion en quickReply, ambiguityScore=0.1',
     '</ambiguity_guide>',
     '',
     '<clarify_guide>',
@@ -116,7 +115,7 @@ function parseClassification(raw: string): KiaIntentClassification | null {
 
     const suggestedTaskType = KIA_TASK_TYPES.includes(parsed.suggestedTaskType as KiaTaskType)
       ? (parsed.suggestedTaskType as KiaTaskType)
-      : 'waba_reply';
+      : 'chat_reply';
     const detectedIntent = KIA_INTENTS.includes(parsed.detectedIntent as (typeof KIA_INTENTS)[number])
       ? (parsed.detectedIntent as (typeof KIA_INTENTS)[number])
       : 'unknown';

@@ -50,17 +50,17 @@ describe('KIA policy authorization snapshot', () => {
     });
   });
 
-  it('overrides caller channel and allowlist after effective authorization and input spread', () => {
+  it('overrides caller channel before orchestration and preserves policy names as ceiling', () => {
     const source = readFileSync(
       resolve(process.cwd(), 'lib/ai/kia/kia-policy-enforced-decision.ts'),
       'utf8',
     );
     const spread = source.indexOf('...input');
-    const channel = source.indexOf('channel: effectiveAuthorization.channel');
-    const allowlist = source.indexOf('allowedToolNames: effectiveToolNames');
+    const channel = source.indexOf('channel: policy.authorization.channel');
+    const policyNames = source.indexOf('policyToolNames: [...policy.toolNames]');
 
     expect(spread).toBeGreaterThan(-1);
     expect(channel).toBeGreaterThan(spread);
-    expect(allowlist).toBeGreaterThan(channel);
+    expect(policyNames).toBeGreaterThan(channel);
   });
 });
