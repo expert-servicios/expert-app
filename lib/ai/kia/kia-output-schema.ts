@@ -38,6 +38,7 @@ export const KIA_INTENTS = [
   'accounting_summary',
   'document_classification',
   'anomaly_review',
+  'payroll_diagnostics',
   'company_data_resolve',
   'company_data_confirm',
   'company_data_reject',
@@ -89,9 +90,9 @@ export const kiaToolRequestSchema = z.object({
 });
 
 export const kiaQuickReplySchema = z.object({
-  id:    z.string().min(1).max(256),
+  id: z.string().min(1).max(256),
   title: z.string().min(1).max(20),
-  kind:  z.enum(KIA_QUICK_REPLY_KINDS).default('secondary'),
+  kind: z.enum(KIA_QUICK_REPLY_KINDS).default('secondary'),
 });
 
 export const kiaDecisionSchema = z.object({
@@ -180,9 +181,9 @@ export const KIA_DECISION_JSON_SCHEMA = {
         additionalProperties: false,
         required: ['id', 'title', 'kind'],
         properties: {
-          id:    { type: 'string' },
+          id: { type: 'string' },
           title: { type: 'string', maxLength: 20 },
-          kind:  { enum: KIA_QUICK_REPLY_KINDS },
+          kind: { enum: KIA_QUICK_REPLY_KINDS },
         },
       },
     },
