@@ -35,10 +35,16 @@ describe('KIA Memory v2 runtime guards', () => {
     }))).toContain('missing_anchor:user');
   });
 
-  it('allows knowledge retrieval without entity anchors', () => {
+  it('requires tenant anchoring for knowledge retrieval', () => {
     expect(validateKiaMemoryReadRequest(readRequest({
       scopes: ['knowledge'],
       companyId: null,
+      tenantId: null,
+    }))).toContain('missing_anchor:knowledge_tenant');
+    expect(validateKiaMemoryReadRequest(readRequest({
+      scopes: ['knowledge'],
+      companyId: null,
+      tenantId: '22222222-2222-2222-2222-222222222222',
     }))).toEqual([]);
   });
 
@@ -48,10 +54,10 @@ describe('KIA Memory v2 runtime guards', () => {
     expect(validateKiaMemoryReadRequest(readRequest({ principal: ' ' }))).toContain('missing_principal');
   });
 
-  it('enforces memory-level read principals', () => {
+  it('enforces exact memory-level read principals', () => {
     expect(canPrincipalReadKiaMemory({ read: ['kia:professional'] }, 'kia:professional')).toBe(true);
     expect(canPrincipalReadKiaMemory({ read: ['kia:admin'] }, 'kia:professional')).toBe(false);
-    expect(canPrincipalReadKiaMemory({ read: ['kia'] }, 'kia:professional')).toBe(true);
+    expect(canPrincipalReadKiaMemory({ read: ['kia'] }, 'kia:professional')).toBe(false);
     expect(canPrincipalReadKiaMemory({ read: ['*'] }, 'kia:professional')).toBe(true);
     expect(canPrincipalReadKiaMemory({}, 'kia:professional')).toBe(false);
   });

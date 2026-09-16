@@ -78,7 +78,7 @@ export function canPrincipalReadKiaMemory(
   principal: string,
 ): boolean {
   const readers = permissions.read ?? [];
-  return readers.includes('*') || readers.includes('kia') || readers.includes(principal);
+  return readers.includes('*') || readers.includes(principal);
 }
 
 export function validateKiaMemoryReadRequest(input: KiaMemoryV2ReadInput): string[] {
@@ -93,6 +93,7 @@ export function validateKiaMemoryReadRequest(input: KiaMemoryV2ReadInput): strin
     if (scope === 'company' && !input.companyId) errors.push('missing_anchor:company');
     if (scope === 'case' && !input.caseId) errors.push('missing_anchor:case');
     if (scope === 'professional' && !input.professionalId) errors.push('missing_anchor:professional');
+    if (scope === 'knowledge' && !input.tenantId) errors.push('missing_anchor:knowledge_tenant');
   }
 
   return [...new Set(errors)];

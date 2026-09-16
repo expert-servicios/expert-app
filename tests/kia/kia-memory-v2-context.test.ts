@@ -30,15 +30,31 @@ function v2(overrides: Partial<KiaMemoryV2Record> = {}): KiaMemoryV2Record {
 }
 
 describe('KIA Memory v2 context adapter', () => {
-  it('selects only scopes backed by available context anchors', () => {
+  it('selects only explicitly authorized scopes backed by available context anchors', () => {
     expect(resolveKiaMemoryV2Scopes({
       clientId: 'client-1',
       companyId: 'company-1',
-      caseId: 'case-1',
-    })).toEqual(['user', 'company', 'case', 'knowledge']);
+      caseId: 'untrusted-case-1',
+    })).toEqual(['user', 'company']);
 
-    expect(resolveKiaMemoryV2Scopes({ includeKnowledge: false })).toEqual([]);
-    expect(resolveKiaMemoryV2Scopes({ professionalId: 'p-1' })).toEqual(['professional', 'knowledge']);
+    expect(resolveKiaMemoryV2Scopes({
+      clientId: 'client-1',
+      companyId: 'company-1',
+      authorizedCaseId: 'case-1',
+    })).toEqual(['user', 'company', 'case']);
+
+    expect(resolveKiaMemoryV2Scopes({
+      clientId: 'client-1',
+      tenantId: 'tenant-1',
+      includeKnowledge: true,
+    })).toEqual(['user', 'knowledge']);
+
+    expect(resolveKiaMemoryV2Scopes({
+      tenantId: 'tenant-1',
+      includeKnowledge: false,
+    })).toEqual([]);
+
+    expect(resolveKiaMemoryV2Scopes({ professionalId: 'p-1' })).toEqual(['professional']);
   });
 
   it('maps v2 records into the legacy prompt memory shape', () => {
