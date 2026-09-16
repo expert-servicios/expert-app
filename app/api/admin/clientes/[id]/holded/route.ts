@@ -124,7 +124,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         permissions_detected: testResult.permissions,
         permissions_enabled: testResult.permissions,
         status: 'active', sync_mode: 'read_only', last_success_at: now, last_error: null,
-        connected_by: actorId, consent_at: now, consent_version: 'admin-client-360-v2',
+        connected_by: actorId, consent_at: now, consent_version: 'admin-client-360-v1',
         disconnected_at: null, updated_at: now,
       };
 
@@ -169,7 +169,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (secretError || !secret?.encrypted_api_key) return NextResponse.json({ error: 'No se encontró la credencial cifrada de Holded' }, { status: 409 });
     let result;
     try {
-      result = await detectAllPermissions(decryptSecret(secret.encrypted_api_key));
+      const rawApiKey = decryptSecret(secret.encrypted_api_key);
+      const [baseResult, laborPermissions] = await Promise.all([
+        createHoldedClientFromRawKey(decryptSecret(secret.encrypted_api_key)).testConnection(),
+        detectHoldedLaborPermissions(rawApiKey),
+      ]);
+      result = {
+        ...baseResult,
+        permissions: forceHoldedReadOnly({
+          ...baseResult.permissions,
+          ...laborPermissions,
+        } as HoldedPermissions),
+      };
     } catch (error) {
       const message = holdedErrorMessage(error);
       await admin.from('client_integrations').update({ last_error: message, updated_at: new Date().toISOString() }).eq('id', integration.id);
