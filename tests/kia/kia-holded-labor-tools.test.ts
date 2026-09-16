@@ -79,18 +79,27 @@ describe('KIA Holded labor tools', () => {
     expect(labor).not.toMatch(/\.(create|update|delete|post|put)\w*\(/i);
   });
 
-  it('builds diagnostics from employee, contract, calculated payslips and separate salary records', () => {
-    const diagnostic = source('lib/ai/kia/kia-labor-payroll-diagnostics.ts');
-    expect(diagnostic).toContain("resolveKiaCompanyHoldedAccess(admin, context, 'laborEmployeesRead')");
-    expect(diagnostic).toContain('permissionsEnabled.laborPayrollsRead !== true');
-    expect(diagnostic).toContain('client.getEmployee(employeeId)');
-    expect(diagnostic).toContain('client.getActiveContract(employeeId)');
-    expect(diagnostic).toContain('client.listPayslips');
-    expect(diagnostic).toContain('client.listSalaryRecords');
-    expect(diagnostic).toContain('contribution_bases');
-    expect(diagnostic).toContain('detectIrpf');
-    expect(diagnostic).toContain("source: 'holded_api_v2_read_only'");
-    expect(diagnostic).not.toMatch(/\.(create|update|delete|post|put)\w*\(/i);
+  it('builds diagnostics through the Holded adapter and pure diagnostic engine', () => {
+    const adapter = source('lib/ai/kia/kia-labor-payroll-diagnostics.ts');
+    const engine = source('lib/ai/kia/kia-labor-payroll-engine.ts');
+
+    expect(adapter).toContain("resolveKiaCompanyHoldedAccess(admin, context, 'laborEmployeesRead')");
+    expect(adapter).toContain('permissionsEnabled.laborPayrollsRead !== true');
+    expect(adapter).toContain('client.getEmployee(employeeId)');
+    expect(adapter).toContain('client.getActiveContract(employeeId)');
+    expect(adapter).toContain('client.listPayslips');
+    expect(adapter).toContain('client.listSalaryRecords');
+    expect(adapter).toContain('analyzeLaborPayrollSnapshot');
+    expect(adapter).toContain("source: 'holded_api_v2_read_only'");
+
+    expect(engine).toContain('detectIrpf');
+    expect(engine).toContain('contributionBasesAvailable');
+    expect(engine).toContain('contribution_bases_missing');
+    expect(engine).toContain('salaryRecords');
+    expect(engine).toContain('manual_salary_records_present');
+
+    expect(adapter).not.toMatch(/\.(create|update|delete|post|put)\w*\(/i);
+    expect(engine).not.toMatch(/\.(create|update|delete|post|put)\w*\(/i);
   });
 
   it('removes client fallback from existing KIA Holded data tools', () => {
