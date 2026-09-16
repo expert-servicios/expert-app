@@ -23,10 +23,14 @@ export interface KiaSkillAuthorizationResolution {
   toolNames: string[];
 }
 
+export type KiaSkillSelectionBasis = 'requested_task' | 'resolved_task' | 'resolved_intent';
+
 export interface KiaSkillExecutionTrace {
   version: '1.0';
   requestedTaskType: KiaTaskType;
-  selectionBasis: 'requested_task';
+  resolvedTaskType: KiaTaskType;
+  detectedIntent: string | null;
+  selectionBasis: KiaSkillSelectionBasis;
   skillId: string | null;
   skillVersion: string | null;
   preferredSubAgentId: string | null;
@@ -94,13 +98,18 @@ export function resolveKiaSkillAuthorization(params: {
 
 export function buildKiaSkillExecutionTrace(params: {
   taskType: KiaTaskType;
+  resolvedTaskType?: KiaTaskType;
+  detectedIntent?: string | null;
+  selectionBasis?: KiaSkillSelectionBasis;
   resolution: KiaSkillAuthorizationResolution;
   lateClassificationFailClosed?: boolean;
 }): KiaSkillExecutionTrace {
   return {
     version: '1.0',
     requestedTaskType: params.taskType,
-    selectionBasis: 'requested_task',
+    resolvedTaskType: params.resolvedTaskType ?? params.taskType,
+    detectedIntent: params.detectedIntent ?? null,
+    selectionBasis: params.selectionBasis ?? 'requested_task',
     skillId: params.resolution.skill?.id ?? null,
     skillVersion: params.resolution.skill?.version ?? null,
     preferredSubAgentId: params.resolution.skill?.preferredSubAgentId ?? null,
