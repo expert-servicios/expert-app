@@ -61,7 +61,7 @@ describe('KIA policy-enforced decision', () => {
       .toMatchObject({ ok: false, reason: 'missing_scope' });
   });
 
-  it('propagates the narrowed authorization snapshot into visibility and execution barriers', () => {
+  it('propagates effective authorization into visibility and execution barriers', () => {
     const wrapper = readFileSync(
       resolve(process.cwd(), 'lib/ai/kia/kia-policy-enforced-decision.ts'),
       'utf8',
@@ -71,11 +71,12 @@ describe('KIA policy-enforced decision', () => {
       'utf8',
     );
 
-    expect(wrapper).toContain('const skillAuthorization = resolveKiaSkillAuthorization({');
+    expect(wrapper).toContain('const initialSkillAuthorization = resolveKiaSkillAuthorization({');
+    expect(wrapper).toContain('const effectiveAuthorization = {');
     expect(wrapper).toContain('toolAuthorization: {');
-    expect(wrapper).toContain('maxRiskTier: skillAuthorization.authorization.maxRiskTier');
-    expect(wrapper).toContain('allowedEffects: skillAuthorization.authorization.allowedEffects');
-    expect(wrapper).toContain('autonomousOnly: skillAuthorization.authorization.autonomousOnly');
+    expect(wrapper).toContain('maxRiskTier: effectiveAuthorization.maxRiskTier');
+    expect(wrapper).toContain('allowedEffects: effectiveAuthorization.allowedEffects');
+    expect(wrapper).toContain('autonomousOnly: effectiveAuthorization.autonomousOnly');
 
     expect(engine).toContain("toolAuthorization?: Pick<KiaToolAuthorizationContext, 'maxRiskTier' | 'allowedEffects' | 'autonomousOnly'>");
     expect(engine).toContain('const effectiveToolAuthorization: KiaToolAuthorizationContext = {');
