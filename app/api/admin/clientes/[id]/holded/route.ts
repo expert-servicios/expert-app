@@ -5,7 +5,11 @@ import { isStaffRole } from '@/lib/auth/roles';
 import { encryptSecret, decryptSecret, keyLast4 } from '@/lib/security/encryption';
 import { createHoldedClientFromRawKey, isEncryptionConfigured } from '@/lib/integrations/holded/holded-client';
 import { detectHoldedLaborPermissions } from '@/lib/integrations/holded/holded-labor-permissions';
-import { forceHoldedReadOnly, type HoldedPermissions } from '@/lib/integrations/holded/holded-permissions';
+import {
+  intersectHoldedReadPermissions,
+  normalizeDetectedHoldedPermissions,
+  type HoldedPermissions,
+} from '@/lib/integrations/holded/holded-permissions';
 import { holdedErrorMessage } from '@/lib/integrations/holded/holded-errors';
 
 const bodySchema = z.discriminatedUnion('action', [
@@ -14,9 +18,10 @@ const bodySchema = z.discriminatedUnion('action', [
     companyId: z.string().uuid(),
     apiKey: z.string().trim().min(8).max(256),
     consentConfirmed: z.literal(true),
-  }),
-  z.object({ action: z.literal('test_stored'), companyId: z.string().uuid() }),
-  z.object({ action: z.literal('disconnect'), companyId: z.string().uuid() }),
+    laborReadAuthorized: z.boolean().default(false),
+  }).strict(),
+  z.object({ action: z.literal('test_stored'), companyId: z.string().uuid() }).strict(),
+  z.object({ action: z.literal('disconnect'), companyId: z.string().uuid() }).strict(),
 ]);
 
 const SAFE_COLUMNS = 'id,client_id,company_id,provider,mode,api_key_last4,permissions_detected,permissions_enabled,status,sync_mode,last_sync_at,last_success_at,last_error,consent_at,consent_version,created_at,updated_at';
@@ -64,10 +69,10 @@ async function detectAllPermissions(rawApiKey: string) {
   ]);
   return {
     ...testResult,
-    permissions: forceHoldedReadOnly({
+    permissions: normalizeDetectedHoldedPermissions({
       ...testResult.permissions,
       ...laborPermissions,
-    } as HoldedPermissions),
+    } as Partial<HoldedPermissions>),
   };
 }
 
@@ -118,22 +123,28 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const now = new Date().toISOString();
       const encryptedApiKey = encryptSecret(parsed.data.apiKey);
       const existing = await getIntegration(admin, companyId);
+      const requestedPermissions: Partial<HoldedPermissions> = {
+        ...testResult.permissions,
+        laborEmployeesRead: parsed.data.laborReadAuthorized,
+        laborPayrollsRead: parsed.data.laborReadAuthorized,
+      };
+      const enabledPermissions = intersectHoldedReadPermissions(testResult.permissions, requestedPermissions);
       const payload = {
-        provider: 'holded', mode: 'client_account', company_id: companyId,
+        provider: 'holded', mode: 'client_account', client_id: clientId, company_id: companyId,
         api_key_last4: keyLast4(parsed.data.apiKey),
         permissions_detected: testResult.permissions,
-        permissions_enabled: testResult.permissions,
+        permissions_enabled: enabledPermissions,
         status: 'active', sync_mode: 'read_only', last_success_at: now, last_error: null,
-        connected_by: actorId, consent_at: now, consent_version: 'admin-client-360-v1',
+        connected_by: actorId, consent_at: now, consent_version: 'admin-client-360-v2',
         disconnected_at: null, updated_at: now,
       };
 
       let integration;
       if (existing?.id) {
-        const { data, error } = await admin.from('client_integrations').update(payload).eq('id', existing.id).select(SAFE_COLUMNS).single();
-        if (error || !data) return NextResponse.json({ error: 'No se pudo actualizar la integración' }, { status: 500 });
         const { error: secretError } = await admin.from('client_integration_secrets').upsert({ integration_id: existing.id, encrypted_api_key: encryptedApiKey, updated_at: now });
         if (secretError) return NextResponse.json({ error: 'No se pudo guardar la credencial cifrada' }, { status: 500 });
+        const { data, error } = await admin.from('client_integrations').update(payload).eq('id', existing.id).select(SAFE_COLUMNS).single();
+        if (error || !data) return NextResponse.json({ error: 'No se pudo actualizar la integración' }, { status: 500 });
         integration = data;
       } else {
         const { data, error } = await admin.from('client_integrations').insert({ ...payload, created_at: now }).select(SAFE_COLUMNS).single();
@@ -148,7 +159,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       await admin.from('audit_logs').insert({
         actor_id: actorId, action: 'holded.admin_connected', entity: 'companies', entity_id: companyId,
-        metadata: { client_id: clientId, integration_id: integration.id, sync_mode: 'read_only' },
+        metadata: {
+          client_id: clientId,
+          integration_id: integration.id,
+          sync_mode: 'read_only',
+          labor_read_authorized: parsed.data.laborReadAuthorized,
+        },
       }).then(() => {});
       return NextResponse.json({ ok: true, integration, warnings: testResult.warnings });
     }
@@ -170,33 +186,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     let result;
     try {
       const rawApiKey = decryptSecret(secret.encrypted_api_key);
-      const [baseResult, laborPermissions] = await Promise.all([
-        createHoldedClientFromRawKey(decryptSecret(secret.encrypted_api_key)).testConnection(),
-        detectHoldedLaborPermissions(rawApiKey),
-      ]);
-      result = {
-        ...baseResult,
-        permissions: forceHoldedReadOnly({
-          ...baseResult.permissions,
-          ...laborPermissions,
-        } as HoldedPermissions),
-      };
+      result = await detectAllPermissions(rawApiKey);
     } catch (error) {
       const message = holdedErrorMessage(error);
       await admin.from('client_integrations').update({ last_error: message, updated_at: new Date().toISOString() }).eq('id', integration.id);
       return NextResponse.json({ ok: false, error: message }, { status: 502 });
     }
     const now = new Date().toISOString();
+    const enabledPermissions = intersectHoldedReadPermissions(
+      result.permissions,
+      (integration.permissions_enabled ?? {}) as Partial<HoldedPermissions>,
+    );
     const { data: updated } = await admin.from('client_integrations').update({
       permissions_detected: result.permissions,
-      permissions_enabled: forceHoldedReadOnly({
-        ...result.permissions,
-        ...(integration.permissions_enabled ?? {}),
-        laborEmployeesRead: (integration.permissions_enabled as Record<string, unknown> | null)?.laborEmployeesRead as boolean | undefined ?? result.permissions.laborEmployeesRead,
-        laborPayrollsRead: (integration.permissions_enabled as Record<string, unknown> | null)?.laborPayrollsRead as boolean | undefined ?? result.permissions.laborPayrollsRead,
-        laborEmployeesWrite: false,
-        laborPayrollsWrite: false,
-      } as HoldedPermissions),
+      permissions_enabled: enabledPermissions,
       last_success_at: result.ok ? now : integration.last_success_at,
       last_error: result.ok ? null : result.warnings.join('; '),
       updated_at: now,
