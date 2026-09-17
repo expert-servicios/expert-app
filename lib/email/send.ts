@@ -18,6 +18,25 @@ interface SendEmailOptions {
   idempotencyKey?: string;
 }
 
+const LEGACY_SERVICE_FEE_COPY =
+  'La tasa administrativa del Ministerio de Justicia no está incluida en este importe y se abonará aparte.';
+const LEGACY_SERVICE_FEE_NEXT_STEP =
+  'Te avisaremos cuando el expediente esté listo para el pago de la tasa administrativa.';
+
+export function normalizeServicePaymentConfirmationHtml(eventType: string, html: string): string {
+  if (eventType !== 'service.payment.confirmed') return html;
+
+  return html
+    .replaceAll(
+      LEGACY_SERVICE_FEE_COPY,
+      'El importe cobrado y su desglose corresponden a lo confirmado en Stripe. Si el servicio incluye una tasa oficial como suplido, se gestiona separadamente de los honorarios profesionales.',
+    )
+    .replaceAll(
+      LEGACY_SERVICE_FEE_NEXT_STEP,
+      'Te indicaremos los siguientes pasos y cualquier documentación pendiente.',
+    );
+}
+
 function stringMetadata(metadata: Record<string, unknown> | undefined, key: string): string | null {
   const value = metadata?.[key];
   return typeof value === 'string' && value.trim() ? value.trim() : null;
@@ -82,6 +101,7 @@ export async function sendEmail({
   const recipients = Array.isArray(to) ? to : [to];
   const supabase = getSupabaseAdmin();
   const effectiveIdempotencyKey = idempotencyKey ?? deriveIdempotencyKey(eventType, metadata);
+  const deliveredHtml = normalizeServicePaymentConfirmationHtml(eventType, html);
 
   if (effectiveIdempotencyKey) {
     if (effectiveIdempotencyKey.length > 256) {
@@ -97,7 +117,7 @@ export async function sendEmail({
     from: BRAND.from,
     to: recipients,
     subject,
-    html,
+    html: deliveredHtml,
     ...(attachments?.length
       ? {
           attachments: attachments.map((a) => ({
@@ -121,7 +141,7 @@ export async function sendEmail({
           event_type: eventType,
           recipient_email: email,
           subject,
-          html,
+          html: deliveredHtml,
           resend_id: null,
           status: 'failed',
           last_error: errMsg,
@@ -140,7 +160,7 @@ export async function sendEmail({
         event_type: eventType,
         recipient_email: email,
         subject,
-        html,
+        html: deliveredHtml,
         resend_id: resendId,
         status: 'sent',
         metadata: eventMetadata
