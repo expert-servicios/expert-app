@@ -7,6 +7,7 @@ export interface KiaGuidanceCardProps {
   state: KiaAvatarState;
   title: string;
   message: string;
+  detail?: string;
   eyebrow?: string;
   className?: string;
   compact?: boolean;
@@ -24,6 +25,7 @@ export function KiaGuidanceCard({
   state,
   title,
   message,
+  detail,
   eyebrow = 'KIA · Tu copiloto',
   className = '',
   compact = false,
@@ -45,6 +47,9 @@ export function KiaGuidanceCard({
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#c88b25]">{eyebrow}</p>
         <p className="mt-1 text-sm font-semibold text-[#07111d]">{title}</p>
         <p className="mt-1 text-xs leading-relaxed text-[#29384a]/75">{message}</p>
+        {detail && (
+          <p className="mt-2 text-[11px] font-medium text-[#29384a]/60">{detail}</p>
+        )}
       </div>
     </aside>
   );
