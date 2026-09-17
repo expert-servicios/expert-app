@@ -1,0 +1,58 @@
+name: Temporary KIA legacy permission fix
+
+on:
+  push:
+    branches:
+      - fix/holded-kia-hardening-main
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/holded-kia-hardening-main
+          fetch-depth: 0
+      - name: Preserve legacy non-labor reads in KIA context
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('lib/ai/kia/kia-context-builder.ts')
+          s = p.read_text(encoding='utf-8')
+          import_anchor = "import { getSupabaseAdmin } from '@/lib/integrations/supabase';\n"
+          import_line = "import { intersectHoldedReadPermissions, normalizeDetectedHoldedPermissions } from '@/lib/integrations/holded/holded-permissions';\n"
+          if import_line not in s:
+              s = s.replace(import_anchor, import_anchor + import_line, 1)
+
+          old = """  const connected = integration?.status === 'active';\n  const detected = connected ? integration?.permissions_detected ?? {} : {};\n  const enabled = connected ? integration?.permissions_enabled ?? {} : {};\n"""
+          new = """  const connected = integration?.status === 'active';\n  const detected = connected\n    ? normalizeDetectedHoldedPermissions(integration?.permissions_detected ?? {})\n    : normalizeDetectedHoldedPermissions({});\n  const legacyRequested = {\n    ...detected,\n    writeInbox: false,\n    laborEmployeesRead: false,\n    laborPayrollsRead: false,\n    laborEmployeesWrite: false,\n    laborPayrollsWrite: false,\n  };\n  const enabled = connected\n    ? intersectHoldedReadPermissions(\n        detected,\n        integration?.permissions_enabled ?? legacyRequested,\n      )\n    : normalizeDetectedHoldedPermissions({});\n"""
+          if old not in s:
+              raise SystemExit('KIA context permission block not found')
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding='utf-8')
+
+          t = Path('tests/kia/kia-holded-audit-boundaries.test.ts')
+          ts = t.read_text(encoding='utf-8')
+          marker = """    expect(context).toContain(\".neq('status', 'revoked')\");\n  });\n"""
+          replacement = """    expect(context).toContain(\".neq('status', 'revoked')\");\n    expect(context).toContain('integration?.permissions_enabled ?? legacyRequested');\n    expect(context).toContain('laborEmployeesRead: false');\n    expect(context).toContain('laborPayrollsRead: false');\n    expect(context).toContain('intersectHoldedReadPermissions');\n  });\n"""
+          if marker not in ts:
+              raise SystemExit('KIA audit test marker not found')
+          ts = ts.replace(marker, replacement, 1)
+          t.write_text(ts, encoding='utf-8')
+          PY
+          git rm .github/workflows/tmp-kia-legacy-permission-fix.yml
+      - name: Commit legacy permission compatibility fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix: preserve legacy non-labor Holded permissions in KIA context'
+          git push origin HEAD:fix/holded-kia-hardening-main
