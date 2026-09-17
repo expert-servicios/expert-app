@@ -6,6 +6,11 @@ import { CheckCircle2, XCircle, AlertTriangle, Loader2, RefreshCw, Unplug } from
 import { HoldedPermissionStatus, type HoldedPermissions } from './HoldedPermissionStatus';
 import { HoldedApiKeyForm } from './HoldedApiKeyForm';
 import { HoldedConnectionGuide } from './HoldedConnectionGuide';
+import { KiaGuidanceCard } from '@/components/kia/KiaGuidanceCard';
+import {
+  resolveHoldedIntegrationGuidance,
+  type KiaHoldedConnectionPhase,
+} from '@/lib/ai/kia/kia-surface-guidance';
 
 interface Integration {
   id                  : string;
@@ -40,9 +45,15 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
   const router = useRouter();
   const [integration, setIntegration] = useState<Integration | null>(initialIntegration);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [phase, setPhase] = useState<KiaHoldedConnectionPhase>('idle');
   const [error, setError] = useState('');
 
   const isActive = integration?.status === 'active';
+  const guidance = resolveHoldedIntegrationGuidance({
+    integrationStatus: integration?.status ?? null,
+    phase: disconnecting ? 'disconnecting' : phase,
+    hasUiError: Boolean(error),
+  });
 
   async function handleDisconnect() {
     if (!integration) return;
@@ -65,6 +76,7 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
         return;
       }
       setIntegration(null);
+      setPhase('idle');
       router.refresh();
     } catch {
       setError('No se pudo conectar con el servidor');
@@ -77,6 +89,14 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
   if (isActive && integration) {
     return (
       <div className="space-y-6">
+        <KiaGuidanceCard
+          state={guidance.state}
+          title={guidance.title}
+          message={guidance.message}
+          compact
+          animateOnChange
+        />
+
         {/* Status badge */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -131,6 +151,14 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
   // ── Non-active state (show error if any + form) ────────────────────────────
   return (
     <div className="space-y-6">
+      <KiaGuidanceCard
+        state={guidance.state}
+        title={guidance.title}
+        message={guidance.message}
+        compact
+        animateOnChange
+      />
+
       {integration && !isActive && (
         <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
           {integration.status === 'failed' ? (
@@ -166,7 +194,9 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
         </p>
         <HoldedApiKeyForm
           companyId={companyId}
+          onPhaseChange={setPhase}
           onConnected={(newIntegration) => {
+            setPhase('verified');
             setIntegration(newIntegration as unknown as Integration);
             router.refresh();
           }}
