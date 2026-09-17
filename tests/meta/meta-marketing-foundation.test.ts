@@ -80,4 +80,22 @@ describe('Meta Marketing foundation', () => {
     expect(audit.pilotCandidates.length).toBeLessThanOrEqual(5);
     expect(audit.warningCounts).toBeTypeOf('object');
   });
+
+  it('surfaces commercial inconsistencies without choosing one price source automatically', () => {
+    const audit = auditMetaCatalog();
+    const consistency = audit.commercialConsistency;
+
+    expect(consistency.publicServiceCount).toBeGreaterThan(0);
+    expect(consistency.adminItemCount).toBeGreaterThan(0);
+    expect(consistency.overlappingSlugs).toBeGreaterThan(0);
+    expect(consistency.issues.length).toBeGreaterThan(0);
+    expect(
+      consistency.issues.some((item) =>
+        item.issue === 'price_mismatch' ||
+        item.issue === 'missing_public_fixed_price' ||
+        item.issue === 'missing_admin_item' ||
+        item.issue === 'admin_alias_only'
+      )
+    ).toBe(true);
+  });
 });
