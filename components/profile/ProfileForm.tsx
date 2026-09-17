@@ -6,6 +6,8 @@ import {
   Save, CheckCircle2, MessageCircle, KeyRound,
   Mail, AlertCircle, FileText, MapPin,
 } from 'lucide-react';
+import { KiaGuidanceCard } from '@/components/kia/KiaGuidanceCard';
+import { resolveProfileGuidance } from '@/lib/ai/kia/kia-surface-guidance';
 import { CompanyDataLookup } from './CompanyDataLookup';
 
 interface Props {
@@ -173,6 +175,7 @@ export function ProfileForm({
       if (!res.ok) { setBillingMsg({ text: data.error ?? 'Error al guardar', ok: false }); return; }
       setCurrentBillingReady(data.profile?.billing_ready ?? currentBillingReady);
       setCurrentHabitualReady(data.profile?.habitual_address_ready ?? currentHabitualReady);
+      setCurrentProfileComplete(data.profile?.profile_completed ?? currentProfileComplete);
       setBillingMsg({ text: 'Datos de facturación actualizados.', ok: true });
     } catch {
       setBillingMsg({ text: 'Error de conexión.', ok: false });
@@ -207,9 +210,28 @@ export function ProfileForm({
   };
 
   const isEmpresa = clientType === 'empresa';
+  const statusMessages = [saveMsg, billingMsg, emailMsg, pwdMsg];
+  const hasUiError = statusMessages.some((msg) => Boolean(msg && !msg.ok));
+  const hasRecentSuccess = statusMessages.some((msg) => Boolean(msg?.ok));
+  const kiaGuidance = resolveProfileGuidance({
+    saving: saving || savingBilling || savingEmail || sendingPwd,
+    hasError: hasUiError,
+    hasRecentSuccess,
+    profileCompleted: currentProfileComplete,
+    billingReady: currentBillingReady,
+    habitualAddressReady: currentHabitualReady,
+    isCompany: isEmpresa,
+  });
 
   return (
     <div className="space-y-5">
+      <KiaGuidanceCard
+        state={kiaGuidance.state}
+        title={kiaGuidance.title}
+        message={kiaGuidance.message}
+        detail={kiaGuidance.detail}
+        animateOnChange
+      />
 
       {/* ── Completion badges ────────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-2">
