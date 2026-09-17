@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getMetaMarketingConfigStatus } from '@/lib/integrations/meta/config';
+import { auditMetaCatalog } from '@/lib/integrations/meta/catalog-audit';
 import { mapServiceToMetaCatalogDraft } from '@/lib/integrations/meta/catalog-mapper';
 import type { Service } from '@/lib/utils/catalog';
 
@@ -52,7 +53,7 @@ describe('Meta Marketing foundation', () => {
     expect(item.warnings).toContain('price_requires_manual_review');
   });
 
-  it('maps fixed public prices without treating VAT as included', () => {
+  it('maps fixed public prices, category image and landing without treating VAT as included', () => {
     const service: Service = {
       slug: 'fixed-price-test',
       categoria: 'declaraciones-impuestos',
@@ -66,6 +67,17 @@ describe('Meta Marketing foundation', () => {
 
     const item = mapServiceToMetaCatalogDraft(service);
     expect(item.price).toEqual({ amount: 150, currency: 'EUR', taxIncluded: false });
+    expect(item.imageUrl).toContain('/catalog/fiscal.png');
+    expect(item.landingUrl).toContain('/servicios/declaraciones-impuestos/fixed-price-test');
     expect(item.marketingReady).toBe(true);
+  });
+
+  it('audits the real catalog and selects only ready pilot candidates', () => {
+    const audit = auditMetaCatalog();
+    expect(audit.total).toBeGreaterThan(0);
+    expect(audit.ready + audit.manualReview).toBe(audit.total);
+    expect(audit.byCategory.length).toBeGreaterThan(0);
+    expect(audit.pilotCandidates.length).toBeLessThanOrEqual(5);
+    expect(audit.warningCounts).toBeTypeOf('object');
   });
 });
