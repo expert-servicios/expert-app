@@ -1,0 +1,78 @@
+name: Temporary Holded KIA hardening port
+
+on:
+  push:
+    branches:
+      - fix/holded-kia-hardening-main
+
+permissions:
+  contents: write
+
+jobs:
+  port:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/holded-kia-hardening-main
+          fetch-depth: 0
+      - name: Port reviewed hardening and complete self-service consent
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin audit/holded-kia-hardening
+          git checkout origin/audit/holded-kia-hardening -- \
+            'app/(protected)/admin/clientes/[id]/integraciones/ClientHoldedAdminPanel.tsx' \
+            'app/api/admin/clientes/[id]/holded/route.ts' \
+            'app/api/integrations/holded/connect/route.ts' \
+            'lib/ai/kia/kia-context-builder.ts' \
+            'lib/ai/kia/kia-orchestrator.ts' \
+            'lib/integrations/holded/holded-auth.ts' \
+            'lib/integrations/holded/holded-client.ts' \
+            'lib/integrations/holded/holded-permissions.ts' \
+            'tests/admin/client360-contextual-operations.test.ts' \
+            'tests/holded/holded-permission-policy.test.ts' \
+            'tests/kia/kia-holded-audit-boundaries.test.ts' \
+            'tests/kia/kia-orchestrator.test.ts'
+
+          cat > supabase/migrations/20260916223931_client_integrations_live_provider_uniqueness.sql <<'SQL'
+          -- Local baseline aligned to production migration ledger version 20260916223931.
+          -- Production preflight 2026-09-17 verified both indexes already exist with
+          -- these exact predicates and there are zero live duplicate groups.
+          -- This file is ledger alignment only; do not replay the DDL manually.
+          create unique index if not exists client_integrations_company_provider_live_uidx
+            on public.client_integrations (company_id, provider)
+            where company_id is not null and status <> 'revoked';
+
+          create unique index if not exists client_integrations_client_provider_live_uidx
+            on public.client_integrations (client_id, provider)
+            where company_id is null and client_id is not null and status <> 'revoked';
+          SQL
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('components/integrations/HoldedConsentModal.tsx')
+          s = p.read_text(encoding='utf-8')
+          anchor = """  {\n    key        : 'inboxDocuments',\n    label      : 'Bandeja de documentos',\n    description: 'Documentos recibidos en Holded para revisión contable.',\n    required   : false,\n    defaultOn  : false,\n  },\n"""
+          addition = anchor + """  {\n    key        : 'laborEmployeesRead',\n    label      : 'Empleados y contratos',\n    description: 'Lectura laboral opcional de fichas de empleados, contratos y jornada. Requiere autorización expresa.',\n    required   : false,\n    defaultOn  : false,\n  },\n  {\n    key        : 'laborPayrollsRead',\n    label      : 'Nóminas y registros salariales',\n    description: 'Lectura laboral opcional de nóminas y registros salariales. Requiere autorización expresa.',\n    required   : false,\n    defaultOn  : false,\n  },\n"""
+          if anchor not in s:
+              raise SystemExit('HoldedConsentModal permission anchor not found')
+          s = s.replace(anchor, addition, 1)
+          s = s.replace("const CONSENT_VERSION = '1.0';", "const CONSENT_VERSION = '1.1';", 1)
+          p.write_text(s, encoding='utf-8')
+
+          test = Path('tests/holded/holded-consent-labor.test.ts')
+          test.write_text("""import { readFileSync } from 'node:fs';\nimport { describe, expect, it } from 'vitest';\n\nconst modal = readFileSync('components/integrations/HoldedConsentModal.tsx', 'utf8');\nconst connectRoute = readFileSync('app/api/integrations/holded/connect/route.ts', 'utf8');\n\ndescribe('Holded labor consent surface', () => {\n  it('offers explicit opt-in controls for both labor read capabilities', () => {\n    expect(modal).toContain(\"key        : 'laborEmployeesRead'\");\n    expect(modal).toContain(\"key        : 'laborPayrollsRead'\");\n    expect(modal).toContain('Requiere autorización expresa.');\n  });\n\n  it('keeps labor reads opt-in in the connection contract', () => {\n    expect(connectRoute).toContain('laborEmployeesRead: z.boolean().optional().default(false)');\n    expect(connectRoute).toContain('laborPayrollsRead: z.boolean().optional().default(false)');\n    expect(connectRoute).toContain('laborEmployeesWrite: z.literal(false)');\n    expect(connectRoute).toContain('laborPayrollsWrite: z.literal(false)');\n  });\n});\n""", encoding='utf-8')
+          PY
+
+          git rm .github/workflows/tmp-holded-kia-hardening-port.yml
+      - name: Commit consolidated hardening
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix: consolidate Holded KIA hardening on current main'
+          git push origin HEAD:fix/holded-kia-hardening-main
