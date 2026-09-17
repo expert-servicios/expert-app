@@ -6,7 +6,7 @@ const root = process.cwd();
 const activeDir = resolve(root, 'supabase', 'migrations');
 const forensicDir = resolve(root, 'supabase', 'migration-history-archive', 'pre-baseline-20260912');
 
-const expectedActive = [
+const expectedBaseline = [
   '20260912000100_baseline_public_primitives.sql',
   '20260912000200_baseline_public_tables_001_040.sql',
   '20260912000300_baseline_public_tables_041_080.sql',
@@ -45,25 +45,53 @@ const expectedActive = [
   '20260912003600_baseline_public_acl.sql',
 ];
 
-describe('Supabase active migration baseline layout', () => {
-  it('contains exactly the 36 validated baseline migrations in version order', () => {
-    const actual = readdirSync(activeDir)
-      .filter((name) => name.endsWith('.sql'))
-      .sort();
+const formerProductionTip = '20260911174615';
+const baselineTip = '20260912003600';
+const recoveredRemoteTail = '20260916223931_client_integrations_live_provider_uniqueness.sql';
 
-    expect(actual).toEqual(expectedActive);
-    expect(actual).toHaveLength(36);
+function activeSql(): string[] {
+  return readdirSync(activeDir)
+    .filter((name) => name.endsWith('.sql'))
+    .sort();
+}
+
+describe('Supabase active migration baseline layout', () => {
+  it('keeps the validated 36-file recovery baseline immutable at the start of history', () => {
+    const actual = activeSql();
+
+    expect(actual.slice(0, expectedBaseline.length)).toEqual(expectedBaseline);
+    expect(expectedBaseline).toHaveLength(36);
+  });
+
+  it('allows legitimate post-baseline migrations without reintroducing legacy history', () => {
+    const actual = activeSql();
+    const tail = actual.slice(expectedBaseline.length);
+
+    expect(tail.length).toBeGreaterThan(0);
+    expect(tail).toContain(recoveredRemoteTail);
+
+    const versions = tail.map((filename) => filename.slice(0, 14));
+    expect(versions).toEqual([...versions].sort());
+    expect(new Set(versions).size).toBe(versions.length);
+
+    for (const filename of tail) {
+      expect(filename).toMatch(/^\d{14}_[a-z0-9_]+\.sql$/);
+      expect(filename.slice(0, 14) > baselineTip).toBe(true);
+    }
   });
 
   it('keeps historical SQL outside the active Supabase migration path', () => {
     expect(existsSync(forensicDir)).toBe(true);
     expect(existsSync(resolve(forensicDir, '20260905111000_client360_fiscal_obligations.sql'))).toBe(true);
     expect(existsSync(resolve(activeDir, '20260905111000_client360_fiscal_obligations.sql'))).toBe(false);
+
+    for (const filename of activeSql()) {
+      expect(filename.slice(0, 14) > formerProductionTip).toBe(true);
+    }
   });
 
-  it('keeps all future baseline versions strictly after the former production tip', () => {
-    const formerProductionTip = '20260911174615';
-    for (const filename of expectedActive) {
+  it('keeps all recovery-baseline versions strictly after the former production tip', () => {
+    for (const filename of expectedBaseline) {
       expect(filename.slice(0, 14) > formerProductionTip).toBe(true);
     }
   });
