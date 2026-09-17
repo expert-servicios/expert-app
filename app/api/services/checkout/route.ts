@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
 
     const session = await stripe.checkout.sessions.create({
       mode                       : 'payment',
-      payment_method_types       : ['card', 'bizum'],
+      payment_method_types       : ['card'],
       automatic_tax              : { enabled: true },
       billing_address_collection : 'required',
       tax_id_collection          : { enabled: true, required: 'if_supported' },
