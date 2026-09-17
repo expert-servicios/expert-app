@@ -14,6 +14,10 @@ describe('audited Holded/KIA boundaries', () => {
     expect(context).toContain('holdedPermissionsDetected: detected');
     expect(context).toContain('holdedPermissionsEnabled: enabled');
     expect(context).toContain(".neq('status', 'revoked')");
+    expect(context).toContain('integration?.permissions_enabled ?? legacyRequested');
+    expect(context).toContain('laborEmployeesRead: false');
+    expect(context).toContain('laborPayrollsRead: false');
+    expect(context).toContain('intersectHoldedReadPermissions');
   });
 
   it('makes null the only global-account selector for Holded auth', () => {

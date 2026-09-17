@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { intersectHoldedReadPermissions, normalizeDetectedHoldedPermissions } from '@/lib/integrations/holded/holded-permissions';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { getService } from '@/lib/services/service-registry';
 import { resolveCompanyCommercialCoverage, type CompanyCoverageSource } from '@/lib/subscriptions/company-commercial-coverage';
@@ -258,8 +259,23 @@ async function loadCompany(
     permissions_enabled?: Record<string, boolean>;
   } | undefined;
   const connected = integration?.status === 'active';
-  const detected = connected ? integration?.permissions_detected ?? {} : {};
-  const enabled = connected ? integration?.permissions_enabled ?? {} : {};
+  const detected = connected
+    ? normalizeDetectedHoldedPermissions(integration?.permissions_detected ?? {})
+    : normalizeDetectedHoldedPermissions({});
+  const legacyRequested = {
+    ...detected,
+    writeInbox: false,
+    laborEmployeesRead: false,
+    laborPayrollsRead: false,
+    laborEmployeesWrite: false,
+    laborPayrollsWrite: false,
+  };
+  const enabled = connected
+    ? intersectHoldedReadPermissions(
+        detected,
+        integration?.permissions_enabled ?? legacyRequested,
+      )
+    : normalizeDetectedHoldedPermissions({});
 
   return {
     id: resolvedCompanyId,
