@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getStripeClient } from '@/lib/integrations/stripe';
 import {
+  getRequiredServiceDisbursementKeys,
   getServiceCheckoutByPriceId,
   getServiceCheckoutLineItem,
   getServiceCheckoutMetadata,
   getServiceDisbursementByKey,
   getServiceDisbursementCheckoutLineItem,
+  validateRequestedServiceDisbursements,
 } from '@/lib/integrations/service-checkout';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
@@ -123,10 +125,25 @@ export async function POST(request: NextRequest) {
       stripeCustomerId = company.stripe_customer_id ?? null;
     }
 
+    // Required disbursements are resolved exclusively from the server-side
+    // service registry. A client may echo the expected keys, but cannot remove
+    // a mandatory fee or attach a fee that does not belong to the selected service.
+    const requiredDisbursementKeys = getRequiredServiceDisbursementKeys(checkoutServices);
     const requestedDisbursementKeys = [...new Set(input.disbursements ?? [])];
-    const checkoutDisbursements = requestedDisbursementKeys.map(key => {
+    const requestedValidation = validateRequestedServiceDisbursements(
+      requiredDisbursementKeys,
+      requestedDisbursementKeys,
+    );
+    if (!requestedValidation.valid) {
+      return NextResponse.json({
+        error: `Suplido no aplicable al servicio seleccionado: ${requestedValidation.unexpectedKey}`,
+        code: 'disbursement_not_applicable',
+      }, { status: 400 });
+    }
+
+    const checkoutDisbursements = requiredDisbursementKeys.map(key => {
       const disbursement = getServiceDisbursementByKey(key);
-      if (!disbursement) throw Object.assign(new Error(`Suplido no válido: ${key}`), { _isUserError: true });
+      if (!disbursement) throw new Error(`Configuración de suplido no encontrada: ${key}`);
       return disbursement;
     });
 
