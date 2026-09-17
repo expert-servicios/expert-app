@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ShoppingBag, Trash2, ArrowRight, ArrowLeft, Plus } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
+import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartDisbursements, useCart } from '@/contexts/CartContext';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { QuickProfileGate } from '@/components/cart/QuickProfileGate';
 
@@ -48,6 +48,8 @@ export default function CarritoPage() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);
+  const hasDisbursements = cartContainsDisbursements(items);
+  const disbursements = collectCartDisbursements(items);
 
   const goToCheckoutUrl = (url: string) => {
     clearCart();
@@ -63,7 +65,7 @@ export default function CarritoPage() {
       const res  = await fetch('/api/services/checkout', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({ priceIds: items.map(i => i.priceId) }),
+        body   : JSON.stringify(buildCartCheckoutPayload(items)),
       });
       const data = await res.json() as { url?: string; error?: string; requiresAuth?: boolean; code?: string };
       if (res.status === 401 || data.requiresAuth) {
@@ -145,6 +147,11 @@ export default function CarritoPage() {
                         {item.name}
                       </Link>
                       <p className="mt-1 text-sm font-bold text-[#D4A017]">{item.displayPrice}</p>
+                      {item.disbursementNotice && (
+                        <p className="mt-2 rounded-lg border border-[#D4A017]/25 bg-[#F8F6F1] px-3 py-2 text-xs leading-5 text-[#23364D]/70">
+                          {item.disbursementNotice}
+                        </p>
+                      )}
                     </div>
                     <button
                       type="button"
@@ -211,6 +218,11 @@ export default function CarritoPage() {
                     </div>
                   ))}
                 </div>
+                {hasDisbursements && (
+                  <div className="rounded-xl border border-[#D4A017]/25 bg-[#F8F6F1] px-4 py-3 text-xs leading-5 text-[#23364D]/70">
+                    Este pedido incluye una tasa oficial obligatoria como suplido. Se cobra junto con el servicio para pagarla en nombre y por cuenta del cliente, pero queda separada de los honorarios profesionales.
+                  </div>
+                )}
                 <div className="border-t border-[#D4A017]/20 pt-3 text-xs text-[#23364D]/60 leading-relaxed">
                   Precios sin IVA. El total exacto con IVA se calcula y confirma en la pasarela de pago Stripe.
                 </div>
@@ -220,6 +232,7 @@ export default function CarritoPage() {
                 {needsProfile ? (
                   <QuickProfileGate
                     priceIds={items.map(i => i.priceId)}
+                    disbursements={disbursements}
                     onCheckoutUrl={goToCheckoutUrl}
                   />
                 ) : (
