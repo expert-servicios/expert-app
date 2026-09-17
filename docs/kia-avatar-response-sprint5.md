@@ -3,7 +3,7 @@
 Fecha: 2026-09-17
 Tracking: #192
 Dependencias completadas: #172, #174, #177, #179, #187, #189
-Implementación actual: PR #274 + Sprint 5C en rama encadenada
+Implementación actual: PR #274 + Sprint 5C + Sprint 5D en ramas encadenadas
 
 ## Objetivo
 
@@ -85,18 +85,52 @@ Mapping implementado:
 
 Los contadores de documentos subidos/revisados pueden mostrarse como detalle auxiliar. No se compara contenido, nombre ni texto libre de los documentos.
 
-## Sprint 5D — Holded y formularios guiados
+## Sprint 5D — integración Holded
 
-Mapping previsto para integración Holded:
+Superficie: `components/integrations/HoldedConnectionCard.tsx` dentro de `/dashboard/integraciones/holded`.
 
-- conexión no iniciada -> `ayuda`;
-- conexión/configuración en curso -> `pensando`;
-- integración activa/verificada -> `confianza`;
-- error de conexión -> `aviso`.
+KIA consume únicamente señales ya presentes en la UI de integración:
 
-Este bloque debe mantenerse separado de la auditoría de permisos e integración activa del PR #272. El estado visual sólo puede consumir una señal de integración ya autorizada; nunca puede conceder capacidad ni inferir permisos.
+- `integration.status`;
+- fase local de verificación del token (`idle`, `testing`, `verified`, `error`);
+- operación de desconexión en curso;
+- error local ya mostrado por la propia tarjeta.
 
-Después se extenderá el patrón a formularios guiados y centro de ayuda cuando exista un estado fiable que justifique la orientación.
+Mapping implementado:
+
+- sin integración / estado inactivo -> `ayuda`;
+- verificación, `pending` o desconexión en curso -> `pensando`;
+- API Token verificado o integración `active` -> `confianza`;
+- `failed`, fallo de verificación o error local -> `aviso`;
+- `disabled` / `revoked` -> `ayuda`.
+
+### Precedencia 5D
+
+La regla visual es fail-safe:
+
+```text
+error
+  > operación en curso
+  > integración activa / token verificado
+  > estado inactivo
+```
+
+Por tanto, KIA nunca muestra `confianza` si la propia UI está señalando un error, ni anticipa una conexión activa mientras una comprobación sigue en curso.
+
+### Separación respecto a #272
+
+Sprint 5D no modifica:
+
+- consulta o selección de la integración;
+- `client_integrations`;
+- permisos detectados o habilitados;
+- consentimiento;
+- secretos o API keys;
+- company scoping;
+- endpoints de conexión/desconexión;
+- capacidad de lectura/escritura de Holded.
+
+El hardening de esos límites permanece exclusivamente en PR #272. La capa visual sólo observa el resultado que ya expone la integración existente.
 
 ## Accesibilidad
 
@@ -114,7 +148,8 @@ Después se extenderá el patrón a formularios guiados y centro de ayuda cuando
 - no datos financieros nuevos;
 - no llamadas API nuevas desde `KiaGuidanceCard`;
 - no se utiliza texto libre para concluir riesgo, éxito o cumplimiento;
-- la capa visual nunca ejecuta acciones externas.
+- la capa visual nunca ejecuta acciones externas;
+- no se expone ni persiste la API key desde la lógica KIA.
 
 ## Validación
 
@@ -125,7 +160,7 @@ PR #274 (5A/5B):
 - Vercel `ksenia-expert`: Ready;
 - smoke visual autenticado desktop/móvil: pendiente antes de merge.
 
-Sprint 5C debe pasar los mismos controles antes de integrarse.
+Sprint 5C y 5D deben pasar los mismos controles antes de integrarse.
 
 ## Criterios de aceptación antes de merge
 
@@ -133,7 +168,9 @@ Sprint 5C debe pasar los mismos controles antes de integrarse.
 - `/dashboard/expedientes` muestra KIA con estado derivado de counts autorizados;
 - `/dashboard/onboarding` respeta `error > loading > paso`;
 - `/dashboard/expedientes/[id]` deriva su estado KIA sólo de estado/checklist/contadores autorizados;
+- Holded deriva su estado KIA únicamente de estado de integración y fases locales existentes;
 - ninguna superficie llama al LLM para seleccionar estado;
+- KIA no modifica permisos, consentimiento ni endpoints Holded;
 - los flujos, enlaces, validaciones y CTAs existentes permanecen intactos;
 - typecheck, lint y tests pasan;
 - Vercel previews están Ready;
