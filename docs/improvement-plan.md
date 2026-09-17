@@ -195,7 +195,7 @@ Todos los cron jobs de produccion (`fiscal-reminders`, `kia-health`, `holded-syn
 5. **Verificacion IMP-022** — Abrir /dashboard → clic Kia → probar "mis expedientes", "mis empresas".
 6. ~~**Holded scheduler externo**~~ — ✅ `holded-sync.yml` (GitHub Actions) confirmado funcionando 2026-07-04.
 7. ~~**DNS**~~ — ✅ `kseniailicheva.com` redirect 301 a `expertconsulting.es` implementado.
-8. ~~**Cal.com**~~ — Obsoleto: la app migro completamente a Cal.com (commits `61d9acf`, `0064245`), cero referencias a Cal.com restantes.
+8. ~~**Agenda legacy**~~ — ✅ Migración completada al sistema actual Cal.com (commits `61d9acf`, `0064245`), sin referencias legacy restantes.
 
 ---
 
@@ -1141,7 +1141,7 @@ Este bloque es la memoria viva del plan. Actualizar estado de cada item al compl
 El plan quedo sin actualizar durante esta ventana pese a 15+ commits en `main`. Resumen para no perder trazabilidad:
 
 - `3d19936`..`a59dd75` — portal tenant, Kia anti-loro, RLS fase 2, rol owner, cola de emails, hardening de seguridad de browser, fix XSS en preview de emails.
-- `61d9acf`, `0064245` — migracion completa Cal.com → Cal.com (cero referencias a Cal.com restantes).
+- `61d9acf`, `0064245` — migración completa al sistema actual Cal.com (sin referencias legacy restantes).
 - `32ba636`, `46dcc27` — Sprint H: digest semanal tenant + creacion automatica de expediente desde webhook Cal.com.
 - `2230b2f` — hardening de funciones DB, fix WhatsApp, UI admin.
 - `95dd62d` — cron de `email-queue` movido de Vercel Cron (bloqueado por plan Hobby) a `pg_cron` en Supabase. (Ver IMP-024: quedo sin cabecera de auth, arreglado 2026-07-03.)
