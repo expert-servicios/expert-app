@@ -7,7 +7,8 @@ const PROFILE_BILLING_SERVICE_SLUGS = new Set([
 export type ServiceBillingResolution =
   | { scope: 'profile'; companyId: null }
   | { scope: 'company'; companyId: string }
-  | { scope: 'company_required'; companyId: null };
+  | { scope: 'company_required'; companyId: null }
+  | { scope: 'mixed_billing_scope'; companyId: null };
 
 export function resolveServiceBillingScope(input: {
   serviceSlugs: string[];
@@ -15,11 +16,17 @@ export function resolveServiceBillingScope(input: {
   activeCompanyId?: string | null;
   clientType?: string | null;
 }): ServiceBillingResolution {
-  const hasProfileOnlyService = input.serviceSlugs.some((slug) => PROFILE_BILLING_SERVICE_SLUGS.has(slug));
+  const profileOnlyCount = input.serviceSlugs.filter((slug) => PROFILE_BILLING_SERVICE_SLUGS.has(slug)).length;
+
+  // Do not combine a strictly personal legal procedure with other services in
+  // the same Stripe payment. They may have different invoice recipients.
+  if (profileOnlyCount > 0 && profileOnlyCount < input.serviceSlugs.length) {
+    return { scope: 'mixed_billing_scope', companyId: null };
+  }
 
   // Personal legal/administrative procedures must stay billed to the person,
   // even when that same profile also manages one or more companies in EXPERT.
-  if (hasProfileOnlyService) {
+  if (profileOnlyCount > 0) {
     return { scope: 'profile', companyId: null };
   }
 
