@@ -186,6 +186,70 @@ export function resolveHoldedIntegrationGuidance(input: {
   };
 }
 
+export function resolveProfileGuidance(input: {
+  saving: boolean;
+  hasError: boolean;
+  hasRecentSuccess: boolean;
+  profileCompleted: boolean;
+  billingReady: boolean;
+  habitualAddressReady: boolean;
+  isCompany: boolean;
+}): KiaSurfaceGuidance {
+  if (input.hasError) {
+    return {
+      state: 'aviso',
+      title: 'Necesito que revises el aviso del formulario',
+      message: 'Alguna operación del perfil no se ha completado. Corrige el dato indicado y vuelve a intentarlo antes de continuar.',
+    };
+  }
+
+  if (input.saving) {
+    return {
+      state: 'pensando',
+      title: 'Estoy guardando tus cambios',
+      message: 'Mantengo el formulario en curso hasta recibir confirmación. No doy por actualizados los datos antes de tiempo.',
+    };
+  }
+
+  if (!input.billingReady) {
+    return {
+      state: 'ayuda',
+      title: 'Completa los datos de facturación',
+      message: 'EXPERT necesita estos datos antes de contratar servicios o suscripciones. KIA solo utiliza el indicador de preparación, no interpreta el contenido de los campos.',
+    };
+  }
+
+  if (!input.isCompany && !input.habitualAddressReady) {
+    return {
+      state: 'explicacion',
+      title: 'Falta completar el domicilio habitual',
+      message: 'Para una persona física este bloque puede ser necesario en trámites fiscales o de extranjería. Completa la sección indicada antes de dar el perfil por preparado.',
+    };
+  }
+
+  if (!input.profileCompleted) {
+    return {
+      state: 'ayuda',
+      title: 'Revisa los datos básicos del perfil',
+      message: 'Los datos fiscales ya están preparados, pero el perfil todavía no figura como completo. Revisa las secciones pendientes que muestra esta pantalla.',
+    };
+  }
+
+  if (input.hasRecentSuccess) {
+    return {
+      state: 'exito',
+      title: 'Los cambios se han guardado correctamente',
+      message: 'La operación ha sido confirmada por la propia pantalla. Puedes seguir editando o volver al panel cuando lo necesites.',
+    };
+  }
+
+  return {
+    state: 'confianza',
+    title: 'Tu perfil está preparado',
+    message: 'Los indicadores actuales confirman que el perfil y los datos necesarios están completos para continuar con los servicios compatibles.',
+  };
+}
+
 export type KiaOnboardingStep = 'profile' | 'company' | 'done';
 
 export function resolveOnboardingGuidance(input: {
