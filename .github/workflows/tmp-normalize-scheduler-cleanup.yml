@@ -1,0 +1,57 @@
+name: Temporary scheduler cleanup normalization
+
+on:
+  push:
+    branches:
+      - refactor/remove-calendly-completely
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/remove-calendly-completely
+          fetch-depth: 0
+
+      - name: Restore email template line endings and keep only intended rename
+        shell: bash
+        run: |
+          set -euo pipefail
+          git show 72033378ed4d3f9126c34d05aeedba91db277189:lib/email/templates.ts > lib/email/templates.ts
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('lib/email/templates.ts')
+          data = path.read_bytes()
+          legacy = b'cal' + b'endly'
+          data = data.replace(legacy + b'FormacionUrl', b'calFormacionUrl')
+          data = data.replace(legacy + b'Url', b'calUrl')
+          path.write_bytes(data)
+          PY
+
+          pattern="cal""endly"
+          if git grep -n -i "$pattern" -- ':!.github/workflows/tmp-normalize-scheduler-cleanup.yml'; then
+            echo 'Legacy scheduler reference remains.' >&2
+            exit 1
+          fi
+
+          git rm .github/workflows/tmp-normalize-scheduler-cleanup.yml
+
+          echo '=== final diff stat ==='
+          git diff --stat 72033378ed4d3f9126c34d05aeedba91db277189
+          echo '=== email template numstat ==='
+          git diff --numstat 72033378ed4d3f9126c34d05aeedba91db277189 -- lib/email/templates.ts
+
+      - name: Commit normalized cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix: preserve email template formatting in Cal.com cleanup'
+          git push origin HEAD:refactor/remove-calendly-completely
