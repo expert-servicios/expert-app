@@ -8,6 +8,8 @@ export interface CartItem {
   displayPrice : string;
   slug         : string;
   category     : string;
+  disbursements?: string[];
+  disbursementNotice?: string;
 }
 
 interface CartContextValue {
@@ -23,6 +25,25 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = 'expert_cart_v1';
+
+export function collectCartDisbursements(items: CartItem[]) {
+  return [...new Set(items.flatMap(item => item.disbursements ?? []))];
+}
+
+export function buildCartCheckoutPayload(items: CartItem[]) {
+  const disbursements = collectCartDisbursements(items);
+
+  return {
+    priceIds: items.map(i => i.priceId),
+    ...(disbursements.length > 0
+      ? { disbursements, disbursementMandateAccepted: true }
+      : {}),
+  };
+}
+
+export function cartContainsDisbursements(items: CartItem[]) {
+  return collectCartDisbursements(items).length > 0;
+}
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items,    setItems]    = useState<CartItem[]>([]);
