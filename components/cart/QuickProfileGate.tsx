@@ -6,6 +6,7 @@ import { ArrowRight, CheckCircle2, Loader2, Phone, User } from 'lucide-react';
 interface Props {
   priceIds: string[];
   disbursements?: string[];
+  disbursementMandateAccepted?: boolean;
   onCheckoutUrl: (url: string) => void;
 }
 
@@ -14,7 +15,12 @@ type CheckoutResponse = { url?: string; error?: string; requiresAuth?: boolean; 
 
 const inputCls = 'w-full rounded-xl border border-[#D4A017]/20 bg-[#F8F6F1] px-3 py-2.5 text-sm text-[#0D1B2A] outline-none transition focus:border-[#D4A017] focus:ring-2 focus:ring-[#D4A017]/20';
 
-export function QuickProfileGate({ priceIds, disbursements = [], onCheckoutUrl }: Props) {
+export function QuickProfileGate({
+  priceIds,
+  disbursements = [],
+  disbursementMandateAccepted = false,
+  onCheckoutUrl,
+}: Props) {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -39,11 +45,20 @@ export function QuickProfileGate({ priceIds, disbursements = [], onCheckoutUrl }
     return () => { cancelled = true; };
   }, []);
 
-  const canSave = useMemo(() => Boolean(fullName.trim() && phone.trim()), [fullName, phone]);
+  const hasDisbursements = disbursements.length > 0;
+  const canSave = useMemo(
+    () => Boolean(fullName.trim() && phone.trim() && (!hasDisbursements || disbursementMandateAccepted)),
+    [fullName, phone, hasDisbursements, disbursementMandateAccepted],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSave) return;
+    if (!canSave) {
+      if (hasDisbursements && !disbursementMandateAccepted) {
+        setError('Debes aceptar expresamente el mandato de suplido antes de continuar.');
+      }
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -60,8 +75,8 @@ export function QuickProfileGate({ priceIds, disbursements = [], onCheckoutUrl }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           priceIds,
-          ...(disbursements.length > 0
-            ? { disbursements, disbursementMandateAccepted: true }
+          ...(hasDisbursements
+            ? { disbursements, disbursementMandateAccepted }
             : {}),
         }),
       });
@@ -97,9 +112,9 @@ export function QuickProfileGate({ priceIds, disbursements = [], onCheckoutUrl }
         </span>
         <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required disabled={loadingProfile} className={inputCls} placeholder="+34 6XX XXX XXX" />
       </label>
-      {disbursements.length > 0 && (
+      {hasDisbursements && (
         <p className="rounded-lg border border-[#D4A017]/25 bg-white px-3 py-2 text-[11px] leading-5 text-[#23364D]/70">
-          Este pedido incluye una tasa obligatoria como suplido. Al continuar, aceptas que EXPERT la abone en nombre y por cuenta del cliente.
+          Este pedido incluye una tasa obligatoria como suplido. El mandato debe haberse aceptado expresamente antes de crear el checkout.
         </p>
       )}
       {error && <p role="alert" aria-live="assertive" className="text-xs font-semibold text-red-700">{error}</p>}

@@ -11,6 +11,7 @@ export function CartSidebar() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);
+  const [disbursementMandateAccepted, setDisbursementMandateAccepted] = useState(false);
   const hasDisbursements = cartContainsDisbursements(items);
   const disbursements = collectCartDisbursements(items);
 
@@ -21,6 +22,10 @@ export function CartSidebar() {
 
   const handleCheckout = async () => {
     if (items.length === 0) return;
+    if (hasDisbursements && !disbursementMandateAccepted) {
+      setError('Debes aceptar expresamente el mandato de suplido antes de continuar.');
+      return;
+    }
     setLoading(true);
     setError(null);
     setNeedsProfile(false);
@@ -28,7 +33,7 @@ export function CartSidebar() {
       const res  = await fetch('/api/services/checkout', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify(buildCartCheckoutPayload(items)),
+        body   : JSON.stringify(buildCartCheckoutPayload(items, disbursementMandateAccepted)),
       });
       const data = await res.json() as { url?: string; error?: string; requiresAuth?: boolean; code?: string };
       if (res.status === 401 || data.requiresAuth) {
@@ -151,18 +156,35 @@ export function CartSidebar() {
               Precios sin IVA. El total con IVA se confirma en la pasarela de pago Stripe.
               {hasDisbursements ? ' Los suplidos obligatorios se cobran separados de los honorarios y no forman parte de la base del servicio.' : ''}
             </p>
+            {hasDisbursements && (
+              <label className="flex items-start gap-2.5 rounded-xl border border-[#D4A017]/30 bg-[#F8F6F1] p-3 text-xs leading-5 text-[#23364D]">
+                <input
+                  type="checkbox"
+                  checked={disbursementMandateAccepted}
+                  onChange={(event) => {
+                    setDisbursementMandateAccepted(event.target.checked);
+                    if (event.target.checked) setError(null);
+                  }}
+                  className="mt-1 h-4 w-4 shrink-0 accent-[#D4A017]"
+                />
+                <span>
+                  Confirmo que autorizo a EXPERT / Ksenia Ilicheva a abonar la tasa oficial indicada en nombre y por cuenta del cliente. Entiendo que este importe es un suplido y no forma parte de los honorarios profesionales.
+                </span>
+              </label>
+            )}
             {error && <p role="alert" aria-live="assertive" className="text-xs font-semibold text-red-700">{error}</p>}
             {needsProfile ? (
               <QuickProfileGate
                 priceIds={items.map(i => i.priceId)}
                 disbursements={disbursements}
+                disbursementMandateAccepted={disbursementMandateAccepted}
                 onCheckoutUrl={goToCheckoutUrl}
               />
             ) : (
               <button
                 type="button"
                 onClick={handleCheckout}
-                disabled={loading}
+                disabled={loading || (hasDisbursements && !disbursementMandateAccepted)}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4A017] py-3 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
               >
                 <ArrowRight className="h-4 w-4" />
