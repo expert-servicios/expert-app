@@ -12,11 +12,10 @@ import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { isCompanyBillingReady, missingCompanyBillingFields } from '@/lib/companies/billing-readiness';
 import { resolveServiceBillingScope } from '@/lib/payments/service-billing-scope';
+import { resolveServiceCheckoutLocale, type CheckoutLocale } from '@/lib/payments/service-checkout-locale';
 
 const RU_NACIONALIDAD_PATH = '/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii';
 const NACIONALIDAD_MENOR_SLUG = 'nacionalidad-espanola-menor-nacido-en-espana';
-
-type CheckoutLocale = 'es' | 'ru';
 
 const checkoutSchema = z.object({
   priceId                    : z.string().min(1).optional(),
@@ -60,13 +59,16 @@ export async function POST(request: NextRequest) {
     }
 
     const input = parseResult.data;
-    const locale = input.locale;
     const rawIds = input.priceIds ?? (input.priceId ? [input.priceId] : []);
     const checkoutServices = rawIds.map(id => {
       const svc = getServiceCheckoutByPriceId(id);
       if (!svc) throw Object.assign(new Error(`Servicio no válido: ${id}`), { _isUserError: true });
       return svc;
     });
+    const locale = resolveServiceCheckoutLocale(
+      checkoutServices.map(service => service.slug),
+      input.locale,
+    );
 
     const billingResolution = resolveServiceBillingScope({
       serviceSlugs: checkoutServices.map(service => service.slug),
