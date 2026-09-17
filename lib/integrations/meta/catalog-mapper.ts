@@ -15,25 +15,34 @@ function parseFixedEuroPrice(price?: string): number | null {
   return Number.isFinite(value) ? value : null;
 }
 
-function getCategoryName(slug: Service['categoria']): string {
-  return categories.find((category) => category.slug === slug)?.name ?? slug;
+function getCategory(slug: Service['categoria']) {
+  return categories.find((category) => category.slug === slug) ?? null;
+}
+
+function absoluteAssetUrl(path?: string): string | null {
+  if (!path?.trim()) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${APP_URL}${path.startsWith('/') ? '' : '/'}${path}`;
 }
 
 export function mapServiceToMetaCatalogDraft(service: Service): MetaServiceCatalogDraft {
   const priceAmount = parseFixedEuroPrice(service.price);
+  const category = getCategory(service.categoria);
+  const imageUrl = absoluteAssetUrl(category?.imageUrl);
   const warnings: string[] = [];
 
   if (!priceAmount) warnings.push('price_requires_manual_review');
   if (!service.shortDescription?.trim()) warnings.push('missing_short_description');
+  if (!imageUrl) warnings.push('missing_catalog_image');
 
   return {
     retailerId: service.slug,
     name: service.name,
     description: service.shortDescription || service.description,
-    serviceCategory: getCategoryName(service.categoria),
+    serviceCategory: category?.name ?? service.categoria,
     sourceCategorySlug: service.categoria,
     landingUrl: `${APP_URL}/servicios/${service.categoria}/${service.slug}`,
-    imageUrl: null,
+    imageUrl,
     price: priceAmount
       ? {
           amount: priceAmount,
