@@ -121,6 +121,71 @@ export function resolveCaseDetailGuidance(input: {
   }
 }
 
+export type KiaHoldedConnectionPhase =
+  | 'idle'
+  | 'testing'
+  | 'verified'
+  | 'connecting'
+  | 'disconnecting'
+  | 'error';
+
+export function resolveHoldedIntegrationGuidance(input: {
+  integrationStatus: string | null;
+  phase: KiaHoldedConnectionPhase;
+  hasUiError: boolean;
+}): KiaSurfaceGuidance {
+  if (input.hasUiError || input.phase === 'error' || input.integrationStatus === 'failed') {
+    return {
+      state: 'aviso',
+      title: 'Hay que revisar la conexión con Holded',
+      message: 'Comprueba el aviso de la integración antes de continuar. KIA no asumirá que la conexión está disponible mientras exista este error.',
+    };
+  }
+
+  if (
+    input.phase === 'testing' ||
+    input.phase === 'connecting' ||
+    input.phase === 'disconnecting' ||
+    input.integrationStatus === 'pending'
+  ) {
+    return {
+      state: 'pensando',
+      title: input.phase === 'disconnecting' ? 'Estoy actualizando la conexión' : 'Estoy verificando la integración',
+      message: 'Mantengo el estado visual en curso hasta que la operación confirme su resultado. No anticipo una conexión válida antes de tiempo.',
+    };
+  }
+
+  if (input.integrationStatus === 'active') {
+    return {
+      state: 'confianza',
+      title: 'Holded está conectado',
+      message: 'La integración figura activa en EXPERT. Puedes consultar debajo los permisos detectados y el modo de sincronización disponible.',
+    };
+  }
+
+  if (input.phase === 'verified') {
+    return {
+      state: 'confianza',
+      title: 'La conexión con Holded está verificada',
+      message: 'La credencial ha superado la comprobación. Revisa los permisos y el consentimiento antes de completar la conexión.',
+    };
+  }
+
+  if (input.integrationStatus === 'disabled' || input.integrationStatus === 'revoked') {
+    return {
+      state: 'ayuda',
+      title: 'Holded no está activo ahora mismo',
+      message: 'Puedes volver a conectar la integración cuando lo necesites. KIA no tratará esta cuenta como disponible mientras permanezca desactivada.',
+    };
+  }
+
+  return {
+    state: 'ayuda',
+    title: 'Te ayudo a conectar Holded',
+    message: 'Empieza verificando tu API Token. La conexión solo se considerará válida cuando el sistema confirme la verificación y el alta de la integración.',
+  };
+}
+
 export type KiaOnboardingStep = 'profile' | 'company' | 'done';
 
 export function resolveOnboardingGuidance(input: {
