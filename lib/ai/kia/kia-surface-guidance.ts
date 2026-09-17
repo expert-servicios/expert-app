@@ -250,6 +250,42 @@ export function resolveProfileGuidance(input: {
   };
 }
 
+export function resolvePostPurchaseGuidance(input: {
+  hasActiveSubscription: boolean;
+  onboardingMeetingScheduled: boolean;
+  holdedConnected: boolean;
+}): KiaSurfaceGuidance {
+  if (!input.hasActiveSubscription) {
+    return {
+      state: 'pensando',
+      title: 'Estoy confirmando la activación de tu suscripción',
+      message: 'La compra ya ha terminado, pero espero la confirmación del sistema antes de mostrar los siguientes pasos. No doy la suscripción por activa antes de tiempo.',
+    };
+  }
+
+  if (!input.onboardingMeetingScheduled) {
+    return {
+      state: 'ayuda',
+      title: 'Tu plan está activo: agenda el onboarding',
+      message: 'El siguiente paso confirmado es reservar la sesión de onboarding. Después podrás completar la preparación técnica antes de la reunión.',
+    };
+  }
+
+  if (!input.holdedConnected) {
+    return {
+      state: 'explicacion',
+      title: 'La reunión está reservada; ahora prepara Holded',
+      message: 'Conecta Holded desde el área segura para que EXPERT pueda comprobar la integración antes de cerrar el alta. No compartas credenciales por chat, email o WhatsApp.',
+    };
+  }
+
+  return {
+    state: 'confianza',
+    title: 'La preparación previa está completa',
+    message: 'La reunión figura reservada y Holded aparece conectado. El alta todavía se cerrará después de la sesión y de la validación del equipo EXPERT.',
+  };
+}
+
 export type KiaOnboardingStep = 'profile' | 'company' | 'done';
 
 export function resolveOnboardingGuidance(input: {
