@@ -1,7 +1,7 @@
-import { BRAND } from './templates';
-
 export const RU_NATIONALITY_MINOR_SERVICE_SLUG = 'nacionalidad-espanola-menor-nacido-en-espana';
 export const RU_NATIONALITY_MINOR_SERVICE_NAME = 'Испанское гражданство для ребёнка, родившегося в Испании';
+
+const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es').replace(/\/$/, '');
 
 export type RussianServicePaymentEventType =
   | 'service.payment.confirmed'
@@ -110,7 +110,7 @@ export function calculateRussianNationalityAmounts(input: {
 }
 
 export function russianNationalityPaymentConfirmedClient(amounts: RussianServicePaymentAmounts) {
-  const serviceUrl = `${BRAND.appUrl}/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii`;
+  const serviceUrl = `${APP_URL}/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii`;
   return {
     subject: 'Оплата получена — начинаем оформление гражданства | EXPERT',
     html: shell('Оплата получена', `
@@ -131,7 +131,7 @@ export function russianNationalityPaymentConfirmedClient(amounts: RussianService
         <li>После проверки срока легальной резиденции и полного комплекта документов готовим заявление.</li>
         <li>Пошлина оплачивается и заявление подаётся после проверки готовности expediente.</li>
       </ol>
-      ${para('Если какого-либо документа пока нет, не переживайте: сначала мы проверим имеющиеся документы и укажем, что именно необходимо дополнить.')}
+      ${para('Если какого-либо документа пока нет, сначала мы проверим имеющиеся документы и укажем, что именно необходимо дополнить.')}
       ${button('Вернуться к описанию услуги', serviceUrl)}
       ${para('Вопросы можно также отправить в WhatsApp: <a href="https://wa.me/34669045528" style="color:#c88b25;">+34 669 045 528</a>.')}
     `),
@@ -176,7 +176,7 @@ export function russianNationalityPaymentConfirmedAdmin(input: {
           <li>Guardar justificante de la tasa y de la futura presentación dentro del expediente.</li>
         </ol>
       </div>
-      ${button('Abrir panel de administración', `${BRAND.appUrl}/admin`)}
+      ${button('Abrir panel de administración', `${APP_URL}/admin`)}
     `),
   };
 }
