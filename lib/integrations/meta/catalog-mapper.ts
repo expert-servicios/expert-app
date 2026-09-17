@@ -3,7 +3,7 @@ import type { MetaServiceCatalogDraft } from './types';
 
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://expertconsulting.es').replace(/\/$/, '');
 
-function parseFixedEuroPrice(price?: string): number | null {
+export function parseFixedEuroPrice(price?: string): number | null {
   if (!price) return null;
   const normalized = price.trim();
   if (/^(consultar|desde\b)/i.test(normalized)) return null;
