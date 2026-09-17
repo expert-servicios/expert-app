@@ -5,6 +5,7 @@ import { ArrowRight, CheckCircle2, Loader2, Phone, User } from 'lucide-react';
 
 interface Props {
   priceIds: string[];
+  disbursements?: string[];
   onCheckoutUrl: (url: string) => void;
 }
 
@@ -13,7 +14,7 @@ type CheckoutResponse = { url?: string; error?: string; requiresAuth?: boolean; 
 
 const inputCls = 'w-full rounded-xl border border-[#D4A017]/20 bg-[#F8F6F1] px-3 py-2.5 text-sm text-[#0D1B2A] outline-none transition focus:border-[#D4A017] focus:ring-2 focus:ring-[#D4A017]/20';
 
-export function QuickProfileGate({ priceIds, onCheckoutUrl }: Props) {
+export function QuickProfileGate({ priceIds, disbursements = [], onCheckoutUrl }: Props) {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -57,7 +58,12 @@ export function QuickProfileGate({ priceIds, onCheckoutUrl }: Props) {
       const checkoutRes = await fetch('/api/services/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceIds }),
+        body: JSON.stringify({
+          priceIds,
+          ...(disbursements.length > 0
+            ? { disbursements, disbursementMandateAccepted: true }
+            : {}),
+        }),
       });
       const checkoutData = await checkoutRes.json() as CheckoutResponse;
       if (checkoutRes.status === 401 || checkoutData.requiresAuth) {
@@ -91,6 +97,11 @@ export function QuickProfileGate({ priceIds, onCheckoutUrl }: Props) {
         </span>
         <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required disabled={loadingProfile} className={inputCls} placeholder="+34 6XX XXX XXX" />
       </label>
+      {disbursements.length > 0 && (
+        <p className="rounded-lg border border-[#D4A017]/25 bg-white px-3 py-2 text-[11px] leading-5 text-[#23364D]/70">
+          Este pedido incluye una tasa obligatoria como suplido. Al continuar, aceptas que EXPERT la abone en nombre y por cuenta del cliente.
+        </p>
+      )}
       {error && <p role="alert" aria-live="assertive" className="text-xs font-semibold text-red-700">{error}</p>}
       <button
         type="submit"
