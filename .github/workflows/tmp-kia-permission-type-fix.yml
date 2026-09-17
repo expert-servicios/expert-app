@@ -1,0 +1,46 @@
+name: Temporary KIA permission type fix
+
+on:
+  push:
+    branches:
+      - fix/holded-kia-hardening-main
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/holded-kia-hardening-main
+          fetch-depth: 0
+      - name: Use canonical HoldedPermissions type in KIA context
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('lib/ai/kia/kia-context-builder.ts')
+          s = p.read_text(encoding='utf-8')
+          old_import = "import { intersectHoldedReadPermissions, normalizeDetectedHoldedPermissions } from '@/lib/integrations/holded/holded-permissions';"
+          new_import = "import { intersectHoldedReadPermissions, normalizeDetectedHoldedPermissions, type HoldedPermissions } from '@/lib/integrations/holded/holded-permissions';"
+          if old_import not in s:
+              raise SystemExit('Holded permission import not found')
+          s = s.replace(old_import, new_import, 1)
+          s = s.replace('    holdedPermissions: Record<string, boolean>;\n    holdedPermissionsDetected: Record<string, boolean>;\n    holdedPermissionsEnabled: Record<string, boolean>;',
+                        '    holdedPermissions: HoldedPermissions;\n    holdedPermissionsDetected: HoldedPermissions;\n    holdedPermissionsEnabled: HoldedPermissions;', 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+          git rm .github/workflows/tmp-kia-permission-type-fix.yml
+      - name: Commit type fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'fix: type KIA Holded permissions with canonical interface'
+          git push origin HEAD:fix/holded-kia-hardening-main
