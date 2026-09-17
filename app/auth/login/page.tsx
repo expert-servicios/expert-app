@@ -7,6 +7,59 @@ import { useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { Mail, ArrowRight, Loader2 } from 'lucide-react';
 
+const RU_SERVICE_PATH = '/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii';
+
+const COPY = {
+  es: {
+    inactive: 'Tu usuario está inactivo. Contacta con EXPERT para reactivar el acceso.',
+    configError: 'Error de configuración. Inténtalo de nuevo.',
+    sendError: 'Error al enviar el enlace.',
+    microsoftError: 'Error al iniciar sesión con Microsoft.',
+    googleError: 'Error al iniciar sesión con Google.',
+    portal: 'Portal de cliente',
+    title: 'Accede a tu panel',
+    checkEmail: 'Revisa tu email',
+    sentPrefix: 'Hemos enviado un enlace de acceso a',
+    expires: 'El enlace caduca en 1 hora.',
+    otherEmail: 'Usar otro email',
+    email: 'Email',
+    sending: 'Enviando…',
+    sendLink: 'Enviar enlace de acceso',
+    continueWith: 'o continúa con',
+    google: 'Acceder con Google',
+    microsoft: 'Acceder con Microsoft',
+    legalPrefix: 'Al acceder aceptas nuestros',
+    terms: 'Términos de uso',
+    and: 'y la',
+    privacy: 'Política de privacidad',
+    back: '← Volver al inicio',
+  },
+  ru: {
+    inactive: 'Ваш аккаунт неактивен. Свяжитесь с EXPERT для восстановления доступа.',
+    configError: 'Ошибка конфигурации. Попробуйте ещё раз.',
+    sendError: 'Не удалось отправить ссылку для входа.',
+    microsoftError: 'Не удалось войти через Microsoft.',
+    googleError: 'Не удалось войти через Google.',
+    portal: 'Кабинет клиента',
+    title: 'Вход в EXPERT',
+    checkEmail: 'Проверьте электронную почту',
+    sentPrefix: 'Мы отправили ссылку для входа на',
+    expires: 'Ссылка действует 1 час.',
+    otherEmail: 'Использовать другой email',
+    email: 'Email',
+    sending: 'Отправляем…',
+    sendLink: 'Отправить ссылку для входа',
+    continueWith: 'или войдите через',
+    google: 'Войти через Google',
+    microsoft: 'Войти через Microsoft',
+    legalPrefix: 'Входя в систему, вы принимаете',
+    terms: 'Условия использования',
+    and: 'и',
+    privacy: 'Политику конфиденциальности',
+    back: '← Вернуться к услуге',
+  },
+} as const;
+
 function getSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -31,25 +84,26 @@ function safeNextPath(value: string | null): string {
 }
 
 function LoginForm() {
-  const searchParams  = useSearchParams();
-  const next          = safeNextPath(searchParams.get('next'));
-  const callbackUrl   = `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback?next=${encodeURIComponent(next)}`;
-  const routeError    = searchParams.get('error');
-  const initialError  = routeError === 'inactive'
-    ? 'Tu usuario está inactivo. Contacta con EXPERT para reactivar el acceso.'
-    : '';
+  const searchParams = useSearchParams();
+  const locale = searchParams.get('lang') === 'ru' ? 'ru' : 'es';
+  const t = COPY[locale];
+  const next = safeNextPath(searchParams.get('next'));
+  const callbackUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback?next=${encodeURIComponent(next)}`;
+  const routeError = searchParams.get('error');
+  const initialError = routeError === 'inactive' ? t.inactive : '';
+  const homeHref = locale === 'ru' ? RU_SERVICE_PATH : '/';
 
-  const [email,     setEmail]     = useState('');
-  const [loading,   setLoading]   = useState<'magic' | 'google' | 'microsoft' | null>(null);
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState<'magic' | 'google' | 'microsoft' | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [error,     setError]     = useState(initialError);
+  const [error, setError] = useState(initialError);
 
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading('magic');
     const supabase = getSupabaseClient();
-    if (!supabase) { setError('Error de configuración. Inténtalo de nuevo.'); setLoading(null); return; }
+    if (!supabase) { setError(t.configError); setLoading(null); return; }
     try {
       const { error: err } = await supabase.auth.signInWithOtp({
         email,
@@ -58,7 +112,7 @@ function LoginForm() {
       if (err) throw err;
       setSubmitted(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error al enviar el enlace.');
+      setError(locale === 'ru' ? t.sendError : (err instanceof Error ? err.message : t.sendError));
     } finally {
       setLoading(null);
     }
@@ -68,7 +122,7 @@ function LoginForm() {
     setError('');
     setLoading('microsoft');
     const supabase = getSupabaseClient();
-    if (!supabase) { setError('Error de configuración. Inténtalo de nuevo.'); setLoading(null); return; }
+    if (!supabase) { setError(t.configError); setLoading(null); return; }
     try {
       const { error: err } = await supabase.auth.signInWithOAuth({
         provider: 'azure',
@@ -76,7 +130,7 @@ function LoginForm() {
       });
       if (err) throw err;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión con Microsoft.');
+      setError(locale === 'ru' ? t.microsoftError : (err instanceof Error ? err.message : t.microsoftError));
       setLoading(null);
     }
   };
@@ -85,7 +139,7 @@ function LoginForm() {
     setError('');
     setLoading('google');
     const supabase = getSupabaseClient();
-    if (!supabase) { setError('Error de configuración. Inténtalo de nuevo.'); setLoading(null); return; }
+    if (!supabase) { setError(t.configError); setLoading(null); return; }
     try {
       const { error: err } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -93,16 +147,15 @@ function LoginForm() {
       });
       if (err) throw err;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión con Google.');
+      setError(locale === 'ru' ? t.googleError : (err instanceof Error ? err.message : t.googleError));
       setLoading(null);
     }
   };
 
   return (
     <div className="relative z-10 w-full max-w-sm">
-      {/* Logo */}
       <div className="mb-8 flex flex-col items-center gap-4">
-        <Link href="/" className="transition-opacity hover:opacity-80">
+        <Link href={homeHref} className="transition-opacity hover:opacity-80">
           <Image
             src="/logos/EXPERT_logo/expert-logo-light-clean.png"
             alt="EXPERT"
@@ -113,12 +166,11 @@ function LoginForm() {
           />
         </Link>
         <div className="text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#D4A017]">Portal de cliente</p>
-          <h1 className="mt-1 font-serif text-2xl font-bold text-white">Accede a tu panel</h1>
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#D4A017]">{t.portal}</p>
+          <h1 className="mt-1 font-serif text-2xl font-bold text-white">{t.title}</h1>
         </div>
       </div>
 
-      {/* Card */}
       <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl shadow-black/40 backdrop-blur-sm">
         {submitted ? (
           <div className="flex flex-col items-center gap-4 py-4 text-center">
@@ -126,19 +178,19 @@ function LoginForm() {
               <Mail className="h-7 w-7 text-[#D4A017]" />
             </div>
             <div>
-              <p className="font-semibold text-white">Revisa tu email</p>
+              <p className="font-semibold text-white">{t.checkEmail}</p>
               <p className="mt-1 text-sm text-white/60">
-                Hemos enviado un enlace de acceso a{' '}
+                {t.sentPrefix}{' '}
                 <span className="font-medium text-white/80">{email}</span>
               </p>
-              <p className="mt-2 text-xs text-white/40">El enlace caduca en 1 hora.</p>
+              <p className="mt-2 text-xs text-white/40">{t.expires}</p>
             </div>
             <button
               type="button"
               onClick={() => { setSubmitted(false); setEmail(''); }}
               className="mt-2 text-sm font-semibold text-[#D4A017] hover:text-[#F2C14E]"
             >
-              Usar otro email
+              {t.otherEmail}
             </button>
           </div>
         ) : (
@@ -152,7 +204,7 @@ function LoginForm() {
             <form onSubmit={handleMagicLink} className="space-y-3">
               <div>
                 <label htmlFor="email" className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-white/60">
-                  Email
+                  {t.email}
                 </label>
                 <input
                   id="email"
@@ -171,9 +223,9 @@ function LoginForm() {
                 className="group flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#07111d] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {loading === 'magic' ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Enviando…</>
+                  <><Loader2 className="h-4 w-4 animate-spin" /> {t.sending}</>
                 ) : (
-                  <><Mail className="h-4 w-4" /> Enviar enlace de acceso
+                  <><Mail className="h-4 w-4" /> {t.sendLink}
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </>
                 )}
@@ -182,7 +234,7 @@ function LoginForm() {
 
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-white/10" />
-              <span className="text-xs text-white/30">o continúa con</span>
+              <span className="text-xs text-white/30">{t.continueWith}</span>
               <div className="h-px flex-1 bg-white/10" />
             </div>
 
@@ -202,7 +254,7 @@ function LoginForm() {
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
               )}
-              Acceder con Google
+              {t.google}
             </button>
 
             <button
@@ -221,20 +273,20 @@ function LoginForm() {
                   <path fill="#FFB900" d="M12.5 12.5H23V23H12.5z" />
                 </svg>
               )}
-              Acceder con Microsoft
+              {t.microsoft}
             </button>
           </div>
         )}
       </div>
 
       <p className="mt-6 text-center text-xs text-white/40">
-        Al acceder aceptas nuestros{' '}
-        <Link href="/terminos" className="underline hover:text-white/60">Términos de uso</Link>
-        {' '}y la{' '}
-        <Link href="/privacidad" className="underline hover:text-white/60">Política de privacidad</Link>
+        {t.legalPrefix}{' '}
+        <Link href="/terminos" className="underline hover:text-white/60">{t.terms}</Link>
+        {' '}{t.and}{' '}
+        <Link href="/privacidad" className="underline hover:text-white/60">{t.privacy}</Link>
       </p>
       <p className="mt-3 text-center text-xs text-white/30">
-        <Link href="/" className="hover:text-white/50">← Volver al inicio</Link>
+        <Link href={homeHref} className="hover:text-white/50">{t.back}</Link>
       </p>
     </div>
   );

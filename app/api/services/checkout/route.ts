@@ -12,14 +12,24 @@ import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { isCompanyBillingReady, missingCompanyBillingFields } from '@/lib/companies/billing-readiness';
 import { resolveServiceBillingScope } from '@/lib/payments/service-billing-scope';
+import { resolveServiceCheckoutLocale, type CheckoutLocale } from '@/lib/payments/service-checkout-locale';
+
+const RU_NACIONALIDAD_PATH = '/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii';
+const NACIONALIDAD_MENOR_SLUG = 'nacionalidad-espanola-menor-nacido-en-espana';
 
 const checkoutSchema = z.object({
   priceId                    : z.string().min(1).optional(),
   priceIds                   : z.array(z.string().min(1)).min(1).max(10).optional(),
   companyId                  : z.string().uuid().optional(),
+  locale                     : z.enum(['es', 'ru']).optional().default('es'),
   disbursements              : z.array(z.string().min(1)).max(5).optional(),
   disbursementMandateAccepted: z.boolean().optional(),
 }).refine(d => d.priceId ?? d.priceIds, { message: 'priceId or priceIds is required' });
+
+function serviceReturnPath(service: { slug: string; category: string }, locale: CheckoutLocale) {
+  if (locale === 'ru' && service.slug === NACIONALIDAD_MENOR_SLUG) return RU_NACIONALIDAD_PATH;
+  return `/servicios/${service.category}/${service.slug}`;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -55,6 +65,10 @@ export async function POST(request: NextRequest) {
       if (!svc) throw Object.assign(new Error(`Servicio no válido: ${id}`), { _isUserError: true });
       return svc;
     });
+    const locale = resolveServiceCheckoutLocale(
+      checkoutServices.map(service => service.slug),
+      input.locale,
+    );
 
     const billingResolution = resolveServiceBillingScope({
       serviceSlugs: checkoutServices.map(service => service.slug),
@@ -125,13 +139,20 @@ export async function POST(request: NextRequest) {
 
     const stripe = getStripeClient();
     const appUrl = getPublicAppUrl();
+    const primaryReturnPath = serviceReturnPath(checkoutServices[0], locale);
     const cancelUrl = checkoutServices.length === 1
-      ? `${appUrl}/servicios/${checkoutServices[0].category}/${checkoutServices[0].slug}`
-      : `${appUrl}/carrito`;
+      ? `${appUrl}${primaryReturnPath}`
+      : locale === 'ru'
+        ? `${appUrl}${primaryReturnPath}`
+        : `${appUrl}/carrito`;
+    const successUrl = locale === 'ru'
+      ? `${appUrl}/ru/spasibo/oplata?service=${checkoutServices[0].slug}`
+      : `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}`;
     const checkoutMetadata = {
       ...getServiceCheckoutMetadata(checkoutServices, checkoutDisbursements),
       user_id: user.id,
       billing_scope: billingResolution.scope,
+      checkout_locale: locale,
       ...(companyId ? { company_id: companyId } : {}),
       disbursement_mandate_accepted: checkoutDisbursements.length > 0 ? 'true' : 'false',
     };
@@ -150,10 +171,10 @@ export async function POST(request: NextRequest) {
         ...checkoutServices.map(getServiceCheckoutLineItem),
         ...checkoutDisbursements.map(getServiceDisbursementCheckoutLineItem),
       ],
-      success_url                : `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}`,
+      success_url                : successUrl,
       cancel_url                 : cancelUrl,
       metadata                   : checkoutMetadata,
-      locale                     : 'es',
+      locale,
     });
 
     const { error: persistError } = await admin.from('checkout_sessions').insert({
@@ -166,6 +187,7 @@ export async function POST(request: NextRequest) {
         service_slug: checkoutMetadata.service_slug ?? null,
         service_slugs: checkoutMetadata.service_slugs ?? null,
         billing_scope: checkoutMetadata.billing_scope,
+        checkout_locale: checkoutMetadata.checkout_locale,
         disbursement_keys: checkoutMetadata.disbursement_keys ?? null,
         disbursement_total_cents: checkoutMetadata.disbursement_total_cents ?? '0',
         revenue_amount_cents: checkoutMetadata.revenue_amount_cents ?? '0',
@@ -187,6 +209,7 @@ export async function POST(request: NextRequest) {
       sessionId: session.id,
       companyId,
       billingScope: billingResolution.scope,
+      locale,
     });
   } catch (err: unknown) {
     const e = err as { _isUserError?: boolean; type?: string; code?: string; message?: string; statusCode?: number; raw?: unknown };

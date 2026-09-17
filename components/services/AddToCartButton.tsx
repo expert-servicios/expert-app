@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { ShoppingBag, Check } from 'lucide-react';
 import { useCart, type CartItem } from '@/contexts/CartContext';
 
@@ -86,12 +87,18 @@ function rewriteVisibleClientCopy() {
   }
 }
 
-export function AddToCartButton({ item, label = DEFAULT_LABEL, inCartLabel = 'En la cesta', className }: AddToCartButtonProps) {
+export function AddToCartButton({ item, label = DEFAULT_LABEL, inCartLabel, className }: AddToCartButtonProps) {
+  const pathname = usePathname();
   const { addItem, items } = useCart();
-  const cartItem = withMandatoryDisbursements(item);
+  const isRussianPage = pathname.startsWith('/ru/');
+  const cartItem = {
+    ...withMandatoryDisbursements(item),
+    locale: item.locale ?? (isRussianPage ? 'ru' as const : 'es' as const),
+  };
   const inCart = items.some(i => i.priceId === cartItem.priceId);
   const isNacionalidadMenor = cartItem.slug === NACIONALIDAD_MENOR_SLUG;
   const buttonLabel = isNacionalidadMenor && label === DEFAULT_LABEL ? NACIONALIDAD_MENOR_LABEL : label;
+  const resolvedInCartLabel = inCartLabel ?? (isRussianPage ? 'В корзине' : 'En la cesta');
 
   useEffect(() => {
     if (!isNacionalidadMenor) return;
@@ -108,7 +115,7 @@ export function AddToCartButton({ item, label = DEFAULT_LABEL, inCartLabel = 'En
       {inCart ? (
         <>
           <Check className="h-4 w-4" />
-          {inCartLabel}
+          {resolvedInCartLabel}
         </>
       ) : (
         <>
