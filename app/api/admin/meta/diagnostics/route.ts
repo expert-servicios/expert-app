@@ -3,6 +3,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { getMetaMarketingConfigStatus } from '@/lib/integrations/meta/config';
 import { auditMetaCatalog } from '@/lib/integrations/meta/catalog-audit';
 import { testMetaMarketingConnection } from '@/lib/integrations/meta/client';
+import { auditCommercialCatalogInventory } from '@/lib/services/commercial-catalog-audit';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -19,10 +20,12 @@ export async function GET(request: NextRequest) {
 
   const config = getMetaMarketingConfigStatus();
   const catalog = auditMetaCatalog();
+  const commercialInventory = auditCommercialCatalogInventory();
 
   return NextResponse.json({
     config,
     catalog,
+    commercialInventory,
     liveTestAvailable: config.enabled && config.configured,
   });
 }
