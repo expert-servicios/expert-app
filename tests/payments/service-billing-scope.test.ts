@@ -10,6 +10,17 @@ describe('resolveServiceBillingScope', () => {
     })).toEqual({ scope: 'profile', companyId: null });
   });
 
+  it('rejects a cart that mixes a personal procedure with another billing scope', () => {
+    expect(resolveServiceBillingScope({
+      serviceSlugs: [
+        'nacionalidad-espanola-menor-nacido-en-espana',
+        'holded-pack-starter',
+      ],
+      activeCompanyId: '11111111-1111-1111-1111-111111111111',
+      clientType: 'empresa',
+    })).toEqual({ scope: 'mixed_billing_scope', companyId: null });
+  });
+
   it('uses an explicit company for ordinary services', () => {
     expect(resolveServiceBillingScope({
       serviceSlugs: ['holded-pack-starter'],
