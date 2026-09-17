@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { intersectHoldedReadPermissions, normalizeDetectedHoldedPermissions } from '@/lib/integrations/holded/holded-permissions';
+import { intersectHoldedReadPermissions, normalizeDetectedHoldedPermissions, type HoldedPermissions } from '@/lib/integrations/holded/holded-permissions';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { getService } from '@/lib/services/service-registry';
 import { resolveCompanyCommercialCoverage, type CompanyCoverageSource } from '@/lib/subscriptions/company-commercial-coverage';
@@ -54,9 +54,9 @@ export interface KiaContext {
     coverageScope: string | null;
     holdedConnected: boolean;
     /** Backwards-compatible alias for the effective/enabled permission map. */
-    holdedPermissions: Record<string, boolean>;
-    holdedPermissionsDetected: Record<string, boolean>;
-    holdedPermissionsEnabled: Record<string, boolean>;
+    holdedPermissions: HoldedPermissions;
+    holdedPermissionsDetected: HoldedPermissions;
+    holdedPermissionsEnabled: HoldedPermissions;
   } | null;
   service: {
     slug: string | null;
