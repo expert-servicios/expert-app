@@ -5,15 +5,19 @@ import {
   getServiceCheckoutByPriceId,
   getServiceCheckoutLineItem,
   getServiceCheckoutMetadata,
+  getServiceDisbursementByKey,
+  getServiceDisbursementCheckoutLineItem,
 } from '@/lib/integrations/service-checkout';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { isCompanyBillingReady, missingCompanyBillingFields } from '@/lib/companies/billing-readiness';
 
 const checkoutSchema = z.object({
-  priceId : z.string().min(1).optional(),
-  priceIds: z.array(z.string().min(1)).min(1).max(10).optional(),
-  companyId: z.string().uuid().optional(),
+  priceId                    : z.string().min(1).optional(),
+  priceIds                   : z.array(z.string().min(1)).min(1).max(10).optional(),
+  companyId                  : z.string().uuid().optional(),
+  disbursements              : z.array(z.string().min(1)).max(5).optional(),
+  disbursementMandateAccepted: z.boolean().optional(),
 }).refine(d => d.priceId ?? d.priceIds, { message: 'priceId or priceIds is required' });
 
 export async function POST(request: NextRequest) {
@@ -81,6 +85,20 @@ export async function POST(request: NextRequest) {
       return svc;
     });
 
+    const requestedDisbursementKeys = [...new Set(input.disbursements ?? [])];
+    const checkoutDisbursements = requestedDisbursementKeys.map(key => {
+      const disbursement = getServiceDisbursementByKey(key);
+      if (!disbursement) throw Object.assign(new Error(`Suplido no válido: ${key}`), { _isUserError: true });
+      return disbursement;
+    });
+
+    if (checkoutDisbursements.length > 0 && input.disbursementMandateAccepted !== true) {
+      return NextResponse.json({
+        error: 'Para incluir suplidos debes aceptar el mandato expreso de pago en nombre y por cuenta del cliente.',
+        code : 'disbursement_mandate_required',
+      }, { status: 409 });
+    }
+
     const stripe = getStripeClient();
     const appUrl = getPublicAppUrl();
     const cancelUrl = checkoutServices.length === 1
@@ -88,9 +106,10 @@ export async function POST(request: NextRequest) {
       : `${appUrl}/carrito`;
     const stripeCustomerId = company.stripe_customer_id ?? null;
     const checkoutMetadata = {
-      ...getServiceCheckoutMetadata(checkoutServices),
+      ...getServiceCheckoutMetadata(checkoutServices, checkoutDisbursements),
       user_id: user.id,
       company_id: companyId,
+      disbursement_mandate_accepted: checkoutDisbursements.length > 0 ? 'true' : 'false',
     };
 
     const session = await stripe.checkout.sessions.create({
@@ -102,7 +121,10 @@ export async function POST(request: NextRequest) {
       customer                   : stripeCustomerId ?? undefined,
       customer_email             : stripeCustomerId ? undefined : user.email,
       ...(stripeCustomerId ? { customer_update: { address: 'auto' as const, name: 'auto' as const } } : {}),
-      line_items                 : checkoutServices.map(getServiceCheckoutLineItem),
+      line_items                 : [
+        ...checkoutServices.map(getServiceCheckoutLineItem),
+        ...checkoutDisbursements.map(getServiceDisbursementCheckoutLineItem),
+      ],
       success_url                : `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}`,
       cancel_url                 : cancelUrl,
       metadata                   : checkoutMetadata,
@@ -118,6 +140,11 @@ export async function POST(request: NextRequest) {
         product_type: checkoutMetadata.product_type ?? (checkoutServices.length > 1 ? 'cart' : 'service'),
         service_slug: checkoutMetadata.service_slug ?? null,
         service_slugs: checkoutMetadata.service_slugs ?? null,
+        disbursement_keys: checkoutMetadata.disbursement_keys ?? null,
+        disbursement_total_cents: checkoutMetadata.disbursement_total_cents ?? '0',
+        revenue_amount_cents: checkoutMetadata.revenue_amount_cents ?? '0',
+        checkout_total_net_cents: checkoutMetadata.checkout_total_net_cents ?? '0',
+        disbursement_mandate_accepted: checkoutMetadata.disbursement_mandate_accepted,
       },
     });
 
