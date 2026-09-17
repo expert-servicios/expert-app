@@ -14,8 +14,13 @@ import {
   type KiaTaskType,
   type KiaToolRequest,
 } from './kia-output-schema';
-import { KIA_TOOL_DEFINITIONS, type KiaToolResult } from './kia-tool-definitions';
+import type { KiaToolResult } from './kia-tool-definitions';
 import { executeKiaToolCall } from './kia-tool-executor';
+import {
+  isKiaToolAuthorized,
+  resolveKiaToolDefinitions,
+  type KiaToolAuthorizationContext,
+} from './kia-tool-registry';
 import { defaultEffortForTask, modelForTask, runKiaProviderRequest, type KiaProviderResult } from './kia-provider-router';
 import { classifyKiaIntent, type KiaIntentClassification } from './kia-intent-classifier';
 import { judgeKiaDecision, JUDGE_REQUIRED_ACTIONS } from './kia-judge-validator';
@@ -56,6 +61,7 @@ export async function runKiaDecision(input: {
   allowTools?: boolean;
   forceToolExecution?: boolean;
   allowedToolNames?: string[];
+  toolAuthorization?: Pick<KiaToolAuthorizationContext, 'maxRiskTier' | 'allowedEffects' | 'autonomousOnly'>;
   mediaUrl?: string;
   mediaType?: string;
   onProgress?: KiaProgressCallback;
@@ -66,7 +72,6 @@ export async function runKiaDecision(input: {
   const slug = input.contextInput.serviceSlug ?? '';
   const recentAssistantTexts = getRecentAssistantTextsFromContext(context);
 
-  // F6: few-shot examples from positive feedback (fail-silent)
   const fewShotBlock = await getKiaFewShotExamples({ taskType: input.taskType, limit: 3 })
     .then(formatFewShotExamples)
     .catch(() => '');
@@ -93,16 +98,17 @@ export async function runKiaDecision(input: {
     console.error('[KiaDecision] official source context failed:', safeErrorMessage(err));
     return '';
   });
-  const allowedToolDefinitions = input.allowedToolNames?.length
-    ? KIA_TOOL_DEFINITIONS.filter((tool) => input.allowedToolNames?.includes(tool.name))
-    : KIA_TOOL_DEFINITIONS;
+  const effectiveToolAuthorization: KiaToolAuthorizationContext = {
+    ...input.toolAuthorization,
+    channel: input.channel,
+    requestedNames: input.allowedToolNames,
+  };
+  const allowedToolDefinitions = resolveKiaToolDefinitions(effectiveToolAuthorization);
   const mediaInfo = input.mediaUrl ? { url: input.mediaUrl, type: input.mediaType ?? 'image/jpeg' } : null;
 
-  // F5: inject long-term memories into the user payload
   const memoriesBlock = formatMemoriesForContext(context.memories ?? []);
   const promptPayload = buildUserPayload(input.message, context, recentAssistantTexts, officialSourceContext, mediaInfo, memoriesBlock);
 
-  // F2: Intent pre-classifier (Haiku, <500ms) — runs only on inbound WABA messages
   let classification: KiaIntentClassification | null = null;
   if (input.channel === 'waba' && input.taskType === 'waba_reply') {
     input.onProgress?.({ type: 'classifying' });
@@ -114,7 +120,6 @@ export async function runKiaDecision(input: {
     }).catch(() => null);
   }
 
-  // If genuinely ambiguous: return clarify decision without calling Sonnet
   if (classification?.needsClarify && classification.ambiguityScore >= 0.7) {
     const clarifyDecision = finalizeDecisionPresentation(
       buildClarifyDecision(classification, input.taskType, context),
@@ -134,7 +139,6 @@ export async function runKiaDecision(input: {
     return { decision: clarifyDecision, context, toolResults: [], userMessage: clarifyDecision.userMessage, usedFallback: false };
   }
 
-  // Upgrade taskType if classifier detected something more specific than waba_reply
   const resolvedTaskType: KiaTaskType =
     classification?.suggestedTaskType && classification.suggestedTaskType !== 'waba_reply'
       ? classification.suggestedTaskType
@@ -146,7 +150,6 @@ export async function runKiaDecision(input: {
   );
   const modelOverride = modelForTask(resolvedTaskType, allowToolExecution);
 
-  // F7: select sub-agent profile based on task type and detected intent
   const subAgentProfile = selectSubAgentProfile({
     taskType: resolvedTaskType,
     detectedIntent: classification?.detectedIntent,
@@ -189,14 +192,12 @@ export async function runKiaDecision(input: {
       } as const;
 
       providerResult = await runKiaProviderRequest({ ...requestBase, messages });
-      // F8: track cost for this call
       if (providerResult.usage) {
         const { tokensIn, tokensOut } = extractTokenUsageFromProviderResult(providerResult);
         costEstimates.push(estimateCost(providerResult.model, tokensIn, tokensOut));
       }
       decision = applyBackendPolicyGuards(parseDecision(providerResult, resolvedTaskType, context, locale), input, context);
 
-      // Agentic tool loop: execute tools and feed results back to LLM until resolved
       if (allowToolExecution && decision.toolRequests.length > 0) {
         const loopStart = Date.now();
         let loopIteration = 0;
@@ -210,9 +211,17 @@ export async function runKiaDecision(input: {
             input.onProgress?.({ type: 'tool_call', tool: req.toolName, reason: req.reason });
           }
           const iterResults = await Promise.all(
-            decision.toolRequests.map((req: KiaToolRequest) =>
-              executeKiaToolCall({ name: req.toolName, arguments: req.arguments }, context),
-            ),
+            decision.toolRequests.map((req: KiaToolRequest) => {
+              const authorized = isKiaToolAuthorized(req.toolName, effectiveToolAuthorization);
+              if (!authorized) {
+                return Promise.resolve({
+                  toolName: req.toolName,
+                  ok: false,
+                  error: 'Tool not authorized by KIA registry policy',
+                } satisfies KiaToolResult);
+              }
+              return executeKiaToolCall({ name: req.toolName, arguments: req.arguments }, context);
+            }),
           );
           for (const r of iterResults) {
             input.onProgress?.({ type: 'tool_result', tool: r.toolName, ok: r.ok });
@@ -252,7 +261,6 @@ export async function runKiaDecision(input: {
         }
       }
 
-      // F3: Judge validator for critical actions (GPT-4o, fail-open)
       if (JUDGE_REQUIRED_ACTIONS.has(decision.nextAction) && decision.confidence >= 0.5 && !usedFallback) {
         const openAiKey = process.env.OPENAI_API_KEY?.trim();
         if (openAiKey) {
@@ -286,7 +294,6 @@ export async function runKiaDecision(input: {
         }
       }
 
-      // Anti-repetition check on final response
       const repeated = findSimilarRecentMessage(decision.userMessage, recentAssistantTexts);
       if (repeated) {
         const retry = await retryAvoidingRepetition({
@@ -334,7 +341,6 @@ export async function runKiaDecision(input: {
   decision = finalizeDecisionPresentation(decision, input.channel, locale);
 
   const totalCost = costEstimates.length ? sumCostEstimates(costEstimates) : null;
-
   await saveKiaDecisionLog({
     decision,
     channel: input.channel,
@@ -350,7 +356,6 @@ export async function runKiaDecision(input: {
     loopIterations: toolResults.length > 0 ? Math.ceil(toolResults.length / Math.max(1, decision.toolRequests.length || 1)) : 0,
   });
 
-  // F5: store memory after successful waba_reply (fire-and-forget, fail-silent)
   if (
     input.channel === 'waba' &&
     input.taskType === 'waba_reply' &&
@@ -441,10 +446,10 @@ function repairUserMessageLanguage(message: string, locale: 'es' | 'ru', nextAct
 }
 
 function russianSafeMessage(nextAction: KiaDecision['nextAction']): string {
-  if (nextAction === 'ask_one_question') return 'Ya Kia, asistentka EXPERT. Utochnite pozhaluysta, chto vam nuzhno?';
-  if (nextAction === 'show_menu') return 'Ya Kia, asistentka EXPERT. Vyberite podkhodyashchiy variant.';
-  if (nextAction === 'get_case_status') return 'Ya Kia, asistentka EXPERT. Proveryu vash vopros po delu.';
-  return 'Ya Kia, asistentka EXPERT. Pomogayu s etim shagom.';
+  if (nextAction === 'ask_one_question') return 'Я Kia, виртуальная помощница EXPERT. Уточните, пожалуйста, что именно вам нужно?';
+  if (nextAction === 'show_menu') return 'Я Kia, виртуальная помощница EXPERT. Выберите подходящий вариант.';
+  if (nextAction === 'get_case_status') return 'Я Kia, виртуальная помощница EXPERT. Проверю информацию по вашему делу.';
+  return 'Я Kia, виртуальная помощница EXPERT. Помогу вам со следующим шагом.';
 }
 
 function spanishSafeMessage(nextAction: KiaDecision['nextAction']): string {

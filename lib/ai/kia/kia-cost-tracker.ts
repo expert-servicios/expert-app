@@ -1,9 +1,15 @@
-// Model pricing (USD per 1M tokens) — approximate, update when pricing changes
+// Model pricing (USD per 1M tokens) — approximate, update when pricing changes.
+// GPT-5.6 prices verified against OpenAI public pricing on 2026-09-15.
+// Claude Sonnet 5 / Haiku 4.5 prices verified against Anthropic docs on 2026-09-15.
 const MODEL_PRICING: Record<string, { inputPer1M: number; outputPer1M: number }> = {
+  'claude-sonnet-5':           { inputPer1M: 2.00,  outputPer1M: 10.00 },
   'claude-sonnet-4-6':         { inputPer1M: 3.00,  outputPer1M: 15.00 },
-  'claude-haiku-4-5-20251001': { inputPer1M: 0.80,  outputPer1M: 4.00  },
-  'claude-haiku-4-5':          { inputPer1M: 0.80,  outputPer1M: 4.00  },
+  'claude-haiku-4-5-20251001': { inputPer1M: 1.00,  outputPer1M: 5.00  },
+  'claude-haiku-4-5':          { inputPer1M: 1.00,  outputPer1M: 5.00  },
   'claude-opus-4-8':           { inputPer1M: 15.00, outputPer1M: 75.00 },
+  'gpt-5.6-sol':               { inputPer1M: 5.00,  outputPer1M: 30.00 },
+  'gpt-5.6-terra':             { inputPer1M: 2.50,  outputPer1M: 15.00 },
+  'gpt-5.6-luna':              { inputPer1M: 1.00,  outputPer1M: 6.00  },
   'gpt-4o':                    { inputPer1M: 5.00,  outputPer1M: 15.00 },
   'text-embedding-3-small':    { inputPer1M: 0.02,  outputPer1M: 0     },
 };
@@ -37,15 +43,31 @@ export function sumCostEstimates(estimates: KiaCostEstimate[]): KiaCostEstimate 
 }
 
 /**
- * Parses token usage from an Anthropic provider result payload.
- * The Anthropic API returns usage in result.usage.input_tokens / output_tokens.
+ * Normalizes usage from Anthropic Messages, OpenAI Responses and legacy
+ * OpenAI Chat Completions so evals can compare cost on the same axes.
  */
 export function extractTokenUsageFromProviderResult(providerResult: unknown): KiaTokenUsage {
   if (!providerResult || typeof providerResult !== 'object') return { tokensIn: 0, tokensOut: 0 };
   const r = providerResult as Record<string, unknown>;
   const usage = r.usage as Record<string, unknown> | undefined;
-  return {
-    tokensIn:  typeof usage?.input_tokens  === 'number' ? usage.input_tokens  : 0,
-    tokensOut: typeof usage?.output_tokens === 'number' ? usage.output_tokens : 0,
-  };
+
+  const tokensIn = firstNumber(
+    usage?.input_tokens,
+    usage?.prompt_tokens,
+    usage?.inputTokens,
+  );
+  const tokensOut = firstNumber(
+    usage?.output_tokens,
+    usage?.completion_tokens,
+    usage?.outputTokens,
+  );
+
+  return { tokensIn, tokensOut };
+}
+
+function firstNumber(...values: unknown[]): number {
+  for (const value of values) {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+  }
+  return 0;
 }

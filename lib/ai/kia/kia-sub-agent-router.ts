@@ -1,4 +1,5 @@
 import type { KiaTaskType } from './kia-output-schema';
+import { selectKiaSkill } from './kia-skill-registry';
 
 export interface KiaSubAgentProfile {
   id: string;
@@ -36,6 +37,25 @@ Reglas adicionales:
 </sub_agent_holded>
 `.trim();
 
+const LABOR_ADDENDUM = `
+<sub_agent_labor>
+Eres el sub-agente laboral de Kia para diagnóstico de nóminas y contratos en Holded.
+Especialización:
+- empleado y estado laboral;
+- contrato activo, antigüedad, jornada, días de trabajo, categoría y salario;
+- pagas extra y periodicidad salarial;
+- nóminas calculadas: devengos, deducciones, bases de cotización, retención IRPF, coste empresa y estado de pago;
+- salary-records manuales, siempre separados de las nóminas calculadas.
+Reglas adicionales:
+- Usa run_labor_payroll_diagnostics cuando exista employeeId y se solicite revisión de nómina, contrato, bases, IRPF o incoherencias.
+- Distingue siempre hechos devueltos por Holded de inferencias o incidencias detectadas.
+- La ausencia de IRPF o bases en el payload no equivale a importe cero.
+- No recalcules ni presentes una nómina legal definitiva si faltan convenio, tablas salariales, situación personal o datos de cotización necesarios.
+- No corrijas datos ni ejecutes escrituras en Holded.
+- Si el diagnóstico marca review o insufficient_data, explica qué dato falta y recomienda revisión profesional antes de corregir la nómina.
+</sub_agent_labor>
+`.trim();
+
 const CASE_ADDENDUM = `
 <sub_agent_case>
 Eres el sub-agente de gestión de expedientes de Kia. Especialización:
@@ -62,6 +82,11 @@ const SUB_AGENT_MAP: Record<string, KiaSubAgentProfile> = {
     systemPromptAddendum: HOLDED_ADDENDUM,
     maxTokensOverride: 1000,
   },
+  labor: {
+    id: 'labor',
+    systemPromptAddendum: LABOR_ADDENDUM,
+    maxTokensOverride: 1200,
+  },
   case: {
     id: 'case',
     systemPromptAddendum: CASE_ADDENDUM,
@@ -70,13 +95,14 @@ const SUB_AGENT_MAP: Record<string, KiaSubAgentProfile> = {
 };
 
 const INTENT_TO_SUB_AGENT: Record<string, string> = {
-  viability:              'fiscal',
-  readiness:              'holded',
-  connect_holded:         'holded',
-  accounting_summary:     'holded',
-  anomaly_review:         'holded',
-  case_status:            'case',
-  send_documents:         'case',
+  viability:               'fiscal',
+  readiness:               'holded',
+  connect_holded:          'holded',
+  accounting_summary:      'holded',
+  anomaly_review:          'holded',
+  payroll_diagnostics:     'labor',
+  case_status:             'case',
+  send_documents:          'case',
   document_classification: 'case',
 };
 
@@ -90,17 +116,28 @@ const TASK_TYPE_TO_SUB_AGENT: Record<KiaTaskType, string | null> = {
   next_best_action:            null,
   checkout_decision:           null,
   lead_client_decision:        null,
+  chat_reply:                  null,
   waba_reply:                  null,
   admin_ai_compose:            null,
   generate_report:             null,
 };
 
+export function getKiaSubAgentProfile(id: string | null | undefined): KiaSubAgentProfile | null {
+  return id ? (SUB_AGENT_MAP[id] ?? null) : null;
+}
+
 export function selectSubAgentProfile(params: {
   taskType: KiaTaskType;
   detectedIntent?: string;
 }): KiaSubAgentProfile | null {
+  const skill = selectKiaSkill({
+    taskType: params.taskType,
+    detectedIntent: params.detectedIntent,
+  });
+  const skillProfile = getKiaSubAgentProfile(skill?.preferredSubAgentId);
+  if (skillProfile) return skillProfile;
+
   const byIntent = params.detectedIntent ? INTENT_TO_SUB_AGENT[params.detectedIntent] : null;
   const byTask = TASK_TYPE_TO_SUB_AGENT[params.taskType];
-  const profileId = byIntent ?? byTask;
-  return profileId ? (SUB_AGENT_MAP[profileId] ?? null) : null;
+  return getKiaSubAgentProfile(byIntent ?? byTask);
 }

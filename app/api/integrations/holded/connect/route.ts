@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { encryptSecret, keyLast4 } from '@/lib/security/encryption';
-import { isEncryptionConfigured, createHoldedClientFromRawKey, type HoldedPermissions } from '@/lib/integrations/holded/holded-client';
+import { isEncryptionConfigured, createHoldedClientFromRawKey } from '@/lib/integrations/holded/holded-client';
+import { detectHoldedLaborPermissions } from '@/lib/integrations/holded/holded-labor-permissions';
+import { forceHoldedReadOnly, type HoldedPermissions } from '@/lib/integrations/holded/holded-permissions';
 import { holdedErrorMessage } from '@/lib/integrations/holded/holded-errors';
 
 const permissionsSchema = z.object({
@@ -14,6 +16,12 @@ const permissionsSchema = z.object({
   bankMovements   : z.boolean().default(false),
   inboxDocuments  : z.boolean().default(false),
   writeInbox      : z.boolean().default(false),
+  accountingReports: z.boolean().default(false),
+  accountingEntries: z.boolean().default(false),
+  laborEmployeesRead: z.boolean().optional(),
+  laborPayrollsRead: z.boolean().optional(),
+  laborEmployeesWrite: z.literal(false).optional(),
+  laborPayrollsWrite: z.literal(false).optional(),
 });
 
 const bodySchema = z.object({
@@ -28,14 +36,12 @@ const SAFE_COLUMNS = 'id,provider,mode,api_key_last4,permissions_detected,status
 
 export async function POST(request: NextRequest) {
   try {
-    // ── Auth ──────────────────────────────────────────────────────────────────
     const supabase = createServerSupabaseClient(request);
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    // ── Encryption guard ──────────────────────────────────────────────────────
     if (!isEncryptionConfigured()) {
       console.error('[holded/connect] SECRET_ENCRYPTION_KEY not configured — refusing connection');
       return NextResponse.json(
@@ -44,7 +50,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── Parse body ────────────────────────────────────────────────────────────
     const body = await request.json().catch(() => null);
     const parsed = bodySchema.safeParse(body);
     if (!parsed.success) {
@@ -53,7 +58,6 @@ export async function POST(request: NextRequest) {
 
     const { apiKey, companyId: bodyCompanyId, permissionsEnabled, consentVersion, consentAt } = parsed.data;
 
-    // ── Resolve company ───────────────────────────────────────────────────────
     const { data: profile } = await getSupabaseAdmin()
       .from('profiles')
       .select('active_company_id')
@@ -62,7 +66,6 @@ export async function POST(request: NextRequest) {
 
     const companyId = bodyCompanyId ?? profile?.active_company_id ?? null;
 
-    // Verify the user belongs to this company (if company-scoped)
     if (companyId) {
       const { data: membership } = await getSupabaseAdmin()
         .from('profile_companies')
@@ -76,11 +79,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ── Test connection before saving ─────────────────────────────────────────
     const client = createHoldedClientFromRawKey(apiKey);
-    let testResult: { ok: boolean; permissions: HoldedPermissions; warnings: string[] };
+    let testResult;
+    let laborPermissions;
     try {
-      testResult = await client.testConnection();
+      [testResult, laborPermissions] = await Promise.all([
+        client.testConnection(),
+        detectHoldedLaborPermissions(apiKey),
+      ]);
     } catch (err) {
       return NextResponse.json(
         { error: `No se pudo conectar con Holded: ${holdedErrorMessage(err)}` },
@@ -95,13 +101,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ── Encrypt and persist ───────────────────────────────────────────────────
+    const detectedPermissions = forceHoldedReadOnly({
+      ...testResult.permissions,
+      ...laborPermissions,
+    } as HoldedPermissions);
+
+    const enabledPermissions = forceHoldedReadOnly({
+      ...detectedPermissions,
+      ...(permissionsEnabled ?? {}),
+      laborEmployeesRead: permissionsEnabled?.laborEmployeesRead ?? detectedPermissions.laborEmployeesRead,
+      laborPayrollsRead: permissionsEnabled?.laborPayrollsRead ?? detectedPermissions.laborPayrollsRead,
+      laborEmployeesWrite: false,
+      laborPayrollsWrite: false,
+    } as HoldedPermissions);
+
     const encryptedApiKey = encryptSecret(apiKey);
     const last4 = keyLast4(apiKey);
-
     const admin = getSupabaseAdmin();
 
-    // Upsert: one active integration per (company|client, provider)
     const existing = await admin
       .from('client_integrations')
       .select('id')
@@ -111,13 +128,12 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     const now = new Date().toISOString();
-    // encrypted_api_key is stored in client_integration_secrets, never in client_integrations (IMP-002)
     const upsertPayload = {
       provider            : 'holded',
       mode                : 'client_account',
       api_key_last4       : last4,
-      permissions_detected: testResult.permissions,
-      permissions_enabled : permissionsEnabled ?? testResult.permissions,
+      permissions_detected: detectedPermissions,
+      permissions_enabled : enabledPermissions,
       consent_at          : consentAt ?? now,
       consent_version     : consentVersion ?? '1.0',
       status              : 'active',
@@ -143,7 +159,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Error actualizando integración' }, { status: 500 });
       }
 
-      // Upsert secret separately — service_role only table, no authenticated grant
       const { error: secretError } = await admin
         .from('client_integration_secrets')
         .upsert({ integration_id: existing.data.id, encrypted_api_key: encryptedApiKey, updated_at: now });
@@ -158,36 +173,34 @@ export async function POST(request: NextRequest) {
         integration: updated,
         warnings: testResult.warnings,
       });
-    } else {
-      const { data: inserted, error: insertError } = await admin
-        .from('client_integrations')
-        .insert({ ...upsertPayload, created_at: now })
-        .select(SAFE_COLUMNS)
-        .single();
-
-      if (insertError || !inserted) {
-        console.error('[holded/connect] insert error:', insertError?.message);
-        return NextResponse.json({ error: 'Error guardando integración' }, { status: 500 });
-      }
-
-      // Insert secret separately — service_role only table, no authenticated grant
-      const { error: secretError } = await admin
-        .from('client_integration_secrets')
-        .insert({ integration_id: inserted.id, encrypted_api_key: encryptedApiKey });
-
-      if (secretError) {
-        console.error('[holded/connect] secret insert error:', secretError.message);
-        // Roll back the integration row to avoid orphaned rows without a secret
-        await admin.from('client_integrations').delete().eq('id', inserted.id);
-        return NextResponse.json({ error: 'Error guardando credencial segura' }, { status: 500 });
-      }
-
-      return NextResponse.json({
-        ok: true,
-        integration: inserted,
-        warnings: testResult.warnings,
-      });
     }
+
+    const { data: inserted, error: insertError } = await admin
+      .from('client_integrations')
+      .insert({ ...upsertPayload, created_at: now })
+      .select(SAFE_COLUMNS)
+      .single();
+
+    if (insertError || !inserted) {
+      console.error('[holded/connect] insert error:', insertError?.message);
+      return NextResponse.json({ error: 'Error guardando integración' }, { status: 500 });
+    }
+
+    const { error: secretError } = await admin
+      .from('client_integration_secrets')
+      .insert({ integration_id: inserted.id, encrypted_api_key: encryptedApiKey });
+
+    if (secretError) {
+      console.error('[holded/connect] secret insert error:', secretError.message);
+      await admin.from('client_integrations').delete().eq('id', inserted.id);
+      return NextResponse.json({ error: 'Error guardando credencial segura' }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      integration: inserted,
+      warnings: testResult.warnings,
+    });
   } catch (err) {
     console.error('[holded/connect] unexpected error:', err instanceof Error ? err.message : err);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });

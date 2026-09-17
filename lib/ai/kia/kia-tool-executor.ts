@@ -9,11 +9,29 @@ import { redactJson, safeErrorMessage } from './kia-redaction';
 import { resolveHoldedAuth, buildHoldedHeaders } from '@/lib/integrations/holded/holded-auth';
 import { generateCompanyReport } from '@/lib/reports/report-generator';
 import { extractInvoiceOcr, type InvoiceMediaType } from './kia-ocr-extractor';
+import { executeKiaHoldedLaborTool, type KiaHoldedLaborToolName } from './kia-holded-labor-tools';
+import { resolveKiaCompanyHoldedAccess } from './kia-holded-access';
+import { executeLaborPayrollDiagnostics } from './kia-labor-payroll-diagnostics';
+
+const HOLDED_LABOR_TOOL_NAMES = new Set<KiaHoldedLaborToolName>([
+  'get_holded_employees',
+  'get_holded_employee_contract',
+  'get_holded_payslips',
+  'get_holded_salary_records',
+]);
 
 export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaContext): Promise<KiaToolResult> {
   try {
     const args = validateKiaToolArguments(toolCall.name, toolCall.arguments);
     const admin = getSupabaseAdmin();
+
+    if (toolCall.name === 'run_labor_payroll_diagnostics') {
+      return executeLaborPayrollDiagnostics(args, context, admin);
+    }
+
+    if (HOLDED_LABOR_TOOL_NAMES.has(toolCall.name as KiaHoldedLaborToolName)) {
+      return executeKiaHoldedLaborTool(toolCall.name as KiaHoldedLaborToolName, args, context, admin);
+    }
 
     switch (toolCall.name) {
       case 'resolve_contact_context': {
@@ -141,11 +159,11 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
       case 'get_holded_invoices':
       case 'get_holded_contacts':
       case 'get_holded_bank_balance': {
-        const integrationId = await findHoldedIntegrationId(admin, context);
-        if (!integrationId) {
-          return fail(toolCall.name, 'Holded no está conectado. Usa generate_holded_connection_link para que el cliente lo vincule.');
+        const access = await resolveKiaCompanyHoldedAccess(admin, context);
+        if (!access.ok) {
+          return fail(toolCall.name, `${access.error} Usa generate_holded_connection_link si necesitas vincular Holded.`);
         }
-        const auth = await resolveHoldedAuth(integrationId);
+        const auth = await resolveHoldedAuth(access.access.integrationId);
         const hdrs = buildHoldedHeaders(auth.apiKey);
 
         if (toolCall.name === 'get_holded_invoices') {
@@ -185,23 +203,19 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
           });
         }
 
-        if (toolCall.name === 'get_holded_bank_balance') {
-          const res = await fetch(`${auth.baseUrl}/treasury`, { headers: hdrs });
-          if (!res.ok) return fail(toolCall.name, `Holded devolvió ${res.status}`);
-          const accounts = (await res.json()) as Array<Record<string, unknown>>;
-          const limit = Number(args.limit ?? 5);
-          return ok(toolCall.name, {
-            count: accounts.length,
-            accounts: accounts.slice(0, limit).map((a) => ({
-              id: a.id,
-              name: a.name,
-              balance: a.balance,
-              currency: a.currency ?? 'EUR',
-            })),
-          });
-        }
-
-        return fail(toolCall.name, 'Tool branch unreachable');
+        const res = await fetch(`${auth.baseUrl}/treasury`, { headers: hdrs });
+        if (!res.ok) return fail(toolCall.name, `Holded devolvió ${res.status}`);
+        const accounts = (await res.json()) as Array<Record<string, unknown>>;
+        const limit = Number(args.limit ?? 5);
+        return ok(toolCall.name, {
+          count: accounts.length,
+          accounts: accounts.slice(0, limit).map((a) => ({
+            id: a.id,
+            name: a.name,
+            balance: a.balance,
+            currency: a.currency ?? 'EUR',
+          })),
+        });
       }
 
       case 'generate_company_report': {
@@ -209,16 +223,16 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         if (!clientId) return fail(toolCall.name, 'No se puede generar el informe sin un cliente identificado.');
 
         const companyId = (context.company as Record<string, unknown> | null)?.id as string | null ?? null;
-        const integrationId = await findHoldedIntegrationId(admin, context);
-        if (!integrationId) {
-          return fail(toolCall.name, 'Holded no está conectado. Usa generate_holded_connection_link para que el cliente lo vincule primero.');
+        const access = await resolveKiaCompanyHoldedAccess(admin, context);
+        if (!access.ok) {
+          return fail(toolCall.name, `${access.error} Usa generate_holded_connection_link para vincular Holded primero.`);
         }
 
         try {
           const result = await generateCompanyReport({
             clientId,
             companyId,
-            integrationId,
+            integrationId: access.access.integrationId,
             period: typeof args.period === 'string' ? args.period : undefined,
             lang: (args.lang as 'es' | 'ru') ?? 'es',
             generatedBy: 'kia',
@@ -353,31 +367,4 @@ function ok(toolName: string, result: Record<string, unknown>): KiaToolResult {
 
 function fail(toolName: string, error: string): KiaToolResult {
   return { toolName, ok: false, error };
-}
-
-async function findHoldedIntegrationId(
-  admin: ReturnType<typeof getSupabaseAdmin>,
-  context: KiaContext,
-): Promise<string | null> {
-  const clientId = context.contact?.clientId ?? null;
-  const companyId = context.company?.id ?? null;
-
-  let query = admin
-    .from('client_integrations')
-    .select('id')
-    .eq('provider', 'holded')
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
-    .limit(1);
-
-  if (companyId) {
-    query = query.eq('company_id', companyId);
-  } else if (clientId) {
-    query = query.eq('client_id', clientId);
-  } else {
-    return null;
-  }
-
-  const { data } = await query.maybeSingle();
-  return data?.id ?? null;
 }

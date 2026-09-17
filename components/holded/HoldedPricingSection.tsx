@@ -87,9 +87,7 @@ type Addon = {
   description : string;
 };
 
-// Deshabilitado temporalmente mientras se prioriza el contenido de las
-// páginas de migración — los datos se conservan para reactivar en 1 línea.
-const ADDONS_ENABLED = false;
+const ADDONS_ENABLED = true;
 
 const ADDONS: Addon[] = [
   {

@@ -2,10 +2,12 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { getService } from '@/lib/services/service-registry';
 import { resolveCompanyCommercialCoverage, type CompanyCoverageSource } from '@/lib/subscriptions/company-commercial-coverage';
+import { resolveKiaLocale, type KiaLocale } from './kia-locale';
 import { retrieveKiaMemories, type KiaMemory } from './kia-memory-retriever';
+import { loadKiaMemoryV2Context, mergeKiaMemoryContexts } from './kia-memory-v2-context';
 
 export interface KiaContextInput {
-  channel: 'waba' | 'admin' | 'email' | 'dashboard' | 'document';
+  channel: 'waba' | 'telegram' | 'admin' | 'email' | 'dashboard' | 'document';
   phone?: string;
   email?: string;
   userId?: string;
@@ -31,7 +33,7 @@ export interface KiaContext {
     phone: string | null;
     clientId: string | null;
     leadId: string | null;
-    language: 'es' | 'ru';
+    language: KiaLocale;
   };
   profile: {
     profileCompleted: boolean;
@@ -79,10 +81,6 @@ export interface KiaContext {
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
-function detectLanguage(text: string | null | undefined): 'es' | 'ru' {
-  return /[\u0400-\u04FF]/.test(text ?? '') ? 'ru' : 'es';
-}
-
 export async function buildKiaContext(input: KiaContextInput): Promise<KiaContext> {
   const admin = getSupabaseAdmin();
   const phone = input.phone ?? null;
@@ -93,8 +91,9 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
 
   const openAiKey = (typeof process !== 'undefined' ? process.env.OPENAI_API_KEY : undefined)?.trim() ?? '';
   const shouldLoadMemories = Boolean(openAiKey && input.latestMessage && (phone || clientId || leadId));
+  const memoryV2ReadEnabled = process.env.KIA_MEMORY_V2_READ_ENABLED?.toLowerCase() === 'true';
 
-  const [profile, company, service, documents, conversation, selectedMessage, accounting, memories] = await Promise.all([
+  const [profile, company, service, documents, conversation, selectedMessage, accounting, legacyMemories] = await Promise.all([
     loadProfile(admin, clientId, contact),
     loadCompany(admin, clientId, resolvedCompanyId),
     loadService(input.serviceSlug),
@@ -106,6 +105,22 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
       ? retrieveKiaMemories({ query: input.latestMessage!, clientId, leadId, phone, openAiApiKey: openAiKey, supabase: admin }).catch(() => [] as KiaMemory[])
       : Promise.resolve([] as KiaMemory[]),
   ]);
+
+  let memories = legacyMemories;
+  if (memoryV2ReadEnabled && openAiKey && input.latestMessage) {
+    const memoryV2 = await loadKiaMemoryV2Context({
+      query: input.latestMessage,
+      openAiApiKey: openAiKey,
+      supabase: admin,
+      clientId,
+      leadId,
+      phone,
+      companyId: resolvedCompanyId,
+      caseId: input.caseId ?? null,
+      principal: 'kia',
+    }).catch(() => []);
+    memories = mergeKiaMemoryContexts(legacyMemories, memoryV2);
+  }
 
   const contactCases = (contact?.openCases ?? []).slice(0, 5).map((c) => ({
     id: c.id,
@@ -120,6 +135,8 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
     ? directCases
     : contactCases.length > 0 ? contactCases : directCases;
 
+  const latestConversationMessage = input.latestMessage ?? conversation[conversation.length - 1]?.text;
+
   return {
     contact: {
       status: contact?.status ?? (clientId ? 'client' : leadId ? 'lead' : 'unknown'),
@@ -128,7 +145,10 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
       phone,
       clientId,
       leadId,
-      language: detectLanguage(input.latestMessage ?? conversation[conversation.length - 1]?.text),
+      language: resolveKiaLocale({
+        preferredLanguage: profile?.preferredLanguage,
+        latestMessage: latestConversationMessage,
+      }),
     },
     profile: profile ? {
       profileCompleted: profile.profileCompleted,
@@ -158,7 +178,7 @@ async function loadProfile(admin: AdminClient, clientId: string | null, contact:
   if (!clientId) return null;
   const { data } = await admin
     .from('profiles')
-    .select('id, full_name, email, profile_completed, billing_ready, habitual_address_ready, active_company_id')
+    .select('id, full_name, email, profile_completed, billing_ready, habitual_address_ready, active_company_id, preferred_language')
     .eq('id', clientId)
     .maybeSingle();
 
@@ -167,6 +187,7 @@ async function loadProfile(admin: AdminClient, clientId: string | null, contact:
     return {
       name: contact.name,
       email: contact.email,
+      preferredLanguage: null,
       profileCompleted: contact.profileCompleted,
       billingReady: contact.billingReady,
       habitualAddressReady: contact.habitualAddressReady,
@@ -177,6 +198,7 @@ async function loadProfile(admin: AdminClient, clientId: string | null, contact:
   return {
     name: data.full_name as string | null,
     email: data.email as string | null,
+    preferredLanguage: data.preferred_language as string | null,
     profileCompleted: Boolean(data.profile_completed),
     billingReady: Boolean(data.billing_ready),
     habitualAddressReady: Boolean(data.habitual_address_ready),

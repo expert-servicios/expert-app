@@ -3,6 +3,8 @@ import { categories, services } from '@/lib/utils/catalog';
 import { blogArticles } from '@/lib/utils/blog';
 import { docs } from '@/lib/utils/docs';
 import { getAcademyKnowledgeArticles } from '@/lib/utils/academy-knowledge';
+import { shouldIndexLocale } from '@/lib/i18n/feature-flags';
+import { PUBLIC_ROUTE_KEYS, PUBLIC_ROUTE_MAP } from '@/lib/i18n/public-routes';
 
 const BASE = 'https://expertconsulting.es';
 
@@ -106,5 +108,28 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(`${article.updatedAt}T00:00:00Z`),
     }));
 
-  return [...staticRoutes, ...categoryRoutes, ...serviceRoutes, ...docRoutes, ...laborKnowledgeRoutes, ...blogRoutes];
+  const russianRoutes: MetadataRoute.Sitemap = shouldIndexLocale('ru')
+    ? PUBLIC_ROUTE_KEYS.map((routeKey) => ({
+        url: `${BASE}${PUBLIC_ROUTE_MAP[routeKey].ru}`,
+        changeFrequency: 'monthly' as const,
+        priority: routeKey === 'home' ? 0.9 : 0.7,
+        lastModified: now,
+        alternates: {
+          languages: {
+            'es-ES': `${BASE}${PUBLIC_ROUTE_MAP[routeKey].es}`,
+            'ru-RU': `${BASE}${PUBLIC_ROUTE_MAP[routeKey].ru}`,
+          },
+        },
+      }))
+    : [];
+
+  return [
+    ...staticRoutes,
+    ...russianRoutes,
+    ...categoryRoutes,
+    ...serviceRoutes,
+    ...docRoutes,
+    ...laborKnowledgeRoutes,
+    ...blogRoutes,
+  ];
 }

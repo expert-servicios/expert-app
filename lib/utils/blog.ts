@@ -2347,7 +2347,7 @@ Las sesiones son prácticas: trabajamos sobre casos reales o sobre tu propia sit
   },
   // ── Holded ─────────────────────────────────────────────────────────────────
   {
-    slug: 'como-empezar-con-holded',
+    slug: 'como-empezar-con-holded-paso-a-paso',
     category: 'Holded',
     title: 'Cómo empezar con Holded: configuración inicial paso a paso',
     excerpt: 'Guía práctica para configurar Holded desde cero: empresa, datos fiscales, facturación, bancos y usuarios. Lo que debes hacer antes de emitir la primera factura.',
@@ -2416,7 +2416,7 @@ El **Pack Starter de EXPERT** deja Holded configurado y listo para operar en 1�
   },
 
   {
-    slug: 'holded-autonomos-pequenas-empresas',
+    slug: 'holded-modulos-autonomos-pymes',
     category: 'Holded',
     title: 'Holded para autónomos y pequeñas empresas: qué módulos usar y cuáles no',
     excerpt: 'Qué partes de Holded son útiles para autónomos y pymes pequeñas y cuáles pueden ignorarse al empezar. Cómo aprovechar el ERP sin perderse en opciones.',
@@ -2472,7 +2472,7 @@ Si migras desde ContaPlus, Sage o Excel, no empieces a introducir datos a mano. 
   },
 
   {
-    slug: 'pack-starter-holded-vs-migracion',
+    slug: 'pack-starter-vs-migracion-holded',
     category: 'Holded',
     title: 'Pack Starter vs. Migración a Holded: qué servicio necesitas',
     excerpt: 'Cómo decidir entre Pack Starter (configuración inicial) y los servicios de Migración a Holded, según si tienes historial de datos, inventario o empiezas desde cero.',

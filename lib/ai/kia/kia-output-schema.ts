@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const KIA_TASK_TYPES = [
+  'chat_reply',
   'waba_reply',
   'admin_ai_compose',
   'document_classification',
@@ -17,7 +18,7 @@ export const KIA_TASK_TYPES = [
 
 export type KiaTaskType = (typeof KIA_TASK_TYPES)[number];
 
-export const KIA_CHANNELS = ['waba', 'admin', 'email', 'dashboard', 'document'] as const;
+export const KIA_CHANNELS = ['waba', 'telegram', 'admin', 'email', 'dashboard', 'document'] as const;
 export type KiaChannel = (typeof KIA_CHANNELS)[number];
 
 export const KIA_CONTACT_STATUSES = ['lead', 'client', 'unknown'] as const;
@@ -37,6 +38,7 @@ export const KIA_INTENTS = [
   'accounting_summary',
   'document_classification',
   'anomaly_review',
+  'payroll_diagnostics',
   'company_data_resolve',
   'company_data_confirm',
   'company_data_reject',
@@ -88,9 +90,9 @@ export const kiaToolRequestSchema = z.object({
 });
 
 export const kiaQuickReplySchema = z.object({
-  id:    z.string().min(1).max(256),
+  id: z.string().min(1).max(256),
   title: z.string().min(1).max(20),
-  kind:  z.enum(KIA_QUICK_REPLY_KINDS).default('secondary'),
+  kind: z.enum(KIA_QUICK_REPLY_KINDS).default('secondary'),
 });
 
 export const kiaDecisionSchema = z.object({
@@ -179,9 +181,9 @@ export const KIA_DECISION_JSON_SCHEMA = {
         additionalProperties: false,
         required: ['id', 'title', 'kind'],
         properties: {
-          id:    { type: 'string' },
+          id: { type: 'string' },
           title: { type: 'string', maxLength: 20 },
-          kind:  { enum: KIA_QUICK_REPLY_KINDS },
+          kind: { enum: KIA_QUICK_REPLY_KINDS },
         },
       },
     },

@@ -6,10 +6,17 @@
  * Auth: usuario autenticado (cookie de sesión Supabase SSR).
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
+import {
+  getEnabledKiaPolicyFeatureFlags,
+  resolveKiaActorCapabilities,
+} from '@/lib/ai/kia/kia-actor-capability-resolver';
+import {
+  resolveKiaPolicyToolNames,
+  runPolicyEnforcedKiaDecision,
+} from '@/lib/ai/kia/kia-policy-enforced-decision';
 import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
 import { resolveKiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 import { buildKiaCopilotArtifacts } from '@/lib/ai/kia/kia-copilot-artifacts';
@@ -18,6 +25,11 @@ import {
   buildKiaPresentationContext,
 } from '@/lib/ai/kia/kia-presentation-context-builder';
 import { loadKiaAuthoritativeCaseStatuses } from '@/lib/ai/kia/kia-authoritative-case-status';
+import { buildKiaSystemPrompt } from '@/lib/ai/kia/kia-system-prompt';
+import { KIA_DECISION_JSON_SCHEMA } from '@/lib/ai/kia/kia-output-schema';
+import { KIA_TOOL_DEFINITIONS } from '@/lib/ai/kia/kia-tool-definitions';
+import { redactSensitiveText, safeErrorMessage, stableHash } from '@/lib/ai/kia/kia-redaction';
+import { runSampledKiaShadow } from '@/lib/ai/kia/evals/kia-shadow-sampler';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -33,22 +45,6 @@ const requestSchema = z.object({
   companyId   : z.string().uuid().optional(),
   history     : z.array(historyItemSchema).max(8).optional(),
 }).strict();
-
-const LEGACY_DASHBOARD_SAFE_TOOLS = [
-  'get_user_expedientes',
-  'get_user_companies',
-  'get_user_pending_docs',
-  'get_case_status',
-  'get_holded_connection_status',
-  'get_holded_invoices',
-  'get_holded_contacts',
-  'get_holded_bank_balance',
-  'get_company_status_snapshot',
-  'generate_company_report',
-  'generate_holded_connection_link',
-  'generate_profile_link',
-  'generate_checkout_gate_link',
-] as const;
 
 function sessionCompanyId(data: unknown): string | null {
   if (!data || typeof data !== 'object') return null;
@@ -127,12 +123,33 @@ export async function POST(request: NextRequest) {
   }
 
   const companyScope = resolvedCompanyId ?? null;
+  let actor;
+  try {
+    actor = await resolveKiaActorCapabilities({
+      admin,
+      userId: user.id,
+      clientId: user.id,
+      companyId: companyScope,
+      featureFlags: getEnabledKiaPolicyFeatureFlags(),
+    });
+  } catch (err) {
+    console.error('[KiaCopilot] actor capability resolution failed:', safeErrorMessage(err));
+    return NextResponse.json({ error: 'policy_context_failed' }, { status: 500 });
+  }
+
+  if (!actor.active) {
+    return NextResponse.json({ error: 'account_inactive' }, { status: 403 });
+  }
+
+  const dashboardPolicy = resolveKiaPolicyToolNames('client_dashboard', actor);
+  if (!dashboardPolicy.ok) {
+    console.warn('[KiaCopilot] client dashboard policy denied:', dashboardPolicy.reason);
+    return NextResponse.json({ error: 'policy_denied' }, { status: 403 });
+  }
+
   let effectiveSessionId = sessionId;
   let effectiveHistory = history;
 
-  // A client component can survive router.refresh() when the active company is
-  // switched. Bind each KIA session to the company scope server-side so stale
-  // history from another entity can never enter the new company's context.
   if (sessionId) {
     const { data: existingSession, error: sessionError } = await admin
       .from('kia_sessions')
@@ -161,14 +178,13 @@ export async function POST(request: NextRequest) {
 
   let result;
   try {
-    result = await runKiaDecision({
-      taskType   : 'waba_reply',
+    result = await runPolicyEnforcedKiaDecision('client_dashboard', actor, {
+      taskType   : 'chat_reply',
       channel    : 'dashboard',
       message,
       locale     : 'es',
       allowTools : true,
       forceToolExecution: process.env.KIA_COPILOT_TOOLS_ENABLED?.toLowerCase() !== 'false',
-      allowedToolNames: [...LEGACY_DASHBOARD_SAFE_TOOLS],
       contextInput: {
         channel     : 'dashboard',
         userId      : user.id,
@@ -182,7 +198,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (err) {
-    console.error('[KiaCopilot] runKiaDecision failed:', err);
+    console.error('[KiaCopilot] runPolicyEnforcedKiaDecision failed:', safeErrorMessage(err));
     return NextResponse.json(
       {
         error: 'kia_error',
@@ -192,6 +208,44 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 },
     );
+  }
+
+  if (!result.usedFallback && result.providerResult) {
+    const shadowTaskType = result.decision.taskType;
+    const allowedShadowToolNames = new Set(dashboardPolicy.toolNames);
+    const shadowTools = KIA_TOOL_DEFINITIONS.filter((tool) => allowedShadowToolNames.has(tool.name));
+    const shadowRequest = {
+      taskType: shadowTaskType,
+      systemPrompt: buildKiaSystemPrompt({
+        locale: 'es',
+        channel: 'dashboard',
+        taskType: shadowTaskType,
+      }),
+      responseSchema: KIA_DECISION_JSON_SCHEMA,
+      tools: shadowTools,
+      messages: [{ role: 'user' as const, content: redactSensitiveText(message) }],
+      maxTokens: 900,
+      temperature: 0.2,
+    };
+    const shadowSampleKey = stableHash({
+      userId: user.id,
+      companyScope,
+      sessionId: effectiveSessionId ?? null,
+      message,
+    });
+
+    after(async () => {
+      try {
+        await runSampledKiaShadow({
+          request: shadowRequest,
+          baselineDecision: result.decision,
+          baselineProviderResult: result.providerResult,
+          sampleKey: shadowSampleKey,
+        });
+      } catch (err) {
+        console.warn('[KiaCopilot] shadow sampling failed:', safeErrorMessage(err));
+      }
+    });
   }
 
   const authoritativeCaseStatuses = result.decision.intent === 'case_status'

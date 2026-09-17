@@ -21,6 +21,10 @@ export interface KiaToolResult {
 }
 
 const emptyObjectSchema = z.object({}).strict();
+const holdedLaborPageSchema = {
+  limit: z.number().int().min(1).max(100).default(20),
+  cursor: z.string().min(1).optional(),
+};
 
 export const kiaToolValidators = {
   resolve_contact_context: z.object({
@@ -89,23 +93,51 @@ export const kiaToolValidators = {
     includeAnomalies: z.boolean().default(true),
     periods: z.number().int().min(1).max(4).default(1),
   }).strict(),
-  // ── Holded data tools (require active client integration) ─────────────────
+  // ── Holded accounting/data tools (active company integration) ─────────────
   get_holded_invoices: z.object({
-    docType  : z.enum(['invoice', 'salesreceipt', 'purchase', 'creditnote']).default('invoice'),
-    limit    : z.number().int().min(1).max(20).default(10),
-    since    : z.string().optional(), // ISO date — filter by date
+    docType: z.enum(['invoice', 'salesreceipt', 'purchase', 'creditnote']).default('invoice'),
+    limit: z.number().int().min(1).max(20).default(10),
+    since: z.string().optional(),
   }).strict(),
   get_holded_contacts: z.object({
-    query    : z.string().max(100).optional(), // search term
-    limit    : z.number().int().min(1).max(20).default(10),
+    query: z.string().max(100).optional(),
+    limit: z.number().int().min(1).max(20).default(10),
   }).strict(),
   get_holded_bank_balance: z.object({
-    limit    : z.number().int().min(1).max(10).default(5),
+    limit: z.number().int().min(1).max(10).default(5),
+  }).strict(),
+  // ── Holded labor v2 tools — company comes only from authorized KiaContext ─
+  get_holded_employees: z.object({
+    search: z.string().max(100).optional(),
+    ...holdedLaborPageSchema,
+  }).strict(),
+  get_holded_employee_contract: z.object({
+    employeeId: z.string().min(1).max(200),
+  }).strict(),
+  get_holded_payslips: z.object({
+    employeeId: z.string().min(1).max(200).optional(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+    kind: z.string().max(100).optional(),
+    isDraft: z.boolean().optional(),
+    ...holdedLaborPageSchema,
+  }).strict(),
+  get_holded_salary_records: z.object({
+    employeeId: z.string().min(1).max(200).optional(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+    ...holdedLaborPageSchema,
+  }).strict(),
+  run_labor_payroll_diagnostics: z.object({
+    employeeId: z.string().min(1).max(200),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
+    limit: z.number().int().min(1).max(100).default(50),
   }).strict(),
   generate_company_report: z.object({
     reportType: z.enum(['empresa_status']).default('empresa_status'),
-    period    : z.string().optional(),
-    lang      : z.enum(['es', 'ru']).default('es'),
+    period: z.string().optional(),
+    lang: z.enum(['es', 'ru']).default('es'),
   }).strict(),
   extract_invoice_ocr: z.object({
     mediaUrl: z.string().url(),
@@ -147,9 +179,14 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   generate_holded_connection_link: 'Generate secure Holded connection panel link.',
   get_company_status_snapshot: 'Return safe company/accounting snapshot summary if available.',
   get_accounting_snapshot: 'Return full accounting period snapshots and open anomalies for a company. Use when the user asks about financial data, quarterly results, IVA, cash flow, or accounting anomalies. Requires companyId in context.',
-  get_holded_invoices: 'List recent Holded invoices or purchases for the client. Requires active Holded integration.',
-  get_holded_contacts: 'Search or list Holded contacts/clients. Requires active Holded integration.',
-  get_holded_bank_balance: 'Return Holded treasury account balances. Requires active Holded integration.',
+  get_holded_invoices: 'List recent Holded invoices or purchases for the active company. Requires active company-scoped Holded integration.',
+  get_holded_contacts: 'Search or list Holded contacts for the active company. Requires active company-scoped Holded integration.',
+  get_holded_bank_balance: 'Return Holded treasury account balances for the active company. Requires active company-scoped Holded integration.',
+  get_holded_employees: 'List or search Holded employees for the already-authorized active company. Read-only; never changes employee data.',
+  get_holded_employee_contract: 'Read one Holded employee and their active contract for the already-authorized active company. Read-only.',
+  get_holded_payslips: 'List calculated Holded payroll payslips for the already-authorized active company. Keeps payslips separate from salary records.',
+  get_holded_salary_records: 'List Holded manual salary accounting records for the already-authorized active company. Keeps salary records separate from calculated payslips.',
+  run_labor_payroll_diagnostics: 'Build a structured read-only payroll diagnostic for one employee from Holded employee, active contract, calculated payslips, contribution bases, IRPF evidence, payment state and separate salary records. Does not recalculate or modify payroll.',
   generate_company_report: 'Generate a visual company status report (IVA, cash flow, anomalies, bank balances) and return a link the client can open. Requires active Holded integration.',
   extract_invoice_ocr: 'Extract structured invoice data (vendor, amount, VAT, date, invoice number) from an image using GPT-4o vision. Use when user sends a photo of an invoice or receipt.',
   create_kia_decision_log: 'Persist a Kia decision log. Usually executed by backend automatically.',

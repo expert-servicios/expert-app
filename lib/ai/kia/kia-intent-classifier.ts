@@ -54,12 +54,12 @@ const CLASSIFIER_SCHEMA = {
 
 function buildClassifierSystemPrompt(): string {
   return [
-    'Eres un clasificador ultra-rapido de intencion para Kia, asistente de EXPERT Asesoria (gestoría fiscal y juridica en España).',
+    'Eres un clasificador ultra-rapido de intencion para Kia, asistente de EXPERT Asesoria (gestoría fiscal, laboral y juridica en España).',
     '',
     'Tu unica tarea: dado el mensaje del usuario y los ultimos mensajes, devolver un JSON de clasificacion.',
     '',
     '<task_type_guide>',
-    '- waba_reply: saludo, estado expediente, pregunta general, respuesta a quickReply',
+    '- chat_reply: saludo, estado expediente, pregunta general, respuesta conversacional o diagnóstico laboral/nómina',
     '- viability_reasoning: servicios con filtro juridico (arraigo, nacionalidad, NIE, residencia, Beckham, patrimonio, modelo 720)',
     '- readiness_reasoning: servicios que requieren Holded (contabilidad, plan mensual, migracion Holded)',
     '- checkout_decision: usuario quiere contratar, pagar o preguntar precio',
@@ -68,13 +68,17 @@ function buildClassifierSystemPrompt(): string {
     '- document_classification: usuario envia o menciona un documento especifico',
     '</task_type_guide>',
     '',
+    '<intent_guide>',
+    '- payroll_diagnostics: revisar o comparar nómina, contrato laboral, jornada, pagas extra, bases de cotización, IRPF de nómina, coste empresa o salary-records de un empleado',
+    '- anomaly_review: anomalías contables generales; no usar para discrepancias de nómina si payroll_diagnostics encaja',
+    '</intent_guide>',
+    '',
     '<ambiguity_guide>',
     '- ambiguityScore 0.0-0.3: mensaje claro, needsClarify=false',
     '- ambiguityScore 0.4-0.6: parcialmente ambiguo, needsClarify=false si puedes inferir',
     '- ambiguityScore 0.7-1.0: genuinamente ambiguo, needsClarify=true',
     '- needsClarify=true SOLO si no puedes determinar la tarea ni el servicio con confianza',
     '- saludos, presentaciones y "hola" son ambiguityScore=0.3, needsClarify=false',
-    '- si el usuario ya eligio una opcion en quickReply, ambiguityScore=0.1',
     '</ambiguity_guide>',
     '',
     '<clarify_guide>',
@@ -116,7 +120,7 @@ function parseClassification(raw: string): KiaIntentClassification | null {
 
     const suggestedTaskType = KIA_TASK_TYPES.includes(parsed.suggestedTaskType as KiaTaskType)
       ? (parsed.suggestedTaskType as KiaTaskType)
-      : 'waba_reply';
+      : 'chat_reply';
     const detectedIntent = KIA_INTENTS.includes(parsed.detectedIntent as (typeof KIA_INTENTS)[number])
       ? (parsed.detectedIntent as (typeof KIA_INTENTS)[number])
       : 'unknown';

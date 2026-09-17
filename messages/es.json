@@ -1,0 +1,40 @@
+{
+  "common": {
+    "brand": "EXPERT",
+    "language": "Idioma",
+    "continue": "Continuar",
+    "back": "Volver"
+  },
+  "navigation": {
+    "home": "Inicio",
+    "services": "Servicios",
+    "plans": "Planes",
+    "academy": "Academy",
+    "contact": "Contacto"
+  },
+  "credentials": {
+    "holdedSolutionPartner": "Holded Solution Partner",
+    "holdedAccreditedAdvisory": "Asesoría Holded acreditada",
+    "aeatSocialCollaborator": "Colaborador social de la Agencia Tributaria",
+    "academyPrivateTraining": "EXPERT Business Academy — formación privada/no reglada"
+  },
+  "holded": {
+    "verticalName": "Holded en español",
+    "title": "Implantación, migración y formación en Holded",
+    "description": "Configura y aprende a utilizar Holded con acompañamiento profesional de EXPERT."
+  },
+  "academy": {
+    "title": "EXPERT Business Academy",
+    "description": "Formación práctica para comprender y gestionar mejor tu negocio en España.",
+    "privateTrainingNotice": "Formación privada y no reglada."
+  },
+  "funnel": {
+    "question": "¿Qué quieres conseguir?",
+    "openBusiness": "Abrir un negocio en España",
+    "organizeBusiness": "Organizar mejor mi empresa actual",
+    "changeAdvisor": "Cambiar de gestor o sistema",
+    "startHolded": "Empezar a usar Holded",
+    "learnSelfManagement": "Aprender a gestionar mi empresa",
+    "resolveIssue": "Resolver un problema fiscal, laboral o administrativo"
+  }
+}

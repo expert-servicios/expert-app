@@ -64,6 +64,18 @@ describe('EXPERT leads admin dashboard', () => {
     expect(page).toContain('marketing_status');
   });
 
+  it('shows locale attribution and the RU funnel without rewriting legacy leads', () => {
+    expect(api).toContain('attributionFromMetadata');
+    expect(api).toContain("ATTRIBUTION_LOCALES = ['es', 'ru', 'en']");
+    expect(api).toContain("contains('metadata', { acquisition: { locale } })");
+    expect(api).toContain('ru_funnel');
+    expect(page).toContain('Todos los idiomas');
+    expect(page).toContain('Funnel RU');
+    expect(page).toContain('Campaña:');
+    expect(page).toContain('Intención:');
+    expect(page).toContain('histórico legacy no se reetiqueta');
+  });
+
   it('exposes the EXPERT contacts route from the admin module itself', () => {
     expect(page).toContain('Contactos y leads');
     expect(page).toContain('href="/admin"');
