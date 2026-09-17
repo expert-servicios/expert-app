@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Check, X, ArrowRight, Calendar, Phone, BookOpen, FileText, ChevronDown, GraduationCap, Sparkles } from 'lucide-react';
-import { HoldedCalendlyButton } from '@/components/holded/HoldedCalendlyButton';
+import { HoldedCalButton } from '@/components/holded/HoldedCalButton';
 import { RequestProposalModal } from '@/components/holded/RequestProposalModal';
 import { FaqSection } from '@/components/site/FaqSection';
 import { articles } from '@/lib/utils/blog';
@@ -197,10 +197,10 @@ export default function MigracionConInventarioPage() {
               >
                 Solicitar prueba Holded 14 días
               </Link>
-              <HoldedCalendlyButton className="inline-flex min-h-12 items-center gap-2 border border-white/20 px-6 py-3.5 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]/80 transition hover:bg-white/5">
+              <HoldedCalButton className="inline-flex min-h-12 items-center gap-2 border border-white/20 px-6 py-3.5 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]/80 transition hover:bg-white/5">
                 <Phone className="h-4 w-4" />
                 Llamada 15 min
-              </HoldedCalendlyButton>
+              </HoldedCalButton>
             </div>
 
             <p className="mt-6 text-xs text-[#9CA3AF]">
@@ -428,10 +428,10 @@ export default function MigracionConInventarioPage() {
               <ArrowRight className="h-4 w-4" />
               Preparar contratación — 1.199 € + IVA
             </Link>
-            <HoldedCalendlyButton className="inline-flex min-h-12 items-center gap-2 border border-[#D4A017]/50 px-6 py-3.5 text-sm font-bold uppercase tracking-wide text-[#F8F6F1] transition hover:bg-[#D4A017]/10">
+            <HoldedCalButton className="inline-flex min-h-12 items-center gap-2 border border-[#D4A017]/50 px-6 py-3.5 text-sm font-bold uppercase tracking-wide text-[#F8F6F1] transition hover:bg-[#D4A017]/10">
               <Calendar className="h-4 w-4" />
               Llamada 15 min
-            </HoldedCalendlyButton>
+            </HoldedCalButton>
           </div>
         </div>
       </section>
@@ -509,10 +509,10 @@ export default function MigracionConInventarioPage() {
               <ArrowRight className="h-4 w-4" />
               Preparar contratación
             </Link>
-            <HoldedCalendlyButton className="inline-flex min-h-12 items-center gap-2 border border-[#D4A017]/50 px-6 py-3.5 text-sm font-bold uppercase tracking-wide text-[#F8F6F1] transition hover:bg-[#D4A017]/10">
+            <HoldedCalButton className="inline-flex min-h-12 items-center gap-2 border border-[#D4A017]/50 px-6 py-3.5 text-sm font-bold uppercase tracking-wide text-[#F8F6F1] transition hover:bg-[#D4A017]/10">
               <Phone className="h-4 w-4" />
               Llamada 15 min sin coste
-            </HoldedCalendlyButton>
+            </HoldedCalButton>
             <RequestProposalModal
               serviceName={SERVICE_NAME}
               className="inline-flex min-h-12 items-center gap-2 px-6 py-3.5 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]/70 underline underline-offset-4 transition hover:text-[#D4A017]"
