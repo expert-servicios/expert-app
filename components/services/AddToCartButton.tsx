@@ -5,14 +5,16 @@ import { ShoppingBag, Check } from 'lucide-react';
 import { useCart, type CartItem } from '@/contexts/CartContext';
 
 type AddToCartButtonProps = {
-  item      : CartItem;
-  label?    : string;
-  className?: string;
+  item        : CartItem;
+  label?      : string;
+  inCartLabel?: string;
+  className?  : string;
 };
 
 const DEFAULT_CLASS =
   'inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#D4A017] px-7 py-3 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60';
 
+const DEFAULT_LABEL = 'Añadir a la cesta';
 const NACIONALIDAD_MENOR_SLUG = 'nacionalidad-espanola-menor-nacido-en-espana';
 const NACIONALIDAD_MENOR_TASA_KEY = 'mjusticia_790_026_nacionalidad_residencia';
 const NACIONALIDAD_MENOR_DISPLAY_PRICE = '302,50 € honorarios + 104,05 € tasa';
@@ -60,9 +62,9 @@ function withMandatoryDisbursements(item: CartItem): CartItem {
 
   return {
     ...item,
-    displayPrice: NACIONALIDAD_MENOR_DISPLAY_PRICE,
-    disbursements: [NACIONALIDAD_MENOR_TASA_KEY],
-    disbursementNotice: NACIONALIDAD_MENOR_NOTICE,
+    displayPrice: item.displayPrice || NACIONALIDAD_MENOR_DISPLAY_PRICE,
+    disbursements: [...new Set([...(item.disbursements ?? []), NACIONALIDAD_MENOR_TASA_KEY])],
+    disbursementNotice: item.disbursementNotice ?? NACIONALIDAD_MENOR_NOTICE,
   };
 }
 
@@ -84,12 +86,12 @@ function rewriteVisibleClientCopy() {
   }
 }
 
-export function AddToCartButton({ item, label = 'Añadir a la cesta', className }: AddToCartButtonProps) {
+export function AddToCartButton({ item, label = DEFAULT_LABEL, inCartLabel = 'En la cesta', className }: AddToCartButtonProps) {
   const { addItem, items } = useCart();
   const cartItem = withMandatoryDisbursements(item);
   const inCart = items.some(i => i.priceId === cartItem.priceId);
   const isNacionalidadMenor = cartItem.slug === NACIONALIDAD_MENOR_SLUG;
-  const buttonLabel = isNacionalidadMenor ? NACIONALIDAD_MENOR_LABEL : label;
+  const buttonLabel = isNacionalidadMenor && label === DEFAULT_LABEL ? NACIONALIDAD_MENOR_LABEL : label;
 
   useEffect(() => {
     if (!isNacionalidadMenor) return;
@@ -106,7 +108,7 @@ export function AddToCartButton({ item, label = 'Añadir a la cesta', className 
       {inCart ? (
         <>
           <Check className="h-4 w-4" />
-          En la cesta
+          {inCartLabel}
         </>
       ) : (
         <>
