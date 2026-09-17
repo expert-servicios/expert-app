@@ -11,6 +11,7 @@ import {
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { isCompanyBillingReady, missingCompanyBillingFields } from '@/lib/companies/billing-readiness';
+import { resolveServiceBillingScope } from '@/lib/payments/service-billing-scope';
 
 const checkoutSchema = z.object({
   priceId                    : z.string().min(1).optional(),
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
     const admin = getSupabaseAdmin();
     const { data: profile, error: profileError } = await admin
       .from('profiles')
-      .select('id,full_name,phone,email,profile_completed,active_company_id')
+      .select('id,full_name,phone,email,profile_completed,active_company_id,client_type,stripe_customer_id')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -48,42 +49,65 @@ export async function POST(request: NextRequest) {
     }
 
     const input = parseResult.data;
-    const companyId = input.companyId ?? profile.active_company_id ?? null;
-    if (!companyId) {
-      return NextResponse.json({ error: 'Selecciona o crea la entidad fiscal que va a contratar el servicio.', code: 'company_required' }, { status: 409 });
-    }
-
-    const { data: membership, error: membershipError } = await admin
-      .from('profile_companies')
-      .select('role')
-      .eq('profile_id', user.id)
-      .eq('company_id', companyId)
-      .maybeSingle();
-    if (membershipError) return NextResponse.json({ error: 'No se pudo validar la entidad seleccionada.' }, { status: 500 });
-    if (!membership) return NextResponse.json({ error: 'La entidad seleccionada no pertenece al usuario.', code: 'company_forbidden' }, { status: 403 });
-
-    const { data: company, error: companyError } = await admin
-      .from('companies')
-      .select('stripe_customer_id,razon_social,cif_nif,direccion,ciudad,codigo_postal,pais')
-      .eq('id', companyId)
-      .maybeSingle();
-    if (companyError || !company) return NextResponse.json({ error: 'No se pudo resolver la entidad seleccionada.' }, { status: 500 });
-
-    if (!isCompanyBillingReady(company)) {
-      return NextResponse.json({
-        error: 'Completa los datos fiscales de la entidad seleccionada antes de contratar.',
-        code: 'billing_required',
-        companyId,
-        missingFields: missingCompanyBillingFields(company),
-      }, { status: 409 });
-    }
-
     const rawIds = input.priceIds ?? (input.priceId ? [input.priceId] : []);
     const checkoutServices = rawIds.map(id => {
       const svc = getServiceCheckoutByPriceId(id);
       if (!svc) throw Object.assign(new Error(`Servicio no válido: ${id}`), { _isUserError: true });
       return svc;
     });
+
+    const billingResolution = resolveServiceBillingScope({
+      serviceSlugs: checkoutServices.map(service => service.slug),
+      explicitCompanyId: input.companyId,
+      activeCompanyId: profile.active_company_id,
+      clientType: profile.client_type,
+    });
+
+    if (billingResolution.scope === 'mixed_billing_scope') {
+      return NextResponse.json({
+        error: 'Este carrito mezcla un trámite personal con servicios de otra entidad fiscal. Tramítalos en pedidos separados.',
+        code: 'mixed_billing_scope',
+      }, { status: 409 });
+    }
+
+    if (billingResolution.scope === 'company_required') {
+      return NextResponse.json({
+        error: 'Selecciona o crea la entidad fiscal que va a contratar el servicio.',
+        code: 'company_required',
+      }, { status: 409 });
+    }
+
+    const companyId = billingResolution.companyId;
+    let stripeCustomerId = profile.stripe_customer_id ?? null;
+
+    if (billingResolution.scope === 'company') {
+      const { data: membership, error: membershipError } = await admin
+        .from('profile_companies')
+        .select('role')
+        .eq('profile_id', user.id)
+        .eq('company_id', companyId)
+        .maybeSingle();
+      if (membershipError) return NextResponse.json({ error: 'No se pudo validar la entidad seleccionada.' }, { status: 500 });
+      if (!membership) return NextResponse.json({ error: 'La entidad seleccionada no pertenece al usuario.', code: 'company_forbidden' }, { status: 403 });
+
+      const { data: company, error: companyError } = await admin
+        .from('companies')
+        .select('stripe_customer_id,razon_social,cif_nif,direccion,ciudad,codigo_postal,pais')
+        .eq('id', companyId)
+        .maybeSingle();
+      if (companyError || !company) return NextResponse.json({ error: 'No se pudo resolver la entidad seleccionada.' }, { status: 500 });
+
+      if (!isCompanyBillingReady(company)) {
+        return NextResponse.json({
+          error: 'Completa los datos fiscales de la entidad seleccionada antes de contratar.',
+          code: 'billing_required',
+          companyId,
+          missingFields: missingCompanyBillingFields(company),
+        }, { status: 409 });
+      }
+
+      stripeCustomerId = company.stripe_customer_id ?? null;
+    }
 
     const requestedDisbursementKeys = [...new Set(input.disbursements ?? [])];
     const checkoutDisbursements = requestedDisbursementKeys.map(key => {
@@ -104,16 +128,17 @@ export async function POST(request: NextRequest) {
     const cancelUrl = checkoutServices.length === 1
       ? `${appUrl}/servicios/${checkoutServices[0].category}/${checkoutServices[0].slug}`
       : `${appUrl}/carrito`;
-    const stripeCustomerId = company.stripe_customer_id ?? null;
     const checkoutMetadata = {
       ...getServiceCheckoutMetadata(checkoutServices, checkoutDisbursements),
       user_id: user.id,
-      company_id: companyId,
+      billing_scope: billingResolution.scope,
+      ...(companyId ? { company_id: companyId } : {}),
       disbursement_mandate_accepted: checkoutDisbursements.length > 0 ? 'true' : 'false',
     };
 
     const session = await stripe.checkout.sessions.create({
       mode                       : 'payment',
+      payment_method_types       : ['card'],
       automatic_tax              : { enabled: true },
       billing_address_collection : 'required',
       tax_id_collection          : { enabled: true, required: 'if_supported' },
@@ -140,6 +165,7 @@ export async function POST(request: NextRequest) {
         product_type: checkoutMetadata.product_type ?? (checkoutServices.length > 1 ? 'cart' : 'service'),
         service_slug: checkoutMetadata.service_slug ?? null,
         service_slugs: checkoutMetadata.service_slugs ?? null,
+        billing_scope: checkoutMetadata.billing_scope,
         disbursement_keys: checkoutMetadata.disbursement_keys ?? null,
         disbursement_total_cents: checkoutMetadata.disbursement_total_cents ?? '0',
         revenue_amount_cents: checkoutMetadata.revenue_amount_cents ?? '0',
@@ -156,7 +182,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No se pudo registrar de forma segura la sesión de pago.' }, { status: 500 });
     }
 
-    return NextResponse.json({ url: session.url, sessionId: session.id, companyId });
+    return NextResponse.json({
+      url: session.url,
+      sessionId: session.id,
+      companyId,
+      billingScope: billingResolution.scope,
+    });
   } catch (err: unknown) {
     const e = err as { _isUserError?: boolean; type?: string; code?: string; message?: string; statusCode?: number; raw?: unknown };
     if (e._isUserError) return NextResponse.json({ error: e.message }, { status: 400 });
