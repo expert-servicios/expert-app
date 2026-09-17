@@ -190,7 +190,6 @@ export function HoldedApiKeyForm({ companyId, onConnected, onPhaseChange }: Prop
           warnings={testResult.warnings}
           apiKey={trimmedKey}
           companyId={companyId}
-          onPhaseChange={onPhaseChange}
           onConnected={handleConnected}
           onCancel={handleConsentCancel}
         />
