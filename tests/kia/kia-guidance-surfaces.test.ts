@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  resolveCaseDetailGuidance,
   resolveCaseListGuidance,
   resolveOnboardingGuidance,
 } from '@/lib/ai/kia/kia-surface-guidance';
@@ -13,6 +14,7 @@ function source(relativePath: string): string {
 describe('KIA contextual guidance surfaces', () => {
   const card = source('components/kia/KiaGuidanceCard.tsx');
   const casesPage = source('app/(protected)/dashboard/expedientes/page.tsx');
+  const caseDetailPage = source('app/(protected)/dashboard/expedientes/[id]/page.tsx');
   const onboardingPage = source('app/(protected)/dashboard/onboarding/page.tsx');
 
   it('keeps the guidance card presentation-only', () => {
@@ -29,6 +31,23 @@ describe('KIA contextual guidance surfaces', () => {
     expect(resolveCaseListGuidance(0, 0).state).toBe('ayuda');
   });
 
+  it('maps expediente detail from trusted state and document counts only', () => {
+    expect(resolveCaseDetailGuidance({ caseState: 'nuevo', checklistCount: 0, uploadedCount: 0, reviewedCount: 0 }).state).toBe('ayuda');
+    expect(resolveCaseDetailGuidance({ caseState: 'docs_pendientes', checklistCount: 3, uploadedCount: 1, reviewedCount: 0 }).state).toBe('aviso');
+    expect(resolveCaseDetailGuidance({ caseState: 'pendiente_documentacion', checklistCount: 1, uploadedCount: 1, reviewedCount: 0 }).state).toBe('duda');
+    expect(resolveCaseDetailGuidance({ caseState: 'en_revision', checklistCount: 2, uploadedCount: 2, reviewedCount: 1 }).state).toBe('seguimiento');
+    expect(resolveCaseDetailGuidance({ caseState: 'presentado', checklistCount: 2, uploadedCount: 2, reviewedCount: 2 }).state).toBe('confianza');
+    expect(resolveCaseDetailGuidance({ caseState: 'resolucion_recibida', checklistCount: 2, uploadedCount: 2, reviewedCount: 2 }).state).toBe('confianza');
+    expect(resolveCaseDetailGuidance({ caseState: 'entregado', checklistCount: 0, uploadedCount: 2, reviewedCount: 2 }).state).toBe('exito');
+    expect(resolveCaseDetailGuidance({ caseState: 'finalizado', checklistCount: 0, uploadedCount: 2, reviewedCount: 2 }).state).toBe('exito');
+    expect(resolveCaseDetailGuidance({ caseState: 'estado_desconocido', checklistCount: 0, uploadedCount: 0, reviewedCount: 0 }).state).toBe('seguimiento');
+  });
+
+  it('does not promote presented/resolution states to celebration', () => {
+    expect(resolveCaseDetailGuidance({ caseState: 'presentado', checklistCount: 0, uploadedCount: 0, reviewedCount: 0 }).state).not.toBe('celebracion');
+    expect(resolveCaseDetailGuidance({ caseState: 'resolucion_recibida', checklistCount: 0, uploadedCount: 0, reviewedCount: 0 }).state).not.toBe('celebracion');
+  });
+
   it('keeps onboarding precedence safe', () => {
     expect(resolveOnboardingGuidance({ step: 'done', loading: false, hasError: true, companySkipped: false }).state).toBe('aviso');
     expect(resolveOnboardingGuidance({ step: 'done', loading: true, hasError: false, companySkipped: false }).state).toBe('pensando');
@@ -43,6 +62,17 @@ describe('KIA contextual guidance surfaces', () => {
     expect(casesPage).toContain('<KiaGuidanceCard');
     expect(casesPage).not.toContain('/api/ai/kia');
     expect(casesPage).not.toContain('runKiaDecision');
+  });
+
+  it('wires expediente detail guidance to authorized case and document state only', () => {
+    expect(caseDetailPage).toContain('resolveCaseDetailGuidance({');
+    expect(caseDetailPage).toContain('caseState: caseItem.state');
+    expect(caseDetailPage).toContain('checklistCount: checklist.length');
+    expect(caseDetailPage).toContain('uploadedCount');
+    expect(caseDetailPage).toContain('reviewedCount');
+    expect(caseDetailPage).toContain('<KiaGuidanceCard');
+    expect(caseDetailPage).not.toContain('/api/ai/kia');
+    expect(caseDetailPage).not.toContain('runKiaDecision');
   });
 
   it('wires onboarding guidance to local UI state only', () => {
