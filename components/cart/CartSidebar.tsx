@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { X, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartDisbursements, resolveCartLocale, useCart } from '@/contexts/CartContext';
 import { QuickProfileGate } from '@/components/cart/QuickProfileGate';
@@ -47,6 +48,7 @@ const COPY = {
 } as const;
 
 export function CartSidebar() {
+  const pathname = usePathname();
   const { items, removeItem, clearCart, isOpen, close } = useCart();
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
@@ -54,7 +56,7 @@ export function CartSidebar() {
   const [disbursementMandateAccepted, setDisbursementMandateAccepted] = useState(false);
   const hasDisbursements = cartContainsDisbursements(items);
   const disbursements = collectCartDisbursements(items);
-  const locale = resolveCartLocale(items);
+  const locale = items.length === 0 && pathname.startsWith('/ru/') ? 'ru' : resolveCartLocale(items);
   const t = COPY[locale];
   const loginNextPath = locale === 'ru' ? RU_NACIONALIDAD_PATH : '/carrito';
 
