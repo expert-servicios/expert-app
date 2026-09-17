@@ -1,9 +1,9 @@
 # KIA Visual Copilot — Sprint 5
 
-Fecha: 2026-09-10
+Fecha: 2026-09-17
 Tracking: #192
 Dependencias completadas: #172, #174, #177, #179, #187, #189
-Implementación actual: PR #193
+Implementación actual: PR #274 + Sprint 5C en rama encadenada
 
 ## Objetivo
 
@@ -27,6 +27,8 @@ KIA sigue siendo una capa de orientación. No modifica datos, permisos, expedien
 `components/kia/KiaGuidanceCard.tsx` presenta una orientación breve con el avatar contextual. El componente no ejecuta `fetch`, tools ni `runKiaDecision`; el estado llega ya resuelto por la capa llamadora.
 
 `lib/ai/kia/kia-surface-guidance.ts` centraliza las reglas deterministas para evitar que cada pantalla invente su propio mapping.
+
+Sprint 5C añade un campo opcional `detail` para exponer únicamente contadores autorizados de documentación, sin inferencias nuevas.
 
 ## Sprint 5A — lista de expedientes
 
@@ -63,22 +65,25 @@ error
   > completado / estado del paso
 ```
 
-Por tanto, una operación que haya terminado visualmente en el paso `done` no puede mostrar `exito` si existe un error de persistencia, y durante una operación en curso se muestra `pensando` en lugar de anticipar el resultado.
-
 La tarjeta KIA no sustituye los mensajes de validación existentes ni modifica los endpoints `/api/profile`, `/api/companies` o `/api/dashboard/onboarding/complete`.
 
-## Sprint 5C — siguiente bloque: detalle de expediente
+## Sprint 5C — detalle de expediente
 
-La pantalla ya dispone de un estado de expediente autorizado y una guía textual por estado. KIA debe reutilizar esos datos en lugar de generar una explicación nueva.
+Superficie: `/dashboard/expedientes/[id]`.
 
-Mapping previsto:
+La pantalla ya dispone de estado de expediente, checklist y documentos autorizados. KIA reutiliza exclusivamente estas señales estructuradas y mantiene la guía operativa existente de la pantalla.
+
+Mapping implementado:
 
 - `nuevo` -> `ayuda`;
-- `docs_pendientes` / `pendiente_documentacion` -> `duda` o `aviso` según la acción requerida;
+- `docs_pendientes` / `pendiente_documentacion` -> `aviso` cuando el checklist conocido tiene menos archivos subidos que elementos solicitados; en otro caso `duda`;
 - `docs_recibidos` / `en_revision` / `en_tramitacion` / `en_proceso` / `pendiente_externo` -> `seguimiento`;
-- `resolucion_recibida` / `presentado` -> `confianza` únicamente porque el estado backend confirma ese hito;
+- `resolucion_recibida` / `presentado` -> `confianza`, porque el estado backend confirma ese hito;
 - `entregado` / `finalizado` -> `exito`;
-- `celebracion` queda reservada a una señal de milestone más fuerte y no se deduce de una etiqueta genérica.
+- estado desconocido -> `seguimiento` fail-safe;
+- `celebracion` continúa reservada a una señal de milestone más fuerte y no se deduce de una etiqueta genérica.
+
+Los contadores de documentos subidos/revisados pueden mostrarse como detalle auxiliar. No se compara contenido, nombre ni texto libre de los documentos.
 
 ## Sprint 5D — Holded y formularios guiados
 
@@ -88,6 +93,8 @@ Mapping previsto para integración Holded:
 - conexión/configuración en curso -> `pensando`;
 - integración activa/verificada -> `confianza`;
 - error de conexión -> `aviso`.
+
+Este bloque debe mantenerse separado de la auditoría de permisos e integración activa del PR #272. El estado visual sólo puede consumir una señal de integración ya autorizada; nunca puede conceder capacidad ni inferir permisos.
 
 Después se extenderá el patrón a formularios guiados y centro de ayuda cuando exista un estado fiable que justifique la orientación.
 
@@ -109,21 +116,24 @@ Después se extenderá el patrón a formularios guiados y centro de ayuda cuando
 - no se utiliza texto libre para concluir riesgo, éxito o cumplimiento;
 - la capa visual nunca ejecuta acciones externas.
 
-## Validación actual de PR #193
+## Validación
 
-- Typecheck: success;
-- Lint: success;
-- Tests: success;
+PR #274 (5A/5B):
+
+- CI: success;
 - Vercel `app`: Ready;
 - Vercel `ksenia-expert`: Ready;
-- smoke visual autenticado desktop/móvil: pendiente.
+- smoke visual autenticado desktop/móvil: pendiente antes de merge.
+
+Sprint 5C debe pasar los mismos controles antes de integrarse.
 
 ## Criterios de aceptación antes de merge
 
 - componente reusable presente;
 - `/dashboard/expedientes` muestra KIA con estado derivado de counts autorizados;
 - `/dashboard/onboarding` respeta `error > loading > paso`;
-- ninguna de las dos superficies llama al LLM para seleccionar estado;
+- `/dashboard/expedientes/[id]` deriva su estado KIA sólo de estado/checklist/contadores autorizados;
+- ninguna superficie llama al LLM para seleccionar estado;
 - los flujos, enlaces, validaciones y CTAs existentes permanecen intactos;
 - typecheck, lint y tests pasan;
 - Vercel previews están Ready;
