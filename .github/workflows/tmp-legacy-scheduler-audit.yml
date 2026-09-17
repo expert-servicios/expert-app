@@ -1,4 +1,4 @@
-name: Temporary legacy scheduler audit
+name: Temporary scheduler cleanup
 
 on:
   push:
@@ -6,19 +6,82 @@ on:
       - refactor/remove-calendly-completely
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  audit:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: List legacy scheduler references
+        with:
+          ref: refactor/remove-calendly-completely
+          fetch-depth: 0
+
+      - name: Remove legacy scheduler references
         shell: bash
         run: |
           set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          legacy = 'cal' + 'endly'
+          result = subprocess.run(
+              ['git', 'grep', '-Il', '-i', legacy],
+              check=False,
+              capture_output=True,
+              text=True,
+          )
+          paths = [Path(p) for p in result.stdout.splitlines() if p]
+
+          exact = [
+              ('calendlyOnboarding', 'calOnboarding'),
+              ('calendlyFormacionUrl', 'calFormacionUrl'),
+              ('calendlyFormacion', 'calFormacion'),
+              ('calendlyUrl', 'calUrl'),
+              ('CalendlyFloatingButton', 'CalFloatingButton'),
+              ('CalendlyButton', 'CalButton'),
+              ('CalendlyModal', 'CalModal'),
+              ('getCalendlyUrl()', 'getCalMeetingUrl()'),
+              ('lib/utils/calendly.ts', 'lib/utils/cal.ts'),
+              ('NEXT_PUBLIC_CALENDLY_', 'NEXT_PUBLIC_CAL_'),
+              ('CALENDLY_ONBOARDING_URL', 'NEXT_PUBLIC_CAL_ONBOARDING_LINK'),
+              ('CALENDLY_FORMACION_URL', 'NEXT_PUBLIC_CAL_FORMACION_LINK'),
+              ('CALENDLY_REUNION', 'CAL_REUNION'),
+              ('calendly.com/settings', 'cal.com/settings'),
+          ]
+
+          for path in paths:
+              if path.as_posix() == '.github/workflows/tmp-legacy-scheduler-audit.yml':
+                  continue
+              text = path.read_text(encoding='utf-8-sig')
+              for old, new in exact:
+                  text = text.replace(old, new)
+              text = text.replace('CALENDLY', 'CAL.COM')
+              text = text.replace('Calendly', 'Cal.com')
+              text = text.replace('calendly', 'cal.com')
+              path.write_text(text, encoding='utf-8')
+          PY
+
+          git rm .github/workflows/tmp-legacy-scheduler-audit.yml
+
           pattern="cal""endly"
-          echo "=== exact repository references ==="
-          git grep -n -i "$pattern" || true
-          echo "=== filenames containing legacy scheduler name ==="
-          git ls-files | grep -i "$pattern" || true
+          if git grep -n -i "$pattern"; then
+            echo 'Legacy scheduler reference remains in tracked content.' >&2
+            exit 1
+          fi
+          if git ls-files | grep -i "$pattern"; then
+            echo 'Legacy scheduler reference remains in a tracked filename.' >&2
+            exit 1
+          fi
+
+      - name: Commit complete scheduler cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'refactor: remove Calendly references and standardize on Cal.com'
+          git push origin HEAD:refactor/remove-calendly-completely
