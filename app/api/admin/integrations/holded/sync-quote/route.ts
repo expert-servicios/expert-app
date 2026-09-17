@@ -59,7 +59,8 @@ export async function POST(request: NextRequest) {
       clientPhone,
       description: quote.title ?? quote.description,
       amountEur: Number(quote.amount_eur),
-      localEntity: 'quotes'
+      localEntity: 'quotes',
+      source: 'manual'
     });
 
     return NextResponse.json({ ok: !result.error, result });
