@@ -175,7 +175,7 @@ Todos los cron jobs de produccion (`fiscal-reminders`, `kia-health`, `holded-syn
 ✅ Reviews / Reseñas       — captura publica, moderacion admin, featured
 ✅ Datos empresas          — BORME paralelo, CKAN open data, VIES, UI admin busqueda
 ✅ Web publica             — orientada a asesorias B2B, SEO, canonical, para-asesorias
-✅ Calendly                — getCalendlyUrl() util; todos los componentes usan env vars
+✅ Cal.com                — getCalMeetingUrl() util; todos los componentes usan env vars
 ✅ Holded sync             — queue durable, reintentos, cron protegido
 ✅ Branch protection main  — PR requerido (1 approval), no force push, no delete
 ⚠️ WABA verificación      — pruebas manuales pendientes (Omitir email, consultas libres)
@@ -195,7 +195,7 @@ Todos los cron jobs de produccion (`fiscal-reminders`, `kia-health`, `holded-syn
 5. **Verificacion IMP-022** — Abrir /dashboard → clic Kia → probar "mis expedientes", "mis empresas".
 6. ~~**Holded scheduler externo**~~ — ✅ `holded-sync.yml` (GitHub Actions) confirmado funcionando 2026-07-04.
 7. ~~**DNS**~~ — ✅ `kseniailicheva.com` redirect 301 a `expertconsulting.es` implementado.
-8. ~~**Calendly**~~ — Obsoleto: la app migro completamente a Cal.com (commits `61d9acf`, `0064245`), cero referencias a Calendly restantes.
+8. ~~**Agenda legacy**~~ — ✅ Migración completada al sistema actual Cal.com (commits `61d9acf`, `0064245`), sin referencias legacy restantes.
 
 ---
 
@@ -736,11 +736,11 @@ Criterio de aceptacion:
 - [x] `<link rel="canonical">` ya apuntaba a `expertconsulting.es` (metadata en app/layout.tsx).
 - [x] Sitemap y robots.txt ya usaban `expertconsulting.es`.
 - [x] `ADMIN_EMAILS` actualizado a `soy@expertconsulting.es,...` en `.env.example` y `.env.local`.
-- [x] URLs Calendly hardcodeadas eliminadas — todas usan `process.env.NEXT_PUBLIC_CALENDLY_*`.
+- [x] URLs Cal.com hardcodeadas eliminadas — todas usan `process.env.NEXT_PUBLIC_CAL_*`.
 - [x] `kseniailicheva.com` eliminado de `next.config.ts` allowedOrigins.
 - [x] README y docs actualizados.
 - [ ] `kseniailicheva.com` configurado como redirect 301 en DNS/Vercel (accion externa).
-- [ ] Username Calendly (`soy-kseniailicheva`) actualizado en la cuenta Calendly (accion externa en calendly.com/settings).
+- [ ] Username Cal.com (`soy-kseniailicheva`) actualizado en la cuenta Cal.com (accion externa en cal.com/settings).
 
 ### IMP-014 - Configuracion tenant-ready
 
@@ -1095,7 +1095,7 @@ Este bloque es la memoria viva del plan. Actualizar estado de cada item al compl
 - [x] Email queue worker — `lib/email/email-queue.ts` + `/api/cron/email-queue/route.ts`, batch 20, atomic claim, exponential backoff, cron cada hora en `vercel.json`.
 - [x] Kia copiloto SSE streaming — `streamAnthropicText()` en provider router; `/api/kia/copilot` con modo dual JSON/SSE; `KiaCopilotPanel` consume stream en tiempo real.
 - [x] Kia user data tools habilitadas — `get_user_expedientes`, `get_user_companies`, `get_user_pending_docs` en `DASHBOARD_SAFE_TOOLS`; artifact builders para tablas.
-- [x] `lib/utils/calendly.ts` — `getCalendlyUrl()` helper; todos los componentes Calendly usan env vars.
+- [x] `lib/utils/cal.ts` — `getCalMeetingUrl()` helper; todos los componentes Cal.com usan env vars.
 - [x] Panel `/dashboard/informes/nuevo` + `GenerateReportPanel` — entrada para generar informes.
 - [x] `improvement-plan.md` actualizado (2026-06-15).
 
@@ -1141,7 +1141,7 @@ Este bloque es la memoria viva del plan. Actualizar estado de cada item al compl
 El plan quedo sin actualizar durante esta ventana pese a 15+ commits en `main`. Resumen para no perder trazabilidad:
 
 - `3d19936`..`a59dd75` — portal tenant, Kia anti-loro, RLS fase 2, rol owner, cola de emails, hardening de seguridad de browser, fix XSS en preview de emails.
-- `61d9acf`, `0064245` — migracion completa Calendly → Cal.com (cero referencias a Calendly restantes).
+- `61d9acf`, `0064245` — migración completa al sistema actual Cal.com (sin referencias legacy restantes).
 - `32ba636`, `46dcc27` — Sprint H: digest semanal tenant + creacion automatica de expediente desde webhook Cal.com.
 - `2230b2f` — hardening de funciones DB, fix WhatsApp, UI admin.
 - `95dd62d` — cron de `email-queue` movido de Vercel Cron (bloqueado por plan Hobby) a `pg_cron` en Supabase. (Ver IMP-024: quedo sin cabecera de auth, arreglado 2026-07-03.)

@@ -15,7 +15,7 @@ Debes preservar la arquitectura actual, el diseño corporativo, las convenciones
 - Página Academy actual: `app/(public)/academy/page.tsx`.
 - Checkout Academy: `app/api/academy/checkout/route.ts`.
 - Formulario Academy: `components/site/AcademyLeadForm.tsx`.
-- Reserva: `components/site/CalendlyButton.tsx` y `lib/utils/cal.ts`.
+- Reserva: `components/site/CalButton.tsx` y `lib/utils/cal.ts`.
 - PDF Academy actual: `app/api/academy/programa-pdf/route.ts`.
 - Base de conocimientos: `app/(public)/docs`, `lib/utils/docs.ts` y `components/docs/DocsExplorer.tsx`.
 - Paleta: azul marino `#0D1B2A`, azul secundario `#23364D`, dorado `#D4A017`, crema `#F8F6F1`.
