@@ -1,6 +1,18 @@
 import { services as catalogServices } from '@/lib/utils/catalog';
 import { toStripeAscii } from '@/lib/integrations/stripe';
 
+export const SERVICE_DISBURSEMENT_KEYS = [
+  'mjusticia_790_026_nacionalidad_residencia',
+] as const;
+
+export type ServiceDisbursementKey = (typeof SERVICE_DISBURSEMENT_KEYS)[number];
+
+const REQUIRED_DISBURSEMENTS_BY_SERVICE_SLUG: Readonly<Record<string, readonly ServiceDisbursementKey[]>> = {
+  'nacionalidad-espanola-menor-nacido-en-espana': [
+    'mjusticia_790_026_nacionalidad_residencia',
+  ],
+};
+
 export type ServiceCheckoutItem = {
   priceId: string;
   name: string;
@@ -18,12 +30,6 @@ export type ServiceDisbursementItem = {
   taxable: false;
   revenueAffecting: false;
 };
-
-export const SERVICE_DISBURSEMENT_KEYS = [
-  'mjusticia_790_026_nacionalidad_residencia',
-] as const;
-
-export type ServiceDisbursementKey = (typeof SERVICE_DISBURSEMENT_KEYS)[number];
 
 function parseUnitAmount(price?: string): number | null {
   if (!price) return null;
@@ -81,6 +87,21 @@ export function getServiceCheckoutByPriceId(priceId: string): ServiceCheckoutIte
 export function getServiceDisbursementByKey(key: string): ServiceDisbursementItem | null {
   if (!SERVICE_DISBURSEMENT_KEYS.includes(key as ServiceDisbursementKey)) return null;
   return SERVICE_DISBURSEMENTS.get(key as ServiceDisbursementKey) ?? null;
+}
+
+export function getRequiredServiceDisbursementKeys(items: ServiceCheckoutItem[]): ServiceDisbursementKey[] {
+  return [...new Set(
+    items.flatMap((item) => REQUIRED_DISBURSEMENTS_BY_SERVICE_SLUG[item.slug] ?? []),
+  )];
+}
+
+export function validateRequestedServiceDisbursements(
+  requiredKeys: readonly ServiceDisbursementKey[],
+  requestedKeys: readonly string[],
+): { valid: true } | { valid: false; unexpectedKey: string } {
+  const allowed = new Set<string>(requiredKeys);
+  const unexpectedKey = requestedKeys.find((key) => !allowed.has(key));
+  return unexpectedKey ? { valid: false, unexpectedKey } : { valid: true };
 }
 
 export function getServiceCheckoutLineItem(item: ServiceCheckoutItem) {
