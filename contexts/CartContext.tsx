@@ -30,13 +30,13 @@ export function collectCartDisbursements(items: CartItem[]) {
   return [...new Set(items.flatMap(item => item.disbursements ?? []))];
 }
 
-export function buildCartCheckoutPayload(items: CartItem[]) {
+export function buildCartCheckoutPayload(items: CartItem[], disbursementMandateAccepted = false) {
   const disbursements = collectCartDisbursements(items);
 
   return {
     priceIds: items.map(i => i.priceId),
     ...(disbursements.length > 0
-      ? { disbursements, disbursementMandateAccepted: true }
+      ? { disbursements, disbursementMandateAccepted }
       : {}),
   };
 }
