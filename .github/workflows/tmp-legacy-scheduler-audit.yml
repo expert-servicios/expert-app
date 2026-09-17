@@ -1,0 +1,24 @@
+name: Temporary legacy scheduler audit
+
+on:
+  push:
+    branches:
+      - refactor/remove-calendly-completely
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: List legacy scheduler references
+        shell: bash
+        run: |
+          set -euo pipefail
+          pattern="cal""endly"
+          echo "=== exact repository references ==="
+          git grep -n -i "$pattern" || true
+          echo "=== filenames containing legacy scheduler name ==="
+          git ls-files | grep -i "$pattern" || true
