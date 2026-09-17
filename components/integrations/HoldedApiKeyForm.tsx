@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Eye, EyeOff, Loader2, Check, AlertCircle } from 'lucide-react';
 import { HoldedPermissionStatus, type HoldedPermissions } from './HoldedPermissionStatus';
 import { HoldedConsentModal } from './HoldedConsentModal';
+import type { KiaHoldedConnectionPhase } from '@/lib/ai/kia/kia-surface-guidance';
 
 interface TestResult {
   ok         : boolean;
@@ -12,11 +13,12 @@ interface TestResult {
 }
 
 interface Props {
-  companyId  ?: string | null;
-  onConnected : (integration: Record<string, unknown>) => void;
+  companyId     ?: string | null;
+  onConnected    : (integration: Record<string, unknown>) => void;
+  onPhaseChange ?: (phase: KiaHoldedConnectionPhase) => void;
 }
 
-export function HoldedApiKeyForm({ companyId, onConnected }: Props) {
+export function HoldedApiKeyForm({ companyId, onConnected, onPhaseChange }: Props) {
   const [showKey,      setShowKey]      = useState(false);
   const [apiKey,       setApiKey]       = useState('');
   const [testing,      setTesting]      = useState(false);
@@ -37,6 +39,7 @@ export function HoldedApiKeyForm({ companyId, onConnected }: Props) {
     setTesting(true);
     setError('');
     setTestResult(null);
+    onPhaseChange?.('testing');
 
     try {
       const res  = await fetch('/api/integrations/holded/test', {
@@ -48,13 +51,16 @@ export function HoldedApiKeyForm({ companyId, onConnected }: Props) {
 
       if (!res.ok) {
         setError(data.error ?? 'Error verificando el token');
+        onPhaseChange?.('error');
         return null;
       }
       const result = data as TestResult;
       setTestResult(result);
+      onPhaseChange?.(result.ok ? 'verified' : 'error');
       return result;
     } catch {
       setError('No se pudo conectar con el servidor');
+      onPhaseChange?.('error');
       return null;
     } finally {
       setTesting(false);
@@ -75,16 +81,19 @@ export function HoldedApiKeyForm({ companyId, onConnected }: Props) {
     }
     if (!result?.ok) return;
 
+    onPhaseChange?.('verified');
     setShowConsent(true);
   }
 
   function handleConsentCancel() {
     setShowConsent(false);
+    onPhaseChange?.(testResult?.ok ? 'verified' : 'idle');
   }
 
   function handleConnected(integration: Record<string, unknown>) {
     setShowConsent(false);
     clearSensitive();
+    onPhaseChange?.('verified');
     onConnected(integration);
   }
 
@@ -100,7 +109,12 @@ export function HoldedApiKeyForm({ companyId, onConnected }: Props) {
               ref={inputRef}
               type={showKey ? 'text' : 'password'}
               value={apiKey}
-              onChange={(e) => { setApiKey(e.target.value); setTestResult(null); setError(''); }}
+              onChange={(e) => {
+                setApiKey(e.target.value);
+                setTestResult(null);
+                setError('');
+                onPhaseChange?.('idle');
+              }}
               placeholder="Pega aquí tu API Token de Holded"
               autoComplete="off"
               spellCheck={false}
@@ -176,6 +190,7 @@ export function HoldedApiKeyForm({ companyId, onConnected }: Props) {
           warnings={testResult.warnings}
           apiKey={trimmedKey}
           companyId={companyId}
+          onPhaseChange={onPhaseChange}
           onConnected={handleConnected}
           onCancel={handleConsentCancel}
         />
