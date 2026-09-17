@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { getMetaMarketingConfigStatus } from '@/lib/integrations/meta/config';
-import { getMetaCatalogDrafts } from '@/lib/integrations/meta/catalog-mapper';
+import { auditMetaCatalog } from '@/lib/integrations/meta/catalog-audit';
 import { testMetaMarketingConnection } from '@/lib/integrations/meta/client';
 
 async function requireAdmin(request: NextRequest) {
@@ -18,17 +18,11 @@ export async function GET(request: NextRequest) {
   if (!await requireAdmin(request)) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   const config = getMetaMarketingConfigStatus();
-  const drafts = getMetaCatalogDrafts();
-  const ready = drafts.filter((item) => item.marketingReady).length;
+  const catalog = auditMetaCatalog();
 
   return NextResponse.json({
     config,
-    catalog: {
-      total: drafts.length,
-      marketingReady: ready,
-      manualReview: drafts.length - ready,
-      warnings: drafts.flatMap((item) => item.warnings.map((warning) => ({ retailerId: item.retailerId, warning }))),
-    },
+    catalog,
     liveTestAvailable: config.enabled && config.configured,
   });
 }
