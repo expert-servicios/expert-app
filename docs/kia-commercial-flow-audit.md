@@ -60,7 +60,7 @@ welcome → ask_name → ask_email → main_menu → service_area → service �
 | Login obligatorio antes de pago | No cobrar visitantes anonimos; enlazar pago a perfil |
 | No crear Stripe Checkout desde frontend sin backend | Seguridad: validacion en servidor |
 | Stripe cobra, Holded factura | Stripe no es sistema fiscal; Holded genera facturas legales |
-| Kia es el unico widget flotante | Eliminar Calendly flotante (completado 2026-05-22) |
+| Kia es el unico widget flotante | Eliminar Cal.com flotante (completado 2026-05-22) |
 | No enviar pago automatico tras viabilidad | Siempre pedir confirmacion del usuario |
 | No pedir justificantes al inicio | Primero datos, luego documentacion |
 | Llamada 15 min solo preventa | No es asesoria completa |
@@ -145,7 +145,7 @@ WABA → Kia precal_cta → btn_pay_now
 
 ```tsx
 <div className="fixed bottom-5 right-5 z-[70] flex flex-col items-center gap-3">
-  <CalendlyFloatingButton url={CALENDLY_REUNION} />  {/* eliminado */}
+  <CalFloatingButton url={CAL_REUNION} />  {/* eliminado */}
   <WhatsAppChatWidget />
 </div>
 ```
@@ -158,7 +158,7 @@ WABA → Kia precal_cta → btn_pay_now
 </div>
 ```
 
-Calendly no se elimina del producto — solo desaparece el boton flotante. Los enlaces de reunion de Calendly pueden seguir apareciendo en emails transaccionales o en el dashboard de cliente cuando sea necesario solicitar una llamada de soporte.
+Cal.com no se elimina del producto — solo desaparece el boton flotante. Los enlaces de reunion de Cal.com pueden seguir apareciendo en emails transaccionales o en el dashboard de cliente cuando sea necesario solicitar una llamada de soporte.
 
 ---
 
@@ -179,7 +179,7 @@ Calendly no se elimina del producto — solo desaparece el boton flotante. Los e
 
 | Fecha | Decision |
 |---|---|
-| 2026-05-22 | Eliminado CalendlyFloatingButton de layout publico |
+| 2026-05-22 | Eliminado CalFloatingButton de layout publico |
 | 2026-05-22 | Confirmado: Kia es el unico punto de entrada flotante |
 | 2026-05-22 | Definido flujo objetivo con login obligatorio antes de pago |
 | 2026-05-22 | Identificados gaps S1, S2, S3, M1–M5 pendientes de implementacion |

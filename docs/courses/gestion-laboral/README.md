@@ -12,7 +12,7 @@ Paquete de especificación y contenidos para implementar en `expertconsulting.es
 - `app/(public)/gracias/academy/gestion-laboral-integral/page.tsx` — página de éxito para configurar como redirect del Payment Link en el Dashboard de Stripe. No afirma matrícula activa (eso requeriría el webhook de la Fase 2).
 - PDF corporativo genérico copiado desde la rama de origen a `public/downloads/academy/gestion-laboral-integral/programa-gestion-laboral-integral-expert.pdf` (26 páginas, verificado que no contiene personalización de cliente).
 - Formulario de leads: reutiliza `AcademyLeadForm`/`app/api/academy/leads` sin cambios (ya son genéricos por `programSlug`).
-- Reserva de reunión informativa: reutiliza `CalendlyButton`/`getCalAcademyUrl()` sin cambios (mismo slot de Cal.com que el Programa Superior).
+- Reserva de reunión informativa: reutiliza `CalButton`/`getCalAcademyUrl()` sin cambios (mismo slot de Cal.com que el Programa Superior).
 - `app/sitemap.ts` — entrada añadida.
 - Kia: `lib/ai/kia/prompts/kia-academy-knowledge.ts` ampliado con un bloque `academy_program_2` y reglas para no confundir los dos programas ni prometer la exención de IVA como garantizada. `ACADEMY_CONTEXT_RE` (system prompt) e `includeAcademy` (decision engine) amplían sus regex.
 

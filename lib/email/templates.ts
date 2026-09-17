@@ -1,4 +1,4 @@
-﻿import { getPublicAppUrl } from '@/lib/utils/app-url';
+import { getPublicAppUrl } from '@/lib/utils/app-url';
 
 const BRAND = {
   from: process.env.RESEND_FROM_EMAIL ?? 'EXPERT <info@expertconsulting.es>',
@@ -578,8 +578,8 @@ export function holdedMigrationConfirmed(name: string, packageName: string, onbo
 }
 
 // ── 14. Holded — formación session confirmed ──────────────────────────────────
-export function holdedFormacionConfirmed(name: string, calendlyUrl: string) {
-  const bookingUrl = calendlyUrl || `${BRAND.appUrl}/cita`;
+export function holdedFormacionConfirmed(name: string, calUrl: string) {
+  const bookingUrl = calUrl || `${BRAND.appUrl}/cita`;
   return {
     subject: '¡Sesión de formación Holded confirmada! Reserva tu horario',
     html: base('Formación Holded confirmada', `
@@ -683,8 +683,8 @@ export function holdedDemoActivated(name: string, helpUrl: string) {
 }
 
 // ── 19. Holded demo — onboarding completado → reservar formación ──────────────
-export function holdedOnboardingDone(name: string, calendlyFormacionUrl: string) {
-  const bookingUrl = calendlyFormacionUrl || `${BRAND.appUrl}/cita`;
+export function holdedOnboardingDone(name: string, calFormacionUrl: string) {
+  const bookingUrl = calFormacionUrl || `${BRAND.appUrl}/cita`;
   return {
     subject: 'Formación Holded disponible — EXPERT',
     html: base('Formación Holded disponible', `

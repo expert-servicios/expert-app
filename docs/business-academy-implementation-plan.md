@@ -152,7 +152,7 @@ export function getCalAcademyUrl(): string | null {
   return calUrl(process.env.NEXT_PUBLIC_CAL_ACADEMY_LINK);
 }
 ```
-Botón "Reservar entrevista de admisión" reutiliza `CalendlyButton`/`CalendlyModal`
+Botón "Reservar entrevista de admisión" reutiliza `CalButton`/`CalModal`
 existentes, sin componentes nuevos. Añadir `NEXT_PUBLIC_CAL_ACADEMY_LINK` a
 `.env.example` junto a los otros 4 slugs de Cal.com.
 
@@ -200,7 +200,7 @@ completa es un proyecto aparte, fuera de alcance de este lanzamiento.
 - **Fase C — Reserva de entrevista de admisión:** integración Cal.com
   (`getCalAcademyUrl`, nueva env var `NEXT_PUBLIC_CAL_ACADEMY_LINK`), botón
   "Reservar entrevista de admisión" en la ficha reutilizando
-  `CalendlyButton`/`CalendlyModal` existentes.
+  `CalButton`/`CalModal` existentes.
 - **Fase C.2 — Descarga de la programación (PDF):** endpoint
   `app/api/academy/programa-pdf/route.ts` con `@react-pdf/renderer`
   (mismo patrón que `app/api/reports/[id]/pdf/route.ts`), genera un PDF con

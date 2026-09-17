@@ -192,8 +192,8 @@ Implementacion propuesta:
 
 - Anadir `HOLDED_API_KEY=` a `.env.example`.
 - Anadir variables opcionales:
-  - `CALENDLY_ONBOARDING_URL=`
-  - `CALENDLY_FORMACION_URL=`
+  - `NEXT_PUBLIC_CAL_ONBOARDING_LINK=`
+  - `NEXT_PUBLIC_CAL_FORMACION_LINK=`
 - Actualizar README:
   - Holded como sincronizacion financiera externa.
   - P0 como prioridad actual.

@@ -804,12 +804,12 @@ export async function POST(req: NextRequest) {
         const holdedPackageSlugs = ['holded-pack-starter', 'holded-migracion-sin-inventario', 'holded-migracion-con-inventario'];
         const isHoldedMigration = slugList.some((s: string) => holdedPackageSlugs.includes(s));
         const isHoldedFormacion = slugList.includes('holded-modulo-formacion');
-        const calendlyOnboarding = getCalOnboardingUrl() ?? '';
-        const calendlyFormacion = getCalFormacionUrl() ?? '';
+        const calOnboarding = getCalOnboardingUrl() ?? '';
+        const calFormacion = getCalFormacionUrl() ?? '';
 
         if (isHoldedMigration) {
           const packageName = serviceName;
-          const tpl = holdedMigrationConfirmed(customerName, packageName, calendlyOnboarding, calendlyFormacion);
+          const tpl = holdedMigrationConfirmed(customerName, packageName, calOnboarding, calFormacion);
           await sendEmail({
             to: customerEmail,
             eventType: 'holded.migration.confirmed',
@@ -817,7 +817,7 @@ export async function POST(req: NextRequest) {
             metadata: { session_id: session.id, package_name: packageName }
           });
         } else if (isHoldedFormacion) {
-          const tpl = holdedFormacionConfirmed(customerName, calendlyFormacion);
+          const tpl = holdedFormacionConfirmed(customerName, calFormacion);
           await sendEmail({
             to: customerEmail,
             eventType: 'holded.formacion.confirmed',
@@ -896,12 +896,12 @@ export async function POST(req: NextRequest) {
         'Cliente';
 
       if (customerEmail) {
-        const calendlyOnboarding = getCalOnboardingUrl() ?? '';
-        const calendlyFormacion = getCalFormacionUrl() ?? '';
+        const calOnboarding = getCalOnboardingUrl() ?? '';
+        const calFormacion = getCalFormacionUrl() ?? '';
         const holdedAmountEur = Number(session.amount_total ?? 0) / 100;
         if (productType === 'holded') {
           const packageName = session.metadata?.package_name ?? 'Paquete Holded';
-          const tpl = holdedMigrationConfirmed(customerName, packageName, calendlyOnboarding, calendlyFormacion);
+          const tpl = holdedMigrationConfirmed(customerName, packageName, calOnboarding, calFormacion);
           await sendEmail({
             to: customerEmail,
             eventType: 'holded.migration.confirmed',
@@ -925,7 +925,7 @@ export async function POST(req: NextRequest) {
               });
           });
         } else {
-          const tpl = holdedFormacionConfirmed(customerName, calendlyFormacion);
+          const tpl = holdedFormacionConfirmed(customerName, calFormacion);
           await sendEmail({
             to: customerEmail,
             eventType: 'holded.formacion.confirmed',
