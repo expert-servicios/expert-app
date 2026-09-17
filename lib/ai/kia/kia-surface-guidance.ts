@@ -286,6 +286,44 @@ export function resolvePostPurchaseGuidance(input: {
   };
 }
 
+export function resolveFiscalCalendarGuidance(input: {
+  obligationCount: number;
+  pendingCount: number;
+  overdueCount: number;
+}): KiaSurfaceGuidance {
+  if (input.overdueCount > 0) {
+    return {
+      state: 'alerta_fiscal',
+      title: input.overdueCount === 1 ? 'Hay 1 plazo vencido en tu calendario' : `Hay ${input.overdueCount} plazos vencidos en tu calendario`,
+      message: 'Revisa las obligaciones que siguen marcadas como pendientes y cuya fecha límite ya ha pasado. KIA no interpreta este estado como deuda, sanción ni presentación omitida.',
+      detail: `${input.pendingCount} pendiente${input.pendingCount === 1 ? '' : 's'} · ${input.overdueCount} vencida${input.overdueCount === 1 ? '' : 's'}`,
+    };
+  }
+
+  if (input.pendingCount > 0) {
+    return {
+      state: 'seguimiento',
+      title: input.pendingCount === 1 ? 'Tienes 1 obligación pendiente' : `Tienes ${input.pendingCount} obligaciones pendientes`,
+      message: 'Consulta las fechas del calendario y el estado de cada obligación. Esta guía utiliza únicamente los registros que ya aparecen en tu calendario fiscal.',
+      detail: `${input.pendingCount} pendiente${input.pendingCount === 1 ? '' : 's'}`,
+    };
+  }
+
+  if (input.obligationCount > 0) {
+    return {
+      state: 'confianza',
+      title: 'No hay obligaciones pendientes en este calendario',
+      message: 'Los registros visibles no tienen estado pendiente. Puedes revisar el histórico y las fechas cuando lo necesites.',
+    };
+  }
+
+  return {
+    state: 'ayuda',
+    title: 'Todavía no hay obligaciones cargadas en este calendario',
+    message: 'Cuando existan obligaciones fiscales visibles para este ejercicio, KIA podrá ayudarte a identificar cuáles siguen pendientes o han superado su fecha límite.',
+  };
+}
+
 export type KiaOnboardingStep = 'profile' | 'company' | 'done';
 
 export function resolveOnboardingGuidance(input: {
