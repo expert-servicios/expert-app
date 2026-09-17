@@ -1,0 +1,44 @@
+name: Temporary KIA Sprint 5 consolidation
+
+on:
+  push:
+    branches:
+      - feat/kia-sprint5-consolidated
+
+permissions:
+  contents: write
+
+jobs:
+  consolidate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/kia-sprint5-consolidated
+          fetch-depth: 0
+      - name: Port final stacked Sprint 5 state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin feat/kia-guidance-sprint5d-holded
+          git checkout origin/feat/kia-guidance-sprint5d-holded -- \
+            'app/(protected)/dashboard/expedientes/page.tsx' \
+            'app/(protected)/dashboard/onboarding/page.tsx' \
+            'app/(protected)/dashboard/expedientes/[id]/page.tsx' \
+            'components/kia/KiaGuidanceCard.tsx' \
+            'components/integrations/HoldedApiKeyForm.tsx' \
+            'components/integrations/HoldedConnectionCard.tsx' \
+            'docs/kia-avatar-response-sprint5.md' \
+            'lib/ai/kia/kia-surface-guidance.ts' \
+            'tests/kia/kia-guidance-surfaces.test.ts'
+          git rm .github/workflows/tmp-kia-sprint5-consolidate.yml
+      - name: Commit consolidated Sprint 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'feat: consolidate KIA Sprint 5 guidance on current main'
+          git push origin HEAD:feat/kia-sprint5-consolidated
