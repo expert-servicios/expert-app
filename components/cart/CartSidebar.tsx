@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { X, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
+import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartDisbursements, useCart } from '@/contexts/CartContext';
 import { QuickProfileGate } from '@/components/cart/QuickProfileGate';
 
 export function CartSidebar() {
@@ -11,6 +11,8 @@ export function CartSidebar() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);
+  const hasDisbursements = cartContainsDisbursements(items);
+  const disbursements = collectCartDisbursements(items);
 
   const goToCheckoutUrl = (url: string) => {
     clearCart();
@@ -26,7 +28,7 @@ export function CartSidebar() {
       const res  = await fetch('/api/services/checkout', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({ priceIds: items.map(i => i.priceId) }),
+        body   : JSON.stringify(buildCartCheckoutPayload(items)),
       });
       const data = await res.json() as { url?: string; error?: string; requiresAuth?: boolean; code?: string };
       if (res.status === 401 || data.requiresAuth) {
@@ -121,6 +123,11 @@ export function CartSidebar() {
                         {item.name}
                       </Link>
                       <p className="mt-1 text-sm font-bold text-[#D4A017]">{item.displayPrice}</p>
+                      {item.disbursementNotice && (
+                        <p className="mt-2 rounded-lg border border-[#D4A017]/25 bg-white px-3 py-2 text-[11px] leading-5 text-[#23364D]/70">
+                          {item.disbursementNotice}
+                        </p>
+                      )}
                     </div>
                     <button
                       type="button"
@@ -142,11 +149,13 @@ export function CartSidebar() {
           <div className="space-y-3 border-t border-[#D4A017]/20 p-5">
             <p className="text-xs leading-relaxed text-[#23364D]/60">
               Precios sin IVA. El total con IVA se confirma en la pasarela de pago Stripe.
+              {hasDisbursements ? ' Los suplidos obligatorios se cobran separados de los honorarios y no forman parte de la base del servicio.' : ''}
             </p>
             {error && <p role="alert" aria-live="assertive" className="text-xs font-semibold text-red-700">{error}</p>}
             {needsProfile ? (
               <QuickProfileGate
                 priceIds={items.map(i => i.priceId)}
+                disbursements={disbursements}
                 onCheckoutUrl={goToCheckoutUrl}
               />
             ) : (
