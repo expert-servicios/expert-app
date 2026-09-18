@@ -271,3 +271,91 @@ jobs:
           path: ${{ runner.temp }}/ledger-preflight/
           if-no-files-found: error
           retention-days: 14
+
+
+  c2-production-dry-run:
+    name: C2 production dry-run
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 326 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: ybtpqscmqrrjjmuoryap
+      EXPECTED_PENDING: "20260918175830"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo 'STOP: SUPABASE_ACCESS_TOKEN secret is not configured'; exit 1; }
+          test -n "${SUPABASE_DB_PASSWORD:-}" || { echo 'STOP: SUPABASE_DB_PASSWORD secret is not configured'; exit 1; }
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+
+      - name: Link production and verify migration alignment
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$PROJECT_REF" -p "$SUPABASE_DB_PASSWORD"
+          supabase migration list --linked | tee "$RUNNER_TEMP/c2-migration-list.txt"
+
+          mapfile -t local_only < <(
+            awk -F'|' '
+              /^[[:space:]]*[0-9]{14}[[:space:]]*\|/ {
+                local=$1; remote=$2
+                gsub(/[^0-9]/, "", local)
+                gsub(/[^0-9]/, "", remote)
+                if (local != "" && remote == "") print local
+              }
+            ' "$RUNNER_TEMP/c2-migration-list.txt"
+          )
+
+          mapfile -t remote_only < <(
+            awk -F'|' '
+              /^[[:space:]]*\|[[:space:]]*[0-9]{14}[[:space:]]*\|/ {
+                local=$1; remote=$2
+                gsub(/[^0-9]/, "", local)
+                gsub(/[^0-9]/, "", remote)
+                if (local == "" && remote != "") print remote
+              }
+            ' "$RUNNER_TEMP/c2-migration-list.txt"
+          )
+
+          test "${#local_only[@]}" -eq 1 || {
+            echo "STOP: expected exactly one local-only migration, got ${#local_only[@]}"
+            printf 'local-only: %s\n' "${local_only[@]:-none}"
+            exit 1
+          }
+          test "${local_only[0]}" = "$EXPECTED_PENDING" || {
+            echo "STOP: unexpected pending migration ${local_only[0]}"
+            exit 1
+          }
+          test "${#remote_only[@]}" -eq 0 || {
+            echo "STOP: remote-only migrations remain"
+            printf 'remote-only: %s\n' "${remote_only[@]}"
+            exit 1
+          }
+
+      - name: Dry-run C2 only
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase db push --linked --dry-run 2>&1 | tee "$RUNNER_TEMP/c2-db-push-dry-run.txt"
+
+      - name: Upload dry-run evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: c2-production-dry-run-20260918
+          path: |
+            ${{ runner.temp }}/c2-migration-list.txt
+            ${{ runner.temp }}/c2-db-push-dry-run.txt
+          if-no-files-found: error
+          retention-days: 14
