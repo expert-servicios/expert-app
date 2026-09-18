@@ -191,7 +191,11 @@ export function buildCanonicalShadowCatalog(): CanonicalShadowService[] {
       const publicAmount = offers[0].amountCents;
       const directlyComparable = adminBindings
         .filter((binding) => !binding.offerCode)
-        .map((binding) => offers.find((offer) => offer.sourceId === binding.item.id))
+        .map((binding) =>
+          offers.find(
+            (offer) => offer.source === 'legacy_admin' && offer.sourceId === binding.item.id
+          )
+        )
         .filter((offer): offer is CanonicalCommercialOffer => Boolean(offer));
 
       if (
