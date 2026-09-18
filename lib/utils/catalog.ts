@@ -599,12 +599,12 @@ export const services: Service[] = [
       'Servicio de preparación y presentación de solicitud de nacionalidad española por residencia para menores nacidos en España. Revisión documental, expediente, formularios y presentación ante el Ministerio de Justicia. Precio: 250 € + IVA.',
     price: '250 € + IVA',
     duration: 'Preparación según documentación; resolución legal hasta 1 año',
-    officialFee: 'Tasa administrativa 790-026: 104,05 € no incluida',
-    servicePriceDetail: 'Honorarios: 250 € + IVA 21 % (total 302,50 € si aplica IVA)',
+    officialFee: 'Tasa administrativa 790-026: 104,05 € incluida como suplido obligatorio',
+    servicePriceDetail: 'Honorarios: 250 € + IVA 21 % = 302,50 €; tasa 790-026: 104,05 € como suplido; total a pagar: 406,55 €',
     stripePriceId: 'price_1TZXomLeYwwgvux4bTuqVZcU',
-    checkoutLabel: 'Contratar — 250 € + IVA',
+    checkoutLabel: 'Contratar — 406,55 € total',
     checkoutLegal:
-      'El pago corresponde exclusivamente a los honorarios profesionales por la preparación y presentación del expediente. La tasa administrativa del Ministerio de Justicia, actualmente 104,05 €, no está incluida y se abonará aparte.',
+      'Al contratar se cobran 302,50 € de honorarios con IVA incluido y 104,05 € de tasa 790-026 como suplido obligatorio. La tasa se abona en nombre y por cuenta del cliente y queda separada de la base de honorarios.',
     keyPoints: [
       {
         title: 'Plazo reducido de 1 año',
@@ -643,7 +643,7 @@ export const services: Service[] = [
       'Revisión de NIE/TIE, pasaportes, certificado de nacimiento, empadronamiento y documentación familiar',
       'Preparación del expediente documental',
       'Cumplimentación de formularios oficiales',
-      'Instrucciones para el pago de la tasa administrativa 790-026',
+      'Gestión del pago de la tasa administrativa 790-026 como suplido, con justificante a nombre del menor solicitante',
       'Presentación telemática ante el Ministerio de Justicia, cuando proceda',
       'Entrega del justificante de presentación y número de expediente',
       'Seguimiento básico inicial del expediente',
@@ -659,7 +659,7 @@ export const services: Service[] = [
           'Tarjeta de residencia anterior, si existe',
           'Resolución inicial de concesión de residencia o protección temporal, si existe',
           'Certificado de empadronamiento familiar o colectivo actualizado',
-          'Certificado de guardería o centro infantil, solo si el menor asiste a un centro'
+          'Certificado del centro escolar o educativo cuando corresponda por la edad y escolarización del menor'
         ]
       },
       {
