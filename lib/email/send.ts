@@ -3,9 +3,12 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { BRAND } from './templates';
 import {
   calculateRussianNationalityAmounts,
+  isNationalityPayment,
   isRussianNationalityPayment,
   russianNationalityPaymentConfirmedAdmin,
   russianNationalityPaymentConfirmedClient,
+  spanishNationalityPaymentConfirmedAdmin,
+  spanishNationalityPaymentConfirmedClient,
 } from './service-payment-ru';
 
 export interface EmailAttachment {
@@ -78,13 +81,18 @@ async function localizeServicePaymentEmail(input: {
     ? checkoutMetadata.service_slug
     : stringMetadata(input.metadata, 'service_slug');
 
-  if (!isRussianNationalityPayment({
+  if (!isNationalityPayment({
     eventType: input.eventType,
-    checkoutLocale,
     serviceSlug,
   })) {
     return input;
   }
+
+  const isRussian = isRussianNationalityPayment({
+    eventType: input.eventType,
+    checkoutLocale,
+    serviceSlug,
+  });
 
   const amounts = calculateRussianNationalityAmounts({
     professionalNetCents: centsMetadata(checkoutMetadata, 'revenue_amount_cents'),
@@ -93,7 +101,7 @@ async function localizeServicePaymentEmail(input: {
 
   const localizedMetadata = {
     ...(input.metadata ?? {}),
-    checkout_locale: 'ru',
+    checkout_locale: isRussian ? 'ru' : 'es',
     service_slug: serviceSlug,
     professional_net_cents: amounts.professionalNetCents,
     professional_vat_cents: amounts.professionalVatCents,
@@ -103,7 +111,9 @@ async function localizeServicePaymentEmail(input: {
   };
 
   if (input.eventType === 'service.payment.confirmed') {
-    const template = russianNationalityPaymentConfirmedClient(amounts);
+    const template = isRussian
+      ? russianNationalityPaymentConfirmedClient(amounts)
+      : spanishNationalityPaymentConfirmedClient(amounts);
     return { ...template, metadata: localizedMetadata };
   }
 
@@ -132,14 +142,17 @@ async function localizeServicePaymentEmail(input: {
     }
   }
 
-  const template = russianNationalityPaymentConfirmedAdmin({
+  const adminInput = {
     customerName,
     customerEmail,
     checkoutSessionId: sessionId,
     orderId: stringMetadata(input.metadata, 'order_id'),
     caseId: stringMetadata(input.metadata, 'case_id'),
     amounts,
-  });
+  };
+  const template = isRussian
+    ? russianNationalityPaymentConfirmedAdmin(adminInput)
+    : spanishNationalityPaymentConfirmedAdmin(adminInput);
   return { ...template, metadata: localizedMetadata };
 }
 
