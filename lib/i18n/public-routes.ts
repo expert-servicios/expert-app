@@ -11,6 +11,7 @@ export const PUBLIC_ROUTE_KEYS = [
   'taxes',
   'verifactu',
   'consultation',
+  'nationalityMinor',
 ] as const;
 
 export type PublicRouteKey = (typeof PUBLIC_ROUTE_KEYS)[number];
@@ -26,6 +27,11 @@ export const PUBLIC_ROUTE_MAP: Record<PublicRouteKey, Record<SupportedLocale, st
   taxes: { es: '/servicios/declaraciones-impuestos', ru: '/ru/nalogi', en: '/en/taxes' },
   verifactu: { es: '/holded', ru: '/ru/verifactu', en: '/en/verifactu' },
   consultation: { es: '/cita', ru: '/ru/konsultatsiya', en: '/en/consultation' },
+  nationalityMinor: {
+    es: '/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana',
+    ru: '/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii',
+    en: '/en/services',
+  },
 };
 
 const RU_SLUG_TO_KEY: Record<string, PublicRouteKey> = {
@@ -39,6 +45,7 @@ const RU_SLUG_TO_KEY: Record<string, PublicRouteKey> = {
   nalogi: 'taxes',
   verifactu: 'verifactu',
   konsultatsiya: 'consultation',
+  'uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii': 'nationalityMinor',
 };
 
 export function getLocalizedPublicHref(route: PublicRouteKey, locale: SupportedLocale): string {
