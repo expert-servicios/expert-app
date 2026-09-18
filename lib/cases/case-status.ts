@@ -94,7 +94,7 @@ export const LEGACY_CASE_STATE_TO_STATUS: Record<string, CaseStatus> = {
   pendiente_externo: 'presentado',
   presentado: 'presentado',
   resolucion_recibida: 'presentado',
-  entregado: 'presentado',
+  entregado: 'finalizado',
   finalizado: 'finalizado',
   bloqueado: 'bloqueado',
 };
