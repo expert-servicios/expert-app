@@ -1,5 +1,10 @@
 import { services, type Service } from '@/lib/utils/catalog';
 import { ADMIN_CATALOG, type CatalogItem } from '@/lib/utils/admin-catalog';
+import {
+  getAliasesForCanonicalService,
+  getChildOffersForCanonicalService,
+  resolveCanonicalServiceId,
+} from '@/lib/services/commercial-catalog-bindings';
 
 export type CanonicalServiceStatus = 'draft' | 'active' | 'paused' | 'retired';
 export type CanonicalServiceType = 'service' | 'training' | 'plan' | 'procedure';
@@ -49,6 +54,7 @@ export interface CanonicalCommercialOffer {
 
 export interface CanonicalShadowService {
   identity: CanonicalServiceIdentity;
+  aliases: string[];
   contentEs: CanonicalServiceContent;
   offers: CanonicalCommercialOffer[];
   warnings: string[];
@@ -115,12 +121,16 @@ function publicOffer(service: Service): CanonicalCommercialOffer {
   };
 }
 
-function adminOffer(item: CatalogItem): CanonicalCommercialOffer {
+function adminOffer(
+  item: CatalogItem,
+  serviceId: string,
+  code = item.category === 'formacion' ? item.id : 'admin-default'
+): CanonicalCommercialOffer {
   const isQuote = item.suggestedPrice <= 0;
   return {
     offerId: `legacy-admin:${item.id}`,
-    serviceId: item.id,
-    code: item.category === 'formacion' ? item.id : 'admin-default',
+    serviceId,
+    code,
     billingMode: isQuote ? 'quote' : item.mode === 'subscription' ? 'recurring' : 'one_time',
     priceMode: isQuote ? 'quote' : 'fixed',
     currency: 'EUR',
@@ -135,7 +145,22 @@ function adminOffer(item: CatalogItem): CanonicalCommercialOffer {
 }
 
 export function buildCanonicalShadowCatalog(): CanonicalShadowService[] {
-  const adminById = new Map(ADMIN_CATALOG.map((item) => [item.id, item]));
+  const childBindingBySource = new Map(
+    ADMIN_CATALOG.flatMap((item) =>
+      getChildOffersForCanonicalService('formacion-holded')
+        .filter((binding) => binding.sourceId === item.id)
+        .map((binding) => [item.id, binding] as const)
+    )
+  );
+
+  const adminByCanonicalService = new Map<string, Array<{ item: CatalogItem; offerCode?: string }>>();
+  for (const item of ADMIN_CATALOG) {
+    const childBinding = childBindingBySource.get(item.id);
+    const canonicalServiceId = childBinding?.canonicalServiceId ?? resolveCanonicalServiceId(item.id);
+    const current = adminByCanonicalService.get(canonicalServiceId) ?? [];
+    current.push({ item, offerCode: childBinding?.offerCode });
+    adminByCanonicalService.set(canonicalServiceId, current);
+  }
 
   return services.map((service) => {
     const identity: CanonicalServiceIdentity = {
@@ -159,17 +184,25 @@ export function buildCanonicalShadowCatalog(): CanonicalShadowService[] {
 
     const offers = [publicOffer(service)];
     const warnings: string[] = [];
-    const admin = adminById.get(service.slug);
+    const aliases = getAliasesForCanonicalService(service.slug).map((binding) => binding.alias);
+    const adminBindings = adminByCanonicalService.get(service.slug) ?? [];
 
-    if (admin) {
-      const candidate = adminOffer(admin);
-      offers.push(candidate);
+    if (adminBindings.length > 0) {
+      for (const binding of adminBindings) {
+        offers.push(adminOffer(binding.item, service.slug, binding.offerCode));
+      }
 
       const publicAmount = offers[0].amountCents;
+      const directlyComparable = adminBindings
+        .filter((binding) => !binding.offerCode)
+        .map((binding) => offers.find((offer) => offer.sourceId === binding.item.id))
+        .filter((offer): offer is CanonicalCommercialOffer => Boolean(offer));
+
       if (
         offers[0].priceMode === 'fixed' &&
-        candidate.priceMode === 'fixed' &&
-        publicAmount !== candidate.amountCents
+        directlyComparable.some(
+          (candidate) => candidate.priceMode === 'fixed' && publicAmount !== candidate.amountCents
+        )
       ) {
         warnings.push('legacy_price_conflict');
       }
@@ -185,6 +218,6 @@ export function buildCanonicalShadowCatalog(): CanonicalShadowService[] {
       warnings.push('non_fixed_public_offer');
     }
 
-    return { identity, contentEs, offers, warnings };
+    return { identity, aliases, contentEs, offers, warnings };
   });
 }
