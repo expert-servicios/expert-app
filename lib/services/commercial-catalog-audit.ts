@@ -3,6 +3,7 @@ import { ADMIN_CATALOG } from '@/lib/utils/admin-catalog';
 import { SERVICES_CATALOG } from '@/lib/data/services-catalog';
 import { getService } from '@/lib/services/service-registry';
 import { parseFixedEuroPrice } from '@/lib/integrations/meta/catalog-mapper';
+import { LEGACY_SERVICE_ALIASES } from '@/lib/services/commercial-catalog-bindings';
 
 export type CommercialCatalogIssue =
   | 'price_mismatch'
@@ -43,26 +44,14 @@ export type CommercialAliasCandidate = {
   status: 'candidate';
 };
 
-export const COMMERCIAL_ALIAS_CANDIDATES: CommercialAliasCandidate[] = [
-  {
-    alias: 'holded-starter',
-    canonical: 'holded-pack-starter',
-    reason: 'services-catalog usa holded-starter; catálogo público y service registry usan holded-pack-starter',
-    status: 'candidate',
-  },
-  {
-    alias: 'nacionalidad-menor-nacido-espana',
-    canonical: 'nacionalidad-espanola-menor-nacido-en-espana',
-    reason: 'admin-catalog usa un id abreviado; catálogo público/conversacional usan el slug largo',
-    status: 'candidate',
-  },
-  {
-    alias: 'matriculacion-vehiculo',
-    canonical: 'matriculacion',
-    reason: 'admin-catalog usa matriculacion-vehiculo; catálogo público/conversacional usan matriculacion',
-    status: 'candidate',
-  },
-];
+export const COMMERCIAL_ALIAS_CANDIDATES: CommercialAliasCandidate[] = LEGACY_SERVICE_ALIASES.map(
+  (binding) => ({
+    alias: binding.alias,
+    canonical: binding.canonicalServiceId,
+    reason: binding.reason,
+    status: 'candidate' as const,
+  })
+);
 
 function conversationMap() {
   return new Map(
