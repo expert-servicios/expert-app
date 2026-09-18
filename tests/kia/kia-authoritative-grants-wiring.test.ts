@@ -28,7 +28,7 @@ describe('KIA authoritative grants wiring', () => {
   });
 
   it('keeps the operational grant table server-side only and scope-limited', () => {
-    const migration = source('supabase/migrations/20260915142000_kia_access_grants.sql');
+    const migration = source('supabase/migrations/20260915141930_kia_access_grants.sql');
     expect(migration).toContain("grant_kind = 'scope'");
     expect(migration).toContain("grant_value in ('kia:operator', 'kia:admin')");
     expect(migration).toContain("source in ('staff_assignment', 'manual_approval')");
