@@ -676,12 +676,12 @@ export const services: Service[] = [
     ],
     process: [
       {
-        title: 'Pago del servicio',
-        text: 'El cliente contrata el servicio mediante pago online seguro.'
+        title: 'Pago del servicio y mandato de suplido',
+        text: 'El cliente abona online los honorarios y la tasa 790-026 como suplido separado, aceptando expresamente que EXPERT la pague en su nombre y por su cuenta.'
       },
       {
-        title: 'Envío de documentación',
-        text: 'Después del pago, se envía la documentación necesaria por WhatsApp o correo electrónico.'
+        title: 'Apertura y documentación',
+        text: 'Después del pago, EXPERT abre el expediente y el cliente carga la documentación en su área privada segura; WhatsApp queda para consultas y coordinación.'
       },
       {
         title: 'Revisión de viabilidad',
@@ -692,8 +692,8 @@ export const services: Service[] = [
         text: 'Preparamos la solicitud, formularios y documentación digitalizada.'
       },
       {
-        title: 'Pago de tasa administrativa',
-        text: 'Cuando el expediente está preparado, indicamos cómo abonar la tasa oficial del Ministerio de Justicia.'
+        title: 'Abono de la tasa como suplido',
+        text: 'Cuando el expediente está validado y listo para presentar, EXPERT abona la tasa 790-026 ya cobrada como suplido en nombre y por cuenta del solicitante.'
       },
       {
         title: 'Presentación de la solicitud',
@@ -705,7 +705,6 @@ export const services: Service[] = [
       }
     ],
     notIncluded: [
-      'Tasa administrativa del Ministerio de Justicia: 104,05 €',
       'Traducciones juradas, si fueran necesarias',
       'Apostillas o legalizaciones, si fueran necesarias',
       'Certificados oficiales que deban solicitarse aparte',
