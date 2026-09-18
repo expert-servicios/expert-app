@@ -75,15 +75,20 @@ describe('Russian nationality service payment emails', () => {
       customerName: 'Vyacheslav Test',
       customerEmail: 'pilot@example.com',
       checkoutSessionId: 'cs_test_123',
+      caseId: 'case_test_123',
+      orderId: 'order_test_123',
       amounts,
     });
 
-    expect(template.subject).toContain('ACCIÓN: abrir expediente');
+    expect(template.subject).toContain('ACCIÓN: revisar expediente');
     expect(template.html).toContain('Vyacheslav Test');
     expect(template.html).toContain('pilot@example.com');
-    expect(template.html).toContain('Localizar o crear la ficha del cliente y abrir expediente');
+    expect(template.html).toContain('expediente ya creado automáticamente');
     expect(template.html).toContain('Solicitar la documentación pendiente');
     expect(template.html).toContain('No abonar la tasa 790-026 hasta validar viabilidad y documentación');
     expect(template.html).toContain('cs_test_123');
+    expect(template.html).toContain('case_test_123');
+    expect(template.html).toContain('order_test_123');
+    expect(template.html).toContain('/admin/expedientes/case_test_123');
   });
 });

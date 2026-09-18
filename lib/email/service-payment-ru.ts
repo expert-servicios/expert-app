@@ -143,17 +143,22 @@ export function russianNationalityPaymentConfirmedAdmin(input: {
   customerEmail?: string | null;
   checkoutSessionId: string;
   orderId?: string | null;
+  caseId?: string | null;
   amounts: RussianServicePaymentAmounts;
 }) {
   const safeName = escapeHtml(input.customerName?.trim() || 'Cliente ruso');
   const safeEmail = escapeHtml(input.customerEmail?.trim() || '—');
   const safeSession = escapeHtml(input.checkoutSessionId);
   const safeOrder = escapeHtml(input.orderId?.trim() || '—');
+  const safeCase = escapeHtml(input.caseId?.trim() || '—');
+  const caseUrl = input.caseId?.trim()
+    ? APP_URL + '/admin/expedientes/' + encodeURIComponent(input.caseId.trim())
+    : APP_URL + '/admin';
   return {
-    subject: `ACCIÓN: abrir expediente de nacionalidad — ${input.customerName?.trim() || 'cliente ruso'}`,
-    html: shell('Nuevo pago ruso — abrir expediente', `
-      ${heading('Nuevo pago ruso — iniciar tramitación')}
-      ${para('<strong>ACCIÓN REQUERIDA:</strong> abrir el expediente y comenzar la revisión documental del servicio de nacionalidad para menor nacido en España.')}
+    subject: `ACCIÓN: revisar expediente de nacionalidad — ${input.customerName?.trim() || 'cliente ruso'}`,
+    html: shell('Nuevo pago ruso — revisar expediente', `
+      ${heading('Nuevo pago ruso — expediente creado')}
+      ${para('<strong>ACCIÓN REQUERIDA:</strong> revisar la ficha y el expediente creados automáticamente y comenzar la revisión documental del servicio de nacionalidad para menor nacido en España.')}
       ${details(
         detail('Cliente', safeName),
         detail('Email', safeEmail === '—' ? '—' : `<a href="mailto:${safeEmail}" style="color:#c88b25;">${safeEmail}</a>`),
@@ -164,11 +169,12 @@ export function russianNationalityPaymentConfirmedAdmin(input: {
         detail('Suplido 790-026', formatEur(input.amounts.disbursementCents)),
         detail('Stripe Checkout', safeSession),
         detail('Order ID', safeOrder),
+        detail('Case ID', safeCase),
       )}
       <div style="margin:22px 0;padding:18px;background:#fff8e8;border:1px solid #e1c06c;color:#29384a;font-size:14px;line-height:1.65;">
         <strong>Checklist inicial</strong>
         <ol style="margin:10px 0 0;padding-left:20px;">
-          <li>Localizar o crear la ficha del cliente y abrir expediente.</li>
+          <li>Abrir la ficha del cliente y el expediente ya creado automáticamente.</li>
           <li>Identificar al menor solicitante y a ambos progenitores/representantes.</li>
           <li>Solicitar la documentación pendiente.</li>
           <li>Comprobar el año de residencia legal, continuada e inmediatamente anterior.</li>
@@ -176,7 +182,7 @@ export function russianNationalityPaymentConfirmedAdmin(input: {
           <li>Guardar justificante de la tasa y de la futura presentación dentro del expediente.</li>
         </ol>
       </div>
-      ${button('Abrir panel de administración', `${APP_URL}/admin`)}
+      ${button(input.caseId?.trim() ? 'Abrir expediente en Admin' : 'Abrir panel de administración', caseUrl)}
     `),
   };
 }
