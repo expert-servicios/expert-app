@@ -14,6 +14,7 @@ import { X, Send, Loader2, ChevronDown, ExternalLink } from 'lucide-react';
 import { KiaAvatar } from '@/components/kia/KiaAvatar';
 import type { KiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 import type { KiaCopilotArtifact } from '@/lib/ai/kia/kia-copilot-artifacts';
+import { getKiaPageContext } from '@/lib/ai/kia/kia-page-context';
 
 interface ChatMessage {
   id: string;
@@ -34,33 +35,44 @@ interface KiaApiResponse {
   error?: string;
 }
 
-function welcomeMessage(returning = false): ChatMessage {
+function buildWelcomeMessage(pathname: string, returning = false): ChatMessage {
+  const pageContext = getKiaPageContext(pathname);
   return {
     id: 'welcome',
     role: 'assistant',
     text: returning
-      ? '¡Hola de nuevo! ¿En qué te ayudo?'
-      : '¡Hola! Soy KIA, tu copiloto en EXPERT. Puedo ayudarte con tus expedientes, empresas conectadas, Holded y cualquier consulta fiscal o legal. ¿En qué te ayudo?',
-    quickReplies: ['Ver mis expedientes', 'Estado de Holded', 'Consulta fiscal'],
+      ? `¡Hola de nuevo! ${pageContext.proactive}`
+      : `¡Hola! Soy KIA, tu copiloto en EXPERT. ${pageContext.proactive}`,
+    quickReplies: pageContext.quickReplies,
     avatarState: 'bienvenida',
   };
 }
 
 function useKiaChat(pathname: string) {
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage()]);
+  const pageContext = getKiaPageContext(pathname);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [buildWelcomeMessage(pathname)]);
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
+    setMessages((previous) => {
+      if (previous.length === 1 && previous[0]?.id === 'welcome') {
+        return [buildWelcomeMessage(pathname)];
+      }
+      return previous;
+    });
+  }, [pathname]);
+
+  useEffect(() => {
     const handleCompanyChanged = () => {
-      setMessages([welcomeMessage(true)]);
+      setMessages([buildWelcomeMessage(pathname, true)]);
       setSessionId(undefined);
       setLoading(false);
     };
 
     window.addEventListener('expert:active-company-changed', handleCompanyChanged);
     return () => window.removeEventListener('expert:active-company-changed', handleCompanyChanged);
-  }, []);
+  }, [pathname]);
 
   const send = useCallback(async (text: string) => {
     if (!text.trim() || loading) return;
@@ -85,6 +97,7 @@ function useKiaChat(pathname: string) {
           message    : text,
           sessionId,
           currentPage: pathname,
+          currentTask: pageContext.task,
           history,
         }),
       });
@@ -117,12 +130,12 @@ function useKiaChat(pathname: string) {
     } finally {
       setLoading(false);
     }
-  }, [loading, messages, pathname, sessionId]);
+  }, [loading, messages, pageContext.task, pathname, sessionId]);
 
   const reset = useCallback(() => {
-    setMessages([welcomeMessage(true)]);
+    setMessages([buildWelcomeMessage(pathname, true)]);
     setSessionId(undefined);
-  }, []);
+  }, [pathname]);
 
   return { messages, loading, send, reset };
 }
