@@ -25,7 +25,7 @@ function extractArray(name: string): string[] {
   if (!match) throw new Error(`Missing ${name}`);
   return match[1]
     .trim()
-    .split(/\\s+/)
+    .split(/\s+/)
     .filter(Boolean);
 }
 
