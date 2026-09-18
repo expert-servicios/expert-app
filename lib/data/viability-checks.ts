@@ -470,7 +470,7 @@ CRITERIOS DE VIABILIDAD:
 const nacionalidad_menor: ViabilityCheck = {
   serviceSlug: 'nacionalidad-espanola-menor-nacido-en-espana',
   serviceName: 'Nacionalidad española para menor nacido en España',
-  intro: 'Los menores nacidos en España de padres extranjeros pueden adquirir la nacionalidad española si alguno de los padres cumple ciertos requisitos. Verifica en 3 minutos.',
+  intro: 'Si el menor nació en España, la vía de nacionalidad por residencia puede aplicar tras 1 año de residencia legal, continuada e inmediatamente anterior. Verifica los datos clave en 3 minutos.',
   estimatedMinutes: 3,
   questions: [
     {
@@ -481,57 +481,79 @@ const nacionalidad_menor: ViabilityCheck = {
       disqualifiesIfFalse: true,
     },
     {
-      id: 'padre_residencia',
+      id: 'residencia_menor_12m',
+      type: 'boolean',
+      label: '¿El menor ha cumplido al menos 1 año de residencia legal, continuada e inmediatamente anterior a la solicitud?',
+      required: true,
+      disqualifiesIfFalse: true,
+    },
+    {
+      id: 'edad_menor',
       type: 'select',
-      label: '¿Cuál es la situación migratoria de al menos uno de los padres en el momento del nacimiento o actualmente?',
+      label: '¿Qué edad tiene el menor?',
       required: true,
       options: [
-        { value: 'residente_legal',    label: 'Residente legal en España (TIE vigente)' },
-        { value: 'nacido_espana',      label: 'Nacido/a en España (aunque sea extranjero)' },
-        { value: 'espanol',            label: 'Ciudadano/a español/a' },
-        { value: 'irregular',          label: 'Sin permiso de residencia en el momento del nacimiento', escalates: true },
+        { value: 'menos_14', label: 'Menos de 14 años' },
+        { value: '14_17', label: 'Entre 14 y 17 años' },
+        { value: '18_o_mas', label: '18 años o más', disqualifies: true },
       ],
     },
     {
-      id: 'menor_edad',
-      type: 'boolean',
-      label: '¿El menor tiene menos de 18 años?',
+      id: 'acuerdo_representantes',
+      type: 'select',
+      label: '¿Existe acuerdo entre quienes ejercen la patria potestad o representación legal?',
       required: true,
+      options: [
+        { value: 'si', label: 'Sí, existe acuerdo' },
+        { value: 'unico_representante', label: 'Solo actúa un representante y puedo acreditarlo', escalates: true },
+        { value: 'desacuerdo', label: 'No existe acuerdo', escalates: true },
+      ],
     },
     {
       id: 'cert_nacimiento',
       type: 'boolean',
-      label: '¿Dispones del certificado de nacimiento del menor emitido en España (Registro Civil)?',
+      label: '¿Dispones del certificado literal de nacimiento del menor expedido por el Registro Civil español?',
       required: true,
     },
     {
-      id: 'doc_padres',
+      id: 'doc_menor',
       type: 'boolean',
-      label: '¿Los padres tienen documentación en vigor (NIE, pasaporte, TIE)?',
+      label: '¿El menor dispone de pasaporte y documentación de residencia legal vigente o acreditable?',
       required: true,
     },
   ],
   docs: [
-    { id: 'cert_nacimiento_espana', label: 'Certificado de nacimiento del menor (Registro Civil español)', required: true },
-    { id: 'pasaporte_padres', label: 'Pasaportes de ambos progenitores', required: true },
-    { id: 'tie_padres', label: 'TIE o NIE de los progenitores (si aplica)', required: false },
-    { id: 'libro_familia', label: 'Libro de familia o certificado de filiación', required: true },
-    { id: 'empadronamiento', label: 'Empadronamiento del menor (actualizado)', required: true },
-    { id: 'foto_menor', label: 'Foto del menor en fondo blanco (tamaño carné)', required: true },
+    { id: 'cert_nacimiento_espana', label: 'Certificación literal de nacimiento del menor (Registro Civil español)', required: true },
+    { id: 'pasaporte_menor', label: 'Pasaporte completo y en vigor del menor', required: true },
+    { id: 'residencia_menor', label: 'TIE/NIE, resolución inicial y tarjetas anteriores que acrediten la residencia legal del menor', required: true },
+    { id: 'pasaporte_padres', label: 'Pasaportes de los progenitores o representantes legales', required: true },
+    { id: 'tie_padres', label: 'NIE/TIE de los progenitores o representantes, si procede', required: false },
+    { id: 'empadronamiento', label: 'Empadronamiento familiar/colectivo actualizado', required: true },
+    { id: 'centro_escolar', label: 'Certificado del centro escolar o educativo cuando corresponda por edad y escolarización', required: false },
   ],
-  aiCriteria: `Eres un experto en extranjería y nacionalidad española. Evalúa la viabilidad para la adquisición de la nacionalidad española de un menor nacido en España.
+  aiCriteria: `Eres un experto en extranjería y nacionalidad española. Evalúa la viabilidad de la nacionalidad española por residencia de un menor nacido en España.
 
-NORMATIVA APLICABLE:
-- Art. 17.1 b) y d) del Código Civil: son españoles de origen los nacidos en España de padres extranjeros si al menos uno de ellos hubiera nacido también en España, o si el menor resultara apátrida.
-- Art. 17.1 c): nacidos en España cuya filiación no resulte determinada.
-- Art. 19 CC: el extranjero menor de 18 años adoptado por español adquiere la nacionalidad desde la adopción.
-- Vía más común: solicitud de nacionalidad por residencia (1 año) para menores nacidos en España de padres extranjeros con residencia legal.
-- También posible: declaración de nacionalidad española de origen si algún progenitor nació en España.
+CRITERIO CENTRAL:
+- Art. 22 del Código Civil: para quien haya nacido en territorio español basta 1 año de residencia.
+- En todo caso, la residencia debe ser legal, continuada e inmediatamente anterior a la petición.
+- La residencia relevante es la del menor solicitante; la residencia de los padres no sustituye este requisito.
+
+REPRESENTACIÓN:
+- Menor de 14 años: actúa a través de sus representantes legales. Tras la Ley 8/2021, en el supuesto ordinario con acuerdo no se exige autorización previa del Encargado del Registro Civil.
+- Entre 14 y 17 años: el menor formula la solicitud asistido por sus representantes legales.
+- Si no existe acuerdo entre quienes ejercen la patria potestad, escalar para revisar la resolución de jurisdicción voluntaria necesaria.
+- Si actúa un solo progenitor, revisar el título que acredita representación suficiente.
+
+PRUEBAS:
+- Menores de edad: exentos de CCSE.
+- Menores de 18 años: exentos de DELE A2 para nacionalidad.
+- Revisar documentación escolar/educativa cuando corresponda para acreditar integración.
 
 CRITERIOS DE VIABILIDAD:
-- VIABLE: Menor nacido en España, al menos un progenitor con residencia legal o nacido en España, documentación disponible.
-- PARCIAL: Menor nacido en España pero progenitores en situación irregular (explorar vías alternativas).
-- ESCALAR: Situaciones familiares complejas, progenitor desconocido, riesgo de apatridia.`,
+- VIABLE: nacido en España + 1 año de residencia legal/continuada/inmediatamente anterior + documentación esencial + representación clara.
+- PARCIAL: cumple el año pero falta documentación subsanable o acreditación escolar/representativa.
+- NO VIABLE: no ha cumplido el año de residencia legal o ya no es menor para este servicio específico.
+- ESCALAR: desacuerdo entre progenitores, representación dudosa, interrupciones de residencia, filiación compleja, posible nacionalidad de origen o apatridia.`,
 };
 
 // ── Permiso Inicial de Residencia ────────────────────────────────────────────
