@@ -2,15 +2,16 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Check, FileText, ShieldCheck, AlertCircle } from 'lucide-react';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
+import { NATIONALITY_MINOR_SERVICE } from '@/lib/services/nationality-minor';
 
 const SERVICE_URL = 'https://expertconsulting.es/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana';
 const CART_ITEM = {
-  priceId     : 'price_1TZXomLeYwwgvux4bTuqVZcU',
+  priceId     : NATIONALITY_MINOR_SERVICE.stripePriceId,
   name        : 'Nacionalidad española para menor nacido en España',
   displayPrice: '302,50 € honorarios + 104,05 € tasa',
-  slug        : 'nacionalidad-espanola-menor-nacido-en-espana',
+  slug        : NATIONALITY_MINOR_SERVICE.slug,
   category    : 'extranjeria-nacionalidad',
-  disbursements: ['mjusticia_790_026_nacionalidad_residencia'],
+  disbursements: [NATIONALITY_MINOR_SERVICE.disbursementKey],
   disbursementNotice:
     'Incluye tasa obligatoria Ministerio de Justicia 790-026: 104,05 € como suplido separado de los honorarios.',
 };
