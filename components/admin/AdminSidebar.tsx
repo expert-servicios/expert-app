@@ -84,6 +84,7 @@ const NAV_GROUPS: NavGroup[] = [
     short: "Mktg",
     icon: Zap,
     items: [
+      { label: "Marketing Hub", href: "/admin/marketing-hub" },
       { label: "Leads SaaS", href: "/admin/saas-leads" },
       { label: "Holded Demos", href: "/admin/holded-demos" },
       { label: "Reseñas", href: "/admin/resenas" },
