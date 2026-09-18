@@ -596,7 +596,7 @@ export const services: Service[] = [
       'Si tu hijo o hija ha nacido en España y ya cuenta con residencia legal, puede solicitar la nacionalidad española por residencia con el plazo reducido de 1 año de residencia legal, continuada e inmediatamente anterior a la solicitud. Revisamos la viabilidad del caso, preparamos la documentación y presentamos el expediente ante el Ministerio de Justicia cuando proceda.',
     metaTitle: 'Nacionalidad española para menor nacido en España | Ksenia Ilicheva',
     metaDescription:
-      'Servicio de preparación y presentación de solicitud de nacionalidad española por residencia para menores nacidos en España. Revisión documental, expediente, formularios y presentación ante el Ministerio de Justicia. Precio: 250 € + IVA.',
+      'Servicio de preparación y presentación de solicitud de nacionalidad española por residencia para menores nacidos en España. Honorarios 302,50 € IVA incluido + tasa 790-026 de 104,05 € como suplido; total 406,55 €.',
     price: '250 € + IVA',
     duration: 'Preparación según documentación; resolución legal hasta 1 año',
     officialFee: 'Tasa administrativa 790-026: 104,05 € incluida como suplido obligatorio',
@@ -626,14 +626,14 @@ export const services: Service[] = [
       'Menor nacido en España e inscrito en el Registro Civil español.',
       'Menor con NIE/TIE o autorización de residencia legal en España.',
       'Familias que ya han cumplido, o están próximas a cumplir, 1 año de residencia legal del menor.',
-      'Ambos progenitores o representantes legales están dispuestos a firmar la solicitud.',
+      'La representación y asistencia del menor están claras según su edad, patria potestad y situación familiar.',
       'Familias que quieren evitar errores documentales, requerimientos y retrasos innecesarios.'
     ],
     requirements: [
       'Nacimiento en España inscrito en el Registro Civil español.',
       'Residencia legal del menor en España.',
       'Al menos 1 año de residencia legal, continuada e inmediatamente anterior a la solicitud.',
-      'Solicitud firmada por los progenitores o representantes legales que correspondan.',
+      'Solicitud formulada o asistida por quienes correspondan según la edad del menor y su representación legal.',
       'Pago de la tasa administrativa del Ministerio de Justicia mediante modelo 790 código 026.',
       'Documentación exigida por el Ministerio de Justicia digitalizada y revisada.'
     ],
@@ -747,17 +747,17 @@ export const services: Service[] = [
       {
         q: '¿La tasa está incluida en el precio?',
         a:
-          'No. La tasa administrativa del Ministerio de Justicia, actualmente 104,05 €, se paga aparte.'
+          'Sí. La tasa 790-026 de 104,05 € se cobra junto con el servicio como suplido obligatorio, separada de los honorarios y de su base imponible.'
       },
       {
         q: '¿Pueden pagar ustedes la tasa por mí?',
         a:
-          'Sí, podemos gestionarla en nombre del cliente cuando el expediente esté preparado, avisando previamente y cumplimentando los datos a nombre del menor solicitante.'
+          'Sí. EXPERT gestiona el pago de la tasa 790-026 por su importe exacto como suplido, en nombre y por cuenta del cliente, con justificante vinculado al menor solicitante.'
       },
       {
         q: '¿Tienen que firmar los dos progenitores?',
         a:
-          'Si ambos ejercen la patria potestad, lo recomendable es que firmen ambos progenitores como representantes legales del menor. Si solo puede firmar uno, revisamos la documentación que justifica la representación suficiente.'
+          'En menores de 14 años actúan los representantes legales; entre 14 y 17 años el menor formula la solicitud asistido por ellos. Si existe desacuerdo o solo actúa un representante, revisamos la documentación y la resolución que corresponda antes de presentar.'
       },
       {
         q: '¿Hace falta autorización previa del Registro Civil?',
