@@ -97,6 +97,7 @@ async function localizeServicePaymentEmail(input: {
   const amounts = calculateRussianNationalityAmounts({
     professionalNetCents: centsMetadata(checkoutMetadata, 'revenue_amount_cents'),
     disbursementCents: centsMetadata(checkoutMetadata, 'disbursement_total_cents'),
+    stripeTotalCents: centsMetadata(input.metadata ?? {}, 'stripe_total_cents'),
   });
 
   const localizedMetadata = {
