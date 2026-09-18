@@ -132,7 +132,7 @@ const faqItems = [
     q: '¿El menor tiene que hacer CCSE o DELE?',
     a:
       'No. Los menores de edad están exentos de la prueba CCSE y los menores de 18 años están exentos del DELE A2 a efectos de nacionalidad por residencia. Revisamos la documentación educativa que corresponda para acreditar integración.',
-
+  },
 ];
 
 export default function NacionalidadMenorPage() {
