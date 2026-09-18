@@ -25,6 +25,8 @@ describe('nationality minor service content and pricing', () => {
     expect(block).not.toContain('104,05 € no incluida');
     expect(block).not.toContain('se abonará aparte');
     expect(block).not.toContain('Instrucciones para el pago de la tasa');
+    expect(block).not.toContain("title: 'Pago de tasa administrativa'");
+    expect(block).not.toContain("'Tasa administrativa del Ministerio de Justicia: 104,05 €'");
     expect(block).toContain('104,05 € como suplido');
     expect(block).toContain('total a pagar: 406,55 €');
   });
@@ -34,6 +36,19 @@ describe('nationality minor service content and pricing', () => {
     expect(source).not.toContain('rewriteVisibleClientCopy');
     expect(source).not.toContain('CLIENT_COPY_REPLACEMENTS');
     expect(source).toContain('NATIONALITY_MINOR_SERVICE.disbursementKey');
+    expect(source).toContain('displayPrice: NACIONALIDAD_MENOR_DISPLAY_PRICE');
+  });
+
+  it('keeps the noindex Russian nationality page out of the sitemap', () => {
+    const sitemap = read('app/sitemap.ts');
+    expect(sitemap).toContain(".filter((routeKey) => routeKey !== 'nationalityMinor')");
+  });
+
+  it('passes Stripe charged totals into nationality payment emails', () => {
+    const webhook = read('app/api/stripe/webhook/route.ts');
+    const sender = read('lib/email/send.ts');
+    expect(webhook).toContain('stripe_total_cents: session.amount_total ?? null');
+    expect(sender).toContain("stripeTotalCents: centsMetadata(input.metadata ?? {}, 'stripe_total_cents')");
   });
 
   it('uses the minor own legal residence and age-specific representation in viability', () => {
