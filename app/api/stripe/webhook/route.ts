@@ -850,7 +850,9 @@ export async function POST(req: NextRequest) {
             ...tpl,
             metadata: {
               session_id: session.id,
-              service_slug: session.metadata?.service_slug ?? session.metadata?.service_slugs ?? null
+              service_slug: session.metadata?.service_slug ?? session.metadata?.service_slugs ?? null,
+              stripe_total_cents: session.amount_total ?? null,
+              stripe_tax_cents: session.total_details?.amount_tax ?? null,
             }
           });
         }
@@ -869,6 +871,8 @@ export async function POST(req: NextRequest) {
               order_id: catalogOrderId ?? null,
               case_id: catalogCaseId,
               service_slug: session.metadata?.service_slug ?? session.metadata?.service_slugs ?? null,
+              stripe_total_cents: session.amount_total ?? null,
+              stripe_tax_cents: session.total_details?.amount_tax ?? null,
             }
           }).catch((err) => {
             console.error('[webhook] admin payment email failed:', err);
