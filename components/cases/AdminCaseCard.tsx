@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FolderOpen, ExternalLink } from 'lucide-react';
-import { CASE_STATUS_LABELS, type CaseStatus } from '@/lib/cases/case-status';
+import { ALLOWED_TRANSITIONS, CASE_STATUS_LABELS, type CaseStatus } from '@/lib/cases/case-status';
 import StaffAssigneeSelect from '@/components/admin/StaffAssigneeSelect';
 
 interface Case {
@@ -21,12 +21,11 @@ interface Case {
   client?: { full_name: string | null; email: string };
 }
 
-const caseStatuses = Object.keys(CASE_STATUS_LABELS) as CaseStatus[];
-
 export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
   const router = useRouter();
   const initialStatus = caseItem.effective_status ?? (caseItem.status as CaseStatus | null) ?? 'nuevo';
   const [status, setStatus] = useState<CaseStatus>(initialStatus);
+  const caseStatuses = [initialStatus, ...ALLOWED_TRANSITIONS[initialStatus]];
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
