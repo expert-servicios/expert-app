@@ -52,7 +52,7 @@ const documentGroups = [
       'Tarjeta de residencia anterior, si existe.',
       'Resolución inicial de concesión de residencia o protección temporal, si existe.',
       'Certificado de empadronamiento familiar o colectivo actualizado.',
-      'Certificado de guardería o centro infantil, solo si el menor asiste a un centro.',
+      'Certificado del centro escolar o educativo cuando corresponda por la edad y escolarización del menor.',
     ],
   },
   {
@@ -62,7 +62,7 @@ const documentGroups = [
       'NIE/TIE de ambos progenitores por ambas caras.',
       'Certificado de empadronamiento familiar, si no se aporta por separado.',
       'Datos de contacto: teléfono, correo electrónico y domicilio actual.',
-      'Firma de ambos progenitores como representantes legales del menor.',
+      'Firmas y asistencia de los representantes legales según la edad del menor y la patria potestad.',
       'Documentación adicional si solo uno de los progenitores puede firmar.',
     ],
   },
@@ -76,7 +76,7 @@ const processSteps = [
   },
   {
     title: 'Envío de documentación',
-    text: 'Después del pago, se envía la documentación necesaria por WhatsApp o correo electrónico.',
+    text: 'Después del pago, EXPERT abre el expediente y la documentación se carga en el área privada segura; WhatsApp queda para consultas y coordinación.',
   },
   {
     title: 'Revisión de viabilidad',
@@ -125,8 +125,13 @@ const faqItems = [
   {
     q: '¿Tienen que firmar los dos progenitores?',
     a:
-      'Si ambos ejercen la patria potestad, lo recomendable es que firmen ambos progenitores como representantes legales del menor. Si solo puede firmar uno, revisamos la documentación que justifica la representación suficiente.',
+      'En menores de 14 años actúan los representantes legales. Si ambos ejercen la patria potestad y existe acuerdo, deben intervenir conforme al modelo aplicable; si no existe acuerdo, revisamos la resolución de jurisdicción voluntaria necesaria. Entre 14 y 17 años, el menor formula la solicitud asistido por sus representantes legales.',
   },
+  {
+    q: '¿El menor tiene que hacer CCSE o DELE?',
+    a:
+      'No. Los menores de edad están exentos de la prueba CCSE y los menores de 18 años están exentos del DELE A2 a efectos de nacionalidad por residencia. Revisamos la documentación educativa que corresponda para acreditar integración.',
+
 ];
 
 export default function NacionalidadMenorPage() {
