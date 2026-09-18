@@ -23,9 +23,9 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       PROJECT_REF: ybtpqscmqrrjjmuoryap
-      EXPECTED_LEDGER_ROWS: "155"
+      EXPECTED_LEDGER_ROWS: "156"
       EXPECTED_FIRST_VERSION: "20260508082323"
-      EXPECTED_LAST_VERSION: "20260918073212"
+      EXPECTED_LAST_VERSION: "20260918114535"
 
     steps:
       - name: Checkout reviewed recovery head
