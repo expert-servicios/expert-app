@@ -161,8 +161,19 @@ export async function runKiaOrchestratedDecision(params: {
 
   console.info('[KIA orchestration]', executionTrace);
 
+  // The classifier runs before the policy/skill selection. Preserve that
+  // resolved intent as task context for the final decision prompt so dashboard
+  // and Telegram do not lose the labor/accounting specialization when the
+  // underlying task type remains the generic chat_reply. An explicit page task
+  // always wins over the classifier-derived context.
+  const decisionContextInput = {
+    ...input.contextInput,
+    currentTask: input.contextInput.currentTask ?? plan.detectedIntent ?? undefined,
+  };
+
   const result = await runKiaDecision({
     ...input,
+    contextInput: decisionContextInput,
     taskType: effectiveTaskType,
     channel: effectiveAuthorization.channel,
     allowedToolNames: effectiveToolNames,
