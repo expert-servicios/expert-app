@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { FolderOpen, ExternalLink } from 'lucide-react';
-import { CASE_PROGRESS_STATES, CASE_STATE_LABELS } from '@/lib/utils/case-states';
+import { ALLOWED_TRANSITIONS, CASE_STATUS_LABELS, type CaseStatus } from '@/lib/cases/case-status';
 import StaffAssigneeSelect from '@/components/admin/StaffAssigneeSelect';
 
 interface Case {
@@ -12,6 +12,8 @@ interface Case {
   category: string;
   service: string;
   state: string;
+  status?: string | null;
+  effective_status?: CaseStatus;
   opened_at: string;
   closed_at: string | null;
   client_id: string;
@@ -19,21 +21,12 @@ interface Case {
   client?: { full_name: string | null; email: string };
 }
 
-const caseStates = [
-  ...CASE_PROGRESS_STATES,
-  'pendiente_documentacion',
-  'en_revision',
-  'en_proceso',
-  'presentado'
-] as const;
-
-type CaseState = (typeof caseStates)[number];
-
 export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
   const router = useRouter();
-  const [state, setState] = useState<CaseState>(caseItem.state as CaseState);
+  const initialStatus = caseItem.effective_status ?? (caseItem.status as CaseStatus | null) ?? 'nuevo';
+  const [status, setStatus] = useState<CaseStatus>(initialStatus);
+  const caseStatuses = [initialStatus, ...ALLOWED_TRANSITIONS[initialStatus]];
   const [note, setNote] = useState('');
-  const [organism, setOrganism] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [assignedTo, setAssignedTo] = useState<string | null>(caseItem.assigned_to ?? null);
@@ -56,18 +49,16 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
     }
   };
 
-  const stateChanged = state !== caseItem.state;
-  const needsOrganism = state === 'pendiente_externo';
+  const statusChanged = status !== initialStatus;
 
   const handleSave = async () => {
     setSaving(true);
     setMessage(null);
     try {
-      const payload: Record<string, unknown> = { state };
-      if (note.trim()) payload.note = note.trim();
-      if (needsOrganism && organism.trim()) payload.organism = organism.trim();
+      const payload: Record<string, unknown> = { status };
+      if (note.trim()) payload.admin_note = note.trim();
 
-      const response = await fetch(`/api/cases/${caseItem.id}`, {
+      const response = await fetch(`/api/admin/cases/${caseItem.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -79,7 +70,6 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
       }
       setMessage('Estado actualizado correctamente.');
       setNote('');
-      setOrganism('');
       router.refresh();
     } catch {
       setMessage('Error al actualizar.');
@@ -106,7 +96,7 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
           </div>
         </div>
         <span className="inline-flex shrink-0 items-center rounded-full bg-[#061321] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#F8F6F1]">
-          {CASE_STATE_LABELS[caseItem.state] ?? caseItem.state}
+          {CASE_STATUS_LABELS[initialStatus]}
         </span>
       </div>
 
@@ -117,20 +107,20 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <select
-          value={state}
-          onChange={(e) => { setState(e.target.value as CaseState); setMessage(null); }}
+          value={status}
+          onChange={(e) => { setStatus(e.target.value as CaseStatus); setMessage(null); }}
           aria-label="Estado del expediente"
           className="rounded-xl border border-[#d8cbb5] bg-white px-4 py-2 text-sm text-[#07111d] outline-none focus:border-[#c88b25]"
         >
-          {caseStates.map((s) => (
-            <option key={s} value={s}>{CASE_STATE_LABELS[s]}</option>
+          {caseStatuses.map((s) => (
+            <option key={s} value={s}>{CASE_STATUS_LABELS[s]}</option>
           ))}
         </select>
 
         <button
           type="button"
           onClick={handleSave}
-          disabled={saving || !stateChanged}
+          disabled={saving || !statusChanged}
           className="inline-flex items-center gap-2 rounded-full bg-[#c88b25] px-5 py-2 text-sm font-bold uppercase tracking-[0.18em] text-[#061321] transition hover:bg-[#b57a1e] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? 'Guardando…' : 'Cambiar estado'}
@@ -152,26 +142,12 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
         </Link>
       </div>
 
-      {/* Extra fields — only visible when state changes */}
-      {stateChanged && (
+      {/* Extra fields — only visible when status changes */}
+      {statusChanged && (
         <div className="mt-4 space-y-3 rounded-2xl border border-[#d8cbb5] bg-white p-4">
-          {needsOrganism && (
-            <div>
-              <label className="mb-1 block text-xs font-semibold text-[#29384a]">
-                Organismo externo <span className="text-[#c88b25]">*</span>
-              </label>
-              <input
-                type="text"
-                value={organism}
-                onChange={(e) => setOrganism(e.target.value)}
-                placeholder="Ej: Oficina de Extranjería de Madrid, AEAT…"
-                className="w-full rounded-xl border border-[#d8cbb5] px-4 py-2 text-sm text-[#07111d] outline-none focus:border-[#c88b25]"
-              />
-            </div>
-          )}
           <div>
             <label className="mb-1 block text-xs font-semibold text-[#29384a]">
-              Mensaje al cliente <span className="text-xs font-normal text-[#29384a]">(opcional — se incluye en el email de notificación)</span>
+              Mensaje al cliente <span className="text-xs font-normal text-[#29384a]">(opcional — se guarda como nota operativa y puede incluirse en la notificación)</span>
             </label>
             <textarea
               value={note}

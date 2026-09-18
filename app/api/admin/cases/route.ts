@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { z } from 'zod';
 import { syncProjectToHolded } from '@/lib/integrations/holded';
+import { caseStatusToVisualState, resolveEffectiveCaseStatus } from '@/lib/cases/case-status';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -60,11 +61,16 @@ export async function GET(request: NextRequest) {
       for (const a of assignees ?? []) assigneeMap[a.id] = { full_name: a.full_name ?? null };
     }
 
-    const enriched = (cases ?? []).map((c) => ({
-      ...c,
-      client: profileMap[c.client_id] ?? { full_name: null, email: '' },
-      assignee: c.assigned_to ? assigneeMap[c.assigned_to] ?? null : null,
-    }));
+    const enriched = (cases ?? []).map((c) => {
+      const effectiveStatus = resolveEffectiveCaseStatus(c.status, c.state);
+      return {
+        ...c,
+        effective_status: effectiveStatus,
+        visual_state: caseStatusToVisualState(effectiveStatus),
+        client: profileMap[c.client_id] ?? { full_name: null, email: '' },
+        assignee: c.assigned_to ? assigneeMap[c.assigned_to] ?? null : null,
+      };
+    });
 
     return NextResponse.json({ cases: enriched });
   } catch (err) {

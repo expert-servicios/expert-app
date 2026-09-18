@@ -1,6 +1,15 @@
 import { getResendClient } from '@/lib/integrations/resend';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { BRAND } from './templates';
+import {
+  calculateRussianNationalityAmounts,
+  isNationalityPayment,
+  isRussianNationalityPayment,
+  russianNationalityPaymentConfirmedAdmin,
+  russianNationalityPaymentConfirmedClient,
+  spanishNationalityPaymentConfirmedAdmin,
+  spanishNationalityPaymentConfirmedClient,
+} from './service-payment-ru';
 
 export interface EmailAttachment {
   filename: string;
@@ -21,6 +30,131 @@ interface SendEmailOptions {
 function stringMetadata(metadata: Record<string, unknown> | undefined, key: string): string | null {
   const value = metadata?.[key];
   return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function centsMetadata(metadata: Record<string, unknown>, key: string): number | null {
+  const raw = metadata[key];
+  const parsed = typeof raw === 'number' ? raw : typeof raw === 'string' ? Number(raw) : Number.NaN;
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+async function localizeServicePaymentEmail(input: {
+  eventType: string;
+  subject: string;
+  html: string;
+  metadata?: Record<string, unknown>;
+}): Promise<{
+  subject: string;
+  html: string;
+  metadata?: Record<string, unknown>;
+}> {
+  if (input.eventType !== 'service.payment.confirmed' && input.eventType !== 'service.payment.confirmed.admin') {
+    return input;
+  }
+
+  const sessionId = stringMetadata(input.metadata, 'session_id');
+  if (!sessionId) return input;
+
+  const supabase = getSupabaseAdmin();
+  const { data: checkout, error: checkoutError } = await supabase
+    .from('checkout_sessions')
+    .select('user_id,metadata')
+    .eq('stripe_session_id', sessionId)
+    .maybeSingle();
+
+  if (checkoutError || !checkout) {
+    if (checkoutError) console.error('[email] checkout locale lookup failed:', checkoutError.message);
+    return input;
+  }
+
+  const checkoutMetadata = asRecord(checkout.metadata);
+  const checkoutLocale = typeof checkoutMetadata.checkout_locale === 'string'
+    ? checkoutMetadata.checkout_locale
+    : null;
+  const serviceSlug = typeof checkoutMetadata.service_slug === 'string' && checkoutMetadata.service_slug
+    ? checkoutMetadata.service_slug
+    : stringMetadata(input.metadata, 'service_slug');
+
+  if (!isNationalityPayment({
+    eventType: input.eventType,
+    serviceSlug,
+  })) {
+    return input;
+  }
+
+  const isRussian = isRussianNationalityPayment({
+    eventType: input.eventType,
+    checkoutLocale,
+    serviceSlug,
+  });
+
+  const amounts = calculateRussianNationalityAmounts({
+    professionalNetCents: centsMetadata(checkoutMetadata, 'revenue_amount_cents'),
+    disbursementCents: centsMetadata(checkoutMetadata, 'disbursement_total_cents'),
+    stripeTotalCents: centsMetadata(input.metadata ?? {}, 'stripe_total_cents'),
+  });
+
+  const localizedMetadata = {
+    ...(input.metadata ?? {}),
+    checkout_locale: isRussian ? 'ru' : 'es',
+    service_slug: serviceSlug,
+    professional_net_cents: amounts.professionalNetCents,
+    professional_vat_cents: amounts.professionalVatCents,
+    professional_gross_cents: amounts.professionalGrossCents,
+    disbursement_total_cents: amounts.disbursementCents,
+    stripe_total_cents: amounts.totalCents,
+  };
+
+  if (input.eventType === 'service.payment.confirmed') {
+    const template = isRussian
+      ? russianNationalityPaymentConfirmedClient(amounts)
+      : spanishNationalityPaymentConfirmedClient(amounts);
+    return { ...template, metadata: localizedMetadata };
+  }
+
+  let customerName: string | null = null;
+  let customerEmail: string | null = null;
+  if (typeof checkout.user_id === 'string' && checkout.user_id) {
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('full_name,email')
+      .eq('id', checkout.user_id)
+      .maybeSingle();
+    if (profileError) {
+      console.error('[email] admin profile lookup failed:', profileError.message);
+    } else if (profile) {
+      customerName = typeof profile.full_name === 'string' ? profile.full_name : null;
+      customerEmail = typeof profile.email === 'string' ? profile.email : null;
+    }
+
+    if (!customerEmail) {
+      const { data: authUser, error: authUserError } = await supabase.auth.admin.getUserById(checkout.user_id);
+      if (authUserError) {
+        console.error('[email] admin auth email lookup failed:', authUserError.message);
+      } else {
+        customerEmail = authUser.user?.email ?? null;
+      }
+    }
+  }
+
+  const adminInput = {
+    customerName,
+    customerEmail,
+    checkoutSessionId: sessionId,
+    orderId: stringMetadata(input.metadata, 'order_id'),
+    caseId: stringMetadata(input.metadata, 'case_id'),
+    amounts,
+  };
+  const template = isRussian
+    ? russianNationalityPaymentConfirmedAdmin(adminInput)
+    : spanishNationalityPaymentConfirmedAdmin(adminInput);
+  return { ...template, metadata: localizedMetadata };
 }
 
 function deriveIdempotencyKey(
@@ -81,6 +215,11 @@ export async function sendEmail({
 }: SendEmailOptions): Promise<string> {
   const recipients = Array.isArray(to) ? to : [to];
   const supabase = getSupabaseAdmin();
+  const localized = await localizeServicePaymentEmail({ eventType, subject, html, metadata });
+  subject = localized.subject;
+  html = localized.html;
+  metadata = localized.metadata;
+
   const effectiveIdempotencyKey = idempotencyKey ?? deriveIdempotencyKey(eventType, metadata);
 
   if (effectiveIdempotencyKey) {

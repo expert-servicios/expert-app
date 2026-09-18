@@ -10,7 +10,7 @@ Fecha: 2026-05-26
 4. Plan Supervision indica que no incluye presentacion de impuestos.
 5. Si el usuario quiere impuestos, Kia debe recomendar Plan Avanzado o superior.
 6. El checkout de suscripcion mensual bloquea si no hay Holded conectado.
-7. Los CTAs principales no dependen de Calendly: usan readiness, portal, Kia, `/cita` o presupuesto.
+7. Los CTAs principales no dependen de Cal.com: usan readiness, portal, Kia, `/cita` o presupuesto.
 8. Los planes mensuales usan readiness, no viabilidad.
 9. Plan Personalizado se presenta como presupuesto y no tiene checkout directo.
 10. Metadata SEO actualizada con "desde 49 EUR/mes".

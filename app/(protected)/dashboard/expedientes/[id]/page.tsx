@@ -4,6 +4,8 @@ import { AlertCircle, ArrowLeft, CheckCircle2, ClipboardCheck, Clock, Download, 
 import { DocumentUpload } from '@/components/cases/DocumentUpload';
 import { DeliverableRow } from '@/components/cases/DeliverableRow';
 import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
+import { KiaGuidanceCard } from '@/components/kia/KiaGuidanceCard';
+import { resolveCaseDetailGuidance } from '@/lib/ai/kia/kia-surface-guidance';
 import { CASE_PROGRESS_STATES, CASE_STATE_LABELS, normalizeCaseStateForProgress } from '@/lib/utils/case-states';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
@@ -178,7 +180,6 @@ const STEP_LABELS: Record<string, string> = {
   finalizado: 'Finalizado'
 };
 
-
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
@@ -205,18 +206,21 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   const uploadedCount = documents.length;
   const reviewedCount = documents.filter((d) => d.state === 'revisado').length;
   const checklist = Array.isArray(caseItem.docs_checklist) ? caseItem.docs_checklist : [];
+  const kiaGuidance = resolveCaseDetailGuidance({
+    caseState: caseItem.state,
+    checklistCount: checklist.length,
+    uploadedCount,
+    reviewedCount,
+  });
 
   return (
     <main className="min-h-screen bg-[#f8f4eb] py-10">
       <div className="mx-auto max-w-4xl px-6">
-
-        {/* Back */}
         <div className="mb-6 flex items-center gap-3 text-sm font-semibold text-[#061321]">
           <ArrowLeft className="h-4 w-4" />
           <Link href="/dashboard/expedientes" className="underline underline-offset-4">Mis expedientes</Link>
         </div>
 
-        {/* Case header */}
         <div className="rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-center gap-4">
@@ -236,7 +240,6 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             </span>
           </div>
 
-          {/* Progress bar */}
           <div className="mt-6">
             <div className="flex items-center justify-between">
               {STEPS.map((step, i) => {
@@ -266,7 +269,14 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        {/* State guidance */}
+        <KiaGuidanceCard
+          state={kiaGuidance.state}
+          title={kiaGuidance.title}
+          message={kiaGuidance.message}
+          detail={kiaGuidance.detail}
+          className="mt-4"
+        />
+
         <div className={`mt-4 rounded-2xl border p-5 ${guide.bgColor} ${guide.borderColor}`}>
           <div className="flex items-start gap-3">
             <div className={`mt-0.5 shrink-0 ${guide.iconColor}`}>
@@ -312,7 +322,6 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           </div>
         )}
 
-        {/* Main grid */}
         <div className="mt-4 grid gap-4 lg:grid-cols-2">
           <div className="rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
             <DocumentUpload caseId={id} initialDocuments={documents} />
@@ -322,7 +331,6 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        {/* Deliverables from advisory team */}
         {deliverables.length > 0 && (
           <div className="mt-4 rounded-2xl border border-[#d7a33a]/50 bg-amber-50/30 p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
@@ -345,7 +353,6 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           </div>
         )}
 
-        {/* WhatsApp attachments */}
         {waAttachments.length > 0 && (
           <div className="mt-4 rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
@@ -391,7 +398,6 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             </div>
           </div>
         )}
-
       </div>
     </main>
   );

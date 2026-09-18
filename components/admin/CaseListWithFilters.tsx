@@ -4,13 +4,15 @@ import { useMemo, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, X } from 'lucide-react';
 import { AdminCaseCard } from '@/components/cases/AdminCaseCard';
-import { CASE_ACTION_GROUPS } from '@/lib/utils/case-states';
+import { CASE_STATUS_FILTER_GROUPS, type CaseStatus } from '@/lib/cases/case-status';
 
 interface Case {
   id: string;
   category: string;
   service: string;
   state: string;
+  status: string | null;
+  effective_status: CaseStatus;
   opened_at: string;
   closed_at: string | null;
   client_id: string;
@@ -26,23 +28,15 @@ const STATE_FILTER_OPTIONS = [
   { label: 'Finalizados', value: 'closed' }
 ] as const;
 
-const URGENT_STATES = [
-  ...CASE_ACTION_GROUPS.pendingDocs,
-  ...CASE_ACTION_GROUPS.docsToReview,
-  ...CASE_ACTION_GROUPS.readyToDeliver
-];
-const FOLLOWUP_STATES = [
-  ...CASE_ACTION_GROUPS.inProgress,
-  ...CASE_ACTION_GROUPS.waitingExternal,
-  ...CASE_ACTION_GROUPS.delivered
-];
-const CLOSED_STATES = [...CASE_ACTION_GROUPS.closed];
+const URGENT_STATUSES = CASE_STATUS_FILTER_GROUPS.urgent;
+const FOLLOWUP_STATUSES = CASE_STATUS_FILTER_GROUPS.followup;
+const CLOSED_STATUSES = CASE_STATUS_FILTER_GROUPS.closed;
 
-function matchesStateFilter(state: string, filter: string): boolean {
+function matchesStateFilter(status: CaseStatus, filter: string): boolean {
   if (filter === 'all') return true;
-  if (filter === 'urgent') return URGENT_STATES.includes(state as never);
-  if (filter === 'followup') return FOLLOWUP_STATES.includes(state as never);
-  if (filter === 'closed') return CLOSED_STATES.includes(state as never);
+  if (filter === 'urgent') return URGENT_STATUSES.includes(status as never);
+  if (filter === 'followup') return FOLLOWUP_STATUSES.includes(status as never);
+  if (filter === 'closed') return CLOSED_STATUSES.includes(status as never);
   return true;
 }
 
@@ -94,7 +88,7 @@ export function CaseListWithFilters({ cases }: { cases: Case[] }) {
         c.service.toLowerCase().includes(q) ||
         c.client.email.toLowerCase().includes(q) ||
         (c.client.full_name?.toLowerCase().includes(q) ?? false);
-      const matchesState = matchesStateFilter(c.state, stateFilter);
+      const matchesState = matchesStateFilter(c.effective_status, stateFilter);
       const matchesCat = categoryFilter === 'all' || c.category === categoryFilter;
       const matchesAssignee =
         assigneeFilter === 'all' ||
@@ -103,8 +97,8 @@ export function CaseListWithFilters({ cases }: { cases: Case[] }) {
     });
   }, [cases, search, stateFilter, categoryFilter, assigneeFilter]);
 
-  const open = filtered.filter((c) => !CLOSED_STATES.includes(c.state as never));
-  const closed = filtered.filter((c) => CLOSED_STATES.includes(c.state as never));
+  const open = filtered.filter((c) => !CLOSED_STATUSES.includes(c.effective_status as never));
+  const closed = filtered.filter((c) => CLOSED_STATUSES.includes(c.effective_status as never));
 
   const hasFilters = search || stateFilter !== 'all' || categoryFilter !== 'all' || assigneeFilter !== 'all';
 

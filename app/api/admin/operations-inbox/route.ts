@@ -32,6 +32,15 @@ interface QueueItem {
 
 const ENTITY_SCOPE_CUTOFF = '2026-09-04T00:00:00.000Z';
 const STALE_CHECKOUT_HOURS = 24;
+const PROFILE_BILLING_SCOPE = 'profile';
+
+function isPersonalBillingMetadata(metadata: Record<string, unknown> | null | undefined): boolean {
+  return metadata?.billing_scope === PROFILE_BILLING_SCOPE;
+}
+
+function isPersonalBillingOrder(item: { source?: string | null; metadata?: Record<string, unknown> | null }): boolean {
+  return item.source === 'catalog' && isPersonalBillingMetadata(item.metadata);
+}
 
 async function requireStaff(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -148,7 +157,7 @@ export async function GET(request: NextRequest) {
       .limit(100),
     admin
       .from('orders')
-      .select('id,client_id,user_id,company_id,status,source,created_at')
+      .select('id,client_id,user_id,company_id,status,source,metadata,created_at')
       .gte('created_at', ENTITY_SCOPE_CUTOFF)
       .is('company_id', null)
       .order('created_at', { ascending: false })
@@ -180,6 +189,14 @@ export async function GET(request: NextRequest) {
   });
   const integrations = (integrationsRes.data ?? []).filter((item) => Boolean(item.last_error?.trim()));
   const holdedOrders = (ordersRes.data ?? []).filter((item) => Boolean(item.holded_sync_error?.trim()));
+  const entitylessCheckouts = (entitylessCheckoutsRes.data ?? []).filter((item) => {
+    const metadata = (item.metadata ?? null) as Record<string, unknown> | null;
+    return !isPersonalBillingMetadata(metadata);
+  });
+  const entitylessOrders = (entitylessOrdersRes.data ?? []).filter((item) => {
+    const metadata = (item.metadata ?? null) as Record<string, unknown> | null;
+    return !isPersonalBillingOrder({ source: item.source, metadata });
+  });
 
   const clientIds = compact([
     ...(checkoutsRes.data ?? []).map((item) => item.user_id),
@@ -190,9 +207,9 @@ export async function GET(request: NextRequest) {
     ...integrations.map((item) => item.client_id),
     ...holdedOrders.map((item) => item.client_id ?? item.user_id),
     ...(incompleteProfilesRes.data ?? []).map((item) => item.id),
-    ...(entitylessCheckoutsRes.data ?? []).map((item) => item.user_id),
+    ...entitylessCheckouts.map((item) => item.user_id),
     ...(entitylessSubscriptionsRes.data ?? []).map((item) => item.client_id),
-    ...(entitylessOrdersRes.data ?? []).map((item) => item.client_id ?? item.user_id),
+    ...entitylessOrders.map((item) => item.client_id ?? item.user_id),
   ]);
 
   const companyIds = compact([
@@ -379,7 +396,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  for (const item of entitylessCheckoutsRes.data ?? []) {
+  for (const item of entitylessCheckouts) {
     push({
       id: `data-quality:checkout:${item.id}`,
       kind: 'data_quality',
@@ -411,7 +428,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  for (const item of entitylessOrdersRes.data ?? []) {
+  for (const item of entitylessOrders) {
     const clientId = item.client_id ?? item.user_id;
     push({
       id: `data-quality:order:${item.id}`,

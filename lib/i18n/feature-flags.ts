@@ -7,7 +7,9 @@ function enabled(value: string | undefined): boolean {
 
 export function isLocalePubliclyEnabled(locale: SupportedLocale): boolean {
   if (locale === 'es') return true;
-  if (locale === 'ru') return enabled(process.env.NEXT_PUBLIC_RU_ENABLED);
+  if (locale === 'ru') return process.env.NEXT_PUBLIC_RU_ENABLED === undefined
+    ? true
+    : enabled(process.env.NEXT_PUBLIC_RU_ENABLED);
   return enabled(process.env.NEXT_PUBLIC_EN_ENABLED);
 }
 
@@ -19,9 +21,9 @@ export function isLocaleIndexingEnabled(locale: SupportedLocale): boolean {
 }
 
 /**
- * Visibility and SEO release are deliberately separate. A localized surface can
- * be enabled for preview/review while remaining noindex until its content is
- * approved for public search.
+ * Visibility and SEO release are deliberately separate. The Russian surface is
+ * visible by default for client review, but remains noindex until its explicit
+ * indexing gate is enabled.
  */
 export function shouldIndexLocale(locale: SupportedLocale): boolean {
   return isLocaleIndexingEnabled(locale);

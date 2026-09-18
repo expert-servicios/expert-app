@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { resolveKiaOrchestrationPlan } from '@/lib/ai/kia/kia-orchestrator';
 
@@ -63,5 +65,11 @@ describe('KIA M7 orchestration plan', () => {
 
     expect(plan.toolNames.every((name) => restrictedNames.includes(name))).toBe(true);
     expect(plan.authorization.requestedNames).toEqual(plan.toolNames);
+  });
+
+  it('propagates the resolved intent into final decision task context without overwriting an explicit page task', () => {
+    const source = readFileSync(resolve(process.cwd(), 'lib/ai/kia/kia-orchestrator.ts'), 'utf8');
+    expect(source).toContain('currentTask: input.contextInput.currentTask ?? plan.detectedIntent ?? undefined');
+    expect(source).toContain('contextInput: decisionContextInput');
   });
 });
