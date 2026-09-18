@@ -98,17 +98,21 @@ export function isRussianNationalityPayment(params: {
 export function calculateRussianNationalityAmounts(input: {
   professionalNetCents?: number | null;
   disbursementCents?: number | null;
+  stripeTotalCents?: number | null;
 }): NationalityServicePaymentAmounts {
   const professionalNetCents = input.professionalNetCents ?? NATIONALITY_MINOR_SERVICE.professionalNetCents;
   const disbursementCents = input.disbursementCents ?? NATIONALITY_MINOR_SERVICE.officialFeeCents;
-  const professionalVatCents = Math.round(professionalNetCents * NATIONALITY_MINOR_SERVICE.vatRate);
-  const professionalGrossCents = professionalNetCents + professionalVatCents;
+  const nominalVatCents = Math.round(professionalNetCents * NATIONALITY_MINOR_SERVICE.vatRate);
+  const nominalGrossCents = professionalNetCents + nominalVatCents;
+  const totalCents = input.stripeTotalCents ?? (nominalGrossCents + disbursementCents);
+  const professionalGrossCents = Math.max(professionalNetCents, totalCents - disbursementCents);
+  const professionalVatCents = Math.max(0, professionalGrossCents - professionalNetCents);
   return {
     professionalNetCents,
     professionalVatCents,
     professionalGrossCents,
     disbursementCents,
-    totalCents: professionalGrossCents + disbursementCents,
+    totalCents,
   };
 }
 
@@ -131,7 +135,7 @@ export function spanishNationalityPaymentConfirmedClient(amounts: NationalitySer
       ${para('Hola,')}
       ${para('Hemos recibido correctamente el pago del servicio <strong>Nacionalidad española para menor nacido en España</strong>. El expediente pasa ahora a apertura y revisión documental.')}
       ${details(
-        detail('Honorarios profesionales', `${formatEur(amounts.professionalGrossCents, 'es-ES')} (${formatEur(amounts.professionalNetCents, 'es-ES')} + IVA 21 %)`),
+        detail('Honorarios profesionales', `${formatEur(amounts.professionalGrossCents, 'es-ES')} (base ${formatEur(amounts.professionalNetCents, 'es-ES')} + IVA ${formatEur(amounts.professionalVatCents, 'es-ES')})`),
         detail('Tasa oficial', `${formatEur(amounts.disbursementCents, 'es-ES')} · Modelo 790-026 · suplido`),
         detail('Total pagado', `<strong>${formatEur(amounts.totalCents, 'es-ES')}</strong>`),
       )}
@@ -197,7 +201,7 @@ export function russianNationalityPaymentConfirmedClient(amounts: NationalitySer
       ${para('Здравствуйте!')}
       ${para(`Мы получили оплату услуги <strong>${escapeHtml(RU_NATIONALITY_MINOR_SERVICE_NAME)}</strong>. Ваше дело переходит в этап открытия и проверки документов.`)}
       ${details(
-        detail('Профессиональные услуги', `${formatEur(amounts.professionalGrossCents)} (${formatEur(amounts.professionalNetCents)} + IVA 21 %)`),
+        detail('Профессиональные услуги', `${formatEur(amounts.professionalGrossCents)} (база ${formatEur(amounts.professionalNetCents)} + IVA ${formatEur(amounts.professionalVatCents)})`),
         detail('Государственная пошлина', `${formatEur(amounts.disbursementCents)} · Modelo 790-026 · suplido`),
         detail('Итого оплачено', `<strong>${formatEur(amounts.totalCents)}</strong>`),
       )}
