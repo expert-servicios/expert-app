@@ -62,7 +62,22 @@ jobs:
           set -euo pipefail
           supabase --version
           supabase link --project-ref "$PROJECT_REF" -p "$SUPABASE_DB_PASSWORD"
-          supabase migration list --linked > "$RUNNER_TEMP/migration-list-before.txt"
+
+          migration_list_ok=0
+          for attempt in 1 2 3 4 5; do
+            if supabase migration list --linked > "$RUNNER_TEMP/migration-list-before.txt"; then
+              migration_list_ok=1
+              break
+            fi
+            if [ "$attempt" -lt 5 ]; then
+              echo "Supavisor connection attempt $attempt failed; retrying after credential-cache window"
+              sleep 20
+            fi
+          done
+          test "$migration_list_ok" -eq 1 || {
+            echo 'STOP: unable to read linked migration list after Supavisor retries'
+            exit 1
+          }
 
       - name: Capture exact ledger backup and validate frozen state
         shell: bash
