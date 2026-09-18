@@ -614,7 +614,7 @@ export const services: Service[] = [
       {
         title: 'Firma de representantes legales',
         text:
-          'Para menores de 14 años, cuando existe acuerdo y firman ambos representantes legales, el Ministerio de Justicia informa que no se exige la autorización previa del Encargado del Registro Civil tras la Ley 8/2021. Si hay discrepancia o solo firma un progenitor sin justificación suficiente, revisamos el caso antes de presentar.'
+          'Para menores de 14 años actúan sus representantes legales; entre 14 y 17 años el menor formula la solicitud asistido por ellos. Si existe desacuerdo entre quienes ejercen la patria potestad o actúa un solo representante, revisamos previamente la documentación y la resolución que corresponda.'
       },
       {
         title: 'Fecha de residencia legal',
@@ -669,7 +669,7 @@ export const services: Service[] = [
           'NIE/TIE de ambos progenitores por ambas caras',
           'Certificado de empadronamiento familiar, si no se aporta por separado',
           'Datos de contacto: teléfono, correo electrónico y domicilio actual',
-          'Firma de ambos progenitores como representantes legales del menor',
+          'Intervención, firma o asistencia de los representantes legales según la edad del menor, la patria potestad y la situación familiar',
           'Documentación adicional si solo uno de los progenitores puede firmar'
         ]
       }
