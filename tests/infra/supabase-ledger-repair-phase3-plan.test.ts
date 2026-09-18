@@ -20,7 +20,7 @@ const manifest = readFileSync(manifestPath, 'utf8');
 
 function extractArray(name: string): string[] {
   const match = script.match(
-    new RegExp(`${name}=\\\\(\\\\n([\\\\s\\\\S]*?)\\\\n\\\\)`),
+    new RegExp(`${name}=\\(\\n([\\s\\S]*?)\\n\\)`),
   );
   if (!match) throw new Error(`Missing ${name}`);
   return match[1]
