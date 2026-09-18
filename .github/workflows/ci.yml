@@ -309,22 +309,22 @@ jobs:
 
           mapfile -t local_only < <(
             awk -F'|' '
-              /^[[:space:]]*[0-9]{14}[[:space:]]*\|/ {
+              NF >= 3 {
                 local=$1; remote=$2
                 gsub(/[^0-9]/, "", local)
                 gsub(/[^0-9]/, "", remote)
-                if (local != "" && remote == "") print local
+                if (length(local) == 14 && remote == "") print local
               }
             ' "$RUNNER_TEMP/c2-migration-list.txt"
           )
 
           mapfile -t remote_only < <(
             awk -F'|' '
-              /^[[:space:]]*\|[[:space:]]*[0-9]{14}[[:space:]]*\|/ {
+              NF >= 3 {
                 local=$1; remote=$2
                 gsub(/[^0-9]/, "", local)
                 gsub(/[^0-9]/, "", remote)
-                if (local == "" && remote != "") print remote
+                if (local == "" && length(remote) == 14) print remote
               }
             ' "$RUNNER_TEMP/c2-migration-list.txt"
           )
