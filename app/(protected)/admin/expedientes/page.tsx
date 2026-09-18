@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { FolderOpen } from 'lucide-react';
 import { CaseListWithFilters } from '@/components/admin/CaseListWithFilters';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
+import type { CaseStatus } from '@/lib/cases/case-status';
 
 interface CaseWithClient {
   id: string;
@@ -10,7 +11,7 @@ interface CaseWithClient {
   service: string;
   state: string;
   status: string | null;
-  effective_status: string;
+  effective_status: CaseStatus;
   opened_at: string;
   closed_at: string | null;
   client_id: string;
