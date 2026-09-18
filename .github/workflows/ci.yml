@@ -40,5 +40,234 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Supabase migration baseline check
+        run: npm run check:supabase-migrations
+
       - name: Tests
         run: npm test
+
+  migration-repair-contract:
+    name: Supabase migration repair contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+
+      - name: Verify migration repair and rollback semantics
+        shell: bash
+        env:
+          DB_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable
+        run: |
+          set -euo pipefail
+          supabase --version
+          workdir="$RUNNER_TEMP/repair-probe"
+          mkdir -p "$workdir/supabase/migrations"
+          printf 'project_id = "repair-probe"\n' > "$workdir/supabase/config.toml"
+          cat > "$workdir/supabase/migrations/20990101000000_repair_probe_contract.sql" <<'SQL'
+          create table public.repair_probe_contract (
+            id bigint primary key
+          );
+          SQL
+
+          supabase --workdir "$workdir" migration repair 20990101000000 \
+            --db-url "$DB_URL" \
+            --status applied
+
+          test "$(psql "$DB_URL" -Atc "select count(*) from supabase_migrations.schema_migrations where version='20990101000000'")" = "1"
+          test "$(psql "$DB_URL" -Atc "select to_regclass('public.repair_probe_contract') is null")" = "t"
+
+          statement_count="$(psql "$DB_URL" -Atc "select coalesce(array_length(statements,1),0) from supabase_migrations.schema_migrations where version='20990101000000'")"
+          statement_hash="$(psql "$DB_URL" -Atc "select md5(coalesce(array_to_string(statements,E'\\n'),'')) from supabase_migrations.schema_migrations where version='20990101000000'")"
+          echo "repair-applied statement_count=$statement_count"
+          test "$statement_count" -gt 0
+          test -n "$statement_hash"
+
+          backup="$workdir/schema_migrations_before.sql"
+          restore="$workdir/schema_migrations_before_pg15.sql"
+          supabase db dump \
+            --db-url "$DB_URL" \
+            --schema supabase_migrations \
+            --data-only \
+            --use-copy \
+            --file "$backup"
+          test -s "$backup"
+          sha256sum "$backup" > "$backup.sha256"
+
+          # Supabase CLI 2.117.0 currently dumps with PostgreSQL 17 tools, which emit
+          # SET transaction_timeout = 0;. Production is PostgreSQL 15.8, where that
+          # GUC does not exist. Preserve the raw dump unchanged, and derive a PG15
+          # restore copy by removing only that compatibility SET line.
+          grep -q '^SET transaction_timeout = 0;$' "$backup"
+          sed '/^SET transaction_timeout = 0;$/d' "$backup" > "$restore"
+          test -s "$restore"
+
+          supabase --workdir "$workdir" migration repair 20990101000000 \
+            --db-url "$DB_URL" \
+            --status reverted
+          test "$(psql "$DB_URL" -Atc "select count(*) from supabase_migrations.schema_migrations where version='20990101000000'")" = "0"
+
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f "$restore" >/dev/null
+          test "$(psql "$DB_URL" -Atc "select count(*) from supabase_migrations.schema_migrations where version='20990101000000'")" = "1"
+          restored_hash="$(psql "$DB_URL" -Atc "select md5(coalesce(array_to_string(statements,E'\\n'),'')) from supabase_migrations.schema_migrations where version='20990101000000'")"
+          test "$restored_hash" = "$statement_hash"
+          test "$(psql "$DB_URL" -Atc "select to_regclass('public.repair_probe_contract') is null")" = "t"
+
+
+  ledger-preflight:
+    name: Supabase ledger preflight
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.number == 194 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: ybtpqscmqrrjjmuoryap
+      EXPECTED_LEDGER_ROWS: "156"
+      EXPECTED_FIRST_VERSION: "20260508082323"
+      EXPECTED_LAST_VERSION: "20260918114535"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo 'STOP: SUPABASE_ACCESS_TOKEN secret is not configured'; exit 1; }
+          test -n "${SUPABASE_DB_PASSWORD:-}" || { echo 'STOP: SUPABASE_DB_PASSWORD secret is not configured'; exit 1; }
+
+      - name: Verify recovery migration layout
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | sort)
+          test "${#files[@]}" -ge 36
+          test "${files[0]}" = '20260912000100_baseline_public_primitives.sql'
+          test "${files[35]}" = '20260912003600_baseline_public_acl.sql'
+          for file in "${files[@]:36}"; do
+            version="${file:0:14}"
+            test "$version" > "20260912003600" || { echo "STOP: invalid post-baseline migration $file"; exit 1; }
+          done
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+
+      - name: Link production and capture migration list
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$PROJECT_REF" -p "$SUPABASE_DB_PASSWORD"
+
+          migration_list_ok=0
+          for attempt in 1 2 3 4 5; do
+            if supabase migration list --linked > "$RUNNER_TEMP/migration-list-before.txt"; then
+              migration_list_ok=1
+              break
+            fi
+            if [ "$attempt" -lt 5 ]; then
+              echo "Supavisor connection attempt $attempt failed; retrying after credential-cache window"
+              sleep 20
+            fi
+          done
+          test "$migration_list_ok" -eq 1 || {
+            echo 'STOP: unable to read linked migration list after Supavisor retries'
+            exit 1
+          }
+
+      - name: Capture encrypted ledger backup and validate frozen state
+        shell: bash
+        run: |
+          set -euo pipefail
+          private="$RUNNER_TEMP/ledger-preflight"
+          mkdir -p "$private"
+          chmod 700 "$private"
+          raw="$private/schema_migrations_before_repair.raw.sql"
+          restore="$private/schema_migrations_before_repair.pg15.sql"
+
+          supabase db dump \
+            --linked \
+            --schema supabase_migrations \
+            --data-only \
+            --use-copy \
+            --file "$raw"
+          test -s "$raw"
+
+          mapfile -t versions < <(
+            awk 'BEGIN { FS="\t" }
+              /^COPY .*schema_migrations.*FROM stdin;$/ { inside=1; next }
+              inside && $0 == "\\." { inside=0; next }
+              inside { print $1 }
+            ' "$raw" | sort
+          )
+
+          test "${#versions[@]}" -eq "$EXPECTED_LEDGER_ROWS" || {
+            echo "STOP: expected $EXPECTED_LEDGER_ROWS ledger rows, got ${#versions[@]}"
+            exit 1
+          }
+          test "${versions[0]}" = "$EXPECTED_FIRST_VERSION" || { echo 'STOP: unexpected first ledger version'; exit 1; }
+          last_index=$((EXPECTED_LEDGER_ROWS - 1))
+          test "${versions[$last_index]}" = "$EXPECTED_LAST_VERSION" || { echo 'STOP: unexpected production migration tip'; exit 1; }
+
+          if printf '%s\n' "${versions[@]}" | grep -q '^2026091200'; then
+            echo 'STOP: recovery baseline tracking versions already exist remotely'
+            exit 1
+          fi
+
+          empty_statements="$(awk 'BEGIN { FS="\t" }
+            /^COPY .*schema_migrations.*FROM stdin;$/ { inside=1; next }
+            inside && $0 == "\\." { inside=0; next }
+            inside && ($2 == "\\N" || $2 == "{}" || $2 == "") { empty++ }
+            END { print empty+0 }
+          ' "$raw")"
+          test "$empty_statements" -eq 0 || { echo "STOP: $empty_statements ledger rows have empty statements"; exit 1; }
+
+          sha256sum "$raw" > "$private/schema_migrations_before_repair.raw.sha256"
+
+          if grep -q '^SET transaction_timeout = 0;$' "$raw"; then
+            sed '/^SET transaction_timeout = 0;$/d' "$raw" > "$restore"
+          else
+            cp "$raw" "$restore"
+          fi
+          test -s "$restore"
+          sha256sum "$restore" > "$private/schema_migrations_before_repair.pg15.sha256"
+
+          cp "$RUNNER_TEMP/migration-list-before.txt" "$private/migration-list-before.txt"
+
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 \
+            -pass env:SUPABASE_DB_PASSWORD \
+            -in "$raw" \
+            -out "$private/schema_migrations_before_repair.raw.sql.enc"
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 \
+            -pass env:SUPABASE_DB_PASSWORD \
+            -in "$restore" \
+            -out "$private/schema_migrations_before_repair.pg15.sql.enc"
+
+          rm -f "$raw" "$restore"
+          chmod 600 "$private"/*
+
+      - name: Upload encrypted ledger backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-ledger-preflight-20260918
+          path: ${{ runner.temp }}/ledger-preflight/
+          if-no-files-found: error
+          retention-days: 14
