@@ -596,15 +596,15 @@ export const services: Service[] = [
       'Si tu hijo o hija ha nacido en España y ya cuenta con residencia legal, puede solicitar la nacionalidad española por residencia con el plazo reducido de 1 año de residencia legal, continuada e inmediatamente anterior a la solicitud. Revisamos la viabilidad del caso, preparamos la documentación y presentamos el expediente ante el Ministerio de Justicia cuando proceda.',
     metaTitle: 'Nacionalidad española para menor nacido en España | Ksenia Ilicheva',
     metaDescription:
-      'Servicio de preparación y presentación de solicitud de nacionalidad española por residencia para menores nacidos en España. Revisión documental, expediente, formularios y presentación ante el Ministerio de Justicia. Precio: 250 € + IVA.',
+      'Servicio de preparación y presentación de solicitud de nacionalidad española por residencia para menores nacidos en España. Honorarios 302,50 € IVA incluido + tasa 790-026 de 104,05 € como suplido; total 406,55 €.',
     price: '250 € + IVA',
     duration: 'Preparación según documentación; resolución legal hasta 1 año',
-    officialFee: 'Tasa administrativa 790-026: 104,05 € no incluida',
-    servicePriceDetail: 'Honorarios: 250 € + IVA 21 % (total 302,50 € si aplica IVA)',
+    officialFee: 'Tasa administrativa 790-026: 104,05 € incluida como suplido obligatorio',
+    servicePriceDetail: 'Honorarios: 250 € + IVA 21 % = 302,50 €; tasa 790-026: 104,05 € como suplido; total a pagar: 406,55 €',
     stripePriceId: 'price_1TZXomLeYwwgvux4bTuqVZcU',
-    checkoutLabel: 'Contratar — 250 € + IVA',
+    checkoutLabel: 'Contratar — 406,55 € total',
     checkoutLegal:
-      'El pago corresponde exclusivamente a los honorarios profesionales por la preparación y presentación del expediente. La tasa administrativa del Ministerio de Justicia, actualmente 104,05 €, no está incluida y se abonará aparte.',
+      'Al contratar se cobran 302,50 € de honorarios con IVA incluido y 104,05 € de tasa 790-026 como suplido obligatorio. La tasa se abona en nombre y por cuenta del cliente y queda separada de la base de honorarios.',
     keyPoints: [
       {
         title: 'Plazo reducido de 1 año',
@@ -614,7 +614,7 @@ export const services: Service[] = [
       {
         title: 'Firma de representantes legales',
         text:
-          'Para menores de 14 años, cuando existe acuerdo y firman ambos representantes legales, el Ministerio de Justicia informa que no se exige la autorización previa del Encargado del Registro Civil tras la Ley 8/2021. Si hay discrepancia o solo firma un progenitor sin justificación suficiente, revisamos el caso antes de presentar.'
+          'Para menores de 14 años actúan sus representantes legales; entre 14 y 17 años el menor formula la solicitud asistido por ellos. Si existe desacuerdo entre quienes ejercen la patria potestad o actúa un solo representante, revisamos previamente la documentación y la resolución que corresponda.'
       },
       {
         title: 'Fecha de residencia legal',
@@ -626,14 +626,14 @@ export const services: Service[] = [
       'Menor nacido en España e inscrito en el Registro Civil español.',
       'Menor con NIE/TIE o autorización de residencia legal en España.',
       'Familias que ya han cumplido, o están próximas a cumplir, 1 año de residencia legal del menor.',
-      'Ambos progenitores o representantes legales están dispuestos a firmar la solicitud.',
+      'La representación y asistencia del menor están claras según su edad, patria potestad y situación familiar.',
       'Familias que quieren evitar errores documentales, requerimientos y retrasos innecesarios.'
     ],
     requirements: [
       'Nacimiento en España inscrito en el Registro Civil español.',
       'Residencia legal del menor en España.',
       'Al menos 1 año de residencia legal, continuada e inmediatamente anterior a la solicitud.',
-      'Solicitud firmada por los progenitores o representantes legales que correspondan.',
+      'Solicitud formulada o asistida por quienes correspondan según la edad del menor y su representación legal.',
       'Pago de la tasa administrativa del Ministerio de Justicia mediante modelo 790 código 026.',
       'Documentación exigida por el Ministerio de Justicia digitalizada y revisada.'
     ],
@@ -643,7 +643,7 @@ export const services: Service[] = [
       'Revisión de NIE/TIE, pasaportes, certificado de nacimiento, empadronamiento y documentación familiar',
       'Preparación del expediente documental',
       'Cumplimentación de formularios oficiales',
-      'Instrucciones para el pago de la tasa administrativa 790-026',
+      'Gestión del pago de la tasa administrativa 790-026 como suplido, con justificante a nombre del menor solicitante',
       'Presentación telemática ante el Ministerio de Justicia, cuando proceda',
       'Entrega del justificante de presentación y número de expediente',
       'Seguimiento básico inicial del expediente',
@@ -659,7 +659,7 @@ export const services: Service[] = [
           'Tarjeta de residencia anterior, si existe',
           'Resolución inicial de concesión de residencia o protección temporal, si existe',
           'Certificado de empadronamiento familiar o colectivo actualizado',
-          'Certificado de guardería o centro infantil, solo si el menor asiste a un centro'
+          'Certificado del centro escolar o educativo cuando corresponda por la edad y escolarización del menor'
         ]
       },
       {
@@ -669,19 +669,19 @@ export const services: Service[] = [
           'NIE/TIE de ambos progenitores por ambas caras',
           'Certificado de empadronamiento familiar, si no se aporta por separado',
           'Datos de contacto: teléfono, correo electrónico y domicilio actual',
-          'Firma de ambos progenitores como representantes legales del menor',
+          'Intervención, firma o asistencia de los representantes legales según la edad del menor, la patria potestad y la situación familiar',
           'Documentación adicional si solo uno de los progenitores puede firmar'
         ]
       }
     ],
     process: [
       {
-        title: 'Pago del servicio',
-        text: 'El cliente contrata el servicio mediante pago online seguro.'
+        title: 'Pago del servicio y mandato de suplido',
+        text: 'El cliente abona online los honorarios y la tasa 790-026 como suplido separado, aceptando expresamente que EXPERT la pague en su nombre y por su cuenta.'
       },
       {
-        title: 'Envío de documentación',
-        text: 'Después del pago, se envía la documentación necesaria por WhatsApp o correo electrónico.'
+        title: 'Apertura y documentación',
+        text: 'Después del pago, EXPERT abre el expediente y el cliente carga la documentación en su área privada segura; WhatsApp queda para consultas y coordinación.'
       },
       {
         title: 'Revisión de viabilidad',
@@ -692,8 +692,8 @@ export const services: Service[] = [
         text: 'Preparamos la solicitud, formularios y documentación digitalizada.'
       },
       {
-        title: 'Pago de tasa administrativa',
-        text: 'Cuando el expediente está preparado, indicamos cómo abonar la tasa oficial del Ministerio de Justicia.'
+        title: 'Abono de la tasa como suplido',
+        text: 'Cuando el expediente está validado y listo para presentar, EXPERT abona la tasa 790-026 ya cobrada como suplido en nombre y por cuenta del solicitante.'
       },
       {
         title: 'Presentación de la solicitud',
@@ -705,7 +705,6 @@ export const services: Service[] = [
       }
     ],
     notIncluded: [
-      'Tasa administrativa del Ministerio de Justicia: 104,05 €',
       'Traducciones juradas, si fueran necesarias',
       'Apostillas o legalizaciones, si fueran necesarias',
       'Certificados oficiales que deban solicitarse aparte',
@@ -747,17 +746,17 @@ export const services: Service[] = [
       {
         q: '¿La tasa está incluida en el precio?',
         a:
-          'No. La tasa administrativa del Ministerio de Justicia, actualmente 104,05 €, se paga aparte.'
+          'Sí. La tasa 790-026 de 104,05 € se cobra junto con el servicio como suplido obligatorio, separada de los honorarios y de su base imponible.'
       },
       {
         q: '¿Pueden pagar ustedes la tasa por mí?',
         a:
-          'Sí, podemos gestionarla en nombre del cliente cuando el expediente esté preparado, avisando previamente y cumplimentando los datos a nombre del menor solicitante.'
+          'Sí. EXPERT gestiona el pago de la tasa 790-026 por su importe exacto como suplido, en nombre y por cuenta del cliente, con justificante vinculado al menor solicitante.'
       },
       {
         q: '¿Tienen que firmar los dos progenitores?',
         a:
-          'Si ambos ejercen la patria potestad, lo recomendable es que firmen ambos progenitores como representantes legales del menor. Si solo puede firmar uno, revisamos la documentación que justifica la representación suficiente.'
+          'En menores de 14 años actúan los representantes legales; entre 14 y 17 años el menor formula la solicitud asistido por ellos. Si existe desacuerdo o solo actúa un representante, revisamos la documentación y la resolución que corresponda antes de presentar.'
       },
       {
         q: '¿Hace falta autorización previa del Registro Civil?',

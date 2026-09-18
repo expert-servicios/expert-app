@@ -263,6 +263,24 @@ Fix separately through a forward security migration after its own preflight.
 - [ ] rollback procedure for migration-history changes documented;
 - [ ] explicit production checkpoint approval obtained immediately before history repair.
 
+## 10.1 Production re-verification — 2026-09-18
+
+Read-only verification against Supabase production project `ybtpqscmqrrjjmuoryap` confirmed:
+
+- ledger rows: **156**;
+- first version: `20260508082323`;
+- latest version: `20260918114535`;
+- rows with null/empty `statements`: **0**;
+- project status: `ACTIVE_HEALTHY`;
+- project ref unchanged despite any dashboard display-name changes.
+
+The GitHub preflight now also tolerates two transport/tooling details that are not ledger drift:
+
+1. transient Supavisor `28P01` failures after a database-password rotation, by retrying read-only `migration list` calls;
+2. optional PostgreSQL 17 dump compatibility line `SET transaction_timeout = 0;`, which is removed only when present before deriving the PostgreSQL 15 restore copy.
+
+These checks do **not** authorize any production history repair by themselves. The encrypted backup artifact and final green preflight are still required before the repair gate can advance.
+
 ## 11. Rollback principle
 
 Because migration-history repair changes metadata rather than schema, rollback means restoring the previous migration-status entries using the supported history-repair mechanism according to the exported pre-change manifest.

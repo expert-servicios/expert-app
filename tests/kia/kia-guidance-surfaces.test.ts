@@ -6,6 +6,7 @@ import {
   resolveCaseListGuidance,
   resolveHoldedIntegrationGuidance,
   resolveOnboardingGuidance,
+  resolveProfileGuidance,
 } from '@/lib/ai/kia/kia-surface-guidance';
 
 function source(relativePath: string): string {
@@ -19,6 +20,7 @@ describe('KIA contextual guidance surfaces', () => {
   const onboardingPage = source('app/(protected)/dashboard/onboarding/page.tsx');
   const holdedCard = source('components/integrations/HoldedConnectionCard.tsx');
   const holdedForm = source('components/integrations/HoldedApiKeyForm.tsx');
+  const profileForm = source('components/profile/ProfileForm.tsx');
 
   it('keeps the guidance card presentation-only', () => {
     expect(card).toContain('data-kia-guidance-state={state}');
@@ -61,6 +63,27 @@ describe('KIA contextual guidance surfaces', () => {
     expect(resolveHoldedIntegrationGuidance({ integrationStatus: 'failed', phase: 'idle', hasUiError: false }).state).toBe('aviso');
     expect(resolveHoldedIntegrationGuidance({ integrationStatus: 'active', phase: 'testing', hasUiError: true }).state).toBe('aviso');
     expect(resolveHoldedIntegrationGuidance({ integrationStatus: 'disabled', phase: 'idle', hasUiError: false }).state).toBe('ayuda');
+  });
+
+  it('maps profile state deterministically with error-first precedence', () => {
+    const base = {
+      saving: false,
+      hasError: false,
+      hasRecentSuccess: false,
+      profileCompleted: true,
+      billingReady: true,
+      habitualAddressReady: true,
+      isCompany: false,
+    };
+
+    expect(resolveProfileGuidance({ ...base, hasError: true, saving: true }).state).toBe('aviso');
+    expect(resolveProfileGuidance({ ...base, saving: true }).state).toBe('pensando');
+    expect(resolveProfileGuidance({ ...base, billingReady: false }).state).toBe('ayuda');
+    expect(resolveProfileGuidance({ ...base, habitualAddressReady: false }).state).toBe('explicacion');
+    expect(resolveProfileGuidance({ ...base, profileCompleted: false }).state).toBe('ayuda');
+    expect(resolveProfileGuidance({ ...base, hasRecentSuccess: true }).state).toBe('exito');
+    expect(resolveProfileGuidance(base).state).toBe('confianza');
+    expect(resolveProfileGuidance({ ...base, isCompany: true, habitualAddressReady: false }).state).toBe('confianza');
   });
 
   it('keeps onboarding precedence safe', () => {
@@ -111,5 +134,19 @@ describe('KIA contextual guidance surfaces', () => {
     expect(holdedCard).not.toContain('runKiaDecision');
     expect(holdedForm).not.toContain('/api/ai/kia');
     expect(holdedForm).not.toContain('runKiaDecision');
+  });
+
+  it('wires profile guidance to structured local state without inspecting field values', () => {
+    expect(profileForm).toContain('resolveProfileGuidance({');
+    expect(profileForm).toContain('saving: saving || savingBilling || savingEmail || sendingPwd');
+    expect(profileForm).toContain('hasError: hasUiError');
+    expect(profileForm).toContain('billingReady: currentBillingReady');
+    expect(profileForm).toContain('habitualAddressReady: currentHabitualReady');
+    expect(profileForm).toContain('profileCompleted: currentProfileComplete');
+    expect(profileForm).toContain('<KiaGuidanceCard');
+    expect(profileForm).toContain('animateOnChange');
+    expect(profileForm).not.toContain('/api/ai/kia');
+    expect(profileForm).not.toContain('runKiaDecision');
+    expect(profileForm).not.toContain('fullName, taxId');
   });
 });

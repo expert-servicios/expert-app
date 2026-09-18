@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getKiaVisualGuidanceTelemetry } from '@/lib/ai/kia-auditor/kia-visual-auditor';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -100,6 +101,7 @@ export async function GET(request: NextRequest) {
     const positiveCount = feedback.filter((item) => item.rating === 'positive').length;
     const negativeCount = feedback.filter((item) => item.rating === 'negative').length;
     const satisfactionRate = positiveCount + negativeCount > 0 ? positiveCount / (positiveCount + negativeCount) : null;
+    const visualGuidance = getKiaVisualGuidanceTelemetry();
 
     return NextResponse.json({
       summary: {
@@ -121,12 +123,14 @@ export async function GET(request: NextRequest) {
       daily,
       taskTypes,
       models,
+      visualGuidance,
       sourceStatus: {
         decisionLogs: logsResult.error ? 'error' : 'ok',
         feedback: feedbackResult.error ? 'error' : 'ok',
         memories: memoriesResult.error ? 'error' : 'ok',
         sessions: recentSessionsCount.error ? 'error' : 'ok',
         healthRuns: healthRunsCount.error ? 'error' : 'ok',
+        visualGuidance: visualGuidance.auditor.status === 'passed' ? 'ok' : 'error',
       },
     });
   } catch (err) {

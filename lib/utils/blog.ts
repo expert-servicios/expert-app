@@ -179,7 +179,7 @@ Estos errores no siempre impiden presentar, pero aumentan el riesgo de requerimi
 
 La solicitud exige el pago de la tasa del Ministerio de Justicia mediante el modelo 790 código 026. El justificante debe estar correctamente vinculado al menor solicitante.
 
-En nuestro servicio, la tasa oficial se paga aparte de los honorarios profesionales. Antes de pagarla, conviene tener el expediente revisado para evitar pagar una tasa cuando todavía falta un requisito esencial.
+En el servicio EXPERT, la tasa oficial de 104,05 € se cobra junto con los honorarios como suplido obligatorio y queda separada de la base de honorarios. EXPERT la abona en nombre y por cuenta del solicitante cuando el expediente ha sido revisado y está listo para presentar.
 
 ## Cómo organizar la documentación
 

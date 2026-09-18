@@ -4,63 +4,67 @@ import {
   Shield, MessageCircle, FileText, CreditCard, Globe,
   AlertTriangle, CheckCircle2, HelpCircle, BookOpen, Phone,
 } from 'lucide-react';
+import { KiaGuidanceCard } from '@/components/kia/KiaGuidanceCard';
 import { getCalDemoUrl } from '@/lib/utils/cal';
 
 export const metadata: Metadata = {
   title: 'Cómo usar Kia, la asistente virtual de EXPERT',
-  description: 'Guía de buenas prácticas para interactuar con Kia de forma segura y eficaz. Qué puede hacer, qué no hace, cómo proteger tus datos y cómo contratar servicios de forma segura.',
+  description: 'Guía de buenas prácticas para interactuar con Kia de forma segura y eficaz: capacidades, límites, privacidad y operaciones seguras.',
 };
 
-const WA_NUMBER   = '34669045528';
-const PORTAL_URL  = '/dashboard';
+const WA_NUMBER = '34669045528';
+const PORTAL_URL = '/dashboard';
 const VIABILITY_URL = '/solicitar-presupuesto';
 const CAL_URL = getCalDemoUrl() ?? '/cita';
 
 export default function KiaGuiaPage() {
   return (
     <div className="min-h-screen bg-[#f8f4eb]">
-      {/* Hero */}
-      <section className="border-b border-[#e8dfc9] bg-[#07111d] py-16 px-6">
+      <section className="border-b border-[#e8dfc9] bg-[#07111d] px-6 py-16">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A017]">Guía de usuario</p>
-          <h1 className="mt-3 font-serif text-3xl font-bold text-white sm:text-4xl">
-            Cómo usar Kia de forma segura
-          </h1>
-          <p className="mt-4 text-base text-white/70 leading-relaxed max-w-2xl mx-auto">
-            Kia es la asistente virtual de EXPERT, disponible en tu Panel Cliente. Te ayuda a elegir servicios, comprobar viabilidad, preparar documentación y seguir tus expedientes, siempre de forma segura y con el respaldo del equipo profesional. WhatsApp lo atiende directamente el equipo de EXPERT.
+          <h1 className="mt-3 font-serif text-3xl font-bold text-white sm:text-4xl">Cómo usar Kia de forma segura</h1>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-white/70">
+            Kia es la asistente y copiloto virtual de EXPERT. Puede orientarte, ayudarte a preparar gestiones y,
+            cuando estás autenticado o utilizas un canal correctamente vinculado, trabajar con el contexto que
+            tengas autorizado. El equipo EXPERT puede intervenir cuando el caso requiere revisión profesional.
           </p>
         </div>
       </section>
 
       <div className="mx-auto max-w-3xl space-y-10 px-6 py-12">
-
-        {/* Security alert — always first */}
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
           <div className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
             <div>
               <p className="font-semibold text-red-800">Aviso de seguridad importante</p>
               <p className="mt-1 text-sm text-red-700">
-                Nunca envíes contraseñas, claves API, códigos de verificación, datos completos de tarjetas ni credenciales por WhatsApp o email. Kia <strong>nunca</strong> te los pedirá por estos canales.
+                Nunca envíes contraseñas, claves API, códigos de verificación, tokens, datos bancarios completos
+                ni datos completos de tarjetas por WhatsApp, email o chat. Utiliza siempre el flujo seguro que te indique EXPERT.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Section 1 — What Kia can do */}
+        <KiaGuidanceCard
+          state="explicacion"
+          title="Las capacidades de Kia dependen del canal y de tus permisos"
+          message="Una conversación pública no tiene el mismo acceso que tu Espacio Cliente autenticado. Kia no debe ampliar el contexto disponible ni asumir estados que el sistema no haya confirmado."
+        />
+
         <Section icon={CheckCircle2} title="Qué puede hacer Kia" color="text-emerald-700">
           <ul className="space-y-2">
             {[
-              'Orientarte sobre servicios de gestión, fiscal, extranjería y empresa.',
-              'Ayudarte a comprobar la viabilidad de un trámite antes de contratarlo.',
-              'Preparar la contratación de servicios y guiarte en el proceso.',
-              'Indicar qué datos o documentos son necesarios para cada gestión.',
-              'Ayudarte a completar tu perfil en el Portal Cliente.',
-              'Guiarte para conectar Holded desde el Panel Cliente de forma segura.',
-              'Explicar el Estado de empresa si tienes plan mensual de gestión.',
-              'Avisarte de documentos pendientes o anomalías en tu expediente.',
-              'Ayudarte a reservar una llamada de 15 minutos antes de contratar.',
-              'Responder en español o en ruso.',
+              'Orientarte sobre servicios de gestión, fiscal, extranjería, empresa, contabilidad y laboral dentro de su alcance.',
+              'Ayudarte a comprobar viabilidad o preparación de un trámite cuando existe un flujo específico para ello.',
+              'Preparar la contratación de servicios y guiarte hacia el siguiente paso seguro.',
+              'Indicar qué datos o documentos son necesarios para una gestión.',
+              'Ayudarte a completar tu perfil en el Espacio Cliente.',
+              'Guiarte para conectar Holded desde la superficie privada y autorizada.',
+              'Consultar contexto de tu cuenta —como empresas vinculadas, estado de expedientes o documentación pendiente— cuando la sesión y los permisos lo autorizan.',
+              'Orientarte sobre estados y plazos visibles en tu calendario fiscal sin convertirlos automáticamente en conclusiones sobre deuda o sanción.',
+              'Ayudarte a reservar una llamada o derivarte al equipo cuando corresponde.',
+              'Responder en español o en ruso según el contexto disponible.',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2 text-sm text-[#29384a]">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
@@ -70,18 +74,17 @@ export default function KiaGuiaPage() {
           </ul>
         </Section>
 
-        {/* Section 2 — What Kia does NOT do */}
         <Section icon={AlertTriangle} title="Qué no hace Kia" color="text-red-700">
           <ul className="space-y-2">
             {[
-              'No sustituye la revisión profesional del equipo de EXPERT.',
-              'No presenta impuestos automáticamente.',
-              'No modifica contabilidad sin validación del equipo.',
-              'No guarda claves API por WhatsApp, email ni chat.',
-              'No recibe contraseñas, códigos de verificación ni datos completos de tarjetas.',
-              'No decide sola expedientes complejos con implicaciones jurídicas o fiscales.',
-              'No muestra datos de otros clientes.',
-              'No ejecuta pagos directamente sin enlace seguro de EXPERT.',
+              'No sustituye la revisión profesional del equipo de EXPERT cuando es necesaria.',
+              'No debe afirmar que ha presentado un impuesto, realizado un pago o completado un trámite si el sistema autorizado no lo confirma.',
+              'No modifica contabilidad ni ejecuta operaciones sensibles fuera de los permisos y validaciones establecidos.',
+              'No pide ni expone claves API, contraseñas, tokens, códigos 2FA ni datos bancarios completos por conversación.',
+              'No puede saltarse autenticación, permisos ni separación entre clientes o empresas.',
+              'No decide sola cuestiones complejas con implicaciones jurídicas, fiscales, laborales o económicas relevantes.',
+              'No muestra datos de otros clientes ni de empresas fuera del ámbito autorizado.',
+              'No debe convertir un aviso o estado intermedio en un resultado final no confirmado.',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2 text-sm text-[#29384a]">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
@@ -91,16 +94,15 @@ export default function KiaGuiaPage() {
           </ul>
         </Section>
 
-        {/* Section 3 — How to ask correctly */}
         <Section icon={MessageCircle} title="Cómo pedir ayuda correctamente" color="text-blue-700">
           <ul className="space-y-2">
             {[
-              'Indica el servicio que necesitas o el trámite que quieres hacer.',
-              'Explica tu situación en una frase clara.',
-              'Si ya eres cliente, usa el mismo teléfono o email con el que te registraste.',
-              'Sube documentos solo cuando Kia o el equipo te los pidan.',
-              'Para dudas antes de contratar, reserva una llamada de 15 minutos.',
-              'Para contratar servicios, usa siempre los enlaces seguros de EXPERT.',
+              'Indica el servicio, trámite o resultado que quieres conseguir.',
+              'Explica la cuestión principal con claridad y separa consultas independientes.',
+              'Para información de tu cuenta utiliza el Espacio Cliente o un canal correctamente vinculado.',
+              'Sube documentos y facilita datos personales únicamente en las superficies seguras habilitadas.',
+              'Si necesitas una conclusión profesional, solicita revisión o reserva una consulta.',
+              'Para contratar o conectar servicios, utiliza siempre el flujo seguro de EXPERT.',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2 text-sm text-[#29384a]">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
@@ -110,119 +112,117 @@ export default function KiaGuiaPage() {
           </ul>
         </Section>
 
-        {/* Section 4 — Security */}
         <Section icon={Shield} title="Seguridad de tus datos" color="text-[#07111d]">
           <div className="space-y-4">
             <InfoCard color="red">
               <p className="text-sm text-[#29384a]">
-                <strong>Datos que nunca debes enviar por WhatsApp o email:</strong> contraseñas, claves API, tokens de acceso, códigos 2FA, números completos de tarjeta, credenciales bancarias.
+                <strong>Datos que no debes enviar por conversación:</strong> contraseñas, claves API, tokens de acceso,
+                códigos 2FA, números completos de tarjeta o credenciales bancarias.
               </p>
             </InfoCard>
             <p className="text-sm text-[#29384a]">
-              Si recibes un mensaje sospechoso pidiendo datos sensibles que afirme ser de EXPERT, no respondas y contacta con nosotros directamente. Los enlaces auténticos de EXPERT siempre empiezan por <code className="rounded bg-[#e8dfc9] px-1 text-[#07111d]">expertconsulting.es</code>.
+              Si recibes un mensaje sospechoso pidiendo secretos o credenciales en nombre de EXPERT, no los facilites.
+              Inicia la operación desde el Espacio Cliente o desde un enlace que hayas abierto a través de una superficie oficial de EXPERT.
             </p>
           </div>
         </Section>
 
-        {/* Section 5 — Holded */}
         <Section icon={Globe} title="Conectar Holded de forma segura" color="text-[#07111d]">
           <div className="space-y-3 text-sm text-[#29384a]">
             <p>
-              Para los planes mensuales de gestión, necesitas una cuenta Holded y conectar tu API key. Kia puede explicarte cómo obtenerla, pero <strong>nunca te pedirá que la pegues en WhatsApp</strong>.
+              Cuando un servicio requiera Holded, Kia puede explicarte el proceso y llevarte a la superficie de conexión,
+              pero no debes pegar API keys ni credenciales en WhatsApp, email o chat.
             </p>
             <InfoCard color="amber">
               <p className="text-sm text-[#29384a]">
-                La conexión de Holded se hace siempre desde el <strong>Panel Cliente seguro</strong>. Kia te enviará el enlace cuando estés listo/a.
+                La disponibilidad real de Holded depende del estado de la integración y de los permisos habilitados para la empresa correspondiente.
               </p>
             </InfoCard>
           </div>
         </Section>
 
-        {/* Section 6 — Payments */}
         <Section icon={CreditCard} title="Pagos seguros" color="text-[#07111d]">
           <div className="space-y-3 text-sm text-[#29384a]">
             <p>
-              Los pagos se realizan siempre desde <strong>enlaces seguros de EXPERT</strong>. Kia puede enviarte el enlace de pago cuando hayas completado tu perfil y datos de facturación.
+              Kia puede guiarte hacia un checkout o enlace de contratación cuando el flujo lo permite y los requisitos previos están completos.
+              No compartas datos completos de tarjeta por conversación.
             </p>
             <InfoCard color="amber">
               <p className="text-sm text-[#29384a]">
-                No pagues a través de mensajes no verificados. Si tienes dudas sobre un enlace de pago, contacta con el equipo antes de proceder.
+                Si tienes dudas sobre un pago, vuelve al Espacio Cliente o confirma el enlace con el equipo EXPERT antes de continuar.
               </p>
             </InfoCard>
           </div>
         </Section>
 
-        {/* Section 7 — Documents */}
-        <Section icon={FileText} title="Envío de documentos" color="text-[#07111d]">
-          <p className="text-sm text-[#29384a]">
-            Kia clasifica automáticamente los documentos que subes desde el Portal Cliente para asociarlos a tu expediente. Si hay dudas sobre el tipo de documento, el equipo de EXPERT los revisará manualmente.
-          </p>
-          <div className="mt-3 space-y-1 text-sm text-[#29384a]">
-            <p>→ Envía los documentos que el equipo te solicite expresamente.</p>
-            <p>→ Puedes subir documentos también desde el Portal Cliente.</p>
-            <p>→ Los documentos se guardan de forma segura y cifrada.</p>
+        <Section icon={FileText} title="Documentos y expedientes" color="text-[#07111d]">
+          <div className="space-y-3 text-sm text-[#29384a]">
+            <p>
+              En un contexto autenticado y autorizado, Kia puede ayudarte a consultar el estado de expedientes y documentación pendiente.
+              También puede intervenir en flujos de clasificación o preparación documental cuando esa capacidad está habilitada.
+            </p>
+            <p>→ Sube documentos únicamente desde las superficies de EXPERT preparadas para ello.</p>
+            <p>→ No asumas que un documento está revisado, aceptado o presentado hasta que el estado autorizado lo confirme.</p>
           </div>
         </Section>
 
-        {/* Section 8 — Languages */}
         <Section icon={Globe} title="Idiomas" color="text-[#07111d]">
           <p className="text-sm text-[#29384a]">
-            Puedes escribir a Kia en <strong>español</strong> o en <strong>ruso</strong> desde el Panel Cliente. Kia detecta el idioma automáticamente y responde en el mismo idioma.
+            Kia puede trabajar en <strong>español</strong> y <strong>ruso</strong>. El idioma se resuelve a partir de la configuración y del contexto disponible de la interacción.
           </p>
         </Section>
 
-        {/* Section 9 — Professional disclaimer */}
         <Section icon={BookOpen} title="Aviso profesional" color="text-[#07111d]">
-          <div className="rounded-xl border border-[#d8cbb5] bg-white p-4 text-sm text-[#29384a] leading-relaxed">
-            Las respuestas de Kia ayudan a organizar y preparar trámites, y a orientarte sobre los servicios de EXPERT. Las decisiones fiscales, jurídicas o administrativas relevantes requieren siempre revisión profesional por el equipo de EXPERT. Kia no sustituye el criterio profesional.
+          <div className="rounded-xl border border-[#d8cbb5] bg-white p-4 text-sm leading-relaxed text-[#29384a]">
+            Las respuestas de Kia ayudan a organizar información, preparar trámites y utilizar los servicios de EXPERT.
+            Las decisiones fiscales, jurídicas, laborales o económicas relevantes pueden requerir revisión profesional.
+            Kia debe distinguir entre orientación y hechos confirmados por los sistemas autorizados.
           </div>
         </Section>
 
-        {/* CTAs */}
         <section className="rounded-2xl border border-[#d8cbb5] bg-white p-6">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25] mb-4">¿Listo/a para empezar?</p>
+          <p className="mb-4 text-xs font-bold uppercase tracking-widest text-[#c88b25]">¿Listo/a para empezar?</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <a
               href={`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent('Hola, quiero información sobre los servicios de EXPERT.')}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white hover:bg-[#20b858] transition"
+              className="flex items-center gap-3 rounded-xl bg-[#25D366] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#20b858]"
             >
               <MessageCircle className="h-4 w-4 shrink-0" />
-              Escríbenos por WhatsApp
+              Contactar por WhatsApp
             </a>
             <Link
               href={VIABILITY_URL}
-              className="flex items-center gap-3 rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-3 text-sm font-semibold text-[#07111d] hover:border-[#c88b25] transition"
+              className="flex items-center gap-3 rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-3 text-sm font-semibold text-[#07111d] transition hover:border-[#c88b25]"
             >
               <HelpCircle className="h-4 w-4 shrink-0" />
               Comprobar viabilidad
             </Link>
             <Link
               href={PORTAL_URL}
-              className="flex items-center gap-3 rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-3 text-sm font-semibold text-[#07111d] hover:border-[#c88b25] transition"
+              className="flex items-center gap-3 rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-3 text-sm font-semibold text-[#07111d] transition hover:border-[#c88b25]"
             >
               <Shield className="h-4 w-4 shrink-0" />
-              Acceder al Panel Cliente
+              Acceder al Espacio Cliente
             </Link>
             <a
               href={CAL_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 rounded-xl border border-[#D4A017] bg-[#D4A017]/10 px-4 py-3 text-sm font-semibold text-[#07111d] hover:bg-[#D4A017]/20 transition"
+              className="flex items-center gap-3 rounded-xl border border-[#D4A017] bg-[#D4A017]/10 px-4 py-3 text-sm font-semibold text-[#07111d] transition hover:bg-[#D4A017]/20"
             >
               <Phone className="h-4 w-4 shrink-0" />
-              Reservar llamada de 15 minutos
+              Reservar llamada
             </a>
           </div>
         </section>
 
+        <p className="text-center text-xs text-[#8899aa]">Versión de política: septiembre 2026 · EXPERT · Kia AI Assistant</p>
       </div>
     </div>
   );
 }
-
-// ── Internal layout components ────────────────────────────────────────────────
 
 function Section({ icon: Icon, title, color, children }: {
   icon: React.ElementType;
@@ -232,7 +232,7 @@ function Section({ icon: Icon, title, color, children }: {
 }) {
   return (
     <section>
-      <div className="flex items-center gap-2 mb-4">
+      <div className="mb-4 flex items-center gap-2">
         <Icon className={`h-5 w-5 shrink-0 ${color}`} />
         <h2 className="font-serif text-xl font-bold text-[#07111d]">{title}</h2>
       </div>
@@ -243,13 +243,9 @@ function Section({ icon: Icon, title, color, children }: {
 
 function InfoCard({ color, children }: { color: 'red' | 'amber' | 'blue'; children: React.ReactNode }) {
   const styles = {
-    red:   'border-red-200 bg-red-50',
+    red: 'border-red-200 bg-red-50',
     amber: 'border-amber-200 bg-amber-50',
-    blue:  'border-blue-100 bg-blue-50',
+    blue: 'border-blue-100 bg-blue-50',
   };
-  return (
-    <div className={`rounded-xl border p-4 ${styles[color]}`}>
-      {children}
-    </div>
-  );
+  return <div className={`rounded-xl border p-4 ${styles[color]}`}>{children}</div>;
 }

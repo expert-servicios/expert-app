@@ -648,6 +648,28 @@ export async function syncOrderToHolded(params: {
   localEntity?: string;
   source?: string;
 }): Promise<HoldedSyncResult> {
+  const automatic = params.source !== 'manual';
+  const createInvoices = process.env.HOLDED_CREATE_INVOICES_FROM_STRIPE === 'true';
+  let resolvedAmountEur = params.amountEur;
+
+  // Orders are the accounting boundary for one-time services. In particular,
+  // catalog orders can contain client disbursements (suplidos) collected by
+  // Stripe but excluded from professional revenue. Always prefer the amount
+  // already persisted on the order after database normalization.
+  if ((params.localEntity ?? 'orders') === 'orders' && params.orderId) {
+    const admin = getSupabaseAdmin();
+    const { data: order, error: orderError } = await admin
+      .from('orders')
+      .select('amount_eur')
+      .eq('id', params.orderId)
+      .maybeSingle();
+    if (orderError) {
+      return { contactId: null, invoiceId: null, syncEventId: null, error: `Could not resolve order amount: ${orderError.message}` };
+    }
+    const persistedAmount = Number(order?.amount_eur);
+    if (Number.isFinite(persistedAmount) && persistedAmount > 0) resolvedAmountEur = persistedAmount;
+  }
+
   const syncEventId = await createSyncEvent({
     direction: 'to_external',
     operation: 'sync_order_invoice',
@@ -657,8 +679,10 @@ export async function syncOrderToHolded(params: {
     requestPayload: {
       clientEmail: params.clientEmail,
       description: params.description,
-      amountEur: params.amountEur,
-      orderId: params.orderId
+      callerAmountEur: params.amountEur,
+      resolvedAmountEur,
+      orderId: params.orderId,
+      source: params.source ?? 'automatic'
     }
   });
 
@@ -666,6 +690,20 @@ export async function syncOrderToHolded(params: {
     const error = 'HOLDED_API_KEY not set';
     await updateSyncEvent(syncEventId, { status: 'skipped', error });
     return { contactId: null, invoiceId: null, syncEventId, error };
+  }
+
+  if (automatic && !createInvoices) {
+    await updateSyncEvent(syncEventId, {
+      status: 'skipped',
+      responsePayload: {
+        contactId: null,
+        invoiceId: null,
+        reason: 'HOLDED_CREATE_INVOICES_FROM_STRIPE=false',
+        callerAmountEur: params.amountEur,
+        resolvedAmountEur
+      }
+    });
+    return { contactId: null, invoiceId: null, syncEventId };
   }
 
   try {
@@ -678,14 +716,14 @@ export async function syncOrderToHolded(params: {
     const invoiceId = await createInvoice({
       contactId,
       description: params.description,
-      amountEur: params.amountEur,
+      amountEur: resolvedAmountEur,
       reference: params.orderId
     });
 
     await updateSyncEvent(syncEventId, {
       status: 'success',
       externalId: invoiceId,
-      responsePayload: { contactId, invoiceId }
+      responsePayload: { contactId, invoiceId, callerAmountEur: params.amountEur, resolvedAmountEur }
     });
 
     return { contactId, invoiceId, syncEventId };

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ShoppingBag, Trash2, ArrowRight, ArrowLeft, Plus } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
+import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartDisbursements, useCart } from '@/contexts/CartContext';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { QuickProfileGate } from '@/components/cart/QuickProfileGate';
 
@@ -48,6 +48,9 @@ export default function CarritoPage() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);
+  const [disbursementMandateAccepted, setDisbursementMandateAccepted] = useState(false);
+  const hasDisbursements = cartContainsDisbursements(items);
+  const disbursements = collectCartDisbursements(items);
 
   const goToCheckoutUrl = (url: string) => {
     clearCart();
@@ -56,6 +59,10 @@ export default function CarritoPage() {
 
   const handleCheckout = async () => {
     if (items.length === 0) return;
+    if (hasDisbursements && !disbursementMandateAccepted) {
+      setError('Debes aceptar expresamente el mandato de suplido antes de continuar.');
+      return;
+    }
     setLoading(true);
     setError(null);
     setNeedsProfile(false);
@@ -63,7 +70,7 @@ export default function CarritoPage() {
       const res  = await fetch('/api/services/checkout', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({ priceIds: items.map(i => i.priceId) }),
+        body   : JSON.stringify(buildCartCheckoutPayload(items, disbursementMandateAccepted)),
       });
       const data = await res.json() as { url?: string; error?: string; requiresAuth?: boolean; code?: string };
       if (res.status === 401 || data.requiresAuth) {
@@ -145,6 +152,11 @@ export default function CarritoPage() {
                         {item.name}
                       </Link>
                       <p className="mt-1 text-sm font-bold text-[#D4A017]">{item.displayPrice}</p>
+                      {item.disbursementNotice && (
+                        <p className="mt-2 rounded-lg border border-[#D4A017]/25 bg-[#F8F6F1] px-3 py-2 text-xs leading-5 text-[#23364D]/70">
+                          {item.disbursementNotice}
+                        </p>
+                      )}
                     </div>
                     <button
                       type="button"
@@ -211,6 +223,27 @@ export default function CarritoPage() {
                     </div>
                   ))}
                 </div>
+                {hasDisbursements && (
+                  <>
+                    <div className="rounded-xl border border-[#D4A017]/25 bg-[#F8F6F1] px-4 py-3 text-xs leading-5 text-[#23364D]/70">
+                      Este pedido incluye una tasa oficial obligatoria como suplido. Se cobra junto con el servicio para pagarla en nombre y por cuenta del cliente, pero queda separada de los honorarios profesionales.
+                    </div>
+                    <label className="flex items-start gap-2.5 rounded-xl border border-[#D4A017]/30 bg-[#F8F6F1] p-3 text-xs leading-5 text-[#23364D]">
+                      <input
+                        type="checkbox"
+                        checked={disbursementMandateAccepted}
+                        onChange={(event) => {
+                          setDisbursementMandateAccepted(event.target.checked);
+                          if (event.target.checked) setError(null);
+                        }}
+                        className="mt-1 h-4 w-4 shrink-0 accent-[#D4A017]"
+                      />
+                      <span>
+                        Confirmo que autorizo a EXPERT / Ksenia Ilicheva a abonar la tasa oficial indicada en nombre y por cuenta del cliente. Entiendo que este importe es un suplido, se cobra por el importe exacto y no forma parte de los honorarios profesionales.
+                      </span>
+                    </label>
+                  </>
+                )}
                 <div className="border-t border-[#D4A017]/20 pt-3 text-xs text-[#23364D]/60 leading-relaxed">
                   Precios sin IVA. El total exacto con IVA se calcula y confirma en la pasarela de pago Stripe.
                 </div>
@@ -220,13 +253,15 @@ export default function CarritoPage() {
                 {needsProfile ? (
                   <QuickProfileGate
                     priceIds={items.map(i => i.priceId)}
+                    disbursements={disbursements}
+                    disbursementMandateAccepted={disbursementMandateAccepted}
                     onCheckoutUrl={goToCheckoutUrl}
                   />
                 ) : (
                   <button
                     type="button"
                     onClick={handleCheckout}
-                    disabled={loading}
+                    disabled={loading || (hasDisbursements && !disbursementMandateAccepted)}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4A017] py-3 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
                   >
                     <ArrowRight className="h-4 w-4" />

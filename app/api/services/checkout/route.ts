@@ -2,19 +2,36 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getStripeClient } from '@/lib/integrations/stripe';
 import {
+  getRequiredServiceDisbursementKeys,
   getServiceCheckoutByPriceId,
   getServiceCheckoutLineItem,
   getServiceCheckoutMetadata,
+  getServiceDisbursementByKey,
+  getServiceDisbursementCheckoutLineItem,
+  validateRequestedServiceDisbursements,
 } from '@/lib/integrations/service-checkout';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { isCompanyBillingReady, missingCompanyBillingFields } from '@/lib/companies/billing-readiness';
+import { resolveServiceBillingScope } from '@/lib/payments/service-billing-scope';
+import { resolveServiceCheckoutLocale, type CheckoutLocale } from '@/lib/payments/service-checkout-locale';
+
+const RU_NACIONALIDAD_PATH = '/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii';
+const NACIONALIDAD_MENOR_SLUG = 'nacionalidad-espanola-menor-nacido-en-espana';
 
 const checkoutSchema = z.object({
-  priceId : z.string().min(1).optional(),
-  priceIds: z.array(z.string().min(1)).min(1).max(10).optional(),
-  companyId: z.string().uuid().optional(),
+  priceId                    : z.string().min(1).optional(),
+  priceIds                   : z.array(z.string().min(1)).min(1).max(10).optional(),
+  companyId                  : z.string().uuid().optional(),
+  locale                     : z.enum(['es', 'ru']).optional().default('es'),
+  disbursements              : z.array(z.string().min(1)).max(5).optional(),
+  disbursementMandateAccepted: z.boolean().optional(),
 }).refine(d => d.priceId ?? d.priceIds, { message: 'priceId or priceIds is required' });
+
+function serviceReturnPath(service: { slug: string; category: string }, locale: CheckoutLocale) {
+  if (locale === 'ru' && service.slug === NACIONALIDAD_MENOR_SLUG) return RU_NACIONALIDAD_PATH;
+  return `/servicios/${service.category}/${service.slug}`;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +44,7 @@ export async function POST(request: NextRequest) {
     const admin = getSupabaseAdmin();
     const { data: profile, error: profileError } = await admin
       .from('profiles')
-      .select('id,full_name,phone,email,profile_completed,active_company_id')
+      .select('id,full_name,phone,email,profile_completed,active_company_id,client_type,stripe_customer_id')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -44,69 +61,138 @@ export async function POST(request: NextRequest) {
     }
 
     const input = parseResult.data;
-    const companyId = input.companyId ?? profile.active_company_id ?? null;
-    if (!companyId) {
-      return NextResponse.json({ error: 'Selecciona o crea la entidad fiscal que va a contratar el servicio.', code: 'company_required' }, { status: 409 });
-    }
-
-    const { data: membership, error: membershipError } = await admin
-      .from('profile_companies')
-      .select('role')
-      .eq('profile_id', user.id)
-      .eq('company_id', companyId)
-      .maybeSingle();
-    if (membershipError) return NextResponse.json({ error: 'No se pudo validar la entidad seleccionada.' }, { status: 500 });
-    if (!membership) return NextResponse.json({ error: 'La entidad seleccionada no pertenece al usuario.', code: 'company_forbidden' }, { status: 403 });
-
-    const { data: company, error: companyError } = await admin
-      .from('companies')
-      .select('stripe_customer_id,razon_social,cif_nif,direccion,ciudad,codigo_postal,pais')
-      .eq('id', companyId)
-      .maybeSingle();
-    if (companyError || !company) return NextResponse.json({ error: 'No se pudo resolver la entidad seleccionada.' }, { status: 500 });
-
-    if (!isCompanyBillingReady(company)) {
-      return NextResponse.json({
-        error: 'Completa los datos fiscales de la entidad seleccionada antes de contratar.',
-        code: 'billing_required',
-        companyId,
-        missingFields: missingCompanyBillingFields(company),
-      }, { status: 409 });
-    }
-
     const rawIds = input.priceIds ?? (input.priceId ? [input.priceId] : []);
     const checkoutServices = rawIds.map(id => {
       const svc = getServiceCheckoutByPriceId(id);
       if (!svc) throw Object.assign(new Error(`Servicio no válido: ${id}`), { _isUserError: true });
       return svc;
     });
+    const locale = resolveServiceCheckoutLocale(
+      checkoutServices.map(service => service.slug),
+      input.locale,
+    );
+
+    const billingResolution = resolveServiceBillingScope({
+      serviceSlugs: checkoutServices.map(service => service.slug),
+      explicitCompanyId: input.companyId,
+      activeCompanyId: profile.active_company_id,
+      clientType: profile.client_type,
+    });
+
+    if (billingResolution.scope === 'mixed_billing_scope') {
+      return NextResponse.json({
+        error: 'Este carrito mezcla un trámite personal con servicios de otra entidad fiscal. Tramítalos en pedidos separados.',
+        code: 'mixed_billing_scope',
+      }, { status: 409 });
+    }
+
+    if (billingResolution.scope === 'company_required') {
+      return NextResponse.json({
+        error: 'Selecciona o crea la entidad fiscal que va a contratar el servicio.',
+        code: 'company_required',
+      }, { status: 409 });
+    }
+
+    const companyId = billingResolution.companyId;
+    let stripeCustomerId = profile.stripe_customer_id ?? null;
+
+    if (billingResolution.scope === 'company') {
+      const { data: membership, error: membershipError } = await admin
+        .from('profile_companies')
+        .select('role')
+        .eq('profile_id', user.id)
+        .eq('company_id', companyId)
+        .maybeSingle();
+      if (membershipError) return NextResponse.json({ error: 'No se pudo validar la entidad seleccionada.' }, { status: 500 });
+      if (!membership) return NextResponse.json({ error: 'La entidad seleccionada no pertenece al usuario.', code: 'company_forbidden' }, { status: 403 });
+
+      const { data: company, error: companyError } = await admin
+        .from('companies')
+        .select('stripe_customer_id,razon_social,cif_nif,direccion,ciudad,codigo_postal,pais')
+        .eq('id', companyId)
+        .maybeSingle();
+      if (companyError || !company) return NextResponse.json({ error: 'No se pudo resolver la entidad seleccionada.' }, { status: 500 });
+
+      if (!isCompanyBillingReady(company)) {
+        return NextResponse.json({
+          error: 'Completa los datos fiscales de la entidad seleccionada antes de contratar.',
+          code: 'billing_required',
+          companyId,
+          missingFields: missingCompanyBillingFields(company),
+        }, { status: 409 });
+      }
+
+      stripeCustomerId = company.stripe_customer_id ?? null;
+    }
+
+    // Required disbursements are resolved exclusively from the server-side
+    // service registry. A client may echo the expected keys, but cannot remove
+    // a mandatory fee or attach a fee that does not belong to the selected service.
+    const requiredDisbursementKeys = getRequiredServiceDisbursementKeys(checkoutServices);
+    const requestedDisbursementKeys = [...new Set(input.disbursements ?? [])];
+    const requestedValidation = validateRequestedServiceDisbursements(
+      requiredDisbursementKeys,
+      requestedDisbursementKeys,
+    );
+    if (!requestedValidation.valid) {
+      return NextResponse.json({
+        error: `Suplido no aplicable al servicio seleccionado: ${requestedValidation.unexpectedKey}`,
+        code: 'disbursement_not_applicable',
+      }, { status: 400 });
+    }
+
+    const checkoutDisbursements = requiredDisbursementKeys.map(key => {
+      const disbursement = getServiceDisbursementByKey(key);
+      if (!disbursement) throw new Error(`Configuración de suplido no encontrada: ${key}`);
+      return disbursement;
+    });
+
+    if (checkoutDisbursements.length > 0 && input.disbursementMandateAccepted !== true) {
+      return NextResponse.json({
+        error: 'Para incluir suplidos debes aceptar el mandato expreso de pago en nombre y por cuenta del cliente.',
+        code : 'disbursement_mandate_required',
+      }, { status: 409 });
+    }
 
     const stripe = getStripeClient();
     const appUrl = getPublicAppUrl();
+    const primaryReturnPath = serviceReturnPath(checkoutServices[0], locale);
     const cancelUrl = checkoutServices.length === 1
-      ? `${appUrl}/servicios/${checkoutServices[0].category}/${checkoutServices[0].slug}`
-      : `${appUrl}/carrito`;
-    const stripeCustomerId = company.stripe_customer_id ?? null;
+      ? `${appUrl}${primaryReturnPath}`
+      : locale === 'ru'
+        ? `${appUrl}${primaryReturnPath}`
+        : `${appUrl}/carrito`;
+    const successUrl = locale === 'ru'
+      ? `${appUrl}/ru/spasibo/oplata?service=${checkoutServices[0].slug}`
+      : `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}`;
     const checkoutMetadata = {
-      ...getServiceCheckoutMetadata(checkoutServices),
+      ...getServiceCheckoutMetadata(checkoutServices, checkoutDisbursements),
       user_id: user.id,
-      company_id: companyId,
+      billing_scope: billingResolution.scope,
+      checkout_locale: locale,
+      ...(companyId ? { company_id: companyId } : {}),
+      disbursement_mandate_accepted: checkoutDisbursements.length > 0 ? 'true' : 'false',
     };
+    const shouldCollectTaxId = billingResolution.scope === 'company';
 
     const session = await stripe.checkout.sessions.create({
       mode                       : 'payment',
+      payment_method_types       : ['card'],
       automatic_tax              : { enabled: true },
       billing_address_collection : 'required',
-      tax_id_collection          : { enabled: true, required: 'if_supported' },
+      ...(shouldCollectTaxId ? { tax_id_collection: { enabled: true, required: 'if_supported' as const } } : {}),
       client_reference_id        : user.id,
       customer                   : stripeCustomerId ?? undefined,
       customer_email             : stripeCustomerId ? undefined : user.email,
       ...(stripeCustomerId ? { customer_update: { address: 'auto' as const, name: 'auto' as const } } : {}),
-      line_items                 : checkoutServices.map(getServiceCheckoutLineItem),
-      success_url                : `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}`,
+      line_items                 : [
+        ...checkoutServices.map(getServiceCheckoutLineItem),
+        ...checkoutDisbursements.map(getServiceDisbursementCheckoutLineItem),
+      ],
+      success_url                : successUrl,
       cancel_url                 : cancelUrl,
       metadata                   : checkoutMetadata,
-      locale                     : 'es',
+      locale,
     });
 
     const { error: persistError } = await admin.from('checkout_sessions').insert({
@@ -118,6 +204,13 @@ export async function POST(request: NextRequest) {
         product_type: checkoutMetadata.product_type ?? (checkoutServices.length > 1 ? 'cart' : 'service'),
         service_slug: checkoutMetadata.service_slug ?? null,
         service_slugs: checkoutMetadata.service_slugs ?? null,
+        billing_scope: checkoutMetadata.billing_scope,
+        checkout_locale: checkoutMetadata.checkout_locale,
+        disbursement_keys: checkoutMetadata.disbursement_keys ?? null,
+        disbursement_total_cents: checkoutMetadata.disbursement_total_cents ?? '0',
+        revenue_amount_cents: checkoutMetadata.revenue_amount_cents ?? '0',
+        checkout_total_net_cents: checkoutMetadata.checkout_total_net_cents ?? '0',
+        disbursement_mandate_accepted: checkoutMetadata.disbursement_mandate_accepted,
       },
     });
 
@@ -129,7 +222,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No se pudo registrar de forma segura la sesión de pago.' }, { status: 500 });
     }
 
-    return NextResponse.json({ url: session.url, sessionId: session.id, companyId });
+    return NextResponse.json({
+      url: session.url,
+      sessionId: session.id,
+      companyId,
+      billingScope: billingResolution.scope,
+      locale,
+    });
   } catch (err: unknown) {
     const e = err as { _isUserError?: boolean; type?: string; code?: string; message?: string; statusCode?: number; raw?: unknown };
     if (e._isUserError) return NextResponse.json({ error: e.message }, { status: 400 });

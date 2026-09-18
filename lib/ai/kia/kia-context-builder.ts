@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { intersectHoldedReadPermissions, normalizeDetectedHoldedPermissions, type HoldedPermissions } from '@/lib/integrations/holded/holded-permissions';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { getService } from '@/lib/services/service-registry';
 import { resolveCompanyCommercialCoverage, type CompanyCoverageSource } from '@/lib/subscriptions/company-commercial-coverage';
@@ -52,7 +53,10 @@ export interface KiaContext {
     coveragePrimaryCompanyName: string | null;
     coverageScope: string | null;
     holdedConnected: boolean;
-    holdedPermissions: Record<string, boolean>;
+    /** Backwards-compatible alias for the effective/enabled permission map. */
+    holdedPermissions: HoldedPermissions;
+    holdedPermissionsDetected: HoldedPermissions;
+    holdedPermissionsEnabled: HoldedPermissions;
   } | null;
   service: {
     slug: string | null;
@@ -236,14 +240,43 @@ async function loadCompany(
 
   const [{ data: company }, { data: integrations }, coverage] = await Promise.all([
     admin.from('companies').select('id, razon_social, nombre_comercial, cif_nif').eq('id', resolvedCompanyId).maybeSingle(),
-    admin.from('client_integrations').select('status, permissions_detected').eq('company_id', resolvedCompanyId).eq('provider', 'holded').order('created_at', { ascending: false }).limit(1),
+    admin.from('client_integrations')
+      .select('status, permissions_detected, permissions_enabled')
+      .eq('company_id', resolvedCompanyId)
+      .eq('provider', 'holded')
+      .neq('status', 'revoked')
+      .order('created_at', { ascending: false })
+      .limit(1),
     clientId
       ? resolveCompanyCommercialCoverage(admin, clientId, resolvedCompanyId)
       : Promise.resolve(null),
   ]);
 
   if (!company) return null;
-  const integration = integrations?.[0] as { status?: string; permissions_detected?: Record<string, boolean> } | undefined;
+  const integration = integrations?.[0] as {
+    status?: string;
+    permissions_detected?: Record<string, boolean>;
+    permissions_enabled?: Record<string, boolean>;
+  } | undefined;
+  const connected = integration?.status === 'active';
+  const detected = connected
+    ? normalizeDetectedHoldedPermissions(integration?.permissions_detected ?? {})
+    : normalizeDetectedHoldedPermissions({});
+  const legacyRequested = {
+    ...detected,
+    writeInbox: false,
+    laborEmployeesRead: false,
+    laborPayrollsRead: false,
+    laborEmployeesWrite: false,
+    laborPayrollsWrite: false,
+  };
+  const enabled = connected
+    ? intersectHoldedReadPermissions(
+        detected,
+        integration?.permissions_enabled ?? legacyRequested,
+      )
+    : normalizeDetectedHoldedPermissions({});
+
   return {
     id: resolvedCompanyId,
     name: (company.nombre_comercial ?? company.razon_social ?? null) as string | null,
@@ -254,8 +287,10 @@ async function loadCompany(
     coveragePrimaryCompanyId: coverage?.primaryCompanyId ?? null,
     coveragePrimaryCompanyName: coverage?.primaryCompanyName ?? null,
     coverageScope: coverage?.coverageScope ?? null,
-    holdedConnected: integration?.status === 'active',
-    holdedPermissions: integration?.permissions_detected ?? {},
+    holdedConnected: connected,
+    holdedPermissions: enabled,
+    holdedPermissionsDetected: detected,
+    holdedPermissionsEnabled: enabled,
   };
 }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { caseStatusToVisualState, resolveEffectiveCaseStatus } from '@/lib/cases/case-status';
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,11 +44,30 @@ export async function GET(request: NextRequest) {
       }
 
       return NextResponse.json({
-        cases: caseList.map((c) => ({ ...c, unread_count: unreadMap[c.id] ?? 0 }))
+        cases: caseList.map((c) => {
+          const effectiveStatus = resolveEffectiveCaseStatus(c.status, c.state);
+          return {
+            ...c,
+            effective_status: effectiveStatus,
+            legacy_state: c.state,
+            state: caseStatusToVisualState(effectiveStatus),
+            unread_count: unreadMap[c.id] ?? 0,
+          };
+        })
       });
     }
 
-    return NextResponse.json({ cases: caseList });
+    return NextResponse.json({
+      cases: caseList.map((c) => {
+        const effectiveStatus = resolveEffectiveCaseStatus(c.status, c.state);
+        return {
+          ...c,
+          effective_status: effectiveStatus,
+          legacy_state: c.state,
+          state: caseStatusToVisualState(effectiveStatus),
+        };
+      })
+    });
   } catch (error) {
     console.error('Cases GET error:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });

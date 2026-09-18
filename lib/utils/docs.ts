@@ -97,7 +97,7 @@ Normalmente se revisa y prepara:
 - Tarjeta de residencia anterior, si existe.
 - Resolución inicial de concesión de residencia o protección temporal, si existe.
 - Certificado de empadronamiento familiar o colectivo actualizado.
-- Certificado de guardería o centro infantil, solo si el menor asiste a un centro.
+- Certificado del centro escolar o educativo cuando corresponda por la edad y escolarización del menor.
 
 ## Documentación de los progenitores
 
@@ -107,7 +107,7 @@ También se revisa:
 - NIE/TIE de ambos progenitores por ambas caras.
 - Certificado de empadronamiento familiar, si no se aporta por separado.
 - Datos de contacto: teléfono, correo electrónico y domicilio actual.
-- Firma de ambos progenitores como representantes legales del menor.
+- Intervención, firma o asistencia de los representantes legales según la edad del menor y la patria potestad.
 
 Si solo uno de los progenitores puede firmar, puede ser necesario aportar documentación adicional que justifique representación suficiente.
 
@@ -115,7 +115,7 @@ Si solo uno de los progenitores puede firmar, puede ser necesario aportar docume
 
 La solicitud de nacionalidad española por residencia exige el pago de la tasa administrativa mediante el modelo **790 código 026**.
 
-La tasa administrativa actual indicada para este trámite es de **104,05 €**. Esta tasa se abona aparte de los honorarios profesionales de preparación y presentación del expediente.
+La tasa administrativa actual indicada para este trámite es de **104,05 €**. En el servicio EXPERT se cobra junto con los honorarios como **suplido obligatorio**, por su importe exacto, para abonarla en nombre y por cuenta del cliente; queda separada de la base de honorarios.
 
 El justificante debe cumplimentarse correctamente a nombre del menor solicitante.
 
@@ -125,7 +125,7 @@ El justificante debe cumplimentarse correctamente a nombre del menor solicitante
 2. Comprobación del plazo de 1 año de residencia legal.
 3. Revisión de documentación del menor y progenitores.
 4. Preparación del expediente.
-5. Pago de la tasa administrativa.
+5. Pago por EXPERT de la tasa 790-026 como suplido, una vez validado el expediente.
 6. Presentación telemática ante el Ministerio de Justicia, cuando proceda.
 7. Entrega del justificante y número de expediente.
 8. Seguimiento básico inicial.
@@ -161,11 +161,15 @@ No basta con la residencia legal de los padres. Hay que verificar la residencia 
 
 ### ¿Hace falta autorización previa del Registro Civil?
 
-Si ambos progenitores están de acuerdo y firman la solicitud, en los supuestos ordinarios no debería exigirse autorización previa del Encargado del Registro Civil. Si hay discrepancia o firma solo un progenitor sin justificación suficiente, hay que estudiar el caso.
+Para menores de 14 años, tras la Ley 8/2021 no se exige en el supuesto ordinario la autorización previa del Encargado del Registro Civil cuando existe acuerdo entre los representantes legales. Si no existe acuerdo entre los progenitores, debe revisarse la necesidad de aportar la resolución del expediente de jurisdicción voluntaria correspondiente.
+
+### ¿Quién firma según la edad del menor?
+
+En menores de 14 años actúan sus representantes legales. Entre 14 y 17 años, el menor formula la solicitud asistido por sus representantes legales. La documentación concreta depende de la patria potestad y de la situación familiar.
 
 ### ¿El menor tiene que hacer examen CCSE o DELE?
 
-No. En menores de edad no se exigen las pruebas de adultos en los términos ordinarios. La integración se valora conforme a la edad y circunstancias del menor.
+No. Los menores de edad están exentos de la prueba CCSE y los menores de 18 años están exentos del DELE A2 a estos efectos. La integración del menor se acredita mediante la documentación que corresponda a su edad y escolarización.
     `
   },
   {

@@ -29,10 +29,18 @@ describe('locale configuration', () => {
     expect(normalizeLocale(undefined)).toBe('es');
   });
 
-  it('keeps RU and EN unpublished and non-indexable by default', () => {
+  it('keeps Spanish and Russian visible by default while Russian remains non-indexable', () => {
     expect(isLocalePubliclyEnabled('es')).toBe(true);
-    expect(isLocalePubliclyEnabled('ru')).toBe(false);
+    expect(isLocalePubliclyEnabled('ru')).toBe(true);
     expect(isLocalePubliclyEnabled('en')).toBe(false);
+    expect(isLocaleIndexingEnabled('ru')).toBe(false);
+    expect(shouldIndexLocale('ru')).toBe(false);
+  });
+
+  it('allows explicitly disabling Russian visibility', () => {
+    vi.stubEnv('NEXT_PUBLIC_RU_ENABLED', 'false');
+
+    expect(isLocalePubliclyEnabled('ru')).toBe(false);
     expect(isLocaleIndexingEnabled('ru')).toBe(false);
     expect(shouldIndexLocale('ru')).toBe(false);
   });

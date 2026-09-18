@@ -186,6 +186,144 @@ export function resolveHoldedIntegrationGuidance(input: {
   };
 }
 
+export function resolveProfileGuidance(input: {
+  saving: boolean;
+  hasError: boolean;
+  hasRecentSuccess: boolean;
+  profileCompleted: boolean;
+  billingReady: boolean;
+  habitualAddressReady: boolean;
+  isCompany: boolean;
+}): KiaSurfaceGuidance {
+  if (input.hasError) {
+    return {
+      state: 'aviso',
+      title: 'Necesito que revises el aviso del formulario',
+      message: 'Alguna operación del perfil no se ha completado. Corrige el dato indicado y vuelve a intentarlo antes de continuar.',
+    };
+  }
+
+  if (input.saving) {
+    return {
+      state: 'pensando',
+      title: 'Estoy guardando tus cambios',
+      message: 'Mantengo el formulario en curso hasta recibir confirmación. No doy por actualizados los datos antes de tiempo.',
+    };
+  }
+
+  if (!input.billingReady) {
+    return {
+      state: 'ayuda',
+      title: 'Completa los datos de facturación',
+      message: 'EXPERT necesita estos datos antes de contratar servicios o suscripciones. KIA solo utiliza el indicador de preparación, no interpreta el contenido de los campos.',
+    };
+  }
+
+  if (!input.isCompany && !input.habitualAddressReady) {
+    return {
+      state: 'explicacion',
+      title: 'Falta completar el domicilio habitual',
+      message: 'Para una persona física este bloque puede ser necesario en trámites fiscales o de extranjería. Completa la sección indicada antes de dar el perfil por preparado.',
+    };
+  }
+
+  if (!input.profileCompleted) {
+    return {
+      state: 'ayuda',
+      title: 'Revisa los datos básicos del perfil',
+      message: 'Los datos fiscales ya están preparados, pero el perfil todavía no figura como completo. Revisa las secciones pendientes que muestra esta pantalla.',
+    };
+  }
+
+  if (input.hasRecentSuccess) {
+    return {
+      state: 'exito',
+      title: 'Los cambios se han guardado correctamente',
+      message: 'La operación ha sido confirmada por la propia pantalla. Puedes seguir editando o volver al panel cuando lo necesites.',
+    };
+  }
+
+  return {
+    state: 'confianza',
+    title: 'Tu perfil está preparado',
+    message: 'Los indicadores actuales confirman que el perfil y los datos necesarios están completos para continuar con los servicios compatibles.',
+  };
+}
+
+export function resolvePostPurchaseGuidance(input: {
+  hasActiveSubscription: boolean;
+  onboardingMeetingScheduled: boolean;
+  holdedConnected: boolean;
+}): KiaSurfaceGuidance {
+  if (!input.hasActiveSubscription) {
+    return {
+      state: 'pensando',
+      title: 'Estoy confirmando la activación de tu suscripción',
+      message: 'La compra ya ha terminado, pero espero la confirmación del sistema antes de mostrar los siguientes pasos. No doy la suscripción por activa antes de tiempo.',
+    };
+  }
+
+  if (!input.onboardingMeetingScheduled) {
+    return {
+      state: 'ayuda',
+      title: 'Tu plan está activo: agenda el onboarding',
+      message: 'El siguiente paso confirmado es reservar la sesión de onboarding. Después podrás completar la preparación técnica antes de la reunión.',
+    };
+  }
+
+  if (!input.holdedConnected) {
+    return {
+      state: 'explicacion',
+      title: 'La reunión está reservada; ahora prepara Holded',
+      message: 'Conecta Holded desde el área segura para que EXPERT pueda comprobar la integración antes de cerrar el alta. No compartas credenciales por chat, email o WhatsApp.',
+    };
+  }
+
+  return {
+    state: 'confianza',
+    title: 'La preparación previa está completa',
+    message: 'La reunión figura reservada y Holded aparece conectado. El alta todavía se cerrará después de la sesión y de la validación del equipo EXPERT.',
+  };
+}
+
+export function resolveFiscalCalendarGuidance(input: {
+  obligationCount: number;
+  pendingCount: number;
+  overdueCount: number;
+}): KiaSurfaceGuidance {
+  if (input.overdueCount > 0) {
+    return {
+      state: 'alerta_fiscal',
+      title: input.overdueCount === 1 ? 'Hay 1 plazo vencido en tu calendario' : `Hay ${input.overdueCount} plazos vencidos en tu calendario`,
+      message: 'Revisa las obligaciones que siguen marcadas como pendientes y cuya fecha límite ya ha pasado. KIA no interpreta este estado como deuda, sanción ni presentación omitida.',
+      detail: `${input.pendingCount} pendiente${input.pendingCount === 1 ? '' : 's'} · ${input.overdueCount} vencida${input.overdueCount === 1 ? '' : 's'}`,
+    };
+  }
+
+  if (input.pendingCount > 0) {
+    return {
+      state: 'seguimiento',
+      title: input.pendingCount === 1 ? 'Tienes 1 obligación pendiente' : `Tienes ${input.pendingCount} obligaciones pendientes`,
+      message: 'Consulta las fechas del calendario y el estado de cada obligación. Esta guía utiliza únicamente los registros que ya aparecen en tu calendario fiscal.',
+      detail: `${input.pendingCount} pendiente${input.pendingCount === 1 ? '' : 's'}`,
+    };
+  }
+
+  if (input.obligationCount > 0) {
+    return {
+      state: 'confianza',
+      title: 'No hay obligaciones pendientes en este calendario',
+      message: 'Los registros visibles no tienen estado pendiente. Puedes revisar el histórico y las fechas cuando lo necesites.',
+    };
+  }
+
+  return {
+    state: 'ayuda',
+    title: 'Todavía no hay obligaciones cargadas en este calendario',
+    message: 'Cuando existan obligaciones fiscales visibles para este ejercicio, KIA podrá ayudarte a identificar cuáles siguen pendientes o han superado su fecha límite.',
+  };
+}
+
 export type KiaOnboardingStep = 'profile' | 'company' | 'done';
 
 export function resolveOnboardingGuidance(input: {

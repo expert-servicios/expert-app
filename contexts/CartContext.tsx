@@ -2,12 +2,17 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 
+export type CartLocale = 'es' | 'ru';
+
 export interface CartItem {
   priceId      : string;
   name         : string;
   displayPrice : string;
   slug         : string;
   category     : string;
+  locale?      : CartLocale;
+  disbursements?: string[];
+  disbursementNotice?: string;
 }
 
 interface CartContextValue {
@@ -23,6 +28,30 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = 'expert_cart_v1';
+
+export function collectCartDisbursements(items: CartItem[]) {
+  return [...new Set(items.flatMap(item => item.disbursements ?? []))];
+}
+
+export function resolveCartLocale(items: CartItem[]): CartLocale {
+  return items.length > 0 && items.every(item => item.locale === 'ru') ? 'ru' : 'es';
+}
+
+export function buildCartCheckoutPayload(items: CartItem[], disbursementMandateAccepted = false) {
+  const disbursements = collectCartDisbursements(items);
+
+  return {
+    priceIds: items.map(i => i.priceId),
+    locale: resolveCartLocale(items),
+    ...(disbursements.length > 0
+      ? { disbursements, disbursementMandateAccepted }
+      : {}),
+  };
+}
+
+export function cartContainsDisbursements(items: CartItem[]) {
+  return collectCartDisbursements(items).length > 0;
+}
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items,    setItems]    = useState<CartItem[]>([]);
