@@ -3,7 +3,7 @@
 Fecha: 2026-09-17
 Tracking: #192
 Dependencias completadas: #172, #174, #177, #179, #187, #189
-Implementación actual: PR #274 + Sprint 5C + Sprint 5D en ramas encadenadas
+Implementación consolidada: PR #280 (Sprint 5A–5D) + Sprint 5E en rama de perfil
 
 ## Objetivo
 
@@ -106,8 +106,6 @@ Mapping implementado:
 
 ### Precedencia 5D
 
-La regla visual es fail-safe:
-
 ```text
 error
   > operación en curso
@@ -117,20 +115,47 @@ error
 
 Por tanto, KIA nunca muestra `confianza` si la propia UI está señalando un error, ni anticipa una conexión activa mientras una comprobación sigue en curso.
 
-### Separación respecto a #272
+### Separación respecto al hardening Holded
 
-Sprint 5D no modifica:
+Sprint 5D no modifica consulta/selección de integración, `client_integrations`, permisos, consentimiento, secretos, company scoping ni endpoints. El hardening de estos límites se consolida por separado en PR #281, que sustituye al antiguo #272.
 
-- consulta o selección de la integración;
-- `client_integrations`;
-- permisos detectados o habilitados;
-- consentimiento;
-- secretos o API keys;
-- company scoping;
-- endpoints de conexión/desconexión;
-- capacidad de lectura/escritura de Holded.
+## Sprint 5E — formulario de perfil
 
-El hardening de esos límites permanece exclusivamente en PR #272. La capa visual sólo observa el resultado que ya expone la integración existente.
+Superficie: `components/profile/ProfileForm.tsx` dentro de `/dashboard/perfil`.
+
+KIA consume exclusivamente señales booleanas ya existentes o derivadas de la UI:
+
+- operación de guardado en curso;
+- existencia de un error ya mostrado;
+- existencia de una operación confirmada correctamente;
+- `profile_completed`;
+- `billing_ready`;
+- `habitual_address_ready`;
+- tipo de cliente únicamente para decidir si el domicilio habitual aplica a persona física.
+
+KIA no recibe nombre, teléfono, WhatsApp, NIF/CIF, razón social, dirección, email, contraseña ni ningún valor libre de los campos.
+
+Mapping implementado:
+
+- error de cualquiera de las operaciones del perfil -> `aviso`;
+- guardado/cambio de email/reset en curso -> `pensando`;
+- facturación no preparada -> `ayuda`;
+- persona física sin domicilio habitual preparado -> `explicacion`;
+- perfil todavía incompleto -> `ayuda`;
+- guardado confirmado y requisitos completos -> `exito`;
+- perfil completo sin operación reciente -> `confianza`.
+
+### Precedencia 5E
+
+```text
+error
+  > operación en curso
+  > requisitos pendientes
+  > guardado confirmado
+  > perfil preparado
+```
+
+El formulario conserva sus mensajes originales y sus endpoints. La tarjeta KIA no valida ni transforma los datos introducidos.
 
 ## Accesibilidad
 
@@ -149,18 +174,14 @@ El hardening de esos límites permanece exclusivamente en PR #272. La capa visua
 - no llamadas API nuevas desde `KiaGuidanceCard`;
 - no se utiliza texto libre para concluir riesgo, éxito o cumplimiento;
 - la capa visual nunca ejecuta acciones externas;
-- no se expone ni persiste la API key desde la lógica KIA.
+- no se expone ni persiste la API key desde la lógica KIA;
+- Sprint 5E no envía valores del formulario al resolver KIA.
 
-## Validación
+## Estado de integración
 
-PR #274 (5A/5B):
+PR #280 consolidó y fusionó Sprint 5A–5D en `main` el 2026-09-17. Los drafts #274, #275 y #276 quedaron cerrados por consolidación y no representan pérdida de trabajo.
 
-- CI: success;
-- Vercel `app`: Ready;
-- Vercel `ksenia-expert`: Ready;
-- smoke visual autenticado desktop/móvil: pendiente antes de merge.
-
-Sprint 5C y 5D deben pasar los mismos controles antes de integrarse.
+Sprint 5E parte del `main` consolidado y debe superar los mismos gates: typecheck, lint, tests, previews Vercel y smoke visual autenticado.
 
 ## Criterios de aceptación antes de merge
 
@@ -169,8 +190,10 @@ Sprint 5C y 5D deben pasar los mismos controles antes de integrarse.
 - `/dashboard/onboarding` respeta `error > loading > paso`;
 - `/dashboard/expedientes/[id]` deriva su estado KIA sólo de estado/checklist/contadores autorizados;
 - Holded deriva su estado KIA únicamente de estado de integración y fases locales existentes;
+- Perfil deriva su estado KIA únicamente de flags estructurados y estados de operación;
 - ninguna superficie llama al LLM para seleccionar estado;
 - KIA no modifica permisos, consentimiento ni endpoints Holded;
+- KIA no recibe valores libres del formulario de perfil;
 - los flujos, enlaces, validaciones y CTAs existentes permanecen intactos;
 - typecheck, lint y tests pasan;
 - Vercel previews están Ready;
