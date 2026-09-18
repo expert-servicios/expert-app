@@ -43,6 +43,11 @@ export const metadata: Metadata = {
     locale: 'ru_RU',
     type: 'website',
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Испанское гражданство для ребёнка, родившегося в Испании | EXPERT',
+    description: '302,50 € с IVA + пошлина 790-026 104,05 € как suplido. Итого 406,55 €.',
+  },
 };
 
 const includedItems = [
