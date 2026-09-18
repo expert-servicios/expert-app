@@ -2,7 +2,7 @@ import { services, type Service } from '@/lib/utils/catalog';
 import { ADMIN_CATALOG, type CatalogItem } from '@/lib/utils/admin-catalog';
 import {
   getAliasesForCanonicalService,
-  getChildOffersForCanonicalService,
+  LEGACY_CHILD_OFFER_BINDINGS,
   resolveCanonicalServiceId,
 } from '@/lib/services/commercial-catalog-bindings';
 
@@ -146,11 +146,7 @@ function adminOffer(
 
 export function buildCanonicalShadowCatalog(): CanonicalShadowService[] {
   const childBindingBySource = new Map(
-    ADMIN_CATALOG.flatMap((item) =>
-      getChildOffersForCanonicalService('formacion-holded')
-        .filter((binding) => binding.sourceId === item.id)
-        .map((binding) => [item.id, binding] as const)
-    )
+    LEGACY_CHILD_OFFER_BINDINGS.map((binding) => [binding.sourceId, binding] as const)
   );
 
   const adminByCanonicalService = new Map<string, Array<{ item: CatalogItem; offerCode?: string }>>();
