@@ -121,6 +121,15 @@ async function localizeServicePaymentEmail(input: {
       customerName = typeof profile.full_name === 'string' ? profile.full_name : null;
       customerEmail = typeof profile.email === 'string' ? profile.email : null;
     }
+
+    if (!customerEmail) {
+      const { data: authUser, error: authUserError } = await supabase.auth.admin.getUserById(checkout.user_id);
+      if (authUserError) {
+        console.error('[email] admin auth email lookup failed:', authUserError.message);
+      } else {
+        customerEmail = authUser.user?.email ?? null;
+      }
+    }
   }
 
   const template = russianNationalityPaymentConfirmedAdmin({
@@ -128,6 +137,7 @@ async function localizeServicePaymentEmail(input: {
     customerEmail,
     checkoutSessionId: sessionId,
     orderId: stringMetadata(input.metadata, 'order_id'),
+    caseId: stringMetadata(input.metadata, 'case_id'),
     amounts,
   });
   return { ...template, metadata: localizedMetadata };
