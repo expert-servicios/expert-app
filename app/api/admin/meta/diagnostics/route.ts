@@ -4,6 +4,7 @@ import { getMetaMarketingConfigStatus } from '@/lib/integrations/meta/config';
 import { auditMetaCatalog } from '@/lib/integrations/meta/catalog-audit';
 import { testMetaMarketingConnection } from '@/lib/integrations/meta/client';
 import { auditCommercialCatalogInventory } from '@/lib/services/commercial-catalog-audit';
+import { buildCanonicalShadowCatalog } from '@/lib/services/canonical-commercial-catalog';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -21,11 +22,24 @@ export async function GET(request: NextRequest) {
   const config = getMetaMarketingConfigStatus();
   const catalog = auditMetaCatalog();
   const commercialInventory = auditCommercialCatalogInventory();
+  const canonicalShadow = buildCanonicalShadowCatalog();
+  const canonicalSummary = {
+    services: canonicalShadow.length,
+    servicesWithAliases: canonicalShadow.filter((item) => item.aliases.length > 0).length,
+    servicesWithMultipleOffers: canonicalShadow.filter((item) => item.offers.length > 1).length,
+    servicesWithWarnings: canonicalShadow.filter((item) => item.warnings.length > 0).length,
+    totalOffers: canonicalShadow.reduce((sum, item) => sum + item.offers.length, 0),
+    warningCounts: canonicalShadow.reduce<Record<string, number>>((acc, item) => {
+      for (const warning of item.warnings) acc[warning] = (acc[warning] ?? 0) + 1;
+      return acc;
+    }, {}),
+  };
 
   return NextResponse.json({
     config,
     catalog,
     commercialInventory,
+    canonicalSummary,
     liveTestAvailable: config.enabled && config.configured,
   });
 }
