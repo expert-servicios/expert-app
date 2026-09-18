@@ -39,8 +39,10 @@ describe('Client 360 contextual operations', () => {
 
   it('requires explicit admin-side client authorization before persisting a new key', () => {
     expect(holdedRoute).toContain('consentConfirmed: z.literal(true)');
-    expect(holdedRoute).toContain("consent_version: 'admin-client-360-v1'");
+    expect(holdedRoute).toContain('laborReadAuthorized: z.boolean().default(false)');
+    expect(holdedRoute).toContain("consent_version: 'admin-client-360-v2'");
     expect(holdedPanel).toContain('Confirmo que el cliente ha autorizado la conexión');
+    expect(holdedPanel).toContain('confirmo además que el cliente ha autorizado expresamente la lectura de empleados, contratos, nóminas y registros salariales');
   });
 
   it('encrypts secrets and only exposes the safe last-four identifier', () => {
@@ -62,7 +64,8 @@ describe('Client 360 contextual operations', () => {
 
   it('tests a stored credential server-side without sending it back to the browser', () => {
     expect(holdedRoute).toContain("action: z.literal('test_stored')");
-    expect(holdedRoute).toContain('createHoldedClientFromRawKey(decryptSecret(secret.encrypted_api_key)).testConnection()');
+    expect(holdedRoute).toContain('const rawApiKey = decryptSecret(secret.encrypted_api_key)');
+    expect(holdedRoute).toContain('result = await detectAllPermissions(rawApiKey)');
     expect(holdedPanel).toContain("action: 'test_stored'");
   });
 });

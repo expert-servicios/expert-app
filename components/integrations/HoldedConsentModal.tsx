@@ -94,9 +94,23 @@ const PERMISSION_DEFS: PermissionDef[] = [
     required   : false,
     defaultOn  : false,
   },
+  {
+    key        : 'laborEmployeesRead',
+    label      : 'Empleados y contratos',
+    description: 'Lectura laboral opcional de fichas de empleados, contratos y jornada. Requiere autorización expresa.',
+    required   : false,
+    defaultOn  : false,
+  },
+  {
+    key        : 'laborPayrollsRead',
+    label      : 'Nóminas y registros salariales',
+    description: 'Lectura laboral opcional de nóminas y registros salariales. Requiere autorización expresa.',
+    required   : false,
+    defaultOn  : false,
+  },
 ];
 
-const CONSENT_VERSION = '1.0';
+const CONSENT_VERSION = '1.1';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
