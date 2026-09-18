@@ -34,6 +34,8 @@ interface CaseDetail {
   category: string;
   service: string;
   state: string;
+  status: string | null;
+  effective_status: 'nuevo' | 'pendiente_cliente' | 'en_revision' | 'listo_para_presentar' | 'presentado' | 'finalizado' | 'bloqueado';
   opened_at: string;
   closed_at: string | null;
   client_id: string;
