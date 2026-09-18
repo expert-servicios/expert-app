@@ -2,6 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { Calendar, CheckCircle2, ExternalLink, KeyRound, Plug, RefreshCw, ShieldCheck, Zap } from 'lucide-react';
+import { KiaGuidanceCard } from '@/components/kia/KiaGuidanceCard';
+import { resolvePostPurchaseGuidance } from '@/lib/ai/kia/kia-surface-guidance';
 
 interface Props {
   subscriptionId: string;
@@ -25,6 +27,11 @@ export default function PostCompraWizard({
 }: Props) {
   const router = useRouter();
   const prerequisitesReady = onboardingMeetingScheduled && holdedConnected;
+  const kiaGuidance = resolvePostPurchaseGuidance({
+    hasActiveSubscription: true,
+    onboardingMeetingScheduled,
+    holdedConnected,
+  });
 
   return (
     <div className="min-h-screen bg-[#f8f4eb] flex items-start justify-center px-4 py-16">
@@ -34,6 +41,14 @@ export default function PostCompraWizard({
           <h1 className="font-serif text-2xl font-bold text-[#07111d]">¡Tu {planName} está activo!</h1>
           <p className="mt-2 text-sm text-[#29384a]/70">Completa estos dos pasos antes de la sesión. Después de la reunión, EXPERT validará y cerrará tu alta.</p>
         </div>
+
+        <KiaGuidanceCard
+          state={kiaGuidance.state}
+          title={kiaGuidance.title}
+          message={kiaGuidance.message}
+          className="mb-5"
+          animateOnChange
+        />
 
         <div className="rounded-2xl border border-[#d8cbb5] bg-white shadow-sm divide-y divide-[#f0e8d5]">
           <div className="flex items-start gap-4 p-6">
