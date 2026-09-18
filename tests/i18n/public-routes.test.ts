@@ -27,6 +27,7 @@ describe('localized public route map', () => {
       '/ru/nalogi',
       '/ru/verifactu',
       '/ru/konsultatsiya',
+      '/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii',
     ]);
   });
 
@@ -34,6 +35,7 @@ describe('localized public route map', () => {
     expect(getRuRouteKey(undefined)).toBe('home');
     expect(getRuRouteKey(['holded'])).toBe('holded');
     expect(getRuRouteKey(['nalogi'])).toBe('taxes');
+    expect(getRuRouteKey(['uslugi', 'grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii'])).toBe('nationalityMinor');
     expect(getRuRouteKey(['unknown'])).toBeNull();
     expect(getRuRouteKey(['holded', 'extra'])).toBeNull();
   });
@@ -44,5 +46,8 @@ describe('localized public route map', () => {
     expect(inferPublicRouteKey('/holded/pack-starter')).toBe('holded');
     expect(inferPublicRouteKey('/ru/konsultatsiya')).toBe('consultation');
     expect(inferPublicRouteKey('/servicios/declaraciones-impuestos')).toBe('taxes');
+    expect(inferPublicRouteKey('/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana')).toBe('nationalityMinor');
+    expect(inferPublicRouteKey('/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii')).toBe('nationalityMinor');
+    expect(getLocalizedPublicHref('nationalityMinor', 'ru')).toBe('/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii');
   });
 });

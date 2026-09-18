@@ -2,17 +2,18 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { AlertCircle, Check, FileText, ShieldCheck } from 'lucide-react';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
+import { NATIONALITY_MINOR_SERVICE } from '@/lib/services/nationality-minor';
 
 const ES_URL = 'https://expertconsulting.es/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana';
 const RU_URL = 'https://expertconsulting.es/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii';
 
 const CART_ITEM = {
-  priceId: 'price_1TZXomLeYwwgvux4bTuqVZcU',
+  priceId: NATIONALITY_MINOR_SERVICE.stripePriceId,
   name: 'Испанское гражданство для ребёнка, родившегося в Испании',
   displayPrice: '302,50 € услуги + 104,05 € пошлина',
-  slug: 'nacionalidad-espanola-menor-nacido-en-espana',
+  slug: NATIONALITY_MINOR_SERVICE.slug,
   category: 'extranjeria-nacionalidad',
-  disbursements: ['mjusticia_790_026_nacionalidad_residencia'],
+  disbursements: [NATIONALITY_MINOR_SERVICE.disbursementKey],
   disbursementNotice:
     'Включает обязательную государственную пошлину Ministerio de Justicia 790-026: 104,05 € как suplido отдельно от профессиональных услуг.',
 };
@@ -42,6 +43,11 @@ export const metadata: Metadata = {
     locale: 'ru_RU',
     type: 'website',
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Испанское гражданство для ребёнка, родившегося в Испании | EXPERT',
+    description: '302,50 € с IVA + пошлина 790-026 104,05 € как suplido. Итого 406,55 €.',
+  },
 };
 
 const includedItems = [
@@ -65,7 +71,7 @@ const documentGroups = [
       'Предыдущая карта резидента, если имеется.',
       'Первичное решение о предоставлении резиденции или временной защиты, если имеется.',
       'Актуальный certificado de empadronamiento familiar/colectivo.',
-      'Справка из детского сада или учебного центра, только если ребёнок посещает такой центр.',
+      'Справка из школы или учебного центра, когда она требуется с учётом возраста и фактического обучения ребёнка.',
     ],
   },
   {
@@ -138,7 +144,12 @@ const faqItems = [
   {
     q: 'Должны ли подписывать заявление оба родителя?',
     a:
-      'Для ребёнка младше 14 лет, если оба законных представителя согласны с подачей, после реформы Ley 8/2021 предварительное разрешение Encargado del Registro Civil в обычной ситуации не требуется. Когда patria potestad осуществляют оба родителя, заявление обычно оформляется с участием обоих представителей. Если есть разногласие или действует только один представитель, мы отдельно проверяем документы и необходимую процедуру до подачи.',
+      'Для ребёнка младше 14 лет заявление подают законные представители. Если patria potestad осуществляют оба родителя и есть согласие, они участвуют в подаче в соответствии с применимой формой; при разногласии мы проверяем необходимость решения по expediente de jurisdicción voluntaria. В возрасте 14–17 лет заявление подаёт сам несовершеннолетний при содействии своих законных представителей.',
+  },
+  {
+    q: 'Нужно ли ребёнку сдавать CCSE или DELE?',
+    a:
+      'Нет. Несовершеннолетние освобождены от CCSE, а лица младше 18 лет — от DELE A2 для процедуры гражданства по резиденции. Мы проверяем, какие документы из школы или учебного центра нужно приложить для подтверждения интеграции.',
   },
 ];
 

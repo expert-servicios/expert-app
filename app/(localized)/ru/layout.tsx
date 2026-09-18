@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { AcquisitionTracker } from '@/components/marketing/AcquisitionTracker';
 import { CartSidebar } from '@/components/cart/CartSidebar';
 import { RuSiteFooter } from '@/components/i18n/RuSiteFooter';
+import { DocumentLanguage } from '@/components/i18n/DocumentLanguage';
 import { CartProvider } from '@/contexts/CartContext';
 import { getMessages } from '@/lib/i18n/messages';
 import { isLocalePubliclyEnabled } from '@/lib/i18n/feature-flags';
@@ -15,6 +16,7 @@ export default function RuPublicLayout({ children }: { children: ReactNode }) {
 
   return (
     <NextIntlClientProvider locale="ru" messages={getMessages('ru')}>
+      <DocumentLanguage lang="ru" />
       <CartProvider>
         <AcquisitionTracker />
         <div lang="ru">{children}</div>

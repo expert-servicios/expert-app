@@ -98,4 +98,14 @@ export const RU_PUBLIC_CONTENT: Record<PublicRouteKey, RuPublicPageContent> = {
     primaryCta: 'Перейти к записи',
     primaryRoute: 'consultation',
   },
+  nationalityMinor: {
+    eyebrow: 'Гражданство Испании · несовершеннолетний',
+    title: 'Гражданство для ребёнка, родившегося в Испании',
+    description: 'Полная подготовка заявления на гражданство по резиденции после проверки одного года легальной, непрерывной резиденции ребёнка и полномочий законных представителей.',
+    bullets: ['Проверка срока и документов ребёнка', 'Учет правил представительства по возрасту', 'Пошлина 790-026 как отдельный обязательный suplido'],
+    primaryCta: 'Открыть услугу',
+    primaryRoute: 'nationalityMinor',
+    secondaryCta: 'Записаться на консультацию',
+    secondaryRoute: 'consultation',
+  },
 };

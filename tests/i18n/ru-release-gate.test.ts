@@ -33,15 +33,16 @@ const ruFiles = [
 ].join('\n');
 
 describe('RU release gate', () => {
-  it('keeps Spanish unprefixed and RU on the explicit ten-route surface', () => {
+  it('keeps Spanish unprefixed and RU on the explicit eleven-route surface', () => {
     expect(DEFAULT_LOCALE).toBe('es');
     expect(SUPPORTED_LOCALES).toEqual(['es', 'ru', 'en']);
-    expect(PUBLIC_ROUTE_KEYS).toHaveLength(10);
+    expect(PUBLIC_ROUTE_KEYS).toHaveLength(11);
     expect(getLocalizedPublicHref('home', 'es')).toBe('/');
     expect(getLocalizedPublicHref('home', 'ru')).toBe('/ru');
     expect(getLocalizedPublicHref('holded', 'ru')).toBe('/ru/holded');
     expect(getLocalizedPublicHref('plans', 'ru')).toBe('/ru/plany');
     expect(getLocalizedPublicHref('consultation', 'ru')).toBe('/ru/konsultatsiya');
+    expect(getLocalizedPublicHref('nationalityMinor', 'ru')).toBe('/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii');
   });
 
   it('requires separate visibility and index gates before RU can be indexed', () => {

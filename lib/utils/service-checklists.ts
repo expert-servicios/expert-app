@@ -430,8 +430,8 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Fecha de nacimiento del menor y si está inscrito en el Registro Civil español',
       'Fecha de concesión del primer permiso de residencia legal del menor',
       'Si el menor lleva al menos 1 año con residencia legal continuada',
-      'Si ambos progenitores están de acuerdo y pueden firmar',
-      'Si alguno de los progenitores solo tiene un progenitor con patria potestad',
+      'Edad actual del menor: menos de 14 años o entre 14 y 17 años',
+      'Si existe acuerdo entre quienes ejercen la patria potestad y quién actuará como representante o asistente',
       'Diferencias en nombres/apellidos entre documentos (transliteración)',
     ],
     requiredDocs: [
@@ -443,19 +443,19 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Certificado de empadronamiento familiar actualizado',
       'Pasaporte de ambos progenitores en vigor (todas las páginas)',
       'NIE / TIE de ambos progenitores (anverso y reverso)',
-      'Fotografía del menor tamaño carné',
-      'Justificante pago tasa Modelo 790 código 026 (104,05 € — no incluida en honorarios)',
+      'Certificado del centro escolar o educativo cuando corresponda por edad y escolarización',
+      'Justificante de la tasa Modelo 790 código 026 (104,05 €), gestionada como suplido separado de honorarios',
     ],
     keyQuestions: [
       '¿El menor nació en España y tiene el certificado literal de nacimiento español?',
       '¿Cuándo se concedió la primera residencia legal del menor?',
       '¿Han pasado ya al menos 12 meses desde esa fecha?',
-      '¿Pueden firmar ambos progenitores? ¿Ambos tienen la documentación en vigor?',
+      '¿Qué edad tiene el menor y cómo debe intervenir él mismo o sus representantes legales según esa edad?',
       '¿Hay alguna diferencia de nombre o apellidos entre documentos?',
     ],
     botInstructions:
-      'La residencia del menor debe ser de al menos 1 año, legal, continuada e inmediatamente anterior a la solicitud. Nacer en España no da la nacionalidad automáticamente. El pasaporte caducado bloquea el expediente — verificar vigencia. La tasa de 104,05 € (Modelo 790 código 026) es aparte de los honorarios de 302,50 € IVA incluido.',
-    estimatedPrice: '302,50 € IVA incluido (+ tasa 104,05 € aparte)',
+      'La residencia del menor debe ser de al menos 1 año, legal, continuada e inmediatamente anterior a la solicitud. Nacer en España no da la nacionalidad automáticamente. Diferenciar menores de 14 años y menores de 14 a 17 años para firma/representación. Los menores están exentos de CCSE y, si tienen menos de 18 años, de DELE A2. La tasa de 104,05 € (Modelo 790 código 026) se cobra junto con el servicio como suplido obligatorio separado de los honorarios de 302,50 € IVA incluido.',
+    estimatedPrice: '406,55 € total: 302,50 € honorarios IVA incluido + 104,05 € suplido',
   },
 
   {
