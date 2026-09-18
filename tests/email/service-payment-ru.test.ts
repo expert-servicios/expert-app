@@ -90,6 +90,20 @@ describe('Russian nationality service payment emails', () => {
     });
   });
 
+  it('uses the total actually charged by Stripe when tax differs from the nominal rate', () => {
+    expect(calculateRussianNationalityAmounts({
+      professionalNetCents: 25000,
+      disbursementCents: 10405,
+      stripeTotalCents: 35405,
+    })).toEqual({
+      professionalNetCents: 25000,
+      professionalVatCents: 0,
+      professionalGrossCents: 25000,
+      disbursementCents: 10405,
+      totalCents: 35405,
+    });
+  });
+
   it('renders a Russian client confirmation with the current payment flow', () => {
     const amounts = calculateRussianNationalityAmounts({
       professionalNetCents: 25000,
