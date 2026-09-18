@@ -173,13 +173,14 @@ export async function POST(request: NextRequest) {
       ...(companyId ? { company_id: companyId } : {}),
       disbursement_mandate_accepted: checkoutDisbursements.length > 0 ? 'true' : 'false',
     };
+    const shouldCollectTaxId = billingResolution.scope === 'company';
 
     const session = await stripe.checkout.sessions.create({
       mode                       : 'payment',
       payment_method_types       : ['card'],
       automatic_tax              : { enabled: true },
       billing_address_collection : 'required',
-      tax_id_collection          : { enabled: true, required: 'if_supported' },
+      ...(shouldCollectTaxId ? { tax_id_collection: { enabled: true, required: 'if_supported' as const } } : {}),
       client_reference_id        : user.id,
       customer                   : stripeCustomerId ?? undefined,
       customer_email             : stripeCustomerId ? undefined : user.email,
