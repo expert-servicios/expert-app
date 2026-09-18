@@ -444,7 +444,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Pasaporte de ambos progenitores en vigor (todas las páginas)',
       'NIE / TIE de ambos progenitores (anverso y reverso)',
       'Fotografía del menor tamaño carné',
-      'Justificante pago tasa Modelo 790 código 026 (104,05 € — no incluida en honorarios)',
+      'Justificante de la tasa Modelo 790 código 026 (104,05 €), gestionada como suplido separado de honorarios',
     ],
     keyQuestions: [
       '¿El menor nació en España y tiene el certificado literal de nacimiento español?',
@@ -454,8 +454,8 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Hay alguna diferencia de nombre o apellidos entre documentos?',
     ],
     botInstructions:
-      'La residencia del menor debe ser de al menos 1 año, legal, continuada e inmediatamente anterior a la solicitud. Nacer en España no da la nacionalidad automáticamente. El pasaporte caducado bloquea el expediente — verificar vigencia. La tasa de 104,05 € (Modelo 790 código 026) es aparte de los honorarios de 302,50 € IVA incluido.',
-    estimatedPrice: '302,50 € IVA incluido (+ tasa 104,05 € aparte)',
+      'La residencia del menor debe ser de al menos 1 año, legal, continuada e inmediatamente anterior a la solicitud. Nacer en España no da la nacionalidad automáticamente. Diferenciar menores de 14 años y menores de 14 a 17 años para firma/representación. Los menores están exentos de CCSE y, si tienen menos de 18 años, de DELE A2. La tasa de 104,05 € (Modelo 790 código 026) se cobra junto con el servicio como suplido obligatorio separado de los honorarios de 302,50 € IVA incluido.',
+    estimatedPrice: '406,55 € total: 302,50 € honorarios IVA incluido + 104,05 € suplido',
   },
 
   {
