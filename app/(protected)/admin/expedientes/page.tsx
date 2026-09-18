@@ -9,6 +9,8 @@ interface CaseWithClient {
   category: string;
   service: string;
   state: string;
+  status: string | null;
+  effective_status: string;
   opened_at: string;
   closed_at: string | null;
   client_id: string;
@@ -36,7 +38,7 @@ async function getAdminCases(): Promise<CaseWithClient[]> {
 export default async function AdminCasesPage() {
   const cases = await getAdminCases();
   const total = cases.length;
-  const active = cases.filter((c) => c.state !== 'finalizado').length;
+  const active = cases.filter((c) => c.effective_status !== 'finalizado').length;
 
   return (
     <main className="min-h-screen bg-[#f8f4eb] py-12">
