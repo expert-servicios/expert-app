@@ -10,7 +10,8 @@ export const CASE_STATE_LABELS: Record<string, string> = {
   pendiente_documentacion: 'Pendiente documentacion',
   en_revision: 'En revision',
   en_proceso: 'En proceso',
-  presentado: 'Presentado'
+  presentado: 'Presentado',
+  bloqueado: 'Bloqueado'
 };
 
 export const CASE_PROGRESS_STATES = [
