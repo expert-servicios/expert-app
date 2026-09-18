@@ -37,11 +37,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     if (caseUpdateError) return NextResponse.json({ error: 'No se pudo actualizar el expediente' }, { status: 500 });
 
-    const taskTitle = caseData.service_id === NATIONALITY_MINOR_SLUG || caseData.service?.includes('гражданство')
+    const isNationality = caseData.service_id === NATIONALITY_MINOR_SLUG || caseData.service?.includes('гражданство');
+    const taskTitle = isNationality
       ? 'Preparar y presentar solicitud de nacionalidad'
       : 'Revisar documentación enviada por cliente';
 
-    const taskDescription = caseData.service_id === NATIONALITY_MINOR_SLUG || caseData.service?.includes('гражданство')
+    const taskDescription = isNationality
       ? [
           'El cliente ha enviado documentación a revisión.',
           '1. Revisar documentación cargada y comentarios por punto de checklist.',
@@ -55,29 +56,47 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         ].join('\n')
       : 'El cliente ha marcado la documentación como enviada. Revisar archivos y comentarios, validar suficiencia y actualizar el expediente.';
 
-    const { error: taskError } = await admin
-      .from('internal_tasks')
-      .upsert({
-        title: taskTitle,
-        description: taskDescription,
-        status: 'pendiente',
-        priority: 'alta',
-        case_id: caseId,
-        client_id: caseData.client_id,
-        company_id: caseData.company_id,
-        due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-        source: 'document',
-        metadata: {
-          task_kind: 'client_documents_ready_for_review',
-          service_slug: caseData.service_id ?? null,
-          submitted_by: user.id,
-          submitted_at: now,
-        },
-        updated_at: now,
-      }, { onConflict: 'case_id' });
+    const taskPayload = {
+      title: taskTitle,
+      description: taskDescription,
+      status: 'pendiente',
+      priority: 'alta',
+      case_id: caseId,
+      client_id: caseData.client_id,
+      company_id: caseData.company_id,
+      due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      source: 'document',
+      metadata: {
+        task_kind: 'client_documents_ready_for_review',
+        service_slug: caseData.service_id ?? null,
+        submitted_by: user.id,
+        submitted_at: now,
+      },
+      updated_at: now,
+    };
 
-    if (taskError) {
-      console.error('[document-review] task upsert failed:', taskError.message);
+    const { data: existingTask, error: existingTaskError } = await admin
+      .from('internal_tasks')
+      .select('id')
+      .eq('case_id', caseId)
+      .eq('source', 'document')
+      .eq('title', taskTitle)
+      .in('status', ['pendiente', 'en_progreso'])
+      .maybeSingle();
+
+    if (existingTaskError) {
+      console.error('[document-review] existing task lookup failed:', existingTaskError.message);
+    } else if (existingTask?.id) {
+      const { error: updateTaskError } = await admin
+        .from('internal_tasks')
+        .update(taskPayload)
+        .eq('id', existingTask.id);
+      if (updateTaskError) console.error('[document-review] task update failed:', updateTaskError.message);
+    } else {
+      const { error: insertTaskError } = await admin
+        .from('internal_tasks')
+        .insert(taskPayload);
+      if (insertTaskError) console.error('[document-review] task insert failed:', insertTaskError.message);
     }
 
     notifyAdmins({
