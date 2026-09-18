@@ -3,12 +3,15 @@ import { cookies } from 'next/headers';
 import { FolderOpen } from 'lucide-react';
 import { CaseListWithFilters } from '@/components/admin/CaseListWithFilters';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
+import type { CaseStatus } from '@/lib/cases/case-status';
 
 interface CaseWithClient {
   id: string;
   category: string;
   service: string;
   state: string;
+  status: string | null;
+  effective_status: CaseStatus;
   opened_at: string;
   closed_at: string | null;
   client_id: string;
@@ -36,7 +39,7 @@ async function getAdminCases(): Promise<CaseWithClient[]> {
 export default async function AdminCasesPage() {
   const cases = await getAdminCases();
   const total = cases.length;
-  const active = cases.filter((c) => c.state !== 'finalizado').length;
+  const active = cases.filter((c) => c.effective_status !== 'finalizado').length;
 
   return (
     <main className="min-h-screen bg-[#f8f4eb] py-12">

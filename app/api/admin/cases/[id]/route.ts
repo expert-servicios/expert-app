@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { registerProfitabilityEvent } from '@/lib/profitability/register-event';
 import { generateCaseSnapshot } from '@/lib/profitability/generate-snapshot';
-import { canTransition } from '@/lib/cases/case-status';
+import { canTransition, caseStatusToVisualState, resolveEffectiveCaseStatus } from '@/lib/cases/case-status';
 import type { CaseStatus } from '@/lib/cases/case-status';
 import { sendEmail } from '@/lib/email/send';
 import { notifyClient } from '@/lib/integrations/push';
@@ -172,7 +172,13 @@ export async function GET(
       return NextResponse.json({ error: 'Expediente no encontrado' }, { status: 404 });
     }
 
-    const caseData = caseResult.data;
+    const rawCaseData = caseResult.data;
+    const effectiveStatus = resolveEffectiveCaseStatus(rawCaseData.status, rawCaseData.state);
+    const caseData = {
+      ...rawCaseData,
+      effective_status: effectiveStatus,
+      visual_state: caseStatusToVisualState(effectiveStatus),
+    };
 
     // Fetch client info
     const [authUser, clientProfile, assigneeProfile] = await Promise.all([
@@ -240,11 +246,11 @@ export async function PATCH(
     // Validate status transition if status is being updated
     if (body.status) {
       const { data: current } = await admin
-        .from('cases').select('status, service_id, client_id, service, admin_note').eq('id', id).single();
+        .from('cases').select('state,status, service_id, client_id, service, admin_note').eq('id', id).single();
 
       if (!current) return NextResponse.json({ error: 'Expediente no encontrado' }, { status: 404 });
 
-      const fromStatus = (current.status ?? 'nuevo') as CaseStatus;
+      const fromStatus = resolveEffectiveCaseStatus(current.status, current.state);
       if (fromStatus !== body.status && !canTransition(fromStatus, body.status)) {
         return NextResponse.json(
           { error: `Transición no permitida: ${fromStatus} → ${body.status}` },
