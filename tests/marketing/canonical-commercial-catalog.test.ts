@@ -46,4 +46,51 @@ describe('canonical commercial catalog C1 shadow model', () => {
     expect(irpf?.identity.serviceId).toBe('irpf');
     expect(irpf?.offers[0].stripePriceId).toMatch(/^price_/);
   });
+
+  it('attaches declared legacy aliases to the canonical identity', () => {
+    const catalog = buildCanonicalShadowCatalog();
+    const nationalityMinor = catalog.find(
+      (item) => item.identity.slug === 'nacionalidad-espanola-menor-nacido-en-espana'
+    );
+    const matriculation = catalog.find((item) => item.identity.slug === 'matriculacion');
+
+    expect(nationalityMinor?.aliases).toContain('nacionalidad-menor-nacido-espana');
+    expect(matriculation?.aliases).toContain('matriculacion-vehiculo');
+  });
+
+  it('models Holded 2h and 4h training variants as offers of one service identity', () => {
+    const catalog = buildCanonicalShadowCatalog();
+    const holdedTraining = catalog.find((item) => item.identity.slug === 'formacion-holded');
+
+    expect(holdedTraining).toBeDefined();
+    expect(holdedTraining?.offers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          serviceId: 'formacion-holded',
+          sourceId: 'formacion-holded-2h',
+          code: 'holded-2h',
+          amountCents: 18000,
+        }),
+        expect.objectContaining({
+          serviceId: 'formacion-holded',
+          sourceId: 'formacion-holded-4h',
+          code: 'holded-4h',
+          amountCents: 32000,
+        }),
+      ])
+    );
+  });
+
+  it('maps an Admin alias offer onto the canonical service without changing its source id', () => {
+    const catalog = buildCanonicalShadowCatalog();
+    const nationalityMinor = catalog.find(
+      (item) => item.identity.slug === 'nacionalidad-espanola-menor-nacido-en-espana'
+    );
+    const adminOffer = nationalityMinor?.offers.find(
+      (offer) => offer.sourceId === 'nacionalidad-menor-nacido-espana'
+    );
+
+    expect(adminOffer?.serviceId).toBe('nacionalidad-espanola-menor-nacido-en-espana');
+    expect(adminOffer?.source).toBe('legacy_admin');
+  });
 });
