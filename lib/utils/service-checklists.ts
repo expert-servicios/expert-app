@@ -430,8 +430,8 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Fecha de nacimiento del menor y si está inscrito en el Registro Civil español',
       'Fecha de concesión del primer permiso de residencia legal del menor',
       'Si el menor lleva al menos 1 año con residencia legal continuada',
-      'Si ambos progenitores están de acuerdo y pueden firmar',
-      'Si alguno de los progenitores solo tiene un progenitor con patria potestad',
+      'Edad actual del menor: menos de 14 años o entre 14 y 17 años',
+      'Si existe acuerdo entre quienes ejercen la patria potestad y quién actuará como representante o asistente',
       'Diferencias en nombres/apellidos entre documentos (transliteración)',
     ],
     requiredDocs: [
@@ -443,14 +443,14 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Certificado de empadronamiento familiar actualizado',
       'Pasaporte de ambos progenitores en vigor (todas las páginas)',
       'NIE / TIE de ambos progenitores (anverso y reverso)',
-      'Fotografía del menor tamaño carné',
+      'Certificado del centro escolar o educativo cuando corresponda por edad y escolarización',
       'Justificante de la tasa Modelo 790 código 026 (104,05 €), gestionada como suplido separado de honorarios',
     ],
     keyQuestions: [
       '¿El menor nació en España y tiene el certificado literal de nacimiento español?',
       '¿Cuándo se concedió la primera residencia legal del menor?',
       '¿Han pasado ya al menos 12 meses desde esa fecha?',
-      '¿Pueden firmar ambos progenitores? ¿Ambos tienen la documentación en vigor?',
+      '¿Qué edad tiene el menor y cómo debe intervenir él mismo o sus representantes legales según esa edad?',
       '¿Hay alguna diferencia de nombre o apellidos entre documentos?',
     ],
     botInstructions:
