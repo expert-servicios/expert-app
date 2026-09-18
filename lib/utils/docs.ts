@@ -97,7 +97,7 @@ Normalmente se revisa y prepara:
 - Tarjeta de residencia anterior, si existe.
 - Resolución inicial de concesión de residencia o protección temporal, si existe.
 - Certificado de empadronamiento familiar o colectivo actualizado.
-- Certificado de guardería o centro infantil, solo si el menor asiste a un centro.
+- Certificado del centro escolar o educativo cuando corresponda por la edad y escolarización del menor.
 
 ## Documentación de los progenitores
 
@@ -107,7 +107,7 @@ También se revisa:
 - NIE/TIE de ambos progenitores por ambas caras.
 - Certificado de empadronamiento familiar, si no se aporta por separado.
 - Datos de contacto: teléfono, correo electrónico y domicilio actual.
-- Firma de ambos progenitores como representantes legales del menor.
+- Intervención, firma o asistencia de los representantes legales según la edad del menor y la patria potestad.
 
 Si solo uno de los progenitores puede firmar, puede ser necesario aportar documentación adicional que justifique representación suficiente.
 
