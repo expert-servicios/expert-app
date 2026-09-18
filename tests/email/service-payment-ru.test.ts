@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   RU_NATIONALITY_MINOR_SERVICE_SLUG,
   calculateRussianNationalityAmounts,
+  isNationalityPayment,
   isRussianNationalityPayment,
   russianNationalityPaymentConfirmedAdmin,
   russianNationalityPaymentConfirmedClient,
+  spanishNationalityPaymentConfirmedAdmin,
+  spanishNationalityPaymentConfirmedClient,
 } from '@/lib/email/service-payment-ru';
 
 describe('Russian nationality service payment emails', () => {
@@ -32,6 +35,46 @@ describe('Russian nationality service payment emails', () => {
       checkoutLocale: 'ru',
       serviceSlug: 'otro-servicio',
     })).toBe(false);
+  });
+
+  it('activates the nationality specialization in Spanish and Russian', () => {
+    expect(isNationalityPayment({
+      eventType: 'service.payment.confirmed',
+      serviceSlug: RU_NATIONALITY_MINOR_SERVICE_SLUG,
+    })).toBe(true);
+    expect(isNationalityPayment({
+      eventType: 'service.payment.confirmed.admin',
+      serviceSlug: RU_NATIONALITY_MINOR_SERVICE_SLUG,
+    })).toBe(true);
+    expect(isNationalityPayment({
+      eventType: 'service.payment.confirmed',
+      serviceSlug: 'otro-servicio',
+    })).toBe(false);
+  });
+
+  it('renders the Spanish nationality confirmation without asking for the fee again', () => {
+    const amounts = calculateRussianNationalityAmounts({});
+    const client = spanishNationalityPaymentConfirmedClient(amounts);
+    const admin = spanishNationalityPaymentConfirmedAdmin({
+      customerName: 'Cliente Test',
+      customerEmail: 'cliente@example.com',
+      checkoutSessionId: 'cs_test_es',
+      caseId: 'case_es',
+      orderId: 'order_es',
+      amounts,
+    });
+
+    expect(client.html).toContain('<html lang="es">');
+    expect(client.html).toContain('302,50');
+    expect(client.html).toContain('104,05');
+    expect(client.html).toContain('406,55');
+    expect(client.html).toContain('ya está cobrada como suplido');
+    expect(client.html).not.toContain('se abonará aparte');
+    expect(client.html).not.toContain('te avisaremos para el pago de la tasa');
+
+    expect(admin.html).toContain('Español (es)');
+    expect(admin.html).toContain('No debe volver a cobrarse');
+    expect(admin.html).toContain('/admin/expedientes/case_es');
   });
 
   it('keeps professional revenue, VAT and disbursement separated', () => {
