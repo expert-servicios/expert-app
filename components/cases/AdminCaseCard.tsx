@@ -28,7 +28,6 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
   const initialStatus = caseItem.effective_status ?? (caseItem.status as CaseStatus | null) ?? 'nuevo';
   const [status, setStatus] = useState<CaseStatus>(initialStatus);
   const [note, setNote] = useState('');
-  const [organism, setOrganism] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [assignedTo, setAssignedTo] = useState<string | null>(caseItem.assigned_to ?? null);
@@ -52,15 +51,13 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
   };
 
   const statusChanged = status !== initialStatus;
-  const needsOrganism = status === 'presentado';
 
   const handleSave = async () => {
     setSaving(true);
     setMessage(null);
     try {
       const payload: Record<string, unknown> = { status };
-      if (note.trim()) payload.note = note.trim();
-      if (needsOrganism && organism.trim()) payload.organism = organism.trim();
+      if (note.trim()) payload.admin_note = note.trim();
 
       const response = await fetch(`/api/admin/cases/${caseItem.id}`, {
         method: 'PATCH',
@@ -74,7 +71,6 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
       }
       setMessage('Estado actualizado correctamente.');
       setNote('');
-      setOrganism('');
       router.refresh();
     } catch {
       setMessage('Error al actualizar.');
@@ -150,8 +146,7 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
       {/* Extra fields — only visible when status changes */}
       {statusChanged && (
         <div className="mt-4 space-y-3 rounded-2xl border border-[#d8cbb5] bg-white p-4">
-          {needsOrganism && (
-            <div>
+          <div>
               <label className="mb-1 block text-xs font-semibold text-[#29384a]">
                 Organismo externo <span className="text-[#c88b25]">*</span>
               </label>
@@ -166,7 +161,7 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
           )}
           <div>
             <label className="mb-1 block text-xs font-semibold text-[#29384a]">
-              Mensaje al cliente <span className="text-xs font-normal text-[#29384a]">(opcional — se incluye en el email de notificación)</span>
+              Mensaje al cliente <span className="text-xs font-normal text-[#29384a]">(opcional — se guarda como nota operativa y puede incluirse en la notificación)</span>
             </label>
             <textarea
               value={note}
