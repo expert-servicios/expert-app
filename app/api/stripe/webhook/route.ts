@@ -701,7 +701,7 @@ export async function POST(req: NextRequest) {
       await fulfillAcademyCertification(supabaseAdmin, session);
     }
 
-    if (session.mode === 'payment' && (productType === 'service' || productType === 'cart')) {
+    if (session.mode === 'payment' && (productType === 'service' || productType === 'cart') && session.payment_status === 'paid') {
       const customerEmail = session.customer_email ?? (session.customer_details as { email?: string } | null)?.email;
       const customerName =
         (session.customer_details as { name?: string } | null)?.name ??
@@ -720,6 +720,10 @@ export async function POST(req: NextRequest) {
           customer_email : customerEmail ?? null,
           product_type   : productType,
         },
+        billing_scope   : session.metadata?.billing_scope ?? null,
+        checkout_locale : session.metadata?.checkout_locale ?? null,
+        service_slug    : session.metadata?.service_slug ?? null,
+        service_slugs   : session.metadata?.service_slugs ?? null,
       };
 
       // ── Idempotency: create order record for catalog payment ──
@@ -753,6 +757,19 @@ export async function POST(req: NextRequest) {
         catalogOrderId = existingCatalogOrder.id;
         catalogOrderMetadata = (existingCatalogOrder.metadata ?? catalogOrderMetadata) as Record<string, unknown>;
       }
+
+      // The nationality fulfillment trigger runs AFTER INSERT and links the newly
+      // created operational case back to the order. Re-read the order so admin
+      // notifications can link directly to the case without guessing.
+      const { data: fulfilledCatalogOrder, error: fulfilledCatalogOrderError } = await supabaseAdmin
+        .from('orders')
+        .select('id,case_id')
+        .eq('id', catalogOrderId)
+        .maybeSingle();
+      if (fulfilledCatalogOrderError) {
+        throw new Error(`Could not resolve catalog order fulfillment ${catalogOrderId}: ${fulfilledCatalogOrderError.message}`);
+      }
+      const catalogCaseId = fulfilledCatalogOrder?.case_id ?? null;
 
       // ── Sync Stripe-collected billing data back into profiles (best-effort, non-blocking) ──
       if (session.client_reference_id) {
@@ -845,7 +862,13 @@ export async function POST(req: NextRequest) {
             to: adminEmails,
             eventType: 'service.payment.confirmed.admin',
             ...adminTpl,
-            metadata: { session_id: session.id, product_type: productType }
+            metadata: {
+              session_id: session.id,
+              product_type: productType,
+              order_id: catalogOrderId ?? null,
+              case_id: catalogCaseId,
+              service_slug: session.metadata?.service_slug ?? session.metadata?.service_slugs ?? null,
+            }
           }).catch((err) => {
             console.error('[webhook] admin payment email failed:', err);
           });
@@ -853,7 +876,7 @@ export async function POST(req: NextRequest) {
         notifyAdmins({
           title: `💰 Pago recibido — ${customerName}`,
           body:  `${serviceName.slice(0, 60)} · €${amountEur.toFixed(0)}`,
-          url:   `/admin/pagos`,
+          url:   catalogCaseId ? `/admin/expedientes/${catalogCaseId}` : '/admin/pagos',
           tag:   `catalog-payment-${session.id}`,
         }).catch(() => {});
 
@@ -977,13 +1000,11 @@ export async function POST(req: NextRequest) {
 
   if (event.type === 'checkout.session.expired') {
     const session = event.data.object as Stripe.Checkout.Session;
-    if (session.mode === 'subscription') {
-      const { error: checkoutStatusError } = await supabaseAdmin
-        .from('checkout_sessions')
-        .update({ status: 'expired', updated_at: new Date().toISOString() })
-        .eq('stripe_session_id', session.id);
-      if (checkoutStatusError) throw new Error(`Could not mark checkout ${session.id} expired: ${checkoutStatusError.message}`);
-    }
+    const { error: checkoutStatusError } = await supabaseAdmin
+      .from('checkout_sessions')
+      .update({ status: 'expired', updated_at: new Date().toISOString() })
+      .eq('stripe_session_id', session.id);
+    if (checkoutStatusError) throw new Error(`Could not mark checkout ${session.id} expired: ${checkoutStatusError.message}`);
   }
 
   // Delayed payment methods (e.g. SEPA debit) can leave a Checkout Session
