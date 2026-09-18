@@ -2,17 +2,18 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { AlertCircle, Check, FileText, ShieldCheck } from 'lucide-react';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
+import { NATIONALITY_MINOR_SERVICE } from '@/lib/services/nationality-minor';
 
 const ES_URL = 'https://expertconsulting.es/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana';
 const RU_URL = 'https://expertconsulting.es/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii';
 
 const CART_ITEM = {
-  priceId: 'price_1TZXomLeYwwgvux4bTuqVZcU',
+  priceId: NATIONALITY_MINOR_SERVICE.stripePriceId,
   name: 'Испанское гражданство для ребёнка, родившегося в Испании',
   displayPrice: '302,50 € услуги + 104,05 € пошлина',
-  slug: 'nacionalidad-espanola-menor-nacido-en-espana',
+  slug: NATIONALITY_MINOR_SERVICE.slug,
   category: 'extranjeria-nacionalidad',
-  disbursements: ['mjusticia_790_026_nacionalidad_residencia'],
+  disbursements: [NATIONALITY_MINOR_SERVICE.disbursementKey],
   disbursementNotice:
     'Включает обязательную государственную пошлину Ministerio de Justicia 790-026: 104,05 € как suplido отдельно от профессиональных услуг.',
 };
