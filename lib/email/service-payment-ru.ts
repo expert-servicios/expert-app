@@ -1,4 +1,6 @@
-export const RU_NATIONALITY_MINOR_SERVICE_SLUG = 'nacionalidad-espanola-menor-nacido-en-espana';
+import { NATIONALITY_MINOR_SERVICE } from '@/lib/services/nationality-minor';
+
+export const RU_NATIONALITY_MINOR_SERVICE_SLUG = NATIONALITY_MINOR_SERVICE.slug;
 export const RU_NATIONALITY_MINOR_SERVICE_NAME = 'Испанское гражданство для ребёнка, родившегося в Испании';
 
 const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://expertconsulting.es').replace(/\/$/, '');
@@ -7,7 +9,7 @@ export type RussianServicePaymentEventType =
   | 'service.payment.confirmed'
   | 'service.payment.confirmed.admin';
 
-export type RussianServicePaymentAmounts = {
+export type NationalityServicePaymentAmounts = {
   professionalNetCents: number;
   professionalVatCents: number;
   professionalGrossCents: number;
@@ -24,18 +26,19 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#039;');
 }
 
-function formatEur(cents: number): string {
-  return new Intl.NumberFormat('ru-RU', {
+function formatEur(cents: number, locale: 'es-ES' | 'ru-RU' = 'ru-RU'): string {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 2,
   }).format(cents / 100);
 }
 
-function shell(title: string, body: string): string {
+function shell(title: string, body: string, lang: 'es' | 'ru' = 'ru'): string {
   const safeTitle = escapeHtml(title);
+  const tagline = lang === 'ru' ? 'Профессиональное сопровождение в Испании' : 'Asesoría profesional en España';
   return `<!DOCTYPE html>
-<html lang="ru">
+<html lang="${lang}">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safeTitle}</title></head>
 <body style="margin:0;padding:0;background:#f8f4eb;font-family:Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f4eb;padding:40px 20px;">
@@ -43,7 +46,7 @@ function shell(title: string, body: string): string {
 <table width="600" cellpadding="0" cellspacing="0" align="center" style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #d8cbb5;max-width:100%;">
   <tr><td style="background:#07111d;padding:32px 40px;text-align:center;">
     <p style="margin:0;font-size:26px;font-weight:bold;color:#d7a33a;letter-spacing:5px;font-family:Georgia,serif;">EXPERT</p>
-    <p style="margin:6px 0 0;font-size:11px;color:#8899aa;letter-spacing:2px;text-transform:uppercase;">Профессиональное сопровождение в Испании</p>
+    <p style="margin:6px 0 0;font-size:11px;color:#8899aa;letter-spacing:2px;text-transform:uppercase;">${tagline}</p>
   </td></tr>
   <tr><td style="padding:40px;">${body}</td></tr>
   <tr><td style="background:#f8f4eb;padding:24px 40px;border-top:1px solid #d8cbb5;text-align:center;">
@@ -95,10 +98,10 @@ export function isRussianNationalityPayment(params: {
 export function calculateRussianNationalityAmounts(input: {
   professionalNetCents?: number | null;
   disbursementCents?: number | null;
-}): RussianServicePaymentAmounts {
-  const professionalNetCents = input.professionalNetCents ?? 25000;
-  const disbursementCents = input.disbursementCents ?? 10405;
-  const professionalVatCents = Math.round(professionalNetCents * 0.21);
+}): NationalityServicePaymentAmounts {
+  const professionalNetCents = input.professionalNetCents ?? NATIONALITY_MINOR_SERVICE.professionalNetCents;
+  const disbursementCents = input.disbursementCents ?? NATIONALITY_MINOR_SERVICE.officialFeeCents;
+  const professionalVatCents = Math.round(professionalNetCents * NATIONALITY_MINOR_SERVICE.vatRate);
   const professionalGrossCents = professionalNetCents + professionalVatCents;
   return {
     professionalNetCents,
@@ -109,7 +112,83 @@ export function calculateRussianNationalityAmounts(input: {
   };
 }
 
-export function russianNationalityPaymentConfirmedClient(amounts: RussianServicePaymentAmounts) {
+export function isNationalityPayment(params: {
+  eventType: string;
+  serviceSlug?: string | null;
+}) {
+  return (
+    (params.eventType === 'service.payment.confirmed' || params.eventType === 'service.payment.confirmed.admin')
+    && params.serviceSlug === NATIONALITY_MINOR_SERVICE.slug
+  );
+}
+
+export function spanishNationalityPaymentConfirmedClient(amounts: NationalityServicePaymentAmounts) {
+  const serviceUrl = `${APP_URL}/servicios/extranjeria-nacionalidad/${NATIONALITY_MINOR_SERVICE.slug}`;
+  return {
+    subject: 'Pago recibido — comenzamos el expediente de nacionalidad | EXPERT',
+    html: shell('Pago recibido', `
+      ${heading('Pago recibido — comenzamos el expediente')}
+      ${para('Hola,')}
+      ${para('Hemos recibido correctamente el pago del servicio <strong>Nacionalidad española para menor nacido en España</strong>. El expediente pasa ahora a apertura y revisión documental.')}
+      ${details(
+        detail('Honorarios profesionales', `${formatEur(amounts.professionalGrossCents, 'es-ES')} (${formatEur(amounts.professionalNetCents, 'es-ES')} + IVA 21 %)`),
+        detail('Tasa oficial', `${formatEur(amounts.disbursementCents, 'es-ES')} · Modelo 790-026 · suplido`),
+        detail('Total pagado', `<strong>${formatEur(amounts.totalCents, 'es-ES')}</strong>`),
+      )}
+      ${para('La tasa 790-026 ya está cobrada como suplido. EXPERT la abonará en nombre y por cuenta del solicitante cuando el expediente haya sido revisado y esté listo para presentar. No forma parte de nuestros honorarios ni de su base imponible.')}
+      ${para('<strong>Siguientes pasos:</strong>')}
+      <ol style="margin:0 0 18px;padding-left:22px;color:#29384a;font-size:15px;line-height:1.7;">
+        <li>Abrimos el expediente en EXPERT.</li>
+        <li>Revisamos los datos del menor y de sus representantes legales.</li>
+        <li>Te indicamos la documentación pendiente y el canal seguro para subirla.</li>
+        <li>Comprobamos el año de residencia legal, continuada e inmediatamente anterior.</li>
+        <li>Cuando el expediente esté validado, abonamos la tasa y presentamos la solicitud.</li>
+      </ol>
+      ${button('Ver descripción del servicio', serviceUrl)}
+    `, 'es'),
+  };
+}
+
+export function spanishNationalityPaymentConfirmedAdmin(input: {
+  customerName?: string | null;
+  customerEmail?: string | null;
+  checkoutSessionId: string;
+  orderId?: string | null;
+  caseId?: string | null;
+  amounts: NationalityServicePaymentAmounts;
+}) {
+  const safeName = escapeHtml(input.customerName?.trim() || 'Cliente');
+  const safeEmail = escapeHtml(input.customerEmail?.trim() || '—');
+  const safeSession = escapeHtml(input.checkoutSessionId);
+  const safeOrder = escapeHtml(input.orderId?.trim() || '—');
+  const safeCase = escapeHtml(input.caseId?.trim() || '—');
+  const caseUrl = input.caseId?.trim()
+    ? APP_URL + '/admin/expedientes/' + encodeURIComponent(input.caseId.trim())
+    : APP_URL + '/admin';
+  return {
+    subject: `ACCIÓN: revisar expediente de nacionalidad — ${input.customerName?.trim() || 'cliente'}`,
+    html: shell('Nuevo pago — revisar expediente', `
+      ${heading('Nuevo pago — expediente de nacionalidad')}
+      ${para('<strong>ACCIÓN REQUERIDA:</strong> revisar la ficha y el expediente creados automáticamente e iniciar la revisión documental.')}
+      ${details(
+        detail('Cliente', safeName),
+        detail('Email', safeEmail === '—' ? '—' : `<a href="mailto:${safeEmail}" style="color:#c88b25;">${safeEmail}</a>`),
+        detail('Idioma', 'Español (es)'),
+        detail('Servicio', 'Nacionalidad española para menor nacido en España'),
+        detail('Total cobrado', `<strong>${formatEur(input.amounts.totalCents, 'es-ES')}</strong>`),
+        detail('Honorarios con IVA', formatEur(input.amounts.professionalGrossCents, 'es-ES')),
+        detail('Suplido 790-026', formatEur(input.amounts.disbursementCents, 'es-ES')),
+        detail('Stripe Checkout', safeSession),
+        detail('Order ID', safeOrder),
+        detail('Case ID', safeCase),
+      )}
+      ${para('La tasa ya está cobrada como suplido. No debe volver a cobrarse al cliente ni incluirse como ingreso profesional.')}
+      ${button(input.caseId?.trim() ? 'Abrir expediente en Admin' : 'Abrir panel de administración', caseUrl)}
+    `, 'es'),
+  };
+}
+
+export function russianNationalityPaymentConfirmedClient(amounts: NationalityServicePaymentAmounts) {
   const serviceUrl = `${APP_URL}/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii`;
   return {
     subject: 'Оплата получена — начинаем оформление гражданства | EXPERT',
@@ -144,7 +223,7 @@ export function russianNationalityPaymentConfirmedAdmin(input: {
   checkoutSessionId: string;
   orderId?: string | null;
   caseId?: string | null;
-  amounts: RussianServicePaymentAmounts;
+  amounts: NationalityServicePaymentAmounts;
 }) {
   const safeName = escapeHtml(input.customerName?.trim() || 'Cliente ruso');
   const safeEmail = escapeHtml(input.customerEmail?.trim() || '—');
