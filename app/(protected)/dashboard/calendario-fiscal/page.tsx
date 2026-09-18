@@ -1,5 +1,7 @@
 import { Calendar } from 'lucide-react';
 import { ClientFiscalCalendar } from '@/components/dashboard/ClientFiscalCalendar';
+import { KiaGuidanceCard } from '@/components/kia/KiaGuidanceCard';
+import { resolveFiscalCalendarGuidance } from '@/lib/ai/kia/kia-surface-guidance';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 interface FiscalObligation {
@@ -37,6 +39,11 @@ export default async function ClientFiscalCalendarPage({
   const overdue = obligations.filter(
     (o) => o.status === 'pending' && new Date(o.deadline) < new Date()
   ).length;
+  const kiaGuidance = resolveFiscalCalendarGuidance({
+    obligationCount: obligations.length,
+    pendingCount: pending,
+    overdueCount: overdue,
+  });
 
   return (
     <main className="min-h-screen bg-[#f8f4eb] py-8">
@@ -58,6 +65,14 @@ export default async function ClientFiscalCalendarPage({
             <span><strong className="font-semibold text-[#07111d]">{pending}</strong> pendientes</span>
           </div>
         </div>
+
+        <KiaGuidanceCard
+          state={kiaGuidance.state}
+          title={kiaGuidance.title}
+          message={kiaGuidance.message}
+          detail={kiaGuidance.detail}
+          className="mb-6"
+        />
 
         <ClientFiscalCalendar
           obligations={obligations}
