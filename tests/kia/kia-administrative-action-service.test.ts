@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { hashKiaAdministrativeActionSnapshot } from '@/lib/ai/kia/kia-administrative-action-service';
 
 const migration = readFileSync(
-  resolve(process.cwd(), 'supabase/migrations/20260915173000_kia_administrative_action_service.sql'),
+  resolve(process.cwd(), 'supabase/migrations/20260915194210_kia_administrative_action_service.sql'),
   'utf8',
 );
 const service = readFileSync(

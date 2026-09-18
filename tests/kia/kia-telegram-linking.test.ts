@@ -13,14 +13,14 @@ describe('KIA M7.2d Telegram linking', () => {
     expect(hash).toMatch(/^[a-f0-9]{64}$/);
     expect(hashTelegramLinkCode(' sample-code ')).toBe(hash);
 
-    const migration = source('supabase/migrations/20260916214500_kia_telegram_link_tokens.sql');
+    const migration = source('supabase/migrations/20260916211014_kia_telegram_link_tokens.sql');
     expect(migration).toContain('token_hash text not null unique');
     expect(migration).not.toContain('token_plaintext');
     expect(migration).not.toContain('bot_token');
   });
 
   it('requires expiry, single consumption, active profile and tenant consistency', () => {
-    const migration = source('supabase/migrations/20260916214500_kia_telegram_link_tokens.sql');
+    const migration = source('supabase/migrations/20260916211014_kia_telegram_link_tokens.sql');
     expect(migration).toContain('v_token.consumed_at is not null');
     expect(migration).toContain('v_token.expires_at <= now()');
     expect(migration).toContain("v_profile.status = 'inactive'");
@@ -30,7 +30,7 @@ describe('KIA M7.2d Telegram linking', () => {
   });
 
   it('keeps link tokens service-role only and consume RPC service-role only', () => {
-    const migration = source('supabase/migrations/20260916214500_kia_telegram_link_tokens.sql');
+    const migration = source('supabase/migrations/20260916211014_kia_telegram_link_tokens.sql');
     expect(migration).toContain('revoke all on table public.kia_channel_link_tokens from anon, authenticated, service_role');
     expect(migration).toContain('grant select, insert, update on table public.kia_channel_link_tokens to service_role');
     expect(migration).toContain('revoke all on function public.kia_consume_telegram_link_token');
