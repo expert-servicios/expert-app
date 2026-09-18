@@ -78,6 +78,14 @@ type DiagnosticsPayload = {
       issues: CommercialIssue[];
     };
   };
+  canonicalSummary: {
+    services: number;
+    servicesWithAliases: number;
+    servicesWithMultipleOffers: number;
+    servicesWithWarnings: number;
+    totalOffers: number;
+    warningCounts: Record<string, number>;
+  };
   commercialInventory: {
     readOnly: true;
     totals: {
@@ -188,7 +196,7 @@ export default function AdminMarketingHubPage() {
   if (error && !data) return <div className="p-6 text-red-700">{error}</div>;
   if (!data) return null;
 
-  const { config, catalog, commercialInventory } = data;
+  const { config, catalog, commercialInventory, canonicalSummary } = data;
 
   return (
     <main className="min-h-screen bg-[#f8f4eb]">
@@ -232,9 +240,16 @@ export default function AdminMarketingHubPage() {
 
       <div className="mx-auto max-w-7xl space-y-6 px-6 py-8">
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <Metric label="Servicios canónicos" value={canonicalSummary.services} sub={`${canonicalSummary.totalOffers} ofertas shadow`} />
+          <Metric label="Con aliases" value={canonicalSummary.servicesWithAliases} sub="Identidades legacy vinculadas explícitamente" />
+          <Metric label="Ofertas múltiples" value={canonicalSummary.servicesWithMultipleOffers} sub="Variantes comerciales bajo una identidad" />
+          <Metric label="Warnings C1" value={canonicalSummary.servicesWithWarnings} sub="Sin corrección automática" />
+        </section>
+
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Metric label="Servicios públicos" value={catalog.total} sub={`${catalog.ready} aptos para marketing`} />
           <Metric label="Revisión manual" value={catalog.manualReview} sub="Bloqueados para publicación automática" />
-          <Metric label="IDs comerciales" value={commercialInventory.totals.uniqueIds} sub={`${commercialInventory.totals.rowsWithIssues} con incidencias`} />
+          <Metric label="IDs comerciales C0" value={commercialInventory.totals.uniqueIds} sub={`${commercialInventory.totals.rowsWithIssues} con incidencias`} />
           <Metric label="Bindings Stripe" value={commercialInventory.totals.stripeBoundRows} sub={`${commercialInventory.totals.checkoutableRows} checkoutables en registry`} />
         </section>
 
