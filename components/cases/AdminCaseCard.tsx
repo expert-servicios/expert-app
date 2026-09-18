@@ -147,19 +147,6 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
       {statusChanged && (
         <div className="mt-4 space-y-3 rounded-2xl border border-[#d8cbb5] bg-white p-4">
           <div>
-              <label className="mb-1 block text-xs font-semibold text-[#29384a]">
-                Organismo externo <span className="text-[#c88b25]">*</span>
-              </label>
-              <input
-                type="text"
-                value={organism}
-                onChange={(e) => setOrganism(e.target.value)}
-                placeholder="Ej: Oficina de Extranjería de Madrid, AEAT…"
-                className="w-full rounded-xl border border-[#d8cbb5] px-4 py-2 text-sm text-[#07111d] outline-none focus:border-[#c88b25]"
-              />
-            </div>
-          )}
-          <div>
             <label className="mb-1 block text-xs font-semibold text-[#29384a]">
               Mensaje al cliente <span className="text-xs font-normal text-[#29384a]">(opcional — se guarda como nota operativa y puede incluirse en la notificación)</span>
             </label>
