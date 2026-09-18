@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShoppingBag, Check } from 'lucide-react';
+import { ShoppingBag, Check, ArrowRight } from 'lucide-react';
 import { useCart, type CartItem } from '@/contexts/CartContext';
 import { NATIONALITY_MINOR_SERVICE } from '@/lib/services/nationality-minor';
 
@@ -38,6 +39,7 @@ export function AddToCartButton({ item, label = DEFAULT_LABEL, inCartLabel, clas
   const pathname = usePathname();
   const { addItem, items } = useCart();
   const isRussianPage = pathname.startsWith('/ru/');
+  const cartHref = isRussianPage ? '/carrito?lang=ru' : '/carrito';
   const cartItem = {
     ...withMandatoryDisbursements(item),
     locale: item.locale ?? (isRussianPage ? 'ru' as const : 'es' as const),
@@ -46,26 +48,38 @@ export function AddToCartButton({ item, label = DEFAULT_LABEL, inCartLabel, clas
   const isNacionalidadMenor = cartItem.slug === NACIONALIDAD_MENOR_SLUG;
   const buttonLabel = isNacionalidadMenor && label === DEFAULT_LABEL ? NACIONALIDAD_MENOR_LABEL : label;
   const resolvedInCartLabel = inCartLabel ?? (isRussianPage ? 'В корзине' : 'En la cesta');
+  const goToCartLabel = isRussianPage ? 'Перейти к оплате' : 'Ir a la cesta';
 
+  if (inCart) {
+    return (
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <button
+          type="button"
+          disabled
+          className={className ?? DEFAULT_CLASS}
+        >
+          <Check className="h-4 w-4" />
+          {resolvedInCartLabel}
+        </button>
+        <Link
+          href={cartHref}
+          className="inline-flex min-h-11 items-center justify-center gap-2 border border-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
+        >
+          {goToCartLabel}
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <button
       type="button"
-      onClick={() => { if (!inCart) addItem(cartItem); }}
-      disabled={inCart}
+      onClick={() => addItem(cartItem)}
       className={className ?? DEFAULT_CLASS}
     >
-      {inCart ? (
-        <>
-          <Check className="h-4 w-4" />
-          {resolvedInCartLabel}
-        </>
-      ) : (
-        <>
-          <ShoppingBag className="h-4 w-4" />
-          {buttonLabel}
-        </>
-      )}
+      <ShoppingBag className="h-4 w-4" />
+      {buttonLabel}
     </button>
   );
 }
