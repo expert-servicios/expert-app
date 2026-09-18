@@ -7,7 +7,7 @@ import {
 } from '@/lib/ai/kia/kia-administrative-approval-service';
 
 const migration = readFileSync(
-  resolve(process.cwd(), 'supabase/migrations/20260915174500_kia_administrative_approval_service.sql'),
+  resolve(process.cwd(), 'supabase/migrations/20260916060120_kia_administrative_approval_service.sql'),
   'utf8',
 );
 const service = readFileSync(
