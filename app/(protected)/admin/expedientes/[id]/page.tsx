@@ -8,6 +8,7 @@ import { AdminNoteEditor } from '@/components/admin/AdminNoteEditor';
 import { AiCaseActions } from '@/components/admin/AiCaseActions';
 import { AdminDeliverableUpload } from '@/components/admin/AdminDeliverableUpload';
 import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
+import { CaseOperationsEditor } from '@/components/admin/CaseOperationsEditor';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 interface Document {
@@ -39,6 +40,10 @@ interface CaseDetail {
   admin_note: string | null;
   docs_checklist: string[] | null;
   assigned_to: string | null;
+  priority: 'baja' | 'media' | 'alta' | 'critica' | null;
+  next_action: string | null;
+  due_date: string | null;
+  order_id: string | null;
   client: { email: string; full_name: string | null; phone: string | null };
   assignee: { full_name: string | null } | null;
 }
@@ -108,6 +113,13 @@ export default async function AdminCaseDetailPage({
             </div>
           </div>
         </div>
+
+        <CaseOperationsEditor
+          caseId={id}
+          initialPriority={c.priority}
+          initialNextAction={c.next_action}
+          initialDueDate={c.due_date}
+        />
 
         {/* Admin internal note */}
         <AdminNoteEditor caseId={id} initialNote={c.admin_note} />
