@@ -761,6 +761,7 @@ export async function POST(req: NextRequest) {
       // The nationality fulfillment trigger runs AFTER INSERT and links the newly
       // created operational case back to the order. Re-read the order so admin
       // notifications can link directly to the case without guessing.
+      if (!catalogOrderId) throw new Error('Catalog order id missing after persistence');
       const { data: fulfilledCatalogOrder, error: fulfilledCatalogOrderError } = await supabaseAdmin
         .from('orders')
         .select('id,case_id')
