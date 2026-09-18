@@ -25,6 +25,11 @@ import {
   buildKiaPresentationContext,
 } from '@/lib/ai/kia/kia-presentation-context-builder';
 import { loadKiaAuthoritativeCaseStatuses } from '@/lib/ai/kia/kia-authoritative-case-status';
+import {
+  appendKiaFiscalNotice,
+  loadKiaAuthoritativeFiscalSignal,
+  shouldLoadKiaFiscalSignal,
+} from '@/lib/ai/kia/kia-authoritative-fiscal-signal';
 import { buildKiaSystemPrompt } from '@/lib/ai/kia/kia-system-prompt';
 import { KIA_DECISION_JSON_SCHEMA } from '@/lib/ai/kia/kia-output-schema';
 import { KIA_TOOL_DEFINITIONS } from '@/lib/ai/kia/kia-tool-definitions';
@@ -251,9 +256,19 @@ export async function POST(request: NextRequest) {
   const authoritativeCaseStatuses = result.decision.intent === 'case_status'
     ? await loadKiaAuthoritativeCaseStatuses(admin, user.id, companyScope)
     : null;
+
+  const fiscalSignal = shouldLoadKiaFiscalSignal({
+    message,
+    currentPage,
+    intent: result.decision.intent,
+  })
+    ? await loadKiaAuthoritativeFiscalSignal(admin, user.id, companyScope)
+    : null;
+
   const presentationContext = buildKiaPresentationContext(
     result.toolResults,
     authoritativeCaseStatuses,
+    fiscalSignal?.risk ?? null,
   );
   const avatarDecision = buildKiaAvatarDecision(
     result.decision,
@@ -266,11 +281,12 @@ export async function POST(request: NextRequest) {
     presentationContext,
   });
   const artifacts = buildKiaCopilotArtifacts(result.toolResults, result.decision);
+  const reply = appendKiaFiscalNotice(result.userMessage, fiscalSignal);
 
   try {
     const sessionData = {
       last_message: message,
-      last_reply  : result.userMessage,
+      last_reply  : reply,
       intent      : result.decision.intent,
       next_action : result.decision.nextAction,
       avatar_state: avatarState,
@@ -301,8 +317,8 @@ export async function POST(request: NextRequest) {
   }
 
   const response = NextResponse.json({
-    reply      : result.userMessage,
-    quickReplies: (result.decision.quickReplies ?? []).map((reply) => reply.title),
+    reply,
+    quickReplies: (result.decision.quickReplies ?? []).map((replyItem) => replyItem.title),
     intent     : result.decision.intent,
     nextAction : result.decision.nextAction,
     avatarState,

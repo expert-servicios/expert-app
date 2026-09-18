@@ -17,7 +17,9 @@ describe('KIA shadow wiring', () => {
 
   it('keeps the shadow fail-silent and separate from the user response', () => {
     expect(route).toContain("console.warn('[KiaCopilot] shadow sampling failed:'");
-    expect(route).toContain('reply      : result.userMessage');
+    expect(route).toContain('const reply = appendKiaFiscalNotice(result.userMessage, fiscalSignal);');
+    expect(route).toContain('last_reply  : reply');
+    expect(route).toContain('reply,');
     expect(route).not.toContain('reply      : shadow');
   });
 
