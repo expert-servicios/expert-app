@@ -12,6 +12,7 @@ import { holdedMigracionConInventarioKnowledge } from '@/lib/data/kia-knowledge/
 const root = process.cwd();
 const commercialSource = fs.readFileSync(path.join(root, 'lib/i18n/ru-commercial-data.ts'), 'utf8');
 const pageSource = fs.readFileSync(path.join(root, 'components/i18n/RuPublicPage.tsx'), 'utf8');
+const footerSource = fs.readFileSync(path.join(root, 'components/i18n/RuSiteFooter.tsx'), 'utf8');
 
 describe('RU commercial pages', () => {
   it('reuses canonical Holded and monthly-plan prices', () => {
@@ -58,6 +59,7 @@ describe('RU commercial pages', () => {
     expect(EXPERT_IDENTITY.publicEmail).toBe('info@expertconsulting.es');
     expect(pageSource).toContain('EXPERT_IDENTITY.credentials.holdedSolutionPartner');
     expect(pageSource).toContain('EXPERT_IDENTITY.credentials.aeatSocialCollaborator');
-    expect(pageSource).toContain('EXPERT_IDENTITY.publicEmail');
+    expect(footerSource).toContain('EXPERT_IDENTITY.publicEmail');
+    expect(footerSource).toContain('EXPERT_IDENTITY.phoneDisplay');
   });
 });
