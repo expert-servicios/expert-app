@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { ShoppingBag, Check } from 'lucide-react';
 import { useCart, type CartItem } from '@/contexts/CartContext';
+import { NATIONALITY_MINOR_SERVICE } from '@/lib/services/nationality-minor';
 
 type AddToCartButtonProps = {
   item        : CartItem;
@@ -15,8 +16,8 @@ const DEFAULT_CLASS =
   'inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#D4A017] px-7 py-3 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60';
 
 const DEFAULT_LABEL = 'Añadir a la cesta';
-const NACIONALIDAD_MENOR_SLUG = 'nacionalidad-espanola-menor-nacido-en-espana';
-const NACIONALIDAD_MENOR_TASA_KEY = 'mjusticia_790_026_nacionalidad_residencia';
+const NACIONALIDAD_MENOR_SLUG = NATIONALITY_MINOR_SERVICE.slug;
+const NACIONALIDAD_MENOR_TASA_KEY = NATIONALITY_MINOR_SERVICE.disbursementKey;
 const NACIONALIDAD_MENOR_DISPLAY_PRICE = '302,50 € honorarios + 104,05 € tasa';
 const NACIONALIDAD_MENOR_LABEL = 'Contratar — 302,50 € + tasa 104,05 €';
 const NACIONALIDAD_MENOR_NOTICE =
