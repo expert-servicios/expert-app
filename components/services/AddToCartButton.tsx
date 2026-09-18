@@ -28,7 +28,7 @@ function withMandatoryDisbursements(item: CartItem): CartItem {
 
   return {
     ...item,
-    displayPrice: item.displayPrice || NACIONALIDAD_MENOR_DISPLAY_PRICE,
+    displayPrice: NACIONALIDAD_MENOR_DISPLAY_PRICE,
     disbursements: [...new Set([...(item.disbursements ?? []), NACIONALIDAD_MENOR_TASA_KEY])],
     disbursementNotice: item.disbursementNotice ?? NACIONALIDAD_MENOR_NOTICE,
   };
