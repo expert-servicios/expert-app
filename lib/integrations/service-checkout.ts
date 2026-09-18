@@ -1,15 +1,16 @@
 import { services as catalogServices } from '@/lib/utils/catalog';
 import { toStripeAscii } from '@/lib/integrations/stripe';
+import { NATIONALITY_MINOR_SERVICE } from '@/lib/services/nationality-minor';
 
 export const SERVICE_DISBURSEMENT_KEYS = [
-  'mjusticia_790_026_nacionalidad_residencia',
+  NATIONALITY_MINOR_SERVICE.disbursementKey,
 ] as const;
 
 export type ServiceDisbursementKey = (typeof SERVICE_DISBURSEMENT_KEYS)[number];
 
 const REQUIRED_DISBURSEMENTS_BY_SERVICE_SLUG: Readonly<Record<string, readonly ServiceDisbursementKey[]>> = {
-  'nacionalidad-espanola-menor-nacido-en-espana': [
-    'mjusticia_790_026_nacionalidad_residencia',
+  [NATIONALITY_MINOR_SERVICE.slug]: [
+    NATIONALITY_MINOR_SERVICE.disbursementKey,
   ],
 };
 
@@ -69,10 +70,10 @@ function buildServiceCheckouts() {
 const SERVICE_CHECKOUTS = buildServiceCheckouts();
 
 const SERVICE_DISBURSEMENTS = new Map<ServiceDisbursementKey, ServiceDisbursementItem>([
-  ['mjusticia_790_026_nacionalidad_residencia', {
-    key             : 'mjusticia_790_026_nacionalidad_residencia',
+  [NATIONALITY_MINOR_SERVICE.disbursementKey, {
+    key             : NATIONALITY_MINOR_SERVICE.disbursementKey,
     name            : 'Suplido tasa Ministerio de Justicia 790-026',
-    unitAmount      : 10405,
+    unitAmount      : NATIONALITY_MINOR_SERVICE.officialFeeCents,
     beneficiary     : 'Ministerio de Justicia',
     officialModel   : '790-026',
     taxable         : false,
