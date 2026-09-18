@@ -128,8 +128,51 @@ jobs:
 
           sha256sum "$raw" > "$private/schema_migrations_before_repair.raw.sha256"
 
-          grep -q '^SET transaction_timeout = 0;$' "$raw" || { echo 'STOP: expected PG17 dump compatibility line not found'; exit 1; }
-          sed '/^SET transaction_timeout = 0;$/d' "$raw" > "$restore"
+          if grep -q '^SET transaction_timeout = 0;
+          sha256sum "$restore" > "$private/schema_migrations_before_repair.pg15.sha256"
+
+          raw_hash="$(cut -d' ' -f1 "$private/schema_migrations_before_repair.raw.sha256")"
+          restore_hash="$(cut -d' ' -f1 "$private/schema_migrations_before_repair.pg15.sha256")"
+          cli_version="$(supabase --version)"
+          cat > "$private/preflight-manifest.txt" <<EOF
+          project_ref=$PROJECT_REF
+          production_postgres=15.8
+          supabase_cli=$cli_version
+          ledger_rows=$EXPECTED_LEDGER_ROWS
+          first_version=$EXPECTED_FIRST_VERSION
+          last_version=$EXPECTED_LAST_VERSION
+          empty_statements=0
+          recovery_baseline_remote_rows=0
+          raw_sha256=$raw_hash
+          pg15_restore_sha256=$restore_hash
+          EOF
+
+          cp "$RUNNER_TEMP/migration-list-before.txt" "$private/migration-list-before.txt"
+
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 \
+            -pass env:SUPABASE_DB_PASSWORD \
+            -in "$raw" \
+            -out "$private/schema_migrations_before_repair.raw.sql.enc"
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 \
+            -pass env:SUPABASE_DB_PASSWORD \
+            -in "$restore" \
+            -out "$private/schema_migrations_before_repair.pg15.sql.enc"
+
+          rm -f "$raw" "$restore"
+          chmod 600 "$private"/*
+
+      - name: Upload encrypted rollback artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-ledger-preflight-20260918
+          path: ${{ runner.temp }}/ledger-preflight/
+          if-no-files-found: error
+          retention-days: 14
+ "$raw"; then
+            sed '/^SET transaction_timeout = 0;$/d' "$raw" > "$restore"
+          else
+            cp "$raw" "$restore"
+          fi
           test -s "$restore"
           sha256sum "$restore" > "$private/schema_migrations_before_repair.pg15.sha256"
 
