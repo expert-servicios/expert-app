@@ -67,7 +67,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.117.0
 
       - name: Verify migration repair and rollback semantics
         shell: bash
