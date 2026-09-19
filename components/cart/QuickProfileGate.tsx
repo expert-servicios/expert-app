@@ -10,11 +10,13 @@ interface Props {
   disbursementMandateAccepted?: boolean;
   locale?: CartLocale;
   loginNextPath?: string;
+  companyId?: string;
+  onCompanyRequired?: () => void;
   onCheckoutUrl: (url: string) => void;
 }
 
 type ProfileResponse = { profile?: { full_name: string | null; phone: string | null } };
-type CheckoutResponse = { url?: string; error?: string; requiresAuth?: boolean; code?: 'profile_required' };
+type CheckoutResponse = { url?: string; error?: string; requiresAuth?: boolean; code?: 'profile_required' | 'company_required' };
 
 const inputCls = 'w-full rounded-xl border border-[#D4A017]/20 bg-[#F8F6F1] px-3 py-2.5 text-sm text-[#0D1B2A] outline-none transition focus:border-[#D4A017] focus:ring-2 focus:ring-[#D4A017]/20';
 
@@ -53,6 +55,8 @@ export function QuickProfileGate({
   disbursementMandateAccepted = false,
   locale = 'es',
   loginNextPath = '/carrito',
+  companyId,
+  onCompanyRequired,
   onCheckoutUrl,
 }: Props) {
   const t = COPY[locale];
@@ -111,6 +115,7 @@ export function QuickProfileGate({
         body: JSON.stringify({
           priceIds,
           locale,
+          ...(companyId ? { companyId } : {}),
           ...(hasDisbursements
             ? { disbursements, disbursementMandateAccepted }
             : {}),
@@ -119,6 +124,10 @@ export function QuickProfileGate({
       const checkoutData = await checkoutRes.json() as CheckoutResponse;
       if (checkoutRes.status === 401 || checkoutData.requiresAuth) {
         window.location.href = `/auth/login?next=${encodeURIComponent(loginNextPath)}&lang=${locale}`;
+        return;
+      }
+      if (checkoutRes.status === 409 && checkoutData.code === 'company_required' && onCompanyRequired) {
+        onCompanyRequired();
         return;
       }
       if (checkoutData.url) {
