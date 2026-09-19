@@ -655,6 +655,189 @@ Si además de el certificado digital quieres gestionar trámites personales desd
     `
   },
   {
+    slug: 'certificado-digital-persona-fisica-usos-aeat-seguridad-social',
+    category: 'Trámites',
+    title: 'Certificado digital de persona física: usos en AEAT, Seguridad Social y sedes electrónicas',
+    excerpt:
+      'Qué trámites puedes hacer con tu certificado digital personal y cuándo conviene usarlo frente a otros sistemas de identificación.',
+    date: '19 sep 2026',
+    readTime: '6 min',
+    tags: ['certificado digital', 'persona física', 'AEAT', 'Seguridad Social', 'sede electrónica'],
+    relatedServiceSlugs: ['certificado-digital-persona-fisica'],
+    body: `
+## Un certificado para identificarte y firmar
+
+El certificado digital de persona física permite identificarte electrónicamente y, cuando el trámite lo admite, firmar documentos o solicitudes.
+
+## Usos habituales
+
+Entre los usos más frecuentes están:
+
+- AEAT: consultas, declaraciones, certificados y escritos;
+- Seguridad Social: informes, trámites y comunicaciones;
+- DGT y otras sedes administrativas;
+- firma de documentos electrónicos;
+- presentación de solicitudes y recursos.
+
+## Certificado digital y Cl@ve no son lo mismo
+
+Cl@ve es un sistema de identificación pública muy útil para trámites personales. El certificado digital, en cambio, puede aportar firma electrónica y se utiliza también en procedimientos y aplicaciones donde Cl@ve no está disponible.
+
+## Antes de instalarlo
+
+Comprueba:
+- que el DNI/TIE está en vigor;
+- que usarás un equipo de confianza;
+- que podrás hacer una copia de seguridad segura;
+- que conoces la fecha de caducidad.
+
+## Modalidad EXPERT
+
+El servicio EXPERT para persona física cuesta **90 € + IVA** y la modalidad comercializada tiene **5 años de vigencia**.
+
+Incluye verificación, emisión, instalación y prueba de funcionamiento.
+    `
+  },
+  {
+    slug: 'certificado-digital-persona-fisica-vs-clave-dnie',
+    category: 'Trámites',
+    title: 'Certificado digital, Cl@ve o DNIe: qué elegir para tus trámites',
+    excerpt:
+      'Comparativa práctica entre certificado digital, Cl@ve y DNI electrónico para saber qué sistema te conviene según el trámite.',
+    date: '19 sep 2026',
+    readTime: '6 min',
+    tags: ['certificado digital', 'Cl@ve', 'DNIe', 'identificación electrónica'],
+    relatedServiceSlugs: ['certificado-digital-persona-fisica'],
+    body: `
+## Tres sistemas distintos
+
+En España puedes identificarte electrónicamente con distintas herramientas. No todas sirven para exactamente lo mismo.
+
+## Certificado digital
+
+Ventajas:
+- identificación electrónica;
+- firma de documentos;
+- uso en muchas sedes;
+- puede instalarse en el equipo habitual.
+
+## Cl@ve
+
+Ventajas:
+- cómoda para trámites personales frecuentes;
+- no requiere custodiar un fichero de certificado;
+- especialmente útil desde móvil.
+
+## DNIe
+
+Ventajas:
+- integra certificado en el documento nacional de identidad;
+- permite identificación y firma si se dispone del soporte y claves necesarios.
+
+## Qué elegir
+
+Si necesitas trabajar de forma habitual con varias sedes y firmar electrónicamente, un certificado software suele ser la opción más versátil.
+
+Si solo haces consultas personales puntuales, Cl@ve puede ser suficiente.
+
+## Servicio EXPERT
+
+Tramitamos el certificado Camerfirma de persona física por **90 € + IVA**, con instalación y prueba de funcionamiento.
+    `
+  },
+  {
+    slug: 'certificado-digital-entidad-representante-o-sello',
+    category: 'Trámites',
+    title: 'Certificado de representante, corporativo o sello: cuál necesita tu empresa',
+    excerpt:
+      'Las empresas pueden necesitar certificados distintos según quién firma y para qué. Explicamos cómo distinguir representación, pertenencia y sello electrónico.',
+    date: '19 sep 2026',
+    readTime: '7 min',
+    tags: ['certificado empresa', 'representante legal', 'sello electrónico', 'Camerfirma'],
+    relatedServiceSlugs: ['certificado-digital-entidad'],
+    body: `
+## El error más frecuente: pedir "un certificado de empresa" sin definir el uso
+
+Camerfirma distingue varias figuras para organizaciones.
+
+## Representante
+
+Se utiliza cuando una persona debe actuar en nombre de la organización dentro de las facultades correspondientes.
+
+## Corporativo
+
+Acredita la pertenencia a una entidad, pero no equivale automáticamente a poderes generales de representación.
+
+## Sello electrónico
+
+Está orientado a identificar a la organización en determinados procesos y automatizaciones.
+
+## Antes de contratar
+
+Define:
+- quién será el titular;
+- qué trámites hará;
+- si necesita actuar ante Administraciones Públicas;
+- si firma contratos;
+- si existe poder suficiente;
+- si el uso será manual o automatizado.
+
+## Servicio EXPERT
+
+La modalidad de entidad comercializada por EXPERT cuesta **150 € + IVA** y tiene **2 años de vigencia**. Revisamos la representación y la documentación antes de emitir.
+
+Fuentes:
+https://www.camerfirma.com/certificados-digitales-empresas/
+    `
+  },
+  {
+    slug: 'certificado-digital-entidad-cambio-administrador-revocacion',
+    category: 'Trámites',
+    title: 'Certificado digital de empresa: qué hacer si cambia el administrador o representante',
+    excerpt:
+      'Qué revisar cuando cambia el representante de una sociedad y por qué conviene controlar certificados, accesos y revocaciones.',
+    date: '19 sep 2026',
+    readTime: '6 min',
+    tags: ['certificado digital empresa', 'administrador', 'representante', 'revocación'],
+    relatedServiceSlugs: ['certificado-digital-entidad'],
+    body: `
+## El certificado está ligado a una situación de representación
+
+Cuando cambia el administrador, apoderado o persona autorizada, no basta con actualizar el organigrama interno. Hay que revisar los certificados y accesos digitales asociados.
+
+## Checklist de cambio
+
+1. Identifica los certificados activos.
+2. Comprueba quién figura como titular o representante.
+3. Revisa las facultades del nuevo cargo.
+4. Valora la revocación de credenciales que ya no deben utilizarse.
+5. Tramita el nuevo certificado adecuado.
+6. Actualiza inventario interno y fechas de vencimiento.
+
+## Por qué importa
+
+Mantener un certificado de representación en manos de alguien que ya no debe actuar puede generar un riesgo operativo y de seguridad.
+
+## Control recomendado
+
+La empresa debería registrar:
+- tipo de certificado;
+- titular;
+- fecha de emisión;
+- fecha de caducidad;
+- equipo o dispositivo;
+- responsable de custodia;
+- estado: activo, revocado o sustituido.
+
+## Servicio EXPERT
+
+Tramitamos la modalidad de entidad por **150 € + IVA**, con **2 años de vigencia**, revisando documentación y facultades del representante.
+
+Fuentes:
+https://www.camerfirma.com/certificado-cualificado-de-representacion/
+    `
+  },
+  {
     slug: 'migracion-holded-guia-practica',
     category: 'Holded',
     title: 'Migración a Holded: qué datos se trasladan y cómo prepararte',
@@ -2931,7 +3114,7 @@ Si prefieres que lo hagamos nosotros, el servicio **Migración con inventario** 
     date: '25 may 2026',
     readTime: '5 min',
     tags: ['Cl@ve', 'identificación electrónica', 'trámites online', 'sede electrónica', 'administración pública'],
-    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'certificado-digital-entidad'],
+    relatedServiceSlugs: ['certificado-digital-persona-fisica'],
     body: `
 ## ¿Qué es Cl@ve?
 
@@ -3000,7 +3183,7 @@ El registro en Cl@ve puede hacerse online en menos de 10 minutos si tienes certi
     date: '25 may 2026',
     readTime: '6 min',
     tags: ['Cl@ve', 'registro Cl@ve', 'identificación electrónica', 'certificado digital', 'sede electrónica'],
-    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'certificado-digital-entidad'],
+    relatedServiceSlugs: ['certificado-digital-persona-fisica'],
     body: `
 ## Qué necesitas antes de empezar
 
