@@ -229,6 +229,7 @@ export function CartSidebar() {
               <CompanyCheckoutGate
                 locale={locale}
                 loading={loading}
+                returnPath={locale === 'ru' ? '/carrito?lang=ru' : '/carrito'}
                 onContinue={(companyId) => { void handleCheckout(companyId); }}
               />
             ) : needsProfile ? (
