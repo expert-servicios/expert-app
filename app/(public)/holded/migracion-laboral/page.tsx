@@ -293,7 +293,7 @@ export default function MigracionLaboralPage() {
               <div>
                 <p className="font-serif text-2xl font-bold">¿Quieres aprender a gestionarlo tú?</p>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[#23364D]">
-                  El Programa de Gestión Laboral Integral incluye 20 horas de formación y 5 horas de tutoría para dominar Holded, Creative Quality y SILTRA.
+                  El Programa de Gestión Laboral Integral incluye 20 horas de formación y 5 horas de tutoría para dominar Holded, las herramientas de afiliación y contratación y SILTRA.
                 </p>
               </div>
             </div>

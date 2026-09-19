@@ -51,7 +51,7 @@ Si dos sistemas discrepan, no se corrige solo el documento final. Se identifica 
 - [Holded Academy: funcionalidad de Nóminas](https://help.holded.com/es/articles/15262251-descubre-la-funcionalidad-de-nominas)
 - [Holded Academy: gestión de ficheros SILTRA](https://help.holded.com/es/articles/14321260-como-gestionar-los-ficheros-siltra-desde-holded)
 - [TGSS: alta, baja y variación de datos](https://www.seg-social.es/wps/portal/wss/internet/InformacionUtil/44539/44113/44136)
-- [Creative Quality: NetContrata](https://www.creative-quality.es/netcontrata/)
+- NetContrata / DelegaRed: documentación operativa disponible en el entorno contratado.
 - [SEPE: guía de uso de Certific@2](https://www.sepe.es/HomeSepe/ca/dam/SiteSepe/contenidos/empresas/contratos_trabajo/certificados_empresa/pdf/guia_uso_certifica_servicios_empresas.pdf)
 
 ## Historial de cambios

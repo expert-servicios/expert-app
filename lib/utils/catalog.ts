@@ -1343,7 +1343,7 @@ export const services: Service[] = [
     name: 'Certificado Digital Persona Física — Camerfirma',
     shortDescription: 'Certificado digital cualificado Camerfirma 100 % online, sin presencia física. Identificación con EXPERT y tramitación en un máximo de 24 horas laborables desde documentación e identidad validadas.',
     description:
-      'EXPERT tramita a través del canal PVP de Creative Quality dentro del proceso Camerfirma y realiza la identificación y validación necesarias para la emisión del certificado. La tramitación es 100 % online, sin desplazamientos ni presencia física. Una vez recibida la documentación completa y validada la identidad, EXPERT tramita el certificado en un plazo máximo de 24 horas laborables e incluye asistencia para su instalación y prueba de funcionamiento.',
+      'EXPERT gestiona la tramitación dentro del proceso Camerfirma y realiza la identificación y validación necesarias para la emisión del certificado. La tramitación es 100 % online, sin desplazamientos ni presencia física. Una vez recibida la documentación completa y validada la identidad, EXPERT tramita el certificado en un plazo máximo de 24 horas laborables e incluye asistencia para su instalación y prueba de funcionamiento.',
     price: '90 € + IVA',
     duration: 'Máximo 24 horas laborables desde documentación completa e identidad validada',
     stripePriceId: 'price_1TZYiBLeYwwgvux4EO07gS0W',
@@ -1353,7 +1353,7 @@ export const services: Service[] = [
     metaDescription: 'Certificado digital Camerfirma para persona física por 90 € + IVA. 100 % online, sin presencia física. Identificación con EXPERT y tramitación máxima de 24 horas laborables.',
     keyPoints: [
       { title: 'Reconocido oficialmente', text: 'Válido ante AEAT, Seguridad Social, Notarías y todos los organismos públicos y privados.' },
-      { title: '100 % online', text: 'Identificación y tramitación remotas con EXPERT a través del canal PVP de Creative Quality dentro del proceso Camerfirma, sin presencia física.' },
+      { title: '100 % online', text: 'Identificación y tramitación remotas con EXPERT dentro del proceso Camerfirma, sin presencia física.' },
       { title: 'Vigencia 5 años', text: 'La modalidad de persona física comercializada por EXPERT tiene una vigencia de 5 años.' },
       { title: 'Instalación incluida', text: 'Te ayudamos a instalarlo y probarlo en tu equipo para que funcione desde el primer minuto.' },
     ],
@@ -1418,7 +1418,7 @@ export const services: Service[] = [
     name: 'Certificado Digital de Entidad — Camerfirma',
     shortDescription: 'Certificado digital Camerfirma para entidad mercantil, 100 % online y sin presencia física. EXPERT valida al representante y tramita la emisión en máximo 24 horas laborables desde expediente completo.',
     description:
-      'EXPERT tramita a través del canal PVP de Creative Quality dentro del proceso Camerfirma. Revisamos la documentación de la entidad y las facultades del representante, realizamos la identificación y validación online y tramitamos la emisión sin presencia física. Una vez recibida la documentación completa y validado el representante, el plazo máximo de tramitación es de 24 horas laborables. Incluye asistencia para instalación y prueba de funcionamiento.',
+      'EXPERT gestiona la tramitación dentro del proceso Camerfirma. Revisamos la documentación de la entidad y las facultades del representante, realizamos la identificación y validación online y tramitamos la emisión sin presencia física. Una vez recibida la documentación completa y validado el representante, el plazo máximo de tramitación es de 24 horas laborables. Incluye asistencia para instalación y prueba de funcionamiento.',
     price: '150 € + IVA',
     duration: 'Máximo 24 horas laborables desde documentación completa y representante validado',
     stripePriceId: 'price_1TZYiDLeYwwgvux4ovAjIxrz',
@@ -1503,7 +1503,7 @@ export const services: Service[] = [
     name: 'Pack Certificados Digitales — Persona Física + Entidad',
     shortDescription: 'Oferta conjunta: certificado digital Camerfirma de persona física + certificado de entidad mercantil por 200 € + IVA. 100 % online y sin presencia física.',
     description:
-      'Pack de lanzamiento EXPERT para obtener en un único pedido el certificado digital Camerfirma de la persona física representante y el certificado digital de su entidad mercantil. EXPERT tramita a través del canal PVP de Creative Quality dentro del proceso Camerfirma, realiza la identificación y validación online y revisa tanto la documentación personal como la societaria. El proceso es 100 % online, sin desplazamientos. Una vez recibida toda la documentación y validadas la identidad y las facultades de representación, ambos certificados se tramitan en un plazo máximo de 24 horas laborables.',
+      'Pack de lanzamiento EXPERT para obtener en un único pedido el certificado digital Camerfirma de la persona física representante y el certificado digital de su entidad mercantil. EXPERT gestiona la tramitación dentro del proceso Camerfirma, realiza la identificación y validación online y revisa tanto la documentación personal como la societaria. El proceso es 100 % online, sin desplazamientos. Una vez recibida toda la documentación y validadas la identidad y las facultades de representación, ambos certificados se tramitan en un plazo máximo de 24 horas laborables.',
     price: '200 € + IVA',
     duration: 'Máximo 24 horas laborables desde expediente completo e identidades/facultades validadas',
     stripePriceId: 'price_1S2X6ZLeYwwgvux4sPrfxFD7',
@@ -1513,7 +1513,7 @@ export const services: Service[] = [
     metaDescription: 'Oferta certificado digital persona física + entidad mercantil por 200 € + IVA. 100 % online, sin presencia física y tramitación máxima de 24 horas laborables con EXPERT.',
     keyPoints: [
       { title: 'Ahorro de 40 €', text: 'Contratados por separado suman 240 € + IVA. Con el pack pagas 200 € + IVA.' },
-      { title: '100 % online', text: 'Identificación, validación documental y tramitación remotas con EXPERT a través del canal PVP de Creative Quality dentro del proceso Camerfirma.' },
+      { title: '100 % online', text: 'Identificación, validación documental y tramitación remotas con EXPERT dentro del proceso Camerfirma.' },
       { title: 'Dos certificados, un pedido', text: 'Incluye el certificado personal del representante y el certificado de la entidad mercantil seleccionada.' },
       { title: 'Máximo 24 h laborables', text: 'El plazo comienza cuando EXPERT dispone de toda la documentación y ha validado identidad y facultades de representación.' },
     ],

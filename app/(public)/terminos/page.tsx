@@ -195,7 +195,18 @@ export default function TerminosPage() {
             </p>
           </Section>
 
-          <Section title="14. Contacto">
+          <Section title="14. Reseñas y valoraciones">
+            <p>
+              Las reseñas de clientes se verifican y procesan conforme a nuestra{' '}
+              <Link href="/politica-de-resenas" className="text-[#D4A017] hover:text-[#F2C14E]">
+                Política de reseñas y valoraciones
+              </Link>.
+              Una opinión negativa no se elimina por ser desfavorable. Cuando existe comentario, puede aplicarse una moderación automatizada
+              limitada a criterios objetivos de contenido, con revisión humana para los casos ambiguos.
+            </p>
+          </Section>
+
+          <Section title="15. Contacto">
             <p>Para cualquier consulta relacionada con estos términos, puedes contactar con nosotros en:</p>
             <ul>
               <li>

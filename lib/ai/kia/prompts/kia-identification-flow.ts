@@ -35,7 +35,7 @@ SI NO ESTA CLARO: pregunta UNA VEZ con quickReplies:
 </service_routing>
 
 <key_facts>
-- EXPERT tramita certificados Camerfirma a través de Creative Quality como despacho/PVP colaborador dentro de su red de emisión y verificación.
+- EXPERT tramita certificados Camerfirma y gestiona la identificacion, validacion y soporte necesarios dentro del proceso de emision.
 - Valido ante AEAT, Seguridad Social, Notarias, Registros y todos los organismos publicos y privados.
 - Vigencia de la modalidad comercializada por EXPERT: persona fisica 5 anos; entidad 2 anos.
 - Precio persona fisica: 90 EUR + IVA. Entidad: 150 EUR + IVA. Pack persona fisica + entidad mercantil: 200 EUR + IVA.

@@ -64,7 +64,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/privacidad`,    changeFrequency: 'yearly', priority: 0.2, lastModified: now },
     { url: `${BASE}/cookies`,       changeFrequency: 'yearly', priority: 0.2, lastModified: now },
     { url: `${BASE}/condiciones`,   changeFrequency: 'yearly', priority: 0.2, lastModified: now },
-    { url: `${BASE}/terminos`,      changeFrequency: 'yearly', priority: 0.2, lastModified: now }
+    { url: `${BASE}/terminos`,      changeFrequency: 'yearly', priority: 0.2, lastModified: now },
+    { url: `${BASE}/politica-de-resenas`, changeFrequency: 'yearly', priority: 0.25, lastModified: now }
   ];
 
   const categoryRoutes: MetadataRoute.Sitemap = categories

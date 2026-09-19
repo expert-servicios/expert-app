@@ -4,11 +4,17 @@ import { AlertCircle, Check, FileText, ShieldCheck } from 'lucide-react';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { getCatalogService } from '@/lib/utils/catalog';
 import { shouldIndexLocale } from '@/lib/i18n/feature-flags';
+import { ServiceShareActions } from '@/components/services/ServiceShareActions';
+import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
+
+export const revalidate = 300;
 
 const SERVICE_SLUG = 'pack-certificados-digitales';
 const ES_URL = 'https://expertconsulting.es/servicios/certificado-digital/pack-certificados-digitales';
 const RU_PATH = '/ru/uslugi/paket-cifrovyh-sertifikatov';
 const RU_URL = `https://expertconsulting.es${RU_PATH}`;
+const SHARE_IMAGE_URL = `https://expertconsulting.es/api/services/og?slug=${encodeURIComponent(SERVICE_SLUG)}&variant=square&lang=ru`;
+const SHARE_TITLE = 'Пакет цифровых сертификатов — физлицо + компания';
 
 const service = (() => {
   const canonical = getCatalogService(SERVICE_SLUG);
@@ -57,6 +63,11 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ru_RU',
     siteName: 'EXPERT',
+    images: [{ url: SHARE_IMAGE_URL, width: 1200, height: 1200 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    images: [SHARE_IMAGE_URL],
   },
 };
 
@@ -338,6 +349,36 @@ export default function RuCertificateBundlePage() {
             </div>
           </div>
         </aside>
+      </section>
+
+      <section className="px-6 pb-16">
+        <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-2">
+          <ServiceRatingSummary serviceSlug={SERVICE_SLUG} locale="ru" />
+          <ServiceShareActions
+            url={RU_URL}
+            title={SHARE_TITLE}
+            text="Пакет цифровых сертификатов Camerfirma: физлицо + компания за 200 € + IVA."
+            locale="ru"
+          />
+        </div>
+        <div className="mx-auto mt-5 max-w-5xl border border-[#D4A017]/20 bg-[#F8F6F1] p-5">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[#23364D]">Сопутствующие услуги</p>
+          <p className="mt-1 text-sm text-[#23364D]/70">Услуги, которые часто дополняют этот процесс.</p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <Link
+                href="/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa"
+                className="block border border-[#D4A017]/20 bg-white px-4 py-3 text-sm font-semibold text-[#0D1B2A] transition hover:border-[#D4A017] hover:text-[#D4A017]"
+              >
+                Сертификат для физического лица →
+              </Link>
+              <Link
+                href="/ru/uslugi/cifrovoi-sertifikat-organizatsii"
+                className="block border border-[#D4A017]/20 bg-white px-4 py-3 text-sm font-semibold text-[#0D1B2A] transition hover:border-[#D4A017] hover:text-[#D4A017]"
+              >
+                Сертификат для компании или организации →
+              </Link>
+          </div>
+        </div>
       </section>
     </main>
   );

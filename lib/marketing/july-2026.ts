@@ -117,7 +117,7 @@ export const julyEmailCampaignDrafts: JulyEmailDraft[] = [
       'Si no puedes firmar o presentar, el tramite se bloquea.',
       `
         <p style="margin:0 0 16px;line-height:1.7;">En julio muchos tramites se vuelven urgentes: presentaciones ante AEAT, consultas, notificaciones y firmas. Si tu certificado esta caducado o dependes de otra persona para operar, conviene resolverlo antes de que sea un bloqueo.</p>
-        <p style="margin:0 0 16px;line-height:1.7;">A través del canal PVP de Creative Quality dentro del proceso Camerfirma, EXPERT tramita certificados de persona fisica y entidad 100 % online, sin presencia fisica. La oferta conjunta de ambos certificados es de 200 EUR + IVA.</p>
+        <p style="margin:0 0 16px;line-height:1.7;">EXPERT tramita certificados Camerfirma de persona fisica y entidad 100 % online, sin presencia fisica. La oferta conjunta de ambos certificados es de 200 EUR + IVA.</p>
         <p style="margin:0;line-height:1.7;">Te ayudamos tambien con instalacion y prueba para que no te quedes con un certificado emitido pero inutilizable.</p>
       `,
       'Ver pack de certificados',

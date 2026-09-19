@@ -19,7 +19,7 @@ meetingHref: /cita
 
 ## De la normativa a la ejecución autónoma
 
-Formación individual para implantar un proceso laboral claro, documentado y controlable mediante Holded, Sistema RED / SILTRA y las soluciones de Creative Quality.
+Formación individual para implantar un proceso laboral claro, documentado y controlable mediante Holded, Sistema RED / SILTRA y herramientas de afiliación y contratación laboral.
 
 ## Datos clave
 
@@ -57,7 +57,7 @@ Formación individual para implantar un proceso laboral claro, documentado y con
 
 ### Módulo 1 · Arquitectura de la gestión laboral · 1 hora
 
-**Capa transversal.** Relación laboral, organismos, obligaciones, plazos, responsabilidades, calendario, expediente digital y mapa Holded–Creative Quality–TGSS/SEPE.
+**Capa transversal.** Relación laboral, organismos, obligaciones, plazos, responsabilidades, calendario, expediente digital y mapa Holded–herramientas de afiliación y contratación–TGSS/SEPE.
 
 ### Módulo 2 · Convenio colectivo de hostelería · 2,5 horas
 
@@ -96,7 +96,7 @@ Formación individual para implantar un proceso laboral claro, documentado y con
 | Plataforma | Qué se aprende a realizar | Qué no sustituye |
 | --- | --- | --- |
 | **Holded Nóminas / Equipo Pro** | configuración laboral, contratos internos, cálculo y aprobación de nóminas, finiquitos, remesas, asientos, preparación de ficheros SILTRA/CRA y gestión documental | alta/baja oficial TGSS, envío SILTRA, comunicación Contrat@ y Certific@2 |
-| **DelegaRed / NetContrata – Creative Quality** | interfaz operativa para afiliación, contratos, prórrogas, transformaciones, huellas y, según servicio contratado, Certific@2 | revisión jurídica, aceptación final por TGSS o SEPE y liquidación de cuotas |
+| **DelegaRed / NetContrata** | interfaz operativa para afiliación, contratos, prórrogas, transformaciones, huellas y, según servicio contratado, Certific@2 | revisión jurídica, aceptación final por TGSS o SEPE y liquidación de cuotas |
 | **Sistema RED / RED Directo – TGSS** | altas, bajas, variaciones, consultas e IDC | nómina, contrato firmado, comunicación SEPE y liquidación SILTRA |
 | **SILTRA / Sistema de Liquidación Directa** | transmisión, respuestas, cálculos, confirmación, RNT y RLC | cálculo contractual, comunicación Contrat@ o certificado de empresa |
 | **Contrat@ / Certific@2 – SEPE** | comunicación de contratos y certificados/periodos que procedan | afiliación TGSS, nómina y cotización |

@@ -76,7 +76,7 @@ Errores: modificar Holded sin TGSS, fecha distinta, borrar histórico, comunicar
 - [TGSS: alta, baja y variación en Régimen General](https://www.seg-social.es/wps/portal/wss/internet/InformacionUtil/44539/44113/44136)
 - [BOE: artículo 32.3 del Real Decreto 84/1996](https://www.boe.es/eli/es/rd/1996/01/26/84/con)
 - [BOE: Real Decreto 643/2026](https://www.boe.es/buscar/doc.php?id=BOE-A-2026-16557)
-- [Creative Quality: NetContrata](https://www.creative-quality.es/netcontrata/)
+- NetContrata / DelegaRed: documentación operativa disponible en el entorno contratado.
 - [Holded Academy: crear contratos y aumentos](https://help.holded.com/es/articles/10484753-como-crear-contratos)
 
 ## Historial

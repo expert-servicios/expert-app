@@ -98,10 +98,14 @@ Para cada servicio incluido:
 7. crear o sincronizar RU;
 8. conectar exactamente el mismo flujo económico;
 9. añadir enlace ES ↔ RU y canonical/hreflang;
-10. añadir tests de paridad;
-11. CI + preview;
-12. merge;
-13. pasar al siguiente.
+10. añadir imagen social principal localizada por idioma;
+11. añadir compartir visible y reputación verificada;
+12. añadir servicios complementarios curados sin Holded/planes/Formación;
+13. verificar que no se expone ningún proveedor de marca blanca;
+14. añadir tests de paridad;
+15. CI + preview;
+16. merge;
+17. pasar al siguiente.
 
 ## No hacer
 

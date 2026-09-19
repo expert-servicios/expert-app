@@ -499,7 +499,7 @@ export const catalogLaunchSocialPacks: ServiceLaunchPack[] = [
         format: 'educational',
         title: '100 % online y máximo 24 horas laborables',
         shortCopy: 'El SLA empieza cuando tenemos documentación completa e identidad/facultades validadas.',
-        longCopy: 'No necesitas desplazarte. EXPERT tramita a través del canal PVP de Creative Quality dentro del proceso Camerfirma. Validamos online al titular/representante y la documentación societaria. Cuando todo está completo, tramitamos ambos certificados en un máximo de 24 horas laborables.',
+        longCopy: 'No necesitas desplazarte. EXPERT gestiona la tramitación dentro del proceso Camerfirma. Validamos online al titular/representante y la documentación societaria. Cuando todo está completo, tramitamos ambos certificados en un máximo de 24 horas laborables.',
         cta: 'Preparar documentación',
         destinationPath: '/docs/certificado-digital-entidad-documentos-representante',
         utmCampaign: packCertificatesCampaign,

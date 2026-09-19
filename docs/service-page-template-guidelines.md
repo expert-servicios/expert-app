@@ -73,6 +73,8 @@ Cuando un dato pueda compartirse como estructura o constante, debe compartirse. 
 - Mantener tono profesional, concreto y orientado a decisión.
 - Mantener enlaces a fuentes oficiales, blog y base de conocimientos cuando existan.
 - Usar Cal.com para reuniones. No usar naming anterior en páginas nuevas.
+- Respetar la arquitectura de **marca blanca**: no exponer en páginas, metadatos, KIA, emails, campañas, FAQ ni piezas sociales el nombre del mayorista, intermediario o proveedor operativo que EXPERT utilice internamente. Solo se identifica al prestador/issuer final cuando sea necesario para explicar el producto al cliente (por ejemplo, Camerfirma en certificados Camerfirma).
+- No inventar testimonios, estrellas ni contadores. Las valoraciones públicas proceden exclusivamente del flujo real de cierre de expediente y moderación.
 
 ## Orden canónico de construcción y sincronización
 
@@ -109,7 +111,10 @@ Orden visual de referencia:
 10. no incluido / límites del servicio;
 11. FAQ;
 12. sidebar sticky de conversión;
-13. artículos, docs o CTA complementarios cuando existan.
+13. valoraciones verificadas del servicio;
+14. bloque visible para compartir la página;
+15. servicios complementarios o acompañantes;
+16. artículos, docs o CTA complementarios cuando existan.
 
 No todos los servicios necesitan los mismos bloques, pero **el orden relativo debe mantenerse** para que la experiencia sea coherente.
 
@@ -252,6 +257,96 @@ Toda página de servicio debe incluir un bloque central con cuatro tarjetas:
    - Reunión informativa de 15 minutos para ubicar el caso antes de decidir la vía.
 
 Este bloque debe situarse después de la documentación/proceso principal y antes de artículos relacionados o CTA final.
+
+## Servicios complementarios y cross-sell
+
+Las páginas de servicios puntuales deben incluir un bloque de **servicios complementarios** pensado como ayuda a la decisión, no como catálogo indiscriminado.
+
+Reglas:
+
+- queda fuera de este cross-sell la categoría Holded, los planes/suscripciones y Formación;
+- el CTA «Hazlo por tu cuenta» sigue siendo una vía comercial separada y no cuenta como servicio complementario;
+- cuando exista una relación clara, usar una selección curada por servicio;
+- si no existe selección específica, usar recomendaciones de categoría como fallback;
+- limitar el bloque a un máximo de 3 servicios;
+- permitir recomendaciones entre categorías cuando exista relación operativa real;
+- no recomendar un servicio solo por tener mayor precio;
+- el enlace siempre debe usar el slug y la categoría canónicos del servicio recomendado.
+
+Implementación actual:
+
+```ts
+getCompanionServices(service)
+```
+
+en:
+
+```text
+lib/services/service-merchandising.ts
+```
+
+## Valoraciones de clientes
+
+El flujo de valoración forma parte del cierre estándar del expediente.
+
+Regla funcional:
+
+1. cuando un expediente pasa a `finalizado`, la automatización `case.review_request` genera un enlace de un solo uso;
+2. la puntuación de **1 a 5 estrellas es obligatoria**;
+3. el comentario es **opcional**;
+4. el cliente decide expresamente si autoriza la publicación;
+5. Administración modera la reseña;
+6. solo se puede mostrar públicamente una reseña si:
+   - está aprobada;
+   - el cliente autorizó la publicación;
+   - está marcada como publicada.
+
+Las páginas públicas deben calcular estrellas y media únicamente con reseñas que cumplan esas condiciones. Nunca se deben mezclar valoraciones de KIA, datos legacy o reseñas no moderadas con la reputación pública del servicio.
+
+Componentes y rutas:
+
+```text
+app/(public)/gracias/opinion/page.tsx
+app/api/reviews/submit/route.ts
+app/(protected)/admin/resenas/
+components/services/ServiceRatingSummary.tsx
+lib/services/public-service-reviews.ts
+```
+
+## Compartir página e imagen social
+
+Cada landing `production-ready` debe tener un bloque visible para compartir mediante:
+
+- compartir nativo del dispositivo, cuando exista;
+- WhatsApp;
+- Telegram;
+- LinkedIn;
+- Facebook;
+- copiar enlace.
+
+La URL compartida será siempre la canonical de la página actual.
+
+Cada idioma debe tener una **imagen social principal propia**, no una imagen española reutilizada en una landing rusa. Para las páginas generadas por catálogo se usa:
+
+```text
+/api/services/og?slug=<service_slug>&variant=square&lang=es
+/api/services/og?slug=<service_slug>&variant=square&lang=ru
+```
+
+Requisitos:
+
+- Open Graph y Twitter/X deben apuntar a la imagen del idioma;
+- tamaño de referencia: 1200 x 1200 para pieza social cuadrada;
+- título, resumen, categoría y claims de la imagen deben corresponder al idioma;
+- la imagen debe mantener identidad EXPERT;
+- no exponer proveedores de marca blanca;
+- cualquier precio mostrado debe provenir de la fuente comercial canónica.
+
+Componente visible:
+
+```text
+components/services/ServiceShareActions.tsx
+```
 
 ## Reglas comerciales
 
@@ -469,6 +564,12 @@ const selfGuidedHref = `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&
 - [ ] Hay al menos 3 guías de base de conocimientos relacionadas.
 - [ ] Landing, blog y guías tienen interlinking coherente.
 - [ ] Existe paquete social preparado para Facebook, Instagram y LinkedIn.
+- [ ] La página muestra valoraciones verificadas; las estrellas proceden solo de reseñas aprobadas, consentidas y publicadas.
+- [ ] El flujo post-servicio exige 1–5 estrellas y deja el comentario opcional.
+- [ ] Existe bloque visible para compartir (nativo, WhatsApp, Telegram, LinkedIn, Facebook y copiar enlace).
+- [ ] Open Graph/Twitter usan una imagen social principal del idioma correcto.
+- [ ] Existe bloque de hasta 3 servicios complementarios, sin Holded, planes ni Formación.
+- [ ] No aparece ningún proveedor/intermediario de marca blanca en copy, metadata, KIA, emails ni campañas.
 - [ ] Se revisa build de Vercel antes de marcar PR como listo.
 
 ### Paridad RU
@@ -482,6 +583,10 @@ const selfGuidedHref = `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&
 - [ ] Incluidos, exclusiones, requisitos y documentos mantienen el mismo alcance.
 - [ ] Hay enlace cruzado ES ↔ RU cuando procede.
 - [ ] Metadata, canonical y hreflang están revisados.
+- [ ] La imagen Open Graph/Twitter está localizada al ruso.
+- [ ] El bloque de compartir utiliza la URL RU y copy RU.
+- [ ] Las valoraciones mantienen la misma fuente verificada que ES.
+- [ ] Los servicios complementarios enlazan a una versión RU cuando exista; no se inventan rutas traducidas.
 - [ ] No queda copy español residual salvo términos oficiales deliberados.
 - [ ] Hay tests de paridad para campos críticos.
 - [ ] CI y Vercel están verdes antes de cerrar el servicio.

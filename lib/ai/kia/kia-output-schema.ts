@@ -14,6 +14,7 @@ export const KIA_TASK_TYPES = [
   'next_best_action',
   'checkout_decision',
   'generate_report',
+  'review_moderation',
 ] as const;
 
 export type KiaTaskType = (typeof KIA_TASK_TYPES)[number];
