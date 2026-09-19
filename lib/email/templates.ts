@@ -802,10 +802,10 @@ export function quoteWithPaymentLink(
       ${para(`Hemos preparado tu presupuesto para <strong>${escapeHtml(service)}</strong>. Accede a tu área privada EXPERT para revisar el presupuesto y, cuando estés conforme, iniciar el pago seguro con Stripe.`)}
       ${table(
         detail('Servicio', escapeHtml(service)),
-        detail('Importe total', `<strong style="font-size:18px;color:#c88b25;">€${amount.toFixed(2)}</strong>`),
+        detail('Base imponible', `<strong style="font-size:18px;color:#c88b25;">€${amount.toFixed(2)}</strong> + IVA`),
         ...(expiry ? [detail('Válido hasta', expiry)] : [])
       )}
-      ${btn('Revisar y pagar — €' + amount.toFixed(2), paymentUrl)}
+      ${btn('Revisar presupuesto y pagar', paymentUrl)}
       ${stepsBlock([
         'Haz clic en "Revisar y pagar" para entrar en tu área privada EXPERT.',
         'Revisa el presupuesto y pulsa pagar para abrir una sesión segura de Stripe (Visa / Mastercard / Amex).',
