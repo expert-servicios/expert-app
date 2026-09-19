@@ -631,7 +631,7 @@ A diferencia del de representante, el sello no está vinculado a una persona fí
 
 **Camerfirma** es una Autoridad de Certificación española acreditada, perteneciente a las Cámaras de Comercio de España. Sus certificados están reconocidos por todas las Administraciones Públicas españolas y por buena parte de los organismos europeos.
 
-En EXPERT somos **Punto de Registro Autorizado de Camerfirma**, lo que significa que podemos emitir certificados directamente en nuestras instalaciones o por videoconferencia, sin necesidad de desplazamientos a una oficina de la Cámara de Comercio.
+En EXPERT tramitamos certificados Camerfirma a través de Creative Quality como despacho/PVP colaborador. Para las modalidades comercializadas por EXPERT, la identificación y verificación se gestiona online dentro de este circuito de emisión, sin necesidad de acudir a una oficina pública.
 
 ## Proceso de obtención
 
@@ -881,7 +881,7 @@ El ahorro es de 40 €.
 
 La tramitación con EXPERT se realiza online, sin presencia física.
 
-EXPERT actúa como Punto de Registro Autorizado dentro del proceso Camerfirma y realiza las validaciones necesarias de identidad y representación.
+EXPERT tramita a través del canal PVP de Creative Quality dentro del proceso Camerfirma y realiza las validaciones necesarias de identidad y representación.
 
 ## Plazo
 
