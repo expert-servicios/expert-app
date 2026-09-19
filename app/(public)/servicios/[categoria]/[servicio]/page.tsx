@@ -116,6 +116,8 @@ export default async function ServicioDetallePage({
 
   const category = getCategory(categoria);
   const showViability   = hasSpecificViabilityCheck(servicio);
+  const isCertificateCategory = categoria === 'certificado-digital';
+  const isStandaloneCertificate = servicio === 'certificado-digital-persona-fisica' || servicio === 'certificado-digital-entidad';
   const viabilityCheck  = showViability ? getViabilityCheck(servicio) : null;
   const relatedServices = getServicesByCategory(categoria as CategorySlug).filter((s) => s.slug !== servicio).slice(0, 3);
   const relatedDocs = getDocsForService(service.slug);
@@ -234,12 +236,14 @@ export default async function ServicioDetallePage({
             >
               Caso complejo
             </Link>
-            <Link
-              href={selfGuidedHref}
-              className="inline-flex min-h-12 items-center justify-center border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-[#D4A017] hover:text-[#D4A017]"
-            >
-              Hazlo por tu cuenta
-            </Link>
+            {!isCertificateCategory && (
+              <Link
+                href={selfGuidedHref}
+                className="inline-flex min-h-12 items-center justify-center border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-[#D4A017] hover:text-[#D4A017]"
+              >
+                Hazlo por tu cuenta
+              </Link>
+            )}
             <FreeMeetingButton className="inline-flex min-h-12 items-center justify-center border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-white/50 hover:text-white">
               Reunión gratuita 15 min
             </FreeMeetingButton>
@@ -254,6 +258,24 @@ export default async function ServicioDetallePage({
             </div>
           )}
         </div>
+
+        {isStandaloneCertificate && (
+          <div className="mx-auto mt-8 max-w-5xl border border-[#D4A017]/45 bg-[#D4A017]/10 p-5 md:flex md:items-center md:justify-between md:gap-6">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A017]">Oferta conjunta</p>
+              <p className="mt-2 font-serif text-xl font-bold text-white">Persona física + entidad mercantil · 200 € + IVA</p>
+              <p className="mt-2 text-sm leading-6 text-white/60">
+                Por separado: 240 € + IVA. Con el pack ahorras 40 €. Todo online y sin presencia física.
+              </p>
+            </div>
+            <Link
+              href="/servicios/certificado-digital/pack-certificados-digitales"
+              className="mt-4 inline-flex min-h-11 shrink-0 items-center justify-center bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#F2C14E] md:mt-0"
+            >
+              Ver pack de 200 €
+            </Link>
+          </div>
+        )}
 
         <div className="mx-auto mt-10 max-w-5xl">
           <div className="h-px bg-gradient-to-r from-[#D4A017]/60 via-[#D4A017]/20 to-transparent" />
