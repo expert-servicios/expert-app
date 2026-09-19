@@ -29,7 +29,8 @@ describe('admin personal-first billing flow', () => {
     expect(route).toContain("const forceProfile = servicePolicy === 'profile_only' || billingScope === 'profile'");
     expect(route).toContain("const forceCompany = servicePolicy === 'company_only' || billingScope === 'company'");
     expect(route).toContain("const resolvedBillingScope = companyId ? 'company' : 'profile'");
-    expect(route).toContain("...(companyId ? { company_id: companyId } : {})");
+    expect(route).toContain("const selectedMembership = companyId");
+    expect(route).toContain("company_id: companyId");
   });
 
   it('keeps quote company_id nullable while preserving company inheritance when selected', () => {
