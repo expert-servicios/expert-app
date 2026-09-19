@@ -60,6 +60,22 @@ describe('KIA Regulatory Registry', () => {
     expect(result.fingerprint).toMatch(/^[a-f0-9]{64}$/);
   });
 
+  it('ignores volatile RSS build metadata when fingerprinting', async () => {
+    const bodies = [
+      '<rss><channel><lastBuildDate>Sat, 19 Sep 2026 10:00:00 GMT</lastBuildDate><item><title>Cambio real</title><link>https://www.boe.es/x</link></item></channel></rss>',
+      '<rss><channel><lastBuildDate>Sat, 19 Sep 2026 11:00:00 GMT</lastBuildDate><item><title>Cambio real</title><link>https://www.boe.es/x</link></item></channel></rss>',
+    ];
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(bodies[0], { status: 200, headers: { 'content-type': 'application/xml' } }))
+      .mockResolvedValueOnce(new Response(bodies[1], { status: 200, headers: { 'content-type': 'application/xml' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const rssSource = source({ fetch_strategy: 'rss' });
+    const first = await fetchRegulatorySource(rssSource);
+    const second = await fetchRegulatorySource(rssSource);
+    expect(first.fingerprint).toBe(second.fingerprint);
+  });
+
   it('rejects non-official hosts before fetching', async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
