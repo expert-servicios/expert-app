@@ -7,7 +7,7 @@ function source(path: string): string {
 }
 
 describe('case document workflow security', () => {
-  const migration = source('supabase/migrations/20260919060000_case_document_workflow.sql');
+  const migration = source('supabase/migrations/20260919071707_case_document_workflow.sql');
   const documentsRoute = source('app/api/cases/[id]/documents/route.ts');
   const reviewRoute = source('app/api/cases/[id]/document-review/route.ts');
 
