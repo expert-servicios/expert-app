@@ -136,6 +136,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
             },
           },
         },
+        {
+          url: `${BASE}/ru/uslugi/cifrovoi-sertifikat-organizatsii`,
+          changeFrequency: 'monthly' as const,
+          priority: 0.85,
+          lastModified: now,
+          alternates: {
+            languages: {
+              'es-ES': `${BASE}/servicios/certificado-digital/certificado-digital-entidad`,
+              'ru-RU': `${BASE}/ru/uslugi/cifrovoi-sertifikat-organizatsii`,
+            },
+          },
+        },
       ]
     : [];
 
