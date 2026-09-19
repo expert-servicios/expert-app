@@ -1,4 +1,5 @@
 import type { CategorySlug } from './catalog';
+import { getGeneratedBatch1KnowledgeDocs } from '@/lib/services/service-generated-content';
 
 export type DocCategorySlug = 'extranjeria-nacionalidad' | 'fiscalidad' | 'empresas' | 'tramites' | 'holded';
 
@@ -26,6 +27,7 @@ export const docCategories: { slug: DocCategorySlug; name: string }[] = [
 ];
 
 export const docs: KnowledgeDoc[] = [
+  ...getGeneratedBatch1KnowledgeDocs(),
   {
     slug: 'nacionalidad-espanola-menor-nacido-en-espana',
     category: 'extranjeria-nacionalidad',
