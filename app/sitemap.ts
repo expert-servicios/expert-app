@@ -109,20 +109,34 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }));
 
   const russianRoutes: MetadataRoute.Sitemap = shouldIndexLocale('ru')
-    ? PUBLIC_ROUTE_KEYS
-        .filter((routeKey) => routeKey !== 'nationalityMinor')
-        .map((routeKey) => ({
-        url: `${BASE}${PUBLIC_ROUTE_MAP[routeKey].ru}`,
-        changeFrequency: 'monthly' as const,
-        priority: routeKey === 'home' ? 0.9 : 0.7,
-        lastModified: now,
-        alternates: {
-          languages: {
-            'es-ES': `${BASE}${PUBLIC_ROUTE_MAP[routeKey].es}`,
-            'ru-RU': `${BASE}${PUBLIC_ROUTE_MAP[routeKey].ru}`,
+    ? [
+        ...PUBLIC_ROUTE_KEYS
+          .filter((routeKey) => routeKey !== 'nationalityMinor')
+          .map((routeKey) => ({
+            url: `${BASE}${PUBLIC_ROUTE_MAP[routeKey].ru}`,
+            changeFrequency: 'monthly' as const,
+            priority: routeKey === 'home' ? 0.9 : 0.7,
+            lastModified: now,
+            alternates: {
+              languages: {
+                'es-ES': `${BASE}${PUBLIC_ROUTE_MAP[routeKey].es}`,
+                'ru-RU': `${BASE}${PUBLIC_ROUTE_MAP[routeKey].ru}`,
+              },
+            },
+          })),
+        {
+          url: `${BASE}/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa`,
+          changeFrequency: 'monthly' as const,
+          priority: 0.85,
+          lastModified: now,
+          alternates: {
+            languages: {
+              'es-ES': `${BASE}/servicios/certificado-digital/certificado-digital-persona-fisica`,
+              'ru-RU': `${BASE}/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa`,
+            },
           },
         },
-      }))
+      ]
     : [];
 
   return [
