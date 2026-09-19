@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 import { sendEmail } from '@/lib/email/send';
 import { reviewReceived } from '@/lib/email/templates';
+import { moderateReviewByKia } from '@/lib/ai/kia/kia-review-moderation';
 
 const REVIEW_TOKEN_RE = /^[a-f0-9]{64}$/i;
 const MAX_COMMENT_LENGTH = 800;
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     // Insert review
-    const { error: insertErr } = await admin.from('reviews').insert({
+    const { data: insertedReview, error: insertErr } = await admin.from('reviews').insert({
       case_id: req.case_id,
       client_id: req.client_id,
       rating: parsedRating,
@@ -79,12 +80,19 @@ export async function POST(request: NextRequest) {
       allow_publish: allow_publish === true,
       service_name: caseData?.service ?? null,
       status: 'pending',
-    });
+      moderation_status: 'pending',
+      comment_publishable: true,
+    }).select('id').single();
 
-    if (insertErr) {
+    if (insertErr || !insertedReview) {
       console.error('[reviews/submit]', insertErr);
       return NextResponse.json({ error: 'Error al guardar la valoración' }, { status: 500 });
     }
+
+    // Moderate the free-text comment automatically. Rating and identity are never sent to KIA.
+    await moderateReviewByKia(insertedReview.id).catch((moderationError) => {
+      console.error('[reviews/submit] KIA moderation failed', moderationError);
+    });
 
     // Invalidate token by deleting the request row
     await admin.from('review_requests').delete().eq('id', req.id);
