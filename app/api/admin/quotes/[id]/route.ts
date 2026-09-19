@@ -23,7 +23,7 @@ export async function GET(
 
     const { data: quote, error } = await admin
       .from('quotes')
-      .select('id,title,description,amount_eur,status,created_at,expires_at,client_id,lead_id,stripe_checkout_id,docs_checklist')
+      .select('id,title,description,amount_eur,status,created_at,expires_at,client_id,lead_id,stripe_checkout_id,docs_checklist,quote_items(service_slug,description,quantity,unit_amount_cents,currency,position)')
       .eq('id', id)
       .single();
 
