@@ -132,7 +132,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
     label: 'Arraigo Social',
     category: 'servicio',
     subcategory: 'Extranjería y Nacionalidad',
-    description: 'Solicitud de autorización de residencia por arraigo social (3 años)',
+    description: 'Solicitud de autorización de residencia por arraigo social (2 años + vínculos/integración)',
     suggestedPrice: 350,
     mode: 'payment'
   },
