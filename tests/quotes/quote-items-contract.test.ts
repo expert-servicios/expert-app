@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const migration = readFileSync(
-  resolve(process.cwd(), 'supabase/migrations/20260919080700_quote_items_contract.sql'),
+  resolve(process.cwd(), 'supabase/migrations/20260919082512_quote_items_contract.sql'),
   'utf8',
 );
 
