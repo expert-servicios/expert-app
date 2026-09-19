@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Star } from 'lucide-react';
 import { getPublicServiceReviewSummary } from '@/lib/services/public-service-reviews';
 
@@ -13,12 +14,14 @@ const COPY = {
     empty: 'Todavía no hay valoraciones públicas para este servicio.',
     reviews: (count: number) => `${count} valoración${count === 1 ? '' : 'es'} verificadas`,
     anonymous: 'Cliente EXPERT',
+    policy: 'Cómo verificamos y moderamos las reseñas',
   },
   ru: {
     heading: 'Отзывы клиентов',
     empty: 'Для этой услуги пока нет опубликованных отзывов.',
     reviews: (count: number) => `${count} проверенн${count === 1 ? 'ый отзыв' : 'ых отзыва'}`,
     anonymous: 'Клиент EXPERT',
+    policy: 'Как мы проверяем и модерируем отзывы',
   },
 } as const;
 
@@ -78,6 +81,9 @@ export async function ServiceRatingSummary({
           </div>
         )
       )}
+      <Link href="/politica-de-resenas" className="mt-4 inline-block text-xs font-semibold text-[#D4A017] underline underline-offset-4">
+        {copy.policy}
+      </Link>
     </section>
   );
 }
