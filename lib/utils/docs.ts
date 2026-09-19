@@ -433,101 +433,212 @@ En EXPERT revisamos tu viabilidad, preparamos el expediente y presentamos la sol
   {
     slug: 'arraigo-social-requisitos-y-proceso',
     category: 'extranjeria-nacionalidad',
-    title: 'Arraigo social: requisitos, documentación y proceso completo',
-    excerpt: 'Guía detallada sobre el arraigo social en España: quién puede pedirlo, qué documentos necesita y cómo funciona el proceso paso a paso.',
-    tags: ['arraigo social', 'residencia temporal', 'empadronamiento', 'antecedentes penales', 'EX-10'],
-    updatedAt: '18 may 2026',
-    readTime: '10 min',
+    title: 'Arraigo social 2026: requisitos, documentación y proceso',
+    excerpt: 'Guía actualizada sobre el arraigo social: 2 años de permanencia, vínculos familiares o integración social, EX-10, tasa y pasos del expediente.',
+    tags: ['arraigo social', 'residencia temporal', '2 años', 'integración social', 'EX-10', 'tasa 790-052'],
+    updatedAt: '19 sep 2026',
+    readTime: '12 min',
     relatedServiceSlugs: ['arraigo-social'],
     relatedServiceCategories: ['extranjeria-nacionalidad'],
-    seoTitle: 'Arraigo social en España: requisitos y documentación | Guía completa',
-    seoDescription: 'Requisitos, documentos y proceso para obtener el arraigo social en España. Vía más habitual para regularizar la situación tras 3 años de permanencia.',
+    seoTitle: 'Arraigo social 2026: requisitos, documentos y proceso | EXPERT',
+    seoDescription: 'Guía de arraigo social 2026: 2 años de permanencia, vínculos familiares o informe de integración, EX-10, tasa 38,28 € y plazo de resolución.',
     body: `
-## ¿Qué es el arraigo social?
+## Qué es el arraigo social
 
-El arraigo social es una **autorización de residencia temporal** que permite regularizar la situación en España a personas extracomunitarias que llevan al menos 3 años de permanencia continuada en el país.
+El **arraigo social** es una autorización de residencia temporal por circunstancias excepcionales para determinadas personas extranjeras que se encuentran en España y pueden acreditar una permanencia continuada mínima de **2 años**.
 
-Es una de las vías más utilizadas para obtener el primer permiso de residencia legal. Una vez concedida, la autorización tiene una vigencia inicial de **1 año**, renovable.
+La regulación vigente se encuentra en la Ley Orgánica 4/2000 y en el **Real Decreto 1155/2024**. La información oficial del Ministerio fue actualizada en abril de 2026.
 
-## Quién puede solicitarlo
+## Requisito temporal: 2 años, no 3
 
-Para poder solicitar el arraigo social es necesario cumplir todos los requisitos siguientes:
+El requisito general actual es haber permanecido de forma continuada en España durante **al menos los 2 años inmediatamente anteriores a la solicitud**.
 
-- **Permanencia continuada de al menos 3 años** en España, aunque sea en situación irregular.
-- **Ausencia de antecedentes penales** en España y en el país o países de residencia anteriores durante los últimos 5 años.
-- **No estar incurso en causa de prohibición de entrada** en España o en otro país con el que España tenga acuerdo de control.
-- Acreditar **vínculos con España** mediante alguna de las vías siguientes:
-  - Oferta de trabajo firmada por un empleador.
-  - Vínculos familiares con ciudadanos españoles o residentes legales (cónyuge, pareja de hecho, ascendientes, descendientes).
-  - Informe de arraigo emitido por el Ayuntamiento o los servicios sociales competentes.
+Durante ese periodo:
 
-## Documentación necesaria
+- las ausencias de España no pueden superar **90 días**;
+- debe poder acreditarse la presencia efectiva en España;
+- si la persona fue solicitante de protección internacional, el tiempo de permanencia mientras se tramitaba esa solicitud no computa hasta que exista resolución firme administrativa y, en su caso, judicial.
 
-El expediente básico incluye:
+No es correcto seguir aplicando la antigua regla general de 3 años.
 
-- **Modelo EX-10** cumplimentado y firmado.
-- **Pasaporte** en vigor con copia de todas las páginas.
-- **Fotografía** reciente en color tamaño carné.
-- **Justificante de pago** de la tasa modelo 790 código 052.
-- **Certificado de empadronamiento con historial** que acredite los 3 años de permanencia.
-- **Certificado de antecedentes penales de España**, obtenido en el Ministerio de Justicia o la Policía Nacional.
-- **Certificado de antecedentes penales del país de origen**, apostillado y con traducción jurada al español.
-- Según la vía de arraigo elegida: **contrato de trabajo firmado**, **informe de arraigo municipal** o **documentación del vínculo familiar**.
+## Dos vías para acreditar el arraigo social
 
-## El empadronamiento: el documento más importante
+### 1. Vínculos familiares y medios económicos
 
-El certificado de empadronamiento es el núcleo del expediente. Hay que solicitar el **certificado con historial completo**, no solo el volante de residencia actual.
+Puede utilizarse esta vía cuando existen determinados vínculos con personas extranjeras titulares de una autorización de residencia:
 
-Puntos críticos:
+- cónyuge;
+- pareja de hecho registrada;
+- familiares de primer grado en línea directa.
 
-- Un período sin empadronamiento puede interrumpir el cómputo de los 3 años.
-- Si hubo cambios de domicilio, cada Ayuntamiento genera su propio histórico; hay que solicitar todos.
-- En algunos Ayuntamientos el certificado histórico tarda días o semanas: solicitarlo con antelación.
+Además deben acreditarse medios económicos suficientes. La hoja informativa oficial indica, con carácter general, un mínimo del **100 % del IPREM para el familiar residente y otro 100 % para la persona solicitante**, es decir, un total del 200 % del IPREM con independencia del número de miembros de la unidad de convivencia.
 
-## Los antecedentes penales del país de origen
+### 2. Informe de integración social
 
-Este documento suele generar los mayores retrasos. Hay que tener en cuenta:
+Si no se acreditan los vínculos familiares previstos, puede recurrirse al **informe favorable de integración social** emitido por la Comunidad Autónoma o, cuando corresponda, por el Ayuntamiento del domicilio habitual.
 
-- Cada país tiene su propio organismo emisor. Comprueba cuál es el competente en tu caso.
-- El documento original debe llevar la **apostilla del Convenio de La Haya** para ser válido en España. Si tu país no forma parte del Convenio, se necesita legalización consular.
-- Una vez apostillado, debe ser traducido por un **traductor jurado** reconocido por el Ministerio de Asuntos Exteriores de España.
-- Los certificados de antecedentes suelen tener una vigencia de **3 meses**. Solicítalo cuando el resto de la documentación esté lista.
+EXPERT no emite este informe. Podemos indicar cuándo procede, revisar la documentación y comprobar que se incorpore correctamente al expediente.
 
-## La vía más habitual: oferta de trabajo
+## Documentación básica
 
-Para el arraigo social mediante oferta de trabajo, el contrato debe:
+La documentación exacta depende del caso, pero normalmente debe revisarse:
 
-- Estar firmado por empresa y trabajador.
-- Indicar categoría, jornada y salario conforme al convenio colectivo aplicable.
-- Tener una duración de al menos 1 año o ser indefinido.
-- Cumplir los requisitos mínimos de jornada (generalmente 30 horas semanales o la jornada completa del sector).
+- formulario oficial **EX-10**;
+- copia completa del pasaporte, cédula de inscripción o título de viaje en vigor;
+- pruebas de permanencia continuada durante al menos 2 años;
+- certificado de antecedentes penales del país o países en los que se haya residido durante los cinco años anteriores a la entrada en España, cuando proceda;
+- documentación acreditativa de los vínculos familiares, si se utiliza esa vía;
+- documentación de medios económicos suficientes, cuando corresponda;
+- informe favorable de integración social, si se utiliza la vía de integración;
+- justificante del abono de la tasa administrativa.
 
-La empresa no está obligada a esperar a que se resuelva el expediente para mantener el contrato: lo que se aporta es la oferta de trabajo, no la formalización definitiva.
+Los documentos públicos extranjeros deben cumplir, cuando proceda, los requisitos de legalización o apostilla y traducción jurada.
 
-## Proceso y plazos
+## Cómo acreditar los 2 años
 
-El expediente se presenta en la **Oficina de Extranjería** de la provincia donde el solicitante esté empadronado.
+El empadronamiento histórico es una prueba muy útil, pero **no es la única**.
 
-| Fase | Plazo aproximado |
-|---|---|
-| Preparación de documentación | 2–4 semanas |
-| Presentación en Extranjería | 1 día |
-| Resolución administrativa | 3 meses (plazo legal) |
-| Recogida del TIE en comisaría | 30–45 días tras resolución |
+La propia Administración indica que pueden valorarse documentos emitidos o registrados por administraciones públicas españolas, por ejemplo:
 
-Si la Administración no resuelve en 3 meses, opera el silencio administrativo negativo. En la práctica, las oficinas suelen resolver, aunque con variaciones según la provincia.
+- empadronamiento;
+- hospitalización;
+- consultas en la sanidad pública;
+- documentación municipal;
+- documentación autonómica;
+- documentación estatal que permita situar al solicitante en España.
 
-## Errores más frecuentes
+La clave es construir una línea temporal coherente y suficiente.
 
-- Empadronamiento con períodos sin cobertura o cambios de domicilio no regularizados.
-- Antecedentes del país de origen sin apostillar o con traducción no jurada.
-- Contrato de trabajo que no cumple los requisitos mínimos de jornada.
-- Presentar la solicitud en la oficina incorrecta (debe ser la de la provincia de empadronamiento).
-- Documentos caducados (pasaporte, antecedentes penales) al momento de la presentación.
+## Formulario y tasa
 
-## ¿Y después del arraigo?
+El formulario oficial es el **EX-10**.
 
-La autorización inicial de arraigo social tiene vigencia de **1 año**. Si se ha mantenido la relación laboral, puede renovarse por períodos de 2 años. Tras 5 años de residencia legal y continuada, se puede acceder a la **residencia de larga duración**.
+La tasa aplicable es el **Modelo 790 código 052, epígrafe 2.3.1**, correspondiente a las autorizaciones de residencia temporal por circunstancias excepcionales por arraigo.
+
+La cuantía vigente es **38,28 €**. Esta tasa administrativa no forma parte de los honorarios profesionales de EXPERT.
+
+## Presentación y plazo de resolución
+
+La solicitud se presenta ante la Oficina de Extranjería competente.
+
+El plazo administrativo de resolución es de **3 meses**, contado desde el día siguiente a la entrada de la solicitud en el registro del órgano competente.
+
+Si transcurre ese plazo sin notificación, la solicitud puede entenderse desestimada por silencio administrativo, sin perjuicio de que el procedimiento pueda continuar hasta resolución expresa.
+
+## ¿Se puede trabajar con el arraigo social?
+
+La concesión del arraigo social lleva aparejada autorización para trabajar:
+
+- por cuenta ajena;
+- por cuenta propia;
+- en todo el territorio español;
+- sin limitación de ocupación durante la vigencia de la autorización.
+
+La autorización de arraigo social y sus prórrogas tienen, con carácter general, una vigencia de **1 año**.
+
+## Después de la concesión
+
+Tras la notificación favorable, la persona extranjera debe solicitar personalmente la **TIE** dentro del plazo indicado por la normativa y las instrucciones administrativas aplicables.
+
+## Errores frecuentes
+
+1. Aplicar todavía el requisito antiguo de 3 años.
+2. Confundir arraigo social con arraigo sociolaboral y exigir contrato de trabajo.
+3. Presentar EX-01 en lugar de EX-10.
+4. Aportar solo un volante actual de padrón sin construir prueba suficiente de los 2 años.
+5. No revisar las ausencias del territorio español.
+6. No comprobar si el tiempo como solicitante de protección internacional puede computarse.
+7. Afirmar que un asesor privado puede emitir el informe oficial de integración.
+8. No separar la tasa administrativa de los honorarios profesionales.
+
+## Fuentes oficiales
+
+- Ministerio de Inclusión, Seguridad Social y Migraciones — Hoja 28, Arraigo social: https://www.inclusion.gob.es/web/migraciones/w/autorizacion-residencia-temporal-por-circunstancias-excepcionales.-arraigo-social
+- Real Decreto 1155/2024: https://www.boe.es/eli/es/rd/2024/11/19/1155
+- Orden PJC/617/2025 — tasas de extranjería: https://www.boe.es/eli/es/o/2025/06/13/pjc617/con
+    `
+  },
+  {
+    slug: 'arraigo-social-acreditar-dos-anos',
+    category: 'extranjeria-nacionalidad',
+    title: 'Cómo acreditar los 2 años de permanencia para el arraigo social',
+    excerpt: 'Checklist práctico para construir la prueba de permanencia continuada de 2 años exigida actualmente para el arraigo social.',
+    tags: ['arraigo social', '2 años', 'permanencia continuada', 'empadronamiento histórico', 'prueba de residencia'],
+    updatedAt: '19 sep 2026',
+    readTime: '7 min',
+    relatedServiceSlugs: ['arraigo-social'],
+    relatedServiceCategories: ['extranjeria-nacionalidad'],
+    seoTitle: 'Cómo acreditar 2 años para arraigo social | Checklist 2026',
+    seoDescription: 'Qué documentos sirven para acreditar los 2 años de permanencia continuada del arraigo social y cómo revisar ausencias y periodos sin padrón.',
+    body: `
+## El padrón ayuda, pero no es la única prueba
+
+Para el arraigo social vigente se exige acreditar **2 años de permanencia continuada en España**. La Administración da preferencia a documentos que hayan sido emitidos o registrados por organismos públicos españoles.
+
+Un historial de empadronamiento completo es muy útil, pero no debe analizarse de forma aislada.
+
+## Documentos que pueden reforzar la permanencia
+
+La hoja informativa oficial menciona expresamente, entre otros:
+
+- certificados o historiales de empadronamiento;
+- documentos de hospitalización;
+- consultas médicas en la sanidad pública;
+- documentación municipal;
+- documentos autonómicos;
+- documentos estatales que identifiquen al solicitante y permitan situarlo en España.
+
+También pueden existir otras pruebas útiles según las circunstancias, pero conviene priorizar documentación oficial y construir una cronología clara.
+
+## Cómo preparar la línea temporal
+
+Recomendamos ordenar la prueba por meses:
+
+1. identificar la fecha desde la que deben computarse los 2 años;
+2. obtener todos los historiales de padrón de los municipios donde se haya residido;
+3. localizar posibles periodos sin padrón;
+4. cubrir esos periodos con documentación pública alternativa;
+5. revisar sellos del pasaporte y desplazamientos;
+6. comprobar que las ausencias acumuladas no superen 90 días;
+7. verificar si existió una solicitud de protección internacional y qué periodos pueden computar.
+
+## Cambios de domicilio
+
+Cambiar de Ayuntamiento no impide por sí mismo cumplir el requisito. El problema aparece cuando quedan huecos documentales importantes.
+
+Si has vivido en varios municipios, conviene solicitar los certificados históricos de cada uno y ordenarlos cronológicamente.
+
+## Ausencias de España
+
+Durante los 2 años exigidos, las ausencias no pueden superar **90 días**.
+
+Antes de presentar, revisa:
+
+- sellos de entrada y salida;
+- billetes y reservas si fueran relevantes;
+- fechas de viajes prolongados;
+- cualquier documentación que pueda contradecir la presencia alegada.
+
+## Solicitantes de protección internacional
+
+El tiempo durante el que una solicitud de protección internacional estuvo en tramitación **no computa** para este requisito hasta la resolución firme administrativa y, en su caso, judicial.
+
+Este punto debe revisarse antes de calcular la fecha más temprana de presentación.
+
+## Checklist final
+
+- [ ] 2 años completos inmediatamente anteriores a la solicitud.
+- [ ] Ausencias no superiores a 90 días.
+- [ ] Historial de padrón de todos los municipios relevantes.
+- [ ] Pruebas oficiales para posibles huecos.
+- [ ] Pasaporte completo revisado.
+- [ ] Periodos de protección internacional correctamente descontados, si existieron.
+- [ ] Cronología documental coherente.
+
+## Fuentes oficiales
+
+- Ministerio de Inclusión — Hoja 28, Arraigo social: https://www.inclusion.gob.es/web/migraciones/w/autorizacion-residencia-temporal-por-circunstancias-excepcionales.-arraigo-social
+- Real Decreto 1155/2024: https://www.boe.es/eli/es/rd/2024/11/19/1155
     `
   },
   {
