@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { getService } from '@/lib/services/service-registry';
 import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
+import { getCurrentRegulatoryValue } from '@/lib/regulatory/regulatory-values';
 import { getReadinessCheck, calculateReadinessResult } from '@/lib/data/service-readiness-checks';
 import { validateKiaToolArguments, type KiaToolCall, type KiaToolResult } from './kia-tool-definitions';
 import type { KiaContext } from './kia-context-builder';
@@ -79,6 +80,15 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
           escalationRules: blueprint.kia.escalationRules,
         });
       }
+      case 'get_regulatory_value': {
+        const onDate = typeof args.onDate === 'string' && args.onDate
+          ? new Date(`${args.onDate}T12:00:00Z`)
+          : new Date();
+        if (Number.isNaN(onDate.getTime())) return fail(toolCall.name, 'onDate no es una fecha válida.');
+        const value = await getCurrentRegulatoryValue(String(args.valueKey), onDate);
+        return ok(toolCall.name, value ? { found: true, value } : { found: false });
+      }
+
       case 'run_readiness_check': {
         const check = getReadinessCheck(String(args.serviceSlug));
         if (!check) return ok(toolCall.name, { found: false });
