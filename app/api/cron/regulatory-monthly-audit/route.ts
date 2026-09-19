@@ -35,3 +35,5 @@ export async function GET(request: NextRequest) {
     sourceErrors: sourceErrors.length,
   });
 }
+
+export const POST = GET;

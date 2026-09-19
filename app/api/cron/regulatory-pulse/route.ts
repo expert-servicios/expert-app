@@ -11,3 +11,5 @@ export async function GET(request: NextRequest) {
   const result = await runRegulatoryPulse({ runType: 'daily_pulse' });
   return NextResponse.json({ ok: true, result });
 }
+
+export const POST = GET;
