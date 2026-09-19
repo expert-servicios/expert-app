@@ -108,6 +108,45 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(`${article.updatedAt}T00:00:00Z`),
     }));
 
+  const certificateRussianRoutes: MetadataRoute.Sitemap = [
+    {
+      url: `${BASE}/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa`,
+      changeFrequency: 'monthly' as const,
+      priority: 0.85,
+      lastModified: now,
+      alternates: {
+        languages: {
+          'es-ES': `${BASE}/servicios/certificado-digital/certificado-digital-persona-fisica`,
+          'ru-RU': `${BASE}/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa`,
+        },
+      },
+    },
+    {
+      url: `${BASE}/ru/uslugi/cifrovoi-sertifikat-organizatsii`,
+      changeFrequency: 'monthly' as const,
+      priority: 0.85,
+      lastModified: now,
+      alternates: {
+        languages: {
+          'es-ES': `${BASE}/servicios/certificado-digital/certificado-digital-entidad`,
+          'ru-RU': `${BASE}/ru/uslugi/cifrovoi-sertifikat-organizatsii`,
+        },
+      },
+    },
+    {
+      url: `${BASE}/ru/uslugi/paket-cifrovyh-sertifikatov`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.9,
+      lastModified: now,
+      alternates: {
+        languages: {
+          'es-ES': `${BASE}/servicios/certificado-digital/pack-certificados-digitales`,
+          'ru-RU': `${BASE}/ru/uslugi/paket-cifrovyh-sertifikatov`,
+        },
+      },
+    },
+  ];
+
   const russianRoutes: MetadataRoute.Sitemap = shouldIndexLocale('ru')
     ? [
         ...PUBLIC_ROUTE_KEYS
@@ -177,6 +216,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     ...staticRoutes,
+    ...certificateRussianRoutes,
     ...russianRoutes,
     ...categoryRoutes,
     ...serviceRoutes,
