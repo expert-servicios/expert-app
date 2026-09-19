@@ -37,7 +37,6 @@ describe('resolveServiceBillingScope', () => {
   it('keeps a personal procedure on the person even when they manage an active company', () => {
     expect(resolveServiceBillingScope({
       serviceSlugs: ['irpf'],
-      activeCompanyId: '11111111-1111-1111-1111-111111111111',
       clientType: 'empresa',
     })).toEqual({ scope: 'profile', companyId: null });
   });
@@ -55,15 +54,19 @@ describe('resolveServiceBillingScope', () => {
         'nacionalidad-espanola-menor-nacido-en-espana',
         'certificado-digital-entidad',
       ],
-      activeCompanyId: '11111111-1111-1111-1111-111111111111',
       clientType: 'empresa',
     })).toEqual({ scope: 'mixed_billing_scope', companyId: null });
   });
 
-  it('rejects personal + flexible cart when the flexible item resolves to a company', () => {
+  it('keeps personal + flexible cart on the person unless a company is explicitly selected', () => {
     expect(resolveServiceBillingScope({
       serviceSlugs: ['irpf', 'holded-pack-starter'],
-      activeCompanyId: '11111111-1111-1111-1111-111111111111',
+      clientType: 'empresa',
+    })).toEqual({ scope: 'profile', companyId: null });
+
+    expect(resolveServiceBillingScope({
+      serviceSlugs: ['irpf', 'holded-pack-starter'],
+      explicitCompanyId: '11111111-1111-1111-1111-111111111111',
       clientType: 'empresa',
     })).toEqual({ scope: 'mixed_billing_scope', companyId: null });
   });
@@ -72,7 +75,6 @@ describe('resolveServiceBillingScope', () => {
     expect(resolveServiceBillingScope({
       serviceSlugs: ['holded-pack-starter'],
       explicitCompanyId: '22222222-2222-2222-2222-222222222222',
-      activeCompanyId: '11111111-1111-1111-1111-111111111111',
       clientType: 'empresa',
     })).toEqual({
       scope: 'company',
@@ -80,15 +82,11 @@ describe('resolveServiceBillingScope', () => {
     });
   });
 
-  it('uses the active company for a flexible service when one is selected', () => {
+  it('never infers company billing from UI context; company profiles must select explicitly', () => {
     expect(resolveServiceBillingScope({
       serviceSlugs: ['modelo-720'],
-      activeCompanyId: '11111111-1111-1111-1111-111111111111',
       clientType: 'empresa',
-    })).toEqual({
-      scope: 'company',
-      companyId: '11111111-1111-1111-1111-111111111111',
-    });
+    })).toEqual({ scope: 'company_required', companyId: null });
   });
 
   it('allows an autonomo to buy a flexible service without creating a company record', () => {
