@@ -126,6 +126,10 @@ const faqItems = [
     q: 'Сколько занимает оформление?',
     a: `Ориентировочный срок — ${service.duration} после проверки документов и личности представителя.`,
   },
+  {
+    q: 'Какой срок действия?',
+    a: 'Модальность сертификата организации, которую предлагает EXPERT, имеет срок действия 2 года.',
+  },
 ];
 
 export default function RuCertificateEntityPage() {
@@ -323,6 +327,16 @@ export default function RuCertificateEntityPage() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div className="border border-[#D4A017]/25 bg-white p-6">
+            <h2 className="font-serif text-2xl font-bold">Полезные материалы</h2>
+            <div className="mt-4 grid gap-3">
+              <Link href="/docs/certificado-digital-camerfirma-guia" className="text-sm font-semibold underline decoration-[#D4A017] underline-offset-4">Общая инструкция Camerfirma →</Link>
+              <Link href="/docs/certificado-digital-entidad-documentos-representante" className="text-sm font-semibold underline decoration-[#D4A017] underline-offset-4">Документы организации и представителя →</Link>
+              <Link href="/docs/certificado-digital-entidad-tipos-usos-seguridad" className="text-sm font-semibold underline decoration-[#D4A017] underline-offset-4">Типы сертификатов для компании →</Link>
+              <Link href="/blog/certificado-digital-entidad-representante-o-sello" className="text-sm font-semibold underline decoration-[#D4A017] underline-offset-4">Представитель, корпоративный сертификат или печать →</Link>
+            </div>
           </div>
 
           <div>
