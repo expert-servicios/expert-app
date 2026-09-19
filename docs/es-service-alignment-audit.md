@@ -51,7 +51,10 @@ La plantilla genérica ya soporta:
 - bloque de decisión;
 - artículos y guías;
 - CTA final;
-- sidebar sticky.
+- sidebar sticky;
+- valoraciones verificadas;
+- compartir página;
+- servicios complementarios curados.
 
 Por tanto, en la mayoría de servicios el principal hueco no es de layout, sino de contenido estructurado y validación comercial/normativa.
 
@@ -143,16 +146,27 @@ Un servicio solo puede marcarse `production-ready` cuando:
 - checkout o presupuesto apunta al flujo correcto;
 - JSON-LD no duplica manualmente datos económicos que puedan derivarse;
 - artículos/docs relacionados se usan cuando existen;
+- muestra solo reseñas aprobadas, consentidas y publicadas;
+- el flujo post-servicio exige estrellas y deja comentario opcional;
+- dispone de compartir por canales y copiar enlace;
+- usa imagen social principal del idioma;
+- incluye hasta 3 servicios complementarios, excluyendo Holded, planes y Formación;
+- no expone proveedores/intermediarios de marca blanca en contenido cliente;
 - si existe RU, ambos idiomas comparten lógica económica y tienen hreflang recíproco;
 - tests, CI y preview están verdes.
 
 ## Primera corrección aplicada
 
-Para los dos certificados:
+Para los certificados:
 - aviso ES explícito de alcance de facturación;
 - persona física vinculada al perfil de la persona titular;
 - entidad vinculada a la organización;
 - hreflang recíproco ES/RU;
-- tests de regresión.
+- tests de regresión;
+- bloque de reputación verificada;
+- compartir multicanal;
+- imagen social ES/RU localizada;
+- cross-sell curado;
+- retirada del intermediario de marca blanca del contenido público.
 
 Siguiente candidato: `arraigo-social`, sujeto a validación normativa y comercial previa.
