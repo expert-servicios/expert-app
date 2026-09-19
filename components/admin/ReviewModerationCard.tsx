@@ -131,6 +131,16 @@ export function ReviewModerationCard({ review }: { review: Review }) {
               <XCircle className="h-3.5 w-3.5" /> Rechazar
             </button>
           )}
+          {review.status === 'approved' && review.comment && (
+            <button
+              type="button"
+              disabled={loading !== null}
+              onClick={() => patch({ comment_publishable: !review.comment_publishable, human_override_reason: 'Decisión manual desde panel de reseñas' })}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-50"
+            >
+              {review.comment_publishable ? 'Ocultar comentario' : 'Mostrar comentario'}
+            </button>
+          )}
           {review.status === 'approved' && review.allow_publish && (
             <button
               type="button"
