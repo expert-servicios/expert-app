@@ -18,6 +18,8 @@ import { ServiceShareActions } from '@/components/services/ServiceShareActions';
 import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
 import { getCompanionServices } from '@/lib/services/service-merchandising';
 
+export const revalidate = 300;
+
 const CAL_REUNION_URL = getCalMeetingUrl();
 
 const RU_SERVICE_ALTERNATES: Record<string, string> = {
