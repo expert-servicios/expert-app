@@ -184,6 +184,8 @@ export function runDeterministicGrader(input: AuditMessageInput): AuditorRuleRes
     const isAuthenticated  = checkoutContext.isAuthenticated  !== false;
     const profileCompleted = checkoutContext.profileCompleted !== false;
     const billingReady     = checkoutContext.billingReady     !== false;
+    const billingScope     = String(checkoutContext.billingScope ?? '');
+    const requiresBillingReady = checkoutContext.requiresBillingReady === true || billingScope === 'company';
 
     check(
       'checkout_requires_auth',
@@ -199,13 +201,19 @@ export function runDeterministicGrader(input: AuditMessageInput): AuditorRuleRes
       'Perfil completo antes de checkout',
       !profileCompleted ? 'Kia ofrece checkout_link pero el perfil del cliente no está completo' : undefined,
     );
-    check(
-      'checkout_requires_billing_ready',
-      billingReady,
-      billingReady ? 'facturación lista' : 'facturación incompleta',
-      'Facturación lista antes de checkout',
-      !billingReady ? 'Kia ofrece checkout_link pero los datos de facturación no están listos' : undefined,
-    );
+
+    if (requiresBillingReady) {
+      check(
+        'checkout_requires_billing_ready',
+        billingReady,
+        billingReady ? 'facturación de entidad lista' : 'facturación de entidad incompleta',
+        'Datos fiscales completos cuando el checkout se factura a una empresa',
+        !billingReady ? 'Kia ofrece checkout_link para una entidad sin los datos fiscales requeridos' : undefined,
+      );
+    } else {
+      const rule = KIA_AUDITOR_RULES_BY_ID.get('checkout_requires_billing_ready');
+      if (rule) results.push({ ruleId: rule.id, category: rule.category, severity: rule.severity, status: 'skipped' });
+    }
   } else {
     // Mark as skipped (no checkout in this interaction)
     for (const ruleId of ['checkout_requires_auth', 'checkout_requires_profile', 'checkout_requires_billing_ready']) {
