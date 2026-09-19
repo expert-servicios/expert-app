@@ -262,6 +262,7 @@ export default function CarritoPage() {
                 {needsCompany ? (
                   <CompanyCheckoutGate
                     loading={loading}
+                    returnPath="/carrito"
                     onContinue={(companyId) => { void handleCheckout(companyId); }}
                   />
                 ) : needsProfile ? (
