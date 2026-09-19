@@ -642,7 +642,7 @@ En EXPERT somos **Punto de Registro Autorizado de Camerfirma**, lo que significa
 
 ## ¿Cada cuánto hay que renovarlo?
 
-Los certificados Camerfirma tienen una validez de **2 o 3 años** según el tipo. La renovación debe realizarse antes de que caduque; si caduca, habrá que solicitar uno nuevo con un nuevo proceso de verificación de identidad.
+La vigencia depende de la modalidad concreta. En el catálogo EXPERT, la modalidad de persona física se comercializa con **5 años** de vigencia y la modalidad de entidad con **2 años**. La renovación debe revisarse antes del vencimiento.
 
 Contacta con nosotros para gestionar tu certificado digital sin desplazamientos.
 
