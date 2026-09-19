@@ -31,6 +31,7 @@ type Summary = {
     }>;
     proposal_pr_number: number | null;
     proposal_pr_url: string | null;
+    values_applied_at: string | null;
     created_at: string;
     source: { source_key: string; authority: string; title: string } | Array<{ source_key: string; authority: string; title: string }> | null;
   }>;
@@ -87,6 +88,23 @@ export default function RegulatoryPulsePage() {
       });
       const payload = await response.json() as { error?: string };
       if (!response.ok) throw new Error(payload.error ?? 'No se pudieron aplicar los valores');
+      await load();
+    } finally {
+      setAction(null);
+    }
+  };
+
+  const resolveChange = async (changeId: string) => {
+    if (!window.confirm('Marcar este cambio como completamente revisado y resuelto? Esto levantará cualquier bloqueo regulatorio asociado.')) return;
+    setAction(`resolve:${changeId}`);
+    try {
+      const response = await fetch('/api/admin/regulatory', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'resolve_change', changeId }),
+      });
+      const payload = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(payload.error ?? 'No se pudo resolver el cambio');
       await load();
     } finally {
       setAction(null);
@@ -208,6 +226,21 @@ export default function RegulatoryPulsePage() {
                       </button>
                     </div>
                   ) : null}
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    {change.values_applied_at ? (
+                      <span className="text-xs font-semibold text-green-700">
+                        Valores aplicados: {change.values_applied_at}
+                      </span>
+                    ) : null}
+                    <button
+                      type="button"
+                      disabled={Boolean(action)}
+                      onClick={() => void resolveChange(change.id)}
+                      className="rounded-lg border border-[#c88b25] bg-white px-3 py-2 text-xs font-semibold text-[#07111d] disabled:opacity-50"
+                    >
+                      {action === `resolve:${change.id}` ? 'Resolviendo…' : 'Marcar revisión completa'}
+                    </button>
+                  </div>
                 </div>
               );
             })}
