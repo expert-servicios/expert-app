@@ -355,7 +355,7 @@ export const services: Service[] = [
       { q: '¿Cuál es la tasa?', a: 'La tasa vigente es el Modelo 790 código 052, epígrafe 2.3.1. Actualmente asciende a 38,28 € y se abona por la persona solicitante.' },
       { q: '¿Cuánto tarda Extranjería en resolver?', a: 'El plazo administrativo de resolución es de 3 meses desde el día siguiente a la entrada de la solicitud en el registro del órgano competente.' },
       { q: '¿Podré trabajar si me conceden el arraigo social?', a: 'Sí. La concesión lleva aparejada autorización para trabajar por cuenta propia o ajena en España durante la vigencia de la autorización, sin limitación de ámbito geográfico u ocupación.' },
-      { q: '¿EXP​ERT emite el informe de integración social?', a: 'No. El informe lo emite el órgano competente de la Comunidad Autónoma o, cuando proceda, el Ayuntamiento. EXPERT puede indicarte cuándo es necesario y revisar que se incorpore correctamente al expediente.' },
+      { q: '¿EXPERT emite el informe de integración social?', a: 'No. El informe lo emite el órgano competente de la Comunidad Autónoma o, cuando proceda, el Ayuntamiento. EXPERT puede indicarte cuándo es necesario y revisar que se incorpore correctamente al expediente.' },
     ],
   },
   {
