@@ -1,4 +1,4 @@
-import { getServiceOperationProfile } from '@/lib/services/service-operations';
+import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
 
 export type SocialChannel = 'facebook' | 'instagram' | 'linkedin' | 'google';
 
@@ -620,7 +620,7 @@ export const catalogLaunchSocialPacks: ServiceLaunchPack[] = [
 ];
 
 function buildGeneratedLaunchPack(serviceSlug: string): ServiceLaunchPack | undefined {
-  const profile = getServiceOperationProfile(serviceSlug);
+  const profile = getServiceOperationalBlueprint(serviceSlug);
   if (!profile) return undefined;
 
   const destinationPath = `/servicios/${profile.category}/${profile.slug}`;
@@ -634,33 +634,33 @@ function buildGeneratedLaunchPack(serviceSlug: string): ServiceLaunchPack | unde
     {
       channel: 'facebook',
       items: [
-        { format: 'educational', suffix: 'requirements', title: `${profile.displayName}: requisitos clave`, cta: 'Ver requisitos' },
-        { format: 'problem_solution', suffix: 'documents', title: `Documentación para ${profile.displayName}`, cta: 'Ver checklist' },
-        { format: 'cta', suffix: 'cta', title: `Preparar ${profile.displayName} con EXPERT`, cta: 'Ver servicio' },
+        { format: 'educational', suffix: 'requirements', title: `${profile.canonicalName}: requisitos clave`, cta: 'Ver requisitos' },
+        { format: 'problem_solution', suffix: 'documents', title: `Documentación para ${profile.canonicalName}`, cta: 'Ver checklist' },
+        { format: 'cta', suffix: 'cta', title: `Preparar ${profile.canonicalName} con EXPERT`, cta: 'Ver servicio' },
       ],
     },
     {
       channel: 'instagram',
       items: [
-        { format: 'educational', suffix: 'requirements', title: `${profile.displayName}: qué revisar primero`, cta: 'Guardar' },
-        { format: 'carousel', suffix: 'steps', title: `${profile.displayName} paso a paso`, cta: 'Ver proceso' },
-        { format: 'cta', suffix: 'cta', title: `Checklist ${profile.displayName}`, cta: 'Abrir servicio' },
+        { format: 'educational', suffix: 'requirements', title: `${profile.canonicalName}: qué revisar primero`, cta: 'Guardar' },
+        { format: 'carousel', suffix: 'steps', title: `${profile.canonicalName} paso a paso`, cta: 'Ver proceso' },
+        { format: 'cta', suffix: 'cta', title: `Checklist ${profile.canonicalName}`, cta: 'Abrir servicio' },
       ],
     },
     {
       channel: 'linkedin',
       items: [
-        { format: 'expert', suffix: 'expert', title: `${profile.displayName}: criterio antes que automatización`, cta: 'Consultar proceso' },
+        { format: 'expert', suffix: 'expert', title: `${profile.canonicalName}: criterio antes que automatización`, cta: 'Consultar proceso' },
         { format: 'comparison', suffix: 'control', title: `Qué automatizamos y qué revisa un profesional`, cta: 'Ver metodología' },
-        { format: 'cta', suffix: 'cta', title: `Servicio empaquetado: ${profile.displayName}`, cta: 'Ver ficha' },
+        { format: 'cta', suffix: 'cta', title: `Servicio empaquetado: ${profile.canonicalName}`, cta: 'Ver ficha' },
       ],
     },
     {
       channel: 'google',
       items: [
-        { format: 'search_ad', suffix: 'search', title: `${profile.displayName} | EXPERT`, cta: 'Consultar servicio' },
-        { format: 'business_profile', suffix: 'business', title: `${profile.displayName}: checklist y gestión`, cta: 'Más información' },
-        { format: 'search_ad', suffix: 'documents', title: `${profile.displayName} · Documentos y pasos`, cta: 'Ver requisitos' },
+        { format: 'search_ad', suffix: 'search', title: `${profile.canonicalName} | EXPERT`, cta: 'Consultar servicio' },
+        { format: 'business_profile', suffix: 'business', title: `${profile.canonicalName}: checklist y gestión`, cta: 'Más información' },
+        { format: 'search_ad', suffix: 'documents', title: `${profile.canonicalName} · Documentos y pasos`, cta: 'Ver requisitos' },
       ],
     },
   ];
@@ -672,8 +672,8 @@ function buildGeneratedLaunchPack(serviceSlug: string): ServiceLaunchPack | unde
         channel: blueprint.channel,
         format: item.format,
         title: item.title,
-        shortCopy: profile.clientSummary,
-        longCopy: `${profile.clientSummary} Requisitos, documentación y pasos se revisan contra la ficha operativa vigente. KIA ayuda a ordenar la información y el equipo EXPERT mantiene el control humano en los puntos críticos.`,
+        shortCopy: profile.kia.userSummary,
+        longCopy: `${profile.kia.userSummary} Requisitos, documentación y pasos se revisan contra la ficha operativa vigente. KIA ayuda a ordenar la información y el equipo EXPERT mantiene el control humano en los puntos críticos.`,
         cta: item.cta,
         destinationPath,
         utmCampaign: campaign,
