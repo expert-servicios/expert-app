@@ -640,7 +640,141 @@ Este punto debe revisarse antes de calcular la fecha más temprana de presentaci
 - Ministerio de Inclusión — Hoja 28, Arraigo social: https://www.inclusion.gob.es/web/migraciones/w/autorizacion-residencia-temporal-por-circunstancias-excepcionales.-arraigo-social
 - Real Decreto 1155/2024: https://www.boe.es/eli/es/rd/2024/11/19/1155
     `
+  },  {
+    slug: 'arraigo-social-vinculos-medios-e-informe-integracion',
+    category: 'extranjeria-nacionalidad',
+    title: 'Arraigo social: vínculos familiares, medios económicos e informe de integración',
+    excerpt: 'Cómo decidir qué vía documental corresponde en el arraigo social y qué debe prepararse si existen vínculos familiares o si se necesita informe de integración.',
+    tags: ['arraigo social', 'vínculos familiares', 'medios económicos', 'informe de integración', 'residencia'],
+    updatedAt: '19 sep 2026',
+    readTime: '8 min',
+    relatedServiceSlugs: ['arraigo-social'],
+    relatedServiceCategories: ['extranjeria-nacionalidad'],
+    seoTitle: 'Arraigo social: vínculos, medios e integración | Guía 2026',
+    seoDescription: 'Guía sobre las dos vías documentales del arraigo social: vínculos familiares con medios económicos o informe favorable de integración social.',
+    body: `
+## Por qué esta elección importa
+
+Cumplir los 2 años de permanencia no basta por sí solo. En el arraigo social actual hay que determinar **qué vía documental justifica el arraigo**.
+
+La estrategia depende de la existencia o no de determinados vínculos familiares con personas extranjeras residentes en España.
+
+## Vía 1: vínculos familiares
+
+Pueden ser relevantes determinados vínculos con:
+
+- cónyuge;
+- pareja de hecho registrada;
+- ascendientes de primer grado;
+- descendientes de primer grado;
+
+siempre que la persona familiar sea titular de una autorización de residencia válida y se cumplan los demás requisitos.
+
+No basta con afirmar el parentesco. Hay que documentarlo correctamente.
+
+## Documentos habituales para acreditar el vínculo
+
+Según el caso pueden ser necesarios:
+
+- certificado de matrimonio;
+- certificado de pareja registrada;
+- certificado de nacimiento;
+- documentación de filiación;
+- TIE o resolución de residencia del familiar;
+- empadronamiento conjunto cuando sea útil para el expediente.
+
+Si los documentos son extranjeros, debe comprobarse si requieren:
+
+- apostilla;
+- legalización;
+- traducción jurada.
+
+## Medios económicos
+
+Cuando se utiliza la vía familiar, también deben acreditarse medios económicos suficientes.
+
+La hoja informativa oficial del Ministerio establece como referencia general:
+
+- 100 % del IPREM para el familiar residente;
+- 100 % adicional del IPREM para la persona solicitante.
+
+Por tanto, la referencia general es el **200 % del IPREM**, con independencia del número total de miembros de la unidad de convivencia.
+
+Antes de presentar conviene revisar:
+
+- origen de los ingresos;
+- estabilidad;
+- disponibilidad real;
+- titularidad;
+- documentación bancaria o laboral que los respalda.
+
+## Vía 2: informe favorable de integración social
+
+Si no existen los vínculos familiares previstos, puede utilizarse el **informe favorable de integración social**.
+
+Este informe no lo emite EXPERT.
+
+Lo emite:
+
+- la Comunidad Autónoma competente;
+- o, cuando proceda según la organización territorial, el Ayuntamiento del domicilio habitual.
+
+## Qué puede valorar el informe
+
+La regulación permite valorar, entre otros elementos:
+
+- integración en la sociedad española;
+- participación en actividades formativas;
+- conocimiento de valores constitucionales;
+- derechos y deberes;
+- conocimiento lingüístico;
+- participación en programas de inserción sociolaboral o cultural.
+
+Los criterios concretos pueden variar según la administración competente.
+
+## Cuándo pedir el informe
+
+No conviene esperar al último momento.
+
+Antes de solicitarlo:
+
+1. confirma que realmente necesitas esta vía;
+2. revisa el órgano competente en tu municipio/comunidad;
+3. comprueba cita y documentación;
+4. solicita el informe con margen suficiente;
+5. controla su fecha y contenido antes de incorporarlo al expediente.
+
+## Errores frecuentes
+
+- Pedir informe de integración cuando el expediente encaja mejor por vía familiar.
+- Aportar parentesco sin demostrar residencia legal del familiar.
+- Confundir medios económicos con una simple transferencia aislada.
+- Presentar documentos familiares sin apostilla o traducción cuando son exigibles.
+- Pensar que el informe de integración sustituye el requisito de 2 años.
+- Presentar sin revisar si existe otro procedimiento migratorio incompatible.
+
+## Checklist de decisión
+
+### Vía familiar
+- [ ] Existe vínculo familiar previsto legalmente.
+- [ ] El familiar tiene residencia válida en España.
+- [ ] El vínculo puede documentarse.
+- [ ] Hay medios económicos suficientes y acreditables.
+
+### Vía integración
+- [ ] No concurren los vínculos familiares previstos.
+- [ ] Se cumplen los 2 años.
+- [ ] Puede solicitarse informe favorable de integración social.
+- [ ] Se conoce el órgano competente.
+- [ ] Se dispone del resto de documentación del expediente.
+
+## Fuentes oficiales
+
+- Ministerio de Inclusión — Arraigo social: https://www.inclusion.gob.es/web/migraciones/w/autorizacion-residencia-temporal-por-circunstancias-excepcionales.-arraigo-social
+- Real Decreto 1155/2024: https://www.boe.es/eli/es/rd/2024/11/19/1155
+    `
   },
+
   {
     slug: 'permiso-residencia-inicial-vias-y-documentos',
     category: 'extranjeria-nacionalidad',
