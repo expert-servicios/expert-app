@@ -23,6 +23,7 @@ const ALLOWED_HOSTS = new Set([
   'seg-social.es',
   'www.ine.es',
   'ine.es',
+  'servicios.ine.es',
   'www.bde.es',
   'bde.es',
   'www.inclusion.gob.es',
