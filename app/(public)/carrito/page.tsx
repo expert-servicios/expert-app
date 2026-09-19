@@ -6,6 +6,7 @@ import { ShoppingBag, Trash2, ArrowRight, ArrowLeft, Plus } from 'lucide-react';
 import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartDisbursements, useCart } from '@/contexts/CartContext';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { QuickProfileGate } from '@/components/cart/QuickProfileGate';
+import { CompanyCheckoutGate } from '@/components/cart/CompanyCheckoutGate';
 
 const HOLDED_PACKAGE_PRICE_IDS = [
   'price_1SxNObLeYwwgvux4fLN9k8YG',
@@ -48,6 +49,7 @@ export default function CarritoPage() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);
+  const [needsCompany, setNeedsCompany] = useState(false);
   const [disbursementMandateAccepted, setDisbursementMandateAccepted] = useState(false);
   const hasDisbursements = cartContainsDisbursements(items);
   const disbursements = collectCartDisbursements(items);
@@ -57,7 +59,7 @@ export default function CarritoPage() {
     window.location.href = url;
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (companyId?: string) => {
     if (items.length === 0) return;
     if (hasDisbursements && !disbursementMandateAccepted) {
       setError('Debes aceptar expresamente el mandato de suplido antes de continuar.');
@@ -66,11 +68,12 @@ export default function CarritoPage() {
     setLoading(true);
     setError(null);
     setNeedsProfile(false);
+    if (!companyId) setNeedsCompany(false);
     try {
       const res  = await fetch('/api/services/checkout', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify(buildCartCheckoutPayload(items, disbursementMandateAccepted)),
+        body   : JSON.stringify(buildCartCheckoutPayload(items, disbursementMandateAccepted, companyId)),
       });
       const data = await res.json() as { url?: string; error?: string; requiresAuth?: boolean; code?: string };
       if (res.status === 401 || data.requiresAuth) {
@@ -79,6 +82,12 @@ export default function CarritoPage() {
       }
       if (res.status === 409 && data.code === 'profile_required') {
         setNeedsProfile(true);
+        setNeedsCompany(false);
+        return;
+      }
+      if (res.status === 409 && data.code === 'company_required') {
+        setNeedsCompany(true);
+        setNeedsProfile(false);
         return;
       }
       if (data.url) {
@@ -250,17 +259,23 @@ export default function CarritoPage() {
                 {error && (
                   <p role="alert" aria-live="assertive" className="rounded-xl bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700">{error}</p>
                 )}
-                {needsProfile ? (
+                {needsCompany ? (
+                  <CompanyCheckoutGate
+                    loading={loading}
+                    onContinue={(companyId) => { void handleCheckout(companyId); }}
+                  />
+                ) : needsProfile ? (
                   <QuickProfileGate
                     priceIds={items.map(i => i.priceId)}
                     disbursements={disbursements}
                     disbursementMandateAccepted={disbursementMandateAccepted}
+                    onCompanyRequired={() => { setNeedsProfile(false); setNeedsCompany(true); }}
                     onCheckoutUrl={goToCheckoutUrl}
                   />
                 ) : (
                   <button
                     type="button"
-                    onClick={handleCheckout}
+                    onClick={() => { void handleCheckout(); }}
                     disabled={loading || (hasDisbursements && !disbursementMandateAccepted)}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4A017] py-3 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
                   >
