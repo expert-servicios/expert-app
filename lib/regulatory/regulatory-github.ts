@@ -123,14 +123,42 @@ export async function createRegulatoryProposalPullRequest(input: RegulatoryPropo
 
   const content = proposalMarkdown(input);
   const path = `docs/regulatory-proposals/${safeId}.md`;
+
+  let existingSha: string | undefined;
+  try {
+    const existing = await gh(
+      `${api}/contents/${path}?ref=${encodeURIComponent(branch)}`,
+      { method: 'GET' },
+      config.token,
+    );
+    existingSha = typeof existing?.sha === 'string' ? existing.sha : undefined;
+  } catch (error) {
+    if (!(error instanceof Error) || !/Not Found/i.test(error.message)) throw error;
+  }
+
   await gh(`${api}/contents/${path}`, {
     method: 'PUT',
     body: JSON.stringify({
       message: `docs: add regulatory proposal ${safeId}`,
       content: Buffer.from(content, 'utf8').toString('base64'),
       branch,
+      ...(existingSha ? { sha: existingSha } : {}),
     }),
   }, config.token);
+
+  const existingPulls = await gh(
+    `${api}/pulls?state=open&head=${encodeURIComponent(`${config.owner}:${branch}`)}&base=${encodeURIComponent(config.base)}`,
+    { method: 'GET' },
+    config.token,
+  );
+
+  const existingPr = Array.isArray(existingPulls) ? existingPulls[0] : null;
+  if (existingPr) {
+    return {
+      number: typeof existingPr.number === 'number' ? existingPr.number : undefined,
+      url: typeof existingPr.html_url === 'string' ? existingPr.html_url : undefined,
+    };
+  }
 
   const pr = await gh(`${api}/pulls`, {
     method: 'POST',
