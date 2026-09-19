@@ -16,7 +16,7 @@ export function QuoteResendButton({ quoteId }: { quoteId: string }) {
       if (!res.ok) {
         setResult({ ok: false, message: data.error ?? 'Error al reenviar' });
       } else {
-        setResult({ ok: true, message: 'Enlace de pago reenviado correctamente.' });
+        setResult({ ok: true, message: 'Presupuesto reenviado correctamente.' });
       }
     } catch {
       setResult({ ok: false, message: 'Error de conexión.' });
@@ -34,7 +34,7 @@ export function QuoteResendButton({ quoteId }: { quoteId: string }) {
         className="inline-flex items-center gap-2 rounded-full bg-[#c88b25] px-5 py-2 text-sm font-bold uppercase tracking-[0.18em] text-[#061321] transition hover:bg-[#b57a1e] disabled:opacity-60"
       >
         <Send className="h-4 w-4" />
-        {loading ? 'Enviando…' : 'Reenviar enlace de pago'}
+        {loading ? 'Enviando…' : 'Reenviar presupuesto'}
       </button>
       {result && (
         <p className={`text-sm font-semibold ${result.ok ? 'text-green-700' : 'text-red-600'}`}>
