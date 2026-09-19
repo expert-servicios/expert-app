@@ -4,9 +4,12 @@ import { getServiceBillingPolicy, resolveServiceBillingScope } from '@/lib/payme
 describe('service billing policy', () => {
   it.each([
     'irpf',
+    'modelo-151',
     'arraigo-social',
     'nacionalidad-espanola',
     'nacionalidad-espanola-menor-nacido-en-espana',
+    'nie-pasaporte',
+    'herencia',
     'alta-autonomo',
     'constitucion-sl',
     'constitucion-sl-circe',
