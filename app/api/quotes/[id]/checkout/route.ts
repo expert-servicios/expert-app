@@ -19,7 +19,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const supabaseAdmin = getSupabaseAdmin();
     const { data: quote, error: quoteError } = await supabaseAdmin
       .from('quotes')
-      .select('amount_eur,title,description,status,client_id,company_id,expires_at')
+      .select('amount_eur,title,description,status,client_id,company_id,expires_at,stripe_checkout_id')
       .eq('id', id)
       .single();
 
@@ -33,9 +33,48 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
-    // Reject already paid or expired quotes
-    if (quote.status === 'paid' || quote.status === 'expired' || (quote.expires_at && new Date(quote.expires_at) <= new Date())) {
+    // Only sent/accepted quotes within their commercial validity can be paid.
+    if (
+      !['sent', 'accepted'].includes(quote.status) ||
+      (quote.expires_at && new Date(quote.expires_at) <= new Date())
+    ) {
       return NextResponse.json({ error: 'Este presupuesto no admite pago en su estado actual' }, { status: 400 });
+    }
+
+    if (quote.company_id) {
+      const { data: membership, error: membershipError } = await supabaseAdmin
+        .from('profile_companies')
+        .select('company_id')
+        .eq('profile_id', user.id)
+        .eq('company_id', quote.company_id)
+        .maybeSingle();
+      if (membershipError) {
+        return NextResponse.json({ error: 'No se pudo validar la entidad del presupuesto' }, { status: 500 });
+      }
+      if (!membership) {
+        return NextResponse.json({
+          error: 'La entidad asociada a este presupuesto ya no está vinculada a tu cuenta.',
+          code: 'quote_company_forbidden'
+        }, { status: 403 });
+      }
+    }
+
+    const previousSessionId = quote.stripe_checkout_id ?? null;
+    if (previousSessionId) {
+      try {
+        const previousSession = await stripe.checkout.sessions.retrieve(previousSessionId);
+        if (previousSession.status === 'open' && previousSession.url) {
+          return NextResponse.json({ url: previousSession.url, reused: true });
+        }
+        if (previousSession.status === 'complete') {
+          return NextResponse.json({
+            error: 'Este pago ya se ha completado o está pendiente de confirmación.',
+            code: 'quote_payment_already_completed'
+          }, { status: 409 });
+        }
+      } catch (previousSessionError) {
+        console.error('Previous quote checkout lookup failed:', previousSessionError);
+      }
     }
 
     const { data: quoteItems, error: quoteItemsError } = await supabaseAdmin
@@ -118,13 +157,48 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       cancel_url: `${appUrl}/dashboard/presupuestos`
     });
 
-    const { error: persistError } = await supabaseAdmin.from('quotes').update({ stripe_checkout_id: session.id }).eq('id', id);
-    if (persistError) {
+    const conditionalUpdate = supabaseAdmin
+      .from('quotes')
+      .update({ stripe_checkout_id: session.id })
+      .eq('id', id)
+      .eq('status', quote.status);
+
+    const { data: persistedQuote, error: persistError } = previousSessionId
+      ? await conditionalUpdate.eq('stripe_checkout_id', previousSessionId).select('id,stripe_checkout_id').maybeSingle()
+      : await conditionalUpdate.is('stripe_checkout_id', null).select('id,stripe_checkout_id').maybeSingle();
+
+    if (persistError || !persistedQuote) {
       try { await stripe.checkout.sessions.expire(session.id); } catch {}
-      return NextResponse.json({ error: 'No se pudo registrar de forma segura la sesión de pago' }, { status: 500 });
+
+      const { data: latestQuote } = await supabaseAdmin
+        .from('quotes')
+        .select('stripe_checkout_id,status')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (latestQuote?.status === 'paid') {
+        return NextResponse.json({
+          error: 'El presupuesto ya figura como pagado.',
+          code: 'quote_already_paid'
+        }, { status: 409 });
+      }
+
+      if (latestQuote?.stripe_checkout_id) {
+        try {
+          const winningSession = await stripe.checkout.sessions.retrieve(latestQuote.stripe_checkout_id);
+          if (winningSession.status === 'open' && winningSession.url) {
+            return NextResponse.json({ url: winningSession.url, reused: true });
+          }
+        } catch {}
+      }
+
+      return NextResponse.json({
+        error: 'No se pudo registrar de forma segura la sesión de pago. Inténtalo de nuevo.',
+        code: 'quote_checkout_race'
+      }, { status: 409 });
     }
 
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url, reused: false });
   } catch (error) {
     console.error('Quote checkout error:', error);
     return NextResponse.json({ error: 'Error al crear la sesión de pago' }, { status: 500 });
