@@ -114,17 +114,18 @@ No traducir todavía como landing específica hasta cerrar alcance o precio:
 
 Para cada servicio:
 
-1. revisar la ficha ES contra la plantilla canónica;
-2. mover a constante compartida cualquier dato económico que hoy esté duplicado;
-3. crear copy RU;
-4. crear/mapping de ruta RU;
-5. conectar mismo checkout/presupuesto;
-6. añadir enlace ES ↔ RU;
-7. revisar canonical/hreflang;
-8. añadir tests de paridad;
-9. CI + Vercel;
-10. merge;
-11. pasar al siguiente.
+1. confirmar que el servicio pertenece al lote puntual y no a migraciones/suscripciones;
+2. revisar la ficha ES contra la plantilla canónica;
+3. mover a constante compartida cualquier dato económico que hoy esté duplicado;
+4. crear copy RU;
+5. crear/mapping de ruta RU;
+6. conectar mismo checkout/presupuesto;
+7. añadir enlace ES ↔ RU;
+8. revisar canonical/hreflang;
+9. añadir tests de paridad;
+10. CI + Vercel;
+11. merge;
+12. pasar al siguiente.
 
 ## No hacer durante este bloque
 
