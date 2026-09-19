@@ -10,6 +10,7 @@ interface Review {
   comment: string | null;
   allow_publish: boolean;
   status: 'pending' | 'approved' | 'rejected';
+  published: boolean;
   featured: boolean;
   created_at: string;
   service_name: string | null;
