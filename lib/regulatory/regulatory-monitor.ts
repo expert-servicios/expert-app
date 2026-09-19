@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 
 export type RegulatoryRunType = 'daily_pulse' | 'monthly_audit' | 'manual';
 
-type RegulatorySourceRow = {
+export type RegulatorySourceRow = {
   id: string;
   source_key: string;
   authority: string;
