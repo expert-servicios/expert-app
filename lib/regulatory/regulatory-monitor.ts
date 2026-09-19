@@ -93,7 +93,7 @@ function normalizePayload(raw: string, strategy: RegulatorySourceRow['fetch_stra
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
-  return value.slice(0, MAX_EXCERPT_CHARS);
+  return value;
 }
 
 async function fetchWithLimits(url: string): Promise<{ text: string; contentType: string }> {
@@ -148,7 +148,7 @@ export async function fetchRegulatorySource(source: RegulatorySourceRow) {
   return {
     fetchUrl,
     fingerprint,
-    excerpt: normalized,
+    excerpt: normalized.slice(0, MAX_EXCERPT_CHARS),
     contentType,
   };
 }
@@ -235,31 +235,39 @@ export async function runRegulatoryPulse(params: {
           .eq('fingerprint', source.last_fingerprint)
           .maybeSingle();
 
-        const { error: changeError } = await admin.from('regulatory_changes').insert({
-          source_id: source.id,
-          previous_snapshot_id: previous?.id ?? null,
-          current_snapshot_id: snapshot.id,
-          status: 'detected',
-          requires_human_review: true,
-        });
+        const { data: insertedChange, error: changeError } = await admin
+          .from('regulatory_changes')
+          .upsert({
+            source_id: source.id,
+            previous_snapshot_id: previous?.id ?? null,
+            current_snapshot_id: snapshot.id,
+            status: 'detected',
+            requires_human_review: true,
+          }, { onConflict: 'current_snapshot_id', ignoreDuplicates: true })
+          .select('id')
+          .maybeSingle();
         if (changeError) throw new Error(changeError.message);
-        changed += 1;
+        if (insertedChange) changed += 1;
       }
 
-      await admin.from('regulatory_sources').update({
+      const { error: sourceUpdateError } = await admin.from('regulatory_sources').update({
         last_checked_at: checkedAt,
         last_success_at: checkedAt,
         last_error: null,
         last_fingerprint: fetched.fingerprint,
         ...(isChanged ? { last_changed_at: checkedAt } : {}),
       }).eq('id', source.id);
+      if (sourceUpdateError) throw new Error(`Source state update failed: ${sourceUpdateError.message}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown regulatory fetch error';
       errors.push({ sourceKey: source.source_key, error: message.slice(0, 500) });
-      await admin.from('regulatory_sources').update({
+      const { error: errorStateUpdateError } = await admin.from('regulatory_sources').update({
         last_checked_at: checkedAt,
         last_error: message.slice(0, 1000),
       }).eq('id', source.id);
+      if (errorStateUpdateError) {
+        console.error('[Regulatory monitor] could not persist source error state:', errorStateUpdateError.message);
+      }
     }
   }
 
