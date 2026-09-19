@@ -20,14 +20,16 @@ describe('RU entity digital certificate parity', () => {
     expect(ru).toContain('priceId: service.stripePriceId');
     expect(ru).toContain('displayPrice: service.price');
     expect(ru).toContain("locale: 'ru' as const");
+    expect(ru).toContain('price: OFFER_PRICE');
     expect(ru).not.toContain("stripePriceId: '");
+    expect(ru).not.toContain("price: '150'");
   });
 
   it('explains that checkout is entity-scoped', () => {
     const ru = read('app/(localized)/ru/uslugi/cifrovoi-sertifikat-organizatsii/page.tsx');
-    expect(ru).toContain('billing company_only');
     expect(ru).toContain('выбрать существующую организацию');
-    expect(ru).toContain('на личный профиль пользователя');
+    expect(ru).toContain('Заказ и счёт будут связаны именно с этой организацией');
+    expect(ru).toContain('а не с личным профилем пользователя');
   });
 
   it('keeps ES/RU SEO alternates aligned', () => {
@@ -35,5 +37,17 @@ describe('RU entity digital certificate parity', () => {
     expect(ru).toContain("'es-ES': ES_URL");
     expect(ru).toContain("'ru-RU': RU_URL");
     expect(ru).toContain("'x-default': ES_URL");
+
+    const sitemap = read('app/sitemap.ts');
+    expect(sitemap).toContain('/ru/uslugi/cifrovoi-sertifikat-organizatsii');
+    expect(sitemap).toContain('/servicios/certificado-digital/certificado-digital-entidad');
+  });
+
+  it('keeps the documented entity scope in Russian copy', () => {
+    const ru = read('app/(localized)/ru/uslugi/cifrovoi-sertifikat-organizatsii/page.tsx');
+    expect(ru).toContain('Проверка документов организации и полномочий законного представителя.');
+    expect(ru).toContain('Учредительные документы или актуальная nota mercantil');
+    expect(ru).toContain('Нотариальная доверенность');
+    expect(ru).toContain('Продление сертификата после окончания срока действия — оформляется отдельно.');
   });
 });
