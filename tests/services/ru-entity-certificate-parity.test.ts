@@ -45,12 +45,14 @@ describe('RU entity digital certificate parity', () => {
 
   it('keeps the documented entity scope in Russian copy', () => {
     const ru = read('app/(localized)/ru/uslugi/cifrovoi-sertifikat-organizatsii/page.tsx');
-    expect(ru).toContain('Проверка документов организации и полномочий законного представителя.');
+    expect(ru).toContain('Онлайн-проверка документов организации, полномочий и личности представителя EXPERT');
     expect(ru).toContain('Учредительные документы или актуальная nota mercantil');
     expect(ru).toContain('Нотариальная доверенность');
     expect(ru).toContain('Продление сертификата после окончания срока действия — оформляется отдельно.');
     expect(ru).toContain('срок действия 2 года');
     expect(ru).toContain('/docs/certificado-digital-entidad-documentos-representante');
     expect(ru).toContain('/docs/certificado-digital-entidad-tipos-usos-seguridad');
+    expect(ru).toContain('максимум за 24 рабочих часа');
+    expect(ru).toContain('/ru/uslugi/paket-cifrovyh-sertifikatov');
   });
 });
