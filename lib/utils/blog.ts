@@ -1609,7 +1609,7 @@ Además del vínculo familiar, se necesita:
 
 | Aspecto | Arraigo social | Arraigo familiar |
 |---|---|---|
-| Tiempo de permanencia exigido | 3 años | No requerido |
+| Tiempo de permanencia exigido | 2 años | Depende de la vía aplicable |
 | Vínculo necesario | Oferta trabajo, informe o familia | Vínculo familiar directo |
 | Autorización laboral | Incluida con contrato de trabajo | Incluida |
 
