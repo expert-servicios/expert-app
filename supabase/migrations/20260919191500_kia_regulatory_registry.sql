@@ -129,6 +129,8 @@ create index if not exists regulatory_changes_status_created_idx
   on public.regulatory_changes(status, created_at);
 create index if not exists regulatory_changes_severity_idx
   on public.regulatory_changes(severity, created_at desc);
+create unique index if not exists regulatory_changes_current_snapshot_unique
+  on public.regulatory_changes(current_snapshot_id);
 create index if not exists regulatory_values_key_valid_idx
   on public.regulatory_values(value_key, valid_from desc);
 create index if not exists regulatory_dependencies_source_idx
