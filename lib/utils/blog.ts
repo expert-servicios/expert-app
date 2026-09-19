@@ -603,7 +603,7 @@ Si estás planteándote migrar, contáctanos para una valoración gratuita de tu
     date: '5 feb 2025',
     readTime: '4 min',
     tags: ['certificado digital', 'empresas', 'trámites online', 'firma electrónica'],
-    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'certificado-digital-entidad'],
+    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'certificado-digital-entidad', 'pack-certificados-digitales'],
     body: `
 ## ¿Para qué sirve el certificado digital?
 
@@ -663,7 +663,7 @@ Si además de el certificado digital quieres gestionar trámites personales desd
     date: '19 sep 2026',
     readTime: '6 min',
     tags: ['certificado digital', 'persona física', 'AEAT', 'Seguridad Social', 'sede electrónica'],
-    relatedServiceSlugs: ['certificado-digital-persona-fisica'],
+    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'pack-certificados-digitales'],
     body: `
 ## Un certificado para identificarte y firmar
 
@@ -754,7 +754,7 @@ Tramitamos el certificado Camerfirma de persona física por **90 € + IVA**, co
     date: '19 sep 2026',
     readTime: '7 min',
     tags: ['certificado empresa', 'representante legal', 'sello electrónico', 'Camerfirma'],
-    relatedServiceSlugs: ['certificado-digital-entidad'],
+    relatedServiceSlugs: ['certificado-digital-entidad', 'pack-certificados-digitales'],
     body: `
 ## El error más frecuente: pedir "un certificado de empresa" sin definir el uso
 
@@ -835,6 +835,70 @@ Tramitamos la modalidad de entidad por **150 € + IVA**, con **2 años de vigen
 
 Fuentes:
 https://www.camerfirma.com/certificado-cualificado-de-representacion/
+    `
+  },
+  {
+    slug: 'pack-certificados-digitales-persona-empresa',
+    category: 'Trámites',
+    title: 'Certificado personal + certificado de empresa: cuándo conviene contratar ambos',
+    excerpt:
+      'Si eres administrador o representante, explicamos por qué el certificado personal y el de la entidad cumplen funciones distintas y cuándo tiene sentido tramitarlos juntos.',
+    date: '19 sep 2026',
+    readTime: '6 min',
+    tags: ['certificado digital', 'empresa', 'administrador', 'Camerfirma', 'representante'],
+    relatedServiceSlugs: ['pack-certificados-digitales'],
+    body: `
+## Dos certificados, dos identidades
+
+El certificado de persona física identifica al individuo.
+
+El certificado de entidad se utiliza para actuar digitalmente en el contexto de la organización y depende de la modalidad y de las facultades del representante.
+
+Por eso un administrador puede necesitar ambos.
+
+## Cuándo tiene sentido contratar los dos
+
+El pack es especialmente útil si:
+
+- eres administrador o representante de una sociedad;
+- haces trámites personales y empresariales;
+- necesitas trabajar con AEAT, Seguridad Social u otras sedes;
+- quieres centralizar emisión, instalación y control de vencimientos.
+
+## Una sola contratación
+
+EXPERT permite contratar ambos certificados en un solo pedido por **200 € + IVA**.
+
+Por separado:
+
+- persona física: 90 € + IVA;
+- entidad: 150 € + IVA;
+- total: 240 € + IVA.
+
+El ahorro es de 40 €.
+
+## 100 % online
+
+La tramitación con EXPERT se realiza online, sin presencia física.
+
+EXPERT actúa como Punto de Registro Autorizado dentro del proceso Camerfirma y realiza las validaciones necesarias de identidad y representación.
+
+## Plazo
+
+El SLA máximo es de **24 horas laborables** desde que:
+
+- la documentación está completa;
+- la identidad está validada;
+- las facultades del representante están confirmadas.
+
+## Un pedido, dos entregables
+
+Aunque el pago es único, EXPERT gestiona dos entregables operativos:
+
+1. certificado personal;
+2. certificado de entidad.
+
+Esto permite mantener trazabilidad y control documental sin duplicar el proceso de compra.
     `
   },
   {
