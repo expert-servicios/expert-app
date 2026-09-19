@@ -42,6 +42,10 @@ export const kiaToolValidators = {
   get_service_operational_blueprint: z.object({
     serviceSlug: z.string().min(1),
   }).strict(),
+  get_regulatory_value: z.object({
+    valueKey: z.string().min(1).max(120),
+    onDate: z.string().optional(),
+  }).strict(),
   run_viability_check: z.object({
     serviceSlug: z.string().min(1),
     answers: z.record(z.string(), z.unknown()).default({}),
@@ -171,6 +175,7 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_client_profile: 'Get safe profile readiness flags for a registered client.',
   get_service_registry_item: 'Get service flow, readiness, viability and checkout metadata.',
   get_service_operational_blueprint: 'Get the canonical operational requirements, document checklist, case steps, task plan and escalation rules for a service.',
+  get_regulatory_value: 'Read one canonical official operational value from the EXPERT Regulatory Registry, such as SMI, MEI, IPC or legal/tax interest, with validity metadata.',
   run_viability_check: 'Evaluate a service viability check with provided answers.',
   run_readiness_check: 'Evaluate a readiness check with provided answers.',
   get_holded_connection_status: 'Return Holded connection status without API keys.',

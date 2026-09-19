@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { resolveVerifiedTelegramIdentity } from '@/lib/ai/kia/kia-channel-identity';
 import { consumeTelegramLinkCode } from '@/lib/ai/kia/kia-telegram-linking';
@@ -14,6 +14,8 @@ import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia
 import { safeErrorMessage } from '@/lib/ai/kia/kia-redaction';
 import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
 import { serviceProductionManifest } from '@/lib/services/service-production-manifest';
+import { runRegulatoryPulse } from '@/lib/regulatory/regulatory-monitor';
+import { getCurrentRegulatoryValue, getRegulatoryPulseSummary } from '@/lib/regulatory/regulatory-values';
 import {
   escapeTelegramHtml,
   isConfiguredTelegramAdminChat,
@@ -104,7 +106,7 @@ export async function POST(request: NextRequest) {
         '/status — comprobar conexión, identidad y tools',
         '/link CÓDIGO — vincular este Telegram con una sesión EXPERT autenticada',
         '/servicio SLUG — ver requisitos, documentos y pasos del servicio',
-        ...(adminChat ? ['/lote1 — ver estado operativo del lote 1'] : []),
+        ...(adminChat ? ['/lote1 — ver estado operativo del lote 1', '/legal status|cambios|valor|revisar — Regulatory Pulse'] : []),
         identity
           ? `Identidad EXPERT verificada. Chat KIA: activo. Tools R0/R1 read: ${telegramToolsEnabled ? 'activadas' : 'bloqueadas por feature flag'}.`
           : 'Identidad EXPERT aún no vinculada o no verificada. KIA permanece bloqueada.',
@@ -173,6 +175,105 @@ export async function POST(request: NextRequest) {
   if (!actor.active || actor.tenantId !== identity.tenantId) {
     await sendTelegramMessage({ chatId: inbound.chatId, text: 'La identidad EXPERT vinculada ya no está activa o no coincide con el tenant autorizado.' });
     return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'actor_inactive_or_tenant_mismatch' });
+  }
+
+  if (command === '/legal' && adminChat) {
+    const action = parts[1]?.toLowerCase() ?? 'status';
+
+    if (action === 'status') {
+      const summary = await getRegulatoryPulseSummary();
+      const lastRun = summary.lastRun;
+      const sourceErrors = summary.sources.filter((source) => source.last_error);
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: [
+          '<b>KIA Regulatory Pulse</b>',
+          lastRun
+            ? `Última ejecución: ${escapeTelegramHtml(lastRun.run_type)} · ${escapeTelegramHtml(lastRun.status)} · ${escapeTelegramHtml(lastRun.started_at)}`
+            : 'Sin ejecuciones registradas.',
+          `Cambios pendientes: ${summary.pendingChanges.length}`,
+          `Fuentes activas: ${summary.sources.length}`,
+          `Fuentes con error: ${sourceErrors.length}`,
+        ].join('\n'),
+      });
+      return NextResponse.json({ ok: true, command: 'legal_status' });
+    }
+
+    if (action === 'cambios') {
+      const summary = await getRegulatoryPulseSummary();
+      const rows = summary.pendingChanges.slice(0, 10).map((change) => {
+        const source = Array.isArray(change.source) ? change.source[0] : change.source;
+        return `• [${change.severity ?? 'pending'}] ${source?.authority ?? 'Fuente'} — ${change.summary ?? change.change_type ?? 'Pendiente de clasificación'}`;
+      });
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: ['<b>Cambios regulatorios pendientes</b>', ...(rows.length ? rows.map(escapeTelegramHtml) : ['Sin cambios pendientes.'])].join('\n'),
+      });
+      return NextResponse.json({ ok: true, command: 'legal_changes', count: rows.length });
+    }
+
+    if (action === 'valor') {
+      const valueKey = parts[2]?.trim();
+      if (!valueKey) {
+        await sendTelegramMessage({ chatId: inbound.chatId, text: 'Uso: /legal valor SMI_MONTHLY' });
+        return NextResponse.json({ ok: true, command: 'legal_value', found: false });
+      }
+      const value = await getCurrentRegulatoryValue(valueKey);
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: value
+          ? [
+              `<b>${escapeTelegramHtml(value.label)}</b>`,
+              `Valor: ${escapeTelegramHtml(String(value.numeric_value ?? value.text_value ?? '—'))} ${escapeTelegramHtml(value.unit ?? '')}`,
+              `Periodo: ${escapeTelegramHtml(value.period_key)}`,
+              `Vigencia: ${escapeTelegramHtml(value.valid_from)} → ${escapeTelegramHtml(value.valid_to ?? 'sin fecha fin')}`,
+              `Verificado: ${escapeTelegramHtml(value.verified_at)}`,
+            ].join('\n')
+          : `No existe un valor vigente para ${escapeTelegramHtml(valueKey)}.`,
+      });
+      return NextResponse.json({ ok: true, command: 'legal_value', found: Boolean(value) });
+    }
+
+    if (action === 'revisar') {
+      const scope = parts.slice(2).join(' ').trim();
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: scope
+          ? `Revisión regulatoria iniciada para: ${escapeTelegramHtml(scope)}.`
+          : 'Revisión regulatoria completa iniciada.',
+      });
+
+      after(async () => {
+        const result = await runRegulatoryPulse({
+          runType: 'manual',
+          forceAll: !scope,
+          authority: scope && !scope.includes('-') ? scope : undefined,
+          sourceKey: scope && scope.includes('_') ? scope : undefined,
+        }).catch((error) => ({
+          sourcesChecked: 0,
+          sourcesChanged: 0,
+          errors: [{ sourceKey: scope || 'manual', error: safeErrorMessage(error) }],
+        }));
+
+        await sendTelegramMessage({
+          chatId: inbound.chatId,
+          text: [
+            '<b>Revisión regulatoria terminada</b>',
+            `Fuentes revisadas: ${result.sourcesChecked}`,
+            `Cambios detectados: ${result.sourcesChanged}`,
+            `Errores: ${result.errors.length}`,
+          ].join('\n'),
+        });
+      });
+
+      return NextResponse.json({ ok: true, command: 'legal_review_started', scope: scope || 'all' });
+    }
+
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: 'Comandos: /legal status · /legal cambios · /legal valor SMI_MONTHLY · /legal revisar [autoridad|source_key]',
+    });
+    return NextResponse.json({ ok: true, command: 'legal_help' });
   }
 
   if (command === '/servicio') {

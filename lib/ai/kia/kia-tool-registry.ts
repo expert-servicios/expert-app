@@ -14,7 +14,8 @@ export type KiaToolCapability =
   | 'checkout'
   | 'navigation'
   | 'internal_operations'
-  | 'administration';
+  | 'administration'
+  | 'regulatory';
 
 export interface KiaToolPolicy {
   name: string;
@@ -41,6 +42,7 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_client_profile:                 policy('R0', 'read',  'client_data'),
   get_service_registry_item:          policy('R0', 'read',  'client_data'),
   get_service_operational_blueprint:   policy('R0', 'read',  'case_management'),
+  get_regulatory_value:                 policy('R0', 'read',  'regulatory'),
   run_viability_check:                policy('R1', 'read',  'client_data'),
   run_readiness_check:                policy('R1', 'read',  'client_data'),
   get_holded_connection_status:       policy('R0', 'read',  'holded_read'),
