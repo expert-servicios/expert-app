@@ -1,5 +1,15 @@
 import { BATCH1_OPERATIONAL_BLUEPRINTS } from './service-operational-blueprints';
 
+const OFFICIAL_SOURCES: Record<string, string[]> = {
+  'nacionalidad-espanola-menor-nacido-en-espana': ['https://sede.mjusticia.gob.es/es/tramites/nacionalidad-espanola'],
+  'arraigo-social': ['https://www.inclusion.gob.es/web/migraciones/w/autorizacion-residencia-temporal-por-circunstancias-excepcionales.-arraigo-social'],
+  'arraigo-familiar': ['https://www.inclusion.gob.es/web/migraciones/w/autorizacion-residencia-temporal-por-circunstancias-excepcionales.-arraigo-familiar'],
+  'arraigo-laboral': ['https://www.inclusion.gob.es/web/migraciones/w/29.-autorizacion-de-residencia-temporal-por-circunstancias-excepcionales.-arraigo-sociolaboral.'],
+  'renovacion-residencia': ['https://www.inclusion.gob.es/web/migraciones/vivir-en-espana'],
+  'nacionalidad-espanola': ['https://sede.mjusticia.gob.es/es/tramites/nacionalidad-espanola'],
+  'reagrupacion-familiar': ['https://www.inclusion.gob.es/web/migraciones/w/autorizacion-de-residencia-temporal-por-reagrupacion-familiar'],
+};
+
 const CATEGORY_MAP: Record<string, 'extranjeria-nacionalidad' | 'tramites'> = {
   'extranjeria-nacionalidad': 'extranjeria-nacionalidad',
   'certificado-digital': 'tramites',
@@ -16,8 +26,9 @@ function numbered(items: Array<{ title: string; description: string }>) {
 export function getGeneratedBatch1KnowledgeDocs() {
   return BATCH1_OPERATIONAL_BLUEPRINTS.flatMap((profile) => {
     const category = CATEGORY_MAP[profile.category] ?? 'tramites';
-    const sourceBlock = [].length
-      ? `\n## Fuentes oficiales\n\n${bullets([])}\n`
+    const officialSources = OFFICIAL_SOURCES[profile.slug] ?? [];
+    const sourceBlock = officialSources.length
+      ? `\n## Fuentes oficiales\n\n${bullets(officialSources)}\n`
       : '';
 
     return [
