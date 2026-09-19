@@ -272,6 +272,7 @@ export async function POST(request: NextRequest) {
       serviceTitle: title,
       serviceDescription: description,
       amountEur: resolvedAmountEur,
+      amountIncludesTax: false,
       contractDate,
       contractType: 'service'
     });
