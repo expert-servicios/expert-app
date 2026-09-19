@@ -16,7 +16,7 @@ describe('RU personal digital certificate parity', () => {
     expect(getServiceBillingPolicy('certificado-digital-persona-fisica')).toBe('profile_only');
 
     const ru = read('app/(localized)/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa/page.tsx');
-    expect(ru).toContain("const service = getCatalogService(SERVICE_SLUG)");
+    expect(ru).toContain("const canonical = getCatalogService(SERVICE_SLUG)");
     expect(ru).toContain('priceId: service.stripePriceId');
     expect(ru).toContain('displayPrice: service.price');
     expect(ru).toContain("locale: 'ru' as const");
