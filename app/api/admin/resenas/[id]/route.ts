@@ -17,11 +17,49 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = await request.json() as {
       status?: 'pending' | 'approved' | 'rejected';
       featured?: boolean;
+      published?: boolean;
     };
 
+    const { data: current, error: currentError } = await admin
+      .from('reviews')
+      .select('allow_publish,status,published')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (currentError) return NextResponse.json({ error: currentError.message }, { status: 500 });
+    if (!current) return NextResponse.json({ error: 'Reseña no encontrada' }, { status: 404 });
+
     const update: Record<string, unknown> = {};
-    if (body.status !== undefined) update.status = body.status;
-    if (body.featured !== undefined) update.featured = body.featured;
+
+    if (body.status !== undefined) {
+      update.status = body.status;
+      if (body.status === 'approved') {
+        // Approval publishes only when the client explicitly consented.
+        update.published = current.allow_publish === true;
+      } else {
+        update.published = false;
+        update.featured = false;
+      }
+    }
+
+    if (body.featured !== undefined) {
+      const effectiveStatus = body.status ?? current.status;
+      if (body.featured && effectiveStatus !== 'approved') {
+        return NextResponse.json({ error: 'Solo se puede destacar una reseña aprobada' }, { status: 400 });
+      }
+      update.featured = body.featured;
+    }
+
+    if (body.published !== undefined) {
+      const effectiveStatus = body.status ?? current.status;
+      if (body.published && current.allow_publish !== true) {
+        return NextResponse.json({ error: 'El cliente no ha autorizado la publicación' }, { status: 400 });
+      }
+      if (body.published && effectiveStatus !== 'approved') {
+        return NextResponse.json({ error: 'Solo se puede publicar una reseña aprobada' }, { status: 400 });
+      }
+      update.published = body.published;
+    }
 
     if (Object.keys(update).length === 0) {
       return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 });
