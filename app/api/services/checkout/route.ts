@@ -15,9 +15,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { isCompanyBillingReady, missingCompanyBillingFields } from '@/lib/companies/billing-readiness';
 import { resolveServiceBillingScope } from '@/lib/payments/service-billing-scope';
 import { resolveServiceCheckoutLocale, type CheckoutLocale } from '@/lib/payments/service-checkout-locale';
-
-const RU_NACIONALIDAD_PATH = '/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii';
-const NACIONALIDAD_MENOR_SLUG = 'nacionalidad-espanola-menor-nacido-en-espana';
+import { getPublicServicePath } from '@/lib/i18n/service-routes';
 
 const checkoutSchema = z.object({
   priceId                    : z.string().min(1).optional(),
@@ -29,8 +27,7 @@ const checkoutSchema = z.object({
 }).refine(d => d.priceId ?? d.priceIds, { message: 'priceId or priceIds is required' });
 
 function serviceReturnPath(service: { slug: string; category: string }, locale: CheckoutLocale) {
-  if (locale === 'ru' && service.slug === NACIONALIDAD_MENOR_SLUG) return RU_NACIONALIDAD_PATH;
-  return `/servicios/${service.category}/${service.slug}`;
+  return getPublicServicePath(service, locale);
 }
 
 export async function POST(request: NextRequest) {
