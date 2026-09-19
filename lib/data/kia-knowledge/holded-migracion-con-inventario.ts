@@ -15,7 +15,7 @@ export const holdedMigracionConInventarioKnowledge = {
 
   // ── Checkout requirements ────────────────────────────────────────────────
   requiresProfileCompleted              : true,
-  requiresBillingReady                  : true,
+  requiresBillingReady                  : false, // autonomo/persona can contract; company scope is validated dynamically
   requiresHoldedConnectionBeforeCheckout: false,
   allowsCheckoutWithoutHoldedAccount    : false,
 
