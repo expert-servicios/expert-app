@@ -686,6 +686,19 @@ function buildGeneratedLaunchPack(serviceSlug: string): ServiceLaunchPack | unde
 }
 
 export function getServiceLaunchPack(serviceSlug: string): ServiceLaunchPack | undefined {
-  return catalogLaunchSocialPacks.find((pack) => pack.serviceSlug === serviceSlug)
-    ?? buildGeneratedLaunchPack(serviceSlug);
+  const manual = catalogLaunchSocialPacks.find((pack) => pack.serviceSlug === serviceSlug);
+  const generated = buildGeneratedLaunchPack(serviceSlug);
+
+  if (!manual) return generated;
+  if (!generated) return manual;
+
+  const posts = [...manual.posts];
+  for (const channel of ['facebook', 'instagram', 'linkedin', 'google'] as const) {
+    const existing = posts.filter((post) => post.channel === channel).length;
+    if (existing >= 3) continue;
+    const needed = 3 - existing;
+    posts.push(...generated.posts.filter((post) => post.channel === channel).slice(0, needed));
+  }
+
+  return { ...manual, posts };
 }
