@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 import { sendEmail } from '@/lib/email/send';
@@ -89,9 +89,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Error al guardar la valoración' }, { status: 500 });
     }
 
-    // Moderate the free-text comment automatically. Rating and identity are never sent to KIA.
-    await moderateReviewByKia(insertedReview.id).catch((moderationError) => {
-      console.error('[reviews/submit] KIA moderation failed', moderationError);
+    // Moderate after the response lifecycle so the client never waits on the AI provider.
+    // Rating and identity are never sent to KIA.
+    after(async () => {
+      await moderateReviewByKia(insertedReview.id).catch((moderationError) => {
+        console.error('[reviews/submit] KIA moderation failed', moderationError);
+      });
     });
 
     // Invalidate token by deleting the request row
