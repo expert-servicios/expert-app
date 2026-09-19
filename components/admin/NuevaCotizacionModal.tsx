@@ -10,6 +10,13 @@ interface Client {
   phone: string | null;
 }
 
+interface ClientCompany {
+  id: string;
+  name: string | null;
+  razon_social: string | null;
+  nif: string | null;
+}
+
 interface QuoteTemplate {
   id: string;
   name: string;
@@ -43,6 +50,10 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
   const [loadingClients, setLoadingClients] = useState(false);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [billingScope, setBillingScope] = useState<'profile' | 'company'>('profile');
+  const [companies, setCompanies] = useState<ClientCompany[]>([]);
+  const [companyId, setCompanyId] = useState('');
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -108,16 +119,27 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleSelectClient = (c: Client) => {
-    setSelectedClient(c);
-    setQuery(c.name ?? c.email);
+  const handleSelectClient = (client: Client) => {
+    setSelectedClient(client);
+    setQuery(client.name ?? client.email);
     setShowDropdown(false);
+    setBillingScope('profile');
+    setCompanyId('');
+    setCompanies([]);
+    setLoadingCompanies(true);
+    void fetch(`/api/admin/clientes/${client.id}`, { cache: 'no-store' })
+      .then(async (res) => res.ok ? await res.json() as { companies?: ClientCompany[] } : { companies: [] })
+      .then((data) => setCompanies(data.companies ?? []))
+      .finally(() => setLoadingCompanies(false));
   };
 
   const handleClearClient = () => {
     setSelectedClient(null);
     setQuery('');
     setClients([]);
+    setBillingScope('profile');
+    setCompanyId('');
+    setCompanies([]);
     fetchClients('');
     setTimeout(() => searchRef.current?.focus(), 50);
   };
@@ -181,6 +203,7 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
     if (!selectedClient) { setError('Selecciona un cliente.'); return; }
     if (!title.trim())   { setError('El título es obligatorio.'); return; }
     if (!description.trim()) { setError('La descripción es obligatoria.'); return; }
+    if (billingScope === 'company' && !companyId) { setError('Selecciona la entidad que recibirá la factura.'); return; }
     if (!amount || parseFloat(amount) <= 0) { setError('El importe debe ser mayor que 0.'); return; }
 
     setSaving(true);
@@ -191,6 +214,8 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clientEmail:    selectedClient.email,
+          billingScope,
+          companyId:      billingScope === 'company' ? companyId : undefined,
           title:          title.trim(),
           description:    description.trim(),
           amountEur:      parseFloat(amount),
@@ -334,6 +359,59 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
               </div>
             )}
           </div>
+
+          {selectedClient && (
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[#07111d]">
+                Destinatario de factura *
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setBillingScope('profile'); setCompanyId(''); }}
+                  className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+                    billingScope === 'profile'
+                      ? 'border-[#D4A017] bg-[#D4A017]/10 text-[#07111d]'
+                      : 'border-[#d8cbb5] text-[#29384a] hover:border-[#c88b25]'
+                  }`}
+                >
+                  Persona / autónomo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBillingScope('company')}
+                  disabled={loadingCompanies || companies.length === 0}
+                  className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+                    billingScope === 'company'
+                      ? 'border-[#D4A017] bg-[#D4A017]/10 text-[#07111d]'
+                      : 'border-[#d8cbb5] text-[#29384a] hover:border-[#c88b25]'
+                  } disabled:cursor-not-allowed disabled:opacity-45`}
+                >
+                  Sociedad / entidad
+                </button>
+              </div>
+              {billingScope === 'company' && (
+                <select
+                  value={companyId}
+                  onChange={(e) => setCompanyId(e.target.value)}
+                  className="mt-2 w-full rounded-xl border border-[#d8cbb5] px-4 py-2.5 text-sm outline-none focus:border-[#c88b25]"
+                  aria-label="Entidad destinataria de la factura"
+                >
+                  <option value="">Selecciona entidad</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.razon_social ?? company.name ?? 'Entidad'}{company.nif ? ` · ${company.nif}` : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {!loadingCompanies && companies.length === 0 && (
+                <p className="mt-1.5 text-xs text-[#8a9aab]">
+                  Este cliente no tiene sociedades vinculadas. El presupuesto puede emitirse a su perfil personal.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* ── Title ── */}
           <div>
