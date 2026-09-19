@@ -57,6 +57,11 @@ export default function PrivacidadPage() {
                 <h3 className="font-semibold text-[#0D1B2A]">2.4 Analítica web</h3>
                 <p>Utilizamos <strong>Google Tag Manager</strong> y <strong>Google Analytics 4</strong> para analizar el uso del sitio web de forma agregada y mejorar la experiencia de usuario. Estos servicios recopilan datos como tipo de dispositivo, sistema operativo, idioma del navegador, páginas visitadas, duración de la sesión y ubicación geográfica aproximada (nivel de país/región). No se recopilan datos que permitan identificar directamente a una persona.</p>
               </div>
+              <div>
+                <h3 className="font-semibold text-[#0D1B2A]">2.5 Reseñas y moderación asistida por IA</h3>
+                <p>Cuando un cliente envía una valoración al finalizar un servicio, tratamos la puntuación, el comentario opcional y la autorización de publicación para gestionar y, cuando proceda, publicar la reseña. El comentario puede ser analizado por KIA para aplicar nuestra política de moderación. Para esta finalidad, el sistema de moderación recibe únicamente el texto del comentario y no recibe la puntuación, el nombre, el email, el NIF, el importe pagado ni el contenido del expediente.</p>
+                <p className="mt-2">Los casos ambiguos se remiten a revisión humana. Puedes consultar los criterios completos en la <a href="/politica-de-resenas" className="text-[#D4A017] underline underline-offset-4">Política de reseñas y valoraciones</a>.</p>
+              </div>
             </div>
           </section>
 
@@ -138,6 +143,7 @@ export default function PrivacidadPage() {
                     ['Google LLC', 'Autenticación OAuth, analítica web (GA4)', 'EEUU (cláusulas contractuales tipo)'],
                     ['Holded Technologies', 'Software de facturación y contabilidad', 'UE (España)'],
                     ['Vercel', 'Alojamiento del sitio web', 'EEUU (cláusulas contractuales tipo)'],
+                    ['OpenAI / Anthropic', 'Funciones de IA de KIA, incluida moderación de comentarios cuando estén configuradas', 'EEUU (garantías de transferencia aplicables)'],
                   ].map(([p, f, u]) => (
                     <tr key={p} className="bg-white even:bg-[#F8F6F1]">
                       <td className="px-4 py-3 font-medium text-[#0D1B2A]">{p}</td>
