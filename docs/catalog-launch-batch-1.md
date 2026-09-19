@@ -13,7 +13,7 @@ Cada servicio debe quedar completamente utilizable como:
 - landing comercial;
 - entrada SEO;
 - fuente de conocimiento para KIA;
-- activo de captación desde Facebook, Instagram y LinkedIn;
+- activo de captación desde Facebook, Instagram, LinkedIn y Google;
 - pieza conectable al catálogo Meta y al panel Admin.
 
 ## Lote 1 — 10 servicios
@@ -30,18 +30,18 @@ Cada servicio debe quedar completamente utilizable como:
    - Stripe existente: `price_1S2X6ZLeYwwgvux4sPrfxFD7`
 5. Arraigo Social
    - slug: `arraigo-social`
-5. Arraigo Familiar
+6. Arraigo Familiar
    - slug: `arraigo-familiar`
-6. Arraigo Laboral
+7. Arraigo Laboral
    - slug: `arraigo-laboral`
-7. Renovación de Residencia
+8. Renovación de Residencia
    - slug: `renovacion-residencia`
-8. Nacionalidad Española
+9. Nacionalidad Española
    - slug: `nacionalidad-espanola`
-9. Reagrupación Familiar
+10. Reagrupación Familiar
    - slug: `reagrupacion-familiar`
 
-No se añade un décimo servicio en esta primera tanda hasta que uno de los siguientes candidatos supere auditoría de madurez:
+El pack de certificados ocupa el décimo puesto del lote porque ya dispone de precio, producto Stripe, checkout, alcance y contenido suficientemente definidos. Los siguientes candidatos permanecen fuera de esta primera tanda hasta superar auditoría de madurez:
 - Alta de Autónomo
 - Constitución de SL
 - IRPF
@@ -98,6 +98,7 @@ Los recuentos son la línea base del 19/09/2026 y deben actualizarse conforme se
 - paquete Facebook;
 - paquete Instagram;
 - paquete LinkedIn;
+- paquete Google Search / Google Business Profile;
 - URL destino;
 - UTM por canal;
 - activo visual pendiente o definido;
