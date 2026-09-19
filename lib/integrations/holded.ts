@@ -745,6 +745,7 @@ export async function syncOrderToHolded(params: {
         contactId: null,
         invoiceId: null,
         reason: 'HOLDED_CREATE_INVOICES_FROM_STRIPE=false',
+        companyId: resolvedCompanyId,
         callerAmountEur: params.amountEur,
         resolvedAmountEur
       }
