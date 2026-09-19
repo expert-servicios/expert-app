@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 import { AlertCircle, Building2, Check, FileText, ShieldCheck } from 'lucide-react';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { getCatalogService } from '@/lib/utils/catalog';
-import { shouldIndexLocale } from '@/lib/i18n/feature-flags';
+import { isLocalePubliclyEnabled } from '@/lib/i18n/feature-flags';
+import { getLocalizedServicePresentation } from '@/lib/services/service-localized-content';
 import { ServiceShareActions } from '@/components/services/ServiceShareActions';
 import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
 
@@ -13,6 +14,8 @@ const SERVICE_SLUG = 'certificado-digital-entidad';
 const ES_URL = 'https://expertconsulting.es/servicios/certificado-digital/certificado-digital-entidad';
 const RU_PATH = '/ru/uslugi/cifrovoi-sertifikat-organizatsii';
 const RU_URL = `https://expertconsulting.es${RU_PATH}`;
+const INDEXABLE = isLocalePubliclyEnabled('ru')
+  && getLocalizedServicePresentation(SERVICE_SLUG, 'ru')?.indexable === true;
 const SHARE_IMAGE_URL = `https://expertconsulting.es/api/services/og?slug=${encodeURIComponent(SERVICE_SLUG)}&variant=square&lang=ru`;
 const SHARE_TITLE = 'Цифровой сертификат Camerfirma для организации';
 
@@ -53,8 +56,8 @@ export const metadata: Metadata = {
     },
   },
   robots: {
-    index: shouldIndexLocale('ru'),
-    follow: shouldIndexLocale('ru'),
+    index: INDEXABLE,
+    follow: INDEXABLE,
   },
   openGraph: {
     title: 'Цифровой сертификат Camerfirma для организации | EXPERT',
@@ -68,12 +71,14 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
+    title: 'Цифровой сертификат Camerfirma для компании | EXPERT',
+    description: `${service.price} · полностью онлайн · срок действия 2 года · максимум 24 рабочих часа после полной проверки.`,
     images: [SHARE_IMAGE_URL],
   },
 };
 
 const includedItems = [
-  'Онлайн-проверка документов организации, полномочий и личности представителя EXPERT в рамках процесса Camerfirma.',
+  'Онлайн-проверка документов организации, полномочий и личности представителя EXPERT через канал PVP Creative Quality в рамках процесса Camerfirma.',
   'Выпуск цифрового сертификата Camerfirma для организации.',
   'Установка и настройка сертификата на компьютере представителя.',
   'Проверка работы сертификата перед завершением услуги.',
