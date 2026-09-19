@@ -1596,7 +1596,7 @@ export const services: Service[] = [
     name: 'Certificado Digital Entidad Sin Ánimo de Lucro — Camerfirma',
     shortDescription: 'Certificado digital cualificado Camerfirma para asociaciones, fundaciones y entidades sin ánimo de lucro.',
     description:
-      'Las entidades sin ánimo de lucro (asociaciones, fundaciones, ONG, comunidades religiosas…) también tienen obligaciones digitales ante la AEAT, la Seguridad Social y otros organismos. Como Punto de Registro Autorizado de Camerfirma, tramitamos el certificado digital de entidad adaptado a estas organizaciones, con verificación del representante legal y emisión en 24–48 horas.',
+      'Las entidades sin ánimo de lucro (asociaciones, fundaciones, ONG, comunidades religiosas…) también tienen obligaciones digitales ante la AEAT, la Seguridad Social y otros organismos. EXPERT tramita el certificado digital de entidad adaptado a estas organizaciones dentro del proceso Camerfirma, con validación online del representante y un plazo máximo de 24 horas laborables desde expediente completo y facultades validadas.',
     price: '150 € + IVA',
     duration: '24–48 h desde la verificación',
     includes: [
