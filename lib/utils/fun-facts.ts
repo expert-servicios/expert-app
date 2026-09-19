@@ -9,7 +9,7 @@ const facts = [
   'Holded tiene más de 80.000 empresas usando su plataforma en España. Los clientes que migran desde Excel o programas de escritorio reportan un ahorro medio del 40% en tiempo de gestión contable.',
   'El modelo 303 de IVA se presenta 4 veces al año. En 2025, la AEAT recibió más de 18 millones de liquidaciones de IVA. La puntualidad en los pagos te evita recargos de entre el 5% y el 20%.',
   'Las empresas con contabilidad ordenada y al día tienen un 35% más de probabilidades de obtener financiación bancaria en condiciones favorables. Los bancos también leen balances.',
-  'El arraigo social en España se puede solicitar después de 3 años de permanencia. Cada año se conceden más de 100.000 autorizaciones de residencia por esta vía.',
+  'El arraigo social vigente exige, con carácter general, 2 años de permanencia continuada en España y acreditar vínculos familiares con medios económicos o integración social.',
   'VeriFactu será obligatorio para autónomos y pymes a partir de julio de 2026. Los sistemas de facturación deberán encadenar cada factura con un hash digital. El papel, definitivamente, tiene los días contados.',
   'España tiene convenios para evitar la doble imposición con más de 90 países. Esto significa que si pagas impuestos en otro país, puedes deducirlos en tu declaración española. La globalización también tiene ventajas fiscales.',
   'El certificado digital tiene una vida útil de 2-3 años. Renovarlo antes de que caduque te evita tener que pasar de nuevo por la verificación de identidad presencial. Ponlo ya en el calendario.',
