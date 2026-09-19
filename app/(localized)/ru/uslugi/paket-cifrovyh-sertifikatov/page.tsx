@@ -12,6 +12,7 @@ const ES_URL = 'https://expertconsulting.es/servicios/certificado-digital/pack-c
 const RU_PATH = '/ru/uslugi/paket-cifrovyh-sertifikatov';
 const RU_URL = `https://expertconsulting.es${RU_PATH}`;
 const SHARE_IMAGE_URL = `https://expertconsulting.es/api/services/og?slug=${encodeURIComponent(SERVICE_SLUG)}&variant=square&lang=ru`;
+const SHARE_TITLE = 'Пакет цифровых сертификатов — физлицо + компания';
 
 const service = (() => {
   const canonical = getCatalogService(SERVICE_SLUG);
@@ -353,7 +354,7 @@ export default function RuCertificateBundlePage() {
           <ServiceRatingSummary serviceSlug={SERVICE_SLUG} locale="ru" />
           <ServiceShareActions
             url={RU_URL}
-            title={service.name}
+            title={SHARE_TITLE}
             text="Пакет цифровых сертификатов Camerfirma: физлицо + компания за 200 € + IVA."
             locale="ru"
           />
