@@ -22,7 +22,7 @@ FISCALIDAD (categoria: declaraciones-impuestos):
   impuestos-trimestrales        → direct_checkout | Pagos fraccionados IRPF autonomo (mod. 130)
 
 EXTRANJERIA Y NACIONALIDAD (categoria: extranjeria-nacionalidad):
-  arraigo-social                → viability      | Arraigo social (3 anos de residencia)
+  arraigo-social                → viability      | Arraigo social (2 anos de permanencia + via familiar/integracion)
   arraigo-familiar              → viability      | Arraigo familiar (conyuge/hijo de espanol o residente legal)
   arraigo-laboral               → viability      | Arraigo laboral (relacion laboral previa no documentada)
   renovacion-residencia         → viability      | Renovacion permiso de residencia
