@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     const admin = getSupabaseAdmin();
     const { data: profile, error: profileError } = await admin
       .from('profiles')
-      .select('id,full_name,phone,email,profile_completed,active_company_id,client_type,stripe_customer_id')
+      .select('id,full_name,phone,email,profile_completed,client_type,stripe_customer_id')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -75,7 +75,6 @@ export async function POST(request: NextRequest) {
     const billingResolution = resolveServiceBillingScope({
       serviceSlugs: checkoutServices.map(service => service.slug),
       explicitCompanyId: input.companyId,
-      activeCompanyId: profile.active_company_id,
       clientType: profile.client_type,
     });
 
