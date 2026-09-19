@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import { AlertCircle, Building2, Check, FileText, ShieldCheck } from 'lucide-react';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { getCatalogService } from '@/lib/utils/catalog';
-import { shouldIndexLocale } from '@/lib/i18n/feature-flags';
 
 const SERVICE_SLUG = 'certificado-digital-entidad';
 const ES_URL = 'https://expertconsulting.es/servicios/certificado-digital/certificado-digital-entidad';
@@ -47,8 +46,8 @@ export const metadata: Metadata = {
     },
   },
   robots: {
-    index: shouldIndexLocale('ru'),
-    follow: shouldIndexLocale('ru'),
+    index: true,
+    follow: true,
   },
   openGraph: {
     title: 'Цифровой сертификат Camerfirma для организации | EXPERT',
@@ -59,10 +58,15 @@ export const metadata: Metadata = {
     locale: 'ru_RU',
     siteName: 'EXPERT',
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Цифровой сертификат Camerfirma для компании | EXPERT',
+    description: `${service.price} · полностью онлайн · срок действия 2 года · максимум 24 рабочих часа после полной проверки.`,
+  },
 };
 
 const includedItems = [
-  'Онлайн-проверка документов организации, полномочий и личности представителя EXPERT в рамках процесса Camerfirma.',
+  'Онлайн-проверка документов организации, полномочий и личности представителя EXPERT через канал PVP Creative Quality в рамках процесса Camerfirma.'
   'Выпуск цифрового сертификата Camerfirma для организации.',
   'Установка и настройка сертификата на компьютере представителя.',
   'Проверка работы сертификата перед завершением услуги.',
