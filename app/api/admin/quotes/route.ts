@@ -9,6 +9,7 @@ import { generateContractHtml, contractToBuffer } from '@/lib/utils/contract';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { syncQuoteAsEstimate } from '@/lib/integrations/holded';
 import { getServiceBillingPolicy } from '@/lib/payments/service-billing-scope';
+import { quoteLineTotalCents, resolveQuoteLineSnapshots } from '@/lib/quotes/quote-line-catalog';
 
 const quoteSchema = z.object({
   clientEmail: z.string().email('Email de cliente inválido'),
@@ -17,9 +18,15 @@ const quoteSchema = z.object({
   serviceSlug: z.string().min(1).max(160).optional(),
   title: z.string().min(3, 'Título demasiado corto'),
   description: z.string().min(5, 'Descripción demasiado corta'),
-  amountEur: z.number().positive('El importe debe ser positivo'),
+  amountEur: z.number().positive('El importe debe ser positivo').optional(),
+  items: z.array(z.object({
+    serviceSlug: z.string().min(1).max(160),
+    quantity: z.number().int().positive(),
+  })).min(1).max(20).optional(),
   expiresInDays: z.number().int().min(1).max(90).default(14),
   docsChecklist: z.array(z.string()).default([])
+}).refine((data) => data.amountEur !== undefined || (data.items?.length ?? 0) > 0, {
+  message: 'Indica un importe o al menos una línea de catálogo.'
 });
 
 async function requireAdmin(request: NextRequest): Promise<string | null> {
@@ -46,8 +53,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 });
     }
 
-    const { clientEmail, title, description, amountEur, expiresInDays, docsChecklist, serviceSlug, billingScope } = parsed.data;
+    const { clientEmail, title, description, amountEur, items, expiresInDays, docsChecklist, serviceSlug, billingScope } = parsed.data;
     const adminSupabase = getSupabaseAdmin();
+
+    let structuredLines = null as ReturnType<typeof resolveQuoteLineSnapshots> | null;
+    if (items?.length) {
+      try {
+        structuredLines = resolveQuoteLineSnapshots(items);
+      } catch (lineError) {
+        return NextResponse.json({
+          error: lineError instanceof Error ? lineError.message : 'Líneas de presupuesto no válidas.'
+        }, { status: 400 });
+      }
+    }
+    const resolvedAmountEur = structuredLines
+      ? quoteLineTotalCents(structuredLines) / 100
+      : amountEur!;
+    const structuredServiceSlugs = structuredLines?.map((line) => line.serviceSlug) ?? [];
 
     const listData = await listAllAuthUsers();
     const authUser = listData.find((u) => u.email?.toLowerCase() === clientEmail.toLowerCase());
@@ -73,7 +95,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No se pudieron resolver las entidades del cliente' }, { status: 500 });
     }
 
-    const servicePolicy = serviceSlug ? getServiceBillingPolicy(serviceSlug) : 'flexible';
+    const policySlugs = structuredServiceSlugs.length > 0
+      ? structuredServiceSlugs
+      : serviceSlug ? [serviceSlug] : [];
+    const policies = policySlugs.map(getServiceBillingPolicy);
+    if (policies.includes('profile_only') && policies.includes('company_only')) {
+      return NextResponse.json({
+        error: 'Este presupuesto mezcla servicios personales y servicios exclusivos de empresa. Deben emitirse por separado.',
+        code: 'mixed_billing_scope'
+      }, { status: 409 });
+    }
+    const servicePolicy = policies.includes('company_only')
+      ? 'company_only'
+      : policies.includes('profile_only') ? 'profile_only' : 'flexible';
     if (servicePolicy === 'profile_only' && billingScope === 'company') {
       return NextResponse.json({
         error: 'Este servicio corresponde a la persona física y no puede presupuestarse a una sociedad.',
@@ -164,7 +198,7 @@ export async function POST(request: NextRequest) {
         company_id: companyId,
         title,
         description,
-        amount_eur: amountEur,
+        amount_eur: resolvedAmountEur,
         status: 'sent',
         expires_at: expiresAt,
         created_by: actorId,
@@ -179,6 +213,51 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Error al crear presupuesto' }, { status: 500 });
     }
 
+    let persistedQuoteItems: Array<{
+      service_slug: string;
+      stripe_price_id: string | null;
+      description: string;
+      quantity: number;
+      unit_amount_cents: number;
+      currency: string;
+      tax_behavior: 'exclusive' | 'inclusive' | 'unspecified';
+      position: number;
+    }> = [];
+
+    if (structuredLines) {
+      const { error: itemsError } = await adminSupabase.from('quote_items').insert(
+        structuredLines.map((line) => ({
+          quote_id: quote.id,
+          service_slug: line.serviceSlug,
+          stripe_price_id: line.stripePriceId,
+          description: line.description,
+          quantity: line.quantity,
+          unit_amount_cents: line.unitAmountCents,
+          currency: line.currency,
+          tax_behavior: line.taxBehavior,
+          position: line.position,
+          metadata: line.metadata,
+        }))
+      );
+      if (itemsError) {
+        console.error('[admin/quotes] quote_items insert error:', itemsError);
+        await adminSupabase.from('leads').delete().eq('id', lead.id).then(() => {});
+        return NextResponse.json({ error: 'No se pudieron guardar las líneas del presupuesto.' }, { status: 500 });
+      }
+
+      const { data: storedItems, error: storedItemsError } = await adminSupabase
+        .from('quote_items')
+        .select('service_slug,stripe_price_id,description,quantity,unit_amount_cents,currency,tax_behavior,position')
+        .eq('quote_id', quote.id)
+        .order('position', { ascending: true });
+      if (storedItemsError || !storedItems?.length) {
+        console.error('[admin/quotes] quote_items reload error:', storedItemsError);
+        await adminSupabase.from('leads').delete().eq('id', lead.id).then(() => {});
+        return NextResponse.json({ error: 'No se pudieron verificar las líneas persistidas del presupuesto.' }, { status: 500 });
+      }
+      persistedQuoteItems = storedItems;
+    }
+
     const stripe = getStripeClient();
     const appUrl = getPublicAppUrl();
 
@@ -188,21 +267,51 @@ export async function POST(request: NextRequest) {
         mode: 'payment',
         client_reference_id: quote.id,
         customer_email: clientEmail,
-        line_items: [
-          {
-            price_data: {
-              currency: 'eur',
-              unit_amount: Math.round(amountEur * 100),
-              product_data: { name: toStripeAscii(title), description: toStripeAscii(description) }
-            },
-            quantity: 1
-          }
-        ],
+        automatic_tax: { enabled: true },
+        billing_address_collection: 'required',
+        ...(resolvedBillingScope === 'company'
+          ? { tax_id_collection: { enabled: true, required: 'if_supported' as const } }
+          : {}),
+        line_items: persistedQuoteItems.length > 0
+          ? persistedQuoteItems.map((line) => ({
+              price_data: {
+                currency: line.currency.toLowerCase(),
+                unit_amount: line.unit_amount_cents,
+                tax_behavior: line.tax_behavior,
+                product_data: {
+                  name: toStripeAscii(line.description),
+                  metadata: {
+                    line_type: 'service_fee',
+                    service_slug: line.service_slug,
+                    configured_price_id: line.stripe_price_id ?? '',
+                    quote_id: quote.id,
+                  },
+                },
+              },
+              quantity: line.quantity,
+            }))
+          : [
+              {
+                price_data: {
+                  currency: 'eur',
+                  unit_amount: Math.round(resolvedAmountEur * 100),
+                  tax_behavior: 'exclusive',
+                  product_data: { name: toStripeAscii(title), description: toStripeAscii(description) }
+                },
+                quantity: 1
+              }
+            ],
         metadata: {
           quote_id: quote.id,
           product_type: 'presupuesto',
           billing_scope: resolvedBillingScope,
-          ...(serviceSlug ? { service_slug: serviceSlug } : {}),
+          ...(structuredServiceSlugs.length > 0
+            ? {
+                service_slug: structuredServiceSlugs.length === 1 ? structuredServiceSlugs[0] : '',
+                service_slugs: structuredServiceSlugs.join(',').slice(0, 499),
+                structured_quote: 'true',
+              }
+            : serviceSlug ? { service_slug: serviceSlug } : {}),
           ...(companyId ? { company_id: companyId } : {}),
         },
         success_url: `${appUrl}/dashboard/expedientes?pago=ok`,
@@ -236,14 +345,14 @@ export async function POST(request: NextRequest) {
       clientAddress: contractingAddress,
       serviceTitle: title,
       serviceDescription: description,
-      amountEur,
+      amountEur: resolvedAmountEur,
       contractDate,
       contractType: 'service'
     });
     const contractBase64 = contractToBuffer(contractHtml);
 
     const funFact = getRandomFunFact();
-    const tpl = quoteWithPaymentLink(clientName, amountEur, title, session.url!, expiresAt, funFact);
+    const tpl = quoteWithPaymentLink(clientName, resolvedAmountEur, title, session.url!, expiresAt, funFact);
 
     try {
       await sendEmail({
@@ -298,7 +407,7 @@ export async function POST(request: NextRequest) {
       action: 'quote.sent',
       entity: 'quotes',
       entity_id: quote.id,
-      metadata: { client_email: clientEmail, billing_scope: resolvedBillingScope, company_id: companyId, amount_eur: amountEur, stripe_session: session.id }
+      metadata: { client_email: clientEmail, billing_scope: resolvedBillingScope, company_id: companyId, amount_eur: resolvedAmountEur, stripe_session: session.id, structured_lines: persistedQuoteItems.length }
     }).then(() => {});
 
     syncQuoteAsEstimate({
@@ -308,7 +417,7 @@ export async function POST(request: NextRequest) {
       clientPhone: contractingCompany?.telefono ?? clientProfile.phone ?? null,
       companyId,
       title,
-      amountEur,
+      amountEur: resolvedAmountEur,
     }).catch((e) => console.error('[admin/quotes] holded estimate sync:', e));
 
     return NextResponse.json({ ok: true, quoteId: quote.id, stripeUrl: session.url, companyId, billingScope: resolvedBillingScope });
