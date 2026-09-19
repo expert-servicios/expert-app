@@ -232,7 +232,7 @@ export default function AdminOnboardingPage() {
   async function handleStep1() {
     if (!client.email) { setError('El email es obligatorio.'); return; }
     if ((client.entityType === 'particular' || client.entityType === 'autonomo') && !client.fullName && !client.company) {
-      setError('Indica el nombre del empresario individual.');
+      setError(client.entityType === 'particular' ? 'Indica el nombre de la persona.' : 'Indica el nombre del empresario individual.');
       return;
     }
     if (client.entityType === 'empresa' && client.mode === 'admin_fill' && !client.company) {
@@ -344,9 +344,11 @@ export default function AdminOnboardingPage() {
 
   if (step === 3 && result) {
     const isPlan = service.selectedItem?.mode === 'subscription';
-    const entityLabel = client.entityType === 'autonomo'
-      ? (client.company || client.fullName || 'Empresario individual')
-      : (client.company || 'Empresa');
+    const entityLabel = client.entityType === 'particular'
+      ? (client.fullName || 'Persona física')
+      : client.entityType === 'autonomo'
+        ? (client.company || client.fullName || 'Empresario individual')
+        : (client.company || 'Empresa');
 
     return (
       <main className="min-h-screen bg-[#f8f4eb]">
@@ -368,7 +370,7 @@ export default function AdminOnboardingPage() {
             <p className="font-semibold text-[#07111d]">{client.fullName || client.email}</p>
             <p className="text-[#29384a]">{entityLabel}</p>
             <p className="text-xs text-[#8a9aab]">
-              {client.entityType === 'autonomo' ? 'Empresario individual / autónomo' : 'Sociedad / entidad'}
+              {client.entityType === 'particular' ? 'Persona física' : client.entityType === 'autonomo' ? 'Empresario individual / autónomo' : 'Sociedad / entidad'}
             </p>
             <p className="mt-2 text-xs text-[#8a9aab]">
               Servicio: <span className="font-semibold text-[#07111d]">{service.title}</span>
@@ -430,7 +432,7 @@ export default function AdminOnboardingPage() {
             </button>
             <div>
               <h1 className="font-serif text-xl font-bold text-[#07111d]">Nuevo cliente — Onboarding</h1>
-              <p className="mt-0.5 text-xs text-[#8a9aab]">Alta manual + entidad fiscal + presupuesto + envío automático</p>
+              <p className="mt-0.5 text-xs text-[#8a9aab]">Alta de persona + entidad opcional + presupuesto + envío automático</p>
             </div>
           </div>
           <div className="mt-5">
