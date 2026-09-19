@@ -1354,7 +1354,7 @@ export const services: Service[] = [
     keyPoints: [
       { title: 'Reconocido oficialmente', text: 'Válido ante AEAT, Seguridad Social, Notarías y todos los organismos públicos y privados.' },
       { title: 'Inmediato', text: 'Emisión en el mismo acto, presencialmente o por videoconferencia sin desplazamiento.' },
-      { title: 'Vigencia 2–3 años', text: 'Certificado con larga validez. Te avisamos cuando se aproxime la renovación.' },
+      { title: 'Vigencia 5 años', text: 'La modalidad de persona física comercializada por EXPERT tiene una vigencia de 5 años.' },
       { title: 'Instalación incluida', text: 'Te ayudamos a instalarlo y probarlo en tu equipo para que funcione desde el primer minuto.' },
     ],
     audience: [
@@ -1406,7 +1406,7 @@ export const services: Service[] = [
       { q: '¿Qué documentos necesito para el certificado de persona física?', a: 'Solo la copia de tu tarjeta DNI o TIE (foto o escáner de ambas caras) y tu domicilio completo. Nada más.' },
       { q: '¿Puedo hacerlo por videoconferencia sin ir a vuestra oficina?', a: 'Sí. Por videoconferencia nos envías la copia del DNI/TIE antes de la sesión y en la videollamada verificamos tu identidad. Todo en menos de 15 minutos.' },
       { q: '¿Qué diferencia hay entre el certificado de persona física y el de entidad?', a: 'El de persona física te identifica a ti como individuo. El de entidad identifica a tu empresa o sociedad y permite actuar en su nombre.' },
-      { q: '¿Cuánto dura el certificado Camerfirma?', a: 'Entre 2 y 3 años según el tipo. Te avisamos con tiempo para renovarlo sin interrupciones.' },
+      { q: '¿Cuánto dura el certificado Camerfirma?', a: 'La modalidad de persona física comercializada por EXPERT tiene una vigencia de 5 años. Antes de contratar revisamos que esta sea la modalidad adecuada para tu uso.' },
       { q: '¿Es válido para todos los organismos?', a: 'Sí. Camerfirma es una Autoridad de Certificación reconocida y su certificado es válido en AEAT, Seguridad Social, DGT, Notarías y cualquier organismo público o privado.' },
       { q: '¿Qué pasa si ya tengo uno caducado?', a: 'Sin problema. Lo renovamos con el mismo proceso. El precio es el mismo: 90 € + IVA.' },
     ],
@@ -1428,7 +1428,7 @@ export const services: Service[] = [
     keyPoints: [
       { title: 'Para cualquier entidad', text: 'Válido para SL, SA, asociaciones, fundaciones, comunidades de propietarios y cualquier persona jurídica.' },
       { title: 'Firma en nombre de la empresa', text: 'Permite actuar y firmar electrónicamente en nombre de tu organización ante cualquier organismo.' },
-      { title: 'Tramitación ágil', text: 'Emisión en 24–48 h desde la verificación del representante legal.' },
+      { title: 'Vigencia 2 años', text: 'La modalidad de entidad comercializada por EXPERT tiene una vigencia de 2 años.' },
       { title: 'Instalación incluida', text: 'Configuramos el certificado en el equipo del representante y verificamos su correcto funcionamiento.' },
     ],
     audience: [
@@ -1491,7 +1491,7 @@ export const services: Service[] = [
       { q: '¿Quién puede solicitar el certificado de entidad?', a: 'El representante legal que figure en las escrituras o nota mercantil (administrador único, solidario, etc.). Si no figura directamente, se necesitan poderes notariales.' },
       { q: '¿Cuánto tiempo tarda?', a: '24–48 horas desde que verificamos la documentación y la identidad del representante.' },
       { q: '¿Qué diferencia hay con el certificado de persona física?', a: 'El de entidad identifica a la organización y permite actuar y firmar en su nombre. El de persona física solo identifica al individuo.' },
-      { q: '¿Cuánto dura el certificado?', a: 'Entre 2 y 3 años. Te avisamos con antelación para renovarlo sin interrupciones.' },
+      { q: '¿Cuánto dura el certificado?', a: 'La modalidad de entidad comercializada por EXPERT tiene una vigencia de 2 años. La renovación se tramita como una nueva gestión cuando se aproxima el vencimiento.' },
       { q: '¿Es válido para todos los organismos?', a: 'Sí. Camerfirma es reconocida por AEAT, Seguridad Social, Registros Mercantiles, Notarías y cualquier organismo público o privado.' },
     ],
   },
