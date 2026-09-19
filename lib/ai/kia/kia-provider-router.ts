@@ -34,6 +34,7 @@ const SONNET_TASKS: KiaTaskType[] = [
   "admin_ai_compose",
   "document_classification",
   "document_extraction",
+  "review_moderation",
 ];
 
 export function modelForTask(
@@ -94,6 +95,7 @@ export function defaultEffortForTask(taskType: KiaTaskType): KiaEffort {
       "readiness_reasoning",
       "next_best_action",
       "checkout_decision",
+      "review_moderation",
     ].includes(taskType)
   )
     return "high";
