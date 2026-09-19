@@ -20,6 +20,7 @@ const CAL_REUNION_URL = getCalMeetingUrl();
 const RU_SERVICE_ALTERNATES: Record<string, string> = {
   'certificado-digital-persona-fisica': '/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa',
   'certificado-digital-entidad': '/ru/uslugi/cifrovoi-sertifikat-organizatsii',
+  'arraigo-social': '/ru/uslugi/arraigo-social',
 };
 
 function FreeMeetingButton({ className, children }: { className: string; children: ReactNode }) {
