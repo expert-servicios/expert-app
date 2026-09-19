@@ -217,9 +217,12 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
   };
 
   const applyTemplate = (tpl: QuoteTemplate) => {
+    setQuoteMode('manual');
+    setQuoteItems([]);
+    setSelectedServiceSlug('');
     setTitle(tpl.title);
     setDescription(tpl.description);
-    if (tpl.amount_eur != null) setAmount(String(tpl.amount_eur));
+    setAmount(tpl.amount_eur != null ? String(tpl.amount_eur) : '');
     setExpiresInDays(String(tpl.expires_in_days));
     setDocs(tpl.docs_checklist);
   };
@@ -235,6 +238,10 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
   };
 
   const saveAsTemplate = async () => {
+    if (quoteMode !== 'manual') {
+      setError('Las plantillas actuales solo admiten presupuestos de importe libre. Las plantillas por líneas se implementarán por separado.');
+      return;
+    }
     if (!templateName.trim() || !title.trim() || !description.trim()) return;
     setSavingTemplate(true);
     try {
@@ -724,7 +731,7 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
           </div>
 
           {/* ── Save as template ── */}
-          {(title.trim().length > 0 || description.trim().length > 0) && (
+          {quoteMode === 'manual' && (title.trim().length > 0 || description.trim().length > 0) && (
             <div>
               {!showSaveTemplate ? (
                 <button
@@ -776,7 +783,7 @@ export function NuevaCotizacionModal({ onClose, onCreated }: Props) {
 
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-[#f0e9d8] px-5 py-4 shrink-0">
-          <p className="text-xs text-[#9ca3af]">Se envía email con enlace de pago al cliente.</p>
+          <p className="text-xs text-[#9ca3af]">Se envía email para revisar el presupuesto en el área privada.</p>
           <div className="flex gap-2">
             <button type="button" onClick={onClose}
               className="rounded-xl border border-[#d8cbb5] px-4 py-2 text-sm font-semibold text-[#29384a] hover:bg-[#f0e9d8]">
