@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   evaluateServiceContentReadiness,
@@ -5,6 +6,8 @@ import {
 } from '@/lib/services/service-production-readiness';
 import { serviceProductionManifest } from '@/lib/services/service-production-manifest';
 import { getLocalizedServicePresentation } from '@/lib/services/service-localized-content';
+
+const read = (path: string) => readFileSync(path, 'utf8');
 
 const CURRENT_REFERENCE_SERVICES = [
   'certificado-digital-persona-fisica',
