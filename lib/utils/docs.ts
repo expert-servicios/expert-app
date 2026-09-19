@@ -646,7 +646,7 @@ Este punto debe revisarse antes de calcular la fecha más temprana de presentaci
     category: 'extranjeria-nacionalidad',
     title: 'Permiso inicial de residencia: vías disponibles y documentación',
     excerpt: 'Análisis de las principales vías para obtener el primer permiso de residencia en España, con los documentos necesarios para cada una y los plazos reales.',
-    tags: ['permiso de residencia', 'arraigo', 'reagrupación familiar', 'TIE', 'EX-01', 'extranjería'],
+    tags: ['permiso de residencia', 'arraigo', 'reagrupación familiar', 'TIE', 'EX-10', 'extranjería'],
     updatedAt: '18 may 2026',
     readTime: '11 min',
     relatedServiceSlugs: ['permiso-residencia-inicial'],
@@ -663,7 +663,7 @@ Sin este permiso, la estancia más allá de 90 días (para quienes lo necesiten)
 ## Principales vías de acceso
 
 ### Arraigo social
-La vía más utilizada. Requiere **3 años de permanencia continuada** en España y acreditar vínculos mediante oferta de trabajo, vínculo familiar o informe de arraigo.
+Con carácter general, exige **2 años de permanencia continuada** en España y acreditar vínculos familiares con medios económicos suficientes o, si no concurren esos vínculos, un informe favorable de integración social.
 
 ### Arraigo laboral
 Requiere acreditar **2 años de estancia irregular** y una relación laboral no declarada de al menos 6 meses. El empresario debe regularizar el contrato.
@@ -682,14 +682,14 @@ Tramitado desde el consulado del país de origen: trabajo, estudios, nómada dig
 
 ## Documentación base para el arraigo social (vía más común)
 
-- Modelo EX-01 cumplimentado.
+- Modelo EX-10 cumplimentado.
 - Pasaporte en vigor (copia de todas las páginas).
 - Fotografía reciente.
 - Tasa modelo 790 código 052.
-- Certificado de empadronamiento histórico (mínimo 3 años).
+- Documentación que acredite al menos 2 años de permanencia continuada.
 - Antecedentes penales de España.
 - Antecedentes penales del país de origen (apostillados + traducción jurada).
-- Documentación de la vía elegida: contrato de trabajo, informe de arraigo o documentación familiar.
+- Documentación de vínculos familiares y medios económicos o informe favorable de integración social, según la vía.
 
 ## La tasa administrativa
 
