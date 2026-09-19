@@ -1,4 +1,4 @@
-import { SERVICE_OPERATION_PROFILES } from './service-operations';
+import { BATCH1_OPERATIONAL_BLUEPRINTS } from './service-operational-blueprints';
 
 const CATEGORY_MAP: Record<string, 'extranjeria-nacionalidad' | 'tramites'> = {
   'extranjeria-nacionalidad': 'extranjeria-nacionalidad',
@@ -14,24 +14,24 @@ function numbered(items: Array<{ title: string; description: string }>) {
 }
 
 export function getGeneratedBatch1KnowledgeDocs() {
-  return Object.values(SERVICE_OPERATION_PROFILES).flatMap((profile) => {
+  return BATCH1_OPERATIONAL_BLUEPRINTS.flatMap((profile) => {
     const category = CATEGORY_MAP[profile.category] ?? 'tramites';
-    const sourceBlock = profile.officialSources.length
-      ? `\n## Fuentes oficiales\n\n${bullets(profile.officialSources)}\n`
+    const sourceBlock = [].length
+      ? `\n## Fuentes oficiales\n\n${bullets([])}\n`
       : '';
 
     return [
       {
         slug: `${profile.slug}-requisitos-checklist`,
         category,
-        title: `${profile.displayName}: checklist de requisitos`,
-        excerpt: `Checklist operativo de requisitos para ${profile.displayName}, conectado al expediente EXPERT y a KIA.`,
-        tags: ['checklist', 'requisitos', profile.displayName],
+        title: `${profile.canonicalName}: checklist de requisitos`,
+        excerpt: `Checklist operativo de requisitos para ${profile.canonicalName}, conectado al expediente EXPERT y a KIA.`,
+        tags: ['checklist', 'requisitos', profile.canonicalName],
         updatedAt: '19 sep 2026',
         readTime: '6 min',
         relatedServiceSlugs: [profile.slug],
-        seoTitle: `${profile.displayName}: requisitos y checklist | EXPERT`,
-        seoDescription: `Requisitos de ${profile.displayName} organizados como checklist operativo antes de preparar el expediente.`,
+        seoTitle: `${profile.canonicalName}: requisitos y checklist | EXPERT`,
+        seoDescription: `Requisitos de ${profile.canonicalName} organizados como checklist operativo antes de preparar el expediente.`,
         body: `
 ## Antes de empezar
 
@@ -47,25 +47,25 @@ KIA puede explicar cada punto, detectar qué información falta y preparar la si
 
 ## Siguiente paso
 
-${profile.clientSummary}
+${profile.kia.userSummary}
 ${sourceBlock}
         `.trim(),
       },
       {
         slug: `${profile.slug}-documentacion-checklist`,
         category,
-        title: `${profile.displayName}: documentación necesaria`,
-        excerpt: `Documentación necesaria para preparar ${profile.displayName} y vincular cada documento al expediente.`,
-        tags: ['documentación', 'expediente', profile.displayName],
+        title: `${profile.canonicalName}: documentación necesaria`,
+        excerpt: `Documentación necesaria para preparar ${profile.canonicalName} y vincular cada documento al expediente.`,
+        tags: ['documentación', 'expediente', profile.canonicalName],
         updatedAt: '19 sep 2026',
         readTime: '7 min',
         relatedServiceSlugs: [profile.slug],
-        seoTitle: `Documentos para ${profile.displayName} | Checklist EXPERT`,
-        seoDescription: `Lista de documentos para ${profile.displayName}, con requisitos condicionales y revisión antes de presentar.`,
+        seoTitle: `Documentos para ${profile.canonicalName} | Checklist EXPERT`,
+        seoDescription: `Lista de documentos para ${profile.canonicalName}, con requisitos condicionales y revisión antes de presentar.`,
         body: `
 ## Documentos del expediente
 
-${bullets(profile.documents.map((item) => item.condition ? `${item.label} — ${item.condition}` : item.label))}
+${bullets(profile.documents.map((item) => item.conditionalWhen ? `${item.label} — ${item.conditionalWhen}` : item.label))}
 
 ## Cómo se controla en EXPERT
 
@@ -80,18 +80,18 @@ ${sourceBlock}
       {
         slug: `${profile.slug}-pasos-expediente`,
         category,
-        title: `${profile.displayName}: pasos del expediente`,
-        excerpt: `Flujo operativo de ${profile.displayName}: desde la revisión inicial hasta la presentación y seguimiento.`,
-        tags: ['pasos', 'trámite', 'KIA', profile.displayName],
+        title: `${profile.canonicalName}: pasos del expediente`,
+        excerpt: `Flujo operativo de ${profile.canonicalName}: desde la revisión inicial hasta la presentación y seguimiento.`,
+        tags: ['pasos', 'trámite', 'KIA', profile.canonicalName],
         updatedAt: '19 sep 2026',
         readTime: '7 min',
         relatedServiceSlugs: [profile.slug],
-        seoTitle: `${profile.displayName}: pasos del expediente | EXPERT`,
-        seoDescription: `Proceso paso a paso de ${profile.displayName}, con tareas automáticas y controles humanos.`,
+        seoTitle: `${profile.canonicalName}: pasos del expediente | EXPERT`,
+        seoDescription: `Proceso paso a paso de ${profile.canonicalName}, con tareas automáticas y controles humanos.`,
         body: `
 ## Flujo del expediente
 
-${numbered(profile.process)}
+${numbered(profile.steps)}
 
 ## Control humano
 
@@ -108,7 +108,7 @@ ${sourceBlock}
 }
 
 export function getGeneratedBatch1BlogArticles() {
-  return Object.values(SERVICE_OPERATION_PROFILES).flatMap((profile) => {
+  return BATCH1_OPERATIONAL_BLUEPRINTS.flatMap((profile) => {
     const reqs = profile.requirements.map((item) => item.label);
     const docs = profile.documents.map((item) => item.label);
 
@@ -116,16 +116,16 @@ export function getGeneratedBatch1BlogArticles() {
       {
         slug: `${profile.slug}-requisitos-operativos-2026`,
         category: profile.category === 'certificado-digital' ? 'Trámites' : 'Extranjería',
-        title: `${profile.displayName}: requisitos que conviene revisar antes de contratar`,
-        excerpt: `Qué comprobar antes de iniciar ${profile.displayName} y qué puntos requieren revisión profesional.`,
+        title: `${profile.canonicalName}: requisitos que conviene revisar antes de contratar`,
+        excerpt: `Qué comprobar antes de iniciar ${profile.canonicalName} y qué puntos requieren revisión profesional.`,
         date: '19 sep 2026',
         readTime: '6 min',
-        tags: [profile.displayName, 'requisitos', '2026'],
+        tags: [profile.canonicalName, 'requisitos', '2026'],
         relatedServiceSlugs: [profile.slug],
         body: `
 ## La revisión previa evita expedientes mal orientados
 
-Antes de iniciar ${profile.displayName}, conviene comprobar los requisitos de base y distinguir los puntos objetivos de los que requieren análisis profesional.
+Antes de iniciar ${profile.canonicalName}, conviene comprobar los requisitos de base y distinguir los puntos objetivos de los que requieren análisis profesional.
 
 ## Requisitos principales
 
@@ -137,17 +137,17 @@ No todos los huecos tienen la misma consecuencia. Algunos impiden seguir, otros 
 
 ## Cómo empezar
 
-${profile.clientSummary}
+${profile.kia.userSummary}
         `.trim(),
       },
       {
         slug: `${profile.slug}-documentos-y-errores-frecuentes`,
         category: profile.category === 'certificado-digital' ? 'Trámites' : 'Extranjería',
-        title: `${profile.displayName}: documentos y errores frecuentes`,
-        excerpt: `Documentos que se revisan en ${profile.displayName} y errores que suelen generar retrasos o revisión adicional.`,
+        title: `${profile.canonicalName}: documentos y errores frecuentes`,
+        excerpt: `Documentos que se revisan en ${profile.canonicalName} y errores que suelen generar retrasos o revisión adicional.`,
         date: '19 sep 2026',
         readTime: '7 min',
-        tags: [profile.displayName, 'documentos', 'errores'],
+        tags: [profile.canonicalName, 'documentos', 'errores'],
         relatedServiceSlugs: [profile.slug],
         body: `
 ## Documentación que debes preparar
@@ -166,16 +166,16 @@ Cada documento se vincula a un punto de checklist. KIA puede señalar huecos y e
       {
         slug: `${profile.slug}-proceso-paso-a-paso`,
         category: profile.category === 'certificado-digital' ? 'Trámites' : 'Extranjería',
-        title: `${profile.displayName}: proceso paso a paso`,
-        excerpt: `Cómo se organiza ${profile.displayName} desde la contratación hasta la preparación, presentación o cierre.`,
+        title: `${profile.canonicalName}: proceso paso a paso`,
+        excerpt: `Cómo se organiza ${profile.canonicalName} desde la contratación hasta la preparación, presentación o cierre.`,
         date: '19 sep 2026',
         readTime: '7 min',
-        tags: [profile.displayName, 'paso a paso', 'expediente'],
+        tags: [profile.canonicalName, 'paso a paso', 'expediente'],
         relatedServiceSlugs: [profile.slug],
         body: `
 ## Proceso
 
-${numbered(profile.process)}
+${numbered(profile.steps)}
 
 ## Qué se automatiza
 
