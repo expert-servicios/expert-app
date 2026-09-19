@@ -18,6 +18,10 @@ const dashboardQuotePage = readFileSync(
   resolve(process.cwd(), 'app/(protected)/dashboard/presupuestos/page.tsx'),
   'utf8',
 );
+const quoteUpdateRoute = readFileSync(
+  resolve(process.cwd(), 'app/api/quotes/[id]/route.ts'),
+  'utf8',
+);
 
 describe('structured quote checkout contract', () => {
   it('persists quote_items but defers Stripe creation until the client chooses to pay', () => {
@@ -57,5 +61,11 @@ describe('structured quote checkout contract', () => {
     expect(dashboardQuotePage).toContain('Base imponible');
     expect(dashboardQuotePage).toContain('item.quantity');
     expect(dashboardQuotePage).toContain('unit_amount_cents');
+  });
+
+  it('invalidates an active Stripe session before quote terms change', () => {
+    expect(quoteUpdateRoute).toContain('active_checkout_invalidation_failed');
+    expect(quoteUpdateRoute).toContain('stripe.checkout.sessions.expire(currentQuote.stripe_checkout_id)');
+    expect(quoteUpdateRoute).toContain('updates.stripe_checkout_id = null');
   });
 });
