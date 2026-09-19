@@ -65,6 +65,17 @@ El pack de certificados ocupa el décimo puesto del lote porque ya dispone de pr
 
 Los recuentos son la línea base del 19/09/2026 y deben actualizarse conforme se cierren servicios.
 
+## Estándar operativo
+
+Este lote se rige por:
+
+```text
+docs/service-production-pipeline-v1.md
+lib/services/service-production-manifest.ts
+```
+
+Los estados `draft / commercial_ready / content_ready / locale_ready / channel_ready / production_ready` sustituyen a descripciones informales de madurez. Un servicio no entra en campaña hasta estar `production_ready`.
+
 ## Definition of Done por servicio
 
 ### Producto

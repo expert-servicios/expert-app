@@ -5,6 +5,8 @@ import { docs } from '@/lib/utils/docs';
 import { getAcademyKnowledgeArticles } from '@/lib/utils/academy-knowledge';
 import { shouldIndexLocale } from '@/lib/i18n/feature-flags';
 import { PUBLIC_ROUTE_KEYS, PUBLIC_ROUTE_MAP } from '@/lib/i18n/public-routes';
+import { getLocalizedServicePresentations } from '@/lib/services/service-localized-content';
+import { getCatalogService } from '@/lib/utils/catalog';
 
 const BASE = 'https://expertconsulting.es';
 
@@ -109,6 +111,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(`${article.updatedAt}T00:00:00Z`),
     }));
 
+  const russianServiceRoutes: MetadataRoute.Sitemap = getLocalizedServicePresentations('ru')
+    .filter((localized) => localized.indexable === true)
+    .flatMap((localized) => {
+      const service = getCatalogService(localized.serviceSlug);
+      if (!service) return [];
+
+      const esPath = `/servicios/${service.categoria}/${service.slug}`;
+      return [{
+        url: `${BASE}${localized.path}`,
+        changeFrequency: localized.sitemapChangeFrequency ?? 'monthly',
+        priority: localized.sitemapPriority ?? 0.8,
+        lastModified: now,
+        alternates: {
+          languages: {
+            'es-ES': `${BASE}${esPath}`,
+            'ru-RU': `${BASE}${localized.path}`,
+          },
+        },
+      }];
+    });
+
   const russianRoutes: MetadataRoute.Sitemap = shouldIndexLocale('ru')
     ? [
         ...PUBLIC_ROUTE_KEYS
@@ -125,54 +148,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
               },
             },
           })),
-        {
-          url: `${BASE}/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa`,
-          changeFrequency: 'monthly' as const,
-          priority: 0.85,
-          lastModified: now,
-          alternates: {
-            languages: {
-              'es-ES': `${BASE}/servicios/certificado-digital/certificado-digital-persona-fisica`,
-              'ru-RU': `${BASE}/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa`,
-            },
-          },
-        },
-        {
-          url: `${BASE}/ru/uslugi/cifrovoi-sertifikat-organizatsii`,
-          changeFrequency: 'monthly' as const,
-          priority: 0.85,
-          lastModified: now,
-          alternates: {
-            languages: {
-              'es-ES': `${BASE}/servicios/certificado-digital/certificado-digital-entidad`,
-              'ru-RU': `${BASE}/ru/uslugi/cifrovoi-sertifikat-organizatsii`,
-            },
-          },
-        },
-        {
-          url: `${BASE}/ru/uslugi/paket-cifrovyh-sertifikatov`,
-          changeFrequency: 'weekly' as const,
-          priority: 0.9,
-          lastModified: now,
-          alternates: {
-            languages: {
-              'es-ES': `${BASE}/servicios/certificado-digital/pack-certificados-digitales`,
-              'ru-RU': `${BASE}/ru/uslugi/paket-cifrovyh-sertifikatov`,
-            },
-          },
-        },
-        {
-          url: `${BASE}/ru/uslugi/arraigo-social`,
-          changeFrequency: 'monthly' as const,
-          priority: 0.85,
-          lastModified: now,
-          alternates: {
-            languages: {
-              'es-ES': `${BASE}/servicios/extranjeria-nacionalidad/arraigo-social`,
-              'ru-RU': `${BASE}/ru/uslugi/arraigo-social`,
-            },
-          },
-        },
+        ...russianServiceRoutes,
       ]
     : [];
 

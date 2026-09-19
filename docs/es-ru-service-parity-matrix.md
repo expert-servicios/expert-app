@@ -28,9 +28,9 @@ Estos grupos tendrán su propio roadmap y plantilla.
 
 | Orden | Servicio | Slug | Precio / flujo | Estado |
 |---|---|---|---|---|
-| 1 | Nacionalidad española para menor nacido en España | `nacionalidad-espanola-menor-nacido-en-espana` | 250 € + IVA + suplido 790-026 104,05 € | production-ready / referencia |
-| 2 | Certificado Digital Persona Física — Camerfirma | `certificado-digital-persona-fisica` | 90 € + IVA, checkout directo | cierre QA production-ready |
-| 3 | Certificado Digital de Entidad — Camerfirma | `certificado-digital-entidad` | 150 € + IVA, checkout directo con entidad vinculada | cierre QA production-ready |
+| 1 | Nacionalidad española para menor nacido en España | `nacionalidad-espanola-menor-nacido-en-espana` | 250 € + IVA + suplido 790-026 104,05 € | `content_ready` · referencia de plantilla, pendiente gate social/canales |
+| 2 | Certificado Digital Persona Física — Camerfirma | `certificado-digital-persona-fisica` | 90 € + IVA, checkout directo | `production_ready` |
+| 3 | Certificado Digital de Entidad — Camerfirma | `certificado-digital-entidad` | 150 € + IVA, checkout directo con entidad vinculada | `production_ready` |
 
 ## Próximos candidatos
 

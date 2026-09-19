@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { getCatalogService } from '@/lib/utils/catalog';
+import { getRuServicePath, getLocalizedServicePresentation } from '@/lib/services/service-localized-content';
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
 
@@ -38,9 +39,10 @@ describe('RU Arraigo Social parity', () => {
     expect(ru).toContain("'es-ES': ES_URL");
     expect(ru).toContain("'ru-RU': RU_URL");
     expect(ru).toContain("'x-default': ES_URL");
-    expect(es).toContain("'arraigo-social': '/ru/uslugi/arraigo-social'");
-    expect(sitemap).toContain('/ru/uslugi/arraigo-social');
-    expect(sitemap).toContain('/servicios/extranjeria-nacionalidad/arraigo-social');
+    expect(getRuServicePath('arraigo-social')).toBe('/ru/uslugi/arraigo-social');
+    expect(es).toContain('getRuServicePath(servicio)');
+    expect(getLocalizedServicePresentation('arraigo-social', 'ru')?.indexable).toBe(true);
+    expect(sitemap).toContain("getLocalizedServicePresentations('ru')");
   });
 
   it('keeps knowledge resources linked from the RU landing', () => {

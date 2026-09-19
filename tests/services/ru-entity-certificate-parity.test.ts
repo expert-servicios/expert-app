@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { getCatalogService } from '@/lib/utils/catalog';
+import { getLocalizedServicePresentation } from '@/lib/services/service-localized-content';
 import { getServiceBillingPolicy } from '@/lib/payments/service-billing-scope';
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
@@ -38,9 +39,12 @@ describe('RU entity digital certificate parity', () => {
     expect(ru).toContain("'ru-RU': RU_URL");
     expect(ru).toContain("'x-default': ES_URL");
 
+    const localized = getLocalizedServicePresentation('certificado-digital-entidad', 'ru');
+    expect(localized?.path).toBe('/ru/uslugi/cifrovoi-sertifikat-organizatsii');
+    expect(localized?.indexable).toBe(true);
+
     const sitemap = read('app/sitemap.ts');
-    expect(sitemap).toContain('/ru/uslugi/cifrovoi-sertifikat-organizatsii');
-    expect(sitemap).toContain('/servicios/certificado-digital/certificado-digital-entidad');
+    expect(sitemap).toContain("getLocalizedServicePresentations('ru')");
   });
 
   it('keeps the documented entity scope in Russian copy', () => {

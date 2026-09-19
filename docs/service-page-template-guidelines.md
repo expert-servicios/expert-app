@@ -5,6 +5,15 @@ Fecha original: 12/09/2026
 Última actualización: 19/09/2026  
 Ámbito: páginas públicas de servicios puntuales ES/RU, sus landings específicas, checkout/presupuesto asociado y reglas de paridad entre idiomas.
 
+Estándar superior de ciclo de vida:
+
+```text
+docs/service-production-pipeline-v1.md
+docs/service-catalog-scale-roadmap.md
+```
+
+Este documento define la plantilla de página. El pipeline v1 define cuándo un servicio puede avanzar de `draft` a `production_ready`.
+
 ## Objetivo
 
 Todas las páginas de servicios puntuales deben seguir un patrón común para que el usuario pueda elegir con claridad entre:
@@ -513,6 +522,20 @@ Mantener el sistema visual actual:
 El hero debe ser oscuro y sobrio. El bloque `Elegir vía` puede usar fondo azul oscuro para destacar decisión.
 
 ## Patrón técnico actual
+
+Gate reutilizable de contenido/canales:
+
+```text
+lib/services/service-production-readiness.ts
+lib/services/service-production-manifest.ts
+tests/services/service-production-pipeline.test.ts
+```
+
+Registro de presentación localizada:
+
+```text
+lib/services/service-localized-content.ts
+```
 
 Archivo principal:
 
