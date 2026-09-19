@@ -289,6 +289,56 @@ where s.source_key = 'boe_daily_sumario'
 on conflict do nothing;
 
 insert into public.regulatory_dependencies
+  (source_id, dependency_type, dependency_key, topic, criticality)
+select s.id, d.dependency_type, d.dependency_key, d.topic, d.criticality
+from public.regulatory_sources s
+cross join (values
+  ('kia_prompt','tax','tax','critical'),
+  ('admin','fiscal-operations','tax','critical'),
+  ('knowledge','tax','tax','high'),
+  ('blog','tax','tax','high')
+) as d(dependency_type, dependency_key, topic, criticality)
+where s.source_key = 'aeat_rss_hub'
+on conflict do nothing;
+
+insert into public.regulatory_dependencies
+  (source_id, dependency_type, dependency_key, topic, criticality)
+select s.id, d.dependency_type, d.dependency_key, d.topic, d.criticality
+from public.regulatory_sources s
+cross join (values
+  ('kia_prompt','labor','social_security','critical'),
+  ('course','gestion-laboral','social_security','critical'),
+  ('admin','labor-operations','social_security','critical'),
+  ('knowledge','labor','social_security','high')
+) as d(dependency_type, dependency_key, topic, criticality)
+where s.source_key = 'seg_social_rss_hub'
+on conflict do nothing;
+
+insert into public.regulatory_dependencies
+  (source_id, dependency_type, dependency_key, topic, criticality)
+select s.id, d.dependency_type, d.dependency_key, d.topic, d.criticality
+from public.regulatory_sources s
+cross join (values
+  ('kia_prompt','tax','inflation','high'),
+  ('calculator','rent-update','inflation','critical'),
+  ('admin','economic-indicators','inflation','high')
+) as d(dependency_type, dependency_key, topic, criticality)
+where s.source_key = 'ine_ipc_publications'
+on conflict do nothing;
+
+insert into public.regulatory_dependencies
+  (source_id, dependency_type, dependency_key, topic, criticality)
+select s.id, d.dependency_type, d.dependency_key, d.topic, d.criticality
+from public.regulatory_sources s
+cross join (values
+  ('kia_prompt','tax','interest_rates','high'),
+  ('calculator','interest','interest_rates','critical'),
+  ('admin','economic-indicators','interest_rates','high')
+) as d(dependency_type, dependency_key, topic, criticality)
+where s.source_key = 'bde_interest_rates'
+on conflict do nothing;
+
+insert into public.regulatory_dependencies
   (value_key, dependency_type, dependency_key, topic, criticality)
 values
   ('SMI_MONTHLY','course','gestion-laboral','labor','critical'),
