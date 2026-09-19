@@ -185,7 +185,9 @@ describe('KIA Regulatory Registry', () => {
   });
 
   it('exposes a protected admin Regulatory Pulse panel', () => {
-    expect(read('app/api/admin/regulatory/route.ts')).toContain("profile?.role === 'admin' || profile?.role === 'owner'");
+    const adminRoute = read('app/api/admin/regulatory/route.ts');
+    expect(adminRoute).toContain("profile?.role !== 'admin' && profile?.role !== 'owner'");
+    expect(adminRoute).toContain("status: 403");
     expect(read('app/(protected)/admin/regulatory/page.tsx')).toContain('KIA Regulatory Pulse');
     expect(read('components/admin/AdminSidebar.tsx')).toContain('/admin/regulatory');
   });
