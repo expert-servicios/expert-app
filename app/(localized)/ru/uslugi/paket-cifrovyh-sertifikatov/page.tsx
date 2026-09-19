@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 import { AlertCircle, Check, FileText, ShieldCheck } from 'lucide-react';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { getCatalogService } from '@/lib/utils/catalog';
-import { shouldIndexLocale } from '@/lib/i18n/feature-flags';
+import { isLocalePubliclyEnabled } from '@/lib/i18n/feature-flags';
+import { getLocalizedServicePresentation } from '@/lib/services/service-localized-content';
 import { ServiceShareActions } from '@/components/services/ServiceShareActions';
 import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
 
@@ -15,6 +16,8 @@ const RU_PATH = '/ru/uslugi/paket-cifrovyh-sertifikatov';
 const RU_URL = `https://expertconsulting.es${RU_PATH}`;
 const SHARE_IMAGE_URL = `https://expertconsulting.es/api/services/og?slug=${encodeURIComponent(SERVICE_SLUG)}&variant=square&lang=ru`;
 const SHARE_TITLE = 'Пакет цифровых сертификатов — физлицо + компания';
+const INDEXABLE = isLocalePubliclyEnabled('ru')
+  && getLocalizedServicePresentation(SERVICE_SLUG, 'ru')?.indexable === true;
 
 const service = (() => {
   const canonical = getCatalogService(SERVICE_SLUG);
@@ -53,8 +56,8 @@ export const metadata: Metadata = {
     },
   },
   robots: {
-    index: shouldIndexLocale('ru'),
-    follow: shouldIndexLocale('ru'),
+    index: INDEXABLE,
+    follow: INDEXABLE,
   },
   openGraph: {
     title: 'Пакет Camerfirma: личный + корпоративный сертификат | EXPERT',
@@ -67,6 +70,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
+    title: 'Пакет Camerfirma: физлицо + компания | 200 € + IVA',
+    description: 'Экономия 40 € · полностью онлайн · 5 лет + 2 года · максимум 24 рабочих часа после полной проверки.',
     images: [SHARE_IMAGE_URL],
   },
 };
@@ -74,7 +79,7 @@ export const metadata: Metadata = {
 const included = [
   'Сертификат Camerfirma для физического лица — модальность EXPERT со сроком действия 5 лет.',
   'Сертификат Camerfirma для выбранного юридического лица — модальность EXPERT со сроком действия 2 года.',
-  'Удалённая идентификация и валидация личности EXPERT в рамках процесса Camerfirma.',
+  'Удалённая идентификация и валидация личности EXPERT через канал PVP Creative Quality в рамках процесса Camerfirma.',
   'Проверка документов компании и полномочий представителя.',
   'Оформление обоих сертификатов.',
   'Помощь с установкой и настройкой.',
@@ -136,7 +141,7 @@ const faq = [
   },
   {
     q: 'Нужно ли приходить лично?',
-    a: 'Нет. Процесс EXPERT полностью онлайн. Идентификация и валидация выполняются удалённо в рамках процесса Camerfirma.',
+    a: 'Нет. Процесс EXPERT полностью онлайн. Идентификация и валидация выполняются удалённо через канал PVP Creative Quality в рамках процесса Camerfirma.',
   },
   {
     q: 'Когда начинается срок 24 часа?',
