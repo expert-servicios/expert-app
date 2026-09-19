@@ -1,8 +1,9 @@
 # Plantilla pública para páginas de servicios puntuales
 
 Estado: directriz de diseño y producto  
-Fecha: 12/09/2026  
-Ámbito: páginas públicas de servicios en `app/(public)/servicios/[categoria]/[servicio]/page.tsx` y futuras landings específicas de servicios puntuales.
+Fecha original: 12/09/2026  
+Última actualización: 19/09/2026  
+Ámbito: páginas públicas de servicios puntuales ES/RU, sus landings específicas, checkout/presupuesto asociado y reglas de paridad entre idiomas.
 
 ## Objetivo
 
@@ -15,6 +16,53 @@ Todas las páginas de servicios puntuales deben seguir un patrón común para qu
 
 El patrón evita crear páginas aisladas con CTAs distintos, precios poco claros o flujos de contratación incompatibles con el panel de administración.
 
+## Referencia canónica obligatoria
+
+La plantilla de referencia para nuevas páginas y para la sincronización ES/RU es el servicio:
+
+**Nacionalidad española para menor nacido en España**
+
+Archivos de referencia:
+
+```text
+app/(public)/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana/page.tsx
+app/(localized)/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii/page.tsx
+tests/services/nationality-service-content.test.ts
+lib/services/nationality-minor.ts
+```
+
+Este servicio se toma como modelo porque ya resuelve de forma conjunta:
+
+- página ES completa;
+- página RU dedicada;
+- precio y desglose económico verificables;
+- separación entre honorarios y suplidos;
+- checkout real;
+- documentación;
+- proceso;
+- incluidos y no incluidos;
+- FAQ;
+- metadata y JSON-LD;
+- navegación cruzada ES/RU;
+- tests de consistencia;
+- lógica financiera compartida fuera del copy traducido.
+
+No se debe copiar literalmente su contenido ni su estructura económica a otros servicios. Se debe copiar **el patrón de producto y de implementación**.
+
+### Regla principal de internacionalización
+
+La versión española es la fuente funcional/comercial de verdad. La versión rusa traduce y adapta el copy, pero no crea:
+
+- precios distintos;
+- productos distintos;
+- `stripePriceId` propios;
+- reglas de billing distintas;
+- tasas o suplidos distintos;
+- alcance diferente;
+- checkout alternativo.
+
+Cuando un dato pueda compartirse como estructura o constante, debe compartirse. El idioma no debe duplicar lógica financiera.
+
 ## Principios de diseño
 
 - Usar estructura clara y repetible.
@@ -25,6 +73,108 @@ El patrón evita crear páginas aisladas con CTAs distintos, precios poco claros
 - Mantener tono profesional, concreto y orientado a decisión.
 - Mantener enlaces a fuentes oficiales, blog y base de conocimientos cuando existan.
 - Usar Cal.com para reuniones. No usar naming anterior en páginas nuevas.
+
+## Orden canónico de construcción y sincronización
+
+Cada servicio `stable` se trabaja completo antes de pasar al siguiente.
+
+### Paso 1 — cerrar la fuente ES
+
+Antes de traducir:
+
+1. confirmar nombre y slug;
+2. confirmar alcance;
+3. confirmar precio;
+4. confirmar si es checkout directo o presupuesto;
+5. validar `stripePriceId` si existe;
+6. validar billing persona/empresa;
+7. separar tasas, suplidos y costes externos;
+8. confirmar documentación, proceso y exclusiones.
+
+Si alguno de estos puntos está pendiente, el servicio se clasifica como `needs-review` o `blocked` y no entra todavía en traducción RU.
+
+### Paso 2 — construir o revisar la página ES
+
+Orden visual de referencia:
+
+1. metadata, canonical y Open Graph;
+2. JSON-LD del servicio y FAQ;
+3. hero;
+4. precio/desglose económico cuando proceda;
+5. CTA principal y caso complejo;
+6. aviso crítico del servicio cuando exista;
+7. qué incluye;
+8. documentación necesaria;
+9. proceso paso a paso;
+10. no incluido / límites del servicio;
+11. FAQ;
+12. sidebar sticky de conversión;
+13. artículos, docs o CTA complementarios cuando existan.
+
+No todos los servicios necesitan los mismos bloques, pero **el orden relativo debe mantenerse** para que la experiencia sea coherente.
+
+### Paso 3 — crear la versión RU equivalente
+
+La página RU debe conservar exactamente:
+
+- mismo alcance;
+- mismo precio;
+- mismo tratamiento IVA;
+- mismas tasas/suplidos;
+- mismos requisitos;
+- mismos incluidos/no incluidos;
+- mismo proceso;
+- mismo destino de checkout o presupuesto;
+- misma lógica de billing.
+
+Se traduce el contenido explicativo. Los términos oficiales españoles que el cliente necesitará reconocer en sedes y documentos pueden mantenerse en español dentro del texto ruso: `AEAT`, `Modelo 036`, `RETA`, `TIE`, `CIRCE`, etc.
+
+### Paso 4 — navegación y SEO ES/RU
+
+Comprobar:
+
+- enlace visible ES ↔ RU;
+- canonical correcto por idioma;
+- `hreflang` ES/RU cuando la arquitectura de la ruta lo permita;
+- Open Graph;
+- index/noindex deliberado;
+- sitemap solo si la página está lista para indexación;
+- enlaces internos localizados.
+
+### Paso 5 — checkout/presupuesto y post-pago
+
+Comprobar en ambos idiomas:
+
+- CTA;
+- login/registro;
+- carrito cuando aplique;
+- perfil;
+- selector de entidad;
+- Stripe locale;
+- suplidos;
+- success/cancel;
+- email;
+- dashboard;
+- pedido/expediente;
+- errores visibles.
+
+La traducción nunca debe modificar la lógica de cobro.
+
+### Paso 6 — tests de paridad
+
+Antes de cerrar el servicio:
+
+- test de precio;
+- test de `stripePriceId` o ausencia deliberada;
+- test de tasa/suplido;
+- test de copy crítico ES/RU;
+- test de rutas;
+- test de checkout/presupuesto;
+- test SEO cuando proceda.
+
+### Paso 7 — pasar al siguiente servicio
+
+No iniciar traducciones masivas de una categoría mientras el servicio anterior no haya pasado CI/Vercel y no tenga paridad funcional.
 
 ## Estructura obligatoria de página
 
@@ -60,7 +210,8 @@ El formulario de presupuesto debe conservar el contexto recibido por query strin
 
 - `servicio`: servicio principal solicitado;
 - `tipo`: variante comercial, por ejemplo `caso-complejo`;
-- `origen`: servicio desde el que se ofrece la formación one to one.
+- `origen`: servicio desde el que se ofrece la formación one to one;
+- `modalidad`: variante estructurada cuando exista, por ejemplo `full_service` o `guided`.
 
 Ese contexto debe verse en pantalla y enviarse dentro de la descripción de la solicitud para que administración pueda identificar correctamente el origen de cada lead.
 
@@ -159,6 +310,24 @@ No debe prometer:
 
 La herramienta oficial de reservas es Cal.com.
 
+## Regla sobre CTAs y landings específicas
+
+Las cuatro vías comerciales siguen siendo el patrón general:
+
+- servicio completo;
+- caso complejo;
+- hazlo por tu cuenta;
+- reunión informativa.
+
+Pero una landing específica no debe inventar una vía que no aplique al servicio. La referencia de nacionalidad demuestra que una landing dedicada puede priorizar el checkout real y el caso complejo cuando esa es la decisión principal.
+
+Regla práctica:
+
+- mantener las cuatro vías cuando aporten valor real;
+- ocultar o trasladar una vía si no es aplicable;
+- documentar cualquier excepción;
+- nunca sustituir una vía por un checkout distinto entre ES y RU.
+
 ## Reglas de contenido del catálogo
 
 Cada servicio nuevo en `lib/utils/catalog.ts` debe rellenar, siempre que sea posible:
@@ -251,8 +420,11 @@ const complexBudgetHref = `${budgetHref}&tipo=caso-complejo`;
 const selfGuidedHref = `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&origen=${encodedServiceSlug}`;
 ```
 
-## Checklist antes de publicar un servicio nuevo
+## Checklist antes de publicar o sincronizar un servicio
 
+### Fuente ES
+
+- [ ] El servicio está clasificado como `stable`.
 - [ ] El slug está definido y no se duplica.
 - [ ] La categoría existe.
 - [ ] El precio está claro: cerrado, desde, consultar o presupuesto.
@@ -264,16 +436,39 @@ const selfGuidedHref = `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&
 - [ ] Hay CTA de caso complejo.
 - [ ] Hay CTA de formación one to one.
 - [ ] Hay CTA de reunión gratuita con Cal.com.
-- [ ] El formulario de presupuesto conserva `servicio`, `tipo` y `origen` cuando el CTA usa query string.
+- [ ] El formulario de presupuesto conserva `servicio`, `tipo`, `origen` y `modalidad` cuando correspondan.
 - [ ] Hay fuentes oficiales cuando procede.
 - [ ] Hay artículos/docs relacionados o queda documentado como pendiente.
 - [ ] Se revisa build de Vercel antes de marcar PR como listo.
 
+### Paridad RU
+
+- [ ] Existe página RU o ruta RU deliberadamente resuelta.
+- [ ] El precio coincide con ES.
+- [ ] El IVA coincide con ES.
+- [ ] Las tasas/suplidos coinciden con ES.
+- [ ] No existe un `stripePriceId` distinto por idioma.
+- [ ] El checkout/presupuesto es el mismo flujo funcional.
+- [ ] Incluidos, exclusiones, requisitos y documentos mantienen el mismo alcance.
+- [ ] Hay enlace cruzado ES ↔ RU cuando procede.
+- [ ] Metadata, canonical y hreflang están revisados.
+- [ ] No queda copy español residual salvo términos oficiales deliberados.
+- [ ] Hay tests de paridad para campos críticos.
+- [ ] CI y Vercel están verdes antes de cerrar el servicio.
+
+## Orden del backlog de internacionalización
+
+Mientras esté activo el Epic #360:
+
+1. terminar correcciones críticas abiertas de servicios ya definidos;
+2. usar nacionalidad de menor como referencia canónica;
+3. inventariar servicios y clasificarlos `stable / needs-review / blocked`;
+4. sincronizar solo los `stable`, uno a uno;
+5. priorizar servicios con checkout real y demanda comercial;
+6. después completar páginas generales RU;
+7. después docs/blog/guías por prioridad comercial y tráfico;
+8. retomar rediseños de alcance/precio (`deliveryOptions[]`, etc.) solo cuando termine este bloque o aparezca un error crítico.
+
 ## Decisión final
 
-La plantilla común es obligatoria para nuevas páginas de servicios puntuales, salvo que exista una razón de producto documentada para crear una landing específica. Incluso en landings específicas, deben conservarse las cuatro vías de decisión:
-
-- servicio completo;
-- caso complejo;
-- hazlo por tu cuenta;
-- reunión gratuita.
+La plantilla común es obligatoria para nuevas páginas de servicios puntuales y para la sincronización ES/RU. La landing de nacionalidad de menor nacido en España es la referencia canónica de implementación. Las landings específicas pueden adaptar los CTAs cuando exista una razón de producto documentada, pero deben mantener paridad funcional entre idiomas y una única fuente para la lógica económica.
