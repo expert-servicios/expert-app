@@ -15,7 +15,7 @@ sourcesVerifiedAt: 2026-08-24
 
 ## Alcance verificado
 
-Creative Quality declara para NetContrata altas/bajas, trámites con Sistema RED y Contrat@, contratos, prórrogas, transformaciones, modificaciones, huella electrónica, recuperación de contratos e importación XML.
+La documentación operativa de NetContrata contempla altas/bajas, trámites con Sistema RED y Contrat@, contratos, prórrogas, transformaciones, modificaciones, huella electrónica, recuperación de contratos e importación XML.
 
 La secuencia exacta de DelegaRed está en el área privada. Este artículo no inventa botones y permanecerá en `review` hasta completar la prueba funcional.
 
@@ -46,8 +46,7 @@ Cuenta de demostración: selector de empresa, trabajador ficticio, trámite RED,
 
 ## Fuentes
 
-- [Creative Quality: NetContrata](https://www.creative-quality.es/netcontrata/)
-- [Creative Quality: DelegaRed](https://www.creative-quality.es/delegared/)
+- NetContrata / DelegaRed: documentación operativa disponible en el entorno contratado.
 
 ## Historial de cambios
 
