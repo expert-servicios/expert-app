@@ -1,64 +1,64 @@
-# Matriz inicial de paridad ES/RU — servicios puntuales
+# Matriz ES/RU — servicios puntuales de gestión
 
-Estado: inventario operativo inicial  
-Fecha: 19/09/2026  
-Epic: #360  
+Estado: inventario operativo
+Fecha: 19/09/2026
+Epic: #360
 Plantilla canónica: nacionalidad española para menor nacido en España (ES/RU)
 
-## Criterio de clasificación
+## Alcance
 
-- `stable`: precio, alcance y flujo suficientemente cerrados para sincronizar ES/RU ahora.
-- `needs-review`: existe servicio publicado, pero conviene revisar precio, alcance, documentación, checkout o copy antes de traducir.
-- `blocked`: hay una dependencia funcional/comercial pendiente que impide una traducción segura.
+Esta matriz se limita a **servicios puntuales de gestión/tramitación**.
 
-La clasificación es deliberadamente conservadora. No se traduce un servicio por el mero hecho de tener página ES.
+Quedan fuera de este bloque, sin excepción:
+- todos los servicios Holded;
+- todas las formaciones, cursos, sesiones formativas y Academy;
+- planes y suscripciones mensuales;
+- cualquier servicio que utilice una plantilla comercial distinta.
 
-## Lote 1 — stable
+Estos grupos tendrán su propio roadmap y plantilla.
 
-| Orden | Servicio | Slug | ES | RU | Precio / flujo | Estado |
-|---|---|---|---|---|---|---|
-| 1 | Nacionalidad española para menor nacido en España | `nacionalidad-espanola-menor-nacido-en-espana` | landing específica completa | landing específica completa | 250 € + IVA + suplido 790-026 104,05 € | stable / referencia |
-| 2 | Certificado Digital Persona Física — Camerfirma | `certificado-digital-persona-fisica` | catálogo + página genérica | sin landing RU dedicada | 90 € + IVA, checkout directo validado | stable |
-| 3 | Certificado Digital de Entidad — Camerfirma | `certificado-digital-entidad` | catálogo + página genérica | sin landing RU dedicada | 150 € + IVA, checkout directo validado | stable |
-| 4 | Pack Starter Holded | `holded-pack-starter` | catálogo / Holded | RU comercial parcial en Holded | 499 € + IVA, checkout directo | stable |
-| 5 | Migración Holded — Sin Inventario | `holded-migracion-sin-inventario` | catálogo / Holded | RU comercial parcial en Holded | 899 € + IVA, checkout directo | stable |
-| 6 | Migración Holded — Con Inventario | `holded-migracion-con-inventario` | catálogo / Holded | RU comercial parcial en Holded | 1.199 € + IVA, checkout directo | stable |
-| 7 | Migración laboral a Holded | `holded-migracion-laboral` | catálogo | sin landing RU dedicada | 50 € + IVA / empleado, mínimo 5, quote-only estructurado | stable |
-| 8 | Módulo Formación Holded | `holded-modulo-formacion` | catálogo | sin landing RU dedicada | 180 € + IVA, servicio cerrado | stable |
+## Criterio
 
-### Orden de ejecución del lote 1
+- `production-ready`: precio, alcance, flujo, contenido ES/RU y checkout/presupuesto cerrados y validados.
+- `stable`: precio, alcance y flujo suficientemente cerrados para completar QA de producción.
+- `needs-review`: publicado, pero requiere revisión de precio, alcance, documentación, checkout o normativa antes de traducir/cerrar.
+- `blocked`: existe una dependencia funcional o comercial pendiente.
 
-1. Certificado digital persona física.
-2. Certificado digital de entidad.
-3. Pack Starter Holded.
-4. Migración Holded sin inventario.
-5. Migración Holded con inventario.
-6. Migración laboral a Holded.
-7. Módulo Formación Holded.
+## Producción / referencia
 
-La nacionalidad de menor no se rehace: se usa como plantilla y control de calidad.
+| Orden | Servicio | Slug | Precio / flujo | Estado |
+|---|---|---|---|---|
+| 1 | Nacionalidad española para menor nacido en España | `nacionalidad-espanola-menor-nacido-en-espana` | 250 € + IVA + suplido 790-026 104,05 € | production-ready / referencia |
+| 2 | Certificado Digital Persona Física — Camerfirma | `certificado-digital-persona-fisica` | 90 € + IVA, checkout directo | cierre QA production-ready |
+| 3 | Certificado Digital de Entidad — Camerfirma | `certificado-digital-entidad` | 150 € + IVA, checkout directo con entidad vinculada | cierre QA production-ready |
 
-## Lote 2 — needs-review antes de traducir
+## Próximos candidatos
 
-| Servicio | Slug | Motivo |
-|---|---|---|
-| Declaración de la Renta (IRPF) | `irpf` | confirmar que precio/alcance actuales son los definitivos para esta campaña |
-| Modelo 720 | `modelo-720` | precio fijo y checkout existente, pero revisar copy normativo/SEO antes de duplicar RU |
-| Arraigo Familiar | `arraigo-familiar` | revisar vigencia normativa y documentación antes de traducción |
-| Arraigo Laboral | `arraigo-laboral` | revisar vigencia normativa y copy legal |
-| Renovación de Residencia | `renovacion-residencia` | validar alcance exacto y supuestos incluidos |
-| Nacionalidad Española | `nacionalidad-espanola` | separar bien caso general de la landing específica de menor |
-| Reagrupación Familiar | `reagrupacion-familiar` | revisar requisitos y documentación vigente |
-| Permiso Inicial de Residencia | `permiso-residencia-inicial` | alcance muy amplio; confirmar vías cubiertas |
-| Alta de Autónomo | `alta-autonomo` | validar precio final y alcance con flujo de onboarding actual |
-| Constitución de Sociedad Limitada | `constitucion-sl` | revisar precio definitivo y diferencia exacta frente a CIRCE |
-| Módulo Laboral Holded | `holded-modulo-laboral` | validar que alcance no se solapa con migración laboral |
-| Otras Integraciones API Holded | `holded-integraciones-api` | el alcance puede variar según integración |
-| Formación en Holded | `formacion-holded` | revisar si debe quedar como bloque único o modular |
+| Orden | Servicio | Slug | Motivo |
+|---|---|---|---|
+| 1 | Arraigo Social | `arraigo-social` | ficha ES muy completa; requiere validación normativa/comercial final |
+| 2 | Arraigo Familiar | `arraigo-familiar` | ficha avanzada; revisar normativa y documentación |
+| 3 | Arraigo Laboral | `arraigo-laboral` | ficha avanzada; revisar normativa y proceso |
+| 4 | Renovación de Residencia | `renovacion-residencia` | ficha avanzada; validar alcance y supuestos incluidos |
+| 5 | Nacionalidad Española | `nacionalidad-espanola` | separar con precisión del caso específico de menor |
+| 6 | Reagrupación Familiar | `reagrupacion-familiar` | ficha avanzada; revisar requisitos vigentes |
 
-## Lote 3 — blocked / variable
+Promover solo uno a uno, después de validación.
 
-No traducir todavía como landing específica hasta cerrar alcance o precio:
+## Needs-review
+
+- `irpf`
+- `modelo-720`
+- `arraigo-familiar`
+- `arraigo-laboral`
+- `renovacion-residencia`
+- `nacionalidad-espanola`
+- `reagrupacion-familiar`
+- `permiso-residencia-inicial`
+- `alta-autonomo`
+- `constitucion-sl`
+
+## Blocked / variable
 
 - `modelo-151`
 - `no-residentes`
@@ -66,72 +66,49 @@ No traducir todavía como landing específica hasta cerrar alcance o precio:
 - `impuesto-sociedades`
 - `modelos-informativos`
 - `nie-pasaporte`
-- `constitucion-sl-circe` — estructura ya corregida, pero el rollout multilingüe queda después del primer lote stable
-- `nif-socio-extranjero` — flujo por cantidad corregido; esperar validación completa del modelo quote-only
+- `constitucion-sl-circe`
+- `nif-socio-extranjero`
 - `contabilidad-mensual`
 - `impuestos-trimestrales`
 - `baja-cese-actividad`
 - `cuentas-anuales`
 - `apoderamientos-mercantiles`
+- `transferencia-vehiculo`
 - `matriculacion`
 - `duplicado-permiso`
 - `tramites-embarcaciones`
+- `compraventa-inmueble`
 - `herencia`
 - `donacion`
 - `hipoteca-cancelacion`
-- `formacion-laboral-rrhh`
-- `formacion-administraciones-publicas`
-- `formacion-alta-autonomo-sl`
-- `formacion-planificacion-fiscal`
+- `certificado-digital-sin-animo-lucro`
 
-## Estado RU actual
+Holded y Formación no aparecen en estas listas porque están **fuera de alcance**, no bloqueados dentro de este roadmap.
 
-### Ya resuelto
-- Landing dedicada de nacionalidad de menor.
-- Infraestructura general RU:
-  - `app/(localized)/ru/[[...slug]]`
-  - `RU_PUBLIC_CONTENT`
-  - `RU_COMMERCIAL_DATA`
-  - rutas localizadas
-  - metadata/hreflang general
+## Regla de implementación
 
-### Parcial
-- Holded.
-- Planes.
-- Fiscalidad general.
-- Autónomo.
-- SL.
-- Academy.
-- VERI*FACTU.
-- Consulta.
+Para cada servicio incluido:
 
-### Pendiente
-- La mayoría de páginas de servicio puntual no tienen landing RU dedicada.
-- Falta una estrategia común para reutilizar datos comerciales ES y traducir únicamente el copy.
-- Falta QA automático de paridad por servicio.
+1. confirmar que no pertenece a Holded, Formación ni Suscripciones;
+2. cerrar la fuente ES;
+3. validar precio, alcance, billing y checkout/presupuesto;
+4. revisar normativa vigente cuando proceda;
+5. completar metadata, documentación, proceso, incluidos, exclusiones y CTA;
+6. mover datos económicos compartibles fuera del copy traducido;
+7. crear o sincronizar RU;
+8. conectar exactamente el mismo flujo económico;
+9. añadir enlace ES ↔ RU y canonical/hreflang;
+10. añadir tests de paridad;
+11. CI + preview;
+12. merge;
+13. pasar al siguiente.
 
-## Regla de implementación del lote 1
+## No hacer
 
-Para cada servicio:
-
-1. confirmar que el servicio pertenece al lote puntual y no a migraciones/suscripciones;
-2. revisar la ficha ES contra la plantilla canónica;
-3. mover a constante compartida cualquier dato económico que hoy esté duplicado;
-4. crear copy RU;
-5. crear/mapping de ruta RU;
-6. conectar mismo checkout/presupuesto;
-7. añadir enlace ES ↔ RU;
-8. revisar canonical/hreflang;
-9. añadir tests de paridad;
-10. CI + Vercel;
-11. merge;
-12. pasar al siguiente.
-
-## No hacer durante este bloque
-
-- no rediseñar servicios `needs-review`;
-- no cambiar precios para “hacer encajar” la traducción;
+- no incorporar ningún servicio Holded;
+- no incorporar ninguna formación o Academy;
+- no incorporar suscripciones mensuales;
+- no cambiar precios para facilitar traducciones;
 - no crear productos Stripe distintos por idioma;
-- no traducir masivamente categorías completas;
-- no duplicar lógica financiera en páginas RU;
+- no completar servicios `needs-review` o `blocked` con contenido inventado;
 - no publicar páginas RU a medias.
