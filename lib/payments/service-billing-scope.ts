@@ -4,6 +4,9 @@ export type ServiceBillingPolicy = 'profile_only' | 'company_only' | 'flexible';
 const PROFILE_ONLY_SERVICE_SLUGS = new Set([
   // Personal taxes / procedures.
   'irpf',
+  'modelo-151',
+
+  // Immigration, nationality and personal identification procedures.
   'arraigo-social',
   'arraigo-familiar',
   'arraigo-laboral',
@@ -12,6 +15,10 @@ const PROFILE_ONLY_SERVICE_SLUGS = new Set([
   'nacionalidad-espanola-menor-nacido-en-espana',
   'reagrupacion-familiar',
   'permiso-residencia-inicial',
+  'nie-pasaporte',
+
+  // Succession is attached to the natural-person estate/heirs in this catalog.
+  'herencia',
 
   // The contracting person is the future entrepreneur/shareholder; the entity
   // does not necessarily exist yet and must never be required to buy these.
