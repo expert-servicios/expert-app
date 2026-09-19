@@ -101,6 +101,13 @@ describe('punctual service template', () => {
     expect(publicReviews).toContain('review.comment_publishable === true');
   });
 
+  it('runs review moderation after the response lifecycle', () => {
+    const submit = read('app/api/reviews/submit/route.ts');
+    expect(submit).toContain("import { after, NextRequest, NextResponse } from 'next/server'");
+    expect(submit).toContain('after(async () => {');
+    expect(submit).toContain('moderateReviewByKia(insertedReview.id)');
+  });
+
   it('fails closed to human review when automatic moderation is uncertain', () => {
     const moderation = read('lib/ai/kia/kia-review-moderation.ts');
 
