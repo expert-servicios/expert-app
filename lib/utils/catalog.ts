@@ -1416,7 +1416,7 @@ export const services: Service[] = [
     slug: 'certificado-digital-entidad',
     categoria: 'certificado-digital',
     name: 'Certificado Digital de Entidad — Camerfirma',
-    shortDescription: 'Certificado digital Camerfirma para entidad mercantil, 100 % online y sin presencia física. EXPERT valida al representante y tramita la emisión en máximo 24 horas laborables desde expediente completo.'
+    shortDescription: 'Certificado digital Camerfirma para entidad mercantil, 100 % online y sin presencia física. EXPERT valida al representante y tramita la emisión en máximo 24 horas laborables desde expediente completo.',
     description:
       'EXPERT actúa como Punto de Registro Autorizado dentro del proceso Camerfirma. Revisamos la documentación de la entidad y las facultades del representante, realizamos la identificación y validación online y tramitamos la emisión sin presencia física. Una vez recibida la documentación completa y validado el representante, el plazo máximo de tramitación es de 24 horas laborables. Incluye asistencia para instalación y prueba de funcionamiento.',
     price: '150 € + IVA',
@@ -1445,7 +1445,7 @@ export const services: Service[] = [
       'Ordenador con Windows o macOS para la instalación',
     ],
     includes: [
-      'Verificación documental de la entidad y validación online del representante por EXPERT'
+      'Verificación documental de la entidad y validación online del representante por EXPERT',
       'Emisión del certificado digital de entidad Camerfirma',
       'Instalación y configuración en el equipo del representante',
       'Prueba de funcionamiento antes de finalizar',
@@ -1588,6 +1588,7 @@ export const services: Service[] = [
       { q: '¿Necesito crear la empresa en EXPERT?', a: 'Sí. El checkout del pack necesita vincular la entidad mercantil para que el certificado empresarial, el pedido y el expediente queden asociados correctamente.' },
       { q: '¿Qué vigencia tiene cada certificado?', a: 'La modalidad de persona física comercializada por EXPERT tiene 5 años de vigencia y la modalidad de entidad, 2 años.' },
     ],
+  },
 
   {
     slug: 'certificado-digital-sin-animo-lucro',
