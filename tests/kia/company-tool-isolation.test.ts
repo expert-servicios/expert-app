@@ -8,7 +8,8 @@ function source(path: string): string {
 
 describe('KIA company tool isolation', () => {
   const executor = source('lib/ai/kia/kia-tool-executor.ts');
-  const copilot = source('app/api/kia/copilot/route.ts');
+  const decisionEngine = source('lib/ai/kia/kia-decision-engine.ts');
+  const contextBuilder = source('lib/ai/kia/kia-context-builder.ts');
 
   it('scopes expediente preflight data to the active company', () => {
     expect(executor).toContain("case 'get_user_expedientes'");
@@ -24,11 +25,11 @@ describe('KIA company tool isolation', () => {
     expect(executor.match(/if \(companyId\) query = query\.eq\('company_id', companyId\)/g)?.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('tells the streaming copilot about included-entity coverage', () => {
-    expect(copilot).toContain("context.company.coverageSource === 'included_entity'");
-    expect(copilot).toContain('No necesita una segunda suscripción.');
-    expect(copilot).toContain('no le propongas una segunda suscripción');
-    expect(copilot).toContain('coveragePrimaryCompanyName');
-    expect(copilot).toContain('coveragePlanName');
+  it('keeps included-entity coverage authoritative in the canonical KIA path', () => {
+    expect(contextBuilder).toContain("coverageSource: coverage?.source ?? 'none'");
+    expect(contextBuilder).toContain('coveragePrimaryCompanyName: coverage?.primaryCompanyName ?? null');
+    expect(decisionEngine).toContain("context.company?.coverageSource === 'included_entity'");
+    expect(decisionEngine).toContain('do_not_create_second_subscription');
+    expect(decisionEngine).toContain('No necesita una segunda suscripción');
   });
 });
