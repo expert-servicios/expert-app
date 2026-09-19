@@ -153,7 +153,7 @@ export function ProfileCompletionWizard({ profile, service }: Props) {
             {checking ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
             {checking ? 'Redirigiendo a Stripe...' : `Pagar - ${service.displayPrice}`}
           </button>
-          <p className="text-center text-xs text-[#23364D]/50">Pago seguro con Stripe. Direccion de facturacion y NIF/CIF se piden en la pasarela de pago.</p>
+          <p className="text-center text-xs text-[#23364D]/50">Pago seguro con Stripe. La pasarela pedirá solo los datos fiscales que correspondan al destinatario de la factura.</p>
         </div>
       )}
     </div>
