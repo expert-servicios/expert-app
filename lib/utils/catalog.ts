@@ -1321,6 +1321,7 @@ export const services: Service[] = [
     duration: 'Inmediato (presencial o videoconferencia)',
     stripePriceId: 'price_1TZYiBLeYwwgvux4EO07gS0W',
     checkoutLabel: 'Solicitar certificado digital',
+    checkoutLegal: 'Certificado personal: la contratación y la factura se vinculan al perfil de la persona titular.',
     metaTitle: 'Certificado Digital Persona Física Camerfirma · 90 € + IVA | EXPERT Asesoría',
     metaDescription: 'Obtén tu certificado digital Camerfirma para persona física desde 90 € + IVA. Tramitación inmediata presencial o por videoconferencia. Punto de Registro Autorizado.',
     keyPoints: [
