@@ -142,6 +142,7 @@ describe('KIA Regulatory Registry', () => {
       'app/api/cron/regulatory-monthly-audit/route.ts',
     ]) {
       expect(read(path), path).toContain('verifyCronRequest');
+      expect(read(path), path).toContain('export const POST = GET;');
     }
   });
 
