@@ -37,10 +37,12 @@ export function CompanyCheckoutGate({
   locale = 'es',
   loading = false,
   onContinue,
+  returnPath = '/carrito',
 }: {
   locale?: CartLocale;
   loading?: boolean;
   onContinue: (companyId: string) => void;
+  returnPath?: string;
 }) {
   const t = COPY[locale];
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -85,7 +87,7 @@ export function CompanyCheckoutGate({
       ) : companies.length === 0 ? (
         <div className="space-y-2">
           <p className="text-xs font-semibold text-amber-800">{error || t.empty}</p>
-          <Link href="/dashboard/empresa/nueva" className="inline-flex text-xs font-bold text-[#D4A017] hover:underline">
+          <Link href={`/dashboard/empresa/nueva?next=${encodeURIComponent(returnPath)}`} className="inline-flex text-xs font-bold text-[#D4A017] hover:underline">
             {t.add}
           </Link>
         </div>
