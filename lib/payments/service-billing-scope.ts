@@ -59,14 +59,13 @@ export function getServiceBillingPolicy(slug: string): ServiceBillingPolicy {
 export function resolveServiceBillingScope(input: {
   serviceSlugs: string[];
   explicitCompanyId?: string | null;
-  activeCompanyId?: string | null;
   clientType?: string | null;
 }): ServiceBillingResolution {
   const policies = input.serviceSlugs.map(getServiceBillingPolicy);
   const hasProfileOnly = policies.includes('profile_only');
   const hasCompanyOnly = policies.includes('company_only');
   const hasFlexible = policies.includes('flexible');
-  const companyId = input.explicitCompanyId ?? input.activeCompanyId ?? null;
+  const companyId = input.explicitCompanyId ?? null;
 
   // A personal legal/tax procedure cannot share an invoice recipient with a
   // service that is obligatorily attached to a legal entity.
@@ -74,10 +73,11 @@ export function resolveServiceBillingScope(input: {
     return { scope: 'mixed_billing_scope', companyId: null };
   }
 
-  // Flexible services follow an explicitly selected/active entity. Therefore a
-  // cart containing a strictly personal service plus a flexible service would
-  // have two invoice recipients when a company context is present.
-  if (hasProfileOnly && hasFlexible && (companyId || input.clientType === 'empresa')) {
+  // Flexible services follow only an explicitly selected entity. The active
+  // dashboard company is UI context and must never silently attribute a charge.
+  // Therefore a cart containing a personal service plus a company-scoped
+  // flexible service is rejected only when a company was explicitly selected.
+  if (hasProfileOnly && hasFlexible && companyId) {
     return { scope: 'mixed_billing_scope', companyId: null };
   }
 
