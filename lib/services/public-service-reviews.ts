@@ -43,7 +43,7 @@ export async function getPublicServiceReviewSummary(
 
     const { data: reviews, error: reviewsError } = await admin
       .from('reviews')
-      .select('id,rating,comment,created_at,featured')
+      .select('id,rating,comment,comment_publishable,created_at,featured')
       .in('case_id', caseIds)
       .eq('status', 'approved')
       .eq('published', true)
@@ -57,7 +57,7 @@ export async function getPublicServiceReviewSummary(
     const normalized = reviews.map((review) => ({
       id: review.id,
       rating: Number(review.rating),
-      comment: typeof review.comment === 'string' && review.comment.trim()
+      comment: review.comment_publishable === true && typeof review.comment === 'string' && review.comment.trim()
         ? review.comment.trim()
         : null,
       createdAt: review.created_at,
