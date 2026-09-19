@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Building2, Check } from 'lucide-react';
 import CompanyDataLookup, { type SuggestionFormFill } from '@/components/dashboard/company/CompanyDataLookup';
@@ -28,6 +28,11 @@ const PROVINCIAS = [
 
 export default function NuevaEmpresaPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedNext = searchParams.get('next');
+  const safeNext = requestedNext && requestedNext.startsWith('/') && !requestedNext.startsWith('//')
+    ? requestedNext
+    : null;
   const [loading,       setLoading]       = useState(false);
   const [error,         setError]         = useState('');
   const [showLookup,    setShowLookup]    = useState(false);
@@ -84,7 +89,7 @@ export default function NuevaEmpresaPage() {
         return;
       }
 
-      router.push('/dashboard/empresa?created=1');
+      router.push(safeNext ?? '/dashboard/empresa?created=1');
     } catch {
       setError('Error de conexión. Inténtalo de nuevo.');
     } finally {
