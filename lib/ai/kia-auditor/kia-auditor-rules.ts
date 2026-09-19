@@ -46,11 +46,11 @@ export const KIA_AUDITOR_RULES: AuditorRuleDefinition[] = [
   },
   {
     id:              'checkout_requires_billing_ready',
-    label:           'Checkout requiere datos de facturación',
+    label:           'Checkout respeta facturación por entidad cuando aplica',
     category:        'checkout',
     severity:        'critical',
     evaluationType:  'deterministic',
-    description:     'Kia debe exigir datos de facturación antes de ofrecer pago.',
+    description:     'Kia debe exigir datos fiscales completos cuando el checkout se factura a una empresa, pero no debe bloquear servicios personales por billing_ready=false.',
   },
   // ── HOLDED ──────────────────────────────────────────────────────────────────
   {

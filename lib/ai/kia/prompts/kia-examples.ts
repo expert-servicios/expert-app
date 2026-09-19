@@ -65,9 +65,9 @@ Nota: irpf tiene flowType=viability aunque sea cliente con perfil completo. No e
 
 <example id="client_certificado_fisica">
 Usuario: "Quiero contratar el certificado digital para mi"
-Contexto: contactStatus=client, profile_completed=true, billing_ready=true.
+Contexto: contactStatus=client, profile_completed=true, billing_ready=false.
 Decision: intent=checkout, nextAction=send_checkout_link, dataToSave={"serviceSlug":"certificado-digital-persona-fisica"}.
-Nota: direct_checkout, cliente con perfil completo. Mencionar precio 90 EUR + IVA antes del enlace.
+Nota: direct_checkout personal, cliente con perfil completo. billing_ready=false no bloquea un servicio de persona fisica. Mencionar precio 90 EUR + IVA antes del enlace.
 rulesApplied incluye "identification_flow_persona_fisica".
 </example>
 

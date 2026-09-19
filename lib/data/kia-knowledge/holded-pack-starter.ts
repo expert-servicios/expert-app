@@ -15,7 +15,7 @@ export const holdedPackStarterKnowledge = {
 
   // ── Checkout requirements ────────────────────────────────────────────────
   requiresProfileCompleted             : true,
-  requiresBillingReady                 : true,
+  requiresBillingReady                 : false, // conditional: company data only when billing to a linked entity
   requiresHoldedConnectionBeforeCheckout: false,
   allowsCheckoutWithoutHoldedAccount   : true,
 
