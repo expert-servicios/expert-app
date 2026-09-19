@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     const { data: clientProfile, error: profileError } = await adminSupabase
       .from('profiles')
-      .select('full_name,phone,client_type,company,tax_id,address,city,postal_code,active_company_id')
+      .select('full_name,phone,client_type,company,tax_id,address,city,postal_code')
       .eq('id', clientId)
       .single();
     if (profileError || !clientProfile) {
@@ -92,8 +92,10 @@ export async function POST(request: NextRequest) {
 
     let companyId: string | null = null;
     if (!forceProfile) {
-      companyId = parsed.data.companyId ?? clientProfile.active_company_id ?? null;
-      if (!companyId && (memberships?.length ?? 0) === 1) companyId = memberships![0].company_id;
+      companyId = parsed.data.companyId ?? null;
+      if (!companyId && forceCompany && (memberships?.length ?? 0) === 1) {
+        companyId = memberships![0].company_id;
+      }
     }
 
     if (forceCompany && !companyId) {
