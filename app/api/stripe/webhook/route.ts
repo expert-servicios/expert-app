@@ -558,15 +558,47 @@ export async function POST(req: NextRequest) {
           const paymentId = (session.payment_intent as string) ?? session.id;
           const currency = session.currency?.toUpperCase() ?? 'EUR';
 
-          // ── Idempotency: skip if order already exists for this payment ──
-          const { data: existingOrder } = await supabaseAdmin
-            .from('orders')
-            .select('id')
-            .eq('stripe_payment_id', paymentId)
-            .maybeSingle();
+          // ── Idempotency: protect both the Stripe payment and the quote itself ──
+          const [{ data: existingOrder }, { data: existingQuoteOrder }] = await Promise.all([
+            supabaseAdmin
+              .from('orders')
+              .select('id')
+              .eq('stripe_payment_id', paymentId)
+              .maybeSingle(),
+            supabaseAdmin
+              .from('orders')
+              .select('id,stripe_payment_id')
+              .eq('quote_id', quoteId)
+              .limit(1)
+              .maybeSingle(),
+          ]);
 
           if (existingOrder) {
             console.log('[webhook] order already exists for payment', paymentId, '— skipping');
+          } else if (existingQuoteOrder) {
+            console.error('[webhook] duplicate payment detected for quote', {
+              quoteId,
+              existingPaymentId: existingQuoteOrder.stripe_payment_id,
+              newPaymentId: paymentId,
+              sessionId: session.id,
+            });
+            await supabaseAdmin.from('audit_logs').insert({
+              action: 'quote.duplicate_payment_detected',
+              entity: 'quotes',
+              entity_id: quoteId,
+              metadata: {
+                existing_order_id: existingQuoteOrder.id,
+                existing_payment_id: existingQuoteOrder.stripe_payment_id,
+                new_payment_id: paymentId,
+                new_session_id: session.id,
+              }
+            }).then(() => {});
+            notifyAdmins({
+              title: '⚠️ Pago duplicado detectado en presupuesto',
+              body: `${quote.title ?? 'Presupuesto'} · requiere revisión manual en Stripe`,
+              url: '/admin/presupuestos',
+              tag: `quote-duplicate-payment-${quoteId}`,
+            }).catch(() => {});
           } else {
             await supabaseAdmin
               .from('quotes')
