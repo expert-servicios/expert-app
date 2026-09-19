@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { getRegulatoryPulseSummary } from '@/lib/regulatory/regulatory-values';
+import { applyReviewedRegulatoryValueUpdates, getRegulatoryPulseSummary } from '@/lib/regulatory/regulatory-values';
 import { runRegulatoryPulse } from '@/lib/regulatory/regulatory-monitor';
 import { runRegulatoryWorker } from '@/lib/regulatory/regulatory-review';
 
@@ -35,10 +35,21 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => ({})) as {
-    action?: 'pulse' | 'worker';
+    action?: 'pulse' | 'worker' | 'apply_values';
     authority?: string;
     sourceKey?: string;
+    changeId?: string;
   };
+
+  if (body.action === 'apply_values') {
+    if (!body.changeId) {
+      return NextResponse.json({ error: 'changeId es obligatorio' }, { status: 400 });
+    }
+    return NextResponse.json({
+      ok: true,
+      result: await applyReviewedRegulatoryValueUpdates(body.changeId),
+    });
+  }
 
   if (body.action === 'worker') {
     return NextResponse.json({ ok: true, result: await runRegulatoryWorker(5) });
