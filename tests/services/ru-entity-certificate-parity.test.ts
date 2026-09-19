@@ -49,5 +49,8 @@ describe('RU entity digital certificate parity', () => {
     expect(ru).toContain('Учредительные документы или актуальная nota mercantil');
     expect(ru).toContain('Нотариальная доверенность');
     expect(ru).toContain('Продление сертификата после окончания срока действия — оформляется отдельно.');
+    expect(ru).toContain('срок действия 2 года');
+    expect(ru).toContain('/docs/certificado-digital-entidad-documentos-representante');
+    expect(ru).toContain('/docs/certificado-digital-entidad-tipos-usos-seguridad');
   });
 });
