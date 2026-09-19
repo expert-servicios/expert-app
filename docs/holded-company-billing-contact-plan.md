@@ -24,3 +24,15 @@ The legacy helper `syncSubscriptionToHolded` identifies an EXPERT Holded custome
 ## Rollout
 
 Implement as a separate code-only PR after entity-scoped billing is merged. No production data migration is required. Existing mappings and Holded contacts remain untouched.
+
+
+## Implementation status — 2026-09-19
+
+Implemented for one-off billing flows:
+- `syncOrderToHolded` resolves `orders.company_id` and validates it against the caller context.
+- Company-scoped orders use the company Holded mapping and never reuse a contact solely by matching email.
+- Personal orders keep the existing profile/email contact behavior.
+- Durable Holded retry jobs preserve `companyId`.
+- Admin quote estimates pass `companyId` and use the company-scoped Holded contact mapping.
+- Quote-payment orders persist the quote company explicitly in addition to the database inheritance guard.
+- No historical Holded contact, mapping, order or invoice is changed automatically.
