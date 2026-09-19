@@ -265,6 +265,7 @@ export async function syncQuoteAsEstimate(params: {
   clientName: string;
   clientEmail: string;
   clientPhone?: string | null;
+  companyId?: string | null;
   title: string;
   amountEur: number;
 }): Promise<HoldedSyncResult> {
@@ -274,7 +275,7 @@ export async function syncQuoteAsEstimate(params: {
     localEntity: 'quotes',
     localId: params.quoteId,
     externalEntity: 'holded_estimate',
-    requestPayload: { clientEmail: params.clientEmail, title: params.title, amountEur: params.amountEur },
+    requestPayload: { clientEmail: params.clientEmail, companyId: params.companyId ?? null, title: params.title, amountEur: params.amountEur },
   });
 
   if (!isConfigured()) {
@@ -283,11 +284,18 @@ export async function syncQuoteAsEstimate(params: {
   }
 
   try {
-    const contactId = await upsertContact({
-      name: params.clientName,
-      email: params.clientEmail,
-      phone: params.clientPhone,
-    });
+    const contactId = params.companyId
+      ? await resolveCompanyBillingContact({
+          companyId: params.companyId,
+          name: params.clientName,
+          email: params.clientEmail,
+          phone: params.clientPhone,
+        })
+      : await upsertContact({
+          name: params.clientName,
+          email: params.clientEmail,
+          phone: params.clientPhone,
+        });
 
     const estimateId = await createEstimate({
       contactId,
@@ -305,6 +313,7 @@ export async function syncQuoteAsEstimate(params: {
         local_id: params.quoteId,
         external_entity: 'holded_estimate',
         external_id: estimateId,
+        company_id: params.companyId ?? null,
       },
       { onConflict: 'provider,local_entity,local_id,external_entity' }
     ).then(() => null, () => null);
@@ -312,7 +321,7 @@ export async function syncQuoteAsEstimate(params: {
     await updateSyncEvent(syncEventId, {
       status: 'success',
       externalId: estimateId,
-      responsePayload: { contactId, estimateId },
+      responsePayload: { contactId, estimateId, companyId: params.companyId ?? null },
     });
     return { contactId, invoiceId: estimateId, syncEventId };
   } catch (error) {
@@ -645,12 +654,17 @@ export async function syncOrderToHolded(params: {
   description: string;
   amountEur: number;
   orderId?: string;
+  companyId?: string | null;
   localEntity?: string;
   source?: string;
 }): Promise<HoldedSyncResult> {
   const automatic = params.source !== 'manual';
   const createInvoices = process.env.HOLDED_CREATE_INVOICES_FROM_STRIPE === 'true';
   let resolvedAmountEur = params.amountEur;
+  let resolvedCompanyId = params.companyId ?? null;
+  let billingName = params.clientName;
+  let billingEmail = params.clientEmail;
+  let billingPhone = params.clientPhone ?? null;
 
   // Orders are the accounting boundary for one-time services. In particular,
   // catalog orders can contain client disbursements (suplidos) collected by
@@ -660,7 +674,7 @@ export async function syncOrderToHolded(params: {
     const admin = getSupabaseAdmin();
     const { data: order, error: orderError } = await admin
       .from('orders')
-      .select('amount_eur')
+      .select('amount_eur,company_id')
       .eq('id', params.orderId)
       .maybeSingle();
     if (orderError) {
@@ -668,6 +682,37 @@ export async function syncOrderToHolded(params: {
     }
     const persistedAmount = Number(order?.amount_eur);
     if (Number.isFinite(persistedAmount) && persistedAmount > 0) resolvedAmountEur = persistedAmount;
+
+    const persistedCompanyId = order?.company_id ?? null;
+    if (params.companyId !== undefined && (params.companyId ?? null) !== persistedCompanyId) {
+      return {
+        contactId: null,
+        invoiceId: null,
+        syncEventId: null,
+        error: `Order company mismatch for ${params.orderId}; manual review required`,
+      };
+    }
+    resolvedCompanyId = persistedCompanyId;
+  }
+
+  if (resolvedCompanyId) {
+    const admin = getSupabaseAdmin();
+    const { data: company, error: companyError } = await admin
+      .from('companies')
+      .select('razon_social,email,telefono')
+      .eq('id', resolvedCompanyId)
+      .maybeSingle();
+
+    if (companyError) {
+      return { contactId: null, invoiceId: null, syncEventId: null, error: `Could not resolve order company: ${companyError.message}` };
+    }
+    if (!company) {
+      return { contactId: null, invoiceId: null, syncEventId: null, error: `Order company ${resolvedCompanyId} not found; manual review required` };
+    }
+
+    billingName = company.razon_social ?? billingName;
+    billingEmail = company.email ?? billingEmail;
+    billingPhone = company.telefono ?? billingPhone;
   }
 
   const syncEventId = await createSyncEvent({
@@ -677,7 +722,8 @@ export async function syncOrderToHolded(params: {
     localId: params.orderId ?? null,
     externalEntity: 'holded_invoice',
     requestPayload: {
-      clientEmail: params.clientEmail,
+      clientEmail: billingEmail,
+      companyId: resolvedCompanyId,
       description: params.description,
       callerAmountEur: params.amountEur,
       resolvedAmountEur,
@@ -707,11 +753,18 @@ export async function syncOrderToHolded(params: {
   }
 
   try {
-    const contactId = await upsertContact({
-      name: params.clientName,
-      email: params.clientEmail,
-      phone: params.clientPhone
-    });
+    const contactId = resolvedCompanyId
+      ? await resolveCompanyBillingContact({
+          companyId: resolvedCompanyId,
+          name: billingName,
+          email: billingEmail,
+          phone: billingPhone,
+        })
+      : await upsertContact({
+          name: billingName,
+          email: billingEmail,
+          phone: billingPhone,
+        });
 
     const invoiceId = await createInvoice({
       contactId,
@@ -723,7 +776,7 @@ export async function syncOrderToHolded(params: {
     await updateSyncEvent(syncEventId, {
       status: 'success',
       externalId: invoiceId,
-      responsePayload: { contactId, invoiceId, callerAmountEur: params.amountEur, resolvedAmountEur }
+      responsePayload: { contactId, invoiceId, companyId: resolvedCompanyId, callerAmountEur: params.amountEur, resolvedAmountEur }
     });
 
     return { contactId, invoiceId, syncEventId };
