@@ -60,6 +60,22 @@ describe('KIA Regulatory Registry', () => {
     expect(result.fingerprint).toMatch(/^[a-f0-9]{64}$/);
   });
 
+  it('fingerprints the full normalized payload while keeping the stored excerpt bounded', async () => {
+    const prefix = 'A'.repeat(25_000);
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(`${prefix}X`, { status: 200, headers: { 'content-type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(`${prefix}Y`, { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const jsonSource = source({ fetch_strategy: 'json' });
+    const first = await fetchRegulatorySource(jsonSource);
+    const second = await fetchRegulatorySource(jsonSource);
+
+    expect(first.excerpt.length).toBeLessThanOrEqual(24_000);
+    expect(first.excerpt).toBe(second.excerpt);
+    expect(first.fingerprint).not.toBe(second.fingerprint);
+  });
+
   it('ignores volatile RSS build metadata when fingerprinting', async () => {
     const bodies = [
       '<rss><channel><lastBuildDate>Sat, 19 Sep 2026 10:00:00 GMT</lastBuildDate><item><title>Cambio real</title><link>https://www.boe.es/x</link></item></channel></rss>',
@@ -115,6 +131,8 @@ describe('KIA Regulatory Registry', () => {
     const monitor = read('lib/regulatory/regulatory-monitor.ts');
     expect(monitor).toContain('const hasBaseline = Boolean(source.last_fingerprint)');
     expect(monitor).toContain('const isChanged = hasBaseline && source.last_fingerprint !== fetched.fingerprint');
+    expect(monitor).toContain("onConflict: 'current_snapshot_id'");
+    expect(monitor).toContain('Source state update failed');
   });
 
   it('protects all regulatory cron routes with CRON_SECRET', () => {
@@ -136,6 +154,8 @@ describe('KIA Regulatory Registry', () => {
     expect(migration).toContain("'regulatory-monthly-audit'");
     expect(migration).toContain("'41 5 3 * *'");
     expect(migration).toContain("where name = 'cron_secret'");
+    const registryMigration = read('supabase/migrations/20260919191500_kia_regulatory_registry.sql');
+    expect(registryMigration).toContain('regulatory_changes_current_snapshot_unique');
   });
 
   it('monitors direct official feeds instead of only RSS directory pages', () => {
