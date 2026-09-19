@@ -1,3 +1,5 @@
+import { getServiceOperationProfile } from '@/lib/services/service-operations';
+
 export type SocialChannel = 'facebook' | 'instagram' | 'linkedin' | 'google';
 
 export type SocialPostDraft = {
@@ -617,6 +619,73 @@ export const catalogLaunchSocialPacks: ServiceLaunchPack[] = [
   }
 ];
 
+function buildGeneratedLaunchPack(serviceSlug: string): ServiceLaunchPack | undefined {
+  const profile = getServiceOperationProfile(serviceSlug);
+  if (!profile) return undefined;
+
+  const destinationPath = `/servicios/${profile.category}/${profile.slug}`;
+  const campaign = `expert_catalog_launch_${profile.slug}`;
+  const posts: SocialPostDraft[] = [];
+
+  const channelBlueprints: Array<{
+    channel: SocialChannel;
+    items: Array<{ format: SocialPostDraft['format']; suffix: string; title: string; cta: string }>;
+  }> = [
+    {
+      channel: 'facebook',
+      items: [
+        { format: 'educational', suffix: 'requirements', title: `${profile.displayName}: requisitos clave`, cta: 'Ver requisitos' },
+        { format: 'problem_solution', suffix: 'documents', title: `Documentación para ${profile.displayName}`, cta: 'Ver checklist' },
+        { format: 'cta', suffix: 'cta', title: `Preparar ${profile.displayName} con EXPERT`, cta: 'Ver servicio' },
+      ],
+    },
+    {
+      channel: 'instagram',
+      items: [
+        { format: 'educational', suffix: 'requirements', title: `${profile.displayName}: qué revisar primero`, cta: 'Guardar' },
+        { format: 'carousel', suffix: 'steps', title: `${profile.displayName} paso a paso`, cta: 'Ver proceso' },
+        { format: 'cta', suffix: 'cta', title: `Checklist ${profile.displayName}`, cta: 'Abrir servicio' },
+      ],
+    },
+    {
+      channel: 'linkedin',
+      items: [
+        { format: 'expert', suffix: 'expert', title: `${profile.displayName}: criterio antes que automatización`, cta: 'Consultar proceso' },
+        { format: 'comparison', suffix: 'control', title: `Qué automatizamos y qué revisa un profesional`, cta: 'Ver metodología' },
+        { format: 'cta', suffix: 'cta', title: `Servicio empaquetado: ${profile.displayName}`, cta: 'Ver ficha' },
+      ],
+    },
+    {
+      channel: 'google',
+      items: [
+        { format: 'search_ad', suffix: 'search', title: `${profile.displayName} | EXPERT`, cta: 'Consultar servicio' },
+        { format: 'business_profile', suffix: 'business', title: `${profile.displayName}: checklist y gestión`, cta: 'Más información' },
+        { format: 'search_ad', suffix: 'documents', title: `${profile.displayName} · Documentos y pasos`, cta: 'Ver requisitos' },
+      ],
+    },
+  ];
+
+  for (const blueprint of channelBlueprints) {
+    for (const item of blueprint.items) {
+      posts.push({
+        id: `${profile.slug}-${blueprint.channel}-${item.suffix}`,
+        channel: blueprint.channel,
+        format: item.format,
+        title: item.title,
+        shortCopy: profile.clientSummary,
+        longCopy: `${profile.clientSummary} Requisitos, documentación y pasos se revisan contra la ficha operativa vigente. KIA ayuda a ordenar la información y el equipo EXPERT mantiene el control humano en los puntos críticos.`,
+        cta: item.cta,
+        destinationPath,
+        utmCampaign: campaign,
+        status: 'review',
+      });
+    }
+  }
+
+  return { serviceSlug, locale: 'es', status: 'content_ready', posts };
+}
+
 export function getServiceLaunchPack(serviceSlug: string): ServiceLaunchPack | undefined {
-  return catalogLaunchSocialPacks.find((pack) => pack.serviceSlug === serviceSlug);
+  return catalogLaunchSocialPacks.find((pack) => pack.serviceSlug === serviceSlug)
+    ?? buildGeneratedLaunchPack(serviceSlug);
 }
