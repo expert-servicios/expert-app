@@ -14,6 +14,10 @@ const stripeWebhookRoute = readFileSync(
   resolve(process.cwd(), 'app/api/stripe/webhook/route.ts'),
   'utf8',
 );
+const dashboardQuotePage = readFileSync(
+  resolve(process.cwd(), 'app/(protected)/dashboard/presupuestos/page.tsx'),
+  'utf8',
+);
 
 describe('structured quote checkout contract', () => {
   it('persists quote_items but defers Stripe creation until the client chooses to pay', () => {
@@ -46,5 +50,12 @@ describe('structured quote checkout contract', () => {
     expect(stripeWebhookRoute).toContain(".eq('quote_id', quoteId)");
     expect(stripeWebhookRoute).toContain("action: 'quote.duplicate_payment_detected'");
     expect(stripeWebhookRoute).toContain('Pago duplicado detectado en presupuesto');
+  });
+
+  it('shows persisted concepts and quantities to the client before payment', () => {
+    expect(dashboardQuotePage).toContain('quote.quote_items');
+    expect(dashboardQuotePage).toContain('Base imponible');
+    expect(dashboardQuotePage).toContain('item.quantity');
+    expect(dashboardQuotePage).toContain('unit_amount_cents');
   });
 });
