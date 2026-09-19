@@ -12,12 +12,11 @@ function source(path: string) {
 }
 
 describe('tenant_admin cases/documents read-only hardening', () => {
-  it('drops stale FOR ALL policies and recreates SELECT-only policies', () => {
+  it('drops stale FOR ALL policies without rewriting the existing cases SELECT policy', () => {
     expect(migration).toContain('DROP POLICY IF EXISTS "tenant_admin all cases"');
     expect(migration).toContain('DROP POLICY IF EXISTS "tenant_admin all documents"');
-    expect(migration).toContain('CREATE POLICY "tenant_admin select cases"');
+    expect(migration).not.toContain('DROP POLICY IF EXISTS "tenant_admin select cases"');
     expect(migration).toContain('CREATE POLICY "tenant_admin select documents"');
-    expect(migration.match(/FOR SELECT/g)?.length).toBe(2);
     expect(migration).not.toMatch(/CREATE POLICY[\s\S]*FOR ALL/);
   });
 
