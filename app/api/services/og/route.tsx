@@ -1,5 +1,6 @@
 ﻿import { ImageResponse } from 'next/og';
 import { categories, services } from '@/lib/utils/catalog';
+import { getLocalizedServicePresentation } from '@/lib/services/service-localized-content';
 
 export const runtime = 'edge';
 
@@ -33,35 +34,18 @@ export async function GET(request: Request) {
   const width = isHero ? 1600 : 1200;
   const height = isHero ? 900 : 1200;
 
-  const ruCopy: Partial<Record<string, { title: string; summary: string }>> = {
-    'certificado-digital-persona-fisica': {
-      title: 'Цифровой сертификат Camerfirma для физического лица',
-      summary: 'Полностью онлайн: проверка личности, оформление, установка и проверка работы.',
-    },
-    'certificado-digital-entidad': {
-      title: 'Цифровой сертификат Camerfirma для организации',
-      summary: 'Онлайн-проверка документов и полномочий представителя, оформление и установка.',
-    },
-    'pack-certificados-digitales': {
-      title: 'Пакет цифровых сертификатов — физлицо + компания',
-      summary: 'Два сертификата одним заказом: 200 € + IVA, полностью онлайн.',
-    },
-  };
-
-  const localized = lang === 'ru' ? ruCopy[service.slug] : undefined;
+  const localized = getLocalizedServicePresentation(service.slug, lang);
   const serviceTitle = localized?.title ?? service.name;
-  const categoryName = lang === 'ru' && service.categoria === 'certificado-digital'
-    ? 'Цифровые сертификаты'
-    : category?.name ?? 'Servicio profesional';
+  const categoryName = localized?.categoryLabel ?? category?.name ?? 'Servicio profesional';
   const summary = trimText(
     localized?.summary ?? service.metaDescription ?? service.shortDescription,
     isHero ? 170 : 150,
   );
   const titleSize = serviceTitle.length > 62 ? (isHero ? 58 : 54) : isHero ? 68 : 64;
-  const cardTitle = lang === 'ru' ? 'Полностью онлайн' : 'Expediente preparado con criterio documental';
-  const cardText = lang === 'ru'
-    ? 'Проверка, оформление, установка и проверка работы.'
-    : 'Revisión, formularios, presentación y seguimiento inicial.';
+  const cardTitle = localized?.socialCardTitle
+    ?? (lang === 'ru' ? 'Онлайн-услуга EXPERT' : 'Expediente preparado con criterio documental');
+  const cardText = localized?.socialCardText
+    ?? (lang === 'ru' ? 'Проверка, подготовка и сопровождение процесса.' : 'Revisión, formularios, presentación y seguimiento inicial.');
   const footerText = lang === 'ru' ? 'Онлайн-оформление в Испании' : 'Gestión online desde España';
 
   return new ImageResponse(
