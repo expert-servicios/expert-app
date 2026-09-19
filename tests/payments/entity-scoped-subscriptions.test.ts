@@ -85,7 +85,8 @@ describe('entity-scoped billing', () => {
     expect(migration).toContain('cases_company_id_fkey');
     expect(quotes).toContain('company_id: companyId');
     expect(quotes).toContain("billing_scope: resolvedBillingScope");
-    expect(quotes).toContain("...(companyId ? { company_id: companyId } : {})");
+    expect(quotes).toContain("const selectedMembership = companyId");
+    expect(quotes).toContain("company_id: companyId");
   });
 
   it('Holded retry keeps contracting company context', () => {
