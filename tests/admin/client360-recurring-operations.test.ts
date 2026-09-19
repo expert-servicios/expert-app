@@ -15,6 +15,10 @@ describe('Client 360 recurring operations', () => {
   const clientLayout = source('app/(protected)/admin/clientes/[id]/layout.tsx');
   const tasksPage = source('app/(protected)/admin/tareas/page.tsx');
   const documentsRoute = source('app/api/cases/[id]/documents/route.ts');
+  const documentNotesRoute = source('app/api/cases/[id]/document-notes/route.ts');
+  const documentReviewRoute = source('app/api/cases/[id]/document-review/route.ts');
+  const checklistComponent = source('components/cases/CaseDocumentChecklist.tsx');
+  const documentWorkflowMigration = source('supabase/migrations/20260919071707_case_document_workflow.sql');
   const companyStripeMigration = historical('20260907175500_add_company_stripe_customer_mappings.sql');
 
   it('aggregates recurring operations from canonical sources without mutating them', () => {
@@ -74,19 +78,37 @@ describe('Client 360 recurring operations', () => {
     expect(tasksPage).toContain('href={`/admin/clientes/${clientId}/operaciones`}');
   });
 
-  it('persists case documents using the real production schema and safe company scope', () => {
-    expect(documentsRoute).toContain(".select('id,client_id,company_id,service')");
+  it('persists case documents with safe business scope and explicit personal-service scope', () => {
+    expect(documentsRoute).toContain(".select('id,client_id,company_id,service,service_id')");
     expect(documentsRoute).toContain('company_id: companyId');
     expect(documentsRoute).toContain("owner_type: 'case'");
     expect(documentsRoute).toContain('owner_id: caseId');
     expect(documentsRoute).toContain("kind: 'client_document'");
     expect(documentsRoute).toContain('mime_type: validation.contentType');
+    expect(documentsRoute).toContain('PERSONAL_DOCUMENT_SERVICE_IDS');
+    expect(documentsRoute).toContain('personalDocumentScope');
     expect(documentsRoute).toContain("code: 'case_company_required'");
+    expect(documentsRoute).toContain('checklist_item_key: checklistItemKey');
+    expect(documentsRoute).toContain('client_comment: clientComment');
     expect(documentsRoute).toContain('.update({ drive_file_id: driveResult.fileId })');
     expect(documentsRoute).not.toContain('.update({ metadata:');
   });
 
   it('cleans up Storage if the database document record cannot be created', () => {
     expect(documentsRoute).toContain(".from('client-documents').remove([uploadData.path])");
+  });
+
+  it('adds the ES/RU checklist workflow and requires a durable Admin handoff task', () => {
+    expect(documentWorkflowMigration).toContain('create table if not exists public.case_document_notes');
+    expect(documentWorkflowMigration).toContain('checklist_item_key text');
+    expect(documentWorkflowMigration).toContain('client_comment text');
+    expect(documentNotesRoute).toContain(".from('case_document_notes')");
+    expect(checklistComponent).toContain('Todos los puntos son opcionales');
+    expect(checklistComponent).toContain('Все пункты необязательные');
+    expect(checklistComponent).toContain('Enviar documentos a revisión');
+    expect(checklistComponent).toContain('Отправить документы на проверку');
+    expect(documentReviewRoute).toContain("return NextResponse.json({ error: 'No se pudo crear la tarea de revisión' }");
+    expect(documentReviewRoute).toContain('Preparar y presentar solicitud de nacionalidad');
+    expect(documentReviewRoute).toContain('Pagar tasa 790-026 de 104,05 € como suplido');
   });
 });
