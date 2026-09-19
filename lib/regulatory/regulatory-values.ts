@@ -28,7 +28,7 @@ export async function getRegulatoryPulseSummary() {
       .limit(1)
       .maybeSingle(),
     admin.from('regulatory_changes')
-      .select('id,status,severity,change_type,summary,effective_date,value_updates,proposal_pr_number,proposal_pr_url,created_at,source:regulatory_sources(source_key,authority,title)')
+      .select('id,status,severity,change_type,summary,effective_date,value_updates,proposal_pr_number,proposal_pr_url,values_applied_at,created_at,source:regulatory_sources(source_key,authority,title)')
       .in('status', ['detected','classified','needs_review','proposal_ready'])
       .order('created_at', { ascending: false })
       .limit(20),
