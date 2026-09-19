@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 import { AlertCircle, Check, FileText, ShieldCheck } from 'lucide-react';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { getCatalogService } from '@/lib/utils/catalog';
-import { shouldIndexLocale } from '@/lib/i18n/feature-flags';
+import { isLocalePubliclyEnabled } from '@/lib/i18n/feature-flags';
+import { getLocalizedServicePresentation } from '@/lib/services/service-localized-content';
 import { ServiceShareActions } from '@/components/services/ServiceShareActions';
 import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
 
@@ -15,6 +16,8 @@ const RU_PATH = '/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa';
 const RU_URL = `https://expertconsulting.es${RU_PATH}`;
 const SHARE_IMAGE_URL = `https://expertconsulting.es/api/services/og?slug=${encodeURIComponent(SERVICE_SLUG)}&variant=square&lang=ru`;
 const SHARE_TITLE = 'Цифровой сертификат Camerfirma для физического лица';
+const INDEXABLE = isLocalePubliclyEnabled('ru')
+  && getLocalizedServicePresentation(SERVICE_SLUG, 'ru')?.indexable === true;
 
 const service = (() => {
   const canonical = getCatalogService(SERVICE_SLUG);
@@ -53,8 +56,8 @@ export const metadata: Metadata = {
     },
   },
   robots: {
-    index: shouldIndexLocale('ru'),
-    follow: shouldIndexLocale('ru'),
+    index: INDEXABLE,
+    follow: INDEXABLE,
   },
   openGraph: {
     title: 'Цифровой сертификат Camerfirma для физического лица | EXPERT',
@@ -68,12 +71,14 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
+    title: 'Цифровой сертификат Camerfirma для физического лица | EXPERT',
+    description: '90 € + IVA · полностью онлайн · срок действия 5 лет · максимум 24 рабочих часа после полной проверки.',
     images: [SHARE_IMAGE_URL],
   },
 };
 
 const includedItems = [
-  'Удалённая идентификация и валидация личности EXPERT в рамках процесса Camerfirma.',
+  'Удалённая идентификация и валидация личности EXPERT через канал PVP Creative Quality в рамках процесса Camerfirma.',
   'Выпуск квалифицированного цифрового сертификата Camerfirma.',
   'Установка и настройка сертификата на вашем компьютере.',
   'Проверка работы сертификата перед завершением услуги.',
@@ -122,7 +127,7 @@ const faqItems = [
   },
   {
     q: 'Можно ли пройти оформление дистанционно?',
-    a: 'Проверка личности может быть организована очно или по видеосвязи в зависимости от применимого процесса Camerfirma.',
+    a: 'Да. Процесс EXPERT для этой модальности полностью онлайн: идентификация и валидация выполняются удалённо через канал PVP Creative Quality в рамках процесса Camerfirma, без личного визита.',
   },
   {
     q: 'Поможете ли вы установить сертификат?',

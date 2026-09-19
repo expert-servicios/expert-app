@@ -3,12 +3,15 @@ import type { Metadata } from 'next';
 import { AlertCircle, Check, FileText, ShieldCheck } from 'lucide-react';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { getCatalogService } from '@/lib/utils/catalog';
-import { shouldIndexLocale } from '@/lib/i18n/feature-flags';
+import { isLocalePubliclyEnabled } from '@/lib/i18n/feature-flags';
+import { getLocalizedServicePresentation } from '@/lib/services/service-localized-content';
 
 const SERVICE_SLUG = 'arraigo-social';
 const ES_URL = 'https://expertconsulting.es/servicios/extranjeria-nacionalidad/arraigo-social';
 const RU_PATH = '/ru/uslugi/arraigo-social';
 const RU_URL = `https://expertconsulting.es${RU_PATH}`;
+const INDEXABLE = isLocalePubliclyEnabled('ru')
+  && getLocalizedServicePresentation(SERVICE_SLUG, 'ru')?.indexable === true;
 
 const service = (() => {
   const canonical = getCatalogService(SERVICE_SLUG);
@@ -47,8 +50,8 @@ export const metadata: Metadata = {
     },
   },
   robots: {
-    index: shouldIndexLocale('ru'),
-    follow: shouldIndexLocale('ru'),
+    index: INDEXABLE,
+    follow: INDEXABLE,
   },
   openGraph: {
     title: 'Arraigo Social в Испании 2026 | EXPERT',
