@@ -131,6 +131,12 @@ create index if not exists regulatory_dependencies_source_idx
   on public.regulatory_dependencies(source_id, dependency_type, dependency_key);
 create index if not exists regulatory_dependencies_value_idx
   on public.regulatory_dependencies(value_key, dependency_type, dependency_key);
+create unique index if not exists regulatory_dependencies_source_unique
+  on public.regulatory_dependencies(source_id, dependency_type, dependency_key)
+  where source_id is not null;
+create unique index if not exists regulatory_dependencies_value_unique
+  on public.regulatory_dependencies(value_key, dependency_type, dependency_key)
+  where value_key is not null;
 
 alter table public.regulatory_sources enable row level security;
 alter table public.regulatory_snapshots enable row level security;
@@ -266,6 +272,14 @@ values
   ('MEI_RATE', 'Mecanismo de Equidad Intergeneracional', 0.90, 'percent', '2026', '2026-01-01', '2026-12-31', '{"official_reference":"Orden PJC/297/2026"}'),
   ('IPC_ANNUAL', 'IPC general interanual', 4.30, 'percent', '2026-08', '2026-08-01', '2026-08-31', '{"official_reference":"INE agosto 2026"}')
 on conflict (value_key, period_key, valid_from) do nothing;
+
+update public.regulatory_values v
+set source_id = s.id
+from public.regulatory_sources s
+where
+  (v.value_key in ('SMI_MONTHLY','SMI_DAILY','SMI_ANNUAL','COMMERCIAL_LATE_INTEREST','SS_MAX_BASE','MEI_RATE') and s.source_key = 'boe_daily_sumario')
+  or (v.value_key in ('LEGAL_INTEREST','TAX_LATE_INTEREST') and s.source_key = 'aeat_rss_hub')
+  or (v.value_key = 'IPC_ANNUAL' and s.source_key = 'ine_ipc_publications');
 
 -- Core batch-1 dependency graph.
 insert into public.regulatory_dependencies
