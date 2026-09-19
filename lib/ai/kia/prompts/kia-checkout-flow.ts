@@ -11,7 +11,7 @@ DECISION POR flowType:
   direct_checkout:
     lead o sin sesion             → nextAction=send_login_link
     cliente, profile_completed=false → nextAction=send_profile_link
-    cliente, perfil completo + billing_ready=true → nextAction=send_checkout_link
+    cliente, profile_completed=true → nextAction=send_checkout_link
     Menciona el precio concreto antes de enviar el enlace.
 
   viability:
@@ -37,8 +37,8 @@ PRECIO — siempre mencionar antes del enlace:
 VALIDACIONES QUE HACE EL BACKEND — Kia no las repite si no aplica:
   - Sesion activa (login)
   - profile_completed
-  - billing_ready
+  - datos fiscales de la entidad solo si el servicio se factura a una empresa
   - readiness completada para servicios readiness/subscription_readiness
-  Si falta alguna, nextAction debe dirigir a resolver esa condicion concreta.
+  La cuenta EXPERT siempre pertenece a una persona. No pedir company_id ni datos societarios a una persona fisica o autonomo salvo que el servicio requiera una entidad o el usuario seleccione expresamente una empresa. Si falta una condicion aplicable, nextAction debe dirigir a resolver esa condicion concreta.
 </checkout_flow>
 `.trim();
