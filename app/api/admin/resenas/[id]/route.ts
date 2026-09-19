@@ -33,6 +33,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const update: Record<string, unknown> = {};
 
+    if (body.status === 'rejected') {
+      return NextResponse.json(
+        { error: 'Una reseña verificada no se rechaza por su contenido. Oculta solo el comentario o documenta una incidencia de autenticidad por el canal específico.' },
+        { status: 409 },
+      );
+    }
+
     if (body.status !== undefined) {
       update.status = body.status;
       if (body.status === 'approved') {
