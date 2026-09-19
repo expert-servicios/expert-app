@@ -4,6 +4,8 @@ import { getRegulatoryPulseSummary } from '@/lib/regulatory/regulatory-values';
 import { runRegulatoryPulse } from '@/lib/regulatory/regulatory-monitor';
 import { runRegulatoryWorker } from '@/lib/regulatory/regulatory-review';
 
+export const maxDuration = 300;
+
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user }, error } = await supabase.auth.getUser();
