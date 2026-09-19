@@ -231,8 +231,12 @@ export default function AdminOnboardingPage() {
 
   async function handleStep1() {
     if (!client.email) { setError('El email es obligatorio.'); return; }
-    if ((client.entityType === 'particular' || client.entityType === 'autonomo') && !client.fullName && !client.company) {
-      setError(client.entityType === 'particular' ? 'Indica el nombre de la persona.' : 'Indica el nombre del empresario individual.');
+    if (client.entityType === 'particular' && client.mode === 'admin_fill' && !client.fullName) {
+      setError('Indica el nombre de la persona.');
+      return;
+    }
+    if (client.entityType === 'autonomo' && !client.fullName && !client.company) {
+      setError('Indica el nombre del empresario individual.');
       return;
     }
     if (client.entityType === 'empresa' && client.mode === 'admin_fill' && !client.company) {
@@ -275,6 +279,10 @@ export default function AdminOnboardingPage() {
   async function handleStep2() {
     if (!service.title) { setError('Selecciona o escribe un servicio.'); return; }
     if (!service.amountEur || isNaN(Number(service.amountEur))) { setError('El importe debe ser un número.'); return; }
+    if (service.selectedItem?.category === 'plan' && !createdCompanyId) {
+      setError('Los planes mensuales y personalizados requieren una entidad fiscal vinculada. Vuelve al paso de cliente y selecciona autónomo o sociedad.');
+      return;
+    }
     setStep(2);
     setError('');
   }
