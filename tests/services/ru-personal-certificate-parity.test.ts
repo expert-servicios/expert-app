@@ -1,0 +1,44 @@
+import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { getCatalogService } from '@/lib/utils/catalog';
+import { getServiceBillingPolicy } from '@/lib/payments/service-billing-scope';
+
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
+
+describe('RU personal digital certificate parity', () => {
+  const service = getCatalogService('certificado-digital-persona-fisica');
+
+  it('reuses the canonical ES catalog price and Stripe product', () => {
+    expect(service).toBeDefined();
+    expect(service?.price).toBe('90 € + IVA');
+    expect(service?.stripePriceId).toBe('price_1TZYiBLeYwwgvux4EO07gS0W');
+    expect(getServiceBillingPolicy('certificado-digital-persona-fisica')).toBe('profile_only');
+
+    const ru = read('app/(localized)/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa/page.tsx');
+    expect(ru).toContain("const canonical = getCatalogService(SERVICE_SLUG)");
+    expect(ru).toContain('priceId: service.stripePriceId');
+    expect(ru).toContain('displayPrice: service.price');
+    expect(ru).toContain("locale: 'ru' as const");
+    expect(ru).not.toContain("stripePriceId: '");
+  });
+
+  it('keeps ES/RU SEO alternates aligned', () => {
+    const ru = read('app/(localized)/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa/page.tsx');
+    expect(ru).toContain("'es-ES': ES_URL");
+    expect(ru).toContain("'ru-RU': RU_URL");
+    expect(ru).toContain("'x-default': ES_URL");
+
+    const sitemap = read('app/sitemap.ts');
+    expect(sitemap).toContain('/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa');
+    expect(sitemap).toContain('/servicios/certificado-digital/certificado-digital-persona-fisica');
+  });
+
+  it('keeps the same commercial scope in Russian copy', () => {
+    const ru = read('app/(localized)/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa/page.tsx');
+    expect(ru).toContain('Проверка личности очно или по видеосвязи.');
+    expect(ru).toContain('Установка и настройка сертификата на вашем компьютере.');
+    expect(ru).toContain('Техническая поддержка по вопросам сертификата в течение 30 дней.');
+    expect(ru).toContain('Продление сертификата после окончания срока действия — оформляется отдельно.');
+  });
+});
