@@ -40,6 +40,7 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   resolve_contact_context:            policy('R0', 'read',  'identity'),
   get_client_profile:                 policy('R0', 'read',  'client_data'),
   get_service_registry_item:          policy('R0', 'read',  'client_data'),
+  get_service_operational_blueprint:   policy('R0', 'read',  'case_management'),
   run_viability_check:                policy('R1', 'read',  'client_data'),
   run_readiness_check:                policy('R1', 'read',  'client_data'),
   get_holded_connection_status:       policy('R0', 'read',  'holded_read'),
