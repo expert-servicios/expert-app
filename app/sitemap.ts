@@ -148,6 +148,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
             },
           },
         },
+        {
+          url: `${BASE}/ru/uslugi/arraigo-social`,
+          changeFrequency: 'monthly' as const,
+          priority: 0.85,
+          lastModified: now,
+          alternates: {
+            languages: {
+              'es-ES': `${BASE}/servicios/extranjeria-nacionalidad/arraigo-social`,
+              'ru-RU': `${BASE}/ru/uslugi/arraigo-social`,
+            },
+          },
+        },
       ]
     : [];
 
