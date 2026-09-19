@@ -1,6 +1,6 @@
 # Kia Commercial Flow — Audit de arquitectura
 
-Ultima revision: 2026-05-23
+Ultima revision: 2026-09-19
 
 ---
 
@@ -21,8 +21,9 @@ Estado aplicado:
 - `btn_write_here` abre `flow='consult'` / `step='free_consult'` y permite que Kia aclare antes de recomendar llamada.
 - Cuando el servicio tiene checkout, Kia envia enlace a `/contratar?service={catalogSlug}&source=whatsapp`; el slug se resuelve desde `stripePriceId` para no enviar IDs internos tipo `svc_irpf`.
 - `/contratar` exige login y muestra `ProfileCompletionWizard`.
-- `POST /api/services/checkout` exige sesion backend, `profile_completed=true` y `billing_ready=true` antes de crear Stripe Checkout.
-- `ProfileCompletionWizard` recoge nombre, telefono, NIF/NIE/CIF, tipo de cliente, direccion de facturacion y domicilio habitual cuando aplica.
+- `POST /api/services/checkout` exige sesion backend y `profile_completed=true` (nombre + telefono). La facturacion se resuelve por alcance del servicio: personal, empresa o flexible.
+- Los servicios personales no exigen empresa aunque el usuario gestione sociedades; un autonomo sigue siendo persona fisica. Los servicios de entidad validan la empresa vinculada y sus datos fiscales.
+- `ProfileCompletionWizard` recoge solo nombre y telefono antes del pago. Stripe solicita los datos fiscales que correspondan al destinatario de la factura; los datos societarios no son un requisito universal.
 - El webhook de Stripe conserva el pago aunque Holded falle: registra `paid_invoice_error`, `holded_sync_error`, `holded_sync_event_id` y `holded_invoice_id` cuando existe factura.
 - `commercial review` de Kia no implica `flow='human'`; la reunion/cita es la via humana comercial.
 - La nueva capa IA estructurada se documenta en `docs/kia-ai-architecture.md` y no sustituye el motor determinista. Primero se activa en admin compose y solo despues en WABA fallback bajo flags.
