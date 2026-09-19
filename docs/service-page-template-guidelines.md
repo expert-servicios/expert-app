@@ -357,16 +357,43 @@ Cada servicio nuevo en `lib/utils/catalog.ts` debe rellenar, siempre que sea pos
 
 Solo añadir `stripePriceId` cuando el precio sea cerrado y el checkout esté validado.
 
-## Blog y base de conocimientos
+## Blog, base de conocimientos y paquete social
 
-Cuando exista contenido relacionado:
+Para los servicios incluidos en el catálogo de lanzamiento, el contenido relacionado deja de ser opcional.
 
-- vincular artículos mediante `relatedServiceSlugs` en `lib/utils/blog.ts`;
-- vincular guías mediante `relatedServiceSlugs` en `lib/utils/docs.ts`;
-- incluir al menos 3 artículos relacionados si el servicio tiene suficiente contexto SEO;
-- incluir guías de base de conocimientos cuando ayuden al usuario a decidir.
+Mínimo obligatorio por servicio antes de marcarlo `production-ready`:
 
-No inventar enlaces. Si todavía no existe contenido relacionado, crear borrador editorial o dejar documentado como pendiente.
+- **3 artículos de blog** vinculados mediante `relatedServiceSlugs` en `lib/utils/blog.ts`;
+- **3 guías de base de conocimientos** vinculadas mediante `relatedServiceSlugs` en `lib/utils/docs.ts`;
+- cada pieza debe resolver una intención distinta: decisión, documentación/proceso y error/comparativa/caso práctico;
+- interlinking entre landing, artículos y guías;
+- metadata SEO propia para cada pieza;
+- referencias oficiales cuando el contenido sea jurídico, fiscal, laboral o administrativo.
+
+Además, cada servicio del lote de lanzamiento debe tener un **paquete social** preparado para:
+
+- Facebook;
+- Instagram;
+- LinkedIn.
+
+El paquete social debe incluir como mínimo:
+
+- titular/hook;
+- copy largo;
+- copy corto;
+- CTA;
+- URL de destino;
+- parámetros UTM por canal;
+- tema o pieza de contenido de soporte;
+- estado editorial (`draft / review / ready / published`).
+
+La publicación automática en Meta o LinkedIn no debe activarse hasta que:
+- la landing esté `production-ready`;
+- los 3 artículos y 3 documentos estén publicados;
+- el contenido social esté aprobado;
+- la integración del canal esté validada.
+
+No inventar enlaces. Si todavía no existe contenido suficiente, el servicio permanece en preparación editorial.
 
 ## Fuentes oficiales
 
@@ -438,7 +465,10 @@ const selfGuidedHref = `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&
 - [ ] Hay CTA de reunión gratuita con Cal.com.
 - [ ] El formulario de presupuesto conserva `servicio`, `tipo`, `origen` y `modalidad` cuando correspondan.
 - [ ] Hay fuentes oficiales cuando procede.
-- [ ] Hay artículos/docs relacionados o queda documentado como pendiente.
+- [ ] Hay al menos 3 artículos de blog relacionados.
+- [ ] Hay al menos 3 guías de base de conocimientos relacionadas.
+- [ ] Landing, blog y guías tienen interlinking coherente.
+- [ ] Existe paquete social preparado para Facebook, Instagram y LinkedIn.
 - [ ] Se revisa build de Vercel antes de marcar PR como listo.
 
 ### Paridad RU
