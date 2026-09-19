@@ -640,6 +640,34 @@ function applyBackendPolicyGuards(
     };
   }
 
+  const includedEntityCheckoutRequested =
+    context.company?.coverageSource === 'included_entity' &&
+    (
+      decision.intent === 'checkout' ||
+      decision.nextAction === 'send_checkout_link' ||
+      decision.nextAction === 'send_login_link' ||
+      /suscripci[oó]n|contratar.*plan|plan.*contratar|pagar.*plan/i.test(input.message)
+    );
+  if (includedEntityCheckoutRequested) {
+    const sourceName = context.company?.coveragePrimaryCompanyName?.trim();
+    rules.add('included_entity_uses_existing_subscription_coverage');
+    rules.add('do_not_create_second_subscription');
+    warnings.push('backend_policy_override_included_entity_checkout');
+    return {
+      ...decision,
+      intent: 'unknown',
+      nextAction: 'reply_only',
+      userMessage: sourceName
+        ? `Esta entidad ya está incluida en la cobertura de ${sourceName}. No necesita una segunda suscripción.`
+        : 'Esta entidad ya está incluida en una cobertura activa. No necesita una segunda suscripción.',
+      requiresManualReview: false,
+      requiresMeeting: false,
+      confidence: Math.max(decision.confidence, 0.95),
+      rulesApplied: Array.from(rules),
+      warnings,
+    };
+  }
+
   const monthlyPlanRequiresHolded = context.service?.flowType === 'subscription_readiness';
   if (monthlyPlanRequiresHolded && !context.company?.holdedConnected) {
     rules.add('monthly_plan_requires_holded');
