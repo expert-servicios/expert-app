@@ -35,6 +35,9 @@ const COMPANY_ONLY_SERVICE_SLUGS = new Set([
   // This product identifies an existing legal entity and therefore needs an
   // explicit company record as the invoice/contracting scope.
   'certificado-digital-entidad',
+  // Combined bundle is one checkout tied to the selected entity while the
+  // logged-in profile remains the natural-person certificate holder.
+  'pack-certificados-digitales',
 
   // Catalog services without direct checkout today. Keeping them here makes
   // future checkout enablement fail safely instead of inheriting profile scope.

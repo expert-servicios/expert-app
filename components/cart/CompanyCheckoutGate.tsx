@@ -4,12 +4,17 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Building2, Loader2 } from 'lucide-react';
 import type { CartLocale } from '@/contexts/CartContext';
+import { missingCompanyBillingFields } from '@/lib/companies/billing-readiness';
 
 type Company = {
   id: string;
   razon_social?: string | null;
   name?: string | null;
   cif_nif?: string | null;
+  direccion?: string | null;
+  ciudad?: string | null;
+  codigo_postal?: string | null;
+  pais?: string | null;
 };
 
 const COPY = {
@@ -21,6 +26,8 @@ const COPY = {
     add: 'Añadir entidad',
     continue: 'Continuar con esta entidad',
     error: 'No hemos podido cargar tus entidades.',
+    incomplete: 'Completa los datos fiscales de esta entidad antes de pagar.',
+    edit: 'Completar datos fiscales',
   },
   ru: {
     title: 'Выберите организацию-заказчика',
@@ -30,6 +37,8 @@ const COPY = {
     add: 'Добавить организацию',
     continue: 'Продолжить с этой организацией',
     error: 'Не удалось загрузить организации.',
+    incomplete: 'Перед оплатой заполните налоговые данные выбранной организации.',
+    edit: 'Заполнить данные организации',
   },
 } as const;
 
@@ -37,16 +46,20 @@ export function CompanyCheckoutGate({
   locale = 'es',
   loading = false,
   onContinue,
+  returnPath = '/carrito',
 }: {
   locale?: CartLocale;
   loading?: boolean;
   onContinue: (companyId: string) => void;
+  returnPath?: string;
 }) {
   const t = COPY[locale];
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selected, setSelected] = useState('');
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
+  const selectedCompany = companies.find((company) => company.id === selected) ?? null;
+  const missingBilling = missingCompanyBillingFields(selectedCompany);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,7 +98,7 @@ export function CompanyCheckoutGate({
       ) : companies.length === 0 ? (
         <div className="space-y-2">
           <p className="text-xs font-semibold text-amber-800">{error || t.empty}</p>
-          <Link href="/dashboard/empresa/nueva" className="inline-flex text-xs font-bold text-[#D4A017] hover:underline">
+          <Link href={`/dashboard/empresa/nueva?next=${encodeURIComponent(returnPath)}`} className="inline-flex text-xs font-bold text-[#D4A017] hover:underline">
             {t.add}
           </Link>
         </div>
@@ -104,10 +117,21 @@ export function CompanyCheckoutGate({
               </option>
             ))}
           </select>
+          {selected && missingBilling.length > 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
+              <p className="text-xs font-semibold text-amber-900">{t.incomplete}</p>
+              <Link
+                href={`/dashboard/empresa?edit=${selected}&next=${encodeURIComponent(returnPath)}`}
+                className="mt-1.5 inline-flex text-xs font-bold text-[#D4A017] hover:underline"
+              >
+                {t.edit}
+              </Link>
+            </div>
+          )}
           {error && <p className="text-xs font-semibold text-red-700">{error}</p>}
           <button
             type="button"
-            disabled={!selected || loading}
+            disabled={!selected || loading || missingBilling.length > 0}
             onClick={() => onContinue(selected)}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4A017] py-2.5 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#F2C14E] disabled:opacity-60"
           >

@@ -13,10 +13,10 @@ Cada servicio debe quedar completamente utilizable como:
 - landing comercial;
 - entrada SEO;
 - fuente de conocimiento para KIA;
-- activo de captación desde Facebook, Instagram y LinkedIn;
+- activo de captación desde Facebook, Instagram, LinkedIn y Google;
 - pieza conectable al catálogo Meta y al panel Admin.
 
-## Lote 1 — 9 servicios
+## Lote 1 — 10 servicios
 
 1. Nacionalidad española para menor nacido en España
    - slug: `nacionalidad-espanola-menor-nacido-en-espana`
@@ -24,20 +24,24 @@ Cada servicio debe quedar completamente utilizable como:
    - slug: `certificado-digital-persona-fisica`
 3. Certificado Digital de Entidad — Camerfirma
    - slug: `certificado-digital-entidad`
-4. Arraigo Social
+4. Pack Certificados Digitales — Persona Física + Entidad
+   - slug: `pack-certificados-digitales`
+   - oferta: 200 € + IVA
+   - Stripe existente: `price_1S2X6ZLeYwwgvux4sPrfxFD7`
+5. Arraigo Social
    - slug: `arraigo-social`
-5. Arraigo Familiar
+6. Arraigo Familiar
    - slug: `arraigo-familiar`
-6. Arraigo Laboral
+7. Arraigo Laboral
    - slug: `arraigo-laboral`
-7. Renovación de Residencia
+8. Renovación de Residencia
    - slug: `renovacion-residencia`
-8. Nacionalidad Española
+9. Nacionalidad Española
    - slug: `nacionalidad-espanola`
-9. Reagrupación Familiar
+10. Reagrupación Familiar
    - slug: `reagrupacion-familiar`
 
-No se añade un décimo servicio en esta primera tanda hasta que uno de los siguientes candidatos supere auditoría de madurez:
+El pack de certificados ocupa el décimo puesto del lote porque ya dispone de precio, producto Stripe, checkout, alcance y contenido suficientemente definidos. Los siguientes candidatos permanecen fuera de esta primera tanda hasta superar auditoría de madurez:
 - Alta de Autónomo
 - Constitución de SL
 - IRPF
@@ -49,9 +53,10 @@ No se añade un décimo servicio en esta primera tanda hasta que uno de los sigu
 | Servicio | Blog vinculados | Guías vinculadas | Estado |
 |---|---:|---:|---|
 | Nacionalidad menor | 0 | 3 | completar blog |
-| Certificado PF | 3 | 1 | completar 2 guías |
-| Certificado entidad | 3 | 1 | completar 2 guías |
-| Arraigo Social | 5 | 3 | suelo editorial ES alcanzado; falta RU + QA social |
+| Certificado PF | 5 | 3 | suelo editorial + social alcanzado; QA en curso |
+| Certificado entidad | 3 | 3 | suelo editorial + social alcanzado; QA en curso |
+| Pack certificados | 4 | 4 | oferta 200 € + IVA, ES/RU + marketing + checkout en QA |
+| Arraigo Social | 5 | 3 | ES/RU + editorial + social cerrados |
 | Arraigo Familiar | 3 | 0 | completar 3 guías |
 | Arraigo Laboral | 0 | 0 | crear 3 + 3 |
 | Renovación residencia | 1 | 1 | completar 2 + 2 |
@@ -93,6 +98,7 @@ Los recuentos son la línea base del 19/09/2026 y deben actualizarse conforme se
 - paquete Facebook;
 - paquete Instagram;
 - paquete LinkedIn;
+- paquete Google Search / Google Business Profile;
 - URL destino;
 - UTM por canal;
 - activo visual pendiente o definido;
@@ -178,3 +184,27 @@ Orden:
 ## Regla de publicación
 
 Ningún servicio entra en la primera campaña de Facebook/Instagram/LinkedIn hasta cumplir el Definition of Done completo.
+
+
+## Primera campaña de adquisición
+
+Los tres primeros productos que deben pasar a activación de canales son:
+
+1. Certificado Digital Persona Física — 90 € + IVA.
+2. Certificado Digital de Entidad — 150 € + IVA.
+3. Pack Certificados Digitales — Persona Física + Entidad — 200 € + IVA.
+
+Mensaje transversal:
+- 100 % online;
+- sin presencia física;
+- identificación/validación realizada por EXPERT dentro del proceso Camerfirma;
+- máximo 24 horas laborables desde documentación completa e identidad/facultades validadas;
+- instalación y prueba incluidas.
+
+Canales:
+- Meta / Facebook;
+- Meta / Instagram;
+- LinkedIn;
+- Google Search / Google Business Profile.
+
+El pack debe ser la oferta principal cuando el lead sea administrador o representante y necesite ambos certificados.

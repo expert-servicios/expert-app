@@ -36,9 +36,14 @@ describe('RU personal digital certificate parity', () => {
 
   it('keeps the same commercial scope in Russian copy', () => {
     const ru = read('app/(localized)/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa/page.tsx');
-    expect(ru).toContain('Проверка личности очно или по видеосвязи.');
+    expect(ru).toContain('Удалённая идентификация и валидация личности EXPERT');
     expect(ru).toContain('Установка и настройка сертификата на вашем компьютере.');
     expect(ru).toContain('Техническая поддержка по вопросам сертификата в течение 30 дней.');
     expect(ru).toContain('Продление сертификата после окончания срока действия — оформляется отдельно.');
+    expect(ru).toContain('срок действия 5 лет');
+    expect(ru).toContain('/docs/certificado-digital-persona-fisica-documentacion-instalacion');
+    expect(ru).toContain('/docs/certificado-digital-persona-fisica-seguridad-copia-renovacion');
+    expect(ru).toContain('максимум за 24 рабочих часа');
+    expect(ru).toContain('/ru/uslugi/paket-cifrovyh-sertifikatov');
   });
 });

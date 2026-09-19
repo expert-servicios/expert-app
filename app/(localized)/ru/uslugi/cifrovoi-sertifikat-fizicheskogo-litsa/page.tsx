@@ -22,6 +22,9 @@ const service = (() => {
   };
 })();
 
+const OFFER_PRICE =
+  service.price.match(/[0-9]+(?:[.,][0-9]+)?/)?.[0]?.replace(',', '.') ?? service.price;
+
 const CART_ITEM = {
   priceId: service.stripePriceId,
   name: service.name,
@@ -59,7 +62,7 @@ export const metadata: Metadata = {
 };
 
 const includedItems = [
-  'Проверка личности очно или по видеосвязи.',
+  'Удалённая идентификация и валидация личности EXPERT в рамках процесса Camerfirma.',
   'Выпуск квалифицированного цифрового сертификата Camerfirma.',
   'Установка и настройка сертификата на вашем компьютере.',
   'Проверка работы сертификата перед завершением услуги.',
@@ -79,15 +82,15 @@ const processSteps = [
   },
   {
     title: 'Согласование проверки личности',
-    text: 'После оплаты мы связываемся с вами и согласовываем очную проверку или видеосвязь.',
+    text: 'После оплаты мы проверяем документы и организуем удалённую идентификацию — без посещения офиса.',
   },
   {
     title: 'Проверка документов и личности',
-    text: 'Проверяем DNI/TIE и данные, необходимые для выпуска сертификата.',
+    text: 'EXPERT проверяет DNI/TIE и подтверждает личность удалённо в рамках процесса Camerfirma.',
   },
   {
     title: 'Выпуск и установка',
-    text: 'Сертификат выпускается через Camerfirma, после чего мы помогаем установить его и проверить работу.',
+    text: 'После полного комплекта документов и подтверждения личности оформляем сертификат максимум за 24 рабочих часа и помогаем с установкой.',
   },
 ];
 
@@ -114,6 +117,10 @@ const faqItems = [
     q: 'Поможете ли вы установить сертификат?',
     a: 'Да. Установка, настройка и проверка работы входят в услугу.',
   },
+  {
+    q: 'Какой срок действия?',
+    a: 'Модальность сертификата физического лица, которую предлагает EXPERT, имеет срок действия 5 лет.',
+  },
 ];
 
 export default function RuCertificatePersonPage() {
@@ -135,7 +142,7 @@ export default function RuCertificatePersonPage() {
     url: RU_URL,
     offers: {
       '@type': 'Offer',
-      price: '90',
+      price: OFFER_PRICE,
       priceCurrency: 'EUR',
       availability: 'https://schema.org/InStock',
       url: RU_URL,
@@ -175,9 +182,7 @@ export default function RuCertificatePersonPage() {
             Цифровой сертификат Camerfirma для физического лица
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-white/65">
-            Оформляем квалифицированный цифровой сертификат Camerfirma для работы с AEAT, Seguridad Social,
-            электронными подписями и другими онлайн-процедурами в Испании. Проверка личности, выпуск,
-            установка и проверка работы входят в услугу.
+            Оформляем квалифицированный цифровой сертификат Camerfirma полностью онлайн, без личного визита. EXPERT проводит удалённую идентификацию в рамках процесса Camerfirma. После получения полного комплекта документов и подтверждения личности срок оформления — максимум 24 рабочих часа.
           </p>
 
           <div className="mt-8 grid gap-4 md:grid-cols-2">
@@ -189,7 +194,7 @@ export default function RuCertificatePersonPage() {
             <div className="border border-[#D4A017]/50 bg-[#D4A017]/10 p-5">
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4A017]">Срок</p>
               <p className="mt-2 text-xl font-bold text-white">{service.duration}</p>
-              <p className="mt-1 text-xs leading-5 text-white/55">Очно или по видеосвязи.</p>
+              <p className="mt-1 text-xs leading-5 text-white/55">Полностью онлайн, без личного визита.</p>
             </div>
           </div>
 
@@ -222,6 +227,17 @@ export default function RuCertificatePersonPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="border border-[#D4A017]/30 bg-[#D4A017]/8 p-6">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4A017]">Пакетное предложение</p>
+            <h2 className="mt-2 font-serif text-2xl font-bold">Хотите сразу два сертификата?</h2>
+            <p className="mt-3 text-sm leading-6 text-[#23364D]">
+              Физическое лицо + юридическое лицо: 200 € + IVA вместо 240 € + IVA. Экономия 40 €, один заказ, полностью онлайн.
+            </p>
+            <Link href="/ru/uslugi/paket-cifrovyh-sertifikatov" className="mt-4 inline-flex min-h-11 items-center justify-center bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A]">
+              Посмотреть пакет
+            </Link>
           </div>
 
           <div>
@@ -281,6 +297,16 @@ export default function RuCertificatePersonPage() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div className="border border-[#D4A017]/25 bg-white p-6">
+            <h2 className="font-serif text-2xl font-bold">Полезные материалы</h2>
+            <div className="mt-4 grid gap-3">
+              <Link href="/docs/certificado-digital-camerfirma-guia" className="text-sm font-semibold underline decoration-[#D4A017] underline-offset-4">Общая инструкция Camerfirma →</Link>
+              <Link href="/docs/certificado-digital-persona-fisica-documentacion-instalacion" className="text-sm font-semibold underline decoration-[#D4A017] underline-offset-4">Документы, установка и использование →</Link>
+              <Link href="/docs/certificado-digital-persona-fisica-seguridad-copia-renovacion" className="text-sm font-semibold underline decoration-[#D4A017] underline-offset-4">Безопасность, копия и продление →</Link>
+              <Link href="/blog/certificado-digital-persona-fisica-vs-clave-dnie" className="text-sm font-semibold underline decoration-[#D4A017] underline-offset-4">Сертификат vs. Cl@ve vs. DNIe →</Link>
+            </div>
           </div>
 
           <div>

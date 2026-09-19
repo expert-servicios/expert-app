@@ -7,9 +7,7 @@ import { X, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartDisbursements, resolveCartLocale, useCart } from '@/contexts/CartContext';
 import { QuickProfileGate } from '@/components/cart/QuickProfileGate';
 import { CompanyCheckoutGate } from '@/components/cart/CompanyCheckoutGate';
-
-const RU_NACIONALIDAD_PATH = '/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii';
-const NACIONALIDAD_MENOR_SLUG = 'nacionalidad-espanola-menor-nacido-en-espana';
+import { getPublicServicePath } from '@/lib/i18n/service-routes';
 
 const COPY = {
   es: {
@@ -60,12 +58,10 @@ export function CartSidebar() {
   const disbursements = collectCartDisbursements(items);
   const locale = items.length === 0 && pathname.startsWith('/ru/') ? 'ru' : resolveCartLocale(items);
   const t = COPY[locale];
-  const loginNextPath = locale === 'ru' ? RU_NACIONALIDAD_PATH : '/carrito';
+  const loginNextPath = locale === 'ru' ? '/carrito?lang=ru' : '/carrito';
 
   const itemHref = (item: { category: string; slug: string; locale?: 'es' | 'ru' }) =>
-    item.locale === 'ru' && item.slug === NACIONALIDAD_MENOR_SLUG
-      ? RU_NACIONALIDAD_PATH
-      : `/servicios/${item.category}/${item.slug}`;
+    getPublicServicePath(item, item.locale ?? locale);
 
   const goToCheckoutUrl = (url: string) => {
     clearCart();
@@ -229,6 +225,7 @@ export function CartSidebar() {
               <CompanyCheckoutGate
                 locale={locale}
                 loading={loading}
+                returnPath={locale === 'ru' ? '/carrito?lang=ru' : '/carrito'}
                 onContinue={(companyId) => { void handleCheckout(companyId); }}
               />
             ) : needsProfile ? (
@@ -253,7 +250,7 @@ export function CartSidebar() {
               </button>
             )}
             <Link
-              href={locale === 'ru' ? RU_NACIONALIDAD_PATH : '/carrito'}
+              href={locale === 'ru' ? '/carrito?lang=ru' : '/carrito'}
               onClick={close}
               className="block text-center text-sm font-medium text-[#23364D] transition hover:text-[#D4A017]"
             >

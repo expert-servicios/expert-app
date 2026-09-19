@@ -149,6 +149,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
           },
         },
         {
+          url: `${BASE}/ru/uslugi/paket-cifrovyh-sertifikatov`,
+          changeFrequency: 'weekly' as const,
+          priority: 0.9,
+          lastModified: now,
+          alternates: {
+            languages: {
+              'es-ES': `${BASE}/servicios/certificado-digital/pack-certificados-digitales`,
+              'ru-RU': `${BASE}/ru/uslugi/paket-cifrovyh-sertifikatov`,
+            },
+          },
+        },
+        {
           url: `${BASE}/ru/uslugi/arraigo-social`,
           changeFrequency: 'monthly' as const,
           priority: 0.85,
