@@ -3,6 +3,7 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import Link from 'next/link';
 import { Star, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function OpinionPage() {
@@ -140,7 +141,10 @@ function OpinionContent() {
                 className="mt-0.5 h-4 w-4 rounded accent-[#d7a33a]"
               />
               <span className="text-sm text-[#29384a]">
-                Autorizo a EXPERT a publicar mi valoración (de forma anónima o con mi nombre) en la web y materiales de comunicación.
+                Autorizo a EXPERT a publicar mi valoración de forma anónima en la web y materiales de comunicación.
+                <span className="mt-1 block text-xs">
+                  Consulta la <Link href="/politica-de-resenas" target="_blank" className="font-semibold text-[#c88b25] underline">Política de reseñas y valoraciones</Link>.
+                </span>
               </span>
             </label>
 
