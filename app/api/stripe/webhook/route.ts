@@ -547,7 +547,7 @@ export async function POST(req: NextRequest) {
       if (quoteId) {
         const { data: quote, error: quoteFetchError } = await supabaseAdmin
           .from('quotes')
-          .select('client_id,lead_id,title,docs_checklist')
+          .select('client_id,lead_id,title,docs_checklist,company_id')
           .eq('id', quoteId)
           .single();
 
@@ -586,6 +586,7 @@ export async function POST(req: NextRequest) {
               source: 'quote',
               quote_id: quoteId,
               client_id: quote.client_id,
+              company_id: quote.company_id ?? null,
               stripe_payment_id: paymentId,
               amount_eur: amountEur,
               ...legacyOrderFields(amountEur, quote.title),
@@ -660,7 +661,7 @@ export async function POST(req: NextRequest) {
               const quoteJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_order_holded', {
                 clientName, clientEmail,
                 description: quote.title ?? 'Servicio EXPERT',
-                amountEur, orderId: newOrderId, localEntity: 'orders',
+                amountEur, orderId: newOrderId, companyId: quote.company_id ?? null, localEntity: 'orders',
               });
               await startHoldedJob(supabaseAdmin, quoteJobId);
               syncOrderToHolded({
@@ -669,6 +670,7 @@ export async function POST(req: NextRequest) {
                 description: quote.title ?? 'Servicio EXPERT',
                 amountEur,
                 orderId: newOrderId,
+                companyId: quote.company_id ?? null,
                 localEntity: 'orders'
               }).then((result) => {
                 void resolveHoldedJob(supabaseAdmin, quoteJobId, result.error ? 'failed' : 'success', result.error);
@@ -888,7 +890,7 @@ export async function POST(req: NextRequest) {
         const catalogJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_order_holded', {
           clientName: customerName, clientEmail: customerEmail,
           description: serviceName, amountEur,
-          orderId: catalogOrderId ?? session.id, localEntity: 'orders',
+          orderId: catalogOrderId ?? session.id, companyId: session.metadata?.company_id ?? null, localEntity: 'orders',
         });
         await startHoldedJob(supabaseAdmin, catalogJobId);
         syncOrderToHolded({
@@ -897,6 +899,7 @@ export async function POST(req: NextRequest) {
           description: serviceName,
           amountEur,
           orderId: catalogOrderId ?? session.id,
+          companyId: session.metadata?.company_id ?? null,
           localEntity: 'orders'
         }).then((result) => {
           void resolveHoldedJob(supabaseAdmin, catalogJobId, result.error ? 'failed' : 'success', result.error);
@@ -940,12 +943,12 @@ export async function POST(req: NextRequest) {
           void enqueueHoldedSync(supabaseAdmin, 'sync_holded_migration', {
             clientName: customerName, clientEmail: customerEmail,
             description: packageName, amountEur: holdedAmountEur,
-            orderId: session.id, localEntity: 'stripe_checkout_sessions',
+            orderId: session.id, companyId: session.metadata?.company_id ?? null, localEntity: 'stripe_checkout_sessions',
           }).then((migJobId) => {
             startHoldedJob(supabaseAdmin, migJobId).then(() => syncOrderToHolded({
               clientName: customerName, clientEmail: customerEmail,
               description: packageName, amountEur: holdedAmountEur,
-              orderId: session.id, localEntity: 'stripe_checkout_sessions',
+              orderId: session.id, companyId: session.metadata?.company_id ?? null, localEntity: 'stripe_checkout_sessions',
             })).then((result) => resolveHoldedJob(supabaseAdmin, migJobId, result.error ? 'failed' : 'success', result.error))
               .catch((err) => {
                 console.error('[webhook] holded sync (migration) failed:', err);
@@ -964,12 +967,12 @@ export async function POST(req: NextRequest) {
           void enqueueHoldedSync(supabaseAdmin, 'sync_holded_formacion', {
             clientName: customerName, clientEmail: customerEmail,
             description: 'Formación EXPERT — sesión 2 h', amountEur: holdedAmountEur,
-            orderId: session.id, localEntity: 'stripe_checkout_sessions',
+            orderId: session.id, companyId: session.metadata?.company_id ?? null, localEntity: 'stripe_checkout_sessions',
           }).then((formJobId) => {
             startHoldedJob(supabaseAdmin, formJobId).then(() => syncOrderToHolded({
               clientName: customerName, clientEmail: customerEmail,
               description: 'Formación EXPERT — sesión 2 h', amountEur: holdedAmountEur,
-              orderId: session.id, localEntity: 'stripe_checkout_sessions',
+              orderId: session.id, companyId: session.metadata?.company_id ?? null, localEntity: 'stripe_checkout_sessions',
             })).then((result) => resolveHoldedJob(supabaseAdmin, formJobId, result.error ? 'failed' : 'success', result.error))
               .catch((err) => {
                 console.error('[webhook] holded sync (formacion) failed:', err);
