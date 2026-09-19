@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, CheckCircle2, XCircle, Award, User } from 'lucide-react';
+import { Star, CheckCircle2, Award, User } from 'lucide-react';
 
 interface Review {
   id: string;
@@ -119,16 +119,6 @@ export function ReviewModerationCard({ review }: { review: Review }) {
               className="inline-flex items-center gap-1.5 rounded-lg border border-green-300 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-100 disabled:opacity-50"
             >
               <CheckCircle2 className="h-3.5 w-3.5" /> Aprobar
-            </button>
-          )}
-          {review.status !== 'rejected' && (
-            <button
-              type="button"
-              disabled={loading !== null}
-              onClick={() => patch({ status: 'rejected' })}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
-            >
-              <XCircle className="h-3.5 w-3.5" /> Rechazar
             </button>
           )}
           {review.status === 'approved' && review.comment && (
