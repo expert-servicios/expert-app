@@ -1,3 +1,5 @@
+import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
+
 export type SocialChannel = 'facebook' | 'instagram' | 'linkedin' | 'google';
 
 export type SocialPostDraft = {
@@ -617,6 +619,86 @@ export const catalogLaunchSocialPacks: ServiceLaunchPack[] = [
   }
 ];
 
+function buildGeneratedLaunchPack(serviceSlug: string): ServiceLaunchPack | undefined {
+  const profile = getServiceOperationalBlueprint(serviceSlug);
+  if (!profile) return undefined;
+
+  const destinationPath = `/servicios/${profile.category}/${profile.slug}`;
+  const campaign = `expert_catalog_launch_${profile.slug}`;
+  const posts: SocialPostDraft[] = [];
+
+  const channelBlueprints: Array<{
+    channel: SocialChannel;
+    items: Array<{ format: SocialPostDraft['format']; suffix: string; title: string; cta: string }>;
+  }> = [
+    {
+      channel: 'facebook',
+      items: [
+        { format: 'educational', suffix: 'requirements', title: `${profile.canonicalName}: requisitos clave`, cta: 'Ver requisitos' },
+        { format: 'problem_solution', suffix: 'documents', title: `Documentación para ${profile.canonicalName}`, cta: 'Ver checklist' },
+        { format: 'cta', suffix: 'cta', title: `Preparar ${profile.canonicalName} con EXPERT`, cta: 'Ver servicio' },
+      ],
+    },
+    {
+      channel: 'instagram',
+      items: [
+        { format: 'educational', suffix: 'requirements', title: `${profile.canonicalName}: qué revisar primero`, cta: 'Guardar' },
+        { format: 'carousel', suffix: 'steps', title: `${profile.canonicalName} paso a paso`, cta: 'Ver proceso' },
+        { format: 'cta', suffix: 'cta', title: `Checklist ${profile.canonicalName}`, cta: 'Abrir servicio' },
+      ],
+    },
+    {
+      channel: 'linkedin',
+      items: [
+        { format: 'expert', suffix: 'expert', title: `${profile.canonicalName}: criterio antes que automatización`, cta: 'Consultar proceso' },
+        { format: 'comparison', suffix: 'control', title: `Qué automatizamos y qué revisa un profesional`, cta: 'Ver metodología' },
+        { format: 'cta', suffix: 'cta', title: `Servicio empaquetado: ${profile.canonicalName}`, cta: 'Ver ficha' },
+      ],
+    },
+    {
+      channel: 'google',
+      items: [
+        { format: 'search_ad', suffix: 'search', title: `${profile.canonicalName} | EXPERT`, cta: 'Consultar servicio' },
+        { format: 'business_profile', suffix: 'business', title: `${profile.canonicalName}: checklist y gestión`, cta: 'Más información' },
+        { format: 'search_ad', suffix: 'documents', title: `${profile.canonicalName} · Documentos y pasos`, cta: 'Ver requisitos' },
+      ],
+    },
+  ];
+
+  for (const blueprint of channelBlueprints) {
+    for (const item of blueprint.items) {
+      posts.push({
+        id: `${profile.slug}-${blueprint.channel}-${item.suffix}`,
+        channel: blueprint.channel,
+        format: item.format,
+        title: item.title,
+        shortCopy: profile.kia.userSummary,
+        longCopy: `${profile.kia.userSummary} Requisitos, documentación y pasos se revisan contra la ficha operativa vigente. KIA ayuda a ordenar la información y el equipo EXPERT mantiene el control humano en los puntos críticos.`,
+        cta: item.cta,
+        destinationPath,
+        utmCampaign: campaign,
+        status: 'review',
+      });
+    }
+  }
+
+  return { serviceSlug, locale: 'es', status: 'content_ready', posts };
+}
+
 export function getServiceLaunchPack(serviceSlug: string): ServiceLaunchPack | undefined {
-  return catalogLaunchSocialPacks.find((pack) => pack.serviceSlug === serviceSlug);
+  const manual = catalogLaunchSocialPacks.find((pack) => pack.serviceSlug === serviceSlug);
+  const generated = buildGeneratedLaunchPack(serviceSlug);
+
+  if (!manual) return generated;
+  if (!generated) return manual;
+
+  const posts = [...manual.posts];
+  for (const channel of ['facebook', 'instagram', 'linkedin', 'google'] as const) {
+    const existing = posts.filter((post) => post.channel === channel).length;
+    if (existing >= 3) continue;
+    const needed = 3 - existing;
+    posts.push(...generated.posts.filter((post) => post.channel === channel).slice(0, needed));
+  }
+
+  return { ...manual, posts };
 }

@@ -9,6 +9,7 @@ import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
 import { getCalOnboardingUrl, getCalFormacionUrl } from '@/lib/utils/cal';
 import { persistAcademyCertificationPayment, persistAcademyProgramPayment } from '@/lib/payments/academy-fulfillment';
 import { legacyOrderFields, requireCreatedOrderId } from '@/lib/payments/non-academy-order';
+import { ensureServiceOrderFulfillment } from '@/lib/payments/service-order-fulfillment';
 import {
   academyEnrollmentConfirmed,
   academyEnrollmentConfirmedAdmin,
@@ -35,161 +36,6 @@ function getAdminEmails(): string[] {
 type SupabaseAdmin = ReturnType<typeof getSupabaseAdmin>;
 type SubscriptionRecord = { clientId: string; companyId: string | null; planName: string; periodEnd: string | null };
 
-
-const CERTIFICATE_SERVICE_SLUGS = new Set([
-  'certificado-digital-persona-fisica',
-  'certificado-digital-entidad',
-  'pack-certificados-digitales',
-]);
-
-function nextCertificateBusinessDueDate(from = new Date()): string {
-  const due = new Date(from);
-  due.setUTCDate(due.getUTCDate() + 1);
-  while (due.getUTCDay() === 0 || due.getUTCDay() === 6) {
-    due.setUTCDate(due.getUTCDate() + 1);
-  }
-  return due.toISOString().slice(0, 10);
-}
-
-async function ensureCertificateOrderFulfillment(
-  supabaseAdmin: SupabaseAdmin,
-  input: {
-    orderId: string;
-    serviceSlug: string;
-    clientId: string | null;
-    companyId: string | null;
-  },
-): Promise<string | null> {
-  if (!CERTIFICATE_SERVICE_SLUGS.has(input.serviceSlug) || !input.clientId) return null;
-
-  const { data: existingCase, error: existingCaseError } = await supabaseAdmin
-    .from('cases')
-    .select('id')
-    .eq('order_id', input.orderId)
-    .maybeSingle();
-
-  if (existingCaseError) {
-    throw new Error(`Could not resolve certificate case for order ${input.orderId}: ${existingCaseError.message}`);
-  }
-
-  let caseId = existingCase?.id ?? null;
-  if (!caseId) {
-    const isBundle = input.serviceSlug === 'pack-certificados-digitales';
-    const isEntity = input.serviceSlug === 'certificado-digital-entidad';
-
-    const docsChecklist = isBundle
-      ? [
-          'DNI/TIE del titular/representante',
-          'Domicilio y datos de contacto',
-          'Razón social y NIF/CIF de la entidad',
-          'Escritura, nota mercantil o documentación registral',
-          'Poderes o nombramiento cuando proceda',
-        ]
-      : isEntity
-        ? [
-            'DNI/TIE del representante',
-            'Razón social y NIF/CIF',
-            'Escritura, nota mercantil o documentación registral',
-            'Poderes o nombramiento cuando proceda',
-          ]
-        : [
-            'DNI/TIE del titular',
-            'Domicilio completo',
-          ];
-
-    const serviceName = isBundle
-      ? 'Pack Certificados Digitales — Persona Física + Entidad'
-      : isEntity
-        ? 'Certificado Digital de Entidad — Camerfirma'
-        : 'Certificado Digital Persona Física — Camerfirma';
-
-    const { data: createdCase, error: createdCaseError } = await supabaseAdmin
-      .from('cases')
-      .insert({
-        client_id: input.clientId,
-        company_id: isEntity || isBundle ? input.companyId : null,
-        category: 'certificado-digital',
-        service: serviceName,
-        service_id: input.serviceSlug,
-        order_id: input.orderId,
-        state: 'pendiente_documentacion',
-        status: 'nuevo',
-        priority: 'alta',
-        due_date: nextCertificateBusinessDueDate(),
-        next_action: 'Revisar documentación e identificación online para emisión del certificado',
-        docs_checklist: docsChecklist,
-        checklist_json: {
-          online_only: true,
-          physical_presence_required: false,
-          sla_business_hours: 24,
-          sla_starts_after: 'documentation_complete_and_identity_validated',
-        },
-      })
-      .select('id')
-      .single();
-
-    if (createdCaseError || !createdCase?.id) {
-      throw new Error(`Could not create certificate case for order ${input.orderId}: ${createdCaseError?.message ?? 'missing id'}`);
-    }
-    caseId = createdCase.id;
-
-    const { error: linkOrderError } = await supabaseAdmin
-      .from('orders')
-      .update({ case_id: caseId })
-      .eq('id', input.orderId);
-    if (linkOrderError) {
-      throw new Error(`Could not link certificate case ${caseId} to order ${input.orderId}: ${linkOrderError.message}`);
-    }
-  }
-
-  const taskTitles = input.serviceSlug === 'pack-certificados-digitales'
-    ? ['Emitir certificado digital persona física', 'Emitir certificado digital de entidad']
-    : input.serviceSlug === 'certificado-digital-entidad'
-      ? ['Emitir certificado digital de entidad']
-      : ['Emitir certificado digital persona física'];
-
-  for (const title of taskTitles) {
-    const { data: existingTask, error: existingTaskError } = await supabaseAdmin
-      .from('internal_tasks')
-      .select('id')
-      .eq('case_id', caseId)
-      .eq('source', 'system')
-      .eq('title', title)
-      .in('status', ['pendiente', 'en_progreso'])
-      .maybeSingle();
-
-    if (existingTaskError) {
-      throw new Error(`Could not resolve certificate task ${title}: ${existingTaskError.message}`);
-    }
-    if (existingTask) continue;
-
-    const { error: taskError } = await supabaseAdmin
-      .from('internal_tasks')
-      .insert({
-        title,
-        description:
-          'Tramitación 100 % online. SLA operativo: máximo 24 horas laborables desde documentación completa e identidad/facultades validadas.',
-        status: 'pendiente',
-        priority: 'alta',
-        case_id: caseId,
-        client_id: input.clientId,
-        company_id: title.includes('entidad') ? input.companyId : null,
-        due_date: nextCertificateBusinessDueDate(),
-        source: 'system',
-        metadata: {
-          service_slug: input.serviceSlug,
-          online_only: true,
-          sla_business_hours: 24,
-        },
-      });
-
-    if (taskError) {
-      throw new Error(`Could not create certificate task ${title}: ${taskError.message}`);
-    }
-  }
-
-  return caseId;
-}
 
 function getPlanName(priceId: string, fallback?: string | null): string {
   if (fallback) return fallback;
@@ -955,16 +801,16 @@ export async function POST(req: NextRequest) {
         (session.metadata?.service_slugs ?? '').split(',').map((slug) => slug.trim()).filter(Boolean)[0] ??
         '';
 
-      await ensureCertificateOrderFulfillment(supabaseAdmin, {
+      await ensureServiceOrderFulfillment(supabaseAdmin, {
         orderId: catalogOrderId,
         serviceSlug: catalogServiceSlug,
         clientId: session.client_reference_id ?? null,
         companyId: session.metadata?.company_id ?? null,
       });
 
-      // Some services have DB-trigger fulfillment while certificate services
-      // use the explicit workflow above. Re-read the order so notifications
-      // always resolve the operational case without guessing.
+      // Operational blueprints create/reconcile the case and its task plan.
+      // Existing database-triggered cases remain idempotently supported.
+      // Re-read the order so notifications always resolve the linked case.
 
       const { data: fulfilledCatalogOrder, error: fulfilledCatalogOrderError } = await supabaseAdmin
         .from('orders')

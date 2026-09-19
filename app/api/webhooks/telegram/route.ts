@@ -12,6 +12,8 @@ import {
 } from '@/lib/ai/kia/kia-policy-enforced-decision';
 import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
 import { safeErrorMessage } from '@/lib/ai/kia/kia-redaction';
+import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
+import { serviceProductionManifest } from '@/lib/services/service-production-manifest';
 import {
   escapeTelegramHtml,
   isConfiguredTelegramAdminChat,
@@ -39,17 +41,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, ignored: true });
   }
 
-  // Current rollout remains restricted to the configured admin chat. This is
-  // separate from EXPERT identity: both the configured chat and an active,
-  // verified persisted identity binding are required before KIA can run.
-  if (!isConfiguredTelegramAdminChat(inbound.chatId)) {
-    return NextResponse.json({ ok: true, ignored: true });
-  }
-
   const admin = getSupabaseAdmin();
   const parts = inbound.text.split(/\s+/);
   const command = parts[0]?.toLowerCase();
   const telegramToolsEnabled = process.env.KIA_TELEGRAM_TOOLS_ENABLED?.toLowerCase() === 'true';
+  const telegramClientsEnabled = process.env.KIA_TELEGRAM_CLIENTS_ENABLED?.toLowerCase() === 'true';
+  const adminChat = isConfiguredTelegramAdminChat(inbound.chatId);
+
+  if (!adminChat && !telegramClientsEnabled) {
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: 'El canal KIA para clientes en Telegram todavía no está habilitado. Usa el portal EXPERT mientras se completa el despliegue.',
+    });
+    return NextResponse.json({ ok: true, ignored: true, reason: 'client_telegram_disabled' });
+  }
 
   if (command === '/link') {
     const code = parts[1]?.trim();
@@ -98,6 +103,8 @@ export async function POST(request: NextRequest) {
         'Canal Telegram conectado en modo seguro.',
         '/status — comprobar conexión, identidad y tools',
         '/link CÓDIGO — vincular este Telegram con una sesión EXPERT autenticada',
+        '/servicio SLUG — ver requisitos, documentos y pasos del servicio',
+        ...(adminChat ? ['/lote1 — ver estado operativo del lote 1'] : []),
         identity
           ? `Identidad EXPERT verificada. Chat KIA: activo. Tools R0/R1 read: ${telegramToolsEnabled ? 'activadas' : 'bloqueadas por feature flag'}.`
           : 'Identidad EXPERT aún no vinculada o no verificada. KIA permanece bloqueada.',
@@ -166,6 +173,52 @@ export async function POST(request: NextRequest) {
   if (!actor.active || actor.tenantId !== identity.tenantId) {
     await sendTelegramMessage({ chatId: inbound.chatId, text: 'La identidad EXPERT vinculada ya no está activa o no coincide con el tenant autorizado.' });
     return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'actor_inactive_or_tenant_mismatch' });
+  }
+
+  if (command === '/servicio') {
+    const slug = parts[1]?.trim();
+    const blueprint = slug ? getServiceOperationalBlueprint(slug) : null;
+    if (!blueprint) {
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'Indica un slug válido del servicio. Ejemplo: /servicio arraigo-social',
+      });
+      return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'service_blueprint_not_found' });
+    }
+
+    const requirements = blueprint.requirements.map((item) => `• ${item.label}`).join('\n');
+    const documents = blueprint.documents
+      .filter((item) => item.required)
+      .map((item) => `• ${item.label}`)
+      .join('\n');
+    const steps = blueprint.steps.map((item, index) => `${index + 1}. ${item.title}`).join('\n');
+
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: [
+        `<b>${escapeTelegramHtml(blueprint.canonicalName)}</b>`,
+        '',
+        '<b>Requisitos</b>',
+        escapeTelegramHtml(requirements),
+        '',
+        '<b>Documentación obligatoria</b>',
+        escapeTelegramHtml(documents),
+        '',
+        '<b>Pasos</b>',
+        escapeTelegramHtml(steps),
+      ].join('\n'),
+    });
+
+    return NextResponse.json({ ok: true, identityLinked: true, routed: true, command: 'servicio', serviceSlug: blueprint.slug });
+  }
+
+  if (command === '/lote1' && adminChat) {
+    const rows = serviceProductionManifest.map((entry) => `• ${entry.slug}: ${entry.stage}`);
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: ['<b>Lote 1 · estado de producción</b>', ...rows.map(escapeTelegramHtml)].join('\n'),
+    });
+    return NextResponse.json({ ok: true, identityLinked: true, routed: true, command: 'lote1' });
   }
 
   const telegramPolicy = resolveKiaPolicyToolNames('telegram_verified', actor);

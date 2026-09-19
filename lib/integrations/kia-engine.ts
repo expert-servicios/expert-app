@@ -651,21 +651,28 @@ export const PRECAL_FLOWS: Record<string, PrecalQuestion[]> = {
 
   arraigo_familiar: [
     {
-      key: 'familiar',
-      text: { es: '¿Tienes padre, madre o hijo/a con nacionalidad española o residencia legal en España?', ru: 'Есть ли у вас родитель или ребёнок — гражданин Испании или законный резидент?' },
+      key: 'supuesto',
+      text: {
+        es: '¿Tu caso es progenitor/tutor de menor UE/EEE/Suiza o familiar que presta apoyo a una persona con discapacidad UE/EEE/Suiza?',
+        ru: 'Ваш случай связан с родителем/опекуном несовершеннолетнего гражданина ЕС/ЕЭЗ/Швейцарии или поддержкой родственника с инвалидностью из этих стран?',
+      },
       type: 'buttons',
       options: [
-        { id: 'si', label: { es: 'Sí', ru: 'Да' } },
-        { id: 'no', label: { es: 'No', ru: 'Нет' }, escalate: true },
+        { id: 'menor_ue', label: { es: 'Progenitor / tutor de menor', ru: 'Родитель / опекун ребёнка' } },
+        { id: 'apoyo_discapacidad', label: { es: 'Apoyo a familiar con discapacidad', ru: 'Поддержка родственника с инвалидностью' } },
+        { id: 'otro', label: { es: 'Otro vínculo familiar', ru: 'Другая семейная связь' }, escalate: true },
       ],
     },
     {
-      key: 'tiempo_espana',
-      text: { es: '¿Cuánto tiempo llevas en España?', ru: 'Как долго вы в Испании?' },
+      key: 'condiciones',
+      text: {
+        es: '¿Puedes acreditar el vínculo y las condiciones de convivencia/cargo/apoyo que correspondan?',
+        ru: 'Можете подтвердить родство и необходимые условия совместного проживания/содержания/поддержки?',
+      },
       type: 'buttons',
       options: [
-        { id: 'menos_2', label: { es: 'Menos de 2 años', ru: 'Менее 2 лет'    }, escalate: true },
-        { id: '2_mas',   label: { es: '2 años o más',    ru: '2 года и больше' } },
+        { id: 'si', label: { es: 'Sí', ru: 'Да' } },
+        { id: 'no', label: { es: 'No / no sé', ru: 'Нет / не знаю' }, escalate: true },
       ],
     },
   ],
@@ -673,20 +680,26 @@ export const PRECAL_FLOWS: Record<string, PrecalQuestion[]> = {
   arraigo_laboral: [
     {
       key: 'tiempo_espana',
-      text: { es: '¿Llevas más de 2 años en España sin permiso de trabajo?', ru: 'Вы в Испании более 2 лет без разрешения на работу?' },
+      text: {
+        es: '¿Puedes acreditar al menos 2 años de permanencia continuada en España?',
+        ru: 'Можете подтвердить не менее 2 лет непрерывного пребывания в Испании?',
+      },
       type: 'buttons',
       options: [
-        { id: 'si', label: { es: 'Sí, más de 2 años', ru: 'Да, более 2 лет' } },
-        { id: 'no', label: { es: 'No',                 ru: 'Нет'             }, escalate: true },
+        { id: 'si', label: { es: 'Sí', ru: 'Да' } },
+        { id: 'no', label: { es: 'No', ru: 'Нет' }, escalate: true },
       ],
     },
     {
-      key: 'relacion_laboral',
-      text: { es: '¿Tienes acta de la ITSS, sentencia judicial o resolución del SEPE que pruebe la relación laboral?', ru: 'Есть акт ITSS, решение суда или SEPE, подтверждающее трудовые отношения?' },
+      key: 'contratos',
+      text: {
+        es: '¿Tienes uno o varios contratos firmados que sumen al menos 20 horas semanales?',
+        ru: 'Есть один или несколько подписанных трудовых договоров с общей занятостью не менее 20 часов в неделю?',
+      },
       type: 'buttons',
       options: [
-        { id: 'si', label: { es: 'Sí, lo tengo',  ru: 'Да, есть' } },
-        { id: 'no', label: { es: 'No lo tengo',   ru: 'Нет'      }, escalate: true },
+        { id: 'si', label: { es: 'Sí', ru: 'Да' } },
+        { id: 'no', label: { es: 'No / menos de 20 h', ru: 'Нет / менее 20 ч' }, escalate: true },
       ],
     },
   ],

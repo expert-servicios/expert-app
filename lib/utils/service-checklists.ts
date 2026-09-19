@@ -1,3 +1,4 @@
+import { getServiceOperationalBlueprint, BATCH1_OPERATIONAL_BLUEPRINTS } from '@/lib/services/service-operational-blueprints';
 export type ServiceChecklist = {
   serviceId: string;
   serviceName: string;
@@ -1276,14 +1277,41 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
   },
 ];
 
-/** Returns the checklist for a given service ID, or undefined if not found */
-export function getServiceChecklist(serviceId: string): ServiceChecklist | undefined {
-  return SERVICE_CHECKLISTS.find((c) => c.serviceId === serviceId);
+function operationalChecklist(serviceId: string): ServiceChecklist | undefined {
+  const blueprint = getServiceOperationalBlueprint(serviceId);
+  if (!blueprint) return undefined;
+
+  return {
+    serviceId: blueprint.slug,
+    serviceName: blueprint.canonicalName,
+    category: blueprint.category,
+    requiredData: blueprint.requirements.map((item) => item.label),
+    requiredDocs: blueprint.documents.filter((item) => item.required).map((item) => item.label),
+    keyQuestions: blueprint.requirements
+      .filter((item) => item.clientCheckable)
+      .map((item) => item.label),
+    botInstructions: `${blueprint.kia.userSummary} Escalar a revisión humana si: ${blueprint.kia.escalationRules.join('; ')}.`,
+  };
 }
 
-/** Returns checklists for all services in a given category */
+/** Returns the canonical checklist. Batch 1 is generated from operational blueprints. */
+export function getServiceChecklist(serviceId: string): ServiceChecklist | undefined {
+  return operationalChecklist(serviceId) ?? SERVICE_CHECKLISTS.find((c) => c.serviceId === serviceId);
+}
+
+/** Returns category checklists, replacing any legacy Batch 1 copies with canonical blueprints. */
 export function getChecklistsByCategory(category: string): ServiceChecklist[] {
-  return SERVICE_CHECKLISTS.filter((c) => c.category === category);
+  const canonical = BATCH1_OPERATIONAL_BLUEPRINTS
+    .filter((item) => item.category === category)
+    .map((item) => operationalChecklist(item.slug))
+    .filter((item): item is ServiceChecklist => Boolean(item));
+
+  const canonicalIds = new Set(canonical.map((item) => item.serviceId));
+  const legacy = SERVICE_CHECKLISTS.filter(
+    (item) => item.category === category && !canonicalIds.has(item.serviceId),
+  );
+
+  return [...canonical, ...legacy];
 }
 
 /** Formats a checklist into a concise text block for AI prompt injection */

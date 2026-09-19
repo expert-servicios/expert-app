@@ -2,6 +2,7 @@ import { articles } from '@/lib/utils/blog';
 import { docs } from '@/lib/utils/docs';
 import { getCatalogService } from '@/lib/utils/catalog';
 import { getServiceLaunchPack } from '@/lib/marketing/catalog-launch-social';
+import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
 
 export const SERVICE_PRODUCTION_STANDARD_VERSION = '1.0';
 
@@ -20,7 +21,11 @@ export type ServiceReadinessIssueCode =
   | 'blog_below_minimum'
   | 'kb_below_minimum'
   | 'social_pack_missing'
-  | 'social_channel_below_minimum';
+  | 'social_channel_below_minimum'
+  | 'operations_missing'
+  | 'requirements_below_minimum'
+  | 'documents_below_minimum'
+  | 'tasks_below_minimum';
 
 export type ServiceReadinessIssue = {
   code: ServiceReadinessIssueCode;
@@ -43,6 +48,7 @@ export function evaluateServiceContentReadiness(slug: string): ServiceReadinessR
   const blogCount = articles.filter((article) => article.relatedServiceSlugs?.includes(slug)).length;
   const knowledgeCount = docs.filter((doc) => doc.relatedServiceSlugs?.includes(slug)).length;
   const socialPack = getServiceLaunchPack(slug);
+  const operational = getServiceOperationalBlueprint(slug);
 
   const socialCounts = Object.fromEntries(
     SOCIAL_CHANNELS.map((channel) => [
@@ -113,6 +119,32 @@ export function evaluateServiceContentReadiness(slug: string): ServiceReadinessR
           message: `El canal ${channel} requiere al menos 3 piezas; existen ${socialCounts[channel]}.`,
         });
       }
+    }
+  }
+
+  if (!operational) {
+    issues.push({
+      code: 'operations_missing',
+      message: 'Falta blueprint operativo para expediente, requisitos, documentos y tareas.',
+    });
+  } else {
+    if (operational.requirements.length < 2) {
+      issues.push({
+        code: 'requirements_below_minimum',
+        message: 'El blueprint operativo necesita al menos 2 requisitos estructurados.',
+      });
+    }
+    if (operational.documents.length < 2) {
+      issues.push({
+        code: 'documents_below_minimum',
+        message: 'El blueprint operativo necesita al menos 2 documentos estructurados.',
+      });
+    }
+    if (operational.tasks.length < 2) {
+      issues.push({
+        code: 'tasks_below_minimum',
+        message: 'El blueprint operativo necesita al menos 2 tareas de expediente.',
+      });
     }
   }
 

@@ -5,6 +5,7 @@ import { getCatalogService } from '@/lib/utils/catalog';
 import { getServiceCheckoutByPriceId } from '@/lib/integrations/service-checkout';
 import { getServiceBillingPolicy, resolveServiceBillingScope } from '@/lib/payments/service-billing-scope';
 import { getRuServicePath, getLocalizedServicePresentation } from '@/lib/services/service-localized-content';
+import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
 
@@ -47,14 +48,17 @@ describe('certificate bundle purchase flow', () => {
     expect(copy).toContain('validada');
   });
 
-  it('creates one operational case with two certificate tasks after payment', () => {
+  it('creates one operational case with separate certificate tasks after payment', () => {
     const webhook = read('app/api/stripe/webhook/route.ts');
-    expect(webhook).toContain("input.serviceSlug === 'pack-certificados-digitales'");
-    expect(webhook).toContain("'Emitir certificado digital persona física'");
-    expect(webhook).toContain("'Emitir certificado digital de entidad'");
-    expect(webhook).toContain("sla_business_hours: 24");
-    expect(webhook).toContain("order_id: input.orderId");
-    expect(webhook).toContain(".update({ case_id: caseId })");
+    const fulfillment = read('lib/payments/service-order-fulfillment.ts');
+    const blueprint = getServiceOperationalBlueprint('pack-certificados-digitales');
+
+    expect(webhook).toContain('ensureServiceOrderFulfillment');
+    expect(blueprint?.tasks.map((task) => task.title)).toContain('Emitir certificado digital persona física');
+    expect(blueprint?.tasks.map((task) => task.title)).toContain('Emitir certificado digital de entidad');
+    expect(fulfillment).toContain("task_kind: 'service_blueprint_step'");
+    expect(fulfillment).toContain('human_approval_required');
+    expect(fulfillment).toContain(".update({ case_id: caseId })");
   });
 
   it('publishes ES/RU SEO routes for the bundle', () => {

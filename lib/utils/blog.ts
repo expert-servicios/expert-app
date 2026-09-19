@@ -1,3 +1,5 @@
+import { getGeneratedBatch1BlogArticles } from '@/lib/services/service-generated-content';
+
 export type Article = {
   slug: string;
   category: string;
@@ -11,6 +13,7 @@ export type Article = {
 };
 
 export const articles: Article[] = [
+  ...getGeneratedBatch1BlogArticles(),
   {
     slug: 'nacionalidad-menor-nacido-espana-requisitos',
     category: 'Extranjería',
