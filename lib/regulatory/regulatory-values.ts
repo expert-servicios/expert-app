@@ -67,7 +67,7 @@ function asDateString(value: unknown): string | null {
   return value;
 }
 
-export async function applyReviewedRegulatoryValueUpdates(changeId: string) {
+export async function applyReviewedRegulatoryValueUpdates(changeId: string, approvedBy?: string) {
   const admin = getSupabaseAdmin();
 
   const { data: change, error: changeError } = await admin
@@ -152,9 +152,33 @@ export async function applyReviewedRegulatoryValueUpdates(changeId: string) {
   }
 
   await admin.from('regulatory_changes').update({
-    status: 'resolved',
-    resolved_at: new Date().toISOString(),
+    values_applied_at: new Date().toISOString(),
+    values_applied_by: approvedBy ?? null,
   }).eq('id', changeId);
 
-  return { changeId, applied };
+  return { changeId, applied, resolved: false };
+}
+
+export async function resolveReviewedRegulatoryChange(changeId: string, resolvedBy?: string) {
+  const admin = getSupabaseAdmin();
+  const { data: change, error } = await admin
+    .from('regulatory_changes')
+    .select('id,status,relevant,summary')
+    .eq('id', changeId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!change) throw new Error('Cambio regulatorio no encontrado');
+  if (!['classified','needs_review','proposal_ready'].includes(change.status)) {
+    throw new Error('El cambio no está en un estado que pueda resolverse manualmente');
+  }
+
+  const { error: updateError } = await admin.from('regulatory_changes').update({
+    status: 'resolved',
+    resolved_at: new Date().toISOString(),
+    resolved_by: resolvedBy ?? null,
+  }).eq('id', changeId);
+
+  if (updateError) throw new Error(updateError.message);
+  return { changeId, resolved: true };
 }
