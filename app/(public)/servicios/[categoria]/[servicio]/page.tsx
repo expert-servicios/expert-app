@@ -20,6 +20,7 @@ const CAL_REUNION_URL = getCalMeetingUrl();
 const RU_SERVICE_ALTERNATES: Record<string, string> = {
   'certificado-digital-persona-fisica': '/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa',
   'certificado-digital-entidad': '/ru/uslugi/cifrovoi-sertifikat-organizatsii',
+  'pack-certificados-digitales': '/ru/uslugi/paket-cifrovyh-sertifikatov',
   'arraigo-social': '/ru/uslugi/arraigo-social',
 };
 
