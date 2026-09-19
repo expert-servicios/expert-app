@@ -297,6 +297,19 @@ values
     '{"official":true}'::jsonb
   ),
   (
+    'ine_ipc_api',
+    'INE',
+    'INE API — tablas de la operación IPC',
+    'https://www.ine.es/dyngs/DAB/index.htm?cid=1100',
+    'https://servicios.ine.es/wstempus/js/ES/TABLAS_OPERACION/IPC?det=2',
+    'dataset',
+    'json',
+    'critical',
+    array['inflation','ipc','rent_updates'],
+    'daily',
+    '{"official":true,"api":"INE JSON","operation":"IPC"}'::jsonb
+  ),
+  (
     'bde_interest_rates',
     'Banco de España',
     'Banco de España — estadísticas de tipos de interés',
@@ -344,7 +357,7 @@ from public.regulatory_sources s
 where
   (v.value_key in ('SMI_MONTHLY','SMI_DAILY','SMI_ANNUAL','COMMERCIAL_LATE_INTEREST','SS_MAX_BASE','MEI_RATE') and s.source_key = 'boe_daily_sumario')
   or (v.value_key in ('LEGAL_INTEREST','TAX_LATE_INTEREST') and s.source_key = 'aeat_news_rss')
-  or (v.value_key = 'IPC_ANNUAL' and s.source_key = 'ine_ipc_publications');
+  or (v.value_key = 'IPC_ANNUAL' and s.source_key = 'ine_ipc_api');
 
 -- Core batch-1 dependency graph.
 insert into public.regulatory_dependencies
@@ -402,7 +415,7 @@ cross join (values
   ('calculator','rent-update','inflation','critical'),
   ('admin','economic-indicators','inflation','high')
 ) as d(dependency_type, dependency_key, topic, criticality)
-where s.source_key = 'ine_ipc_publications'
+where s.source_key in ('ine_ipc_publications','ine_ipc_api')
 on conflict do nothing;
 
 insert into public.regulatory_dependencies
