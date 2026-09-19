@@ -195,28 +195,93 @@ values
   (
     'aeat_rss_hub',
     'AEAT',
-    'AEAT — RSS y novedades',
+    'AEAT — directorio RSS',
     'https://sede.agenciatributaria.gob.es/Sede/informacion-institucional/suscripcion-rss-newsletter/rss.html',
     'https://sede.agenciatributaria.gob.es/Sede/informacion-institucional/suscripcion-rss-newsletter/rss.html',
     'administrative',
     'html',
+    'normal',
+    array['tax','accounting'],
+    'monthly',
+    '{"official":true,"directory":true}'::jsonb
+  ),
+  (
+    'aeat_news_rss',
+    'AEAT',
+    'AEAT — Novedades destacadas RSS',
+    'https://sede.agenciatributaria.gob.es/Sede/todas-noticias.xml',
+    'https://sede.agenciatributaria.gob.es/Sede/todas-noticias.xml',
+    'rss',
+    'rss',
     'critical',
     array['tax','accounting'],
     'daily',
     '{"official":true}'::jsonb
   ),
   (
+    'aeat_analysis_rss',
+    'AEAT',
+    'AEAT — Análisis y criterios RSS',
+    'https://sede.agenciatributaria.gob.es/Sede/informacion-institucional/puede-interesar/analisis.xml',
+    'https://sede.agenciatributaria.gob.es/Sede/informacion-institucional/puede-interesar/analisis.xml',
+    'rss',
+    'rss',
+    'high',
+    array['tax','accounting','criteria'],
+    'daily',
+    '{"official":true}'::jsonb
+  ),
+  (
     'seg_social_rss_hub',
     'Seguridad Social',
-    'Seguridad Social — RSS legislativo y Sistema RED',
+    'Seguridad Social — directorio RSS',
     'https://www.seg-social.es/wps/portal/wss/internet/RSS',
     'https://www.seg-social.es/wps/portal/wss/internet/RSS',
     'administrative',
     'html',
+    'normal',
+    array['social_security','labor'],
+    'monthly',
+    '{"official":true,"directory":true}'::jsonb
+  ),
+  (
+    'seg_social_legislation',
+    'Seguridad Social',
+    'Seguridad Social — Novedades Legislativas',
+    'https://www.seg-social.es/wps/portal/wss/internet/RSS',
+    'https://www.seg-social.es/wps/wcm/connect/wss/poin_contenidos/internet/1139/?CACHE=NONE&CONNECTORCACHE=NONE&CONTENTCACHE=NONE&WCM_Page.ResetAll=TRUE&cmpntid=601fa53b-f1d2-4180-a5e7-fe0b130e0296&source=library&srv=cmpnt',
+    'rss',
+    'xml',
     'critical',
     array['social_security','labor'],
     'daily',
-    '{"official":true,"channels":["Novedades Legislativas","Boletines Sistema RED","Avisos RED"]}'::jsonb
+    '{"official":true,"channel":"Novedades Legislativas"}'::jsonb
+  ),
+  (
+    'seg_social_red_bulletins',
+    'Seguridad Social',
+    'Seguridad Social — Boletines Sistema RED',
+    'https://www.seg-social.es/wps/portal/wss/internet/RSS',
+    'https://www.seg-social.es/wps/wcm/connect/wss/poin_contenidos/internet/39715/5300/7855/?CACHE=NONE&CONNECTORCACHE=NONE&CONTENTCACHE=NONE&WCM_Page.ResetAll=TRUE&cmpntid=601fa53b-f1d2-4180-a5e7-fe0b130e0296&source=library&srv=cmpnt',
+    'rss',
+    'xml',
+    'critical',
+    array['social_security','labor','sistema_red','siltra'],
+    'daily',
+    '{"official":true,"channel":"Boletines Sistema RED"}'::jsonb
+  ),
+  (
+    'seg_social_red_alerts',
+    'Seguridad Social',
+    'Seguridad Social — Avisos Sistema RED',
+    'https://www.seg-social.es/wps/portal/wss/internet/RSS',
+    'https://www.seg-social.es/wps/wcm/connect/wss/poin_contenidos/internet/39715/5300/3827/?CACHE=NONE&CONNECTORCACHE=NONE&CONTENTCACHE=NONE&WCM_Page.ResetAll=TRUE&cmpntid=601fa53b-f1d2-4180-a5e7-fe0b130e0296&source=library&srv=cmpnt',
+    'rss',
+    'xml',
+    'high',
+    array['social_security','labor','sistema_red','siltra'],
+    'daily',
+    '{"official":true,"channel":"Avisos Sistema RED"}'::jsonb
   ),
   (
     'ine_ipc_publications',
@@ -278,7 +343,7 @@ set source_id = s.id
 from public.regulatory_sources s
 where
   (v.value_key in ('SMI_MONTHLY','SMI_DAILY','SMI_ANNUAL','COMMERCIAL_LATE_INTEREST','SS_MAX_BASE','MEI_RATE') and s.source_key = 'boe_daily_sumario')
-  or (v.value_key in ('LEGAL_INTEREST','TAX_LATE_INTEREST') and s.source_key = 'aeat_rss_hub')
+  or (v.value_key in ('LEGAL_INTEREST','TAX_LATE_INTEREST') and s.source_key = 'aeat_news_rss')
   or (v.value_key = 'IPC_ANNUAL' and s.source_key = 'ine_ipc_publications');
 
 -- Core batch-1 dependency graph.
@@ -312,7 +377,7 @@ cross join (values
   ('knowledge','tax','tax','high'),
   ('blog','tax','tax','high')
 ) as d(dependency_type, dependency_key, topic, criticality)
-where s.source_key = 'aeat_rss_hub'
+where s.source_key in ('aeat_news_rss','aeat_analysis_rss')
 on conflict do nothing;
 
 insert into public.regulatory_dependencies
@@ -325,7 +390,7 @@ cross join (values
   ('admin','labor-operations','social_security','critical'),
   ('knowledge','labor','social_security','high')
 ) as d(dependency_type, dependency_key, topic, criticality)
-where s.source_key = 'seg_social_rss_hub'
+where s.source_key in ('seg_social_legislation','seg_social_red_bulletins','seg_social_red_alerts')
 on conflict do nothing;
 
 insert into public.regulatory_dependencies
