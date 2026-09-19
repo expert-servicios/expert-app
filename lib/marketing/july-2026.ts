@@ -23,19 +23,20 @@ export const julySiteCampaignLinks = {
   planes: sitePath('/planes', 'julio_planes_2026'),
   certificadoPersonaFisica: sitePath('/servicios/certificado-digital/certificado-digital-persona-fisica', 'julio_certificado_2026'),
   certificadoEntidad: sitePath('/servicios/certificado-digital/certificado-digital-entidad', 'julio_certificado_2026'),
+  certificadoPack: sitePath('/servicios/certificado-digital/pack-certificados-digitales', 'expert_catalog_launch_pack-certificados-digitales'),
 } as const;
 
 export const julyMetricoolLinks: Record<JulyCampaignArea, string> = {
   holded: withUtm('/holded/migracion-sin-inventario', 'metricool', 'social', 'julio_holded_2026'),
   planes: withUtm('/planes', 'metricool', 'social', 'julio_planes_2026'),
-  certificado: withUtm('/servicios/certificado-digital/certificado-digital-persona-fisica', 'metricool', 'social', 'julio_certificado_2026'),
+  certificado: withUtm('/servicios/certificado-digital/pack-certificados-digitales', 'metricool', 'social', 'expert_catalog_launch_pack-certificados-digitales'),
 };
 
 const emailLinks = {
   holded: withUtm('/holded/migracion-sin-inventario', 'email', 'campaign', 'julio_holded_2026'),
   packStarter: withUtm('/holded/pack-starter', 'email', 'campaign', 'julio_holded_2026'),
   planes: withUtm('/planes', 'email', 'campaign', 'julio_planes_2026'),
-  certificado: withUtm('/servicios/certificado-digital/certificado-digital-persona-fisica', 'email', 'campaign', 'julio_certificado_2026'),
+  certificado: withUtm('/servicios/certificado-digital/pack-certificados-digitales', 'email', 'campaign', 'expert_catalog_launch_pack-certificados-digitales'),
   sociedades: withUtm('/planes/avanzado', 'email', 'campaign', 'julio_sociedades_2026'),
 };
 
@@ -116,10 +117,10 @@ export const julyEmailCampaignDrafts: JulyEmailDraft[] = [
       'Si no puedes firmar o presentar, el tramite se bloquea.',
       `
         <p style="margin:0 0 16px;line-height:1.7;">En julio muchos tramites se vuelven urgentes: presentaciones ante AEAT, consultas, notificaciones y firmas. Si tu certificado esta caducado o dependes de otra persona para operar, conviene resolverlo antes de que sea un bloqueo.</p>
-        <p style="margin:0 0 16px;line-height:1.7;">Como Punto de Registro Autorizado de Camerfirma, podemos tramitar certificados para persona fisica y entidad, con verificacion presencial o por videoconferencia cuando aplica.</p>
+        <p style="margin:0 0 16px;line-height:1.7;">Como Punto de Registro Autorizado dentro del proceso Camerfirma, EXPERT tramita certificados de persona fisica y entidad 100 % online, sin presencia fisica. La oferta conjunta de ambos certificados es de 200 EUR + IVA.</p>
         <p style="margin:0;line-height:1.7;">Te ayudamos tambien con instalacion y prueba para que no te quedes con un certificado emitido pero inutilizable.</p>
       `,
-      'Tramitar certificado digital',
+      'Ver pack de certificados',
       emailLinks.certificado
     ),
   },
