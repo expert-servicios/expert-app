@@ -122,6 +122,23 @@ describe('KIA Regulatory Registry', () => {
     expect(migration).toContain("where name = 'cron_secret'");
   });
 
+  it('monitors direct official feeds instead of only RSS directory pages', () => {
+    const migration = read('supabase/migrations/20260919191500_kia_regulatory_registry.sql');
+    expect(migration).toContain('https://sede.agenciatributaria.gob.es/Sede/todas-noticias.xml');
+    expect(migration).toContain('aeat_analysis_rss');
+    expect(migration).toContain('seg_social_legislation');
+    expect(migration).toContain('seg_social_red_bulletins');
+    expect(migration).toContain('seg_social_red_alerts');
+    expect(migration).toContain('https://servicios.ine.es/wstempus/js/ES/TABLAS_OPERACION/IPC?det=2');
+  });
+
+  it('blocks publication review when a critical regulatory dependency is unresolved', () => {
+    const orchestrator = read('lib/services/service-publication-orchestrator.ts');
+    expect(orchestrator).toContain("code: 'regulatory_block'");
+    expect(orchestrator).toContain(".eq('severity', 'critical')");
+    expect(orchestrator).toContain("['detected', 'classified', 'needs_review', 'proposal_ready']");
+  });
+
   it('keeps registry tables server-side only with explicit browser deny policies', () => {
     const migration = read('supabase/migrations/20260919191500_kia_regulatory_registry.sql');
     expect(migration).toContain('alter table public.regulatory_sources enable row level security');
@@ -138,6 +155,12 @@ describe('KIA Regulatory Registry', () => {
     expect(telegram).toContain("action === 'valor'");
     expect(telegram).toContain("action === 'revisar'");
     expect(telegram).toContain('after(async () => {');
+  });
+
+  it('exposes a protected admin Regulatory Pulse panel', () => {
+    expect(read('app/api/admin/regulatory/route.ts')).toContain("profile?.role === 'admin' || profile?.role === 'owner'");
+    expect(read('app/(protected)/admin/regulatory/page.tsx')).toContain('KIA Regulatory Pulse');
+    expect(read('components/admin/AdminSidebar.tsx')).toContain('/admin/regulatory');
   });
 
   it('documents the no-auto-merge and no-auto-publish contract', () => {
