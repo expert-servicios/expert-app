@@ -46,6 +46,14 @@ describe('cart checkout payload', () => {
     });
   });
 
+  it('adds companyId only after explicit entity selection', () => {
+    expect(buildCartCheckoutPayload([serviceWithDisbursement], true, '11111111-1111-1111-1111-111111111111')).toMatchObject({
+      companyId: '11111111-1111-1111-1111-111111111111',
+      disbursementMandateAccepted: true,
+    });
+    expect(buildCartCheckoutPayload([serviceWithDisbursement], true)).not.toHaveProperty('companyId');
+  });
+
   it('keeps a fully Russian cart in Russian', () => {
     const russian: CartItem = { ...serviceWithDisbursement, locale: 'ru' };
     expect(resolveCartLocale([russian])).toBe('ru');
