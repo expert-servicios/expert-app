@@ -45,6 +45,16 @@ export async function POST(request: NextRequest) {
   const parts = inbound.text.split(/\s+/);
   const command = parts[0]?.toLowerCase();
   const telegramToolsEnabled = process.env.KIA_TELEGRAM_TOOLS_ENABLED?.toLowerCase() === 'true';
+  const telegramClientsEnabled = process.env.KIA_TELEGRAM_CLIENTS_ENABLED?.toLowerCase() === 'true';
+  const adminChat = isConfiguredTelegramAdminChat(inbound.chatId);
+
+  if (!adminChat && !telegramClientsEnabled) {
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: 'El canal KIA para clientes en Telegram todavía no está habilitado. Usa el portal EXPERT mientras se completa el despliegue.',
+    });
+    return NextResponse.json({ ok: true, ignored: true, reason: 'client_telegram_disabled' });
+  }
 
   if (command === '/link') {
     const code = parts[1]?.trim();
@@ -94,7 +104,7 @@ export async function POST(request: NextRequest) {
         '/status — comprobar conexión, identidad y tools',
         '/link CÓDIGO — vincular este Telegram con una sesión EXPERT autenticada',
         '/servicio SLUG — ver requisitos, documentos y pasos del servicio',
-        ...(isConfiguredTelegramAdminChat(inbound.chatId) ? ['/lote1 — ver estado operativo del lote 1'] : []),
+        ...(adminChat ? ['/lote1 — ver estado operativo del lote 1'] : []),
         identity
           ? `Identidad EXPERT verificada. Chat KIA: activo. Tools R0/R1 read: ${telegramToolsEnabled ? 'activadas' : 'bloqueadas por feature flag'}.`
           : 'Identidad EXPERT aún no vinculada o no verificada. KIA permanece bloqueada.',
@@ -202,7 +212,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, identityLinked: true, routed: true, command: 'servicio', serviceSlug: blueprint.slug });
   }
 
-  if (command === '/lote1' && isConfiguredTelegramAdminChat(inbound.chatId)) {
+  if (command === '/lote1' && adminChat) {
     const rows = serviceProductionManifest.map((entry) => `• ${entry.slug}: ${entry.stage}`);
     await sendTelegramMessage({
       chatId: inbound.chatId,
