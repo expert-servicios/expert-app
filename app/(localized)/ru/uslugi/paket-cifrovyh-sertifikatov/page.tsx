@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import { AlertCircle, Check, FileText, ShieldCheck } from 'lucide-react';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { getCatalogService } from '@/lib/utils/catalog';
-import { shouldIndexLocale } from '@/lib/i18n/feature-flags';
 
 const SERVICE_SLUG = 'pack-certificados-digitales';
 const ES_URL = 'https://expertconsulting.es/servicios/certificado-digital/pack-certificados-digitales';
@@ -47,8 +46,8 @@ export const metadata: Metadata = {
     },
   },
   robots: {
-    index: shouldIndexLocale('ru'),
-    follow: shouldIndexLocale('ru'),
+    index: true,
+    follow: true,
   },
   openGraph: {
     title: 'Пакет Camerfirma: личный + корпоративный сертификат | EXPERT',
@@ -58,12 +57,17 @@ export const metadata: Metadata = {
     locale: 'ru_RU',
     siteName: 'EXPERT',
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Пакет Camerfirma: физлицо + компания | 200 € + IVA',
+    description: 'Экономия 40 € · полностью онлайн · 5 лет + 2 года · максимум 24 рабочих часа после полной проверки.',
+  },
 };
 
 const included = [
   'Сертификат Camerfirma для физического лица — модальность EXPERT со сроком действия 5 лет.',
   'Сертификат Camerfirma для выбранного юридического лица — модальность EXPERT со сроком действия 2 года.',
-  'Удалённая идентификация и валидация личности EXPERT в рамках процесса Camerfirma.',
+  'Удалённая идентификация и валидация личности EXPERT через канал PVP Creative Quality в рамках процесса Camerfirma.'
   'Проверка документов компании и полномочий представителя.',
   'Оформление обоих сертификатов.',
   'Помощь с установкой и настройкой.',
@@ -125,7 +129,7 @@ const faq = [
   },
   {
     q: 'Нужно ли приходить лично?',
-    a: 'Нет. Процесс EXPERT полностью онлайн. Идентификация и валидация выполняются удалённо в рамках процесса Camerfirma.',
+    a: 'Нет. Процесс EXPERT полностью онлайн. Идентификация и валидация выполняются удалённо через канал PVP Creative Quality в рамках процесса Camerfirma.',
   },
   {
     q: 'Когда начинается срок 24 часа?',
