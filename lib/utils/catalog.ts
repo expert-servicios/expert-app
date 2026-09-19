@@ -1570,7 +1570,6 @@ export const services: Service[] = [
     metaTitle: 'Migración laboral a Holded desde 50 € por empleado | EXPERT',
     metaDescription: 'Migramos y validamos los datos laborales de tu plantilla en Holded por 50 € + IVA por empleado. Revisión previa, configuración y nómina de prueba.',
     price: '50 € + IVA / empleado',
-    stripePriceId: 'price_1UDKyMLeYwwgvux40YFzyVwi',
     duration: '3–5 días hábiles para hasta 15 empleados',
     includes: [
       'Revisión documental previa',
@@ -1596,7 +1595,7 @@ export const services: Service[] = [
     faqs: [
       { q: '¿Cuál es el pedido mínimo?', a: 'El pedido mínimo es de 5 empleados, equivalente a 250 € + IVA.' },
       { q: '¿Incluye la gestión mensual?', a: 'No. Es una implantación puntual; la gestión mensual se contrata por separado.' },
-      { q: '¿Cómo se contrata?', a: 'Primero realizamos una revisión de 15 minutos y confirmamos el número de expedientes facturables. Después enviamos el enlace de pago con la cantidad correcta.' },
+      { q: '¿Cómo se contrata?', a: 'Primero confirmamos el número de empleados a migrar. Después emitimos un presupuesto estructurado con la cantidad correcta (mínimo 5 empleados) y el pago se realiza desde el área privada.' },
     ],
   },
   {
