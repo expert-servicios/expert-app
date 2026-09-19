@@ -1014,7 +1014,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'CIF o NIF de la entidad',
       'Nombre y cargo del representante legal (presidente, secretario, etc.)',
       'Si tiene estatutos y acta de nombramiento del cargo actualizados',
-      'Si prefiere la cita presencial o por videoconferencia',
+      'Confirmación de que dispone de conexión y equipo para completar la identificación e instalación online',
     ],
     requiredDocs: [
       'CIF o NIF de la entidad',
@@ -1027,10 +1027,10 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Qué tipo de entidad es?',
       '¿Tienes los estatutos y el acta de nombramiento del representante actualizados?',
       '¿Para qué trámites necesita el certificado la entidad?',
-      '¿Prefieres la cita presencial o por videoconferencia?',
+      '¿Tienes disponible el equipo en el que quieres instalar el certificado para completar el proceso online?',
     ],
     botInstructions:
-      'El certificado de entidad sin ánimo de lucro sigue el mismo proceso que el de entidad comercial pero adaptado a la documentación de estas organizaciones (estatutos + acta en lugar de escrituras). Precio: 150 €. Plazo: 24–48 horas desde la verificación. Somos Punto de Registro Autorizado de Camerfirma.',
+      'El certificado de entidad sin ánimo de lucro sigue el mismo proceso online que el de entidad comercial, adaptado a la documentación de estas organizaciones (estatutos + acta en lugar de escrituras). Precio: 150 €. Plazo máximo: 24 horas laborables desde expediente completo y representante/facultades validados. EXPERT tramita el certificado dentro del proceso Camerfirma.',
     estimatedPrice: '150 €',
   },
 
