@@ -7,6 +7,8 @@ import { shouldIndexLocale } from '@/lib/i18n/feature-flags';
 import { ServiceShareActions } from '@/components/services/ServiceShareActions';
 import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
 
+export const revalidate = 300;
+
 const SERVICE_SLUG = 'pack-certificados-digitales';
 const ES_URL = 'https://expertconsulting.es/servicios/certificado-digital/pack-certificados-digitales';
 const RU_PATH = '/ru/uslugi/paket-cifrovyh-sertifikatov';
