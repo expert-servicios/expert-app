@@ -4,8 +4,6 @@ import { useMemo, useState } from 'react';
 import {
   Check,
   Copy,
-  Facebook,
-  Linkedin,
   MessageCircle,
   Send,
   Share2,
@@ -72,12 +70,12 @@ export function ServiceShareActions({
       {
         label: labels.linkedin,
         href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-        Icon: Linkedin,
+        Icon: Share2,
       },
       {
         label: labels.facebook,
         href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-        Icon: Facebook,
+        Icon: Share2,
       },
     ];
   }, [labels, text, title, url]);
