@@ -1394,6 +1394,7 @@ export const services: Service[] = [
     duration: '24–48 h desde la verificación',
     stripePriceId: 'price_1TZYiDLeYwwgvux4ovAjIxrz',
     checkoutLabel: 'Solicitar certificado de entidad',
+    checkoutLegal: 'Certificado de entidad: la contratación y la factura deben vincularse a la organización para la que se emite.',
     metaTitle: 'Certificado Digital de Entidad Camerfirma · 150 € + IVA | EXPERT Asesoría',
     metaDescription: 'Certificado digital Camerfirma para empresas y entidades desde 150 € + IVA. Tramitación en 24–48 h. Punto de Registro Autorizado. Válido ante AEAT, SS y todos los organismos.',
     keyPoints: [
