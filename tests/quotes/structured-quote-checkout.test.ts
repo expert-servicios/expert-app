@@ -10,6 +10,10 @@ const clientCheckoutRoute = readFileSync(
   resolve(process.cwd(), 'app/api/quotes/[id]/checkout/route.ts'),
   'utf8',
 );
+const stripeWebhookRoute = readFileSync(
+  resolve(process.cwd(), 'app/api/stripe/webhook/route.ts'),
+  'utf8',
+);
 
 describe('structured quote checkout contract', () => {
   it('persists quote_items but defers Stripe creation until the client chooses to pay', () => {
@@ -36,5 +40,11 @@ describe('structured quote checkout contract', () => {
   it('revalidates company ownership before starting payment', () => {
     expect(clientCheckoutRoute).toContain(".from('profile_companies')");
     expect(clientCheckoutRoute).toContain("code: 'quote_company_forbidden'");
+  });
+
+  it('detects a second payment for the same quote before creating another order', () => {
+    expect(stripeWebhookRoute).toContain(".eq('quote_id', quoteId)");
+    expect(stripeWebhookRoute).toContain("action: 'quote.duplicate_payment_detected'");
+    expect(stripeWebhookRoute).toContain('Pago duplicado detectado en presupuesto');
   });
 });
