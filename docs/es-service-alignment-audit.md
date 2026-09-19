@@ -58,13 +58,16 @@ La plantilla genérica ya soporta:
 
 Por tanto, en la mayoría de servicios el principal hueco no es de layout, sino de contenido estructurado y validación comercial/normativa.
 
-## Producción cerrada / referencia
+## Estado según manifest
 
-- `nacionalidad-espanola-menor-nacido-en-espana`
-- `certificado-digital-persona-fisica`
-- `certificado-digital-entidad`
+Fuente canónica de madurez: `lib/services/service-production-manifest.ts`.
 
-Nacionalidad de menor se mantiene como referencia canónica. Los dos certificados quedan en fase de cierre de QA de producción ES/RU.
+- `certificado-digital-persona-fisica` — `production_ready`.
+- `certificado-digital-entidad` — `production_ready`.
+- `pack-certificados-digitales` — `production_ready`.
+- `nacionalidad-espanola-menor-nacido-en-espana` — `content_ready`; se mantiene como referencia de patrón funcional, pero no se etiqueta `production_ready` hasta completar su gate de canales.
+
+La referencia de plantilla no equivale automáticamente a estado de publicación/campaña.
 
 ## Candidatos no-Holded y no-formación más maduros
 
