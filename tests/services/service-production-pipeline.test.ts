@@ -76,8 +76,12 @@ describe('service production pipeline v1', () => {
     expect(og).not.toContain('const ruCopy');
   });
 
-  it('reports editorial gaps instead of treating partial services as ready', () => {
-    const result = evaluateServiceContentReadiness('nacionalidad-espanola-menor-nacido-en-espana');
-    expect(result.issues.length).toBeGreaterThan(0);
+  it('closes the editorial floor without automatically promoting the service stage', () => {
+    const slug = 'nacionalidad-espanola-menor-nacido-en-espana';
+    const result = evaluateServiceContentReadiness(slug);
+    const manifest = serviceProductionManifest.find((entry) => entry.slug === slug);
+
+    expect(result.issues).toEqual([]);
+    expect(manifest?.stage).toBe('content_ready');
   });
 });
