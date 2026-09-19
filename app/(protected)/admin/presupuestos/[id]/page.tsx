@@ -13,6 +13,15 @@ const STATUS_LABELS: Record<string, string> = {
   expired: 'Expirado'
 };
 
+interface QuoteItem {
+  service_slug: string;
+  description: string;
+  quantity: number;
+  unit_amount_cents: number;
+  currency: string;
+  position: number;
+}
+
 interface QuoteDetail {
   id: string;
   title: string;
@@ -28,6 +37,7 @@ interface QuoteDetail {
   lead: { name: string | null; email: string | null } | null;
   client: { full_name: string | null; email: string | null } | null;
   stripeCheckoutUrl: string | null;
+  quote_items?: QuoteItem[];
 }
 
 async function fetchQuoteDetail(id: string): Promise<QuoteDetail | null> {
@@ -96,6 +106,35 @@ export default async function AdminQuoteDetailPage({
           </div>
         </div>
 
+        {Array.isArray(quote.quote_items) && quote.quote_items.length > 0 && (
+          <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
+            <div className="mb-3 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-[#c88b25]" />
+              <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Desglose contractual</p>
+            </div>
+            <div className="overflow-hidden rounded-xl border border-[#eee5d6]">
+              {[...quote.quote_items]
+                .sort((a, b) => a.position - b.position)
+                .map((item) => (
+                  <div key={item.service_slug} className="grid grid-cols-[1fr_auto_auto] gap-3 border-b border-[#f1eadf] px-4 py-3 text-sm last:border-b-0">
+                    <div>
+                      <p className="font-semibold text-[#07111d]">{item.description}</p>
+                      <p className="text-xs text-[#6b7280]">{item.service_slug}</p>
+                    </div>
+                    <span className="self-center text-right text-[#29384a]">{item.quantity} × {(item.unit_amount_cents / 100).toFixed(2)} €</span>
+                    <span className="self-center text-right font-bold text-[#07111d]">
+                      {((item.unit_amount_cents * item.quantity) / 100).toFixed(2)} €
+                    </span>
+                  </div>
+                ))}
+              <div className="flex items-center justify-between bg-[#fbf8f2] px-4 py-3">
+                <span className="text-sm font-semibold text-[#29384a]">Base imponible</span>
+                <span className="font-bold text-[#07111d]">{Number(quote.amount_eur).toFixed(2)} €</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Contact info */}
         <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
           <div className="mb-3 flex items-center gap-2">
@@ -122,7 +161,7 @@ export default async function AdminQuoteDetailPage({
         <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
           <div className="mb-3 flex items-center gap-2">
             <CreditCard className="h-4 w-4 text-[#c88b25]" />
-            <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Enlace de pago</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Sesión de pago</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             {quote.stripeCheckoutUrl ? (

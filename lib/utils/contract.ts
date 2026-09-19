@@ -7,6 +7,7 @@ export interface ContractData {
   serviceTitle: string;
   serviceDescription: string;
   amountEur: number;
+  amountIncludesTax?: boolean;
   contractDate: string;
   contractType: 'service' | 'subscription';
   planName?: string | null;
@@ -92,7 +93,7 @@ export function generateContractHtml(d: ContractData): string {
 </table>
 
 <h2>3. Precio y forma de pago</h2>
-<div class="amount">${fmt(d.amountEur)} € ${isSubscription ? '/mes' : ''} (IVA incluido si aplica)</div>
+<div class="amount">${fmt(d.amountEur)} € ${isSubscription ? '/mes' : ''} ${d.amountIncludesTax === false ? '(base imponible; IVA no incluido)' : '(IVA incluido si aplica)'}</div>
 <p>El pago se realiza de forma segura a través de la plataforma <strong>Stripe</strong> (Stripe, Inc. — PCI-DSS Level 1 certificado). ${EXPERT.name} no almacena datos de tarjetas bancarias. ${isSubscription ? 'La suscripción se renueva automáticamente cada mes hasta su cancelación expresa.' : 'Este es un pago único no recurrente.'}</p>
 
 <h2>4. Obligaciones del prestador</h2>

@@ -24,12 +24,13 @@ describe('admin personal-first billing flow', () => {
 
   it('resolves one-off quote recipient from service policy or explicit billing scope', () => {
     const route = source('app/api/admin/quotes/route.ts');
-    expect(route).toContain("getServiceBillingPolicy(serviceSlug)");
+    expect(route).toContain("const policies = policySlugs.map(getServiceBillingPolicy)");
     expect(route).toContain("billingScope: z.enum(['profile', 'company']).optional()");
     expect(route).toContain("const forceProfile = servicePolicy === 'profile_only' || billingScope === 'profile'");
     expect(route).toContain("const forceCompany = servicePolicy === 'company_only' || billingScope === 'company'");
     expect(route).toContain("const resolvedBillingScope = companyId ? 'company' : 'profile'");
-    expect(route).toContain("...(companyId ? { company_id: companyId } : {})");
+    expect(route).toContain("const selectedMembership = companyId");
+    expect(route).toContain("company_id: companyId");
   });
 
   it('keeps quote company_id nullable while preserving company inheritance when selected', () => {

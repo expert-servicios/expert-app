@@ -787,7 +787,7 @@ export function quoteWithPaymentLink(
   name: string,
   amount: number,
   service: string,
-  stripeUrl: string,
+  paymentUrl: string,
   expiresAt: string | null,
   funFact: string
 ) {
@@ -799,15 +799,16 @@ export function quoteWithPaymentLink(
     html: base('Presupuesto listo para pagar', `
       ${heading('Tu propuesta personalizada está lista')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para(`Hemos preparado tu presupuesto para <strong>${escapeHtml(service)}</strong>. Puedes completar el pago directamente desde el botón de abajo — sin necesidad de buscar nada en el panel.`)}
+      ${para(`Hemos preparado tu presupuesto para <strong>${escapeHtml(service)}</strong>. Accede a tu área privada EXPERT para revisar el presupuesto y, cuando estés conforme, iniciar el pago seguro con Stripe.`)}
       ${table(
         detail('Servicio', escapeHtml(service)),
-        detail('Importe total', `<strong style="font-size:18px;color:#c88b25;">€${amount.toFixed(2)}</strong>`),
+        detail('Base imponible', `<strong style="font-size:18px;color:#c88b25;">€${amount.toFixed(2)}</strong> + IVA`),
         ...(expiry ? [detail('Válido hasta', expiry)] : [])
       )}
-      ${btn('Pagar ahora — €' + amount.toFixed(2), stripeUrl)}
+      ${btn('Revisar presupuesto y pagar', paymentUrl)}
       ${stepsBlock([
-        'Haz clic en "Pagar ahora" y completa el pago de forma segura (Visa / Mastercard / Amex).',
+        'Haz clic en "Revisar y pagar" para entrar en tu área privada EXPERT.',
+        'Revisa el presupuesto y pulsa pagar para abrir una sesión segura de Stripe (Visa / Mastercard / Amex).',
         'Recibirás un email de confirmación con los detalles de tu expediente.',
         'Accede a tu panel privado para seguir el estado en tiempo real y subir documentación.',
         'Tu gestor te contactará en menos de 24 horas hábiles para coordinar el inicio.'
