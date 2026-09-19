@@ -106,7 +106,7 @@ async function fetchWithLimits(url: string): Promise<{ text: string; contentType
 
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    const finalUrl = new URL(response.url);
+    const finalUrl = new URL(response.url || url);
     if (finalUrl.protocol !== 'https:' || !ALLOWED_HOSTS.has(finalUrl.hostname)) {
       throw new Error(`Regulatory redirect host not allowed: ${finalUrl.hostname}`);
     }
