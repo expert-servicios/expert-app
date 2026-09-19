@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { AlertCircle, ArrowLeft, CheckCircle2, ClipboardCheck, Clock, Download, FolderOpen, Info, MessageSquare, FileText, Image as ImageIcon, Mic, Video } from 'lucide-react';
-import { DocumentUpload } from '@/components/cases/DocumentUpload';
+import { AlertCircle, ArrowLeft, CheckCircle2, Clock, Download, FolderOpen, Info, MessageSquare, FileText, Image as ImageIcon, Mic, Video } from 'lucide-react';
 import { DeliverableRow } from '@/components/cases/DeliverableRow';
 import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
+import { CaseDocumentChecklist } from '@/components/cases/CaseDocumentChecklist';
 import { KiaGuidanceCard } from '@/components/kia/KiaGuidanceCard';
 import { resolveCaseDetailGuidance } from '@/lib/ai/kia/kia-surface-guidance';
 import { CASE_PROGRESS_STATES, CASE_STATE_LABELS, normalizeCaseStateForProgress } from '@/lib/utils/case-states';
@@ -25,6 +25,17 @@ interface Document {
   state: string;
   created_at: string;
   uploaded_by_role?: string;
+  checklist_item_key?: string | null;
+  checklist_item_label?: string | null;
+  client_comment?: string | null;
+}
+
+interface DocumentNote {
+  id: string;
+  item_key: string;
+  item_label: string;
+  comment: string | null;
+  updated_at: string;
 }
 
 interface Message {
@@ -180,14 +191,19 @@ const STEP_LABELS: Record<string, string> = {
   finalizado: 'Finalizado'
 };
 
+function resolveLocale(caseItem: CaseDetail): 'es' | 'ru' {
+  return /[А-Яа-яЁё]/.test(caseItem.service) ? 'ru' : 'es';
+}
+
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const [casesData, docsData, messagesData, waData] = await Promise.all([
+  const [casesData, docsData, messagesData, waData, notesData] = await Promise.all([
     fetchWithCookies('/api/cases'),
     fetchWithCookies(`/api/cases/${id}/documents`),
     fetchWithCookies(`/api/cases/${id}/messages`),
     fetchWithCookies(`/api/cases/${id}/whatsapp-attachments`),
+    fetchWithCookies(`/api/cases/${id}/document-notes`),
   ]);
 
   const caseItem = (casesData?.cases as CaseDetail[] | undefined)?.find((c) => c.id === id);
@@ -198,6 +214,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   const deliverables = allDocuments.filter((d) => d.uploaded_by_role === 'admin');
   const messages: Message[] = messagesData?.messages ?? [];
   const waAttachments: WaAttachment[] = waData?.attachments ?? [];
+  const notes: DocumentNote[] = notesData?.notes ?? [];
 
   const guide = STATE_GUIDE[caseItem.state] ?? STATE_GUIDE.en_proceso;
   const progressState = normalizeCaseStateForProgress(caseItem.state);
@@ -206,6 +223,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
   const uploadedCount = documents.length;
   const reviewedCount = documents.filter((d) => d.state === 'revisado').length;
   const checklist = Array.isArray(caseItem.docs_checklist) ? caseItem.docs_checklist : [];
+  const locale = resolveLocale(caseItem);
   const kiaGuidance = resolveCaseDetailGuidance({
     caseState: caseItem.state,
     checklistCount: checklist.length,
@@ -298,37 +316,24 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        {checklist.length > 0 && (
-          <div className="mt-4 rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <ClipboardCheck className="h-4 w-4 text-[#c88b25]" />
-                <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Documentacion solicitada</p>
-              </div>
-              <span className="rounded-full bg-[#f8f4eb] px-3 py-1 text-xs font-semibold text-[#29384a]">
-                {uploadedCount} subido{uploadedCount !== 1 ? 's' : ''}
-              </span>
-            </div>
-            <ul className="space-y-2">
-              {checklist.map((item, index) => (
-                <li key={`${item}-${index}`} className="flex gap-3 rounded-xl border border-[#f0e8d8] bg-[#f8f4eb] px-4 py-3 text-sm text-[#29384a]">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d7a33a]/15 text-xs font-bold text-[#c88b25]">
-                    {index + 1}
-                  </span>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
+        {checklist.length > 0 ? (
+          <div className="mt-4">
+            <CaseDocumentChecklist
+              caseId={id}
+              checklist={checklist}
+              documents={documents}
+              notes={notes}
+              locale={locale}
+            />
+          </div>
+        ) : (
+          <div className="mt-4 rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
+            <p className="text-sm text-[#29384a]">No hay checklist documental definido para este expediente.</p>
           </div>
         )}
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
-            <DocumentUpload caseId={id} initialDocuments={documents} />
-          </div>
-          <div className="rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
-            <CaseMessageThread caseId={id} initialMessages={messages} currentRole="client" />
-          </div>
+        <div className="mt-4 rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
+          <CaseMessageThread caseId={id} initialMessages={messages} currentRole="client" />
         </div>
 
         {deliverables.length > 0 && (
