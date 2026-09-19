@@ -162,7 +162,7 @@ export async function GET(request: NextRequest) {
 
     const { data: quotes, error: fetchError } = await supabase
       .from('quotes')
-      .select('id,title,description,amount_eur,status,created_at,expires_at,client_id')
+      .select('id,title,description,amount_eur,status,created_at,expires_at,client_id,quote_items(service_slug,description,quantity,unit_amount_cents,currency,position)')
       .order('created_at', { ascending: false });
 
     if (fetchError) {
