@@ -173,6 +173,17 @@ describe('KIA Regulatory Registry', () => {
     expect(telegram).toContain('after(async () => {');
   });
 
+  it('separates value approval from full regulatory resolution', () => {
+    const values = read('lib/regulatory/regulatory-values.ts');
+    const adminRoute = read('app/api/admin/regulatory/route.ts');
+
+    expect(values).toContain('values_applied_at');
+    expect(values).toContain('resolveReviewedRegulatoryChange');
+    expect(values).toContain('resolved: false');
+    expect(adminRoute).toContain("action?: 'pulse' | 'worker' | 'apply_values' | 'resolve_change'");
+    expect(adminRoute).toContain('resolveReviewedRegulatoryChange');
+  });
+
   it('exposes a protected admin Regulatory Pulse panel', () => {
     expect(read('app/api/admin/regulatory/route.ts')).toContain("profile?.role === 'admin' || profile?.role === 'owner'");
     expect(read('app/(protected)/admin/regulatory/page.tsx')).toContain('KIA Regulatory Pulse');
