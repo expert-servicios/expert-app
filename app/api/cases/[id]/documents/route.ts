@@ -9,6 +9,14 @@ import {
   validateClientDocumentFile,
 } from '@/lib/security/uploads';
 
+const PERSONAL_DOCUMENT_SERVICE_IDS = new Set(['nacionalidad-espanola-menor-nacido-en-espana']);
+
+function cleanText(value: FormDataEntryValue | null, max = 2000): string | null {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.trim();
+  return cleaned ? cleaned.slice(0, max) : null;
+}
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -20,7 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const { data: documents, error } = await supabase
       .from('documents')
-      .select('id,original_name,state,created_at,file_path,uploaded_by_role,company_id,drive_file_id,mime_type')
+      .select('id,original_name,state,created_at,file_path,uploaded_by_role,company_id,drive_file_id,mime_type,checklist_item_key,checklist_item_label,client_comment,replaced_by')
       .eq('case_id', id)
       .order('created_at', { ascending: false });
 
@@ -68,7 +76,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { data: caseData, error: caseError } = await adminSupabase
       .from('cases')
-      .select('id,client_id,company_id,service')
+      .select('id,client_id,company_id,service,service_id')
       .eq('id', caseId)
       .single();
 
@@ -85,22 +93,30 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     const clientId = caseData.client_id;
-    const companyId = await resolveDocumentCompany(adminSupabase, clientId, caseData.company_id ?? null);
-    if (!companyId) {
+    const personalDocumentScope = Boolean(
+      caseData.service_id && PERSONAL_DOCUMENT_SERVICE_IDS.has(caseData.service_id),
+    );
+    const companyId = personalDocumentScope
+      ? null
+      : await resolveDocumentCompany(adminSupabase, clientId, caseData.company_id ?? null);
+
+    if (!personalDocumentScope && !companyId) {
       return NextResponse.json({
         error: 'Asigna una entidad al expediente antes de subir documentación. No se puede inferir con seguridad entre varias entidades.',
         code: 'case_company_required',
       }, { status: 409 });
     }
 
-    const { data: membership, error: membershipError } = await adminSupabase
-      .from('profile_companies')
-      .select('company_id')
-      .eq('profile_id', clientId)
-      .eq('company_id', companyId)
-      .maybeSingle();
-    if (membershipError || !membership) {
-      return NextResponse.json({ error: 'La entidad del expediente no está vinculada al cliente' }, { status: 409 });
+    if (companyId) {
+      const { data: membership, error: membershipError } = await adminSupabase
+        .from('profile_companies')
+        .select('company_id')
+        .eq('profile_id', clientId)
+        .eq('company_id', companyId)
+        .maybeSingle();
+      if (membershipError || !membership) {
+        return NextResponse.json({ error: 'La entidad del expediente no está vinculada al cliente' }, { status: 409 });
+      }
     }
 
     const formData = await request.formData();
@@ -108,6 +124,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!file) {
       return NextResponse.json({ error: 'Archivo requerido' }, { status: 400 });
     }
+
+    const checklistItemKey = cleanText(formData.get('checklistItemKey'), 160);
+    const checklistItemLabel = cleanText(formData.get('checklistItemLabel'), 500);
+    const clientComment = cleanText(formData.get('clientComment'), 2000);
 
     const validation = validateClientDocumentFile(file, CLIENT_DOCUMENT_MAX_BYTES);
     if (!validation.ok) {
@@ -142,8 +162,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         mime_type: validation.contentType,
         state: 'pendiente',
         uploaded_by_role: isAdmin ? 'admin' : 'client',
+        checklist_item_key: checklistItemKey,
+        checklist_item_label: checklistItemLabel,
+        client_comment: clientComment,
       })
-      .select('id,original_name,state,created_at,file_path,uploaded_by_role,company_id,drive_file_id,mime_type')
+      .select('id,original_name,state,created_at,file_path,uploaded_by_role,company_id,drive_file_id,mime_type,checklist_item_key,checklist_item_label,client_comment,replaced_by')
       .single();
 
     if (docError || !doc) {
@@ -154,6 +177,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }
       console.error('[documents] database insert failed:', docError?.message);
       return NextResponse.json({ error: 'Error al registrar el documento' }, { status: 500 });
+    }
+
+    if (checklistItemKey || clientComment) {
+      await adminSupabase.from('case_document_notes').upsert({
+        case_id: caseId,
+        client_id: clientId,
+        item_key: checklistItemKey ?? `general-${doc.id}`,
+        item_label: checklistItemLabel ?? 'Documento general',
+        comment: clientComment,
+        updated_by: userId,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'case_id,item_key' }).then(() => null, (err) => {
+        console.error('[documents] note upsert failed:', err);
+      });
     }
 
     if (!isAdmin) {
