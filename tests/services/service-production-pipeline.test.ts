@@ -54,6 +54,17 @@ describe('service production pipeline v1', () => {
     }
   });
 
+  it('keeps noindex localized services out of the generated RU sitemap projection', () => {
+    const nationality = getLocalizedServicePresentation(
+      'nacionalidad-espanola-menor-nacido-en-espana',
+      'ru',
+    );
+    expect(nationality?.indexable).toBe(false);
+
+    const sitemap = read('app/sitemap.ts');
+    expect(sitemap).toContain(".filter((localized) => localized.indexable === true)");
+  });
+
   it('fails closed for an unknown service', () => {
     const result = evaluateServiceContentReadiness('servicio-inexistente');
     expect(result.issues.some((issue) => issue.code === 'service_missing')).toBe(true);
