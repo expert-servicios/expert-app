@@ -8,10 +8,13 @@ import { getRandomFunFact } from '@/lib/utils/fun-facts';
 import { generateContractHtml, contractToBuffer } from '@/lib/utils/contract';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { syncQuoteAsEstimate } from '@/lib/integrations/holded';
+import { getServiceBillingPolicy } from '@/lib/payments/service-billing-scope';
 
 const quoteSchema = z.object({
   clientEmail: z.string().email('Email de cliente inválido'),
   companyId: z.string().uuid().nullable().optional(),
+  billingScope: z.enum(['profile', 'company']).optional(),
+  serviceSlug: z.string().min(1).max(160).optional(),
   title: z.string().min(3, 'Título demasiado corto'),
   description: z.string().min(5, 'Descripción demasiado corta'),
   amountEur: z.number().positive('El importe debe ser positivo'),
@@ -43,7 +46,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 });
     }
 
-    const { clientEmail, title, description, amountEur, expiresInDays, docsChecklist } = parsed.data;
+    const { clientEmail, title, description, amountEur, expiresInDays, docsChecklist, serviceSlug, billingScope } = parsed.data;
     const adminSupabase = getSupabaseAdmin();
 
     const listData = await listAllAuthUsers();
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     const { data: clientProfile, error: profileError } = await adminSupabase
       .from('profiles')
-      .select('full_name,company,tax_id,address,city,postal_code,active_company_id')
+      .select('full_name,phone,client_type,company,tax_id,address,city,postal_code,active_company_id')
       .eq('id', clientId)
       .single();
     if (profileError || !clientProfile) {
@@ -70,33 +73,62 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No se pudieron resolver las entidades del cliente' }, { status: 500 });
     }
 
-    let companyId = parsed.data.companyId ?? clientProfile.active_company_id ?? null;
-    if (!companyId && (memberships?.length ?? 0) === 1) companyId = memberships![0].company_id;
-    if (!companyId) {
+    const servicePolicy = serviceSlug ? getServiceBillingPolicy(serviceSlug) : 'flexible';
+    if (servicePolicy === 'profile_only' && billingScope === 'company') {
+      return NextResponse.json({
+        error: 'Este servicio corresponde a la persona física y no puede presupuestarse a una sociedad.',
+        code: 'billing_scope_conflict'
+      }, { status: 409 });
+    }
+    if (servicePolicy === 'company_only' && billingScope === 'profile') {
+      return NextResponse.json({
+        error: 'Este servicio requiere una entidad fiscal como destinataria.',
+        code: 'billing_scope_conflict'
+      }, { status: 409 });
+    }
+
+    const forceProfile = servicePolicy === 'profile_only' || billingScope === 'profile';
+    const forceCompany = servicePolicy === 'company_only' || billingScope === 'company';
+
+    let companyId: string | null = null;
+    if (!forceProfile) {
+      companyId = parsed.data.companyId ?? clientProfile.active_company_id ?? null;
+      if (!companyId && (memberships?.length ?? 0) === 1) companyId = memberships![0].company_id;
+    }
+
+    if (forceCompany && !companyId) {
       return NextResponse.json({
         error: (memberships?.length ?? 0) > 1
           ? 'El cliente tiene varias entidades. Selecciona cuál contrata el servicio.'
-          : 'El cliente necesita una entidad fiscal antes de contratar el servicio.',
+          : 'Este servicio requiere una entidad fiscal vinculada al cliente.',
         code: 'company_required'
       }, { status: 409 });
     }
 
-    const selectedMembership = memberships?.find((m) => m.company_id === companyId) ?? null;
-    if (!selectedMembership) {
+    const selectedMembership = companyId
+      ? memberships?.find((m) => m.company_id === companyId) ?? null
+      : null;
+    if (companyId && !selectedMembership) {
       return NextResponse.json({ error: 'La entidad seleccionada no pertenece al cliente.' }, { status: 403 });
     }
-    const companyRaw = selectedMembership.company;
+
+    const companyRaw = selectedMembership?.company ?? null;
     const contractingCompany = Array.isArray(companyRaw) ? companyRaw[0] : companyRaw;
-    if (!contractingCompany) {
+    if (companyId && !contractingCompany) {
       return NextResponse.json({ error: 'No se pudo cargar la entidad seleccionada' }, { status: 500 });
     }
 
     const clientName = clientProfile.full_name ?? clientEmail.split('@')[0];
-    const contractingName = contractingCompany.razon_social ?? clientName;
-    const contractingTaxId = contractingCompany.cif_nif ?? null;
-    const contractingAddress = contractingCompany.ciudad
-      ? `${contractingCompany.direccion ?? ''}, ${contractingCompany.ciudad}`.trim().replace(/^,\s*/, '')
-      : contractingCompany.direccion ?? null;
+    const resolvedBillingScope = companyId ? 'company' : 'profile';
+    const contractingName = contractingCompany?.razon_social ?? clientName;
+    const contractingTaxId = contractingCompany?.cif_nif ?? clientProfile.tax_id ?? null;
+    const contractingAddress = contractingCompany
+      ? (contractingCompany.ciudad
+          ? `${contractingCompany.direccion ?? ''}, ${contractingCompany.ciudad}`.trim().replace(/^,\s*/, '')
+          : contractingCompany.direccion ?? null)
+      : (clientProfile.city
+          ? `${clientProfile.address ?? ''}, ${clientProfile.city}`.trim().replace(/^,\s*/, '')
+          : clientProfile.address ?? null);
 
     // Rows created below belong exclusively to this request and can be safely
     // compensated if Stripe/email setup fails before the quote is delivered.
@@ -105,7 +137,9 @@ export async function POST(request: NextRequest) {
       .insert({
         name: clientName,
         email: clientEmail,
-        client_type: contractingCompany.forma_juridica === 'autonomo' ? 'autonomo' : 'empresa',
+        client_type: contractingCompany
+          ? (contractingCompany.forma_juridica === 'autonomo' ? 'autonomo' : 'empresa')
+          : (clientProfile.client_type ?? 'particular'),
         category: 'presupuesto',
         service: title,
         state: 'converted'
@@ -162,7 +196,13 @@ export async function POST(request: NextRequest) {
             quantity: 1
           }
         ],
-        metadata: { quote_id: quote.id, company_id: companyId, product_type: 'presupuesto' },
+        metadata: {
+          quote_id: quote.id,
+          product_type: 'presupuesto',
+          billing_scope: resolvedBillingScope,
+          ...(serviceSlug ? { service_slug: serviceSlug } : {}),
+          ...(companyId ? { company_id: companyId } : {}),
+        },
         success_url: `${appUrl}/dashboard/expedientes?pago=ok`,
         cancel_url: `${appUrl}/dashboard?pago=cancelado`,
         expires_at: Math.floor(Date.now() / 1000) + expiresInDays * 86400
@@ -208,7 +248,7 @@ export async function POST(request: NextRequest) {
         to: clientEmail,
         eventType: 'quote.payment_link_sent',
         ...tpl,
-        metadata: { quote_id: quote.id, company_id: companyId, session_id: session.id },
+        metadata: { quote_id: quote.id, billing_scope: resolvedBillingScope, company_id: companyId, session_id: session.id },
         attachments: [
           {
             filename: `Contrato_EXPERT_${title.replace(/\s+/g, '_').slice(0, 40)}.html`,
@@ -256,19 +296,19 @@ export async function POST(request: NextRequest) {
       action: 'quote.sent',
       entity: 'quotes',
       entity_id: quote.id,
-      metadata: { client_email: clientEmail, company_id: companyId, amount_eur: amountEur, stripe_session: session.id }
+      metadata: { client_email: clientEmail, billing_scope: resolvedBillingScope, company_id: companyId, amount_eur: amountEur, stripe_session: session.id }
     }).then(() => {});
 
     syncQuoteAsEstimate({
       quoteId: quote.id,
       clientName: contractingName,
       clientEmail,
-      clientPhone: contractingCompany.telefono ?? null,
+      clientPhone: contractingCompany?.telefono ?? clientProfile.phone ?? null,
       title,
       amountEur,
     }).catch((e) => console.error('[admin/quotes] holded estimate sync:', e));
 
-    return NextResponse.json({ ok: true, quoteId: quote.id, stripeUrl: session.url, companyId });
+    return NextResponse.json({ ok: true, quoteId: quote.id, stripeUrl: session.url, companyId, billingScope: resolvedBillingScope });
   } catch (err) {
     console.error('[admin/quotes] error:', err);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });

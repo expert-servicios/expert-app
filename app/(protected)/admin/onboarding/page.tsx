@@ -13,7 +13,7 @@ import { ADMIN_CATALOG, type CatalogItem } from '@/lib/utils/admin-catalog';
 interface ClientForm {
   email: string;
   fullName: string;
-  entityType: 'empresa' | 'autonomo';
+  entityType: 'particular' | 'empresa' | 'autonomo';
   company: string;
   phone: string;
   taxId: string;
@@ -35,7 +35,7 @@ interface ServiceForm {
 const EMPTY_CLIENT: ClientForm = {
   email: '',
   fullName: '',
-  entityType: 'empresa',
+  entityType: 'particular',
   company: '',
   phone: '',
   taxId: '',
@@ -231,6 +231,10 @@ export default function AdminOnboardingPage() {
 
   async function handleStep1() {
     if (!client.email) { setError('El email es obligatorio.'); return; }
+    if (client.entityType === 'particular' && client.mode === 'admin_fill' && !client.fullName) {
+      setError('Indica el nombre de la persona.');
+      return;
+    }
     if (client.entityType === 'autonomo' && !client.fullName && !client.company) {
       setError('Indica el nombre del empresario individual.');
       return;
@@ -275,6 +279,10 @@ export default function AdminOnboardingPage() {
   async function handleStep2() {
     if (!service.title) { setError('Selecciona o escribe un servicio.'); return; }
     if (!service.amountEur || isNaN(Number(service.amountEur))) { setError('El importe debe ser un número.'); return; }
+    if (service.selectedItem?.category === 'plan' && !createdCompanyId) {
+      setError('Los planes mensuales y personalizados requieren una entidad fiscal vinculada. Vuelve al paso de cliente y selecciona autónomo o sociedad.');
+      return;
+    }
     setStep(2);
     setError('');
   }
@@ -289,6 +297,10 @@ export default function AdminOnboardingPage() {
       const isPlan = item?.mode === 'subscription';
 
       if (isPlan && item?.stripePriceEnvKey) {
+        if (!createdCompanyId) {
+          setError('Los planes mensuales requieren una entidad fiscal vinculada. Vuelve al paso de cliente y selecciona autónomo o sociedad.');
+          return;
+        }
         // Send subscription invite for the entity created/reused in step 1.
         const res = await fetch('/api/admin/subscriptions/send-link', {
           method: 'POST',
@@ -315,6 +327,9 @@ export default function AdminOnboardingPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             clientEmail: client.email,
+            companyId: createdCompanyId || undefined,
+            serviceSlug: item?.serviceSlug,
+            ...(item?.category === 'plan' ? { billingScope: 'company' as const } : {}),
             title: service.title,
             description: service.description,
             amountEur: Number(service.amountEur),
@@ -337,9 +352,11 @@ export default function AdminOnboardingPage() {
 
   if (step === 3 && result) {
     const isPlan = service.selectedItem?.mode === 'subscription';
-    const entityLabel = client.entityType === 'autonomo'
-      ? (client.company || client.fullName || 'Empresario individual')
-      : (client.company || 'Empresa');
+    const entityLabel = client.entityType === 'particular'
+      ? (client.fullName || 'Persona física')
+      : client.entityType === 'autonomo'
+        ? (client.company || client.fullName || 'Empresario individual')
+        : (client.company || 'Empresa');
 
     return (
       <main className="min-h-screen bg-[#f8f4eb]">
@@ -361,7 +378,7 @@ export default function AdminOnboardingPage() {
             <p className="font-semibold text-[#07111d]">{client.fullName || client.email}</p>
             <p className="text-[#29384a]">{entityLabel}</p>
             <p className="text-xs text-[#8a9aab]">
-              {client.entityType === 'autonomo' ? 'Empresario individual / autónomo' : 'Sociedad / entidad'}
+              {client.entityType === 'particular' ? 'Persona física' : client.entityType === 'autonomo' ? 'Empresario individual / autónomo' : 'Sociedad / entidad'}
             </p>
             <p className="mt-2 text-xs text-[#8a9aab]">
               Servicio: <span className="font-semibold text-[#07111d]">{service.title}</span>
@@ -423,7 +440,7 @@ export default function AdminOnboardingPage() {
             </button>
             <div>
               <h1 className="font-serif text-xl font-bold text-[#07111d]">Nuevo cliente — Onboarding</h1>
-              <p className="mt-0.5 text-xs text-[#8a9aab]">Alta manual + entidad fiscal + presupuesto + envío automático</p>
+              <p className="mt-0.5 text-xs text-[#8a9aab]">Alta de persona + entidad opcional + presupuesto + envío automático</p>
             </div>
           </div>
           <div className="mt-5">
@@ -479,11 +496,12 @@ export default function AdminOnboardingPage() {
               )}
 
               <div className="mt-5">
-                <p className="text-xs font-bold uppercase tracking-wide text-[#07111d]">Entidad que contrata</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-[#07111d]">Tipo de cliente</p>
                 <div className="mt-2 grid gap-3 sm:grid-cols-2">
                   {([
-                    { value: 'empresa', label: 'Sociedad / entidad', detail: 'S.L., S.A., asociación u otra persona jurídica', icon: Building2 },
+                    { value: 'particular', label: 'Persona física', detail: 'Cliente particular sin entidad empresarial', icon: User },
                     { value: 'autonomo', label: 'Empresario individual', detail: 'Autónomo / persona física con actividad económica', icon: User },
+                    { value: 'empresa', label: 'Sociedad / entidad', detail: 'S.L., S.A., asociación u otra persona jurídica', icon: Building2 },
                   ] as const).map(({ value, label, detail, icon: Icon }) => (
                     <button
                       key={value}
@@ -517,7 +535,7 @@ export default function AdminOnboardingPage() {
                   />
                 </FieldRow>
 
-                <FieldRow label="Nombre completo" required={client.mode === 'admin_fill' || client.entityType === 'autonomo'}>
+                <FieldRow label="Nombre completo" required={client.mode === 'admin_fill' || client.entityType !== 'empresa'}>
                   <input
                     type="text"
                     value={client.fullName}
@@ -527,7 +545,7 @@ export default function AdminOnboardingPage() {
                   />
                 </FieldRow>
 
-                <FieldRow label={client.entityType === 'autonomo' ? 'Nombre de actividad / nombre fiscal' : 'Empresa / Razón social'} required={client.entityType === 'empresa' && client.mode === 'admin_fill'}>
+                {client.entityType !== 'particular' && <FieldRow label={client.entityType === 'autonomo' ? 'Nombre de actividad / nombre fiscal' : 'Empresa / Razón social'} required={client.entityType === 'empresa' && client.mode === 'admin_fill'}>
                   <input
                     type="text"
                     value={client.company}
@@ -535,14 +553,14 @@ export default function AdminOnboardingPage() {
                     placeholder={client.entityType === 'autonomo' ? 'María García / nombre comercial' : 'Empresa Demo, S.L.'}
                     className={inputCls}
                   />
-                </FieldRow>
+                </FieldRow>}
 
-                <FieldRow label={client.entityType === 'autonomo' ? 'NIF / NIE' : 'CIF / NIF'}>
+                <FieldRow label={client.entityType === 'empresa' ? 'CIF / NIF' : 'NIF / NIE'}>
                   <input
                     type="text"
                     value={client.taxId}
                     onChange={(e) => setClientField('taxId', e.target.value)}
-                    placeholder={client.entityType === 'autonomo' ? '12345678Z' : 'B12345678'}
+                    placeholder={client.entityType === 'empresa' ? 'B12345678' : '12345678Z'}
                     className={inputCls}
                   />
                 </FieldRow>
@@ -616,7 +634,7 @@ export default function AdminOnboardingPage() {
                   )}
                 </p>
                 <p className="text-xs text-[#8a9aab]">
-                  {client.entityType === 'autonomo' ? 'Autónomo' : 'Empresa'} · {client.company || client.fullName || 'Entidad sin nombre'}
+                  {client.entityType === 'particular' ? 'Persona física' : client.entityType === 'autonomo' ? 'Autónomo' : 'Empresa'} · {client.company || client.fullName || 'Sin nombre'}
                 </p>
                 <p className="text-xs text-[#8a9aab]">{client.email}</p>
               </div>
@@ -729,7 +747,7 @@ export default function AdminOnboardingPage() {
                   <p className="text-xs font-bold uppercase tracking-wider text-[#8a9aab]">Cliente y entidad</p>
                   <p className="mt-1 font-semibold text-[#07111d]">{client.fullName || '—'}</p>
                   <p className="text-sm text-[#29384a]">{client.company || client.fullName || '—'}</p>
-                  <p className="text-xs text-[#8a9aab]">{client.entityType === 'autonomo' ? 'Empresario individual / autónomo' : 'Sociedad / entidad'}</p>
+                  <p className="text-xs text-[#8a9aab]">{client.entityType === 'particular' ? 'Persona física' : client.entityType === 'autonomo' ? 'Empresario individual / autónomo' : 'Sociedad / entidad'}</p>
                   {client.taxId && <p className="text-xs text-[#8a9aab]">NIF/CIF: {client.taxId}</p>}
                   <p className="text-sm text-[#29384a]">{client.email}</p>
                   {client.phone && <p className="text-xs text-[#8a9aab]">{client.phone}</p>}
