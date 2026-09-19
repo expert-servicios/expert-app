@@ -18,7 +18,7 @@ describe('Client 360 recurring operations', () => {
   const documentNotesRoute = source('app/api/cases/[id]/document-notes/route.ts');
   const documentReviewRoute = source('app/api/cases/[id]/document-review/route.ts');
   const checklistComponent = source('components/cases/CaseDocumentChecklist.tsx');
-  const documentWorkflowMigration = source('supabase/migrations/20260919060000_case_document_workflow.sql');
+  const documentWorkflowMigration = source('supabase/migrations/20260919071707_case_document_workflow.sql');
   const companyStripeMigration = historical('20260907175500_add_company_stripe_customer_mappings.sql');
 
   it('aggregates recurring operations from canonical sources without mutating them', () => {
