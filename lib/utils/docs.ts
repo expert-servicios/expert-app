@@ -1237,7 +1237,7 @@ Identifica a la organización (empresa, asociación, fundación, comunidad de pr
 
 1. **Solicitud**: tramitamos la solicitud en el sistema de Camerfirma.
 2. **Verificación de identidad**: presencial en nuestras instalaciones o por videoconferencia (eIDAS).
-3. **Emisión**: el certificado se genera en el momento (persona física) o en 24–48 horas (entidad).
+3. **Tramitación**: en los servicios EXPERT de persona física, entidad mercantil y pack, el plazo máximo es de 24 horas laborables desde que la documentación está completa y la identidad/facultades han quedado validadas.
 4. **Instalación**: te ayudamos a instalarlo y configurarlo en tu equipo.
 5. **Prueba**: verificamos que funciona correctamente antes de terminar.
 
@@ -1279,7 +1279,7 @@ Para la modalidad de persona física que tramita EXPERT conviene tener preparado
 
 ## Verificación de identidad
 
-La identificación puede realizarse según la modalidad y procedimiento habilitado para el certificado. Camerfirma dispone de procesos de identificación remota y presencial para distintos productos. EXPERT confirma el método aplicable antes de la emisión.
+En los servicios EXPERT incluidos en el catálogo de lanzamiento, la identificación y validación se realizan de forma remota dentro del proceso Camerfirma. No es necesario acudir físicamente a una oficina.
 
 ## Instalación
 
