@@ -436,8 +436,8 @@ export const SERVICES: Record<string, KiaServiceDef> = {
     stripePriceId: 'price_1TXMmQLeYwwgvux4ivP7Uhn8',
     docs: [
       'Pasaporte en vigor (todas las páginas)',
-      'Empadronamiento histórico (mínimo 3 años)',
-      'Contrato de trabajo firmado por empleador (vigente)',
+      'Pruebas de permanencia continuada (mínimo 2 años)',
+      'Vínculos familiares + medios económicos o informe de integración social',
       'Ausencia de antecedentes penales en España y país de origen',
     ],
   },
