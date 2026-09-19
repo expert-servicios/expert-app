@@ -24,12 +24,12 @@ const copy = {
     secondaryHref: julySiteCampaignLinks.holded,
   },
   certificado: {
-    eyebrow: 'Tramites online',
-    text: 'Certificado digital sin desplazamiento cuando el tramite admite verificacion remota.',
-    primaryLabel: 'Persona fisica',
-    primaryHref: julySiteCampaignLinks.certificadoPersonaFisica,
-    secondaryLabel: 'Entidad',
-    secondaryHref: julySiteCampaignLinks.certificadoEntidad,
+    eyebrow: 'Certificados 100 % online',
+    text: 'Persona fisica + entidad por 200 EUR + IVA. Sin presencia fisica y maximo 24 horas laborables desde expediente completo.',
+    primaryLabel: 'Pack 200 EUR',
+    primaryHref: julySiteCampaignLinks.certificadoPack,
+    secondaryLabel: 'Ver certificados',
+    secondaryHref: '/servicios/certificado-digital',
   },
 } as const;
 
