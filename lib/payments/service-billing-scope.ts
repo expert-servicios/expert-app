@@ -1,7 +1,40 @@
 export type ServiceBillingScope = 'profile' | 'company';
+export type ServiceBillingPolicy = 'profile_only' | 'company_only' | 'flexible';
 
-const PROFILE_BILLING_SERVICE_SLUGS = new Set([
+const PROFILE_ONLY_SERVICE_SLUGS = new Set([
+  // Personal taxes / procedures.
+  'irpf',
+  'arraigo-social',
+  'arraigo-familiar',
+  'arraigo-laboral',
+  'renovacion-residencia',
+  'nacionalidad-espanola',
   'nacionalidad-espanola-menor-nacido-en-espana',
+  'reagrupacion-familiar',
+  'permiso-residencia-inicial',
+
+  // The contracting person is the future entrepreneur/shareholder; the entity
+  // does not necessarily exist yet and must never be required to buy these.
+  'alta-autonomo',
+  'constitucion-sl',
+  'constitucion-sl-circe',
+  'nif-socio-extranjero',
+
+  // The certificate identifies the natural person, not a linked company.
+  'certificado-digital-persona-fisica',
+]);
+
+const COMPANY_ONLY_SERVICE_SLUGS = new Set([
+  // This product identifies an existing legal entity and therefore needs an
+  // explicit company record as the invoice/contracting scope.
+  'certificado-digital-entidad',
+
+  // Catalog services without direct checkout today. Keeping them here makes
+  // future checkout enablement fail safely instead of inheriting profile scope.
+  'impuesto-sociedades',
+  'cuentas-anuales',
+  'apoderamientos-mercantiles',
+  'certificado-digital-sin-animo-lucro',
 ]);
 
 export type ServiceBillingResolution =
@@ -10,32 +43,61 @@ export type ServiceBillingResolution =
   | { scope: 'company_required'; companyId: null }
   | { scope: 'mixed_billing_scope'; companyId: null };
 
+export function getServiceBillingPolicy(slug: string): ServiceBillingPolicy {
+  if (PROFILE_ONLY_SERVICE_SLUGS.has(slug)) return 'profile_only';
+  if (COMPANY_ONLY_SERVICE_SLUGS.has(slug)) return 'company_only';
+  return 'flexible';
+}
+
 export function resolveServiceBillingScope(input: {
   serviceSlugs: string[];
   explicitCompanyId?: string | null;
   activeCompanyId?: string | null;
   clientType?: string | null;
 }): ServiceBillingResolution {
-  const profileOnlyCount = input.serviceSlugs.filter((slug) => PROFILE_BILLING_SERVICE_SLUGS.has(slug)).length;
+  const policies = input.serviceSlugs.map(getServiceBillingPolicy);
+  const hasProfileOnly = policies.includes('profile_only');
+  const hasCompanyOnly = policies.includes('company_only');
+  const hasFlexible = policies.includes('flexible');
+  const companyId = input.explicitCompanyId ?? input.activeCompanyId ?? null;
 
-  // Do not combine a strictly personal legal procedure with other services in
-  // the same Stripe payment. They may have different invoice recipients.
-  if (profileOnlyCount > 0 && profileOnlyCount < input.serviceSlugs.length) {
+  // A personal legal/tax procedure cannot share an invoice recipient with a
+  // service that is obligatorily attached to a legal entity.
+  if (hasProfileOnly && hasCompanyOnly) {
     return { scope: 'mixed_billing_scope', companyId: null };
   }
 
-  // Personal legal/administrative procedures must stay billed to the person,
-  // even when that same profile also manages one or more companies in EXPERT.
-  if (profileOnlyCount > 0) {
+  // Flexible services follow an explicitly selected/active entity. Therefore a
+  // cart containing a strictly personal service plus a flexible service would
+  // have two invoice recipients when a company context is present.
+  if (hasProfileOnly && hasFlexible && (companyId || input.clientType === 'empresa')) {
+    return { scope: 'mixed_billing_scope', companyId: null };
+  }
+
+  // Strictly personal services stay on the natural-person profile even if that
+  // user also manages one or more companies in EXPERT.
+  if (hasProfileOnly) {
     return { scope: 'profile', companyId: null };
   }
 
-  const companyId = input.explicitCompanyId ?? input.activeCompanyId ?? null;
+  // Company-only services require an actual linked entity, never just a label
+  // on the user's personal profile.
+  if (hasCompanyOnly) {
+    return companyId
+      ? { scope: 'company', companyId }
+      : { scope: 'company_required', companyId: null };
+  }
+
+  // Flexible services (Holded, mixed tax/admin services, training, etc.) can be
+  // contracted by a natural person/autonomo or by a linked company. An autonomo
+  // remains a natural person and does not need a company record merely to pay.
   if (companyId) {
     return { scope: 'company', companyId };
   }
 
-  if (input.clientType === 'empresa' || input.clientType === 'autonomo') {
+  // A profile explicitly marked as "empresa" must select/create the entity that
+  // is going to be invoiced. This does not apply to autonomos.
+  if (input.clientType === 'empresa') {
     return { scope: 'company_required', companyId: null };
   }
 
