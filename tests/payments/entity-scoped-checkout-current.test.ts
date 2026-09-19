@@ -5,6 +5,7 @@ import { isCompanyBillingReady, missingCompanyBillingFields } from '@/lib/compan
 
 const serviceCheckout = readFileSync(resolve(process.cwd(), 'app/api/services/checkout/route.ts'), 'utf8');
 const subscriptionCheckout = readFileSync(resolve(process.cwd(), 'app/api/subscriptions/checkout/route.ts'), 'utf8');
+const adminQuotes = readFileSync(resolve(process.cwd(), 'app/api/admin/quotes/route.ts'), 'utf8');
 
 describe('entity-scoped contracting', () => {
   it('requires complete fiscal data on the selected company', () => {
@@ -27,6 +28,12 @@ describe('entity-scoped contracting', () => {
     expect(serviceCheckout).toContain("from('checkout_sessions').insert");
     expect(serviceCheckout).toContain('await stripe.checkout.sessions.expire(session.id)');
     expect(serviceCheckout).not.toContain("select('id,full_name,phone,email,stripe_customer_id,profile_completed')");
+  });
+
+  it('never inherits active company as a payment recipient', () => {
+    expect(serviceCheckout).not.toContain('profile.active_company_id');
+    expect(serviceCheckout).not.toContain('activeCompanyId:');
+    expect(adminQuotes).not.toContain('clientProfile.active_company_id');
   });
 
   it('validates subscription billing and duplicate subscription by company', () => {
