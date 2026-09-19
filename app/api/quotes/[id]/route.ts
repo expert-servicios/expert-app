@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getStripeClient } from '@/lib/integrations/stripe';
 import { sendEmail } from '@/lib/email/send';
 import { quoteResponded, quoteAcceptedAdmin } from '@/lib/email/templates';
 
@@ -48,7 +49,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // Fetch current quote state before update (for email triggers and immutable structured totals)
     const { data: currentQuote } = await adminSupabase
       .from('quotes')
-      .select('status,amount_eur,lead_id,client_id,expires_at')
+      .select('status,amount_eur,lead_id,client_id,expires_at,stripe_checkout_id')
       .eq('id', paramsData.id)
       .single();
 
@@ -79,10 +80,42 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
     }
 
+    const amountWillChange =
+      parseResult.data.amount_eur !== undefined &&
+      parseResult.data.amount_eur !== Number(currentQuote.amount_eur);
+    const expiryWillChange =
+      parseResult.data.expires_at !== undefined &&
+      parseResult.data.expires_at !== currentQuote.expires_at;
+    const statusWillInvalidate =
+      parseResult.data.status !== undefined &&
+      !['sent', 'accepted'].includes(parseResult.data.status);
+
+    if (
+      currentQuote.stripe_checkout_id &&
+      (amountWillChange || expiryWillChange || statusWillInvalidate)
+    ) {
+      try {
+        const stripe = getStripeClient();
+        const session = await stripe.checkout.sessions.retrieve(currentQuote.stripe_checkout_id);
+        if (session.status === 'open') {
+          await stripe.checkout.sessions.expire(currentQuote.stripe_checkout_id);
+        }
+      } catch (stripeError) {
+        console.error('Quote checkout invalidation failed:', stripeError);
+        return NextResponse.json({
+          error: 'No se pudo invalidar la sesión Stripe activa. Revisa el presupuesto antes de modificar sus condiciones.',
+          code: 'active_checkout_invalidation_failed'
+        }, { status: 409 });
+      }
+    }
+
     const updates: Record<string, unknown> = {};
     if (parseResult.data.amount_eur !== undefined) updates.amount_eur = parseResult.data.amount_eur;
     if (parseResult.data.status) updates.status = parseResult.data.status;
     if (parseResult.data.expires_at) updates.expires_at = parseResult.data.expires_at;
+    if (currentQuote.stripe_checkout_id && (amountWillChange || expiryWillChange || statusWillInvalidate)) {
+      updates.stripe_checkout_id = null;
+    }
 
     const { data: updatedQuote, error: updateError } = await adminSupabase
       .from('quotes')
