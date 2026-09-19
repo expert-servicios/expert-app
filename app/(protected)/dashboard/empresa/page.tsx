@@ -41,9 +41,10 @@ async function getData() {
 export default async function EmpresaPage({
   searchParams
 }: {
-  searchParams: Promise<{ created?: string; edit?: string }>
+  searchParams: Promise<{ created?: string; edit?: string; next?: string }>
 }) {
-  const { created, edit } = await searchParams;
+  const { created, edit, next } = await searchParams;
+  const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : undefined;
   const { companies, activeCompanyId } = await getData();
 
   const editingId = edit ?? activeCompanyId;
@@ -136,7 +137,7 @@ export default async function EmpresaPage({
                 <h1 className="mt-0.5 font-serif text-2xl font-bold text-[#07111d]">{editingCompany.razon_social}</h1>
               </div>
             </div>
-            <CompanyEditForm company={editingCompany} />
+            <CompanyEditForm company={editingCompany} returnPath={safeNext} />
           </div>
         )}
       </div>
