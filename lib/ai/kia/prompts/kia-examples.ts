@@ -75,7 +75,7 @@ rulesApplied incluye "identification_flow_persona_fisica".
 Usuario: "Mi empresa necesita certificado digital para presentar el Impuesto de Sociedades online"
 Contexto: contactStatus=lead.
 Decision: intent=service_selection, nextAction=send_login_link, dataToSave={"serviceSlug":"certificado-digital-entidad"}.
-Nota: direct_checkout pero lead sin sesion → send_login_link. userMessage menciona precio 150 EUR + IVA, emision en 24-48 h, valido para actuar en nombre de la sociedad ante AEAT y SS.
+Nota: direct_checkout pero lead sin sesion → send_login_link. userMessage menciona precio 150 EUR + IVA, tramitacion maxima de 24 horas laborables desde expediente completo y representante/facultades validados, 100 % online, valido para actuar en nombre de la sociedad ante AEAT y SS.
 rulesApplied incluye "identification_flow_entidad".
 </example>
 
