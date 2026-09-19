@@ -12,6 +12,14 @@ interface Review {
   status: 'pending' | 'approved' | 'rejected';
   published: boolean;
   featured: boolean;
+  comment_publishable: boolean;
+  moderation_status: 'pending' | 'approved' | 'hold_for_review' | 'comment_not_publishable';
+  moderation_reason: string | null;
+  moderated_by: 'kia' | 'human' | null;
+  moderation_policy_version: string | null;
+  moderation_model: string | null;
+  moderated_at: string | null;
+  human_override_reason: string | null;
   created_at: string;
   service_name: string | null;
   client_name: string | null;
