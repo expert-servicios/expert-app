@@ -1,19 +1,33 @@
-# Auditoría de alineación ES — páginas de servicios
+# Auditoría de alineación ES — servicios puntuales de gestión
 
 Estado: inventario operativo
 Fecha: 19/09/2026
 Referencia canónica: `nacionalidad-espanola-menor-nacido-en-espana`
 Epic relacionado: #360
 
+## Alcance
+
+Este bloque cubre exclusivamente **servicios puntuales de gestión/tramitación no relacionados con Holded y no formativos** que estén suficientemente definidos para llevarlos a producción con la plantilla canónica ES/RU.
+
+Quedan expresamente fuera:
+- todos los servicios Holded, sin excepción;
+- todas las formaciones, cursos, sesiones formativas y productos Academy;
+- planes y suscripciones mensuales;
+- cualquier producto que use otra arquitectura comercial o plantilla.
+
+Holded y Formación tendrán roadmaps y plantillas propios.
+
+La existencia de un CTA de «Hazlo por tu cuenta» dentro de una página de gestión no convierte esa formación en parte de este bloque: el CTA puede enlazar al producto formativo correspondiente, pero la página y el producto de formación se trabajan en su plantilla específica.
+
 ## Objetivo
 
-Revisar todas las páginas españolas de servicios para que evolucionen hacia el mismo patrón funcional y comercial de la referencia canónica antes de sincronizar cada servicio con ruso.
+Revisar las páginas españolas de servicios puntuales incluidas en alcance para que sigan el mismo patrón funcional y comercial de la referencia canónica antes de sincronizar cada servicio con ruso.
 
 La auditoría no autoriza a inventar precios, alcance, requisitos ni documentación. Los servicios con datos comerciales o jurídicos pendientes deben seguir en `needs-review` o `blocked`.
 
-## Hallazgo estructural
+## Patrón técnico
 
-La mayoría de servicios ES usa:
+La mayoría de servicios puntuales ES usa:
 
 `app/(public)/servicios/[categoria]/[servicio]/page.tsx`
 
@@ -23,7 +37,7 @@ La plantilla genérica ya soporta:
 - hero;
 - checkout directo o presupuesto;
 - caso complejo;
-- formación one to one;
+- enlace a opción formativa cuando proceda;
 - reunión gratuita;
 - descripción;
 - puntos clave;
@@ -34,61 +48,35 @@ La plantilla genérica ya soporta:
 - no incluido;
 - revisión previa;
 - modalidades;
-- bloque «Elegir vía»;
+- bloque de decisión;
 - artículos y guías;
 - CTA final;
 - sidebar sticky.
 
-Por tanto, para estos servicios el principal hueco no es de layout: es la falta de contenido estructurado en `lib/utils/catalog.ts`.
+Por tanto, en la mayoría de servicios el principal hueco no es de layout, sino de contenido estructurado y validación comercial/normativa.
 
-Holded tiene además landings dedicadas fuera de la plantilla genérica y debe revisarse página por página.
-
-## Estado por bloques
-
-### Referencia completa
+## Producción cerrada / referencia
 
 - `nacionalidad-espanola-menor-nacido-en-espana`
-
-No requiere rehacer. Se usa como control de calidad.
-
-### Casi alineados
-
 - `certificado-digital-persona-fisica`
 - `certificado-digital-entidad`
-- `arraigo-social`
-- `arraigo-familiar`
-- `arraigo-laboral`
-- `renovacion-residencia`
-- `nacionalidad-espanola`
-- `reagrupacion-familiar`
 
-Acción:
-- completar únicamente campos faltantes;
-- validar normativa antes de tocar extranjería;
-- no alterar precios o checkout sin preflight.
+Nacionalidad de menor se mantiene como referencia canónica. Los dos certificados quedan en fase de cierre de QA de producción ES/RU.
 
-### Servicios puntuales Holded incluidos en este bloque
+## Candidatos no-Holded y no-formación más maduros
 
-- `holded-pack-starter`
-- `holded-modulo-formacion`
+Por completitud actual del catálogo, los siguientes candidatos a auditar son:
 
-Se tratan como servicios puntuales, no como migración ni suscripción. Antes de RU:
-- alinear las cuatro vías comerciales cuando procedan;
-- completar audiencia, requisitos, documentación, proceso y límites;
-- usar una única fuente económica;
-- completar JSON-LD de Service y FAQ;
-- mantener paridad entre landing, catálogo y checkout.
+1. `arraigo-social`
+2. `arraigo-familiar`
+3. `arraigo-laboral`
+4. `renovacion-residencia`
+5. `nacionalidad-espanola`
+6. `reagrupacion-familiar`
 
-### Fuera de alcance de esta plantilla
+Antes de promover cualquiera a `production-ready` se debe verificar normativa, alcance, documentación, precio, billing y checkout vigentes.
 
-- `holded-migracion-sin-inventario`
-- `holded-migracion-con-inventario`
-- `holded-migracion-laboral`
-- planes y suscripciones mensuales EXPERT
-
-Estos productos siguen otra lógica operativa y comercial y tendrán una auditoría específica separada.
-
-### Needs-review
+## Needs-review
 
 - `irpf`
 - `modelo-720`
@@ -100,13 +88,10 @@ Estos productos siguen otra lógica operativa y comercial y tendrán una auditor
 - `permiso-residencia-inicial`
 - `alta-autonomo`
 - `constitucion-sl`
-- `holded-modulo-laboral`
-- `holded-integraciones-api`
-- `formacion-holded`
 
 No completar por mera redacción: primero validar alcance, precio y vigencia.
 
-### Blocked / variable
+## Blocked / variable
 
 - `modelo-151`
 - `no-residentes`
@@ -130,27 +115,21 @@ No completar por mera redacción: primero validar alcance, precio y vigencia.
 - `donacion`
 - `hipoteca-cancelacion`
 - `certificado-digital-sin-animo-lucro`
-- `formacion-fiscal-contable`
-- `formacion-laboral-rrhh`
-- `formacion-administraciones-publicas`
-- `formacion-alta-autonomo-sl`
-- `formacion-planificacion-fiscal`
 
-## Orden de corrección ES — bloque de producción puntual
+Los servicios formativos no aparecen en `needs-review` ni `blocked` porque están **fuera de alcance**, no pendientes dentro de esta plantilla.
 
-1. Certificado digital persona física.
-2. Certificado digital de entidad.
-3. Pack Starter Holded.
-4. Módulo Formación Holded.
-5. Auditar y promover a la cola el siguiente servicio puntual más maduro.
-6. `needs-review` entra solo después de validar contenido.
-7. `blocked` entra solo cuando se cierre previamente su alcance comercial/funcional.
+## Orden de trabajo
 
-Migraciones Holded y suscripciones mensuales no forman parte de este orden.
+1. Cerrar QA de Certificado digital persona física.
+2. Cerrar QA de Certificado digital de entidad.
+3. Auditar `arraigo-social` como siguiente candidato por ser la ficha no-Holded/no-formación actualmente más completa.
+4. Si supera validación jurídica/comercial, llevarlo a 100 % ES y después RU.
+5. Continuar con el siguiente candidato más maduro.
+6. No incorporar Holded ni Formación a esta cola.
 
-## Regla de cierre de un servicio ES
+## Regla de cierre de un servicio
 
-Un servicio solo puede marcarse «alineado» cuando:
+Un servicio solo puede marcarse `production-ready` cuando:
 - precio y flujo están confirmados;
 - billing persona/empresa está confirmado;
 - metadata está completa;
@@ -159,21 +138,21 @@ Un servicio solo puede marcarse «alineado» cuando:
 - proceso está descrito;
 - incluidos y no incluidos están claros;
 - existe CTA de caso complejo cuando procede;
-- existe opción formativa cuando aporta valor;
-- existe reunión informativa;
+- el enlace a formación, si se ofrece, apunta al flujo formativo separado;
+- existe reunión informativa cuando aporta valor;
 - checkout o presupuesto apunta al flujo correcto;
 - JSON-LD no duplica manualmente datos económicos que puedan derivarse;
 - artículos/docs relacionados se usan cuando existen;
 - si existe RU, ambos idiomas comparten lógica económica y tienen hreflang recíproco;
-- tests y CI están verdes.
+- tests, CI y preview están verdes.
 
 ## Primera corrección aplicada
 
-Para los dos certificados `stable`:
-- se añade aviso ES explícito de alcance de facturación;
-- persona física queda vinculada al perfil de la persona titular;
-- entidad queda vinculada a la organización;
-- se añaden hreflang recíprocos ES/RU en la página genérica;
-- se añaden tests de regresión.
+Para los dos certificados:
+- aviso ES explícito de alcance de facturación;
+- persona física vinculada al perfil de la persona titular;
+- entidad vinculada a la organización;
+- hreflang recíproco ES/RU;
+- tests de regresión.
 
-Siguiente bloque: Pack Starter Holded. Las migraciones Holded y las suscripciones mensuales quedan expresamente fuera de esta plantilla.
+Siguiente candidato: `arraigo-social`, sujeto a validación normativa y comercial previa.
