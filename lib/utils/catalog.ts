@@ -1024,8 +1024,6 @@ export const services: Service[] = [
     ]
   },
   {
-    // TODO(stripe): stripePriceId es un identificador sintético — sustituir por un
-    // price_id real de Stripe (o confirmar que no hace falta) antes de activar en producción.
     slug: 'nif-socio-extranjero',
     categoria: 'empresas-autonomos',
     name: 'NIF para Socio Extranjero',
@@ -1034,7 +1032,6 @@ export const services: Service[] = [
       'Tramitamos el Número de Identificación Fiscal (NIF) para socios, administradores o apoderados extranjeros que van a participar en una sociedad española y no disponen de NIE. Necesario para poder constituir la sociedad, firmar ante notario y figurar en el Registro Mercantil.',
     price: '60 € + IVA / persona',
     servicePriceDetail: 'Precio por cada socio o administrador que necesite NIF.',
-    stripePriceId: 'price_circe_nif_socio_extranjero',
     duration: '5–10 días hábiles',
     includes: [
       'Cumplimentación del Modelo 030 / EX-15',
@@ -1047,7 +1044,7 @@ export const services: Service[] = [
       'Poder de representación si no se tramita en persona'
     ],
     faqs: [
-      { q: '¿Cuántos NIF necesito tramitar?', a: 'Uno por cada socio o administrador extranjero sin NIE que vaya a figurar en la escritura de constitución. Puedes añadir varias unidades en el carrito, una por persona.' },
+      { q: '¿Cuántos NIF necesito tramitar?', a: 'Uno por cada socio o administrador extranjero sin NIE que vaya a figurar en la escritura de constitución. El presupuesto se calcula por persona según la cantidad necesaria.' },
       { q: '¿El NIF sustituye al NIE?', a: 'No. El NIF es exclusivamente a efectos fiscales para poder constituir la sociedad; si el socio va a residir en España necesitará tramitar además su NIE/TIE.' }
     ]
   },
