@@ -67,34 +67,26 @@ Acción:
 - validar normativa antes de tocar extranjería;
 - no alterar precios o checkout sin preflight.
 
-### Stable con landing dedicada Holded
+### Servicios puntuales Holded incluidos en este bloque
 
 - `holded-pack-starter`
-- `holded-migracion-sin-inventario`
-- `holded-migracion-con-inventario`
-
-Las páginas ES ya tienen bastante contenido propio, pero no siguen exactamente la plantilla canónica. Hay que unificar:
-- cuatro vías comerciales;
-- caso complejo;
-- «hazlo por tu cuenta»;
-- reunión gratuita;
-- fuente económica única desde catálogo;
-- JSON-LD de Service además de FAQ;
-- paridad de contenido entre landing y catálogo;
-- hreflang cuando exista RU.
-
-### Stable con ficha todavía incompleta
-
-- `holded-migracion-laboral`
 - `holded-modulo-formacion`
 
-Antes de RU:
-- completar audiencia;
-- requisitos;
-- documentación;
-- proceso;
-- CTA final;
-- mantener migración laboral como `quote-only` con mínimo 5 empleados.
+Se tratan como servicios puntuales, no como migración ni suscripción. Antes de RU:
+- alinear las cuatro vías comerciales cuando procedan;
+- completar audiencia, requisitos, documentación, proceso y límites;
+- usar una única fuente económica;
+- completar JSON-LD de Service y FAQ;
+- mantener paridad entre landing, catálogo y checkout.
+
+### Fuera de alcance de esta plantilla
+
+- `holded-migracion-sin-inventario`
+- `holded-migracion-con-inventario`
+- `holded-migracion-laboral`
+- planes y suscripciones mensuales EXPERT
+
+Estos productos siguen otra lógica operativa y comercial y tendrán una auditoría específica separada.
 
 ### Needs-review
 
@@ -144,17 +136,17 @@ No completar por mera redacción: primero validar alcance, precio y vigencia.
 - `formacion-alta-autonomo-sl`
 - `formacion-planificacion-fiscal`
 
-## Orden de corrección ES
+## Orden de corrección ES — bloque de producción puntual
 
 1. Certificado digital persona física.
 2. Certificado digital de entidad.
 3. Pack Starter Holded.
-4. Migración Holded sin inventario.
-5. Migración Holded con inventario.
-6. Migración laboral Holded.
-7. Módulo Formación Holded.
-8. Después, `needs-review` uno a uno tras validar contenido.
-9. `blocked` solo cuando se cierre previamente su alcance comercial/funcional.
+4. Módulo Formación Holded.
+5. Auditar y promover a la cola el siguiente servicio puntual más maduro.
+6. `needs-review` entra solo después de validar contenido.
+7. `blocked` entra solo cuando se cierre previamente su alcance comercial/funcional.
+
+Migraciones Holded y suscripciones mensuales no forman parte de este orden.
 
 ## Regla de cierre de un servicio ES
 
@@ -184,4 +176,4 @@ Para los dos certificados `stable`:
 - se añaden hreflang recíprocos ES/RU en la página genérica;
 - se añaden tests de regresión.
 
-Siguiente bloque: Pack Starter Holded.
+Siguiente bloque: Pack Starter Holded. Las migraciones Holded y las suscripciones mensuales quedan expresamente fuera de esta plantilla.
