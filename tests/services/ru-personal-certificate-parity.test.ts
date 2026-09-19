@@ -40,5 +40,8 @@ describe('RU personal digital certificate parity', () => {
     expect(ru).toContain('Установка и настройка сертификата на вашем компьютере.');
     expect(ru).toContain('Техническая поддержка по вопросам сертификата в течение 30 дней.');
     expect(ru).toContain('Продление сертификата после окончания срока действия — оформляется отдельно.');
+    expect(ru).toContain('срок действия 5 лет');
+    expect(ru).toContain('/docs/certificado-digital-persona-fisica-documentacion-instalacion');
+    expect(ru).toContain('/docs/certificado-digital-persona-fisica-seguridad-copia-renovacion');
   });
 });
