@@ -1353,7 +1353,7 @@ export const services: Service[] = [
     metaDescription: 'Certificado digital Camerfirma para persona física por 90 € + IVA. 100 % online, sin presencia física. Identificación con EXPERT y tramitación máxima de 24 horas laborables.',
     keyPoints: [
       { title: 'Reconocido oficialmente', text: 'Válido ante AEAT, Seguridad Social, Notarías y todos los organismos públicos y privados.' },
-      { title: '100 % online', text: 'Identificación y tramitación remotas con EXPERT como Punto de Registro Autorizado, sin presencia física.' },
+      { title: '100 % online', text: 'Identificación y tramitación remotas con EXPERT a través del canal PVP de Creative Quality dentro del proceso Camerfirma, sin presencia física.' },
       { title: 'Vigencia 5 años', text: 'La modalidad de persona física comercializada por EXPERT tiene una vigencia de 5 años.' },
       { title: 'Instalación incluida', text: 'Te ayudamos a instalarlo y probarlo en tu equipo para que funcione desde el primer minuto.' },
     ],
@@ -1513,7 +1513,7 @@ export const services: Service[] = [
     metaDescription: 'Oferta certificado digital persona física + entidad mercantil por 200 € + IVA. 100 % online, sin presencia física y tramitación máxima de 24 horas laborables con EXPERT.',
     keyPoints: [
       { title: 'Ahorro de 40 €', text: 'Contratados por separado suman 240 € + IVA. Con el pack pagas 200 € + IVA.' },
-      { title: '100 % online', text: 'Identificación, validación documental y tramitación remotas con EXPERT como Punto de Registro Autorizado.' },
+      { title: '100 % online', text: 'Identificación, validación documental y tramitación remotas con EXPERT a través del canal PVP de Creative Quality dentro del proceso Camerfirma.' },
       { title: 'Dos certificados, un pedido', text: 'Incluye el certificado personal del representante y el certificado de la entidad mercantil seleccionada.' },
       { title: 'Máximo 24 h laborables', text: 'El plazo comienza cuando EXPERT dispone de toda la documentación y ha validado identidad y facultades de representación.' },
     ],
@@ -1598,7 +1598,7 @@ export const services: Service[] = [
     description:
       'Las entidades sin ánimo de lucro (asociaciones, fundaciones, ONG, comunidades religiosas…) también tienen obligaciones digitales ante la AEAT, la Seguridad Social y otros organismos. EXPERT tramita el certificado digital de entidad adaptado a estas organizaciones dentro del proceso Camerfirma, con validación online del representante y un plazo máximo de 24 horas laborables desde expediente completo y facultades validadas.',
     price: '150 € + IVA',
-    duration: '24–48 h desde la verificación',
+    duration: 'Máximo 24 horas laborables desde expediente completo y representante/facultades validados',
     includes: [
       'Verificación documental de la entidad y del representante legal',
       'Emisión del certificado digital de entidad sin ánimo de lucro Camerfirma',
@@ -1608,7 +1608,7 @@ export const services: Service[] = [
     ],
     faqs: [
       { q: '¿Qué documentación necesita una asociación para el certificado digital?', a: 'Estatutos de la asociación, acta de nombramiento del representante legal o presidente en vigor, y DNI/NIE de dicha persona.' },
-      { q: '¿Cuánto tarda?', a: '24–48 horas desde que verificamos la documentación y la identidad del representante legal.' },
+      { q: '¿Cuánto tarda?', a: 'Máximo 24 horas laborables desde que el expediente está completo y la identidad y facultades del representante han quedado validadas.' },
     ],
   },
 
