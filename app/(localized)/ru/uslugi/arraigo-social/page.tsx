@@ -15,7 +15,11 @@ const service = (() => {
   if (!canonical?.stripePriceId || !canonical.price) {
     throw new Error('Canonical arraigo social service is not configured for checkout.');
   }
-  return canonical;
+  return {
+    ...canonical,
+    price: canonical.price,
+    stripePriceId: canonical.stripePriceId,
+  };
 })();
 
 const OFFER_PRICE =
