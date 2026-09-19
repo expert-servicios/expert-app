@@ -1217,7 +1217,7 @@ Identifica a la organización (empresa, asociación, fundación, comunidad de pr
 | Identifica a | El individuo | La organización |
 | Firma en nombre de | Sí mismo | La entidad |
 | Documentación | DNI/NIE | CIF + escrituras + DNI del representante |
-| Tiempo de emisión | Inmediato | 24–48 h |
+| Tiempo de tramitación EXPERT | Máximo 24 h laborables desde documentación e identidad validadas | Máximo 24 h laborables desde expediente completo y representante/facultades validados |
 | Precio | 90 € | 150 € |
 
 ## Documentación necesaria
@@ -1236,7 +1236,7 @@ Identifica a la organización (empresa, asociación, fundación, comunidad de pr
 ## Proceso de obtención
 
 1. **Solicitud**: tramitamos la solicitud en el sistema de Camerfirma.
-2. **Verificación de identidad**: presencial en nuestras instalaciones o por videoconferencia (eIDAS).
+2. **Verificación de identidad**: online en nuestras instalaciones o por videoconferencia (eIDAS).
 3. **Tramitación**: en los servicios EXPERT de persona física, entidad mercantil y pack, el plazo máximo es de 24 horas laborables desde que la documentación está completa y la identidad/facultades han quedado validadas.
 4. **Instalación**: te ayudamos a instalarlo y configurarlo en tu equipo.
 5. **Prueba**: verificamos que funciona correctamente antes de terminar.
