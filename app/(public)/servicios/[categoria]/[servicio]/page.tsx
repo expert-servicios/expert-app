@@ -403,6 +403,63 @@ export default async function ServicioDetallePage({
               </div>
             ) : null}
 
+            {service.deliveryOptions && service.deliveryOptions.length > 0 && (
+              <section className="border border-[#D4A017]/30 bg-white p-6 md:p-7">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Modalidades disponibles</p>
+                <h2 className="mt-3 font-serif text-2xl font-bold text-[#0D1B2A]">Elige cómo quieres realizar el servicio</h2>
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  {service.deliveryOptions.map((option) => {
+                    const optionHref = option.mode === 'guided'
+                      ? `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&origen=${encodedServiceSlug}&modalidad=guided`
+                      : `${budgetHref}&modalidad=full_service`;
+                    return (
+                      <div key={option.mode} className="border border-[#D4A017]/25 bg-[#F8F6F1] p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">{option.label}</p>
+                            <h3 className="mt-2 font-serif text-xl font-bold text-[#0D1B2A]">{option.price}</h3>
+                          </div>
+                          {option.mode === 'guided'
+                            ? <GraduationCap className="h-6 w-6 shrink-0 text-[#D4A017]" />
+                            : <CheckCircle2 className="h-6 w-6 shrink-0 text-[#D4A017]" />}
+                        </div>
+                        <p className="mt-3 text-sm leading-6 text-[#23364D]">{option.description}</p>
+                        {option.duration && <p className="mt-2 text-xs font-semibold text-[#23364D]/70">{option.duration}</p>}
+                        <ul className="mt-4 space-y-2">
+                          {option.includes.map((item) => (
+                            <li key={item} className="flex items-start gap-2 text-sm leading-5 text-[#23364D]">
+                              <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A017]" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        {option.notIncluded && option.notIncluded.length > 0 && (
+                          <div className="mt-4 border-t border-[#D4A017]/20 pt-3">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">No incluido</p>
+                            <ul className="mt-2 space-y-1.5">
+                              {option.notIncluded.map((item) => (
+                                <li key={item} className="text-xs leading-5 text-[#6B7280]">• {item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        <Link
+                          href={optionHref}
+                          className="mt-5 inline-flex min-h-11 items-center justify-center bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+                        >
+                          {option.mode === 'guided' ? 'Solicitar formación guiada' : 'Solicitar servicio completo'}
+                        </Link>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="mt-4 text-xs leading-5 text-[#6B7280]">
+                  Estas modalidades se solicitan primero como presupuesto. El pago online se activará cuando exista una configuración Stripe real y validada para cada modalidad.
+                </p>
+              </section>
+            )}
+
+            {!service.deliveryOptions?.length && (
             <section className="bg-[#0D1B2A] p-6 text-white md:p-7">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Elegir vía</p>
               <h2 className="mt-3 font-serif text-2xl font-bold">Servicio completo, presupuesto complejo, formación o reunión gratuita</h2>
@@ -451,6 +508,7 @@ export default async function ServicioDetallePage({
                 </div>
               </div>
             </section>
+            )}
 
             {relatedArticles.length > 0 && (
               <div className="border border-[#D4A017]/20 bg-white p-6">

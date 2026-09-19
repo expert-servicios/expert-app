@@ -47,6 +47,20 @@ export type PublicCategorySlug = (typeof categories)[number]['slug'];
 export type HiddenCategorySlug = 'formacion';
 export type CategorySlug = PublicCategorySlug | HiddenCategorySlug;
 
+export type ServiceDeliveryMode = 'full_service' | 'guided';
+
+export type ServiceDeliveryOption = {
+  mode: ServiceDeliveryMode;
+  label: string;
+  description: string;
+  price: string;
+  duration?: string;
+  stripePriceId?: string;
+  checkoutLabel?: string;
+  includes: string[];
+  notIncluded?: string[];
+};
+
 export type Service = {
   slug: string;
   categoria: CategorySlug;
@@ -62,6 +76,7 @@ export type Service = {
   stripePriceId?: string;
   checkoutLabel?: string;
   checkoutLegal?: string;
+  deliveryOptions?: ServiceDeliveryOption[];
   audience?: string[];
   requirements?: string[];
   keyPoints?: { title: string; text: string }[];
@@ -945,33 +960,67 @@ export const services: Service[] = [
     ]
   },
   {
-    // TODO(stripe): stripePriceId es un identificador sintético — sustituir por un
-    // price_id real de Stripe (o confirmar que no hace falta, ver lib/integrations/service-checkout.ts,
-    // que usa price_data dinámico y solo necesita una clave única) antes de activar en producción.
     slug: 'constitucion-sl-circe',
     categoria: 'empresas-autonomos',
     name: 'Constitución de SL por CIRCE',
-    shortDescription: 'Constitución telemática de Sociedad Limitada a través del sistema CIRCE, más rápida y económica.',
+    shortDescription: 'Constitución telemática de Sociedad Limitada a través del sistema CIRCE, con opción de gestión completa o acompañamiento guiado.',
     description:
-      'Constituimos tu Sociedad Limitada mediante el sistema CIRCE (Centro de Información y Red de Creación de Empresas): tramitación 100% telemática con el Documento Único Electrónico (DUE), denominación social, estatutos tipo, notaría y alta fiscal coordinados en un único circuito. Es la vía más rápida y económica para socios que puedan acogerse a estatutos estandarizados.',
-    price: '180 € + IVA',
-    stripePriceId: 'price_circe_sl_constitucion',
-    duration: '3–7 días hábiles',
+      'Puedes contratar la constitución completa de tu Sociedad Limitada mediante CIRCE o elegir una sesión guiada para preparar el proceso por tu cuenta. En la gestión completa coordinamos el DUE, denominación social, estatutos tipo, notaría, inscripción registral y alta fiscal. La modalidad guiada es formativa y no incluye la presentación ni ejecución del trámite por EXPERT.',
+    price: 'Desde 180 € + IVA',
+    duration: 'Gestión completa: 3–7 días hábiles · Formación guiada: 2 horas',
+    deliveryOptions: [
+      {
+        mode: 'full_service',
+        label: 'Servicio completo',
+        description: 'EXPERT gestiona la constitución por CIRCE de principio a fin.',
+        price: '499 € + IVA',
+        duration: '3–7 días hábiles',
+        includes: [
+          'Revisión de viabilidad para CIRCE y estatutos tipo',
+          'Certificado de denominación social',
+          'Documento Único Electrónico (DUE)',
+          'Coordinación con notaría adherida a CIRCE',
+          'Inscripción en Registro Mercantil',
+          'Alta fiscal y obtención del NIF definitivo'
+        ],
+        notIncluded: [
+          'Aranceles notariales y registrales',
+          'Certificados o trámites personales de socios extranjeros',
+          'Pactos de socios o estatutos a medida'
+        ]
+      },
+      {
+        mode: 'guided',
+        label: 'Formación guiada',
+        description: 'Sesión práctica individual para preparar el trámite CIRCE por tu cuenta con apoyo profesional.',
+        price: '180 € + IVA',
+        duration: '2 horas',
+        includes: [
+          'Sesión one to one de 2 horas',
+          'Checklist personalizado',
+          'Revisión guiada de datos y documentación',
+          'Explicación paso a paso del circuito CIRCE',
+          'Resolución de dudas durante la sesión'
+        ],
+        notIncluded: [
+          'Presentación del DUE por EXPERT',
+          'Gestión de notaría o Registro Mercantil',
+          'Seguimiento posterior del expediente'
+        ]
+      }
+    ],
     includes: [
-      'Certificado de denominación social (BORME)',
-      'Documento Único Electrónico (DUE) vía CIRCE',
-      'Estatutos sociales tipo (modelo estandarizado)',
-      'Coordinación con notaría adherida al sistema CIRCE',
-      'Inscripción en Registro Mercantil',
-      'Alta fiscal en Hacienda (Modelo 036) y obtención del CIF definitivo'
+      'Modalidad a elegir: gestión completa o acompañamiento guiado',
+      'Revisión previa de requisitos para CIRCE',
+      'Orientación sobre documentación y pasos necesarios'
     ],
     requirements: [
       'Todos los socios deben aportar DNI/NIE en vigor',
-      'Aplica solo a sociedades que puedan usar estatutos tipo (sin pactos parasociales complejos)'
+      'La vía CIRCE con estatutos tipo no es adecuada para estructuras societarias complejas'
     ],
     faqs: [
-      { q: '¿En qué se diferencia de la constitución de SL estándar?', a: 'CIRCE usa un circuito telemático con estatutos tipo, por lo que es más rápido y económico. Si necesitas estatutos a medida o pactos de socios complejos, la vía estándar es más adecuada.' },
-      { q: '¿Puedo usar CIRCE si hay socios extranjeros?', a: 'Sí, siempre que dispongan de NIE. Si algún socio aún no tiene NIF/NIE, puedes contratar también el servicio de "NIF para socio extranjero".' }
+      { q: '¿Qué diferencia hay entre las dos modalidades?', a: 'En el servicio completo EXPERT realiza y coordina el trámite. En la formación guiada te enseñamos a prepararlo y gestionarlo por tu cuenta; no presentamos el expediente en tu nombre.' },
+      { q: '¿Puedo usar CIRCE si hay socios extranjeros?', a: 'Sí, siempre que dispongan de la identificación fiscal necesaria. Si algún socio no dispone de NIF/NIE, ese trámite debe resolverse previamente.' }
     ]
   },
   {
