@@ -196,32 +196,19 @@ function DocField({
 
 function ResultView({
   response,
+  serviceSlug,
   onClose
 }: {
   response: ViabilityResponse;
+  serviceSlug: string;
   onClose: () => void;
 }) {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (!response.stripePriceId) return;
     setCheckoutLoading(true);
-    setCheckoutError(null);
-    try {
-      const res = await fetch('/api/services/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId: response.stripePriceId })
-      });
-      const data = await res.json() as { url?: string; error?: string };
-      if (data.url) { window.location.href = data.url; return; }
-      setCheckoutError(data.error ?? 'No se pudo iniciar el pago.');
-    } catch {
-      setCheckoutError('No se pudo conectar con el servidor.');
-    } finally {
-      setCheckoutLoading(false);
-    }
+    window.location.href = `/contratar?service=${encodeURIComponent(serviceSlug)}&source=viability`;
   };
 
   const config = {
@@ -314,9 +301,7 @@ function ResultView({
               )}
               {checkoutLoading ? 'Redirigiendo…' : 'Contratar ahora'}
             </button>
-            {checkoutError && (
-              <p className="text-xs text-red-400 text-center">{checkoutError}</p>
-            )}
+
           </>
         )}
         {(response.escalate || response.result === 'no_viable') && (
@@ -608,6 +593,7 @@ export function ViabilityModal({ check, serviceSlug, onClose }: ViabilityModalPr
           {step === 'result' && result && (
             <ResultView
               response={result}
+              serviceSlug={serviceSlug}
               onClose={onClose}
             />
           )}
