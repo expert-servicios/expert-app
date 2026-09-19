@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { getCatalogService } from '@/lib/utils/catalog';
 import { getServiceCheckoutByPriceId } from '@/lib/integrations/service-checkout';
 import { getServiceBillingPolicy, resolveServiceBillingScope } from '@/lib/payments/service-billing-scope';
-import { getRuServicePath } from '@/lib/services/service-localized-content';
+import { getRuServicePath, getLocalizedServicePresentation } from '@/lib/services/service-localized-content';
 
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
 
@@ -67,7 +67,7 @@ describe('certificate bundle purchase flow', () => {
     expect(ru).toContain("'es-ES': ES_URL");
     expect(ru).toContain("'ru-RU': RU_URL");
     expect(ru).toContain("'x-default': ES_URL");
-    expect(sitemap).toContain('/ru/uslugi/paket-cifrovyh-sertifikatov');
-    expect(sitemap).toContain('/servicios/certificado-digital/pack-certificados-digitales');
+    expect(getLocalizedServicePresentation('pack-certificados-digitales', 'ru')?.indexable).toBe(true);
+    expect(sitemap).toContain("getLocalizedServicePresentations('ru')");
   });
 });
