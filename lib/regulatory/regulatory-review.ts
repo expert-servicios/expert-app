@@ -215,6 +215,14 @@ async function classifyOne(change: ChangeRow) {
       return null;
     });
 
+    if (pullRequest?.url || pullRequest?.number) {
+      await admin.from('regulatory_changes').update({
+        status: 'proposal_ready',
+        proposal_pr_number: pullRequest.number ?? null,
+        proposal_pr_url: pullRequest.url ?? null,
+      }).eq('id', change.id);
+    }
+
     await notifyAdminsTelegram([
       '<b>KIA Regulatory Pulse</b>',
       `Severidad: <b>${escapeTelegramHtml(parsed.severity.toUpperCase())}</b>`,
