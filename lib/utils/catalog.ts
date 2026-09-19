@@ -1353,7 +1353,7 @@ export const services: Service[] = [
     metaDescription: 'Certificado digital Camerfirma para persona física por 90 € + IVA. 100 % online, sin presencia física. Identificación con EXPERT y tramitación máxima de 24 horas laborables.',
     keyPoints: [
       { title: 'Reconocido oficialmente', text: 'Válido ante AEAT, Seguridad Social, Notarías y todos los organismos públicos y privados.' },
-      { title: '100 % online', text: 'Identificación y tramitación remotas con EXPERT a través del canal PVP de Creative Quality dentro del proceso Camerfirma, sin presencia física.' },
+      { title: '100 % online', text: 'Identificación y tramitación remotas con EXPERT dentro del proceso Camerfirma, sin presencia física.' },
       { title: 'Vigencia 5 años', text: 'La modalidad de persona física comercializada por EXPERT tiene una vigencia de 5 años.' },
       { title: 'Instalación incluida', text: 'Te ayudamos a instalarlo y probarlo en tu equipo para que funcione desde el primer minuto.' },
     ],
