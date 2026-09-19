@@ -243,14 +243,21 @@ function buildAnthropicBody(
 
 function buildAnthropicJsonSchemaInstruction(schema: unknown): string {
   if (!schema) return "";
+
+  const properties =
+    typeof schema === 'object' && schema !== null && 'properties' in schema
+      ? (schema as { properties?: Record<string, unknown> }).properties
+      : undefined;
+  const expectsVersion = Boolean(properties?.version);
+
   return [
     "<strict_json_schema>",
     JSON.stringify(schema),
     "</strict_json_schema>",
     "Devuelve exactamente un objeto JSON que cumpla este schema.",
     "Incluye todos los campos required, aunque sean arrays u objetos vacios.",
-    "No uses markdown, bloques ```json, texto antes/despues, ni campos alternativos como decision/metadata.",
-    'version debe ser el string "1.0". confidence debe ser numero entre 0 y 1.',
+    "No uses markdown, bloques ```json, texto antes/despues, ni campos fuera del schema.",
+    ...(expectsVersion ? ['version debe ser el string "1.0".'] : []),
   ].join("\n");
 }
 
