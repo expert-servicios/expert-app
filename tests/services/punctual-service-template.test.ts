@@ -81,6 +81,54 @@ describe('punctual service template', () => {
     expect(page).toContain('Servicios complementarios');
   });
 
+  it('keeps KIA moderation blind to rating and client identity', () => {
+    const moderation = read('lib/ai/kia/kia-review-moderation.ts');
+
+    expect(moderation).toContain(".select('id,comment,allow_publish,status')");
+    expect(moderation).not.toContain("select('id,comment,rating");
+    expect(moderation).not.toContain('client_id');
+    expect(moderation).toContain('No protejas la reputación de EXPERT');
+    expect(moderation).toContain('La opinión negativa');
+  });
+
+  it('keeps the rating publishable when only a comment is withheld', () => {
+    const moderation = read('lib/ai/kia/kia-review-moderation.ts');
+    const publicReviews = read('lib/services/public-service-reviews.ts');
+
+    expect(moderation).toContain("moderationStatus = 'comment_not_publishable'");
+    expect(moderation).toContain('published = review.allow_publish === true');
+    expect(moderation).toContain('commentPublishable = false');
+    expect(publicReviews).toContain('review.comment_publishable === true');
+  });
+
+  it('fails closed to human review when automatic moderation is uncertain', () => {
+    const moderation = read('lib/ai/kia/kia-review-moderation.ts');
+
+    expect(moderation).toContain("decision: 'hold_for_review'");
+    expect(moderation).toContain("moderationStatus = 'hold_for_review'");
+    expect(moderation).toContain("status = 'pending'");
+  });
+
+  it('publishes a transparent review policy and links it from consent', () => {
+    const policy = read('app/(public)/politica-de-resenas/page.tsx');
+    const form = read('app/(public)/gracias/opinion/page.tsx');
+
+    expect(policy).toContain('Una valoración puede ser positiva, neutra o negativa');
+    expect(policy).toContain('no recibe la puntuación en estrellas');
+    expect(policy).toContain('no crea reseñas ficticias');
+    expect(form).toContain('/politica-de-resenas');
+    expect(form).toContain('publicar mi valoración de forma anónima');
+  });
+
+  it('does not offer routine rejection of a verified review from the admin card', () => {
+    const card = read('components/admin/ReviewModerationCard.tsx');
+    const api = read('app/api/admin/resenas/[id]/route.ts');
+
+    expect(card).not.toContain('> Rechazar');
+    expect(api).toContain('Una reseña verificada no se rechaza por su contenido');
+    expect(card).toContain('Ocultar comentario');
+  });
+
   it('uses localized social images and sharing on the three RU certificate pages', () => {
     for (const path of RU_CERTIFICATE_PAGES) {
       const page = read(path);
