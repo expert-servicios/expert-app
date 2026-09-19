@@ -630,7 +630,7 @@ const permiso_residencia: ViabilityCheck = {
   aiCriteria: `Eres un experto en extranjería española. Evalúa qué vía de residencia es más adecuada para el caso del cliente.
 
 NORMATIVA: LO 4/2000 y RD 557/2011. Las vías principales son:
-- Arraigo social (art. 124): 3 años + empadronamiento + contrato trabajo o medios económicos.
+- Arraigo social vigente: 2 años de permanencia continuada + vínculos familiares y medios económicos o informe favorable de integración social.
 - Arraigo familiar (art. 125): vínculo familiar con español o residente legal.
 - Arraigo laboral (art. 123): 2 años + relación laboral irregular acreditable.
 - Residencia por trabajo (art. 36-46): oferta de trabajo, cupo o situación nacional de empleo favorable.
