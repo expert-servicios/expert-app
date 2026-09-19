@@ -16,9 +16,11 @@ interface Quote {
   client_id: string | null;
 }
 
-const quoteStatuses = ['draft', 'sent', 'accepted', 'paid', 'expired'] as const;
+const quoteStatuses = ['draft', 'sent', 'accepted', 'expired'] as const;
 
-type QuoteStatus = (typeof quoteStatuses)[number];
+type EditableQuoteStatus = (typeof quoteStatuses)[number];
+
+type QuoteStatus = EditableQuoteStatus | 'paid';
 
 interface AdminQuoteCardProps {
   quote: Quote;
@@ -113,6 +115,7 @@ export function AdminQuoteCard({ quote }: AdminQuoteCardProps) {
               onChange={(event) => setStatus(event.target.value as QuoteStatus)}
               className="mt-2 w-full rounded-xl border border-[#d8cbb5] bg-white px-4 py-3 text-[#07111d] outline-none focus:border-[#c88b25]"
             >
+              {status === 'paid' && <option value="paid">paid</option>}
               {quoteStatuses.map((item) => (
                 <option key={item} value={item}>
                   {item}
