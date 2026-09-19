@@ -51,7 +51,7 @@ No se añade un décimo servicio en esta primera tanda hasta que uno de los sigu
 | Nacionalidad menor | 0 | 3 | completar blog |
 | Certificado PF | 3 | 1 | completar 2 guías |
 | Certificado entidad | 3 | 1 | completar 2 guías |
-| Arraigo Social | 5 | 2 | completar 1 guía |
+| Arraigo Social | 5 | 3 | suelo editorial ES alcanzado; falta RU + QA social |
 | Arraigo Familiar | 3 | 0 | completar 3 guías |
 | Arraigo Laboral | 0 | 0 | crear 3 + 3 |
 | Renovación residencia | 1 | 1 | completar 2 + 2 |
