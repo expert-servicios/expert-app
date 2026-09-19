@@ -9,6 +9,9 @@ export type LocalizedServicePresentation = {
   categoryLabel?: string;
   socialCardTitle?: string;
   socialCardText?: string;
+  indexable?: boolean;
+  sitemapPriority?: number;
+  sitemapChangeFrequency?: 'weekly' | 'monthly';
 };
 
 const RU_SERVICE_PRESENTATIONS: Record<string, LocalizedServicePresentation> = {
@@ -21,6 +24,9 @@ const RU_SERVICE_PRESENTATIONS: Record<string, LocalizedServicePresentation> = {
     categoryLabel: 'Цифровые сертификаты',
     socialCardTitle: 'Полностью онлайн',
     socialCardText: 'Проверка, оформление, установка и проверка работы.',
+    indexable: true,
+    sitemapPriority: 0.85,
+    sitemapChangeFrequency: 'monthly',
   },
   'certificado-digital-entidad': {
     serviceSlug: 'certificado-digital-entidad',
@@ -31,6 +37,9 @@ const RU_SERVICE_PRESENTATIONS: Record<string, LocalizedServicePresentation> = {
     categoryLabel: 'Цифровые сертификаты',
     socialCardTitle: 'Полностью онлайн',
     socialCardText: 'Проверка документов, полномочий, оформление и установка.',
+    indexable: true,
+    sitemapPriority: 0.85,
+    sitemapChangeFrequency: 'monthly',
   },
   'pack-certificados-digitales': {
     serviceSlug: 'pack-certificados-digitales',
@@ -41,6 +50,9 @@ const RU_SERVICE_PRESENTATIONS: Record<string, LocalizedServicePresentation> = {
     categoryLabel: 'Цифровые сертификаты',
     socialCardTitle: 'Два сертификата онлайн',
     socialCardText: 'Личный и корпоративный сертификаты одним заказом.',
+    indexable: true,
+    sitemapPriority: 0.9,
+    sitemapChangeFrequency: 'weekly',
   },
   'arraigo-social': {
     serviceSlug: 'arraigo-social',
@@ -51,6 +63,9 @@ const RU_SERVICE_PRESENTATIONS: Record<string, LocalizedServicePresentation> = {
     categoryLabel: 'ВНЖ и гражданство',
     socialCardTitle: 'Arraigo Social 2026',
     socialCardText: 'Проверка основания, документов, EX-10 и сопровождение подачи.',
+    indexable: true,
+    sitemapPriority: 0.85,
+    sitemapChangeFrequency: 'monthly',
   },
   'nacionalidad-espanola-menor-nacido-en-espana': {
     serviceSlug: 'nacionalidad-espanola-menor-nacido-en-espana',
@@ -61,6 +76,9 @@ const RU_SERVICE_PRESENTATIONS: Record<string, LocalizedServicePresentation> = {
     categoryLabel: 'ВНЖ и гражданство',
     socialCardTitle: 'Гражданство ребёнка',
     socialCardText: 'Проверка резиденции, документов, пошлины и подготовка expediente.',
+    indexable: false,
+    sitemapPriority: 0.7,
+    sitemapChangeFrequency: 'monthly',
   },
 };
 
