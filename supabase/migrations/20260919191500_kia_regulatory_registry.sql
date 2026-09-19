@@ -61,6 +61,8 @@ create table if not exists public.regulatory_changes (
   proposed_files jsonb not null default '[]'::jsonb,
   value_updates jsonb not null default '[]'::jsonb,
   dependency_hints jsonb not null default '[]'::jsonb,
+  proposal_pr_number integer,
+  proposal_pr_url text,
   resolved_at timestamptz,
   resolved_by uuid,
   created_at timestamptz not null default now()
