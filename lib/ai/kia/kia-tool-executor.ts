@@ -2,6 +2,7 @@ import { absoluteAppUrl } from '@/lib/utils/app-url';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { getService } from '@/lib/services/service-registry';
+import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
 import { getReadinessCheck, calculateReadinessResult } from '@/lib/data/service-readiness-checks';
 import { validateKiaToolArguments, type KiaToolCall, type KiaToolResult } from './kia-tool-definitions';
 import type { KiaContext } from './kia-context-builder';
@@ -58,7 +59,25 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
           hasCheckout: service.hasCheckout,
           hasReadiness: service.hasReadiness,
           requiresHolded: service.requiresHoldedApi || service.requiresHoldedLicense,
+          hasOperationalBlueprint: Boolean(getServiceOperationalBlueprint(service.slug)),
         } : { found: false });
+      }
+      case 'get_service_operational_blueprint': {
+        const blueprint = getServiceOperationalBlueprint(String(args.serviceSlug));
+        if (!blueprint) return ok(toolCall.name, { found: false });
+        return ok(toolCall.name, {
+          found: true,
+          slug: blueprint.slug,
+          name: blueprint.canonicalName,
+          category: blueprint.category,
+          requirements: blueprint.requirements,
+          documents: blueprint.documents,
+          steps: blueprint.steps,
+          tasks: blueprint.tasks,
+          userSummary: blueprint.kia.userSummary,
+          adminSummary: blueprint.kia.adminSummary,
+          escalationRules: blueprint.kia.escalationRules,
+        });
       }
       case 'run_readiness_check': {
         const check = getReadinessCheck(String(args.serviceSlug));
