@@ -56,7 +56,7 @@ export async function GET(
         const { getStripeClient } = await import('@/lib/integrations/stripe');
         const stripe = getStripeClient();
         const session = await stripe.checkout.sessions.retrieve(quote.stripe_checkout_id);
-        stripeCheckoutUrl = session.url ?? null;
+        stripeCheckoutUrl = session.status === 'open' ? (session.url ?? null) : null;
       } catch {
         // Session may have expired — don't fail the whole request
       }
