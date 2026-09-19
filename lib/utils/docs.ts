@@ -1196,7 +1196,7 @@ El certificado digital es un fichero electrónico que identifica de forma segura
 
 Camerfirma es una **Autoridad de Certificación española acreditada**, perteneciente a las Cámaras de Comercio de España. Sus certificados son reconocidos por todas las Administraciones Públicas españolas y por organismos europeos.
 
-En EXPERT somos **Punto de Registro Autorizado de Camerfirma**, lo que nos permite emitir certificados directamente en nuestras instalaciones o por videoconferencia.
+En EXPERT tramitamos certificados Camerfirma a través de Creative Quality como despacho/PVP colaborador. La identificación y verificación del cliente se realiza dentro de este circuito de emisión y, para las modalidades comercializadas por EXPERT, el proceso se gestiona online sin necesidad de acudir a una oficina pública.
 
 ## Tipos de certificado
 
@@ -1533,7 +1533,7 @@ Según el caso pueden ser necesarios:
 
 La tramitación con EXPERT se realiza **100 % online**.
 
-EXPERT actúa como Punto de Registro Autorizado dentro del proceso Camerfirma y realiza la identificación y validación remotas necesarias para la emisión.
+EXPERT tramita a través del canal PVP de Creative Quality dentro del proceso Camerfirma y realiza la identificación y validación remotas necesarias para la emisión.
 
 ## Cuándo empieza el plazo de 24 horas
 
