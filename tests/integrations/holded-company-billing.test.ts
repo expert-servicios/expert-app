@@ -5,9 +5,14 @@ import { resolve } from 'node:path';
 const source = readFileSync(resolve(process.cwd(), 'lib/integrations/holded.ts'), 'utf8');
 
 describe('Holded company billing contact isolation', () => {
-  it('does not touch contacts while Stripe invoice creation is disabled', () => {
-    const guardPosition = source.indexOf("if (!createInvoices) {");
-    const companyContactPosition = source.indexOf('resolveCompanyBillingContact({');
+  it('does not touch contacts while Stripe subscription invoice creation is disabled', () => {
+    const subscriptionStart = source.indexOf('export async function syncSubscriptionToHolded');
+    const orderStart = source.indexOf('export async function syncOrderToHolded');
+    const subscriptionSource = source.slice(subscriptionStart, orderStart);
+    const guardPosition = subscriptionSource.indexOf("if (!createInvoices) {");
+    const companyContactPosition = subscriptionSource.indexOf('resolveCompanyBillingContact({');
+    expect(subscriptionStart).toBeGreaterThan(-1);
+    expect(orderStart).toBeGreaterThan(subscriptionStart);
     expect(guardPosition).toBeGreaterThan(-1);
     expect(companyContactPosition).toBeGreaterThan(guardPosition);
     expect(source).toContain("reason: 'HOLDED_CREATE_INVOICES_FROM_STRIPE=false'");

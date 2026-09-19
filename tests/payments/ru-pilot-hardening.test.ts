@@ -10,7 +10,8 @@ describe('Russian nationality pilot hardening', () => {
     expect(source).toContain("process.env.HOLDED_CREATE_INVOICES_FROM_STRIPE === 'true'");
     expect(source).toContain("const automatic = params.source !== 'manual'");
     expect(source).toContain('if (automatic && !createInvoices)');
-    expect(source).toContain(".select('amount_eur')");
+    expect(source).toContain(".select('amount_eur,company_id')");
+    expect(source).toContain('resolvedCompanyId');
     expect(source).toContain('resolvedAmountEur');
     expect(source).toContain('callerAmountEur');
   });

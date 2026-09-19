@@ -302,8 +302,9 @@ export async function POST(request: NextRequest) {
     syncQuoteAsEstimate({
       quoteId: quote.id,
       clientName: contractingName,
-      clientEmail,
+      clientEmail: contractingCompany?.email ?? clientEmail,
       clientPhone: contractingCompany?.telefono ?? clientProfile.phone ?? null,
+      companyId,
       title,
       amountEur,
     }).catch((e) => console.error('[admin/quotes] holded estimate sync:', e));

@@ -50,6 +50,7 @@ async function executeJob(job: SyncJobRow): Promise<{ ok: boolean; error?: strin
         description: m.description ?? 'Servicio EXPERT',
         amountEur  : m.amountEur   ?? 0,
         orderId    : m.orderId,
+        companyId  : m.companyId,
         localEntity: (m.localEntity as 'orders' | 'stripe_checkout_sessions') ?? 'orders',
       });
       return { ok: true };
