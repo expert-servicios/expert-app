@@ -19,7 +19,7 @@ meetingHref: /cita
 
 ## De la normativa a la ejecución autónoma
 
-Formación individual para implantar un proceso laboral claro, documentado y controlable mediante Holded, Sistema RED / SILTRA y las soluciones de Creative Quality.
+Formación individual para implantar un proceso laboral claro, documentado y controlable mediante Holded, Sistema RED / SILTRA y herramientas de afiliación y contratación laboral.
 
 ## Datos clave
 
