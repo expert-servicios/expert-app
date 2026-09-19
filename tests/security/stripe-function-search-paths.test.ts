@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const migration = readFileSync(
-  resolve(process.cwd(), 'supabase/migrations/20260919074700_harden_stripe_schema_function_search_paths.sql'),
+  resolve(process.cwd(), 'supabase/migrations/20260919075112_harden_stripe_schema_function_search_paths.sql'),
   'utf8',
 );
 
