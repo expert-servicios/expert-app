@@ -63,6 +63,8 @@ create table if not exists public.regulatory_changes (
   dependency_hints jsonb not null default '[]'::jsonb,
   proposal_pr_number integer,
   proposal_pr_url text,
+  values_applied_at timestamptz,
+  values_applied_by uuid,
   resolved_at timestamptz,
   resolved_by uuid,
   created_at timestamptz not null default now()
