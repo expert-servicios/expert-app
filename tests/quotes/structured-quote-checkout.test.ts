@@ -22,6 +22,10 @@ const quoteUpdateRoute = readFileSync(
   resolve(process.cwd(), 'app/api/quotes/[id]/route.ts'),
   'utf8',
 );
+const adminQuoteCreateRoute = readFileSync(
+  resolve(process.cwd(), 'app/api/admin/quotes/route.ts'),
+  'utf8',
+);
 
 describe('structured quote checkout contract', () => {
   it('persists quote_items but defers Stripe creation until the client chooses to pay', () => {
@@ -67,5 +71,9 @@ describe('structured quote checkout contract', () => {
     expect(quoteUpdateRoute).toContain('active_checkout_invalidation_failed');
     expect(quoteUpdateRoute).toContain('stripe.checkout.sessions.expire(currentQuote.stripe_checkout_id)');
     expect(quoteUpdateRoute).toContain('updates.stripe_checkout_id = null');
+  });
+
+  it('marks quote contracts as pre-tax base amounts', () => {
+    expect(adminQuoteCreateRoute).toContain('amountIncludesTax: false');
   });
 });
