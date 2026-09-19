@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import { AlertCircle, Check, FileText, ShieldCheck } from 'lucide-react';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { getCatalogService } from '@/lib/utils/catalog';
-import { shouldIndexLocale } from '@/lib/i18n/feature-flags';
 
 const SERVICE_SLUG = 'certificado-digital-persona-fisica';
 const ES_URL = 'https://expertconsulting.es/servicios/certificado-digital/certificado-digital-persona-fisica';
@@ -47,8 +46,8 @@ export const metadata: Metadata = {
     },
   },
   robots: {
-    index: shouldIndexLocale('ru'),
-    follow: shouldIndexLocale('ru'),
+    index: true,
+    follow: true,
   },
   openGraph: {
     title: 'Цифровой сертификат Camerfirma для физического лица | EXPERT',
@@ -59,10 +58,15 @@ export const metadata: Metadata = {
     locale: 'ru_RU',
     siteName: 'EXPERT',
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Цифровой сертификат Camerfirma для физического лица | EXPERT',
+    description: '90 € + IVA · полностью онлайн · срок действия 5 лет · максимум 24 рабочих часа после полной проверки.',
+  },
 };
 
 const includedItems = [
-  'Удалённая идентификация и валидация личности EXPERT в рамках процесса Camerfirma.',
+  'Удалённая идентификация и валидация личности EXPERT через канал PVP Creative Quality в рамках процесса Camerfirma.'
   'Выпуск квалифицированного цифрового сертификата Camerfirma.',
   'Установка и настройка сертификата на вашем компьютере.',
   'Проверка работы сертификата перед завершением услуги.',
@@ -111,7 +115,7 @@ const faqItems = [
   },
   {
     q: 'Можно ли пройти оформление дистанционно?',
-    a: 'Проверка личности может быть организована очно или по видеосвязи в зависимости от применимого процесса Camerfirma.',
+    a: 'Да. Процесс EXPERT для этой модальности полностью онлайн: идентификация и валидация выполняются удалённо через канал PVP Creative Quality в рамках процесса Camerfirma, без личного визита.',
   },
   {
     q: 'Поможете ли вы установить сертификат?',
