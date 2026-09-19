@@ -244,7 +244,7 @@ export function ProfileForm({
         <div className="flex items-start gap-3 rounded-2xl border border-amber-300/60 bg-amber-50 p-4">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
           <p className="text-sm text-amber-800">
-            <strong>Faltan datos de facturación.</strong> Son necesarios antes de contratar cualquier servicio o suscribirte a un plan.
+            <strong>Faltan datos de facturación del perfil.</strong> Solo son necesarios cuando el servicio deba facturarse a ti como persona física o autónomo; los servicios de una sociedad usan los datos de la entidad vinculada.
           </p>
         </div>
       )}
@@ -288,13 +288,13 @@ export function ProfileForm({
       <div className="rounded-2xl border border-[#d8cbb5] bg-white p-6">
         <div className="mb-5 flex items-center gap-2">
           <FileText className="h-4 w-4 text-[#c88b25]" />
-          <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Datos de facturación</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Datos fiscales personales</p>
         </div>
 
         <div className="space-y-4">
           {/* Client type */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#07111d]">Tipo de cliente</label>
+            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#07111d]">Cómo actúas habitualmente</label>
             <div className="mt-2 grid grid-cols-3 gap-2">
               {(['particular', 'autonomo', 'empresa'] as const).map((t) => (
                 <button
@@ -411,7 +411,7 @@ export function ProfileForm({
         )}
 
         <div className="mt-5 flex items-center gap-4">
-          <SaveButton saving={savingBilling} onClick={handleSaveBilling} label="Guardar facturación" />
+          <SaveButton saving={savingBilling} onClick={handleSaveBilling} label="Guardar datos fiscales" />
           {billingMsg && <InlineMsg msg={billingMsg} />}
         </div>
       </div>
