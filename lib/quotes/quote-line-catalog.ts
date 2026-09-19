@@ -7,7 +7,7 @@ export type QuoteLineRequest = {
 
 export type QuoteLineSnapshot = {
   serviceSlug: string;
-  stripePriceId: string;
+  stripePriceId: string | null;
   description: string;
   quantity: number;
   unitAmountCents: number;
@@ -22,7 +22,7 @@ export type QuoteLineCatalogItem = {
   name: string;
   category: string;
   unitAmountCents: number;
-  stripePriceId: string;
+  stripePriceId: string | null;
   minQuantity: number;
   maxQuantity: number;
   quantityLabel: string;
@@ -60,7 +60,9 @@ function parseFixedUnitAmount(price?: string): number | null {
 
 function catalogItemForServiceSlug(slug: string): QuoteLineCatalogItem | null {
   const service = services.find((item) => item.slug === slug);
-  if (!service?.stripePriceId) return null;
+  if (!service) return null;
+  const quoteOnly = Object.prototype.hasOwnProperty.call(QUANTITY_RULES, slug);
+  if (!service.stripePriceId && !quoteOnly) return null;
 
   const unitAmountCents = parseFixedUnitAmount(service.price);
   if (!unitAmountCents) return null;
@@ -72,7 +74,7 @@ function catalogItemForServiceSlug(slug: string): QuoteLineCatalogItem | null {
     name: service.name,
     category: service.categoria,
     unitAmountCents,
-    stripePriceId: service.stripePriceId,
+    stripePriceId: service.stripePriceId ?? null,
     minQuantity: rule.min,
     maxQuantity: rule.max,
     quantityLabel: rule.label,
