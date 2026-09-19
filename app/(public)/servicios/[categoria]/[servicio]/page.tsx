@@ -17,17 +17,11 @@ import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
 import { ServiceShareActions } from '@/components/services/ServiceShareActions';
 import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
 import { getCompanionServices } from '@/lib/services/service-merchandising';
+import { getRuServicePath } from '@/lib/services/service-localized-content';
 
 export const revalidate = 300;
 
 const CAL_REUNION_URL = getCalMeetingUrl();
-
-const RU_SERVICE_ALTERNATES: Record<string, string> = {
-  'certificado-digital-persona-fisica': '/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa',
-  'certificado-digital-entidad': '/ru/uslugi/cifrovoi-sertifikat-organizatsii',
-  'pack-certificados-digitales': '/ru/uslugi/paket-cifrovyh-sertifikatov',
-  'arraigo-social': '/ru/uslugi/arraigo-social',
-};
 
 function FreeMeetingButton({ className, children }: { className: string; children: ReactNode }) {
   return (
@@ -61,7 +55,7 @@ export async function generateMetadata({
   const canonicalUrl = `https://expertconsulting.es/servicios/${categoria}/${servicio}`;
   const shareImageUrl = `https://expertconsulting.es/api/services/og?slug=${encodeURIComponent(servicio)}&variant=square`;
 
-  const ruPath = RU_SERVICE_ALTERNATES[servicio];
+  const ruPath = getRuServicePath(servicio);
 
   return {
     title,
