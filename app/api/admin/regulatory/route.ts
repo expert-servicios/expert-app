@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { applyReviewedRegulatoryValueUpdates, getRegulatoryPulseSummary } from '@/lib/regulatory/regulatory-values';
+import {
+  applyReviewedRegulatoryValueUpdates,
+  getRegulatoryPulseSummary,
+  resolveReviewedRegulatoryChange,
+} from '@/lib/regulatory/regulatory-values';
 import { runRegulatoryPulse } from '@/lib/regulatory/regulatory-monitor';
 import { runRegulatoryWorker } from '@/lib/regulatory/regulatory-review';
 
@@ -9,7 +13,7 @@ export const maxDuration = 300;
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return false;
+  if (error || !user) return null;
 
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin
@@ -18,24 +22,27 @@ async function requireAdmin(request: NextRequest) {
     .eq('id', user.id)
     .single();
 
-  if (profile?.status === 'inactive') return false;
-  return profile?.role === 'admin' || profile?.role === 'owner';
+  if (profile?.status === 'inactive') return null;
+  if (profile?.role !== 'admin' && profile?.role !== 'owner') return null;
+  return { userId: user.id };
 }
 
 export async function GET(request: NextRequest) {
-  if (!await requireAdmin(request)) {
+  const auth = await requireAdmin(request);
+  if (!auth) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
   return NextResponse.json({ ok: true, summary: await getRegulatoryPulseSummary() });
 }
 
 export async function POST(request: NextRequest) {
-  if (!await requireAdmin(request)) {
+  const auth = await requireAdmin(request);
+  if (!auth) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
 
   const body = await request.json().catch(() => ({})) as {
-    action?: 'pulse' | 'worker' | 'apply_values';
+    action?: 'pulse' | 'worker' | 'apply_values' | 'resolve_change';
     authority?: string;
     sourceKey?: string;
     changeId?: string;
@@ -47,7 +54,17 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({
       ok: true,
-      result: await applyReviewedRegulatoryValueUpdates(body.changeId),
+      result: await applyReviewedRegulatoryValueUpdates(body.changeId, auth.userId),
+    });
+  }
+
+  if (body.action === 'resolve_change') {
+    if (!body.changeId) {
+      return NextResponse.json({ error: 'changeId es obligatorio' }, { status: 400 });
+    }
+    return NextResponse.json({
+      ok: true,
+      result: await resolveReviewedRegulatoryChange(body.changeId, auth.userId),
     });
   }
 
