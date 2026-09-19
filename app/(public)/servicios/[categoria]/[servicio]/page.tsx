@@ -17,6 +17,11 @@ import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
 
 const CAL_REUNION_URL = getCalMeetingUrl();
 
+const RU_SERVICE_ALTERNATES: Record<string, string> = {
+  'certificado-digital-persona-fisica': '/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa',
+  'certificado-digital-entidad': '/ru/uslugi/cifrovoi-sertifikat-organizatsii',
+};
+
 function FreeMeetingButton({ className, children }: { className: string; children: ReactNode }) {
   return (
     <CalButton url={CAL_REUNION_URL} fallbackHref="/contacto" className={className}>
@@ -49,11 +54,22 @@ export async function generateMetadata({
   const canonicalUrl = `https://expertconsulting.es/servicios/${categoria}/${servicio}`;
   const shareImageUrl = `https://expertconsulting.es/api/services/og?slug=${encodeURIComponent(servicio)}&variant=square`;
 
+  const ruPath = RU_SERVICE_ALTERNATES[servicio];
+
   return {
     title,
     description,
     alternates: {
-      canonical: canonicalUrl
+      canonical: canonicalUrl,
+      ...(ruPath
+        ? {
+            languages: {
+              'es-ES': canonicalUrl,
+              'ru-RU': `https://expertconsulting.es${ruPath}`,
+              'x-default': canonicalUrl,
+            },
+          }
+        : {}),
     },
     openGraph: {
       title,
