@@ -10,6 +10,7 @@ interface Review {
   comment: string | null;
   allow_publish: boolean;
   status: 'pending' | 'approved' | 'rejected';
+  published: boolean;
   featured: boolean;
   created_at: string;
   service_name: string | null;
@@ -69,6 +70,9 @@ export function ReviewModerationCard({ review }: { review: Review }) {
             {review.allow_publish && (
               <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">Autoriza publicación</span>
             )}
+            {review.published && (
+              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">Publicada</span>
+            )}
           </div>
 
           {review.service_name && (
@@ -110,6 +114,16 @@ export function ReviewModerationCard({ review }: { review: Review }) {
               className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
             >
               <XCircle className="h-3.5 w-3.5" /> Rechazar
+            </button>
+          )}
+          {review.status === 'approved' && review.allow_publish && (
+            <button
+              type="button"
+              disabled={loading !== null}
+              onClick={() => patch({ published: !review.published })}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 disabled:opacity-50"
+            >
+              {review.published ? 'Ocultar' : 'Publicar'}
             </button>
           )}
           {review.status === 'approved' && (
