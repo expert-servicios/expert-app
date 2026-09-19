@@ -19,6 +19,18 @@ type Summary = {
     change_type: string | null;
     summary: string | null;
     effective_date: string | null;
+    value_updates: Array<{
+      valueKey?: string;
+      numericValue?: number | null;
+      textValue?: string | null;
+      unit?: string | null;
+      periodKey?: string | null;
+      validFrom?: string | null;
+      validTo?: string | null;
+      evidence?: string;
+    }>;
+    proposal_pr_number: number | null;
+    proposal_pr_url: string | null;
     created_at: string;
     source: { source_key: string; authority: string; title: string } | Array<{ source_key: string; authority: string; title: string }> | null;
   }>;
@@ -63,6 +75,23 @@ export default function RegulatoryPulsePage() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  const applyValues = async (changeId: string) => {
+    if (!window.confirm('Aplicar los valores propuestos al registro canónico después de haber revisado la fuente oficial?')) return;
+    setAction(`values:${changeId}`);
+    try {
+      const response = await fetch('/api/admin/regulatory', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'apply_values', changeId }),
+      });
+      const payload = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(payload.error ?? 'No se pudieron aplicar los valores');
+      await load();
+    } finally {
+      setAction(null);
+    }
+  };
 
   const run = async (nextAction: 'pulse' | 'worker') => {
     setAction(nextAction);
@@ -148,6 +177,37 @@ export default function RegulatoryPulsePage() {
                     <span className="text-xs text-[#6b7280]">{change.status}</span>
                   </div>
                   <p className="mt-2 text-sm">{change.summary ?? 'Pendiente de clasificación KIA.'}</p>
+                  {change.proposal_pr_url ? (
+                    <a
+                      className="mt-3 inline-block text-xs font-semibold text-[#c88b25] underline"
+                      href={change.proposal_pr_url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Revisar PR #{change.proposal_pr_number ?? '—'}
+                    </a>
+                  ) : null}
+                  {Array.isArray(change.value_updates) && change.value_updates.length > 0 ? (
+                    <div className="mt-4 rounded-xl border border-[#e6d7bb] bg-[#f8f4eb] p-4">
+                      <p className="text-xs font-bold uppercase tracking-wide text-[#6b7280]">Valores propuestos · revisión humana obligatoria</p>
+                      <div className="mt-2 space-y-1 text-xs">
+                        {change.value_updates.map((value, index) => (
+                          <p key={`${value.valueKey ?? 'value'}-${index}`}>
+                            <strong>{value.valueKey ?? '—'}</strong>: {value.numericValue ?? value.textValue ?? '—'} {value.unit ?? ''}
+                            {value.validFrom ? ` · desde ${value.validFrom}` : ''}
+                          </p>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        disabled={Boolean(action)}
+                        onClick={() => void applyValues(change.id)}
+                        className="mt-3 rounded-lg bg-[#07111d] px-3 py-2 text-xs font-semibold text-[#d7a33a] disabled:opacity-50"
+                      >
+                        {action === `values:${change.id}` ? 'Aplicando…' : 'Aplicar valores revisados'}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               );
             })}
