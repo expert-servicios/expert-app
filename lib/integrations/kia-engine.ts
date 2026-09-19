@@ -370,8 +370,8 @@ export const SERVICES: Record<string, KiaServiceDef> = {
     area: 'extranjeria', category: 'extranjeria-nacionalidad',
     docs: [
       'Pasaporte en vigor',
-      'Empadronamiento histórico (últimos 2-3 años según tipo)',
-      'Contrato de trabajo o informe arraigo social / familiar',
+      'Pruebas de permanencia según la modalidad de arraigo',
+      'Documentación específica según tipo de arraigo: vínculos, medios, integración o relación laboral',
       'Medios económicos suficientes (nóminas o extracto bancario)',
     ],
   },
@@ -436,8 +436,8 @@ export const SERVICES: Record<string, KiaServiceDef> = {
     stripePriceId: 'price_1TXMmQLeYwwgvux4ivP7Uhn8',
     docs: [
       'Pasaporte en vigor (todas las páginas)',
-      'Empadronamiento histórico (mínimo 3 años)',
-      'Contrato de trabajo firmado por empleador (vigente)',
+      'Pruebas de permanencia continuada (mínimo 2 años)',
+      'Vínculos familiares + medios económicos o informe de integración social',
       'Ausencia de antecedentes penales en España y país de origen',
     ],
   },
@@ -639,7 +639,7 @@ export const PRECAL_FLOWS: Record<string, PrecalQuestion[]> = {
     },
     {
       key: 'contrato',
-      text: { es: '¿Tienes contrato de trabajo firmado o informe de arraigo social del ayuntamiento?', ru: 'Есть ли у вас трудовой договор или отчёт об интеграции от мэрии?' },
+      text: { es: '¿Tu caso se basa en vínculos familiares e integración social o en una relación laboral?', ru: 'Ваш случай основан на семейных связях и социальной интеграции или на трудовых отношениях?' },
       type: 'buttons',
       options: [
         { id: 'si_contrato', label: { es: 'Tengo contrato', ru: 'Есть договор' } },

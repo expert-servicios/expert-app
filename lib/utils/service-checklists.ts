@@ -265,8 +265,8 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Fotografía reciente tamaño carné',
       'Formulario EX-01 o EX-02 (lo preparamos nosotros)',
       'Justificante de pago de la tasa Modelo 790 código 052',
-      'Certificado de empadronamiento (mínimo 3 años continuados si es arraigo)',
-      'Contrato de trabajo o oferta laboral firmada por empresa (si aplica)',
+      'Pruebas de permanencia continuada según la modalidad de arraigo aplicable',
+      'Documentación específica de la modalidad: vínculos, medios económicos, integración o relación laboral, según proceda',
       'Nóminas o extractos bancarios con medios económicos suficientes',
       'Seguro médico privado sin copago ni carencia (si no cotiza a la SS)',
       'Certificado de antecedentes penales del país de origen (apostillado y traducido si aplica)',
@@ -290,7 +290,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     serviceName: 'Arraigo Social',
     category: 'extranjeria-nacionalidad',
     requiredData: [
-      'Años de permanencia en España (mínimo 3 años)',
+      'Años de permanencia en España (mínimo 2 años)',
       'Si tiene empadronamiento continuo que lo acredite',
       'Si tiene oferta de trabajo firmada por empleador',
       'Si tiene vínculos familiares con residentes o españoles',
@@ -299,9 +299,9 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     ],
     requiredDocs: [
       'Pasaporte en vigor (todas las páginas)',
-      'Certificado de empadronamiento histórico (3 años)',
+      'Pruebas de permanencia continuada durante al menos 2 años',
       'Informe de arraigo social del ayuntamiento',
-      'Contrato de trabajo o promesa de contrato (si aplica)',
+      'Medios económicos suficientes (si aplica)',
       'Certificado de antecedentes penales en España',
       'Certificado de antecedentes penales del país de origen (apostillado y traducido)',
       'Documentación de vínculos familiares si aplica (libro de familia, etc.)',
@@ -310,12 +310,12 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     ],
     keyQuestions: [
       '¿Cuántos años llevas en España? ¿Tienes el padrón que lo acredite?',
-      '¿Tienes oferta de trabajo o vínculos familiares en España?',
+      '¿Tienes vínculos familiares con residentes y medios económicos, o puedes obtener informe de integración social?',
       '¿Tienes el certificado de antecedentes del país de origen?',
       '¿El ayuntamiento ya te ha dado o pediste el informe de arraigo social?',
     ],
     botInstructions:
-      'Verificar los 3 años de empadronamiento continuo es el requisito clave. El informe de arraigo del ayuntamiento suele tardar semanas — conviene pedirlo cuanto antes. Precio: 490 € + IVA. La resolución tarda 3–6 meses según delegación.',
+      'Verificar al menos 2 años de permanencia continuada y la vía correcta (familia+medios o integración social). Precio: 490 € + IVA. El plazo administrativo de resolución es de 3 meses.',
     estimatedPrice: '490 € + IVA',
   },
 

@@ -255,55 +255,155 @@ En EXPERT te ayudamos a evaluar tu situación y a tramitar el Modelo 149 si deci
   {
     slug: 'arraigo-social-2025',
     category: 'Extranjería',
-    title: '¿Cómo obtener el arraigo social en 2025? Requisitos y pasos',
+    title: 'Arraigo social en 2026: requisitos, 2 años de permanencia y documentación',
     excerpt:
-      'Explicamos los cambios normativos recientes en los permisos de arraigo social, los documentos que necesitas y los errores más comunes en la presentación.',
-    date: '28 mar 2025',
-    readTime: '6 min',
-    tags: ['arraigo social', 'residencia', 'extranjería', 'autorización de residencia'],
+      'Guía actualizada del arraigo social: 2 años de permanencia, vínculos familiares o informe de integración, EX-10, tasa y errores a evitar.',
+    date: '19 sep 2026',
+    readTime: '8 min',
+    tags: ['arraigo social', 'residencia', 'extranjería', '2 años', 'EX-10'],
     relatedServiceSlugs: ['arraigo-social'],
     body: `
-## ¿Qué es el arraigo social?
+## Qué ha cambiado en el arraigo social
 
-El arraigo social es una **autorización de residencia temporal** que permite regularizar la situación en España a personas extranjeras que llevan un tiempo prolongado en el país sin documentación en regla. Es una de las vías más utilizadas para obtener la primera autorización de residencia en España.
+La regulación actual del arraigo social ya no responde al esquema antiguo de **3 años + oferta de empleo**.
 
-## Requisitos para 2025
+Con el Reglamento vigente, el requisito general es acreditar **2 años de permanencia continuada en España** y cumplir el resto de condiciones legales aplicables.
 
-Para solicitar el arraigo social debes cumplir los siguientes requisitos:
+Además, el arraigo social debe encajarse correctamente en una de estas vías:
 
-- **Tiempo de permanencia:** Llevar al menos **3 años** de permanencia continuada en España, acreditados mediante empadronamiento histórico, informes consulares, entradas de pasaporte u otros documentos admitidos.
-- **No tener antecedentes penales:** Ni en España ni en los países de residencia anteriores durante los últimos 5 años.
-- **Vínculos con España:** Demostrar arraigo mediante alguna de estas vías:
-  - **Oferta de trabajo** firmada por un empleador español (mínimo 30 horas semanales, 1 año de duración).
-  - **Vínculos familiares** con residentes legales o ciudadanos españoles (cónyuge, pareja de hecho, ascendientes, descendientes).
-  - **Informe de arraigo** emitido por el Ayuntamiento o los servicios sociales de la comunidad autónoma.
+- vínculos familiares con determinadas personas extranjeras residentes + medios económicos suficientes;
+- o informe favorable de integración social cuando no concurren esos vínculos.
 
-## Documentos necesarios
+## Requisito temporal
 
-1. Solicitud en Modelo EX–10
-2. Pasaporte válido (completo, con todas las páginas)
-3. Certificado de empadronamiento histórico (mínimo 3 años)
-4. Certificado de antecedentes penales del país de origen (apostillado o legalizado y traducido)
-5. Certificado de antecedentes penales del Registro Central de Penados (España)
-6. Según la vía elegida: contrato de trabajo firmado, informe de arraigo o documentación de vínculo familiar
+Debes acreditar al menos **2 años de permanencia continuada** inmediatamente anteriores a la solicitud.
 
-## Errores más comunes
+Durante ese periodo:
 
-- **Empadronamiento discontinuo:** Cada cambio de domicilio o baja padronal puede interrumpir el período. Comprueba tu historial completo antes de presentar.
-- **Antecedentes en el país de origen caducados:** El certificado de antecedentes penales del extranjero tiene validez de 3 meses. Solicítalo al final del proceso.
-- **Contratos de trabajo inadecuados:** El contrato debe ser a jornada completa o parcial con un mínimo de horas, cumplir con el Convenio Colectivo aplicable y estar firmado por ambas partes.
-- **Informes de arraigo insuficientes:** Cada Comunidad Autónoma tiene sus propios criterios. En algunas, el informe tarda varios meses en emitirse.
+- las ausencias no pueden superar 90 días;
+- conviene construir una cronología documental completa;
+- el empadronamiento histórico es muy útil, pero puede complementarse con otra documentación oficial.
 
-## Plazos y resolución
+## Ya no se exige contrato de trabajo como requisito propio del arraigo social
 
-La Delegación o Subdelegación del Gobierno tiene **3 meses** para resolver desde la presentación de la solicitud. Pasado ese plazo sin respuesta, se entiende desestimada por silencio administrativo (aunque en la práctica se suele resolver).
+El contrato de trabajo pertenece a la lógica del **arraigo sociolaboral**.
 
-Una vez aprobada, la autorización tiene una validez de **1 año**, renovable si se mantiene la relación laboral.
+En el arraigo social actual se revisan:
 
-En EXPERT te acompañamos durante todo el proceso, desde la evaluación previa hasta la obtención de la tarjeta TIE.
+- vínculos familiares y medios económicos; o
+- integración social mediante informe favorable.
+
+Confundir ambas figuras puede llevar a preparar mal el expediente desde el inicio.
+
+## Documentación principal
+
+Según el caso, normalmente se revisan:
+
+1. Formulario EX-10.
+2. Pasaporte completo en vigor.
+3. Pruebas de permanencia continuada durante 2 años.
+4. Antecedentes penales del país o países correspondientes, cuando proceda.
+5. Documentación del vínculo familiar, si se usa esa vía.
+6. Documentación de medios económicos.
+7. Informe favorable de integración social, si corresponde.
+8. Justificante de la tasa 790-052.
+
+## Tasa
+
+La tasa aplicable es el **Modelo 790 código 052, epígrafe 2.3.1**.
+
+La cuantía vigente es **38,28 €** y se abona aparte de los honorarios profesionales.
+
+## Plazo de resolución
+
+El plazo administrativo de resolución es de **3 meses** desde la entrada de la solicitud en el registro del órgano competente.
+
+## ¿Se puede trabajar si se concede?
+
+Sí. La concesión del arraigo social lleva aparejada autorización para trabajar por cuenta ajena o propia durante su vigencia, sin limitación de ámbito geográfico u ocupación.
+
+## Errores que seguimos viendo
+
+- usar todavía el requisito antiguo de 3 años;
+- pedir contrato de trabajo como requisito del arraigo social;
+- usar EX-01 en lugar de EX-10;
+- no revisar ausencias superiores a 90 días;
+- depender únicamente de un volante actual de padrón;
+- pensar que una asesoría privada puede emitir el informe oficial de integración;
+- no separar tasa administrativa y honorarios.
+
+## Antes de contratar
+
+Conviene comprobar primero:
+
+- fecha exacta desde la que puedes acreditar permanencia;
+- posibles periodos como solicitante de protección internacional;
+- ausencias del territorio español;
+- vía familiar o vía de integración social;
+- antecedentes y situación administrativa actual.
+
+En EXPERT revisamos estos puntos antes de presentar el expediente.
+
+Fuentes oficiales:
+- Ministerio de Inclusión: https://www.inclusion.gob.es/web/migraciones/w/autorizacion-residencia-temporal-por-circunstancias-excepcionales.-arraigo-social
+- Real Decreto 1155/2024: https://www.boe.es/eli/es/rd/2024/11/19/1155
+- Orden PJC/617/2025: https://www.boe.es/eli/es/o/2025/06/13/pjc617/con
     `
   },
   {
+    slug: 'arraigo-social-vs-sociolaboral-2026',
+    category: 'Extranjería',
+    title: 'Arraigo social vs. arraigo sociolaboral en 2026: diferencias clave',
+    excerpt:
+      'Qué vía encaja según tu situación: vínculos e integración social frente a una vía vinculada a relaciones laborales.',
+    date: '19 sep 2026',
+    readTime: '6 min',
+    tags: ['arraigo social', 'arraigo sociolaboral', 'residencia', 'extranjería'],
+    relatedServiceSlugs: ['arraigo-social'],
+    body: `
+## No son el mismo permiso
+
+Desde la reforma del Reglamento de Extranjería es especialmente importante no confundir **arraigo social** con **arraigo sociolaboral**.
+
+Ambos son autorizaciones por circunstancias excepcionales, pero responden a requisitos y pruebas distintas.
+
+## Arraigo social
+
+El arraigo social se apoya en:
+
+- 2 años de permanencia continuada en España;
+- vínculos familiares con determinadas personas extranjeras residentes y medios económicos suficientes;
+- o, en ausencia de esos vínculos, informe favorable de integración social.
+
+No exige contrato de trabajo como requisito específico.
+
+## Arraigo sociolaboral
+
+El arraigo sociolaboral utiliza una vía vinculada a una o varias relaciones laborales que cumplan los requisitos reglamentarios.
+
+Por tanto, si tu principal elemento de regularización es una relación laboral, puede que la figura correcta no sea el arraigo social.
+
+## Cómo elegir bien la vía
+
+Antes de presentar conviene revisar:
+
+1. tiempo de permanencia en España;
+2. situación migratoria actual;
+3. existencia de vínculos familiares;
+4. medios económicos;
+5. posibilidad de obtener informe de integración;
+6. existencia y características de una relación laboral;
+7. antecedentes y posibles incompatibilidades.
+
+## Por qué importa
+
+Elegir mal la vía puede provocar requerimientos innecesarios, documentos que no sirven para el expediente elegido, pérdida de tiempo o una denegación evitable.
+
+Fuentes oficiales:
+- Ministerio de Inclusión — arraigo social: https://www.inclusion.gob.es/web/migraciones/w/autorizacion-residencia-temporal-por-circunstancias-excepcionales.-arraigo-social
+- Real Decreto 1155/2024: https://www.boe.es/eli/es/rd/2024/11/19/1155
+    `
+  },  {
     slug: 'alta-autonomo-espana',
     category: 'Empresas',
     title: 'Alta de autónomo en España: todo lo que debes saber antes de empezar',
@@ -1101,11 +1201,11 @@ Tramitado en el consulado español de tu país de origen antes de viajar. Incluy
 
 ## Requisitos generales para el arraigo social (la vía más común)
 
-- **Estancia continuada en España de al menos 3 años** (acreditada mediante empadronamiento, contrato de arrendamiento, facturas, etc.)
+- **Permanencia continuada en España de al menos 2 años**, con ausencias no superiores a 90 días.
 - **Ausencia de antecedentes penales** en España y en el país de origen (últimos 5 años)
-- **Contrato de trabajo** de al menos 30 horas semanales, **o** medios económicos propios equivalentes al 100 % del IPREM mensual
+- **Vínculos familiares y medios económicos**, o informe favorable de integración social, según la vía.
 - **No estar en situación de prohibición de entrada** en España o en la UE
-- **Formulario EX-01** cumplimentado y firmado
+- **Formulario EX-10** cumplimentado y firmado
 
 ## Documentos necesarios
 
@@ -1113,8 +1213,8 @@ Tramitado en el consulado español de tu país de origen antes de viajar. Incluy
 2. Formulario EX-01 (solicitud)
 3. Fotografía reciente en color tamaño carné
 4. Justificante de pago de la tasa modelo 790 código 052
-5. Certificado de empadronamiento (con historial de 3 años o más)
-6. Contrato de trabajo firmado por empresa y trabajador
+5. Documentación que acredite 2 años de permanencia continuada
+6. Documentación de vínculos familiares y medios económicos, o informe favorable de integración social
 7. Antecedentes penales del país de origen (apostillados y traducidos oficialmente)
 8. Certificado de antecedentes penales de España (solicitado en la Policía o por internet)
 
@@ -1133,13 +1233,13 @@ El **plazo legal de resolución es de 3 meses**. Si la Administración no resuel
 
 1. **Pasaporte caducado o próximo a caducar**: debe tener validez mínima igual al permiso solicitado (generalmente 1 año).
 2. **Antecedentes del país de origen sin apostillar o sin traducción jurada**: son documentos extranjeros que necesitan apostilla del Convenio de La Haya y traducción oficial al español.
-3. **Empadronamiento que no refleja continuidad**: una baja en el padrón (aunque sea temporal) puede romper el cómputo de los 3 años.
-4. **Contrato de trabajo que no cumple las horas mínimas**: contratos a tiempo parcial con pocas horas pueden no ser suficientes.
+3. **Empadronamiento que no refleja continuidad**: los periodos sin padrón deben revisarse y, si procede, cubrirse con otras pruebas oficiales.
+4. **Confundir arraigo social con sociolaboral**: el contrato de trabajo no es el requisito central del arraigo social vigente.
 5. **Presentar la solicitud en la oficina incorrecta**: debes solicitar en la Oficina de Extranjería de la provincia donde estás empadronado.
 
 ## ¿Puedo trabajar mientras tramito el permiso?
 
-Con el **arraigo social**: no, salvo autorización expresa provisional.
+Con el **arraigo social**: la autorización para trabajar nace con la concesión; la mera presentación no habilita por sí sola para trabajar.
 Con el **arraigo laboral**: sí, porque se pide autorización de trabajo simultánea.
 Con visado de trabajo: sí, desde el momento en que la empresa obtiene la autorización previa de trabajo.
 
@@ -1186,7 +1286,7 @@ Esta guía recoge los documentos más habituales, cómo obtenerlos correctamente
 ## Formulario de solicitud
 
 Dependiendo del trámite:
-- **EX-01**: autorización de residencia temporal (arraigo social, familiar, laboral, circunstancias excepcionales).
+- **EX-10**: autorizaciones de residencia temporal por circunstancias excepcionales, incluido el arraigo social.
 - **EX-02**: autorización de residencia temporal por reagrupación familiar.
 
 Descárgalos siempre de la web oficial del Ministerio de Inclusión, Seguridad Social y Migraciones, ya que los modelos se actualizan periódicamente.
@@ -1207,7 +1307,7 @@ Descárgalos siempre de la web oficial del Ministerio de Inclusión, Seguridad S
 ## Certificado de empadronamiento
 
 - Solicítalo en tu Ayuntamiento o Junta de Distrito, en persona o por internet.
-- Para el arraigo social debe reflejar **al menos 3 años continuados** de residencia en España.
+- Para el arraigo social actual debe poder acreditarse **al menos 2 años de permanencia continuada** en España.
 - Pide el **certificado de empadronamiento con historial** (no solo el volante de residencia actual), para que refleje la antigüedad.
 - Atención: si te diste de baja en el padrón aunque sea brevemente, eso puede interrumpir el cómputo.
 
@@ -1259,7 +1359,7 @@ Si no presentas contrato de trabajo (o como complemento):
 | Documento | Dónde obtenerlo | Vigencia |
 |---|---|---|
 | Pasaporte | Consulado / embajada de tu país | Según fecha de caducidad |
-| Formulario EX-01 / EX-02 | Web del Ministerio | Sin caducidad |
+| Formulario EX-10 / EX-02 | Web del Ministerio | Sin caducidad |
 | Fotografía carné | Estudio fotográfico | — |
 | Tasa modelo 790-052 | Banco / internet | — |
 | Empadronamiento con historial | Ayuntamiento | 3 meses |
@@ -1509,7 +1609,7 @@ Además del vínculo familiar, se necesita:
 
 | Aspecto | Arraigo social | Arraigo familiar |
 |---|---|---|
-| Tiempo de permanencia exigido | 3 años | No requerido |
+| Tiempo de permanencia exigido | 2 años | Depende de la vía aplicable |
 | Vínculo necesario | Oferta trabajo, informe o familia | Vínculo familiar directo |
 | Autorización laboral | Incluida con contrato de trabajo | Incluida |
 

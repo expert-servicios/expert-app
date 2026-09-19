@@ -1104,7 +1104,7 @@ CUÁNDO preguntar primero (usa botones con pregunta de diagnóstico):
 
 PREGUNTAS DE DIAGNÓSTICO POR SERVICIO (la más determinante):
 - IRPF / Renta genérica → "¿La declaración es para ti como persona física, como autónomo, o para una empresa?"
-- Arraigo genérico → "¿Cuánto tiempo llevas en España de forma continuada?" (social 3+, familiar o laboral)
+- Arraigo genérico → "¿Cuánto tiempo llevas en España de forma continuada?" (social 2+ con requisitos, familiar, sociolaboral u otras vias)
 - Residencia genérica → "¿Es primera vez, una renovación de TIE, o un cambio de tipo de permiso?"
 - Certificado digital genérico → "¿El certificado es para ti como persona física o para tu empresa?"
 - Empresa / Autónomo genérico → "¿Ya tienes actividad en marcha o estás pensando en empezar?"

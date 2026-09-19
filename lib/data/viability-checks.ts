@@ -142,20 +142,37 @@ CRITERIOS DE VIABILIDAD:
 const arraigo_social: ViabilityCheck = {
   serviceSlug: 'arraigo-social',
   serviceName: 'Arraigo Social',
-  intro: 'El arraigo social requiere 3 años de empadronamiento y, en la mayoría de los casos, contrato de trabajo. Verifica tu situación en 3 minutos.',
+  intro: 'El arraigo social exige, con carácter general, 2 años de permanencia continuada en España y acreditar vínculos familiares + medios económicos o integración social. Verifica tu situación en 3 minutos.',
   estimatedMinutes: 3,
   questions: [
     {
-      id: 'anios_empadronado',
+      id: 'anios_permanencia',
       type: 'select',
-      label: '¿Cuántos años llevas empadronado ininterrumpidamente en España?',
-      hint: 'Las ausencias de más de 90 días seguidos pueden interrumpir el cómputo.',
+      label: '¿Cuánto tiempo llevas en España de forma continuada?',
+      hint: 'Para el arraigo social actual se exigen, con carácter general, al menos 2 años inmediatamente anteriores a la solicitud.',
       required: true,
       options: [
-        { value: 'menos_de_3', label: 'Menos de 3 años', disqualifies: true },
-        { value: 'exactamente_3', label: 'Exactamente 3 años (o a punto de cumplirlos)' },
-        { value: 'mas_de_3', label: 'Más de 3 años' },
+        { value: 'menos_de_2', label: 'Menos de 2 años', disqualifies: true },
+        { value: 'dos_o_mas', label: '2 años o más' },
       ],
+    },
+    {
+      id: 'ausencias',
+      type: 'select',
+      label: 'Durante esos 2 años, ¿cuánto tiempo has estado fuera de España?',
+      required: true,
+      options: [
+        { value: 'hasta_90', label: '90 días o menos' },
+        { value: 'mas_90', label: 'Más de 90 días', escalates: true },
+      ],
+    },
+    {
+      id: 'proteccion_internacional',
+      type: 'boolean',
+      label: '¿Has sido solicitante de protección internacional durante parte de ese periodo?',
+      hint: 'Ese tiempo puede afectar al cómputo y debe revisarse antes de fijar la fecha de solicitud.',
+      required: true,
+      escalatesIfTrue: true,
     },
     {
       id: 'situacion_actual',
@@ -163,83 +180,91 @@ const arraigo_social: ViabilityCheck = {
       label: '¿Cuál es tu situación migratoria actual en España?',
       required: true,
       options: [
-        { value: 'sin_permiso',   label: 'Sin permiso de residencia (situación irregular)' },
-        { value: 'caducado',      label: 'Permiso caducado (en renovación o no renovado)' },
-        { value: 'otro_permiso',  label: 'Tengo otro tipo de permiso vigente' },
+        { value: 'sin_permiso', label: 'Sin autorización de estancia o residencia' },
+        { value: 'otro_procedimiento', label: 'Tengo otro procedimiento de estancia/residencia en curso', escalates: true },
+        { value: 'permiso_vigente', label: 'Tengo una autorización vigente', escalates: true },
       ],
     },
     {
-      id: 'contrato_trabajo',
+      id: 'vinculos',
       type: 'boolean',
-      label: '¿Tienes una oferta o contrato de trabajo de al menos 30 horas semanales?',
-      hint: 'Si no tienes contrato, también puede solicitarse mediante medios económicos propios, vínculos familiares u otras excepciones.',
+      label: '¿Tienes cónyuge, pareja registrada, ascendientes o descendientes de primer grado con residencia legal en España?',
       required: true,
     },
     {
-      id: 'medios_propios',
+      id: 'medios_economicos',
       type: 'boolean',
-      label: 'Si no tienes contrato: ¿Dispones de medios económicos propios suficientes (mínimo ~600€/mes)?',
-      hint: 'Solo relevante si no tienes contrato de trabajo. Si tienes contrato, puedes omitir esta pregunta.',
+      label: 'Si tienes esos vínculos, ¿puedes acreditar medios económicos suficientes?',
       required: false,
+    },
+    {
+      id: 'informe_integracion',
+      type: 'select',
+      label: 'Si no tienes esos vínculos, ¿tienes o puedes solicitar informe favorable de integración social?',
+      required: false,
+      options: [
+        { value: 'si', label: 'Sí' },
+        { value: 'en_tramite', label: 'Está en trámite' },
+        { value: 'no', label: 'No / no lo sé', escalates: true },
+      ],
     },
     {
       id: 'antecedentes',
       type: 'boolean',
-      label: '¿Tienes antecedentes penales en España o en tu país de origen?',
-      hint: 'Los antecedentes penales en vigor suponen causa de denegación directa.',
+      label: '¿Tienes antecedentes penales relevantes en España o en los países donde residiste antes de entrar en España?',
       required: true,
-      disqualifiesIfTrue: true,
-    },
-    {
-      id: 'prohibicion_entrada',
-      type: 'boolean',
-      label: '¿Tienes alguna resolución de expulsión o prohibición de entrada en España o la UE vigente?',
-      required: true,
-      disqualifiesIfTrue: true,
+      escalatesIfTrue: true,
     },
   ],
   docs: [
-    { id: 'pasaporte', label: 'Pasaporte en vigor (todas las páginas)', required: true },
+    { id: 'pasaporte', label: 'Pasaporte en vigor (copia completa)', required: true },
     {
-      id: 'empadronamiento_historico',
-      label: 'Empadronamiento histórico de los últimos 3 años',
+      id: 'permanencia',
+      label: 'Pruebas de permanencia continuada durante al menos 2 años',
       required: true,
-      howToGet: 'Solicítalo en tu Ayuntamiento o en la sede electrónica municipal con certificado digital.',
+      howToGet: 'Prioriza certificados de empadronamiento histórico y otra documentación emitida o registrada por administraciones públicas.',
     },
     {
-      id: 'contrato_oferta',
-      label: 'Contrato de trabajo u oferta laboral (firmada por empleador)',
+      id: 'vinculos_familiares',
+      label: 'Documentación acreditativa de vínculos familiares (si aplica)',
       required: false,
     },
     {
-      id: 'nominas',
-      label: 'Últimas 3 nóminas (si ya trabajas)',
+      id: 'medios',
+      label: 'Documentación de medios económicos suficientes (si aplica)',
+      required: false,
+    },
+    {
+      id: 'informe_integracion',
+      label: 'Informe favorable de integración social (si aplica)',
       required: false,
     },
     {
       id: 'antecedentes_pais_origen',
-      label: 'Certificado de antecedentes penales del país de origen (apostillado y traducido)',
+      label: 'Certificado de antecedentes penales del país o países correspondientes, cuando proceda',
       required: true,
-      howToGet: 'Solicítalo en el consulado o ministerio de justicia de tu país. Debe apostillarse y traducirse al español.',
+      howToGet: 'Debe cumplir los requisitos de apostilla/legalización y traducción jurada cuando correspondan.',
     },
-    { id: 'foto', label: 'Foto reciente en fondo blanco (tamaño carné)', required: true },
   ],
-  aiCriteria: `Eres un experto en extranjería española. Evalúa si el caso es VIABLE para el Arraigo Social.
+  aiCriteria: `Eres un experto en extranjería española. Evalúa si el caso es VIABLE para el Arraigo Social conforme al régimen vigente.
 
 NORMATIVA APLICABLE:
-- Art. 124 del RD 557/2011 (Reglamento de la Ley de Extranjería, modificado por RD 629/2022).
-- Requisitos imprescindibles:
-  1. Permanencia continuada en España de al menos 3 años (ausencias <90 días sin interrumpir el cómputo).
-  2. Empadronamiento continuado durante esos 3 años.
-  3. Ausencia de antecedentes penales en España y país de origen.
-  4. No tener resolución de expulsión o prohibición de entrada vigente.
-  5. Contrato de trabajo de mínimo 30h/semana, O bien relaciones familiares con residentes legales en España, O medios económicos propios.
+- Ley Orgánica 4/2000.
+- Real Decreto 1155/2024.
+- Requisitos clave:
+  1. Permanencia continuada en España de al menos 2 años inmediatamente anteriores a la solicitud.
+  2. Ausencias no superiores a 90 días durante ese periodo.
+  3. Revisar periodos como solicitante de protección internacional antes de computarlos.
+  4. No ser titular de autorización de estancia/residencia ni estar inmerso en otro procedimiento incompatible, salvo revisión profesional.
+  5. Carecer de antecedentes penales en los términos legalmente exigibles.
+  6. Acreditar vínculos familiares con personas extranjeras residentes + medios económicos suficientes, O informe favorable de integración social si no concurren esos vínculos.
+  7. El contrato de trabajo NO es requisito específico del arraigo social; esa lógica corresponde al arraigo sociolaboral.
 
 CRITERIOS DE VIABILIDAD:
-- VIABLE: Cumple años de empadronamiento, sin antecedentes, con contrato de trabajo o medios propios.
-- PARCIAL: Cumple tiempo pero sin contrato (explorar otras vías: vínculos familiares, medios propios, arraigo familiar).
-- NO VIABLE: Menos de 3 años de empadronamiento, antecedentes penales en vigor, o prohibición de entrada vigente.
-- ESCALAR: Situaciones mixtas, ausencias prolongadas, historiales migratorios complejos.`,
+- VIABLE: 2+ años, ausencias <=90 días, situación compatible, sin incidencias penales relevantes, y vía familiar+medios o integración social acreditable.
+- PARCIAL: Cumple tiempo pero falta completar medios económicos o informe de integración.
+- NO VIABLE: Menos de 2 años de permanencia acreditable.
+- ESCALAR: Protección internacional previa, ausencias >90 días, antecedentes, otro procedimiento migratorio, dudas sobre cómputo o documentación.`,
 };
 
 // ── Arraigo Familiar ──────────────────────────────────────────────────────────
@@ -605,7 +630,7 @@ const permiso_residencia: ViabilityCheck = {
   aiCriteria: `Eres un experto en extranjería española. Evalúa qué vía de residencia es más adecuada para el caso del cliente.
 
 NORMATIVA: LO 4/2000 y RD 557/2011. Las vías principales son:
-- Arraigo social (art. 124): 3 años + empadronamiento + contrato trabajo o medios económicos.
+- Arraigo social vigente: 2 años de permanencia continuada + vínculos familiares y medios económicos o informe favorable de integración social.
 - Arraigo familiar (art. 125): vínculo familiar con español o residente legal.
 - Arraigo laboral (art. 123): 2 años + relación laboral irregular acreditable.
 - Residencia por trabajo (art. 36-46): oferta de trabajo, cupo o situación nacional de empleo favorable.
