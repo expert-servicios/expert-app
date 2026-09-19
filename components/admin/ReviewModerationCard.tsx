@@ -12,6 +12,14 @@ interface Review {
   status: 'pending' | 'approved' | 'rejected';
   published: boolean;
   featured: boolean;
+  comment_publishable: boolean;
+  moderation_status: 'pending' | 'approved' | 'hold_for_review' | 'comment_not_publishable';
+  moderation_reason: string | null;
+  moderated_by: 'kia' | 'human' | null;
+  moderation_policy_version: string | null;
+  moderation_model: string | null;
+  moderated_at: string | null;
+  human_override_reason: string | null;
   created_at: string;
   service_name: string | null;
   client_name: string | null;
@@ -77,6 +85,13 @@ export function ReviewModerationCard({ review }: { review: Review }) {
 
           {review.service_name && (
             <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[#c88b25]">{review.service_name}</p>
+          )}
+
+          {review.moderated_by && (
+            <div className="mt-2 rounded-lg bg-[#f8f4eb] px-3 py-2 text-xs text-[#29384a]">
+              Moderación: <strong>{review.moderated_by === 'kia' ? 'KIA' : 'humana'}</strong> · {review.moderation_status}
+              {review.moderation_reason ? <> · {review.moderation_reason}</> : null}
+            </div>
           )}
 
           {review.comment ? (
