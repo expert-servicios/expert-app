@@ -12,13 +12,10 @@ const clientCheckoutRoute = readFileSync(
 );
 
 describe('structured quote checkout contract', () => {
-  it('persists quote_items before creating the admin Stripe session', () => {
-    const persistIndex = adminQuoteRoute.indexOf(".from('quote_items').insert");
-    const stripeIndex = adminQuoteRoute.indexOf('stripe.checkout.sessions.create');
-
-    expect(persistIndex).toBeGreaterThan(-1);
-    expect(stripeIndex).toBeGreaterThan(persistIndex);
-    expect(adminQuoteRoute).toContain("structured_quote: 'true'");
+  it('persists quote_items but defers Stripe creation until the client chooses to pay', () => {
+    expect(adminQuoteRoute).toContain(".from('quote_items').insert");
+    expect(adminQuoteRoute).not.toContain('stripe.checkout.sessions.create');
+    expect(adminQuoteRoute).toContain('/dashboard/presupuestos');
   });
 
   it('rebuilds authenticated checkout from persisted quote_items', () => {
@@ -26,9 +23,18 @@ describe('structured quote checkout contract', () => {
     expect(clientCheckoutRoute).toContain("code: 'quote_total_mismatch'");
     expect(clientCheckoutRoute).toContain('unit_amount: Number(line.unit_amount_cents)');
     expect(clientCheckoutRoute).toContain('quantity: Number(line.quantity)');
+    expect(clientCheckoutRoute).toContain('stripe.checkout.sessions.create');
   });
 
-  it('expires Stripe checkout when persistence of the session id fails', () => {
+  it('reuses an open Stripe session and compensates a losing concurrent session', () => {
+    expect(clientCheckoutRoute).toContain("previousSession.status === 'open'");
+    expect(clientCheckoutRoute).toContain('reused: true');
     expect(clientCheckoutRoute).toContain('stripe.checkout.sessions.expire(session.id)');
+    expect(clientCheckoutRoute).toContain("code: 'quote_checkout_race'");
+  });
+
+  it('revalidates company ownership before starting payment', () => {
+    expect(clientCheckoutRoute).toContain(".from('profile_companies')");
+    expect(clientCheckoutRoute).toContain("code: 'quote_company_forbidden'");
   });
 });
