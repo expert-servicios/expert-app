@@ -10,10 +10,17 @@ const ES_URL = 'https://expertconsulting.es/servicios/certificado-digital/certif
 const RU_PATH = '/ru/uslugi/cifrovoi-sertifikat-fizicheskogo-litsa';
 const RU_URL = `https://expertconsulting.es${RU_PATH}`;
 
-const service = getCatalogService(SERVICE_SLUG);
-if (!service?.stripePriceId || !service.price) {
-  throw new Error('Canonical certificate service is not configured for checkout.');
-}
+const service = (() => {
+  const canonical = getCatalogService(SERVICE_SLUG);
+  if (!canonical?.stripePriceId || !canonical.price) {
+    throw new Error('Canonical certificate service is not configured for checkout.');
+  }
+  return {
+    ...canonical,
+    price: canonical.price,
+    stripePriceId: canonical.stripePriceId,
+  };
+})();
 
 const CART_ITEM = {
   priceId: service.stripePriceId,
