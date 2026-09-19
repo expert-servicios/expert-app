@@ -86,7 +86,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       update.moderated_by = 'human';
       update.moderated_at = new Date().toISOString();
       if (body.status === 'approved') update.moderation_status = current.comment_publishable === false ? 'comment_not_publishable' : 'approved';
-      if (body.status === 'rejected') update.moderation_status = 'hold_for_review';
       if (body.human_override_reason?.trim()) update.human_override_reason = body.human_override_reason.trim().slice(0, 500);
     }
 
