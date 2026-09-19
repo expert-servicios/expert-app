@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { createServerClient } from '@supabase/ssr';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { getCatalogService } from '@/lib/utils/catalog';
+import { getServiceBillingPolicy } from '@/lib/payments/service-billing-scope';
 import { ProfileCompletionWizard } from '@/components/profile/ProfileCompletionWizard';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -164,6 +165,23 @@ export default async function ContratarPage({ searchParams }: Props) {
     category    : catalogService.categoria,
   };
 
+  const billingPolicy = getServiceBillingPolicy(catalogService.slug);
+  const { data: companyMemberships } = await admin
+    .from('profile_companies')
+    .select('company_id,company:companies(id,razon_social,cif_nif,forma_juridica)')
+    .eq('profile_id', user.id);
+
+  const companies = (companyMemberships ?? []).flatMap((membership) => {
+    const raw = membership.company;
+    const company = Array.isArray(raw) ? raw[0] : raw;
+    return company ? [{
+      id: company.id,
+      name: company.razon_social ?? 'Entidad',
+      taxId: company.cif_nif ?? null,
+      legalForm: company.forma_juridica ?? null,
+    }] : [];
+  });
+
   return (
     <main className="min-h-screen bg-[#F8F6F1] text-[#0D1B2A]">
       {/* Hero */}
@@ -185,8 +203,10 @@ export default async function ContratarPage({ searchParams }: Props) {
 
       <div className="mx-auto max-w-lg px-6 py-10">
         <ProfileCompletionWizard
-          profile ={profile ?? null}
-          service ={serviceInfo}
+          profile={profile ?? null}
+          service={serviceInfo}
+          billingPolicy={billingPolicy}
+          companies={companies}
         />
       </div>
     </main>
