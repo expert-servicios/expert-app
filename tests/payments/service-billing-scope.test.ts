@@ -19,8 +19,11 @@ describe('service billing policy', () => {
     expect(getServiceBillingPolicy(slug)).toBe('profile_only');
   });
 
-  it('classifies entity certificate as company-only', () => {
-    expect(getServiceBillingPolicy('certificado-digital-entidad')).toBe('company_only');
+  it.each([
+    'certificado-digital-entidad',
+    'pack-certificados-digitales',
+  ])('classifies %s as company-only', (slug) => {
+    expect(getServiceBillingPolicy(slug)).toBe('company_only');
   });
 
   it.each([
@@ -101,6 +104,22 @@ describe('resolveServiceBillingScope', () => {
       serviceSlugs: ['certificado-digital-entidad'],
       clientType: 'particular',
     })).toEqual({ scope: 'company_required', companyId: null });
+  });
+
+  it('requires a linked entity for the bundle and resolves it as one company-scoped checkout', () => {
+    expect(resolveServiceBillingScope({
+      serviceSlugs: ['pack-certificados-digitales'],
+      clientType: 'particular',
+    })).toEqual({ scope: 'company_required', companyId: null });
+
+    expect(resolveServiceBillingScope({
+      serviceSlugs: ['pack-certificados-digitales'],
+      explicitCompanyId: '33333333-3333-3333-3333-333333333333',
+      clientType: 'particular',
+    })).toEqual({
+      scope: 'company',
+      companyId: '33333333-3333-3333-3333-333333333333',
+    });
   });
 
   it('requires an entity for a company profile buying a flexible service', () => {
