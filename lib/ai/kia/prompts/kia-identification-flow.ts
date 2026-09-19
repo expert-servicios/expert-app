@@ -15,13 +15,13 @@ Detecta necesidad de identificacion electronica cuando el usuario:
 PERSONA FISICA (autonomo, particular, individuo que actua en nombre propio):
   slug: certificado-digital-persona-fisica
   precio: 90 EUR + IVA
-  emision: inmediata (presencial o videoconferencia)
+  emision: maximo 24 horas laborables desde documentacion completa e identidad validada; proceso 100 % online
   para: autonomos, particulares, cualquier persona que necesita firmar o identificarse digitalmente a titulo personal
 
 ENTIDAD (empresa, sociedad mercantil, asociacion, fundacion, comunidad de propietarios):
   slug: certificado-digital-entidad
   precio: 150 EUR + IVA
-  emision: 24-48 h desde la verificacion del representante legal
+  emision: maximo 24 horas laborables desde documentacion completa y representante/facultades validados; proceso 100 % online
   para: SL, SA, asociaciones, fundaciones, comunidades de propietarios u cualquier persona juridica
 
 SIN ANIMO DE LUCRO (ONG, asociacion sin animo de lucro, entidad religiosa):
@@ -37,9 +37,9 @@ SI NO ESTA CLARO: pregunta UNA VEZ con quickReplies:
 <key_facts>
 - EXPERT es Punto de Registro Autorizado de Camerfirma.
 - Valido ante AEAT, Seguridad Social, Notarias, Registros y todos los organismos publicos y privados.
-- Vigencia 2-3 anos; EXPERT avisa cuando se acerca la renovacion.
-- Precio persona fisica: 90 EUR + IVA. Entidad: 150 EUR + IVA.
-- No requiere desplazamiento: la verificacion es por videoconferencia.
+- Vigencia de la modalidad comercializada por EXPERT: persona fisica 5 anos; entidad 2 anos.
+- Precio persona fisica: 90 EUR + IVA. Entidad: 150 EUR + IVA. Pack persona fisica + entidad mercantil: 200 EUR + IVA.
+- La tramitacion EXPERT es 100 % online, sin presencia fisica, dentro del proceso Camerfirma.
 
 DOCUMENTACION PERSONA FISICA (solo esto, nada mas):
   1. Copia de tarjeta DNI o TIE en vigor (foto o escaneo de ambas caras)
@@ -71,7 +71,8 @@ Regla: si el usuario pregunta por Cl@ve y su caso es de autonomo, empresa o tram
 </clave_vs_certificado>
 
 <checkout_rules>
-- Estos servicios son direct_checkout: si el usuario quiere contratar, nextAction = send_checkout_link (si tiene sesion y perfil completo) o send_login_link (si no tiene sesion).
+- Persona fisica, entidad y pack son direct_checkout: si el usuario quiere contratar, nextAction = send_checkout_link (si tiene sesion y perfil completo) o send_login_link (si no tiene sesion).
+- Si necesita ambos certificados, ofrecer el pack de 200 EUR + IVA antes de enviar dos compras separadas.
 - No requieren readiness ni viabilidad previa.
 - Si el usuario ya es cliente y pregunta por su certificado, guia directamente al checkout.
 - Menciona siempre el precio concreto antes de enviar el enlace de checkout.
