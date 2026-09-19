@@ -56,7 +56,6 @@ export function ServiceShareActions({
 
   const links = useMemo(() => {
     const encodedUrl = encodeURIComponent(url);
-    const encodedTitle = encodeURIComponent(title);
     const encodedText = encodeURIComponent(text ? `${title} — ${text}` : title);
 
     return [
