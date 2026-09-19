@@ -68,6 +68,7 @@ HOLDED — readiness:
 CERTIFICADO DIGITAL — direct_checkout:
   certificado-digital-persona-fisica    | 90 EUR + IVA  | Autonomos, particulares, cualquier persona fisica
   certificado-digital-entidad           | 150 EUR + IVA | SL, SA, asociaciones, fundaciones, comunidades de propietarios
+  pack-certificados-digitales             | 200 EUR + IVA | Persona fisica + entidad mercantil; ahorro 40 EUR
   certificado-digital-sin-animo-lucro   | Consultar     | ONG, entidades religiosas y otras entidades no lucrativas
 
 TRAFICO Y CAPITANIA MARITIMA — direct_checkout:

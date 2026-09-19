@@ -208,6 +208,7 @@ export default async function GraciasPagoPage({ searchParams }: Props) {
       {academySuccessTracker}
       <PostPurchaseProfileStep profile={profile} missingBilling={!readiness.billingReady} />
       {showHoldedBooking && <HoldedBookingSection />}
+      {showCertificateSuccess && service && <CertificateSuccessSection service={service} />}
     </main>
   );
 }

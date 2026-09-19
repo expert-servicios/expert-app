@@ -964,7 +964,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     category: 'certificado-digital',
     requiredData: [
       'Domicilio completo (calle, número, piso, código postal, localidad)',
-      'Si prefiere la cita presencial o por videoconferencia',
+      'Confirmación de que dispone de conexión y equipo para completar la identificación e instalación online',
       'Si tiene ordenador con Windows o macOS disponible para la instalación',
     ],
     requiredDocs: [
@@ -973,10 +973,10 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     keyQuestions: [
       '¿Tienes el DNI o TIE en vigor? Necesitamos una foto o escáner de ambas caras.',
       '¿Cuál es tu domicilio completo (calle, número, piso, CP, localidad)?',
-      '¿Prefieres la cita presencial o por videoconferencia?',
+      '¿Tienes disponible el equipo en el que quieres instalar el certificado para completar el proceso online?',
     ],
     botInstructions:
-      'Solo necesitamos la copia de la tarjeta DNI/TIE (foto o escáner de ambas caras) y el domicilio completo. Somos Punto de Registro Autorizado de Camerfirma. Proceso: menos de 15 minutos. Emision en el momento de la cita. Precio: 90 € + IVA. Validez: 2–3 años. Tras el pago online confirmamos la cita en menos de 24 horas.',
+      'Solo necesitamos la copia de la tarjeta DNI/TIE (foto o escáner de ambas caras) y el domicilio completo. EXPERT tramita el certificado 100 % online dentro del proceso Camerfirma. Precio: 90 € + IVA. Vigencia de la modalidad comercializada por EXPERT: 5 años. Plazo máximo de tramitación: 24 horas laborables desde documentación completa e identidad validada.',
     estimatedPrice: '90 €',
   },
 
@@ -1001,7 +1001,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Dispones de las escrituras o nota mercantil actualizada (o estatutos y acta si es asociación)?',
     ],
     botInstructions:
-      'Para el certificado de entidad necesitamos: copia de DNI/TIE del representante, dirección de la entidad, y documentos de constitución (escrituras o nota mercantil para sociedades; estatutos y acta para asociaciones). Somos Punto de Registro Autorizado de Camerfirma. Precio: 150 € + IVA. Plazo: 24–48 horas desde la verificación del representante.',
+      'Para el certificado de entidad necesitamos: copia de DNI/TIE del representante, dirección de la entidad y documentación que acredite la entidad y las facultades de representación. EXPERT tramita el certificado 100 % online dentro del proceso Camerfirma. Precio: 150 € + IVA. Vigencia: 2 años. Plazo máximo: 24 horas laborables desde expediente completo y representante/facultades validados.',
     estimatedPrice: '150 €',
   },
 
@@ -1014,7 +1014,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'CIF o NIF de la entidad',
       'Nombre y cargo del representante legal (presidente, secretario, etc.)',
       'Si tiene estatutos y acta de nombramiento del cargo actualizados',
-      'Si prefiere la cita presencial o por videoconferencia',
+      'Confirmación de que dispone de conexión y equipo para completar la identificación e instalación online',
     ],
     requiredDocs: [
       'CIF o NIF de la entidad',
@@ -1027,10 +1027,10 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Qué tipo de entidad es?',
       '¿Tienes los estatutos y el acta de nombramiento del representante actualizados?',
       '¿Para qué trámites necesita el certificado la entidad?',
-      '¿Prefieres la cita presencial o por videoconferencia?',
+      '¿Tienes disponible el equipo en el que quieres instalar el certificado para completar el proceso online?',
     ],
     botInstructions:
-      'El certificado de entidad sin ánimo de lucro sigue el mismo proceso que el de entidad comercial pero adaptado a la documentación de estas organizaciones (estatutos + acta en lugar de escrituras). Precio: 150 €. Plazo: 24–48 horas desde la verificación. Somos Punto de Registro Autorizado de Camerfirma.',
+      'El certificado de entidad sin ánimo de lucro sigue el mismo proceso online que el de entidad comercial, adaptado a la documentación de estas organizaciones (estatutos + acta en lugar de escrituras). Precio: 150 €. Plazo máximo: 24 horas laborables desde expediente completo y representante/facultades validados. EXPERT tramita el certificado dentro del proceso Camerfirma.',
     estimatedPrice: '150 €',
   },
 
