@@ -1203,12 +1203,12 @@ En EXPERT somos **Punto de Registro Autorizado de Camerfirma**, lo que nos permi
 ### Persona física
 Identifica a un individuo en sus relaciones personales y profesionales. Válido para cualquier persona física, incluyendo autónomos que actúan en nombre propio.
 
-**Precio: 90 €** | **Tiempo de emisión: inmediato** (presencial o videoconferencia)
+**Precio EXPERT: 90 € + IVA** | **Vigencia de la modalidad comercializada: 5 años**
 
 ### Entidad (persona jurídica)
 Identifica a la organización (empresa, asociación, fundación, comunidad de propietarios...) y permite actuar y firmar en nombre de ella.
 
-**Precio: 150 €** | **Tiempo de emisión: 24–48 horas** desde la verificación del representante
+**Precio EXPERT: 150 € + IVA** | **Vigencia de la modalidad comercializada: 2 años**
 
 ## Diferencias clave
 
@@ -1243,7 +1243,7 @@ Identifica a la organización (empresa, asociación, fundación, comunidad de pr
 
 ## Validez y renovación
 
-Los certificados Camerfirma tienen una validez de **2 a 3 años** según el tipo. Cuando se aproxima la caducidad, te avisamos para renovarlo antes de que expire.
+La vigencia depende de la modalidad concreta. En el catálogo EXPERT, la modalidad de persona física se ofrece con **5 años** de vigencia y la modalidad de entidad con **2 años**.
 
 Si el certificado caduca sin renovar, es necesario obtener uno nuevo con el mismo proceso de verificación de identidad.
 
@@ -1252,6 +1252,227 @@ Si el certificado caduca sin renovar, es necesario obtener uno nuevo con el mism
 **Para persona física**: no es necesario desplazarte. La verificación se puede hacer por videoconferencia. Solo necesitas conexión a internet y tu DNI/NIE.
 
 **Para entidad**: el representante legal debe verificar su identidad (también se puede hacer por videoconferencia). Sí es necesario enviar previamente la documentación de la empresa por email para la verificación documental.
+    `
+  },
+
+  {
+    slug: 'certificado-digital-persona-fisica-documentacion-instalacion',
+    category: 'tramites',
+    title: 'Certificado digital de persona física: documentos, instalación y uso',
+    excerpt: 'Qué debes preparar antes de la cita, cómo se instala el certificado Camerfirma y qué revisar para empezar a usarlo correctamente.',
+    tags: ['certificado digital persona física', 'Camerfirma', 'DNI', 'TIE', 'instalación certificado'],
+    updatedAt: '19 sep 2026',
+    readTime: '7 min',
+    relatedServiceSlugs: ['certificado-digital-persona-fisica'],
+    relatedServiceCategories: ['certificado-digital'],
+    seoTitle: 'Certificado digital persona física: documentos e instalación | EXPERT',
+    seoDescription: 'Checklist para obtener e instalar el certificado digital Camerfirma de persona física: documentación, equipo, copia de seguridad y primeros usos.',
+    body: `
+## Qué debes preparar
+
+Para la modalidad de persona física que tramita EXPERT conviene tener preparado:
+
+- DNI o TIE en vigor, por ambas caras.
+- Domicilio completo.
+- Un ordenador Windows o macOS en el que quieras instalar el certificado.
+- Acceso al correo electrónico que utilices durante el proceso.
+
+## Verificación de identidad
+
+La identificación puede realizarse según la modalidad y procedimiento habilitado para el certificado. Camerfirma dispone de procesos de identificación remota y presencial para distintos productos. EXPERT confirma el método aplicable antes de la emisión.
+
+## Instalación
+
+Una vez emitido:
+
+1. instalamos el certificado en el equipo elegido;
+2. verificamos que el navegador y el sistema lo reconozcan;
+3. hacemos una prueba de acceso o firma cuando procede;
+4. explicamos cómo conservar una copia de seguridad.
+
+## Copia de seguridad
+
+La copia de seguridad es especialmente importante en certificados software.
+
+Guárdala:
+- en un soporte seguro;
+- protegida con contraseña;
+- fuera del equipo principal cuando sea posible.
+
+No envíes el fichero del certificado ni su contraseña por mensajería insegura.
+
+## Usos habituales
+
+- identificarte ante AEAT;
+- realizar trámites con Seguridad Social;
+- presentar escritos y solicitudes;
+- firmar documentos;
+- acceder a sedes electrónicas compatibles.
+
+## Vigencia del servicio EXPERT
+
+La modalidad de persona física comercializada por EXPERT tiene una vigencia de **5 años**.
+
+La renovación o nueva emisión al finalizar la vigencia se contrata aparte.
+
+## Fuente
+
+Camerfirma — certificados digitales:
+https://www.camerfirma.com/new-certificados-digitales/
+    `
+  },
+  {
+    slug: 'certificado-digital-persona-fisica-seguridad-copia-renovacion',
+    category: 'tramites',
+    title: 'Cómo proteger tu certificado digital personal: copia, contraseña y renovación',
+    excerpt: 'Buenas prácticas para guardar, usar y renovar un certificado digital de persona física sin perder acceso ni comprometer tus claves.',
+    tags: ['seguridad certificado digital', 'copia seguridad', 'renovación certificado', 'firma electrónica'],
+    updatedAt: '19 sep 2026',
+    readTime: '6 min',
+    relatedServiceSlugs: ['certificado-digital-persona-fisica'],
+    relatedServiceCategories: ['certificado-digital'],
+    seoTitle: 'Seguridad del certificado digital: copia y renovación | EXPERT',
+    seoDescription: 'Cómo proteger un certificado digital personal: copia segura, contraseña, cambio de equipo, pérdida y renovación.',
+    body: `
+## El certificado es una credencial sensible
+
+Un certificado digital permite identificarte y firmar electrónicamente. Debe tratarse como una credencial de alto valor.
+
+Nunca compartas el fichero, su contraseña ni las claves privadas.
+
+## Copia de seguridad recomendada
+
+1. crea una copia exportable protegida por contraseña;
+2. guárdala en un soporte seguro;
+3. evita carpetas compartidas;
+4. no la envíes por email sin protección;
+5. conserva la contraseña en un gestor seguro.
+
+## Si cambias de ordenador
+
+Exporta y prueba la copia antes de borrar o sustituir el equipo antiguo.
+
+## Si pierdes el certificado
+
+Si existe riesgo de acceso no autorizado hay que valorar la revocación. No sigas utilizando una credencial si no puedes garantizar el control de su clave privada.
+
+## Renovación
+
+La modalidad de persona física comercializada por EXPERT tiene una vigencia de **5 años**. Conviene iniciar la revisión antes del vencimiento para evitar interrupciones.
+
+## Fuente
+
+Camerfirma — certificados digitales:
+https://www.camerfirma.com/new-certificados-digitales/
+    `
+  },
+  {
+    slug: 'certificado-digital-entidad-documentos-representante',
+    category: 'tramites',
+    title: 'Certificado digital de entidad: documentación del representante y de la organización',
+    excerpt: 'Checklist para preparar la documentación de una sociedad, asociación u otra entidad y acreditar correctamente las facultades del representante.',
+    tags: ['certificado digital entidad', 'representante legal', 'Camerfirma', 'empresa', 'poderes'],
+    updatedAt: '19 sep 2026',
+    readTime: '8 min',
+    relatedServiceSlugs: ['certificado-digital-entidad'],
+    relatedServiceCategories: ['certificado-digital'],
+    seoTitle: 'Certificado digital de entidad: documentos del representante | EXPERT',
+    seoDescription: 'Qué documentos necesita una entidad y su representante para tramitar un certificado digital Camerfirma con EXPERT.',
+    body: `
+## Dos bloques de documentación
+
+En un certificado vinculado a una organización hay que verificar la identidad de la persona que actúa y la existencia de la entidad y sus facultades de representación.
+
+## Documentación del representante
+
+Normalmente se revisa:
+
+- DNI o TIE en vigor;
+- datos de contacto;
+- cargo o condición en la que actúa.
+
+## Documentación de la entidad
+
+Según el tipo de organización pueden ser necesarios:
+
+- CIF/NIF de la entidad;
+- escritura de constitución;
+- nota o certificación registral;
+- estatutos;
+- acta de nombramiento;
+- escritura de poder;
+- documento acreditativo de facultades.
+
+## Representante legal y apoderado no son lo mismo
+
+Camerfirma distingue certificados y figuras según las facultades del titular. EXPERT revisa tipo de entidad, cargo, poderes y uso previsto antes de emitir.
+
+## Vigencia
+
+La modalidad de entidad comercializada por EXPERT tiene una vigencia de **2 años**.
+
+## Fuentes
+
+Camerfirma — certificados para empresas:
+https://www.camerfirma.com/certificados-digitales-empresas/
+
+Camerfirma — representante legal:
+https://www.camerfirma.com/certificado-cualificado-de-representacion/
+    `
+  },
+  {
+    slug: 'certificado-digital-entidad-tipos-usos-seguridad',
+    category: 'tramites',
+    title: 'Certificados digitales para empresa: representación, corporativo y sello electrónico',
+    excerpt: 'Cómo distinguir entre certificado de representante, certificado corporativo y sello electrónico antes de contratar una modalidad para tu organización.',
+    tags: ['certificado empresa', 'representante legal', 'certificado corporativo', 'sello electrónico', 'Camerfirma'],
+    updatedAt: '19 sep 2026',
+    readTime: '8 min',
+    relatedServiceSlugs: ['certificado-digital-entidad'],
+    relatedServiceCategories: ['certificado-digital'],
+    seoTitle: 'Certificados digitales para empresa: tipos y diferencias | EXPERT',
+    seoDescription: 'Diferencias entre certificado de representante, corporativo y sello electrónico y cómo elegir la modalidad adecuada para una entidad.',
+    body: `
+## No todos los certificados de empresa son equivalentes
+
+Camerfirma comercializa distintas figuras para organizaciones. Elegir la correcta depende de quién firma y con qué facultades.
+
+## Certificado de representante
+
+Está orientado a personas físicas con facultades para representar legalmente a la organización.
+
+## Certificado corporativo
+
+Acredita la pertenencia de una persona a una organización. Camerfirma indica que el corporativo no otorga por sí mismo poderes generales de representación.
+
+## Sello electrónico
+
+El sello electrónico se utiliza para identificar a la entidad en determinados procesos o documentos automatizados y no equivale a la firma personal de un representante.
+
+## Antes de contratar
+
+Conviene definir:
+- quién utilizará el certificado;
+- si debe actuar ante Administraciones Públicas;
+- si debe firmar contratos en nombre de la entidad;
+- si se trata de un empleado sin poderes;
+- si se necesita automatización;
+- qué facultades constan en los poderes.
+
+## Vigencia
+
+La modalidad de entidad comercializada por EXPERT tiene una vigencia de **2 años**.
+
+## Fuentes
+
+Camerfirma — certificados para empresas:
+https://www.camerfirma.com/certificados-digitales-empresas/
+
+Camerfirma — certificado corporativo:
+https://www.camerfirma.com/certificados-digitales/certificado-digital-cualificado-corporativo/
+
+Camerfirma — sello electrónico:
+https://www.camerfirma.com/certificado-sello-electronico-digital/
     `
   },
 
