@@ -62,7 +62,7 @@ export const metadata: Metadata = {
 };
 
 const includedItems = [
-  'Проверка документов организации и полномочий законного представителя.',
+  'Онлайн-проверка документов организации, полномочий и личности представителя EXPERT в рамках процесса Camerfirma.',
   'Выпуск цифрового сертификата Camerfirma для организации.',
   'Установка и настройка сертификата на компьютере представителя.',
   'Проверка работы сертификата перед завершением услуги.',
@@ -191,8 +191,7 @@ export default function RuCertificateEntityPage() {
             Цифровой сертификат Camerfirma для компании или организации
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-white/65">
-            Оформляем цифровой сертификат для SL, SA, ассоциаций, фондов и других организаций.
-            Проверяем документы организации и полномочия представителя, выпускаем сертификат и помогаем с установкой.
+            Оформляем цифровой сертификат Camerfirma для компании полностью онлайн, без личного визита. EXPERT проверяет документы организации, полномочия представителя и проводит удалённую идентификацию. После полного комплекта документов и подтверждения полномочий срок оформления — максимум 24 рабочих часа.
           </p>
 
           <div className="mt-8 grid gap-4 md:grid-cols-2">
@@ -204,7 +203,7 @@ export default function RuCertificateEntityPage() {
             <div className="border border-[#D4A017]/50 bg-[#D4A017]/10 p-5">
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4A017]">Срок</p>
               <p className="mt-2 text-xl font-bold text-white">{service.duration}</p>
-              <p className="mt-1 text-xs leading-5 text-white/55">После проверки документов и представителя.</p>
+              <p className="mt-1 text-xs leading-5 text-white/55">Полностью онлайн, без личного визита.</p>
             </div>
           </div>
 
@@ -251,6 +250,17 @@ export default function RuCertificateEntityPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="border border-[#D4A017]/30 bg-[#D4A017]/8 p-6">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4A017]">Пакетное предложение</p>
+            <h2 className="mt-2 font-serif text-2xl font-bold">Нужен также личный сертификат?</h2>
+            <p className="mt-3 text-sm leading-6 text-[#23364D]">
+              Личный сертификат + сертификат юридического лица: 200 € + IVA вместо 240 € + IVA. Экономия 40 €, один заказ, полностью онлайн.
+            </p>
+            <Link href="/ru/uslugi/paket-cifrovyh-sertifikatov" className="mt-4 inline-flex min-h-11 items-center justify-center bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A]">
+              Посмотреть пакет
+            </Link>
           </div>
 
           <div>
