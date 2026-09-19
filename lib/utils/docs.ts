@@ -1,4 +1,5 @@
 import type { CategorySlug } from './catalog';
+import { serviceOperationalGuides } from '@/lib/services/service-operational-guides';
 import { getGeneratedBatch1KnowledgeDocs } from '@/lib/services/service-generated-content';
 
 export type DocCategorySlug = 'extranjeria-nacionalidad' | 'fiscalidad' | 'empresas' | 'tramites' | 'holded';
@@ -27,6 +28,7 @@ export const docCategories: { slug: DocCategorySlug; name: string }[] = [
 ];
 
 export const docs: KnowledgeDoc[] = [
+  ...serviceOperationalGuides,
   ...getGeneratedBatch1KnowledgeDocs(),
   {
     slug: 'nacionalidad-espanola-menor-nacido-en-espana',
