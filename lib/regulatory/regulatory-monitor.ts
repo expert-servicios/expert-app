@@ -72,7 +72,14 @@ function decodeEntities(value: string) {
 function normalizePayload(raw: string, strategy: RegulatorySourceRow['fetch_strategy']) {
   let value = raw;
 
-  if (strategy === 'html') {
+  if (strategy === 'rss' || strategy === 'xml') {
+    value = value
+      .replace(/<lastBuildDate\b[^>]*>[\s\S]*?<\/lastBuildDate>/gi, ' ')
+      .replace(/<generator\b[^>]*>[\s\S]*?<\/generator>/gi, ' ')
+      .replace(/<atom:link\b[^>]*\/>/gi, ' ');
+  }
+
+  if (strategy === 'html' || strategy === 'rss' || strategy === 'xml') {
     value = value
       .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
       .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
