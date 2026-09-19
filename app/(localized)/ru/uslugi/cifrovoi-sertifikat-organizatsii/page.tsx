@@ -12,6 +12,7 @@ const ES_URL = 'https://expertconsulting.es/servicios/certificado-digital/certif
 const RU_PATH = '/ru/uslugi/cifrovoi-sertifikat-organizatsii';
 const RU_URL = `https://expertconsulting.es${RU_PATH}`;
 const SHARE_IMAGE_URL = `https://expertconsulting.es/api/services/og?slug=${encodeURIComponent(SERVICE_SLUG)}&variant=square&lang=ru`;
+const SHARE_TITLE = 'Цифровой сертификат Camerfirma для организации';
 
 const service = (() => {
   const canonical = getCatalogService(SERVICE_SLUG);
@@ -399,7 +400,7 @@ export default function RuCertificateEntityPage() {
           <ServiceRatingSummary serviceSlug={SERVICE_SLUG} locale="ru" />
           <ServiceShareActions
             url={RU_URL}
-            title={service.name}
+            title={SHARE_TITLE}
             text="Цифровой сертификат Camerfirma для компании: полностью онлайн, 150 € + IVA."
             locale="ru"
           />
