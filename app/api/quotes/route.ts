@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         name: validated.name,
         email: validated.email,
         phone: validated.phone?.trim() || null,
-        client_type: 'persona_fisica',
+        client_type: 'particular',
         category: 'Presupuesto',
         service: serviceList,
         country: 'ES',
@@ -88,7 +88,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Error al registrar la solicitud' }, { status: 500 });
     }
 
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
     const quoteTitle = `Solicitud de presupuesto de ${validated.name}`;
     const quoteDescription = `Servicios:\n${serviceList}\n\nDetalles:\n${descriptionText}`;
 
@@ -100,9 +99,9 @@ export async function POST(request: NextRequest) {
         title: quoteTitle,
         description: quoteDescription,
         amount_eur: 0.0,
-        status: 'sent',
+        status: 'draft',
         stripe_checkout_id: null,
-        expires_at: expiresAt,
+        expires_at: null,
         created_by: adminId
       })
       .select('id')
@@ -137,7 +136,7 @@ export async function POST(request: NextRequest) {
     notifyAdmins({
       title: `💼 Nuevo presupuesto: ${validated.name}`,
       body: serviceList.length > 80 ? serviceList.slice(0, 77) + '…' : serviceList,
-      url: '/admin/quotes',
+      url: '/admin/presupuestos',
       tag: `quote-${quote.id}`,
     }).catch(() => {});
 
