@@ -160,7 +160,7 @@ export const catalogLaunchSocialPacks: ServiceLaunchPack[] = [
         status: 'review',
       },
     ],
-  },,
+  },
   {
     serviceSlug: 'certificado-digital-persona-fisica',
     locale: 'es',
