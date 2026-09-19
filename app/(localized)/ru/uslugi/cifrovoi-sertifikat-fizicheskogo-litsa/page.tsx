@@ -22,6 +22,9 @@ const service = (() => {
   };
 })();
 
+const OFFER_PRICE =
+  service.price.match(/[0-9]+(?:[.,][0-9]+)?/)?.[0]?.replace(',', '.') ?? service.price;
+
 const CART_ITEM = {
   priceId: service.stripePriceId,
   name: service.name,
@@ -114,6 +117,10 @@ const faqItems = [
     q: 'Поможете ли вы установить сертификат?',
     a: 'Да. Установка, настройка и проверка работы входят в услугу.',
   },
+  {
+    q: 'Какой срок действия?',
+    a: 'Модальность сертификата физического лица, которую предлагает EXPERT, имеет срок действия 5 лет.',
+  },
 ];
 
 export default function RuCertificatePersonPage() {
@@ -135,7 +142,7 @@ export default function RuCertificatePersonPage() {
     url: RU_URL,
     offers: {
       '@type': 'Offer',
-      price: '90',
+      price: OFFER_PRICE,
       priceCurrency: 'EUR',
       availability: 'https://schema.org/InStock',
       url: RU_URL,
@@ -281,6 +288,16 @@ export default function RuCertificatePersonPage() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div className="border border-[#D4A017]/25 bg-white p-6">
+            <h2 className="font-serif text-2xl font-bold">Полезные материалы</h2>
+            <div className="mt-4 grid gap-3">
+              <Link href="/docs/certificado-digital-camerfirma-guia" className="text-sm font-semibold underline decoration-[#D4A017] underline-offset-4">Общая инструкция Camerfirma →</Link>
+              <Link href="/docs/certificado-digital-persona-fisica-documentacion-instalacion" className="text-sm font-semibold underline decoration-[#D4A017] underline-offset-4">Документы, установка и использование →</Link>
+              <Link href="/docs/certificado-digital-persona-fisica-seguridad-copia-renovacion" className="text-sm font-semibold underline decoration-[#D4A017] underline-offset-4">Безопасность, копия и продление →</Link>
+              <Link href="/blog/certificado-digital-persona-fisica-vs-clave-dnie" className="text-sm font-semibold underline decoration-[#D4A017] underline-offset-4">Сертификат vs. Cl@ve vs. DNIe →</Link>
+            </div>
           </div>
 
           <div>
