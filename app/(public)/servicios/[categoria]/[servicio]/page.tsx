@@ -14,6 +14,9 @@ import { getDocsForService } from '@/lib/utils/docs';
 import { getArticlesForService } from '@/lib/utils/blog';
 import { getCalMeetingUrl } from '@/lib/utils/cal';
 import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
+import { ServiceShareActions } from '@/components/services/ServiceShareActions';
+import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
+import { getCompanionServices } from '@/lib/services/service-merchandising';
 
 const CAL_REUNION_URL = getCalMeetingUrl();
 
@@ -120,7 +123,7 @@ export default async function ServicioDetallePage({
   const isCertificateCategory = categoria === 'certificado-digital';
   const isStandaloneCertificate = servicio === 'certificado-digital-persona-fisica' || servicio === 'certificado-digital-entidad';
   const viabilityCheck  = showViability ? getViabilityCheck(servicio) : null;
-  const relatedServices = getServicesByCategory(categoria as CategorySlug).filter((s) => s.slug !== servicio).slice(0, 3);
+  const companionServices = getCompanionServices(service);
   const relatedDocs = getDocsForService(service.slug);
   const relatedArticles = getArticlesForService(service.slug);
   const canonicalUrl = `https://expertconsulting.es/servicios/${categoria}/${servicio}`;
@@ -725,14 +728,26 @@ export default async function ServicioDetallePage({
               </div>
             )}
 
-            {relatedServices.length > 0 && (
+            <ServiceRatingSummary serviceSlug={service.slug} />
+
+            <ServiceShareActions
+              url={canonicalUrl}
+              title={service.name}
+              text={service.shortDescription}
+              compact
+            />
+
+            {companionServices.length > 0 && (
               <div className="border border-[#D4A017]/20 bg-white p-5">
-                <p className="mb-4 text-[10px] font-bold uppercase tracking-wider text-[#23364D]">Otros servicios del área</p>
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#23364D]">Servicios complementarios</p>
+                <p className="mb-4 text-xs leading-5 text-[#23364D]/65">
+                  Gestiones que suelen acompañar o completar este servicio.
+                </p>
                 <ul className="space-y-1">
-                  {relatedServices.map((s) => (
+                  {companionServices.map((s) => (
                     <li key={s.slug}>
                       <Link
-                        href={`/servicios/${categoria}/${s.slug}`}
+                        href={`/servicios/${s.categoria}/${s.slug}`}
                         className="flex items-center gap-2 px-2 py-2 text-sm font-medium text-[#0D1B2A] transition hover:bg-[#F8F6F1] hover:text-[#D4A017]"
                       >
                         <span className="text-[#D4A017]/50">→</span>
@@ -741,12 +756,6 @@ export default async function ServicioDetallePage({
                     </li>
                   ))}
                 </ul>
-                <Link
-                  href={`/servicios/${categoria}`}
-                  className="mt-3 block px-2 py-2 text-sm font-bold text-[#D4A017] transition hover:text-[#F2C14E]"
-                >
-                  Ver todos los servicios →
-                </Link>
               </div>
             )}
           </aside>
