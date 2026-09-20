@@ -69,15 +69,19 @@ Baja en Hacienda:
 OTROS MODELOS FRECUENTES:
 
 Modelo 720 — bienes y derechos en el extranjero:
-- Obligacion informativa (no impositiva) para residentes fiscales con bienes, cuentas o seguros en el extranjero que superen 50.000 EUR por categoria.
-- Plazo: 1 enero - 31 marzo del ano siguiente.
-- Importante: las sanciones por no presentar fueron muy altas historicamente; revisar la normativa actualizada con EXPERT.
-- Mas info: https://sede.agenciatributaria.gob.es/Sede/procedimientoini/GI34.shtml
+- Consultar MODEL_720_RULES antes de decidir si existe obligacion. El umbral no se aplica a todos los activos como una bolsa unica: hay categorias, reglas de valoracion y exenciones.
+- La ventana ordinaria es 1 enero - 31 marzo del ano siguiente, pero revisar siempre el ejercicio y los supuestos de declaracion posterior.
+- No tratar criptomonedas como Modelo 720 por defecto.
 
-Modelo 151 / Ley Beckham (regimen especial de impatriados):
-- Para trabajadores desplazados a Espana que cumplen requisitos: tributar como no residente (tipo fijo 24%) durante maximo 6 anos.
-- Solicitud en los 6 meses desde inicio de la actividad en Espana.
-- Requiere revision profesional — EXPERT gestiona la solicitud y la declaracion anual.
+Modelo 721 — monedas virtuales situadas en el extranjero:
+- Consultar MODEL_721_RULES. Verificar ubicacion del custodio, exclusiones y saldo conjunto antes de concluir que existe obligacion.
+- No confundir saldo fiat en una cuenta extranjera con moneda virtual del Modelo 721.
+
+Modelo 151 / regimen especial de desplazados:
+- Consultar IMPARTIATES_149_151_RULES antes de informar requisitos, duracion o plazo.
+- El Modelo 149 comunica opcion/renuncia/exclusion/fin del desplazamiento; el plazo de opcion depende de si es contribuyente principal o asociado.
+- La declaracion anual del contribuyente acogido al regimen se presenta mediante Modelo 151.
+- EXPERT revisa elegibilidad y documentacion antes de tramitar.
 
 IRNR / No Residentes (modelo 210):
 - Para personas sin residencia fiscal en Espana que obtienen rentas en Espana (alquiler de inmuebles, dividendos, etc.).
