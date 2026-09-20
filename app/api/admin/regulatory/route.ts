@@ -7,6 +7,7 @@ import {
 } from '@/lib/regulatory/regulatory-values';
 import { runRegulatoryPulse } from '@/lib/regulatory/regulatory-monitor';
 import { runRegulatoryWorker } from '@/lib/regulatory/regulatory-review';
+import { runRegulatoryHealthAudit } from '@/lib/regulatory/regulatory-audit';
 
 export const maxDuration = 300;
 
@@ -32,7 +33,11 @@ export async function GET(request: NextRequest) {
   if (!auth) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
-  return NextResponse.json({ ok: true, summary: await getRegulatoryPulseSummary() });
+  const [summary, health] = await Promise.all([
+    getRegulatoryPulseSummary(),
+    runRegulatoryHealthAudit(),
+  ]);
+  return NextResponse.json({ ok: true, summary, health });
 }
 
 export async function POST(request: NextRequest) {
