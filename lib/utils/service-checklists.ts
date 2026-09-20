@@ -662,9 +662,10 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Cuándo quieres celebrar la Junta General?',
       '¿Necesitas también el Impuesto de Sociedades?',
       '¿La sociedad tiene auditor?',
+      '¿Ha cambiado la titularidad real o la cadena de control desde las últimas cuentas?',
     ],
     botInstructions:
-      'Consultar ANNUAL_ACCOUNTS_LSC_RULES para calcular formulación, junta y depósito desde las fechas reales del ejercicio. Si existe incumplimiento, consultar REGISTRY_CLOSURE_RRM_RULES antes de informar sobre cierre registral y sus excepciones. Precio: consultar.',
+      'Consultar ANNUAL_ACCOUNTS_LSC_RULES para formulación, junta y depósito; BENEFICIAL_OWNERSHIP_RCTR_RULES para la hoja/declaración de titularidad real y cambios de control; y REGISTRY_CLOSURE_RRM_RULES si existe incumplimiento. Precio: consultar.',
     estimatedPrice: 'Consultar',
   },
 
@@ -677,7 +678,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Datos de la sociedad (CIF, denominación, domicilio)',
       'Si hay acuerdo unánime de todos los socios o se necesita convocatoria de Junta',
       'Datos del nuevo administrador o apoderado (DNI/NIE, dirección)',
-      'Si se quieren otorgar poderes generales o especiales (para qué actos)',
+      'Si se quieren otorgar poderes generales, para pleitos o para actos concretos y cuál es exactamente su alcance',
     ],
     requiredDocs: [
       'Escrituras de constitución actualizadas de la sociedad',
@@ -689,11 +690,11 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     keyQuestions: [
       '¿Qué modificación necesitas hacer en la empresa?',
       '¿Estáis de acuerdo todos los socios?',
-      '¿Necesitas poderes para una gestión concreta o poderes generales?',
+      '¿Necesitas un poder general mercantil, un poder para pleitos o un poder limitado a actos concretos?',
       '¿Hay que convocar Junta o es decisión del administrador?',
     ],
     botInstructions:
-      'Muchas modificaciones requieren escritura notarial e inscripción en el Registro Mercantil. El plazo varía: notaría 1–5 días, registro 5–15 días hábiles. Para poderes simples (sin cargo registral) el proceso es más rápido. Precio: consultar según tipo de modificación.',
+      'Consultar MERCANTILE_POWERS_RRM_RULES antes de afirmar que un poder debe inscribirse: los poderes generales mercantiles son registrables y existen excepciones para pleitos y actos concretos. Verificar también si la operación altera administración, control o titularidad real. Precio: consultar según el acto.',
     estimatedPrice: 'Consultar',
   },
 
