@@ -23,6 +23,7 @@ export async function runRegulatoryHealthAudit() {
   const [
     { data: sources, error: sourcesError },
     { data: values, error: valuesError },
+    { data: rulesets, error: rulesetsError },
     { data: dependencies, error: depsError },
     { data: runs, error: runsError },
   ] = await Promise.all([
@@ -33,8 +34,12 @@ export async function runRegulatoryHealthAudit() {
       .select('id,value_key,period_key,valid_from,valid_to,source_id,metadata')
       .order('value_key', { ascending: true })
       .order('valid_from', { ascending: true }),
+    admin.from('regulatory_rulesets')
+      .select('id,ruleset_key,schema_version,valid_from,valid_to,source_id,metadata')
+      .order('ruleset_key', { ascending: true })
+      .order('valid_from', { ascending: true }),
     admin.from('regulatory_dependencies')
-      .select('id,source_id,value_key,dependency_type,dependency_key')
+      .select('id,source_id,value_key,ruleset_key,dependency_type,dependency_key')
       .eq('active', true),
     admin.from('regulatory_review_runs')
       .select('id,run_type,status,started_at,finished_at')
@@ -44,12 +49,14 @@ export async function runRegulatoryHealthAudit() {
 
   if (sourcesError) throw new Error(sourcesError.message);
   if (valuesError) throw new Error(valuesError.message);
+  if (rulesetsError) throw new Error(rulesetsError.message);
   if (depsError) throw new Error(depsError.message);
   if (runsError) throw new Error(runsError.message);
 
   const issues: AuditIssue[] = [];
   const sourceIds = new Set((sources ?? []).map((source) => source.id));
   const valueKeys = new Set((values ?? []).map((value) => value.value_key));
+  const rulesetKeys = new Set((rulesets ?? []).map((ruleset) => ruleset.ruleset_key));
 
   for (const source of sources ?? []) {
     if (!source.last_fingerprint) {
@@ -154,6 +161,66 @@ export async function runRegulatoryHealthAudit() {
     }
   }
 
+  for (const ruleset of rulesets ?? []) {
+    if (!ruleset.source_id) {
+      issues.push({
+        code: 'ruleset_missing_source',
+        severity: 'critical',
+        entity: ruleset.ruleset_key,
+        message: `${ruleset.ruleset_key} no tiene fuente canónica asociada.`,
+      });
+    } else if (!sourceIds.has(ruleset.source_id)) {
+      issues.push({
+        code: 'ruleset_source_inactive',
+        severity: 'critical',
+        entity: ruleset.ruleset_key,
+        message: `${ruleset.ruleset_key} apunta a una fuente inactiva o inexistente.`,
+      });
+    }
+  }
+
+  const rulesetsByKey = new Map<string, NonNullable<typeof rulesets>>();
+  for (const ruleset of rulesets ?? []) {
+    const list = rulesetsByKey.get(ruleset.ruleset_key) ?? [];
+    list.push(ruleset);
+    rulesetsByKey.set(ruleset.ruleset_key, list);
+  }
+
+  for (const [rulesetKey, rows] of rulesetsByKey) {
+    const current = rows.filter((row) =>
+      row.valid_from <= today && (row.valid_to == null || row.valid_to >= today),
+    );
+    if (current.length === 0) {
+      issues.push({
+        code: 'ruleset_no_current_record',
+        severity: 'warning',
+        entity: rulesetKey,
+        message: `${rulesetKey} no tiene una regla vigente para ${today}.`,
+      });
+    }
+    if (current.length > 1) {
+      issues.push({
+        code: 'ruleset_multiple_current_records',
+        severity: 'critical',
+        entity: rulesetKey,
+        message: `${rulesetKey} tiene más de una versión vigente para ${today}.`,
+      });
+    }
+
+    for (let i = 1; i < rows.length; i += 1) {
+      const previous = rows[i - 1];
+      const next = rows[i];
+      if (previous.valid_to == null || previous.valid_to >= next.valid_from) {
+        issues.push({
+          code: 'ruleset_overlap',
+          severity: 'critical',
+          entity: rulesetKey,
+          message: `${rulesetKey} tiene vigencias solapadas entre versiones regulatorias.`,
+        });
+      }
+    }
+  }
+
   const sourceDependencyCounts = new Map<string, number>();
   for (const dependency of dependencies ?? []) {
     if (dependency.source_id) {
@@ -190,6 +257,14 @@ export async function runRegulatoryHealthAudit() {
         severity: 'critical',
         entity: dependency.id,
         message: `Dependencia ${dependency.dependency_type}:${dependency.dependency_key} apunta al valor inexistente ${dependency.value_key}.`,
+      });
+    }
+    if (dependency.ruleset_key && !rulesetKeys.has(dependency.ruleset_key)) {
+      issues.push({
+        code: 'dependency_orphan_ruleset',
+        severity: 'critical',
+        entity: dependency.id,
+        message: `Dependencia ${dependency.dependency_type}:${dependency.dependency_key} apunta al ruleset inexistente ${dependency.ruleset_key}.`,
       });
     }
   }
