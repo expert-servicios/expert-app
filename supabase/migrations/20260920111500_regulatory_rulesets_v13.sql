@@ -211,13 +211,15 @@ select
   1,'2026-07-01','2027-12-31',s.id,
   '{
     "transitional_rules":[
-      {"income":"rental_ungrouped","accrual_from":"2026-04-01","accrual_to":"2026-09-30","rule":"quarterly legacy filing remains applicable for these accruals"},
-      {"income":"rental","accrual_from":"2026-07-01","accrual_to":"2026-09-30","filing_from":"2026-10-01","filing_to":"2026-10-20"},
-      {"income":"rental","accrual_from":"2026-10-01","accrual_to":"2026-12-31","filing_from":"2027-04-01","filing_to":"2027-04-20"},
+      {"income":"rental_grouped_annual","accrual_from":"2026-01-01","accrual_to":"2026-12-31","filing_from":"2027-04-01","filing_to":"2027-04-20","rule":"If the taxpayer groups the rental income accrued in calendar year 2026, file from 1 to 20 April 2027."},
+      {"income":"rental_separate","accrual_from":"2026-01-01","accrual_to":"2026-03-31","filing_from":"2026-04-01","filing_to":"2026-04-20","rule":"Legacy quarterly filing window remains applicable when filing each rent separately."},
+      {"income":"rental_separate","accrual_from":"2026-04-01","accrual_to":"2026-06-30","filing_from":"2026-07-01","filing_to":"2026-07-20","rule":"Legacy quarterly filing window remains applicable when filing each rent separately."},
+      {"income":"rental_separate","accrual_from":"2026-07-01","accrual_to":"2026-09-30","filing_from":"2026-10-01","filing_to":"2026-10-20","rule":"Legacy quarterly filing window remains applicable when filing each rent separately."},
+      {"income":"rental_separate","accrual_from":"2026-10-01","accrual_to":"2026-12-31","filing_from":"2027-04-01","filing_to":"2027-04-20","rule":"The new April filing window applies to separate declarations for rents accrued in Q4 2026."},
       {"income":"imputed_real_estate","tax_year":2025,"filing_from":"2026-01-01","filing_to":"2026-12-31"},
       {"income":"imputed_real_estate","tax_year":2026,"filing_from":"2027-04-01","filing_to":"2027-12-31"}
     ],
-    "rule":"Never answer Modelo 210 rental deadlines with a timeless 'quarterly' rule; resolve by accrual date and income type."
+    "rule":"Never answer Modelo 210 rental deadlines with a timeless quarterly or annual rule. Resolve grouped versus separate filing, accrual date and income type first."
   }'::jsonb,
   '{"official_reference":"BOE-A-2026-13573","aeat_note":"modificaciones plazos Modelo 210"}'::jsonb
 from public.regulatory_sources s where s.source_key='boe_irnr_order_623_2026'
@@ -375,3 +377,117 @@ values
 on conflict (ruleset_key,dependency_type,dependency_key)
 where ruleset_key is not null
 do update set topic=excluded.topic, criticality=excluded.criticality, active=true, metadata=excluded.metadata;
+
+-- P0 closure: 2026 Corporate Income Tax rates and AEAT taxpayer calendar.
+insert into public.regulatory_sources
+  (source_key, authority, title, url, fetch_url, source_type, fetch_strategy, priority, topics, check_frequency, metadata)
+values
+  (
+    'aeat_is_rates_2026',
+    'AEAT',
+    'AEAT — Tipos de gravamen del Impuesto sobre Sociedades 2026',
+    'https://sede.agenciatributaria.gob.es/Sede/impuesto-sobre-sociedades/que-base-imponible-se-determina-sociedades/tipo-impositivo.html',
+    'https://sede.agenciatributaria.gob.es/Sede/impuesto-sobre-sociedades/que-base-imponible-se-determina-sociedades/tipo-impositivo.html',
+    'administrative',
+    'html',
+    'critical',
+    array['tax','corporate_tax','is','rates'],
+    'monthly',
+    '{"official":true,"evidence_source":true,"service_specific":false}'::jsonb
+  ),
+  (
+    'aeat_tax_calendar_2026',
+    'AEAT',
+    'AEAT — Calendario del contribuyente 2026',
+    'https://sede.agenciatributaria.gob.es/Sede/ayuda/calendario-contribuyente/calendario-contribuyente-2026/calendario-anual.html',
+    'https://sede.agenciatributaria.gob.es/Sede/ayuda/calendario-contribuyente/calendario-contribuyente-2026/calendario-anual.html',
+    'administrative',
+    'html',
+    'critical',
+    array['tax','calendar','deadlines','filing'],
+    'daily',
+    '{"official":true,"evidence_source":true,"service_specific":false,"year":2026}'::jsonb
+  )
+on conflict (source_key) do update set
+  authority=excluded.authority,
+  title=excluded.title,
+  url=excluded.url,
+  fetch_url=excluded.fetch_url,
+  source_type=excluded.source_type,
+  fetch_strategy=excluded.fetch_strategy,
+  priority=excluded.priority,
+  topics=excluded.topics,
+  check_frequency=excluded.check_frequency,
+  metadata=excluded.metadata,
+  active=true;
+
+insert into public.regulatory_rulesets
+  (ruleset_key,label,schema_version,valid_from,valid_to,source_id,payload,metadata)
+select
+  'IS_RATES_2026',
+  'Impuesto sobre Sociedades — tipos aplicables a periodos iniciados en 2026',
+  1,'2026-01-01','2026-12-31',s.id,
+  '{
+    "general_rate_percent":25,
+    "microenterprise":{"prior_year_net_turnover_lt_eur":1000000,"brackets":[{"base_from":0,"base_to":50000,"rate_percent":19},{"base_from":50000,"base_to":null,"rate_percent":21}]},
+    "reduced_dimension_entity":{"article":"101 LIS","rate_percent":23},
+    "new_entity":{"rate_percent":15,"rule":"Subject to the statutory requirements for newly created entities and applicable in the first tax period with a positive tax base and the following one."},
+    "patrimonial_entity":{"rate_percent":25},
+    "rule":"Never treat 25% as a universal SL rate. Determine the entity category and applicable special regime before calculating or comparing tax burdens."
+  }'::jsonb,
+  '{"official_reference":"AEAT Tipo impositivo 2026; art. 29 and DT 44 LIS","calculation_requires_entity_classification":true}'::jsonb
+from public.regulatory_sources s where s.source_key='aeat_is_rates_2026'
+on conflict (ruleset_key,schema_version,valid_from) do update set
+  valid_to=excluded.valid_to, source_id=excluded.source_id, payload=excluded.payload,
+  verified_at=now(), metadata=excluded.metadata;
+
+insert into public.regulatory_rulesets
+  (ruleset_key,label,schema_version,valid_from,valid_to,source_id,payload,metadata)
+select
+  'AEAT_TAX_CALENDAR_2026',
+  'AEAT — vencimientos verificados del calendario 2026',
+  1,'2026-01-01','2026-12-31',s.id,
+  '{
+    "deadlines":[
+      {"model":"180","period":"annual_2025","filing_to":"2026-02-02"},
+      {"model":"190","period":"annual_2025","filing_to":"2026-02-02"},
+      {"model":"347","period":"annual_2025","filing_to":"2026-03-02"},
+      {"model":"200","period":"annual_2025_calendar_year","filing_to":"2026-07-27"},
+      {"model":"202","period":"1P_2026","filing_to":"2026-04-20"},
+      {"model":"202","period":"2P_2026","filing_to":"2026-10-20"},
+      {"model":"202","period":"3P_2026","filing_to":"2026-12-21"},
+      {"model":"303","period":"4T_2025","filing_to":"2026-01-30"},
+      {"model":"303","period":"1T_2026","filing_to":"2026-04-20"},
+      {"model":"303","period":"2T_2026","filing_to":"2026-07-20"},
+      {"model":"303","period":"3T_2026","filing_to":"2026-10-20"},
+      {"model":"111","period":"4T_2025","filing_to":"2026-01-20"},
+      {"model":"115","period":"4T_2025","filing_to":"2026-01-20"},
+      {"model":"130","period":"4T_2025","filing_to":"2026-01-30"}
+    ],
+    "rule":"Use the exact published AEAT deadline for the filing year. Never mark a nominal statutory day as verified when a weekend or holiday moves the deadline."
+  }'::jsonb,
+  '{"official_reference":"AEAT Calendario del contribuyente 2026","year":2026}'::jsonb
+from public.regulatory_sources s where s.source_key='aeat_tax_calendar_2026'
+on conflict (ruleset_key,schema_version,valid_from) do update set
+  valid_to=excluded.valid_to, source_id=excluded.source_id, payload=excluded.payload,
+  verified_at=now(), metadata=excluded.metadata;
+
+insert into public.regulatory_dependencies
+  (ruleset_key,dependency_type,dependency_key,topic,criticality,metadata)
+values
+  ('IS_RATES_2026','service','impuesto-sociedades','tax','critical','{"impact_requires_classification":true}'::jsonb),
+  ('IS_RATES_2026','service','constitucion-sl','tax','high','{"impact_requires_classification":true}'::jsonb),
+  ('IS_RATES_2026','service','constitucion-sl-circe','tax','high','{"impact_requires_classification":true}'::jsonb),
+  ('IS_RATES_2026','course','formacion-alta-autonomo-sl','tax','critical','{"impact_requires_classification":true}'::jsonb),
+  ('IS_RATES_2026','course','formacion-planificacion-fiscal','tax','critical','{"impact_requires_classification":true}'::jsonb),
+  ('IS_RATES_2026','kia_prompt','tax','tax','critical','{"impact_requires_classification":true}'::jsonb),
+  ('AEAT_TAX_CALENDAR_2026','service','impuestos-trimestrales','tax','critical','{"impact_requires_classification":true}'::jsonb),
+  ('AEAT_TAX_CALENDAR_2026','service','iva-trimestral','tax','critical','{"impact_requires_classification":true}'::jsonb),
+  ('AEAT_TAX_CALENDAR_2026','service','impuesto-sociedades','tax','critical','{"impact_requires_classification":true}'::jsonb),
+  ('AEAT_TAX_CALENDAR_2026','service','contabilidad-mensual','tax','high','{"impact_requires_classification":true}'::jsonb),
+  ('AEAT_TAX_CALENDAR_2026','kia_prompt','tax','tax','critical','{"impact_requires_classification":true}'::jsonb),
+  ('AEAT_TAX_CALENDAR_2026','knowledge','fiscal-calendar','tax','critical','{"impact_requires_classification":true}'::jsonb)
+on conflict (ruleset_key,dependency_type,dependency_key)
+where ruleset_key is not null
+do update set topic=excluded.topic, criticality=excluded.criticality, active=true, metadata=excluded.metadata;
+
