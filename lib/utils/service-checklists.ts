@@ -596,7 +596,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Facturas emitidas del mes',
       'Facturas recibidas del mes',
       'Extractos bancarios del mes',
-      'Alta en Hacienda (Modelo 036/037)',
+      'Alta en Hacienda (Modelo 036)',
       'CIF (para sociedades)',
     ],
     keyQuestions: [
@@ -710,7 +710,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     ],
     requiredDocs: [
       'DNI / NIE en vigor',
-      'Alta en Hacienda (Modelo 036/037) original',
+      'Alta en Hacienda (Modelo 036) original',
       'Para sociedades: escrituras y libro de actas de la sociedad',
       'Última declaración del IVA e IRPF presentada',
     ],
@@ -1136,7 +1136,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Exportación CSV/Excel de facturas emitidas por período',
       'Exportación CSV/Excel de facturas recibidas (opcional, si disponible)',
       'Exportación de maestro de clientes y proveedores',
-      'Modelo 036/037 o alta fiscal (para datos fiscales de la empresa)',
+      'Modelo 036 o alta fiscal (para datos fiscales de la empresa)',
     ],
     keyQuestions: [
       '¿Ya tienes cuenta activa de Holded?',
@@ -1175,7 +1175,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Exportación de ubicaciones de almacén si aplica',
       'Exportación de facturas emitidas/recibidas si se migra historial',
       'Exportación de maestro de clientes y proveedores',
-      'Modelo 036/037 o alta fiscal para datos de empresa',
+      'Modelo 036 o alta fiscal para datos de empresa',
     ],
     keyQuestions: [
       '¿Ya tienes cuenta activa de Holded?',
