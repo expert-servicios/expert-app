@@ -1,4 +1,4 @@
--- KIA Regulatory Registry v1.3
+-- Global regulatory audit preflight: 2026-09-20; forward-only deployment after dry-run.\n-- KIA Regulatory Registry v1.3
 -- Versioned regulatory rule/table layer for EXPERT.
 -- DDL is migration-only; browser access remains denied.
 
