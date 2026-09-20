@@ -1214,9 +1214,9 @@ export const services: Service[] = [
     slug: 'matriculacion',
     categoria: 'trafico-capitania-maritima',
     name: 'Matriculación de Vehículos',
-    shortDescription: 'Primera matriculación de vehículos nuevos e importados.',
+    shortDescription: 'Primera matriculación e importación de vehículos, con circuito diferenciado UE y fuera de la UE.'
     description:
-      'Gestionamos la primera matriculación de vehículos nuevos o importados: liquidación del IEDMT (impuesto de matriculación), presentación de documentación ante la DGT, obtención de placas y entrega del permiso de circulación definitivo.',
+      'Gestionamos la primera matriculación y la importación de vehículos, diferenciando procedencia UE y fuera de la UE. Revisamos homologación/ITV, fiscalidad de la adquisición o importación, IEDMT, documentación aduanera cuando proceda y trámite final ante la DGT.',
     price: 'Consultar',
     duration: '5–10 días hábiles',
     includes: [
@@ -1226,7 +1226,7 @@ export const services: Service[] = [
       'Obtención de placas y permiso de circulación'
     ],
     faqs: [
-      { q: '¿Cuándo debo pagar el impuesto de matriculación?', a: 'En la primera matriculación en España o cuando el vehículo supera ciertos límites de emisiones de CO₂.' }
+      { q: '¿Cuándo debo pagar el impuesto de matriculación?', a: 'Depende del hecho imponible, posibles exenciones o no sujeciones, la categoría del vehículo, sus emisiones oficiales y la base aplicable. Lo verificamos antes de presentar el Modelo 576 o la vía que corresponda.' }
     ]
   },
   {
