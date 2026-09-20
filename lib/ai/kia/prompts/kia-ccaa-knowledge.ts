@@ -20,8 +20,7 @@ Tipos generales por CCAA (inmuebles — orientativos, verificar para el ejercici
 - Aragon, Castilla y Leon, Extremadura: en torno al 8%.
 - Islas Baleares, Canarias: tipos propios (Canarias aplica IGIC en lugar de IVA, con diferencias en ITP).
 
-Para vehiculos de segunda mano: el ITP se calcula sobre el valor venal (tabla oficial de la AEAT/CCAA), no sobre el precio de compraventa acordado. Tipo general: 4-8% segun CCAA.
-Modelo de autoliquidacion: generalmente el modelo 600 de la CCAA (o 620 para vehiculos en algunas CCAA).
+Para vehiculos de segunda mano: no usar un porcentaje nacional ni asumir una unica regla de valoracion. Resolver la CCAA, el modelo de autoliquidacion y el metodo de valoracion aplicables. Para el cambio de titularidad consultar DGT_VEHICLE_TRANSFER_2026 y, cuando exista una regla territorial versionada, consumirla antes de calcular.
 </ccaa_itp>
 
 <ccaa_isd>
