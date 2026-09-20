@@ -5,6 +5,14 @@ update public.regulatory_sources
 set metadata = coalesce(metadata, '{}'::jsonb) || '{"discovery_only":true,"monitoring_role":"source_directory"}'::jsonb
 where source_key in ('aeat_rss_hub','seg_social_rss_hub');
 
+-- BOE daily normalization changes in v1.2. Clear only its fingerprint so the
+-- first compact reading becomes a fresh baseline instead of a false legal change.
+update public.regulatory_sources
+set last_fingerprint = null,
+    last_error = null,
+    metadata = coalesce(metadata, '{}'::jsonb) || '{"fingerprint_version":2,"normalization":"boe_daily_compact_v1","discovery_only":true}'::jsonb
+where source_key = 'boe_daily_sumario';
+
 insert into public.regulatory_sources
   (source_key, authority, title, url, fetch_url, source_type, fetch_strategy, priority, topics, check_frequency, metadata)
 values
@@ -75,6 +83,7 @@ on conflict (source_key) do update set
 
 update public.regulatory_values v
 set source_id = s.id,
+    verified_at = now(),
     metadata = coalesce(v.metadata, '{}'::jsonb) || jsonb_build_object(
       'evidence_source_key', s.source_key,
       'evidence_url', s.url
