@@ -45,6 +45,8 @@ export async function POST(request: NextRequest) {
     action?: 'pulse' | 'worker' | 'apply_values' | 'resolve_change';
     authority?: string;
     sourceKey?: string;
+    topic?: string;
+    serviceKey?: string;
     changeId?: string;
     resolutionNote?: string;
     resolutionEvidence?: Record<string, unknown>;
@@ -83,9 +85,11 @@ export async function POST(request: NextRequest) {
     ok: true,
     result: await runRegulatoryPulse({
       runType: 'manual',
-      forceAll: !body.authority && !body.sourceKey,
+      forceAll: !body.authority && !body.sourceKey && !body.topic && !body.serviceKey,
       authority: body.authority,
       sourceKey: body.sourceKey,
+      topic: body.topic,
+      serviceKey: body.serviceKey,
     }),
   });
 }
