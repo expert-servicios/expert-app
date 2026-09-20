@@ -61,15 +61,18 @@ Pendiente del bloque fiscal:
 
 ## Lote 3 - mercantil
 
-Pendiente:
-- CIRCE/PAE/DUE;
-- formulación de cuentas: tres meses desde cierre;
-- junta ordinaria: seis primeros meses;
-- depósito: un mes desde aprobación;
-- cierre registral por falta de depósito;
-- legalización de libros;
+Implementado:
+- `ANNUAL_ACCOUNTS_LSC_RULES`: formulación, junta ordinaria, depósito y régimen sancionador;
+- `REGISTRY_CLOSURE_RRM_RULES`: cierre registral, excepciones y acreditación de falta de aprobación;
+- `BOOK_LEGALIZATION_RULES`: cuatro meses desde el cierre real del ejercicio;
+- `CIRCE_PAE_DUE_RULES`: PAE, CIRCE, DUE, escritura pública y coordinación notarial;
+- corrección del prompt PAE para no reutilizar 3.000 EUR como capital mínimo ni prometer ausencia de notaría;
+- corrección de fechas fijas de julio y simplificaciones del cierre registral.
+
+Pendiente mercantil:
 - titular real;
-- NIF y obligaciones censales de sociedades.
+- NIF y obligaciones censales específicas de sociedades;
+- revisar apoderamientos mercantiles y poderes como bloque propio.
 
 ## Regla de seguridad
 
