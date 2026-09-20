@@ -94,6 +94,39 @@ values
     array['nationality','immigration','civil_registry'],
     'daily',
     '{"official":true,"service_specific":true}'::jsonb
+  ),
+  (
+    'migraciones_renovacion_hub',
+    'Migraciones',
+    'Migraciones — Renovación o prórroga de residencia',
+    'https://www.inclusion.gob.es/es/web/migraciones/residencia',
+    'https://www.inclusion.gob.es/es/web/migraciones/residencia',
+    'administrative','html','critical',
+    array['immigration','residence','renewal'],
+    'daily',
+    '{"official":true,"service_specific":true,"scope":"permit_type_router"}'::jsonb
+  ),
+  (
+    'boe_trust_services_law',
+    'BOE',
+    'Ley 6/2020 — servicios electrónicos de confianza',
+    'https://www.boe.es/buscar/act.php?id=BOE-A-2020-14046',
+    'https://www.boe.es/buscar/act.php?id=BOE-A-2020-14046',
+    'legislation','html','critical',
+    array['digital_identity','trust_services','certificates'],
+    'daily',
+    '{"official":true,"service_specific":true,"official_reference":"BOE-A-2020-14046"}'::jsonb
+  ),
+  (
+    'boe_rd_1155_2024',
+    'BOE',
+    'Real Decreto 1155/2024 — Reglamento de Extranjería',
+    'https://www.boe.es/eli/es/rd/2024/11/19/1155',
+    'https://www.boe.es/eli/es/rd/2024/11/19/1155',
+    'legislation','html','critical',
+    array['immigration','residence','arraigo','family_reunification'],
+    'daily',
+    '{"official":true,"official_reference":"BOE-A-2024-24099"}'::jsonb
   )
 on conflict (source_key) do update set
   authority = excluded.authority,
@@ -133,21 +166,33 @@ join public.regulatory_sources s on s.source_key = m.source_key
 cross join (values ('service'),('operational_blueprint'),('viability')) as dt(dependency_type)
 on conflict do nothing;
 
--- Generic services still need a regulatory graph even when the exact administrative
--- sheet depends on the underlying permit or private certificate provider.
-with mapping(service_key, topic, criticality) as (
+with mapping(source_key, service_key, topic, criticality) as (
   values
-    ('renovacion-residencia','immigration','critical'),
-    ('certificado-digital-persona-fisica','digital_identity','high'),
-    ('certificado-digital-entidad','digital_identity','high'),
-    ('pack-certificados-digitales','digital_identity','high')
+    ('migraciones_renovacion_hub','renovacion-residencia','immigration','critical'),
+    ('boe_trust_services_law','certificado-digital-persona-fisica','digital_identity','high'),
+    ('boe_trust_services_law','certificado-digital-entidad','digital_identity','high'),
+    ('boe_trust_services_law','pack-certificados-digitales','digital_identity','high')
 )
 insert into public.regulatory_dependencies
   (source_id, dependency_type, dependency_key, topic, criticality)
 select s.id, dt.dependency_type, m.service_key, m.topic, m.criticality
 from mapping m
-join public.regulatory_sources s on s.source_key = 'boe_daily_sumario'
+join public.regulatory_sources s on s.source_key = m.source_key
 cross join (values ('service'),('operational_blueprint'),('viability')) as dt(dependency_type)
+on conflict do nothing;
+
+-- Primary immigration law remains a cross-cutting radar, but it is not directly
+-- tied to publication blocking for every individual service.
+insert into public.regulatory_dependencies
+  (source_id, dependency_type, dependency_key, topic, criticality)
+select s.id, d.dependency_type, d.dependency_key, 'immigration', 'high'
+from public.regulatory_sources s
+cross join (values
+  ('knowledge','immigration'),
+  ('kia_prompt','immigration'),
+  ('admin','immigration-operations')
+) as d(dependency_type, dependency_key)
+where s.source_key = 'boe_rd_1155_2024'
 on conflict do nothing;
 
 create or replace function public.apply_regulatory_value_reviewed(
