@@ -999,56 +999,68 @@ En EXPERT, como Holded Solution Partner, te ayudamos a evaluar si tu sistema act
     tags: ['VeriFactu', 'facturación electrónica', 'AEAT', 'software de facturación'],
     relatedServiceSlugs: ['contabilidad-mensual', 'formacion-holded'],
     body: `
-## ¿Qué es VeriFactu?
+## ¿Qué es VERI*FACTU?
 
-**VERI*FACTU** es el sistema de verificación de facturas de la Agencia Tributaria española, regulado por el **Real Decreto 1007/2023**. Permite a empresas y autónomos enviar sus registros de facturación directamente a la AEAT en tiempo real, garantizando su autenticidad e integridad mediante una cadena de huellas digitales (hash).
+**VERI*FACTU** es una de las dos modalidades previstas por el Reglamento de sistemas informáticos de facturación (RRSIF), aprobado por el **Real Decreto 1007/2023**. En esta modalidad, el sistema remite a la AEAT los registros de facturación inmediatamente después de producirlos y las facturas pueden ser cotejadas por el destinatario mediante el código QR.
 
-El nombre es un acrónimo de **VERIficación de FACTURas**.
+No debe confundirse VERI*FACTU con todo el RRSIF: también existe la modalidad **NO VERI*FACTU**, que cumple el mismo reglamento sin remitir automáticamente cada registro a la AEAT.
 
-## ¿Es obligatorio o voluntario?
+## ¿Es obligatorio VERI*FACTU?
 
-Aquí es donde existe confusión. El sistema funciona en dos niveles:
+La obligación es utilizar, cuando resulte aplicable el RRSIF, un sistema informático de facturación adaptado. Dentro de ese marco existen dos modalidades de cumplimiento:
 
-### 1. Sistemas VERI*FACTU (envío a la AEAT)
-Es **voluntario** optar por esta modalidad. Las empresas que lo adoptan envían cada factura a la AEAT en el momento de su emisión. A cambio, obtienen ciertas ventajas:
-- Quedan **exoneradas** de expedir factura electrónica a sus clientes en determinados supuestos.
-- Generan confianza adicional frente a la Administración.
+### 1. Sistemas VERI*FACTU
 
-### 2. Sistemas de facturación no VERI*FACTU
-Si no se opta por el envío a la AEAT, el software debe igualmente cumplir los **requisitos técnicos del Reglamento**: encadenamiento de registros, hash, QR en facturas, inmutabilidad de datos. Esto es **obligatorio** para todos.
+La elección de esta modalidad es **voluntaria**. El sistema remite los registros de facturación a la AEAT inmediatamente después de producirlos. Entre sus efectos prácticos:
 
-## Requisitos técnicos obligatorios para todo el software
+- la AEAT conserva los registros remitidos;
+- se simplifican determinadas obligaciones técnicas de conservación y seguridad que sí recaen sobre NO VERI*FACTU;
+- el destinatario puede cotejar mediante el QR que el registro de la factura se encuentra en poder de la AEAT.
 
-Independientemente de si se opta por VeriFactu o no, todos los sistemas de facturación deberán:
+### 2. Sistemas NO VERI*FACTU
 
-- **Generar un código hash** único para cada registro de facturación, encadenado con el anterior (similar a una blockchain).
-- **Incluir un código QR** en cada factura que permita a la AEAT verificar su autenticidad.
-- **Garantizar la inmutabilidad** de los registros: ningún registro podrá modificarse o eliminarse sin dejar huella.
-- **Conservar los registros** durante el período de prescripción tributaria (generalmente 4 años, pero se recomienda 6).
+No remiten automáticamente los registros de facturación a la AEAT, pero deben cumplir el RRSIF con **medidas adicionales de seguridad**, entre ellas la firma de los registros, el registro de eventos y los mecanismos reglamentarios de conservación, exportación y comprobación.
 
-## Calendario de implantación
+Las facturas emitidas mediante un SIF sujeto al reglamento incorporan el **código QR** exigido; la capacidad de cotejo en sede depende de la modalidad utilizada.
 
-| Colectivo | Obligatorio desde |
-|---|---|
-| Grandes empresas (> 6 M€ de facturación) | **1 julio 2025** |
-| Pymes, autónomos y resto de empresas | **1 julio 2026** |
+## Requisitos técnicos comunes y diferencias entre modalidades
 
-Los **proveedores de software** (ERP, programas de facturación, contabilidad) deberán tener sus productos certificados antes de que sus clientes estén obligados a cumplir.
+Los SIF incluidos en el RRSIF deben generar registros de facturación en el formato reglamentario y asegurar su integridad, conservación, accesibilidad, legibilidad, trazabilidad e inalterabilidad. El encadenamiento mediante huellas y el QR forman parte del esquema técnico previsto por la normativa.
+
+La forma de asegurar la conservación e inalterabilidad cambia según la modalidad: **VERI*FACTU** remite los registros a la AEAT, mientras que **NO VERI*FACTU** debe implementar controles adicionales como firma electrónica de registros y registro de eventos.
+
+## Calendario de implantación vigente
+
+- **Contribuyentes del Impuesto sobre Sociedades**: deben tener sus sistemas adaptados **antes del 1 de enero de 2027**.
+- **Resto de obligados tributarios del artículo 3.1 del RRSIF**: deben tenerlos operativos **antes del 1 de julio de 2027**.
+- Los obligados que llevan sus libros registro mediante **SII** cuentan con una exclusión específica del RRSIF en los términos previstos por la norma.
+
+Los productores y comercializadores de SIF debían ofrecer productos adaptados dentro del plazo reglamentario derivado de la Orden HAC/1177/2024; la AEAT sitúa ese vencimiento en **29 de julio de 2025**, sin perjuicio de la adaptación de sistemas incluidos en determinados contratos de mantenimiento plurianual a las fechas aplicables a sus usuarios.
 
 ## ¿Qué pasa con la factura electrónica entre empresas (B2B)?
 
-VeriFactu es distinto a la **obligación de factura electrónica B2B** que introduce la Ley Crea y Crece (Ley 18/2022). Esta última, pendiente de reglamentación definitiva, exigirá la emisión de facturas en formato electrónico estructurado (principalmente **Facturae** o **UBL**) entre empresas y autónomos.
+VERI*FACTU es distinto de la **factura electrónica obligatoria B2B** de la Ley 18/2022. El **Real Decreto 238/2026, de 25 de marzo**, ya desarrolla el sistema español de factura electrónica entre empresarios y profesionales y entró en vigor el 20 de abril de 2026.
 
-Ambas normativas son complementarias pero independientes. VeriFactu se centra en la integridad y trazabilidad; la factura electrónica B2B, en el formato de intercambio.
+Su aplicación efectiva no comienza simplemente por la entrada en vigor del real decreto: el cómputo de los plazos se vincula a la entrada en vigor de la orden ministerial que desarrolle la solución pública de facturación electrónica. Desde ese momento, la obligación será exigible en dos fases:
+
+- a los **12 meses** para empresarios y profesionales cuyo volumen de operaciones del año anterior haya superado **8 millones de euros**;
+- a los **24 meses** para el resto.
+
+Por tanto, RRSIF/VERI*FACTU y factura electrónica B2B son obligaciones relacionadas con la digitalización de la facturación, pero **no son la misma norma ni tienen el mismo calendario**.
 
 ## Cómo prepararte ahora
 
-1. **Pregunta a tu proveedor de software** si su sistema cumplirá el RRSIF antes de la fecha que corresponda a tu condición tributaria: 1 de enero o 1 de julio de 2027.
-2. **Evita soluciones improvisadas** (Excel, Word, facturas manuales): no podrán cumplir los requisitos técnicos.
-3. **Considera migrar a un ERP cloud** como Holded, que puede adaptarse a los requisitos de forma centralizada sin que tengas que gestionar la actualización tú mismo.
-4. **Revisa tus procesos internos**: VeriFactu implica que cada factura queda registrada permanentemente. Errores en facturas emitidas requerirán facturas rectificativas, no eliminaciones.
+1. **Confirma con tu proveedor** que el sistema estará adaptado al RRSIF antes de la fecha que corresponda: 1 de enero de 2027 para contribuyentes del Impuesto sobre Sociedades y 1 de julio de 2027 para el resto de obligados incluidos.
+2. **Revisa si concurre alguna exclusión**, especialmente si llevas los libros registro mediante SII.
+3. **Decide la modalidad** que encaja mejor con tu operativa: VERI*FACTU o NO VERI*FACTU.
+4. **Revisa tus procesos de facturación, rectificación y conservación** antes de la entrada en obligación para asegurar la trazabilidad exigida.
 
-En EXPERT te ayudamos a evaluar tu situación actual y a preparar tu sistema de facturación para el cumplimiento de la normativa VeriFactu.
+**Fuentes oficiales**:
+- [Agencia Tributaria — FAQ de Sistemas Informáticos de Facturación y VERI*FACTU](https://sede.agenciatributaria.gob.es/Sede/iva/sistemas-informaticos-facturacion-verifactu/preguntas-frecuentes.html)
+- [BOE — Real Decreto-ley 15/2025](https://www.boe.es/buscar/doc.php?id=BOE-A-2025-24446)
+- [BOE — Real Decreto 238/2026](https://www.boe.es/eli/es/rd/2026/03/25/238)
+
+En EXPERT te ayudamos a evaluar tu situación actual y a preparar tu sistema de facturación para cumplir el RRSIF y coordinarlo con la futura obligación de factura electrónica B2B.
     `
   },
   {
