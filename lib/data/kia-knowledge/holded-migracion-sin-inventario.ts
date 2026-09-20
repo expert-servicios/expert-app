@@ -83,7 +83,7 @@ export const holdedMigracionSinInventarioKnowledge = {
     'Exportación CSV/Excel de facturas emitidas por período',
     'Exportación CSV/Excel de facturas recibidas (opcional, si disponible)',
     'Exportación de maestro de clientes y proveedores',
-    'Modelo 036/037 o alta fiscal (para datos de la empresa)',
+    'Modelo 036 o alta fiscal (para datos de la empresa)',
   ],
 
   // ── FAQ for Kia ─────────────────────────────────────────────────────────
