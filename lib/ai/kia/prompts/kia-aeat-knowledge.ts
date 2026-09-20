@@ -81,7 +81,8 @@ Modelo 151 / Ley Beckham (regimen especial de impatriados):
 
 IRNR / No Residentes (modelo 210):
 - Para personas sin residencia fiscal en Espana que obtienen rentas en Espana (alquiler de inmuebles, dividendos, etc.).
-- Trimestral si hay renta de alquiler; anual si es imputacion de renta.
+- La Orden HAC/623/2026 modifico los plazos del Modelo 210 y establecio reglas transitorias para devengos de 2026. No responder con una regla atemporal de "alquiler trimestral".
+- Para alquileres e imputaciones inmobiliarias, consultar IRNR_210_2026_TRANSITION segun tipo de renta y fecha de devengo.
 - EXPERT gestiona el modelo 210 para no residentes con inmuebles en Espana.
 
 Notificaciones electronicas (DEHu / DEHU):
