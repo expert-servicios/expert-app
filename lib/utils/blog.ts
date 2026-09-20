@@ -2435,7 +2435,7 @@ La fiscalidad de la compraventa depende principalmente de si la vivienda es **nu
 
 ## Vivienda de segunda mano: ITP
 
-El comprador paga el **Impuesto de Transmisiones Patrimoniales (ITP)**, que corresponde a la Comunidad Autónoma donde está situado el inmueble.
+El comprador puede quedar sujeto a **Transmisiones Patrimoniales Onerosas (TPO)** en vivienda usada, mientras que otras operaciones pueden tributar por IVA + AJD. En Comunitat Valenciana, antes de calcular hay que comprobar también el **valor de referencia**, porque puede determinar la base mínima de tributación.
 
 Los tipos generales en 2025 según comunidad autónoma:
 
