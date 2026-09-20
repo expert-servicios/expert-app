@@ -149,7 +149,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes operaciones con clientes o proveedores de otros países de la UE?',
     ],
     botInstructions:
-      'Plazos: del 1 al 20 de abril (1T), julio (2T), octubre (3T) y hasta el 30 de enero (4T). Pedir siempre las facturas con suficiente antelación. Si el cliente usa Holded, podemos extraer los datos directamente. Precio: desde 60 € / trimestre.',
+      'Consultar AEAT_TAX_CALENDAR_2026 para el vencimiento exacto del Modelo 303 y revisar si existe obligación de Modelo 390 mediante INFORMATIVE_RETURNS_2026. Pedir siempre la documentación con antelación. Precio: desde 60 € / trimestre.',
     estimatedPrice: 'Desde 60 € / trimestre',
   },
 
@@ -224,13 +224,13 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     requiredData: [
       'Qué modelo/s necesita presentar',
       'Ejercicio o período',
-      'Si tiene operaciones con terceros >3.005,06 € anuales (Modelo 347)',
+      'Si tiene operaciones con terceros que puedan superar el umbral general del Modelo 347 y si concurre alguna exclusión',
       'Si tiene operaciones intracomunitarias (Modelo 349)',
       'Si ha pagado alquileres con retención (Modelo 180)',
       'Si ha pagado nóminas o rendimientos profesionales con retención (Modelo 190)',
     ],
     requiredDocs: [
-      'Datos de proveedores/clientes con operaciones anuales superiores a 3.005 €',
+      'Datos de proveedores/clientes y detalle anual suficiente para revisar el umbral y exclusiones del Modelo 347',
       'Libro de facturas emitidas y recibidas del año',
       'Contratos de arrendamiento y retenciones practicadas',
       'Nóminas y retenciones a trabajadores y profesionales',
@@ -240,7 +240,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes la contabilidad ordenada del ejercicio?',
     ],
     botInstructions:
-      'Estos modelos son puramente informativos pero las sanciones por no presentarlos o presentarlos fuera de plazo son importantes. Verificar siempre el plazo específico de cada modelo. Precio: desde 50 € / modelo.',
+      'Consultar INFORMATIVE_RETURNS_2026 para obligación, periodicidad, umbrales y exoneraciones, y AEAT_TAX_CALENDAR_2026 para vencimientos exactos. No asumir que todos los modelos son anuales ni que todo obligado al 303 presenta 390. Precio: desde 50 € / modelo.',
     estimatedPrice: 'Desde 50 € / modelo',
   },
 
@@ -633,7 +633,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes las facturas del trimestre preparadas?',
     ],
     botInstructions:
-      'Plazos: del 1 al 20 de los meses de abril, julio, octubre y hasta el 30 de enero. Importante enviar la documentación con suficiente antelación. Precio: desde 120 € / trimestre.',
+      'Consultar AEAT_TAX_CALENDAR_2026 para vencimientos exactos e IRPF_PAYMENT_FRACTIONS_2026 para Modelos 130/131 antes de calcular. Importante enviar la documentación con suficiente antelación. Precio: desde 120 € / trimestre.',
     estimatedPrice: 'Desde 120 € / trimestre',
   },
 
