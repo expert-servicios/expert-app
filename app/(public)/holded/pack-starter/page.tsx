@@ -90,7 +90,7 @@ const MIN_DATA = [
 ];
 
 const OPTIONAL_DOCS = [
-  'Alta censal 036 / 037 (si la tienes)',
+  'Alta censal Modelo 036 (si la tienes)',
   'Escritura de constitución si es sociedad (si la tienes)',
   'Logo de empresa para facturas (opcional)',
   'Ejemplo de factura anterior (opcional)',
