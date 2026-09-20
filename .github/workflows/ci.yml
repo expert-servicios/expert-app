@@ -127,3 +127,222 @@ jobs:
           restored_hash="$(psql "$DB_URL" -Atc "select md5(coalesce(array_to_string(statements,E'\\n'),'')) from supabase_migrations.schema_migrations where version='20990101000000'")"
           test "$restored_hash" = "$statement_hash"
           test "$(psql "$DB_URL" -Atc "select to_regclass('public.repair_probe_contract') is null")" = "t"
+
+
+  regulatory-ledger-preflight:
+    name: Regulatory ledger preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: ybtpqscmqrrjjmuoryap
+      EXPECTED_FIRST_VERSION: "20260912000100"
+      PREDEPLOY_LEDGER_ROWS: "72"
+      PREDEPLOY_LAST_VERSION: "20260920073758"
+      POSTDEPLOY_LEDGER_ROWS: "81"
+      POSTDEPLOY_LAST_VERSION: "20260920230000"
+      EXPECTED_BATCH_COUNT: "9"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Verify required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo 'STOP: SUPABASE_ACCESS_TOKEN is missing'; exit 1; }
+          test -n "${SUPABASE_DB_PASSWORD:-}" || { echo 'STOP: SUPABASE_DB_PASSWORD is missing'; exit 1; }
+
+      - name: Verify exact audited local migration tail
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t files < <(find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' | sort)
+          test "${#files[@]}" -ge 36
+          test "${files[0]}" = '20260912000100_baseline_public_primitives.sql'
+          test "${files[35]}" = '20260912003600_baseline_public_acl.sql'
+
+          versions=()
+          for file in "${files[@]}"; do
+            versions+=("${file:0:14}")
+          done
+          test "$(printf '%s\n' "${versions[@]}" | sort -u | wc -l)" -eq "${#versions[@]}" || {
+            echo 'STOP: duplicate local migration versions'
+            exit 1
+          }
+
+          mapfile -t batch_local < <(
+            find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' \
+              | sort \
+              | awk '$0 >= "20260920111500_" { print substr($0,1,14) }'
+          )
+          expected_batch=(
+            20260920111500
+            20260920123000
+            20260920133000
+            20260920150000
+            20260920163000
+            20260920180000
+            20260920201500
+            20260920213000
+            20260920230000
+          )
+          test "${#batch_local[@]}" -eq "$EXPECTED_BATCH_COUNT" || {
+            echo "STOP: unexpected audited batch size"
+            exit 1
+          }
+          test "$(printf '%s\n' "${batch_local[@]}")" = "$(printf '%s\n' "${expected_batch[@]}")" || {
+            echo 'STOP: local regulatory migration tail differs from audited batch'
+            exit 1
+          }
+
+      - name: Setup validated Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+
+      - name: Link production
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$PROJECT_REF" -p "$SUPABASE_DB_PASSWORD"
+
+      - name: Validate exact production ledger and dry-run
+        shell: bash
+        run: |
+          set -euo pipefail
+          private="$RUNNER_TEMP/regulatory-ledger-preflight"
+          mkdir -p "$private"
+          chmod 700 "$private"
+          raw="$private/schema_migrations.raw.sql"
+
+          supabase db dump \
+            --linked \
+            --schema supabase_migrations \
+            --data-only \
+            --use-copy \
+            --file "$raw"
+          test -s "$raw"
+
+          mapfile -t versions < <(
+            awk 'BEGIN { FS="\t" }
+              /^COPY .*schema_migrations.*FROM stdin;$/ { inside=1; next }
+              inside && $0 == "\\." { inside=0; next }
+              inside { print $1 }
+            ' "$raw" | sort
+          )
+
+          rows="${#versions[@]}"
+          test "$rows" -gt 0 || { echo 'STOP: empty production migration ledger'; exit 1; }
+          test "${versions[0]}" = "$EXPECTED_FIRST_VERSION" || { echo 'STOP: unexpected first ledger version'; exit 1; }
+
+          last_index=$((rows - 1))
+          last_version="${versions[$last_index]}"
+
+          if [ "$rows" -eq "$PREDEPLOY_LEDGER_ROWS" ] && [ "$last_version" = "$PREDEPLOY_LAST_VERSION" ]; then
+            ledger_state='pre_deploy'
+            expected_pending="$EXPECTED_BATCH_COUNT"
+          elif [ "$rows" -eq "$POSTDEPLOY_LEDGER_ROWS" ] && [ "$last_version" = "$POSTDEPLOY_LAST_VERSION" ]; then
+            ledger_state='post_deploy'
+            expected_pending='0'
+          else
+            echo "STOP: production ledger is neither exact pre-deploy nor exact post-deploy state"
+            echo "rows=$rows last_version=$last_version"
+            exit 1
+          fi
+
+          empty_statements="$(awk 'BEGIN { FS="\t" }
+            /^COPY .*schema_migrations.*FROM stdin;$/ { inside=1; next }
+            inside && $0 == "\\." { inside=0; next }
+            inside && ($2 == "\\N" || $2 == "{}" || $2 == "") { empty++ }
+            END { print empty+0 }
+          ' "$raw")"
+          test "$empty_statements" -eq 0 || { echo "STOP: ledger has empty statements"; exit 1; }
+
+          reconciled=(
+            20260919192850
+            20260919192924
+            20260920054204
+            20260920071136
+            20260920073758
+          )
+          for version in "${reconciled[@]}"; do
+            printf '%s\n' "${versions[@]}" | grep -qx "$version" || {
+              echo "STOP: reconciled migration $version missing remotely"
+              exit 1
+            }
+          done
+
+          batch=(
+            20260920111500
+            20260920123000
+            20260920133000
+            20260920150000
+            20260920163000
+            20260920180000
+            20260920201500
+            20260920213000
+            20260920230000
+          )
+
+          if [ "$ledger_state" = 'pre_deploy' ]; then
+            for version in "${batch[@]}"; do
+              if printf '%s\n' "${versions[@]}" | grep -qx "$version"; then
+                echo "STOP: partial regulatory deployment detected at $version"
+                exit 1
+              fi
+            done
+          else
+            for version in "${batch[@]}"; do
+              printf '%s\n' "${versions[@]}" | grep -qx "$version" || {
+                echo "STOP: post-deploy ledger missing $version"
+                exit 1
+              }
+            done
+          fi
+
+          supabase migration list --linked 2>&1 | tee "$private/migration-list.txt"
+          supabase db push --linked --dry-run 2>&1 | tee "$private/db-push-dry-run.txt"
+
+          observed_pending=0
+          for version in "${batch[@]}"; do
+            if grep -q "$version" "$private/db-push-dry-run.txt"; then
+              observed_pending=$((observed_pending + 1))
+            fi
+          done
+          test "$observed_pending" -eq "$expected_pending" || {
+            echo "STOP: expected $expected_pending audited migrations in dry-run, got $observed_pending"
+            exit 1
+          }
+
+          if [ "$ledger_state" = 'pre_deploy' ]; then
+            for version in "${batch[@]}"; do
+              grep -q "$version" "$private/db-push-dry-run.txt" || {
+                echo "STOP: audited migration $version missing from dry-run"
+                exit 1
+              }
+            done
+          fi
+
+          raw_hash="$(sha256sum "$raw" | cut -d' ' -f1)"
+          cat > "$private/ledger-summary.txt" <<EOF
+ledger_state=$ledger_state
+ledger_rows=$rows
+first_version=$EXPECTED_FIRST_VERSION
+last_version=$last_version
+empty_statements=0
+expected_dry_run_pending=$expected_pending
+observed_dry_run_pending=$observed_pending
+sha256=$raw_hash
+EOF
+          rm -f "$raw"
+
+      - name: Upload regulatory preflight evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: regulatory-ledger-preflight-current
+          path: ${{ runner.temp }}/regulatory-ledger-preflight/
+          if-no-files-found: error
+          retention-days: 14
