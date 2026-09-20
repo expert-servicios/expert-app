@@ -226,7 +226,9 @@ export async function POST(request: NextRequest) {
               `<b>${escapeTelegramHtml(value.label)}</b>`,
               `Valor: ${escapeTelegramHtml(String(value.numeric_value ?? value.text_value ?? '—'))} ${escapeTelegramHtml(value.unit ?? '')}`,
               `Periodo: ${escapeTelegramHtml(value.period_key)}`,
-              `Vigencia: ${escapeTelegramHtml(value.valid_from)} → ${escapeTelegramHtml(value.valid_to ?? 'sin fecha fin')}`,
+              value.availability_mode === 'latest_published'
+                ? `Disponibilidad: último dato oficial publicado (periodo ${escapeTelegramHtml(value.period_key)})`
+                : `Vigencia: ${escapeTelegramHtml(value.valid_from)} → ${escapeTelegramHtml(value.valid_to ?? 'sin fecha fin')}`,
               `Verificado: ${escapeTelegramHtml(value.verified_at)}`,
             ].join('\n')
           : `No existe un valor vigente para ${escapeTelegramHtml(valueKey)}.`,
