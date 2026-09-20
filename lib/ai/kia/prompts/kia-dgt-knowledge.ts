@@ -31,7 +31,7 @@ EXPERT gestiona todo el proceso por el cliente: ITP + transferencia DGT.
 </dgt_transferencia_vehiculo>
 
 <dgt_matriculacion>
-MATRICULACION DE VEHICULO NUEVO O IMPORTADO:
+MATRICULACION E IMPORTACION DE VEHICULOS:
 
 Vehiculo nuevo (compra a concesionario):
 - El concesionario normalmente gestiona la matriculacion incluida en el precio.
@@ -39,9 +39,11 @@ Vehiculo nuevo (compra a concesionario):
 
 Vehiculo importado (de fuera de España):
 - Homologacion tecnica (si el vehiculo no tiene ficha tecnica española).
-- Pago del Impuesto de Matriculacion (IEDMT) si aplica (vehiculos con CO2 superiores a ciertos limites).
-- Presentacion en Jefatura de Trafico: documentacion del vehiculo, seguro, ITV, justificante de pago de impuestos.
-- EXPERT asesora y gestiona matriculaciones de vehiculos importados.
+- Consultar IEDMT_REGISTRATION_2026 antes de calcular o afirmar si existe cuota: revisar hecho imponible, exencion/no sujecion, categoria, emisiones oficiales, territorio y base.
+- Para vehiculos procedentes de la UE o de fuera de la UE consultar VEHICLE_IMPORT_REGISTRATION_2026; no mezclar ambos circuitos.
+- Fuera de la UE existe capa aduanera previa y puede ser necesario certificado H1 tras el despacho.
+- Para la tasa DGT consultar DGT_FEES_2026.
+- EXPERT asesora y gestiona matriculaciones e importaciones de vehiculos segun el caso.
 </dgt_matriculacion>
 
 <dgt_canje_permiso>
