@@ -2,32 +2,36 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const workflowPath = path.join(
-  process.cwd(),
-  '.github',
-  'workflows',
-  'supabase-ledger-preflight.yml',
-);
+const root = process.cwd();
+const standaloneWorkflowPath = path.join(root, '.github', 'workflows', 'supabase-ledger-preflight.yml');
+const ciWorkflowPath = path.join(root, '.github', 'workflows', 'ci.yml');
+const scriptPath = path.join(root, 'scripts', 'regulatory-ledger-preflight.sh');
 
-function workflow() {
-  return fs.readFileSync(workflowPath, 'utf8');
+function read(file: string) {
+  return fs.readFileSync(file, 'utf8');
 }
 
 describe('Supabase regulatory ledger preflight contract', () => {
-  it('accepts only the audited pre-deploy and exact post-deploy ledger states', () => {
-    const yaml = workflow();
+  it('uses one centralized forward-only guard from both workflows', () => {
+    const standalone = read(standaloneWorkflowPath);
+    const ci = read(ciWorkflowPath);
 
-    expect(yaml).toContain('PREDEPLOY_LEDGER_ROWS: "72"');
-    expect(yaml).toContain('PREDEPLOY_LAST_VERSION: "20260920073758"');
-    expect(yaml).toContain('POSTDEPLOY_LEDGER_ROWS: "81"');
-    expect(yaml).toContain('POSTDEPLOY_LAST_VERSION: "20260920230000"');
-    expect(yaml).toContain("ledger_state='pre_deploy'");
-    expect(yaml).toContain("ledger_state='post_deploy'");
-    expect(yaml).toContain('partial v1.3-v1.5 deployment detected');
+    expect(standalone).toContain('bash scripts/regulatory-ledger-preflight.sh');
+    expect(ci).toContain('bash scripts/regulatory-ledger-preflight.sh');
+    expect(standalone).toContain("'scripts/regulatory-ledger-preflight.sh'");
   });
 
-  it('pins the exact nine audited regulatory migrations', () => {
-    const yaml = workflow();
+  it('requires production to be an exact prefix of local migration history', () => {
+    const script = read(scriptPath);
+
+    expect(script).toContain('production ledger is not an exact prefix of local migrations');
+    expect(script).toContain('production contains more migration versions than the repository');
+    expect(script).toContain('non-forward migration');
+    expect(script).toContain('duplicate local migration versions');
+  });
+
+  it('fails closed on partial v1.3-v1.5 deployment and pins the audited batch', () => {
+    const script = read(scriptPath);
     const versions = [
       '20260920111500',
       '20260920123000',
@@ -40,27 +44,31 @@ describe('Supabase regulatory ledger preflight contract', () => {
       '20260920230000',
     ];
 
-    expect(yaml).toContain('EXPECTED_BATCH_COUNT: "9"');
+    expect(script).toContain("predeploy_tip='20260920073758'");
+    expect(script).toContain('partial v1.3-v1.5 production deployment detected');
+    expect(script).toContain('expected exactly 9 audited regulatory migrations before deployment');
     for (const version of versions) {
-      expect(yaml).toContain(version);
+      expect(script).toContain(version);
     }
   });
 
   it('remains read-only against production and requires a dry-run', () => {
-    const yaml = workflow();
+    const script = read(scriptPath);
 
-    expect(yaml).toContain('supabase db push --linked --dry-run');
-    expect(yaml).not.toMatch(/supabase db push --linked(?:\s|$)(?![^\n]*--dry-run)/);
-    expect(yaml).not.toContain('migration repair');
-    expect(yaml).not.toContain('delete from supabase_migrations');
-    expect(yaml).not.toContain('update supabase_migrations');
+    expect(script).toContain('supabase db dump');
+    expect(script).toContain('supabase migration list --linked');
+    expect(script).toContain('supabase db push --linked --dry-run');
+    expect(script).not.toMatch(/supabase db push --linked(?:\s|$)(?![^\n]*--dry-run)/);
+    expect(script).not.toContain('migration repair');
+    expect(script).not.toContain('delete from supabase_migrations');
+    expect(script).not.toContain('update supabase_migrations');
   });
 
-  it('runs for migration and preflight-contract changes', () => {
-    const yaml = workflow();
+  it('allows later legitimate forward-only migrations without rewriting the guard', () => {
+    const script = read(scriptPath);
 
-    expect(yaml).toContain("'supabase/migrations/**'");
-    expect(yaml).toContain("'.github/workflows/supabase-ledger-preflight.yml'");
-    expect(yaml).toContain("'tests/infra/supabase-migration-*.test.ts'");
+    expect(script).toContain("ledger_state='forward_after_regulatory_batch'");
+    expect(script).toContain('pending=("${local_versions[@]:remote_count}")');
+    expect(script).toContain('pending migration $version is missing from db push --dry-run');
   });
 });
