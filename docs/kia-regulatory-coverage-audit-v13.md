@@ -1,7 +1,7 @@
 # KIA Regulatory Coverage Audit v1.3 — EXPERT master map
 
 Fecha: 20/09/2026  
-Estado: auditoría exhaustiva + remediación P0 en curso  
+Estado: auditoría exhaustiva + remediación P0 aplicada; gate en validación  
 Ámbito: catálogo EXPERT, KIA, calculadoras, checklists, contenido, formación y operativa Admin.
 
 ## Objetivo
@@ -44,6 +44,10 @@ La cobertura se clasifica así:
 | P0-CV-03 | ISD Comunitat Valenciana | KIA CCAA: bonificación 75 % grupos I-II | normativa vigente recoge 99 % en supuestos familiares definidos y cambios 2026 | retirar resumen obsoleto; ruleset con requisitos |
 | P0-RET-01 | Retenciones IRPF 2026 | prompt estático 15/7 y cálculo laboral | AEAT publica versión 01/01–09/09 y nueva versión desde 10/09/2026 | ruleset versionado; cálculo siempre por periodo |
 | P0-CENS-01 | Modelo 037 | catálogo, ayuda, prompts y Holded seguían ofreciendo 036/037 | Modelo 037 suprimido desde 03/02/2025; la vía vigente es Modelo 036 | eliminar 037 como trámite vivo + ruleset canónico |
+| P0-IS-01 | IS 2026 | contenido público trataba el 25 % como tipo universal de SL | 2026 exige clasificar: microempresa 19/21 %, ERD 23 %, general 25 % y demás regímenes | ruleset IS_RATES_2026 + retirar comparación universal |
+| P0-CAL-01 | calendario fiscal 2026 | generador usaba días nominales y los marcaba como verificados | AEAT desplaza vencimientos por inhábiles (p.ej. 200: 27/07; 202 diciembre: 21/12; 180/190: 02/02) | ruleset AEAT_TAX_CALENDAR_2026 + fechas verificadas |
+| P0-IRNR-02 | representante fiscal IRNR | FAQ decía obligatorio para todo no UE con inmueble | la obligación solo concurre en supuestos legales específicos | corregir FAQ y no inferir por mera tenencia |
+| P0-130-01 | Modelo 130 | blog/prompt calculaban 20 % sobre beneficio del trimestre | regla general sobre rendimiento acumulado desde 1 enero; revisar excepción de profesionales con ingresos sometidos a retención | corregir KIA/blog y cubrir en lote fiscal |
 
 ## Mapa exhaustivo por dominio
 
@@ -56,11 +60,11 @@ planes mensuales, formación fiscal/contable y planificación fiscal.
 
 | Materia | Estado | Prioridad | Fuente canónica objetivo | Representación |
 |---|---|---:|---|---|
-| calendario del contribuyente 2026 | C | P0 | AEAT calendario 2026 | ruleset |
-| retenciones IRPF | C | P0 | AEAT Retenciones 2026 | ruleset versionado |
+| calendario del contribuyente 2026 | A | — | AEAT calendario 2026 | ruleset |
+| retenciones IRPF | A | — | AEAT Retenciones 2026 | ruleset versionado |
 | IVA 21/10/4/0 | B | P1 | AEAT tipos IVA 2026 | valores + fuente |
-| IS tipos 2026 | C | P0 | AEAT tipo impositivo IS | ruleset |
-| Modelo 210 IRNR | C | P0 | AEAT + Orden HAC/623/2026 | ruleset |
+| IS tipos 2026 | A | — | AEAT tipo impositivo IS | ruleset |
+| Modelo 210 IRNR | A | — | AEAT + Orden HAC/623/2026 | ruleset |
 | tipos IRNR 19/24 | C | P1 | AEAT IRNR | valores/ruleset |
 | Modelo 720 | B | P1 | AEAT GI34 | ruleset |
 | Modelo 721 cripto | C | P1 | AEAT Modelo 721 | ruleset |
@@ -68,7 +72,7 @@ planes mensuales, formación fiscal/contable y planificación fiscal.
 | pagos fraccionados 130/131/202 | B | P1 | AEAT calendario/instrucciones | ruleset |
 | modelos informativos 180/190/347/349/390 | B | P1 | AEAT calendario/modelos | ruleset |
 | interés legal/demora | A | — | AEAT evidencia 2026 | values |
-| VERI*FACTU / RRSIF | C | P0 | AEAT FAQ/nota oficial | ruleset |
+| VERI*FACTU / RRSIF | A | — | AEAT FAQ/nota oficial | ruleset |
 
 ### 2. Autónomos y Seguridad Social — prioridad P0
 
@@ -230,8 +234,7 @@ Solo valores escalares:
 ### `regulatory_rulesets`
 Reglas/tablas versionadas:
 - `RETA_2026_BRACKETS`
-- `IRPF_WITHHOLDING_2026_01_01_09_09`
-- `IRPF_WITHHOLDING_2026_FROM_09_10`
+- `IRPF_WITHHOLDING_2026` (periodos internos 01/01–09/09 y desde 10/09)
 - `IS_RATES_2026`
 - `IRNR_210_2026_TRANSITION`
 - `VERIFACTU_DEADLINES`
