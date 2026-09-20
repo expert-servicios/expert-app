@@ -71,7 +71,7 @@ Proceso simplificado via CIRCE:
 4. CIRCE coordina la cita y el paso notarial conforme al canal disponible.
 5. Se otorga la escritura publica por la via notarial que corresponda.
 6. CIRCE envia automaticamente al Registro Mercantil para inscripcion.
-7. Alta en Hacienda (modelo 036) automatica via CIRCE.
+7. CIRCE coordina la informacion fiscal; para NIF provisional/definitivo y documentacion pendiente consultar ENTITY_NIF_036_RULES y verificar que informacion ya ha sido transmitida a AEAT.
 8. Plazo total estimado con estatutos tipo: 5-10 dias habiles.
 
 Limitaciones de CIRCE / estatutos tipo:
