@@ -203,13 +203,7 @@ async function classifyOne(change: ChangeRow) {
   const hinted = new Map(
     parsed.dependencyHints.map((hint) => [`${hint.type}::${hint.key}`, hint.reason]),
   );
-  const serviceKeys = new Set(
-    knownDependencies
-      .filter((dependency) => ['service', 'operational_blueprint', 'viability'].includes(dependency.dependency_type))
-      .map((dependency) => dependency.dependency_key),
-  );
-  const canAutoLinkSpecificSource = sourceMetadata.service_specific === true && serviceKeys.size <= 1;
-  const affectedDependencies = canAutoLinkSpecificSource
+  const affectedDependencies = sourceMetadata.service_specific === true
     ? knownDependencies
     : knownDependencies.filter((dependency) =>
         hinted.has(`${dependency.dependency_type}::${dependency.dependency_key}`),
