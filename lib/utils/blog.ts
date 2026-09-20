@@ -434,20 +434,11 @@ Debes presentarla **antes del inicio de la actividad** o como máximo el primer 
 
 En este momento elegirás tu **base de cotización**, que determinará la cuota mensual a pagar y tus futuras prestaciones.
 
-## Cuota de autónomos en 2025
+## Cotización de autónomos en 2026
 
-Desde 2023 rige el nuevo sistema de cotización por ingresos reales, con tramos progresivos:
+En 2026 la cotización se determina por **rendimientos netos** y por las bases mínima y máxima del tramo aplicable. La tabla oficial de 2026 contiene tres tramos reducidos y doce tramos generales, y la base puede ajustarse durante el año en los periodos habilitados.
 
-| Rendimientos netos mensuales | Cuota aprox. |
-|---|---|
-| Menos de 670 € | ~200 €/mes |
-| 670 € – 900 € | ~260 €/mes |
-| 900 € – 1.166 € | ~290 €/mes |
-| 1.166 € – 1.300 € | ~294 €/mes |
-| 1.300 € – 1.700 € | ~350 €/mes |
-| Más de 6.000 € | ~590 €/mes |
-
-**Tarifa plana:** Los nuevos autónomos pagan **80 €/mes durante 12 meses**, prorrogable si los rendimientos no superan el SMI. En algunas comunidades autónomas existen bonificaciones adicionales.
+Antes de calcular una cuota hay que comprobar el tramo, la base seleccionada y los tipos vigentes. La cuantía reducida de **80 €/mes estaba fijada para 2023–2025**; para altas en 2026 no debe reutilizarse automáticamente y se verifica el beneficio vigente en la fuente oficial.
 
 ## Obligaciones fiscales del primer año
 
@@ -985,9 +976,9 @@ El desarrollo reglamentario de esta prohibición se concreta en el **Real Decret
 
 | Colectivo | Fecha de entrada en vigor |
 |---|---|
-| Grandes empresas (facturación > 6 M€) | 1 de julio de 2025 |
-| Resto de empresas y autónomos | 1 de julio de 2026 |
-| Software de terceros (ERP, gestión) | Deben certificarse antes de esas fechas |
+| Contribuyentes del Impuesto sobre Sociedades sujetos al reglamento | Antes del 1 de enero de 2027 |
+| Resto de obligados del artículo 3.1, incluidos empresarios/profesionales en IRPF cuando proceda | Antes del 1 de julio de 2027 |
+| Proveedores de software | Deben entregar soluciones adaptadas a tiempo para que cada obligado cumpla su fecha aplicable |
 
 ## ¿Qué debo hacer?
 
@@ -1007,9 +998,9 @@ En EXPERT, como Holded Solution Partner, te ayudamos a evaluar si tu sistema act
   {
     slug: 'verifactu-facturacion-electronica',
     category: 'Fiscalidad',
-    title: 'VeriFactu: la facturación electrónica obligatoria que llega en 2025-2026',
+    title: 'VERI*FACTU y RRSIF: las fechas obligatorias pasan a 2027',
     excerpt:
-      'El sistema VeriFactu será obligatorio para grandes empresas desde julio de 2025 y para pymes y autónomos desde julio de 2026. Explicamos cómo funciona y cómo prepararte.',
+      'Los sistemas de facturación sujetos al RRSIF deberán adaptarse antes del 1 de enero o del 1 de julio de 2027, según el tipo de obligado. Explicamos la diferencia entre RRSIF y la modalidad VERI*FACTU.',
     date: '8 may 2026',
     readTime: '7 min',
     tags: ['VeriFactu', 'facturación electrónica', 'AEAT', 'software de facturación'],
@@ -1059,7 +1050,7 @@ Ambas normativas son complementarias pero independientes. VeriFactu se centra en
 
 ## Cómo prepararte ahora
 
-1. **Pregunta a tu proveedor de software** si su sistema cumplirá con el Reglamento antes de julio de 2025 (grandes empresas) o julio de 2026 (pymes/autónomos).
+1. **Pregunta a tu proveedor de software** si su sistema cumplirá el RRSIF antes de la fecha que corresponda a tu condición tributaria: 1 de enero o 1 de julio de 2027.
 2. **Evita soluciones improvisadas** (Excel, Word, facturas manuales): no podrán cumplir los requisitos técnicos.
 3. **Considera migrar a un ERP cloud** como Holded, que puede adaptarse a los requisitos de forma centralizada sin que tengas que gestionar la actualización tú mismo.
 4. **Revisa tus procesos internos**: VeriFactu implica que cada factura queda registrada permanentemente. Errores en facturas emitidas requerirán facturas rectificativas, no eliminaciones.
