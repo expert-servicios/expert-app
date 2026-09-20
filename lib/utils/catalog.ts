@@ -959,12 +959,12 @@ export const services: Service[] = [
     name: 'Alta de Autónomo',
     shortDescription: 'Tramitación del alta en el RETA y gestión de la actividad económica.',
     description:
-      'Gestionamos tu alta como autónomo en la Agencia Tributaria (Modelo 036/037) y en la Seguridad Social (RETA), con asesoramiento sobre el epígrafe de actividad más adecuado, cuota de autónomos, tarifa plana y obligaciones fiscales desde el inicio.',
+      'Gestionamos tu alta como autónomo en la Agencia Tributaria (Modelo 036) y en la Seguridad Social (RETA), con asesoramiento sobre el epígrafe de actividad más adecuado, cuota de autónomos, tarifa plana y obligaciones fiscales desde el inicio.',
     price: '120 € + IVA',
     stripePriceId: 'price_1TXMmKLeYwwgvux4oXpYh27g',
     duration: '1–3 días hábiles',
     includes: [
-      'Modelo 036/037 — Alta en Hacienda',
+      'Modelo 036 — Alta en Hacienda',
       'Alta en el RETA (Seguridad Social)',
       'Asesoramiento sobre epígrafe y base de cotización',
       'Información sobre tarifa plana y bonificaciones',
@@ -1137,7 +1137,7 @@ export const services: Service[] = [
     price: 'Consultar',
     duration: 'Variable',
     includes: [
-      'Baja en Hacienda (Modelo 036/037)',
+      'Baja en Hacienda (Modelo 036)',
       'Baja en el RETA',
       'Liquidación de impuestos pendientes',
       'Para sociedades: acta de disolución, escritura e inscripción registral'
