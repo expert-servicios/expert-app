@@ -576,7 +576,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Alguno de los socios es extranjero y tiene NIE?',
     ],
     botInstructions:
-      'El proceso completo tarda 7–15 días hábiles. Hay que ir al notario con todos los socios. Los gastos de notaría y registro mercantil van aparte (aprox. 400–600 €). El CIF definitivo puede tardar unos días adicionales. Precio honorarios: 490 € + IVA.',
+      'El proceso completo tarda 7–15 días hábiles. Hay que ir al notario con todos los socios. Los gastos de notaría y registro mercantil van aparte (aprox. 400–600 €). El NIF definitivo puede requerir documentación o comunicación adicional según el circuito utilizado. Precio honorarios: 490 € + IVA.',
     estimatedPrice: '490 € + IVA (+ notaría y registro ~400–600 €)',
   },
 
