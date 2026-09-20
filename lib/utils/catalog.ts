@@ -1214,7 +1214,7 @@ export const services: Service[] = [
     slug: 'matriculacion',
     categoria: 'trafico-capitania-maritima',
     name: 'Matriculación de Vehículos',
-    shortDescription: 'Primera matriculación e importación de vehículos, con circuito diferenciado UE y fuera de la UE.'
+    shortDescription: 'Primera matriculación e importación de vehículos, con circuito diferenciado UE y fuera de la UE.',
     description:
       'Gestionamos la primera matriculación y la importación de vehículos, diferenciando procedencia UE y fuera de la UE. Revisamos homologación/ITV, fiscalidad de la adquisición o importación, IEDMT, documentación aduanera cuando proceda y trámite final ante la DGT.',
     price: 'Consultar',
