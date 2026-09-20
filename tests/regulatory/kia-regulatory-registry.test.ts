@@ -429,6 +429,38 @@ describe('KIA Regulatory Registry', () => {
     }
   });
 
+
+  it('adds v1.4 fiscal international rulesets and dependencies', () => {
+    const migration = read('supabase/migrations/20260920123000_regulatory_v14_fiscal_mercantil_lot1.sql');
+    expect(migration).toContain("'MODEL_720_RULES'");
+    expect(migration).toContain("'MODEL_721_RULES'");
+    expect(migration).toContain("'IMPARTIATES_149_151_RULES'");
+    expect(migration).toContain("'modelo-720'");
+    expect(migration).toContain("'modelo-151'");
+    expect(migration).toContain("'modelos-informativos'");
+  });
+
+  it('keeps 720, 721 and impatriates guidance registry-driven', () => {
+    const catalog = read('lib/utils/catalog.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+    const aeat = read('lib/ai/kia/prompts/kia-aeat-knowledge.ts');
+    const systemPrompt = read('lib/ai/kia/kia-system-prompt.ts');
+    const decisionEngine = read('lib/ai/kia/kia-decision-engine.ts');
+    const facts = read('lib/utils/fun-facts.ts');
+
+    expect(checklists).toContain('MODEL_720_RULES');
+    expect(checklists).toContain('IMPARTIATES_149_151_RULES');
+    expect(aeat).toContain('MODEL_721_RULES');
+    expect(aeat).toContain('IMPARTIATES_149_151_RULES');
+    expect(systemPrompt).toContain('|720|721|151|beckham|');
+    expect(decisionEngine).toContain('modelo 720|modelo 721|patrimonio|beckham');
+
+    expect(catalog).not.toContain('Hasta 5 años desde la activación, renovable');
+    expect(checklists).not.toContain('Solo hay que presentarlo cuando se supera el umbral por primera vez');
+    expect(facts).not.toContain('David Beckham lo usó al fichar por el Real Madrid');
+    expect(aeat).not.toContain('tipo fijo 24%) durante maximo 6 anos');
+  });
+
   it('documents the no-auto-merge and no-auto-publish contract', () => {
     const docs = read('docs/kia-regulatory-registry.md');
     expect(docs).toContain('Nunca se hace merge automático');
