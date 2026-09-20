@@ -461,6 +461,29 @@ describe('KIA Regulatory Registry', () => {
     expect(aeat).not.toContain('tipo fijo 24%) durante maximo 6 anos');
   });
 
+  it('adds v1.4 recurring tax rulesets and protects consumers from stale formulas', () => {
+    const migration = read('supabase/migrations/20260920133000_regulatory_v14_fiscal_recurrente_lot2.sql');
+    const aeat = read('lib/ai/kia/prompts/kia-aeat-knowledge.ts');
+    const blog = read('lib/utils/blog.ts');
+    const docs = read('lib/utils/docs.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+
+    expect(migration).toContain("'IRPF_PAYMENT_FRACTIONS_2026'");
+    expect(migration).toContain("'MODEL_202_RULES_2026'");
+    expect(migration).toContain("'INFORMATIVE_RETURNS_2026'");
+    expect(migration).toContain('RDL 22/2026');
+    expect(migration).toContain('RDL 23/2026');
+
+    expect(aeat).toContain('IRPF_PAYMENT_FRACTIONS_2026');
+    expect(aeat).toContain('INFORMATIVE_RETURNS_2026');
+    expect(checklists).toContain('AEAT_TAX_CALENDAR_2026');
+    expect(checklists).toContain('IRPF_PAYMENT_FRACTIONS_2026');
+
+    expect(blog).not.toContain('modelo 130 se calcula sobre el rendimiento real del trimestre');
+    expect(docs).not.toContain('**Modelo 390**: resumen anual de IVA (enero)');
+    expect(checklists).not.toContain('Plazos: del 1 al 20 de abril (1T), julio (2T), octubre (3T)');
+  });
+
   it('documents the no-auto-merge and no-auto-publish contract', () => {
     const docs = read('docs/kia-regulatory-registry.md');
     expect(docs).toContain('Nunca se hace merge automático');
