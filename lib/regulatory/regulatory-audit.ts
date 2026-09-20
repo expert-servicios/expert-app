@@ -27,7 +27,7 @@ export async function runRegulatoryHealthAudit() {
     { data: runs, error: runsError },
   ] = await Promise.all([
     admin.from('regulatory_sources')
-      .select('id,source_key,authority,check_frequency,last_success_at,last_fingerprint,last_error')
+      .select('id,source_key,authority,check_frequency,last_success_at,last_fingerprint,last_error,metadata')
       .eq('active', true),
     admin.from('regulatory_values')
       .select('id,value_key,period_key,valid_from,valid_to,metadata')
@@ -66,6 +66,15 @@ export async function runRegulatoryHealthAudit() {
         severity: 'critical',
         entity: source.source_key,
         message: `${source.authority} · ${source.source_key}: ${source.last_error}`,
+      });
+    }
+    const sourceMetadata = (source.metadata ?? {}) as Record<string, unknown>;
+    if (!source.last_success_at && sourceMetadata.monitoring_mode !== 'manual_reference') {
+      issues.push({
+        code: 'source_never_succeeded',
+        severity: 'critical',
+        entity: source.source_key,
+        message: `${source.authority} · ${source.source_key} nunca ha tenido una lectura correcta.`,
       });
     }
     if (source.last_success_at) {
@@ -128,6 +137,27 @@ export async function runRegulatoryHealthAudit() {
     }
   }
 
+  const sourceDependencyCounts = new Map<string, number>();
+  for (const dependency of dependencies ?? []) {
+    if (dependency.source_id) {
+      sourceDependencyCounts.set(
+        dependency.source_id,
+        (sourceDependencyCounts.get(dependency.source_id) ?? 0) + 1,
+      );
+    }
+  }
+
+  for (const source of sources ?? []) {
+    const metadata = (source.metadata ?? {}) as Record<string, unknown>;
+    if ((sourceDependencyCounts.get(source.id) ?? 0) === 0 && metadata.discovery_only !== true) {
+      issues.push({
+        code: 'source_without_dependency',
+        severity: 'warning',
+        entity: source.source_key,
+        message: `${source.source_key} está activa pero no tiene ninguna dependencia explícita.`,
+      });
+    }
+  }
   for (const dependency of dependencies ?? []) {
     if (dependency.source_id && !sourceIds.has(dependency.source_id)) {
       issues.push({
