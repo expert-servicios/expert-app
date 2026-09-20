@@ -356,6 +356,7 @@ describe('KIA Regulatory Registry', () => {
     expect(migration).toContain("'VALENCIA_ITPAJD_2026'");
     expect(migration).toContain("'VALENCIA_ISD_2026'");
     expect(migration).toContain("'SL_CAPITAL_RULES'");
+    expect(migration).toContain("'AEAT_CENSUS_MODEL_036'");
   });
 
   it('exposes canonical regulatory rulesets to KIA as autonomous R0 reads', () => {
@@ -402,6 +403,24 @@ describe('KIA Regulatory Registry', () => {
     expect(catalog).not.toContain('Para alquileres, trimestralmente');
     expect(docs).not.toContain('Cuota de autónomos en 2025');
     expect(blog).not.toContain('| Resto de empresas y autónomos | 1 de julio de 2026 |');
+
+    for (const path of [
+      'lib/utils/docs.ts',
+      'lib/utils/blog.ts',
+      'lib/ai/kia/prompts/kia-aeat-knowledge.ts',
+      'lib/ai/kia/prompts/kia-ss-knowledge.ts',
+      'lib/ai/kia/prompts/kia-pae-knowledge.ts',
+      'lib/utils/catalog.ts',
+      'lib/utils/service-checklists.ts',
+      'lib/integrations/kia-engine.ts',
+      'lib/data/kia-knowledge/holded-migracion-sin-inventario.ts',
+      'lib/data/kia-knowledge/holded-migracion-con-inventario.ts',
+      'app/(public)/holded/migracion-sin-inventario/page.tsx',
+      'app/(public)/holded/migracion-con-inventario/page.tsx',
+    ]) {
+      expect(read(path), path).not.toContain('036/037');
+      expect(read(path), path).not.toContain('036 o 037');
+    }
   });
 
   it('documents the no-auto-merge and no-auto-publish contract', () => {
