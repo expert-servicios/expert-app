@@ -30,7 +30,7 @@ export async function runRegulatoryHealthAudit() {
       .select('id,source_key,authority,check_frequency,last_success_at,last_fingerprint,last_error,metadata')
       .eq('active', true),
     admin.from('regulatory_values')
-      .select('id,value_key,period_key,valid_from,valid_to,metadata')
+      .select('id,value_key,period_key,valid_from,valid_to,source_id,metadata')
       .order('value_key', { ascending: true })
       .order('valid_from', { ascending: true }),
     admin.from('regulatory_dependencies')
@@ -90,6 +90,23 @@ export async function runRegulatoryHealthAudit() {
     }
   }
 
+  for (const value of values ?? []) {
+    if (!value.source_id) {
+      issues.push({
+        code: 'value_missing_source',
+        severity: 'critical',
+        entity: value.value_key,
+        message: `${value.value_key} no tiene fuente canónica asociada.`,
+      });
+    } else if (!sourceIds.has(value.source_id)) {
+      issues.push({
+        code: 'value_source_inactive',
+        severity: 'critical',
+        entity: value.value_key,
+        message: `${value.value_key} apunta a una fuente inactiva o inexistente.`,
+      });
+    }
+  }
   const byKey = new Map<string, NonNullable<typeof values>>();
   for (const value of values ?? []) {
     const list = byKey.get(value.value_key) ?? [];
