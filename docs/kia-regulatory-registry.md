@@ -1,7 +1,7 @@
 # KIA Regulatory Registry — vigilancia normativa e indicadores oficiales
 
-Estado: arquitectura e implementación v1  
-Fecha: 19/09/2026
+Estado: producción v1.1  
+Fecha: 20/09/2026
 
 ## Objetivo
 
@@ -27,7 +27,8 @@ El sistema separa:
 - KIA razona solo sobre fuentes nuevas o cambiadas.
 - Los casos relevantes generan una propuesta auditable.
 - Las actualizaciones con efecto jurídico, económico o fiscal exigen revisión humana antes de publicar.
-- Un cambio crítico bloquea automatizaciones comerciales dependientes hasta revisión.
+- Un cambio crítico solo bloquea automatizaciones comerciales cuando existe una relación explícita `change → dependency`.
+- Una fuente genérica no bloquea por sí sola todos los servicios vinculados a ella.
 - Los valores usados por cálculos y respuestas deben salir de `regulatory_values`, no quedar duplicados en prompts.
 
 ---
@@ -119,14 +120,32 @@ El día 3 de cada mes se fuerza una revisión completa de todas las fuentes acti
 
 La auditoría mensual no debe re-publicar automáticamente nada.
 
+Desde v1.1 también valida:
+
+- fuentes sin baseline;
+- fuentes con error o estancadas;
+- valores sin registro actual;
+- solapamientos de vigencia;
+- dependencias huérfanas;
+- ejecuciones que permanecen `running` más de 15 minutos.
+
 ### Bajo demanda
 
 Admin/Telegram puede lanzar una revisión manual por:
 
-- autoridad;
-- topic;
-- source key;
-- service slug.
+- `source`;
+- `authority`;
+- `topic`;
+- `service`.
+
+Telegram usa sintaxis explícita, por ejemplo:
+
+```text
+/legal revisar service arraigo-social
+/legal revisar topic tax
+/legal revisar authority AEAT
+/legal revisar source aeat_news_rss
+```
 
 ---
 
@@ -249,11 +268,17 @@ Campos clave:
 
 Foto normalizada de una fuente en una fecha.
 
-No almacena una copia ilimitada de páginas completas; guarda huella, extracto relevante y metadata suficiente para auditar.
+No almacena una copia ilimitada de páginas completas; guarda huella, evidencia muestreada y metadata suficiente para auditar. En fuentes largas la evidencia toma segmentos de inicio, centro y final para no ocultar cambios situados fuera de los primeros 24.000 caracteres.
 
 ### `regulatory_changes`
 
 Cambio detectado y posterior clasificación KIA.
+
+Desde v1.1 conserva además evidencia del cambio y resolución humana trazable.
+
+### `regulatory_change_dependencies`
+
+Relación explícita entre un cambio concreto y las dependencias EXPERT realmente afectadas. El bloqueo de publicación consulta esta tabla, no solo la fuente de origen.
 
 Estados:
 
@@ -289,7 +314,7 @@ Valores canónicos usados por KIA y cálculos.
 Ejemplos:
 
 - SMI mensual/diario/anual;
-- IPC;
+- IPC (último dato publicado, separado de la vigencia jurídica);
 - IRAV;
 - IPREM;
 - interés legal;
@@ -450,10 +475,13 @@ AEAT:
 Si un cambio es `critical`:
 
 1. registrar cambio;
-2. marcar dependencias afectadas;
-3. notificar Admin/Telegram;
-4. impedir promoción automática de servicios afectados;
-5. requerir revisión humana.
+2. identificar dependencias afectadas;
+3. persistir `regulatory_change_dependencies`;
+4. notificar Admin/Telegram;
+5. impedir promoción automática **solo** de servicios afectados;
+6. requerir revisión humana con nota de resolución.
+
+Una fuente oficial genérica no bloquea servicios si KIA no ha vinculado expresamente el cambio a esas dependencias.
 
 No se despublica automáticamente una landing existente.
 
@@ -567,22 +595,30 @@ Todos llaman endpoints protegidos con `CRON_SECRET`.
 
 ---
 
-## Definition of Done v1
+## Definition of Done v1.1
 
-- [ ] tablas y RLS;
-- [ ] source registry oficial;
-- [ ] seed de valores 2026;
-- [ ] fetch/fingerprint;
-- [ ] pulse diario;
-- [ ] worker KIA;
-- [ ] auditoría mensual;
-- [ ] dependencias lote 1;
-- [ ] herramienta KIA de lectura;
-- [ ] Telegram Admin;
-- [ ] alertas;
-- [ ] tests;
-- [ ] CI verde;
-- [ ] Security Advisor después de DDL.
+- [x] tablas y RLS;
+- [x] source registry oficial;
+- [x] seed de valores 2026;
+- [x] fetch/fingerprint completo;
+- [x] evidencia distribuida para fuentes largas;
+- [x] pulse diario;
+- [x] worker KIA;
+- [x] auditoría mensual de salud;
+- [x] dependencias de los 10 servicios del lote 1;
+- [x] impacto por cambio concreto;
+- [x] bloqueo de publicación por impacto explícito;
+- [x] herramienta KIA de lectura;
+- [x] valores periódicos con modo `latest_published`;
+- [x] cierre controlado de vigencias solapadas;
+- [x] resolución humana trazable;
+- [x] Telegram Admin con scope explícito;
+- [x] timeout pg_net 30 s;
+- [x] alertas;
+- [x] tests;
+- [ ] CI verde del PR v1.1;
+- [ ] Security Advisor después de aplicar DDL v1.1;
+- [ ] baseline post-migración de todas las fuentes nuevas.
 
 ## Fase siguiente
 
