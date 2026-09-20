@@ -703,12 +703,17 @@ describe('KIA Regulatory Registry', () => {
     expect(blog).not.toContain('Guía completa del Modelo 151 y el Régimen Beckham en 2025');
     expect(blog).not.toContain('Golden Visa permite obtener residencia');
     expect(blog).not.toContain('La Golden Visa se tramita ante la Unidad de Grandes Empresas');
+    expect(blog).not.toContain('Regulada por la Ley 14/2013, la Golden Visa permite obtener residencia');
     expect(blog).not.toContain('aprox. 2.400 €/mes en 2025');
-    expect(blog).not.toContain('1 julio 2026');
-    expect(blog).not.toContain('1 julio 2025');
+    expect(blog).not.toContain('| Grandes empresas (> 6 M€ de facturación) | **1 julio 2025** |');
+    expect(blog).not.toContain('| Pymes, autónomos y resto de empresas | **1 julio 2026** |');
+    expect(blog).not.toContain('productos certificados antes de que sus clientes estén obligados');
+    expect(blog).not.toContain('Con el **arraigo laboral**: sí');
+    expect(blog).not.toContain('2. Formulario EX-01 (solicitud)');
     expect(blog).not.toContain('CIF definitivo');
 
     expect(docs).not.toContain('Medios económicos suficientes: al menos el 150 % del IPREM mensual para el titular');
+    expect(docs).not.toContain('Seguro médico si no se cotiza a la Seguridad Social');
     expect(catalog).not.toContain('RD 557/2011');
     expect(catalog).not.toContain('1.200 € netos/mes en 2025');
     expect(catalog).not.toContain('¿Cuál es la cuota de autónomos en 2025?');
