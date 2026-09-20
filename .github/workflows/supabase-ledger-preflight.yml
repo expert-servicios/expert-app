@@ -214,14 +214,14 @@ jobs:
 
           raw_hash="$(sha256sum "$raw" | cut -d' ' -f1)"
           cat > "$private/ledger-summary.txt" <<EOF
-ledger_state=$ledger_state
-ledger_rows=$rows
-first_version=$EXPECTED_FIRST_VERSION
-last_version=$last_version
-empty_statements=0
-expected_dry_run_pending=$expected_dry_run_pending
-sha256=$raw_hash
-EOF
+          ledger_state=$ledger_state
+          ledger_rows=$rows
+          first_version=$EXPECTED_FIRST_VERSION
+          last_version=$last_version
+          empty_statements=0
+          expected_dry_run_pending=$expected_dry_run_pending
+          sha256=$raw_hash
+          EOF
           rm -f "$raw"
 
       - name: Verify migration list and dry-run
