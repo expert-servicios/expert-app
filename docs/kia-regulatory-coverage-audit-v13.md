@@ -43,6 +43,7 @@ La cobertura se clasifica así:
 | P0-CV-02 | AJD Comunitat Valenciana | KIA CCAA: 1,5 % | desde 01/06/2026: general 1,4 % | corregir + ruleset |
 | P0-CV-03 | ISD Comunitat Valenciana | KIA CCAA: bonificación 75 % grupos I-II | normativa vigente recoge 99 % en supuestos familiares definidos y cambios 2026 | retirar resumen obsoleto; ruleset con requisitos |
 | P0-RET-01 | Retenciones IRPF 2026 | prompt estático 15/7 y cálculo laboral | AEAT publica versión 01/01–09/09 y nueva versión desde 10/09/2026 | ruleset versionado; cálculo siempre por periodo |
+| P0-CENS-01 | Modelo 037 | catálogo, ayuda, prompts y Holded seguían ofreciendo 036/037 | Modelo 037 suprimido desde 03/02/2025; la vía vigente es Modelo 036 | eliminar 037 como trámite vivo + ruleset canónico |
 
 ## Mapa exhaustivo por dominio
 
