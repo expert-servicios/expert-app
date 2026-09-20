@@ -14,7 +14,7 @@ const facts = [
   'España tiene convenios para evitar la doble imposición con más de 90 países. Esto significa que si pagas impuestos en otro país, puedes deducirlos en tu declaración española. La globalización también tiene ventajas fiscales.',
   'El certificado digital tiene una vida útil de 2-3 años. Renovarlo antes de que caduque te evita tener que pasar de nuevo por la verificación de identidad presencial. Ponlo ya en el calendario.',
   'La cuota reducida de nuevos autónomos tiene requisitos y vigencia propios. El importe de 80 €/mes estaba fijado para 2023–2025; para altas posteriores hay que comprobar el importe oficial vigente antes de presupuestar.',
-  'El Impuesto de Sociedades en España tiene un tipo general del 25%. Para empresas de nueva creación, es del 15% durante los dos primeros ejercicios con base imponible positiva. Arrancar tiene sus ventajas.',
+  'El Impuesto sobre Sociedades no tiene un único tipo aplicable a todas las SL. En 2026 conviven el 25% general, tipos específicos para microempresas y entidades de reducida dimensión y el 15% para determinadas entidades de nueva creación; hay que clasificar la entidad antes de calcular.',
   'Los emprendedores en España dedican de media 120 horas al año a tareas administrativas y fiscales que podrían delegar. A 50 €/hora de coste de oportunidad, son 6.000 € de valor perdido cada año.',
   'El 85% de los expedientes de extranjería que se presentan correctamente en el primer intento se resuelven en el plazo legal. La documentación completa marca la diferencia.',
   'Una empresa bien organizada digitalmente vale entre un 20% y un 40% más en una operación de compraventa que una similar con contabilidad desordenada. Tu gestión de hoy es la valoración de mañana.',
