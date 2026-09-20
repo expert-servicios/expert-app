@@ -1050,7 +1050,7 @@ Este es un plazo crítico: si se presenta fuera de plazo, el régimen no puede a
 | Hasta 600.000 € | 24 % |
 | Exceso sobre 600.000 € | 47 % |
 
-Las **rentas obtenidas fuera de España** (salvo rendimientos del trabajo) quedan **exentas** de tributación en España, lo que puede suponer una ventaja significativa para quienes mantengan patrimonio o rentas en el extranjero.
+La determinación de las rentas sometidas a gravamen sigue las reglas especiales del artículo 93 LIRPF y, en lo no previsto, las reglas del IRNR aplicables al régimen. No debe concluirse que una renta extranjera está exenta únicamente por su localización: hay que clasificar el tipo de renta y aplicar las especialidades correspondientes.
 
 ## Duración del régimen
 
@@ -1061,7 +1061,7 @@ El régimen se aplica durante el **año del desplazamiento y los 5 siguientes** 
 No siempre resulta más ventajoso que el IRPF ordinario. La escala especial puede resultar más favorable cuando:
 
 - Los rendimientos del trabajo son elevados (superan los tramos altos del IRPF).
-- Se tienen rentas o patrimonio en el extranjero que quedarían exentas.
+- La estructura de rentas y patrimonio hace que las reglas especiales del régimen resulten favorables frente al IRPF ordinario, tras revisar cada fuente de renta.
 - No se aplican deducciones personales significativas (hipoteca, hijos, etc.).
 
 Si los ingresos son moderados o hay muchas deducciones personales, el IRPF ordinario puede resultar más beneficioso. **Es imprescindible calcular ambas opciones antes de decidir**.
@@ -1071,7 +1071,7 @@ Si los ingresos son moderados o hay muchas deducciones personales, el IRPF ordin
 | Aspecto | Régimen Beckham | IRPF ordinario |
 |---|---|---|
 | Tipo impositivo | 24 % (fijo hasta 600.000 €) | 19 %–47 % (progresivo) |
-| Rentas extranjeras | En general exentas | Tributación mundial |
+| Rentas extranjeras | Según reglas especiales del art. 93/IRNR y tipo de renta | Tributación mundial con reglas ordinarias |
 | Modelo de declaración | Modelo 151 | Modelo 100 |
 | Duración | Hasta 6 años | Indefinido |
 | Reducción por trabajo | No aplica | Sí aplica |
@@ -1082,8 +1082,8 @@ Mientras se esté bajo el régimen Beckham:
 
 - Se presenta el **Modelo 151** anualmente en lugar del Modelo 100.
 - Las retenciones a cuenta son del 24 % (no el tipo marginal).
-- Si se obtienen rentas en el extranjero que no tributan en España, en muchos casos no hay obligación de incluirlas en la declaración española.
-- El **Modelo 720** (bienes en el extranjero) puede no ser aplicable durante el régimen.
+- La inclusión de rentas se determina conforme a las reglas especiales del régimen y al tipo concreto de renta.
+- El contribuyente acogido al régimen especial del artículo 93 no está obligado a presentar el **Modelo 720** por bienes y derechos en el extranjero; la situación de cónyuge u otros familiares se analiza separadamente.
 
 ## Causas de exclusión del régimen
 
