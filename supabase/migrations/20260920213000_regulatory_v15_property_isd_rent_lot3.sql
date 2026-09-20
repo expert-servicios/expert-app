@@ -188,7 +188,7 @@ values
   ('VALENCIA_DONATIONS_651_2026','service','donacion','tax','critical','{"impact_requires_classification":true}'::jsonb),
   ('VALENCIA_DONATIONS_651_2026','kia_prompt','ccaa','tax','critical','{"impact_requires_classification":true}'::jsonb),
   ('VALENCIA_RENTAL_DEPOSIT_2026','knowledge','rental-deposit-valencia','housing','critical','{"impact_requires_classification":true}'::jsonb),
-  ('VALENCIA_RENTAL_DEPOSIT_2026','service','contabilidad-mensual','housing','medium','{"impact_requires_classification":true}'::jsonb),
+  ('VALENCIA_RENTAL_DEPOSIT_2026','service','contabilidad-mensual','housing','normal','{"impact_requires_classification":true}'::jsonb),
   ('VALENCIA_RENTAL_DEPOSIT_2026','kia_prompt','ccaa','housing','critical','{"impact_requires_classification":true}'::jsonb)
 on conflict (ruleset_key,dependency_type,dependency_key)
 where ruleset_key is not null
