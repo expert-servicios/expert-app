@@ -1163,8 +1163,8 @@ export const services: Service[] = [
       'Justificante de presentación'
     ],
     faqs: [
-      { q: '¿Cuándo hay que depositar las cuentas anuales?', a: 'Dentro del mes siguiente a la aprobación en Junta (normalmente hasta el 30 de julio para ejercicios cerrados a 31 de diciembre).' },
-      { q: '¿Qué pasa si no deposito las cuentas?', a: 'La sociedad puede quedar en situación de cierre registral y el ICAC puede imponer multas de hasta 300.000 €.' }
+      { q: '¿Cuándo hay que depositar las cuentas anuales?', a: 'Dentro del mes siguiente a su aprobación. La fecha concreta depende del cierre del ejercicio y de la fecha real de aprobación; no usamos un 30/31 de julio como plazo universal.' },
+      { q: '¿Qué pasa si no deposito las cuentas?', a: 'Puede producirse cierre registral y existe un régimen sancionador. El cierre tiene excepciones legales y la cuantía de la sanción depende, entre otros factores, del tamaño de la sociedad y de sus cifras contables.' }
     ]
   },
   {
