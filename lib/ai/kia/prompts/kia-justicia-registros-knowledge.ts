@@ -139,6 +139,15 @@ Referencia Catastral:
 - Codigo alfanumerico unico de cada bien inmueble en el Catastro.
 - Se encuentra en el recibo del IBI o en https://www.sedecatastro.gob.es/
 - Diferente del numero registral: el Catastro es fiscal; el Registro es juridico-juridico.
+
+
+Cancelacion registral de hipoteca:
+- En Comunitat Valenciana consultar VALENCIA_MORTGAGE_CANCELLATION_2026.
+- Distinguir siempre extincion de la deuda de cancelacion registral de la carga.
+- La via ordinaria exige escritura publica de cancelacion otorgada por el acreedor, presentacion fiscal correspondiente y presentacion en Registro.
+- No afirmar que la cancelacion es obligatoria en todos los casos ni que el banco la realiza automaticamente.
+- Para supuestos de caducidad, cancelacion parcial o varias fincas, exigir revision individual antes de orientar el tramite.
+
 </registro_propiedad>
 
 <justicia_registros_kia_rules>
