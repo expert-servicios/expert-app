@@ -856,7 +856,7 @@ export const services: Service[] = [
     metaTitle: 'Reagrupación Familiar en España · EXPERT Asesoría',
     metaDescription: 'Tramitamos la reagrupación familiar en España desde 390 € + IVA. Cónyuge, hijos y ascendientes. Evaluación de ingresos, vivienda y documentación incluida.',
     description:
-      'La reagrupación familiar (arts. 52-60 de la LO 4/2000 y arts. 52-60 del RD 557/2011) permite que los residentes legales en España traigan a vivir con ellos a sus familiares más cercanos: cónyuge o pareja de hecho, hijos menores de 18 años y ascendientes dependientes. Gestionamos el expediente completo: evaluación de los requisitos económicos y de vivienda, preparación de toda la documentación y presentación ante la Oficina de Extranjería o en el Consulado español del país de origen del familiar.',
+      'La reagrupación familiar se tramita conforme a la Ley Orgánica 4/2000 y al Reglamento aprobado por el RD 1155/2024. Revisamos qué familiares pueden reagruparse, los recursos fijos y regulares, la vivienda adecuada y la documentación exigible antes de presentar el expediente.',
     price: '390 € + IVA',
     stripePriceId: 'price_1TZYlBLeYwwgvux4c3bW4zwF',
     checkoutLabel: 'Contratar — 390 € + IVA',
@@ -873,7 +873,7 @@ export const services: Service[] = [
     ],
     requirements: [
       'Autorización de residencia del reagrupante vigente (al menos 1 año de residencia previa)',
-      'Ingresos suficientes: al menos 150 % del IPREM mensual para el primer familiar reagrupado',
+      'Ingresos suficientes: referencia general del 150 % del IPREM para una unidad familiar de dos miembros y 50 % adicional por cada miembro extra, con posibles minoraciones en supuestos con menores',
       'Vivienda en condiciones de habitabilidad suficiente (informe del Ayuntamiento)',
       'Parentesco acreditable: matrimonio, filiación o dependencia económica',
       'Familiar sin antecedentes penales',
@@ -908,7 +908,7 @@ export const services: Service[] = [
     },
     faqs: [
       { q: '¿Qué familiares puedo reagrupar?', a: 'Cónyuge o pareja de hecho inscrita, hijos menores de 18 años (o mayores si son dependientes), y ascendientes (padres) dependientes económicamente.' },
-      { q: '¿Cuánto dinero tengo que ganar?', a: 'Al menos el 150 % del IPREM mensual para el primer familiar (aprox. 1.200 € netos/mes en 2025) y un 50 % adicional por cada familiar extra.' },
+      { q: '¿Cuánto dinero tengo que ganar?', a: 'Como regla general, una unidad familiar de dos miembros exige recursos mensuales equivalentes al 150 % del IPREM y se añade el 50 % por cada miembro adicional. En determinados casos con menores la cuantía puede minorarse, por lo que revisamos el supuesto concreto.' },
       { q: '¿Necesito un piso grande?', a: 'Depende del número de personas. El Ayuntamiento emite un informe de habitabilidad según los metros cuadrados y el número de ocupantes.' },
       { q: '¿Mi cónyuge puede trabajar cuando llegue?', a: 'Si reagrupas a tu cónyuge, la autorización de residencia que se le concede incluye en general autorización para trabajar.' },
     ],
@@ -972,7 +972,7 @@ export const services: Service[] = [
     ],
     faqs: [
       { q: '¿Cuánto tarda el alta?', a: 'El alta fiscal es inmediata. El alta en el RETA puede tardar 1–3 días.' },
-      { q: '¿Cuál es la cuota de autónomos en 2025?', a: 'Con el nuevo sistema de cotización por ingresos reales, la cuota varía entre 200 € y 590 € aproximadamente según el tramo de rendimientos netos.' }
+      { q: '¿Cuál será mi cuota de autónomos?', a: 'En 2026 depende del tramo de rendimientos netos, la base elegida dentro del tramo y los tipos aplicables. La calculamos con la tabla oficial vigente; no usamos un rango aproximado genérico.' }
     ]
   },
   {
