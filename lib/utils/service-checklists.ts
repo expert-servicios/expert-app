@@ -88,7 +88,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tu contrato es con una empresa española o estás desplazado?',
     ],
     botInstructions:
-      'El régimen Beckham tributa al 24% fijo sobre rentas en España hasta 600.000 €. Es fundamental verificar que el cliente NO haya sido residente en España los 5 años previos. El plazo para solicitar el Modelo 149 es de 6 meses desde el inicio de actividad. Precio: consultar según complejidad.',
+      'Consultar IMPARTIATES_149_151_RULES antes de informar elegibilidad, duración o plazo. Verificar causa del desplazamiento, residencia fiscal previa, fecha de inicio de actividad, fecha de entrada de asociados y documentación. Para el contribuyente principal, la opción del Modelo 149 tiene como regla general 6 meses desde el inicio de actividad. Precio: consultar según complejidad.',
     estimatedPrice: 'Consultar',
   },
 
@@ -213,7 +213,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Ha habido cambios de más de 20.000 € respecto al último año declarado?',
     ],
     botInstructions:
-      'La obligación existe si el valor supera 50.000 € en al menos una de las tres categorías (cuentas, valores/fondos, inmuebles). Plazo: del 1 enero al 31 de marzo. Solo hay que presentarlo cuando se supera el umbral por primera vez, y luego cuando alguna categoría sube más de 20.000 €. Las sanciones por no presentar son muy elevadas. Precio: 190 € + IVA.',
+      'Consultar MODEL_720_RULES antes de concluir que existe obligación. Clasificar los bienes por categoría, aplicar reglas de valoración y exenciones, revisar si hubo declaración previa y pérdidas de titularidad. La ventana ordinaria es 1 de enero a 31 de marzo del año siguiente. Precio: 190 € + IVA.',
     estimatedPrice: '190 € + IVA',
   },
 
