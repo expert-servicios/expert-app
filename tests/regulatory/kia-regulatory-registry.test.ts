@@ -201,7 +201,7 @@ describe('KIA Regulatory Registry', () => {
   });
 
   it('schedules daily pulse, hourly worker and monthly audit through pg_cron', () => {
-    const migration = read('supabase/migrations/20260919193500_kia_regulatory_cron.sql');
+    const migration = read('supabase/migrations/20260919192924_kia_regulatory_cron.sql');
     expect(migration).toContain("'regulatory-pulse-daily'");
     expect(migration).toContain("'17 5 * * *'");
     expect(migration).toContain("'regulatory-worker-hourly'");
@@ -209,12 +209,12 @@ describe('KIA Regulatory Registry', () => {
     expect(migration).toContain("'regulatory-monthly-audit'");
     expect(migration).toContain("'41 5 3 * *'");
     expect(migration).toContain("where name = 'cron_secret'");
-    const registryMigration = read('supabase/migrations/20260919191500_kia_regulatory_registry.sql');
+    const registryMigration = read('supabase/migrations/20260919192850_kia_regulatory_registry.sql');
     expect(registryMigration).toContain('regulatory_changes_current_snapshot_unique');
   });
 
   it('monitors direct official feeds instead of only RSS directory pages', () => {
-    const migration = read('supabase/migrations/20260919191500_kia_regulatory_registry.sql');
+    const migration = read('supabase/migrations/20260919192850_kia_regulatory_registry.sql');
     expect(migration).toContain('https://sede.agenciatributaria.gob.es/Sede/todas-noticias.xml');
     expect(migration).toContain('aeat_analysis_rss');
     expect(migration).toContain('seg_social_legislation');
@@ -232,7 +232,7 @@ describe('KIA Regulatory Registry', () => {
   });
 
   it('hardens v1.1 with change-specific impact, specific sources and longer pg_net timeout', () => {
-    const migration = read('supabase/migrations/20260920073500_kia_regulatory_hardening_v11.sql');
+    const migration = read('supabase/migrations/20260920054204_kia_regulatory_hardening_v11.sql');
     expect(migration).toContain('regulatory_change_dependencies');
     expect(migration).toContain('migraciones_arraigo_social');
     expect(migration).toContain('migraciones_renovacion_hub');
@@ -245,7 +245,7 @@ describe('KIA Regulatory Registry', () => {
 
   it('treats latest published periodic values separately from legal validity', () => {
     const values = read('lib/regulatory/regulatory-values.ts');
-    const migration = read('supabase/migrations/20260920073500_kia_regulatory_hardening_v11.sql');
+    const migration = read('supabase/migrations/20260920054204_kia_regulatory_hardening_v11.sql');
     expect(values).toContain("availability_mode === 'latest_published'");
     expect(migration).toContain('"availability_mode":"latest_published"');
   });
@@ -273,7 +273,7 @@ describe('KIA Regulatory Registry', () => {
   });
 
   it('keeps blocked Migraciones pages as manual references and falls back to BOE monitoring', () => {
-    const migration = read('supabase/migrations/20260920080000_regulatory_migraciones_waf_fallback.sql');
+    const migration = read('supabase/migrations/20260920071136_regulatory_migraciones_waf_fallback.sql');
     expect(migration).toContain("'monitoring_mode', 'manual_reference'");
     expect(migration).toContain("'automatic_fallback_source', 'boe_rd_1155_2024'");
     expect(migration).toContain("'arraigo-social'");
@@ -283,7 +283,7 @@ describe('KIA Regulatory Registry', () => {
   });
 
   it('keeps registry tables server-side only with explicit browser deny policies', () => {
-    const migration = read('supabase/migrations/20260919191500_kia_regulatory_registry.sql');
+    const migration = read('supabase/migrations/20260919192850_kia_regulatory_registry.sql');
     expect(migration).toContain('alter table public.regulatory_sources enable row level security');
     expect(migration).toContain('regulatory_sources_deny_browser');
     expect(migration).toContain('regulatory_changes_deny_browser');
@@ -320,7 +320,7 @@ describe('KIA Regulatory Registry', () => {
   });
 
   it('closes production gaps with exact evidence sources and a safe BOE re-baseline', () => {
-    const migration = read('supabase/migrations/20260920093000_regulatory_production_gap_closure_v12.sql');
+    const migration = read('supabase/migrations/20260920073758_regulatory_production_gap_closure_v12.sql');
     expect(migration).toContain("'boe_smi_2026'");
     expect(migration).toContain("'boe_social_security_order_2026'");
     expect(migration).toContain("'boe_commercial_late_interest_2026_h2'");
@@ -631,6 +631,28 @@ describe('KIA Regulatory Registry', () => {
     expect(mortgageIsd).not.toContain("'administrative','pdf'");
     expect(finalV15).not.toContain("'administrative','pdf'");
     expect(finalV15).not.toContain("'legislation','pdf'");
+  });
+
+  it('keeps post-audit production consumers free of known regulatory regressions', () => {
+    const adminWorkflow = read('components/admin/WaServiceWorkflow.tsx');
+    const starterKnowledge = read('lib/data/kia-knowledge/holded-pack-starter.ts');
+    const starterPage = read('app/(public)/holded/pack-starter/page.tsx');
+    const blog = read('lib/utils/blog.ts');
+    const docs = read('lib/utils/docs.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+
+    expect(adminWorkflow).not.toContain('036/037');
+    expect(starterKnowledge).not.toContain('036 / 037');
+    expect(starterPage).not.toContain('036 / 037');
+    expect(blog).not.toContain('| Valencia | 10 % |');
+    expect(blog).not.toContain('si supera 50.000 €, también el Modelo 720');
+    expect(docs).not.toContain('tipo fijo del 24%');
+    expect(checklists).not.toContain('25 días siguientes a los 6 meses del cierre');
+  });
+
+  it('keeps dependency criticality inside the production enum contract', () => {
+    const migration = read('supabase/migrations/20260920213000_regulatory_v15_property_isd_rent_lot3.sql');
+    expect(migration).not.toContain("'housing','medium'");
   });
 
   it('documents the no-auto-merge and no-auto-publish contract', () => {
