@@ -121,7 +121,7 @@ export const services: Service[] = [
     name: 'Modelo 151 — Régimen Beckham',
     shortDescription: 'Tributación especial para expatriados desplazados a España.',
     description:
-      'El régimen especial de impatriados (popularmente conocido como Ley Beckham) permite tributar al tipo fijo del 24% sobre rentas obtenidas en España durante los primeros años de residencia. Gestionamos la solicitud de activación del régimen y la declaración anual del Modelo 151.',
+      'El régimen especial de impatriados (popularmente conocido como Ley Beckham) permite, cuando se cumplen sus requisitos, tributar bajo las reglas especiales del artículo 93 LIRPF. Gestionamos la opción mediante el Modelo 149, la revisión de elegibilidad y la declaración anual del Modelo 151.',
     price: 'Consultar',
     duration: '5–10 días hábiles',
     includes: [
@@ -133,7 +133,7 @@ export const services: Service[] = [
     ],
     faqs: [
       { q: '¿Quién puede acogerse al régimen Beckham?', a: 'Trabajadores y directivos desplazados a España que no hayan sido residentes los 5 años anteriores, bajo determinadas condiciones.' },
-      { q: '¿Cuánto tiempo dura el régimen?', a: 'Hasta 5 años desde la activación, renovable en algunas circunstancias.' },
+      { q: '¿Cuánto tiempo dura el régimen?', a: 'Se aplica en el período impositivo en que se adquiere la residencia fiscal en España bajo el régimen y en los cinco períodos impositivos siguientes, siempre que se mantengan los requisitos.' },
       { q: '¿Cubre también a mi familia?', a: 'El régimen es individual, aunque el cónyuge e hijos pueden acogerse bajo ciertos requisitos.' }
     ]
   },
@@ -225,7 +225,7 @@ export const services: Service[] = [
     name: 'Modelo 720 — Bienes en el Extranjero',
     shortDescription: 'Declaración de bienes y derechos situados en el extranjero ante la AEAT.',
     description:
-      'El Modelo 720 es una declaración informativa obligatoria para residentes fiscales en España que posean bienes o derechos en el extranjero por valor superior a 50.000 € en alguna de sus tres categorías: cuentas bancarias, valores e inmuebles. Analizamos tu obligación de declarar, preparamos el modelo y lo presentamos en plazo para evitar sanciones.',
+      'El Modelo 720 es una declaración informativa sobre determinadas categorías de bienes y derechos situados en el extranjero. La obligación depende de la categoría, los umbrales, las reglas de valoración y las exenciones aplicables. Analizamos primero si existe obligación y después preparamos y presentamos el modelo.',
     price: '190 € + IVA',
     stripePriceId: 'price_1TXMmVLeYwwgvux4e9hXI90o',
     duration: '3–5 días hábiles',
@@ -244,10 +244,10 @@ export const services: Service[] = [
       'Número de identificación fiscal extranjero (si aplica)'
     ],
     faqs: [
-      { q: '¿Quién está obligado a presentar el Modelo 720?', a: 'Personas físicas y jurídicas residentes en España que tengan bienes o derechos en el extranjero cuyo valor supere los 50.000 € en alguna de las tres categorías (cuentas, valores o inmuebles).' },
+      { q: '¿Quién está obligado a presentar el Modelo 720?', a: 'Puede existir obligación cuando se superan los umbrales legales en alguna de las tres categorías de información, pero antes hay que aplicar las reglas de valoración y las exenciones correspondientes.' },
       { q: '¿Cuándo hay que presentarlo?', a: 'Entre el 1 de enero y el 31 de marzo del año siguiente al ejercicio que se declara.' },
-      { q: '¿Qué pasa si no lo presento?', a: 'Las sanciones por no presentar o presentar incorrectamente pueden ser muy elevadas. Es imprescindible declarar si se supera el umbral.' },
-      { q: '¿Tengo que presentarlo cada año?', a: 'Solo en el año en que se supera el umbral por primera vez, y posteriormente cuando alguna categoría experimente un incremento superior a 20.000 € respecto al último ejercicio declarado.' }
+      { q: '¿Qué pasa si no lo presento?', a: 'La falta de presentación puede generar consecuencias tributarias y sancionadoras. Antes de concluir que existe obligación verificamos categoría, umbral, exenciones y ejercicio.' },
+      { q: '¿Tengo que presentarlo cada año?', a: 'No necesariamente. Tras una primera declaración hay que revisar el incremento respecto de la última presentada y también otros supuestos que pueden obligar a informar, como determinadas pérdidas de titularidad.' }
     ]
   },
 
