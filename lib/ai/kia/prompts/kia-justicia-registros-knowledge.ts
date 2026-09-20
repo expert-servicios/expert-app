@@ -86,11 +86,11 @@ Denominacion Social Negativa (paso previo para crear una SL):
 - EXPERT solicita el certificado de denominacion social como parte del servicio de constitucion de SL.
 
 Deposito de Cuentas Anuales:
-- Obligacion anual para todas las sociedades mercantiles (SL, SA, etc.).
-- Plazo: dentro del mes siguiente a la aprobacion de las cuentas por la junta general (normalmente antes del 31 de julio si el ejercicio cierra el 31 de diciembre).
-- Consecuencias de no depositar: cierre registral (la sociedad no puede inscribir ningun acto) y posible sancion del ICAC.
-- Tramite: en el Registro Mercantil Provincial de la provincia del domicilio social.
-- EXPERT gestiona el deposito de cuentas con el servicio de gestion mensual de empresa.
+- Consultar ANNUAL_ACCOUNTS_LSC_RULES para formulacion, junta, deposito y sanciones.
+- El deposito se calcula desde la fecha real de aprobacion; no usar 30/31 de julio como regla universal.
+- Consultar REGISTRY_CLOSURE_RRM_RULES antes de explicar un cierre registral: existen excepciones legales y un mecanismo especifico cuando las cuentas no han sido aprobadas.
+- Consultar BOOK_LEGALIZATION_RULES para el plazo de legalizacion de libros desde el cierre real del ejercicio.
+- EXPERT gestiona el deposito de cuentas y la operativa registral vinculada dentro de los servicios contratados.
 
 Consultas publicas en el Registro Mercantil:
 - Se pueden consultar datos basicos de empresas (denominacion, domicilio, objeto social, administrador) gratuitamente.
