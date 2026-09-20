@@ -239,6 +239,16 @@ describe('KIA Regulatory Registry', () => {
     expect(admin).toContain("window.prompt('Indica brevemente qué se ha revisado");
   });
 
+  it('keeps blocked Migraciones pages as manual references and falls back to BOE monitoring', () => {
+    const migration = read('supabase/migrations/20260920080000_regulatory_migraciones_waf_fallback.sql');
+    expect(migration).toContain("'monitoring_mode', 'manual_reference'");
+    expect(migration).toContain("'automatic_fallback_source', 'boe_rd_1155_2024'");
+    expect(migration).toContain("'arraigo-social'");
+    expect(migration).toContain("'reagrupacion-familiar'");
+    expect(migration).toContain("'renovacion-residencia'");
+    expect(migration).toContain("'impact_requires_classification', true");
+  });
+
   it('keeps registry tables server-side only with explicit browser deny policies', () => {
     const migration = read('supabase/migrations/20260919191500_kia_regulatory_registry.sql');
     expect(migration).toContain('alter table public.regulatory_sources enable row level security');
