@@ -38,16 +38,19 @@ Diferencias clave por CCAA (herencias entre familiares directos — orientativo)
 - Pais Vasco: regimen foral. Para familiares directos, exenciones amplias; tipo residual bajo.
 - Resto de CCAA: grandes diferencias; algunas con bonificaciones del 99%, otras con tipos efectivos relevantes.
 
-Donaciones:
-- Tambien gestionadas por las CCAA con tipos y reducciones propios.
-- En general, las donaciones en vida tributan mas que las herencias en muchas CCAA.
-- Algunas CCAA tienen bonificaciones para donaciones de vivienda habitual a hijos.
+Operativa Comunitat Valenciana:
+- Sucesiones: consultar VALENCIA_SUCCESSIONS_650_2026 para Modelo 650, plazo y prorroga.
+- Donaciones: consultar VALENCIA_DONATIONS_651_2026 para Modelo 651, plazo y punto de conexion territorial.
+- Beneficios fiscales: consultar VALENCIA_ISD_2026 antes de cuantificar.
+- En donaciones de inmuebles no usar la residencia del donatario como unica regla territorial; revisar donde radica el inmueble y las reglas de conexion.
 
-Plazo de autoliquidacion:
-- Sucesiones: 6 meses desde el fallecimiento (prorrogable otros 6 meses si se solicita en los primeros 5).
-- Donaciones: 30 dias habiles desde la firma notarial.
+Fianzas de arrendamiento en Comunitat Valenciana:
+- Consultar VALENCIA_RENTAL_DEPOSIT_2026.
+- Distinguir la fianza legal que entrega el arrendatario al arrendador de la obligacion del arrendador de depositarla ante la Generalitat.
+- La ficha GVA vigente en 2026 fija el deposito dentro del mes siguiente al contrato y usa modelo 816 telematico o 806 presencial.
+- La cuantia legal general es una mensualidad en vivienda y dos en uso distinto, conforme al art. 36 LAU.
 
-EXPERT gestiona el ISD en los servicios de herencia (svc_notaria_herencia).
+EXPERT gestiona el ISD y puede orientar la operativa de fianzas cuando el expediente lo requiera.
 </ccaa_isd>
 
 <ccaa_ajd>
