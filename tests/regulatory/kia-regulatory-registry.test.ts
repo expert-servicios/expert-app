@@ -484,6 +484,31 @@ describe('KIA Regulatory Registry', () => {
     expect(checklists).not.toContain('Plazos: del 1 al 20 de abril (1T), julio (2T), octubre (3T)');
   });
 
+  it('adds mercantile rulesets and blocks stale company guidance', () => {
+    const migration = read('supabase/migrations/20260920150000_regulatory_v14_mercantil_lot3.sql');
+    const pae = read('lib/ai/kia/prompts/kia-pae-knowledge.ts');
+    const registries = read('lib/ai/kia/prompts/kia-justicia-registros-knowledge.ts');
+    const catalog = read('lib/utils/catalog.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+    const sources = read('lib/integrations/official-sources.ts');
+
+    expect(migration).toContain("'ANNUAL_ACCOUNTS_LSC_RULES'");
+    expect(migration).toContain("'REGISTRY_CLOSURE_RRM_RULES'");
+    expect(migration).toContain("'BOOK_LEGALIZATION_RULES'");
+    expect(migration).toContain("'CIRCE_PAE_DUE_RULES'");
+
+    expect(pae).toContain('SL_CAPITAL_RULES');
+    expect(registries).toContain('ANNUAL_ACCOUNTS_LSC_RULES');
+    expect(registries).toContain('REGISTRY_CLOSURE_RRM_RULES');
+    expect(registries).toContain('BOOK_LEGALIZATION_RULES');
+
+    expect(pae).not.toContain('Capital social minimo: 3.000 EUR');
+    expect(pae).not.toContain('sin ir presencialmente a la notaria');
+    expect(catalog).not.toContain('hasta el 30 de julio para ejercicios cerrados a 31 de diciembre');
+    expect(checklists).not.toContain('normalmente hasta el 30 de julio');
+    expect(sources).not.toContain('SL) online via CIRCE o tramitar el alta de autonomo sin desplazamientos');
+  });
+
   it('documents the no-auto-merge and no-auto-publish contract', () => {
     const docs = read('docs/kia-regulatory-registry.md');
     expect(docs).toContain('Nunca se hace merge automático');
