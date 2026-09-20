@@ -1592,7 +1592,7 @@ https://www.camerfirma.com/certificado-cualificado-de-representacion/
     relatedServiceSlugs: ['alta-autonomo'],
     relatedServiceCategories: ['empresas-autonomos'],
     seoTitle: 'Alta de autónomo en España: guía completa de trámites',
-    seoDescription: 'Cómo darse de alta como autónomo en España: Modelo 036, RETA, elección de epígrafe, cuota 2025 y obligaciones fiscales del primer año.',
+    seoDescription: 'Cómo darse de alta como autónomo en España: Modelo 036, RETA, elección de epígrafe, cotización 2026 y obligaciones fiscales del primer año.',
     body: `
 ## ¿Cuándo hay que darse de alta?
 
@@ -1622,19 +1622,11 @@ En este trámite elegirás tu **base de cotización**, que determina:
 - La **cuota mensual** a pagar.
 - Las **prestaciones** a las que tendrás derecho (enfermedad, accidente, jubilación).
 
-## Cuota de autónomos en 2025
+## Cotización de autónomos en 2026
 
-Desde 2023 rige el sistema de cotización por **ingresos reales**:
+En 2026 sigue vigente el sistema de cotización por **rendimientos netos**, con una tabla reducida y una tabla general de bases mínimas y máximas. La base que puedes elegir depende del tramo de rendimientos previsto y puede modificarse, dentro de los periodos habilitados, si cambian tus previsiones.
 
-| Rendimientos netos mensuales | Cuota aprox. |
-|---|---|
-| Menos de 670 € | ~200 €/mes |
-| 670 €–1.166 € | ~260–290 €/mes |
-| 1.166 €–1.700 € | ~294–350 €/mes |
-| 1.700 €–3.000 € | ~370–420 €/mes |
-| Más de 6.000 € | ~590 €/mes |
-
-**Tarifa plana**: los nuevos autónomos pagan **80 €/mes durante los primeros 12 meses**, prorrogable si los ingresos no superan el SMI. Algunas comunidades autónomas tienen bonificaciones adicionales.
+No usamos una cuota fija genérica: antes del alta comprobamos el tramo 2026, la base elegida y los tipos vigentes. La cifra de **80 €/mes** correspondía a la cuota reducida fijada expresamente para **2023–2025**; para un alta en 2026 debe verificarse la cuantía oficial vigente y si se cumplen los requisitos del beneficio.
 
 ## Obligaciones fiscales desde el primer día
 
