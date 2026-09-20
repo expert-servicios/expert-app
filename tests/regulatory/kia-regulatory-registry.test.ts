@@ -693,6 +693,30 @@ describe('KIA Regulatory Registry', () => {
     expect(rulesets).toContain('Ambiguous regulatory ruleset');
   });
 
+  it('keeps current 2026 public guidance free of stale immigration and RRSIF claims', () => {
+    const blog = read('lib/utils/blog.ts');
+    const docs = read('lib/utils/docs.ts');
+    const catalog = read('lib/utils/catalog.ts');
+    const ss = read('lib/ai/kia/prompts/kia-ss-knowledge.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+
+    expect(blog).not.toContain('Guía completa del Modelo 151 y el Régimen Beckham en 2025');
+    expect(blog).not.toContain('Golden Visa permite obtener residencia');
+    expect(blog).not.toContain('La Golden Visa se tramita ante la Unidad de Grandes Empresas');
+    expect(blog).not.toContain('aprox. 2.400 €/mes en 2025');
+    expect(blog).not.toContain('1 julio 2026');
+    expect(blog).not.toContain('1 julio 2025');
+    expect(blog).not.toContain('CIF definitivo');
+
+    expect(docs).not.toContain('Medios económicos suficientes: al menos el 150 % del IPREM mensual para el titular');
+    expect(catalog).not.toContain('RD 557/2011');
+    expect(catalog).not.toContain('1.200 € netos/mes en 2025');
+    expect(catalog).not.toContain('¿Cuál es la cuota de autónomos en 2025?');
+    expect(ss).not.toContain('En 2025 los tramos y cuotas han vuelto a actualizarse');
+    expect(ss).toContain('RETA_2026_BRACKETS');
+    expect(checklists).not.toContain('El CIF definitivo');
+  });
+
   it('documents the no-auto-merge and no-auto-publish contract', () => {
     const docs = read('docs/kia-regulatory-registry.md');
     expect(docs).toContain('Nunca se hace merge automático');
