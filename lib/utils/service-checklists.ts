@@ -664,7 +664,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿La sociedad tiene auditor?',
     ],
     botInstructions:
-      'El plazo para depositar las cuentas es el mes siguiente a la aprobación en Junta (normalmente hasta el 30 de julio). La falta de depósito puede generar cierre registral. Si la contabilidad la lleva EXPERT, el depósito suele estar incluido en el plan mensual. Precio: consultar.',
+      'Consultar ANNUAL_ACCOUNTS_LSC_RULES para calcular formulación, junta y depósito desde las fechas reales del ejercicio. Si existe incumplimiento, consultar REGISTRY_CLOSURE_RRM_RULES antes de informar sobre cierre registral y sus excepciones. Precio: consultar.',
     estimatedPrice: 'Consultar',
   },
 
