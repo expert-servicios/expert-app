@@ -43,6 +43,7 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_service_registry_item:          policy('R0', 'read',  'client_data'),
   get_service_operational_blueprint:   policy('R0', 'read',  'case_management'),
   get_regulatory_value:                 policy('R0', 'read',  'regulatory'),
+  get_regulatory_ruleset:               policy('R0', 'read',  'regulatory'),
   run_viability_check:                policy('R1', 'read',  'client_data'),
   run_readiness_check:                policy('R1', 'read',  'client_data'),
   get_holded_connection_status:       policy('R0', 'read',  'holded_read'),

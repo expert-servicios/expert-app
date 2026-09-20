@@ -14,7 +14,7 @@ Plazo de pago: 30 dias habiles desde la firma de la escritura o contrato.
 Tipos generales por CCAA (inmuebles — orientativos, verificar para el ejercicio actual):
 - Madrid: 6% (uno de los mas bajos de España).
 - Andalucia: 7% (reducido) hasta ciertos valores; 8-10% en tramos superiores.
-- Comunitat Valenciana: 10% general.
+- Comunitat Valenciana: desde el 1/06/2026, 9% general en inmuebles; 11% cuando el valor supera 1.000.000 EUR. Existen tipos reducidos y supuestos especiales: consultar el ruleset VALENCIA_ITPAJD_2026 antes de calcular.
 - Cataluna: 10% general; puede llegar al 11% para inmuebles de mayor valor.
 - Pais Vasco: 4% (regimen foral propio, tipo reducido historicamente).
 - Aragon, Castilla y Leon, Extremadura: en torno al 8%.
@@ -35,7 +35,7 @@ Diferencias clave por CCAA (herencias entre familiares directos — orientativo)
 - Madrid: bonificacion del 99% en cuota para herencias entre conyuges, hijos y padres → tributacion casi nula para familiares directos.
 - Andalucia: desde 2021, bonificacion del 99% para grupo I y II (descendientes, ascendientes, conyuges) → casi sin tributacion.
 - Cataluna: tipos progresivos; bonificacion del 99% para conyuges; para hijos, reduccion de 100.000 EUR pero tipo efectivo puede ser significativo para patrimonios altos.
-- Comunitat Valenciana: bonificacion del 75% para grupo I y II.
+- Comunitat Valenciana: bonificacion del 99% en los supuestos familiares previstos por la Ley 13/1997; en donaciones inter vivos hay requisitos de parentesco y documento publico. Consultar VALENCIA_ISD_2026 antes de cuantificar.
 - Pais Vasco: regimen foral. Para familiares directos, exenciones amplias; tipo residual bajo.
 - Resto de CCAA: grandes diferencias; algunas con bonificaciones del 99%, otras con tipos efectivos relevantes.
 
@@ -61,7 +61,7 @@ Quien lo gestiona: la CCAA donde se otorga el documento notarial.
 Tipos orientativos por CCAA:
 - Madrid: 0,75%.
 - Andalucia: 1,2% (reducido a 0,1% para primera vivienda habitual protegida).
-- Comunitat Valenciana: 1,5%.
+- Comunitat Valenciana: desde el 1/06/2026, 1,4% en los demas casos del tipo general de AJD. Existen tipos y bonificaciones especiales: consultar VALENCIA_ITPAJD_2026.
 - Cataluna: 1,5%.
 - Pais Vasco: 0,5% (regimen foral).
 - Media nacional: entre 0,5% y 1,5%.

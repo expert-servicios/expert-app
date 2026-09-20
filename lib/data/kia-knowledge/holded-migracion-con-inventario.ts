@@ -86,7 +86,7 @@ export const holdedMigracionConInventarioKnowledge = {
     'Exportación de ubicaciones de almacén si aplica',
     'Exportación de facturas emitidas/recibidas si se migra historial',
     'Exportación de maestro de clientes y proveedores',
-    'Modelo 036/037 o alta fiscal para datos de empresa',
+    'Modelo 036 o alta fiscal para datos de empresa',
   ],
 
   // ── FAQ for Kia ─────────────────────────────────────────────────────────

@@ -423,8 +423,8 @@ En España, debes darte de alta como autónomo **antes de comenzar a ejercer cua
 
 ## Pasos para el alta
 
-### 1. Alta en Hacienda (Modelo 036 o 037)
-El Modelo 037 es la versión simplificada para la mayoría de los autónomos. En él indicarás:
+### 1. Alta en Hacienda (Modelo 036)
+Desde el 3 de febrero de 2025 el Modelo 037 está suprimido; el alta censal se tramita mediante el Modelo 036. En él indicarás:
 - **Epígrafe del IAE** (actividad económica)
 - **Régimen de IVA** aplicable (general, simplificado, recargo de equivalencia, exento...)
 - Fecha de inicio de la actividad
@@ -434,26 +434,17 @@ Debes presentarla **antes del inicio de la actividad** o como máximo el primer 
 
 En este momento elegirás tu **base de cotización**, que determinará la cuota mensual a pagar y tus futuras prestaciones.
 
-## Cuota de autónomos en 2025
+## Cotización de autónomos en 2026
 
-Desde 2023 rige el nuevo sistema de cotización por ingresos reales, con tramos progresivos:
+En 2026 la cotización se determina por **rendimientos netos** y por las bases mínima y máxima del tramo aplicable. La tabla oficial de 2026 contiene tres tramos reducidos y doce tramos generales, y la base puede ajustarse durante el año en los periodos habilitados.
 
-| Rendimientos netos mensuales | Cuota aprox. |
-|---|---|
-| Menos de 670 € | ~200 €/mes |
-| 670 € – 900 € | ~260 €/mes |
-| 900 € – 1.166 € | ~290 €/mes |
-| 1.166 € – 1.300 € | ~294 €/mes |
-| 1.300 € – 1.700 € | ~350 €/mes |
-| Más de 6.000 € | ~590 €/mes |
-
-**Tarifa plana:** Los nuevos autónomos pagan **80 €/mes durante 12 meses**, prorrogable si los rendimientos no superan el SMI. En algunas comunidades autónomas existen bonificaciones adicionales.
+Antes de calcular una cuota hay que comprobar el tramo, la base seleccionada y los tipos vigentes. La cuantía reducida de **80 €/mes estaba fijada para 2023–2025**; para altas en 2026 no debe reutilizarse automáticamente y se verifica el beneficio vigente en la fuente oficial.
 
 ## Obligaciones fiscales del primer año
 
 Como autónomo en régimen general, deberás presentar:
 
-- **Modelo 130** (IRPF trimestral): 20 % del beneficio neto en los primeros 3 años, luego según retenciones.
+- **Modelo 130** (IRPF): pago fraccionado calculado con las reglas vigentes sobre el rendimiento neto acumulado desde el inicio del año, descontando pagos previos y retenciones cuando proceda. Determinadas actividades profesionales pueden quedar exentas de presentarlo si cumplen el umbral legal de ingresos sometidos a retención.
 - **Modelo 303** (IVA trimestral): diferencia entre IVA repercutido y soportado.
 - **Modelo 390** (Resumen anual de IVA): en enero del año siguiente.
 - **Modelo 100** (Declaración de la Renta): en mayo-junio.
@@ -985,9 +976,9 @@ El desarrollo reglamentario de esta prohibición se concreta en el **Real Decret
 
 | Colectivo | Fecha de entrada en vigor |
 |---|---|
-| Grandes empresas (facturación > 6 M€) | 1 de julio de 2025 |
-| Resto de empresas y autónomos | 1 de julio de 2026 |
-| Software de terceros (ERP, gestión) | Deben certificarse antes de esas fechas |
+| Contribuyentes del Impuesto sobre Sociedades sujetos al reglamento | Antes del 1 de enero de 2027 |
+| Resto de obligados del artículo 3.1, incluidos empresarios/profesionales en IRPF cuando proceda | Antes del 1 de julio de 2027 |
+| Proveedores de software | Deben entregar soluciones adaptadas a tiempo para que cada obligado cumpla su fecha aplicable |
 
 ## ¿Qué debo hacer?
 
@@ -1007,9 +998,9 @@ En EXPERT, como Holded Solution Partner, te ayudamos a evaluar si tu sistema act
   {
     slug: 'verifactu-facturacion-electronica',
     category: 'Fiscalidad',
-    title: 'VeriFactu: la facturación electrónica obligatoria que llega en 2025-2026',
+    title: 'VERI*FACTU y RRSIF: las fechas obligatorias pasan a 2027',
     excerpt:
-      'El sistema VeriFactu será obligatorio para grandes empresas desde julio de 2025 y para pymes y autónomos desde julio de 2026. Explicamos cómo funciona y cómo prepararte.',
+      'Los sistemas de facturación sujetos al RRSIF deberán adaptarse antes del 1 de enero o del 1 de julio de 2027, según el tipo de obligado. Explicamos la diferencia entre RRSIF y la modalidad VERI*FACTU.',
     date: '8 may 2026',
     readTime: '7 min',
     tags: ['VeriFactu', 'facturación electrónica', 'AEAT', 'software de facturación'],
@@ -1059,7 +1050,7 @@ Ambas normativas son complementarias pero independientes. VeriFactu se centra en
 
 ## Cómo prepararte ahora
 
-1. **Pregunta a tu proveedor de software** si su sistema cumplirá con el Reglamento antes de julio de 2025 (grandes empresas) o julio de 2026 (pymes/autónomos).
+1. **Pregunta a tu proveedor de software** si su sistema cumplirá el RRSIF antes de la fecha que corresponda a tu condición tributaria: 1 de enero o 1 de julio de 2027.
 2. **Evita soluciones improvisadas** (Excel, Word, facturas manuales): no podrán cumplir los requisitos técnicos.
 3. **Considera migrar a un ERP cloud** como Holded, que puede adaptarse a los requisitos de forma centralizada sin que tengas que gestionar la actualización tú mismo.
 4. **Revisa tus procesos internos**: VeriFactu implica que cada factura queda registrada permanentemente. Errores en facturas emitidas requerirán facturas rectificativas, no eliminaciones.
@@ -2112,7 +2103,7 @@ El proceso completo, desde la reserva de denominación hasta la obtención del C
 La elección entre SL y autónomo depende del nivel de ingresos, la actividad y la estructura prevista:
 
 - **Autónomo**: más sencillo, menos costes de mantenimiento, ideal para ingresos por debajo de 40.000–50.000 €/año.
-- **SL**: mejor cuando los ingresos son elevados (tipo IS del 25 % frente al IRPF progresivo), cuando hay varios socios o cuando interesa separar el patrimonio personal del profesional.
+- **SL**: puede resultar adecuada cuando hay ingresos elevados, varios socios o interés en separar el patrimonio personal del profesional. La comparación fiscal exige aplicar el tipo de IS que corresponda a la entidad y compararlo con el IRPF efectivo; no debe asumirse un 25 % universal.
     `
   },
   {
@@ -2136,7 +2127,7 @@ Liquida la diferencia entre el IVA repercutido (cobrado a clientes) y el IVA sop
 - Si el IVA pagado supera al cobrado → resultado negativo, compensable en trimestres siguientes o devuelto al final del año.
 
 ### Modelo 130 — Pago fraccionado del IRPF
-Adelanto trimestral del IRPF del autónomo. Se calcula aplicando el **20 % sobre el beneficio neto** del trimestre (ingresos menos gastos), restando los pagos fraccionados anteriores del año.
+Adelanto a cuenta del IRPF del autónomo. En estimación directa, la regla general parte del rendimiento neto acumulado desde el 1 de enero y aplica el porcentaje correspondiente, restando pagos fraccionados previos y retenciones/ingresos a cuenta cuando proceda.
 
 ### Modelo 111 — Retenciones de trabajadores
 Si el autónomo tiene empleados, ingresa las retenciones de IRPF practicadas sobre sus nóminas.
@@ -2187,7 +2178,7 @@ Debes darte de baja cuando **cesas de forma definitiva en el ejercicio de la act
 
 ## Trámites necesarios
 
-### Baja en Hacienda (Modelo 036 o 037)
+### Baja en Hacienda (Modelo 036)
 Se presenta la baja censal ante la AEAT, indicando la fecha de cese de la actividad. Esto cancela las obligaciones de presentación de modelos trimestrales a partir de esa fecha.
 
 ### Baja en la Seguridad Social (RETA)

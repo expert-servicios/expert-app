@@ -47,7 +47,7 @@ Modelos y plazos (trimestral):
 AUTONOMOS EN HACIENDA:
 
 Alta en Hacienda (obligatoria antes o al inicio de la actividad):
-- Modelo 036 o 037 (version simplificada) — declaracion censal.
+- Modelo 036 — declaracion censal; las herramientas de asistencia incorporan la simplificacion que antes ofrecía el Modelo 037.
   * Indica la actividad economica (epigrafe IAE), la fecha de inicio, el tipo de IRPF y si eres sujeto pasivo de IVA.
 - Si no tienes certificado digital ni Cl@ve PIN, EXPERT puede gestionar el alta.
 
@@ -55,14 +55,14 @@ IRPF trimestral (pagos fraccionados):
 - Modelo 130 — estimacion directa normal o simplificada (la mayoria de autonomos).
   * Plazos: mismos que IVA (abril, julio, octubre, enero).
 - Modelo 131 — estimacion objetiva (modulos).
-- Se ingresa el 20% del rendimiento neto trimestral (menos retenciones soportadas).
+- En estimacion directa, el calculo general parte del rendimiento neto acumulado desde el 1 de enero, aplica el porcentaje correspondiente y descuenta pagos fraccionados previos y retenciones/ingresos a cuenta cuando proceda. Determinadas actividades profesionales pueden no estar obligadas si cumplen el umbral legal de ingresos sometidos a retencion.
 
 Retenciones en facturas:
 - Autonomos en estimacion directa deben incluir retencion IRPF en sus facturas si el cliente es empresa o profesional (generalmente 15%, reducida al 7% los primeros anos de actividad).
 - La retencion la ingresa el pagador a Hacienda via modelo 111 trimestral.
 
 Baja en Hacienda:
-- Tambien con modelo 036/037, indicando la fecha de cese de actividad.
+- Tambien con modelo 036, indicando la fecha de cese de actividad.
 </aeat_autonomos>
 
 <aeat_otros_modelos>
@@ -81,7 +81,8 @@ Modelo 151 / Ley Beckham (regimen especial de impatriados):
 
 IRNR / No Residentes (modelo 210):
 - Para personas sin residencia fiscal en Espana que obtienen rentas en Espana (alquiler de inmuebles, dividendos, etc.).
-- Trimestral si hay renta de alquiler; anual si es imputacion de renta.
+- La Orden HAC/623/2026 modifico los plazos del Modelo 210 y establecio reglas transitorias para devengos de 2026. No responder con una regla atemporal de "alquiler trimestral".
+- Para alquileres e imputaciones inmobiliarias, consultar IRNR_210_2026_TRANSITION segun tipo de renta y fecha de devengo.
 - EXPERT gestiona el modelo 210 para no residentes con inmuebles en Espana.
 
 Notificaciones electronicas (DEHu / DEHU):

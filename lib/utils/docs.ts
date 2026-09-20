@@ -1135,8 +1135,8 @@ Las rentas que deben declararse en España como no residente incluyen:
 ### Modelo 210 — El más habitual
 Se usa para la mayoría de rentas obtenidas por no residentes:
 
-- **Alquileres**: presentación trimestral (meses de abril, julio, octubre y enero).
-- **Imputación de rentas**: presentación anual entre el 1 de enero y el 31 de diciembre del año siguiente.
+- **Alquileres**: desde 2026 el plazo depende de si se agrupan las rentas del año o se presentan separadamente y de la fecha de devengo. Debe consultarse la transición de la Orden HAC/623/2026 antes de presentar.
+- **Imputación de rentas**: el plazo también fue modificado por la Orden HAC/623/2026; para 2026 debe resolverse con la regla transitoria aplicable.
 - **Ganancias patrimoniales por venta de inmueble**: dentro de los 3 meses siguientes a la transmisión.
 
 ### Modelo 211 — Retención por compraventa de inmueble
@@ -1592,15 +1592,15 @@ https://www.camerfirma.com/certificado-cualificado-de-representacion/
     relatedServiceSlugs: ['alta-autonomo'],
     relatedServiceCategories: ['empresas-autonomos'],
     seoTitle: 'Alta de autónomo en España: guía completa de trámites',
-    seoDescription: 'Cómo darse de alta como autónomo en España: Modelo 036, RETA, elección de epígrafe, cuota 2025 y obligaciones fiscales del primer año.',
+    seoDescription: 'Cómo darse de alta como autónomo en España: Modelo 036, RETA, elección de epígrafe, cotización 2026 y obligaciones fiscales del primer año.',
     body: `
 ## ¿Cuándo hay que darse de alta?
 
 En España, debes darte de alta como autónomo **antes de comenzar a ejercer cualquier actividad económica habitual**. Emitir una factura sin estar dado de alta puede generar sanciones de la AEAT y de la Seguridad Social.
 
-## Paso 1: Alta en Hacienda (Modelo 036 o 037)
+## Paso 1: Alta en Hacienda (Modelo 036)
 
-El primer trámite es comunicar a la AEAT el inicio de actividad mediante el **Modelo 036** (completo) o el **Modelo 037** (simplificado, apto para la mayoría de autónomos).
+El primer trámite es comunicar a la AEAT el inicio de actividad mediante el **Modelo 036**. El Modelo 037 quedó suprimido con efectos de 3 de febrero de 2025 y su simplificación se integró en las herramientas del Modelo 036.
 
 En este modelo indicarás:
 
@@ -1622,19 +1622,11 @@ En este trámite elegirás tu **base de cotización**, que determina:
 - La **cuota mensual** a pagar.
 - Las **prestaciones** a las que tendrás derecho (enfermedad, accidente, jubilación).
 
-## Cuota de autónomos en 2025
+## Cotización de autónomos en 2026
 
-Desde 2023 rige el sistema de cotización por **ingresos reales**:
+En 2026 sigue vigente el sistema de cotización por **rendimientos netos**, con una tabla reducida y una tabla general de bases mínimas y máximas. La base que puedes elegir depende del tramo de rendimientos previsto y puede modificarse, dentro de los periodos habilitados, si cambian tus previsiones.
 
-| Rendimientos netos mensuales | Cuota aprox. |
-|---|---|
-| Menos de 670 € | ~200 €/mes |
-| 670 €–1.166 € | ~260–290 €/mes |
-| 1.166 €–1.700 € | ~294–350 €/mes |
-| 1.700 €–3.000 € | ~370–420 €/mes |
-| Más de 6.000 € | ~590 €/mes |
-
-**Tarifa plana**: los nuevos autónomos pagan **80 €/mes durante los primeros 12 meses**, prorrogable si los ingresos no superan el SMI. Algunas comunidades autónomas tienen bonificaciones adicionales.
+No usamos una cuota fija genérica: antes del alta comprobamos el tramo 2026, la base elegida y los tipos vigentes. La cifra de **80 €/mes** correspondía a la cuota reducida fijada expresamente para **2023–2025**; para un alta en 2026 debe verificarse la cuantía oficial vigente y si se cumplen los requisitos del beneficio.
 
 ## Obligaciones fiscales desde el primer día
 

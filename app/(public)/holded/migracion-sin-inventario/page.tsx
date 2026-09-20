@@ -99,7 +99,7 @@ const REQUIRED_DOCS = [
   'Exportación CSV/Excel de facturas emitidas por período',
   'Exportación CSV/Excel de facturas recibidas (si disponible)',
   'Exportación del maestro de clientes y proveedores',
-  'Modelo 036/037 o alta fiscal (datos de empresa)',
+  'Modelo 036 o alta fiscal (datos de empresa)',
 ];
 
 const FAQ = [

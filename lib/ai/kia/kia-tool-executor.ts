@@ -4,6 +4,7 @@ import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolve
 import { getService } from '@/lib/services/service-registry';
 import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
 import { getCurrentRegulatoryValue } from '@/lib/regulatory/regulatory-values';
+import { getCurrentRegulatoryRuleset } from '@/lib/regulatory/regulatory-rulesets';
 import { getReadinessCheck, calculateReadinessResult } from '@/lib/data/service-readiness-checks';
 import { validateKiaToolArguments, type KiaToolCall, type KiaToolResult } from './kia-tool-definitions';
 import type { KiaContext } from './kia-context-builder';
@@ -87,6 +88,14 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         if (Number.isNaN(onDate.getTime())) return fail(toolCall.name, 'onDate no es una fecha válida.');
         const value = await getCurrentRegulatoryValue(String(args.valueKey), onDate);
         return ok(toolCall.name, value ? { found: true, value } : { found: false });
+      }
+      case 'get_regulatory_ruleset': {
+        const onDate = typeof args.onDate === 'string' && args.onDate
+          ? new Date(`${args.onDate}T12:00:00Z`)
+          : new Date();
+        if (Number.isNaN(onDate.getTime())) return fail(toolCall.name, 'onDate no es una fecha válida.');
+        const ruleset = await getCurrentRegulatoryRuleset(String(args.rulesetKey), onDate);
+        return ok(toolCall.name, ruleset ? { found: true, ruleset } : { found: false });
       }
 
       case 'run_readiness_check': {

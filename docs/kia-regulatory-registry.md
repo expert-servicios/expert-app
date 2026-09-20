@@ -660,3 +660,26 @@ Fuentes exactas 2026 añadidas:
 Los directorios RSS de AEAT y Seguridad Social se conservan como `discovery_only`; los feeds directos siguen siendo las fuentes accionables.
 
 El panel Admin recibe el resultado del health audit en la misma carga del Regulatory Pulse y muestra códigos, severidad y motivo sin necesidad de consultar Supabase.
+
+
+## v1.3 — cobertura regulatoria por rulesets
+
+La auditoría exhaustiva del catálogo EXPERT demostró que una parte relevante de la operativa no puede modelarse como valores escalares. Desde v1.3:
+
+- `regulatory_values` se reserva para magnitudes puntuales con vigencia;
+- `regulatory_rulesets` almacena tablas, matrices, calendarios y reglas versionadas;
+- `regulatory_dependencies.ruleset_key` conecta cada ruleset con servicios, KIA, calculadoras, cursos y Admin;
+- el worker resuelve impacto por `source_id` y también por `source -> ruleset -> dependency`;
+- el health audit comprueba fuente, vigencia, solapamiento y dependencias huérfanas de rulesets;
+- KIA dispone de `get_regulatory_ruleset` como herramienta R0 de solo lectura.
+
+Primer lote P0:
+- `RETA_2026_BRACKETS`;
+- `IRPF_WITHHOLDING_2026`;
+- `VERIFACTU_DEADLINES`;
+- `IRNR_210_2026_TRANSITION`;
+- `VALENCIA_ITPAJD_2026`;
+- `VALENCIA_ISD_2026`;
+- `SL_CAPITAL_RULES`.
+
+La auditoría maestra y el roadmap de cobertura están en `docs/kia-regulatory-coverage-audit-v13.md`.

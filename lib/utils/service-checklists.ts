@@ -120,7 +120,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes ya NIE español?',
     ],
     botInstructions:
-      'El Modelo 210 se presenta: para imputación de inmuebles en enero del año siguiente; para alquileres, trimestralmente. No residentes fuera de la UE no pueden deducir gastos, solo el tipo fijo del 24%. Los residentes UE/EEE sí pueden deducir gastos. Verificar siempre si hay convenio de doble imposición. Precio: desde 80 € por modelo.',
+      'Los plazos del Modelo 210 cambiaron por la Orden HAC/623/2026 y existen reglas transitorias según tipo de renta y fecha de devengo. Consultar IRNR_210_2026_TRANSITION antes de informar un plazo. Verificar también tipo aplicable, deducibilidad de gastos y convenio de doble imposición según residencia fiscal. Precio: desde 80 € por modelo.',
     estimatedPrice: 'Desde 80 € / modelo',
   },
 
@@ -596,7 +596,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Facturas emitidas del mes',
       'Facturas recibidas del mes',
       'Extractos bancarios del mes',
-      'Alta en Hacienda (Modelo 036/037)',
+      'Alta en Hacienda (Modelo 036)',
       'CIF (para sociedades)',
     ],
     keyQuestions: [
@@ -710,7 +710,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     ],
     requiredDocs: [
       'DNI / NIE en vigor',
-      'Alta en Hacienda (Modelo 036/037) original',
+      'Alta en Hacienda (Modelo 036) original',
       'Para sociedades: escrituras y libro de actas de la sociedad',
       'Última declaración del IVA e IRPF presentada',
     ],
@@ -866,7 +866,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Hay hipoteca pendiente del vendedor?',
     ],
     botInstructions:
-      'Para segunda mano: ITP (6–10% según CCAA). Para vivienda nueva: IVA 10% + AJD. El comprador tiene 30 días hábiles para liquidar el impuesto tras la escritura. Verificar siempre la nota simple para cargas. Precio: consultar según operación.',
+      'Para segunda mano se aplica ITP según la CCAA y posibles tipos reducidos; para vivienda nueva, IVA más AJD según el supuesto. Antes de calcular, consultar la regla autonómica vigente (en Comunitat Valenciana, VALENCIA_ITPAJD_2026). Verificar siempre la nota simple y el plazo autonómico aplicable. Precio: consultar según operación.',
     estimatedPrice: 'Consultar',
   },
 
@@ -1136,7 +1136,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Exportación CSV/Excel de facturas emitidas por período',
       'Exportación CSV/Excel de facturas recibidas (opcional, si disponible)',
       'Exportación de maestro de clientes y proveedores',
-      'Modelo 036/037 o alta fiscal (para datos fiscales de la empresa)',
+      'Modelo 036 o alta fiscal (para datos fiscales de la empresa)',
     ],
     keyQuestions: [
       '¿Ya tienes cuenta activa de Holded?',
@@ -1175,7 +1175,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Exportación de ubicaciones de almacén si aplica',
       'Exportación de facturas emitidas/recibidas si se migra historial',
       'Exportación de maestro de clientes y proveedores',
-      'Modelo 036/037 o alta fiscal para datos de empresa',
+      'Modelo 036 o alta fiscal para datos de empresa',
     ],
     keyQuestions: [
       '¿Ya tienes cuenta activa de Holded?',

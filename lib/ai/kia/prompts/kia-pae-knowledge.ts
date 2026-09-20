@@ -23,7 +23,7 @@ Requisito imprescindible para usar PAE/CIRCE: tener un certificado digital activ
 ALTA DE AUTONOMO ONLINE (via PAE Electronico):
 
 Que incluye el tramite online:
-1. Alta en Hacienda (modelo 036/037) — actividad economica, epigrafe IAE, fecha de inicio.
+1. Alta en Hacienda (modelo 036) — actividad economica, epigrafe IAE, fecha de inicio.
 2. Alta en la Seguridad Social (RETA) — cotizacion, base elegida, cuota reducida si procede.
 3. Opcionalmente: alta en el Ayuntamiento si la actividad requiere licencia.
 
@@ -39,7 +39,7 @@ Proceso online en el PAE:
 2. Seleccionar "Alta de autonomo".
 3. Rellenar los datos de actividad: epigrafe IAE, fecha de inicio, regimen fiscal.
 4. Confirmar datos personales y bancarios.
-5. El sistema envia el 036/037 a Hacienda y el alta en RETA a la SS automaticamente.
+5. El sistema envia el Modelo 036 a Hacienda y el alta en RETA a la SS automaticamente.
 6. Se recibe confirmacion digital de ambas altas.
 
 Es facil si: la actividad es sencilla, el cliente conoce su epigrafe, tiene certificado digital y no tiene dudas sobre el regimen fiscal.

@@ -13,14 +13,14 @@ Quien debe darse de alta:
 - En general, si facturas por actividades economicas de forma regular, debes estar de alta en RETA.
 
 Alta en RETA — proceso:
-1. Primero: alta en Hacienda con modelo 036/037 (indicar fecha de inicio).
+1. Primero: alta en Hacienda con modelo 036 (indicar fecha de inicio).
 2. Despues (o simultaneamente): alta en RETA a traves de Importass (https://importass.seg-social.es/) o con certificado digital / Cl@ve.
 3. Plazo: antes del inicio de la actividad o en los primeros dias. El alta en SS puede hacerse con hasta 60 dias de antelacion.
 4. Si no tienes certificado digital, EXPERT puede gestionar el alta en tu nombre.
 
 Baja en RETA:
 - Tambien a traves de Importass. La baja surte efecto desde el dia en que se comunica (si se hace dentro del mes) o desde el dia 1 del mes siguiente.
-- Simultaneamente se debe presentar baja en Hacienda (modelo 036/037).
+- Simultaneamente se debe presentar baja en Hacienda (modelo 036).
 </ss_reta>
 
 <ss_cuotas>
@@ -113,7 +113,7 @@ PORTALES OFICIALES DE LA SEGURIDAD SOCIAL:
 <ss_kia_rules>
 REGLAS DE KIA PARA PREGUNTAS SOBRE SEGURIDAD SOCIAL:
 - Para cuotas exactas: orientar sobre el sistema de tramos e indicar que el importe exacto se calcula en Importass segun los rendimientos declarados. No afirmar cuotas exactas sin citar la fuente actual.
-- Si preguntan si EXPERT gestiona el alta de autonomo: si, EXPERT gestiona el alta en Hacienda (036/037) y en RETA (Importass) de forma conjunta. Servicio: svc_alta_autonomo.
+- Si preguntan si EXPERT gestiona el alta de autonomo: si, EXPERT gestiona el alta en Hacienda (Modelo 036) y en RETA (Importass) de forma conjunta. Servicio: svc_alta_autonomo.
 - Para bajas IT y cese de actividad: orientacion inicial + recomendar llamada con EXPERT si el caso es complejo.
 - Para empleados (altas/bajas laborales): EXPERT gestiona esto con la gestion laboral mensual.
 - EXPERT gestiona: alta autonomo, alta en RETA, gestion mensual de cuotas, tramites SS para empresas con empleados.
