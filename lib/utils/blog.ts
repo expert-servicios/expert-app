@@ -444,7 +444,7 @@ Antes de calcular una cuota hay que comprobar el tramo, la base seleccionada y l
 
 Como autónomo en régimen general, deberás presentar:
 
-- **Modelo 130** (IRPF trimestral): 20 % del beneficio neto en los primeros 3 años, luego según retenciones.
+- **Modelo 130** (IRPF): pago fraccionado calculado con las reglas vigentes sobre el rendimiento neto acumulado desde el inicio del año, descontando pagos previos y retenciones cuando proceda. Determinadas actividades profesionales pueden quedar exentas de presentarlo si cumplen el umbral legal de ingresos sometidos a retención.
 - **Modelo 303** (IVA trimestral): diferencia entre IVA repercutido y soportado.
 - **Modelo 390** (Resumen anual de IVA): en enero del año siguiente.
 - **Modelo 100** (Declaración de la Renta): en mayo-junio.
@@ -2103,7 +2103,7 @@ El proceso completo, desde la reserva de denominación hasta la obtención del C
 La elección entre SL y autónomo depende del nivel de ingresos, la actividad y la estructura prevista:
 
 - **Autónomo**: más sencillo, menos costes de mantenimiento, ideal para ingresos por debajo de 40.000–50.000 €/año.
-- **SL**: mejor cuando los ingresos son elevados (tipo IS del 25 % frente al IRPF progresivo), cuando hay varios socios o cuando interesa separar el patrimonio personal del profesional.
+- **SL**: puede resultar adecuada cuando hay ingresos elevados, varios socios o interés en separar el patrimonio personal del profesional. La comparación fiscal exige aplicar el tipo de IS que corresponda a la entidad y compararlo con el IRPF efectivo; no debe asumirse un 25 % universal.
     `
   },
   {
@@ -2127,7 +2127,7 @@ Liquida la diferencia entre el IVA repercutido (cobrado a clientes) y el IVA sop
 - Si el IVA pagado supera al cobrado → resultado negativo, compensable en trimestres siguientes o devuelto al final del año.
 
 ### Modelo 130 — Pago fraccionado del IRPF
-Adelanto trimestral del IRPF del autónomo. Se calcula aplicando el **20 % sobre el beneficio neto** del trimestre (ingresos menos gastos), restando los pagos fraccionados anteriores del año.
+Adelanto a cuenta del IRPF del autónomo. En estimación directa, la regla general parte del rendimiento neto acumulado desde el 1 de enero y aplica el porcentaje correspondiente, restando pagos fraccionados previos y retenciones/ingresos a cuenta cuando proceda.
 
 ### Modelo 111 — Retenciones de trabajadores
 Si el autónomo tiene empleados, ingresa las retenciones de IRPF practicadas sobre sus nóminas.
