@@ -124,7 +124,15 @@ jobs:
             }
           done
 
-          sha256sum "$raw" > "$private/schema_migrations.raw.sha256"
+          raw_hash="$(sha256sum "$raw" | cut -d' ' -f1)"
+          cat > "$private/ledger-summary.txt" <<EOF
+ledger_rows=$EXPECTED_LEDGER_ROWS
+first_version=$EXPECTED_FIRST_VERSION
+last_version=$EXPECTED_LAST_VERSION
+empty_statements=0
+sha256=$raw_hash
+EOF
+          rm -f "$raw"
 
       - name: Verify migration list and dry-run
         shell: bash
@@ -155,7 +163,7 @@ jobs:
         with:
           name: supabase-ledger-preflight-current
           path: |
-            ${{ runner.temp }}/ledger-preflight/
+            ${{ runner.temp }}/ledger-preflight/ledger-summary.txt
             ${{ runner.temp }}/migration-list.txt
             ${{ runner.temp }}/db-push-dry-run.txt
           if-no-files-found: error
