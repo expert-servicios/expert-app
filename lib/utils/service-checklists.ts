@@ -181,7 +181,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tenéis bases imponibles negativas de ejercicios anteriores?',
     ],
     botInstructions:
-      'El IS se presenta en los 25 días siguientes a los 6 meses del cierre (normalmente julio para ejercicios con cierre en diciembre). Si la contabilidad la lleva EXPERT, el IS está incluido en el plan mensual. Precio: consultar según volumen y complejidad.',
+      'Consultar AEAT_TAX_CALENDAR_2026 para el vencimiento exacto del Modelo 200 del ejercicio y IS_RATES_2026 para el tipo aplicable. No calcular el plazo desde una frase estática. Si la contabilidad la lleva EXPERT, el IS está incluido en el plan mensual. Precio: consultar según volumen y complejidad.',
     estimatedPrice: 'Consultar',
   },
 
