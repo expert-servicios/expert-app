@@ -3,7 +3,7 @@ const facts = [
   'El 62% de las pymes españolas que digitalizan su gestión contable recuperan más de 5 horas semanales de trabajo administrativo. Eso son 260 horas al año... o 32 días completos.',
   'La palabra "empresa" viene del latín medieval "imprehendere" — que significa atreverse a emprender. Así que si tienes una empresa, eres, por definición, una persona valiente.',
   'Hacienda procesa más de 22 millones de declaraciones de IRPF cada campaña. De todas ellas, el 70% resulta a devolver. ¿Revisaste bien tus deducciones?',
-  'El Régimen Beckham (Ley de Impatriados) permite tributar a un tipo fijo del 24% en lugar de hasta el 47%. David Beckham lo usó al fichar por el Real Madrid en 2003. Buen precedente.',
+  'El régimen especial para determinados desplazados a España no se reduce a una comparación 24 % frente a IRPF general: exige revisar la causa del desplazamiento, los requisitos del artículo 93 LIRPF, el plazo del Modelo 149 y las reglas especiales de tributación antes de optar.',
   'Una Sociedad Limitada puede constituirse con un capital desde 1 €. Mientras capital y reserva legal no alcancen 3.000 €, se aplican salvaguardas legales específicas.',
   'El plazo de prescripción fiscal en España es de 4 años. Después de ese período, Hacienda ya no puede reclamar deudas de ejercicios anteriores. Por eso conservar facturas durante ese tiempo es fundamental.',
   'Holded tiene más de 80.000 empresas usando su plataforma en España. Los clientes que migran desde Excel o programas de escritorio reportan un ahorro medio del 40% en tiempo de gestión contable.',
