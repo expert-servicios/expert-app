@@ -131,7 +131,7 @@ export async function applyReviewedRegulatoryValueUpdates(changeId: string, appr
 
     const { data: previous, error: previousError } = await admin
       .from('regulatory_values')
-      .select('label,unit,period_key')
+      .select('label,unit,period_key,metadata')
       .eq('value_key', valueKey)
       .order('valid_from', { ascending: false })
       .limit(1)
@@ -161,6 +161,7 @@ export async function applyReviewedRegulatoryValueUpdates(changeId: string, appr
       p_source_id: change.source_id,
       p_change_id: change.id,
       p_metadata: {
+        ...((previous.metadata ?? {}) as Record<string, unknown>),
         evidence: typeof proposal.evidence === 'string' ? proposal.evidence.slice(0, 500) : null,
         approved_via: 'admin_regulatory_review',
       },
