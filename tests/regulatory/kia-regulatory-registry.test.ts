@@ -556,13 +556,14 @@ describe('KIA Regulatory Registry', () => {
 
   it('adds v1.5 vehicle registration and IEDMT rules', () => {
     const migration = read('supabase/migrations/20260920201500_regulatory_v15_vehicle_registration_lot2.sql');
+    const dgtBaseline = read('supabase/migrations/20260920180000_regulatory_v15_property_dgt_lot1.sql');
     const dgt = read('lib/ai/kia/prompts/kia-dgt-knowledge.ts');
     const catalog = read('lib/utils/catalog.ts');
     const checklists = read('lib/utils/service-checklists.ts');
 
     expect(migration).toContain("'IEDMT_REGISTRATION_2026'");
     expect(migration).toContain("'VEHICLE_IMPORT_REGISTRATION_2026'");
-    expect(migration).toContain('vehicle_registration_rate_1_1');
+    expect(dgtBaseline).toContain('vehicle_registration_rate_1_1');
 
     expect(dgt).toContain('IEDMT_REGISTRATION_2026');
     expect(dgt).toContain('VEHICLE_IMPORT_REGISTRATION_2026');
