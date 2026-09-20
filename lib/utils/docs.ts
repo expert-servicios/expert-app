@@ -1598,9 +1598,9 @@ https://www.camerfirma.com/certificado-cualificado-de-representacion/
 
 En España, debes darte de alta como autónomo **antes de comenzar a ejercer cualquier actividad económica habitual**. Emitir una factura sin estar dado de alta puede generar sanciones de la AEAT y de la Seguridad Social.
 
-## Paso 1: Alta en Hacienda (Modelo 036 o 037)
+## Paso 1: Alta en Hacienda (Modelo 036)
 
-El primer trámite es comunicar a la AEAT el inicio de actividad mediante el **Modelo 036** (completo) o el **Modelo 037** (simplificado, apto para la mayoría de autónomos).
+El primer trámite es comunicar a la AEAT el inicio de actividad mediante el **Modelo 036**. El Modelo 037 quedó suprimido con efectos de 3 de febrero de 2025 y su simplificación se integró en las herramientas del Modelo 036.
 
 En este modelo indicarás:
 
