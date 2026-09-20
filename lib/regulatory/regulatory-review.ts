@@ -123,16 +123,25 @@ type ChangeRow = {
 async function classifyOne(change: ChangeRow) {
   const admin = getSupabaseAdmin();
 
+  const { data: current, error: currentError } = await admin
+    .from('regulatory_snapshots')
+    .select('fingerprint,normalized_excerpt,fetched_at,metadata')
+    .eq('id', change.current_snapshot_id)
+    .single();
+  if (currentError || !current) throw new Error(currentError?.message || 'Regulatory change snapshot is missing');
+
+  const effectiveDate = current.fetched_at.slice(0, 10);
   const { data: sourceRulesets, error: sourceRulesetsError } = await admin
     .from('regulatory_rulesets')
     .select('ruleset_key')
-    .eq('source_id', change.source_id);
+    .eq('source_id', change.source_id)
+    .lte('valid_from', effectiveDate)
+    .or(`valid_to.is.null,valid_to.gte.${effectiveDate}`);
   if (sourceRulesetsError) throw new Error(sourceRulesetsError.message);
   const sourceRulesetKeys = Array.from(new Set((sourceRulesets ?? []).map((row) => row.ruleset_key)));
 
   const [
     { data: source },
-    { data: current },
     previousResult,
     directDependenciesResult,
     rulesetDependenciesResult,
@@ -140,9 +149,6 @@ async function classifyOne(change: ChangeRow) {
     admin.from('regulatory_sources')
       .select('source_key,authority,title,url,topics,priority,metadata')
       .eq('id', change.source_id).single(),
-    admin.from('regulatory_snapshots')
-      .select('fingerprint,normalized_excerpt,fetched_at,metadata')
-      .eq('id', change.current_snapshot_id).single(),
     change.previous_snapshot_id
       ? admin.from('regulatory_snapshots')
           .select('fingerprint,normalized_excerpt,fetched_at,metadata')
@@ -164,7 +170,7 @@ async function classifyOne(change: ChangeRow) {
 
   if (directDependenciesResult.error) throw new Error(directDependenciesResult.error.message);
   if (rulesetDependenciesResult.error) throw new Error(rulesetDependenciesResult.error.message);
-  if (!source || !current) throw new Error('Regulatory change context is incomplete');
+  if (!source) throw new Error('Regulatory change context is incomplete');
 
   const dependencyMap = new Map<string, NonNullable<typeof directDependenciesResult.data>[number]>();
   for (const dependency of [
