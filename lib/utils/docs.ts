@@ -902,12 +902,12 @@ Tras **5 años de residencia legal y continuada** en España se puede solicitar 
 - Permite trabajar por cuenta propia o ajena sin autorización laboral específica.
 - Es renovable cada 5 años sin riesgo de denegación si se mantienen los requisitos.
 
-### Requisitos para la larga duración
+### Requisitos para la larga duración nacional
 
-1. 5 años de residencia legal y continuada en España.
-2. Ausencia de antecedentes penales.
-3. Medios económicos suficientes: al menos el 150 % del IPREM mensual para el titular (aprox. 900 €/mes en 2025), más el 50 % por familiar a cargo.
-4. Seguro médico si no se cotiza a la Seguridad Social.
+1. Haber residido legalmente y de forma continuada en España durante los 5 años previos, salvo los demás supuestos específicos previstos por la normativa.
+2. Cumplir los requisitos generales del procedimiento (antecedentes, orden público y demás condiciones aplicables al supuesto).
+
+No debe añadirse un requisito general del 150 % del IPREM ni de seguro médico: esos requisitos pertenecen a otras autorizaciones y no forman parte de la regla general de la larga duración nacional.
 
 ## Períodos de desempleo y la renovación
 
