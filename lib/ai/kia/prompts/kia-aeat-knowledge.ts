@@ -55,7 +55,7 @@ IRPF trimestral (pagos fraccionados):
 - Modelo 130 — estimacion directa normal o simplificada (la mayoria de autonomos).
   * Plazos: mismos que IVA (abril, julio, octubre, enero).
 - Modelo 131 — estimacion objetiva (modulos).
-- Se ingresa el 20% del rendimiento neto trimestral (menos retenciones soportadas).
+- En estimacion directa, el calculo general parte del rendimiento neto acumulado desde el 1 de enero, aplica el porcentaje correspondiente y descuenta pagos fraccionados previos y retenciones/ingresos a cuenta cuando proceda. Determinadas actividades profesionales pueden no estar obligadas si cumplen el umbral legal de ingresos sometidos a retencion.
 
 Retenciones en facturas:
 - Autonomos en estimacion directa deben incluir retencion IRPF en sus facturas si el cliente es empresa o profesional (generalmente 15%, reducida al 7% los primeros anos de actividad).
