@@ -175,7 +175,7 @@ export const services: Service[] = [
       'Alerta de plazos y recordatorios'
     ],
     faqs: [
-      { q: '¿Cuáles son los plazos trimestrales?', a: 'Del 1 al 20 de los meses de abril, julio, octubre y enero (este último hasta el 30).' },
+      { q: '¿Cuáles son los plazos trimestrales?', a: 'El patrón general es trimestral, pero verificamos el vencimiento exacto del período en el calendario AEAT vigente antes de presentar.' },
       { q: '¿Puedo llevar yo las facturas y que solo presentéis?', a: 'Sí, puedes enviarnos el registro de facturas y nos encargamos de la liquidación y presentación.' }
     ]
   },
