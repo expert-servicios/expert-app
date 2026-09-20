@@ -242,7 +242,7 @@ export const SERVICES: Record<string, KiaServiceDef> = {
     area: 'fiscal', category: 'declaraciones-impuestos',
     docs: [
       'DNI / NIE en vigor',
-      'Alta en Hacienda y RETA (modelo 036/037)',
+      'Alta en Hacienda y RETA (modelo 036)',
       'Facturas emitidas del trimestre',
       'Facturas recibidas (gastos deducibles)',
       'Extracto bancario del trimestre',
