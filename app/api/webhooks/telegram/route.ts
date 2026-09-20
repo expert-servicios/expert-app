@@ -235,24 +235,30 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === 'revisar') {
-      const scope = parts.slice(2).join(' ').trim();
+      const scopeType = parts[2]?.toLowerCase();
+      const scopeValue = parts.slice(3).join(' ').trim();
+      const validScope = ['source', 'authority', 'topic', 'service'].includes(scopeType ?? '');
+      const hasScope = validScope && Boolean(scopeValue);
+
       await sendTelegramMessage({
         chatId: inbound.chatId,
-        text: scope
-          ? `Revisión regulatoria iniciada para: ${escapeTelegramHtml(scope)}.`
+        text: hasScope
+          ? `Revisión regulatoria iniciada · ${escapeTelegramHtml(scopeType!)}: ${escapeTelegramHtml(scopeValue)}.`
           : 'Revisión regulatoria completa iniciada.',
       });
 
       after(async () => {
         const result = await runRegulatoryPulse({
           runType: 'manual',
-          forceAll: !scope,
-          authority: scope && !scope.includes('-') ? scope : undefined,
-          sourceKey: scope && scope.includes('_') ? scope : undefined,
+          forceAll: !hasScope,
+          sourceKey: scopeType === 'source' ? scopeValue : undefined,
+          authority: scopeType === 'authority' ? scopeValue : undefined,
+          topic: scopeType === 'topic' ? scopeValue : undefined,
+          serviceKey: scopeType === 'service' ? scopeValue : undefined,
         }).catch((error) => ({
           sourcesChecked: 0,
           sourcesChanged: 0,
-          errors: [{ sourceKey: scope || 'manual', error: safeErrorMessage(error) }],
+          errors: [{ sourceKey: hasScope ? scopeValue : 'manual', error: safeErrorMessage(error) }],
         }));
 
         await sendTelegramMessage({
@@ -266,12 +272,16 @@ export async function POST(request: NextRequest) {
         });
       });
 
-      return NextResponse.json({ ok: true, command: 'legal_review_started', scope: scope || 'all' });
+      return NextResponse.json({
+        ok: true,
+        command: 'legal_review_started',
+        scope: hasScope ? { type: scopeType, value: scopeValue } : 'all',
+      });
     }
 
     await sendTelegramMessage({
       chatId: inbound.chatId,
-      text: 'Comandos: /legal status · /legal cambios · /legal valor SMI_MONTHLY · /legal revisar [autoridad|source_key]',
+      text: 'Comandos: /legal status · /legal cambios · /legal valor SMI_MONTHLY · /legal revisar [source|authority|topic|service] VALOR',
     });
     return NextResponse.json({ ok: true, command: 'legal_help' });
   }
