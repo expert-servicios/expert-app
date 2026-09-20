@@ -69,10 +69,14 @@ Implementado:
 - corrección del prompt PAE para no reutilizar 3.000 EUR como capital mínimo ni prometer ausencia de notaría;
 - corrección de fechas fijas de julio y simplificaciones del cierre registral.
 
-Pendiente mercantil:
-- titular real;
-- NIF y obligaciones censales específicas de sociedades;
-- revisar apoderamientos mercantiles y poderes como bloque propio.
+Lote 4 - cierre mercantil:
+- `BENEFICIAL_OWNERSHIP_RCTR_RULES`: titular real, control directo/indirecto, fallback de administradores, RCTR y actualización de cambios;
+- `ENTITY_NIF_036_RULES`: NIF provisional/definitivo, Modelo 036, documentación pendiente y coordinación CIRCE/notaría/Registro;
+- `MERCANTILE_POWERS_RRM_RULES`: poderes generales, excepciones para pleitos/actos concretos y distinción entre representación orgánica y voluntaria;
+- catálogo, checklists y prompts corregidos;
+- terminología CIF/NIF saneada.
+
+Con este lote queda cerrada la cobertura P1 fiscal/mercantil prevista para v1.4.
 
 ## Regla de seguridad
 
