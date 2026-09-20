@@ -624,6 +624,15 @@ describe('KIA Regulatory Registry', () => {
     expect(checklists).not.toContain('Los trámites de embarcaciones dependen de la Capitanía Marítima de cada provincia');
   });
 
+  it('keeps all new regulatory source fetch strategies inside the registry contract', () => {
+    const mortgageIsd = read('supabase/migrations/20260920213000_regulatory_v15_property_isd_rent_lot3.sql');
+    const finalV15 = read('supabase/migrations/20260920230000_regulatory_v15_final_dgt_maritime.sql');
+
+    expect(mortgageIsd).not.toContain("'administrative','pdf'");
+    expect(finalV15).not.toContain("'administrative','pdf'");
+    expect(finalV15).not.toContain("'legislation','pdf'");
+  });
+
   it('documents the no-auto-merge and no-auto-publish contract', () => {
     const docs = read('docs/kia-regulatory-registry.md');
     expect(docs).toContain('Nunca se hace merge automático');
