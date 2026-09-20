@@ -138,8 +138,8 @@ EOF
         shell: bash
         run: |
           set -euo pipefail
-          supabase migration list --linked | tee "$RUNNER_TEMP/migration-list.txt"
-          supabase db push --linked --dry-run | tee "$RUNNER_TEMP/db-push-dry-run.txt"
+          supabase migration list --linked 2>&1 | tee "$RUNNER_TEMP/migration-list.txt"
+          supabase db push --linked --dry-run 2>&1 | tee "$RUNNER_TEMP/db-push-dry-run.txt"
 
           mapfile -t pending < <(
             find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' \
