@@ -154,7 +154,7 @@ export const services: Service[] = [
       'Asesoramiento sobre convenios de doble imposición'
     ],
     faqs: [
-      { q: '¿Cuándo debo presentar el Modelo 210?', a: 'Depende del tipo de renta. Para imputaciones de inmuebles, en enero del año siguiente. Para alquileres, trimestralmente.' },
+      { q: '¿Cuándo debo presentar el Modelo 210?', a: 'Depende del tipo de renta y de la fecha de devengo. La Orden HAC/623/2026 modificó los plazos y estableció una transición específica para 2026, por lo que revisamos el periodo oficial aplicable antes de presentar.' },
       { q: '¿Necesito representante fiscal?', a: 'Sí, si eres no residente en la UE con propiedades en España, es obligatorio tener un representante fiscal en España.' }
     ]
   },
@@ -1284,8 +1284,8 @@ export const services: Service[] = [
       'Inscripción en el Registro de la Propiedad'
     ],
     faqs: [
-      { q: '¿Qué impuestos paga el comprador de un piso de segunda mano?', a: 'El Impuesto de Transmisiones Patrimoniales (ITP), cuyo tipo varía según la comunidad autónoma (entre el 6% y el 10% del precio).' },
-      { q: '¿Y si compro una vivienda nueva?', a: 'En vivienda nueva pagas IVA (10%) más Actos Jurídicos Documentados (AJD, entre el 0,5% y el 1,5% según CCAA).' }
+      { q: '¿Qué impuestos paga el comprador de un piso de segunda mano?', a: 'El Impuesto de Transmisiones Patrimoniales (ITP), cuyo tipo depende de la comunidad autónoma, del valor y de posibles tipos reducidos. Verificamos la normativa autonómica vigente antes de calcularlo.' },
+      { q: '¿Y si compro una vivienda nueva?', a: 'En vivienda nueva puede resultar aplicable IVA más Actos Jurídicos Documentados (AJD). El tipo de AJD y los beneficios fiscales dependen de la comunidad autónoma y del supuesto concreto.' }
     ]
   },
   {
