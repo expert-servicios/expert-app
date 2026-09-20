@@ -343,6 +343,67 @@ describe('KIA Regulatory Registry', () => {
     expect(audit).toContain('value_source_inactive');
   });
 
+  it('adds versioned regulatory rulesets as a server-only canonical layer', () => {
+    const migration = read('supabase/migrations/20260920111500_regulatory_rulesets_v13.sql');
+    expect(migration).toContain('create table if not exists public.regulatory_rulesets');
+    expect(migration).toContain('regulatory_rulesets_deny_browser');
+    expect(migration).toContain('to service_role');
+    expect(migration).toContain('ruleset_key text');
+    expect(migration).toContain("'RETA_2026_BRACKETS'");
+    expect(migration).toContain("'IRPF_WITHHOLDING_2026'");
+    expect(migration).toContain("'VERIFACTU_DEADLINES'");
+    expect(migration).toContain("'IRNR_210_2026_TRANSITION'");
+    expect(migration).toContain("'VALENCIA_ITPAJD_2026'");
+    expect(migration).toContain("'VALENCIA_ISD_2026'");
+    expect(migration).toContain("'SL_CAPITAL_RULES'");
+  });
+
+  it('exposes canonical regulatory rulesets to KIA as autonomous R0 reads', () => {
+    const policy = getKiaToolPolicy('get_regulatory_ruleset');
+    expect(policy?.riskTier).toBe('R0');
+    expect(policy?.effect).toBe('read');
+    expect(policy?.capability).toBe('regulatory');
+
+    const definitions = read('lib/ai/kia/kia-tool-definitions.ts');
+    const executor = read('lib/ai/kia/kia-tool-executor.ts');
+    expect(definitions).toContain('get_regulatory_ruleset');
+    expect(executor).toContain('getCurrentRegulatoryRuleset');
+  });
+
+  it('resolves official-source impact through ruleset dependencies and audits their health', () => {
+    const worker = read('lib/regulatory/regulatory-review.ts');
+    const audit = read('lib/regulatory/regulatory-audit.ts');
+    expect(worker).toContain("from('regulatory_rulesets')");
+    expect(worker).toContain('sourceRulesetKeys');
+    expect(worker).toContain("in('ruleset_key', sourceRulesetKeys)");
+    expect(audit).toContain('ruleset_missing_source');
+    expect(audit).toContain('ruleset_source_inactive');
+    expect(audit).toContain('ruleset_no_current_record');
+    expect(audit).toContain('ruleset_overlap');
+    expect(audit).toContain('dependency_orphan_ruleset');
+  });
+
+  it('removes confirmed P0 stale regulatory claims from live EXPERT content', () => {
+    const tips = read('lib/data/kia-contextual-tips.ts');
+    const facts = read('lib/utils/fun-facts.ts');
+    const ccaa = read('lib/ai/kia/prompts/kia-ccaa-knowledge.ts');
+    const aeat = read('lib/ai/kia/prompts/kia-aeat-knowledge.ts');
+    const catalog = read('lib/utils/catalog.ts');
+    const docs = read('lib/utils/docs.ts');
+    const blog = read('lib/utils/blog.ts');
+
+    expect(tips).not.toContain('El primer año tienes tarifa plana de 80 €/mes');
+    expect(facts).not.toContain('a partir de julio de 2026');
+    expect(facts).not.toContain('capital mínimo de 3.000 €');
+    expect(ccaa).not.toContain('Comunitat Valenciana: 10% general');
+    expect(ccaa).not.toContain('bonificacion del 75%');
+    expect(ccaa).not.toContain('Comunitat Valenciana: 1,5%');
+    expect(aeat).not.toContain('Trimestral si hay renta de alquiler; anual si es imputacion de renta');
+    expect(catalog).not.toContain('Para alquileres, trimestralmente');
+    expect(docs).not.toContain('Cuota de autónomos en 2025');
+    expect(blog).not.toContain('| Resto de empresas y autónomos | 1 de julio de 2026 |');
+  });
+
   it('documents the no-auto-merge and no-auto-publish contract', () => {
     const docs = read('docs/kia-regulatory-registry.md');
     expect(docs).toContain('Nunca se hace merge automático');
