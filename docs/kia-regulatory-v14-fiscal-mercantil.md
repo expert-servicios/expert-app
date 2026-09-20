@@ -48,11 +48,16 @@ Se modela:
 
 ## Lote 2 - fiscal recurrente
 
-Pendiente:
-- IVA: tipos y reglas de consumo, sin convertir exenciones complejas en hardcodes;
-- 130/131/202: reglas de obligación/cálculo;
-- 180/190/347/349/390;
-- integración completa con `AEAT_TAX_CALENDAR_2026`.
+Implementado:
+- `IRPF_PAYMENT_FRACTIONS_2026`: Modelos 130/131, reglas de cálculo, excepción del 70 %, módulos y medidas territoriales 2026;
+- `MODEL_202_RULES_2026`: modalidades del art. 40 LIS, umbral de 6 M€, obligación y cambio Ceuta RDL 22/2026;
+- `INFORMATIVE_RETURNS_2026`: 347/349/390 y enlace operativo a 180/190;
+- integración de vencimientos exactos con `AEAT_TAX_CALENDAR_2026`;
+- corrección de prompts, blog, docs, catálogo y checklists para evitar fechas/fórmulas estáticas.
+
+Pendiente del bloque fiscal:
+- IVA: tipos, exenciones y regímenes que realmente necesiten consumo estructurado;
+- revisar si 111/115 necesitan ruleset propio o basta calendario + reglas de retención ya existentes.
 
 ## Lote 3 - mercantil
 
