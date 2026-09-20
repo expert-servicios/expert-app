@@ -655,6 +655,44 @@ describe('KIA Regulatory Registry', () => {
     expect(migration).not.toContain("'housing','medium'");
   });
 
+  it('keeps the v1.3-v1.5 ruleset dependency graph closed', () => {
+    const migrationPaths = [
+      'supabase/migrations/20260920111500_regulatory_rulesets_v13.sql',
+      'supabase/migrations/20260920123000_regulatory_v14_fiscal_mercantil_lot1.sql',
+      'supabase/migrations/20260920133000_regulatory_v14_fiscal_recurrente_lot2.sql',
+      'supabase/migrations/20260920150000_regulatory_v14_mercantil_lot3.sql',
+      'supabase/migrations/20260920163000_regulatory_v14_mercantil_lot4.sql',
+      'supabase/migrations/20260920180000_regulatory_v15_property_dgt_lot1.sql',
+      'supabase/migrations/20260920201500_regulatory_v15_vehicle_registration_lot2.sql',
+      'supabase/migrations/20260920213000_regulatory_v15_property_isd_rent_lot3.sql',
+      'supabase/migrations/20260920230000_regulatory_v15_final_dgt_maritime.sql',
+    ];
+    const sql = migrationPaths.map(read).join('\n');
+    const definedRulesets = new Set(
+      [...sql.matchAll(/insert into public\.regulatory_rulesets[\s\S]*?select\s+'([^']+)'/g)]
+        .map((match) => match[1]),
+    );
+    const dependencyRulesets = [
+      ...sql.matchAll(/\('([A-Z][A-Z0-9_]+)','(?:service|course|knowledge|kia_prompt|calculator|blog|seo|social|admin|telegram|operational_blueprint|viability)','[^']+'/g),
+    ].map((match) => match[1]);
+
+    expect(definedRulesets.size).toBeGreaterThan(30);
+    expect(dependencyRulesets.length).toBeGreaterThan(100);
+    for (const rulesetKey of dependencyRulesets) {
+      expect(definedRulesets.has(rulesetKey), rulesetKey).toBe(true);
+    }
+  });
+
+  it('fails closed instead of selecting an arbitrary overlapping regulation', () => {
+    const values = read('lib/regulatory/regulatory-values.ts');
+    const rulesets = read('lib/regulatory/regulatory-rulesets.ts');
+
+    expect(values).toContain('.limit(2)');
+    expect(values).toContain('Ambiguous regulatory value');
+    expect(rulesets).toContain('.limit(2)');
+    expect(rulesets).toContain('Ambiguous regulatory ruleset');
+  });
+
   it('documents the no-auto-merge and no-auto-publish contract', () => {
     const docs = read('docs/kia-regulatory-registry.md');
     expect(docs).toContain('Nunca se hace merge automático');
