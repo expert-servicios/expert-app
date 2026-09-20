@@ -14,12 +14,10 @@ describe('regulatory source host allowlist', () => {
   it('allows every HTTPS host referenced by regulatory v1.3-v1.5 migrations', () => {
     const monitor = read(monitorPath);
     const migrationFiles = fs.readdirSync(migrationsDir)
-      .filter((name) =>
-        /^20260920(111500|123000|133000|150000|163000|180000|201500|213000|230000)_.*\.sql$/.test(name),
-      )
+      .filter((name) => name.endsWith('.sql') && name.includes('regulatory'))
       .sort();
 
-    expect(migrationFiles).toHaveLength(9);
+    expect(migrationFiles.length).toBeGreaterThanOrEqual(9);
 
     const urls = migrationFiles.flatMap((name) => {
       const sql = read(path.join(migrationsDir, name));
