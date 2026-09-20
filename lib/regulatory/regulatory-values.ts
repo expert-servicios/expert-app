@@ -29,7 +29,11 @@ export async function getCurrentRegulatoryValue(valueKey: string, onDate = new D
   if (latestError) throw new Error(latestError.message);
   const metadata = (latest?.metadata ?? {}) as Record<string, unknown>;
   if (latest && metadata.availability_mode === 'latest_published') {
-    return { ...latest, availability_mode: 'latest_published' as const };
+    const maxAgeDays = typeof metadata.max_age_days === 'number' ? metadata.max_age_days : 62;
+    const ageDays = Math.floor((onDate.getTime() - new Date(`${latest.valid_from}T00:00:00Z`).getTime()) / 86_400_000);
+    if (ageDays <= maxAgeDays) {
+      return { ...latest, availability_mode: 'latest_published' as const, age_days: ageDays };
+    }
   }
   return null;
 }
