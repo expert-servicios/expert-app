@@ -30,8 +30,15 @@ Contrato:
 - usar precio de compraventa como única base inmobiliaria;
 - mostrar tasa DGT aproximada cuando existe tasa oficial anual.
 
+## Lote 2
+
+### Matriculación / IEDMT / importación
+- `IEDMT_REGISTRATION_2026`: hecho imponible, Modelo 576, tramos CO2 de referencia, base y excepciones;
+- `VEHICLE_IMPORT_REGISTRATION_2026`: separa UE de fuera de UE, ITV/homologación, Aduana/H1 y fiscalidad previa;
+- reutiliza `DGT_FEES_2026`;
+- catálogo, prompt y checklist dejan de resumir IEDMT como "pagar si supera cierto CO2".
+
 ## Siguientes lotes
-- matriculación/IEDMT e importación UE/no UE;
 - duplicados y permisos;
 - cancelación de hipoteca;
 - herencia/donación/ISD operativo;
