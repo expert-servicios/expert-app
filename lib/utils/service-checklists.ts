@@ -900,7 +900,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿En qué comunidad autónoma vivía el fallecido?',
     ],
     botInstructions:
-      'El Impuesto de Sucesiones debe liquidarse en 6 meses desde el fallecimiento (prorrogables otros 6). Las reducciones varían enormemente por comunidad autónoma. La renuncia a la herencia debe hacerse ante notario. Precio: consultar según caudal hereditario.',
+      'En Comunitat Valenciana consultar VALENCIA_SUCCESSIONS_650_2026 para plazo, prórroga y operativa, y VALENCIA_ISD_2026 para beneficios fiscales. No confundir plazo tributario con aceptación o renuncia civil de la herencia. Precio: consultar según caudal hereditario.',
     estimatedPrice: 'Consultar',
   },
 
@@ -928,7 +928,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿En qué comunidad autónoma reside quien recibe la donación?',
     ],
     botInstructions:
-      'El Impuesto de Donaciones lo paga el receptor y varía mucho por CCAA. Madrid y Andalucía tienen reducciones de hasta el 99% para donaciones entre padres e hijos. Las donaciones de dinero en efectivo superiores a 2.500 € deben justificarse con transferencia bancaria. Precio: consultar.',
+      'Consultar VALENCIA_DONATIONS_651_2026 para competencia, plazo y Modelo 651, y VALENCIA_ISD_2026 para beneficios fiscales. No usar la residencia del donatario como única regla territorial: en inmuebles importa dónde radica el bien. Precio: consultar.',
     estimatedPrice: 'Consultar',
   },
 
@@ -954,7 +954,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿El banco ya te ha dado el certificado de deuda cero?',
     ],
     botInstructions:
-      'El banco solo emite el certificado de deuda cero — la cancelación registral la debe hacer el titular. Este trámite es necesario si se va a vender el inmueble o pedir otro préstamo. Precio: desde 150 €.',
+      'Consultar VALENCIA_MORTGAGE_CANCELLATION_2026. Distinguir deuda extinguida de carga registral; la cancelación ordinaria requiere escritura pública del acreedor, Modelo 600 exento y presentación registral. Precio: desde 150 €.',
     estimatedPrice: 'Desde 150 €',
   },
 
