@@ -211,6 +211,16 @@ Uso:
 - manuales;
 - novedades tributarias.
 
+### Migraciones
+
+Las hojas informativas de Migraciones se mantienen como referencias oficiales humanas. El portal de Inclusión deniega actualmente el acceso server-to-server (HTTP 403), por lo que no se considera una fuente automática fiable.
+
+Para los servicios de arraigo, reagrupación y renovación:
+
+- referencia administrativa humana: páginas oficiales de Migraciones;
+- monitorización automática primaria: RD 1155/2024 consolidado en BOE;
+- el cambio del Reglamento solo bloquea un servicio cuando KIA vincula expresamente el cambio a esa dependencia.
+
 ### Seguridad Social
 
 - Novedades Legislativas;
