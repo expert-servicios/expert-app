@@ -753,7 +753,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes el contrato de compraventa firmado?',
     ],
     botInstructions:
-      'El ITP varía por comunidad autónoma (6–10%). La transferencia se debe hacer en un plazo de 30 días desde la compraventa. Precio del servicio: desde 80 €.',
+      'Consultar DGT_VEHICLE_TRANSFER_2026 para plazo y condiciones, DGT_FEES_2026 para la tasa y la regla tributaria de la CCAA para el ITP. No aplicar un rango nacional aproximado. Precio del servicio: desde 80 €.',
     estimatedPrice: 'Desde 80 €',
   },
 
@@ -867,7 +867,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Hay hipoteca pendiente del vendedor?',
     ],
     botInstructions:
-      'Para segunda mano se aplica ITP según la CCAA y posibles tipos reducidos; para vivienda nueva, IVA más AJD según el supuesto. Antes de calcular, consultar la regla autonómica vigente (en Comunitat Valenciana, VALENCIA_ITPAJD_2026). Verificar siempre la nota simple y el plazo autonómico aplicable. Precio: consultar según operación.',
+      'Para segunda mano se aplica TPO según la CCAA y para vivienda nueva puede corresponder IVA + AJD según el supuesto. En Comunitat Valenciana consultar VALENCIA_PROPERTY_TRANSFER_BASE_2026 para la base y VALENCIA_ITPAJD_2026 para el tipo. Verificar nota simple, valor de referencia y plazo autonómico. Precio: consultar según operación.',
     estimatedPrice: 'Consultar',
   },
 
