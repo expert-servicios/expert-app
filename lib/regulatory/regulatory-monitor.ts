@@ -111,7 +111,10 @@ function normalizePayload(raw: string, strategy: RegulatorySourceRow['fetch_stra
   return value;
 }
 
-async function fetchWithLimits(url: string): Promise<{ text: string; contentType: string }> {
+async function fetchWithLimits(
+  url: string,
+  allowNotFound = false,
+): Promise<{ text: string; contentType: string; status: number }> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12_000);
 
@@ -126,6 +129,13 @@ async function fetchWithLimits(url: string): Promise<{ text: string; contentType
       signal: controller.signal,
     });
 
+    if (response.status === 404 && allowNotFound) {
+      return {
+        text: '',
+        contentType: response.headers.get('content-type') ?? '',
+        status: response.status,
+      };
+    }
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const finalUrl = new URL(response.url || url);
@@ -146,6 +156,7 @@ async function fetchWithLimits(url: string): Promise<{ text: string; contentType
     return {
       text,
       contentType: response.headers.get('content-type') ?? '',
+      status: response.status,
     };
   } finally {
     clearTimeout(timeout);
@@ -154,7 +165,21 @@ async function fetchWithLimits(url: string): Promise<{ text: string; contentType
 
 export async function fetchRegulatorySource(source: RegulatorySourceRow) {
   const fetchUrl = resolveFetchUrl(source);
-  const { text, contentType } = await fetchWithLimits(fetchUrl);
+  const { text, contentType, status } = await fetchWithLimits(
+    fetchUrl,
+    source.fetch_strategy === 'boe_daily',
+  );
+  if (source.fetch_strategy === 'boe_daily' && status === 404) {
+    return {
+      fetchUrl,
+      fingerprint: null,
+      excerpt: '',
+      contentType,
+      normalizedLength: 0,
+      noPublication: true as const,
+    };
+  }
+
   const normalized = normalizePayload(text, source.fetch_strategy);
   if (!normalized) throw new Error('Official source returned empty content');
 
@@ -166,6 +191,7 @@ export async function fetchRegulatorySource(source: RegulatorySourceRow) {
     excerpt: buildEvidenceExcerpt(normalized),
     contentType,
     normalizedLength: normalized.length,
+    noPublication: false as const,
   };
 }
 
@@ -250,6 +276,16 @@ export async function runRegulatoryPulse(params: {
 
     try {
       const fetched = await fetchRegulatorySource(source);
+      if (fetched.noPublication) {
+        const { error: sourceUpdateError } = await admin.from('regulatory_sources').update({
+          last_checked_at: checkedAt,
+          last_success_at: checkedAt,
+          last_error: null,
+        }).eq('id', source.id);
+        if (sourceUpdateError) throw new Error(`Source state update failed: ${sourceUpdateError.message}`);
+        continue;
+      }
+
       const hasBaseline = Boolean(source.last_fingerprint);
       const isChanged = hasBaseline && source.last_fingerprint !== fetched.fingerprint;
 

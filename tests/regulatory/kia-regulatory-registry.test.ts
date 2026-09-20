@@ -95,6 +95,22 @@ describe('KIA Regulatory Registry', () => {
     expect(first.fingerprint).toBe(second.fingerprint);
   });
 
+  it('treats a BOE 404 as a valid non-publication day without a fingerprint', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('', {
+      status: 404,
+      headers: { 'content-type': 'application/json' },
+    })));
+
+    const result = await fetchRegulatorySource(source({
+      fetch_strategy: 'boe_daily',
+      fetch_url: 'https://www.boe.es/datosabiertos/api/boe/sumario/{date}',
+    }));
+
+    expect(result.noPublication).toBe(true);
+    expect(result.fingerprint).toBeNull();
+    expect(result.excerpt).toBe('');
+  });
+
   it('rejects non-official hosts before fetching', async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
@@ -136,6 +152,8 @@ describe('KIA Regulatory Registry', () => {
     expect(monitor).toContain('const isChanged = hasBaseline && source.last_fingerprint !== fetched.fingerprint');
     expect(monitor).toContain("onConflict: 'current_snapshot_id'");
     expect(monitor).toContain('Source state update failed');
+    expect(monitor).toContain('if (fetched.noPublication)');
+    expect(monitor).toContain('last_success_at: checkedAt');
   });
 
   it('protects all regulatory cron routes with CRON_SECRET', () => {
