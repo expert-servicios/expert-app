@@ -28,7 +28,7 @@ describe('generateFiscalTemplateObligations', () => {
 
   it('genera 202 en abril, octubre y diciembre', () => {
     const items = generateFiscalTemplateObligations(['202_triannual'], 2026);
-    expect(items.map((o) => o.deadline)).toEqual(['2026-04-20', '2026-10-20', '2026-12-20']);
+    expect(items.map((o) => o.deadline)).toEqual(['2026-04-20', '2026-10-20', '2026-12-21']);
   });
 
   it('respeta febrero bisiesto para 347', () => {
@@ -43,6 +43,13 @@ describe('generateFiscalTemplateObligations', () => {
     const future = generateFiscalTemplateObligations(['202_triannual'], 2027)[0];
     expect(verified.deadline_verified).toBe(true);
     expect(future.deadline_verified).toBe(false);
+  });
+
+  it('aplica los vencimientos AEAT ajustados de 2026 para anuales 2025', () => {
+    expect(generateFiscalTemplateObligations(['200_annual_calendar_year'], 2025)[0].deadline).toBe('2026-07-27');
+    expect(generateFiscalTemplateObligations(['190_annual'], 2025)[0].deadline).toBe('2026-02-02');
+    expect(generateFiscalTemplateObligations(['180_annual'], 2025)[0].deadline).toBe('2026-02-02');
+    expect(generateFiscalTemplateObligations(['347_annual'], 2025)[0].deadline).toBe('2026-03-02');
   });
 });
 
