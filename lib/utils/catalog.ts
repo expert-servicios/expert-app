@@ -155,7 +155,7 @@ export const services: Service[] = [
     ],
     faqs: [
       { q: '¿Cuándo debo presentar el Modelo 210?', a: 'Depende del tipo de renta y de la fecha de devengo. La Orden HAC/623/2026 modificó los plazos y estableció una transición específica para 2026, por lo que revisamos el periodo oficial aplicable antes de presentar.' },
-      { q: '¿Necesito representante fiscal?', a: 'Sí, si eres no residente en la UE con propiedades en España, es obligatorio tener un representante fiscal en España.' }
+      { q: '¿Necesito representante fiscal?', a: 'No por el mero hecho de ser no residente o tener un inmueble en España. La obligación existe en determinados supuestos previstos por la normativa; revisamos tu caso antes de indicarlo como requisito.' }
     ]
   },
   {
