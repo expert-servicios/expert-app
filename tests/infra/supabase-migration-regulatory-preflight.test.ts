@@ -12,13 +12,15 @@ function read(file: string) {
 }
 
 describe('Supabase regulatory ledger preflight contract', () => {
-  it('uses one centralized forward-only guard from both workflows', () => {
+  it('uses the standalone workflow as the single production-ledger gate', () => {
     const standalone = read(standaloneWorkflowPath);
     const ci = read(ciWorkflowPath);
 
     expect(standalone).toContain('bash scripts/regulatory-ledger-preflight.sh');
-    expect(ci).toContain('bash scripts/regulatory-ledger-preflight.sh');
     expect(standalone).toContain("'scripts/regulatory-ledger-preflight.sh'");
+    expect(standalone).toContain('pull_request:');
+    expect(standalone).toContain('workflow_dispatch:');
+    expect(ci).not.toContain('regulatory-ledger-preflight:');
   });
 
   it('requires production to be an exact prefix of local migration history', () => {
