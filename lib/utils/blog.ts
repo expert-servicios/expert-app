@@ -2439,7 +2439,7 @@ El comprador puede quedar sujeto a **Transmisiones Patrimoniales Onerosas (TPO)*
 
 Los tipos de TPO dependen de la comunidad autónoma, del valor del inmueble y de los posibles tipos reducidos. No usamos una tabla autonómica estática para calcularlos.
 
-En Comunitat Valenciana consultamos `VALENCIA_ITPAJD_2026` para el tipo y `VALENCIA_PROPERTY_TRANSFER_BASE_2026` para la base imponible. Cuando existe valor de referencia, puede actuar como base mínima; si el valor declarado o la contraprestación son superiores, se aplica el importe mayor conforme a la regla vigente.
+En Comunitat Valenciana verificamos la regla autonómica vigente para el tipo y la regla específica de valor de referencia para la base imponible. Cuando existe valor de referencia, puede actuar como base mínima; si el valor declarado o la contraprestación son superiores, se aplica el importe mayor conforme a la regla vigente.
 
 ## Vivienda nueva: IVA + AJD
 
