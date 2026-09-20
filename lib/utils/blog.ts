@@ -424,7 +424,7 @@ En España, debes darte de alta como autónomo **antes de comenzar a ejercer cua
 ## Pasos para el alta
 
 ### 1. Alta en Hacienda (Modelo 036)
-El Desde el 3 de febrero de 2025 el Modelo 037 está suprimido; el alta censal se tramita mediante el Modelo 036. En él indicarás:
+Desde el 3 de febrero de 2025 el Modelo 037 está suprimido; el alta censal se tramita mediante el Modelo 036. En él indicarás:
 - **Epígrafe del IAE** (actividad económica)
 - **Régimen de IVA** aplicable (general, simplificado, recargo de equivalencia, exento...)
 - Fecha de inicio de la actividad
