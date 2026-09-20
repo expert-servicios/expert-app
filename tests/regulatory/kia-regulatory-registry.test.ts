@@ -533,6 +533,27 @@ describe('KIA Regulatory Registry', () => {
     expect(checklists).not.toContain('Para poderes simples (sin cargo registral)');
   });
 
+  it('adds v1.5 property and DGT rules and removes stale vehicle tax shortcuts', () => {
+    const migration = read('supabase/migrations/20260920180000_regulatory_v15_property_dgt_lot1.sql');
+    const dgt = read('lib/ai/kia/prompts/kia-dgt-knowledge.ts');
+    const ccaa = read('lib/ai/kia/prompts/kia-ccaa-knowledge.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+
+    expect(migration).toContain("'VALENCIA_PROPERTY_TRANSFER_BASE_2026'");
+    expect(migration).toContain("'DGT_VEHICLE_TRANSFER_2026'");
+    expect(migration).toContain("'DGT_FEES_2026'");
+
+    expect(dgt).toContain('DGT_VEHICLE_TRANSFER_2026');
+    expect(dgt).toContain('DGT_FEES_2026');
+    expect(checklists).toContain('VALENCIA_PROPERTY_TRANSFER_BASE_2026');
+
+    expect(dgt).not.toContain('plusvalia municipal si aplica (Impuesto sobre Vehículos');
+    expect(dgt).not.toContain('Tipo general aproximado: 4-8%');
+    expect(checklists).not.toContain('ITP varía por comunidad autónoma (6–10%)');
+    expect(ccaa).not.toContain('Tipo general: 4-8% segun CCAA');
+    expect(ccaa).not.toContain('Plazo de pago: 30 dias habiles');
+  });
+
   it('documents the no-auto-merge and no-auto-publish contract', () => {
     const docs = read('docs/kia-regulatory-registry.md');
     expect(docs).toContain('Nunca se hace merge automático');
