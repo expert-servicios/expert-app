@@ -1014,31 +1014,28 @@ Si estás casado, puedes optar por declaración individual o conjunta. La conjun
     slug: 'regimen-beckham-modelo-151-guia',
     category: 'fiscalidad',
     title: 'Régimen Beckham (Modelo 151): quién puede acogerse y cómo funciona',
-    excerpt: 'Guía técnica sobre el régimen especial de impatriados: requisitos de acceso, tipo fijo del 24%, cómo solicitar el Modelo 149 y diferencias con el IRPF ordinario.',
+    excerpt: 'Guía técnica sobre el régimen especial de impatriados: requisitos de acceso, Modelo 149, tributación especial y diferencias con el IRPF ordinario.',
     tags: ['Modelo 151', 'Régimen Beckham', 'impatriados', 'expatriados', 'Modelo 149'],
     updatedAt: '18 may 2026',
     readTime: '10 min',
     relatedServiceSlugs: ['modelo-151'],
     relatedServiceCategories: ['declaraciones-impuestos'],
     seoTitle: 'Régimen Beckham y Modelo 151: guía completa | EXPERT Asesoría',
-    seoDescription: 'Todo sobre el régimen especial de impatriados: quién puede acogerse, tipo fijo del 24%, cómo solicitar la opción y cuándo conviene frente al IRPF ordinario.',
+    seoDescription: 'Todo sobre el régimen especial de impatriados: quién puede acogerse, cómo solicitar la opción, tributación aplicable y diferencias con el IRPF ordinario.',
     body: `
 ## ¿Qué es el régimen especial de impatriados?
 
-El régimen especial de impatriados (popularmente llamado **Ley Beckham**) permite a personas que se desplazan a España por motivos laborales tributar al **tipo fijo del 24 %** sobre sus rentas obtenidas en España (hasta 600.000 €), en lugar del tipo progresivo general del IRPF (que puede llegar al 47 %).
+El régimen especial de impatriados (popularmente llamado **Ley Beckham**) aplica reglas especiales de tributación a determinados contribuyentes que se desplazan a España y cumplen los requisitos del artículo 93 LIRPF. Para los rendimientos sujetos a la escala especial, el 24 % se aplica hasta 600.000 € y el 47 % sobre el exceso; antes de informar o calcular hay que revisar la causa del desplazamiento y el supuesto concreto.
 
 La declaración anual se presenta mediante el **Modelo 151**, distinto del Modelo 100 que usan los residentes ordinarios.
 
 ## Requisitos para acogerse
 
-Para aplicar el régimen en 2025 es necesario cumplir **todos** los requisitos siguientes:
+Para aplicar el régimen hay que verificar **todos** los requisitos vigentes del supuesto concreto, entre ellos la residencia previa y la causa legal del desplazamiento:
 
 - **No haber sido residente fiscal en España** durante los 5 años anteriores al desplazamiento.
-- Desplazarse a España por:
-  - Un **contrato de trabajo** con empresa española.
-  - Para **ejercer funciones de administrador** de una sociedad española (no vinculada o con vinculación permitida).
-  - Como **nómada digital**: trabajador remoto con visado de nómada digital.
-- El trabajo o la administración deben realizarse **efectivamente en España**.
+- Comprobar si el desplazamiento encaja en alguno de los supuestos actualmente admitidos por la norma (laboral, determinados administradores, actividad emprendedora/profesional o teletrabajo internacional, entre otros casos previstos).
+- Revisar además los requisitos específicos del supuesto y la documentación que exige la AEAT.
 
 ## Cómo solicitar la opción al régimen
 
@@ -1061,7 +1058,7 @@ El régimen se aplica durante el **año del desplazamiento y los 5 siguientes** 
 
 ## ¿Cuándo conviene acogerse?
 
-No siempre resulta más ventajoso que el IRPF ordinario. El tipo fijo del 24 % es más favorable cuando:
+No siempre resulta más ventajoso que el IRPF ordinario. La escala especial puede resultar más favorable cuando:
 
 - Los rendimientos del trabajo son elevados (superan los tramos altos del IRPF).
 - Se tienen rentas o patrimonio en el extranjero que quedarían exentas.
