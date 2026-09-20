@@ -98,6 +98,19 @@ Consultas publicas en el Registro Mercantil:
 
 Publicaciones BORME (Boletin Oficial del Registro Mercantil):
 - https://www.boe.es/diario_borme/ — publicaciones obligatorias de actos inscribibles en el Registro Mercantil.
+
+
+Titularidad real:
+- Consultar BENEFICIAL_OWNERSHIP_RCTR_RULES.
+- No identificar al titular real solo mirando la lista de socios: revisar participacion directa e indirecta, derechos de voto y control por otros medios.
+- Para sociedades mercantiles, revisar la informacion anual y los cambios conocidos por el organo de administracion; los cambios de titularidad real tienen su propio plazo de comunicacion.
+- Si no existe persona fisica que cumpla el criterio de control, aplicar solo entonces la regla subsidiaria de administradores prevista en la normativa.
+
+Apoderamientos mercantiles:
+- Consultar MERCANTILE_POWERS_RRM_RULES.
+- Distinguir representacion organica del administrador de la representacion voluntaria por apoderado.
+- No afirmar que todo poder notarial es obligatoriamente inscribible: clasificar poder general mercantil, poder para pleitos y poder para actos concretos antes de responder.
+
 </registro_mercantil>
 
 <registro_propiedad>
