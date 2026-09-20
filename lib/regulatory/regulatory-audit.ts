@@ -222,16 +222,20 @@ export async function runRegulatoryHealthAudit() {
   }
 
   const sourceDependencyCounts = new Map<string, number>();
-  const rulesetSourceIds = new Map<string, string>();
+  const rulesetSourceIds = new Map<string, Set<string>>();
   for (const ruleset of rulesets ?? []) {
-    if (ruleset.source_id) rulesetSourceIds.set(ruleset.ruleset_key, ruleset.source_id);
+    if (!ruleset.source_id) continue;
+    const ids = rulesetSourceIds.get(ruleset.ruleset_key) ?? new Set<string>();
+    ids.add(ruleset.source_id);
+    rulesetSourceIds.set(ruleset.ruleset_key, ids);
   }
   for (const dependency of dependencies ?? []) {
     const sourceIdsForDependency = new Set<string>();
     if (dependency.source_id) sourceIdsForDependency.add(dependency.source_id);
     if (dependency.ruleset_key) {
-      const rulesetSourceId = rulesetSourceIds.get(dependency.ruleset_key);
-      if (rulesetSourceId) sourceIdsForDependency.add(rulesetSourceId);
+      for (const rulesetSourceId of rulesetSourceIds.get(dependency.ruleset_key) ?? []) {
+        sourceIdsForDependency.add(rulesetSourceId);
+      }
     }
     for (const sourceId of sourceIdsForDependency) {
       sourceDependencyCounts.set(
