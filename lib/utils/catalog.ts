@@ -991,7 +991,7 @@ export const services: Service[] = [
       'Escritura pública notarial',
       'Inscripción en Registro Mercantil',
       'Alta en Hacienda (Modelo 036)',
-      'Obtención del CIF definitivo'
+      'Obtención del NIF definitivo'
     ],
     faqs: [
       { q: '¿Cuánto capital mínimo se necesita?', a: 'Desde 1 euro, aunque lo habitual es un capital inicial de 3.000 €.' },
@@ -1173,7 +1173,7 @@ export const services: Service[] = [
     name: 'Apoderamientos y Modificaciones Mercantiles',
     shortDescription: 'Cambio de administrador, modificación de estatutos, poderes notariales y compraventa de participaciones.',
     description:
-      'Gestionamos todo tipo de modificaciones societarias: cambio o nombramiento de administrador, modificación de estatutos sociales, otorgamiento y revocación de poderes notariales, ampliaciones y reducciones de capital, compraventa de participaciones sociales y otras operaciones registrales.',
+      'Gestionamos modificaciones societarias y apoderamientos: cambios de administrador, estatutos, otorgamiento o revocación de poderes, capital, participaciones y otras operaciones registrales. Antes de inscribir clasificamos el acto y el alcance del poder, porque no todos los poderes tienen el mismo régimen registral.',
     price: 'Consultar',
     duration: '7–20 días hábiles',
     includes: [
@@ -1185,7 +1185,7 @@ export const services: Service[] = [
     ],
     faqs: [
       { q: '¿Cómo cambio al administrador de mi empresa?', a: 'Se acuerda en Junta General o por el propio órgano de administración, se eleva a escritura notarial y se inscribe en el Registro Mercantil.' },
-      { q: '¿Qué es un poder notarial y para qué sirve?', a: 'Es un documento que otorga a una persona la facultad de actuar en nombre de otra o de la empresa. Puede ser general o especial (para actos concretos).' }
+      { q: '¿Qué es un poder notarial y para qué sirve?', a: 'Es un instrumento de representación voluntaria. Antes de tramitarlo hay que definir su alcance: los poderes generales mercantiles suelen acceder al Registro Mercantil, mientras que existen excepciones legales para determinados poderes para pleitos o actos concretos.' }
     ]
   },
 
