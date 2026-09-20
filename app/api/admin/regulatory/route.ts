@@ -46,6 +46,8 @@ export async function POST(request: NextRequest) {
     authority?: string;
     sourceKey?: string;
     changeId?: string;
+    resolutionNote?: string;
+    resolutionEvidence?: Record<string, unknown>;
   };
 
   if (body.action === 'apply_values') {
@@ -64,7 +66,12 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({
       ok: true,
-      result: await resolveReviewedRegulatoryChange(body.changeId, auth.userId),
+      result: await resolveReviewedRegulatoryChange(
+        body.changeId,
+        auth.userId,
+        body.resolutionNote ?? '',
+        body.resolutionEvidence,
+      ),
     });
   }
 
