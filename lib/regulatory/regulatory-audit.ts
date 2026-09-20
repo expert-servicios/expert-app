@@ -222,11 +222,21 @@ export async function runRegulatoryHealthAudit() {
   }
 
   const sourceDependencyCounts = new Map<string, number>();
+  const rulesetSourceIds = new Map<string, string>();
+  for (const ruleset of rulesets ?? []) {
+    if (ruleset.source_id) rulesetSourceIds.set(ruleset.ruleset_key, ruleset.source_id);
+  }
   for (const dependency of dependencies ?? []) {
-    if (dependency.source_id) {
+    const sourceIdsForDependency = new Set<string>();
+    if (dependency.source_id) sourceIdsForDependency.add(dependency.source_id);
+    if (dependency.ruleset_key) {
+      const rulesetSourceId = rulesetSourceIds.get(dependency.ruleset_key);
+      if (rulesetSourceId) sourceIdsForDependency.add(rulesetSourceId);
+    }
+    for (const sourceId of sourceIdsForDependency) {
       sourceDependencyCounts.set(
-        dependency.source_id,
-        (sourceDependencyCounts.get(dependency.source_id) ?? 0) + 1,
+        sourceId,
+        (sourceDependencyCounts.get(sourceId) ?? 0) + 1,
       );
     }
   }
