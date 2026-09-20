@@ -4,6 +4,10 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - 'supabase/migrations/**'
+      - '.github/workflows/supabase-ledger-preflight.yml'
+      - 'tests/infra/supabase-migration-*.test.ts'
   workflow_dispatch:
 
 permissions:
@@ -16,27 +20,27 @@ concurrency:
 jobs:
   preflight:
     name: Read-only ledger preflight
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.number == 194 }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       PROJECT_REF: ybtpqscmqrrjjmuoryap
-      EXPECTED_LEDGER_ROWS: "156"
-      EXPECTED_FIRST_VERSION: "20260508082323"
-      EXPECTED_LAST_VERSION: "20260918114535"
+      EXPECTED_LEDGER_ROWS: "72"
+      EXPECTED_FIRST_VERSION: "20260912000100"
+      EXPECTED_LAST_VERSION: "20260920073758"
+      EXPECTED_PENDING_COUNT: "9"
 
     steps:
-      - name: Checkout reviewed recovery head
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v7
 
-      - name: Verify required secrets are available
+      - name: Verify required secrets
         shell: bash
         run: |
           set -euo pipefail
-          test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo 'STOP: SUPABASE_ACCESS_TOKEN secret is not configured'; exit 1; }
-          test -n "${SUPABASE_DB_PASSWORD:-}" || { echo 'STOP: SUPABASE_DB_PASSWORD secret is not configured'; exit 1; }
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo 'STOP: SUPABASE_ACCESS_TOKEN is missing'; exit 1; }
+          test -n "${SUPABASE_DB_PASSWORD:-}" || { echo 'STOP: SUPABASE_DB_PASSWORD is missing'; exit 1; }
 
       - name: Verify baseline plus forward-only tail layout
         shell: bash
@@ -46,48 +50,35 @@ jobs:
           test "${#files[@]}" -ge 36
           test "${files[0]}" = '20260912000100_baseline_public_primitives.sql'
           test "${files[35]}" = '20260912003600_baseline_public_acl.sql'
-          for file in "${files[@]:36}"; do
+          versions=()
+          for file in "${files[@]}"; do
             version="${file:0:14}"
-            test "$version" > "20260912003600" || { echo "STOP: invalid post-baseline migration $file"; exit 1; }
+            versions+=("$version")
           done
+          test "$(printf '%s\n' "${versions[@]}" | sort -u | wc -l)" -eq "${#versions[@]}" || {
+            echo 'STOP: duplicate local migration versions'
+            exit 1
+          }
 
       - name: Setup validated Supabase CLI
         uses: supabase/setup-cli@v1
         with:
           version: 2.117.0
 
-      - name: Link production and capture migration list
+      - name: Link production
         shell: bash
         run: |
           set -euo pipefail
-          supabase --version
           supabase link --project-ref "$PROJECT_REF" -p "$SUPABASE_DB_PASSWORD"
 
-          migration_list_ok=0
-          for attempt in 1 2 3 4 5; do
-            if supabase migration list --linked > "$RUNNER_TEMP/migration-list-before.txt"; then
-              migration_list_ok=1
-              break
-            fi
-            if [ "$attempt" -lt 5 ]; then
-              echo "Supavisor connection attempt $attempt failed; retrying after credential-cache window"
-              sleep 20
-            fi
-          done
-          test "$migration_list_ok" -eq 1 || {
-            echo 'STOP: unable to read linked migration list after Supavisor retries'
-            exit 1
-          }
-
-      - name: Capture exact ledger backup and validate frozen state
+      - name: Validate frozen production ledger
         shell: bash
         run: |
           set -euo pipefail
           private="$RUNNER_TEMP/ledger-preflight"
           mkdir -p "$private"
           chmod 700 "$private"
-          raw="$private/schema_migrations_before_repair.raw.sql"
-          restore="$private/schema_migrations_before_repair.pg15.sql"
+          raw="$private/schema_migrations.raw.sql"
 
           supabase db dump \
             --linked \
@@ -113,11 +104,6 @@ jobs:
           last_index=$((EXPECTED_LEDGER_ROWS - 1))
           test "${versions[$last_index]}" = "$EXPECTED_LAST_VERSION" || { echo 'STOP: unexpected production migration tip'; exit 1; }
 
-          if printf '%s\n' "${versions[@]}" | grep -q '^2026091200'; then
-            echo 'STOP: recovery baseline tracking versions already exist remotely'
-            exit 1
-          fi
-
           empty_statements="$(awk 'BEGIN { FS="\t" }
             /^COPY .*schema_migrations.*FROM stdin;$/ { inside=1; next }
             inside && $0 == "\\." { inside=0; next }
@@ -126,90 +112,51 @@ jobs:
           ' "$raw")"
           test "$empty_statements" -eq 0 || { echo "STOP: $empty_statements ledger rows have empty statements"; exit 1; }
 
-          sha256sum "$raw" > "$private/schema_migrations_before_repair.raw.sha256"
+          for version in \
+            20260919192850 \
+            20260919192924 \
+            20260920054204 \
+            20260920071136 \
+            20260920073758; do
+            printf '%s\n' "${versions[@]}" | grep -qx "$version" || {
+              echo "STOP: expected reconciled regulatory migration $version is absent remotely"
+              exit 1
+            }
+          done
 
-          if grep -q '^SET transaction_timeout = 0;
-          sha256sum "$restore" > "$private/schema_migrations_before_repair.pg15.sha256"
+          sha256sum "$raw" > "$private/schema_migrations.raw.sha256"
 
-          raw_hash="$(cut -d' ' -f1 "$private/schema_migrations_before_repair.raw.sha256")"
-          restore_hash="$(cut -d' ' -f1 "$private/schema_migrations_before_repair.pg15.sha256")"
-          cli_version="$(supabase --version)"
-          cat > "$private/preflight-manifest.txt" <<EOF
-          project_ref=$PROJECT_REF
-          production_postgres=15.8
-          supabase_cli=$cli_version
-          ledger_rows=$EXPECTED_LEDGER_ROWS
-          first_version=$EXPECTED_FIRST_VERSION
-          last_version=$EXPECTED_LAST_VERSION
-          empty_statements=0
-          recovery_baseline_remote_rows=0
-          raw_sha256=$raw_hash
-          pg15_restore_sha256=$restore_hash
-          EOF
+      - name: Verify migration list and dry-run
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase migration list --linked | tee "$RUNNER_TEMP/migration-list.txt"
+          supabase db push --linked --dry-run | tee "$RUNNER_TEMP/db-push-dry-run.txt"
 
-          cp "$RUNNER_TEMP/migration-list-before.txt" "$private/migration-list-before.txt"
+          mapfile -t pending < <(
+            find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' \
+              | sort \
+              | awk '$0 >= "20260920111500_" { print substr($0,1,14) }'
+          )
+          test "${#pending[@]}" -eq "$EXPECTED_PENDING_COUNT" || {
+            echo "STOP: expected $EXPECTED_PENDING_COUNT new regulatory migrations, got ${#pending[@]}"
+            exit 1
+          }
 
-          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 \
-            -pass env:SUPABASE_DB_PASSWORD \
-            -in "$raw" \
-            -out "$private/schema_migrations_before_repair.raw.sql.enc"
-          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 \
-            -pass env:SUPABASE_DB_PASSWORD \
-            -in "$restore" \
-            -out "$private/schema_migrations_before_repair.pg15.sql.enc"
+          for version in "${pending[@]}"; do
+            grep -q "$version" "$RUNNER_TEMP/db-push-dry-run.txt" || {
+              echo "STOP: pending migration $version missing from db push dry-run"
+              exit 1
+            }
+          done
 
-          rm -f "$raw" "$restore"
-          chmod 600 "$private"/*
-
-      - name: Upload encrypted rollback artifact
+      - name: Upload read-only preflight evidence
         uses: actions/upload-artifact@v4
         with:
-          name: supabase-ledger-preflight-20260918
-          path: ${{ runner.temp }}/ledger-preflight/
-          if-no-files-found: error
-          retention-days: 14
- "$raw"; then
-            sed '/^SET transaction_timeout = 0;$/d' "$raw" > "$restore"
-          else
-            cp "$raw" "$restore"
-          fi
-          test -s "$restore"
-          sha256sum "$restore" > "$private/schema_migrations_before_repair.pg15.sha256"
-
-          raw_hash="$(cut -d' ' -f1 "$private/schema_migrations_before_repair.raw.sha256")"
-          restore_hash="$(cut -d' ' -f1 "$private/schema_migrations_before_repair.pg15.sha256")"
-          cli_version="$(supabase --version)"
-          cat > "$private/preflight-manifest.txt" <<EOF
-          project_ref=$PROJECT_REF
-          production_postgres=15.8
-          supabase_cli=$cli_version
-          ledger_rows=$EXPECTED_LEDGER_ROWS
-          first_version=$EXPECTED_FIRST_VERSION
-          last_version=$EXPECTED_LAST_VERSION
-          empty_statements=0
-          recovery_baseline_remote_rows=0
-          raw_sha256=$raw_hash
-          pg15_restore_sha256=$restore_hash
-          EOF
-
-          cp "$RUNNER_TEMP/migration-list-before.txt" "$private/migration-list-before.txt"
-
-          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 \
-            -pass env:SUPABASE_DB_PASSWORD \
-            -in "$raw" \
-            -out "$private/schema_migrations_before_repair.raw.sql.enc"
-          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 200000 \
-            -pass env:SUPABASE_DB_PASSWORD \
-            -in "$restore" \
-            -out "$private/schema_migrations_before_repair.pg15.sql.enc"
-
-          rm -f "$raw" "$restore"
-          chmod 600 "$private"/*
-
-      - name: Upload encrypted rollback artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: supabase-ledger-preflight-20260918
-          path: ${{ runner.temp }}/ledger-preflight/
+          name: supabase-ledger-preflight-current
+          path: |
+            ${{ runner.temp }}/ledger-preflight/
+            ${{ runner.temp }}/migration-list.txt
+            ${{ runner.temp }}/db-push-dry-run.txt
           if-no-files-found: error
           retention-days: 14
