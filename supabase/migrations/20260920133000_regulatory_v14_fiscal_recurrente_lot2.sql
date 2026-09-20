@@ -9,8 +9,8 @@ values
     'aeat_model_130',
     'AEAT',
     'AEAT - Modelo 130 IRPF estimacion directa, pago fraccionado',
-    'https://sede.agenciatributaria.gob.es/Sede/impuestos-tasas/impuesto-sobre-renta-personas-fisicas/modelo-130-irpf______esionales-estimacion-directa-fraccionado_/instrucciones.html',
-    'https://sede.agenciatributaria.gob.es/Sede/impuestos-tasas/impuesto-sobre-renta-personas-fisicas/modelo-130-irpf______esionales-estimacion-directa-fraccionado_/instrucciones.html',
+    'https://sede.agenciatributaria.gob.es/Sede/procedimientoini/G601.shtml',
+    'https://sede.agenciatributaria.gob.es/Sede/procedimientoini/G601.shtml',
     'administrative','html','critical',
     array['tax','irpf','model_130','payments_on_account'],'daily',
     '{"official":true,"evidence_source":true,"service_specific":true}'::jsonb
@@ -19,8 +19,8 @@ values
     'aeat_model_131',
     'AEAT',
     'AEAT - Modelo 131 IRPF estimacion objetiva, pago fraccionado',
-    'https://sede.agenciatributaria.gob.es/Sede/impuestos-tasas/impuesto-sobre-renta-personas-fisicas/modelo-131-irpf______sionales-estimacion-objetiva-fraccionado_/instrucciones.html',
-    'https://sede.agenciatributaria.gob.es/Sede/impuestos-tasas/impuesto-sobre-renta-personas-fisicas/modelo-131-irpf______sionales-estimacion-objetiva-fraccionado_/instrucciones.html',
+    'https://sede.agenciatributaria.gob.es/Sede/procedimientoini/G602.shtml',
+    'https://sede.agenciatributaria.gob.es/Sede/procedimientoini/G602.shtml',
     'administrative','html','high',
     array['tax','irpf','model_131','modules','payments_on_account'],'monthly',
     '{"official":true,"evidence_source":true,"service_specific":true}'::jsonb
@@ -29,8 +29,8 @@ values
     'aeat_model_202',
     'AEAT',
     'AEAT - Modelo 202 IS pago fraccionado, instrucciones 2025 y siguientes',
-    'https://sede.agenciatributaria.gob.es/Sede/todas-gestiones/impuestos-tasas/impuesto-sobre-sociedades/modelo-202-is-i_____resencia-territorio-fraccionado_/instrucciones.html',
-    'https://sede.agenciatributaria.gob.es/Sede/todas-gestiones/impuestos-tasas/impuesto-sobre-sociedades/modelo-202-is-i_____resencia-territorio-fraccionado_/instrucciones.html',
+    'https://sede.agenciatributaria.gob.es/Sede/procedimientoini/GE00.shtml',
+    'https://sede.agenciatributaria.gob.es/Sede/procedimientoini/GE00.shtml',
     'administrative','html','critical',
     array['tax','corporate_tax','model_202','payments_on_account'],'daily',
     '{"official":true,"evidence_source":true,"service_specific":true}'::jsonb
@@ -39,8 +39,8 @@ values
     'aeat_model_347',
     'AEAT',
     'AEAT - Modelo 347 operaciones con terceras personas',
-    'https://sede.agenciatributaria.gob.es/Sede/todas-gestiones/impuestos-tasas/declaraciones-informativas/modelo-347-decla_____racion-anual-operaciones-personas_/plazos-presentacion.html',
-    'https://sede.agenciatributaria.gob.es/Sede/todas-gestiones/impuestos-tasas/declaraciones-informativas/modelo-347-decla_____racion-anual-operaciones-personas_/plazos-presentacion.html',
+    'https://sede.agenciatributaria.gob.es/Sede/procedimientoini/GI27.shtml',
+    'https://sede.agenciatributaria.gob.es/Sede/procedimientoini/GI27.shtml',
     'administrative','html','high',
     array['tax','informative_returns','model_347'],'monthly',
     '{"official":true,"evidence_source":true,"service_specific":true}'::jsonb
@@ -49,8 +49,8 @@ values
     'aeat_model_349',
     'AEAT',
     'AEAT - Modelo 349 operaciones intracomunitarias',
-    'https://sede.agenciatributaria.gob.es/Sede/todas-gestiones/impuestos-tasas/declaraciones-informativas/modelo-349-decla_____n-recapitulativa-operaciones-intracomunitarias_/plazos-presentacion.html',
-    'https://sede.agenciatributaria.gob.es/Sede/todas-gestiones/impuestos-tasas/declaraciones-informativas/modelo-349-decla_____n-recapitulativa-operaciones-intracomunitarias_/plazos-presentacion.html',
+    'https://sede.agenciatributaria.gob.es/Sede/procedimientoini/GI28.shtml',
+    'https://sede.agenciatributaria.gob.es/Sede/procedimientoini/GI28.shtml',
     'administrative','html','high',
     array['tax','vat','intracommunity','model_349'],'monthly',
     '{"official":true,"evidence_source":true,"service_specific":true}'::jsonb
@@ -59,8 +59,8 @@ values
     'aeat_model_390',
     'AEAT',
     'AEAT - Modelo 390 resumen anual IVA',
-    'https://sede.agenciatributaria.gob.es/Sede/todas-gestiones/impuestos-tasas/iva/modelo-390-iva-declaracion-resumen-anual_/plazos-presentacion.html',
-    'https://sede.agenciatributaria.gob.es/Sede/todas-gestiones/impuestos-tasas/iva/modelo-390-iva-declaracion-resumen-anual_/plazos-presentacion.html',
+    'https://sede.agenciatributaria.gob.es/Sede/procedimientoini/G412.shtml',
+    'https://sede.agenciatributaria.gob.es/Sede/procedimientoini/G412.shtml',
     'administrative','html','high',
     array['tax','vat','model_390'],'monthly',
     '{"official":true,"evidence_source":true,"service_specific":true}'::jsonb
@@ -97,12 +97,16 @@ select
       "non_agricultural_module_rates":{"more_than_one_employee_percent":4,"one_employee_percent":3,"no_employees_percent":2},
       "no_base_data_rate_on_quarter_sales_percent":2,
       "agricultural_livestock_forestry_rate_on_quarter_income_percent":2,
-      "agricultural_livestock_forestry_70_percent_exception":true
+      "agricultural_livestock_forestry_70_percent_exception":true,
+      "special_2026":{
+        "ceuta_melilla_multiplier":0.4,
+        "la_palma_qualifying_income":{"quarters":["3T","4T"],"multiplier":0.4}
+      }
     },
     "filing_pattern":{"1T":"1-20 April","2T":"1-20 July","3T":"1-20 October","4T":"1-30 January following year"},
     "rule":"Never calculate 130 from the isolated quarter profit. Determine activity type, method, withholding exception and territorial special rules first. For 131 determine the module data and workforce case before applying a percentage."
   }'::jsonb,
-  '{"official_reference":"AEAT Modelo 130/131 instructions and 2026 payment guidance","recent_2026_change":"La Palma special percentage for 3T/4T 2026","human_review_if_special_regime":true}'::jsonb
+  '{"official_reference":"AEAT Modelos 130/131; arts. 109-110 RIRPF; RDL 23/2026","recent_2026_change":"La Palma multiplier 0.4 for qualifying activities in 3T/4T 2026","human_review_if_special_regime":true}'::jsonb
 from public.regulatory_sources s where s.source_key='aeat_model_130'
 on conflict (ruleset_key,schema_version,valid_from) do update set
   valid_to=excluded.valid_to,source_id=excluded.source_id,payload=excluded.payload,verified_at=now(),metadata=excluded.metadata;
@@ -131,12 +135,13 @@ select
     },
     "deadlines_2026":{"1P":"2026-04-20","2P":"2026-10-20","3P":"2026-12-21"},
     "recent_2026_change":{
-      "effective_context":"payments for tax periods started in 2026 whose filing window begins after RDL 22/2026 entered into force",
-      "ceuta_melilla_related_reduction_percent":60
+      "effective_context":"payments for tax periods started in 2026 whose filing window begins from the entry into force of RDL 22/2026",
+      "ceuta_melilla_related_reduction_percent":60,
+      "official_rule":"LIS additional provision 20, added by RDL 22/2026"
     },
     "rule":"Determine article 40.2 versus 40.3, turnover threshold, tax rate/regime and current 2026 special measures before calculating or deciding filing obligation."
   }'::jsonb,
-  '{"official_reference":"AEAT Modelo 202 instructions 2025 and following; art. 40 LIS; RDL 22/2026","human_review_if_special_regime":true}'::jsonb
+  '{"official_reference":"AEAT Modelo 202 instructions 2025 and following; art. 40 LIS; RDL 22/2026","recent_2026_change":"Ceuta/Melilla related minimum-payment reduction raised to 60% for qualifying 2026 payments","human_review_if_special_regime":true}'::jsonb
 from public.regulatory_sources s where s.source_key='aeat_model_202'
 on conflict (ruleset_key,schema_version,valid_from) do update set
   valid_to=excluded.valid_to,source_id=excluded.source_id,payload=excluded.payload,verified_at=now(),metadata=excluded.metadata;
