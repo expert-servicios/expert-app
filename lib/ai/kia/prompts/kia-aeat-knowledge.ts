@@ -47,7 +47,7 @@ Modelos y plazos (trimestral):
 AUTONOMOS EN HACIENDA:
 
 Alta en Hacienda (obligatoria antes o al inicio de la actividad):
-- Modelo 036 (version simplificada) — declaracion censal.
+- Modelo 036 — declaracion censal; las herramientas de asistencia incorporan la simplificacion que antes ofrecía el Modelo 037.
   * Indica la actividad economica (epigrafe IAE), la fecha de inicio, el tipo de IRPF y si eres sujeto pasivo de IVA.
 - Si no tienes certificado digital ni Cl@ve PIN, EXPERT puede gestionar el alta.
 
