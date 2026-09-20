@@ -9,7 +9,7 @@ ITP — IMPUESTO DE TRANSMISIONES PATRIMONIALES ONEROSAS:
 
 Que es: impuesto que paga el COMPRADOR en la compraventa de bienes de segunda mano (inmuebles, vehiculos, etc.) entre particulares o cuando el vendedor no aplica IVA.
 Quien lo gestiona: la CCAA del comprador (para inmuebles: la CCAA donde esta el inmueble).
-Plazo de pago: 30 dias habiles desde la firma de la escritura o contrato.
+El plazo depende de la CCAA y del hecho imponible. En Comunitat Valenciana, para el Modelo 600 la regla general es un mes desde el acto o contrato; consultar la fuente autonómica vigente.
 
 Tipos generales por CCAA (inmuebles — orientativos, verificar para el ejercicio actual):
 - Madrid: 6% (uno de los mas bajos de España).
@@ -20,8 +20,7 @@ Tipos generales por CCAA (inmuebles — orientativos, verificar para el ejercici
 - Aragon, Castilla y Leon, Extremadura: en torno al 8%.
 - Islas Baleares, Canarias: tipos propios (Canarias aplica IGIC en lugar de IVA, con diferencias en ITP).
 
-Para vehiculos de segunda mano: el ITP se calcula sobre el valor venal (tabla oficial de la AEAT/CCAA), no sobre el precio de compraventa acordado. Tipo general: 4-8% segun CCAA.
-Modelo de autoliquidacion: generalmente el modelo 600 de la CCAA (o 620 para vehiculos en algunas CCAA).
+Para vehiculos de segunda mano: no usar un porcentaje nacional ni asumir una unica regla de valoracion. Resolver la CCAA, el modelo de autoliquidacion y el metodo de valoracion aplicables. Para el cambio de titularidad consultar DGT_VEHICLE_TRANSFER_2026 y, cuando exista una regla territorial versionada, consumirla antes de calcular.
 </ccaa_itp>
 
 <ccaa_isd>
@@ -39,16 +38,19 @@ Diferencias clave por CCAA (herencias entre familiares directos — orientativo)
 - Pais Vasco: regimen foral. Para familiares directos, exenciones amplias; tipo residual bajo.
 - Resto de CCAA: grandes diferencias; algunas con bonificaciones del 99%, otras con tipos efectivos relevantes.
 
-Donaciones:
-- Tambien gestionadas por las CCAA con tipos y reducciones propios.
-- En general, las donaciones en vida tributan mas que las herencias en muchas CCAA.
-- Algunas CCAA tienen bonificaciones para donaciones de vivienda habitual a hijos.
+Operativa Comunitat Valenciana:
+- Sucesiones: consultar VALENCIA_SUCCESSIONS_650_2026 para Modelo 650, plazo y prorroga.
+- Donaciones: consultar VALENCIA_DONATIONS_651_2026 para Modelo 651, plazo y punto de conexion territorial.
+- Beneficios fiscales: consultar VALENCIA_ISD_2026 antes de cuantificar.
+- En donaciones de inmuebles no usar la residencia del donatario como unica regla territorial; revisar donde radica el inmueble y las reglas de conexion.
 
-Plazo de autoliquidacion:
-- Sucesiones: 6 meses desde el fallecimiento (prorrogable otros 6 meses si se solicita en los primeros 5).
-- Donaciones: 30 dias habiles desde la firma notarial.
+Fianzas de arrendamiento en Comunitat Valenciana:
+- Consultar VALENCIA_RENTAL_DEPOSIT_2026.
+- Distinguir la fianza legal que entrega el arrendatario al arrendador de la obligacion del arrendador de depositarla ante la Generalitat.
+- La ficha GVA vigente en 2026 fija el deposito dentro del mes siguiente al contrato y usa modelo 816 telematico o 806 presencial.
+- La cuantia legal general es una mensualidad en vivienda y dos en uso distinto, conforme al art. 36 LAU.
 
-EXPERT gestiona el ISD en los servicios de herencia (svc_notaria_herencia).
+EXPERT gestiona el ISD y puede orientar la operativa de fianzas cuando el expediente lo requiera.
 </ccaa_isd>
 
 <ccaa_ajd>
@@ -137,7 +139,7 @@ SEDES TRIBUTARIAS AUTONOMICAS PRINCIPALES:
 <ccaa_kia_rules>
 REGLAS DE KIA PARA PREGUNTAS SOBRE TRIBUTOS AUTONOMICOS Y LOCALES:
 - Para ISD (herencias): siempre preguntar en que CCAA residia el fallecido, ya que las diferencias son enormes (Madrid casi 0, Cataluna puede ser significativo). Recomendar consulta con EXPERT antes de actuar.
-- Para ITP (compraventa): siempre preguntar si el inmueble es de primera o segunda mano (primera mano paga IVA + AJD; segunda mano paga ITP).
+- Para ITP/AJD inmobiliario: preguntar si la operación está sujeta a TPO o a IVA + AJD y resolver la base imponible. En Comunitat Valenciana consultar VALENCIA_PROPERTY_TRANSFER_BASE_2026 y VALENCIA_ITPAJD_2026.
 - Para IBI/IVTM: orientar al cliente a la sede del Ayuntamiento o Diputacion correspondiente. Si es Alicante: SUMA.
 - No dar tipos exactos como definitivos sin indicar que deben verificarse para el ejercicio actual.
 - EXPERT gestiona: compraventas (ITP/AJD/plusvalia), herencias (ISD), patrimonio. Servicios: svc_notaria_compraventa, svc_notaria_herencia.

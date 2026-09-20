@@ -753,7 +753,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes el contrato de compraventa firmado?',
     ],
     botInstructions:
-      'El ITP varía por comunidad autónoma (6–10%). La transferencia se debe hacer en un plazo de 30 días desde la compraventa. Precio del servicio: desde 80 €.',
+      'Consultar DGT_VEHICLE_TRANSFER_2026 para plazo y condiciones, DGT_FEES_2026 para la tasa y la regla tributaria de la CCAA para el ITP. No aplicar un rango nacional aproximado. Precio del servicio: desde 80 €.',
     estimatedPrice: 'Desde 80 €',
   },
 
@@ -780,7 +780,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes la ficha técnica homologada?',
     ],
     botInstructions:
-      'El impuesto de matriculación (IEDMT) se paga en la primera matriculación en España o si el vehículo supera ciertos límites de emisiones de CO₂. Precio: consultar según caso.',
+      'Consultar VEHICLE_IMPORT_REGISTRATION_2026 para distinguir vehículo nacional, UE y fuera de UE; IEDMT_REGISTRATION_2026 para hecho imponible, exenciones, base y tipo; y DGT_FEES_2026 para la tasa. No concluir la cuota únicamente por emisiones de CO₂. Precio: consultar según caso.',
     estimatedPrice: 'Consultar',
   },
 
@@ -867,7 +867,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Hay hipoteca pendiente del vendedor?',
     ],
     botInstructions:
-      'Para segunda mano se aplica ITP según la CCAA y posibles tipos reducidos; para vivienda nueva, IVA más AJD según el supuesto. Antes de calcular, consultar la regla autonómica vigente (en Comunitat Valenciana, VALENCIA_ITPAJD_2026). Verificar siempre la nota simple y el plazo autonómico aplicable. Precio: consultar según operación.',
+      'Para segunda mano se aplica TPO según la CCAA y para vivienda nueva puede corresponder IVA + AJD según el supuesto. En Comunitat Valenciana consultar VALENCIA_PROPERTY_TRANSFER_BASE_2026 para la base y VALENCIA_ITPAJD_2026 para el tipo. Verificar nota simple, valor de referencia y plazo autonómico. Precio: consultar según operación.',
     estimatedPrice: 'Consultar',
   },
 
@@ -900,7 +900,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿En qué comunidad autónoma vivía el fallecido?',
     ],
     botInstructions:
-      'El Impuesto de Sucesiones debe liquidarse en 6 meses desde el fallecimiento (prorrogables otros 6). Las reducciones varían enormemente por comunidad autónoma. La renuncia a la herencia debe hacerse ante notario. Precio: consultar según caudal hereditario.',
+      'En Comunitat Valenciana consultar VALENCIA_SUCCESSIONS_650_2026 para plazo, prórroga y operativa, y VALENCIA_ISD_2026 para beneficios fiscales. No confundir plazo tributario con aceptación o renuncia civil de la herencia. Precio: consultar según caudal hereditario.',
     estimatedPrice: 'Consultar',
   },
 
@@ -928,7 +928,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿En qué comunidad autónoma reside quien recibe la donación?',
     ],
     botInstructions:
-      'El Impuesto de Donaciones lo paga el receptor y varía mucho por CCAA. Madrid y Andalucía tienen reducciones de hasta el 99% para donaciones entre padres e hijos. Las donaciones de dinero en efectivo superiores a 2.500 € deben justificarse con transferencia bancaria. Precio: consultar.',
+      'Consultar VALENCIA_DONATIONS_651_2026 para competencia, plazo y Modelo 651, y VALENCIA_ISD_2026 para beneficios fiscales. No usar la residencia del donatario como única regla territorial: en inmuebles importa dónde radica el bien. Precio: consultar.',
     estimatedPrice: 'Consultar',
   },
 
@@ -954,7 +954,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿El banco ya te ha dado el certificado de deuda cero?',
     ],
     botInstructions:
-      'El banco solo emite el certificado de deuda cero — la cancelación registral la debe hacer el titular. Este trámite es necesario si se va a vender el inmueble o pedir otro préstamo. Precio: desde 150 €.',
+      'Consultar VALENCIA_MORTGAGE_CANCELLATION_2026. Distinguir deuda extinguida de carga registral; la cancelación ordinaria requiere escritura pública del acreedor, Modelo 600 exento y presentación registral. Precio: desde 150 €.',
     estimatedPrice: 'Desde 150 €',
   },
 

@@ -533,6 +533,73 @@ describe('KIA Regulatory Registry', () => {
     expect(checklists).not.toContain('Para poderes simples (sin cargo registral)');
   });
 
+  it('adds v1.5 property and DGT rules and removes stale vehicle tax shortcuts', () => {
+    const migration = read('supabase/migrations/20260920180000_regulatory_v15_property_dgt_lot1.sql');
+    const dgt = read('lib/ai/kia/prompts/kia-dgt-knowledge.ts');
+    const ccaa = read('lib/ai/kia/prompts/kia-ccaa-knowledge.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+
+    expect(migration).toContain("'VALENCIA_PROPERTY_TRANSFER_BASE_2026'");
+    expect(migration).toContain("'DGT_VEHICLE_TRANSFER_2026'");
+    expect(migration).toContain("'DGT_FEES_2026'");
+
+    expect(dgt).toContain('DGT_VEHICLE_TRANSFER_2026');
+    expect(dgt).toContain('DGT_FEES_2026');
+    expect(checklists).toContain('VALENCIA_PROPERTY_TRANSFER_BASE_2026');
+
+    expect(dgt).not.toContain('plusvalia municipal si aplica (Impuesto sobre Vehículos');
+    expect(dgt).not.toContain('Tipo general aproximado: 4-8%');
+    expect(checklists).not.toContain('ITP varía por comunidad autónoma (6–10%)');
+    expect(ccaa).not.toContain('Tipo general: 4-8% segun CCAA');
+    expect(ccaa).not.toContain('Plazo de pago: 30 dias habiles');
+  });
+
+  it('adds v1.5 vehicle registration and IEDMT rules', () => {
+    const migration = read('supabase/migrations/20260920201500_regulatory_v15_vehicle_registration_lot2.sql');
+    const dgtBaseline = read('supabase/migrations/20260920180000_regulatory_v15_property_dgt_lot1.sql');
+    const dgt = read('lib/ai/kia/prompts/kia-dgt-knowledge.ts');
+    const catalog = read('lib/utils/catalog.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+
+    expect(migration).toContain("'IEDMT_REGISTRATION_2026'");
+    expect(migration).toContain("'VEHICLE_IMPORT_REGISTRATION_2026'");
+    expect(dgtBaseline).toContain('vehicle_registration_rate_1_1');
+
+    expect(dgt).toContain('IEDMT_REGISTRATION_2026');
+    expect(dgt).toContain('VEHICLE_IMPORT_REGISTRATION_2026');
+    expect(checklists).toContain('IEDMT_REGISTRATION_2026');
+    expect(checklists).toContain('VEHICLE_IMPORT_REGISTRATION_2026');
+
+    expect(catalog).not.toContain('cuando el vehículo supera ciertos límites de emisiones de CO₂');
+    expect(checklists).not.toContain('se paga en la primera matriculación en España o si el vehículo supera ciertos límites');
+  });
+
+  it('adds mortgage, Valencia ISD operational and rental deposit rules', () => {
+    const migration = read('supabase/migrations/20260920213000_regulatory_v15_property_isd_rent_lot3.sql');
+    const catalog = read('lib/utils/catalog.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+    const ccaa = read('lib/ai/kia/prompts/kia-ccaa-knowledge.ts');
+    const registries = read('lib/ai/kia/prompts/kia-justicia-registros-knowledge.ts');
+    const blog = read('lib/utils/blog.ts');
+
+    expect(migration).toContain("'VALENCIA_MORTGAGE_CANCELLATION_2026'");
+    expect(migration).toContain("'VALENCIA_SUCCESSIONS_650_2026'");
+    expect(migration).toContain("'VALENCIA_DONATIONS_651_2026'");
+    expect(migration).toContain("'VALENCIA_RENTAL_DEPOSIT_2026'");
+    expect(migration).toContain("'rental-deposit-valencia'");
+
+    expect(checklists).toContain('VALENCIA_MORTGAGE_CANCELLATION_2026');
+    expect(checklists).toContain('VALENCIA_SUCCESSIONS_650_2026');
+    expect(checklists).toContain('VALENCIA_DONATIONS_651_2026');
+    expect(ccaa).toContain('VALENCIA_RENTAL_DEPOSIT_2026');
+    expect(registries).toContain('VALENCIA_MORTGAGE_CANCELLATION_2026');
+
+    expect(ccaa).not.toContain('Donaciones: 30 dias habiles desde la firma notarial');
+    expect(checklists).not.toContain('Madrid y Andalucía tienen reducciones de hasta el 99%');
+    expect(blog).not.toContain('la cancelación registral es obligación del deudor');
+    expect(catalog).not.toContain('La cancelación registral debe tramitarla el titular del préstamo');
+  });
+
   it('documents the no-auto-merge and no-auto-publish contract', () => {
     const docs = read('docs/kia-regulatory-registry.md');
     expect(docs).toContain('Nunca se hace merge automático');

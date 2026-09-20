@@ -17,21 +17,21 @@ Documentos necesarios (comprador y vendedor):
 - Contrato de compraventa firmado por ambas partes.
 - Certificado de la ITV en vigor (si el vehiculo tiene mas de 4 años).
 - Justificante de pago del Impuesto de Transmisiones Patrimoniales (ITP) — modelo 620 o equivalente de la CCAA.
-- Justificante de pago de la plusvalia municipal si aplica (Impuesto sobre Vehículos de Traccion Mecanica — IVTM en el ayuntamiento).
+- Comprobar que el IVTM del vehiculo esta al corriente cuando proceda. No confundir IVTM con la plusvalia municipal inmobiliaria.
 
 Proceso:
 1. Firmar el contrato de compraventa.
-2. Pagar el ITP en la Consejeria de Hacienda de la CCAA del comprador (plazo: 30 dias habiles desde la compraventa). Tipo general aproximado: 4-8% segun CCAA sobre el valor venal del vehiculo.
-3. Presentar la transferencia en la DGT: online via sede.dgt.gob.es (recomendado, con certificado digital) o en la Jefatura Provincial de Trafico.
-4. Plazo para notificar la transferencia a la DGT: 30 dias desde la compraventa.
+2. Liquidar o acreditar exencion/no sujecion del impuesto autonómico que corresponda. No usar un porcentaje nacional aproximado: resolver la CCAA, modelo y valoracion aplicables.
+3. Consultar DGT_VEHICLE_TRANSFER_2026 para condiciones de transferibilidad y plazo.
+4. El comprador debe solicitar el cambio de titularidad en la DGT dentro de 30 dias desde la firma del contrato.
 5. La DGT emite el nuevo permiso de circulacion a nombre del comprador.
 
-Tasa DGT por transferencia: consultar importe actualizado en sede.dgt.gob.es (en torno a 55-60 EUR aprox).
+Tasa DGT: consultar DGT_FEES_2026 y aplicar el tipo de tasa del tramite concreto.
 EXPERT gestiona todo el proceso por el cliente: ITP + transferencia DGT.
 </dgt_transferencia_vehiculo>
 
 <dgt_matriculacion>
-MATRICULACION DE VEHICULO NUEVO O IMPORTADO:
+MATRICULACION E IMPORTACION DE VEHICULOS:
 
 Vehiculo nuevo (compra a concesionario):
 - El concesionario normalmente gestiona la matriculacion incluida en el precio.
@@ -39,9 +39,11 @@ Vehiculo nuevo (compra a concesionario):
 
 Vehiculo importado (de fuera de España):
 - Homologacion tecnica (si el vehiculo no tiene ficha tecnica española).
-- Pago del Impuesto de Matriculacion (IEDMT) si aplica (vehiculos con CO2 superiores a ciertos limites).
-- Presentacion en Jefatura de Trafico: documentacion del vehiculo, seguro, ITV, justificante de pago de impuestos.
-- EXPERT asesora y gestiona matriculaciones de vehiculos importados.
+- Consultar IEDMT_REGISTRATION_2026 antes de calcular o afirmar si existe cuota: revisar hecho imponible, exencion/no sujecion, categoria, emisiones oficiales, territorio y base.
+- Para vehiculos procedentes de la UE o de fuera de la UE consultar VEHICLE_IMPORT_REGISTRATION_2026; no mezclar ambos circuitos.
+- Fuera de la UE existe capa aduanera previa y puede ser necesario certificado H1 tras el despacho.
+- Para la tasa DGT consultar DGT_FEES_2026.
+- EXPERT asesora y gestiona matriculaciones e importaciones de vehiculos segun el caso.
 </dgt_matriculacion>
 
 <dgt_canje_permiso>
@@ -104,7 +106,7 @@ ITV (Inspeccion Tecnica de Vehiculos):
 
 <dgt_kia_rules>
 REGLAS DE KIA PARA PREGUNTAS SOBRE DGT Y TRAFICO:
-- Para transferencias: recordar siempre que el comprador debe pagar el ITP antes de presentar la transferencia en DGT.
+- Para transferencias: consultar DGT_VEHICLE_TRANSFER_2026; el comprador debe acreditar pago, exencion o no sujecion del impuesto autonómico aplicable antes de completar el cambio de titularidad.
 - Para vehiculos de empresa: las transferencias requieren documentacion adicional (escrituras, representante legal).
 - Para canje de permiso extranjero: verificar si el pais tiene convenio de reciprocidad con España antes de orientar el proceso.
 - Si el cliente pregunta por multas de trafico: orientacion inicial sobre plazos de recurso; si es complejo, derivar a EXPERT (recurso administrativo trafico).
