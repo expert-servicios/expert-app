@@ -39,6 +39,21 @@ const ALLOWED_HOSTS = new Set([
 
 const MAX_SOURCE_BYTES = 2_000_000;
 const MAX_EXCERPT_CHARS = 24_000;
+const EVIDENCE_SLICE_CHARS = 8_000;
+
+function buildEvidenceExcerpt(normalized: string) {
+  if (normalized.length <= MAX_EXCERPT_CHARS) return normalized;
+  const middleStart = Math.max(0, Math.floor(normalized.length / 2) - Math.floor(EVIDENCE_SLICE_CHARS / 2));
+  const tailStart = Math.max(0, normalized.length - EVIDENCE_SLICE_CHARS);
+  return [
+    '[BEGIN]',
+    normalized.slice(0, EVIDENCE_SLICE_CHARS),
+    '[MIDDLE]',
+    normalized.slice(middleStart, middleStart + EVIDENCE_SLICE_CHARS),
+    '[END]',
+    normalized.slice(tailStart),
+  ].join('\n');
+}
 
 function formatBoeDate(date = new Date()) {
   const yyyy = date.getUTCFullYear();
@@ -148,8 +163,9 @@ export async function fetchRegulatorySource(source: RegulatorySourceRow) {
   return {
     fetchUrl,
     fingerprint,
-    excerpt: normalized.slice(0, MAX_EXCERPT_CHARS),
+    excerpt: buildEvidenceExcerpt(normalized),
     contentType,
+    normalizedLength: normalized.length,
   };
 }
 
@@ -220,6 +236,8 @@ export async function runRegulatoryPulse(params: {
           metadata: {
             fetchedUrl: fetched.fetchUrl,
             contentType: fetched.contentType,
+            normalizedLength: fetched.normalizedLength,
+            evidenceMode: fetched.normalizedLength > MAX_EXCERPT_CHARS ? 'head_middle_tail' : 'full',
           },
         }, { onConflict: 'source_id,fingerprint' })
         .select('id')
