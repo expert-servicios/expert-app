@@ -108,6 +108,8 @@ const SYSTEM_PROMPT = [
   'medium: contenido/criterio útil con impacto limitado.',
   'low/info: cambio informativo o editorial.',
   'Los valueUpdates son PROPUESTAS: solo inclúyelos cuando el nuevo valor esté explícitamente visible en la evidencia.',
+  'Para cada dependencia conocida realmente afectada, usa dependencyHints con EXACTAMENTE el mismo type y key recibido.',
+  'No marques dependencias por similitud temática si la evidencia no demuestra impacto; en caso de duda exige revisión humana.',
   'Devuelve únicamente JSON conforme al schema.',
 ].join('\n');
 
@@ -201,7 +203,13 @@ async function classifyOne(change: ChangeRow) {
   const hinted = new Map(
     parsed.dependencyHints.map((hint) => [`${hint.type}::${hint.key}`, hint.reason]),
   );
-  const affectedDependencies = sourceMetadata.service_specific === true
+  const serviceKeys = new Set(
+    knownDependencies
+      .filter((dependency) => ['service', 'operational_blueprint', 'viability'].includes(dependency.dependency_type))
+      .map((dependency) => dependency.dependency_key),
+  );
+  const canAutoLinkSpecificSource = sourceMetadata.service_specific === true && serviceKeys.size <= 1;
+  const affectedDependencies = canAutoLinkSpecificSource
     ? knownDependencies
     : knownDependencies.filter((dependency) =>
         hinted.has(`${dependency.dependency_type}::${dependency.dependency_key}`),
