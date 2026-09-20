@@ -357,6 +357,8 @@ describe('KIA Regulatory Registry', () => {
     expect(migration).toContain("'VALENCIA_ISD_2026'");
     expect(migration).toContain("'SL_CAPITAL_RULES'");
     expect(migration).toContain("'AEAT_CENSUS_MODEL_036'");
+    expect(migration).toContain("'IS_RATES_2026'");
+    expect(migration).toContain("'AEAT_TAX_CALENDAR_2026'");
   });
 
   it('exposes canonical regulatory rulesets to KIA as autonomous R0 reads', () => {
@@ -403,6 +405,10 @@ describe('KIA Regulatory Registry', () => {
     expect(catalog).not.toContain('Para alquileres, trimestralmente');
     expect(docs).not.toContain('Cuota de autónomos en 2025');
     expect(blog).not.toContain('| Resto de empresas y autónomos | 1 de julio de 2026 |');
+    expect(blog).not.toContain('tipo IS del 25 % frente al IRPF progresivo');
+    expect(blog).not.toContain('20 % sobre el beneficio neto del trimestre');
+    expect(docs).not.toContain('**Alquileres**: presentación trimestral');
+    expect(catalog).not.toContain('si eres no residente en la UE con propiedades en España, es obligatorio tener un representante fiscal');
 
     for (const path of [
       'lib/utils/docs.ts',
