@@ -34,7 +34,7 @@ create policy "regulatory_change_dependencies_deny_browser"
   using (false) with check (false);
 
 update public.regulatory_values
-set metadata = coalesce(metadata, '{}'::jsonb) || '{"availability_mode":"latest_published"}'::jsonb
+set metadata = coalesce(metadata, '{}'::jsonb) || '{"availability_mode":"latest_published","max_age_days":62}'::jsonb
 where value_key = 'IPC_ANNUAL';
 
 insert into public.regulatory_sources
