@@ -1135,8 +1135,8 @@ Las rentas que deben declararse en España como no residente incluyen:
 ### Modelo 210 — El más habitual
 Se usa para la mayoría de rentas obtenidas por no residentes:
 
-- **Alquileres**: presentación trimestral (meses de abril, julio, octubre y enero).
-- **Imputación de rentas**: presentación anual entre el 1 de enero y el 31 de diciembre del año siguiente.
+- **Alquileres**: desde 2026 el plazo depende de si se agrupan las rentas del año o se presentan separadamente y de la fecha de devengo. Debe consultarse la transición de la Orden HAC/623/2026 antes de presentar.
+- **Imputación de rentas**: el plazo también fue modificado por la Orden HAC/623/2026; para 2026 debe resolverse con la regla transitoria aplicable.
 - **Ganancias patrimoniales por venta de inmueble**: dentro de los 3 meses siguientes a la transmisión.
 
 ### Modelo 211 — Retención por compraventa de inmueble
