@@ -512,7 +512,7 @@ Tributas solo por las **rentas de fuente española**: alquileres, dividendos, ga
 Para residentes:
 - Certificado de retenciones del empleador
 - Datos de inmuebles (referencia catastral, valor, % de propiedad)
-- Extractos de cuentas bancarias en el extranjero (si supera 50.000 €, también el Modelo 720)
+- Extractos y datos de bienes/derechos en el extranjero suficientes para revisar si existe obligación de Modelo 720 por categoría, valoración, umbrales y exenciones
 - Certificado de residencia fiscal del país de origen (si solicitas deducción por doble imposición)
 
 Para no residentes:
@@ -2437,25 +2437,16 @@ La fiscalidad de la compraventa depende principalmente de si la vivienda es **nu
 
 El comprador puede quedar sujeto a **Transmisiones Patrimoniales Onerosas (TPO)** en vivienda usada, mientras que otras operaciones pueden tributar por IVA + AJD. En Comunitat Valenciana, antes de calcular hay que comprobar también el **valor de referencia**, porque puede determinar la base mínima de tributación.
 
-Los tipos generales en 2025 según comunidad autónoma:
+Los tipos de TPO dependen de la comunidad autónoma, del valor del inmueble y de los posibles tipos reducidos. No usamos una tabla autonómica estática para calcularlos.
 
-| Comunidad Autónoma | Tipo general |
-|---|---|
-| Madrid | 6 % |
-| Cataluña | 10 % |
-| Andalucía | 7 % |
-| Valencia | 10 % |
-| País Vasco | 4 % |
-| Otras | 6 %–10 % |
-
-La base imponible es el **precio de compraventa**, siempre que no sea inferior al valor de referencia del Catastro. Si el precio escriturado es inferior al valor de referencia, Hacienda tomará el valor de referencia como base.
+En Comunitat Valenciana consultamos `VALENCIA_ITPAJD_2026` para el tipo y `VALENCIA_PROPERTY_TRANSFER_BASE_2026` para la base imponible. Cuando existe valor de referencia, puede actuar como base mínima; si el valor declarado o la contraprestación son superiores, se aplica el importe mayor conforme a la regla vigente.
 
 ## Vivienda nueva: IVA + AJD
 
 Si compras una vivienda nueva directamente al promotor, pagas:
 
 - **IVA**: 10 % sobre el precio de venta (21 % para locales comerciales).
-- **Actos Jurídicos Documentados (AJD)**: entre el 0,5 % y el 1,5 % del valor escriturado, según la comunidad autónoma.
+- **Actos Jurídicos Documentados (AJD)**: el tipo y la base dependen de la comunidad autónoma y del supuesto concreto; se verifica la regla autonómica vigente antes de calcular.
 
 En vivienda de protección oficial (VPO) el IVA puede ser del 4 %.
 
