@@ -1428,7 +1428,7 @@ Dentro de los arraigos, el RD 1155/2024 reorganizó las figuras en **arraigo de 
 ## Documentos necesarios
 
 1. Pasaporte en vigor (todas las páginas fotocopiadas)
-2. Formulario EX-01 (solicitud)
+2. Formulario oficial correspondiente a la vía elegida (para arraigo social, EX-10)
 3. Fotografía reciente en color tamaño carné
 4. Justificante de pago de la tasa modelo 790 código 052
 5. Documentación que acredite 2 años de permanencia continuada
@@ -1458,12 +1458,12 @@ El **plazo legal de resolución es de 3 meses**. Si la Administración no resuel
 ## ¿Puedo trabajar mientras tramito el permiso?
 
 Con el **arraigo social**: la autorización para trabajar nace con la concesión; la mera presentación no habilita por sí sola para trabajar.
-Con el **arraigo laboral**: sí, porque se pide autorización de trabajo simultánea.
+En el **arraigo sociolaboral**, la habilitación para trabajar deriva de la autorización concedida y de sus condiciones; la mera presentación de la solicitud no equivale por sí sola a autorización para trabajar.
 Con visado de trabajo: sí, desde el momento en que la empresa obtiene la autorización previa de trabajo.
 
 ## ¿Qué pasa después? La tarjeta TIE
 
-Una vez resuelta favorablemente la solicitud, tienes **30 días hábiles** para solicitar la Tarjeta de Identidad de Extranjero (TIE) en la comisaría de Policía de tu localidad. Para ello necesitarás:
+Una vez resuelta favorablemente la solicitud, debe solicitarse la Tarjeta de Identidad de Extranjero (TIE) dentro del plazo específico aplicable al procedimiento, que normalmente se expresa como **un mes** en la comisaría de Policía de tu localidad. Para ello necesitarás:
 
 - Resolución favorable de Extranjería
 - Pasaporte original
@@ -1962,7 +1962,7 @@ La solicitud se resuelve en un plazo legal de **3 meses**. La práctica varía p
     date: '18 may 2026',
     readTime: '7 min',
     tags: ['Golden Visa', 'inversores', 'residencia inversión', 'visado inversor', 'extranjería'],
-    relatedServiceSlugs: ['inversores'],
+    relatedServiceSlugs: ['permiso-residencia-inicial'],
     body: `
 ## La Golden Visa ya no está abierta a nuevas solicitudes
 
