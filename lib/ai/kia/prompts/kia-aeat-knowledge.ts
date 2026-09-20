@@ -35,12 +35,11 @@ Quien lo aplica: autonomos y empresas que realizan actividades economicas sujeta
 Tipos generales: 21% (general), 10% (reducido, ej. hosteleria, transporte), 4% (superreducido, ej. alimentos basicos).
 Algunos autonomos en regimen de modulos o en actividades exentas no aplican IVA.
 
-Modelos y plazos (trimestral):
-- Modelo 303 — liquidacion trimestral del IVA.
-  * 1T: 1-20 abril | 2T: 1-20 julio | 3T: 1-20 octubre | 4T: 1-30 enero del ano siguiente.
-- Modelo 390 — resumen anual del IVA. Plazo: 1-30 enero del ano siguiente.
-- Modelo 349 — operaciones intracomunitarias (si facturas a empresas de la UE sin IVA).
-- Verificar plazos exactos en: https://sede.agenciatributaria.gob.es/Sede/todas-gestiones/impuestos-tasas/iva.html
+Modelos recurrentes de IVA e informativas:
+- Modelo 303 — liquidacion periodica del IVA; para vencimientos exactos consultar AEAT_TAX_CALENDAR_2026.
+- Modelo 390 — resumen anual del IVA: consultar INFORMATIVE_RETURNS_2026 para obligacion/exoneraciones y AEAT_TAX_CALENDAR_2026 para fecha exacta.
+- Modelo 349 — operaciones intracomunitarias: la periodicidad puede ser mensual o trimestral segun el volumen y las reglas aplicables; consultar INFORMATIVE_RETURNS_2026.
+- No inferir periodicidad o fecha exacta solo por el nombre del modelo.
 </aeat_iva>
 
 <aeat_autonomos>
@@ -51,11 +50,12 @@ Alta en Hacienda (obligatoria antes o al inicio de la actividad):
   * Indica la actividad economica (epigrafe IAE), la fecha de inicio, el tipo de IRPF y si eres sujeto pasivo de IVA.
 - Si no tienes certificado digital ni Cl@ve PIN, EXPERT puede gestionar el alta.
 
-IRPF trimestral (pagos fraccionados):
-- Modelo 130 — estimacion directa normal o simplificada (la mayoria de autonomos).
-  * Plazos: mismos que IVA (abril, julio, octubre, enero).
-- Modelo 131 — estimacion objetiva (modulos).
-- En estimacion directa, el calculo general parte del rendimiento neto acumulado desde el 1 de enero, aplica el porcentaje correspondiente y descuenta pagos fraccionados previos y retenciones/ingresos a cuenta cuando proceda. Determinadas actividades profesionales pueden no estar obligadas si cumplen el umbral legal de ingresos sometidos a retencion.
+IRPF pagos fraccionados:
+- Modelos 130 y 131: consultar IRPF_PAYMENT_FRACTIONS_2026 antes de calcular o decidir obligacion.
+- Modelo 130: estimacion directa; usar acumulado desde 1 de enero, pagos previos, retenciones y excepciones del 70% cuando procedan.
+- Modelo 131: estimacion objetiva; el porcentaje depende del tipo de actividad, datos-base/modulos y personal asalariado.
+- En 3T y 4T de 2026 existen reglas especiales para actividades que cumplan requisitos en La Palma; no reutilizar porcentajes generales sin comprobar el territorio y el supuesto.
+- Para vencimientos exactos consultar AEAT_TAX_CALENDAR_2026.
 
 Retenciones en facturas:
 - Autonomos en estimacion directa deben incluir retencion IRPF en sus facturas si el cliente es empresa o profesional (generalmente 15%, reducida al 7% los primeros anos de actividad).
