@@ -1,5 +1,7 @@
 name: Supabase Ledger Preflight
 
+# Read-only production ledger guard.
+
 on:
   pull_request:
     branches:
