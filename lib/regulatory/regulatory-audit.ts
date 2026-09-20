@@ -8,6 +8,15 @@ type AuditIssue = {
   entity?: string;
 };
 
+type AuditDependencyRow = {
+  id: string;
+  source_id: string | null;
+  value_key: string | null;
+  ruleset_key: string | null;
+  dependency_type: string;
+  dependency_key: string;
+};
+
 function daysBetween(a: string, b = new Date()) {
   return Math.floor((b.getTime() - new Date(a).getTime()) / 86_400_000);
 }
@@ -61,11 +70,16 @@ export async function runRegulatoryHealthAudit() {
     .eq('active', true);
 
   if (depsError) throw new Error(depsError.message);
-  const dependencies = (dependenciesRaw ?? []).map((dependency) => ({
-    ...dependency,
-    ruleset_key: rulesetSchemaAvailable && 'ruleset_key' in dependency
-      ? dependency.ruleset_key
-      : null,
+  const dependencyRows = (dependenciesRaw ?? []) as unknown as Array<
+    Omit<AuditDependencyRow, 'ruleset_key'> & { ruleset_key?: string | null }
+  >;
+  const dependencies: AuditDependencyRow[] = dependencyRows.map((dependency) => ({
+    id: dependency.id,
+    source_id: dependency.source_id,
+    value_key: dependency.value_key,
+    dependency_type: dependency.dependency_type,
+    dependency_key: dependency.dependency_key,
+    ruleset_key: rulesetSchemaAvailable ? (dependency.ruleset_key ?? null) : null,
   }));
 
   const issues: AuditIssue[] = [];
