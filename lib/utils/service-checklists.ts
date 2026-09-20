@@ -120,7 +120,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes ya NIE español?',
     ],
     botInstructions:
-      'El Modelo 210 se presenta: para imputación de inmuebles en enero del año siguiente; para alquileres, trimestralmente. No residentes fuera de la UE no pueden deducir gastos, solo el tipo fijo del 24%. Los residentes UE/EEE sí pueden deducir gastos. Verificar siempre si hay convenio de doble imposición. Precio: desde 80 € por modelo.',
+      'Los plazos del Modelo 210 cambiaron por la Orden HAC/623/2026 y existen reglas transitorias según tipo de renta y fecha de devengo. Consultar IRNR_210_2026_TRANSITION antes de informar un plazo. Verificar también tipo aplicable, deducibilidad de gastos y convenio de doble imposición según residencia fiscal. Precio: desde 80 € por modelo.',
     estimatedPrice: 'Desde 80 € / modelo',
   },
 
@@ -866,7 +866,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Hay hipoteca pendiente del vendedor?',
     ],
     botInstructions:
-      'Para segunda mano: ITP (6–10% según CCAA). Para vivienda nueva: IVA 10% + AJD. El comprador tiene 30 días hábiles para liquidar el impuesto tras la escritura. Verificar siempre la nota simple para cargas. Precio: consultar según operación.',
+      'Para segunda mano se aplica ITP según la CCAA y posibles tipos reducidos; para vivienda nueva, IVA más AJD según el supuesto. Antes de calcular, consultar la regla autonómica vigente (en Comunitat Valenciana, VALENCIA_ITPAJD_2026). Verificar siempre la nota simple y el plazo autonómico aplicable. Precio: consultar según operación.',
     estimatedPrice: 'Consultar',
   },
 
