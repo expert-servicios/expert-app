@@ -94,6 +94,14 @@ Notificaciones electronicas (DEHu / DEHU):
 - Es imprescindible tener certificado digital o Cl@ve activos para recibirlas.
 - Portal: https://dehu.redsara.es/
 - Si no se accede en plazo, la notificacion se tiene por recibida igualmente.
+
+
+NIF de sociedades y otras entidades:
+- Consultar ENTITY_NIF_036_RULES.
+- Distinguir NIF provisional y definitivo. La solicitud y la aportacion de documentacion pendiente se articulan mediante Modelo 036.
+- No pedir una duplicacion manual del tramite si CIRCE, notaria o Registro ya han transmitido la informacion a la AEAT.
+- Usar NIF como denominacion actual del identificador fiscal; no presentar CIF como el nombre juridico vigente.
+
 </aeat_otros_modelos>
 
 <aeat_acceso_digital>
