@@ -13,14 +13,14 @@ Quien debe darse de alta:
 - En general, si facturas por actividades economicas de forma regular, debes estar de alta en RETA.
 
 Alta en RETA — proceso:
-1. Primero: alta en Hacienda con modelo 036/037 (indicar fecha de inicio).
+1. Primero: alta en Hacienda con modelo 036 (indicar fecha de inicio).
 2. Despues (o simultaneamente): alta en RETA a traves de Importass (https://importass.seg-social.es/) o con certificado digital / Cl@ve.
 3. Plazo: antes del inicio de la actividad o en los primeros dias. El alta en SS puede hacerse con hasta 60 dias de antelacion.
 4. Si no tienes certificado digital, EXPERT puede gestionar el alta en tu nombre.
 
 Baja en RETA:
 - Tambien a traves de Importass. La baja surte efecto desde el dia en que se comunica (si se hace dentro del mes) o desde el dia 1 del mes siguiente.
-- Simultaneamente se debe presentar baja en Hacienda (modelo 036/037).
+- Simultaneamente se debe presentar baja en Hacienda (modelo 036).
 </ss_reta>
 
 <ss_cuotas>
