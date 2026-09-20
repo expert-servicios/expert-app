@@ -81,7 +81,7 @@ export async function runRegulatoryHealthAudit() {
     }
   }
 
-  const byKey = new Map<string, typeof values>();
+  const byKey = new Map<string, NonNullable<typeof values>>();
   for (const value of values ?? []) {
     const list = byKey.get(value.value_key) ?? [];
     list.push(value);
@@ -92,7 +92,7 @@ export async function runRegulatoryHealthAudit() {
     const current = rows.filter((row) =>
       row.valid_from <= today && (row.valid_to == null || row.valid_to >= today),
     );
-    const latest = rows.at(-1);
+    const latest = rows[rows.length - 1];
     const latestMetadata = (latest?.metadata ?? {}) as Record<string, unknown>;
     if (current.length === 0 && latestMetadata.availability_mode !== 'latest_published') {
       issues.push({
@@ -101,6 +101,17 @@ export async function runRegulatoryHealthAudit() {
         entity: valueKey,
         message: `${valueKey} no tiene un valor vigente para ${today}.`,
       });
+    }
+    if (current.length === 0 && latest && latestMetadata.availability_mode === 'latest_published') {
+      const maxAgeDays = typeof latestMetadata.max_age_days === 'number' ? latestMetadata.max_age_days : 62;
+      if (daysBetween(`${latest.valid_from}T00:00:00Z`, now) > maxAgeDays) {
+        issues.push({
+          code: 'value_latest_published_stale',
+          severity: 'critical',
+          entity: valueKey,
+          message: `${valueKey} supera la antigüedad máxima de ${maxAgeDays} días sin un nuevo dato oficial.`,
+        });
+      }
     }
 
     for (let i = 1; i < rows.length; i += 1) {
