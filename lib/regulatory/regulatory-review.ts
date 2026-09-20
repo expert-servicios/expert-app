@@ -121,6 +121,21 @@ type ChangeRow = {
   current_snapshot_id: string;
 };
 
+type RegulatoryDependencyRow = {
+  id: string;
+  dependency_type: string;
+  dependency_key: string;
+  topic: string | null;
+  criticality: string;
+  metadata: unknown;
+  ruleset_key?: string | null;
+};
+
+type DependencyQueryResult = {
+  data: RegulatoryDependencyRow[] | null;
+  error: { message: string } | null;
+};
+
 async function classifyOne(change: ChangeRow) {
   const admin = getSupabaseAdmin();
 
@@ -174,14 +189,17 @@ async function classifyOne(change: ChangeRow) {
       : Promise.resolve({ data: [], error: null }),
   ]);
 
-  if (directDependenciesResult.error) throw new Error(directDependenciesResult.error.message);
-  if (rulesetDependenciesResult.error) throw new Error(rulesetDependenciesResult.error.message);
+  const directDependencies = directDependenciesResult as unknown as DependencyQueryResult;
+  const rulesetDependencies = rulesetDependenciesResult as unknown as DependencyQueryResult;
+
+  if (directDependencies.error) throw new Error(directDependencies.error.message);
+  if (rulesetDependencies.error) throw new Error(rulesetDependencies.error.message);
   if (!source) throw new Error('Regulatory change context is incomplete');
 
-  const dependencyMap = new Map<string, NonNullable<typeof directDependenciesResult.data>[number]>();
+  const dependencyMap = new Map<string, RegulatoryDependencyRow>();
   for (const dependency of [
-    ...(directDependenciesResult.data ?? []),
-    ...(rulesetDependenciesResult.data ?? []),
+    ...(directDependencies.data ?? []),
+    ...(rulesetDependencies.data ?? []),
   ]) {
     dependencyMap.set(dependency.id, dependency);
   }
