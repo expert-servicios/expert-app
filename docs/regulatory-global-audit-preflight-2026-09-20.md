@@ -50,7 +50,9 @@ El workflow seguía congelado en el estado previo a la reparación de septiembre
 - comprueba las cinco versiones regulatorias ya reconciliadas;
 - ejecuta `supabase migration list --linked`;
 - ejecuta `supabase db push --linked --dry-run`;
-- exige exactamente las nueve migraciones pendientes;
+- exige exactamente las nueve migraciones pendientes en estado pre-despliegue;
+- tras el despliegue, acepta únicamente el estado exacto de 81 filas con las nueve migraciones ya registradas y cero pendientes;
+- rechaza cualquier estado intermedio o despliegue parcial;
 - no realiza escritura alguna.
 
 ### P1 — rendimiento
@@ -114,10 +116,10 @@ Orden obligatorio:
 
 1. CI verde.
 2. Vercel `app` y `ksenia-expert` verdes.
-3. `Supabase Ledger Preflight` verde.
+3. `Supabase Ledger Preflight` verde en estado `pre_deploy`.
 4. Revisar artefacto de `db push --dry-run`: solo las 9 migraciones anteriores.
 5. Aplicar migraciones forward-only en orden.
-6. Verificar que el ledger pasa de 72 a **81** filas y termina en `20260920230000`.
+6. Verificar que el ledger pasa de 72 a **81** filas, termina en `20260920230000` y que el mismo preflight pasa a estado `post_deploy` con cero migraciones del lote en el dry-run.
 7. Ejecutar health audit regulatorio.
 8. Ejecutar Security Advisor y Performance Advisor.
 9. Verificar RLS/policies de `regulatory_rulesets`.
