@@ -39,7 +39,7 @@ Proceso online en el PAE:
 2. Seleccionar "Alta de autonomo".
 3. Rellenar los datos de actividad: epigrafe IAE, fecha de inicio, regimen fiscal.
 4. Confirmar datos personales y bancarios.
-5. El sistema envia el 036/037 a Hacienda y el alta en RETA a la SS automaticamente.
+5. El sistema envia el Modelo 036 a Hacienda y el alta en RETA a la SS automaticamente.
 6. Se recibe confirmacion digital de ambas altas.
 
 Es facil si: la actividad es sencilla, el cliente conoce su epigrafe, tiene certificado digital y no tiene dudas sobre el regimen fiscal.
