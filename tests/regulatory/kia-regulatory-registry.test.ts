@@ -509,6 +509,30 @@ describe('KIA Regulatory Registry', () => {
     expect(sources).not.toContain('SL) online via CIRCE o tramitar el alta de autonomo sin desplazamientos');
   });
 
+  it('adds beneficial ownership, entity NIF and mercantile powers rules', () => {
+    const migration = read('supabase/migrations/20260920163000_regulatory_v14_mercantil_lot4.sql');
+    const catalog = read('lib/utils/catalog.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+    const registries = read('lib/ai/kia/prompts/kia-justicia-registros-knowledge.ts');
+    const aeat = read('lib/ai/kia/prompts/kia-aeat-knowledge.ts');
+    const pae = read('lib/ai/kia/prompts/kia-pae-knowledge.ts');
+
+    expect(migration).toContain("'BENEFICIAL_OWNERSHIP_RCTR_RULES'");
+    expect(migration).toContain("'ENTITY_NIF_036_RULES'");
+    expect(migration).toContain("'MERCANTILE_POWERS_RRM_RULES'");
+
+    expect(checklists).toContain('BENEFICIAL_OWNERSHIP_RCTR_RULES');
+    expect(checklists).toContain('MERCANTILE_POWERS_RRM_RULES');
+    expect(registries).toContain('BENEFICIAL_OWNERSHIP_RCTR_RULES');
+    expect(registries).toContain('MERCANTILE_POWERS_RRM_RULES');
+    expect(aeat).toContain('ENTITY_NIF_036_RULES');
+    expect(pae).toContain('ENTITY_NIF_036_RULES');
+
+    expect(catalog).not.toContain('Obtención del CIF definitivo');
+    expect(catalog).not.toContain('Gestionamos todo tipo de modificaciones societarias');
+    expect(checklists).not.toContain('Para poderes simples (sin cargo registral)');
+  });
+
   it('documents the no-auto-merge and no-auto-publish contract', () => {
     const docs = read('docs/kia-regulatory-registry.md');
     expect(docs).toContain('Nunca se hace merge automático');
