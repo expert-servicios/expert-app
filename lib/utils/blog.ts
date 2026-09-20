@@ -3583,7 +3583,7 @@ Este checklist no sustituye la revisión de tu asesor, pero te permite llegar al
 - Si arrendaste un local, el modelo 115 está revisado.
 
 ### 5. Pago fraccionado de IRPF (autónomos)
-- En estimación directa, el modelo 130 se calcula sobre el rendimiento real del trimestre: confirma que ingresos y gastos están completos antes de calcularlo.
+- En estimación directa, el modelo 130 se calcula con el rendimiento neto acumulado desde el 1 de enero, no con el beneficio aislado del trimestre. Hay que revisar además pagos anteriores, retenciones y posibles reglas especiales.
 - En estimación objetiva, el modelo 131 depende de los signos, índices o módulos de tu actividad.
 
 ### 6. Cuadre general antes de presentar
