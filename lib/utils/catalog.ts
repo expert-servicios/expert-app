@@ -1305,7 +1305,7 @@ export const services: Service[] = [
       'Inscripción en Registro de la Propiedad y otras gestiones'
     ],
     faqs: [
-      { q: '¿Cuánto tiempo tengo para aceptar la herencia?', a: 'No hay plazo para aceptar, pero el Impuesto de Sucesiones debe liquidarse en 6 meses (prorrogable otros 6).' },
+      { q: '¿Cuánto tiempo tengo para tramitar el Impuesto de Sucesiones?', a: 'En Comunitat Valenciana, cuando resulte competente, el Modelo 650 se presenta en general en 6 meses desde el fallecimiento y puede solicitarse prórroga dentro de los primeros 5 meses. La aceptación civil de la herencia es una cuestión distinta.' },
       { q: '¿Puedo renunciar a la herencia?', a: 'Sí, la renuncia es pura y simple, y puede hacerse ante notario.' }
     ]
   },
@@ -1325,7 +1325,7 @@ export const services: Service[] = [
       'Inscripción registral si hay inmuebles'
     ],
     faqs: [
-      { q: '¿Cuánto se paga por una donación entre padres e hijos?', a: 'Depende de la comunidad autónoma. Algunas tienen reducciones muy significativas (hasta el 99% en Madrid o Andalucía para ciertas donaciones).' }
+      { q: '¿Cuánto se paga por una donación entre padres e hijos?', a: 'Depende de la comunidad competente, el tipo de bien, parentesco, valoración y requisitos formales. En Comunitat Valenciana revisamos VALENCIA_ISD_2026 y el Modelo 651 antes de cuantificar.' }
     ]
   },
   {
@@ -1334,7 +1334,7 @@ export const services: Service[] = [
     name: 'Cancelación de Hipoteca',
     shortDescription: 'Cancelación registral de la hipoteca una vez pagado el préstamo.',
     description:
-      'Cuando terminas de pagar la hipoteca, el banco no cancela automáticamente la carga en el Registro de la Propiedad. Gestionamos la obtención del certificado de deuda cero, la firma notarial de la escritura de cancelación y la inscripción registral.',
+      'Cuando se extingue la deuda hipotecaria, la carga no desaparece automáticamente del Registro de la Propiedad. Gestionamos la documentación bancaria, la escritura pública de cancelación, la autoliquidación exenta cuando corresponda y la inscripción registral.',
     price: 'Desde 150 € + IVA',
     duration: '2–4 semanas',
     includes: [
@@ -1344,7 +1344,7 @@ export const services: Service[] = [
       'Nota simple registral actualizada'
     ],
     faqs: [
-      { q: '¿Por qué el banco no cancela la hipoteca por su cuenta?', a: 'El banco solo emite el certificado de deuda cero. La cancelación registral debe tramitarla el titular del préstamo.' }
+      { q: '¿Por qué sigue apareciendo la hipoteca si el préstamo ya está pagado?', a: 'Porque extinguir la deuda y cancelar la carga registral son actos distintos. La cancelación registral requiere escritura pública del acreedor y presentación en el Registro; no es automática.' }
     ]
   },
 
