@@ -804,7 +804,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Has puesto denuncia?',
     ],
     botInstructions:
-      'Mientras espera el duplicado del carnet, el titular no puede conducir salvo que tenga resguardo provisional en vigor. Precio: desde 50 €.',
+      'Consultar DGT_DUPLICATES_PERMITS_2026 para clasificar documento y causa, y DGT_FEES_2026 para la tasa. Diferenciar duplicado, renovación, copia eITV y canje. Precio: desde 50 €.',
     estimatedPrice: 'Desde 50 €',
   },
 
@@ -831,7 +831,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes toda la documentación técnica de la embarcación?',
     ],
     botInstructions:
-      'Los trámites de embarcaciones dependen de la Capitanía Marítima de cada provincia. Precio: consultar según trámite.',
+      'Consultar MARITIME_RECREATIONAL_CRAFT_2026. Clasificar primero eslora, marcado CE, lista/uso y acto registral; la tasa 025 no tiene un importe único aplicable a todos los trámites. Precio: consultar según trámite.',
     estimatedPrice: 'Consultar',
   },
 
