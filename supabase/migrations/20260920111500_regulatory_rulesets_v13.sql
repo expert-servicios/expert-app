@@ -22,6 +22,25 @@ create table if not exists public.regulatory_rulesets (
 create index if not exists regulatory_rulesets_key_valid_idx
   on public.regulatory_rulesets(ruleset_key, valid_from desc);
 
+create index if not exists regulatory_rulesets_source_idx
+  on public.regulatory_rulesets(source_id);
+
+create index if not exists regulatory_rulesets_change_idx
+  on public.regulatory_rulesets(change_id);
+
+create index if not exists regulatory_changes_previous_snapshot_idx
+  on public.regulatory_changes(previous_snapshot_id);
+
+create index if not exists regulatory_changes_source_idx
+  on public.regulatory_changes(source_id);
+
+create index if not exists regulatory_values_change_idx
+  on public.regulatory_values(change_id);
+
+create index if not exists regulatory_values_source_idx
+  on public.regulatory_values(source_id);
+
+
 alter table public.regulatory_rulesets enable row level security;
 revoke all on table public.regulatory_rulesets from public, anon, authenticated;
 grant select, insert, update, delete on table public.regulatory_rulesets to service_role;
