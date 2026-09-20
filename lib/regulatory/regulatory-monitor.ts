@@ -39,7 +39,7 @@ const ALLOWED_HOSTS = new Set([
 
 const MAX_SOURCE_BYTES = 2_000_000;
 const MAX_EXCERPT_CHARS = 24_000;
-const EVIDENCE_SLICE_CHARS = 8_000;
+const EVIDENCE_SLICE_CHARS = 7_900;
 
 function buildEvidenceExcerpt(normalized: string) {
   if (normalized.length <= MAX_EXCERPT_CHARS) return normalized;
