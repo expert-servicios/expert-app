@@ -45,7 +45,11 @@ export async function POST(request: NextRequest) {
     action?: 'pulse' | 'worker' | 'apply_values' | 'resolve_change';
     authority?: string;
     sourceKey?: string;
+    topic?: string;
+    serviceKey?: string;
     changeId?: string;
+    resolutionNote?: string;
+    resolutionEvidence?: Record<string, unknown>;
   };
 
   if (body.action === 'apply_values') {
@@ -64,7 +68,12 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({
       ok: true,
-      result: await resolveReviewedRegulatoryChange(body.changeId, auth.userId),
+      result: await resolveReviewedRegulatoryChange(
+        body.changeId,
+        auth.userId,
+        body.resolutionNote ?? '',
+        body.resolutionEvidence,
+      ),
     });
   }
 
@@ -76,9 +85,11 @@ export async function POST(request: NextRequest) {
     ok: true,
     result: await runRegulatoryPulse({
       runType: 'manual',
-      forceAll: !body.authority && !body.sourceKey,
+      forceAll: !body.authority && !body.sourceKey && !body.topic && !body.serviceKey,
       authority: body.authority,
       sourceKey: body.sourceKey,
+      topic: body.topic,
+      serviceKey: body.serviceKey,
     }),
   });
 }

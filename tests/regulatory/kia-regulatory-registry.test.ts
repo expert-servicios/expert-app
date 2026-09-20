@@ -72,7 +72,10 @@ describe('KIA Regulatory Registry', () => {
     const second = await fetchRegulatorySource(jsonSource);
 
     expect(first.excerpt.length).toBeLessThanOrEqual(24_000);
-    expect(first.excerpt).toBe(second.excerpt);
+    expect(first.excerpt).toContain('[BEGIN]');
+    expect(first.excerpt).toContain('[MIDDLE]');
+    expect(first.excerpt).toContain('[END]');
+    expect(first.excerpt).not.toBe(second.excerpt);
     expect(first.fingerprint).not.toBe(second.fingerprint);
   });
 
@@ -169,11 +172,53 @@ describe('KIA Regulatory Registry', () => {
     expect(migration).toContain('https://servicios.ine.es/wstempus/js/ES/TABLAS_OPERACION/IPC?det=2');
   });
 
-  it('blocks publication review when a critical regulatory dependency is unresolved', () => {
+  it('blocks publication only when a critical change is explicitly linked to the service dependency', () => {
     const orchestrator = read('lib/services/service-publication-orchestrator.ts');
+    expect(orchestrator).toContain("regulatory_change_dependencies");
     expect(orchestrator).toContain("code: 'regulatory_block'");
-    expect(orchestrator).toContain(".eq('severity', 'critical')");
+    expect(orchestrator).toContain("change?.severity === 'critical'");
     expect(orchestrator).toContain("['detected', 'classified', 'needs_review', 'proposal_ready']");
+  });
+
+  it('hardens v1.1 with change-specific impact, specific sources and longer pg_net timeout', () => {
+    const migration = read('supabase/migrations/20260920073500_kia_regulatory_hardening_v11.sql');
+    expect(migration).toContain('regulatory_change_dependencies');
+    expect(migration).toContain('migraciones_arraigo_social');
+    expect(migration).toContain('migraciones_renovacion_hub');
+    expect(migration).toContain('justicia_nacionalidad_residencia');
+    expect(migration).toContain('boe_trust_services_law');
+    expect(migration).toContain('boe_rd_1155_2024');
+    expect(migration).toContain('timeout_milliseconds := 30000');
+    expect(migration).toContain('apply_regulatory_value_reviewed');
+  });
+
+  it('treats latest published periodic values separately from legal validity', () => {
+    const values = read('lib/regulatory/regulatory-values.ts');
+    const migration = read('supabase/migrations/20260920073500_kia_regulatory_hardening_v11.sql');
+    expect(values).toContain("availability_mode === 'latest_published'");
+    expect(migration).toContain('"availability_mode":"latest_published"');
+  });
+
+  it('runs a real monthly health audit and supports explicit Telegram scopes', () => {
+    const monthly = read('app/api/cron/regulatory-monthly-audit/route.ts');
+    const audit = read('lib/regulatory/regulatory-audit.ts');
+    const telegram = read('app/api/webhooks/telegram/route.ts');
+    expect(monthly).toContain('runRegulatoryHealthAudit');
+    expect(audit).toContain('source_missing_baseline');
+    expect(audit).toContain('source_stale');
+    expect(audit).toContain('value_overlap');
+    expect(audit).toContain('dependency_orphan_value');
+    expect(audit).toContain('run_stuck');
+    expect(telegram).toContain("['source', 'authority', 'topic', 'service']");
+    expect(telegram).toContain('serviceKey:');
+  });
+
+  it('requires a human resolution note and keeps value periods non-overlapping', () => {
+    const values = read('lib/regulatory/regulatory-values.ts');
+    const admin = read('app/(protected)/admin/regulatory/page.tsx');
+    expect(values).toContain('La resolución requiere una nota');
+    expect(values).toContain("admin.rpc('apply_regulatory_value_reviewed'");
+    expect(admin).toContain("window.prompt('Indica brevemente qué se ha revisado");
   });
 
   it('keeps registry tables server-side only with explicit browser deny policies', () => {

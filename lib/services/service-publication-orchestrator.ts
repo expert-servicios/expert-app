@@ -49,7 +49,7 @@ export async function prepareServicePublicationReview(
 
   const { data: regulatoryDeps, error: regulatoryDepsError } = await admin
     .from('regulatory_dependencies')
-    .select('source_id')
+    .select('id')
     .eq('active', true)
     .in('dependency_type', ['service', 'operational_blueprint'])
     .eq('dependency_key', slug);
@@ -58,27 +58,32 @@ export async function prepareServicePublicationReview(
     throw new Error(`Could not resolve regulatory dependencies for ${slug}: ${regulatoryDepsError.message}`);
   }
 
-  const sourceIds = Array.from(new Set((regulatoryDeps ?? []).map((row) => row.source_id).filter(Boolean)));
-  if (sourceIds.length > 0) {
-    const { data: criticalChanges, error: criticalChangesError } = await admin
-      .from('regulatory_changes')
-      .select('id,summary,severity,status')
-      .in('source_id', sourceIds)
-      .eq('severity', 'critical')
-      .in('status', ['detected', 'classified', 'needs_review', 'proposal_ready']);
+  const dependencyIds = (regulatoryDeps ?? []).map((row) => row.id).filter(Boolean);
+  if (dependencyIds.length > 0) {
+    const { data: impacts, error: impactError } = await admin
+      .from('regulatory_change_dependencies')
+      .select('change:regulatory_changes(id,summary,severity,status)')
+      .in('dependency_id', dependencyIds);
 
-    if (criticalChangesError) {
-      throw new Error(`Could not resolve regulatory blocks for ${slug}: ${criticalChangesError.message}`);
+    if (impactError) {
+      throw new Error(`Could not resolve regulatory impact for ${slug}: ${impactError.message}`);
     }
 
-    if ((criticalChanges ?? []).length > 0) {
+    const criticalChanges = (impacts ?? [])
+      .map((row) => Array.isArray(row.change) ? row.change[0] : row.change)
+      .filter((change) =>
+        change?.severity === 'critical'
+        && ['detected', 'classified', 'needs_review', 'proposal_ready'].includes(change.status),
+      );
+
+    if (criticalChanges.length > 0) {
       return {
         slug,
         prepared: false,
         stage: manifest.stage,
         issues: [{
           code: 'regulatory_block',
-          message: `Existe un cambio regulatorio crítico pendiente de revisión humana (${criticalChanges?.length ?? 0}).`,
+          message: `Existe un cambio regulatorio crítico que afecta expresamente a este servicio (${criticalChanges.length}).`,
         }],
         channels: [],
       };

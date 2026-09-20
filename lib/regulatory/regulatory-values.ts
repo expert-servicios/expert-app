@@ -15,7 +15,27 @@ export async function getCurrentRegulatoryValue(valueKey: string, onDate = new D
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  return data ?? null;
+  if (data) return { ...data, availability_mode: 'effective_date' as const };
+
+  const { data: latest, error: latestError } = await admin
+    .from('regulatory_values')
+    .select('value_key,label,numeric_value,text_value,unit,period_key,valid_from,valid_to,verified_at,metadata')
+    .eq('value_key', valueKey)
+    .lte('valid_from', date)
+    .order('valid_from', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latestError) throw new Error(latestError.message);
+  const metadata = (latest?.metadata ?? {}) as Record<string, unknown>;
+  if (latest && metadata.availability_mode === 'latest_published') {
+    const maxAgeDays = typeof metadata.max_age_days === 'number' ? metadata.max_age_days : 62;
+    const ageDays = Math.floor((onDate.getTime() - new Date(`${latest.valid_from}T00:00:00Z`).getTime()) / 86_400_000);
+    if (ageDays <= maxAgeDays) {
+      return { ...latest, availability_mode: 'latest_published' as const, age_days: ageDays };
+    }
+  }
+  return null;
 }
 
 export async function getRegulatoryPulseSummary() {
@@ -111,7 +131,7 @@ export async function applyReviewedRegulatoryValueUpdates(changeId: string, appr
 
     const { data: previous, error: previousError } = await admin
       .from('regulatory_values')
-      .select('label,unit,period_key')
+      .select('label,unit,period_key,metadata')
       .eq('value_key', valueKey)
       .order('valid_from', { ascending: false })
       .limit(1)
@@ -129,23 +149,23 @@ export async function applyReviewedRegulatoryValueUpdates(changeId: string, appr
       ? proposal.unit.trim()
       : previous.unit;
 
-    const { error: valueError } = await admin.from('regulatory_values').upsert({
-      value_key: valueKey,
-      label: previous.label,
-      numeric_value: numericValue,
-      text_value: textValue,
-      unit,
-      period_key: periodKey,
-      valid_from: validFrom,
-      valid_to: validTo,
-      source_id: change.source_id,
-      change_id: change.id,
-      verified_at: new Date().toISOString(),
-      metadata: {
+    const { error: valueError } = await admin.rpc('apply_regulatory_value_reviewed', {
+      p_value_key: valueKey,
+      p_label: previous.label,
+      p_numeric_value: numericValue,
+      p_text_value: textValue,
+      p_unit: unit,
+      p_period_key: periodKey,
+      p_valid_from: validFrom,
+      p_valid_to: validTo,
+      p_source_id: change.source_id,
+      p_change_id: change.id,
+      p_metadata: {
+        ...((previous.metadata ?? {}) as Record<string, unknown>),
         evidence: typeof proposal.evidence === 'string' ? proposal.evidence.slice(0, 500) : null,
         approved_via: 'admin_regulatory_review',
       },
-    }, { onConflict: 'value_key,period_key,valid_from' });
+    });
 
     if (valueError) throw new Error(valueError.message);
     applied.push(valueKey);
@@ -159,8 +179,16 @@ export async function applyReviewedRegulatoryValueUpdates(changeId: string, appr
   return { changeId, applied, resolved: false };
 }
 
-export async function resolveReviewedRegulatoryChange(changeId: string, resolvedBy?: string) {
+export async function resolveReviewedRegulatoryChange(
+  changeId: string,
+  resolvedBy: string | undefined,
+  resolutionNote: string,
+  resolutionEvidence?: Record<string, unknown>,
+) {
   const admin = getSupabaseAdmin();
+  const note = resolutionNote.trim();
+  if (note.length < 10) throw new Error('La resolución requiere una nota de al menos 10 caracteres');
+
   const { data: change, error } = await admin
     .from('regulatory_changes')
     .select('id,status,relevant,summary')
@@ -177,6 +205,8 @@ export async function resolveReviewedRegulatoryChange(changeId: string, resolved
     status: 'resolved',
     resolved_at: new Date().toISOString(),
     resolved_by: resolvedBy ?? null,
+    resolution_note: note,
+    resolution_evidence: resolutionEvidence ?? {},
   }).eq('id', changeId);
 
   if (updateError) throw new Error(updateError.message);

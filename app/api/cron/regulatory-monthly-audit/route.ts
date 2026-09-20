@@ -3,6 +3,7 @@ import { verifyCronRequest } from '@/lib/security/cron';
 import { runRegulatoryPulse } from '@/lib/regulatory/regulatory-monitor';
 import { getRegulatoryPulseSummary } from '@/lib/regulatory/regulatory-values';
 import { notifyAdminsTelegram, escapeTelegramHtml } from '@/lib/integrations/telegram';
+import { runRegulatoryHealthAudit } from '@/lib/regulatory/regulatory-audit';
 
 export const maxDuration = 300;
 
@@ -15,6 +16,7 @@ export async function GET(request: NextRequest) {
     forceAll: true,
   });
   const summary = await getRegulatoryPulseSummary();
+  const health = await runRegulatoryHealthAudit();
 
   const sourceErrors = summary.sources.filter((source) => source.last_error);
   await notifyAdminsTelegram([
@@ -23,6 +25,10 @@ export async function GET(request: NextRequest) {
     `Fuentes con cambio: ${pulse.sourcesChanged}`,
     `Cambios pendientes: ${summary.pendingChanges.length}`,
     `Fuentes con error: ${sourceErrors.length}`,
+    `Health audit: ${health.critical} críticos · ${health.warnings} avisos`,
+    health.issues.length
+      ? escapeTelegramHtml(health.issues.slice(0, 8).map((issue) => `[${issue.severity}] ${issue.code}: ${issue.message}`).join('\n'))
+      : 'Health audit: sin incidencias',
     sourceErrors.length
       ? escapeTelegramHtml(sourceErrors.slice(0, 5).map((source) => `${source.authority}: ${source.last_error}`).join('\n'))
       : 'Estado de fuentes: correcto',
@@ -33,6 +39,7 @@ export async function GET(request: NextRequest) {
     pulse,
     pendingChanges: summary.pendingChanges.length,
     sourceErrors: sourceErrors.length,
+    health,
   });
 }
 

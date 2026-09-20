@@ -95,13 +95,15 @@ export default function RegulatoryPulsePage() {
   };
 
   const resolveChange = async (changeId: string) => {
+    const resolutionNote = window.prompt('Indica brevemente qué se ha revisado y por qué el cambio puede darse por resuelto.');
+    if (!resolutionNote || resolutionNote.trim().length < 10) return;
     if (!window.confirm('Marcar este cambio como completamente revisado y resuelto? Esto levantará cualquier bloqueo regulatorio asociado.')) return;
     setAction(`resolve:${changeId}`);
     try {
       const response = await fetch('/api/admin/regulatory', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action: 'resolve_change', changeId }),
+        body: JSON.stringify({ action: 'resolve_change', changeId, resolutionNote }),
       });
       const payload = await response.json() as { error?: string };
       if (!response.ok) throw new Error(payload.error ?? 'No se pudo resolver el cambio');

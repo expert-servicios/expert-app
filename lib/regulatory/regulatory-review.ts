@@ -108,6 +108,8 @@ const SYSTEM_PROMPT = [
   'medium: contenido/criterio útil con impacto limitado.',
   'low/info: cambio informativo o editorial.',
   'Los valueUpdates son PROPUESTAS: solo inclúyelos cuando el nuevo valor esté explícitamente visible en la evidencia.',
+  'Para cada dependencia conocida realmente afectada, usa dependencyHints con EXACTAMENTE el mismo type y key recibido.',
+  'No marques dependencias por similitud temática si la evidencia no demuestra impacto; en caso de duda exige revisión humana.',
   'Devuelve únicamente JSON conforme al schema.',
 ].join('\n');
 
@@ -123,7 +125,7 @@ async function classifyOne(change: ChangeRow) {
 
   const [{ data: source }, { data: current }, previousResult, { data: dependencies }] = await Promise.all([
     admin.from('regulatory_sources')
-      .select('source_key,authority,title,url,topics,priority')
+      .select('source_key,authority,title,url,topics,priority,metadata')
       .eq('id', change.source_id).single(),
     admin.from('regulatory_snapshots')
       .select('fingerprint,normalized_excerpt,fetched_at,metadata')
@@ -134,7 +136,7 @@ async function classifyOne(change: ChangeRow) {
           .eq('id', change.previous_snapshot_id).single()
       : Promise.resolve({ data: null, error: null }),
     admin.from('regulatory_dependencies')
-      .select('dependency_type,dependency_key,topic,criticality,metadata')
+      .select('id,dependency_type,dependency_key,topic,criticality,metadata')
       .eq('source_id', change.source_id)
       .eq('active', true)
       .limit(100),
@@ -196,6 +198,31 @@ async function classifyOne(change: ChangeRow) {
 
   if (updateError) throw new Error(updateError.message);
 
+  const sourceMetadata = (source.metadata ?? {}) as Record<string, unknown>;
+  const knownDependencies = dependencies ?? [];
+  const hinted = new Map(
+    parsed.dependencyHints.map((hint) => [`${hint.type}::${hint.key}`, hint.reason]),
+  );
+  const affectedDependencies = sourceMetadata.service_specific === true
+    ? knownDependencies
+    : knownDependencies.filter((dependency) =>
+        hinted.has(`${dependency.dependency_type}::${dependency.dependency_key}`),
+      );
+
+  if (affectedDependencies.length > 0) {
+    const { error: impactError } = await admin.from('regulatory_change_dependencies').upsert(
+      affectedDependencies.map((dependency) => ({
+        change_id: change.id,
+        dependency_id: dependency.id,
+        impact_reason: hinted.get(`${dependency.dependency_type}::${dependency.dependency_key}`)
+          ?? 'Fuente oficial específica vinculada a esta dependencia.',
+        confidence: parsed.confidence,
+      })),
+      { onConflict: 'change_id,dependency_id' },
+    );
+    if (impactError) throw new Error(impactError.message);
+  }
+
   let pullRequest: { url?: string; number?: number } | null = null;
   if (parsed.relevant && ['medium','high','critical'].includes(parsed.severity)) {
     pullRequest = await createRegulatoryProposalPullRequest({
@@ -230,6 +257,7 @@ async function classifyOne(change: ChangeRow) {
       escapeTelegramHtml(parsed.summary),
       parsed.effectiveDate ? `Vigencia: ${escapeTelegramHtml(parsed.effectiveDate)}` : '',
       `Dependencias conocidas: ${dependencies?.length ?? 0}`,
+      `Dependencias afectadas: ${affectedDependencies.length}`,
       pullRequest?.url ? `PR de revisión: ${escapeTelegramHtml(pullRequest.url)}` : 'PR automático: no configurado o no disponible',
     ].filter(Boolean).join('\n'));
   }

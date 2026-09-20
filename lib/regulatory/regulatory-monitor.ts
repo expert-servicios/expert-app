@@ -39,6 +39,21 @@ const ALLOWED_HOSTS = new Set([
 
 const MAX_SOURCE_BYTES = 2_000_000;
 const MAX_EXCERPT_CHARS = 24_000;
+const EVIDENCE_SLICE_CHARS = 7_900;
+
+function buildEvidenceExcerpt(normalized: string) {
+  if (normalized.length <= MAX_EXCERPT_CHARS) return normalized;
+  const middleStart = Math.max(0, Math.floor(normalized.length / 2) - Math.floor(EVIDENCE_SLICE_CHARS / 2));
+  const tailStart = Math.max(0, normalized.length - EVIDENCE_SLICE_CHARS);
+  return [
+    '[BEGIN]',
+    normalized.slice(0, EVIDENCE_SLICE_CHARS),
+    '[MIDDLE]',
+    normalized.slice(middleStart, middleStart + EVIDENCE_SLICE_CHARS),
+    '[END]',
+    normalized.slice(tailStart),
+  ].join('\n');
+}
 
 function formatBoeDate(date = new Date()) {
   const yyyy = date.getUTCFullYear();
@@ -148,8 +163,9 @@ export async function fetchRegulatorySource(source: RegulatorySourceRow) {
   return {
     fetchUrl,
     fingerprint,
-    excerpt: normalized.slice(0, MAX_EXCERPT_CHARS),
+    excerpt: buildEvidenceExcerpt(normalized),
     contentType,
+    normalizedLength: normalized.length,
   };
 }
 
@@ -158,6 +174,8 @@ export async function runRegulatoryPulse(params: {
   forceAll?: boolean;
   sourceKey?: string;
   authority?: string;
+  topic?: string;
+  serviceKey?: string;
 }) {
   const admin = getSupabaseAdmin();
   const { data: run, error: runError } = await admin
@@ -169,12 +187,35 @@ export async function runRegulatoryPulse(params: {
         forceAll: Boolean(params.forceAll),
         sourceKey: params.sourceKey ?? null,
         authority: params.authority ?? null,
+        topic: params.topic ?? null,
+        serviceKey: params.serviceKey ?? null,
       },
     })
     .select('id')
     .single();
 
   if (runError || !run) throw new Error(runError?.message ?? 'Cannot create regulatory run');
+
+  let serviceSourceIds: string[] | null = null;
+  if (params.serviceKey) {
+    const { data: serviceDeps, error: serviceDepsError } = await admin
+      .from('regulatory_dependencies')
+      .select('source_id')
+      .eq('active', true)
+      .eq('dependency_key', params.serviceKey)
+      .in('dependency_type', ['service', 'operational_blueprint', 'viability']);
+    if (serviceDepsError) throw new Error(serviceDepsError.message);
+    serviceSourceIds = Array.from(new Set((serviceDeps ?? []).map((row) => row.source_id).filter(Boolean))) as string[];
+    if (serviceSourceIds.length === 0) {
+      await admin.from('regulatory_review_runs').update({
+        status: 'succeeded',
+        sources_checked: 0,
+        sources_changed: 0,
+        finished_at: new Date().toISOString(),
+      }).eq('id', run.id);
+      return { runId: run.id, sourcesChecked: 0, sourcesChanged: 0, errors: [] };
+    }
+  }
 
   let query = admin
     .from('regulatory_sources')
@@ -186,6 +227,8 @@ export async function runRegulatoryPulse(params: {
   }
   if (params.sourceKey) query = query.eq('source_key', params.sourceKey);
   if (params.authority) query = query.ilike('authority', params.authority);
+  if (params.topic) query = query.contains('topics', [params.topic]);
+  if (serviceSourceIds) query = query.in('id', serviceSourceIds);
 
   const { data: sources, error: sourceError } = await query.order('priority', { ascending: false });
   if (sourceError) {
@@ -220,6 +263,8 @@ export async function runRegulatoryPulse(params: {
           metadata: {
             fetchedUrl: fetched.fetchUrl,
             contentType: fetched.contentType,
+            normalizedLength: fetched.normalizedLength,
+            evidenceMode: fetched.normalizedLength > MAX_EXCERPT_CHARS ? 'head_middle_tail' : 'full',
           },
         }, { onConflict: 'source_id,fingerprint' })
         .select('id')
