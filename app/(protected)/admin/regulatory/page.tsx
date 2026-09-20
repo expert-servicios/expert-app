@@ -3,6 +3,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, RefreshCw, Scale, Sparkles } from 'lucide-react';
 
+type HealthAudit = {
+  checkedAt: string;
+  critical: number;
+  warnings: number;
+  healthy: boolean;
+  issues: Array<{
+    code: string;
+    severity: 'info' | 'warning' | 'critical';
+    message: string;
+    entity?: string;
+  }>;
+};
+
 type Summary = {
   lastRun: {
     run_type: string;
@@ -60,6 +73,7 @@ type Summary = {
 
 export default function RegulatoryPulsePage() {
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [health, setHealth] = useState<HealthAudit | null>(null);
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState<string | null>(null);
 
@@ -68,8 +82,9 @@ export default function RegulatoryPulsePage() {
     try {
       const response = await fetch('/api/admin/regulatory', { cache: 'no-store' });
       if (!response.ok) throw new Error('No se pudo cargar Regulatory Pulse');
-      const payload = await response.json() as { summary: Summary };
+      const payload = await response.json() as { summary: Summary; health: HealthAudit };
       setSummary(payload.summary);
+      setHealth(payload.health);
     } finally {
       setLoading(false);
     }
@@ -160,12 +175,42 @@ export default function RegulatoryPulsePage() {
           </div>
         </div>
 
-        <div className="mt-7 grid gap-4 md:grid-cols-4">
+        <div className="mt-7 grid gap-4 md:grid-cols-5">
           <Metric label="Fuentes" value={summary.sources.length} />
           <Metric label="Cambios pendientes" value={summary.pendingChanges.length} />
           <Metric label="Críticos" value={critical.length} />
           <Metric label="Fuentes con error" value={sourceErrors.length} />
+          <Metric label="Health críticos" value={health?.critical ?? 0} />
         </div>
+
+        {health && (
+          <section className={`mt-6 rounded-2xl border p-5 ${health.healthy ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'}`}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 font-bold text-[#07111d]">
+                {health.healthy ? <CheckCircle2 className="h-4 w-4 text-green-700" /> : <AlertTriangle className="h-4 w-4 text-amber-700" />}
+                Health audit regulatorio
+              </div>
+              <span className="text-xs font-semibold text-[#5b6470]">
+                {health.critical} críticos · {health.warnings} avisos
+              </span>
+            </div>
+            {health.issues.length === 0 ? (
+              <p className="mt-2 text-sm text-green-800">Sin incidencias estructurales detectadas.</p>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {health.issues.map((issue, index) => (
+                  <div key={`${issue.code}-${issue.entity ?? index}`} className="rounded-xl border border-black/5 bg-white/70 px-3 py-2 text-xs">
+                    <span className={`mr-2 font-bold uppercase ${issue.severity === 'critical' ? 'text-red-700' : issue.severity === 'warning' ? 'text-amber-700' : 'text-[#5b6470]'}`}>
+                      {issue.severity}
+                    </span>
+                    <span className="font-mono text-[#6b7280]">{issue.code}</span>
+                    <p className="mt-1 text-[#07111d]">{issue.message}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {sourceErrors.length > 0 && (
           <section className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5">

@@ -41,6 +41,110 @@ const MAX_SOURCE_BYTES = 2_000_000;
 const MAX_EXCERPT_CHARS = 24_000;
 const EVIDENCE_SLICE_CHARS = 7_900;
 
+const BOE_RELEVANCE_KEYWORDS = [
+  'agencia estatal de administracion tributaria',
+  'tribut',
+  'impuesto',
+  'hacienda',
+  'factur',
+  'iva',
+  'irpf',
+  'sociedades',
+  'seguridad social',
+  'cotiz',
+  'laboral',
+  'trabajo',
+  'salario minimo',
+  'autonom',
+  'empleo',
+  'extranjer',
+  'migraci',
+  'residencia',
+  'nacionalidad',
+  'registro mercantil',
+  'sociedad',
+  'mercantil',
+  'interes',
+  'demora',
+  'morosidad',
+  'arrendamiento',
+  'vivienda',
+  'alquiler',
+  'proteccion de datos',
+  'firma electronica',
+  'servicios de confianza',
+  'certificado electronico',
+];
+
+type BoeDailyItem = {
+  id: string;
+  title: string;
+  order: number;
+  score: number;
+};
+
+function normalizeSearchText(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function normalizeBoeDailyPayload(raw: string) {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    const items: BoeDailyItem[] = [];
+    const seen = new Set<string>();
+    let order = 0;
+
+    const visit = (value: unknown) => {
+      if (Array.isArray(value)) {
+        value.forEach(visit);
+        return;
+      }
+      if (!value || typeof value !== 'object') return;
+
+      const row = value as Record<string, unknown>;
+      const id = typeof row.identificador === 'string' ? row.identificador.trim() : '';
+      const title = typeof row.titulo === 'string'
+        ? row.titulo.replace(/\s+/g, ' ').trim()
+        : '';
+
+      if (/^BOE-A-\d{4}-\d+$/.test(id) && title && !seen.has(id)) {
+        const searchable = normalizeSearchText(title);
+        const score = BOE_RELEVANCE_KEYWORDS.reduce(
+          (total, keyword) => total + (searchable.includes(keyword) ? 1 : 0),
+          0,
+        );
+        items.push({ id, title: title.slice(0, 600), order, score });
+        seen.add(id);
+        order += 1;
+      }
+
+      Object.values(row).forEach(visit);
+    };
+
+    visit(parsed);
+    if (items.length === 0) return raw;
+
+    const candidates = items
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score || a.order - b.order);
+    const others = items.filter((item) => item.score === 0);
+
+    return [
+      '[BOE_DAILY_COMPACT]',
+      'items=' + items.length + '; candidates=' + candidates.length,
+      '[EXPERT_CANDIDATES]',
+      ...candidates.map((item) => item.id + ' | ' + item.title),
+      '[OTHER_BOE_ITEMS]',
+      ...others.map((item) => item.id + ' | ' + item.title),
+    ].join('\n');
+  } catch {
+    return raw;
+  }
+}
+
 function buildEvidenceExcerpt(normalized: string) {
   if (normalized.length <= MAX_EXCERPT_CHARS) return normalized;
   const middleStart = Math.max(0, Math.floor(normalized.length / 2) - Math.floor(EVIDENCE_SLICE_CHARS / 2));
@@ -85,7 +189,7 @@ function decodeEntities(value: string) {
 }
 
 function normalizePayload(raw: string, strategy: RegulatorySourceRow['fetch_strategy']) {
-  let value = raw;
+  let value = strategy === 'boe_daily' ? normalizeBoeDailyPayload(raw) : raw;
 
   if (strategy === 'rss' || strategy === 'xml') {
     value = value
@@ -249,7 +353,7 @@ export async function runRegulatoryPulse(params: {
     .eq('active', true);
 
   if (!params.forceAll && params.runType === 'daily_pulse') {
-    query = query.eq('check_frequency', 'daily');
+    query = query.or('check_frequency.eq.daily,last_fingerprint.is.null');
   }
   if (params.sourceKey) query = query.eq('source_key', params.sourceKey);
   if (params.authority) query = query.ilike('authority', params.authority);

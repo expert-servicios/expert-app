@@ -95,6 +95,39 @@ describe('KIA Regulatory Registry', () => {
     expect(first.fingerprint).toBe(second.fingerprint);
   });
 
+  it('compacts BOE daily JSON and prioritizes EXPERT-relevant provisions in evidence', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      data: {
+        sumario: {
+          diario: [{
+            seccion: [{
+              departamento: [{
+                epigrafe: [{
+                  item: [
+                    { identificador: 'BOE-A-2026-10001', titulo: 'Resolución sobre premios culturales' },
+                    { identificador: 'BOE-A-2026-10002', titulo: 'Orden por la que se actualizan bases de cotización a la Seguridad Social' },
+                  ],
+                }],
+              }],
+            }],
+          }],
+        },
+      },
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    })));
+
+    const result = await fetchRegulatorySource(source({
+      fetch_strategy: 'boe_daily',
+      fetch_url: 'https://www.boe.es/datosabiertos/api/boe/sumario/{date}',
+    }));
+
+    expect(result.excerpt).toContain('[BOE_DAILY_COMPACT]');
+    expect(result.excerpt).toContain('[EXPERT_CANDIDATES]');
+    expect(result.excerpt.indexOf('BOE-A-2026-10002')).toBeLessThan(result.excerpt.indexOf('BOE-A-2026-10001'));
+  });
+
   it('treats a BOE 404 as a valid non-publication day without a fingerprint', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('', {
       status: 404,
@@ -284,6 +317,30 @@ describe('KIA Regulatory Registry', () => {
     expect(adminRoute).toContain("status: 403");
     expect(read('app/(protected)/admin/regulatory/page.tsx')).toContain('KIA Regulatory Pulse');
     expect(read('components/admin/AdminSidebar.tsx')).toContain('/admin/regulatory');
+  });
+
+  it('closes production gaps with exact evidence sources and a safe BOE re-baseline', () => {
+    const migration = read('supabase/migrations/20260920093000_regulatory_production_gap_closure_v12.sql');
+    expect(migration).toContain("'boe_smi_2026'");
+    expect(migration).toContain("'boe_social_security_order_2026'");
+    expect(migration).toContain("'boe_commercial_late_interest_2026_h2'");
+    expect(migration).toContain("'aeat_interest_reference_2026'");
+    expect(migration).toContain('"fingerprint_version":2');
+    expect(migration).toContain("last_fingerprint = null");
+    expect(migration).toContain('"discovery_only":true');
+  });
+
+  it('surfaces structural regulatory health in the protected Admin panel', () => {
+    const route = read('app/api/admin/regulatory/route.ts');
+    const admin = read('app/(protected)/admin/regulatory/page.tsx');
+    const audit = read('lib/regulatory/regulatory-audit.ts');
+    expect(route).toContain('runRegulatoryHealthAudit');
+    expect(route).toContain('summary, health');
+    expect(admin).toContain('Health audit regulatorio');
+    expect(audit).toContain('source_never_succeeded');
+    expect(audit).toContain('source_without_dependency');
+    expect(audit).toContain('value_missing_source');
+    expect(audit).toContain('value_source_inactive');
   });
 
   it('documents the no-auto-merge and no-auto-publish contract', () => {

@@ -639,3 +639,24 @@ Todos llaman endpoints protegidos con `CRON_SECRET`.
 - panel Admin visual Regulatory Pulse;
 - diff semántico por artículo/bloque normativo;
 - suscripciones personalizadas por área.
+
+
+## Hardening v1.2 — cierre de huecos de producción
+
+La revisión posterior al baseline de producción añade cuatro controles:
+
+- el sumario diario del BOE se normaliza a una evidencia compacta y prioriza disposiciones potencialmente relevantes para EXPERT antes de clasificar;
+- cualquier cambio de algoritmo de fingerprint requiere re-baseline explícito de la fuente afectada para no crear falsos cambios;
+- los valores canónicos deben apuntar a una fuente de evidencia específica cuando exista una norma o página oficial concreta, manteniendo los feeds amplios como capa de descubrimiento;
+- el health audit marca como incidencia una fuente activa que nunca ha tenido lectura correcta, una fuente accionable sin dependencias y un valor sin fuente canónica activa.
+
+Fuentes exactas 2026 añadidas:
+
+- RD 126/2026 / BOE-A-2026-3815 — SMI;
+- Orden PJC/297/2026 / BOE-A-2026-7296 — bases y cotización / MEI;
+- BOE-A-2026-14327 — interés de demora comercial H2 2026;
+- AEAT — referencia vigente 2026 para interés legal e interés de demora tributario.
+
+Los directorios RSS de AEAT y Seguridad Social se conservan como `discovery_only`; los feeds directos siguen siendo las fuentes accionables.
+
+El panel Admin recibe el resultado del health audit en la misma carga del Regulatory Pulse y muestra códigos, severidad y motivo sin necesidad de consultar Supabase.
