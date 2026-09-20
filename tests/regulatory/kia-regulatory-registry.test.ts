@@ -574,6 +574,32 @@ describe('KIA Regulatory Registry', () => {
     expect(checklists).not.toContain('se paga en la primera matriculación en España o si el vehículo supera ciertos límites');
   });
 
+  it('adds mortgage, Valencia ISD operational and rental deposit rules', () => {
+    const migration = read('supabase/migrations/20260920213000_regulatory_v15_property_isd_rent_lot3.sql');
+    const catalog = read('lib/utils/catalog.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+    const ccaa = read('lib/ai/kia/prompts/kia-ccaa-knowledge.ts');
+    const registries = read('lib/ai/kia/prompts/kia-justicia-registros-knowledge.ts');
+    const blog = read('lib/utils/blog.ts');
+
+    expect(migration).toContain("'VALENCIA_MORTGAGE_CANCELLATION_2026'");
+    expect(migration).toContain("'VALENCIA_SUCCESSIONS_650_2026'");
+    expect(migration).toContain("'VALENCIA_DONATIONS_651_2026'");
+    expect(migration).toContain("'VALENCIA_RENTAL_DEPOSIT_2026'");
+    expect(migration).toContain("'rental-deposit-valencia'");
+
+    expect(checklists).toContain('VALENCIA_MORTGAGE_CANCELLATION_2026');
+    expect(checklists).toContain('VALENCIA_SUCCESSIONS_650_2026');
+    expect(checklists).toContain('VALENCIA_DONATIONS_651_2026');
+    expect(ccaa).toContain('VALENCIA_RENTAL_DEPOSIT_2026');
+    expect(registries).toContain('VALENCIA_MORTGAGE_CANCELLATION_2026');
+
+    expect(ccaa).not.toContain('Donaciones: 30 dias habiles desde la firma notarial');
+    expect(checklists).not.toContain('Madrid y Andalucía tienen reducciones de hasta el 99%');
+    expect(blog).not.toContain('la cancelación registral es obligación del deudor');
+    expect(catalog).not.toContain('La cancelación registral debe tramitarla el titular del préstamo');
+  });
+
   it('documents the no-auto-merge and no-auto-publish contract', () => {
     const docs = read('docs/kia-regulatory-registry.md');
     expect(docs).toContain('Nunca se hace merge automático');
