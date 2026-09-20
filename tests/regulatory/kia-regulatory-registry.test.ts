@@ -554,6 +554,25 @@ describe('KIA Regulatory Registry', () => {
     expect(ccaa).not.toContain('Plazo de pago: 30 dias habiles');
   });
 
+  it('adds v1.5 vehicle registration and IEDMT rules', () => {
+    const migration = read('supabase/migrations/20260920201500_regulatory_v15_vehicle_registration_lot2.sql');
+    const dgt = read('lib/ai/kia/prompts/kia-dgt-knowledge.ts');
+    const catalog = read('lib/utils/catalog.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+
+    expect(migration).toContain("'IEDMT_REGISTRATION_2026'");
+    expect(migration).toContain("'VEHICLE_IMPORT_REGISTRATION_2026'");
+    expect(migration).toContain('vehicle_registration_rate_1_1');
+
+    expect(dgt).toContain('IEDMT_REGISTRATION_2026');
+    expect(dgt).toContain('VEHICLE_IMPORT_REGISTRATION_2026');
+    expect(checklists).toContain('IEDMT_REGISTRATION_2026');
+    expect(checklists).toContain('VEHICLE_IMPORT_REGISTRATION_2026');
+
+    expect(catalog).not.toContain('cuando el vehículo supera ciertos límites de emisiones de CO₂');
+    expect(checklists).not.toContain('se paga en la primera matriculación en España o si el vehículo supera ciertos límites');
+  });
+
   it('documents the no-auto-merge and no-auto-publish contract', () => {
     const docs = read('docs/kia-regulatory-registry.md');
     expect(docs).toContain('Nunca se hace merge automático');
