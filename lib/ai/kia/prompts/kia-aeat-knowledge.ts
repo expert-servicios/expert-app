@@ -47,7 +47,7 @@ Modelos y plazos (trimestral):
 AUTONOMOS EN HACIENDA:
 
 Alta en Hacienda (obligatoria antes o al inicio de la actividad):
-- Modelo 036 o 037 (version simplificada) — declaracion censal.
+- Modelo 036 (version simplificada) — declaracion censal.
   * Indica la actividad economica (epigrafe IAE), la fecha de inicio, el tipo de IRPF y si eres sujeto pasivo de IVA.
 - Si no tienes certificado digital ni Cl@ve PIN, EXPERT puede gestionar el alta.
 
@@ -62,7 +62,7 @@ Retenciones en facturas:
 - La retencion la ingresa el pagador a Hacienda via modelo 111 trimestral.
 
 Baja en Hacienda:
-- Tambien con modelo 036/037, indicando la fecha de cese de actividad.
+- Tambien con modelo 036, indicando la fecha de cese de actividad.
 </aeat_autonomos>
 
 <aeat_otros_modelos>
