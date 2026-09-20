@@ -38,9 +38,23 @@ Contrato:
 - reutiliza `DGT_FEES_2026`;
 - catálogo, prompt y checklist dejan de resumir IEDMT como "pagar si supera cierto CO2".
 
+## Lote 3
+
+### Cancelación de hipoteca
+- `VALENCIA_MORTGAGE_CANCELLATION_2026`: deuda vs carga registral, escritura pública, Modelo 600 exento y Registro;
+- evita afirmar que la cancelación es automática u obligatoria en todos los casos.
+
+### ISD operativo Comunitat Valenciana
+- `VALENCIA_SUCCESSIONS_650_2026`: Modelo 650, seis meses y prórroga solicitada en los cinco primeros meses;
+- `VALENCIA_DONATIONS_651_2026`: Modelo 651, un mes y reglas territoriales inmueble/resto de bienes;
+- ambos consumen `VALENCIA_ISD_2026` para beneficios fiscales.
+
+### Fianza de alquiler
+- `VALENCIA_RENTAL_DEPOSIT_2026`: una mensualidad vivienda / dos uso distinto según LAU;
+- procedimiento GVA 2026: plazo operativo de un mes;
+- modelo 816 telemático / 806 presencial;
+- se documenta explícitamente el conflicto con instrucciones antiguas de 15 días y se toma la ficha GVA 2026 como fuente operativa vigente.
+
 ## Siguientes lotes
 - duplicados y permisos;
-- cancelación de hipoteca;
-- herencia/donación/ISD operativo;
-- fianzas GVA/LAU;
 - Capitanía.
