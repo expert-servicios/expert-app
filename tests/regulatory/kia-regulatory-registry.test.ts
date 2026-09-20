@@ -327,7 +327,7 @@ describe('KIA Regulatory Registry', () => {
     expect(migration).toContain("'aeat_interest_reference_2026'");
     expect(migration).toContain('"fingerprint_version":2');
     expect(migration).toContain("last_fingerprint = null");
-    expect(migration).toContain("'discovery_only':true");
+    expect(migration).toContain('"discovery_only":true');
   });
 
   it('surfaces structural regulatory health in the protected Admin panel', () => {
