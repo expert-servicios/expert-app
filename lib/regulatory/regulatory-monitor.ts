@@ -174,6 +174,8 @@ export async function runRegulatoryPulse(params: {
   forceAll?: boolean;
   sourceKey?: string;
   authority?: string;
+  topic?: string;
+  serviceKey?: string;
 }) {
   const admin = getSupabaseAdmin();
   const { data: run, error: runError } = await admin
@@ -185,12 +187,35 @@ export async function runRegulatoryPulse(params: {
         forceAll: Boolean(params.forceAll),
         sourceKey: params.sourceKey ?? null,
         authority: params.authority ?? null,
+        topic: params.topic ?? null,
+        serviceKey: params.serviceKey ?? null,
       },
     })
     .select('id')
     .single();
 
   if (runError || !run) throw new Error(runError?.message ?? 'Cannot create regulatory run');
+
+  let serviceSourceIds: string[] | null = null;
+  if (params.serviceKey) {
+    const { data: serviceDeps, error: serviceDepsError } = await admin
+      .from('regulatory_dependencies')
+      .select('source_id')
+      .eq('active', true)
+      .eq('dependency_key', params.serviceKey)
+      .in('dependency_type', ['service', 'operational_blueprint', 'viability']);
+    if (serviceDepsError) throw new Error(serviceDepsError.message);
+    serviceSourceIds = Array.from(new Set((serviceDeps ?? []).map((row) => row.source_id).filter(Boolean))) as string[];
+    if (serviceSourceIds.length === 0) {
+      await admin.from('regulatory_review_runs').update({
+        status: 'succeeded',
+        sources_checked: 0,
+        sources_changed: 0,
+        finished_at: new Date().toISOString(),
+      }).eq('id', run.id);
+      return { runId: run.id, sourcesChecked: 0, sourcesChanged: 0, errors: [] };
+    }
+  }
 
   let query = admin
     .from('regulatory_sources')
@@ -202,6 +227,8 @@ export async function runRegulatoryPulse(params: {
   }
   if (params.sourceKey) query = query.eq('source_key', params.sourceKey);
   if (params.authority) query = query.ilike('authority', params.authority);
+  if (params.topic) query = query.contains('topics', [params.topic]);
+  if (serviceSourceIds) query = query.in('id', serviceSourceIds);
 
   const { data: sources, error: sourceError } = await query.order('priority', { ascending: false });
   if (sourceError) {
