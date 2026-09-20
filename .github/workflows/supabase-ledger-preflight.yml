@@ -1,6 +1,8 @@
 name: Supabase Ledger Preflight
 
 # Read-only production ledger guard.
+# Accepts only the exact pre-deploy or post-deploy state for the v1.3-v1.5 batch.
+# Any partial deployment, unexpected ledger tip or extra local migration fails closed.
 
 on:
   pull_request:
@@ -28,10 +30,12 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       PROJECT_REF: ybtpqscmqrrjjmuoryap
-      EXPECTED_LEDGER_ROWS: "72"
       EXPECTED_FIRST_VERSION: "20260912000100"
-      EXPECTED_LAST_VERSION: "20260920073758"
-      EXPECTED_PENDING_COUNT: "9"
+      PREDEPLOY_LEDGER_ROWS: "72"
+      PREDEPLOY_LAST_VERSION: "20260920073758"
+      POSTDEPLOY_LEDGER_ROWS: "81"
+      POSTDEPLOY_LAST_VERSION: "20260920230000"
+      EXPECTED_BATCH_COUNT: "9"
 
     steps:
       - name: Checkout
@@ -52,13 +56,43 @@ jobs:
           test "${#files[@]}" -ge 36
           test "${files[0]}" = '20260912000100_baseline_public_primitives.sql'
           test "${files[35]}" = '20260912003600_baseline_public_acl.sql'
+
           versions=()
           for file in "${files[@]}"; do
             version="${file:0:14}"
             versions+=("$version")
           done
+
           test "$(printf '%s\n' "${versions[@]}" | sort -u | wc -l)" -eq "${#versions[@]}" || {
             echo 'STOP: duplicate local migration versions'
+            exit 1
+          }
+
+          mapfile -t batch_local < <(
+            find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' \
+              | sort \
+              | awk '$0 >= "20260920111500_" { print substr($0,1,14) }'
+          )
+
+          expected_batch=(
+            20260920111500
+            20260920123000
+            20260920133000
+            20260920150000
+            20260920163000
+            20260920180000
+            20260920201500
+            20260920213000
+            20260920230000
+          )
+
+          test "${#batch_local[@]}" -eq "$EXPECTED_BATCH_COUNT" || {
+            echo "STOP: expected exactly $EXPECTED_BATCH_COUNT local v1.3-v1.5 migrations, got ${#batch_local[@]}"
+            exit 1
+          }
+
+          test "$(printf '%s\n' "${batch_local[@]}")" = "$(printf '%s\n' "${expected_batch[@]}")" || {
+            echo 'STOP: local v1.3-v1.5 migration tail differs from the audited batch'
             exit 1
           }
 
@@ -73,7 +107,7 @@ jobs:
           set -euo pipefail
           supabase link --project-ref "$PROJECT_REF" -p "$SUPABASE_DB_PASSWORD"
 
-      - name: Validate frozen production ledger
+      - name: Validate exact production ledger state
         shell: bash
         run: |
           set -euo pipefail
@@ -98,13 +132,25 @@ jobs:
             ' "$raw" | sort
           )
 
-          test "${#versions[@]}" -eq "$EXPECTED_LEDGER_ROWS" || {
-            echo "STOP: expected $EXPECTED_LEDGER_ROWS ledger rows, got ${#versions[@]}"
+          rows="${#versions[@]}"
+          test "$rows" -gt 0 || { echo 'STOP: empty production migration ledger'; exit 1; }
+          test "${versions[0]}" = "$EXPECTED_FIRST_VERSION" || {
+            echo 'STOP: unexpected first ledger version'
             exit 1
           }
-          test "${versions[0]}" = "$EXPECTED_FIRST_VERSION" || { echo 'STOP: unexpected first ledger version'; exit 1; }
-          last_index=$((EXPECTED_LEDGER_ROWS - 1))
-          test "${versions[$last_index]}" = "$EXPECTED_LAST_VERSION" || { echo 'STOP: unexpected production migration tip'; exit 1; }
+
+          last_index=$((rows - 1))
+          last_version="${versions[$last_index]}"
+
+          if [ "$rows" -eq "$PREDEPLOY_LEDGER_ROWS" ] && [ "$last_version" = "$PREDEPLOY_LAST_VERSION" ]; then
+            ledger_state='pre_deploy'
+          elif [ "$rows" -eq "$POSTDEPLOY_LEDGER_ROWS" ] && [ "$last_version" = "$POSTDEPLOY_LAST_VERSION" ]; then
+            ledger_state='post_deploy'
+          else
+            echo "STOP: production ledger is neither the audited pre-deploy state nor the exact post-deploy state"
+            echo "rows=$rows last_version=$last_version"
+            exit 1
+          fi
 
           empty_statements="$(awk 'BEGIN { FS="\t" }
             /^COPY .*schema_migrations.*FROM stdin;$/ { inside=1; next }
@@ -112,26 +158,68 @@ jobs:
             inside && ($2 == "\\N" || $2 == "{}" || $2 == "") { empty++ }
             END { print empty+0 }
           ' "$raw")"
-          test "$empty_statements" -eq 0 || { echo "STOP: $empty_statements ledger rows have empty statements"; exit 1; }
+          test "$empty_statements" -eq 0 || {
+            echo "STOP: $empty_statements ledger rows have empty statements"
+            exit 1
+          }
 
-          for version in \
-            20260919192850 \
-            20260919192924 \
-            20260920054204 \
-            20260920071136 \
-            20260920073758; do
+          reconciled=(
+            20260919192850
+            20260919192924
+            20260920054204
+            20260920071136
+            20260920073758
+          )
+          for version in "${reconciled[@]}"; do
             printf '%s\n' "${versions[@]}" | grep -qx "$version" || {
               echo "STOP: expected reconciled regulatory migration $version is absent remotely"
               exit 1
             }
           done
 
+          batch=(
+            20260920111500
+            20260920123000
+            20260920133000
+            20260920150000
+            20260920163000
+            20260920180000
+            20260920201500
+            20260920213000
+            20260920230000
+          )
+
+          if [ "$ledger_state" = 'pre_deploy' ]; then
+            for version in "${batch[@]}"; do
+              if printf '%s\n' "${versions[@]}" | grep -qx "$version"; then
+                echo "STOP: partial v1.3-v1.5 deployment detected at $version"
+                exit 1
+              fi
+            done
+            expected_dry_run_pending="$EXPECTED_BATCH_COUNT"
+          else
+            for version in "${batch[@]}"; do
+              printf '%s\n' "${versions[@]}" | grep -qx "$version" || {
+                echo "STOP: post-deploy ledger is missing audited migration $version"
+                exit 1
+              }
+            done
+            expected_dry_run_pending='0'
+          fi
+
+          {
+            echo "REGULATORY_LEDGER_STATE=$ledger_state"
+            echo "EXPECTED_DRY_RUN_PENDING=$expected_dry_run_pending"
+          } >> "$GITHUB_ENV"
+
           raw_hash="$(sha256sum "$raw" | cut -d' ' -f1)"
           cat > "$private/ledger-summary.txt" <<EOF
-ledger_rows=$EXPECTED_LEDGER_ROWS
+ledger_state=$ledger_state
+ledger_rows=$rows
 first_version=$EXPECTED_FIRST_VERSION
-last_version=$EXPECTED_LAST_VERSION
+last_version=$last_version
 empty_statements=0
+expected_dry_run_pending=$expected_dry_run_pending
 sha256=$raw_hash
 EOF
           rm -f "$raw"
@@ -143,22 +231,45 @@ EOF
           supabase migration list --linked 2>&1 | tee "$RUNNER_TEMP/migration-list.txt"
           supabase db push --linked --dry-run 2>&1 | tee "$RUNNER_TEMP/db-push-dry-run.txt"
 
-          mapfile -t pending < <(
-            find supabase/migrations -maxdepth 1 -type f -name '*.sql' -printf '%f\n' \
-              | sort \
-              | awk '$0 >= "20260920111500_" { print substr($0,1,14) }'
+          batch=(
+            20260920111500
+            20260920123000
+            20260920133000
+            20260920150000
+            20260920163000
+            20260920180000
+            20260920201500
+            20260920213000
+            20260920230000
           )
-          test "${#pending[@]}" -eq "$EXPECTED_PENDING_COUNT" || {
-            echo "STOP: expected $EXPECTED_PENDING_COUNT new regulatory migrations, got ${#pending[@]}"
+
+          observed_pending=0
+          for version in "${batch[@]}"; do
+            if grep -q "$version" "$RUNNER_TEMP/db-push-dry-run.txt"; then
+              observed_pending=$((observed_pending + 1))
+            fi
+          done
+
+          test "$observed_pending" -eq "$EXPECTED_DRY_RUN_PENDING" || {
+            echo "STOP: expected $EXPECTED_DRY_RUN_PENDING audited migrations in dry-run, got $observed_pending"
             exit 1
           }
 
-          for version in "${pending[@]}"; do
-            grep -q "$version" "$RUNNER_TEMP/db-push-dry-run.txt" || {
-              echo "STOP: pending migration $version missing from db push dry-run"
-              exit 1
-            }
-          done
+          if [ "$REGULATORY_LEDGER_STATE" = 'pre_deploy' ]; then
+            for version in "${batch[@]}"; do
+              grep -q "$version" "$RUNNER_TEMP/db-push-dry-run.txt" || {
+                echo "STOP: pending audited migration $version missing from db push dry-run"
+                exit 1
+              }
+            done
+          else
+            for version in "${batch[@]}"; do
+              if grep -q "$version" "$RUNNER_TEMP/db-push-dry-run.txt"; then
+                echo "STOP: already-applied audited migration $version unexpectedly appears in dry-run"
+                exit 1
+              fi
+            done
+          fi
 
       - name: Upload read-only preflight evidence
         uses: actions/upload-artifact@v4
