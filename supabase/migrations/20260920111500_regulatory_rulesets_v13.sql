@@ -314,3 +314,64 @@ do update set topic=excluded.topic, criticality=excluded.criticality, active=tru
 
 comment on table public.regulatory_rulesets is
   'Versioned official regulatory tables/rules. Server-side only; never auto-published.';
+
+
+-- Census forms: Modelo 037 was abolished from 2025-02-03. Keep one canonical rule
+-- so service copy and KIA never resurrect it as a current filing route.
+insert into public.regulatory_sources
+  (source_key, authority, title, url, fetch_url, source_type, fetch_strategy, priority, topics, check_frequency, metadata)
+values (
+  'boe_census_model_036_2025',
+  'BOE',
+  'Orden HAC/1526/2024 — Modelo 036 y supresión del 037',
+  'https://www.boe.es/buscar/doc.php?id=BOE-A-2025-410',
+  'https://www.boe.es/buscar/doc.php?id=BOE-A-2025-410',
+  'legislation',
+  'html',
+  'high',
+  array['tax','census','model_036','self_employed'],
+  'monthly',
+  '{"official":true,"official_identifier":"BOE-A-2025-410","evidence_source":true,"service_specific":false}'::jsonb
+)
+on conflict (source_key) do update set
+  authority=excluded.authority,
+  title=excluded.title,
+  url=excluded.url,
+  fetch_url=excluded.fetch_url,
+  source_type=excluded.source_type,
+  fetch_strategy=excluded.fetch_strategy,
+  priority=excluded.priority,
+  topics=excluded.topics,
+  check_frequency=excluded.check_frequency,
+  metadata=excluded.metadata,
+  active=true;
+
+insert into public.regulatory_rulesets
+  (ruleset_key,label,schema_version,valid_from,valid_to,source_id,payload,metadata)
+select
+  'AEAT_CENSUS_MODEL_036',
+  'AEAT — declaración censal vigente para empresarios y profesionales',
+  1,'2025-02-03',null,s.id,
+  '{
+    "current_form":"036",
+    "abolished_forms":[{"form":"037","abolished_from":"2025-02-03"}],
+    "rule":"Do not offer Modelo 037 as a current filing route. Alta, modificación y baja censal se canalizan por Modelo 036 según el supuesto aplicable."
+  }'::jsonb,
+  '{"official_reference":"BOE-A-2025-410","aeat_calendar_2026":true}'::jsonb
+from public.regulatory_sources s where s.source_key='boe_census_model_036_2025'
+on conflict (ruleset_key,schema_version,valid_from) do update set
+  valid_to=excluded.valid_to, source_id=excluded.source_id, payload=excluded.payload,
+  verified_at=now(), metadata=excluded.metadata;
+
+insert into public.regulatory_dependencies
+  (ruleset_key,dependency_type,dependency_key,topic,criticality,metadata)
+values
+  ('AEAT_CENSUS_MODEL_036','service','alta-autonomo','tax','critical','{"impact_requires_classification":true}'::jsonb),
+  ('AEAT_CENSUS_MODEL_036','service','baja-cese-actividad','tax','critical','{"impact_requires_classification":true}'::jsonb),
+  ('AEAT_CENSUS_MODEL_036','service','constitucion-sl','tax','high','{"impact_requires_classification":true}'::jsonb),
+  ('AEAT_CENSUS_MODEL_036','service','constitucion-sl-circe','tax','high','{"impact_requires_classification":true}'::jsonb),
+  ('AEAT_CENSUS_MODEL_036','kia_prompt','tax','tax','critical','{"impact_requires_classification":true}'::jsonb),
+  ('AEAT_CENSUS_MODEL_036','course','formacion-alta-autonomo-sl','tax','critical','{"impact_requires_classification":true}'::jsonb)
+on conflict (ruleset_key,dependency_type,dependency_key)
+where ruleset_key is not null
+do update set topic=excluded.topic, criticality=excluded.criticality, active=true, metadata=excluded.metadata;
