@@ -198,7 +198,7 @@ Los archivos deben verse completos, sin cortes, sombras ni páginas omitidas. Un
   {
     slug: 'modelo-151-beckham-guia',
     category: 'Fiscalidad',
-    title: 'Guía completa del Modelo 151 y el Régimen Beckham en 2025',
+    title: 'Guía completa del Modelo 151 y el Régimen Beckham',
     excerpt:
       'Todo lo que necesitas saber sobre la tributación especial para impatriados: quién puede acogerse, cómo solicitarlo, plazos y diferencias con el IRPF ordinario.',
     date: '12 abr 2025',
@@ -208,20 +208,13 @@ Los archivos deben verse completos, sin cortes, sombras ni páginas omitidas. Un
     body: `
 ## ¿Qué es el Régimen Beckham?
 
-El régimen especial de impatriados, popularmente conocido como **Ley Beckham**, permite a las personas que se desplazan a España por motivos laborales tributar en el IRPF a un tipo fijo del **24 % sobre las rentas obtenidas en territorio español** (hasta 600.000 €), en lugar del tipo progresivo general que puede llegar al 47 %.
+El régimen especial de impatriados, popularmente conocido como **Ley Beckham**, aplica reglas especiales a determinados contribuyentes desplazados a España que cumplen el artículo 93 LIRPF. Para los rendimientos sujetos a la escala especial, el 24 % se aplica hasta 600.000 € y el 47 % sobre el exceso.
 
 Su nombre popular proviene del futbolista David Beckham, que lo utilizó al fichar por el Real Madrid en 2003, aunque desde entonces el régimen se ha reformado en varias ocasiones.
 
 ## ¿Quién puede acogerse?
 
-Para poder aplicar este régimen en 2025 es necesario cumplir **todos** los siguientes requisitos:
-
-- **No haber sido residente fiscal en España** durante los 5 años anteriores al desplazamiento.
-- Desplazarse a España como consecuencia de un **contrato de trabajo** (o para ejercer funciones de administrador de una sociedad) o de la **adquisición de la condición de administrador** de una sociedad no vinculada.
-- El trabajo debe realizarse **efectivamente en España**.
-- Los trabajos deben realizarse para una empresa o entidad residente en España, o para un establecimiento permanente en España.
-
-Desde 2023 también pueden acogerse los **nómadas digitales** (trabajadores por cuenta propia o ajena que prestan servicios de forma remota mediante el uso exclusivo de medios y sistemas informáticos) que obtengan el visado de nómada digital.
+La elegibilidad debe revisarse según la causa concreta del desplazamiento y los requisitos vigentes. El régimen ya no se limita a un contrato laboral clásico: contempla, entre otros supuestos legales, determinados administradores, teletrabajo internacional y ciertas actividades emprendedoras o profesionales. Antes de optar se verifica también la residencia fiscal previa y la documentación exigida por la AEAT.
 
 ## ¿Cuánto se paga con el Modelo 151?
 
@@ -230,7 +223,7 @@ Desde 2023 también pueden acogerse los **nómadas digitales** (trabajadores por
 | Hasta 600.000 € | 24 % |
 | Exceso sobre 600.000 € | 47 % |
 
-Las rentas obtenidas **fuera de España** (salvo rendimientos del trabajo) quedan **exentas** de tributación en España, lo que supone una ventaja adicional significativa para quienes mantengan patrimonio o rentas en el extranjero.
+Las rentas no se clasifican como exentas únicamente por haberse obtenido fuera de España. Debe aplicarse la regla especial del artículo 93 LIRPF y, cuando corresponda, las reglas del IRNR al tipo concreto de renta.
 
 ## Cómo solicitar la opción al régimen
 
@@ -411,7 +404,7 @@ Fuentes oficiales:
     category: 'Empresas',
     title: 'Alta de autónomo en España: todo lo que debes saber antes de empezar',
     excerpt:
-      'Pasos para darte de alta como autónomo, cuota a pagar en 2025, tarifa plana, modelos trimestrales y las obligaciones que te esperan el primer año.',
+      'Pasos para darte de alta como autónomo, cotización por rendimientos en 2026, modelos fiscales y obligaciones del primer año.',
     date: '15 mar 2025',
     readTime: '7 min',
     tags: ['autónomos', 'alta autónomo', 'Hacienda', 'Seguridad Social'],
@@ -943,9 +936,9 @@ Lo más importante es no precipitarse: una migración bien hecha te ahorra meses
   {
     slug: 'ley-antifraude-software-contable',
     category: 'Fiscalidad',
-    title: 'Ley Antifraude y software contable: lo que debes saber en 2025',
+    title: 'Ley Antifraude y sistemas de facturación: situación en 2026',
     excerpt:
-      'La Ley 11/2021 prohíbe el software de doble uso y exige sistemas de facturación certificados. Analizamos qué implica para autónomos, pymes y sus asesores.',
+      'La Ley 11/2021 prohíbe el software de doble uso y el RRSIF exige sistemas de facturación adaptados a sus requisitos. Analizamos qué implica para autónomos, sociedades y asesores.',
     date: '5 may 2026',
     readTime: '6 min',
     tags: ['Ley Antifraude', 'software contable', 'facturación', 'VeriFactu'],
@@ -985,7 +978,7 @@ El desarrollo reglamentario de esta prohibición se concreta en el **Real Decret
 Si usas un programa de facturación o contabilidad:
 
 1. **Verifica que tu proveedor de software esté adaptando su producto** a los requisitos del Reglamento. Pregunta explícitamente si cumplirá con VeriFactu antes de las fechas indicadas.
-2. **Si usas hojas de cálculo o facturas en Word/PDF**, debes migrar a un sistema certificado. Excel no cumple los requisitos.
+2. **Si usas hojas de cálculo o facturas en Word/PDF**, debes migrar a un sistema adaptado al RRSIF. Excel no cumple los requisitos.
 3. **Si eres asesor o gestoría**, asegúrate de que los programas que usas para tus clientes también estén certificados.
 
 ## Holded y la Ley Antifraude
@@ -1404,7 +1397,7 @@ O puedes empezar directamente con el Pack Starter si ya sabes que no tienes hist
   {
     slug: 'permiso-residencia-inicial-guia-2025',
     category: 'Extranjería',
-    title: 'Permiso inicial de residencia en España: guía completa 2025',
+    title: 'Permiso inicial de residencia en España: guía actualizada',
     excerpt:
       'Todo lo que necesitas saber para obtener tu primer permiso de residencia en España: vías disponibles, requisitos, plazos y errores más comunes que debes evitar.',
     date: '14 may 2026',
@@ -1420,27 +1413,11 @@ Sin este permiso, la estancia en España más allá de 90 días (para quienes lo
 
 ## Vías para obtener el primer permiso de residencia
 
-Existen varias vías según tu situación personal:
+La vía correcta depende de la situación personal. El Reglamento vigente diferencia, entre otras, autorizaciones por trabajo, reagrupación, residencia no lucrativa y circunstancias excepcionales.
 
-### 1. Arraigo social
-Requiere **3 años de estancia continuada** en España, aunque sea en situación irregular, y un contrato de trabajo o medios económicos propios. Es una de las vías más utilizadas.
+Dentro de los arraigos, el RD 1155/2024 reorganizó las figuras en **arraigo de segunda oportunidad, sociolaboral, social, socioformativo y familiar**. No debe utilizarse la antigua clasificación de arraigo laboral como si siguiera siendo una categoría vigente.
 
-### 2. Arraigo laboral
-Requiere acreditar **2 años de estancia irregular** y una relación laboral no declarada de al menos 6 meses. El empresario debe regularizar el contrato.
-
-### 3. Arraigo familiar
-Para personas que tienen un vínculo familiar de primer grado (hijo/a español/a o padre/madre de menor español/a). No requiere tiempo mínimo de estancia.
-
-### 4. Circunstancias excepcionales
-Incluye casos de protección internacional, colaboración con autoridades, trata de seres humanos y violencia de género.
-
-### 5. Residencia por reagrupación familiar
-Cuando un familiar con residencia legal en España solicita traerte.
-
-### 6. Visado de larga duración
-Tramitado en el consulado español de tu país de origen antes de viajar. Incluye el visado de trabajo, el visado de estudiante o el visado de nómada digital.
-
-## Requisitos generales para el arraigo social (la vía más común)
+## Requisitos generales para el arraigo social
 
 - **Permanencia continuada en España de al menos 2 años**, con ausencias no superiores a 90 días.
 - **Ausencia de antecedentes penales** en España y en el país de origen (últimos 5 años)
@@ -1500,7 +1477,7 @@ En EXPERT gestionamos el proceso completo, desde la evaluación de tu situación
   {
     slug: 'documentos-permiso-residencia-espana',
     category: 'Extranjería',
-    title: 'Lista completa de documentos para el permiso de residencia en España (2025)',
+    title: 'Documentos para permisos de residencia en España: guía actualizada',
     excerpt:
       'Qué documentos necesitas exactamente, cómo obtenerlos, cómo apostillarlos y traducirlos, y qué errores de documentación son los más frecuentes en Extranjería.',
     date: '14 may 2026',
@@ -1678,12 +1655,7 @@ Sí. Haber percibido prestación por desempleo se considera una situación de co
 
 ## De la residencia temporal a la larga duración
 
-Para acceder a la **residencia de larga duración** necesitas:
-
-1. **5 años de residencia legal y continuada** en España (los períodos de prórroga administrativa cuentan).
-2. No tener **antecedentes penales** en España ni en el país de origen.
-3. Acreditar **medios económicos suficientes**: al menos el 150 % del IPREM mensual para el titular (aprox. 900 €/mes en 2025), más el 50 % por cada familiar a cargo.
-4. Disponer de **seguro médico** si no cotizas a la Seguridad Social.
+Para acceder a la **residencia de larga duración nacional** la regla general es acreditar **5 años de residencia legal y continuada** en España y cumplir los demás requisitos del procedimiento. No existe, con carácter general, un requisito del 150 % del IPREM ni un seguro médico como los que se exigen en otras autorizaciones; no deben trasladarse esos requisitos a esta figura.
 
 La residencia de larga duración abre también la puerta a acumular tiempo para solicitar la **nacionalidad española por residencia** (10 años como regla general, 2 años para nacionales de países iberoamericanos o con tratados especiales).
 
@@ -1954,7 +1926,7 @@ Para poder reagrupar, el residente en España debe:
 
 1. Tener autorización de residencia en vigor **mínimo de 1 año** y haber solicitado la renovación.
 2. Disponer de **vivienda adecuada** para el número de familiares a reagrupar (acreditada mediante contrato de arrendamiento o escritura de propiedad).
-3. Contar con **medios económicos suficientes**: al menos el 150 % del IPREM mensual (aprox. 900 €/mes en 2025) para el reagrupante solo, más el 50 % por cada familiar adicional.
+3. Contar con **medios económicos suficientes**: para una unidad familiar de dos miembros (reagrupante + una persona reagrupada), la referencia general es el 150 % del IPREM mensual; por cada miembro adicional se añade el 50 %. En determinados casos con menores existen reglas de minoración que deben revisarse.
 
 ## Proceso de tramitación
 
@@ -1985,62 +1957,50 @@ La solicitud se resuelve en un plazo legal de **3 meses**. La práctica varía p
   {
     slug: 'permiso-residencia-inversores',
     category: 'Extranjería',
-    title: 'Permiso de residencia para inversores en España: Golden Visa y alternativas',
-    excerpt: 'Opciones para obtener residencia en España a través de la inversión: Golden Visa, visado de no lucrativa y otros permisos. Requisitos, plazos y proceso.',
+    title: 'Golden Visa en España: derogación y alternativas de residencia',
+    excerpt: 'La vía de residencia para inversores de la Ley 14/2013 dejó de admitir nuevas solicitudes desde el 3 de abril de 2025. Explicamos el régimen transitorio y alternativas vigentes.',
     date: '18 may 2026',
     readTime: '7 min',
     tags: ['Golden Visa', 'inversores', 'residencia inversión', 'visado inversor', 'extranjería'],
     relatedServiceSlugs: ['inversores'],
     body: `
-## Residencia en España para inversores
+## La Golden Visa ya no está abierta a nuevas solicitudes
 
-España ofrece varias vías para que ciudadanos extracomunitarios obtengan residencia a través de la inversión económica o la disponibilidad de medios suficientes. Las más relevantes son la **Golden Visa** y el **visado de residencia no lucrativa**.
+Los artículos 63 a 67 de la Ley 14/2013, que regulaban los visados y autorizaciones de residencia para inversores, quedaron **sin contenido con efectos de 3 de abril de 2025**.
 
-## Golden Visa (Visado de Inversor)
+Esto significa que una nueva inversión inmobiliaria, financiera o empresarial realizada ahora no abre por sí sola la antigua vía de Golden Visa.
 
-Regulada por la Ley 14/2013, la Golden Visa permite obtener residencia a través de una inversión significativa en España:
+### Régimen transitorio
 
-| Tipo de inversión | Mínimo |
-|---|---|
-| Inmuebles en España | 500.000 € |
-| Deuda pública española | 2.000.000 € |
-| Acciones de sociedades españolas | 1.000.000 € |
-| Depósitos en entidades financieras españolas | 1.000.000 € |
-| Inversión en proyectos empresariales de interés general | Sin mínimo fijo |
+Las solicitudes presentadas antes de la entrada en vigor de la derogación pueden resolverse conforme a la normativa aplicable cuando se presentaron. Las autorizaciones de inversor que ya estaban vigentes conservan su validez y determinadas renovaciones se tramitan bajo las reglas transitorias correspondientes.
 
-### Ventajas de la Golden Visa
-- No requiere residencia efectiva en España (basta con 1 visita al año).
-- Incluye a cónyuge e hijos menores.
-- Renovable cada 2 años (primera vez) y cada 5 años (posteriores).
-- Permite acceso al espacio Schengen.
+Para nuevas solicitudes hay que estudiar otra autorización vigente según el perfil: actividad emprendedora, profesional altamente cualificado, teletrabajo internacional, residencia no lucrativa u otra vía del Reglamento de Extranjería.
 
 ## Visado de Residencia No Lucrativa
 
 Para personas que no necesitan trabajar en España y disponen de medios económicos suficientes para sostenerse y a su familia sin ejercer actividad laboral.
 
 **Requisitos principales:**
-- Medios económicos mínimos: al menos el 400 % del IPREM mensual (aprox. 2.400 €/mes en 2025) para el solicitante, más el 100 % por cada familiar adicional.
+- Medios económicos mínimos: al menos el 400 % del IPREM mensual para el solicitante, más el 100 % del IPREM por cada familiar adicional, usando el IPREM vigente al presentar la solicitud.
 - Seguro médico privado sin copago ni carencia en España.
 - Ausencia de antecedentes penales.
 - No haber trabajado en España en los últimos años.
 
-## Permiso de inversor por tramitación inicial y renovación
+## Alternativas actuales
 
-Para inversiones de menor cuantía o situaciones específicas, existen permisos de residencia vinculados a inversión que no alcanzan los umbrales de la Golden Visa pero que pueden tramitarse como autorización de residencia por circunstancias excepcionales o por cuenta propia empresarial.
-
-En EXPERT analizamos cada caso para determinar la vía más adecuada según el perfil y la inversión del cliente. El precio del servicio de tramitación inicial y renovación es de **250 €/persona**.
+La inversión por sí sola ya no genera una nueva autorización de residencia para inversores. EXPERT revisa el perfil personal, profesional y económico para determinar qué vía vigente puede encajar y, cuando existe una autorización de inversor previa, si resulta aplicable el régimen transitorio de renovación.
 
 ## Documentación general
 
 - Pasaporte en vigor.
-- Acreditación de la inversión (escritura de compraventa, certificado bancario, etc.).
+- Documentación económica o profesional que corresponda a la vía vigente que se vaya a solicitar.
 - Certificado de antecedentes penales.
 - Seguro médico privado.
 - Formulario de solicitud correspondiente.
 
 ## Plazos
 
-La Golden Visa se tramita ante la Unidad de Grandes Empresas (UGE-CE), con resolución en unos **20 días hábiles**. El visado no lucrativo se tramita en el consulado español del país de residencia del solicitante.
+Las nuevas solicitudes deben seguir el procedimiento y plazo de la autorización vigente elegida. El visado no lucrativo, por ejemplo, se solicita a través del consulado español competente conforme a su procedimiento específico.
     `
   },
 
@@ -2082,7 +2042,7 @@ Las constituciones de sociedades están sujetas a la modalidad de Operaciones So
 La escritura se inscribe en el Registro Mercantil de la provincia del domicilio social. Desde la inscripción, la sociedad tiene personalidad jurídica plena.
 
 ### 6. Alta fiscal en Hacienda (Modelo 036)
-Una vez inscrita, se solicita el **CIF definitivo** y se realiza el alta censal en la AEAT.
+Una vez inscrita, se solicita el **NIF definitivo** y se realiza el alta censal en la AEAT.
 
 ## Costes aproximados
 
@@ -2096,7 +2056,7 @@ Una vez inscrita, se solicita el **CIF definitivo** y se realiza el alta censal 
 
 ## Plazos
 
-El proceso completo, desde la reserva de denominación hasta la obtención del CIF definitivo, lleva habitualmente entre **7 y 15 días hábiles**.
+El proceso completo, desde la reserva de denominación hasta la obtención del NIF definitivo, lleva habitualmente entre **7 y 15 días hábiles**.
 
 ## ¿SL o autónomo?
 
