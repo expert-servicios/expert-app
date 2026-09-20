@@ -11,6 +11,10 @@ function daysBetween(a: string, b = new Date()) {
   return Math.floor((b.getTime() - new Date(a).getTime()) / 86_400_000);
 }
 
+function minutesBetween(a: string, b = new Date()) {
+  return Math.floor((b.getTime() - new Date(a).getTime()) / 60_000);
+}
+
 export async function runRegulatoryHealthAudit() {
   const admin = getSupabaseAdmin();
   const now = new Date();
@@ -133,7 +137,7 @@ export async function runRegulatoryHealthAudit() {
   }
 
   for (const run of runs ?? []) {
-    if (run.status === 'running' && daysBetween(run.started_at, now) >= 1) {
+    if (run.status === 'running' && minutesBetween(run.started_at, now) >= 15) {
       issues.push({
         code: 'run_stuck',
         severity: 'critical',
