@@ -86,11 +86,11 @@ Denominacion Social Negativa (paso previo para crear una SL):
 - EXPERT solicita el certificado de denominacion social como parte del servicio de constitucion de SL.
 
 Deposito de Cuentas Anuales:
-- Obligacion anual para todas las sociedades mercantiles (SL, SA, etc.).
-- Plazo: dentro del mes siguiente a la aprobacion de las cuentas por la junta general (normalmente antes del 31 de julio si el ejercicio cierra el 31 de diciembre).
-- Consecuencias de no depositar: cierre registral (la sociedad no puede inscribir ningun acto) y posible sancion del ICAC.
-- Tramite: en el Registro Mercantil Provincial de la provincia del domicilio social.
-- EXPERT gestiona el deposito de cuentas con el servicio de gestion mensual de empresa.
+- Consultar ANNUAL_ACCOUNTS_LSC_RULES para formulacion, junta, deposito y sanciones.
+- El deposito se calcula desde la fecha real de aprobacion; no usar 30/31 de julio como regla universal.
+- Consultar REGISTRY_CLOSURE_RRM_RULES antes de explicar un cierre registral: existen excepciones legales y un mecanismo especifico cuando las cuentas no han sido aprobadas.
+- Consultar BOOK_LEGALIZATION_RULES para el plazo de legalizacion de libros desde el cierre real del ejercicio.
+- EXPERT gestiona el deposito de cuentas y la operativa registral vinculada dentro de los servicios contratados.
 
 Consultas publicas en el Registro Mercantil:
 - Se pueden consultar datos basicos de empresas (denominacion, domicilio, objeto social, administrador) gratuitamente.
@@ -98,6 +98,19 @@ Consultas publicas en el Registro Mercantil:
 
 Publicaciones BORME (Boletin Oficial del Registro Mercantil):
 - https://www.boe.es/diario_borme/ — publicaciones obligatorias de actos inscribibles en el Registro Mercantil.
+
+
+Titularidad real:
+- Consultar BENEFICIAL_OWNERSHIP_RCTR_RULES.
+- No identificar al titular real solo mirando la lista de socios: revisar participacion directa e indirecta, derechos de voto y control por otros medios.
+- Para sociedades mercantiles, revisar la informacion anual y los cambios conocidos por el organo de administracion; los cambios de titularidad real tienen su propio plazo de comunicacion.
+- Si no existe persona fisica que cumpla el criterio de control, aplicar solo entonces la regla subsidiaria de administradores prevista en la normativa.
+
+Apoderamientos mercantiles:
+- Consultar MERCANTILE_POWERS_RRM_RULES.
+- Distinguir representacion organica del administrador de la representacion voluntaria por apoderado.
+- No afirmar que todo poder notarial es obligatoriamente inscribible: clasificar poder general mercantil, poder para pleitos y poder para actos concretos antes de responder.
+
 </registro_mercantil>
 
 <registro_propiedad>

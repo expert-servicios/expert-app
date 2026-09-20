@@ -1636,11 +1636,13 @@ Como autónomo en régimen general, tus obligaciones trimestrales son:
 - **Modelo 130** (IRPF trimestral): pago fraccionado a cuenta del IRPF.
 - Si tienes empleados: **Modelo 111** (retenciones IRPF empleados) y **Modelo 115** (retenciones alquileres).
 
-Anualmente:
+Anualmente pueden resultar aplicables, entre otros:
 
-- **Modelo 390**: resumen anual de IVA (enero).
-- **Modelo 190**: resumen anual de retenciones de trabajo (enero).
-- **Modelo 100**: declaración de la renta (mayo–junio).
+- **Modelo 390**: resumen anual de IVA, cuando no exista exoneración.
+- **Modelo 190**: resumen anual de retenciones de trabajo y determinadas actividades.
+- **Modelo 100**: declaración anual de IRPF.
+
+Los vencimientos exactos se verifican en el calendario AEAT del ejercicio correspondiente.
 
 ## Errores frecuentes en el alta
 

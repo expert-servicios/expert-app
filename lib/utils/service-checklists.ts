@@ -88,7 +88,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tu contrato es con una empresa española o estás desplazado?',
     ],
     botInstructions:
-      'El régimen Beckham tributa al 24% fijo sobre rentas en España hasta 600.000 €. Es fundamental verificar que el cliente NO haya sido residente en España los 5 años previos. El plazo para solicitar el Modelo 149 es de 6 meses desde el inicio de actividad. Precio: consultar según complejidad.',
+      'Consultar IMPARTIATES_149_151_RULES antes de informar elegibilidad, duración o plazo. Verificar causa del desplazamiento, residencia fiscal previa, fecha de inicio de actividad, fecha de entrada de asociados y documentación. Para el contribuyente principal, la opción del Modelo 149 tiene como regla general 6 meses desde el inicio de actividad. Precio: consultar según complejidad.',
     estimatedPrice: 'Consultar',
   },
 
@@ -149,7 +149,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes operaciones con clientes o proveedores de otros países de la UE?',
     ],
     botInstructions:
-      'Plazos: del 1 al 20 de abril (1T), julio (2T), octubre (3T) y hasta el 30 de enero (4T). Pedir siempre las facturas con suficiente antelación. Si el cliente usa Holded, podemos extraer los datos directamente. Precio: desde 60 € / trimestre.',
+      'Consultar AEAT_TAX_CALENDAR_2026 para el vencimiento exacto del Modelo 303 y revisar si existe obligación de Modelo 390 mediante INFORMATIVE_RETURNS_2026. Pedir siempre la documentación con antelación. Precio: desde 60 € / trimestre.',
     estimatedPrice: 'Desde 60 € / trimestre',
   },
 
@@ -213,7 +213,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Ha habido cambios de más de 20.000 € respecto al último año declarado?',
     ],
     botInstructions:
-      'La obligación existe si el valor supera 50.000 € en al menos una de las tres categorías (cuentas, valores/fondos, inmuebles). Plazo: del 1 enero al 31 de marzo. Solo hay que presentarlo cuando se supera el umbral por primera vez, y luego cuando alguna categoría sube más de 20.000 €. Las sanciones por no presentar son muy elevadas. Precio: 190 € + IVA.',
+      'Consultar MODEL_720_RULES antes de concluir que existe obligación. Clasificar los bienes por categoría, aplicar reglas de valoración y exenciones, revisar si hubo declaración previa y pérdidas de titularidad. La ventana ordinaria es 1 de enero a 31 de marzo del año siguiente. Precio: 190 € + IVA.',
     estimatedPrice: '190 € + IVA',
   },
 
@@ -224,13 +224,13 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     requiredData: [
       'Qué modelo/s necesita presentar',
       'Ejercicio o período',
-      'Si tiene operaciones con terceros >3.005,06 € anuales (Modelo 347)',
+      'Si tiene operaciones con terceros que puedan superar el umbral general del Modelo 347 y si concurre alguna exclusión',
       'Si tiene operaciones intracomunitarias (Modelo 349)',
       'Si ha pagado alquileres con retención (Modelo 180)',
       'Si ha pagado nóminas o rendimientos profesionales con retención (Modelo 190)',
     ],
     requiredDocs: [
-      'Datos de proveedores/clientes con operaciones anuales superiores a 3.005 €',
+      'Datos de proveedores/clientes y detalle anual suficiente para revisar el umbral y exclusiones del Modelo 347',
       'Libro de facturas emitidas y recibidas del año',
       'Contratos de arrendamiento y retenciones practicadas',
       'Nóminas y retenciones a trabajadores y profesionales',
@@ -240,7 +240,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes la contabilidad ordenada del ejercicio?',
     ],
     botInstructions:
-      'Estos modelos son puramente informativos pero las sanciones por no presentarlos o presentarlos fuera de plazo son importantes. Verificar siempre el plazo específico de cada modelo. Precio: desde 50 € / modelo.',
+      'Consultar INFORMATIVE_RETURNS_2026 para obligación, periodicidad, umbrales y exoneraciones, y AEAT_TAX_CALENDAR_2026 para vencimientos exactos. No asumir que todos los modelos son anuales ni que todo obligado al 303 presenta 390. Precio: desde 50 € / modelo.',
     estimatedPrice: 'Desde 50 € / modelo',
   },
 
@@ -633,7 +633,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes las facturas del trimestre preparadas?',
     ],
     botInstructions:
-      'Plazos: del 1 al 20 de los meses de abril, julio, octubre y hasta el 30 de enero. Importante enviar la documentación con suficiente antelación. Precio: desde 120 € / trimestre.',
+      'Consultar AEAT_TAX_CALENDAR_2026 para vencimientos exactos e IRPF_PAYMENT_FRACTIONS_2026 para Modelos 130/131 antes de calcular. Importante enviar la documentación con suficiente antelación. Precio: desde 120 € / trimestre.',
     estimatedPrice: 'Desde 120 € / trimestre',
   },
 
@@ -662,9 +662,10 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Cuándo quieres celebrar la Junta General?',
       '¿Necesitas también el Impuesto de Sociedades?',
       '¿La sociedad tiene auditor?',
+      '¿Ha cambiado la titularidad real o la cadena de control desde las últimas cuentas?',
     ],
     botInstructions:
-      'El plazo para depositar las cuentas es el mes siguiente a la aprobación en Junta (normalmente hasta el 30 de julio). La falta de depósito puede generar cierre registral. Si la contabilidad la lleva EXPERT, el depósito suele estar incluido en el plan mensual. Precio: consultar.',
+      'Consultar ANNUAL_ACCOUNTS_LSC_RULES para formulación, junta y depósito; BENEFICIAL_OWNERSHIP_RCTR_RULES para la hoja/declaración de titularidad real y cambios de control; y REGISTRY_CLOSURE_RRM_RULES si existe incumplimiento. Precio: consultar.',
     estimatedPrice: 'Consultar',
   },
 
@@ -677,7 +678,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Datos de la sociedad (CIF, denominación, domicilio)',
       'Si hay acuerdo unánime de todos los socios o se necesita convocatoria de Junta',
       'Datos del nuevo administrador o apoderado (DNI/NIE, dirección)',
-      'Si se quieren otorgar poderes generales o especiales (para qué actos)',
+      'Si se quieren otorgar poderes generales, para pleitos o para actos concretos y cuál es exactamente su alcance',
     ],
     requiredDocs: [
       'Escrituras de constitución actualizadas de la sociedad',
@@ -689,11 +690,11 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     keyQuestions: [
       '¿Qué modificación necesitas hacer en la empresa?',
       '¿Estáis de acuerdo todos los socios?',
-      '¿Necesitas poderes para una gestión concreta o poderes generales?',
+      '¿Necesitas un poder general mercantil, un poder para pleitos o un poder limitado a actos concretos?',
       '¿Hay que convocar Junta o es decisión del administrador?',
     ],
     botInstructions:
-      'Muchas modificaciones requieren escritura notarial e inscripción en el Registro Mercantil. El plazo varía: notaría 1–5 días, registro 5–15 días hábiles. Para poderes simples (sin cargo registral) el proceso es más rápido. Precio: consultar según tipo de modificación.',
+      'Consultar MERCANTILE_POWERS_RRM_RULES antes de afirmar que un poder debe inscribirse: los poderes generales mercantiles son registrables y existen excepciones para pleitos y actos concretos. Verificar también si la operación altera administración, control o titularidad real. Precio: consultar según el acto.',
     estimatedPrice: 'Consultar',
   },
 

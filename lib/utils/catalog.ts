@@ -121,7 +121,7 @@ export const services: Service[] = [
     name: 'Modelo 151 — Régimen Beckham',
     shortDescription: 'Tributación especial para expatriados desplazados a España.',
     description:
-      'El régimen especial de impatriados (popularmente conocido como Ley Beckham) permite tributar al tipo fijo del 24% sobre rentas obtenidas en España durante los primeros años de residencia. Gestionamos la solicitud de activación del régimen y la declaración anual del Modelo 151.',
+      'El régimen especial de impatriados (popularmente conocido como Ley Beckham) permite, cuando se cumplen sus requisitos, tributar bajo las reglas especiales del artículo 93 LIRPF. Gestionamos la opción mediante el Modelo 149, la revisión de elegibilidad y la declaración anual del Modelo 151.',
     price: 'Consultar',
     duration: '5–10 días hábiles',
     includes: [
@@ -133,7 +133,7 @@ export const services: Service[] = [
     ],
     faqs: [
       { q: '¿Quién puede acogerse al régimen Beckham?', a: 'Trabajadores y directivos desplazados a España que no hayan sido residentes los 5 años anteriores, bajo determinadas condiciones.' },
-      { q: '¿Cuánto tiempo dura el régimen?', a: 'Hasta 5 años desde la activación, renovable en algunas circunstancias.' },
+      { q: '¿Cuánto tiempo dura el régimen?', a: 'Se aplica en el período impositivo en que se adquiere la residencia fiscal en España bajo el régimen y en los cinco períodos impositivos siguientes, siempre que se mantengan los requisitos.' },
       { q: '¿Cubre también a mi familia?', a: 'El régimen es individual, aunque el cónyuge e hijos pueden acogerse bajo ciertos requisitos.' }
     ]
   },
@@ -175,7 +175,7 @@ export const services: Service[] = [
       'Alerta de plazos y recordatorios'
     ],
     faqs: [
-      { q: '¿Cuáles son los plazos trimestrales?', a: 'Del 1 al 20 de los meses de abril, julio, octubre y enero (este último hasta el 30).' },
+      { q: '¿Cuáles son los plazos trimestrales?', a: 'El patrón general es trimestral, pero verificamos el vencimiento exacto del período en el calendario AEAT vigente antes de presentar.' },
       { q: '¿Puedo llevar yo las facturas y que solo presentéis?', a: 'Sí, puedes enviarnos el registro de facturas y nos encargamos de la liquidación y presentación.' }
     ]
   },
@@ -225,7 +225,7 @@ export const services: Service[] = [
     name: 'Modelo 720 — Bienes en el Extranjero',
     shortDescription: 'Declaración de bienes y derechos situados en el extranjero ante la AEAT.',
     description:
-      'El Modelo 720 es una declaración informativa obligatoria para residentes fiscales en España que posean bienes o derechos en el extranjero por valor superior a 50.000 € en alguna de sus tres categorías: cuentas bancarias, valores e inmuebles. Analizamos tu obligación de declarar, preparamos el modelo y lo presentamos en plazo para evitar sanciones.',
+      'El Modelo 720 es una declaración informativa sobre determinadas categorías de bienes y derechos situados en el extranjero. La obligación depende de la categoría, los umbrales, las reglas de valoración y las exenciones aplicables. Analizamos primero si existe obligación y después preparamos y presentamos el modelo.',
     price: '190 € + IVA',
     stripePriceId: 'price_1TXMmVLeYwwgvux4e9hXI90o',
     duration: '3–5 días hábiles',
@@ -244,10 +244,10 @@ export const services: Service[] = [
       'Número de identificación fiscal extranjero (si aplica)'
     ],
     faqs: [
-      { q: '¿Quién está obligado a presentar el Modelo 720?', a: 'Personas físicas y jurídicas residentes en España que tengan bienes o derechos en el extranjero cuyo valor supere los 50.000 € en alguna de las tres categorías (cuentas, valores o inmuebles).' },
+      { q: '¿Quién está obligado a presentar el Modelo 720?', a: 'Puede existir obligación cuando se superan los umbrales legales en alguna de las tres categorías de información, pero antes hay que aplicar las reglas de valoración y las exenciones correspondientes.' },
       { q: '¿Cuándo hay que presentarlo?', a: 'Entre el 1 de enero y el 31 de marzo del año siguiente al ejercicio que se declara.' },
-      { q: '¿Qué pasa si no lo presento?', a: 'Las sanciones por no presentar o presentar incorrectamente pueden ser muy elevadas. Es imprescindible declarar si se supera el umbral.' },
-      { q: '¿Tengo que presentarlo cada año?', a: 'Solo en el año en que se supera el umbral por primera vez, y posteriormente cuando alguna categoría experimente un incremento superior a 20.000 € respecto al último ejercicio declarado.' }
+      { q: '¿Qué pasa si no lo presento?', a: 'La falta de presentación puede generar consecuencias tributarias y sancionadoras. Antes de concluir que existe obligación verificamos categoría, umbral, exenciones y ejercicio.' },
+      { q: '¿Tengo que presentarlo cada año?', a: 'No necesariamente. Tras una primera declaración hay que revisar el incremento respecto de la última presentada y también otros supuestos que pueden obligar a informar, como determinadas pérdidas de titularidad.' }
     ]
   },
 
@@ -991,7 +991,7 @@ export const services: Service[] = [
       'Escritura pública notarial',
       'Inscripción en Registro Mercantil',
       'Alta en Hacienda (Modelo 036)',
-      'Obtención del CIF definitivo'
+      'Obtención del NIF definitivo'
     ],
     faqs: [
       { q: '¿Cuánto capital mínimo se necesita?', a: 'Desde 1 euro, aunque lo habitual es un capital inicial de 3.000 €.' },
@@ -1163,8 +1163,8 @@ export const services: Service[] = [
       'Justificante de presentación'
     ],
     faqs: [
-      { q: '¿Cuándo hay que depositar las cuentas anuales?', a: 'Dentro del mes siguiente a la aprobación en Junta (normalmente hasta el 30 de julio para ejercicios cerrados a 31 de diciembre).' },
-      { q: '¿Qué pasa si no deposito las cuentas?', a: 'La sociedad puede quedar en situación de cierre registral y el ICAC puede imponer multas de hasta 300.000 €.' }
+      { q: '¿Cuándo hay que depositar las cuentas anuales?', a: 'Dentro del mes siguiente a su aprobación. La fecha concreta depende del cierre del ejercicio y de la fecha real de aprobación; no usamos un 30/31 de julio como plazo universal.' },
+      { q: '¿Qué pasa si no deposito las cuentas?', a: 'Puede producirse cierre registral y existe un régimen sancionador. El cierre tiene excepciones legales y la cuantía de la sanción depende, entre otros factores, del tamaño de la sociedad y de sus cifras contables.' }
     ]
   },
   {
@@ -1173,7 +1173,7 @@ export const services: Service[] = [
     name: 'Apoderamientos y Modificaciones Mercantiles',
     shortDescription: 'Cambio de administrador, modificación de estatutos, poderes notariales y compraventa de participaciones.',
     description:
-      'Gestionamos todo tipo de modificaciones societarias: cambio o nombramiento de administrador, modificación de estatutos sociales, otorgamiento y revocación de poderes notariales, ampliaciones y reducciones de capital, compraventa de participaciones sociales y otras operaciones registrales.',
+      'Gestionamos modificaciones societarias y apoderamientos: cambios de administrador, estatutos, otorgamiento o revocación de poderes, capital, participaciones y otras operaciones registrales. Antes de inscribir clasificamos el acto y el alcance del poder, porque no todos los poderes tienen el mismo régimen registral.',
     price: 'Consultar',
     duration: '7–20 días hábiles',
     includes: [
@@ -1185,7 +1185,7 @@ export const services: Service[] = [
     ],
     faqs: [
       { q: '¿Cómo cambio al administrador de mi empresa?', a: 'Se acuerda en Junta General o por el propio órgano de administración, se eleva a escritura notarial y se inscribe en el Registro Mercantil.' },
-      { q: '¿Qué es un poder notarial y para qué sirve?', a: 'Es un documento que otorga a una persona la facultad de actuar en nombre de otra o de la empresa. Puede ser general o especial (para actos concretos).' }
+      { q: '¿Qué es un poder notarial y para qué sirve?', a: 'Es un instrumento de representación voluntaria. Antes de tramitarlo hay que definir su alcance: los poderes generales mercantiles suelen acceder al Registro Mercantil, mientras que existen excepciones legales para determinados poderes para pleitos o actos concretos.' }
     ]
   },
 

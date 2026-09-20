@@ -429,6 +429,110 @@ describe('KIA Regulatory Registry', () => {
     }
   });
 
+
+  it('adds v1.4 fiscal international rulesets and dependencies', () => {
+    const migration = read('supabase/migrations/20260920123000_regulatory_v14_fiscal_mercantil_lot1.sql');
+    expect(migration).toContain("'MODEL_720_RULES'");
+    expect(migration).toContain("'MODEL_721_RULES'");
+    expect(migration).toContain("'IMPARTIATES_149_151_RULES'");
+    expect(migration).toContain("'modelo-720'");
+    expect(migration).toContain("'modelo-151'");
+    expect(migration).toContain("'modelos-informativos'");
+  });
+
+  it('keeps 720, 721 and impatriates guidance registry-driven', () => {
+    const catalog = read('lib/utils/catalog.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+    const aeat = read('lib/ai/kia/prompts/kia-aeat-knowledge.ts');
+    const systemPrompt = read('lib/ai/kia/kia-system-prompt.ts');
+    const decisionEngine = read('lib/ai/kia/kia-decision-engine.ts');
+    const facts = read('lib/utils/fun-facts.ts');
+
+    expect(checklists).toContain('MODEL_720_RULES');
+    expect(checklists).toContain('IMPARTIATES_149_151_RULES');
+    expect(aeat).toContain('MODEL_721_RULES');
+    expect(aeat).toContain('IMPARTIATES_149_151_RULES');
+    expect(systemPrompt).toContain('|720|721|151|beckham|');
+    expect(decisionEngine).toContain('modelo 720|modelo 721|patrimonio|beckham');
+
+    expect(catalog).not.toContain('Hasta 5 años desde la activación, renovable');
+    expect(checklists).not.toContain('Solo hay que presentarlo cuando se supera el umbral por primera vez');
+    expect(facts).not.toContain('David Beckham lo usó al fichar por el Real Madrid');
+    expect(aeat).not.toContain('tipo fijo 24%) durante maximo 6 anos');
+  });
+
+  it('adds v1.4 recurring tax rulesets and protects consumers from stale formulas', () => {
+    const migration = read('supabase/migrations/20260920133000_regulatory_v14_fiscal_recurrente_lot2.sql');
+    const aeat = read('lib/ai/kia/prompts/kia-aeat-knowledge.ts');
+    const blog = read('lib/utils/blog.ts');
+    const docs = read('lib/utils/docs.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+
+    expect(migration).toContain("'IRPF_PAYMENT_FRACTIONS_2026'");
+    expect(migration).toContain("'MODEL_202_RULES_2026'");
+    expect(migration).toContain("'INFORMATIVE_RETURNS_2026'");
+    expect(migration).toContain('RDL 22/2026');
+    expect(migration).toContain('RDL 23/2026');
+
+    expect(aeat).toContain('IRPF_PAYMENT_FRACTIONS_2026');
+    expect(aeat).toContain('INFORMATIVE_RETURNS_2026');
+    expect(checklists).toContain('AEAT_TAX_CALENDAR_2026');
+    expect(checklists).toContain('IRPF_PAYMENT_FRACTIONS_2026');
+
+    expect(blog).not.toContain('modelo 130 se calcula sobre el rendimiento real del trimestre');
+    expect(docs).not.toContain('**Modelo 390**: resumen anual de IVA (enero)');
+    expect(checklists).not.toContain('Plazos: del 1 al 20 de abril (1T), julio (2T), octubre (3T)');
+  });
+
+  it('adds mercantile rulesets and blocks stale company guidance', () => {
+    const migration = read('supabase/migrations/20260920150000_regulatory_v14_mercantil_lot3.sql');
+    const pae = read('lib/ai/kia/prompts/kia-pae-knowledge.ts');
+    const registries = read('lib/ai/kia/prompts/kia-justicia-registros-knowledge.ts');
+    const catalog = read('lib/utils/catalog.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+    const sources = read('lib/integrations/official-sources.ts');
+
+    expect(migration).toContain("'ANNUAL_ACCOUNTS_LSC_RULES'");
+    expect(migration).toContain("'REGISTRY_CLOSURE_RRM_RULES'");
+    expect(migration).toContain("'BOOK_LEGALIZATION_RULES'");
+    expect(migration).toContain("'CIRCE_PAE_DUE_RULES'");
+
+    expect(pae).toContain('SL_CAPITAL_RULES');
+    expect(registries).toContain('ANNUAL_ACCOUNTS_LSC_RULES');
+    expect(registries).toContain('REGISTRY_CLOSURE_RRM_RULES');
+    expect(registries).toContain('BOOK_LEGALIZATION_RULES');
+
+    expect(pae).not.toContain('Capital social minimo: 3.000 EUR');
+    expect(pae).not.toContain('sin ir presencialmente a la notaria');
+    expect(catalog).not.toContain('hasta el 30 de julio para ejercicios cerrados a 31 de diciembre');
+    expect(checklists).not.toContain('normalmente hasta el 30 de julio');
+    expect(sources).not.toContain('SL) online via CIRCE o tramitar el alta de autonomo sin desplazamientos');
+  });
+
+  it('adds beneficial ownership, entity NIF and mercantile powers rules', () => {
+    const migration = read('supabase/migrations/20260920163000_regulatory_v14_mercantil_lot4.sql');
+    const catalog = read('lib/utils/catalog.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+    const registries = read('lib/ai/kia/prompts/kia-justicia-registros-knowledge.ts');
+    const aeat = read('lib/ai/kia/prompts/kia-aeat-knowledge.ts');
+    const pae = read('lib/ai/kia/prompts/kia-pae-knowledge.ts');
+
+    expect(migration).toContain("'BENEFICIAL_OWNERSHIP_RCTR_RULES'");
+    expect(migration).toContain("'ENTITY_NIF_036_RULES'");
+    expect(migration).toContain("'MERCANTILE_POWERS_RRM_RULES'");
+
+    expect(checklists).toContain('BENEFICIAL_OWNERSHIP_RCTR_RULES');
+    expect(checklists).toContain('MERCANTILE_POWERS_RRM_RULES');
+    expect(registries).toContain('BENEFICIAL_OWNERSHIP_RCTR_RULES');
+    expect(registries).toContain('MERCANTILE_POWERS_RRM_RULES');
+    expect(aeat).toContain('ENTITY_NIF_036_RULES');
+    expect(pae).toContain('ENTITY_NIF_036_RULES');
+
+    expect(catalog).not.toContain('Obtención del CIF definitivo');
+    expect(catalog).not.toContain('Gestionamos todo tipo de modificaciones societarias');
+    expect(checklists).not.toContain('Para poderes simples (sin cargo registral)');
+  });
+
   it('documents the no-auto-merge and no-auto-publish contract', () => {
     const docs = read('docs/kia-regulatory-registry.md');
     expect(docs).toContain('Nunca se hace merge automático');

@@ -704,7 +704,7 @@ function applyBackendPolicyGuards(
     };
   }
 
-  if (input.taskType === 'viability_reasoning' && /arraigo|nacionalidad|residencia|renovar|modelo 720|patrimonio|beckham|denegaron|requerimiento/.test(lower)) {
+  if (input.taskType === 'viability_reasoning' && /arraigo|nacionalidad|residencia|renovar|modelo 720|modelo 721|patrimonio|beckham|denegaron|requerimiento/.test(lower)) {
     rules.add('service_flowtype_viability_detected');
     rules.add('run_viability_before_checkout');
     warnings.push('backend_policy_override_viability');

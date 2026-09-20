@@ -21,7 +21,7 @@ import { KIA_ACADEMY_KNOWLEDGE_PROMPT } from "./prompts/kia-academy-knowledge";
 const HOLDED_CONTEXT_RE =
   /\bholded\b|pack starter|migraci[oó]n holded|formaci[oó]n holded|plan supervision|plan avanzado|plan colaborativo|erp|control horario.*holded|holded.*control horario|холдед/i;
 const AEAT_CONTEXT_RE =
-  /\b(irpf|renta|iva|hacienda|aeat|agencia tributaria|modelo\s*\d{2,3}|tributar|declaraci[oó]n.*renta|impuesto.*renta|fiscal|036|037|130|131|303|390|720|151|beckham|verifactu|no residente|irnr|renta web|campan.*renta)\b/i;
+  /\b(irpf|renta|iva|hacienda|aeat|agencia tributaria|modelo\s*\d{2,3}|tributar|declaraci[oó]n.*renta|impuesto.*renta|fiscal|036|037|130|131|303|390|720|721|151|beckham|verifactu|no residente|irnr|renta web|campan.*renta)\b/i;
 const SS_CONTEXT_RE =
   /\b(seguridad social|reta|cotizaci[oó]n|cuota.*aut[oó]nom|aut[oó]nom.*cuota|vida laboral|importass|cese de actividad|tarifa plana|cuota reducida|baja.*laboral|alta.*aut[oó]nom|aut[oó]nom.*alta|inss|tgss|prestaci[oó]n.*aut[oó]nom|aut[oó]nom.*prestaci[oó]n)\b/i;
 const DGT_CONTEXT_RE =
