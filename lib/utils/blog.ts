@@ -2361,7 +2361,7 @@ Sí, pero necesitas llevar:
 
 ## Plazos
 
-Los duplicados se tramitan generalmente en **2 a 5 días hábiles** desde la presentación de la solicitud. Con gestoría autorizada, el proceso puede ser más ágil al evitar citas previas en las oficinas de tráfico.
+La tramitación y la entrega no tienen un único plazo para todos los documentos. En el duplicado del permiso de conducir, la DGT facilita un documento provisional y sitúa la llegada del permiso definitivo aproximadamente en torno a mes y medio. Para permiso de circulación y ficha técnica/eITV hay que revisar el canal concreto.
     `
   },
   {
@@ -2406,7 +2406,7 @@ Documentación necesaria:
 Las embarcaciones que van a navegar por aguas españolas o internacionales necesitan:
 
 - **Abanderamiento**: acreditar el pabellón (bandera) bajo la que navega la embarcación.
-- **Despacho de navegación**: autorización para cada salida a mar abierto, requerido para embarcaciones de cierto tamaño o recorrido.
+- **Permiso/certificado de navegación y despacho**: su régimen depende del tipo de embarcación, lista, uso y procedimiento aplicable; no todas las embarcaciones de recreo siguen el mismo régimen ni requieren una autorización individual para cada salida.
 
 ## Baja de embarcación
 
@@ -2414,7 +2414,7 @@ La baja (cancelación de matrícula) se tramita ante Capitanía Marítima cuando
 
 ## Titulaciones náuticas
 
-Capitanía Marítima también gestiona (junto con las Comunidades Autónomas) las titulaciones náuticas de recreo: Patrón de Embarcaciones de Recreo (PER), Patrón de Recreo (PR) y otros títulos. Aunque la gestión varía por comunidad, la validación oficial corresponde a la Marina Mercante.
+Las titulaciones náuticas de recreo tienen un reparto competencial que puede variar entre la Administración marítima estatal y las comunidades autónomas. Antes de indicar examen, expedición o renovación hay que comprobar la autoridad competente y el título concreto.
     `
   },
 

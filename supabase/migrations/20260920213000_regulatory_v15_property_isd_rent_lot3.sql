@@ -9,8 +9,8 @@ values
     'Agencia Tributaria Valenciana',
     'ATV - Modelo 600 cancelacion de hipoteca',
     'https://atv.gva.es/documents/173852445/176137351/MODELO%2B600-CANCELACION%2BDE%2BHIPOTECA.pdf/9ca4a900-ceb5-4391-ae76-8b27ae8fe81f',
-    'https://atv.gva.es/documents/173852445/176137351/MODELO%2B600-CANCELACION%2BDE%2BHIPOTECA.pdf/9ca4a900-ceb5-4391-ae76-8b27ae8fe81f',
-    'administrative','pdf','critical',
+    'https://atv.gva.es/es/tributos-modelos-autoliquidacion',
+    'administrative','html','critical',
     array['property','mortgage','cancellation','model_600','ajd'],'monthly',
     '{"official":true,"evidence_source":true,"jurisdiction":"Comunitat Valenciana"}'::jsonb
   ),

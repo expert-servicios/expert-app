@@ -600,6 +600,39 @@ describe('KIA Regulatory Registry', () => {
     expect(catalog).not.toContain('La cancelación registral debe tramitarla el titular del préstamo');
   });
 
+  it('closes v1.5 DGT duplicates and recreational maritime coverage', () => {
+    const migration = read('supabase/migrations/20260920230000_regulatory_v15_final_dgt_maritime.sql');
+    const dgt = read('lib/ai/kia/prompts/kia-dgt-knowledge.ts');
+    const catalog = read('lib/utils/catalog.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+    const blog = read('lib/utils/blog.ts');
+
+    expect(migration).toContain("'DGT_DUPLICATES_PERMITS_2026'");
+    expect(migration).toContain("'MARITIME_RECREATIONAL_CRAFT_2026'");
+    expect(migration).toContain('administrative_annotation_or_detailed_report_rate_4_1');
+    expect(migration).toContain('duplicate_driving_or_circulation_document_rate_4_4');
+    expect(migration).toContain('deadline":"maximum 3 months from transfer date');
+
+    expect(dgt).toContain('DGT_DUPLICATES_PERMITS_2026');
+    expect(dgt).toContain('MARITIME_RECREATIONAL_CRAFT_2026');
+    expect(checklists).toContain('DGT_DUPLICATES_PERMITS_2026');
+    expect(checklists).toContain('MARITIME_RECREATIONAL_CRAFT_2026');
+
+    expect(blog).not.toContain('Los duplicados se tramitan generalmente en **2 a 5 días hábiles**');
+    expect(blog).not.toContain('autorización para cada salida a mar abierto');
+    expect(catalog).not.toContain('ante la DGT o la prefectura correspondiente');
+    expect(checklists).not.toContain('Los trámites de embarcaciones dependen de la Capitanía Marítima de cada provincia');
+  });
+
+  it('keeps all new regulatory source fetch strategies inside the registry contract', () => {
+    const mortgageIsd = read('supabase/migrations/20260920213000_regulatory_v15_property_isd_rent_lot3.sql');
+    const finalV15 = read('supabase/migrations/20260920230000_regulatory_v15_final_dgt_maritime.sql');
+
+    expect(mortgageIsd).not.toContain("'administrative','pdf'");
+    expect(finalV15).not.toContain("'administrative','pdf'");
+    expect(finalV15).not.toContain("'legislation','pdf'");
+  });
+
   it('documents the no-auto-merge and no-auto-publish contract', () => {
     const docs = read('docs/kia-regulatory-registry.md');
     expect(docs).toContain('Nunca se hace merge automático');

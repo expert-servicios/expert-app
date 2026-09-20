@@ -58,3 +58,34 @@ Contrato:
 ## Siguientes lotes
 - duplicados y permisos;
 - Capitanía.
+
+## Lote 4 - cierre final v1.5
+
+### Duplicados y permisos DGT
+- `DGT_DUPLICATES_PERMITS_2026`: permiso de conducir, permiso de circulación, eITV/ficha técnica y canjes;
+- distingue duplicado, renovación y copia eITV;
+- `DGT_FEES_2026` pasa a schema v2 desde 20/09/2026 para incorporar tasa 4.1 sin solapar la versión anterior;
+- no se mantienen listas estáticas de países con convenio de canje.
+
+### Capitanía / embarcaciones de recreo
+- `MARITIME_RECREATIONAL_CRAFT_2026`: inscripción/abanderamiento, régimen especial hasta 12 m con marcado CE cuando procede, cambio de titularidad, cambios registrales y permiso/certificado de navegación;
+- cambio de titularidad: máximo 3 meses desde la transmisión;
+- tasa código 025: cálculo por concepto/arqueo, sin importe fijo universal;
+- titulaciones de recreo: verificar autoridad competente y título concreto.
+
+## Estado de v1.5
+
+**CERRADA.**
+
+Cobertura final:
+1. compraventa inmobiliaria / valor de referencia CV;
+2. transferencias DGT y tasas;
+3. matriculación / IEDMT / importación UE-no UE;
+4. cancelación hipotecaria;
+5. ISD operativo CV;
+6. fianzas GVA/LAU;
+7. duplicados, documentación y canjes DGT;
+8. embarcaciones de recreo / Capitanía-Marina Mercante.
+
+El siguiente trabajo debe abrir una versión nueva; no ampliar este baseline salvo corrección de error.
+

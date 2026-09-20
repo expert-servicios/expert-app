@@ -49,17 +49,11 @@ Vehiculo importado (de fuera de España):
 <dgt_canje_permiso>
 CANJE DE PERMISO DE CONDUCIR EXTRANJERO:
 
-Convenios de reciprocidad: España tiene acuerdos de canje directo con muchos paises (UE/EEE, y otros como Marruecos, Argentina, Colombia, etc.).
-
-Proceso general para paises con convenio:
-1. Solicitar cita previa en la Jefatura Provincial de Trafico: https://sede.dgt.gob.es/
-2. Documentos: NIE o TIE vigente, permiso de conducir extranjero original, traduccion jurada si no es de la UE, fotografia, justificante pago tasa.
-3. El permiso extranjero queda retenido mientras dura el tramite.
-4. Plazo estimado de resolucion: variable (semanas a meses segun provincia y carga).
-
-Paises sin convenio: requieren superar pruebas teorica y practica en España.
-UE/EEE: canje directo sin pruebas, tramite simplificado.
-EXPERT gestiona el canje de permiso extranjero como parte del servicio de trafico.
+Consultar DGT_DUPLICATES_PERMITS_2026 antes de orientar un canje.
+- UE/EEE: la via de canje no exige examen de conduccion, sin perjuicio de los requisitos administrativos aplicables.
+- Otros paises: comprobar siempre la pagina DGT vigente de convenios y las condiciones especificas del pais y clase de permiso.
+- No mantener listas estaticas de paises ni asumir que todo pais sin convenio sigue exactamente el mismo circuito.
+EXPERT gestiona el canje de permiso extranjero dentro de los servicios de trafico cuando el caso es tramitable.
 </dgt_canje_permiso>
 
 <dgt_otros_tramites>
@@ -70,9 +64,12 @@ Informe de puntos del carnet:
 - Necesita certificado digital, Cl@ve o SMS con DNI/NIE + fecha nacimiento + numero permiso.
 - Es gratuito y puede consultarse en cualquier momento.
 
-Duplicado del permiso de circulacion:
-- Por perdida, robo o deterioro. Tramite online en sede DGT o en Jefatura.
-- Requiere denuncia si es por robo.
+Duplicados y documentacion de trafico:
+- Consultar DGT_DUPLICATES_PERMITS_2026.
+- Distinguir permiso de conducir, permiso de circulacion y ficha tecnica/eITV.
+- Perdida, robo o deterioro pueden dar lugar a duplicado, pero cambios de datos o caracteristicas pueden ser renovacion u otro tramite.
+- No afirmar que la denuncia es siempre requisito del duplicado: verificar el canal y supuesto concreto.
+- Para tasas consultar DGT_FEES_2026.
 
 Baja definitiva de vehiculo (desguace):
 - El desguace autorizado realiza la baja automaticamente al recibir el vehiculo.
@@ -110,7 +107,9 @@ REGLAS DE KIA PARA PREGUNTAS SOBRE DGT Y TRAFICO:
 - Para vehiculos de empresa: las transferencias requieren documentacion adicional (escrituras, representante legal).
 - Para canje de permiso extranjero: verificar si el pais tiene convenio de reciprocidad con España antes de orientar el proceso.
 - Si el cliente pregunta por multas de trafico: orientacion inicial sobre plazos de recurso; si es complejo, derivar a EXPERT (recurso administrativo trafico).
-- EXPERT gestiona: transferencias, matriculaciones, canje de permisos, bajas, duplicados y tramites con Capitania Maritima. Servicio: svc_trafico.
+- Para duplicados/canjes consultar DGT_DUPLICATES_PERMITS_2026.
+- Para embarcaciones de recreo consultar MARITIME_RECREATIONAL_CRAFT_2026.
+- EXPERT gestiona: transferencias, matriculaciones, canjes, bajas, duplicados y tramites maritimos segun el expediente. Servicio: svc_trafico.
 - Sede DGT: https://sede.dgt.gob.es/ | App miDGT para consultas rapidas.
 </dgt_kia_rules>
 </dgt_knowledge>
