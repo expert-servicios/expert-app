@@ -780,7 +780,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes la ficha técnica homologada?',
     ],
     botInstructions:
-      'El impuesto de matriculación (IEDMT) se paga en la primera matriculación en España o si el vehículo supera ciertos límites de emisiones de CO₂. Precio: consultar según caso.',
+      'Consultar VEHICLE_IMPORT_REGISTRATION_2026 para distinguir vehículo nacional, UE y fuera de UE; IEDMT_REGISTRATION_2026 para hecho imponible, exenciones, base y tipo; y DGT_FEES_2026 para la tasa. No concluir la cuota únicamente por emisiones de CO₂. Precio: consultar según caso.',
     estimatedPrice: 'Consultar',
   },
 
