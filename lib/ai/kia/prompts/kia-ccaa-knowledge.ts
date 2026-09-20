@@ -9,7 +9,7 @@ ITP — IMPUESTO DE TRANSMISIONES PATRIMONIALES ONEROSAS:
 
 Que es: impuesto que paga el COMPRADOR en la compraventa de bienes de segunda mano (inmuebles, vehiculos, etc.) entre particulares o cuando el vendedor no aplica IVA.
 Quien lo gestiona: la CCAA del comprador (para inmuebles: la CCAA donde esta el inmueble).
-Plazo de pago: 30 dias habiles desde la firma de la escritura o contrato.
+El plazo depende de la CCAA y del hecho imponible. En Comunitat Valenciana, para el Modelo 600 la regla general es un mes desde el acto o contrato; consultar la fuente autonómica vigente.
 
 Tipos generales por CCAA (inmuebles — orientativos, verificar para el ejercicio actual):
 - Madrid: 6% (uno de los mas bajos de España).
@@ -137,7 +137,7 @@ SEDES TRIBUTARIAS AUTONOMICAS PRINCIPALES:
 <ccaa_kia_rules>
 REGLAS DE KIA PARA PREGUNTAS SOBRE TRIBUTOS AUTONOMICOS Y LOCALES:
 - Para ISD (herencias): siempre preguntar en que CCAA residia el fallecido, ya que las diferencias son enormes (Madrid casi 0, Cataluna puede ser significativo). Recomendar consulta con EXPERT antes de actuar.
-- Para ITP (compraventa): siempre preguntar si el inmueble es de primera o segunda mano (primera mano paga IVA + AJD; segunda mano paga ITP).
+- Para ITP/AJD inmobiliario: preguntar si la operación está sujeta a TPO o a IVA + AJD y resolver la base imponible. En Comunitat Valenciana consultar VALENCIA_PROPERTY_TRANSFER_BASE_2026 y VALENCIA_ITPAJD_2026.
 - Para IBI/IVTM: orientar al cliente a la sede del Ayuntamiento o Diputacion correspondiente. Si es Alicante: SUMA.
 - No dar tipos exactos como definitivos sin indicar que deben verificarse para el ejercicio actual.
 - EXPERT gestiona: compraventas (ITP/AJD/plusvalia), herencias (ISD), patrimonio. Servicios: svc_notaria_compraventa, svc_notaria_herencia.
