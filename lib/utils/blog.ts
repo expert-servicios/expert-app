@@ -2597,7 +2597,7 @@ En comunidades con fuerte bonificación del ISD (Madrid, Andalucía), tanto la d
     body: `
 ## ¿Por qué el banco no cancela la hipoteca automáticamente?
 
-Una confusión muy habitual: cuando terminas de pagar el préstamo hipotecario, la **deuda queda saldada económicamente**, pero la hipoteca sigue inscrita como carga en el Registro de la Propiedad. El banco solo emite el certificado de deuda cero; la cancelación registral es obligación del deudor.
+Una confusión muy habitual: cuando terminas de pagar el préstamo hipotecario, la **deuda queda saldada económicamente**, pero la hipoteca sigue inscrita como carga en el Registro de la Propiedad. El pago extingue la deuda, pero no elimina por sí solo la carga registral. La cancelación registral no es automática y se tramita mediante escritura pública otorgada por el acreedor y su posterior inscripción.
 
 Si no cancelas registralmente la hipoteca, la carga sigue figurando en la nota simple del inmueble, lo que puede:
 
@@ -2633,7 +2633,7 @@ Los costes aproximados incluyen:
 
 ## ¿Cuánto tiempo tengo para cancelar?
 
-No hay plazo legal para cancelar la hipoteca en el Registro. Puede hacerse en cualquier momento después de saldar la deuda. Pero conviene hacerlo cuanto antes para evitar problemas en futuras transacciones.
+La cancelación registral ordinaria no es obligatoria por el mero pago de la deuda, pero resulta conveniente si se quiere dejar la finca libre de la carga. Existen además supuestos especiales de cancelación por caducidad que requieren revisar fechas y antecedentes registrales.
     `
   },
 
