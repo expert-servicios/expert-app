@@ -123,7 +123,20 @@ type ChangeRow = {
 async function classifyOne(change: ChangeRow) {
   const admin = getSupabaseAdmin();
 
-  const [{ data: source }, { data: current }, previousResult, { data: dependencies }] = await Promise.all([
+  const { data: sourceRulesets, error: sourceRulesetsError } = await admin
+    .from('regulatory_rulesets')
+    .select('ruleset_key')
+    .eq('source_id', change.source_id);
+  if (sourceRulesetsError) throw new Error(sourceRulesetsError.message);
+  const sourceRulesetKeys = Array.from(new Set((sourceRulesets ?? []).map((row) => row.ruleset_key)));
+
+  const [
+    { data: source },
+    { data: current },
+    previousResult,
+    directDependenciesResult,
+    rulesetDependenciesResult,
+  ] = await Promise.all([
     admin.from('regulatory_sources')
       .select('source_key,authority,title,url,topics,priority,metadata')
       .eq('id', change.source_id).single(),
@@ -136,13 +149,31 @@ async function classifyOne(change: ChangeRow) {
           .eq('id', change.previous_snapshot_id).single()
       : Promise.resolve({ data: null, error: null }),
     admin.from('regulatory_dependencies')
-      .select('id,dependency_type,dependency_key,topic,criticality,metadata')
+      .select('id,dependency_type,dependency_key,topic,criticality,metadata,ruleset_key')
       .eq('source_id', change.source_id)
       .eq('active', true)
       .limit(100),
+    sourceRulesetKeys.length > 0
+      ? admin.from('regulatory_dependencies')
+          .select('id,dependency_type,dependency_key,topic,criticality,metadata,ruleset_key')
+          .in('ruleset_key', sourceRulesetKeys)
+          .eq('active', true)
+          .limit(200)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
+  if (directDependenciesResult.error) throw new Error(directDependenciesResult.error.message);
+  if (rulesetDependenciesResult.error) throw new Error(rulesetDependenciesResult.error.message);
   if (!source || !current) throw new Error('Regulatory change context is incomplete');
+
+  const dependencyMap = new Map<string, NonNullable<typeof directDependenciesResult.data>[number]>();
+  for (const dependency of [
+    ...(directDependenciesResult.data ?? []),
+    ...(rulesetDependenciesResult.data ?? []),
+  ]) {
+    dependencyMap.set(dependency.id, dependency);
+  }
+  const dependencies = Array.from(dependencyMap.values());
 
   const previous = previousResult.data;
   const payload = {
