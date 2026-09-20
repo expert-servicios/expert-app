@@ -103,7 +103,7 @@ const REQUIRED_DOCS = [
   'Exportación de ubicaciones de almacén si aplica',
   'Exportación de facturas emitidas/recibidas si se migra historial',
   'Exportación del maestro de clientes y proveedores',
-  'Modelo 036/037 o alta fiscal para datos de empresa',
+  'Modelo 036 o alta fiscal para datos de empresa',
 ];
 
 const FAQ = [
