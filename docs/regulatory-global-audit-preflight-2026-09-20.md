@@ -70,7 +70,25 @@ Se eliminan residuos:
 - Valencia 10 % en contenido público;
 - Modelo 720 resumido como simple umbral de 50.000 EUR;
 - Beckham resumido como un único “tipo fijo 24 %”;
-- plazo del Modelo 200 calculado desde una frase estática.
+- plazo del Modelo 200 calculado desde una frase estática;
+- Golden Visa presentada como vía abierta pese a su derogación para nuevas solicitudes desde 03/04/2025;
+- larga duración nacional con requisitos económicos/seguro trasladados incorrectamente desde otras autorizaciones;
+- reagrupación familiar con RD 557/2011 y cuantías aproximadas 2025;
+- guía de arraigos con categoría antigua de arraigo laboral y formulario erróneo;
+- segunda tabla VERI*FACTU con fechas 2025/2026;
+- cuota RETA y metadatos de autónomos anclados a 2025;
+- terminología residual CIF definitivo.
+
+## Auditoría temporal de contenido 2026
+
+La pasada final se contrastó con fuentes oficiales vigentes:
+
+- RRSIF/VERI*FACTU: 01/01/2027 para contribuyentes del IS y 01/07/2027 para el resto de obligados del ámbito;
+- residencia de larga duración nacional: no incorporar como requisito general 150 % IPREM ni seguro médico;
+- reagrupación familiar: 150 % IPREM para unidad de dos miembros + 50 % por adicional, con reglas de minoración en determinados supuestos con menores;
+- residencia no lucrativa: 400 % IPREM para solicitante + 100 % por familiar, usando el IPREM vigente;
+- Golden Visa/inversores: artículos 63-67 Ley 14/2013 sin contenido desde 03/04/2025, salvo régimen transitorio;
+- arraigos: nomenclatura vigente del RD 1155/2024.
 
 ## Integridad del grafo
 
