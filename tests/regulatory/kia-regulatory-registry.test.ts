@@ -325,7 +325,7 @@ describe('KIA Regulatory Registry', () => {
     expect(migration).toContain("'boe_social_security_order_2026'");
     expect(migration).toContain("'boe_commercial_late_interest_2026_h2'");
     expect(migration).toContain("'aeat_interest_reference_2026'");
-    expect(migration).toContain("'fingerprint_version':2");
+    expect(migration).toContain('"fingerprint_version":2');
     expect(migration).toContain("last_fingerprint = null");
     expect(migration).toContain("'discovery_only':true");
   });
