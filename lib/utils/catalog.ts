@@ -1235,7 +1235,7 @@ export const services: Service[] = [
     name: 'Duplicado de Documentos de Tráfico',
     shortDescription: 'Obtención de duplicados del permiso de conducir, de circulación o ficha técnica.',
     description:
-      'Tramitamos duplicados de permiso de conducir, permiso de circulación o ficha técnica del vehículo por pérdida, robo o deterioro ante la DGT o la prefectura correspondiente.',
+      'Tramitamos duplicados y renovaciones documentales de tráfico según el documento y la causa: permiso de conducir, permiso de circulación y ficha técnica/eITV. Verificamos el canal, la tasa y si el caso es realmente un duplicado o un trámite distinto.',
     price: 'Desde 50 € + IVA',
     duration: '2–5 días hábiles',
     includes: [
@@ -1243,7 +1243,7 @@ export const services: Service[] = [
       'Obtención del duplicado correspondiente'
     ],
     faqs: [
-      { q: '¿Puedo conducir mientras espero el duplicado del carnet?', a: 'No, necesitas tener el permiso físico o el resguardo provisional en vigor para circular legalmente.' }
+      { q: '¿Puedo conducir mientras llega el duplicado?', a: 'Cuando la DGT emite autorización provisional, ésta permite conducir en España durante su vigencia mientras llega el permiso definitivo. Revisamos el justificante concreto del expediente.' }
     ]
   },
   {
@@ -1252,7 +1252,7 @@ export const services: Service[] = [
     name: 'Trámites de Embarcaciones',
     shortDescription: 'Matriculación, transferencias y gestiones ante Capitanía Marítima.',
     description:
-      'Gestionamos los trámites de embarcaciones de recreo ante Capitanía Marítima: matriculación, cambio de titularidad, despachos, abanderamiento y documentación para titulaciones náuticas. También tramitamos bajas y transferencias de motos de agua.',
+      'Gestionamos trámites de embarcaciones de recreo ante la Administración marítima: inscripción y abanderamiento/matriculación cuando proceda, cambios registrales, cambio de titularidad, bajas y permisos/certificados de navegación. La vía depende de eslora, marcado CE, lista/uso y acto registral.',
     price: 'Consultar',
     duration: '5–15 días hábiles',
     includes: [
@@ -1262,7 +1262,7 @@ export const services: Service[] = [
       'Tramitación de bajas'
     ],
     faqs: [
-      { q: '¿Dónde se tramitan los permisos de embarcaciones en España?', a: 'Ante la Capitanía Marítima de la provincia correspondiente, dependiente de la Dirección General de la Marina Mercante.' }
+      { q: '¿Dónde se tramitan los documentos de una embarcación?', a: 'Depende del trámite. Las Capitanías/Distritos Marítimos y la sede electrónica de Transportes gestionan distintos procedimientos de registro, abanderamiento, cambios de titularidad y permisos de navegación.' }
     ]
   },
 
