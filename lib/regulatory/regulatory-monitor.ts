@@ -40,6 +40,7 @@ const ALLOWED_HOSTS = new Set([
   'www.gva.es',
   'sede.gva.es',
   'www.paeelectronico.es',
+  'paeelectronico.es',
   'revista.dgt.es',
   'sede.transportes.gob.es',
 ]);
