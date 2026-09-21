@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - '.github/workflows/regulatory-production-complete-v15-once.yml'
+      - 'supabase/migrations/20260920180000_regulatory_v15_property_dgt_lot1.sql'
+      - 'supabase/migrations/20260920213000_regulatory_v15_property_isd_rent_lot3.sql'
 
 permissions:
   contents: read

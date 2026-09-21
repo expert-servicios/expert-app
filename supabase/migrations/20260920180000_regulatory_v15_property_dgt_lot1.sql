@@ -105,7 +105,7 @@ select
       "insurance_required_before_driving":true
     },
     "fee_source":"DGT_FEES_2026",
-    "rule":"The DGT 30-day transfer deadline is distinct from the regional tax filing deadline. Do not call IVTM 'plusvalia municipal'; IVTM is the municipal vehicle tax and is a different tax."
+    "rule":"The DGT 30-day transfer deadline is distinct from the regional tax filing deadline. Do not call IVTM plusvalia municipal; IVTM is the municipal vehicle tax and is a different tax."
   }'::jsonb,
   '{"official_reference":"DGT used vehicle purchase/transfer guidance 2026","human_review_if_encumbrance_inheritance_donation_or_divorce":true}'::jsonb
 from public.regulatory_sources s where s.source_key='dgt_vehicle_transfer_2026'

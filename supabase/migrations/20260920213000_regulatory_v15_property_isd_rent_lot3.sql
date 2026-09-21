@@ -135,7 +135,7 @@ select
     "benefit_source":"VALENCIA_ISD_2026",
     "real_estate_valuation_source":"VALENCIA_PROPERTY_TRANSFER_BASE_2026 when reference value applies",
     "public_document_rule":"Check VALENCIA_ISD_2026 before applying family bonus to inter vivos gifts because public-document and relationship requirements may apply.",
-    "rule":"Do not use a universal 'donee residence' rule for every donation. Determine whether the gift is real estate or another asset and apply the correct territorial connection."
+    "rule":"Do not use a universal donee-residence rule for every donation. Determine whether the gift is real estate or another asset and apply the correct territorial connection."
   }'::jsonb,
   '{"official_reference":"GVA Modelo 651 procedure 2026 + ATV Donaciones","human_review_if_nonresident_mixed_assets_or_multiple_regions":true}'::jsonb
 from public.regulatory_sources s where s.source_key='gva_donations_651_2026'

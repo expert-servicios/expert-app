@@ -32,7 +32,7 @@ describe('Supabase regulatory ledger preflight contract', () => {
     expect(script).toContain('duplicate local migration versions');
   });
 
-  it('fails closed on partial v1.3-v1.5 deployment and pins the audited batch', () => {
+  it('pins the audited batch and allows only the exact audited v1.5 recovery state', () => {
     const script = read(scriptPath);
     const versions = [
       '20260920111500',
@@ -47,8 +47,11 @@ describe('Supabase regulatory ledger preflight contract', () => {
     ];
 
     expect(script).toContain("predeploy_tip='20260920073758'");
-    expect(script).toContain('partial v1.3-v1.5 production deployment detected');
+    expect(script).toContain("recovery_tip='20260920163000'");
+    expect(script).toContain("ledger_state='audited_partial_v15_recovery'");
+    expect(script).toContain('unexpected partial v1.3-v1.5 production deployment detected');
     expect(script).toContain('expected exactly 9 audited regulatory migrations before deployment');
+    expect(script).toContain('expected exactly 4 migrations in audited v1.5 recovery tail');
     for (const version of versions) {
       expect(script).toContain(version);
     }
