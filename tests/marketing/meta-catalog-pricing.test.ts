@@ -28,6 +28,14 @@ describe('parseServicePrice', () => {
     expect(result.warnings).toContain('per_unit_pricing:modelo');
   });
 
+  it('treats a fixed price with a per-unit suffix as "from", since the total varies', () => {
+    const result = parseServicePrice('50 € + IVA / empleado');
+    expect(result.priceMode).toBe('from');
+    expect(result.amountCents).toBe(5000);
+    expect(result.perUnit).toBe('empleado');
+    expect(result.warnings).toContain('per_unit_pricing:empleado');
+  });
+
   it('treats "Consultar" as a quote requiring manual review', () => {
     const result = parseServicePrice('Consultar');
     expect(result.priceMode).toBe('quote');

@@ -63,8 +63,12 @@ export function parseServicePrice(raw: string | undefined | null): ParsedService
   const warnings: string[] = [];
   if (perUnit) warnings.push(`per_unit_pricing:${perUnit}`);
 
+  // A per-unit price ("/ empleado", "/ trimestre") is a floor, not a total,
+  // even when the source text didn't say "Desde" — the real total varies.
+  const priceMode: CommercialPriceMode = fromPrefix || perUnit ? 'from' : 'fixed';
+
   return {
-    priceMode: fromPrefix ? 'from' : 'fixed',
+    priceMode,
     amountCents: Math.round(amount * 100),
     currency: 'EUR',
     vatTreatment: 'plus_vat',

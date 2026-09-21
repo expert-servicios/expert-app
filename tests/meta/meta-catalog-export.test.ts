@@ -55,7 +55,7 @@ describe('buildMetaCatalogDrafts', () => {
     });
   });
 
-  it('flags a service missing an image, on a quote price and with the Meta channel not ready', async () => {
+  it('excludes a "Consultar" (quote price) service from the catalog outright instead of listing it blocked', async () => {
     fromMock.mockImplementation((table: string) => {
       if (table === 'catalog_services') {
         return { select: () => queryResult([{ id: 's2', slug: 'quote-service', category_key: 'notaria-propiedades', status: 'active' }]) };
@@ -75,14 +75,63 @@ describe('buildMetaCatalogDrafts', () => {
     const { buildMetaCatalogDrafts } = await import('@/lib/integrations/meta/catalog-export');
     const result = await buildMetaCatalogDrafts();
 
+    expect(result.drafts).toHaveLength(0);
+    expect(result.readyCount).toBe(0);
+    expect(result.blockedCount).toBe(0);
+    expect(result.excluded).toEqual([{ retailerId: 'quote-service', name: 'Quote service', reason: 'quote_price' }]);
+  });
+
+  it('excludes a service with no commercial offer at all', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'catalog_services') {
+        return { select: () => queryResult([{ id: 's3', slug: 'no-offer-service', category_key: 'notaria-propiedades', status: 'active' }]) };
+      }
+      if (table === 'service_contents') {
+        return { select: () => queryResult([{ id: 'c3', service_id: 's3', locale: 'es', name: 'No offer service', short_description: 'short', description: 'long', landing_path: '/servicios/notaria-propiedades/no-offer-service', image_url: null, status: 'active' }]) };
+      }
+      if (table === 'commercial_offers') {
+        return { select: () => queryResult([]) };
+      }
+      if (table === 'service_channel_configs') {
+        return { select: () => queryResult([]) };
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const { buildMetaCatalogDrafts } = await import('@/lib/integrations/meta/catalog-export');
+    const result = await buildMetaCatalogDrafts();
+
+    expect(result.drafts).toHaveLength(0);
+    expect(result.excluded).toEqual([{ retailerId: 'no-offer-service', name: 'No offer service', reason: 'missing_offer' }]);
+  });
+
+  it('flags a priced service missing an image and with the Meta channel not ready, without excluding it', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'catalog_services') {
+        return { select: () => queryResult([{ id: 's4', slug: 'blocked-service', category_key: 'notaria-propiedades', status: 'active' }]) };
+      }
+      if (table === 'service_contents') {
+        return { select: () => queryResult([{ id: 'c4', service_id: 's4', locale: 'es', name: 'Blocked service', short_description: 'short', description: 'long', landing_path: '/servicios/notaria-propiedades/blocked-service', image_url: null, status: 'active' }]) };
+      }
+      if (table === 'commercial_offers') {
+        return { select: () => queryResult([{ id: 'o4', service_id: 's4', code: 'default', price_mode: 'from', amount_cents: 5000, status: 'active' }]) };
+      }
+      if (table === 'service_channel_configs') {
+        return { select: () => queryResult([]) };
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const { buildMetaCatalogDrafts } = await import('@/lib/integrations/meta/catalog-export');
+    const result = await buildMetaCatalogDrafts();
+
+    expect(result.excluded).toEqual([]);
     expect(result.readyCount).toBe(0);
     expect(result.blockedCount).toBe(1);
     const draft = result.drafts[0];
     expect(draft.marketingReady).toBe(false);
-    expect(draft.price).toBeNull();
-    expect(draft.warnings).toEqual(
-      expect.arrayContaining(['missing_image', 'price_requires_manual_review', 'meta_channel_not_ready']),
-    );
+    expect(draft.price).toEqual({ amount: 50, currency: 'EUR', taxIncluded: false });
+    expect(draft.warnings).toEqual(expect.arrayContaining(['missing_image', 'meta_channel_not_ready']));
   });
 
   it('throws instead of silently exporting a partial catalog when a C2 table read fails', async () => {

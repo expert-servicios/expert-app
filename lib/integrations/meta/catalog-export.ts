@@ -37,8 +37,16 @@ type ChannelConfigRow = {
   publish_status: string;
 };
 
+export type MetaCatalogExcludedService = {
+  retailerId: string;
+  name: string;
+  reason: 'quote_price' | 'missing_offer';
+};
+
 export type MetaCatalogDraftResult = {
   drafts: MetaServiceCatalogDraft[];
+  /** Services with no fixed/floor price at all — never candidates for the catalog, not just blocked. */
+  excluded: MetaCatalogExcludedService[];
   readyCount: number;
   blockedCount: number;
 };
@@ -47,7 +55,9 @@ export type MetaCatalogDraftResult = {
  * Read-only projection from the canonical C2 tables into what a Meta
  * commerce catalog item needs. Never writes anything and never calls Meta.
  * A draft with `marketingReady: false` names exactly what is missing so it
- * can be fixed before this service is exported.
+ * can be fixed before this service is exported. Services priced "Consultar"
+ * (price_mode "quote") are excluded outright: Meta requires one number per
+ * item, and listing a made-up price is worse than not listing it.
  */
 export async function buildMetaCatalogDrafts(locale = 'es'): Promise<MetaCatalogDraftResult> {
   const admin = getSupabaseAdmin();
@@ -85,10 +95,29 @@ export async function buildMetaCatalogDrafts(locale = 'es'): Promise<MetaCatalog
   }
   const channelByService = new Map(channels.map((row) => [row.service_id, row]));
 
-  const drafts = services.map((service) => buildDraft(service, contentByService, offersByService, channelByService));
+  const drafts: MetaServiceCatalogDraft[] = [];
+  const excluded: MetaCatalogExcludedService[] = [];
+
+  for (const service of services) {
+    const content = contentByService.get(service.id) ?? null;
+    const serviceOffers = offersByService.get(service.id) ?? [];
+    const offer = serviceOffers.find((row) => row.status === 'active') ?? serviceOffers[0] ?? null;
+
+    if (!offer || offer.price_mode === 'quote') {
+      excluded.push({
+        retailerId: service.slug,
+        name: content?.name ?? service.slug,
+        reason: offer ? 'quote_price' : 'missing_offer',
+      });
+      continue;
+    }
+
+    drafts.push(buildDraft(service, content, offer, channelByService));
+  }
 
   return {
     drafts,
+    excluded,
     readyCount: drafts.filter((draft) => draft.marketingReady).length,
     blockedCount: drafts.filter((draft) => !draft.marketingReady).length,
   };
@@ -96,26 +125,21 @@ export async function buildMetaCatalogDrafts(locale = 'es'): Promise<MetaCatalog
 
 function buildDraft(
   service: CatalogServiceRow,
-  contentByService: Map<string, ServiceContentRow>,
-  offersByService: Map<string, CommercialOfferRow[]>,
+  content: ServiceContentRow | null,
+  offer: CommercialOfferRow,
   channelByService: Map<string, ChannelConfigRow>,
 ): MetaServiceCatalogDraft {
-  const content = contentByService.get(service.id) ?? null;
-  const serviceOffers = offersByService.get(service.id) ?? [];
-  const offer = serviceOffers.find((row) => row.status === 'active') ?? serviceOffers[0] ?? null;
   const channel = channelByService.get(service.id) ?? null;
 
   const warnings: string[] = [];
   if (!content) warnings.push('missing_content');
   if (content && !content.image_url) warnings.push('missing_image');
   if (content && content.status !== 'active') warnings.push(`content_status:${content.status}`);
-  if (!offer) warnings.push('missing_offer');
-  if (offer && offer.price_mode === 'quote') warnings.push('price_requires_manual_review');
-  if (offer && offer.price_mode !== 'quote' && offer.amount_cents == null) warnings.push('missing_amount');
+  if (offer.amount_cents == null) warnings.push('missing_amount');
   if (service.status !== 'active') warnings.push(`service_status:${service.status}`);
   if (!channel || !channel.enabled || channel.publish_status !== 'ready') warnings.push('meta_channel_not_ready');
 
-  const price = offer && offer.amount_cents != null
+  const price = offer.amount_cents != null
     ? { amount: offer.amount_cents / 100, currency: 'EUR' as const, taxIncluded: false as const }
     : null;
 

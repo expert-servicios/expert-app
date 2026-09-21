@@ -59,10 +59,22 @@ type MetaCatalogDraft = {
   warnings: string[];
 };
 
+type MetaCatalogExcludedService = {
+  retailerId: string;
+  name: string;
+  reason: 'quote_price' | 'missing_offer';
+};
+
 type MetaCatalogPayload = {
   drafts: MetaCatalogDraft[];
+  excluded: MetaCatalogExcludedService[];
   readyCount: number;
   blockedCount: number;
+};
+
+const EXCLUSION_LABEL: Record<MetaCatalogExcludedService['reason'], string> = {
+  quote_price: 'Precio "Consultar"',
+  missing_offer: 'Sin oferta comercial',
 };
 
 function Metric({ label, value, detail }: { label: string; value: string | number; detail?: string }) {
@@ -262,13 +274,43 @@ export default function MarketingHubPage() {
                 ))}
               </tbody>
             </table>
-            {catalog && catalog.drafts.length === 0 ? (
+            {catalog && catalog.drafts.length === 0 && catalog.excluded.length === 0 ? (
               <p className="p-5 text-sm text-[#5b6470]">
                 No hay servicios en catalog_services todavía. Ejecuta el backfill (scripts/backfill-meta-catalog-c2.ts --apply) primero.
               </p>
             ) : null}
           </div>
         </section>
+
+        {catalog && catalog.excluded.length > 0 ? (
+          <section className="mt-6 overflow-hidden rounded-2xl border border-[#d8cbb5] bg-white">
+            <div className="border-b border-[#eee6d8] p-5">
+              <h2 className="font-serif text-xl font-bold text-[#07111d]">Fuera del catálogo de Meta</h2>
+              <p className="mt-1 text-sm text-[#5b6470]">
+                {catalog.excluded.length} servicios sin precio fijo o &ldquo;desde&rdquo; (p. ej. &ldquo;Consultar&rdquo;). Meta exige un
+                número por artículo, así que se quedan fuera en vez de mostrar un precio inventado.
+              </p>
+            </div>
+            <div className="max-h-64 overflow-auto">
+              <table className="min-w-full text-sm">
+                <thead className="sticky top-0 bg-[#f8f4eb] text-left text-xs uppercase text-[#6b7280]">
+                  <tr>
+                    <th className="px-4 py-3">Servicio (retailer_id)</th>
+                    <th className="px-4 py-3">Motivo</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#eee6d8]">
+                  {catalog.excluded.map((item) => (
+                    <tr key={item.retailerId}>
+                      <td className="px-4 py-3 font-mono text-xs font-semibold">{item.retailerId}</td>
+                      <td className="px-4 py-3 text-[#5b6470]">{EXCLUSION_LABEL[item.reason]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ) : null}
       </div>
     </main>
   );
