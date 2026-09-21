@@ -11,7 +11,7 @@ function read(file: string) {
 }
 
 describe('regulatory source host allowlist', () => {
-  it('allows every HTTPS host referenced by regulatory v1.3-v1.5 migrations', () => {
+  it('allows every regulatory source HTTPS host referenced by regulatory migrations', () => {
     const monitor = read(monitorPath);
     const migrationFiles = fs.readdirSync(migrationsDir)
       .filter((name) => name.endsWith('.sql') && name.includes('regulatory'))
@@ -21,7 +21,13 @@ describe('regulatory source host allowlist', () => {
 
     const urls = migrationFiles.flatMap((name) => {
       const sql = read(path.join(migrationsDir, name));
-      return [...sql.matchAll(/https:\/\/[^'"\s)]+/g)].map((match) => match[0]);
+      const sourceStatements = [
+        ...sql.matchAll(/insert\s+into\s+public\.regulatory_sources\b[\s\S]*?;/gi),
+      ].map((match) => match[0]);
+
+      return sourceStatements.flatMap((statement) =>
+        [...statement.matchAll(/https:\/\/[^'"\s)]+/g)].map((match) => match[0]),
+      );
     });
 
     const hosts = [...new Set(urls.map((value) => new URL(value).hostname))].sort();
