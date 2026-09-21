@@ -1,0 +1,86 @@
+name: Regulatory Production Deploy One Shot
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/regulatory-production-deploy-once.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-regulatory-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy audited regulatory migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      PROJECT_REF: ybtpqscmqrrjjmuoryap
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v7
+
+      - name: Verify required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo 'STOP: SUPABASE_ACCESS_TOKEN is missing'; exit 1; }
+          test -n "${SUPABASE_DB_PASSWORD:-}" || { echo 'STOP: SUPABASE_DB_PASSWORD is missing'; exit 1; }
+
+      - name: Setup validated Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+
+      - name: Link production
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase link --project-ref "$PROJECT_REF" -p "$SUPABASE_DB_PASSWORD"
+
+      - name: Pre-deploy audited ledger gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          REGULATORY_PREFLIGHT_EVIDENCE_DIR="$RUNNER_TEMP/regulatory-predeploy" \
+            bash scripts/regulatory-ledger-preflight.sh
+          grep -qx 'ledger_state=audited_pre_deploy' "$RUNNER_TEMP/regulatory-predeploy/ledger-summary.txt"
+          grep -qx 'remote_rows=72' "$RUNNER_TEMP/regulatory-predeploy/ledger-summary.txt"
+          grep -qx 'remote_tip=20260920073758' "$RUNNER_TEMP/regulatory-predeploy/ledger-summary.txt"
+          grep -qx 'pending_count=9' "$RUNNER_TEMP/regulatory-predeploy/ledger-summary.txt"
+
+      - name: Apply exactly the audited forward-only migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'y\n' | supabase db push --linked
+
+      - name: Post-deploy ledger gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          REGULATORY_PREFLIGHT_EVIDENCE_DIR="$RUNNER_TEMP/regulatory-postdeploy" \
+            bash scripts/regulatory-ledger-preflight.sh
+          grep -qx 'ledger_state=post_regulatory_batch' "$RUNNER_TEMP/regulatory-postdeploy/ledger-summary.txt"
+          grep -qx 'remote_rows=81' "$RUNNER_TEMP/regulatory-postdeploy/ledger-summary.txt"
+          grep -qx 'remote_tip=20260920230000' "$RUNNER_TEMP/regulatory-postdeploy/ledger-summary.txt"
+          grep -qx 'pending_count=0' "$RUNNER_TEMP/regulatory-postdeploy/ledger-summary.txt"
+          grep -qx 'empty_statements=0' "$RUNNER_TEMP/regulatory-postdeploy/ledger-summary.txt"
+
+      - name: Upload deploy evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: regulatory-production-deploy-20260921
+          path: |
+            ${{ runner.temp }}/regulatory-predeploy/
+            ${{ runner.temp }}/regulatory-postdeploy/
+          if-no-files-found: error
+          retention-days: 30
