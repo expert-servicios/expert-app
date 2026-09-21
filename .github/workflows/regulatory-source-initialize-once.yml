@@ -1,0 +1,52 @@
+name: Regulatory Source Initialization One Shot
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/regulatory-source-initialize-once.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: regulatory-source-initialization
+  cancel-in-progress: false
+
+jobs:
+  initialize:
+    name: Initialize regulatory source baselines
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Verify cron secret
+        shell: bash
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          test -n "${CRON_SECRET:-}" || {
+            echo "STOP: CRON_SECRET is missing"
+            exit 1
+          }
+
+      - name: Run monthly regulatory audit once
+        shell: bash
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          HTTP_CODE=$(curl --silent --show-error --output /tmp/regulatory-audit.json --write-out "%{http_code}" \
+            --max-time 360 \
+            -X POST "https://expertconsulting.es/api/cron/regulatory-monthly-audit" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json")
+
+          echo "HTTP $HTTP_CODE"
+          cat /tmp/regulatory-audit.json
+
+          test "$HTTP_CODE" = "200" || {
+            echo "::error::Regulatory monthly audit failed with HTTP $HTTP_CODE"
+            exit 1
+          }
