@@ -2,21 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, CalendarDays, Clock, Lock, ShieldCheck } from 'lucide-react';
-import { getAcademyKnowledgeArticles, getAcademyKnowledgeArticleWithStatus, getAcademyKnowledgeArticlesWithStatus } from '@/lib/utils/academy-knowledge';
+import { getAcademyKnowledgeArticleWithStatus, getAcademyKnowledgeArticlesWithStatus } from '@/lib/utils/academy-knowledge';
 import { getActiveEnrollment } from '@/lib/utils/academy-enrollment';
 import { AcademyKnowledgeArticleBody } from '@/components/docs/AcademyKnowledgeArticle';
 import { EventTracker } from '@/components/site/EventTracker';
 
 const PROGRAM_SLUG = 'gestion-laboral-integral';
 
-// Only public articles are statically generated — student-gated articles
-// are rendered dynamically per-request so the access check always runs
-// against the live session (no stale static HTML leaking gated content).
-export function generateStaticParams() {
-  return getAcademyKnowledgeArticles()
-    .filter((a) => a.access === 'public')
-    .map((a) => ({ slug: a.slug }));
-}
+// This route serves both public and student-gated manuals. Student access
+// depends on the live session/cookies, so the route must never fall back to
+// static rendering for slugs that were not prerendered at build time.
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
