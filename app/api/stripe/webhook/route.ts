@@ -8,7 +8,7 @@ import { syncOrderToHolded, syncSubscriptionToHolded } from '@/lib/integrations/
 import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
 import { getCalOnboardingUrl, getCalFormacionUrl } from '@/lib/utils/cal';
 import { persistAcademyCertificationPayment, persistAcademyProgramPayment } from '@/lib/payments/academy-fulfillment';
-import { legacyOrderFields, requireCreatedOrderId } from '@/lib/payments/non-academy-order';
+import { legacyOrderFields, requireCreatedOrderId, resolveCatalogPaymentBreakdown } from '@/lib/payments/non-academy-order';
 import { ensureServiceOrderFulfillment } from '@/lib/payments/service-order-fulfillment';
 import {
   academyEnrollmentConfirmed,
@@ -749,6 +749,20 @@ export async function POST(req: NextRequest) {
         'Servicio EXPERT';
       const amountEur = Number(session.amount_total ?? 0) / 100;
       const paymentId  = (session.payment_intent as string) ?? session.id;
+
+      // A catalog session can bundle a client disbursement (suplido) collected
+      // by Stripe alongside professional revenue. amount_eur must exclude it —
+      // it is never professional income, and syncOrderToHolded reads this
+      // column back as the Holded invoice amount.
+      const paymentBreakdown = resolveCatalogPaymentBreakdown({
+        amountTotalCents: Number(session.amount_total ?? 0),
+        revenueAmountCents: session.metadata?.revenue_amount_cents,
+        disbursementTotalCents: session.metadata?.disbursement_total_cents,
+        disbursementKeys: session.metadata?.disbursement_keys,
+        disbursementMandateAccepted: session.metadata?.disbursement_mandate_accepted,
+      });
+      const professionalAmountEur = paymentBreakdown.professionalGrossCents / 100;
+
       let catalogOrderMetadata: Record<string, unknown> = {
         checkout_session: {
           id             : session.id,
@@ -760,6 +774,11 @@ export async function POST(req: NextRequest) {
         checkout_locale : session.metadata?.checkout_locale ?? null,
         service_slug    : session.metadata?.service_slug ?? null,
         service_slugs   : session.metadata?.service_slugs ?? null,
+        disbursement    : {
+          total_cents      : paymentBreakdown.disbursementTotalCents,
+          keys             : paymentBreakdown.disbursementKeys,
+          mandate_accepted : paymentBreakdown.mandateAccepted,
+        },
       };
 
       // ── Idempotency: create order record for catalog payment ──
@@ -778,8 +797,8 @@ export async function POST(req: NextRequest) {
             client_id       : session.client_reference_id ?? null,
             company_id      : session.metadata?.company_id ?? null,
             stripe_payment_id: paymentId,
-            amount_eur      : amountEur,
-            ...legacyOrderFields(amountEur, serviceName),
+            amount_eur      : professionalAmountEur,
+            ...legacyOrderFields(professionalAmountEur, serviceName),
             currency        : session.currency?.toUpperCase() ?? 'EUR',
             status          : 'paid',
             service_slugs   : session.metadata?.service_slugs ?? session.metadata?.service_slug ?? null,
