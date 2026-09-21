@@ -350,7 +350,17 @@ Reglas de uso de fuentes:
 }
 
 async function lookupOfficialSources(query: string): Promise<OfficialSourceLookup | null> {
+  const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
   const openAiKey = process.env.OPENAI_API_KEY?.trim();
+
+  if (anthropicKey) {
+    try {
+      const live = await searchOfficialSourcesWithAnthropic(query, anthropicKey);
+      if (live && (live.summary || live.sources.length > 0)) return live;
+    } catch (error) {
+      console.error('[Official sources] Anthropic web search failed:', error instanceof Error ? error.message : 'Unknown error');
+    }
+  }
 
   if (openAiKey) {
     try {
@@ -370,6 +380,107 @@ async function lookupOfficialSources(query: string): Promise<OfficialSourceLooku
       'No se ha podido obtener contenido actualizado mediante busqueda en vivo. Usa estos portales oficiales como punto de partida y evita afirmar que el dato esta verificado hoy.',
     sources: fallback,
   };
+}
+
+async function searchOfficialSourcesWithAnthropic(query: string, apiKey: string): Promise<OfficialSourceLookup | null> {
+  const data = await callAnthropicOfficialSearch(query, apiKey);
+  const summary = extractAnthropicResponseText(data);
+  const sources = extractAnthropicCitations(data).filter((source) => isAllowedOfficialUrl(source.url));
+
+  if (!summary && sources.length === 0) return null;
+
+  return {
+    mode: 'live',
+    summary: summary || 'Busqueda oficial realizada, pero no se obtuvo un resumen textual claro.',
+    sources: sources.length > 0 ? sources : getFallbackSources(query),
+  };
+}
+
+async function callAnthropicOfficialSearch(query: string, apiKey: string): Promise<unknown> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model:
+          process.env.OFFICIAL_SEARCH_ANTHROPIC_MODEL?.trim()
+          || process.env.ANTHROPIC_MODEL?.trim()
+          || 'claude-haiku-4-5-20251001',
+        max_tokens: 900,
+        system:
+          'Eres un buscador documental para una gestoria espanola. Busca solo en los dominios oficiales permitidos. Resume en espanol con prudencia, prioriza fuentes primarias y no des asesoramiento personalizado.',
+        messages: [
+          {
+            role: 'user',
+            content: `Consulta del cliente: ${query}`,
+          },
+        ],
+        tools: [
+          {
+            type: 'web_search_20250305',
+            name: 'web_search',
+            max_uses: 3,
+            allowed_domains: OFFICIAL_DOMAINS,
+            user_location: {
+              type: 'approximate',
+              country: 'ES',
+              timezone: 'Europe/Madrid',
+            },
+          },
+        ],
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(extractApiError(data, response.status));
+    }
+
+    return data;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function extractAnthropicResponseText(data: unknown): string {
+  if (!isRecord(data) || !Array.isArray(data.content)) return '';
+
+  return data.content
+    .filter((item): item is Record<string, unknown> => isRecord(item) && item.type === 'text' && typeof item.text === 'string')
+    .map((item) => String(item.text).trim())
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+}
+
+function extractAnthropicCitations(data: unknown): OfficialSource[] {
+  if (!isRecord(data) || !Array.isArray(data.content)) return [];
+
+  const citations: OfficialSource[] = [];
+
+  for (const item of data.content) {
+    if (!isRecord(item) || item.type !== 'text' || !Array.isArray(item.citations)) continue;
+    for (const citation of item.citations) {
+      if (!isRecord(citation) || citation.type !== 'web_search_result_location') continue;
+      const url = typeof citation.url === 'string' ? citation.url : '';
+      if (!url) continue;
+      citations.push({
+        title: typeof citation.title === 'string' && citation.title ? citation.title : getHostLabel(url),
+        url,
+        snippet: typeof citation.cited_text === 'string' ? citation.cited_text : undefined,
+      });
+    }
+  }
+
+  return dedupeSources(citations);
 }
 
 async function searchOfficialSourcesWithOpenAi(query: string, apiKey: string): Promise<OfficialSourceLookup | null> {
