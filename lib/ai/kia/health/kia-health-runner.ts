@@ -54,9 +54,11 @@ export async function runKiaHealthChecks(input: {
     results.push(...await runKiaBusinessChecks());
   }
   if (includeCanary) {
-    for (const check of KIA_HEALTH_CANARY_TESTS) {
-      results.push(await runCanaryCheck(check));
-    }
+    const requestedConcurrency = Number(process.env.KIA_HEALTH_CANARY_CONCURRENCY ?? '4');
+    const concurrency = Number.isFinite(requestedConcurrency)
+      ? Math.min(6, Math.max(1, Math.floor(requestedConcurrency)))
+      : 4;
+    results.push(...await mapWithConcurrency(KIA_HEALTH_CANARY_TESTS, concurrency, runCanaryCheck));
   }
 
   const finishedAtDate = new Date();
@@ -129,6 +131,7 @@ async function runCanaryCheck(check: KiaHealthCheck): Promise<KiaHealthCheckResu
       contextInput: contextInputForCheck(check),
       locale: /[А-Яа-яЁё]/.test(check.input.message) ? 'ru' : 'es',
       allowTools: false,
+      includeOfficialSourceContext: false,
     });
     const latencyMs = Date.now() - started;
     const usage = extractUsage(decision.providerResult?.usage);
@@ -285,4 +288,27 @@ function buildSummary(status: KiaHealthRunStatus, total: number, passed: number,
   if (status === 'success') return `Kia Health verde: ${passed}/${total} checks OK.`;
   if (status === 'warning') return `Kia Health amarillo: ${passed}/${total} OK, ${warnings} warnings, ${failed} fallos.`;
   return `Kia Health rojo: ${failed} fallos, ${warnings} warnings, ${passed}/${total} OK.`;
+}
+
+
+async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  concurrency: number,
+  worker: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+
+  async function runWorker(): Promise<void> {
+    while (true) {
+      const index = nextIndex;
+      nextIndex += 1;
+      if (index >= items.length) return;
+      results[index] = await worker(items[index]);
+    }
+  }
+
+  const workerCount = Math.min(concurrency, items.length);
+  await Promise.all(Array.from({ length: workerCount }, () => runWorker()));
+  return results;
 }
