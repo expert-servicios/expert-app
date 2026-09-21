@@ -181,7 +181,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tenéis bases imponibles negativas de ejercicios anteriores?',
     ],
     botInstructions:
-      'El IS se presenta en los 25 días siguientes a los 6 meses del cierre (normalmente julio para ejercicios con cierre en diciembre). Si la contabilidad la lleva EXPERT, el IS está incluido en el plan mensual. Precio: consultar según volumen y complejidad.',
+      'Consultar AEAT_TAX_CALENDAR_2026 para el vencimiento exacto del Modelo 200 del ejercicio y IS_RATES_2026 para el tipo aplicable. No calcular el plazo desde una frase estática. Si la contabilidad la lleva EXPERT, el IS está incluido en el plan mensual. Precio: consultar según volumen y complejidad.',
     estimatedPrice: 'Consultar',
   },
 
@@ -576,7 +576,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Alguno de los socios es extranjero y tiene NIE?',
     ],
     botInstructions:
-      'El proceso completo tarda 7–15 días hábiles. Hay que ir al notario con todos los socios. Los gastos de notaría y registro mercantil van aparte (aprox. 400–600 €). El CIF definitivo puede tardar unos días adicionales. Precio honorarios: 490 € + IVA.',
+      'El proceso completo tarda 7–15 días hábiles. Hay que ir al notario con todos los socios. Los gastos de notaría y registro mercantil van aparte (aprox. 400–600 €). El NIF definitivo puede requerir documentación o comunicación adicional según el circuito utilizado. Precio honorarios: 490 € + IVA.',
     estimatedPrice: '490 € + IVA (+ notaría y registro ~400–600 €)',
   },
 

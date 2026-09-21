@@ -198,7 +198,7 @@ Los archivos deben verse completos, sin cortes, sombras ni páginas omitidas. Un
   {
     slug: 'modelo-151-beckham-guia',
     category: 'Fiscalidad',
-    title: 'Guía completa del Modelo 151 y el Régimen Beckham en 2025',
+    title: 'Guía completa del Modelo 151 y el Régimen Beckham',
     excerpt:
       'Todo lo que necesitas saber sobre la tributación especial para impatriados: quién puede acogerse, cómo solicitarlo, plazos y diferencias con el IRPF ordinario.',
     date: '12 abr 2025',
@@ -208,20 +208,13 @@ Los archivos deben verse completos, sin cortes, sombras ni páginas omitidas. Un
     body: `
 ## ¿Qué es el Régimen Beckham?
 
-El régimen especial de impatriados, popularmente conocido como **Ley Beckham**, permite a las personas que se desplazan a España por motivos laborales tributar en el IRPF a un tipo fijo del **24 % sobre las rentas obtenidas en territorio español** (hasta 600.000 €), en lugar del tipo progresivo general que puede llegar al 47 %.
+El régimen especial de impatriados, popularmente conocido como **Ley Beckham**, aplica reglas especiales a determinados contribuyentes desplazados a España que cumplen el artículo 93 LIRPF. Para los rendimientos sujetos a la escala especial, el 24 % se aplica hasta 600.000 € y el 47 % sobre el exceso.
 
 Su nombre popular proviene del futbolista David Beckham, que lo utilizó al fichar por el Real Madrid en 2003, aunque desde entonces el régimen se ha reformado en varias ocasiones.
 
 ## ¿Quién puede acogerse?
 
-Para poder aplicar este régimen en 2025 es necesario cumplir **todos** los siguientes requisitos:
-
-- **No haber sido residente fiscal en España** durante los 5 años anteriores al desplazamiento.
-- Desplazarse a España como consecuencia de un **contrato de trabajo** (o para ejercer funciones de administrador de una sociedad) o de la **adquisición de la condición de administrador** de una sociedad no vinculada.
-- El trabajo debe realizarse **efectivamente en España**.
-- Los trabajos deben realizarse para una empresa o entidad residente en España, o para un establecimiento permanente en España.
-
-Desde 2023 también pueden acogerse los **nómadas digitales** (trabajadores por cuenta propia o ajena que prestan servicios de forma remota mediante el uso exclusivo de medios y sistemas informáticos) que obtengan el visado de nómada digital.
+La elegibilidad debe revisarse según la causa concreta del desplazamiento y los requisitos vigentes. El régimen ya no se limita a un contrato laboral clásico: contempla, entre otros supuestos legales, determinados administradores, teletrabajo internacional y ciertas actividades emprendedoras o profesionales. Antes de optar se verifica también la residencia fiscal previa y la documentación exigida por la AEAT.
 
 ## ¿Cuánto se paga con el Modelo 151?
 
@@ -230,7 +223,7 @@ Desde 2023 también pueden acogerse los **nómadas digitales** (trabajadores por
 | Hasta 600.000 € | 24 % |
 | Exceso sobre 600.000 € | 47 % |
 
-Las rentas obtenidas **fuera de España** (salvo rendimientos del trabajo) quedan **exentas** de tributación en España, lo que supone una ventaja adicional significativa para quienes mantengan patrimonio o rentas en el extranjero.
+Las rentas no se clasifican como exentas únicamente por haberse obtenido fuera de España. Debe aplicarse la regla especial del artículo 93 LIRPF y, cuando corresponda, las reglas del IRNR al tipo concreto de renta.
 
 ## Cómo solicitar la opción al régimen
 
@@ -411,7 +404,7 @@ Fuentes oficiales:
     category: 'Empresas',
     title: 'Alta de autónomo en España: todo lo que debes saber antes de empezar',
     excerpt:
-      'Pasos para darte de alta como autónomo, cuota a pagar en 2025, tarifa plana, modelos trimestrales y las obligaciones que te esperan el primer año.',
+      'Pasos para darte de alta como autónomo, cotización por rendimientos en 2026, modelos fiscales y obligaciones del primer año.',
     date: '15 mar 2025',
     readTime: '7 min',
     tags: ['autónomos', 'alta autónomo', 'Hacienda', 'Seguridad Social'],
@@ -512,7 +505,7 @@ Tributas solo por las **rentas de fuente española**: alquileres, dividendos, ga
 Para residentes:
 - Certificado de retenciones del empleador
 - Datos de inmuebles (referencia catastral, valor, % de propiedad)
-- Extractos de cuentas bancarias en el extranjero (si supera 50.000 €, también el Modelo 720)
+- Extractos y datos de bienes/derechos en el extranjero suficientes para revisar si existe obligación de Modelo 720 por categoría, valoración, umbrales y exenciones
 - Certificado de residencia fiscal del país de origen (si solicitas deducción por doble imposición)
 
 Para no residentes:
@@ -943,9 +936,9 @@ Lo más importante es no precipitarse: una migración bien hecha te ahorra meses
   {
     slug: 'ley-antifraude-software-contable',
     category: 'Fiscalidad',
-    title: 'Ley Antifraude y software contable: lo que debes saber en 2025',
+    title: 'Ley Antifraude y sistemas de facturación: situación en 2026',
     excerpt:
-      'La Ley 11/2021 prohíbe el software de doble uso y exige sistemas de facturación certificados. Analizamos qué implica para autónomos, pymes y sus asesores.',
+      'La Ley 11/2021 prohíbe el software de doble uso y el RRSIF exige sistemas de facturación adaptados a sus requisitos. Analizamos qué implica para autónomos, sociedades y asesores.',
     date: '5 may 2026',
     readTime: '6 min',
     tags: ['Ley Antifraude', 'software contable', 'facturación', 'VeriFactu'],
@@ -985,7 +978,7 @@ El desarrollo reglamentario de esta prohibición se concreta en el **Real Decret
 Si usas un programa de facturación o contabilidad:
 
 1. **Verifica que tu proveedor de software esté adaptando su producto** a los requisitos del Reglamento. Pregunta explícitamente si cumplirá con VeriFactu antes de las fechas indicadas.
-2. **Si usas hojas de cálculo o facturas en Word/PDF**, debes migrar a un sistema certificado. Excel no cumple los requisitos.
+2. **Si usas hojas de cálculo o facturas en Word/PDF**, debes migrar a un sistema adaptado al RRSIF. Excel no cumple los requisitos.
 3. **Si eres asesor o gestoría**, asegúrate de que los programas que usas para tus clientes también estén certificados.
 
 ## Holded y la Ley Antifraude
@@ -1006,56 +999,68 @@ En EXPERT, como Holded Solution Partner, te ayudamos a evaluar si tu sistema act
     tags: ['VeriFactu', 'facturación electrónica', 'AEAT', 'software de facturación'],
     relatedServiceSlugs: ['contabilidad-mensual', 'formacion-holded'],
     body: `
-## ¿Qué es VeriFactu?
+## ¿Qué es VERI*FACTU?
 
-**VERI*FACTU** es el sistema de verificación de facturas de la Agencia Tributaria española, regulado por el **Real Decreto 1007/2023**. Permite a empresas y autónomos enviar sus registros de facturación directamente a la AEAT en tiempo real, garantizando su autenticidad e integridad mediante una cadena de huellas digitales (hash).
+**VERI*FACTU** es una de las dos modalidades previstas por el Reglamento de sistemas informáticos de facturación (RRSIF), aprobado por el **Real Decreto 1007/2023**. En esta modalidad, el sistema remite a la AEAT los registros de facturación inmediatamente después de producirlos y las facturas pueden ser cotejadas por el destinatario mediante el código QR.
 
-El nombre es un acrónimo de **VERIficación de FACTURas**.
+No debe confundirse VERI*FACTU con todo el RRSIF: también existe la modalidad **NO VERI*FACTU**, que cumple el mismo reglamento sin remitir automáticamente cada registro a la AEAT.
 
-## ¿Es obligatorio o voluntario?
+## ¿Es obligatorio VERI*FACTU?
 
-Aquí es donde existe confusión. El sistema funciona en dos niveles:
+La obligación es utilizar, cuando resulte aplicable el RRSIF, un sistema informático de facturación adaptado. Dentro de ese marco existen dos modalidades de cumplimiento:
 
-### 1. Sistemas VERI*FACTU (envío a la AEAT)
-Es **voluntario** optar por esta modalidad. Las empresas que lo adoptan envían cada factura a la AEAT en el momento de su emisión. A cambio, obtienen ciertas ventajas:
-- Quedan **exoneradas** de expedir factura electrónica a sus clientes en determinados supuestos.
-- Generan confianza adicional frente a la Administración.
+### 1. Sistemas VERI*FACTU
 
-### 2. Sistemas de facturación no VERI*FACTU
-Si no se opta por el envío a la AEAT, el software debe igualmente cumplir los **requisitos técnicos del Reglamento**: encadenamiento de registros, hash, QR en facturas, inmutabilidad de datos. Esto es **obligatorio** para todos.
+La elección de esta modalidad es **voluntaria**. El sistema remite los registros de facturación a la AEAT inmediatamente después de producirlos. Entre sus efectos prácticos:
 
-## Requisitos técnicos obligatorios para todo el software
+- la AEAT conserva los registros remitidos;
+- se simplifican determinadas obligaciones técnicas de conservación y seguridad que sí recaen sobre NO VERI*FACTU;
+- el destinatario puede cotejar mediante el QR que el registro de la factura se encuentra en poder de la AEAT.
 
-Independientemente de si se opta por VeriFactu o no, todos los sistemas de facturación deberán:
+### 2. Sistemas NO VERI*FACTU
 
-- **Generar un código hash** único para cada registro de facturación, encadenado con el anterior (similar a una blockchain).
-- **Incluir un código QR** en cada factura que permita a la AEAT verificar su autenticidad.
-- **Garantizar la inmutabilidad** de los registros: ningún registro podrá modificarse o eliminarse sin dejar huella.
-- **Conservar los registros** durante el período de prescripción tributaria (generalmente 4 años, pero se recomienda 6).
+No remiten automáticamente los registros de facturación a la AEAT, pero deben cumplir el RRSIF con **medidas adicionales de seguridad**, entre ellas la firma de los registros, el registro de eventos y los mecanismos reglamentarios de conservación, exportación y comprobación.
 
-## Calendario de implantación
+Las facturas emitidas mediante un SIF sujeto al reglamento incorporan el **código QR** exigido; la capacidad de cotejo en sede depende de la modalidad utilizada.
 
-| Colectivo | Obligatorio desde |
-|---|---|
-| Grandes empresas (> 6 M€ de facturación) | **1 julio 2025** |
-| Pymes, autónomos y resto de empresas | **1 julio 2026** |
+## Requisitos técnicos comunes y diferencias entre modalidades
 
-Los **proveedores de software** (ERP, programas de facturación, contabilidad) deberán tener sus productos certificados antes de que sus clientes estén obligados a cumplir.
+Los SIF incluidos en el RRSIF deben generar registros de facturación en el formato reglamentario y asegurar su integridad, conservación, accesibilidad, legibilidad, trazabilidad e inalterabilidad. El encadenamiento mediante huellas y el QR forman parte del esquema técnico previsto por la normativa.
+
+La forma de asegurar la conservación e inalterabilidad cambia según la modalidad: **VERI*FACTU** remite los registros a la AEAT, mientras que **NO VERI*FACTU** debe implementar controles adicionales como firma electrónica de registros y registro de eventos.
+
+## Calendario de implantación vigente
+
+- **Contribuyentes del Impuesto sobre Sociedades**: deben tener sus sistemas adaptados **antes del 1 de enero de 2027**.
+- **Resto de obligados tributarios del artículo 3.1 del RRSIF**: deben tenerlos operativos **antes del 1 de julio de 2027**.
+- Los obligados que llevan sus libros registro mediante **SII** cuentan con una exclusión específica del RRSIF en los términos previstos por la norma.
+
+Los productores y comercializadores de SIF debían ofrecer productos adaptados dentro del plazo reglamentario derivado de la Orden HAC/1177/2024; la AEAT sitúa ese vencimiento en **29 de julio de 2025**, sin perjuicio de la adaptación de sistemas incluidos en determinados contratos de mantenimiento plurianual a las fechas aplicables a sus usuarios.
 
 ## ¿Qué pasa con la factura electrónica entre empresas (B2B)?
 
-VeriFactu es distinto a la **obligación de factura electrónica B2B** que introduce la Ley Crea y Crece (Ley 18/2022). Esta última, pendiente de reglamentación definitiva, exigirá la emisión de facturas en formato electrónico estructurado (principalmente **Facturae** o **UBL**) entre empresas y autónomos.
+VERI*FACTU es distinto de la **factura electrónica obligatoria B2B** de la Ley 18/2022. El **Real Decreto 238/2026, de 25 de marzo**, ya desarrolla el sistema español de factura electrónica entre empresarios y profesionales y entró en vigor el 20 de abril de 2026.
 
-Ambas normativas son complementarias pero independientes. VeriFactu se centra en la integridad y trazabilidad; la factura electrónica B2B, en el formato de intercambio.
+Su aplicación efectiva no comienza simplemente por la entrada en vigor del real decreto: el cómputo de los plazos se vincula a la entrada en vigor de la orden ministerial que desarrolle la solución pública de facturación electrónica. Desde ese momento, la obligación será exigible en dos fases:
+
+- a los **12 meses** para empresarios y profesionales cuyo volumen de operaciones del año anterior haya superado **8 millones de euros**;
+- a los **24 meses** para el resto.
+
+Por tanto, RRSIF/VERI*FACTU y factura electrónica B2B son obligaciones relacionadas con la digitalización de la facturación, pero **no son la misma norma ni tienen el mismo calendario**.
 
 ## Cómo prepararte ahora
 
-1. **Pregunta a tu proveedor de software** si su sistema cumplirá el RRSIF antes de la fecha que corresponda a tu condición tributaria: 1 de enero o 1 de julio de 2027.
-2. **Evita soluciones improvisadas** (Excel, Word, facturas manuales): no podrán cumplir los requisitos técnicos.
-3. **Considera migrar a un ERP cloud** como Holded, que puede adaptarse a los requisitos de forma centralizada sin que tengas que gestionar la actualización tú mismo.
-4. **Revisa tus procesos internos**: VeriFactu implica que cada factura queda registrada permanentemente. Errores en facturas emitidas requerirán facturas rectificativas, no eliminaciones.
+1. **Confirma con tu proveedor** que el sistema estará adaptado al RRSIF antes de la fecha que corresponda: 1 de enero de 2027 para contribuyentes del Impuesto sobre Sociedades y 1 de julio de 2027 para el resto de obligados incluidos.
+2. **Revisa si concurre alguna exclusión**, especialmente si llevas los libros registro mediante SII.
+3. **Decide la modalidad** que encaja mejor con tu operativa: VERI*FACTU o NO VERI*FACTU.
+4. **Revisa tus procesos de facturación, rectificación y conservación** antes de la entrada en obligación para asegurar la trazabilidad exigida.
 
-En EXPERT te ayudamos a evaluar tu situación actual y a preparar tu sistema de facturación para el cumplimiento de la normativa VeriFactu.
+**Fuentes oficiales**:
+- [Agencia Tributaria — FAQ de Sistemas Informáticos de Facturación y VERI*FACTU](https://sede.agenciatributaria.gob.es/Sede/iva/sistemas-informaticos-facturacion-verifactu/preguntas-frecuentes.html)
+- [BOE — Real Decreto-ley 15/2025](https://www.boe.es/buscar/doc.php?id=BOE-A-2025-24446)
+- [BOE — Real Decreto 238/2026](https://www.boe.es/eli/es/rd/2026/03/25/238)
+
+En EXPERT te ayudamos a evaluar tu situación actual y a preparar tu sistema de facturación para cumplir el RRSIF y coordinarlo con la futura obligación de factura electrónica B2B.
     `
   },
   {
@@ -1404,7 +1409,7 @@ O puedes empezar directamente con el Pack Starter si ya sabes que no tienes hist
   {
     slug: 'permiso-residencia-inicial-guia-2025',
     category: 'Extranjería',
-    title: 'Permiso inicial de residencia en España: guía completa 2025',
+    title: 'Permiso inicial de residencia en España: guía actualizada',
     excerpt:
       'Todo lo que necesitas saber para obtener tu primer permiso de residencia en España: vías disponibles, requisitos, plazos y errores más comunes que debes evitar.',
     date: '14 may 2026',
@@ -1420,27 +1425,11 @@ Sin este permiso, la estancia en España más allá de 90 días (para quienes lo
 
 ## Vías para obtener el primer permiso de residencia
 
-Existen varias vías según tu situación personal:
+La vía correcta depende de la situación personal. El Reglamento vigente diferencia, entre otras, autorizaciones por trabajo, reagrupación, residencia no lucrativa y circunstancias excepcionales.
 
-### 1. Arraigo social
-Requiere **3 años de estancia continuada** en España, aunque sea en situación irregular, y un contrato de trabajo o medios económicos propios. Es una de las vías más utilizadas.
+Dentro de los arraigos, el RD 1155/2024 reorganizó las figuras en **arraigo de segunda oportunidad, sociolaboral, social, socioformativo y familiar**. No debe utilizarse la antigua clasificación de arraigo laboral como si siguiera siendo una categoría vigente.
 
-### 2. Arraigo laboral
-Requiere acreditar **2 años de estancia irregular** y una relación laboral no declarada de al menos 6 meses. El empresario debe regularizar el contrato.
-
-### 3. Arraigo familiar
-Para personas que tienen un vínculo familiar de primer grado (hijo/a español/a o padre/madre de menor español/a). No requiere tiempo mínimo de estancia.
-
-### 4. Circunstancias excepcionales
-Incluye casos de protección internacional, colaboración con autoridades, trata de seres humanos y violencia de género.
-
-### 5. Residencia por reagrupación familiar
-Cuando un familiar con residencia legal en España solicita traerte.
-
-### 6. Visado de larga duración
-Tramitado en el consulado español de tu país de origen antes de viajar. Incluye el visado de trabajo, el visado de estudiante o el visado de nómada digital.
-
-## Requisitos generales para el arraigo social (la vía más común)
+## Requisitos generales para el arraigo social
 
 - **Permanencia continuada en España de al menos 2 años**, con ausencias no superiores a 90 días.
 - **Ausencia de antecedentes penales** en España y en el país de origen (últimos 5 años)
@@ -1451,7 +1440,7 @@ Tramitado en el consulado español de tu país de origen antes de viajar. Incluy
 ## Documentos necesarios
 
 1. Pasaporte en vigor (todas las páginas fotocopiadas)
-2. Formulario EX-01 (solicitud)
+2. Formulario oficial correspondiente a la vía elegida (para arraigo social, EX-10)
 3. Fotografía reciente en color tamaño carné
 4. Justificante de pago de la tasa modelo 790 código 052
 5. Documentación que acredite 2 años de permanencia continuada
@@ -1481,12 +1470,12 @@ El **plazo legal de resolución es de 3 meses**. Si la Administración no resuel
 ## ¿Puedo trabajar mientras tramito el permiso?
 
 Con el **arraigo social**: la autorización para trabajar nace con la concesión; la mera presentación no habilita por sí sola para trabajar.
-Con el **arraigo laboral**: sí, porque se pide autorización de trabajo simultánea.
+En el **arraigo sociolaboral**, la habilitación para trabajar deriva de la autorización concedida y de sus condiciones; la mera presentación de la solicitud no equivale por sí sola a autorización para trabajar.
 Con visado de trabajo: sí, desde el momento en que la empresa obtiene la autorización previa de trabajo.
 
 ## ¿Qué pasa después? La tarjeta TIE
 
-Una vez resuelta favorablemente la solicitud, tienes **30 días hábiles** para solicitar la Tarjeta de Identidad de Extranjero (TIE) en la comisaría de Policía de tu localidad. Para ello necesitarás:
+Una vez resuelta favorablemente la solicitud, debe solicitarse la Tarjeta de Identidad de Extranjero (TIE) dentro del plazo específico aplicable al procedimiento, que normalmente se expresa como **un mes** en la comisaría de Policía de tu localidad. Para ello necesitarás:
 
 - Resolución favorable de Extranjería
 - Pasaporte original
@@ -1500,7 +1489,7 @@ En EXPERT gestionamos el proceso completo, desde la evaluación de tu situación
   {
     slug: 'documentos-permiso-residencia-espana',
     category: 'Extranjería',
-    title: 'Lista completa de documentos para el permiso de residencia en España (2025)',
+    title: 'Documentos para permisos de residencia en España: guía actualizada',
     excerpt:
       'Qué documentos necesitas exactamente, cómo obtenerlos, cómo apostillarlos y traducirlos, y qué errores de documentación son los más frecuentes en Extranjería.',
     date: '14 may 2026',
@@ -1678,12 +1667,7 @@ Sí. Haber percibido prestación por desempleo se considera una situación de co
 
 ## De la residencia temporal a la larga duración
 
-Para acceder a la **residencia de larga duración** necesitas:
-
-1. **5 años de residencia legal y continuada** en España (los períodos de prórroga administrativa cuentan).
-2. No tener **antecedentes penales** en España ni en el país de origen.
-3. Acreditar **medios económicos suficientes**: al menos el 150 % del IPREM mensual para el titular (aprox. 900 €/mes en 2025), más el 50 % por cada familiar a cargo.
-4. Disponer de **seguro médico** si no cotizas a la Seguridad Social.
+Para acceder a la **residencia de larga duración nacional** la regla general es acreditar **5 años de residencia legal y continuada** en España y cumplir los demás requisitos del procedimiento. No existe, con carácter general, un requisito del 150 % del IPREM ni un seguro médico como los que se exigen en otras autorizaciones; no deben trasladarse esos requisitos a esta figura.
 
 La residencia de larga duración abre también la puerta a acumular tiempo para solicitar la **nacionalidad española por residencia** (10 años como regla general, 2 años para nacionales de países iberoamericanos o con tratados especiales).
 
@@ -1954,7 +1938,7 @@ Para poder reagrupar, el residente en España debe:
 
 1. Tener autorización de residencia en vigor **mínimo de 1 año** y haber solicitado la renovación.
 2. Disponer de **vivienda adecuada** para el número de familiares a reagrupar (acreditada mediante contrato de arrendamiento o escritura de propiedad).
-3. Contar con **medios económicos suficientes**: al menos el 150 % del IPREM mensual (aprox. 900 €/mes en 2025) para el reagrupante solo, más el 50 % por cada familiar adicional.
+3. Contar con **medios económicos suficientes**: para una unidad familiar de dos miembros (reagrupante + una persona reagrupada), la referencia general es el 150 % del IPREM mensual; por cada miembro adicional se añade el 50 %. En determinados casos con menores existen reglas de minoración que deben revisarse.
 
 ## Proceso de tramitación
 
@@ -1985,62 +1969,50 @@ La solicitud se resuelve en un plazo legal de **3 meses**. La práctica varía p
   {
     slug: 'permiso-residencia-inversores',
     category: 'Extranjería',
-    title: 'Permiso de residencia para inversores en España: Golden Visa y alternativas',
-    excerpt: 'Opciones para obtener residencia en España a través de la inversión: Golden Visa, visado de no lucrativa y otros permisos. Requisitos, plazos y proceso.',
+    title: 'Golden Visa en España: derogación y alternativas de residencia',
+    excerpt: 'La vía de residencia para inversores de la Ley 14/2013 dejó de admitir nuevas solicitudes desde el 3 de abril de 2025. Explicamos el régimen transitorio y alternativas vigentes.',
     date: '18 may 2026',
     readTime: '7 min',
     tags: ['Golden Visa', 'inversores', 'residencia inversión', 'visado inversor', 'extranjería'],
-    relatedServiceSlugs: ['inversores'],
+    relatedServiceSlugs: ['permiso-residencia-inicial'],
     body: `
-## Residencia en España para inversores
+## La Golden Visa ya no está abierta a nuevas solicitudes
 
-España ofrece varias vías para que ciudadanos extracomunitarios obtengan residencia a través de la inversión económica o la disponibilidad de medios suficientes. Las más relevantes son la **Golden Visa** y el **visado de residencia no lucrativa**.
+Los artículos 63 a 67 de la Ley 14/2013, que regulaban los visados y autorizaciones de residencia para inversores, quedaron **sin contenido con efectos de 3 de abril de 2025**.
 
-## Golden Visa (Visado de Inversor)
+Esto significa que una nueva inversión inmobiliaria, financiera o empresarial realizada ahora no abre por sí sola la antigua vía de Golden Visa.
 
-Regulada por la Ley 14/2013, la Golden Visa permite obtener residencia a través de una inversión significativa en España:
+### Régimen transitorio
 
-| Tipo de inversión | Mínimo |
-|---|---|
-| Inmuebles en España | 500.000 € |
-| Deuda pública española | 2.000.000 € |
-| Acciones de sociedades españolas | 1.000.000 € |
-| Depósitos en entidades financieras españolas | 1.000.000 € |
-| Inversión en proyectos empresariales de interés general | Sin mínimo fijo |
+Las solicitudes presentadas antes de la entrada en vigor de la derogación pueden resolverse conforme a la normativa aplicable cuando se presentaron. Las autorizaciones de inversor que ya estaban vigentes conservan su validez y determinadas renovaciones se tramitan bajo las reglas transitorias correspondientes.
 
-### Ventajas de la Golden Visa
-- No requiere residencia efectiva en España (basta con 1 visita al año).
-- Incluye a cónyuge e hijos menores.
-- Renovable cada 2 años (primera vez) y cada 5 años (posteriores).
-- Permite acceso al espacio Schengen.
+Para nuevas solicitudes hay que estudiar otra autorización vigente según el perfil: actividad emprendedora, profesional altamente cualificado, teletrabajo internacional, residencia no lucrativa u otra vía del Reglamento de Extranjería.
 
 ## Visado de Residencia No Lucrativa
 
 Para personas que no necesitan trabajar en España y disponen de medios económicos suficientes para sostenerse y a su familia sin ejercer actividad laboral.
 
 **Requisitos principales:**
-- Medios económicos mínimos: al menos el 400 % del IPREM mensual (aprox. 2.400 €/mes en 2025) para el solicitante, más el 100 % por cada familiar adicional.
+- Medios económicos mínimos: al menos el 400 % del IPREM mensual para el solicitante, más el 100 % del IPREM por cada familiar adicional, usando el IPREM vigente al presentar la solicitud.
 - Seguro médico privado sin copago ni carencia en España.
 - Ausencia de antecedentes penales.
 - No haber trabajado en España en los últimos años.
 
-## Permiso de inversor por tramitación inicial y renovación
+## Alternativas actuales
 
-Para inversiones de menor cuantía o situaciones específicas, existen permisos de residencia vinculados a inversión que no alcanzan los umbrales de la Golden Visa pero que pueden tramitarse como autorización de residencia por circunstancias excepcionales o por cuenta propia empresarial.
-
-En EXPERT analizamos cada caso para determinar la vía más adecuada según el perfil y la inversión del cliente. El precio del servicio de tramitación inicial y renovación es de **250 €/persona**.
+La inversión por sí sola ya no genera una nueva autorización de residencia para inversores. EXPERT revisa el perfil personal, profesional y económico para determinar qué vía vigente puede encajar y, cuando existe una autorización de inversor previa, si resulta aplicable el régimen transitorio de renovación.
 
 ## Documentación general
 
 - Pasaporte en vigor.
-- Acreditación de la inversión (escritura de compraventa, certificado bancario, etc.).
+- Documentación económica o profesional que corresponda a la vía vigente que se vaya a solicitar.
 - Certificado de antecedentes penales.
 - Seguro médico privado.
 - Formulario de solicitud correspondiente.
 
 ## Plazos
 
-La Golden Visa se tramita ante la Unidad de Grandes Empresas (UGE-CE), con resolución en unos **20 días hábiles**. El visado no lucrativo se tramita en el consulado español del país de residencia del solicitante.
+Las nuevas solicitudes deben seguir el procedimiento y plazo de la autorización vigente elegida. El visado no lucrativo, por ejemplo, se solicita a través del consulado español competente conforme a su procedimiento específico.
     `
   },
 
@@ -2082,7 +2054,7 @@ Las constituciones de sociedades están sujetas a la modalidad de Operaciones So
 La escritura se inscribe en el Registro Mercantil de la provincia del domicilio social. Desde la inscripción, la sociedad tiene personalidad jurídica plena.
 
 ### 6. Alta fiscal en Hacienda (Modelo 036)
-Una vez inscrita, se solicita el **CIF definitivo** y se realiza el alta censal en la AEAT.
+Una vez inscrita, se solicita el **NIF definitivo** y se realiza el alta censal en la AEAT.
 
 ## Costes aproximados
 
@@ -2096,7 +2068,7 @@ Una vez inscrita, se solicita el **CIF definitivo** y se realiza el alta censal 
 
 ## Plazos
 
-El proceso completo, desde la reserva de denominación hasta la obtención del CIF definitivo, lleva habitualmente entre **7 y 15 días hábiles**.
+El proceso completo, desde la reserva de denominación hasta la obtención del NIF definitivo, lleva habitualmente entre **7 y 15 días hábiles**.
 
 ## ¿SL o autónomo?
 
@@ -2437,25 +2409,16 @@ La fiscalidad de la compraventa depende principalmente de si la vivienda es **nu
 
 El comprador puede quedar sujeto a **Transmisiones Patrimoniales Onerosas (TPO)** en vivienda usada, mientras que otras operaciones pueden tributar por IVA + AJD. En Comunitat Valenciana, antes de calcular hay que comprobar también el **valor de referencia**, porque puede determinar la base mínima de tributación.
 
-Los tipos generales en 2025 según comunidad autónoma:
+Los tipos de TPO dependen de la comunidad autónoma, del valor del inmueble y de los posibles tipos reducidos. No usamos una tabla autonómica estática para calcularlos.
 
-| Comunidad Autónoma | Tipo general |
-|---|---|
-| Madrid | 6 % |
-| Cataluña | 10 % |
-| Andalucía | 7 % |
-| Valencia | 10 % |
-| País Vasco | 4 % |
-| Otras | 6 %–10 % |
-
-La base imponible es el **precio de compraventa**, siempre que no sea inferior al valor de referencia del Catastro. Si el precio escriturado es inferior al valor de referencia, Hacienda tomará el valor de referencia como base.
+En Comunitat Valenciana verificamos la regla autonómica vigente para el tipo y la regla específica de valor de referencia para la base imponible. Cuando existe valor de referencia, puede actuar como base mínima; si el valor declarado o la contraprestación son superiores, se aplica el importe mayor conforme a la regla vigente.
 
 ## Vivienda nueva: IVA + AJD
 
 Si compras una vivienda nueva directamente al promotor, pagas:
 
 - **IVA**: 10 % sobre el precio de venta (21 % para locales comerciales).
-- **Actos Jurídicos Documentados (AJD)**: entre el 0,5 % y el 1,5 % del valor escriturado, según la comunidad autónoma.
+- **Actos Jurídicos Documentados (AJD)**: el tipo y la base dependen de la comunidad autónoma y del supuesto concreto; se verifica la regla autonómica vigente antes de calcular.
 
 En vivienda de protección oficial (VPO) el IVA puede ser del 4 %.
 

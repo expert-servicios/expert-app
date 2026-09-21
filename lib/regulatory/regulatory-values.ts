@@ -11,11 +11,13 @@ export async function getCurrentRegulatoryValue(valueKey: string, onDate = new D
     .lte('valid_from', date)
     .or(`valid_to.is.null,valid_to.gte.${date}`)
     .order('valid_from', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(2);
 
   if (error) throw new Error(error.message);
-  if (data) return { ...data, availability_mode: 'effective_date' as const };
+  if ((data ?? []).length > 1) {
+    throw new Error(`Ambiguous regulatory value ${valueKey} for ${date}; human review required`);
+  }
+  if (data?.[0]) return { ...data[0], availability_mode: 'effective_date' as const };
 
   const { data: latest, error: latestError } = await admin
     .from('regulatory_values')

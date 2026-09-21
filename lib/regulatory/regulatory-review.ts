@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { runKiaProviderRequest } from '@/lib/ai/kia/kia-provider-router';
 import { notifyAdminsTelegram, escapeTelegramHtml } from '@/lib/integrations/telegram';
 import { createRegulatoryProposalPullRequest } from './regulatory-github';
+import { isRulesetSchemaUnavailable } from './regulatory-schema-compat';
 
 const reviewSchema = z.object({
   relevant: z.boolean(),
@@ -120,6 +121,21 @@ type ChangeRow = {
   current_snapshot_id: string;
 };
 
+type RegulatoryDependencyRow = {
+  id: string;
+  dependency_type: string;
+  dependency_key: string;
+  topic: string | null;
+  criticality: string;
+  metadata: unknown;
+  ruleset_key?: string | null;
+};
+
+type DependencyQueryResult = {
+  data: RegulatoryDependencyRow[] | null;
+  error: { message: string } | null;
+};
+
 async function classifyOne(change: ChangeRow) {
   const admin = getSupabaseAdmin();
 
@@ -137,8 +153,11 @@ async function classifyOne(change: ChangeRow) {
     .eq('source_id', change.source_id)
     .lte('valid_from', effectiveDate)
     .or(`valid_to.is.null,valid_to.gte.${effectiveDate}`);
-  if (sourceRulesetsError) throw new Error(sourceRulesetsError.message);
-  const sourceRulesetKeys = Array.from(new Set((sourceRulesets ?? []).map((row) => row.ruleset_key)));
+  const rulesetSchemaAvailable = !isRulesetSchemaUnavailable(sourceRulesetsError);
+  if (sourceRulesetsError && rulesetSchemaAvailable) throw new Error(sourceRulesetsError.message);
+  const sourceRulesetKeys = rulesetSchemaAvailable
+    ? Array.from(new Set((sourceRulesets ?? []).map((row) => row.ruleset_key)))
+    : [];
 
   const [
     { data: source },
@@ -155,11 +174,13 @@ async function classifyOne(change: ChangeRow) {
           .eq('id', change.previous_snapshot_id).single()
       : Promise.resolve({ data: null, error: null }),
     admin.from('regulatory_dependencies')
-      .select('id,dependency_type,dependency_key,topic,criticality,metadata,ruleset_key')
+      .select(rulesetSchemaAvailable
+        ? 'id,dependency_type,dependency_key,topic,criticality,metadata,ruleset_key'
+        : 'id,dependency_type,dependency_key,topic,criticality,metadata')
       .eq('source_id', change.source_id)
       .eq('active', true)
       .limit(100),
-    sourceRulesetKeys.length > 0
+    rulesetSchemaAvailable && sourceRulesetKeys.length > 0
       ? admin.from('regulatory_dependencies')
           .select('id,dependency_type,dependency_key,topic,criticality,metadata,ruleset_key')
           .in('ruleset_key', sourceRulesetKeys)
@@ -168,14 +189,17 @@ async function classifyOne(change: ChangeRow) {
       : Promise.resolve({ data: [], error: null }),
   ]);
 
-  if (directDependenciesResult.error) throw new Error(directDependenciesResult.error.message);
-  if (rulesetDependenciesResult.error) throw new Error(rulesetDependenciesResult.error.message);
+  const directDependencies = directDependenciesResult as unknown as DependencyQueryResult;
+  const rulesetDependencies = rulesetDependenciesResult as unknown as DependencyQueryResult;
+
+  if (directDependencies.error) throw new Error(directDependencies.error.message);
+  if (rulesetDependencies.error) throw new Error(rulesetDependencies.error.message);
   if (!source) throw new Error('Regulatory change context is incomplete');
 
-  const dependencyMap = new Map<string, NonNullable<typeof directDependenciesResult.data>[number]>();
+  const dependencyMap = new Map<string, RegulatoryDependencyRow>();
   for (const dependency of [
-    ...(directDependenciesResult.data ?? []),
-    ...(rulesetDependenciesResult.data ?? []),
+    ...(directDependencies.data ?? []),
+    ...(rulesetDependencies.data ?? []),
   ]) {
     dependencyMap.set(dependency.id, dependency);
   }

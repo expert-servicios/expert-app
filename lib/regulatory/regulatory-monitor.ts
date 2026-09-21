@@ -35,6 +35,13 @@ const ALLOWED_HOSTS = new Set([
   'sede.dgt.gob.es',
   'www.mjusticia.gob.es',
   'sede.mjusticia.gob.es',
+  'www3.agenciatributaria.gob.es',
+  'atv.gva.es',
+  'www.gva.es',
+  'sede.gva.es',
+  'www.paeelectronico.es',
+  'revista.dgt.es',
+  'sede.transportes.gob.es',
 ]);
 
 const MAX_SOURCE_BYTES = 2_000_000;

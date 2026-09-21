@@ -26,19 +26,13 @@ Baja en RETA:
 <ss_cuotas>
 CUOTAS DE AUTONOMOS — SISTEMA POR TRAMOS DE RENDIMIENTO NETO (vigente desde 2023):
 
-Desde 2023 las cuotas de autonomos se calculan en funcion de los rendimientos netos anuales previstos, en lugar de la base de cotizacion elegida libremente.
-Existen 15 tramos. En 2025 los tramos y cuotas han vuelto a actualizarse.
+Desde 2023 las cuotas de autonomos se determinan en funcion de rendimientos netos y la base elegida dentro del tramo aplicable.
 
-Referencia orientativa (verificar cuotas exactas para el ano en curso en Importass):
-- Rendimientos muy bajos (menos de 670 EUR/mes netos): cuota minima reducida.
-- Rendimientos medios: cuota intermedia segun tramo.
-- Rendimientos altos (mas de 6.000 EUR/mes netos): cuota maxima.
-
-Cuota reducida para nuevos autonomos (sustituye a la antigua "tarifa plana"):
-- Los primeros 12 meses: cuota fija reducida (en 2024 era 80 EUR/mes; verificar importe actualizado).
-- Los 12 meses siguientes: cuota reducida si los rendimientos netos son inferiores al SMI.
-- Condicion: no haber estado de alta en RETA en los 2 anos anteriores (3 si se disfrutaron bonificaciones previas).
-- Solicitar en Importass al darse de alta.
+Para 2026:
+- Consultar RETA_2026_BRACKETS antes de indicar base o cuota.
+- No reutilizar importes de 2024 o 2025 como si fueran la cuota vigente.
+- La cuota reducida para nuevas altas debe verificarse con la regla oficial vigente y los requisitos personales del caso.
+- Portal operativo: Importass.
 
 Cambio de tramo:
 - Se puede cambiar de tramo hasta 6 veces al ano si los ingresos varian.

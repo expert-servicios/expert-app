@@ -201,7 +201,7 @@ describe('KIA Regulatory Registry', () => {
   });
 
   it('schedules daily pulse, hourly worker and monthly audit through pg_cron', () => {
-    const migration = read('supabase/migrations/20260919193500_kia_regulatory_cron.sql');
+    const migration = read('supabase/migrations/20260919192924_kia_regulatory_cron.sql');
     expect(migration).toContain("'regulatory-pulse-daily'");
     expect(migration).toContain("'17 5 * * *'");
     expect(migration).toContain("'regulatory-worker-hourly'");
@@ -209,12 +209,12 @@ describe('KIA Regulatory Registry', () => {
     expect(migration).toContain("'regulatory-monthly-audit'");
     expect(migration).toContain("'41 5 3 * *'");
     expect(migration).toContain("where name = 'cron_secret'");
-    const registryMigration = read('supabase/migrations/20260919191500_kia_regulatory_registry.sql');
+    const registryMigration = read('supabase/migrations/20260919192850_kia_regulatory_registry.sql');
     expect(registryMigration).toContain('regulatory_changes_current_snapshot_unique');
   });
 
   it('monitors direct official feeds instead of only RSS directory pages', () => {
-    const migration = read('supabase/migrations/20260919191500_kia_regulatory_registry.sql');
+    const migration = read('supabase/migrations/20260919192850_kia_regulatory_registry.sql');
     expect(migration).toContain('https://sede.agenciatributaria.gob.es/Sede/todas-noticias.xml');
     expect(migration).toContain('aeat_analysis_rss');
     expect(migration).toContain('seg_social_legislation');
@@ -232,7 +232,7 @@ describe('KIA Regulatory Registry', () => {
   });
 
   it('hardens v1.1 with change-specific impact, specific sources and longer pg_net timeout', () => {
-    const migration = read('supabase/migrations/20260920073500_kia_regulatory_hardening_v11.sql');
+    const migration = read('supabase/migrations/20260920054204_kia_regulatory_hardening_v11.sql');
     expect(migration).toContain('regulatory_change_dependencies');
     expect(migration).toContain('migraciones_arraigo_social');
     expect(migration).toContain('migraciones_renovacion_hub');
@@ -245,7 +245,7 @@ describe('KIA Regulatory Registry', () => {
 
   it('treats latest published periodic values separately from legal validity', () => {
     const values = read('lib/regulatory/regulatory-values.ts');
-    const migration = read('supabase/migrations/20260920073500_kia_regulatory_hardening_v11.sql');
+    const migration = read('supabase/migrations/20260920054204_kia_regulatory_hardening_v11.sql');
     expect(values).toContain("availability_mode === 'latest_published'");
     expect(migration).toContain('"availability_mode":"latest_published"');
   });
@@ -273,7 +273,7 @@ describe('KIA Regulatory Registry', () => {
   });
 
   it('keeps blocked Migraciones pages as manual references and falls back to BOE monitoring', () => {
-    const migration = read('supabase/migrations/20260920080000_regulatory_migraciones_waf_fallback.sql');
+    const migration = read('supabase/migrations/20260920071136_regulatory_migraciones_waf_fallback.sql');
     expect(migration).toContain("'monitoring_mode', 'manual_reference'");
     expect(migration).toContain("'automatic_fallback_source', 'boe_rd_1155_2024'");
     expect(migration).toContain("'arraigo-social'");
@@ -283,7 +283,7 @@ describe('KIA Regulatory Registry', () => {
   });
 
   it('keeps registry tables server-side only with explicit browser deny policies', () => {
-    const migration = read('supabase/migrations/20260919191500_kia_regulatory_registry.sql');
+    const migration = read('supabase/migrations/20260919192850_kia_regulatory_registry.sql');
     expect(migration).toContain('alter table public.regulatory_sources enable row level security');
     expect(migration).toContain('regulatory_sources_deny_browser');
     expect(migration).toContain('regulatory_changes_deny_browser');
@@ -320,7 +320,7 @@ describe('KIA Regulatory Registry', () => {
   });
 
   it('closes production gaps with exact evidence sources and a safe BOE re-baseline', () => {
-    const migration = read('supabase/migrations/20260920093000_regulatory_production_gap_closure_v12.sql');
+    const migration = read('supabase/migrations/20260920073758_regulatory_production_gap_closure_v12.sql');
     expect(migration).toContain("'boe_smi_2026'");
     expect(migration).toContain("'boe_social_security_order_2026'");
     expect(migration).toContain("'boe_commercial_late_interest_2026_h2'");
@@ -631,6 +631,95 @@ describe('KIA Regulatory Registry', () => {
     expect(mortgageIsd).not.toContain("'administrative','pdf'");
     expect(finalV15).not.toContain("'administrative','pdf'");
     expect(finalV15).not.toContain("'legislation','pdf'");
+  });
+
+  it('keeps post-audit production consumers free of known regulatory regressions', () => {
+    const adminWorkflow = read('components/admin/WaServiceWorkflow.tsx');
+    const starterKnowledge = read('lib/data/kia-knowledge/holded-pack-starter.ts');
+    const starterPage = read('app/(public)/holded/pack-starter/page.tsx');
+    const blog = read('lib/utils/blog.ts');
+    const docs = read('lib/utils/docs.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+
+    expect(adminWorkflow).not.toContain('036/037');
+    expect(starterKnowledge).not.toContain('036 / 037');
+    expect(starterPage).not.toContain('036 / 037');
+    expect(blog).not.toContain('| Valencia | 10 % |');
+    expect(blog).not.toContain('si supera 50.000 €, también el Modelo 720');
+    expect(docs).not.toContain('tipo fijo del 24%');
+    expect(checklists).not.toContain('25 días siguientes a los 6 meses del cierre');
+  });
+
+  it('keeps dependency criticality inside the production enum contract', () => {
+    const migration = read('supabase/migrations/20260920213000_regulatory_v15_property_isd_rent_lot3.sql');
+    expect(migration).not.toContain("'housing','medium'");
+  });
+
+  it('keeps the v1.3-v1.5 ruleset dependency graph closed', () => {
+    const migrationPaths = [
+      'supabase/migrations/20260920111500_regulatory_rulesets_v13.sql',
+      'supabase/migrations/20260920123000_regulatory_v14_fiscal_mercantil_lot1.sql',
+      'supabase/migrations/20260920133000_regulatory_v14_fiscal_recurrente_lot2.sql',
+      'supabase/migrations/20260920150000_regulatory_v14_mercantil_lot3.sql',
+      'supabase/migrations/20260920163000_regulatory_v14_mercantil_lot4.sql',
+      'supabase/migrations/20260920180000_regulatory_v15_property_dgt_lot1.sql',
+      'supabase/migrations/20260920201500_regulatory_v15_vehicle_registration_lot2.sql',
+      'supabase/migrations/20260920213000_regulatory_v15_property_isd_rent_lot3.sql',
+      'supabase/migrations/20260920230000_regulatory_v15_final_dgt_maritime.sql',
+    ];
+    const sql = migrationPaths.map(read).join('\n');
+    const definedRulesets = new Set(
+      [...sql.matchAll(/insert into public\.regulatory_rulesets[\s\S]*?select\s+'([^']+)'/g)]
+        .map((match) => match[1]),
+    );
+    const dependencyRulesets = [
+      ...sql.matchAll(/\('([A-Z][A-Z0-9_]+)','(?:service|course|knowledge|kia_prompt|calculator|blog|seo|social|admin|telegram|operational_blueprint|viability)','[^']+'/g),
+    ].map((match) => match[1]);
+
+    expect(definedRulesets.size).toBeGreaterThan(30);
+    expect(dependencyRulesets.length).toBeGreaterThan(100);
+    for (const rulesetKey of dependencyRulesets) {
+      expect(definedRulesets.has(rulesetKey), rulesetKey).toBe(true);
+    }
+  });
+
+  it('fails closed instead of selecting an arbitrary overlapping regulation', () => {
+    const values = read('lib/regulatory/regulatory-values.ts');
+    const rulesets = read('lib/regulatory/regulatory-rulesets.ts');
+
+    expect(values).toContain('.limit(2)');
+    expect(values).toContain('Ambiguous regulatory value');
+    expect(rulesets).toContain('.limit(2)');
+    expect(rulesets).toContain('Ambiguous regulatory ruleset');
+  });
+
+  it('keeps current 2026 public guidance free of stale immigration and RRSIF claims', () => {
+    const blog = read('lib/utils/blog.ts');
+    const docs = read('lib/utils/docs.ts');
+    const catalog = read('lib/utils/catalog.ts');
+    const ss = read('lib/ai/kia/prompts/kia-ss-knowledge.ts');
+    const checklists = read('lib/utils/service-checklists.ts');
+
+    expect(blog).not.toContain('Guía completa del Modelo 151 y el Régimen Beckham en 2025');
+    expect(blog).not.toContain('Golden Visa permite obtener residencia');
+    expect(blog).not.toContain('La Golden Visa se tramita ante la Unidad de Grandes Empresas');
+    expect(blog).not.toContain('Regulada por la Ley 14/2013, la Golden Visa permite obtener residencia');
+    expect(blog).not.toContain('aprox. 2.400 €/mes en 2025');
+    expect(blog).not.toContain('| Grandes empresas (> 6 M€ de facturación) | **1 julio 2025** |');
+    expect(blog).not.toContain('| Pymes, autónomos y resto de empresas | **1 julio 2026** |');
+    expect(blog).not.toContain('productos certificados antes de que sus clientes estén obligados');
+    expect(blog).not.toContain('Con el **arraigo laboral**: sí');
+    expect(blog).not.toContain('2. Formulario EX-01 (solicitud)');
+    expect(blog).not.toContain('CIF definitivo');
+
+    expect(docs).not.toContain('Medios económicos suficientes: al menos el 150 % del IPREM mensual para el titular');
+    expect(docs).not.toContain('Seguro médico si no se cotiza a la Seguridad Social');
+    expect(catalog).not.toContain('RD 557/2011');
+    expect(catalog).not.toContain('1.200 € netos/mes en 2025');
+    expect(catalog).not.toContain('¿Cuál es la cuota de autónomos en 2025?');
+    expect(ss).not.toContain('En 2025 los tramos y cuotas han vuelto a actualizarse');
+    expect(ss).toContain('RETA_2026_BRACKETS');
+    expect(checklists).not.toContain('El CIF definitivo');
   });
 
   it('documents the no-auto-merge and no-auto-publish contract', () => {

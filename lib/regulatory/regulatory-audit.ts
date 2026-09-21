@@ -1,10 +1,20 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { isRulesetSchemaUnavailable } from './regulatory-schema-compat';
 
 type AuditIssue = {
   code: string;
   severity: 'info' | 'warning' | 'critical';
   message: string;
   entity?: string;
+};
+
+type AuditDependencyRow = {
+  id: string;
+  source_id: string | null;
+  value_key: string | null;
+  ruleset_key: string | null;
+  dependency_type: string;
+  dependency_key: string;
 };
 
 function daysBetween(a: string, b = new Date()) {
@@ -23,8 +33,6 @@ export async function runRegulatoryHealthAudit() {
   const [
     { data: sources, error: sourcesError },
     { data: values, error: valuesError },
-    { data: rulesets, error: rulesetsError },
-    { data: dependencies, error: depsError },
     { data: runs, error: runsError },
   ] = await Promise.all([
     admin.from('regulatory_sources')
@@ -34,13 +42,6 @@ export async function runRegulatoryHealthAudit() {
       .select('id,value_key,period_key,valid_from,valid_to,source_id,metadata')
       .order('value_key', { ascending: true })
       .order('valid_from', { ascending: true }),
-    admin.from('regulatory_rulesets')
-      .select('id,ruleset_key,schema_version,valid_from,valid_to,source_id,metadata')
-      .order('ruleset_key', { ascending: true })
-      .order('valid_from', { ascending: true }),
-    admin.from('regulatory_dependencies')
-      .select('id,source_id,value_key,ruleset_key,dependency_type,dependency_key')
-      .eq('active', true),
     admin.from('regulatory_review_runs')
       .select('id,run_type,status,started_at,finished_at')
       .order('started_at', { ascending: false })
@@ -49,9 +50,37 @@ export async function runRegulatoryHealthAudit() {
 
   if (sourcesError) throw new Error(sourcesError.message);
   if (valuesError) throw new Error(valuesError.message);
-  if (rulesetsError) throw new Error(rulesetsError.message);
-  if (depsError) throw new Error(depsError.message);
   if (runsError) throw new Error(runsError.message);
+
+  const { data: rulesetsRaw, error: rulesetsError } = await admin
+    .from('regulatory_rulesets')
+    .select('id,ruleset_key,schema_version,valid_from,valid_to,source_id,metadata')
+    .order('ruleset_key', { ascending: true })
+    .order('valid_from', { ascending: true });
+
+  const rulesetSchemaAvailable = !isRulesetSchemaUnavailable(rulesetsError);
+  if (rulesetsError && rulesetSchemaAvailable) throw new Error(rulesetsError.message);
+  const rulesets = rulesetSchemaAvailable ? (rulesetsRaw ?? []) : [];
+
+  const { data: dependenciesRaw, error: depsError } = await admin
+    .from('regulatory_dependencies')
+    .select(rulesetSchemaAvailable
+      ? 'id,source_id,value_key,ruleset_key,dependency_type,dependency_key'
+      : 'id,source_id,value_key,dependency_type,dependency_key')
+    .eq('active', true);
+
+  if (depsError) throw new Error(depsError.message);
+  const dependencyRows = (dependenciesRaw ?? []) as unknown as Array<
+    Omit<AuditDependencyRow, 'ruleset_key'> & { ruleset_key?: string | null }
+  >;
+  const dependencies: AuditDependencyRow[] = dependencyRows.map((dependency) => ({
+    id: dependency.id,
+    source_id: dependency.source_id,
+    value_key: dependency.value_key,
+    dependency_type: dependency.dependency_type,
+    dependency_key: dependency.dependency_key,
+    ruleset_key: rulesetSchemaAvailable ? (dependency.ruleset_key ?? null) : null,
+  }));
 
   const issues: AuditIssue[] = [];
   const sourceIds = new Set((sources ?? []).map((source) => source.id));

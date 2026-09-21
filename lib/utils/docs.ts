@@ -902,12 +902,12 @@ Tras **5 años de residencia legal y continuada** en España se puede solicitar 
 - Permite trabajar por cuenta propia o ajena sin autorización laboral específica.
 - Es renovable cada 5 años sin riesgo de denegación si se mantienen los requisitos.
 
-### Requisitos para la larga duración
+### Requisitos para la larga duración nacional
 
-1. 5 años de residencia legal y continuada en España.
-2. Ausencia de antecedentes penales.
-3. Medios económicos suficientes: al menos el 150 % del IPREM mensual para el titular (aprox. 900 €/mes en 2025), más el 50 % por familiar a cargo.
-4. Seguro médico si no se cotiza a la Seguridad Social.
+1. Haber residido legalmente y de forma continuada en España durante los 5 años previos, salvo los demás supuestos específicos previstos por la normativa.
+2. Cumplir los requisitos generales del procedimiento (antecedentes, orden público y demás condiciones aplicables al supuesto).
+
+No debe añadirse un requisito general del 150 % del IPREM ni de seguro médico: esos requisitos pertenecen a otras autorizaciones y no forman parte de la regla general de la larga duración nacional.
 
 ## Períodos de desempleo y la renovación
 
@@ -1014,31 +1014,28 @@ Si estás casado, puedes optar por declaración individual o conjunta. La conjun
     slug: 'regimen-beckham-modelo-151-guia',
     category: 'fiscalidad',
     title: 'Régimen Beckham (Modelo 151): quién puede acogerse y cómo funciona',
-    excerpt: 'Guía técnica sobre el régimen especial de impatriados: requisitos de acceso, tipo fijo del 24%, cómo solicitar el Modelo 149 y diferencias con el IRPF ordinario.',
+    excerpt: 'Guía técnica sobre el régimen especial de impatriados: requisitos de acceso, Modelo 149, tributación especial y diferencias con el IRPF ordinario.',
     tags: ['Modelo 151', 'Régimen Beckham', 'impatriados', 'expatriados', 'Modelo 149'],
     updatedAt: '18 may 2026',
     readTime: '10 min',
     relatedServiceSlugs: ['modelo-151'],
     relatedServiceCategories: ['declaraciones-impuestos'],
     seoTitle: 'Régimen Beckham y Modelo 151: guía completa | EXPERT Asesoría',
-    seoDescription: 'Todo sobre el régimen especial de impatriados: quién puede acogerse, tipo fijo del 24%, cómo solicitar la opción y cuándo conviene frente al IRPF ordinario.',
+    seoDescription: 'Todo sobre el régimen especial de impatriados: quién puede acogerse, cómo solicitar la opción, tributación aplicable y diferencias con el IRPF ordinario.',
     body: `
 ## ¿Qué es el régimen especial de impatriados?
 
-El régimen especial de impatriados (popularmente llamado **Ley Beckham**) permite a personas que se desplazan a España por motivos laborales tributar al **tipo fijo del 24 %** sobre sus rentas obtenidas en España (hasta 600.000 €), en lugar del tipo progresivo general del IRPF (que puede llegar al 47 %).
+El régimen especial de impatriados (popularmente llamado **Ley Beckham**) aplica reglas especiales de tributación a determinados contribuyentes que se desplazan a España y cumplen los requisitos del artículo 93 LIRPF. Para los rendimientos sujetos a la escala especial, el 24 % se aplica hasta 600.000 € y el 47 % sobre el exceso; antes de informar o calcular hay que revisar la causa del desplazamiento y el supuesto concreto.
 
 La declaración anual se presenta mediante el **Modelo 151**, distinto del Modelo 100 que usan los residentes ordinarios.
 
 ## Requisitos para acogerse
 
-Para aplicar el régimen en 2025 es necesario cumplir **todos** los requisitos siguientes:
+Para aplicar el régimen hay que verificar **todos** los requisitos vigentes del supuesto concreto, entre ellos la residencia previa y la causa legal del desplazamiento:
 
 - **No haber sido residente fiscal en España** durante los 5 años anteriores al desplazamiento.
-- Desplazarse a España por:
-  - Un **contrato de trabajo** con empresa española.
-  - Para **ejercer funciones de administrador** de una sociedad española (no vinculada o con vinculación permitida).
-  - Como **nómada digital**: trabajador remoto con visado de nómada digital.
-- El trabajo o la administración deben realizarse **efectivamente en España**.
+- Comprobar si el desplazamiento encaja en alguno de los supuestos actualmente admitidos por la norma (laboral, determinados administradores, actividad emprendedora/profesional o teletrabajo internacional, entre otros casos previstos).
+- Revisar además los requisitos específicos del supuesto y la documentación que exige la AEAT.
 
 ## Cómo solicitar la opción al régimen
 
@@ -1053,7 +1050,7 @@ Este es un plazo crítico: si se presenta fuera de plazo, el régimen no puede a
 | Hasta 600.000 € | 24 % |
 | Exceso sobre 600.000 € | 47 % |
 
-Las **rentas obtenidas fuera de España** (salvo rendimientos del trabajo) quedan **exentas** de tributación en España, lo que puede suponer una ventaja significativa para quienes mantengan patrimonio o rentas en el extranjero.
+La determinación de las rentas sometidas a gravamen sigue las reglas especiales del artículo 93 LIRPF y, en lo no previsto, las reglas del IRNR aplicables al régimen. No debe concluirse que una renta extranjera está exenta únicamente por su localización: hay que clasificar el tipo de renta y aplicar las especialidades correspondientes.
 
 ## Duración del régimen
 
@@ -1061,10 +1058,10 @@ El régimen se aplica durante el **año del desplazamiento y los 5 siguientes** 
 
 ## ¿Cuándo conviene acogerse?
 
-No siempre resulta más ventajoso que el IRPF ordinario. El tipo fijo del 24 % es más favorable cuando:
+No siempre resulta más ventajoso que el IRPF ordinario. La escala especial puede resultar más favorable cuando:
 
 - Los rendimientos del trabajo son elevados (superan los tramos altos del IRPF).
-- Se tienen rentas o patrimonio en el extranjero que quedarían exentas.
+- La estructura de rentas y patrimonio hace que las reglas especiales del régimen resulten favorables frente al IRPF ordinario, tras revisar cada fuente de renta.
 - No se aplican deducciones personales significativas (hipoteca, hijos, etc.).
 
 Si los ingresos son moderados o hay muchas deducciones personales, el IRPF ordinario puede resultar más beneficioso. **Es imprescindible calcular ambas opciones antes de decidir**.
@@ -1074,7 +1071,7 @@ Si los ingresos son moderados o hay muchas deducciones personales, el IRPF ordin
 | Aspecto | Régimen Beckham | IRPF ordinario |
 |---|---|---|
 | Tipo impositivo | 24 % (fijo hasta 600.000 €) | 19 %–47 % (progresivo) |
-| Rentas extranjeras | En general exentas | Tributación mundial |
+| Rentas extranjeras | Según reglas especiales del art. 93/IRNR y tipo de renta | Tributación mundial con reglas ordinarias |
 | Modelo de declaración | Modelo 151 | Modelo 100 |
 | Duración | Hasta 6 años | Indefinido |
 | Reducción por trabajo | No aplica | Sí aplica |
@@ -1085,8 +1082,8 @@ Mientras se esté bajo el régimen Beckham:
 
 - Se presenta el **Modelo 151** anualmente en lugar del Modelo 100.
 - Las retenciones a cuenta son del 24 % (no el tipo marginal).
-- Si se obtienen rentas en el extranjero que no tributan en España, en muchos casos no hay obligación de incluirlas en la declaración española.
-- El **Modelo 720** (bienes en el extranjero) puede no ser aplicable durante el régimen.
+- La inclusión de rentas se determina conforme a las reglas especiales del régimen y al tipo concreto de renta.
+- El contribuyente acogido al régimen especial del artículo 93 no está obligado a presentar el **Modelo 720** por bienes y derechos en el extranjero; la situación de cónyuge u otros familiares se analiza separadamente.
 
 ## Causas de exclusión del régimen
 

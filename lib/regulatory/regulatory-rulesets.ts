@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { isRulesetSchemaUnavailable } from './regulatory-schema-compat';
 
 export async function getCurrentRegulatoryRuleset(rulesetKey: string, onDate = new Date()) {
   const admin = getSupabaseAdmin();
@@ -12,9 +13,14 @@ export async function getCurrentRegulatoryRuleset(rulesetKey: string, onDate = n
     .or(`valid_to.is.null,valid_to.gte.${date}`)
     .order('valid_from', { ascending: false })
     .order('schema_version', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(2);
 
-  if (error) throw new Error(error.message);
-  return data ?? null;
+  if (error) {
+    if (isRulesetSchemaUnavailable(error)) return null;
+    throw new Error(error.message);
+  }
+  if ((data ?? []).length > 1) {
+    throw new Error(`Ambiguous regulatory ruleset ${rulesetKey} for ${date}; human review required`);
+  }
+  return data?.[0] ?? null;
 }
