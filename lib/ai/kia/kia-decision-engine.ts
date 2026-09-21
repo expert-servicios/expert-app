@@ -59,6 +59,7 @@ export async function runKiaDecision(input: {
   contextInput: KiaContextInput;
   locale?: 'es' | 'ru';
   allowTools?: boolean;
+  includeOfficialSourceContext?: boolean;
   forceToolExecution?: boolean;
   allowedToolNames?: string[];
   toolAuthorization?: Pick<KiaToolAuthorizationContext, 'maxRiskTier' | 'allowedEffects' | 'autonomousOnly'>;
@@ -94,10 +95,12 @@ export async function runKiaDecision(input: {
     fewShotBlock,
   });
 
-  const officialSourceContext = await buildOfficialSourceContext(input.message).catch((err) => {
-    console.error('[KiaDecision] official source context failed:', safeErrorMessage(err));
-    return '';
-  });
+  const officialSourceContext = input.includeOfficialSourceContext === false
+    ? ''
+    : await buildOfficialSourceContext(input.message).catch((err) => {
+      console.error('[KiaDecision] official source context failed:', safeErrorMessage(err));
+      return '';
+    });
   const effectiveToolAuthorization: KiaToolAuthorizationContext = {
     ...input.toolAuthorization,
     channel: input.channel,
