@@ -110,7 +110,14 @@ audited_batch=(
   20260920230000
 )
 predeploy_tip='20260920073758'
+recovery_tip='20260920163000'
 final_batch_tip='20260920230000'
+recovery_tail=(
+  20260920180000
+  20260920201500
+  20260920213000
+  20260920230000
+)
 
 if [ "$remote_tip" = "$predeploy_tip" ]; then
   test "$remote_count" -eq 72 || {
@@ -126,8 +133,22 @@ if [ "$remote_tip" = "$predeploy_tip" ]; then
     exit 1
   }
   ledger_state='audited_pre_deploy'
+elif [ "$remote_tip" = "$recovery_tip" ]; then
+  test "$remote_count" -eq 77 || {
+    echo "STOP: audited recovery tip found with unexpected ledger row count $remote_count"
+    exit 1
+  }
+  test "$pending_count" -eq "${#recovery_tail[@]}" || {
+    echo "STOP: expected exactly 4 migrations in audited v1.5 recovery tail, got $pending_count"
+    exit 1
+  }
+  test "$(printf '%s\n' "${pending[@]}")" = "$(printf '%s\n' "${recovery_tail[@]}")" || {
+    echo "STOP: pending tail differs from the audited v1.5 recovery batch"
+    exit 1
+  }
+  ledger_state='audited_partial_v15_recovery'
 elif printf '%s\n' "${audited_batch[@]:0:8}" | grep -qx "$remote_tip"; then
-  echo "STOP: partial v1.3-v1.5 production deployment detected at $remote_tip"
+  echo "STOP: unexpected partial v1.3-v1.5 production deployment detected at $remote_tip"
   exit 1
 elif [ "$remote_tip" = "$final_batch_tip" ]; then
   test "$remote_count" -ge 81 || {
