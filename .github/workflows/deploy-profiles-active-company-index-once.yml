@@ -1,30 +1,30 @@
-name: Deploy profiles RLS consolidate once
+name: Deploy profiles active company index once
 
 on:
   push:
     branches:
       - main
     paths:
-      - '.github/workflows/deploy-profiles-rls-consolidate-once.yml'
+      - '.github/workflows/deploy-profiles-active-company-index-once.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy-profiles-rls-consolidate-once
+  group: deploy-profiles-active-company-index-once
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Deploy exact profiles RLS migration
+    name: Deploy exact profiles active-company index migration
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       PROJECT_REF: ybtpqscmqrrjjmuoryap
-      EXPECTED_VERSION: 20260921203000
+      EXPECTED_VERSION: 20260921212000
 
     steps:
       - name: Checkout
