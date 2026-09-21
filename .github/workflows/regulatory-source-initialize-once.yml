@@ -1,4 +1,4 @@
-name: Regulatory Source Initialization One Shot
+name: Regulatory Final Health Verification One Shot
 
 on:
   push:
@@ -11,30 +11,26 @@ permissions:
   contents: read
 
 concurrency:
-  group: regulatory-source-initialization
+  group: regulatory-final-health-verification
   cancel-in-progress: false
 
 jobs:
-  initialize:
-    name: Initialize regulatory source baselines
+  verify:
+    name: Verify regulatory health is clean
     runs-on: ubuntu-latest
     timeout-minutes: 8
+    env:
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
     steps:
       - name: Verify cron secret
         shell: bash
-        env:
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
-          test -n "${CRON_SECRET:-}" || {
-            echo "STOP: CRON_SECRET is missing"
-            exit 1
-          }
+          test -n "${CRON_SECRET:-}"
 
-      - name: Run monthly regulatory audit once
+      - name: Run final monthly audit
         shell: bash
-        env:
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
           HTTP_CODE=$(curl --silent --show-error --output /tmp/regulatory-audit.json --write-out "%{http_code}" \
@@ -46,7 +42,9 @@ jobs:
           echo "HTTP $HTTP_CODE"
           cat /tmp/regulatory-audit.json
 
-          test "$HTTP_CODE" = "200" || {
-            echo "::error::Regulatory monthly audit failed with HTTP $HTTP_CODE"
-            exit 1
-          }
+          test "$HTTP_CODE" = "200"
+          jq -e '.ok == true' /tmp/regulatory-audit.json >/dev/null
+          jq -e '.sourceErrors == 0' /tmp/regulatory-audit.json >/dev/null
+          jq -e '.health.critical == 0' /tmp/regulatory-audit.json >/dev/null
+          jq -e '.health.warnings == 0' /tmp/regulatory-audit.json >/dev/null
+          jq -e '.health.healthy == true' /tmp/regulatory-audit.json >/dev/null
