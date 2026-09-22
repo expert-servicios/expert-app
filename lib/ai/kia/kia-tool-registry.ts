@@ -15,7 +15,9 @@ export type KiaToolCapability =
   | 'navigation'
   | 'internal_operations'
   | 'administration'
-  | 'regulatory';
+  | 'regulatory'
+  | 'knowledge'
+  | 'service_discovery';
 
 export interface KiaToolPolicy {
   name: string;
@@ -70,6 +72,9 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_user_expedientes:               policy('R0', 'read',  'case_management'),
   get_user_companies:                 policy('R0', 'read',  'client_data'),
   get_user_pending_docs:              policy('R0', 'read',  'documents'),
+  search_knowledge_resources:          policy('R0', 'read',  'knowledge'),
+  get_official_sources:                policy('R0', 'read',  'regulatory'),
+  find_relevant_services:              policy('R0', 'read',  'service_discovery'),
 };
 
 function policy(
