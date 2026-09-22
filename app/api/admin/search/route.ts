@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
       type: 'company',
       title: company.nombre_comercial || company.razon_social || company.cif_nif || company.id,
       subtitle: [company.cif_nif, company.email, company.status].filter(Boolean).join(' · '),
-      href: `/admin/empresas?companyId=${company.id}`,
+      href: `/admin/empresas/${company.id}`,
     });
   }
 
