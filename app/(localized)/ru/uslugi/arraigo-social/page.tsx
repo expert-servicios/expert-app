@@ -145,6 +145,17 @@ const reviewBeforeHiring = [
   'При наличии судимостей, запрета на въезд или другого миграционного процесса нужна индивидуальная оценка.',
 ];
 
+const includes = [
+  'Предварительная оценка применимого основания arraigo',
+  'Проверка и организация документации',
+  'Проверка непрерывного пребывания и отсутствий',
+  'Проверка семейных связей, средств или informe de integración social — в зависимости от случая',
+  'Заполнение формы EX-10',
+  'Подготовка и электронная подача в Oficina de Extranjería',
+  'Стандартное сопровождение дела',
+  'Консультация по получению TIE после положительного решения',
+];
+
 const faqs = [
   {
     q: 'Сколько нужно прожить в Испании для Arraigo Social?',
@@ -286,7 +297,7 @@ export default function RuArraigoSocialPage() {
           <div>
             <h2 className="font-serif text-2xl font-bold">Что входит в услугу</h2>
             <ul className="mt-5 space-y-3">
-              {service.includes.map((item) => (
+              {includes.map((item) => (
                 <li key={item} className="flex items-start gap-3">
                   <Check className="mt-0.5 h-5 w-5 shrink-0 text-[#D4A017]" strokeWidth={2.5} />
                   <span className="text-[15px] leading-6 text-[#23364D]">{item}</span>

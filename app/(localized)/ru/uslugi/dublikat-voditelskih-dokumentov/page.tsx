@@ -20,6 +20,8 @@ const service = (() => {
   return canonical;
 })();
 
+const DURATION_RU = '2–5 рабочих дней';
+
 const budgetHref = `/solicitar-presupuesto?servicio=${SERVICE_SLUG}`;
 const complexBudgetHref = `${budgetHref}&tipo=caso-complejo`;
 
@@ -125,7 +127,7 @@ export default function RuDuplicadoPermisoPage() {
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4A017] flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5" /> Срок
               </p>
-              <p className="mt-2 text-xl font-bold text-white">{service.duration}</p>
+              <p className="mt-2 text-xl font-bold text-white">{DURATION_RU}</p>
             </div>
           </div>
 
@@ -178,7 +180,7 @@ export default function RuDuplicadoPermisoPage() {
             <div className="border-b border-[#D4A017]/20 bg-[#D4A017]/8 px-6 py-4">
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">Стоимость</p>
               <p className="mt-1 text-2xl font-bold">{service.price}</p>
-              <p className="mt-2 text-xs leading-5 text-[#23364D]/65">Срок: {service.duration}.</p>
+              <p className="mt-2 text-xs leading-5 text-[#23364D]/65">Срок: {DURATION_RU}.</p>
             </div>
             <div className="space-y-3 px-6 py-5">
               <Link
