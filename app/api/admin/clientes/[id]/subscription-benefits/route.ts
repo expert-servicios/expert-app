@@ -286,8 +286,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   if (input.benefitType === 'included_entity' && onboardingUrl) {
     try {
-      const [{ data: authUser }, { data: beneficiary }] = await Promise.all([
+      const [{ data: authUser }, { data: clientProfile }, { data: beneficiary }] = await Promise.all([
         admin.auth.admin.getUserById(clientId),
+        admin.from('profiles').select('full_name').eq('id', clientId).maybeSingle(),
         admin
           .from('companies')
           .select('razon_social,nombre_comercial')
@@ -300,7 +301,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const beneficiaryName =
         beneficiary?.razon_social || beneficiary?.nombre_comercial || 'tu nueva entidad';
       const template = includedEntityOnboardingInvitationEmail({
-        name: profileNameForEmail(profileRes.data.full_name, recipientEmail),
+        name: profileNameForEmail(clientProfile?.full_name ?? null, recipientEmail),
         companyName: beneficiaryName,
         planName: sourcePlanName,
         onboardingUrl,
