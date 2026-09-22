@@ -51,13 +51,15 @@ describe('certificate bundle purchase flow', () => {
   it('creates one operational case with separate certificate tasks after payment', () => {
     const webhook = read('app/api/stripe/webhook/route.ts');
     const fulfillment = read('lib/payments/service-order-fulfillment.ts');
+    const orchestration = read('lib/services/service-task-orchestration.ts');
     const blueprint = getServiceOperationalBlueprint('pack-certificados-digitales');
 
     expect(webhook).toContain('ensureServiceOrderFulfillment');
     expect(blueprint?.tasks.map((task) => task.title)).toContain('Emitir certificado digital persona física');
     expect(blueprint?.tasks.map((task) => task.title)).toContain('Emitir certificado digital de entidad');
-    expect(fulfillment).toContain("task_kind: 'service_blueprint_step'");
-    expect(fulfillment).toContain('human_approval_required');
+    expect(fulfillment).toContain('ensureUnlockedServiceTasks');
+    expect(orchestration).toContain("task_kind: 'service_blueprint_step'");
+    expect(orchestration).toContain('human_approval_required');
     expect(fulfillment).toContain(".update({ case_id: caseId })");
   });
 
