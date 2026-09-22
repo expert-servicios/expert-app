@@ -1,1 +1,1 @@
-export { metadata, default } from '../../../ayuda/firmar-pdf-certificado-digital/page';
+export { metadata, default } from '../../ayuda/firmar-pdf-certificado-digital/page';
