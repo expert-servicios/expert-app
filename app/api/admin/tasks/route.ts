@@ -132,6 +132,25 @@ export async function PATCH(request: NextRequest) {
 
   const now = new Date().toISOString();
   const updatePayload: Record<string, unknown> = { updated_at: now };
+
+  if (parsed.data.status === 'en_progreso') {
+    const { data: currentTask } = await auth.admin
+      .from('internal_tasks')
+      .select('metadata')
+      .eq('id', parsed.data.id)
+      .maybeSingle();
+    const metadata = (currentTask?.metadata ?? {}) as Record<string, unknown>;
+    if (metadata.client_action_required === true && !metadata.client_action_started_at) {
+      updatePayload.metadata = {
+        ...metadata,
+        client_action_started_at: now,
+        client_reminders_sent_days: Array.isArray(metadata.client_reminders_sent_days)
+          ? metadata.client_reminders_sent_days
+          : [],
+      };
+    }
+  }
+
   if (parsed.data.status !== undefined) {
     updatePayload.status = parsed.data.status;
     updatePayload.completed_at = null;
