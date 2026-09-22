@@ -388,6 +388,172 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         });
       }
 
+      case 'get_user_orders': {
+        const clientId = context.contact?.clientId;
+        if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+        const caseId = typeof args.caseId === 'string' ? args.caseId : undefined;
+        const limit = Number(args.limit ?? 10);
+
+        if (caseId) {
+          const { data: ownedCase } = await admin.from('cases').select('id').eq('id', caseId).eq('client_id', clientId).maybeSingle();
+          if (!ownedCase) return fail(toolCall.name, 'Expediente no autorizado.');
+        }
+
+        let byClient = admin
+          .from('orders')
+          .select('id,pack_name,amount_eur,amount,currency,status,source,service_slugs,case_id,company_id,created_at,metadata')
+          .eq('client_id', clientId);
+        if (caseId) byClient = byClient.eq('case_id', caseId);
+
+        let byUser = admin
+          .from('orders')
+          .select('id,pack_name,amount_eur,amount,currency,status,source,service_slugs,case_id,company_id,created_at,metadata')
+          .eq('user_id', clientId);
+        if (caseId) byUser = byUser.eq('case_id', caseId);
+
+        const [clientRows, userRows] = await Promise.all([
+          byClient.order('created_at', { ascending: false }).limit(limit),
+          byUser.order('created_at', { ascending: false }).limit(limit),
+        ]);
+        if (clientRows.error || userRows.error) return fail(toolCall.name, 'Error consultando pagos.');
+
+        const merged = [...(clientRows.data ?? []), ...(userRows.data ?? [])];
+        const unique = [...new Map(merged.map((row) => [row.id, row])).values()]
+          .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+          .slice(0, limit);
+
+        return ok(toolCall.name, {
+          count: unique.length,
+          orders: unique.map((row) => ({
+            id: row.id,
+            concepto: row.pack_name ?? row.service_slugs,
+            importe_eur: row.amount_eur ?? row.amount,
+            moneda: row.currency ?? 'EUR',
+            estado: row.status,
+            fuente: row.source,
+            expediente_id: row.case_id,
+            fecha: row.created_at,
+          })),
+        });
+      }
+
+      case 'get_user_subscriptions': {
+        const clientId = context.contact?.clientId;
+        if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+        const requestedCompanyId = typeof args.companyId === 'string' ? args.companyId : undefined;
+        const companyId = requestedCompanyId ?? context.company?.id ?? null;
+        const limit = Number(args.limit ?? 10);
+
+        if (companyId) {
+          const { data: membership } = await admin
+            .from('profile_companies')
+            .select('company_id')
+            .eq('profile_id', clientId)
+            .eq('company_id', companyId)
+            .maybeSingle();
+          if (!membership) return fail(toolCall.name, 'Empresa no autorizada.');
+        }
+
+        let query = admin
+          .from('subscriptions')
+          .select('id,plan_name,plan_slug,status,company_id,current_period_start,current_period_end,canceled_at,cancel_at_period_end,trial_status,trial_end,created_at')
+          .eq('client_id', clientId);
+        if (companyId) query = query.eq('company_id', companyId);
+
+        const { data, error } = await query.order('created_at', { ascending: false }).limit(limit);
+        if (error) return fail(toolCall.name, 'Error consultando suscripciones.');
+        return ok(toolCall.name, {
+          count: (data ?? []).length,
+          subscriptions: (data ?? []).map((row) => ({
+            id: row.id,
+            plan: row.plan_name ?? row.plan_slug,
+            estado: row.status,
+            empresa_id: row.company_id,
+            periodo_desde: row.current_period_start,
+            periodo_hasta: row.current_period_end,
+            cancelacion_programada: row.cancel_at_period_end,
+            cancelada_en: row.canceled_at,
+            prueba_estado: row.trial_status,
+            prueba_hasta: row.trial_end,
+          })),
+        });
+      }
+
+      case 'get_case_tasks': {
+        const clientId = context.contact?.clientId;
+        const caseId = String(args.caseId);
+        if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+        const { data: ownedCase } = await admin.from('cases').select('id').eq('id', caseId).eq('client_id', clientId).maybeSingle();
+        if (!ownedCase) return fail(toolCall.name, 'Expediente no autorizado.');
+        const { data, error } = await admin
+          .from('internal_tasks')
+          .select('id,title,status,priority,due_date,completed_at,created_at,updated_at,metadata')
+          .eq('case_id', caseId)
+          .eq('client_id', clientId)
+          .order('created_at', { ascending: false })
+          .limit(Number(args.limit ?? 20));
+        if (error) return fail(toolCall.name, 'Error consultando tareas.');
+        return ok(toolCall.name, { tasks: data ?? [] });
+      }
+
+      case 'get_case_documents': {
+        const clientId = context.contact?.clientId;
+        const caseId = String(args.caseId);
+        if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+        const { data: ownedCase } = await admin.from('cases').select('id').eq('id', caseId).eq('client_id', clientId).maybeSingle();
+        if (!ownedCase) return fail(toolCall.name, 'Expediente no autorizado.');
+        const { data, error } = await admin
+          .from('documents')
+          .select('id,original_name,title,doc_type,kind,state,checklist_item_label,created_at,updated_at')
+          .eq('case_id', caseId)
+          .eq('client_id', clientId)
+          .order('created_at', { ascending: false })
+          .limit(Number(args.limit ?? 20));
+        if (error) return fail(toolCall.name, 'Error consultando documentos.');
+        return ok(toolCall.name, { documents: data ?? [] });
+      }
+
+      case 'get_case_timeline': {
+        const clientId = context.contact?.clientId;
+        const caseId = String(args.caseId);
+        if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+        const { data: ownedCase } = await admin
+          .from('cases')
+          .select('id,service,state,status,next_action,opened_at,updated_at,closed_at')
+          .eq('id', caseId)
+          .eq('client_id', clientId)
+          .maybeSingle();
+        if (!ownedCase) return fail(toolCall.name, 'Expediente no autorizado.');
+
+        const limit = Number(args.limit ?? 25);
+        const [tasks, docs, emails] = await Promise.all([
+          admin.from('internal_tasks').select('id,title,status,created_at,completed_at,updated_at').eq('case_id', caseId).eq('client_id', clientId).order('created_at', { ascending: false }).limit(limit),
+          admin.from('documents').select('id,original_name,title,state,created_at,updated_at').eq('case_id', caseId).eq('client_id', clientId).order('created_at', { ascending: false }).limit(limit),
+          admin.from('email_events').select('id,event_type,subject,status,created_at').contains('metadata', { case_id: caseId }).order('created_at', { ascending: false }).limit(limit),
+        ]);
+
+        const events = [
+          { type: 'case_opened', at: ownedCase.opened_at, label: `Expediente abierto: ${ownedCase.service}` },
+          { type: 'case_updated', at: ownedCase.updated_at, label: `Estado: ${ownedCase.state ?? ownedCase.status}` },
+          ...(ownedCase.closed_at ? [{ type: 'case_closed', at: ownedCase.closed_at, label: 'Expediente cerrado' }] : []),
+          ...(tasks.data ?? []).map((row) => ({ type: 'task', at: row.completed_at ?? row.updated_at ?? row.created_at, label: `${row.title} · ${row.status}` })),
+          ...(docs.data ?? []).map((row) => ({ type: 'document', at: row.updated_at ?? row.created_at, label: `${row.original_name ?? row.title ?? 'Documento'} · ${row.state}` })),
+          ...(emails.data ?? []).map((row) => ({ type: 'email', at: row.created_at, label: `${row.subject ?? row.event_type} · ${row.status}` })),
+        ].filter((event) => Boolean(event.at))
+          .sort((a, b) => String(b.at).localeCompare(String(a.at)))
+          .slice(0, limit);
+
+        return ok(toolCall.name, {
+          case: {
+            id: ownedCase.id,
+            servicio: ownedCase.service,
+            estado: ownedCase.state ?? ownedCase.status,
+            siguiente_paso: ownedCase.next_action,
+          },
+          events,
+        });
+      }
+
       case 'search_knowledge_resources':
         return ok(toolCall.name, {
           resources: searchKiaKnowledgeResources({
