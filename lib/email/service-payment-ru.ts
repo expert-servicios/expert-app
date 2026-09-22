@@ -129,7 +129,7 @@ export function isNationalityPayment(params: {
 export function spanishNationalityPaymentConfirmedClient(amounts: NationalityServicePaymentAmounts) {
   const serviceUrl = `${APP_URL}/servicios/extranjeria-nacionalidad/${NATIONALITY_MINOR_SERVICE.slug}`;
   return {
-    subject: 'Pago recibido — comenzamos el expediente de nacionalidad | EXPERT',
+    subject: '👏 ¡Pago recibido! Empezamos con tu expediente de nacionalidad',
     html: shell('Pago recibido', `
       ${heading('Pago recibido — comenzamos el expediente')}
       ${para('Hola,')}
@@ -195,7 +195,7 @@ export function spanishNationalityPaymentConfirmedAdmin(input: {
 export function russianNationalityPaymentConfirmedClient(amounts: NationalityServicePaymentAmounts) {
   const serviceUrl = `${APP_URL}/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii`;
   return {
-    subject: 'Оплата получена — начинаем оформление гражданства | EXPERT',
+    subject: '👏 Оплата получена! Начинаем оформление гражданства',
     html: shell('Оплата получена', `
       ${heading('Оплата получена — начинаем оформление')}
       ${para('Здравствуйте!')}
