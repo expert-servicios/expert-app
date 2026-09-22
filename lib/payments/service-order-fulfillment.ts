@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   getServiceOperationalBlueprint,
+  type ServiceOperationalBlueprint,
   type ServiceTaskTemplate,
 } from '@/lib/services/service-operational-blueprints';
 
@@ -23,19 +24,62 @@ function taskDueDate(task: ServiceTaskTemplate): string | null {
     : null;
 }
 
+type ResolvedService = {
+  slug: string;
+  blueprint: ServiceOperationalBlueprint | null;
+};
+
+function unique(values: string[]): string[] {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function genericTask(service: ResolvedService): ServiceTaskTemplate {
+  return {
+    key: `manual-intake-${service.slug}`,
+    title: `Iniciar servicio: ${service.slug}`,
+    description: 'Revisar el pedido pagado, confirmar alcance y preparar el checklist operativo con el cliente.',
+    phase: 'intake',
+    priority: 'alta',
+    dueBusinessDays: 1,
+    humanApprovalRequired: true,
+  };
+}
+
 export async function ensureServiceOrderFulfillment(
   admin: SupabaseAdmin,
   input: {
     orderId: string;
     serviceSlug: string;
+    serviceSlugs?: string[];
+    serviceName?: string | null;
     clientId: string | null;
     companyId: string | null;
   },
 ): Promise<string | null> {
   if (!input.clientId) return null;
 
-  const blueprint = getServiceOperationalBlueprint(input.serviceSlug);
-  if (!blueprint) return null;
+  const slugs = unique([...(input.serviceSlugs ?? []), input.serviceSlug]);
+  if (slugs.length === 0) {
+    throw new Error(`Could not fulfill service order ${input.orderId}: missing service slug`);
+  }
+
+  const services: ResolvedService[] = slugs.map((slug) => ({
+    slug,
+    blueprint: getServiceOperationalBlueprint(slug),
+  }));
+  const blueprints = services
+    .map((service) => service.blueprint)
+    .filter((blueprint): blueprint is ServiceOperationalBlueprint => Boolean(blueprint));
+  const isFullySpecialized = blueprints.length === services.length;
+  const primaryBlueprint = blueprints[0] ?? null;
+
+  const requiredDocuments = unique(
+    blueprints.flatMap((blueprint) =>
+      blueprint.documents.filter((document) => document.required).map((document) => document.label),
+    ),
+  );
+  const serviceLabel = input.serviceName?.trim()
+    || services.map((service) => service.blueprint?.canonicalName ?? service.slug).join(', ');
 
   const { data: existingCase, error: caseLookupError } = await admin
     .from('cases')
@@ -55,21 +99,28 @@ export async function ensureServiceOrderFulfillment(
       .insert({
         client_id: input.clientId,
         company_id: input.companyId,
-        category: blueprint.category,
-        service: blueprint.canonicalName,
-        service_id: blueprint.slug,
+        category: services.length === 1 && primaryBlueprint ? primaryBlueprint.category : 'servicios',
+        service: serviceLabel,
+        service_id: slugs.join(','),
         order_id: input.orderId,
-        state: blueprint.initialState,
-        status: blueprint.initialStatus,
-        priority: blueprint.initialPriority,
-        next_action: blueprint.initialNextAction,
-        docs_checklist: blueprint.documents.filter((doc) => doc.required).map((doc) => doc.label),
+        state: primaryBlueprint?.initialState ?? 'nuevo',
+        status: primaryBlueprint?.initialStatus ?? 'nuevo',
+        priority: primaryBlueprint?.initialPriority ?? 'alta',
+        next_action: isFullySpecialized
+          ? primaryBlueprint?.initialNextAction ?? 'Revisar el pedido y comenzar la prestación'
+          : 'Revisar el pedido pagado y definir el checklist operativo',
+        docs_checklist: requiredDocuments,
         checklist_json: {
-          standard: 'service-operational-blueprint-v1',
-          service_slug: blueprint.slug,
-          requirements: blueprint.requirements,
-          documents: blueprint.documents,
-          steps: blueprint.steps,
+          standard: 'service-operational-blueprint-v2',
+          service_slugs: slugs,
+          specialized: isFullySpecialized,
+          services: services.map((service) => ({
+            service_slug: service.slug,
+            blueprint_available: Boolean(service.blueprint),
+            requirements: service.blueprint?.requirements ?? [],
+            documents: service.blueprint?.documents ?? [],
+            steps: service.blueprint?.steps ?? [],
+          })),
         },
       })
       .select('id')
@@ -91,7 +142,15 @@ export async function ensureServiceOrderFulfillment(
     }
   }
 
-  for (const task of blueprint.tasks) {
+  const tasks = services.flatMap((service) =>
+    (service.blueprint?.tasks ?? [genericTask(service)]).map((task) => ({
+      task,
+      serviceSlug: service.slug,
+      blueprintSlug: service.blueprint?.slug ?? null,
+    })),
+  );
+
+  for (const { task, serviceSlug, blueprintSlug } of tasks) {
     const { data: existingTask, error: taskLookupError } = await admin
       .from('internal_tasks')
       .select('id')
@@ -119,12 +178,15 @@ export async function ensureServiceOrderFulfillment(
         due_date: taskDueDate(task),
         source: 'system',
         metadata: {
-          task_kind: 'service_blueprint_step',
-          service_slug: blueprint.slug,
+          ...(blueprintSlug
+            ? { task_kind: 'service_blueprint_step' }
+            : { task_kind: 'service_manual_intake' }),
+          service_slug: serviceSlug,
+          blueprint_slug: blueprintSlug,
           task_key: task.key,
           phase: task.phase,
           human_approval_required: Boolean(task.humanApprovalRequired),
-          blueprint_version: '1',
+          blueprint_version: blueprintSlug ? '2' : null,
         },
       });
 
