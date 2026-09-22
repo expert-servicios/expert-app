@@ -63,6 +63,11 @@ describe('batch 1 operational automation', () => {
     expect(fulfillment).toContain(".eq('order_id', input.orderId)");
     expect(fulfillment).toContain(".eq('title', task.title)");
     expect(fulfillment).toContain('human_approval_required');
+    expect(fulfillment).toContain('service_manual_intake');
+    expect(fulfillment).toContain('service-operational-blueprint-v2');
+    expect(fulfillment).not.toContain('if (!blueprint) return null');
+    expect(webhook).toContain('serviceSlugs: catalogServiceSlugs');
+    expect(webhook).toContain('serviceName,');
   });
 
   it('keeps current Arraigo Sociolaboral rules and retires the old operational logic', () => {
