@@ -94,6 +94,20 @@ describe('batch 1 operational automation', () => {
     expect(copy).not.toContain('art. 125 del RD 557/2011');
   });
 
+  it('treats voluntary representation as a blocking nationality step', () => {
+    const blueprint = getServiceOperationalBlueprint('nacionalidad-espanola-menor-nacido-en-espana');
+    const migration = read('supabase/migrations/20260922160000_nationality_voluntary_representation_mandate.sql');
+
+    expect(blueprint).toBeDefined();
+    expect(blueprint?.requirements.some((item) => item.key === 'voluntary_representation' && item.required)).toBe(true);
+    expect(blueprint?.documents.some((item) => item.key === 'voluntary_representation_mandate' && item.required)).toBe(true);
+    expect(blueprint?.steps.some((step) => step.key === 'representation_mandate')).toBe(true);
+    expect(blueprint?.tasks.some((task) => task.key === 'verify_signed_mandate' && task.humanApprovalRequired)).toBe(true);
+    expect(blueprint?.tasks.find((task) => task.key === 'submit')?.description).toContain('mandato');
+    expect(migration).toContain("'blocks_submission', true");
+    expect(migration).toContain('requires_both_parents_signatures');
+  });
+
   it('exposes operational blueprints to KIA as an autonomous read-only tool', () => {
     const policy = getKiaToolPolicy('get_service_operational_blueprint');
     expect(policy?.riskTier).toBe('R0');
