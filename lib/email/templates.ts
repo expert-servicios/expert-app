@@ -1,4 +1,5 @@
 ﻿import { getPublicAppUrl } from '@/lib/utils/app-url';
+import { inferKiaEmailMood, kiaEmailSignatureHtml, type KiaEmailLocale } from '@/lib/email/kia-signature';
 
 const BRAND = {
   from: process.env.RESEND_FROM_EMAIL ?? 'EXPERT <info@expertconsulting.es>',
@@ -12,7 +13,7 @@ export interface TenantBrand {
   support_email?: string;
 }
 
-function base(title: string, body: string, brand?: TenantBrand): string {
+function base(title: string, body: string, brand?: TenantBrand, locale: KiaEmailLocale = 'es'): string {
   const brandName     = escapeHtmlRaw(brand?.name    ?? 'EXPERT');
   const brandTagline  = escapeHtmlRaw(brand?.tagline ?? 'Asesoría Legal · Fiscal · Administrativa');
   const brandColor    = brand?.primary_color ?? '#d7a33a';
