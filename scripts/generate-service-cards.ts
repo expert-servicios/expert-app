@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { ImageResponse } from 'next/og.js';
 import { categories, services, type CategorySlug } from '../lib/utils/catalog';
@@ -6,46 +6,80 @@ import { getLocalizedServicePresentations } from '../lib/services/service-locali
 import { isArchivedService, MONTHLY_PLANS } from '../lib/marketing/meta-catalog-archive';
 
 /**
- * Generates one branded PNG per catalog item (category palette + icon letter +
- * name) so the Meta catalog export has an image_url to point at. Pure asset
- * generation: never touches Supabase, never calls Meta. Output lands under
+ * Generates one branded PNG per catalog item (EXPERT logo mark + category
+ * label + name + a row of 3 category-specific feature pills) so the Meta
+ * catalog export has an image_url to point at. Pure asset generation: never
+ * touches Supabase, never calls Meta. Output lands under
  * public/catalog/servicios/<slug>.png (Spanish) and public/catalog/servicios/ru/<slug>.png
  * (Russian, only for services with a vetted translation in service-localized-content.ts —
  * this repo does not invent legal/fiscal terminology on its own), matched by the
  * backfill script via slug.
  *
- * Ksenia (2026-09-22): archived services (subscription-only "gestión
- * empresarial" services + anything with no fixed/floor price — see
- * lib/marketing/meta-catalog-archive.ts) get no card, and any stale card
- * left over from a previous run is deleted. The 3 monthly plans get a card
- * instead, sharing the "Empresas y Autónomos" accent since that's the
- * category the backfill script files them under.
+ * Ksenia (2026-09-22): wants a cream/navy/gold "premium" look closer to the
+ * marketing cards she showed as a reference (photorealistic 3D renders
+ * aren't something this script can produce — no AI image generation tool is
+ * available here — but the layout, real EXPERT logo mark, and per-category
+ * "feature pill" row below the title are). Confirmed she wants this script
+ * to generate every card so they stay visually consistent, rather than
+ * hand-placing individually designed images.
+ *
+ * Archived services (subscription-only "gestión empresarial" services +
+ * anything with no fixed/floor price — see lib/marketing/meta-catalog-archive.ts)
+ * get no card, and any stale card left over from a previous run is deleted.
+ * The 3 monthly plans get a card too, filed under "Empresas y Autónomos"
+ * since that's the category the backfill script uses for them.
  */
 
 const OUTPUT_DIR = path.join(process.cwd(), 'public', 'catalog', 'servicios');
 const RU_OUTPUT_DIR = path.join(OUTPUT_DIR, 'ru');
+const LOGO_PATH = path.join(process.cwd(), 'public', 'logo_expert_new.png');
 const CARD_SIZE = 800;
-
-const CATEGORY_STYLE: Record<CategorySlug, { accent: string; label: string }> = {
-  'declaraciones-impuestos': { accent: '#D4A017', label: 'Fiscalidad' },
-  'extranjeria-nacionalidad': { accent: '#6B8CAE', label: 'Extranjería y Nacionalidad' },
-  'empresas-autonomos': { accent: '#4C9A6A', label: 'Empresas y Autónomos' },
-  holded: { accent: '#B8548C', label: 'Holded' },
-  'certificado-digital': { accent: '#5E7CE2', label: 'Certificado digital' },
-  'trafico-capitania-maritima': { accent: '#3FA7A0', label: 'Tráfico y Capitanía Marítima' },
-  'notaria-propiedades': { accent: '#C77B3D', label: 'Notaría y Propiedades' },
-  formacion: { accent: '#8B6FD4', label: 'Formación' },
-};
-
-const PLAN_STYLE = { accent: CATEGORY_STYLE['empresas-autonomos'].accent, label: 'Planes mensuales' };
 
 const NAVY = '#0D1B2A';
 const CREAM = '#F8F6F1';
-const GRAY = '#9CA3AF';
+const GOLD = '#D4A017';
+const GRAY = '#6B7280';
 
-function buildCardElement(serviceName: string, accent: string, categoryLabel: string, footerText: string) {
-  const initial = categoryLabel.charAt(0).toUpperCase();
+const CATEGORY_LABEL: Record<CategorySlug, string> = {
+  'declaraciones-impuestos': 'Fiscalidad',
+  'extranjeria-nacionalidad': 'Extranjería y Nacionalidad',
+  'empresas-autonomos': 'Empresas y Autónomos',
+  holded: 'Holded',
+  'certificado-digital': 'Certificado digital',
+  'trafico-capitania-maritima': 'Tráfico y Capitanía Marítima',
+  'notaria-propiedades': 'Notaría y Propiedades',
+  formacion: 'Formación',
+};
 
+// 3 short feature words per category, echoing the pattern in Ksenia's
+// reference images (e.g. Holded: "Migración · Configuración · Formación").
+const CATEGORY_FEATURES_ES: Record<CategorySlug, [string, string, string]> = {
+  'declaraciones-impuestos': ['Revisión fiscal', 'Presentación online', 'Seguimiento'],
+  'extranjeria-nacionalidad': ['Estudio del caso', 'Trámite oficial', 'Seguimiento personalizado'],
+  'empresas-autonomos': ['Estudio previo', 'Trámites online', 'Soporte profesional'],
+  holded: ['Migración', 'Configuración', 'Formación'],
+  'certificado-digital': ['Solicitud', 'Verificación', 'Entrega'],
+  'trafico-capitania-maritima': ['Gestión del trámite', 'Presentación oficial', 'Seguimiento'],
+  'notaria-propiedades': ['Revisión', 'Firma notarial', 'Registro'],
+  formacion: ['Contenido práctico', 'Sesión en vivo', 'Certificado'],
+};
+
+const PLAN_FEATURES_ES: [string, string, string] = ['Revisión mensual', 'Alertas', 'Soporte prioritario'];
+
+// Only translated for the 2 categories that currently have a vetted RU
+// service (see lib/services/service-localized-content.ts) — plain
+// process words, not fiscal/legal terminology, so no review dependency.
+const CATEGORY_FEATURES_RU: Partial<Record<CategorySlug, [string, string, string]>> = {
+  'certificado-digital': ['Заявка', 'Проверка', 'Выдача'],
+  'extranjeria-nacionalidad': ['Изучение дела', 'Официальная процедура', 'Сопровождение'],
+};
+
+function buildCardElement(
+  title: string,
+  categoryLabel: string,
+  features: [string, string, string],
+  logoDataUri: string,
+) {
   return {
     type: 'div',
     props: {
@@ -54,15 +88,35 @@ function buildCardElement(serviceName: string, accent: string, categoryLabel: st
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        background: NAVY,
-        padding: 64,
+        alignItems: 'center',
+        background: CREAM,
+        padding: 56,
       },
       children: [
+        { type: 'img', props: { src: logoDataUri, width: 96, height: 96 } },
         {
           type: 'div',
           props: {
-            style: { display: 'flex', width: '100%', height: 8, background: accent, borderRadius: 4 },
-            children: [],
+            style: {
+              display: 'flex',
+              marginTop: 12,
+              fontSize: 26,
+              fontWeight: 700,
+              letterSpacing: 6,
+              color: NAVY,
+            },
+            children: 'EXPERT',
+          },
+        },
+        {
+          type: 'div',
+          props: {
+            style: { display: 'flex', alignItems: 'center', marginTop: 16, width: 220 },
+            children: [
+              { type: 'div', props: { style: { display: 'flex', flexGrow: 1, height: 1, background: GOLD }, children: [] } },
+              { type: 'div', props: { style: { display: 'flex', width: 6, height: 6, borderRadius: 3, background: GOLD, margin: '0 10px' }, children: [] } },
+              { type: 'div', props: { style: { display: 'flex', flexGrow: 1, height: 1, background: GOLD }, children: [] } },
+            ],
           },
         },
         {
@@ -70,43 +124,14 @@ function buildCardElement(serviceName: string, accent: string, categoryLabel: st
           props: {
             style: {
               display: 'flex',
-              alignItems: 'center',
-              marginTop: 56,
+              marginTop: 20,
+              fontSize: 22,
+              letterSpacing: 3,
+              textTransform: 'uppercase',
+              color: GOLD,
+              fontWeight: 700,
             },
-            children: [
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 72,
-                    height: 72,
-                    borderRadius: 36,
-                    background: accent,
-                    color: NAVY,
-                    fontSize: 34,
-                    fontWeight: 700,
-                  },
-                  children: initial,
-                },
-              },
-              {
-                type: 'div',
-                props: {
-                  style: {
-                    display: 'flex',
-                    marginLeft: 24,
-                    fontSize: 26,
-                    letterSpacing: 2,
-                    textTransform: 'uppercase',
-                    color: accent,
-                  },
-                  children: categoryLabel,
-                },
-              },
-            ],
+            children: categoryLabel,
           },
         },
         {
@@ -116,18 +141,22 @@ function buildCardElement(serviceName: string, accent: string, categoryLabel: st
               display: 'flex',
               flexGrow: 1,
               alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              padding: '0 20px',
             },
             children: {
               type: 'div',
               props: {
                 style: {
                   display: 'flex',
-                  color: CREAM,
-                  fontSize: serviceName.length > 40 ? 52 : 64,
+                  color: NAVY,
+                  fontSize: title.length > 40 ? 46 : 56,
                   fontWeight: 700,
-                  lineHeight: 1.15,
+                  lineHeight: 1.2,
+                  textAlign: 'center',
                 },
-                children: serviceName,
+                children: title,
               },
             },
           },
@@ -137,27 +166,57 @@ function buildCardElement(serviceName: string, accent: string, categoryLabel: st
           props: {
             style: {
               display: 'flex',
+              width: '100%',
               justifyContent: 'space-between',
-              alignItems: 'center',
-              borderTop: `1px solid ${GRAY}`,
-              paddingTop: 24,
+              borderTop: `1px solid ${GOLD}`,
+              paddingTop: 28,
             },
-            children: [
-              {
-                type: 'div',
-                props: {
-                  style: { display: 'flex', color: CREAM, fontSize: 28, fontWeight: 700, letterSpacing: 4 },
-                  children: 'EXPERT',
-                },
+            children: features.map((feature) => ({
+              type: 'div',
+              props: {
+                style: { display: 'flex', flexDirection: 'column', alignItems: 'center', width: '31%' },
+                children: [
+                  {
+                    // A plain vector bullet (no glyph) — satori has to fetch a
+                    // dynamic Google Font for any character outside the base
+                    // font, which fails offline/sandboxed (Status: 400).
+                    type: 'div',
+                    props: {
+                      style: {
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 40,
+                        height: 40,
+                        borderRadius: 20,
+                        background: NAVY,
+                      },
+                      children: {
+                        type: 'div',
+                        props: {
+                          style: { display: 'flex', width: 12, height: 12, borderRadius: 6, background: GOLD },
+                          children: [],
+                        },
+                      },
+                    },
+                  },
+                  {
+                    type: 'div',
+                    props: {
+                      style: {
+                        display: 'flex',
+                        marginTop: 10,
+                        fontSize: 17,
+                        fontWeight: 600,
+                        color: GRAY,
+                        textAlign: 'center',
+                      },
+                      children: feature,
+                    },
+                  },
+                ],
               },
-              {
-                type: 'div',
-                props: {
-                  style: { display: 'flex', color: GRAY, fontSize: 20 },
-                  children: footerText,
-                },
-              },
-            ],
+            })),
           },
         },
       ],
@@ -175,10 +234,13 @@ async function main() {
   await mkdir(OUTPUT_DIR, { recursive: true });
   await mkdir(RU_OUTPUT_DIR, { recursive: true });
 
-  const missingCategories = services.filter((service) => !CATEGORY_STYLE[service.categoria]);
+  const missingCategories = services.filter((service) => !CATEGORY_LABEL[service.categoria]);
   if (missingCategories.length > 0) {
     throw new Error(`Falta estilo para categorías: ${missingCategories.map((s) => s.categoria).join(', ')}`);
   }
+
+  const logoBuffer = await readFile(LOGO_PATH);
+  const logoDataUri = `data:image/png;base64,${logoBuffer.toString('base64')}`;
 
   let written = 0;
   let archived = 0;
@@ -190,8 +252,7 @@ async function main() {
       await rm(path.join(RU_OUTPUT_DIR, `${service.slug}.png`), { force: true });
       continue;
     }
-    const style = CATEGORY_STYLE[service.categoria];
-    const element = buildCardElement(service.name, style.accent, style.label, 'Gestoría');
+    const element = buildCardElement(service.name, CATEGORY_LABEL[service.categoria], CATEGORY_FEATURES_ES[service.categoria], logoDataUri);
     await writeCard(path.join(OUTPUT_DIR, `${service.slug}.png`), element);
     written += 1;
   }
@@ -202,7 +263,7 @@ async function main() {
 
   let writtenPlans = 0;
   for (const plan of MONTHLY_PLANS) {
-    const element = buildCardElement(plan.name, PLAN_STYLE.accent, PLAN_STYLE.label, 'Gestoría');
+    const element = buildCardElement(plan.name, 'Planes mensuales', PLAN_FEATURES_ES, logoDataUri);
     await writeCard(path.join(OUTPUT_DIR, `${plan.slug}.png`), element);
     writtenPlans += 1;
   }
@@ -216,8 +277,9 @@ async function main() {
   for (const presentation of ruPresentations) {
     const service = services.find((item) => item.slug === presentation.serviceSlug);
     if (!service || isArchivedService(service)) continue;
-    const categoryLabel = presentation.categoryLabel ?? CATEGORY_STYLE[service.categoria].label;
-    const element = buildCardElement(presentation.title, CATEGORY_STYLE[service.categoria].accent, categoryLabel, 'Испания');
+    const categoryLabel = presentation.categoryLabel ?? CATEGORY_LABEL[service.categoria];
+    const features = CATEGORY_FEATURES_RU[service.categoria] ?? CATEGORY_FEATURES_ES[service.categoria];
+    const element = buildCardElement(presentation.title, categoryLabel, features, logoDataUri);
     await writeCard(path.join(RU_OUTPUT_DIR, `${service.slug}.png`), element);
     writtenRu += 1;
   }
