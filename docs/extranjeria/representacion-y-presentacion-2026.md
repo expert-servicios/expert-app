@@ -218,27 +218,51 @@ Por tanto, para EXPERT la vía estructural aplicable sigue siendo:
 - Extranjería: Apoder@/REA (apud acta) o poder notarial, además de cualquier convenio de habilitación que pudiera resultar aplicable en el futuro.
 
 
-## 12. ASESORLEX
+## 12. ASESORLEX — posible vía futura de colaborador de Extranjería
 
-EXPERT está asociada a ASESORLEX. A fecha de revisión 22/09/2026:
-- ASESORLEX publica convenios de colaboración social con AEAT y administraciones tributarias autonómicas, además de CIRCE/PAE y acceso al Sistema RED;
-- no se ha localizado en su catálogo público un convenio específico de representación en materia de Extranjería;
-- no se ha podido acreditar su presencia en el listado oficial de entidades colaboradoras del Registro Electrónico de Extranjería.
+EXPERT está asociada a ASESORLEX.
 
-Por tanto, la pertenencia a ASESORLEX no se utilizará como habilitación para presentar expedientes de Extranjería salvo que exista y se verifique posteriormente un convenio específico aplicable.
+### Situación jurídica verificada
 
-### Flujo remoto definitivo
+ASESORLEX consta como **ASESORLEX ASOCIACIÓN PROFESIONAL DE ASESORÍAS DE PYMES**, CIF G73741266. Consta constituida en 2012 y figura como asociación inscrita a nivel nacional (Grupo 1 / Sección 1 / número nacional 599987).
 
-1. Identificar trámite y sujeto legitimado.
-2. Verificar que admite actuación por apoderado.
-3. Preguntar si el cliente dispone de certificado electrónico/DNIe válido para Apoder@.
-4. Si no dispone:
-   - ofrecer `certificado-digital-persona-fisica` (90 € + IVA);
-   - tramitarlo online;
-   - ayudar a instalarlo/probarlo.
-5. Generar instrucciones Apoder@ con los datos de Ksenia ILICHEVA, NIE X3576519L, y el trámite/SIA.
-6. Cliente otorga el poder electrónicamente.
-7. Ksenia acepta el poder con su certificado personal.
-8. Comprobar estado **Autorizado** y guardar justificante/referencia REA en el expediente.
-9. Desbloquear presentación profesional en Mercurio.
-10. Al finalizar, revocar o dejar caducar el poder según alcance y vigencia.
+Por tanto, su forma jurídica y antigüedad son, en principio, compatibles con los dos primeros elementos del artículo 4.1.b de la Orden ISM/164/2026: entidad sin ánimo de lucro legalmente constituida en España con más de tres años de antigüedad.
+
+### Requisitos que aún debe acreditar
+
+La inscripción no es automática. ASESORLEX tendría que acreditar además:
+
+1. que sus fines o actividades institucionales, conforme a estatutos o programas desarrollados, están vinculados al ámbito migratorio o de protección internacional;
+2. experiencia mínima y verificable de **dos años continuados** en acompañamiento y asistencia a personas extranjeras;
+3. cumplimiento tributario y de Seguridad Social y ausencia de condenas/sanciones incompatibles;
+4. seguro de responsabilidad civil que cubra la representación;
+5. un censo de personas habilitadas para ejercer representación;
+6. que cada persona habilitada cumple los requisitos del artículo 8 (conocimientos, certificado negativo de delitos sexuales, ausencia de sanciones/condenas incompatibles, firma electrónica compatible y residencia en España).
+
+La información pública de ASESORLEX acredita amplia actividad de colaboración social tributaria, PAE/CIRCE y Sistema RED, pero no permite por sí sola demostrar los dos años de actividad migratoria exigidos. ASESORLEX deberá valorar qué programas, servicios o experiencia institucional puede documentar.
+
+### Posible incorporación de asesores asociados al censo
+
+La Orden exige un **censo de personas habilitadas**, pero no establece expresamente en los artículos revisados que dichas personas deban ser trabajadoras de la entidad. Esto abre la posibilidad de estudiar si ASESORLEX puede habilitar a profesionales asociados que cumplan individualmente los requisitos.
+
+Antes de utilizar esta vía, ASESORLEX debería confirmar con la Dirección General de Gestión Migratoria que los asesores asociados pueden formar parte del censo en su modelo organizativo.
+
+### Gratuidad
+
+El artículo 8.1.c de la Orden ISM/164/2026 exige el **carácter gratuito de la representación en los trámites realizados al amparo del Registro**.
+
+Debe solicitarse criterio sobre cómo se aplica esta gratuidad cuando el profesional asociado presta, separadamente, servicios profesionales remunerados de análisis, preparación documental, asesoramiento y seguimiento del expediente. Hasta disponer de criterio claro, EXPERT no asumirá que la inscripción permite cobrar por la propia actuación representativa.
+
+### Conclusión operativa
+
+ASESORLEX **puede ser candidata a solicitar la inscripción** si acredita los requisitos materiales de actividad migratoria y experiencia de dos años. No debe descartarse por su forma jurídica.
+
+EXPERT propondrá formalmente a ASESORLEX:
+- estudiar y, si cumple requisitos, solicitar la inscripción;
+- consultar a Migraciones la inclusión de asesores asociados en el censo de personas habilitadas;
+- aclarar el alcance práctico de la gratuidad de la representación;
+- crear, si procede, un procedimiento de adhesión/habilitación individual semejante al que ya utiliza con AEAT/CCAA y PAE.
+
+Mientras no exista inscripción/habilitación confirmada, se mantiene el flujo ordinario:
+**certificado digital del cliente → Apoder@/REA → aceptación por Ksenia → Mercurio**.
+
