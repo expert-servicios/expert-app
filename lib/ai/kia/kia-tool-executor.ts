@@ -15,6 +15,7 @@ import { extractInvoiceOcr, type InvoiceMediaType } from './kia-ocr-extractor';
 import { executeKiaHoldedLaborTool, type KiaHoldedLaborToolName } from './kia-holded-labor-tools';
 import { resolveKiaCompanyHoldedAccess } from './kia-holded-access';
 import { executeLaborPayrollDiagnostics } from './kia-labor-payroll-diagnostics';
+import { findKiaRelevantServices, getKiaOfficialSources, searchKiaKnowledgeResources } from './kia-knowledge-discovery';
 
 const HOLDED_LABOR_TOOL_NAMES = new Set<KiaHoldedLaborToolName>([
   'get_holded_employees',
@@ -386,6 +387,36 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
           })),
         });
       }
+
+      case 'search_knowledge_resources':
+        return ok(toolCall.name, {
+          resources: searchKiaKnowledgeResources({
+            query: String(args.query),
+            type: args.type as 'blog' | 'doc' | 'all',
+            category: typeof args.category === 'string' ? args.category : undefined,
+            serviceSlug: typeof args.serviceSlug === 'string' ? args.serviceSlug : undefined,
+            limit: Number(args.limit ?? 5),
+          }),
+        });
+
+      case 'get_official_sources':
+        return ok(toolCall.name, {
+          sources: await getKiaOfficialSources({
+            admin,
+            serviceSlug: typeof args.serviceSlug === 'string' ? args.serviceSlug : undefined,
+            topic: typeof args.topic === 'string' ? args.topic : undefined,
+            limit: Number(args.limit ?? 5),
+          }),
+        });
+
+      case 'find_relevant_services':
+        return ok(toolCall.name, {
+          services: findKiaRelevantServices({
+            query: String(args.query),
+            category: typeof args.category === 'string' ? args.category : undefined,
+            limit: Number(args.limit ?? 2),
+          }),
+        });
 
       default:
         return fail(toolCall.name, `Tool not allowed: ${toolCall.name}`);
