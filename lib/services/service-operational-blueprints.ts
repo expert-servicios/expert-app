@@ -32,6 +32,8 @@ export type ServiceTaskTemplate = {
   phase: string;
   humanApprovalRequired?: boolean;
   dueBusinessDays?: number;
+  dependsOn?: string[];
+  syncCalendar?: boolean;
 };
 
 export type ServiceOperationalBlueprint = {
@@ -106,18 +108,38 @@ function immigrationCaseSteps(
       clientVisible: true,
     },
     {
-      key: 'submit',
-      title: 'Presentación',
-      description: representationMode === 'extranjeria'
-        ? 'Presentar únicamente después de validar el expediente y acreditar formalmente la representación cuando EXPERT actúe en nombre del interesado.'
-        : 'Presentar únicamente después de validar el expediente y archivar el mandato o poder de representación voluntaria cuando EXPERT actúe como representante.',
+      key: 'fee',
+      title: 'Tasas',
+      description: 'Preparar, abonar o registrar las tasas administrativas aplicables al procedimiento y archivar sus justificantes.',
       clientVisible: true,
       humanApprovalRequired: true,
     },
     {
+      key: 'final_review',
+      title: 'Revisión final',
+      description: 'Comprobar expediente, representación, formularios, tasas y anexos inmediatamente antes de presentar.',
+      clientVisible: true,
+      humanApprovalRequired: true,
+    },
+    {
+      key: 'submit',
+      title: 'Presentación',
+      description: representationMode === 'extranjeria'
+        ? 'Presentar únicamente después de validar el expediente, las tasas y la representación formal cuando EXPERT actúe en nombre del interesado.'
+        : 'Presentar únicamente después de validar el expediente, las tasas y archivar el mandato o poder de representación voluntaria cuando EXPERT actúe como representante.',
+      clientVisible: true,
+      humanApprovalRequired: true,
+    },
+    {
+      key: 'receipt',
+      title: 'Justificante de presentación',
+      description: 'Archivar justificante, número de expediente y fecha/hora de registro y comunicar la presentación al cliente.',
+      clientVisible: true,
+    },
+    {
       key: 'follow_up',
       title: 'Seguimiento',
-      description: 'Registrar justificante, número de expediente, requerimientos y siguiente acción.',
+      description: 'Controlar requerimientos, notificaciones, resolución y siguiente acción.',
       clientVisible: true,
     },
   ];
@@ -132,19 +154,27 @@ function immigrationTasks(
     ? {
         key: 'formalize_representation',
         title: `Acreditar representación formal — ${serviceName}`,
-        description: 'Si EXPERT presentará en nombre del interesado, obtener y validar poder notarial o apoderamiento apud acta/REA antes de desbloquear la presentación.',
+        description: 'Si EXPERT presentará en nombre del interesado, obtener y validar apoderamiento apud acta/REA, poder notarial u otra habilitación válida antes de desbloquear la presentación.',
         priority: 'alta',
         phase: 'representation',
         humanApprovalRequired: true,
+        dueBusinessDays: 1,
+        dependsOn: ['review_documents'],
+        syncCalendar: true,
       }
     : {
         key: 'formalize_voluntary_representation',
         title: `Formalizar representación voluntaria — ${serviceName}`,
-        description: 'Si EXPERT presentará la solicitud de nacionalidad, preparar y validar mandato o poder de representación voluntaria antes de presentar.',
+        description: 'Si EXPERT presentará la solicitud de nacionalidad, preparar, firmar y validar el mandato o poder de representación voluntaria antes de presentar.',
         priority: 'alta',
         phase: 'representation',
         humanApprovalRequired: true,
+        dueBusinessDays: 1,
+        dependsOn: ['review_documents'],
+        syncCalendar: true,
       };
+
+  const representationKey = representationTask.key;
 
   return [
     {
@@ -154,6 +184,7 @@ function immigrationTasks(
       priority: 'alta',
       phase: 'intake',
       dueBusinessDays: 1,
+      syncCalendar: true,
     },
     {
       key: 'review_documents',
@@ -161,31 +192,75 @@ function immigrationTasks(
       description: 'Comprobar documentos recibidos contra el checklist canónico y registrar faltantes.',
       priority: 'media',
       phase: 'documents',
+      dueBusinessDays: 1,
+      dependsOn: ['validate'],
+      syncCalendar: true,
     },
     representationTask,
     {
       key: 'prepare_application',
       title: `Preparar ${applicationLabel} — ${serviceName}`,
-      description: 'Preparar formularios, anexos, tasas y paquete de presentación según la vía validada.',
+      description: 'Preparar formularios, anexos y paquete documental según la vía validada.',
       priority: 'media',
       phase: 'prepare',
+      dueBusinessDays: 1,
+      dependsOn: [representationKey],
+      syncCalendar: true,
+    },
+    {
+      key: 'fee',
+      title: `Gestionar tasas — ${serviceName}`,
+      description: 'Preparar, abonar o registrar las tasas administrativas aplicables y archivar sus justificantes.',
+      priority: 'alta',
+      phase: 'fee',
+      dueBusinessDays: 1,
+      dependsOn: ['prepare_application'],
+      syncCalendar: true,
+      humanApprovalRequired: true,
+    },
+    {
+      key: 'final_review',
+      title: `Revisión final antes de presentar — ${serviceName}`,
+      description: 'Comprobar formularios, anexos, representación y tasas antes de la firma/presentación.',
+      priority: 'alta',
+      phase: 'final_review',
+      dueBusinessDays: 0,
+      dependsOn: ['fee'],
+      syncCalendar: true,
+      humanApprovalRequired: true,
     },
     {
       key: 'submit',
       title: `Presentar expediente — ${serviceName}`,
       description: representationMode === 'extranjeria'
-        ? 'Acción profesional. No presentar sin expediente validado y representación formal acreditada cuando EXPERT actúe por el interesado.'
-        : 'Acción profesional. No presentar sin expediente validado y mandato/poder acreditado cuando EXPERT actúe como representante voluntario.',
+        ? 'Acción profesional. No presentar sin expediente validado, tasas controladas y representación formal acreditada cuando EXPERT actúe por el interesado.'
+        : 'Acción profesional. No presentar sin expediente validado, tasas controladas y mandato/poder acreditado cuando EXPERT actúe como representante voluntario.',
       priority: 'alta',
       phase: 'submit',
+      dueBusinessDays: 0,
+      dependsOn: ['final_review'],
+      syncCalendar: true,
       humanApprovalRequired: true,
     },
     {
+      key: 'receipt',
+      title: `Archivar justificante y comunicar presentación — ${serviceName}`,
+      description: 'Guardar justificante/número de expediente y comunicar al cliente la presentación y siguientes pasos.',
+      priority: 'alta',
+      phase: 'receipt',
+      dueBusinessDays: 0,
+      dependsOn: ['submit'],
+      syncCalendar: true,
+    },
+    {
       key: 'follow_up',
-      title: `Registrar y seguir expediente — ${serviceName}`,
-      description: 'Guardar justificante/número de expediente y controlar requerimientos o resolución.',
+      title: `Seguimiento — ${serviceName}`,
+      description: 'Controlar requerimientos, notificaciones, resolución y siguiente acción.',
       priority: 'media',
       phase: 'follow_up',
+      dueBusinessDays: 1,
+      dependsOn: ['receipt'],
+      syncCalendar: true,
     },
   ];
 }
