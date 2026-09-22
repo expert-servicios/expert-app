@@ -62,7 +62,7 @@ type MetaCatalogDraft = {
 type MetaCatalogExcludedService = {
   retailerId: string;
   name: string;
-  reason: 'quote_price' | 'missing_offer';
+  reason: 'quote_price' | 'missing_offer' | 'archived';
 };
 
 type MetaCatalogPayload = {
@@ -75,6 +75,7 @@ type MetaCatalogPayload = {
 const EXCLUSION_LABEL: Record<MetaCatalogExcludedService['reason'], string> = {
   quote_price: 'Precio "Consultar"',
   missing_offer: 'Sin oferta comercial',
+  archived: 'Archivado (solo suscripción o sin precio)',
 };
 
 function Metric({ label, value, detail }: { label: string; value: string | number; detail?: string }) {

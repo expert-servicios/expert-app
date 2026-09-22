@@ -81,6 +81,30 @@ describe('buildMetaCatalogDrafts', () => {
     expect(result.excluded).toEqual([{ retailerId: 'quote-service', name: 'Quote service', reason: 'quote_price' }]);
   });
 
+  it('excludes a paused (archived) service outright, even when it has a real price', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'catalog_services') {
+        return { select: () => queryResult([{ id: 's5', slug: 'paused-service', category_key: 'empresas-autonomos', status: 'paused' }]) };
+      }
+      if (table === 'service_contents') {
+        return { select: () => queryResult([{ id: 'c5', service_id: 's5', locale: 'es', name: 'Paused service', short_description: 'short', description: 'long', landing_path: '/servicios/empresas-autonomos/paused-service', image_url: '/catalog/servicios/paused-service.png', status: 'active' }]) };
+      }
+      if (table === 'commercial_offers') {
+        return { select: () => queryResult([{ id: 'o5', service_id: 's5', code: 'default', price_mode: 'from', amount_cents: 8000, status: 'active' }]) };
+      }
+      if (table === 'service_channel_configs') {
+        return { select: () => queryResult([{ service_id: 's5', enabled: true, publish_status: 'ready' }]) };
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const { buildMetaCatalogDrafts } = await import('@/lib/integrations/meta/catalog-export');
+    const result = await buildMetaCatalogDrafts();
+
+    expect(result.drafts).toHaveLength(0);
+    expect(result.excluded).toEqual([{ retailerId: 'paused-service', name: 'Paused service', reason: 'archived' }]);
+  });
+
   it('excludes a service with no commercial offer at all', async () => {
     fromMock.mockImplementation((table: string) => {
       if (table === 'catalog_services') {

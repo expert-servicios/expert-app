@@ -10,13 +10,19 @@ describe('Meta catalog C2 backfill script', () => {
     expect(script).toContain('if (!APPLY || !admin) continue;');
   });
 
-  it('only upserts the C2 tables, never deletes or retires a row', () => {
+  it('only upserts the C2 tables, never deletes a row (archiving is a status upsert, not a delete)', () => {
     const script = read('scripts/backfill-meta-catalog-c2.ts');
     expect(script).toContain(".from('catalog_services')");
     expect(script).toContain(".from('service_contents')");
     expect(script).toContain(".from('commercial_offers')");
     expect(script).not.toContain('.delete(');
     expect(script).not.toContain('.update(');
+  });
+
+  it('archives subscription-only and no-price services as "paused" instead of dropping them', () => {
+    const script = read('scripts/backfill-meta-catalog-c2.ts');
+    expect(script).toContain('SUBSCRIPTION_ONLY_SLUGS');
+    expect(script).toContain("status: isPaused ? 'paused' : 'active'");
   });
 
   it('keeps the read-only Meta catalog preview API admin-gated and read-only', () => {

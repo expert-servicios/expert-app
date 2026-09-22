@@ -10,8 +10,10 @@
  * (catalog_services.slug, service_contents (service_id, locale),
  * commercial_offers (service_id, code)). Safe to re-run.
  *
- * Never deletes or retires a row: a service removed from the public catalog
- * is left as-is here for a human to decide, it is not auto-retired.
+ * Never deletes a row: a service removed from the public catalog is left
+ * as-is here for a human to decide. Subscription-only services and services
+ * with no fixed/floor price are archived (status "paused") rather than
+ * excluded silently — see SUBSCRIPTION_ONLY_SLUGS below.
  *
  * Usage:
  *   npx tsx scripts/backfill-meta-catalog-c2.ts            # dry run (default)
@@ -27,6 +29,24 @@ const APPLY = process.argv.includes('--apply');
 const LOCALE = 'es';
 const CARDS_DIR = path.join(process.cwd(), 'public', 'catalog', 'servicios');
 
+// Ksenia (2026-09-22): these are only sold bundled into a monthly plan
+// subscription, never standalone — paused in the Meta catalog even though
+// some of them parse to a real price, and archived (not deleted) rather
+// than dropped from lib/utils/catalog.ts, which stays the live site's source.
+const SUBSCRIPTION_ONLY_SLUGS = new Set([
+  'contabilidad-mensual',
+  'impuestos-trimestrales',
+  'baja-cese-actividad',
+  'cuentas-anuales',
+]);
+
+// Ksenia (2026-09-22): "Constitución de SL por CIRCE" is a guided/formación
+// offer, not a full gestoría service — Meta category only, the live site's
+// own categoria (and URL) is untouched.
+const CATEGORY_OVERRIDES: Record<string, CategorySlug> = {
+  'constitucion-sl-circe': 'formacion',
+};
+
 function serviceType(categoria: CategorySlug): 'service' | 'training' {
   return categoria === 'formacion' ? 'training' : 'service';
 }
@@ -41,15 +61,130 @@ function cardImageUrl(service: Service): string | null {
   return existsSync(path.join(CARDS_DIR, `${service.slug}.png`)) ? `/catalog/servicios/${service.slug}.png` : null;
 }
 
+type MonthlyPlan = {
+  slug: string;
+  name: string;
+  description: string;
+  landingPath: string;
+  amountCents: number | null;
+};
+
+// The 3 plans with a real, fixed monthly price (from
+// lib/data/kia-knowledge/monthly-plans.ts). "Plan Personalizado" is
+// Presupuesto/quote-only, so it's archived like any other no-price item
+// below rather than added here.
+const MONTHLY_PLANS: MonthlyPlan[] = [
+  {
+    slug: 'plan-supervision',
+    name: 'Plan Supervisión',
+    description: 'Revisión mensual básica de Holded, alertas y soporte para quien lleva su contabilidad por su cuenta.',
+    landingPath: '/planes/supervision',
+    amountCents: 4900,
+  },
+  {
+    slug: 'plan-avanzado',
+    name: 'Plan Avanzado',
+    description: 'Revisión mensual, cierre trimestral y preparación/presentación de impuestos básicos según alcance.',
+    landingPath: '/planes/avanzado',
+    amountCents: 9900,
+  },
+  {
+    slug: 'plan-colaborativo',
+    name: 'Plan Colaborativo',
+    description: 'Revisión y validación mensual por EXPERT, informes, alertas de anomalías y soporte prioritario 24h.',
+    landingPath: '/planes/colaborativo',
+    amountCents: 19900,
+  },
+];
+
+type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
+
+type CatalogEntryInput = {
+  slug: string;
+  categoryKey: string;
+  entryType: 'service' | 'training';
+  status: 'active' | 'paused';
+  name: string;
+  shortDescription: string | null;
+  description: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
+  landingPath: string;
+  imageUrl: string | null;
+  billingMode: 'one_time' | 'recurring';
+  priceMode: 'fixed' | 'from' | 'quote';
+  amountCents: number | null;
+  vatTreatment: string;
+};
+
+async function upsertCatalogEntry(admin: Admin, input: CatalogEntryInput) {
+  const { data: catalogService, error: serviceError } = await admin
+    .from('catalog_services')
+    .upsert(
+      {
+        slug: input.slug,
+        category_key: input.categoryKey,
+        service_type: input.entryType,
+        status: input.status,
+      },
+      { onConflict: 'slug' },
+    )
+    .select('id')
+    .single();
+
+  if (serviceError || !catalogService) {
+    throw new Error(`catalog_services upsert failed for ${input.slug}: ${serviceError?.message}`);
+  }
+
+  const { error: contentError } = await admin.from('service_contents').upsert(
+    {
+      service_id: catalogService.id,
+      locale: LOCALE,
+      name: input.name,
+      short_description: input.shortDescription,
+      description: input.description,
+      meta_title: input.metaTitle,
+      meta_description: input.metaDescription,
+      landing_path: input.landingPath,
+      image_url: input.imageUrl,
+      status: 'active',
+    },
+    { onConflict: 'service_id,locale' },
+  );
+
+  if (contentError) {
+    throw new Error(`service_contents upsert failed for ${input.slug}: ${contentError.message}`);
+  }
+
+  const { error: offerError } = await admin.from('commercial_offers').upsert(
+    {
+      service_id: catalogService.id,
+      code: 'default',
+      billing_mode: input.billingMode,
+      price_mode: input.priceMode,
+      currency: 'EUR',
+      amount_cents: input.amountCents,
+      vat_treatment: input.vatTreatment,
+      status: 'active',
+    },
+    { onConflict: 'service_id,code' },
+  );
+
+  if (offerError) {
+    throw new Error(`commercial_offers upsert failed for ${input.slug}: ${offerError.message}`);
+  }
+}
+
 async function main() {
   // Only requires Supabase credentials when actually writing; a dry run
   // just parses and prints, so it works without any env configured.
   const admin = APPLY ? getSupabaseAdmin() : null;
 
-  console.log(`${APPLY ? 'APLICANDO' : 'DRY RUN'} backfill de ${services.length} servicios hacia catalog_services/service_contents/commercial_offers\n`);
+  console.log(`${APPLY ? 'APLICANDO' : 'DRY RUN'} backfill de ${services.length} servicios + ${MONTHLY_PLANS.length} planes mensuales hacia catalog_services/service_contents/commercial_offers\n`);
 
   let priceWarnings = 0;
   let missingImages = 0;
+  let paused = 0;
 
   for (const service of services) {
     const parsedPrice = parseServicePrice(service.price);
@@ -64,66 +199,59 @@ async function main() {
       console.log(`  ⚠ ${service.slug}: sin tarjeta de imagen generada`);
     }
 
+    const isPaused = SUBSCRIPTION_ONLY_SLUGS.has(service.slug) || parsedPrice.priceMode === 'quote';
+    if (isPaused) {
+      paused++;
+      console.log(`  ⏸ ${service.slug}: archivado del catálogo de Meta (${SUBSCRIPTION_ONLY_SLUGS.has(service.slug) ? 'solo por suscripción' : 'sin precio fijo'})`);
+    }
+
     if (!APPLY || !admin) continue;
 
-    const { data: catalogService, error: serviceError } = await admin
-      .from('catalog_services')
-      .upsert(
-        {
-          slug: service.slug,
-          category_key: service.categoria,
-          service_type: serviceType(service.categoria),
-          status: 'active',
-        },
-        { onConflict: 'slug' },
-      )
-      .select('id')
-      .single();
+    await upsertCatalogEntry(admin, {
+      slug: service.slug,
+      // Meta-facing grouping only — the real site keeps service.categoria,
+      // so landingPath below is never built from this override.
+      categoryKey: CATEGORY_OVERRIDES[service.slug] ?? service.categoria,
+      entryType: serviceType(CATEGORY_OVERRIDES[service.slug] ?? service.categoria),
+      status: isPaused ? 'paused' : 'active',
+      name: service.name,
+      shortDescription: service.shortDescription,
+      description: service.description,
+      metaTitle: service.metaTitle ?? null,
+      metaDescription: service.metaDescription ?? null,
+      landingPath: landingPath(service),
+      imageUrl,
+      billingMode: 'one_time',
+      priceMode: parsedPrice.priceMode,
+      amountCents: parsedPrice.amountCents,
+      vatTreatment: parsedPrice.vatTreatment,
+    });
+  }
 
-    if (serviceError || !catalogService) {
-      throw new Error(`catalog_services upsert failed for ${service.slug}: ${serviceError?.message}`);
-    }
-
-    const { error: contentError } = await admin.from('service_contents').upsert(
-      {
-        service_id: catalogService.id,
-        locale: LOCALE,
-        name: service.name,
-        short_description: service.shortDescription,
-        description: service.description,
-        meta_title: service.metaTitle ?? null,
-        meta_description: service.metaDescription ?? null,
-        landing_path: landingPath(service),
-        image_url: imageUrl,
+  for (const plan of MONTHLY_PLANS) {
+    if (APPLY && admin) {
+      await upsertCatalogEntry(admin, {
+        slug: plan.slug,
+        categoryKey: 'empresas-autonomos',
+        entryType: 'service',
         status: 'active',
-      },
-      { onConflict: 'service_id,locale' },
-    );
-
-    if (contentError) {
-      throw new Error(`service_contents upsert failed for ${service.slug}: ${contentError.message}`);
-    }
-
-    const { error: offerError } = await admin.from('commercial_offers').upsert(
-      {
-        service_id: catalogService.id,
-        code: 'default',
-        billing_mode: 'one_time',
-        price_mode: parsedPrice.priceMode,
-        currency: 'EUR',
-        amount_cents: parsedPrice.amountCents,
-        vat_treatment: parsedPrice.vatTreatment,
-        status: 'active',
-      },
-      { onConflict: 'service_id,code' },
-    );
-
-    if (offerError) {
-      throw new Error(`commercial_offers upsert failed for ${service.slug}: ${offerError.message}`);
+        name: plan.name,
+        shortDescription: plan.description,
+        description: plan.description,
+        metaTitle: null,
+        metaDescription: null,
+        landingPath: plan.landingPath,
+        imageUrl: null,
+        billingMode: 'recurring',
+        priceMode: 'fixed',
+        amountCents: plan.amountCents,
+        vatTreatment: 'plus_vat',
+      });
     }
   }
 
-  console.log(`\n${services.length} servicios procesados. ${priceWarnings} con precio que requiere revisión manual (formato no reconocido o "Consultar"). ${missingImages} sin tarjeta de imagen.`);
+  console.log(`\n${services.length} servicios procesados. ${priceWarnings} con precio que requiere revisión manual (formato no reconocido o "Consultar"). ${missingImages} sin tarjeta de imagen. ${paused} archivados (pausados) del catálogo de Meta.`);
+  console.log(`${MONTHLY_PLANS.length} planes mensuales añadidos como servicios recurrentes.`);
   if (missingImages > 0) {
     console.log('Ejecuta scripts/generate-service-cards.ts para generar las tarjetas que falten.');
   }

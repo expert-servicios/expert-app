@@ -40,7 +40,7 @@ type ChannelConfigRow = {
 export type MetaCatalogExcludedService = {
   retailerId: string;
   name: string;
-  reason: 'quote_price' | 'missing_offer';
+  reason: 'quote_price' | 'missing_offer' | 'archived';
 };
 
 export type MetaCatalogDraftResult = {
@@ -57,7 +57,10 @@ export type MetaCatalogDraftResult = {
  * A draft with `marketingReady: false` names exactly what is missing so it
  * can be fixed before this service is exported. Services priced "Consultar"
  * (price_mode "quote") are excluded outright: Meta requires one number per
- * item, and listing a made-up price is worse than not listing it.
+ * item, and listing a made-up price is worse than not listing it. Services
+ * with `catalog_services.status` other than "active" (e.g. "paused" —
+ * archived from the catalog, subscription-only or otherwise not for sale
+ * standalone) are excluded the same way, never listed as merely blocked.
  */
 export async function buildMetaCatalogDrafts(locale = 'es'): Promise<MetaCatalogDraftResult> {
   const admin = getSupabaseAdmin();
@@ -103,6 +106,15 @@ export async function buildMetaCatalogDrafts(locale = 'es'): Promise<MetaCatalog
     const serviceOffers = offersByService.get(service.id) ?? [];
     const offer = serviceOffers.find((row) => row.status === 'active') ?? serviceOffers[0] ?? null;
 
+    if (service.status !== 'active') {
+      excluded.push({
+        retailerId: service.slug,
+        name: content?.name ?? service.slug,
+        reason: 'archived',
+      });
+      continue;
+    }
+
     if (!offer || offer.price_mode === 'quote') {
       excluded.push({
         retailerId: service.slug,
@@ -136,7 +148,6 @@ function buildDraft(
   if (content && !content.image_url) warnings.push('missing_image');
   if (content && content.status !== 'active') warnings.push(`content_status:${content.status}`);
   if (offer.amount_cents == null) warnings.push('missing_amount');
-  if (service.status !== 'active') warnings.push(`service_status:${service.status}`);
   if (!channel || !channel.enabled || channel.publish_status !== 'ready') warnings.push('meta_channel_not_ready');
 
   const price = offer.amount_cents != null
@@ -152,7 +163,7 @@ function buildDraft(
     landingUrl: content ? `${SITE_ORIGIN}${content.landing_path}` : `${SITE_ORIGIN}/servicios`,
     imageUrl: content?.image_url ? `${SITE_ORIGIN}${content.image_url}` : null,
     price,
-    availability: service.status === 'active' ? 'in stock' : 'out of stock',
+    availability: 'in stock',
     marketingReady: warnings.length === 0,
     warnings,
   };
