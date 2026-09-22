@@ -14,7 +14,7 @@ export function hashKiaContextToken(token: string): string {
 
 export async function createKiaContextToken(input: {
   admin: AdminClient;
-  tenantId: string;
+  tenantId?: string | null;
   profileId: string;
   companyId?: string | null;
   caseId?: string | null;
@@ -29,7 +29,7 @@ export async function createKiaContextToken(input: {
   const token = generateKiaContextToken();
   const expiresAt = new Date(Date.now() + (input.ttlMs ?? DEFAULT_TTL_MS)).toISOString();
   const { error } = await input.admin.from('kia_context_tokens').insert({
-    tenant_id: input.tenantId,
+    tenant_id: input.tenantId ?? null,
     profile_id: input.profileId,
     token_hash: hashKiaContextToken(token),
     company_id: input.companyId ?? null,
@@ -50,7 +50,7 @@ export async function resolveKiaContextToken(input: {
   admin: AdminClient;
   token: string;
   profileId: string;
-  tenantId: string;
+  tenantId?: string | null;
 }) {
   const { data, error } = await input.admin
     .from('kia_context_tokens')
@@ -60,7 +60,8 @@ export async function resolveKiaContextToken(input: {
 
   if (error) throw error;
   if (!data || data.revoked_at || new Date(data.expires_at) <= new Date()) return null;
-  if (data.profile_id !== input.profileId || data.tenant_id !== input.tenantId) return null;
+  if (data.profile_id !== input.profileId) return null;
+  if ((data.tenant_id ?? null) !== (input.tenantId ?? null)) return null;
 
   if (data.case_id) {
     const { data: ownedCase, error: caseError } = await input.admin
