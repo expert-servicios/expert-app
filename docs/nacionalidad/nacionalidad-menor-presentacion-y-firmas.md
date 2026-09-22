@@ -178,3 +178,44 @@ En cada expediente conservar:
 - justificantes;
 - correos enviados;
 - incidencias y subsanaciones.
+
+## 12. Cómputo de residencia legal y vigencia de TIE de menores nacidos en España
+
+### Regla práctica para el modelo de nacionalidad
+
+El modelo oficial de nacionalidad por residencia solicita **“Reside en España desde el año”**. Por tanto, si la fecha operativa de inicio que maneja EXPERT es 12/03/2025, en el formulario debe consignarse **2025**, no es necesario introducir el día y mes.
+
+En el expediente de Ruslana:
+- fecha operativa calculada: **12/03/2025**;
+- año a consignar en el modelo: **2025**;
+- fundamento interno: un año anterior a la fecha de expedición/renovación de la TIE actual indicada por la familia;
+- naturaleza del dato: **inferencia profesional operativa, no confirmación documental de la fecha inicial de concesión**.
+
+La fecha de expedición física de una TIE no debe confundirse automáticamente con la fecha de efectos de la autorización de residencia. La TIE documenta una autorización ya concedida y su periodo de validez queda vinculado a la autorización correspondiente.
+
+### Duración de las autorizaciones de menores nacidos en España
+
+No existe una secuencia general “primera TIE de 1 año y renovación de 2 años”.
+
+**Régimen anterior (RD 557/2011, aplicable antes del 20/05/2025):**
+el hijo nacido en España de residente adquiría automáticamente la misma autorización de residencia de la que fuera titular cualquiera de sus progenitores. Por tanto, su duración dependía de la autorización del progenitor, no de una duración fija propia del menor.
+
+**Régimen vigente (RD 1155/2024, desde 20/05/2025):**
+la autorización de residencia temporal del menor extranjero acompañado nacido en España tiene una duración de **5 años desde la fecha de la resolución**.
+
+Esto implica que, para expedientes históricos como el de Ruslana, no debe inferirse una regla universal de 1 o 2 años. Hay que identificar qué régimen y qué autorización concreta se aplicaron.
+
+### Retirada de la TIE anterior
+
+Es normal que la familia no conserve el original de la tarjeta anterior. La normativa policial obliga a entregar la TIE cuando ha finalizado su vigencia y se ha acordado la renovación de la autorización. Por tanto, la ausencia del original anterior tras la renovación es coherente con el procedimiento ordinario y no debe tratarse como una incidencia por sí sola.
+
+### Regla EXPERT
+
+Para nacionalidad:
+1. priorizar resolución inicial, TIE anterior o consulta oficial cuando estén disponibles;
+2. si no están disponibles pero existe una inferencia profesional razonable, registrar claramente:
+   - fecha/año operativo;
+   - base de la inferencia;
+   - que no existe confirmación documental;
+3. no pedir de nuevo al cliente una tarjeta anterior que razonablemente fue retirada por Policía, salvo que sea imprescindible;
+4. si el formulario solo pide año, consignar el año validado/inferido sin inventar un día concreto en el documento oficial.
