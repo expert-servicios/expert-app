@@ -162,7 +162,7 @@ export async function GET(
     const [caseResult, docsResult] = await Promise.all([
       admin
         .from('cases')
-        .select('id,category,service,state,status,priority,next_action,due_date,order_id,opened_at,closed_at,client_id,admin_note,docs_checklist,assigned_to')
+        .select('id,category,service,service_id,state,status,priority,next_action,due_date,order_id,opened_at,closed_at,client_id,admin_note,docs_checklist,checklist_json,assigned_to')
         .eq('id', id)
         .single(),
       admin.from('documents').select('id,original_name,state,created_at,file_path,uploaded_by_role').eq('case_id', id).order('created_at', { ascending: false })
