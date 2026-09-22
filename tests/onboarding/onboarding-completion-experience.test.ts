@@ -24,6 +24,19 @@ describe('onboarding completion experience', () => {
     expect(templates).toContain('Espacio de Cliente Responsable');
   });
 
+  it('invites an included entity to onboarding exactly once after admin validation', () => {
+    const benefits = source('app/api/admin/clientes/[id]/subscription-benefits/route.ts');
+    const templates = source('lib/email/onboarding-templates.ts');
+    expect(benefits).toContain("input.benefitType === 'included_entity'");
+    expect(benefits).toContain('getCalOnboardingUrl()');
+    expect(benefits).toContain('sendEmailOnce({');
+    expect(benefits).toContain("eventType: 'onboarding.included_entity.invitation'");
+    expect(benefits).toContain('onboarding/included-entity/');
+    expect(benefits).toContain('beneficiary_company_id: input.beneficiaryCompanyId');
+    expect(templates).toContain('Reservar segunda sesión de onboarding');
+    expect(templates).toContain('sin una segunda cuota');
+  });
+
   it('shows Stripe invoices read-only for the authenticated active company', () => {
     const invoices = source('app/api/billing/invoices/route.ts');
     const page = source('app/(protected)/dashboard/suscripciones/page.tsx');
