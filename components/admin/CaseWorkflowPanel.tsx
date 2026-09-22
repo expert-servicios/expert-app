@@ -12,6 +12,7 @@ const minorNationalityTasks: WorkflowTask[] = [
   { key: 'review_documents', title: 'Revisar documentación', description: 'Comprobar documentos del menor y progenitores.' },
   { key: 'prepare_representation_mandate', title: 'Preparar mandato voluntario', description: 'Mandato a favor de Ksenia como persona física.' },
   { key: 'verify_signed_mandate', title: 'Validar mandato firmado', description: 'Archivar documento y evidencia de finalización.', humanApprovalRequired: true },
+  { key: 'verify_legal_residence_start', title: 'Verificar inicio de residencia legal', description: 'Confirmar TIE/resolución inicial; no inferir desde nacimiento o TIE actual.', humanApprovalRequired: true },
   { key: 'prepare_official_application', title: 'Pre-rellenar modelo oficial', description: 'Preparar el modelo normalizado del Ministerio.' },
   { key: 'obtain_parent_signatures', title: 'Obtener firmas de progenitores', description: 'Firma manuscrita del modelo oficial cuando corresponda.' },
   { key: 'verify_official_application', title: 'Validar solicitud oficial', description: 'Revisar integridad, firmas y patria potestad.', humanApprovalRequired: true },
