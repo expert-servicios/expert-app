@@ -37,6 +37,7 @@ import { redactSensitiveText, safeErrorMessage, stableHash } from '@/lib/ai/kia/
 import { runSampledKiaShadow } from '@/lib/ai/kia/evals/kia-shadow-sampler';
 import { resolveKiaLocale } from '@/lib/ai/kia/kia-locale';
 import { resolveKiaContextToken } from '@/lib/ai/kia/kia-context-token';
+import { loadKiaConversation, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -190,10 +191,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'policy_denied' }, { status: 403 });
   }
 
+  const contextualPersistenceEnabled =
+    process.env.KIA_CONTEXTUAL_CONVERSATIONS_ENABLED?.toLowerCase() === 'true';
   let effectiveSessionId = sessionId;
   let effectiveHistory = history;
 
-  if (sessionId) {
+  if (sessionId && contextualPersistenceEnabled) {
+    const stored = await loadKiaConversation({
+      admin,
+      conversationId: sessionId,
+      profileId: user.id,
+      companyId: companyScope,
+    }).catch((err) => {
+      console.error('[KiaCopilot] contextual conversation lookup failed:', safeErrorMessage(err));
+      return null;
+    });
+
+    if (!stored) {
+      effectiveSessionId = undefined;
+      effectiveHistory = [];
+    } else {
+      effectiveHistory = stored.messages.map((item) => ({ role: item.role, text: item.text }));
+    }
+  } else if (sessionId) {
     const { data: existingSession, error: sessionError } = await admin
       .from('kia_sessions')
       .select('id, data')
@@ -324,33 +344,56 @@ export async function POST(request: NextRequest) {
   const reply = appendKiaFiscalNotice(result.userMessage, fiscalSignal);
 
   try {
-    const sessionData = {
-      last_message: message,
-      last_reply  : reply,
-      intent      : result.decision.intent,
-      next_action : result.decision.nextAction,
-      avatar_state: avatarState,
-      company_id  : companyScope,
-    };
-
-    if (effectiveSessionId) {
-      await admin
-        .from('kia_sessions')
-        .update({ data: sessionData, updated_at: new Date().toISOString() })
-        .eq('id', effectiveSessionId)
-        .eq('user_id', user.id);
+    if (contextualPersistenceEnabled) {
+      effectiveSessionId = await persistKiaConversationTurn({
+        admin,
+        conversationId: effectiveSessionId,
+        tenantId: actor.tenantId,
+        profileId: user.id,
+        companyId: companyScope,
+        caseId: contextualCaseId ?? null,
+        serviceSlug: contextualServiceSlug ?? null,
+        topic: contextualTask ?? currentTask ?? null,
+        originType: contextToken ? 'email' : 'dashboard',
+        channel: 'dashboard',
+        userMessage: message,
+        assistantMessage: reply,
+        intent: result.decision.intent,
+        avatarState,
+        metadata: {
+          next_action: result.decision.nextAction,
+          contextual: Boolean(contextToken),
+        },
+      });
     } else {
-      const { data: createdSession } = await admin
-        .from('kia_sessions')
-        .insert({
-          channel  : 'dashboard',
-          user_id  : user.id,
-          phone    : null,
-          data     : sessionData,
-        })
-        .select('id')
-        .single();
-      effectiveSessionId = createdSession?.id ?? undefined;
+      const sessionData = {
+        last_message: message,
+        last_reply  : reply,
+        intent      : result.decision.intent,
+        next_action : result.decision.nextAction,
+        avatar_state: avatarState,
+        company_id  : companyScope,
+      };
+
+      if (effectiveSessionId) {
+        await admin
+          .from('kia_sessions')
+          .update({ data: sessionData, updated_at: new Date().toISOString() })
+          .eq('id', effectiveSessionId)
+          .eq('user_id', user.id);
+      } else {
+        const { data: createdSession } = await admin
+          .from('kia_sessions')
+          .insert({
+            channel  : 'dashboard',
+            user_id  : user.id,
+            phone    : null,
+            data     : sessionData,
+          })
+          .select('id')
+          .single();
+        effectiveSessionId = createdSession?.id ?? undefined;
+      }
     }
   } catch (err) {
     console.warn('[KiaCopilot] session save failed:', err);
