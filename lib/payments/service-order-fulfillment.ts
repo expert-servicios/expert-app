@@ -4,6 +4,7 @@ import {
   type ServiceOperationalBlueprint,
   type ServiceTaskTemplate,
 } from '@/lib/services/service-operational-blueprints';
+import { ensureUnlockedServiceTasks } from '@/lib/services/service-task-orchestration';
 
 type SupabaseAdmin = SupabaseClient;
 
@@ -142,15 +143,18 @@ export async function ensureServiceOrderFulfillment(
     }
   }
 
-  const tasks = services.flatMap((service) =>
-    (service.blueprint?.tasks ?? [genericTask(service)]).map((task) => ({
-      task,
-      serviceSlug: service.slug,
-      blueprintSlug: service.blueprint?.slug ?? null,
-    })),
-  );
+  for (const service of services) {
+    if (service.blueprint) {
+      await ensureUnlockedServiceTasks(admin, {
+        caseId,
+        clientId: input.clientId,
+        companyId: input.companyId,
+        serviceSlug: service.slug,
+      });
+      continue;
+    }
 
-  for (const { task, serviceSlug, blueprintSlug } of tasks) {
+    const task = genericTask(service);
     const { data: existingTask, error: taskLookupError } = await admin
       .from('internal_tasks')
       .select('id')
@@ -161,7 +165,7 @@ export async function ensureServiceOrderFulfillment(
       .maybeSingle();
 
     if (taskLookupError) {
-      throw new Error(`Could not resolve service task ${task.key}: ${taskLookupError.message}`);
+      throw new Error(`Could not resolve generic service task ${task.key}: ${taskLookupError.message}`);
     }
     if (existingTask) continue;
 
@@ -178,20 +182,17 @@ export async function ensureServiceOrderFulfillment(
         due_date: taskDueDate(task),
         source: 'system',
         metadata: {
-          ...(blueprintSlug
-            ? { task_kind: 'service_blueprint_step' }
-            : { task_kind: 'service_manual_intake' }),
-          service_slug: serviceSlug,
-          blueprint_slug: blueprintSlug,
+          task_kind: 'service_manual_intake',
+          service_slug: service.slug,
           task_key: task.key,
           phase: task.phase,
           human_approval_required: Boolean(task.humanApprovalRequired),
-          blueprint_version: blueprintSlug ? '2' : null,
+          blueprint_version: null,
         },
       });
 
     if (taskCreateError) {
-      throw new Error(`Could not create service task ${task.key}: ${taskCreateError.message}`);
+      throw new Error(`Could not create generic service task ${task.key}: ${taskCreateError.message}`);
     }
   }
 
