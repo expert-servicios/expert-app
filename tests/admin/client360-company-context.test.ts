@@ -48,10 +48,20 @@ describe('Client 360 company context', () => {
     expect(holded).toContain("requestedCompanyId = searchParams.get('companyId')");
   });
 
-  it('keeps the selected company in onboarding actions', () => {
+  it('keeps the selected company in onboarding actions and validation', () => {
     const cockpit = source('app/(protected)/admin/clientes/[id]/ClientOnboardingCockpit.tsx');
+    const onboardingRoute = source('app/api/admin/clientes/[id]/onboarding-state/route.ts');
     expect(cockpit).toContain("requestedCompanyId = searchParams.get('companyId')");
     expect(cockpit).toContain('activeCompany.id');
     expect(cockpit).toContain('companyId=');
+    expect(onboardingRoute).toContain("requestedCompanyId = request.nextUrl.searchParams.get('companyId')");
+    expect(onboardingRoute).toContain(".from('profile_companies')");
+    expect(onboardingRoute).toContain('sub.company_id === requestedCompanyId');
+  });
+
+  it('preselects Stripe reconciliation from the selected entity', () => {
+    const stripe = source('app/(protected)/admin/clientes/[id]/stripe/page.tsx');
+    expect(stripe).toContain("requestedCompanyId = searchParams.get('companyId')");
+    expect(stripe).toContain('setSelectedCompanyId(requestedCompanyId)');
   });
 });
