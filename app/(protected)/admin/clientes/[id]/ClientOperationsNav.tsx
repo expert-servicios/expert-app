@@ -1,12 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { CalendarClock, CreditCard, FileText, Gauge, Gift, ListTodo, Mail, Plug, ReceiptText } from 'lucide-react';
+import { CalendarClock, CreditCard, Eye, FileText, Gauge, Gift, ListTodo, Mail, Plug, ReceiptText } from 'lucide-react';
 
 export function ClientOperationsNav({ clientId }: { clientId: string }) {
   return (
     <nav className="border-b border-[#e6dfd2] bg-[#faf8f2]">
       <div className="mx-auto flex max-w-7xl flex-wrap gap-2 px-6 py-2.5">
+        <Link href={`/admin/clientes/${clientId}/portal`} className="inline-flex items-center gap-1.5 rounded-lg border border-[#c88b25]/40 bg-[#fff8e8] px-3 py-1.5 text-xs font-bold text-[#8a5a0a] hover:border-[#c88b25]">
+          <Eye className="h-3.5 w-3.5" /> Vista cliente
+        </Link>
         <Link href={`/admin/clientes/${clientId}/operaciones`} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 text-xs font-bold text-[#07111d] hover:border-[#c88b25]">
           <Gauge className="h-3.5 w-3.5" /> Operaciones
         </Link>
