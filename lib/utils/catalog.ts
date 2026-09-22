@@ -520,7 +520,7 @@ export const services: Service[] = [
     keyPoints: [
       { title: 'Presenta en el plazo correcto', text: 'Puedes presentar la renovación desde 60 días antes de la caducidad. Si caducó hace menos de 90 días también cabe presentarla, aunque puede llevar recargo.' },
       { title: 'Mantienes la autorización mientras se resuelve', text: 'Si presentas en plazo, tu autorización queda prorrogada automáticamente hasta que se resuelva el expediente.' },
-      { title: 'Gestión online completa', text: 'No necesitas desplazarte a nuestra oficina. Enviamos la documentación escaneada, preparamos y presentamos todo telemáticamente.' },
+      { title: 'Representación para presentar', text: 'Si EXPERT presenta la renovación en tu nombre, primero validamos y formalizamos la representación exigible para Extranjería. No utilizamos una simple autorización privada cuando la normativa exige poder notarial, apud acta u otra habilitación válida.' },
     ],
     audience: [
       'Residentes con autorización temporal próxima a caducar (en los próximos 60 días)',
@@ -537,7 +537,8 @@ export const services: Service[] = [
       'Revisión de requisitos y plazo para la renovación',
       'Preparación y revisión de toda la documentación',
       'Cumplimentación del formulario de renovación',
-      'Presentación telemática ante la Oficina de Extranjería',
+      'Validación de quién está legitimado para presentar y, si EXPERT actúa como representante, comprobación del poder o habilitación exigible',
+      'Presentación telemática ante la Oficina de Extranjería cuando la representación esté válidamente acreditada',
       'Seguimiento y atención a requerimientos',
       'Orientación para la nueva TIE tras la resolución',
     ],
@@ -548,6 +549,7 @@ export const services: Service[] = [
       'Documentación acreditativa del mantenimiento de los requisitos (contrato, nóminas, medios económicos…)',
       'Fotografía reciente en color (tamaño carné)',
       'Justificante de pago de tasa Modelo 790 cód. 052',
+      'Si EXPERT presenta en tu nombre: poder notarial, apoderamiento apud acta o acreditación equivalente válida según el procedimiento',
     ],
     notIncluded: [
       'Tasa administrativa Modelo 790 cód. 052 (abono por el cliente)',
@@ -561,6 +563,7 @@ export const services: Service[] = [
     faqs: [
       { q: '¿Cuándo debo presentar la renovación?', a: 'Entre los 60 días antes de la caducidad y la propia fecha de vencimiento. Si ya caducó, tienes hasta 90 días después para presentarla con posible recargo.' },
       { q: '¿Puedo trabajar mientras se renueva?', a: 'Si presentas la renovación en plazo, tu autorización queda prorrogada automáticamente, incluyendo la autorización de trabajo si la tenías.' },
+      { q: '¿Puede EXPERT presentar la renovación por mí?', a: 'Sí, cuando el procedimiento admite representación y esta queda acreditada conforme a la normativa de Extranjería. Antes de presentar validamos si basta el apoderamiento disponible o si debes otorgar poder notarial o apud acta.' },
       { q: '¿Qué pasa si no renuevo a tiempo?', a: 'Si han pasado más de 90 días desde la caducidad sin renovar, puedes incurrir en situación irregular. En ese caso, es necesario estudiar otras vías de regularización.' },
       { q: '¿Cuánto tarda la resolución?', a: 'El plazo legal es de 3 meses. En la práctica, suele resolverse entre 1 y 3 meses según la Delegación.' },
     ],
@@ -602,7 +605,8 @@ export const services: Service[] = [
       'Orientación para la obtención de CCSE y DELE A2',
       'Revisión y organización de toda la documentación',
       'Comprobación de apostillas y traducciones',
-      'Presentación del expediente (Registro Civil o Notaría según corresponda)',
+      'Preparación del mandato o poder de representación voluntaria cuando EXPERT presente telemáticamente en tu nombre',
+      'Presentación telemática del expediente ante el Ministerio de Justicia cuando la representación esté acreditada',
       'Seguimiento periódico del expediente',
       'Atención a requerimientos y subsanaciones',
     ],
@@ -615,6 +619,7 @@ export const services: Service[] = [
       'Certificado de nacimiento (apostillado y con traducción jurada al español)',
       'Diploma DELE A2 o superior (si aplica)',
       'Certificado CCSE (Instituto Cervantes)',
+      'Si EXPERT presenta en tu nombre: mandato o poder de representación voluntaria para el procedimiento de nacionalidad',
     ],
     notIncluded: [
       'Tasa administrativa de tramitación',
@@ -638,6 +643,7 @@ export const services: Service[] = [
       { q: '¿La residencia debe ser ininterrumpida?', a: 'Sí, debe ser continua e inmediatamente anterior a la solicitud. Las ausencias superiores a 90 días seguidos pueden interrumpir el cómputo. Se valoran caso a caso.' },
       { q: '¿Cuánto tiempo tarda el expediente?', a: 'El plazo legal de resolución es de 1 año, pero en la práctica puede tardar entre 1,5 y 3 años. Hacemos seguimiento periódico para detectar posibles requerimientos cuanto antes.' },
       { q: '¿Puedo iniciar el expediente antes de tener el CCSE o el DELE?', a: 'Lo recomendable es presentar con ambos certificados. No obstante, podemos preparar toda la documentación mientras realizas los exámenes para no perder tiempo.' },
+      { q: '¿Puede EXPERT presentar la nacionalidad por mí?', a: 'Sí. Para nacionalidad por residencia puede actuar un representante voluntario si se aporta el mandato o poder correspondiente. EXPERT prepara ese documento y lo incorpora al expediente antes de la presentación telemática.' },
     ],
   },
   {
@@ -882,7 +888,8 @@ export const services: Service[] = [
       'Evaluación de requisitos: ingresos, vivienda y parentesco',
       'Orientación para obtener el informe de vivienda en el Ayuntamiento',
       'Preparación del expediente completo',
-      'Presentación ante la Oficina de Extranjería',
+      'Validación del sujeto legitimado y de la representación para la presentación',
+      'Presentación ante la Oficina de Extranjería cuando EXPERT esté válidamente facultada para actuar en nombre del reagrupante',
       'Seguimiento y atención a requerimientos',
       'Orientación sobre el procedimiento de visado en el Consulado',
     ],
@@ -894,6 +901,7 @@ export const services: Service[] = [
       'Documento acreditativo del parentesco (certificado de matrimonio, libro de familia, etc.) — apostillado y traducido si es extranjero',
       'Pasaporte del familiar a reagrupar',
       'Certificado de antecedentes penales del familiar (apostillado y traducido)',
+      'Si EXPERT presenta en nombre del reagrupante: poder notarial, apud acta o acreditación de representación válida para Extranjería',
     ],
     notIncluded: [
       'Tasa administrativa (abono por el cliente)',
@@ -911,6 +919,7 @@ export const services: Service[] = [
       { q: '¿Cuánto dinero tengo que ganar?', a: 'Como regla general, una unidad familiar de dos miembros exige recursos mensuales equivalentes al 150 % del IPREM y se añade el 50 % por cada miembro adicional. En determinados casos con menores la cuantía puede minorarse, por lo que revisamos el supuesto concreto.' },
       { q: '¿Necesito un piso grande?', a: 'Depende del número de personas. El Ayuntamiento emite un informe de habitabilidad según los metros cuadrados y el número de ocupantes.' },
       { q: '¿Mi cónyuge puede trabajar cuando llegue?', a: 'Si reagrupas a tu cónyuge, la autorización de residencia que se le concede incluye en general autorización para trabajar.' },
+      { q: '¿Puede EXPERT presentar la reagrupación por mí?', a: 'Sí. La persona reagrupante puede actuar personalmente o a través de representante. Si EXPERT presenta, comprobamos antes que la representación esté formalmente acreditada por una vía válida para Extranjería.' },
     ],
   },
   {
@@ -927,7 +936,9 @@ export const services: Service[] = [
       'Evaluación gratuita de la vía más adecuada a tu situación',
       'Revisión y guía de aportación de documentación',
       'Cumplimentación del formulario EX-01 o EX-02 según proceda',
-      'Presentación telemática o presencial ante la Oficina de Extranjería',
+      'Identificación previa del sujeto legitimado para presentar según la vía concreta',
+      'Validación de la representación o poder cuando EXPERT pueda actuar en nombre del sujeto legitimado',
+      'Presentación telemática o presencial ante la Oficina de Extranjería únicamente cuando la vía y la representación lo permitan',
       'Seguimiento activo del expediente y atención a requerimientos',
       'Notificación de resolución y pasos para recoger el TIE'
     ],
@@ -948,7 +959,8 @@ export const services: Service[] = [
       { q: '¿Qué pasa si no resuelven en el plazo legal?', a: 'Si la Administración no resuelve en 3 meses, opera el silencio administrativo negativo. Sin embargo, esto abre la vía de recurso. Te orientamos sobre cómo actuar en ese caso.' },
       { q: '¿Puedo trabajar mientras tramito el permiso inicial?', a: 'Depende de la vía. Con el arraigo laboral, al presentar la solicitud se puede solicitar un permiso provisional de trabajo. En otras vías no está permitido trabajar durante la tramitación.' },
       { q: '¿Qué es el TIE?', a: 'La Tarjeta de Identidad de Extranjero (TIE) es el documento físico que acredita tu permiso de residencia. Se solicita en comisaría una vez recibida la resolución favorable y se entrega en un plazo aproximado de 30–45 días.' },
-      { q: '¿Necesito venir en persona a vuestras oficinas?', a: 'No. Toda la gestión se realiza de forma online. Tú nos envías la documentación escaneada y nosotros preparamos y presentamos el expediente. Solo necesitarás acudir presencialmente a la Oficina de Extranjería si es obligatorio para tu vía concreta.' }
+      { q: '¿Necesito venir en persona a vuestras oficinas?', a: 'No necesitas acudir a nuestra oficina. La forma de presentación ante Extranjería depende de la vía: en algunas solicitudes presenta el propio extranjero, en otras el empleador, el reagrupante o un representante válidamente acreditado. Lo determinamos antes de iniciar la presentación.' },
+      { q: '¿Puede EXPERT presentar cualquier permiso inicial en mi nombre?', a: 'No de forma automática. Primero identificamos la autorización exacta y el sujeto legitimado. Si la vía admite representación por EXPERT, formalizamos el poder o acreditación exigible antes de presentar.' }
     ]
   },
 
