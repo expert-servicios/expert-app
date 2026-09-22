@@ -12,6 +12,9 @@ export type ImmigrationRepresentationPolicy = {
   filingRule: string;
   legalBasis: string[];
   blockSubmissionUntilValidated: boolean;
+  remoteOnly?: boolean;
+  clientDigitalCredentialRequired?: boolean;
+  credentialFallbackServiceSlug?: string;
 };
 
 const policies: ImmigrationRepresentationPolicy[] = [
@@ -24,6 +27,9 @@ const policies: ImmigrationRepresentationPolicy[] = [
     filingRule: 'EXPERT puede presentar telemáticamente como representante voluntario cuando el mandato o poder esté acreditado.',
     legalBasis: ['RD 1004/2015 art. 5', 'Ley 39/2015 art. 5'],
     blockSubmissionUntilValidated: true,
+    remoteOnly: true,
+    clientDigitalCredentialRequired: true,
+    credentialFallbackServiceSlug: 'certificado-digital-persona-fisica',
   },
   {
     serviceSlug: 'nacionalidad-espanola',
@@ -34,6 +40,9 @@ const policies: ImmigrationRepresentationPolicy[] = [
     filingRule: 'EXPERT puede presentar telemáticamente como representante voluntario cuando el mandato o poder esté acreditado.',
     legalBasis: ['RD 1004/2015 art. 5', 'Ley 39/2015 art. 5'],
     blockSubmissionUntilValidated: true,
+    remoteOnly: true,
+    clientDigitalCredentialRequired: true,
+    credentialFallbackServiceSlug: 'certificado-digital-persona-fisica',
   },
   {
     serviceSlug: 'renovacion-residencia',
@@ -44,6 +53,9 @@ const policies: ImmigrationRepresentationPolicy[] = [
     filingRule: 'Si EXPERT presenta en nombre del sujeto legitimado, la representación debe cumplir el régimen específico del art. 197.4 del RD 1155/2024.',
     legalBasis: ['RD 1155/2024 art. 197.4', 'Ley 39/2015 art. 5'],
     blockSubmissionUntilValidated: true,
+    remoteOnly: true,
+    clientDigitalCredentialRequired: true,
+    credentialFallbackServiceSlug: 'certificado-digital-persona-fisica',
   },
   {
     serviceSlug: 'reagrupacion-familiar',
@@ -54,6 +66,9 @@ const policies: ImmigrationRepresentationPolicy[] = [
     filingRule: 'La persona reagrupante puede presentar personalmente o mediante representante; EXPERT solo presenta tras acreditar representación válida.',
     legalBasis: ['RD 1155/2024 art. 197.4', 'Hoja 8 Migraciones'],
     blockSubmissionUntilValidated: true,
+    remoteOnly: true,
+    clientDigitalCredentialRequired: true,
+    credentialFallbackServiceSlug: 'certificado-digital-persona-fisica',
   },
   {
     serviceSlug: 'permiso-residencia-inicial',
@@ -64,6 +79,9 @@ const policies: ImmigrationRepresentationPolicy[] = [
     filingRule: 'No existe una regla única: según la autorización puede estar legitimado el extranjero, el empleador, el reagrupante u otro sujeto.',
     legalBasis: ['RD 1155/2024 art. 197', 'Hoja informativa específica de cada autorización'],
     blockSubmissionUntilValidated: true,
+    remoteOnly: true,
+    clientDigitalCredentialRequired: true,
+    credentialFallbackServiceSlug: 'certificado-digital-persona-fisica',
   },
   {
     serviceSlug: 'arraigo-social',
@@ -74,6 +92,9 @@ const policies: ImmigrationRepresentationPolicy[] = [
     filingRule: 'La ficha oficial vigente identifica al extranjero personalmente, o a su representante legal si es menor o incapaz; no asumir representación voluntaria genérica.',
     legalBasis: ['Hoja 28 Migraciones', 'RD 1155/2024 art. 197'],
     blockSubmissionUntilValidated: true,
+    remoteOnly: true,
+    clientDigitalCredentialRequired: true,
+    credentialFallbackServiceSlug: 'certificado-digital-persona-fisica',
   },
   {
     serviceSlug: 'arraigo-familiar',
@@ -84,6 +105,9 @@ const policies: ImmigrationRepresentationPolicy[] = [
     filingRule: 'No prometer presentación por EXPERT hasta validar la modalidad vigente y el sujeto legitimado.',
     legalBasis: ['Hoja 31 Migraciones', 'RD 1155/2024 art. 197'],
     blockSubmissionUntilValidated: true,
+    remoteOnly: true,
+    clientDigitalCredentialRequired: true,
+    credentialFallbackServiceSlug: 'certificado-digital-persona-fisica',
   },
   {
     serviceSlug: 'arraigo-laboral',
@@ -94,6 +118,9 @@ const policies: ImmigrationRepresentationPolicy[] = [
     filingRule: 'No asumir que un mandato privado habilita a EXPERT para presentar; validar primero el régimen del procedimiento.',
     legalBasis: ['Hoja 29 Migraciones', 'RD 1155/2024 art. 197'],
     blockSubmissionUntilValidated: true,
+    remoteOnly: true,
+    clientDigitalCredentialRequired: true,
+    credentialFallbackServiceSlug: 'certificado-digital-persona-fisica',
   },
 ];
 
