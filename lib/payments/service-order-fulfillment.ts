@@ -178,7 +178,9 @@ export async function ensureServiceOrderFulfillment(
         due_date: taskDueDate(task),
         source: 'system',
         metadata: {
-          task_kind: blueprintSlug ? 'service_blueprint_step' : 'service_manual_intake',
+          ...(blueprintSlug
+            ? { task_kind: 'service_blueprint_step' }
+            : { task_kind: 'service_manual_intake' }),
           service_slug: serviceSlug,
           blueprint_slug: blueprintSlug,
           task_key: task.key,
