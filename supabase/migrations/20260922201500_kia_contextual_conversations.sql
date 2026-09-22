@@ -1,6 +1,6 @@
 create table if not exists public.kia_conversations (
   id uuid primary key default gen_random_uuid(),
-  tenant_id uuid not null references public.tenants(id) on delete restrict,
+  tenant_id uuid references public.tenants(id) on delete restrict,
   profile_id uuid not null references public.profiles(id) on delete cascade,
   channel text not null check (channel in ('dashboard','telegram','waba','email')),
   company_id uuid references public.companies(id) on delete set null,
@@ -19,7 +19,7 @@ create table if not exists public.kia_conversations (
 create table if not exists public.kia_conversation_messages (
   id uuid primary key default gen_random_uuid(),
   conversation_id uuid not null references public.kia_conversations(id) on delete cascade,
-  tenant_id uuid not null references public.tenants(id) on delete restrict,
+  tenant_id uuid references public.tenants(id) on delete restrict,
   profile_id uuid not null references public.profiles(id) on delete cascade,
   channel text not null check (channel in ('dashboard','telegram','waba','email')),
   role text not null check (role in ('user','assistant','professional','system')),
@@ -33,7 +33,7 @@ create table if not exists public.kia_conversation_messages (
 
 create table if not exists public.kia_context_tokens (
   id uuid primary key default gen_random_uuid(),
-  tenant_id uuid not null references public.tenants(id) on delete restrict,
+  tenant_id uuid references public.tenants(id) on delete restrict,
   profile_id uuid not null references public.profiles(id) on delete cascade,
   token_hash text not null unique,
   company_id uuid references public.companies(id) on delete cascade,
@@ -86,3 +86,5 @@ comment on table public.kia_conversations is 'Canonical multichannel KIA convers
 comment on table public.kia_conversation_messages is 'Auditable persisted KIA messages scoped to a conversation.';
 comment on table public.kia_context_tokens is 'Hashed opaque context links for email/app/Telegram. Plain tokens are never stored.';
 comment on table public.kia_telegram_updates is 'Telegram update ledger for durable idempotency by update_id.';
+
+comment on column public.kia_context_tokens.tenant_id is 'Nullable for personal clients; profile ownership remains mandatory. Company-scoped tokens additionally validate company/tenant ownership.';
