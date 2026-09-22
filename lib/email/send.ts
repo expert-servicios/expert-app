@@ -1,6 +1,7 @@
 import { getResendClient } from '@/lib/integrations/resend';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { BRAND } from './templates';
+import { inferKiaEmailMood, kiaEmailSignatureHtml, type KiaEmailLocale } from './kia-signature';
 import {
   calculateRussianNationalityAmounts,
   isNationalityPayment,
@@ -42,6 +43,28 @@ function centsMetadata(metadata: Record<string, unknown>, key: string): number |
   const raw = metadata[key];
   const parsed = typeof raw === 'number' ? raw : typeof raw === 'string' ? Number(raw) : Number.NaN;
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function inferEmailLocale(subject: string, metadata?: Record<string, unknown>): KiaEmailLocale {
+  const explicit = metadata?.checkout_locale ?? metadata?.locale ?? metadata?.preferred_language;
+  if (explicit === 'ru' || explicit === 'en' || explicit === 'es') return explicit;
+  return /[А-Яа-яЁё]/.test(subject) ? 'ru' : 'es';
+}
+
+function ensureKiaSignature(
+  html: string,
+  subject: string,
+  metadata?: Record<string, unknown>,
+): string {
+  if (html.includes('data-kia-signature="true"')) return html;
+  const signature = kiaEmailSignatureHtml({
+    mood: inferKiaEmailMood(subject),
+    locale: inferEmailLocale(subject, metadata),
+  });
+
+  return html.includes('</body>')
+    ? html.replace('</body>', `${signature}</body>`)
+    : `${html}${signature}`;
 }
 
 async function localizeServicePaymentEmail(input: {
@@ -219,6 +242,7 @@ export async function sendEmail({
   subject = localized.subject;
   html = localized.html;
   metadata = localized.metadata;
+  html = ensureKiaSignature(html, subject, metadata);
 
   const effectiveIdempotencyKey = idempotencyKey ?? deriveIdempotencyKey(eventType, metadata);
 
