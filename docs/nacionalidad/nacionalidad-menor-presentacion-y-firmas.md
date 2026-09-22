@@ -219,3 +219,37 @@ Para nacionalidad:
    - que no existe confirmación documental;
 3. no pedir de nuevo al cliente una tarjeta anterior que razonablemente fue retirada por Policía, salvo que sea imprescindible;
 4. si el formulario solo pide año, consignar el año validado/inferido sin inventar un día concreto en el documento oficial.
+
+
+## 13. Menores en edad preescolar e integración
+
+El art. 5.2.a).2.ª del RD 1004/2015 distingue entre:
+- menores en edad escolar: certificado de centro de formación/residencia/acogida/atención o educación especial obligatorio;
+- menores en edad preescolar: presentación de dicho certificado voluntaria.
+
+Para una menor de dos años como Ruslana no debe bloquearse el expediente por ausencia de certificado escolar o de guardería. Si existe un certificado de escuela infantil/centro puede aportarse voluntariamente, pero EXPERT no lo exigirá como documento bloqueante.
+
+## 14. Nombre y apellidos para la futura inscripción registral
+
+El modelo normalizado 2022 obliga a cumplimentar el apartado 8 sobre el nombre y apellidos con que la persona será inscrita si se concede la nacionalidad.
+
+Regla general para personas extranjeras con filiación determinada:
+- primer apellido: línea paterna;
+- segundo apellido: línea materna;
+- se admite la opción de invertirlos cuando proceda.
+
+Cuando el apellido extranjero tenga variantes masculina/femenina según el sexo, el art. 200 del Reglamento del Registro Civil contempla la forma correspondiente al sexo de la persona inscrita, acreditando la variante cuando no sea conocida por el encargado.
+
+Para Ruslana:
+- nombre actual: RUSLANA;
+- apellido actual: KONOVA;
+- padre: Viacheslav KONOV;
+- madre: Yana KONOVA;
+- filiación bilateral acreditada.
+
+Antes de enviar el formulario a firma deberá revisarse y dejar expresa la opción registral del apartado 8. La propuesta técnica inicial de EXPERT será aplicar las reglas de filiación y variante femenina, pero la elección debe quedar revisada profesionalmente antes de la firma del modelo oficial.
+
+Fuentes:
+- Instrucción DGRN de 23/05/2007 sobre apellidos de extranjeros nacionalizados.
+- Art. 200 Reglamento del Registro Civil.
+- Apartado 8 del modelo normalizado aprobado por Resolución de 16/12/2021.
