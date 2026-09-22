@@ -111,7 +111,13 @@ export async function ensureUnlockedServiceTasks(
           depends_on: deps,
           sync_calendar: Boolean(task.syncCalendar),
           human_approval_required: Boolean(task.humanApprovalRequired),
-          blueprint_version: '3',
+          client_action_required: Boolean(task.clientActionRequired),
+          client_action_kind: task.clientActionKind ?? null,
+          client_reminder_business_days: task.clientReminderBusinessDays ?? [],
+          internal_escalation_business_day: task.internalEscalationBusinessDay ?? null,
+          client_action_started_at: null,
+          client_reminders_sent_days: [],
+          blueprint_version: '4',
         },
       })
       .select('id,metadata')
