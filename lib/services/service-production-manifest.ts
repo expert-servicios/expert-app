@@ -60,21 +60,21 @@ export const serviceProductionManifest: ServiceProductionManifestEntry[] = [
     stage: 'commercial_ready',
     ruRequired: true,
     socialRequired: true,
-    notes: 'Pendiente completar contenido satélite y paridad RU.',
+    notes: 'Pendiente contenido satélite, página RU y copy de representación formal para renovaciones.',
   },
   {
     slug: 'nacionalidad-espanola',
     stage: 'commercial_ready',
     ruRequired: true,
     socialRequired: true,
-    notes: 'Pendiente completar contenido satélite y paridad RU.',
+    notes: 'Pendiente contenido satélite y página RU; el flujo ES ya contempla mandato/poder de representante voluntario.',
   },
   {
     slug: 'reagrupacion-familiar',
     stage: 'commercial_ready',
     ruRequired: true,
     socialRequired: true,
-    notes: 'Pendiente completar contenido satélite y paridad RU.',
+    notes: 'Pendiente contenido satélite y página RU; incorporar copy de poder/apud acta para representación en Extranjería.',
   },
 ];
 
