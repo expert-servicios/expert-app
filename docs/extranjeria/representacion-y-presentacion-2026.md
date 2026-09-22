@@ -158,11 +158,11 @@ Por tanto, EXPERT no debe diseñar actualmente el flujo suponiendo que Cl@ve PIN
 
 Nota histórica: la antigua Orden HFP/633/2017 contemplaba para personas físicas otros medios incorporados en Cl@ve, pero esa orden fue derogada con efectos de 12/12/2021 por la Orden PCM/1384/2021. La regla operativa actual publicada por la Sede del Punto de Acceso General debe prevalecer en el diseño del flujo.
 
-### Alternativa sin certificado y sin notaría
+### Política EXPERT: sin presencialidad
 
-Una persona física que no disponga de certificado electrónico puede otorgar el poder apud acta presencialmente en una OAMR. La comparecencia se realiza ante funcionario y el poderdante manifiesta su voluntad de otorgar el poder, que queda inscrito en el REA.
+EXPERT no ofrecerá como flujo operativo la comparecencia presencial en OAMR. Aunque jurídicamente exista como alternativa, es contraria al modelo de servicio 100 % online.
 
-Esto evita la notaría, aunque no es un proceso 100 % remoto.
+Si el cliente no dispone del medio electrónico exigido por Apoder@, el flujo comercial y operativo será ofrecer primero el servicio `certificado-digital-persona-fisica` de EXPERT (90 € + IVA), tramitable online. Una vez emitido e instalado el certificado, se continúa con Apoder@/REA.
 
 ### Tipo de poder recomendado
 
@@ -197,7 +197,10 @@ No todos los trámites de Extranjería son apoderables: por ejemplo, determinado
 9. Tras finalización del expediente se recomienda revocación o dejar caducar el poder según su alcance y vigencia.
 
 Si el cliente no dispone de certificado:
-- opción principal sin notaría: comparecencia presencial apud acta en OAMR;
+- ofrecer automáticamente el servicio de certificado digital de persona física de EXPERT;
+- completar emisión/instalación;
+- continuar después con Apoder@/REA;
+- no usar comparecencia presencial como alternativa comercial estándar;
 - no prometer que Cl@ve PIN permitirá completar el alta electrónica en Apoder@ mientras la Sede REA mantenga el requisito de DNIe/certificado.
 
 ## 11. Registro Electrónico de Colaboradores de Extranjería (2026)
@@ -213,3 +216,29 @@ Además, la representación realizada al amparo de ese registro debe tener cará
 Por tanto, para EXPERT la vía estructural aplicable sigue siendo:
 - nacionalidad: mandato/poder del procedimiento de Justicia;
 - Extranjería: Apoder@/REA (apud acta) o poder notarial, además de cualquier convenio de habilitación que pudiera resultar aplicable en el futuro.
+
+
+## 12. ASESORLEX
+
+EXPERT está asociada a ASESORLEX. A fecha de revisión 22/09/2026:
+- ASESORLEX publica convenios de colaboración social con AEAT y administraciones tributarias autonómicas, además de CIRCE/PAE y acceso al Sistema RED;
+- no se ha localizado en su catálogo público un convenio específico de representación en materia de Extranjería;
+- no se ha podido acreditar su presencia en el listado oficial de entidades colaboradoras del Registro Electrónico de Extranjería.
+
+Por tanto, la pertenencia a ASESORLEX no se utilizará como habilitación para presentar expedientes de Extranjería salvo que exista y se verifique posteriormente un convenio específico aplicable.
+
+### Flujo remoto definitivo
+
+1. Identificar trámite y sujeto legitimado.
+2. Verificar que admite actuación por apoderado.
+3. Preguntar si el cliente dispone de certificado electrónico/DNIe válido para Apoder@.
+4. Si no dispone:
+   - ofrecer `certificado-digital-persona-fisica` (90 € + IVA);
+   - tramitarlo online;
+   - ayudar a instalarlo/probarlo.
+5. Generar instrucciones Apoder@ con los datos de Ksenia ILICHEVA, NIE X3576519L, y el trámite/SIA.
+6. Cliente otorga el poder electrónicamente.
+7. Ksenia acepta el poder con su certificado personal.
+8. Comprobar estado **Autorizado** y guardar justificante/referencia REA en el expediente.
+9. Desbloquear presentación profesional en Mercurio.
+10. Al finalizar, revocar o dejar caducar el poder según alcance y vigencia.
