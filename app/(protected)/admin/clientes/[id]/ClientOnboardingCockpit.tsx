@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Building2, CheckCircle2, CircleDashed, CreditCard, FileText, Mail, Plug, RefreshCw, UserRoundCheck } from 'lucide-react';
 
@@ -37,6 +38,8 @@ function stateClass(state: StepState) {
 }
 
 export function ClientOnboardingCockpit({ clientId }: { clientId: string }) {
+  const searchParams = useSearchParams();
+  const requestedCompanyId = searchParams.get('companyId');
   const [data, setData] = useState<Client360 | null>(null);
   const [onboardingState, setOnboardingState] = useState<CanonicalOnboardingState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,7 +84,7 @@ export function ClientOnboardingCockpit({ clientId }: { clientId: string }) {
 
   const steps = useMemo<Step[]>(() => {
     if (!data) return [];
-    const activeCompany = data.companies.find((company) => company.id === data.profile.active_company_id) ?? data.companies[0] ?? null;
+    const activeCompany = (requestedCompanyId ? data.companies.find((company) => company.id === requestedCompanyId) : null) ?? data.companies.find((company) => company.id === data.profile.active_company_id) ?? data.companies[0] ?? null;
     const companyQuery = activeCompany ? `&companyId=${encodeURIComponent(activeCompany.id)}` : '';
     const activeSubscription = data.subs.find((sub) => ['active', 'trialing'].includes(sub.status));
     const openCheckout = data.checkoutSessions.find((session) => session.status === 'open');
@@ -100,10 +103,10 @@ export function ClientOnboardingCockpit({ clientId }: { clientId: string }) {
       { key: 'commercial', title: 'Presupuesto y contratación', detail: latestQuote ? `${latestQuote.service} · ${latestQuote.status} · ${latestQuote.amount_eur} € base` : activeSubscription ? `Suscripción ${activeSubscription.plan}` : openCheckout ? 'Checkout ya generado; no crear otro mientras siga abierto.' : 'Preparar lead, presupuesto, expediente y Checkout en una sola operación.', state: commercialReady ? (activeSubscription ? 'done' : 'active') : (profileReady && companyReady ? 'active' : 'pending'), href: `/admin/suscripciones/generar?clientId=${clientId}`, action: commercialReady ? 'Revisar contratación' : 'Preparar contratación', icon: FileText },
       { key: 'payment', title: 'Stripe y suscripción', detail: activeSubscription ? `${activeSubscription.plan} · ${activeSubscription.status}` : openCheckout ? `Checkout abierto · ${openCheckout.stripe_session_id}` : 'Pendiente de generar/completar Checkout.', state: checkoutState, href: `/admin/suscripciones?clientId=${encodeURIComponent(clientId)}${companyQuery}`, action: activeSubscription ? 'Ver suscripción' : 'Ver intentos', icon: CreditCard },
       { key: 'onboarding', title: 'Onboarding', detail: onboardingDone ? 'Onboarding poscompra completado por Admin.' : onboardingState?.meetingOccurred ? 'Reunión celebrada. Validar Holded y finalizar el alta desde esta ficha.' : onboardingState?.meetingScheduled ? 'Reunión reservada; el cierre se habilitará cuando haya transcurrido la cita.' : onboardingCase?.next_action || (activeSubscription ? 'Pendiente reservar la reunión inicial.' : 'Se activa después de la suscripción.'), state: onboardingDone ? 'done' : activeSubscription || onboardingCase ? 'active' : 'pending', href: `/admin/expedientes?clientId=${clientId}`, action: onboardingDone ? 'Ver expediente' : 'Revisar onboarding', icon: CheckCircle2 },
-      { key: 'holded', title: 'Holded', detail: onboardingState?.holdedConnected || holded ? 'Conexión Holded validada para el alta.' : 'Sin integración Holded válida para cerrar el alta.', state: onboardingState?.holdedConnected || holded ? 'done' : activeSubscription ? 'active' : 'pending', href: `/admin/clientes/${clientId}/integraciones`, action: onboardingState?.holdedConnected || holded ? 'Gestionar conexión' : 'Conectar / revisar', icon: Plug },
-      { key: 'communications', title: 'Comunicaciones', detail: `${data.emailEvents.length} email(s) EXPERT registrados. Los nuevos envíos guardan también el contenido completo.`, state: data.emailEvents.length ? 'done' : 'active', href: `/admin/clientes/${clientId}/comunicaciones`, action: 'Abrir comunicaciones', icon: Mail },
+      { key: 'holded', title: 'Holded', detail: onboardingState?.holdedConnected || holded ? 'Conexión Holded validada para el alta.' : 'Sin integración Holded válida para cerrar el alta.', state: onboardingState?.holdedConnected || holded ? 'done' : activeSubscription ? 'active' : 'pending', href: `/admin/clientes/${clientId}/integraciones${activeCompany ? `?companyId=${encodeURIComponent(activeCompany.id)}` : ''}`, action: onboardingState?.holdedConnected || holded ? 'Gestionar conexión' : 'Conectar / revisar', icon: Plug },
+      { key: 'communications', title: 'Comunicaciones', detail: `${data.emailEvents.length} email(s) EXPERT registrados. Los nuevos envíos guardan también el contenido completo.`, state: data.emailEvents.length ? 'done' : 'active', href: `/admin/clientes/${clientId}/comunicaciones${activeCompany ? `?companyId=${encodeURIComponent(activeCompany.id)}` : ''}`, action: 'Abrir comunicaciones', icon: Mail },
     ];
-  }, [data, onboardingState, clientId]);
+  }, [data, onboardingState, clientId, requestedCompanyId]);
 
   if (loading && !data) return <div className="border-b border-[#e6dfd2] bg-[#faf8f2] px-6 py-3 text-xs text-[#6b7280]"><RefreshCw className="mr-2 inline h-3.5 w-3.5 animate-spin" />Cargando alta y activación…</div>;
   if (error && !data) return <div className="border-b border-red-200 bg-red-50 px-6 py-2 text-xs text-red-700">No se pudo cargar el cockpit de alta: {error}</div>;
