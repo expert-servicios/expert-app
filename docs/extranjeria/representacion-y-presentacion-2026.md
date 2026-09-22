@@ -136,3 +136,80 @@ El flujo debe:
 - Ministerio de Inclusión, Hoja 29 — arraigo sociolaboral.
 - Ministerio de Inclusión, Hoja 31 — arraigo familiar.
 - Ministerio de Justicia — procedimiento de nacionalidad por residencia.
+
+
+## 10. Apoder@ / REA-AGE como alternativa a la notaría
+
+### Conclusión operativa
+
+Apoder@ (Registro Electrónico de Apoderamientos de la AGE, REA-AGE) es una vía válida para formalizar un apoderamiento apud acta sin acudir a notaría.
+
+Para personas físicas existen dos caminos:
+1. comparecencia electrónica en Apoder@;
+2. comparecencia presencial en una Oficina de Asistencia en Materia de Registros (OAMR).
+
+Si el poderdante inscribe el poder, la persona apoderada debe aceptarlo posteriormente. El poder solo es utilizable cuando alcanza el estado **Autorizado**.
+
+### Acceso electrónico y Cl@ve
+
+La información operativa vigente del REA-AGE indica que la identidad para utilizar el servicio se acredita mediante DNI electrónico o certificado digital reconocido en vigor, que califica como requisito imprescindible.
+
+Por tanto, EXPERT no debe diseñar actualmente el flujo suponiendo que Cl@ve PIN sea suficiente para otorgar electrónicamente un poder en Apoder@.
+
+Nota histórica: la antigua Orden HFP/633/2017 contemplaba para personas físicas otros medios incorporados en Cl@ve, pero esa orden fue derogada con efectos de 12/12/2021 por la Orden PCM/1384/2021. La regla operativa actual publicada por la Sede del Punto de Acceso General debe prevalecer en el diseño del flujo.
+
+### Alternativa sin certificado y sin notaría
+
+Una persona física que no disponga de certificado electrónico puede otorgar el poder apud acta presencialmente en una OAMR. La comparecencia se realiza ante funcionario y el poderdante manifiesta su voluntad de otorgar el poder, que queda inscrito en el REA.
+
+Esto evita la notaría, aunque no es un proceso 100 % remoto.
+
+### Tipo de poder recomendado
+
+Aplicar principio de mínimo alcance:
+- preferir **tipo C** cuando exista en SIA un trámite concreto habilitado para actuación por apoderado;
+- utilizar tipo B solo cuando resulte necesario cubrir actuaciones ante un organismo completo;
+- evitar tipo A salvo necesidad real y consentimiento informado del cliente.
+
+El REA únicamente permite apoderar para trámites previamente inscritos en SIA con capacidad para ser iniciados por apoderado.
+
+### Extranjería y Mercurio
+
+Existe constancia oficial de integración de Apoder@ con procedimientos de Extranjería y de la opción **ACCESO EN REPRESENTACIÓN** de Mercurio. La comprobación de la representación puede realizarse automatizadamente a través de Apoder@.
+
+El procedimiento SIA 201361, “Extranjería. Autorizaciones de residencia competencia del Ministerio de Inclusión, Seguridad Social y Migraciones”, figura como disponible para tramitación telemática por apoderado.
+
+No todos los trámites de Extranjería son apoderables: por ejemplo, determinados procedimientos policiales (certificados/TIE) figuran en SIA como no disponibles para tramitación telemática por apoderado. Debe comprobarse el código SIA del trámite concreto antes de prometer presentación por EXPERT.
+
+### Flujo EXPERT propuesto con Apoder@
+
+1. KIA identifica autorización y código SIA.
+2. KIA comprueba si el trámite admite presentación por apoderado.
+3. Se solicita al cliente apoderamiento a favor de **Ksenia ILICHEVA, NIE X3576519L, persona física**.
+4. Si el cliente tiene DNIe/certificado reconocido:
+   - accede a Apoder@;
+   - inscribe preferentemente poder tipo C para el trámite concreto;
+   - define una vigencia limitada al expediente o periodo razonable.
+5. Ksenia accede con su certificado personal y acepta el poder.
+6. EXPERT comprueba que el estado del poder es **Autorizado**.
+7. Se guarda justificante/referencia del REA en el expediente.
+8. Se desbloquea la acción profesional de presentación en Mercurio.
+9. Tras finalización del expediente se recomienda revocación o dejar caducar el poder según su alcance y vigencia.
+
+Si el cliente no dispone de certificado:
+- opción principal sin notaría: comparecencia presencial apud acta en OAMR;
+- no prometer que Cl@ve PIN permitirá completar el alta electrónica en Apoder@ mientras la Sede REA mantenga el requisito de DNIe/certificado.
+
+## 11. Registro Electrónico de Colaboradores de Extranjería (2026)
+
+La Orden ISM/164/2026, vigente desde el 06/03/2026, desarrolla el Registro Electrónico de Colaboradores de Extranjería previsto en el art. 197.4.c del RD 1155/2024.
+
+No es una vía disponible para EXPERT ESTUDIOS PROFESIONALES, S.L.U. como sociedad mercantil. La inscripción está limitada a:
+- organizaciones sindicales más representativas;
+- entidades sin ánimo de lucro constituidas en España al menos tres años antes y vinculadas al ámbito migratorio o de protección internacional, cumpliendo los requisitos adicionales de la Orden.
+
+Además, la representación realizada al amparo de ese registro debe tener carácter gratuito.
+
+Por tanto, para EXPERT la vía estructural aplicable sigue siendo:
+- nacionalidad: mandato/poder del procedimiento de Justicia;
+- Extranjería: Apoder@/REA (apud acta) o poder notarial, además de cualquier convenio de habilitación que pudiera resultar aplicable en el futuro.
