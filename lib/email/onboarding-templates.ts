@@ -80,3 +80,26 @@ export function onboardingReviewRequestEmail(input: { name: string; token: strin
     `),
   };
 }
+
+
+export function includedEntityOnboardingInvitationEmail(input: {
+  name: string;
+  companyName: string;
+  planName?: string | null;
+  onboardingUrl: string;
+}) {
+  const planContext = input.planName
+    ? ` dentro de <strong>${escapeHtml(input.planName)}</strong>`
+    : '';
+  return {
+    subject: `Reserva el onboarding de ${input.companyName} — incluido en tu plan EXPERT`,
+    html: shell('Onboarding de entidad incluida', `
+      <h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:24px;color:#07111d">Tu nueva entidad ya está incluida</h1>
+      <p>Hola <strong>${escapeHtml(input.name)}</strong>,</p>
+      <p>Hemos validado <strong>${escapeHtml(input.companyName)}</strong> como entidad incluida${planContext}, sin una segunda cuota.</p>
+      <p>Ya puedes reservar la sesión de onboarding específica para esta actividad. En ella revisaremos su configuración fiscal y operativa, la conexión con Holded y las reglas necesarias para mantener separada la información de cada entidad.</p>
+      ${button('Reservar segunda sesión de onboarding', input.onboardingUrl)}
+      <p style="margin-top:22px">La invitación se genera una sola vez. Si ya has reservado la reunión, no necesitas realizar ninguna otra acción.</p>
+    `),
+  };
+}
