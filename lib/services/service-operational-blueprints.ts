@@ -34,6 +34,10 @@ export type ServiceTaskTemplate = {
   dueBusinessDays?: number;
   dependsOn?: string[];
   syncCalendar?: boolean;
+  clientActionRequired?: boolean;
+  clientActionKind?: 'signature' | 'representation' | 'documents' | 'approval';
+  clientReminderBusinessDays?: number[];
+  internalEscalationBusinessDay?: number;
 };
 
 export type ServiceOperationalBlueprint = {
@@ -161,6 +165,10 @@ function immigrationTasks(
         dueBusinessDays: 1,
         dependsOn: ['review_documents'],
         syncCalendar: true,
+        clientActionRequired: true,
+        clientActionKind: 'representation',
+        clientReminderBusinessDays: [1, 3, 5],
+        internalEscalationBusinessDay: 5,
       }
     : {
         key: 'formalize_voluntary_representation',
@@ -172,6 +180,10 @@ function immigrationTasks(
         dueBusinessDays: 1,
         dependsOn: ['review_documents'],
         syncCalendar: true,
+        clientActionRequired: true,
+        clientActionKind: 'signature',
+        clientReminderBusinessDays: [1, 3, 5],
+        internalEscalationBusinessDay: 5,
       };
 
   const representationKey = representationTask.key;
@@ -550,6 +562,10 @@ const blueprints: ServiceOperationalBlueprint[] = [
         dueBusinessDays: 1,
         dependsOn: ['prepare_official_application'],
         syncCalendar: true,
+        clientActionRequired: true,
+        clientActionKind: 'signature',
+        clientReminderBusinessDays: [1, 3, 5],
+        internalEscalationBusinessDay: 5,
       },
       {
         key: 'verify_official_application',
