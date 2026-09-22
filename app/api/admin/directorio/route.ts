@@ -209,7 +209,7 @@ export async function GET(request: NextRequest) {
         activeSubscription,
         holdedConnected,
         activeCompanyId: null,
-        href: `/admin/empresas?companyId=${company.id}`,
+        href: `/admin/empresas/${company.id}`,
         portalHref: null,
         holdedHref: `/admin/empresas/${company.id}/integraciones`,
         createdAt: company.created_at ?? null,
