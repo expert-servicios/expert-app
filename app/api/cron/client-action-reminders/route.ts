@@ -54,33 +54,36 @@ function asNumberArray(value: unknown): number[] {
 function reminderCopy(locale: string, title: string, day: number, dashboardUrl: string) {
   if (locale === 'ru') {
     return {
-      subject: `Напоминание: требуется ваше действие — ${title}`,
-      html: `<p>Здравствуйте!</p>
-        <p>Напоминаем, что для продолжения вашего expediente требуется ваше действие: <strong>${title}</strong>.</p>
-        <p>Это напоминание №${day === 1 ? '1' : day === 3 ? '2' : '3'}. Если вы уже выполнили действие, дополнительный ответ не требуется.</p>
-        <p><a href="${dashboardUrl}">Открыть личный кабинет EXPERT</a></p>
-        <p>С уважением,<br>EXPERT</p>`,
+      subject: `⏰ Небольшое напоминание: ждём ваш следующий шаг`,
+      html: `<p>Здравствуйте! 👋</p>
+        <p>Небольшое напоминание от меня: чтобы мы могли двигаться дальше по вашему expediente, нам всё ещё нужен следующий шаг:</p>
+        <p><strong>${title}</strong></p>
+        <p>Если вы уже всё сделали — спасибо! Тогда ничего дополнительно отправлять не нужно, я увижу обновление в системе.</p>
+        <p>Если возник вопрос или что-то не получается, просто ответьте на письмо — команда EXPERT подключится.</p>
+        <p><a href="${dashboardUrl}">Открыть личный кабинет EXPERT</a></p>`,
     };
   }
 
   if (locale === 'en') {
     return {
-      subject: `Reminder: action required — ${title}`,
-      html: `<p>Hello,</p>
-        <p>We are reminding you that your case is waiting for your action: <strong>${title}</strong>.</p>
-        <p>If you have already completed it, no further reply is needed.</p>
-        <p><a href="${dashboardUrl}">Open your EXPERT workspace</a></p>
-        <p>EXPERT</p>`,
+      subject: `⏰ Quick reminder: we’re waiting for your next step`,
+      html: `<p>Hello! 👋</p>
+        <p>A quick reminder from me: to keep your case moving, we still need this step from you:</p>
+        <p><strong>${title}</strong></p>
+        <p>If you have already done it, thank you — there is nothing else you need to send.</p>
+        <p>If anything is unclear, simply reply and the EXPERT team will help.</p>
+        <p><a href="${dashboardUrl}">Open your EXPERT workspace</a></p>`,
     };
   }
 
   return {
-    subject: `Recordatorio: necesitamos tu acción — ${title}`,
-    html: `<p>Hola,</p>
-      <p>Tu expediente está pendiente de una acción por tu parte: <strong>${title}</strong>.</p>
-      <p>Si ya la has realizado, no necesitas responder de nuevo.</p>
-      <p><a href="${dashboardUrl}">Abrir mi Espacio EXPERT</a></p>
-      <p>Un saludo,<br>EXPERT</p>`,
+    subject: `⏰ Un pequeño recordatorio: esperamos tu siguiente paso`,
+    html: `<p>¡Hola! 👋</p>
+      <p>Te escribo porque para seguir avanzando con tu expediente todavía necesitamos este paso:</p>
+      <p><strong>${title}</strong></p>
+      <p>Si ya lo has hecho, ¡gracias! No tienes que enviarnos nada más: la actualización quedará registrada.</p>
+      <p>Y si algo no te queda claro, responde a este correo y el equipo de EXPERT te ayudará.</p>
+      <p><a href="${dashboardUrl}">Abrir mi Espacio EXPERT</a></p>`,
   };
 }
 
