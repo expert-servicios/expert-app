@@ -35,6 +35,7 @@ import { KIA_DECISION_JSON_SCHEMA } from '@/lib/ai/kia/kia-output-schema';
 import { KIA_TOOL_DEFINITIONS } from '@/lib/ai/kia/kia-tool-definitions';
 import { redactSensitiveText, safeErrorMessage, stableHash } from '@/lib/ai/kia/kia-redaction';
 import { runSampledKiaShadow } from '@/lib/ai/kia/evals/kia-shadow-sampler';
+import { detectKiaLocaleFromLastMessage } from '@/lib/ai/kia/kia-language';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
   const admin = getSupabaseAdmin();
   const { data: profile, error: profileError } = await admin
     .from('profiles')
-    .select('tenant_id, active_company_id')
+    .select('tenant_id, active_company_id, preferred_language')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -98,6 +99,8 @@ export async function POST(request: NextRequest) {
   }
 
   const resolvedCompanyId = companyId ?? profile?.active_company_id ?? undefined;
+  const profileLocale = profile?.preferred_language === 'ru' ? 'ru' : 'es';
+  const responseLocale = detectKiaLocaleFromLastMessage(message, profileLocale);
 
   if (resolvedCompanyId) {
     const { data: membership, error: membershipError } = await admin
@@ -187,7 +190,7 @@ export async function POST(request: NextRequest) {
       taskType   : 'chat_reply',
       channel    : 'dashboard',
       message,
-      locale     : 'es',
+      locale     : responseLocale,
       allowTools : true,
       forceToolExecution: process.env.KIA_COPILOT_TOOLS_ENABLED?.toLowerCase() !== 'false',
       contextInput: {
@@ -222,7 +225,7 @@ export async function POST(request: NextRequest) {
     const shadowRequest = {
       taskType: shadowTaskType,
       systemPrompt: buildKiaSystemPrompt({
-        locale: 'es',
+        locale: responseLocale,
         channel: 'dashboard',
         taskType: shadowTaskType,
       }),
