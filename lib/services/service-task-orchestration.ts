@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getServiceOperationalBlueprint, type ServiceTaskTemplate } from '@/lib/services/service-operational-blueprints';
 import { hasCalendarSA, upsertCalendarEventSA, deleteCalendarEventSA } from '@/lib/integrations/google-calendar';
+import { enqueueEmail } from '@/lib/email/email-queue';
 
 type SupabaseAdmin = SupabaseClient;
 
@@ -151,6 +152,80 @@ export async function ensureUnlockedServiceTasks(
   return created;
 }
 
+async function acknowledgeClientAction(
+  admin: SupabaseAdmin,
+  input: {
+    taskId: string;
+    taskTitle: string;
+    clientId: string | null;
+    caseId: string | null;
+    metadata: Record<string, unknown>;
+  },
+) {
+  if (!input.clientId || input.metadata.client_action_required !== true) return;
+  if (typeof input.metadata.client_acknowledgement_sent_at === 'string') return;
+
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('email,preferred_language')
+    .eq('id', input.clientId)
+    .maybeSingle();
+
+  if (!profile?.email) return;
+
+  const locale = profile.preferred_language ?? 'es';
+  const actionKind = typeof input.metadata.client_action_kind === 'string'
+    ? input.metadata.client_action_kind
+    : 'action';
+
+  const copy = locale === 'ru'
+    ? {
+        subject: `Спасибо — мы получили ваше действие по expediente`,
+        html: `<p>Здравствуйте!</p>
+          <p>Спасибо. Мы получили и зарегистрировали: <strong>${input.taskTitle}</strong>.</p>
+          <p>EXPERT проверит полученные данные/документ и продолжит expediente со следующим этапом. Если потребуется дополнительная информация, мы сразу свяжемся с вами.</p>
+          <p>С уважением,<br>EXPERT</p>`,
+      }
+    : locale === 'en'
+      ? {
+          subject: 'Thank you — we received your action',
+          html: `<p>Hello,</p>
+            <p>Thank you. We have received and recorded: <strong>${input.taskTitle}</strong>.</p>
+            <p>EXPERT will review it and move your case to the next step. If anything else is needed, we will contact you.</p>
+            <p>EXPERT</p>`,
+        }
+      : {
+          subject: 'Gracias — hemos recibido tu acción',
+          html: `<p>Hola,</p>
+            <p>Gracias. Hemos recibido y registrado: <strong>${input.taskTitle}</strong>.</p>
+            <p>EXPERT lo revisará y continuará el expediente con el siguiente paso. Si necesitamos algún dato adicional, te avisaremos.</p>
+            <p>Un saludo,<br>EXPERT</p>`,
+        };
+
+  await enqueueEmail({
+    to: profile.email,
+    subject: copy.subject,
+    html: copy.html,
+    eventType: 'case.client_action_acknowledgement',
+    metadata: {
+      taskId: input.taskId,
+      caseId: input.caseId,
+      actionKind,
+    },
+  });
+
+  await admin
+    .from('internal_tasks')
+    .update({
+      metadata: {
+        ...input.metadata,
+        client_acknowledgement_sent_at: new Date().toISOString(),
+      },
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', input.taskId);
+}
+
 export async function completeServiceTaskAndUnlockNext(
   admin: SupabaseAdmin,
   input: {
@@ -160,7 +235,7 @@ export async function completeServiceTaskAndUnlockNext(
 ) {
   const { data: task, error } = await admin
     .from('internal_tasks')
-    .select('id,status,case_id,client_id,company_id,metadata')
+    .select('id,title,status,case_id,client_id,company_id,metadata')
     .eq('id', input.taskId)
     .single();
 
@@ -196,4 +271,16 @@ export async function completeServiceTaskAndUnlockNext(
       serviceSlug,
     });
   }
+
+  await acknowledgeClientAction(admin, {
+    taskId: task.id,
+    taskTitle: task.title,
+    clientId: task.client_id,
+    caseId: task.case_id,
+    metadata: {
+      ...metadata,
+      completed_by: input.actorId ?? null,
+      google_event_id: null,
+    },
+  });
 }
