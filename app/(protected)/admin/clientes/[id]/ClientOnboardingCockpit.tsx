@@ -8,7 +8,7 @@ import { Building2, CheckCircle2, CircleDashed, CreditCard, FileText, Mail, Plug
 type Client360 = {
   profile: { id: string; full_name: string | null; email: string; profile_completed: boolean; billing_ready: boolean; active_company_id: string | null; onboarding_completed_at: string | null };
   companies: { id: string; name: string; nif: string | null }[];
-  cases: { id: string; service: string; state: string; status: string; next_action?: string | null }[];
+  cases: { id: string; service: string; state: string; status: string; next_action?: string | null; company_id?: string | null }[];
   quotes: { id: string; service: string; status: string; amount_eur: number; company_id: string | null }[];
   subs: { id: string; plan: string; status: string; company_id: string | null }[];
   checkoutSessions: { id: string; stripe_session_id: string; status: string; company_id: string | null; created_at: string }[];
@@ -52,7 +52,7 @@ export function ClientOnboardingCockpit({ clientId }: { clientId: string }) {
     try {
       const [clientResponse, onboardingResponse] = await Promise.all([
         fetch(`/api/admin/clientes/${clientId}`, { cache: 'no-store' }),
-        fetch(`/api/admin/clientes/${clientId}/onboarding-state`, { cache: 'no-store' }),
+        fetch(`/api/admin/clientes/${clientId}/onboarding-state${requestedCompanyId ? `?companyId=${encodeURIComponent(requestedCompanyId)}` : ''}`, { cache: 'no-store' }),
       ]);
       const [clientJson, onboardingJson] = await Promise.all([clientResponse.json(), onboardingResponse.json()]);
       if (!clientResponse.ok) throw new Error(clientJson.error ?? 'No se pudo cargar el alta');
@@ -63,7 +63,7 @@ export function ClientOnboardingCockpit({ clientId }: { clientId: string }) {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { void load(); }, [clientId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { void load(); }, [clientId, requestedCompanyId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const completeOnboarding = async () => {
     if (!onboardingState?.activeSubscriptionId || !onboardingState.canAdminComplete) return;
@@ -86,11 +86,11 @@ export function ClientOnboardingCockpit({ clientId }: { clientId: string }) {
     if (!data) return [];
     const activeCompany = (requestedCompanyId ? data.companies.find((company) => company.id === requestedCompanyId) : null) ?? data.companies.find((company) => company.id === data.profile.active_company_id) ?? data.companies[0] ?? null;
     const companyQuery = activeCompany ? `&companyId=${encodeURIComponent(activeCompany.id)}` : '';
-    const activeSubscription = data.subs.find((sub) => ['active', 'trialing'].includes(sub.status));
-    const openCheckout = data.checkoutSessions.find((session) => session.status === 'open');
-    const latestQuote = data.quotes[0] ?? null;
-    const onboardingCase = data.cases.find((item) => item.service === 'Alta de usuario' && item.state !== 'finalizado') ?? null;
-    const holded = data.integrations.find((integration) => integration.provider === 'holded' && integration.status === 'active' && (!activeCompany || !integration.company_id || integration.company_id === activeCompany.id));
+    const activeSubscription = data.subs.find((sub) => ['active', 'trialing'].includes(sub.status) && (!activeCompany || sub.company_id === activeCompany.id));
+    const openCheckout = data.checkoutSessions.find((session) => session.status === 'open' && (!activeCompany || session.company_id === activeCompany.id));
+    const latestQuote = data.quotes.find((quote) => !activeCompany || quote.company_id === activeCompany.id) ?? null;
+    const onboardingCase = data.cases.find((item) => item.service === 'Alta de usuario' && item.state !== 'finalizado' && (!activeCompany || item.company_id === activeCompany.id)) ?? null;
+    const holded = data.integrations.find((integration) => integration.provider === 'holded' && integration.status === 'active' && (!activeCompany || integration.company_id === activeCompany.id));
     const profileReady = data.profile.profile_completed && data.profile.billing_ready;
     const companyReady = Boolean(activeCompany);
     const commercialReady = Boolean(latestQuote || openCheckout || activeSubscription);
