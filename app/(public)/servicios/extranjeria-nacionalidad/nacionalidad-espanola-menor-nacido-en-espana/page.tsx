@@ -37,6 +37,8 @@ const includedItems = [
   'Comprobación del plazo de 1 año de residencia legal del menor.',
   'Revisión de NIE/TIE, pasaportes, certificado de nacimiento, empadronamiento y documentación familiar.',
   'Preparación del expediente documental y formularios oficiales.',
+  'Preparación del mandato de representación voluntaria para que EXPERT pueda presentar telemáticamente la solicitud en nombre del interesado.',
+  'Gestión de la firma de ambos progenitores cuando ambos ejerzan la patria potestad y conservación del mandato firmado en el expediente.',
   'Gestión del pago de la tasa administrativa 790-026 como suplido, con justificante a nombre de la menor solicitante.',
   'Presentación telemática ante el Ministerio de Justicia, cuando proceda.',
   'Entrega del justificante de presentación y número de expediente.',
@@ -63,8 +65,9 @@ const documentGroups = [
       'NIE/TIE de ambos progenitores por ambas caras.',
       'Certificado de empadronamiento familiar, si no se aporta por separado.',
       'Datos de contacto: teléfono, correo electrónico y domicilio actual.',
-      'Firmas y asistencia de los representantes legales según la edad del menor y la patria potestad.',
-      'Documentación adicional si solo uno de los progenitores puede firmar.',
+      'Firma de ambos progenitores cuando ambos ejerzan la patria potestad y exista acuerdo.',
+      'Mandato de representación voluntaria a favor del profesional de EXPERT que realizará la presentación telemática.',
+      'Documentación adicional que acredite la representación legal si solo uno de los progenitores puede firmar.',
     ],
   },
 ];
@@ -84,8 +87,12 @@ const processSteps = [
     text: 'Comprobamos el requisito de 1 año de residencia legal, continuidad y documentación disponible.',
   },
   {
+    title: 'Mandato de representación y firmas',
+    text: 'Cuando EXPERT vaya a presentar la solicitud como representante voluntario, preparamos el mandato con los datos del expediente y recabamos las firmas de ambos progenitores si ambos ejercen la patria potestad. El documento firmado se incorpora al expediente antes de la presentación.',
+  },
+  {
     title: 'Preparación y presentación',
-    text: 'Preparamos la solicitud, formularios y documentación digitalizada, y presentamos el expediente cuando proceda.',
+    text: 'Preparamos la solicitud, formularios y documentación digitalizada. La presentación telemática se realiza con el certificado del representante de EXPERT una vez acreditada la representación y validado el expediente.',
   },
   {
     title: 'Justificante y seguimiento inicial',
@@ -127,6 +134,11 @@ const faqItems = [
     q: '¿Tienen que firmar los dos progenitores?',
     a:
       'En menores de 14 años actúan los representantes legales. Si ambos ejercen la patria potestad y existe acuerdo, deben intervenir conforme al modelo aplicable; si no existe acuerdo, revisamos la resolución de jurisdicción voluntaria necesaria. Entre 14 y 17 años, el menor formula la solicitud asistido por sus representantes legales.',
+  },
+  {
+    q: '¿Puede EXPERT presentar la solicitud en nuestro nombre?',
+    a:
+      'Sí. El Ministerio de Justicia permite que la solicitud se presente mediante representante voluntario siempre que exista mandato o poder acreditativo. Cuando EXPERT realice la presentación, prepararemos el mandato, recabaremos las firmas necesarias y lo incorporaremos al expediente antes de firmar y presentar telemáticamente.',
   },
   {
     q: '¿El menor tiene que hacer CCSE o DELE?',
@@ -192,7 +204,7 @@ export default function NacionalidadMenorPage() {
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-white/65">
             Preparación y presentación de solicitud de nacionalidad española por residencia para menores nacidos en España.
-            Revisamos residencia legal, continuidad, documentación familiar y requisitos de firma de los representantes legales.
+            Revisamos residencia legal, continuidad, documentación familiar, firmas de los representantes legales y el mandato de representación voluntaria cuando EXPERT realiza la presentación.
           </p>
 
           <div className="mt-8 grid gap-4 md:grid-cols-3">
