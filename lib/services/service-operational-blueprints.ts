@@ -520,6 +520,10 @@ const blueprints: ServiceOperationalBlueprint[] = [
         dueBusinessDays: 1,
         dependsOn: ['review_documents'],
         syncCalendar: true,
+        clientActionRequired: true,
+        clientActionKind: 'signature',
+        clientReminderBusinessDays: [1, 3, 5],
+        internalEscalationBusinessDay: 5,
       },
       {
         key: 'verify_signed_mandate',
