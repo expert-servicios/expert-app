@@ -17,7 +17,10 @@ export type KiaToolCapability =
   | 'administration'
   | 'regulatory'
   | 'knowledge'
-  | 'service_discovery';
+  | 'service_discovery'
+  | 'payments'
+  | 'subscriptions'
+  | 'case_operations';
 
 export interface KiaToolPolicy {
   name: string;
@@ -72,6 +75,11 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_user_expedientes:               policy('R0', 'read',  'case_management'),
   get_user_companies:                 policy('R0', 'read',  'client_data'),
   get_user_pending_docs:              policy('R0', 'read',  'documents'),
+  get_user_orders:                    policy('R0', 'read',  'payments'),
+  get_user_subscriptions:             policy('R0', 'read',  'subscriptions'),
+  get_case_tasks:                     policy('R0', 'read',  'case_operations'),
+  get_case_documents:                 policy('R0', 'read',  'documents'),
+  get_case_timeline:                  policy('R0', 'read',  'case_operations'),
   search_knowledge_resources:          policy('R0', 'read',  'knowledge'),
   get_official_sources:                policy('R0', 'read',  'regulatory'),
   find_relevant_services:              policy('R0', 'read',  'service_discovery'),
