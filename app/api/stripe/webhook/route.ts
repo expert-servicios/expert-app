@@ -796,14 +796,17 @@ export async function POST(req: NextRequest) {
 
       if (!catalogOrderId) throw new Error('Catalog order id missing after persistence');
 
-      const catalogServiceSlug =
-        session.metadata?.service_slug ??
-        (session.metadata?.service_slugs ?? '').split(',').map((slug) => slug.trim()).filter(Boolean)[0] ??
-        '';
+      const catalogServiceSlugs = (session.metadata?.service_slugs ?? session.metadata?.service_slug ?? '')
+        .split(',')
+        .map((slug) => slug.trim())
+        .filter(Boolean);
+      const catalogServiceSlug = catalogServiceSlugs[0] ?? '';
 
       await ensureServiceOrderFulfillment(supabaseAdmin, {
         orderId: catalogOrderId,
         serviceSlug: catalogServiceSlug,
+        serviceSlugs: catalogServiceSlugs,
+        serviceName,
         clientId: session.client_reference_id ?? null,
         companyId: session.metadata?.company_id ?? null,
       });
