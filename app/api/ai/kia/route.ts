@@ -35,7 +35,7 @@ import { KIA_DECISION_JSON_SCHEMA } from '@/lib/ai/kia/kia-output-schema';
 import { KIA_TOOL_DEFINITIONS } from '@/lib/ai/kia/kia-tool-definitions';
 import { redactSensitiveText, safeErrorMessage, stableHash } from '@/lib/ai/kia/kia-redaction';
 import { runSampledKiaShadow } from '@/lib/ai/kia/evals/kia-shadow-sampler';
-import { detectKiaLocaleFromLastMessage } from '@/lib/ai/kia/kia-language';
+import { resolveKiaLocale } from '@/lib/ai/kia/kia-locale';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
 
   const resolvedCompanyId = companyId ?? profile?.active_company_id ?? undefined;
   const profileLocale = profile?.preferred_language === 'ru' ? 'ru' : 'es';
-  const responseLocale = detectKiaLocaleFromLastMessage(message, profileLocale);
+  const responseLocale = resolveKiaLocale({ latestMessage: message, preferredLanguage: profileLocale });
 
   if (resolvedCompanyId) {
     const { data: membership, error: membershipError } = await admin
