@@ -65,7 +65,26 @@ function immigrationCommonDocuments(): ServiceDocumentRule[] {
   ];
 }
 
-function immigrationCaseSteps(applicationLabel: string): ServiceCaseStep[] {
+function immigrationCaseSteps(
+  applicationLabel: string,
+  representationMode: 'extranjeria' | 'nationality' = 'extranjeria',
+): ServiceCaseStep[] {
+  const representationStep: ServiceCaseStep = representationMode === 'extranjeria'
+    ? {
+        key: 'formal_representation',
+        title: 'Acreditación formal de representación',
+        description: 'Si EXPERT presenta en nombre del interesado, acreditar previamente la representación mediante poder notarial o apoderamiento apud acta/Registro Electrónico de Apoderamientos (REA), salvo otra habilitación legal aplicable. Una autorización privada simple no desbloquea la presentación de Extranjería.',
+        clientVisible: true,
+        humanApprovalRequired: true,
+      }
+    : {
+        key: 'voluntary_representation',
+        title: 'Mandato de representación voluntaria',
+        description: 'Si EXPERT presenta la solicitud de nacionalidad, formalizar y archivar el mandato o poder del representante voluntario antes de presentar.',
+        clientVisible: true,
+        humanApprovalRequired: true,
+      };
+
   return [
     {
       key: 'intake',
@@ -79,6 +98,7 @@ function immigrationCaseSteps(applicationLabel: string): ServiceCaseStep[] {
       description: 'Comprobar que la documentación obligatoria y condicional está completa, vigente y coherente.',
       clientVisible: true,
     },
+    representationStep,
     {
       key: 'prepare',
       title: 'Preparación del expediente',
@@ -88,7 +108,9 @@ function immigrationCaseSteps(applicationLabel: string): ServiceCaseStep[] {
     {
       key: 'submit',
       title: 'Presentación',
-      description: 'Presentar ante la Administración competente únicamente después de revisión profesional.',
+      description: representationMode === 'extranjeria'
+        ? 'Presentar únicamente después de validar el expediente y acreditar formalmente la representación cuando EXPERT actúe en nombre del interesado.'
+        : 'Presentar únicamente después de validar el expediente y archivar el mandato o poder de representación voluntaria cuando EXPERT actúe como representante.',
       clientVisible: true,
       humanApprovalRequired: true,
     },
@@ -101,7 +123,29 @@ function immigrationCaseSteps(applicationLabel: string): ServiceCaseStep[] {
   ];
 }
 
-function immigrationTasks(serviceName: string, applicationLabel: string): ServiceTaskTemplate[] {
+function immigrationTasks(
+  serviceName: string,
+  applicationLabel: string,
+  representationMode: 'extranjeria' | 'nationality' = 'extranjeria',
+): ServiceTaskTemplate[] {
+  const representationTask: ServiceTaskTemplate = representationMode === 'extranjeria'
+    ? {
+        key: 'formalize_representation',
+        title: `Acreditar representación formal — ${serviceName}`,
+        description: 'Si EXPERT presentará en nombre del interesado, obtener y validar poder notarial o apoderamiento apud acta/REA antes de desbloquear la presentación.',
+        priority: 'alta',
+        phase: 'representation',
+        humanApprovalRequired: true,
+      }
+    : {
+        key: 'formalize_voluntary_representation',
+        title: `Formalizar representación voluntaria — ${serviceName}`,
+        description: 'Si EXPERT presentará la solicitud de nacionalidad, preparar y validar mandato o poder de representación voluntaria antes de presentar.',
+        priority: 'alta',
+        phase: 'representation',
+        humanApprovalRequired: true,
+      };
+
   return [
     {
       key: 'validate',
@@ -118,6 +162,7 @@ function immigrationTasks(serviceName: string, applicationLabel: string): Servic
       priority: 'media',
       phase: 'documents',
     },
+    representationTask,
     {
       key: 'prepare_application',
       title: `Preparar ${applicationLabel} — ${serviceName}`,
@@ -128,7 +173,9 @@ function immigrationTasks(serviceName: string, applicationLabel: string): Servic
     {
       key: 'submit',
       title: `Presentar expediente — ${serviceName}`,
-      description: 'Acción profesional. Confirmar que el expediente está listo antes de presentar.',
+      description: representationMode === 'extranjeria'
+        ? 'Acción profesional. No presentar sin expediente validado y representación formal acreditada cuando EXPERT actúe por el interesado.'
+        : 'Acción profesional. No presentar sin expediente validado y mandato/poder acreditado cuando EXPERT actúe como representante voluntario.',
       priority: 'alta',
       phase: 'submit',
       humanApprovalRequired: true,
@@ -551,8 +598,8 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'criminal_record', label: 'Certificado de antecedentes penales del país de origen, legalizado/apostillado y traducido cuando proceda', required: true },
       { key: 'ccse_dele', label: 'CCSE/DELE o documentación de exención/dispensa cuando corresponda', required: false, conditionalWhen: 'Según nacionalidad, edad y circunstancias personales' },
     ],
-    steps: immigrationCaseSteps('solicitud de nacionalidad por residencia'),
-    tasks: immigrationTasks('Nacionalidad Española', 'solicitud de nacionalidad'),
+    steps: immigrationCaseSteps('solicitud de nacionalidad por residencia', 'nationality'),
+    tasks: immigrationTasks('Nacionalidad Española', 'solicitud de nacionalidad', 'nationality'),
     kia: {
       userSummary: 'KIA determina el plazo aplicable y genera una lista documental adaptada al supuesto.',
       adminSummary: 'KIA marca continuidad de residencia, exenciones y antecedentes como puntos de control.',
