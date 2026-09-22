@@ -448,6 +448,7 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'absences', label: 'Ausencias dentro del límite aplicable durante el periodo exigido', required: true, clientCheckable: false },
       { key: 'route', label: 'Acreditar vía de vínculos familiares + medios económicos o informe favorable de integración social', required: true, clientCheckable: false },
       { key: 'compatible_status', label: 'Situación migratoria y periodos de protección internacional compatibles con el cómputo', required: true, clientCheckable: false },
+      { key: 'filing_actor', label: 'Forma de presentación validada según la legitimación específica del arraigo social', required: true, clientCheckable: false },
     ],
     documents: [
       ...immigrationCommonDocuments(),
@@ -460,7 +461,7 @@ const blueprints: ServiceOperationalBlueprint[] = [
     tasks: immigrationTasks('Arraigo Social', 'EX-10'),
     kia: {
       userSummary: 'KIA ayuda a construir la cronología de 2 años y a identificar si la vía es familiar + medios o integración social.',
-      adminSummary: 'KIA revisa cronología, ausencias, protección internacional, vía jurídica y faltantes.',
+      adminSummary: 'KIA revisa cronología, ausencias, protección internacional, vía jurídica y faltantes. No promete presentación por representante sin validar la legitimación específica y el artículo 197 del RD 1155/2024.',
       escalationRules: ['Ausencias relevantes', 'Protección internacional previa', 'Antecedentes', 'Cronología incompleta', 'Vía familiar/integración no acreditada'],
     },
   },
@@ -495,6 +496,7 @@ const blueprints: ServiceOperationalBlueprint[] = [
       },
       { key: 'family_link', label: 'Vínculo familiar acreditado documentalmente', required: true, clientCheckable: false },
       { key: 'compatible_status', label: 'Situación migratoria compatible con la autorización solicitada', required: true, clientCheckable: false },
+      { key: 'filing_actor', label: 'Forma de presentación y legitimación verificadas para el supuesto concreto', required: true, clientCheckable: false },
     ],
     documents: [
       ...immigrationCommonDocuments(),
@@ -517,7 +519,7 @@ const blueprints: ServiceOperationalBlueprint[] = [
     tasks: immigrationTasks('Arraigo Familiar', 'EX-10'),
     kia: {
       userSummary: 'KIA identifica el vínculo y pide solo los documentos pertinentes al supuesto familiar.',
-      adminSummary: 'KIA obliga a validar el supuesto vigente antes de prometer esta vía.',
+      adminSummary: 'KIA obliga a validar el supuesto vigente y quién está legitimado para presentar antes de prometer esta vía o una presentación por representante.',
       escalationRules: ['Vínculo fuera de los supuestos vigentes', 'Patria potestad/custodia compleja', 'Antecedentes', 'Documentación extranjera no válida'],
     },
   },
@@ -562,15 +564,23 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'permit_type', label: 'Tipo exacto de autorización actual identificado', required: true, clientCheckable: false },
       { key: 'filing_window', label: 'Solicitud dentro de plazo o con estrategia revisada si existe presentación tardía', required: true, clientCheckable: false },
       { key: 'renewal_requirements', label: 'Cumplimiento de los requisitos específicos de renovación/modificación de esa autorización', required: true, clientCheckable: false },
+      { key: 'filing_actor', label: 'Sujeto legitimado para presentar identificado y representación validada si EXPERT presenta', required: true, clientCheckable: false },
     ],
     documents: [
       { key: 'tie', label: 'TIE actual por ambas caras', required: true },
       { key: 'passport', label: 'Pasaporte completo y en vigor', required: true },
       { key: 'registration', label: 'Empadronamiento actualizado cuando resulte aplicable', required: false },
       { key: 'basis', label: 'Documentos que acrediten mantenimiento/cambio de las circunstancias que sustentan la renovación', required: true },
+      { key: 'representation_power', label: 'Poder notarial, apud acta o acreditación de representación válida para Extranjería', required: false, conditionalWhen: 'EXPERT presenta en nombre del sujeto legitimado' },
     ],
-    steps: immigrationCaseSteps('solicitud de renovación o modificación aplicable'),
-    tasks: immigrationTasks('Renovación de Residencia', 'solicitud de renovación'),
+    steps: [
+      ...immigrationCaseSteps('solicitud de renovación o modificación aplicable'),
+      { key: 'representation_gate', title: 'Validación de representación', description: 'Antes de presentar por EXPERT, comprobar que el poder o habilitación cumple el artículo 197 del RD 1155/2024.', clientVisible: true, humanApprovalRequired: true },
+    ],
+    tasks: [
+      ...immigrationTasks('Renovación de Residencia', 'solicitud de renovación'),
+      { key: 'verify_representation', title: 'Validar representación — Renovación de Residencia', description: 'No presentar por EXPERT hasta verificar poder notarial, apud acta u otra habilitación válida para Extranjería.', priority: 'alta', phase: 'representation', humanApprovalRequired: true },
+    ],
     kia: {
       userSummary: 'KIA identifica tipo de permiso y fecha de caducidad para generar el checklist específico.',
       adminSummary: 'KIA no aplica un checklist genérico si no se ha identificado la autorización que se renueva.',
@@ -590,6 +600,7 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'continuous_residence', label: 'Residencia legal, continuada e inmediatamente anterior a la solicitud', required: true, clientCheckable: false },
       { key: 'good_conduct', label: 'Buena conducta cívica y ausencia de incidencias incompatibles', required: true, clientCheckable: false },
       { key: 'integration', label: 'Requisitos de integración/pruebas o exenciones correctamente determinados', required: true, clientCheckable: false },
+      { key: 'voluntary_representation', label: 'Mandato o poder de representación voluntaria válido cuando EXPERT presenta ante el Ministerio de Justicia', required: true, clientCheckable: false },
     ],
     documents: [
       { key: 'passport', label: 'Pasaporte completo y en vigor', required: true },
@@ -597,9 +608,16 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'birth', label: 'Certificado de nacimiento del país de origen, legalizado/apostillado y traducido cuando proceda', required: true },
       { key: 'criminal_record', label: 'Certificado de antecedentes penales del país de origen, legalizado/apostillado y traducido cuando proceda', required: true },
       { key: 'ccse_dele', label: 'CCSE/DELE o documentación de exención/dispensa cuando corresponda', required: false, conditionalWhen: 'Según nacionalidad, edad y circunstancias personales' },
+      { key: 'voluntary_representation_mandate', label: 'Mandato o poder de representación voluntaria para nacionalidad por residencia', required: false, conditionalWhen: 'EXPERT presenta en nombre del solicitante' },
     ],
-    steps: immigrationCaseSteps('solicitud de nacionalidad por residencia', 'nationality'),
-    tasks: immigrationTasks('Nacionalidad Española', 'solicitud de nacionalidad', 'nationality'),
+    steps: [
+      ...immigrationCaseSteps('solicitud de nacionalidad por residencia', 'nationality'),
+      { key: 'representation_mandate', title: 'Mandato de representación', description: 'Preparar y validar el mandato o poder cuando EXPERT presente telemáticamente ante el Ministerio de Justicia.', clientVisible: true, humanApprovalRequired: true },
+    ],
+    tasks: [
+      ...immigrationTasks('Nacionalidad Española', 'solicitud de nacionalidad', 'nationality'),
+      { key: 'verify_representation', title: 'Validar mandato — Nacionalidad Española', description: 'Comprobar que el mandato o poder identifica al solicitante y a Ksenia ILICHEVA como representante voluntaria antes de presentar.', priority: 'alta', phase: 'representation_mandate', humanApprovalRequired: true },
+    ],
     kia: {
       userSummary: 'KIA determina el plazo aplicable y genera una lista documental adaptada al supuesto.',
       adminSummary: 'KIA marca continuidad de residencia, exenciones y antecedentes como puntos de control.',
@@ -619,6 +637,7 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'eligible_relative', label: 'Familiar incluido entre los familiares reagrupables en el supuesto aplicable', required: true, clientCheckable: false },
       { key: 'means', label: 'Medios económicos suficientes según unidad familiar', required: true, clientCheckable: false },
       { key: 'housing', label: 'Vivienda adecuada acreditada mediante el informe/documento exigible', required: true, clientCheckable: false },
+      { key: 'filing_actor', label: 'Persona reagrupante identificada como sujeto legitimado y representación validada si EXPERT presenta', required: true, clientCheckable: false },
     ],
     documents: [
       { key: 'sponsor_passport', label: 'Pasaporte y TIE/documentación de residencia del reagrupante', required: true },
@@ -626,9 +645,16 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'family_link', label: 'Documentación acreditativa del vínculo familiar, legalizada/apostillada y traducida cuando proceda', required: true },
       { key: 'means', label: 'Nóminas, contratos, declaraciones u otros justificantes de medios económicos', required: true },
       { key: 'housing_report', label: 'Informe de vivienda adecuada o documento aplicable', required: true },
+      { key: 'representation_power', label: 'Poder notarial, apud acta o acreditación de representación válida para Extranjería', required: false, conditionalWhen: 'EXPERT presenta en nombre de la persona reagrupante' },
     ],
-    steps: immigrationCaseSteps('solicitud de reagrupación familiar'),
-    tasks: immigrationTasks('Reagrupación Familiar', 'solicitud de reagrupación'),
+    steps: [
+      ...immigrationCaseSteps('solicitud de reagrupación familiar'),
+      { key: 'representation_gate', title: 'Validación de representación', description: 'La persona reagrupante puede presentar personalmente o mediante representante; EXPERT solo presenta tras acreditar representación válida.', clientVisible: true, humanApprovalRequired: true },
+    ],
+    tasks: [
+      ...immigrationTasks('Reagrupación Familiar', 'solicitud de reagrupación'),
+      { key: 'verify_representation', title: 'Validar representación — Reagrupación Familiar', description: 'Comprobar poder notarial, apud acta u otra habilitación válida antes de presentar por EXPERT.', priority: 'alta', phase: 'representation', humanApprovalRequired: true },
+    ],
     kia: {
       userSummary: 'KIA estructura familiar, medios y vivienda para evitar pedir documentos que no correspondan.',
       adminSummary: 'KIA calcula qué bloque necesita revisión humana y separa requisitos del reagrupante y del familiar.',
