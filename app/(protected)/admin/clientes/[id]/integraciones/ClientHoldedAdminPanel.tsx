@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { CheckCircle2, Eye, EyeOff, Loader2, Plug, RefreshCw, ShieldCheck, Unplug } from 'lucide-react';
 
 type Company = { id: string; name: string; nif: string | null };
@@ -24,6 +25,8 @@ type Client360 = {
 };
 
 export function ClientHoldedAdminPanel({ clientId }: { clientId: string }) {
+  const searchParams = useSearchParams();
+  const requestedCompanyId = searchParams.get('companyId');
   const [data, setData] = useState<Client360 | null>(null);
   const [companyId, setCompanyId] = useState('');
   const [apiKey, setApiKey] = useState('');
@@ -43,13 +46,13 @@ export function ClientHoldedAdminPanel({ clientId }: { clientId: string }) {
       if (!res.ok) throw new Error(json.error ?? 'No se pudo cargar el cliente');
       const next = json as Client360;
       setData(next);
-      setCompanyId((current) => current || next.profile.active_company_id || next.companies[0]?.id || '');
+      setCompanyId((current) => current || (requestedCompanyId && next.companies.some((company) => company.id === requestedCompanyId) ? requestedCompanyId : '') || next.profile.active_company_id || next.companies[0]?.id || '');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error de conexión');
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { void load(); }, [clientId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { void load(); }, [clientId, requestedCompanyId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const integration = useMemo(() => data?.integrations.find((item) => item.provider === 'holded' && item.company_id === companyId && item.status !== 'revoked') ?? null, [data, companyId]);
   const company = data?.companies.find((item) => item.id === companyId) ?? null;
