@@ -180,26 +180,26 @@ async function acknowledgeClientAction(
 
   const copy = locale === 'ru'
     ? {
-        subject: `Спасибо — мы получили ваше действие по expediente`,
-        html: `<p>Здравствуйте!</p>
-          <p>Спасибо. Мы получили и зарегистрировали: <strong>${input.taskTitle}</strong>.</p>
-          <p>EXPERT проверит полученные данные/документ и продолжит expediente со следующим этапом. Если потребуется дополнительная информация, мы сразу свяжемся с вами.</p>
-          <p>С уважением,<br>EXPERT</p>`,
+        subject: `👏 Спасибо! Всё получено — переходим к следующему этапу`,
+        html: `<p>Здравствуйте! 👋</p>
+          <p><strong>Спасибо — всё получено.</strong> Я уже отметила в expediente: <strong>${input.taskTitle}</strong>.</p>
+          <p>Теперь мы переходим к следующему этапу. Я буду следить за движением expediente и напишу вам, когда потребуется следующее действие.</p>
+          <p>Если хотите что-то уточнить, просто ответьте на это письмо.</p>`,
       }
     : locale === 'en'
       ? {
-          subject: 'Thank you — we received your action',
-          html: `<p>Hello,</p>
-            <p>Thank you. We have received and recorded: <strong>${input.taskTitle}</strong>.</p>
-            <p>EXPERT will review it and move your case to the next step. If anything else is needed, we will contact you.</p>
-            <p>EXPERT</p>`,
+          subject: '👏 Thank you! We’ve got it — moving to the next step',
+          html: `<p>Hello! 👋</p>
+            <p><strong>Thank you — we’ve received it.</strong> I’ve already recorded: <strong>${input.taskTitle}</strong>.</p>
+            <p>We can now move your case to the next stage. I’ll keep an eye on the workflow and let you know when we need anything else.</p>
+            <p>If you have a question, just reply to this email.</p>`,
         }
       : {
-          subject: 'Gracias — hemos recibido tu acción',
-          html: `<p>Hola,</p>
-            <p>Gracias. Hemos recibido y registrado: <strong>${input.taskTitle}</strong>.</p>
-            <p>EXPERT lo revisará y continuará el expediente con el siguiente paso. Si necesitamos algún dato adicional, te avisaremos.</p>
-            <p>Un saludo,<br>EXPERT</p>`,
+          subject: '👏 ¡Gracias! Ya lo tenemos — pasamos al siguiente paso',
+          html: `<p>¡Hola! 👋</p>
+            <p><strong>Gracias, ya lo tenemos.</strong> He dejado registrado en tu expediente: <strong>${input.taskTitle}</strong>.</p>
+            <p>Con esto podemos pasar a la siguiente etapa. Yo seguiré pendiente del flujo y te avisaré cuando necesitemos algo más de tu parte.</p>
+            <p>Si quieres preguntarnos algo, responde directamente a este correo.</p>`,
         };
 
   await enqueueEmail({
