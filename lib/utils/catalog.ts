@@ -293,7 +293,8 @@ export const services: Service[] = [
       'Comprobación de permanencia continuada y ausencias',
       'Revisión de vínculos familiares, medios económicos o informe de integración social según el caso',
       'Cumplimentación del formulario EX-10',
-      'Preparación y presentación telemática ante la Oficina de Extranjería',
+      'Preparación del expediente y validación de quién debe presentar según la legitimación específica del arraigo social',
+      'Presentación telemática por EXPERT únicamente cuando la normativa y la representación aplicable lo permitan',
       'Seguimiento ordinario del expediente',
       'Orientación para la solicitud del TIE tras resolución favorable',
     ],
@@ -326,7 +327,7 @@ export const services: Service[] = [
       { title: 'Evaluación inicial', text: 'Comprobamos permanencia, situación administrativa, antecedentes, posibles vínculos familiares y la vía concreta por la que debe tramitarse el arraigo social.' },
       { title: 'Checklist documental', text: 'Definimos la documentación exacta según se tramite por vínculos familiares y medios económicos o mediante informe de integración social.' },
       { title: 'Preparación del expediente', text: 'Cumplimentamos el EX-10, ordenamos la documentación y revisamos que el expediente sea coherente antes de presentarlo.' },
-      { title: 'Presentación y tasa', text: 'Presentamos el expediente telemáticamente y te indicamos el abono de la tasa 790-052 correspondiente.' },
+      { title: 'Presentación y tasa', text: 'Antes de presentar validamos quién está legitimado para hacerlo. Si EXPERT puede actuar válidamente como representante, comprobamos la acreditación exigible; en caso contrario te guiamos para la presentación personal/electrónica que corresponda. Después controlamos la tasa 790-052.' },
       { title: 'Seguimiento y TIE', text: 'Hacemos seguimiento ordinario del expediente y, si la resolución es favorable, te orientamos sobre la solicitud de la TIE.' },
     ],
     notIncluded: [
@@ -356,6 +357,7 @@ export const services: Service[] = [
       { q: '¿Cuánto tarda Extranjería en resolver?', a: 'El plazo administrativo de resolución es de 3 meses desde el día siguiente a la entrada de la solicitud en el registro del órgano competente.' },
       { q: '¿Podré trabajar si me conceden el arraigo social?', a: 'Sí. La concesión lleva aparejada autorización para trabajar por cuenta propia o ajena en España durante la vigencia de la autorización, sin limitación de ámbito geográfico u ocupación.' },
       { q: '¿EXPERT emite el informe de integración social?', a: 'No. El informe lo emite el órgano competente de la Comunidad Autónoma o, cuando proceda, el Ayuntamiento. EXPERT puede indicarte cuándo es necesario y revisar que se incorpore correctamente al expediente.' },
+      { q: '¿Puede EXPERT presentar el arraigo social por mí?', a: 'No lo damos por supuesto. La ficha oficial identifica como sujeto legitimado a la persona extranjera, o a su representante legal si es menor o incapaz. Antes de contratar la presentación validamos la vía exacta y, si procede representación, la acreditación exigida por la normativa de Extranjería.' },
     ],
   },
   {
@@ -393,7 +395,8 @@ export const services: Service[] = [
       'Evaluación del supuesto vigente de arraigo familiar',
       'Revisión y organización de documentación',
       'Preparación del formulario EX-10 cuando corresponda',
-      'Presentación telemática tras validación profesional',
+      'Validación del sujeto legitimado y de la forma de presentación para el supuesto concreto',
+      'Presentación telemática por EXPERT solo cuando la vía y la representación estén jurídicamente habilitadas',
       'Seguimiento ordinario del expediente',
     ],
     requiredDocs: [
