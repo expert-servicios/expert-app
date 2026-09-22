@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { isStaffRole } from '@/lib/auth/roles';
+import { completeServiceTaskAndUnlockNext } from '@/lib/services/service-task-orchestration';
 
 async function requireStaff(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -109,11 +110,31 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 });
   }
 
+  if (parsed.data.status === 'completada') {
+    try {
+      await completeServiceTaskAndUnlockNext(auth.admin, {
+        taskId: parsed.data.id,
+        actorId: auth.actorId,
+      });
+    } catch {
+      return NextResponse.json({ error: 'No se pudo completar la tarea o desbloquear la siguiente fase' }, { status: 500 });
+    }
+
+    if (parsed.data.assignedTo !== undefined) {
+      await auth.admin
+        .from('internal_tasks')
+        .update({ assigned_to: parsed.data.assignedTo, updated_at: new Date().toISOString() })
+        .eq('id', parsed.data.id);
+    }
+
+    return NextResponse.json({ ok: true });
+  }
+
   const now = new Date().toISOString();
   const updatePayload: Record<string, unknown> = { updated_at: now };
   if (parsed.data.status !== undefined) {
     updatePayload.status = parsed.data.status;
-    updatePayload.completed_at = parsed.data.status === 'completada' ? now : null;
+    updatePayload.completed_at = null;
   }
   if (parsed.data.assignedTo !== undefined) {
     updatePayload.assigned_to = parsed.data.assignedTo;
