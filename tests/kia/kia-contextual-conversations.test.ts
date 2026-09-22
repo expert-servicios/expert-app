@@ -86,4 +86,16 @@ describe('KIA contextual conversations foundation', () => {
     expect(executor).toContain(".eq('profile_id', clientId)");
   });
 
+
+  it('wires canonical server-side conversation persistence behind a feature flag', () => {
+    const route = source('app/api/ai/kia/route.ts');
+    const store = source('lib/ai/kia/kia-conversation-store.ts');
+    expect(route).toContain('KIA_CONTEXTUAL_CONVERSATIONS_ENABLED');
+    expect(route).toContain('loadKiaConversation');
+    expect(route).toContain('persistKiaConversationTurn');
+    expect(store).toContain(".eq('profile_id', input.profileId)");
+    expect(store).toContain("role: 'user'");
+    expect(store).toContain("role: 'assistant'");
+  });
+
 });
