@@ -59,10 +59,10 @@ const RU_SERVICE_PRESENTATIONS: Record<string, LocalizedServicePresentation> = {
     locale: 'ru',
     path: '/ru/uslugi/arraigo-social',
     title: 'Arraigo Social в Испании',
-    summary: 'Актуальные требования 2026: 2 года пребывания, основание, EX-10 и проверка допустимого способа подачи/представительства перед подачей.'
+    summary: 'Актуальные требования 2026: 2 года пребывания, основание, EX-10 и проверка допустимого способа подачи/представительства перед подачей.',
     categoryLabel: 'ВНЖ и гражданство',
     socialCardTitle: 'Arraigo Social 2026',
-    socialCardText: 'Проверка основания, документов, EX-10 и законного способа подачи.'
+    socialCardText: 'Проверка основания, документов, EX-10 и законного способа подачи.',
     indexable: true,
     sitemapPriority: 0.85,
     sitemapChangeFrequency: 'monthly',
