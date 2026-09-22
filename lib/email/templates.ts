@@ -90,11 +90,11 @@ function escapeHtml(value: string): string {
 // ── 0. Welcome — new user first login ───────────────────────────────────────
 export function welcomeEmail(name: string) {
   return {
-    subject: 'Bienvenido/a a EXPERT — tu área privada está lista',
+    subject: '👋 ¡Bienvenido/a a EXPERT! Tu espacio ya está listo',
     html: base('Bienvenido a EXPERT', `
       ${heading('¡Bienvenido/a a EXPERT!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para('Tu cuenta está activa. Desde tu área privada puedes consultar el estado de tus expedientes, subir documentación, revisar presupuestos y gestionar tus suscripciones, todo en un solo lugar.')}
+      ${para('¡Ya está todo preparado! Desde tu área privada puedes seguir tus expedientes, subir documentación, revisar presupuestos y gestionar tus servicios sin perderte nada.')}
       ${table(
         detail('Expedientes', 'Estado en tiempo real de cada trámite'),
         detail('Documentación', 'Subida segura y control de pendientes'),
@@ -110,11 +110,11 @@ export function welcomeEmail(name: string) {
 // ── 1. Quote received (client) ───────────────────────────────────────────────
 export function quoteReceivedClient(name: string, services: string) {
   return {
-    subject: 'Hemos recibido tu solicitud de presupuesto — EXPERT',
+    subject: '✨ ¡Gracias! Ya tenemos tu solicitud de presupuesto',
     html: base('Solicitud recibida', `
       ${heading('¡Solicitud recibida!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para('Hemos recibido tu solicitud de presupuesto y la estamos revisando. Nos pondremos en contacto contigo en un plazo de 24 horas hábiles con una propuesta personalizada.')}
+      ${para('¡Gracias por escribirnos! Ya tengo tu solicitud y la he dejado en revisión. Prepararemos una propuesta adaptada a lo que necesitas y te avisaremos en cuanto esté lista.')}
       ${table(detail('Servicios solicitados', escapeHtml(services)))}
       ${para('Si tienes alguna pregunta urgente, puedes escribirnos directamente.')}
       ${btn('Ver mi área privada', `${BRAND.appUrl}/dashboard`)}
@@ -153,7 +153,7 @@ export function academyLeadReceivedClient(input: {
 }) {
   const { name, programName, programPath = '/academy', paymentUrl, programPdfUrl } = input;
   return {
-    subject: 'Hemos recibido tu solicitud de información — EXPERT Business Academy',
+    subject: '🎓 ¡Gracias por tu interés! Ya estamos revisando tu solicitud',
     html: base('Solicitud recibida', `
       ${heading('¡Gracias por tu interés!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -197,11 +197,11 @@ export function academyLeadReceivedAdmin(input: {
 // ── 2d. Academy enrollment confirmed (client) ────────────────────────────────
 export function academyEnrollmentConfirmed(name: string, programName: string, amount: number) {
   return {
-    subject: '¡Matrícula confirmada! — EXPERT Business Academy',
+    subject: '🎉 ¡Matrícula confirmada! Bienvenido/a a EXPERT Business Academy',
     html: base('Matrícula confirmada', `
       ${heading('¡Bienvenido/a a EXPERT Business Academy!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para(`Hemos recibido tu pago y tu matrícula en <strong>${escapeHtml(programName)}</strong> está confirmada.`)}
+      ${para(`¡Perfecto! El pago ha llegado correctamente y tu matrícula en <strong>${escapeHtml(programName)}</strong> ya está confirmada. 🎉`)}
       ${table(
         detail('Programa', escapeHtml(programName)),
         detail('Importe abonado', `€${amount.toFixed(2)}`)
@@ -235,11 +235,11 @@ export function academyEnrollmentConfirmedAdmin(name: string, email: string, pro
 // can't be matched to an existing profile by email.
 export function academyEnrollmentPendingLink(name: string, programName: string) {
   return {
-    subject: '¡Pago recibido! Un último paso para activar tu acceso — EXPERT',
+    subject: '👏 ¡Pago recibido! Solo falta un pequeño paso para activar tu acceso',
     html: base('Pago recibido', `
       ${heading('¡Pago recibido!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para(`Hemos recibido tu pago de <strong>${escapeHtml(programName)}</strong>. Para activar tu acceso a la base de conocimientos y a tu área privada, crea una cuenta o inicia sesión usando el <strong>mismo email</strong> con el que has pagado.`)}
+      ${para(`¡Pago recibido! 👏 Solo nos queda vincularlo a tu cuenta. Crea una cuenta o inicia sesión usando el <strong>mismo email</strong> con el que has pagado y podremos activar tu acceso.`)}
       ${para('En cuanto lo hagas, nuestro equipo vinculará tu matrícula a tu cuenta y te avisaremos por email.')}
       ${btn('Crear cuenta / Iniciar sesión', `${BRAND.appUrl}/auth/login`)}
     `)
@@ -281,7 +281,7 @@ export function academyCertificationRequestedAdmin(name: string, email: string, 
 // ── 2i. Certification approved (client) ──────────────────────────────────────
 export function academyCertificationApproved(name: string, programName: string, price: string) {
   return {
-    subject: 'Tu certificación oficial ha sido aprobada — EXPERT',
+    subject: '✅ ¡Buenas noticias! Tu certificación oficial ha sido aprobada',
     html: base('Certificación aprobada', `
       ${heading('¡Certificación oficial aprobada!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -294,7 +294,7 @@ export function academyCertificationApproved(name: string, programName: string, 
 // ── 2j. Certification paid (client) ──────────────────────────────────────────
 export function academyCertificationPaid(name: string, programName: string, amount: number) {
   return {
-    subject: '¡Pago de certificación recibido! — EXPERT',
+    subject: '👏 ¡Pago recibido! Seguimos con tu certificación',
     html: base('Certificación pagada', `
       ${heading('¡Pago recibido!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -327,16 +327,16 @@ export function quoteResponded(name: string, amount: number, expiresAt: string |
     ? new Date(expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
     : 'próximamente';
   return {
-    subject: 'Tu presupuesto personalizado está listo — EXPERT',
+    subject: '✨ ¡Tu presupuesto está listo! Revísalo cuando quieras',
     html: base('Presupuesto listo', `
       ${heading('Tu presupuesto está listo')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para('Hemos preparado una propuesta personalizada para los servicios que solicitaste. Puedes revisarla y aceptar el pago desde tu área privada.')}
+      ${para('Ya tenemos preparada tu propuesta 😊. Puedes revisarla con calma desde tu área privada y, si todo encaja, continuar directamente con el pago.')}
       ${table(
         detail('Importe', `€${amount.toFixed(2)}`),
         detail('Válido hasta', expiry)
       )}
-      ${para('<em>Si tienes alguna duda sobre la propuesta, responde a este email y lo aclaramos.</em>')}
+      ${para('<em>Si algo no te queda claro, responde a este correo. Yo me encargo de dejar tu pregunta registrada para que EXPERT pueda revisarla contigo.</em>')}
       ${btn('Revisar y pagar', `${BRAND.appUrl}/dashboard/presupuestos`)}
     `)
   };
@@ -358,7 +358,7 @@ export function quoteAcceptedAdmin(name: string, amount: number) {
 // ── 5. Payment confirmed ──────────────────────────────────────────────────────
 export function paymentConfirmed(name: string, amount: number, service: string) {
   return {
-    subject: 'Pago recibido — comenzamos tu expediente',
+    subject: '👏 ¡Pago recibido! Empezamos con tu expediente',
     html: base('Pago confirmado', `
       ${heading('¡Pago confirmado!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -375,7 +375,7 @@ export function paymentConfirmed(name: string, amount: number, service: string) 
 
 export function servicePaymentConfirmed(name: string, amount: number, service: string) {
   return {
-    subject: 'Pago recibido - empezamos con tu trámite',
+    subject: '👏 ¡Pago recibido! Empezamos con tu trámite',
     html: base('Pago confirmado', `
       ${heading('Pago confirmado')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -424,7 +424,7 @@ const STATE_LABELS: Record<string, string> = {
 export function caseStatusUpdated(name: string, service: string, newState: string) {
   const label = STATE_LABELS[newState] ?? escapeHtml(newState);
   return {
-    subject: `Actualización de tu expediente: ${label}`,
+    subject: `📌 Tu expediente avanza: ${label}`,
     html: base('Estado actualizado', `
       ${heading('Tu expediente ha avanzado')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -442,7 +442,7 @@ export function caseStatusUpdated(name: string, service: string, newState: strin
 // ── 7. Service completed ──────────────────────────────────────────────────────
 export function serviceCompleted(name: string, service: string) {
   return {
-    subject: 'Tu servicio ha sido completado con éxito — EXPERT',
+    subject: '🎉 ¡Listo! Hemos completado tu servicio',
     html: base('Servicio completado', `
       ${heading('¡Trámite completado!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -457,7 +457,7 @@ export function serviceCompleted(name: string, service: string) {
 export function reviewRequest(name: string, service: string, token: string, brand?: TenantBrand) {
   const brandDisplay = brand?.name ?? 'EXPERT';
   return {
-    subject: `¿Cómo fue tu experiencia con ${brandDisplay}?`,
+    subject: `💬 ¿Nos cuentas cómo fue tu experiencia con ${brandDisplay}?`,
     html: base('Solicitud de reseña', `
       ${heading('¿Cómo fue tu experiencia?')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -473,7 +473,7 @@ export function reviewRequest(name: string, service: string, token: string, bran
 export function reviewReceived(name: string, brand?: TenantBrand) {
   const brandDisplay = brand?.name ?? 'EXPERT';
   return {
-    subject: `Gracias por tu valoración — ${brandDisplay}`,
+    subject: `💛 ¡Gracias por tu valoración! — ${brandDisplay}`,
     html: base('Valoración recibida', `
       ${heading('¡Gracias por tu opinión!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -489,7 +489,7 @@ export function subscriptionCreated(name: string, planName: string, periodEnd: s
     : 'próximamente';
   const safePlan = escapeHtml(planName);
   return {
-    subject: `Tu suscripción ${safePlan} está activa — EXPERT`,
+    subject: `✅ ¡Tu plan ${safePlan} ya está activo!`,
     html: base('Suscripción activa', `
       ${heading('¡Bienvenido a tu plan EXPERT!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -507,7 +507,7 @@ export function subscriptionCreated(name: string, planName: string, periodEnd: s
 // ── 10. Subscription payment failed ──────────────────────────────────────────
 export function subscriptionPaymentFailed(name: string, planName: string) {
   return {
-    subject: 'No hemos podido procesar el pago de tu suscripción — EXPERT',
+    subject: '⚠️ Necesitamos revisar el pago de tu suscripción',
     html: base('Pago fallido', `
       ${heading('Problema con el pago')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -544,7 +544,7 @@ export function contactMessage(nombre: string, email: string, asunto: string, me
 // ── 12. Contact form — auto-reply to sender ───────────────────────────────────
 export function contactAutoReply(nombre: string, asunto: string) {
   return {
-    subject: 'Hemos recibido tu mensaje — EXPERT',
+    subject: '💬 ¡Gracias! Ya tenemos tu mensaje',
     html: base('Mensaje recibido', `
       ${heading('¡Mensaje recibido!')}
       ${para(`Hola <strong>${escapeHtml(nombre)}</strong>,`)}
@@ -563,7 +563,7 @@ export function holdedMigrationConfirmed(name: string, packageName: string, onbo
   const onboardingBtn = onboardingUrl || fallback;
   const formacionBtn = formacionUrl || fallback;
   return {
-    subject: '¡Tu migración a Holded ha comenzado! Reserva tu onboarding y formación',
+    subject: '🚀 ¡Empezamos tu migración a Holded! Reserva el siguiente paso',
     html: base('Migración a Holded confirmada', `
       ${heading('¡Tu compra está confirmada!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -582,7 +582,7 @@ export function holdedMigrationConfirmed(name: string, packageName: string, onbo
 export function holdedFormacionConfirmed(name: string, calUrl: string) {
   const bookingUrl = calUrl || `${BRAND.appUrl}/cita`;
   return {
-    subject: '¡Sesión de formación Holded confirmada! Reserva tu horario',
+    subject: '🎓 ¡Formación Holded confirmada! Elige tu horario',
     html: base('Formación Holded confirmada', `
       ${heading('¡Tu sesión de formación está lista!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -602,7 +602,7 @@ export function holdedFormacionConfirmed(name: string, calUrl: string) {
 export function documentRequired(name: string, service: string, docs: string[]) {
   const list = docs.map((d) => `<li style="margin:6px 0;color:#29384a;">${escapeHtml(d)}</li>`).join('');
   return {
-    subject: 'Documentación necesaria para tu expediente — EXPERT',
+    subject: '📎 Siguiente paso: necesitamos esta documentación',
     html: base('Documentación requerida', `
       ${heading('Necesitamos documentación')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -617,7 +617,7 @@ export function documentRequired(name: string, service: string, docs: string[]) 
 // ── 16. Holded demo — solicitud recibida (usuario) ───────────────────────────
 export function holdedDemoRequested(name: string, companyName: string) {
   return {
-    subject: 'Hemos recibido tu solicitud de prueba Holded 14 días — EXPERT',
+    subject: '🚀 ¡Solicitud recibida! Preparamos tu prueba de Holded',
     html: base('Solicitud recibida', `
       ${heading('¡Solicitud recibida!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -667,7 +667,7 @@ export function holdedDemoRequestAdmin(input: {
 // ── 18. Holded demo — demo activada → reservar onboarding ────────────────────
 export function holdedDemoActivated(name: string, helpUrl: string) {
   return {
-    subject: '¡Tu prueba de Holded está activa! Siguiente paso',
+    subject: '🎉 ¡Tu prueba de Holded ya está activa! Vamos al siguiente paso',
     html: base('Demo Holded activa', `
       ${heading('¡Tu prueba de Holded está activa!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -687,7 +687,7 @@ export function holdedDemoActivated(name: string, helpUrl: string) {
 export function holdedOnboardingDone(name: string, calFormacionUrl: string) {
   const bookingUrl = calFormacionUrl || `${BRAND.appUrl}/cita`;
   return {
-    subject: 'Formación Holded disponible — EXPERT',
+    subject: '🎓 ¡Tu formación Holded ya está disponible!',
     html: base('Formación Holded disponible', `
       ${heading('Siguiente paso: formación Holded')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -742,7 +742,7 @@ export function saasLeadReceivedAdmin(input: {
 // ── 21. SaaS lead — auto-reply ────────────────────────────────────────────────
 export function saasLeadAutoReply(name: string) {
   return {
-    subject: 'Hemos recibido tu interés en EXPERT para asesorías',
+    subject: '✨ ¡Gracias por tu interés en EXPERT para asesorías!',
     html: base('Interés recibido', `
       ${heading('Gracias por tu interés')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -796,7 +796,7 @@ export function quoteWithPaymentLink(
     ? new Date(expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
     : null;
   return {
-    subject: `Tu presupuesto EXPERT está listo — ${service}`,
+    subject: `✨ ¡Tu presupuesto está listo! — ${service}`,
     html: base('Presupuesto listo para pagar', `
       ${heading('Tu propuesta personalizada está lista')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -829,7 +829,7 @@ export function subscriptionInvite(
   funFact: string
 ) {
   return {
-    subject: `Tu plan mensual EXPERT está listo para activar — ${planName}`,
+    subject: `🚀 ¡Tu plan ${planName} está listo para activar!`,
     html: base('Plan mensual listo', `
       ${heading('Activa tu plan mensual')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -858,7 +858,7 @@ export function subscriptionInvite(
 // Stage 1: nuevo — expediente abierto tras pago
 export function caseOpened(name: string, service: string, note: string | null, funFact: string) {
   return {
-    subject: `Tu expediente de ${service} está abierto — EXPERT`,
+    subject: `🚀 ¡Empezamos! Tu expediente de ${service} ya está abierto`,
     html: base('Expediente abierto', `
       ${heading('¡Tu expediente ya está abierto!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -887,7 +887,7 @@ export function caseDocsRequired(
 ) {
   const list = docs.map((d) => `<li style="margin:6px 0;color:#29384a;">${escapeHtml(d)}</li>`).join('');
   return {
-    subject: `Documentación necesaria para tu expediente — ${service}`,
+    subject: `📎 Para seguir con ${service}, necesitamos estos documentos`,
     html: base('Documentación requerida', `
       ${heading('Necesitamos tu documentación')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -910,7 +910,7 @@ export function caseDocsRequired(
 // Stage 3: docs_recibidos — documentación recibida
 export function caseDocsReceived(name: string, service: string, note: string | null, funFact: string, brand?: TenantBrand) {
   return {
-    subject: `Documentación recibida — comenzamos la revisión de tu expediente`,
+    subject: `👏 ¡Gracias! Ya tenemos tu documentación y empezamos a revisarla`,
     html: base('Documentación recibida', `
       ${heading('Documentación recibida')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -931,7 +931,7 @@ export function caseDocsReceived(name: string, service: string, note: string | n
 // Stage 4: en_tramitacion — tramitación activa
 export function caseBlocked(name: string, service: string, note: string | null, brand?: TenantBrand) {
   return {
-    subject: `Necesitamos tu atención — expediente de ${service}`,
+    subject: `⚠️ Necesitamos tu ayuda para seguir con ${service}`,
     html: base('Expediente pendiente de resolución', `
       ${heading('Tu expediente necesita tu atención')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -945,7 +945,7 @@ export function caseBlocked(name: string, service: string, note: string | null, 
 
 export function caseInProgress(name: string, service: string, note: string | null, funFact: string, brand?: TenantBrand) {
   return {
-    subject: `Tu expediente de ${service} está en tramitación`,
+    subject: `🚀 ¡Tu expediente avanza! ${service} ya está en tramitación`,
     html: base('Expediente en tramitación', `
       ${heading('Tu expediente está en tramitación')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -975,7 +975,7 @@ export function casePendingExternal(
 ) {
   const org = organism ? escapeHtml(organism) : 'el organismo correspondiente';
   return {
-    subject: `Expediente presentado ante ${org} — Pendiente de resolución`,
+    subject: `✅ ¡Presentado! Ahora esperamos respuesta de ${org}`,
     html: base('Expediente presentado', `
       ${heading('Tu expediente ha sido presentado')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -997,7 +997,7 @@ export function casePendingExternal(
 // Stage 6: resolucion_recibida — resolución del organismo recibida
 export function caseResolutionReceived(name: string, service: string, note: string | null, funFact: string) {
   return {
-    subject: `Resolución recibida para tu expediente de ${service} — EXPERT`,
+    subject: `📬 ¡Tenemos novedades! Ha llegado la resolución de ${service}`,
     html: base('Resolución recibida', `
       ${heading('Hemos recibido resolución')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -1018,7 +1018,7 @@ export function caseResolutionReceived(name: string, service: string, note: stri
 // Stage 7: entregado — servicio entregado al cliente
 export function caseDelivered(name: string, service: string, note: string | null, funFact: string, brand?: TenantBrand) {
   return {
-    subject: `Tu expediente de ${service} está completado — Documentación disponible`,
+    subject: `🎉 ¡Expediente completado! ${service} ya está listo`,
     html: base('Servicio entregado', `
       ${heading('¡Tu expediente está completado!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -1058,7 +1058,7 @@ export const ALL_CASE_STATE_LABELS: Record<string, string> = {
 
 export function presupuestoAvanzadoRequested(name: string, companyName: string) {
   return {
-    subject: 'Hemos recibido tu solicitud de presupuesto personalizado — EXPERT',
+    subject: '✨ ¡Gracias! Ya estamos preparando tu presupuesto personalizado',
     html: base('Solicitud de presupuesto recibida', `
       ${heading('¡Solicitud recibida!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -1119,7 +1119,7 @@ export function presupuestoAvanzadoAdmin(data: {
 // ── New message: admin → client notification ─────────────────────────────────
 export function caseNewMessageFromAdvisor(clientName: string, service: string, preview: string, caseId: string) {
   return {
-    subject: `Nuevo mensaje de tu asesor — ${service}`,
+    subject: `💬 Tienes un nuevo mensaje sobre ${service}`,
     html: base('Nuevo mensaje en tu expediente', `
       ${heading('Tu asesor te ha escrito')}
       ${para(`Hola <strong>${escapeHtml(clientName)}</strong>,`)}
@@ -1231,7 +1231,7 @@ export function caseNewMessageFromClient(clientName: string, service: string, pr
 // ── Cita: solicitud recibida (cliente) ──────────────────────────────────────
 export function citaRequested(name: string, service: string, preferredDate: string, preferredTime: string) {
   return {
-    subject: `Solicitud de cita recibida — EXPERT`,
+    subject: `📅 ¡Solicitud de cita recibida! Te confirmamos en breve`,
     html: base('Solicitud de cita recibida', `
       ${heading('¡Solicitud recibida!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -1256,7 +1256,7 @@ export function citaConfirmed(
   meetingUrl?: string | null
 ) {
   return {
-    subject: `Tu cita está confirmada — ${confirmedDate}`,
+    subject: `✅ ¡Cita confirmada! — ${confirmedDate}`,
     html: base('Cita confirmada', `
       ${heading('Tu cita está confirmada')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -1313,7 +1313,7 @@ export function citaReminder(
   meetingUrl?: string | null
 ) {
   return {
-    subject: `Recordatorio: tu cita mañana — ${confirmedDate}`,
+    subject: `⏰ Mañana nos vemos — ${confirmedDate}`,
     html: base('Recordatorio de cita', `
       ${heading('Tu cita es mañana')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
@@ -1563,7 +1563,7 @@ export function tenantWeeklyDigest(data: TenantWeeklyDigestData, brand?: TenantB
 // ── Document rejected — notify client to re-upload ──────────────────────────
 export function documentRejected(name: string, documentName: string, service: string, caseId: string) {
   return {
-    subject: `Documento rechazado — necesitamos que lo vuelvas a subir`,
+    subject: `📎 Necesitamos que vuelvas a subir este documento`,
     html: base('Documento rechazado', `
       ${heading('Necesitamos un nuevo documento')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
