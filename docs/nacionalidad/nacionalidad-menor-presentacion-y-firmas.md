@@ -95,12 +95,16 @@ Para menor de 14 años con ambos progenitores:
 - justificante de tasa;
 - revisión profesional final.
 
-## 8. SLA EXPERT de 24 horas
+## 8. SLA EXPERT de 24 horas laborables
 
-El compromiso operativo de 24 horas comienza únicamente cuando:
+El compromiso es de **24 horas laborables**, no 24 horas naturales. Para control operativo EXPERT se computa en la zona horaria Europe/Madrid dentro de la jornada 09:00-18:00 de días laborables. El reloj se detiene a las 18:00, permanece pausado fuera de jornada y fines de semana/festivos operativos, y continúa al inicio de la siguiente jornada laborable.
+
+El compromiso operativo comienza únicamente cuando:
 - el mandato está firmado y validado;
 - el modelo normalizado está firmado por los progenitores y validado;
 - están disponibles los documentos obligatorios necesarios para presentar.
+
+Desde ese hito se registra `sla_started_at` y se calcula `sla_due_at` consumiendo únicamente horas laborables hasta completar 24 horas.
 
 Desde ese hito:
 1. firma electrónica del documento por Ksenia cuando proceda;
