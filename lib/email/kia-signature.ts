@@ -78,7 +78,7 @@ export function kiaEmailSignatureHtml(input?: {
   const copy = COPY[locale];
 
   return `
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+    <table data-kia-signature="true" width="100%" cellpadding="0" cellspacing="0" role="presentation"
       style="margin:30px 0 4px;border-top:1px solid #eadfce;padding-top:22px;">
       <tr>
         <td width="72" valign="top" style="padding-right:14px;">
