@@ -16,7 +16,7 @@ import { getServiceOperationalBlueprint } from '@/lib/services/service-operation
 import { serviceProductionManifest } from '@/lib/services/service-production-manifest';
 import { runRegulatoryPulse } from '@/lib/regulatory/regulatory-monitor';
 import { getCurrentRegulatoryValue, getRegulatoryPulseSummary } from '@/lib/regulatory/regulatory-values';
-import { detectKiaLocaleFromLastMessage } from '@/lib/ai/kia/kia-language';
+import { resolveKiaLocale } from '@/lib/ai/kia/kia-locale';
 import {
   escapeTelegramHtml,
   isConfiguredTelegramAdminChat,
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
 
   const companyId = profile?.active_company_id ?? null;
   const profileLocale = profile?.preferred_language === 'ru' ? 'ru' : 'es';
-  const responseLocale = detectKiaLocaleFromLastMessage(inbound.text, profileLocale);
+  const responseLocale = resolveKiaLocale({ latestMessage: inbound.text, preferredLanguage: profileLocale });
   let actor;
   try {
     actor = await resolveKiaActorCapabilities({
