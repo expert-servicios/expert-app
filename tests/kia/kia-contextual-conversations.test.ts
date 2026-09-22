@@ -63,4 +63,27 @@ describe('KIA contextual conversations foundation', () => {
     expect(prompt).toContain('Nunca inventes una URL oficial');
     expect(prompt).toContain('Normalmente ofrece 1 servicio y como máximo 2');
   });
+
+  it('registers payment subscription and case operational tools as autonomous reads', () => {
+    for (const name of [
+      'get_user_orders',
+      'get_user_subscriptions',
+      'get_case_tasks',
+      'get_case_documents',
+      'get_case_timeline',
+    ]) {
+      const policy = getKiaToolPolicy(name);
+      expect(policy?.effect).toBe('read');
+      expect(policy?.requiresHumanApproval).toBe(false);
+      expect(['R0','R1']).toContain(policy?.riskTier);
+    }
+  });
+
+  it('requires case ownership in operational read tools', () => {
+    const executor = source('lib/ai/kia/kia-tool-executor.ts');
+    expect(executor).toContain(".eq('id', caseId).eq('client_id', clientId)");
+    expect(executor).toContain("'Expediente no autorizado.'");
+    expect(executor).toContain(".eq('profile_id', clientId)");
+  });
+
 });
