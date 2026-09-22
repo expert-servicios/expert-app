@@ -362,12 +362,12 @@ export function paymentConfirmed(name: string, amount: number, service: string) 
     html: base('Pago confirmado', `
       ${heading('¡Pago confirmado!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para('Hemos recibido tu pago correctamente. Tu expediente ha sido creado y ya podemos comenzar a trabajar en tu trámite.')}
+      ${para('¡Gracias! El pago ha llegado correctamente y tu expediente ya está creado. Desde aquí empezamos a moverlo paso a paso. 🚀')}
       ${table(
         detail('Servicio', escapeHtml(service)),
         detail('Importe abonado', `€${amount.toFixed(2)}`)
       )}
-      ${para('En breve nos pondremos en contacto para informarte sobre la documentación necesaria. También puedes seguir el estado de tu expediente desde tu área privada.')}
+      ${para('Ahora revisaremos qué documentación necesitamos exactamente para tu caso y te avisaré del siguiente paso. Mientras tanto, puedes ver el estado desde tu área privada.')}
       ${btn('Ver mi expediente', `${BRAND.appUrl}/dashboard/expedientes`)}
     `)
   };
@@ -379,7 +379,7 @@ export function servicePaymentConfirmed(name: string, amount: number, service: s
     html: base('Pago confirmado', `
       ${heading('Pago confirmado')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para('Hemos recibido tu pago correctamente. A partir de ahora revisaremos la documentación necesaria para preparar tu trámite.')}
+      ${para('¡Perfecto! El pago ha llegado correctamente. Ahora toca revisar qué documentación necesitamos para preparar tu trámite sin pedirte cosas de más.')}
       ${table(
         detail('Servicio', escapeHtml(service)),
         detail('Importe abonado', `€${amount.toFixed(2)}`)
@@ -428,12 +428,12 @@ export function caseStatusUpdated(name: string, service: string, newState: strin
     html: base('Estado actualizado', `
       ${heading('Tu expediente ha avanzado')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para('Queremos informarte de que el estado de tu expediente ha sido actualizado.')}
+      ${para('¡Tenemos avance! He registrado un nuevo estado en tu expediente:')}
       ${table(
         detail('Servicio', escapeHtml(service)),
         detail('Nuevo estado', `<strong style="color:#c88b25;">${label}</strong>`)
       )}
-      ${para('Puedes consultar todos los detalles desde tu área privada.')}
+      ${para('Puedes ver el detalle en tu área privada. Si esta actualización requiere algo de tu parte, te lo indicaremos claramente.')}
       ${btn('Ver mi expediente', `${BRAND.appUrl}/dashboard/expedientes`)}
     `)
   };
@@ -446,8 +446,8 @@ export function serviceCompleted(name: string, service: string) {
     html: base('Servicio completado', `
       ${heading('¡Trámite completado!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para(`Nos complace comunicarte que el trámite <strong>${escapeHtml(service)}</strong> ha sido completado satisfactoriamente.`)}
-      ${para('Ha sido un placer trabajar contigo. Si en el futuro necesitas cualquier otro servicio, estaremos aquí para ayudarte.')}
+      ${para(`🎉 ¡Ya está! Hemos completado <strong>${escapeHtml(service)}</strong>.`)}
+      ${para('Gracias por confiar en EXPERT. Guarda la documentación final y, si más adelante necesitas renovar, actualizar o gestionar algo relacionado, ya tendremos el contexto para ayudarte más rápido.')}
       ${btn('Ver mi área privada', `${BRAND.appUrl}/dashboard`)}
     `)
   };
@@ -606,9 +606,9 @@ export function documentRequired(name: string, service: string, docs: string[]) 
     html: base('Documentación requerida', `
       ${heading('Necesitamos documentación')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para(`Para continuar con tu expediente de <strong>${escapeHtml(service)}</strong>, necesitamos que nos proporciones los siguientes documentos:`)}
+      ${para(`Para que podamos seguir avanzando con <strong>${escapeHtml(service)}</strong>, necesito que nos envíes estos documentos:`)}
       <ul style="margin:16px 0;padding-left:20px;">${list}</ul>
-      ${para('Puedes subir los archivos directamente desde tu área privada de forma segura.')}
+      ${para('Puedes subirlos directamente desde tu área privada. En cuanto estén, te confirmaremos la recepción y pasaremos a la revisión.')}
       ${btn('Subir documentos', `${BRAND.appUrl}/dashboard/expedientes`)}
     `)
   };
@@ -914,10 +914,10 @@ export function caseDocsReceived(name: string, service: string, note: string | n
     html: base('Documentación recibida', `
       ${heading('Documentación recibida')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para(`Hemos recibido la documentación de tu expediente de <strong>${escapeHtml(service)}</strong>. Comenzamos la revisión.`)}
+      ${para(`👏 ¡Gracias! Ya tenemos la documentación de <strong>${escapeHtml(service)}</strong>. La hemos registrado y empezamos la revisión.`)}
       ${note ? noteBlock(note) : ''}
       ${stepsBlock([
-        'Tu gestor revisará la documentación en detalle (plazo habitual: 1-2 días hábiles).',
+        'El equipo de EXPERT revisará la documentación en detalle (plazo habitual: 1-2 días hábiles).',
         'Si necesitamos algo adicional, te lo comunicaremos por email.',
         'Una vez revisada toda la documentación, te informaremos del siguiente paso.',
         'Puedes consultar el estado en tiempo real desde tu panel privado.'
@@ -949,10 +949,10 @@ export function caseInProgress(name: string, service: string, note: string | nul
     html: base('Expediente en tramitación', `
       ${heading('Tu expediente está en tramitación')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para(`Tu expediente de <strong>${escapeHtml(service)}</strong> está siendo gestionado activamente por tu gestor. Estamos trabajando en ello.`)}
+      ${para(`🚀 Tu expediente de <strong>${escapeHtml(service)}</strong> ya está en tramitación. El equipo de EXPERT está trabajando en esta etapa y yo seguiré pendiente de cualquier novedad.`)}
       ${note ? noteBlock(note) : ''}
       ${stepsBlock([
-        'Tu gestor está tramitando activamente tu expediente.',
+        'El equipo de EXPERT está tramitando activamente tu expediente.',
         'Te notificaremos por email en cada avance relevante.',
         'Si tienes cualquier duda urgente, escríbenos por WhatsApp al +34 669 04 55 28.',
         'Consulta el estado en tiempo real desde tu panel privado.'
@@ -979,11 +979,11 @@ export function casePendingExternal(
     html: base('Expediente presentado', `
       ${heading('Tu expediente ha sido presentado')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para(`Tu expediente de <strong>${escapeHtml(service)}</strong> ha sido presentado correctamente ante <strong>${org}</strong>. Ahora estamos pendientes de su resolución.`)}
+      ${para(`✅ ¡Presentado! Tu expediente de <strong>${escapeHtml(service)}</strong> ya consta presentado ante <strong>${org}</strong>. Ahora entramos en la fase de espera y seguimiento.`)}
       ${note ? noteBlock(note) : ''}
       ${stepsBlock([
         `Hemos presentado tu expediente ante ${org} — recibirás acuse de recibo si aplica.`,
-        'Los plazos de resolución los fija el organismo: te informaremos en cuanto tengamos noticias.',
+        'Los plazos de resolución los marca el organismo. Yo seguiré pendiente y te avisaré en cuanto tengamos una novedad.',
         'Mientras tanto, no necesitas hacer nada. Nosotros hacemos el seguimiento.',
         'Si el organismo solicita documentación adicional, te lo comunicaremos de inmediato.'
       ])}
@@ -1001,10 +1001,10 @@ export function caseResolutionReceived(name: string, service: string, note: stri
     html: base('Resolución recibida', `
       ${heading('Hemos recibido resolución')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para(`Hemos recibido la resolución correspondiente a tu expediente de <strong>${escapeHtml(service)}</strong>. Tu gestor la está revisando y te informará del resultado en detalle.`)}
+      ${para(`Hemos recibido la resolución correspondiente a tu expediente de <strong>${escapeHtml(service)}</strong>. El equipo de EXPERT la está revisando y te informaremos del resultado en detalle.`)}
       ${note ? noteBlock(note) : ''}
       ${stepsBlock([
-        'Tu gestor ha recibido y está analizando la resolución.',
+        'El equipo de EXPERT ha recibido la resolución y está analizando su contenido.',
         'Te contactaremos por email (y si es urgente, por teléfono/WhatsApp) con el resultado.',
         'Si la resolución requiere alguna acción por tu parte, te lo indicaremos con claridad.',
         'Accede a tu panel para ver si hay documentos o actualizaciones disponibles.'
@@ -1022,11 +1022,11 @@ export function caseDelivered(name: string, service: string, note: string | null
     html: base('Servicio entregado', `
       ${heading('¡Tu expediente está completado!')}
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
-      ${para(`Tu expediente de <strong>${escapeHtml(service)}</strong> ha sido completado y la documentación final está disponible en tu panel privado.`)}
+      ${para(`🎉 ¡Enhorabuena! Tu expediente de <strong>${escapeHtml(service)}</strong> está completado y la documentación final ya está disponible en tu panel privado.`)}
       ${note ? noteBlock(note) : ''}
       ${stepsBlock([
         'Accede a tu panel y descarga la documentación final en la sección "Documentos".',
-        'Revisa que todo esté correcto — si hay algún error, escríbenos de inmediato.',
+        'Revísalo con calma. Si ves cualquier dato que quieras comprobar, responde a este correo y lo revisamos contigo.',
         'Guarda una copia de la documentación en un lugar seguro.',
         'Si en el futuro necesitas renovar o gestionar algo relacionado, ya sabemos dónde estamos.'
       ])}
