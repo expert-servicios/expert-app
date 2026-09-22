@@ -51,6 +51,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/solicitar-presupuesto`,           changeFrequency: 'yearly',  priority: 0.6, lastModified: now },
     { url: `${BASE}/para-asesorias`,                  changeFrequency: 'monthly', priority: 0.5, lastModified: now },
     { url: `${BASE}/ayuda/kia`,                       changeFrequency: 'monthly', priority: 0.45, lastModified: now },
+    { url: `${BASE}/ayuda/firmar-pdf-certificado-digital`, changeFrequency: 'yearly', priority: 0.35, lastModified: now },
     { url: `${BASE}/holded/pack-starter`,             changeFrequency: 'monthly', priority: 0.75, lastModified: now },
     { url: `${BASE}/holded/migracion-sin-inventario`, changeFrequency: 'monthly', priority: 0.7, lastModified: now },
     { url: `${BASE}/holded/migracion-con-inventario`, changeFrequency: 'monthly', priority: 0.7, lastModified: now },
