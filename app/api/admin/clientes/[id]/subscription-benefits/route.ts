@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { sendEmailOnce } from '@/lib/email/send';
+import { includedEntityOnboardingInvitationEmail } from '@/lib/email/onboarding-templates';
+import { getCalOnboardingUrl } from '@/lib/utils/cal';
 
 const BENEFIT_TYPES = ['included_entity', 'discount_percent', 'discount_amount', 'free_months'] as const;
 const COVERAGE_SCOPES = ['recurring_management', 'subscription_fee', 'custom'] as const;
@@ -23,6 +26,10 @@ async function requireAdmin(request: NextRequest) {
 
 function companyName(company: { razon_social: string | null; nombre_comercial: string | null; id: string }) {
   return company.razon_social || company.nombre_comercial || company.id;
+}
+
+function profileNameForEmail(fullName: string | null, email: string): string {
+  return fullName?.trim() || email.split('@')[0] || 'cliente';
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -166,11 +173,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   let subscriptionId: string | null = null;
   let checkoutSessionId: string | null = null;
+  let sourcePlanName: string | null = null;
 
   if (input.sourceType === 'subscription') {
     const { data: source, error } = await admin
       .from('subscriptions')
-      .select('id,client_id,company_id,status')
+      .select('id,client_id,company_id,status,plan_name')
       .eq('id', input.sourceId)
       .maybeSingle();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -181,6 +189,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'La suscripción no está en un estado válido para añadir beneficios' }, { status: 409 });
     }
     subscriptionId = source.id;
+    sourcePlanName = source.plan_name;
   } else {
     const { data: source, error } = await admin
       .from('checkout_sessions')
@@ -214,6 +223,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const validUntil = input.validUntil ? `${input.validUntil}T23:59:59.999Z` : null;
   if (validUntil && new Date(validUntil).getTime() < new Date(validFrom).getTime()) {
     return NextResponse.json({ error: 'La fecha fin no puede ser anterior a la fecha de inicio' }, { status: 400 });
+  }
+
+  const onboardingUrl = input.benefitType === 'included_entity' ? getCalOnboardingUrl() : null;
+  if (input.benefitType === 'included_entity' && !onboardingUrl) {
+    return NextResponse.json({ error: 'No está configurado el enlace de onboarding' }, { status: 503 });
   }
 
   const { data: created, error: insertError } = await admin
@@ -267,7 +281,62 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     },
   });
 
-  return NextResponse.json({ ok: true, id: created.id }, { status: 201 });
+  let invitationSent = false;
+  let invitationError: string | null = null;
+
+  if (input.benefitType === 'included_entity' && onboardingUrl) {
+    try {
+      const [{ data: authUser }, { data: beneficiary }] = await Promise.all([
+        admin.auth.admin.getUserById(clientId),
+        admin
+          .from('companies')
+          .select('razon_social,nombre_comercial')
+          .eq('id', input.beneficiaryCompanyId)
+          .maybeSingle(),
+      ]);
+      const recipientEmail = authUser.user?.email?.trim().toLowerCase() ?? null;
+      if (!recipientEmail) throw new Error('El cliente no tiene un email de acceso válido');
+
+      const beneficiaryName =
+        beneficiary?.razon_social || beneficiary?.nombre_comercial || 'tu nueva entidad';
+      const template = includedEntityOnboardingInvitationEmail({
+        name: profileNameForEmail(profileRes.data.full_name, recipientEmail),
+        companyName: beneficiaryName,
+        planName: sourcePlanName,
+        onboardingUrl,
+      });
+      const result = await sendEmailOnce({
+        to: recipientEmail,
+        eventType: 'onboarding.included_entity.invitation',
+        ...template,
+        metadata: {
+          entitlement_id: created.id,
+          subscription_id: subscriptionId,
+          primary_company_id: input.primaryCompanyId,
+          beneficiary_company_id: input.beneficiaryCompanyId,
+        },
+        idempotencyKey: `onboarding/included-entity/${created.id}`,
+      });
+      invitationSent = result.sent || Boolean(result.resendId);
+    } catch (error) {
+      invitationError = error instanceof Error ? error.message : 'No se pudo enviar la invitación';
+      await admin.from('audit_logs').insert({
+        actor_id: actorId,
+        action: 'subscription.benefit.onboarding_invitation_failed',
+        entity: 'subscription_entitlements',
+        entity_id: created.id,
+        metadata: { client_id: clientId, error: invitationError },
+      });
+    }
+  }
+
+  return NextResponse.json({
+    ok: true,
+    id: created.id,
+    onboardingInvitation: input.benefitType === 'included_entity'
+      ? { sent: invitationSent, error: invitationError }
+      : null,
+  }, { status: 201 });
 }
 
 const patchSchema = z.object({
