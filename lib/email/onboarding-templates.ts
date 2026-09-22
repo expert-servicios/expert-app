@@ -31,9 +31,9 @@ export function onboardingPreparationEmail(input: {
 }) {
   const safeName = escapeHtml(input.name);
   return {
-    subject: 'Antes de tu onboarding EXPERT — prepara tu cuenta de Holded',
+    subject: '🧭 Antes de vernos: deja tu Holded preparado para aprovechar la sesión',
     html: shell('Preparación de onboarding', `
-      <h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:24px;color:#07111d">Prepara tu sesión de onboarding</h1>
+      <h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:24px;color:#07111d">Vamos a preparar bien tu onboarding</h1>
       <p>Hola <strong>${safeName}</strong>,</p>
       <p>Para aprovechar al máximo nuestra reunión del <strong>${escapeHtml(input.meetingDate)} a las ${escapeHtml(input.meetingTime)}</strong>, te pedimos que revises previamente este material oficial de Holded Academy.</p>
       <p>La sesión estará orientada a <strong>resolver dudas concretas y revisar contigo la configuración</strong>, no a repetir contenidos básicos que puedes estudiar antes.</p>
@@ -55,9 +55,9 @@ export function onboardingPreparationEmail(input: {
 
 export function responsibleClientWelcomeEmail(input: { name: string; companyName: string; planName: string }) {
   return {
-    subject: 'Tu alta está completada — bienvenido/a al Espacio de Cliente Responsable EXPERT',
+    subject: '🎉 ¡Tu alta está completa! Ya tienes tu Espacio EXPERT preparado',
     html: shell('Alta completada', `
-      <h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:24px;color:#07111d">Tu alta EXPERT está completada</h1>
+      <h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:24px;color:#07111d">¡Ya está! Tu alta EXPERT está completada</h1>
       <p>Hola <strong>${escapeHtml(input.name)}</strong>,</p>
       <p>Hemos finalizado el onboarding de <strong>${escapeHtml(input.companyName)}</strong> para el plan <strong>${escapeHtml(input.planName)}</strong>.</p>
       <p>Desde este momento tu área privada funciona como tu <strong>Espacio de Cliente Responsable EXPERT</strong>: un lugar para mantener el control de tus expedientes, documentación, suscripción, comunicaciones y próximos pasos, con nuestro acompañamiento profesional.</p>
@@ -70,7 +70,7 @@ export function responsibleClientWelcomeEmail(input: { name: string; companyName
 export function onboardingReviewRequestEmail(input: { name: string; token: string }) {
   const reviewUrl = `${APP_URL}/gracias/opinion?token=${encodeURIComponent(input.token)}`;
   return {
-    subject: '¿Cómo ha sido tu proceso de alta con EXPERT?',
+    subject: '💬 ¿Nos cuentas cómo fue tu alta con EXPERT?',
     html: shell('Valoración del proceso de alta', `
       <h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:24px;color:#07111d">Ayúdanos a mejorar el onboarding</h1>
       <p>Hola <strong>${escapeHtml(input.name)}</strong>,</p>
@@ -92,9 +92,9 @@ export function includedEntityOnboardingInvitationEmail(input: {
     ? ` dentro de <strong>${escapeHtml(input.planName)}</strong>`
     : '';
   return {
-    subject: `Reserva el onboarding de ${input.companyName} — incluido en tu plan EXPERT`,
+    subject: `🚀 ${input.companyName} ya está incluida — reserva su onboarding`,
     html: shell('Onboarding de entidad incluida', `
-      <h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:24px;color:#07111d">Tu nueva entidad ya está incluida</h1>
+      <h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:24px;color:#07111d">¡Buenas noticias! Tu nueva entidad ya está incluida</h1>
       <p>Hola <strong>${escapeHtml(input.name)}</strong>,</p>
       <p>Hemos validado <strong>${escapeHtml(input.companyName)}</strong> como entidad incluida${planContext}, sin una segunda cuota.</p>
       <p>Ya puedes reservar la sesión de onboarding específica para esta actividad. En ella revisaremos su configuración fiscal y operativa, la conexión con Holded y las reglas necesarias para mantener separada la información de cada entidad.</p>
