@@ -90,7 +90,10 @@ describe('Client 360 recurring operations', () => {
     expect(documentsRoute).toContain("code: 'case_company_required'");
     expect(documentsRoute).toContain('checklist_item_key: checklistItemKey');
     expect(documentsRoute).toContain('client_comment: clientComment');
-    expect(documentsRoute).toContain('.update({ drive_file_id: driveResult.fileId })');
+    expect(documentsRoute).toContain('syncDocumentExternalCopy');
+    expect(documentsRoute).toContain("copyResult?.provider === 'google'");
+    expect(documentsRoute).toContain('.update({ drive_file_id: copyResult.fileId })');
+    expect(documentsRoute).toContain('Supabase Storage + documents remains the canonical record');
     expect(documentsRoute).not.toContain('.update({ metadata:');
   });
 
