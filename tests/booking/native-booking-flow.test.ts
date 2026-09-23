@@ -7,7 +7,7 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8'
 describe('native booking public flow', () => {
   const route = read('app/api/booking/route.ts');
   const availability = read('app/api/booking/availability/route.ts');
-  const migration = read('supabase/migrations/20260923130500_native_google_booking.sql');
+  const migration = read('supabase/migrations/20260923132714_native_google_booking.sql');
 
   it('protects public booking creation', () => {
     expect(route).toContain("action: 'booking_create'");
