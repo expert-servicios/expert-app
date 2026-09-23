@@ -84,6 +84,16 @@ async function ensureFreshToken(stored: Ms365StoredTokens) {
   return { access_token: refreshed.access_token, refreshed };
 }
 
+export async function prepareMs365StoredTokens(
+  stored: Ms365StoredTokens
+): Promise<{ stored: Ms365StoredTokens; refreshed: Ms365StoredTokens | null }> {
+  const { refreshed } = await ensureFreshToken(stored);
+  return {
+    stored: refreshed ? { ...stored, ...refreshed } : stored,
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
+}
+
 async function graphGet(accessToken: string, path: string) {
   const res = await fetch(`${GRAPH_BASE}${path}`, {
     headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
