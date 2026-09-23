@@ -4,11 +4,13 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { sendEmail } from '@/lib/email/send';
 import { citaConfirmed } from '@/lib/email/templates';
 import {
-  upsertCalendarEventSA,
-  updateCalendarMeetingSA,
-  deleteCalendarEventSA,
-  hasCalendarSA,
-} from '@/lib/integrations/google-calendar';
+  calendarProviderFromBookingProvider,
+  createBookingCalendarMeeting,
+  deleteBookingCalendarEvent,
+  getConfiguredBookingCalendarProvider,
+  isBookingCalendarConfigured,
+  updateBookingCalendarMeeting,
+} from '@/lib/booking/calendar-provider';
 import { formatMadridDate, formatMadridTime, madridLocalToDate } from '@/lib/booking/native-booking';
 
 async function requireAdmin(request: NextRequest) {
@@ -125,52 +127,18 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'No se pudo actualizar' }, { status: 500 });
     }
 
-    if (hasCalendarSA()) {
-      try {
-        const eventId = (appt.google_event_id ?? appt.provider_booking_id) as string | null;
-        if (appt.status === 'confirmed' && appt.appointment_date && appt.appointment_end) {
-          const start = new Date(appt.appointment_date as string);
-          const end = new Date(appt.appointment_end as string);
-          let syncedEventId: string;
+    {
+      const calendarProvider =
+        calendarProviderFromBookingProvider(appt.booking_provider) ??
+        getConfiguredBookingCalendarProvider();
 
-          if (eventId) {
-            syncedEventId = await updateCalendarMeetingSA(eventId, {
-              summary: `Cita: ${appt.service ?? 'Consultoría'} — ${appt.name}`,
-              description: `Cliente: ${appt.name} (${appt.email})\nServicio: ${appt.service ?? ''}\n${appt.meeting_url ? `Reunión: ${appt.meeting_url}` : ''}`.trim(),
-              start: start.toISOString(),
-              end: end.toISOString(),
-              timezone: 'Europe/Madrid',
-              reminderMinutesBefore: [1440, 60],
-            });
-          } else {
-            const createdEventId = await upsertCalendarEventSA({
-              summary: `Cita: ${appt.service ?? 'Consultoría'} — ${appt.name}`,
-              description: `Cliente: ${appt.name} (${appt.email})\nServicio: ${appt.service ?? ''}`.trim(),
-              date: formatMadridDate(start),
-              startTime: formatMadridTime(start),
-              endTime: formatMadridTime(end),
-              reminderMinutesBefore: [1440, 60],
-            });
-            if (!createdEventId) throw new Error('Google Calendar event sync returned no event id');
-            syncedEventId = createdEventId;
-          }
+      const nativeProvider = calendarProviderFromBookingProvider(appt.booking_provider);
+      const requiresRemoteSync = Boolean(
+        nativeProvider || appt.google_event_id || appt.provider_booking_id
+      );
+      const providerConfigured = await isBookingCalendarConfigured(calendarProvider);
 
-          if (syncedEventId !== appt.google_event_id) {
-            await admin
-              .from('appointments')
-              .update({
-                google_event_id: syncedEventId,
-                provider_booking_id: appt.booking_provider === 'google_native'
-                  ? syncedEventId
-                  : appt.provider_booking_id,
-              })
-              .eq('id', appt.id);
-          }
-        } else if (appt.status === 'cancelled' && eventId) {
-          await deleteCalendarEventSA(eventId);
-        }
-      } catch (calendarError) {
-        console.error('[citas] calendar sync:', calendarError);
+      if (!providerConfigured && requiresRemoteSync) {
         await admin
           .from('appointments')
           .update({
@@ -185,8 +153,83 @@ export async function PATCH(request: NextRequest) {
           })
           .eq('id', id);
         return NextResponse.json({
-          error: 'Calendar no pudo sincronizarse. EXPERT ha restaurado la cita al estado anterior.'
-        }, { status: 502 });
+          error: 'El proveedor de calendario de esta cita no está conectado. EXPERT ha restaurado el estado anterior.'
+        }, { status: 503 });
+      }
+
+      if (providerConfigured) {
+        try {
+          const eventId = (
+            calendarProvider === 'google'
+              ? (appt.google_event_id ?? appt.provider_booking_id)
+              : appt.provider_booking_id
+          ) as string | null;
+
+          if (appt.status === 'confirmed' && appt.appointment_date && appt.appointment_end) {
+            const start = new Date(appt.appointment_date as string);
+            const end = new Date(appt.appointment_end as string);
+            let syncedEventId: string;
+            let meetingUrl = appt.meeting_url as string | null;
+            let bookingProvider = appt.booking_provider as string | null;
+
+            if (eventId) {
+              syncedEventId = await updateBookingCalendarMeeting(eventId, {
+                summary: `Cita: ${appt.service ?? 'Consultoría'} — ${appt.name}`,
+                description: `Cliente: ${appt.name} (${appt.email})\nServicio: ${appt.service ?? ''}\n${appt.meeting_url ? `Reunión: ${appt.meeting_url}` : ''}`.trim(),
+                start: start.toISOString(),
+                end: end.toISOString(),
+                timezone: 'Europe/Madrid',
+                reminderMinutesBefore: [1440, 60],
+              }, calendarProvider);
+            } else {
+              const created = await createBookingCalendarMeeting({
+                summary: `Cita: ${appt.service ?? 'Consultoría'} — ${appt.name}`,
+                description: `Cliente: ${appt.name} (${appt.email})\nServicio: ${appt.service ?? ''}`.trim(),
+                start: start.toISOString(),
+                end: end.toISOString(),
+                attendeeEmail: appt.email as string,
+                timezone: 'Europe/Madrid',
+                reminderMinutesBefore: [1440, 60],
+              }, calendarProvider);
+              syncedEventId = created.eventId;
+              meetingUrl = created.meetingUrl;
+              bookingProvider = created.bookingProvider;
+            }
+
+            await admin
+              .from('appointments')
+              .update({
+                google_event_id: calendarProvider === 'google' ? syncedEventId : null,
+                provider_booking_id: syncedEventId,
+                booking_provider: bookingProvider ?? (
+                  calendarProvider === 'ms365' ? 'ms365_native' : 'google_native'
+                ),
+                meeting_url: meetingUrl,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', appt.id);
+          } else if (appt.status === 'cancelled' && eventId) {
+            await deleteBookingCalendarEvent(eventId, calendarProvider);
+          }
+        } catch (calendarError) {
+          console.error('[citas] calendar sync:', calendarError);
+          await admin
+            .from('appointments')
+            .update({
+              status: current.status,
+              confirmed_date: current.confirmed_date,
+              confirmed_time: current.confirmed_time,
+              appointment_date: current.appointment_date,
+              appointment_end: current.appointment_end,
+              meeting_url: current.meeting_url,
+              admin_notes: current.admin_notes,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', id);
+          return NextResponse.json({
+            error: 'Calendar no pudo sincronizarse. EXPERT ha restaurado la cita al estado anterior.'
+          }, { status: 502 });
+        }
       }
     }
 
@@ -231,17 +274,27 @@ export async function DELETE(request: NextRequest) {
       .single();
     if (fetchError || !appt) return NextResponse.json({ error: 'Cita no encontrada' }, { status: 404 });
 
-    const remoteEventId = (appt.google_event_id ?? (
-      appt.booking_provider === 'google_native' ? appt.provider_booking_id : null
-    )) as string | null;
+    const calendarProvider =
+      calendarProviderFromBookingProvider(appt.booking_provider) ??
+      (appt.google_event_id ? 'google' : null);
+    const remoteEventId = (
+      calendarProvider === 'google'
+        ? (appt.google_event_id ?? appt.provider_booking_id)
+        : appt.provider_booking_id
+    ) as string | null;
 
-    if (remoteEventId && hasCalendarSA()) {
+    if (calendarProvider && remoteEventId) {
+      if (!(await isBookingCalendarConfigured(calendarProvider))) {
+        return NextResponse.json({
+          error: 'El proveedor de calendario de esta cita no está conectado. La cita se conserva en EXPERT.'
+        }, { status: 503 });
+      }
       try {
-        await deleteCalendarEventSA(remoteEventId);
+        await deleteBookingCalendarEvent(remoteEventId, calendarProvider);
       } catch (calendarError) {
         console.error('[admin/citas] DELETE calendar:', calendarError);
         return NextResponse.json({
-          error: 'No se pudo eliminar el evento de Google Calendar. La cita se conserva en EXPERT para poder reconciliarla.'
+          error: 'No se pudo eliminar el evento remoto. La cita se conserva en EXPERT para poder reconciliarla.'
         }, { status: 502 });
       }
     }

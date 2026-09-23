@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { listCalendarBusyWindowsSA } from '@/lib/integrations/google-calendar';
+import { listBookingCalendarBusyWindows } from '@/lib/booking/calendar-provider';
 import { verifyPrivateBookingAuthorization } from '@/lib/booking/private-booking-authorization';
 import {
   BOOKING_MAX_DAYS,
@@ -40,8 +40,8 @@ export async function GET(request: NextRequest) {
     const now = new Date();
     const rangeEnd = new Date(now.getTime() + (days + 1) * 24 * 60 * 60 * 1000);
 
-    const [googleBusy, dbResult] = await Promise.all([
-      listCalendarBusyWindowsSA(now.toISOString(), rangeEnd.toISOString()),
+    const [calendarBusy, dbResult] = await Promise.all([
+      listBookingCalendarBusyWindows(now.toISOString(), rangeEnd.toISOString()),
       getSupabaseAdmin()
         .from('appointments')
         .select('appointment_date,appointment_end,status,created_at')
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
       }));
 
     const busy: BusyRange[] = [
-      ...googleBusy.map((window) => ({
+      ...calendarBusy.map((window) => ({
         start: new Date(window.start),
         end: new Date(window.end),
       })),
