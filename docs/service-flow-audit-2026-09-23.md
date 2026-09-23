@@ -15,7 +15,7 @@ Baseline: main at `fca0cfa7`. This is an inventory and shared-boundary regressio
 ## Reproduced and corrected
 
 1. A case insert could succeed while linking orders.case_id failed. A replay found the case and skipped the link permanently. Reconciliation now links both new and existing cases. Behavioral regression test failed before the fix and passes after it.
-2. A payment replay recreated completed/cancelled tasks because the lookup only included pending/in-progress status. The lookup now preserves tasks in every status and tolerates pre-existing duplicates. Behavioral tests failed before and pass after the fix.
+2. A payment replay recreated completed/cancelled tasks because the lookup only included pending/in-progress status. The lookup now preserves tasks in every status. It identifies tasks by service_slug and task_key, preserving renamed tasks and distinguishing identical titles in multi-service orders. Identity-free legacy tasks are reused only for unambiguous titles; ambiguous legacy records remain untouched and require manual reconciliation with the newly identified tasks. Behavioral tests failed before and pass after the fix.
 3. Three existing source-based tests depended on LF line endings and failed on Windows despite equivalent source. Their readers now normalize CRLF.
 
 The retry fix is sequential replay safety, not an atomic concurrency guarantee. Concurrent task insertion still needs a deliberate database uniqueness design, including legacy duplicates and task identity. The existing unique case order_id index protects case duplication.

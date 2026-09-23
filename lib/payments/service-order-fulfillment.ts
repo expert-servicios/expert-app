@@ -157,7 +157,8 @@ export async function ensureServiceOrderFulfillment(
       .select('id')
       .eq('case_id', caseId)
       .eq('source', 'system')
-      .eq('title', task.title)
+      .eq('metadata->>service_slug', serviceSlug)
+      .eq('metadata->>task_key', task.key)
       // A payment replay must also preserve completed or cancelled work.
       .limit(1)
       .maybeSingle();
@@ -166,6 +167,25 @@ export async function ensureServiceOrderFulfillment(
       throw new Error(`Could not resolve service task ${task.key}: ${taskLookupError.message}`);
     }
     if (existingTask) continue;
+
+    // Old tasks without identity can only be reused when the title maps to one
+    // task in this order. Never consume another service's identified task.
+    if (tasks.filter((entry) => entry.task.title === task.title).length === 1) {
+      const { data: legacyTask, error: legacyLookupError } = await admin
+        .from('internal_tasks')
+        .select('id')
+        .eq('case_id', caseId)
+        .eq('source', 'system')
+        .eq('title', task.title)
+        .is('metadata->>service_slug', null)
+        .is('metadata->>task_key', null)
+        .limit(1)
+        .maybeSingle();
+      if (legacyLookupError) {
+        throw new Error(`Could not resolve legacy service task ${task.key}: ${legacyLookupError.message}`);
+      }
+      if (legacyTask) continue;
+    }
 
     const { error: taskCreateError } = await admin
       .from('internal_tasks')

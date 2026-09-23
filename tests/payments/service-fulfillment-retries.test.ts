@@ -8,9 +8,14 @@ function database(failFirstLink = false) {
     let operation = 'select';
     let value: Record<string, unknown> = {};
     const filters: Array<(row: Record<string, unknown>) => boolean> = [];
+    const field = (row: Record<string, unknown>, key: string) => {
+      const [column, property] = key.split('->>');
+      return property ? (row[column] as Record<string, unknown> | null)?.[property] ?? null : row[column];
+    };
     const query = {
       select() { return query; },
-      eq(key: string, expected: unknown) { filters.push(row => row[key] === expected); return query; },
+      eq(key: string, expected: unknown) { filters.push(row => field(row, key) === expected); return query; },
+      is(key: string, expected: unknown) { filters.push(row => field(row, key) === expected); return query; },
       in(key: string, expected: unknown[]) { filters.push(row => expected.includes(row[key])); return query; },
       limit() { return query; },
       insert(data: Record<string, unknown>) { operation = 'insert'; value = data; return query; },
@@ -41,6 +46,28 @@ function database(failFirstLink = false) {
 const input = { orderId: 'order-1', serviceSlug: 'manual-test-service', clientId: 'client-1', companyId: null };
 
 describe('service fulfillment retries', () => {
+  it('keeps same-title tasks separate across services and preserves renamed completed tasks', async () => {
+    const { admin, state } = database();
+    const cart = { ...input, serviceSlug: 'certificado-digital-persona-fisica', serviceSlugs: ['pack-certificados-digitales'] };
+    await ensureServiceOrderFulfillment(admin, cart);
+    expect(state.tasks).toHaveLength(7);
+    expect(state.tasks.filter(task => task.title === 'Emitir certificado digital persona física')).toHaveLength(2);
+    state.tasks[0].title = 'Revisado por el gestor';
+    state.tasks[0].status = 'completada';
+    await ensureServiceOrderFulfillment(admin, cart);
+    expect(state.tasks).toHaveLength(7);
+    expect(state.tasks[0].title).toBe('Revisado por el gestor');
+  });
+
+  it('preserves a legacy task without identity when its title is unambiguous', async () => {
+    const { admin, state } = database();
+    await ensureServiceOrderFulfillment(admin, input);
+    state.tasks[0].metadata = null;
+    state.tasks[0].status = 'completada';
+    await ensureServiceOrderFulfillment(admin, input);
+    expect(state.tasks).toHaveLength(1);
+  });
+
   it('links a pre-existing case and creates its missing intake task', async () => {
     const { admin, state } = database();
     state.caseId = 'legacy-case';
