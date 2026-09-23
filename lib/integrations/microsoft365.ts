@@ -91,6 +91,16 @@ async function graphGet(accessToken: string, path: string) {
   return res.json();
 }
 
+async function readOptionalGraphJson(res: Response) {
+  const text = await res.text();
+  if (!text.trim()) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 async function graphPatch(accessToken: string, path: string, body: object) {
   const res = await fetch(`${GRAPH_BASE}${path}`, {
     method: 'PATCH',
@@ -101,7 +111,7 @@ async function graphPatch(accessToken: string, path: string, body: object) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err?.error?.message ?? `Graph PATCH ${path} failed: ${res.status}`);
   }
-  return res.status === 204 ? null : res.json();
+  return readOptionalGraphJson(res);
 }
 
 async function graphPost(accessToken: string, path: string, body: object, headers?: Record<string, string>) {
@@ -118,7 +128,7 @@ async function graphPost(accessToken: string, path: string, body: object, header
     const err = await res.json().catch(() => ({}));
     throw new Error(err?.error?.message ?? `Graph POST ${path} failed: ${res.status}`);
   }
-  return res.status === 204 ? null : res.json();
+  return readOptionalGraphJson(res);
 }
 
 async function graphDelete(accessToken: string, path: string) {
