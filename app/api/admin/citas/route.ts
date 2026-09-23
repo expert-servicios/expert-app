@@ -308,11 +308,14 @@ export async function PATCH(request: NextRequest) {
           const reconciliationNotice = reconciliationEventId
             ? `Evento remoto ${reconciliationEventId} requiere reconciliación tras fallo de sincronización.`
             : null;
+          const baseAdminNotes = keepSynchronizedSchedule
+            ? appt.admin_notes
+            : current.admin_notes;
           const reconciledAdminNotes = reconciliationNotice
-            ? [current.admin_notes?.trim(), reconciliationNotice]
+            ? [baseAdminNotes?.trim(), reconciliationNotice]
                 .filter(Boolean)
                 .join('\n\n')
-            : current.admin_notes;
+            : baseAdminNotes;
 
           const { error: restoreError } = await admin
             .from('appointments')
@@ -365,8 +368,8 @@ export async function PATCH(request: NextRequest) {
           }
 
           // Existing remote event and local schedule now agree on the requested
-          // time. Continue to the normal confirmation/response path.
-          appt.meeting_url = current.meeting_url;
+          // time. Continue to the normal confirmation/response path with the
+          // already-persisted values from the initial Admin update.
         }
       }
     }
