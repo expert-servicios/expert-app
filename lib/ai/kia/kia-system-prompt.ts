@@ -81,6 +81,19 @@ function matchesContext(
   return re.test(text);
 }
 
+export function shouldIncludeJusticia(params: {
+  message?: string;
+  serviceSlug?: string;
+  currentPage?: string;
+  currentTask?: string;
+  pageData?: Record<string, unknown>;
+}): boolean {
+  return JUSTICIA_CONTEXT_RE.test(params.message ?? "")
+    || JUSTICIA_CONTEXT_RE.test(params.serviceSlug ?? "")
+    || /constitucion.sl|arraigo|notaria|herencia/i.test(params.serviceSlug ?? "")
+    || matchesContext(JUSTICIA_CONTEXT_RE, params);
+}
+
 export function buildKiaSystemPrompt(params: {
   locale: "es" | "ru";
   channel: KiaChannel;
@@ -111,7 +124,7 @@ export function buildKiaSystemPrompt(params: {
   const withSs = params.includeSs ?? matchesContext(SS_CONTEXT_RE, params);
   const withDgt = params.includeDgt ?? matchesContext(DGT_CONTEXT_RE, params);
   const withJusticia =
-    params.includeJusticia ?? matchesContext(JUSTICIA_CONTEXT_RE, params);
+    params.includeJusticia ?? shouldIncludeJusticia(params);
   const withPae = params.includePae ?? matchesContext(PAE_CONTEXT_RE, params);
   const withCcaa =
     params.includeCcaa ?? matchesContext(CCAA_CONTEXT_RE, params);

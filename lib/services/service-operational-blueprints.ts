@@ -274,6 +274,7 @@ const blueprints: ServiceOperationalBlueprint[] = [
     initialNextAction: 'Validar residencia legal del menor, representación y documentación',
     requirements: [
       { key: 'born_in_spain', label: 'El menor ha nacido en España', required: true, clientCheckable: true },
+      { key: 'maternal_surname_review', label: 'Apellido personal de la madre, posible cambio por matrimonio y documento existente que lo acredita; revisar antes de solicitar prueba adicional', required: true, clientCheckable: true },
       { key: 'legal_residence_year', label: 'El menor cumple el periodo legal de residencia aplicable antes de presentar', required: true, clientCheckable: false },
       { key: 'representation', label: 'Representación/firma del menor correctamente resuelta según edad y patria potestad', required: true, clientCheckable: false },
     ],
@@ -446,6 +447,7 @@ const blueprints: ServiceOperationalBlueprint[] = [
     initialNextAction: 'Determinar plazo de residencia aplicable y validar continuidad/documentación',
     requirements: [
       { key: 'residence_period', label: 'Cumplimiento del periodo de residencia legal exigible según el supuesto personal', required: true, clientCheckable: false },
+      { key: 'maternal_surname_review', label: 'Apellido personal de la madre, posible cambio por matrimonio y documento existente que lo acredita; revisar antes de solicitar prueba adicional', required: true, clientCheckable: true },
       { key: 'continuous_residence', label: 'Residencia legal, continuada e inmediatamente anterior a la solicitud', required: true, clientCheckable: false },
       { key: 'good_conduct', label: 'Buena conducta cívica y ausencia de incidencias incompatibles', required: true, clientCheckable: false },
       { key: 'integration', label: 'Requisitos de integración/pruebas o exenciones correctamente determinados', required: true, clientCheckable: false },

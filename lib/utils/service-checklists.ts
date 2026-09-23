@@ -434,7 +434,6 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Edad actual del menor: menos de 14 años o entre 14 y 17 años',
       'Si existe acuerdo entre quienes ejercen la patria potestad y quién actuará como representante o asistente',
       'Diferencias en nombres/apellidos entre documentos (transliteración)',
-      'Apellido personal de la madre, posible cambio por matrimonio y documento existente que lo acredita',
     ],
     requiredDocs: [
       'Certificación literal de nacimiento española (Registro Civil)',
@@ -1292,7 +1291,13 @@ function operationalChecklist(serviceId: string): ServiceChecklist | undefined {
     keyQuestions: blueprint.requirements
       .filter((item) => item.clientCheckable)
       .map((item) => item.label),
-    botInstructions: `${blueprint.kia.userSummary} Escalar a revisión humana si: ${blueprint.kia.escalationRules.join('; ')}.`,
+    botInstructions: [
+      blueprint.kia.userSummary,
+      ...blueprint.documents
+        .filter((item) => !item.required && item.conditionalWhen)
+        .map((item) => `Documento condicional: ${item.label}. Cuándo procede: ${item.conditionalWhen}.`),
+      `Escalar a revisión humana si: ${blueprint.kia.escalationRules.join('; ')}.`,
+    ].join(' '),
   };
 }
 

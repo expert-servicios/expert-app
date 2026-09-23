@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { NATIONALITY_MINOR_SERVICE } from '@/lib/services/nationality-minor';
 import { getServiceDocumentChecklist, getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
 import { getGeneratedBatch1BlogArticles } from '@/lib/services/service-generated-content';
+import { getServiceChecklist, formatChecklistForPrompt } from '@/lib/utils/service-checklists';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 
@@ -14,6 +15,10 @@ describe('nationality minor service content and pricing', () => {
       expect(evidence?.required).toBe(false);
       expect(evidence?.conditionalWhen).toBeTruthy();
       expect(getServiceDocumentChecklist(slug)).not.toContain(evidence?.label);
+      const checklist = getServiceChecklist(slug)!;
+      expect(checklist.requiredData.some((item) => item.includes('Apellido personal de la madre'))).toBe(true);
+      expect(checklist.requiredDocs).not.toContain(evidence?.label);
+      expect(formatChecklistForPrompt(checklist)).toContain(`Cuándo procede: ${evidence?.conditionalWhen}`);
       const article = getGeneratedBatch1BlogArticles().find((item) => item.slug === `${slug}-documentos-y-errores-frecuentes`);
       expect(article?.body).toContain(`${evidence?.label} — ${evidence?.conditionalWhen}`);
     }
@@ -103,6 +108,7 @@ describe('nationality minor service content and pricing', () => {
     expect(page).toContain('/docs/apellidos-menor-nacionalidad-registro-civil');
     expect(page).toContain('/blog/apellidos-menor-nacionalidad-espanola-registro-civil');
     expect(page).not.toContain('Esta segunda opción es voluntaria');
+    expect(page).not.toContain('si la familia quiere acreditar');
     expect(page).toContain('no es una elección para evitar documentación');
     expect(templates).toContain('nationalityMinorDataConfirmationRu');
     expect(templates).toContain('/ru/docs/familii-rebenka-pri-poluchenii-grazhdanstva-ispanii');
