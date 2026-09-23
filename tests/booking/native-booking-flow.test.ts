@@ -137,6 +137,10 @@ describe('native booking public flow', () => {
     expect(calendarProvider).toContain('result.meetingUrl');
     expect(calendarProvider).toContain('BookingCalendarDeletionError');
     expect(calendarProvider).toContain('remoteDeleted');
+    expect(calendarProvider).toContain('BookingCalendarUpdateError');
+    expect(calendarProvider).toContain('remoteUpdated');
+    expect(adminRoute).toContain('updateError instanceof BookingCalendarUpdateError');
+    expect(adminRoute).toContain('updateError.remoteUpdated');
     expect(route).toContain('cleanupError instanceof BookingCalendarDeletionError');
     expect(route).toContain('cleanupError.remoteDeleted');
     expect(adminRoute).toContain('calendarError instanceof BookingCalendarDeletionError');
