@@ -6,6 +6,7 @@ import { citaConfirmed } from '@/lib/email/templates';
 import {
   BookingCalendarCreationError,
   BookingCalendarDeletionError,
+  BookingCalendarUpdateError,
   calendarProviderFromBookingProvider,
   createBookingCalendarMeeting,
   deleteBookingCalendarEvent,
@@ -178,15 +179,27 @@ export async function PATCH(request: NextRequest) {
             let bookingProvider = appt.booking_provider as string | null;
 
             if (eventId) {
-              syncedEventId = await updateBookingCalendarMeeting(eventId, {
-                summary: `Cita: ${appt.service ?? 'Consultoría'} — ${appt.name}`,
-                description: `Cliente: ${appt.name} (${appt.email})\nServicio: ${appt.service ?? ''}\n${appt.meeting_url ? `Reunión: ${appt.meeting_url}` : ''}`.trim(),
-                start: start.toISOString(),
-                end: end.toISOString(),
-                timezone: 'Europe/Madrid',
-                reminderMinutesBefore: [1440, 60],
-              }, calendarProvider);
-              existingRemoteEventUpdated = true;
+              try {
+                syncedEventId = await updateBookingCalendarMeeting(eventId, {
+                  summary: `Cita: ${appt.service ?? 'Consultoría'} — ${appt.name}`,
+                  description: `Cliente: ${appt.name} (${appt.email})\nServicio: ${appt.service ?? ''}\n${appt.meeting_url ? `Reunión: ${appt.meeting_url}` : ''}`.trim(),
+                  start: start.toISOString(),
+                  end: end.toISOString(),
+                  timezone: 'Europe/Madrid',
+                  reminderMinutesBefore: [1440, 60],
+                }, calendarProvider);
+                existingRemoteEventUpdated = true;
+              } catch (updateError) {
+                if (
+                  updateError instanceof BookingCalendarUpdateError &&
+                  updateError.remoteUpdated
+                ) {
+                  existingRemoteEventUpdated = true;
+                  syncedEventId = updateError.eventId;
+                  throw updateError;
+                }
+                throw updateError;
+              }
             } else {
               const created = await createBookingCalendarMeeting({
                 summary: `Cita: ${appt.service ?? 'Consultoría'} — ${appt.name}`,
