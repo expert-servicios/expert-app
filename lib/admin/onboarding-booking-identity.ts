@@ -100,6 +100,17 @@ async function resolveSingleOpenOnboardingCompanyId(admin: AdminClient, clientId
   return companyIds.length === 1 ? companyIds[0] : null;
 }
 
+export async function resolveAuthenticatedBookingIdentity(
+  admin: AdminClient,
+  clientId: string,
+): Promise<BookingIdentity> {
+  return {
+    clientId,
+    companyId: await resolveSingleOpenOnboardingCompanyId(admin, clientId),
+    source: 'auth_email',
+  };
+}
+
 /**
  * Resolve a Cal.com attendee to a customer and, when it can be proven
  * unambiguously, to the fiscal entity that owns the booking.
