@@ -165,6 +165,43 @@ export const kiaToolValidators = {
   get_user_pending_docs: z.object({
     caseId: z.string().uuid().optional(),
   }).strict(),
+  get_user_orders: z.object({
+    caseId: z.string().uuid().optional(),
+    limit: z.number().int().min(1).max(20).default(10),
+  }).strict(),
+  get_user_subscriptions: z.object({
+    companyId: z.string().uuid().optional(),
+    limit: z.number().int().min(1).max(20).default(10),
+  }).strict(),
+  get_case_tasks: z.object({
+    caseId: z.string().uuid(),
+    limit: z.number().int().min(1).max(50).default(20),
+  }).strict(),
+  get_case_documents: z.object({
+    caseId: z.string().uuid(),
+    limit: z.number().int().min(1).max(50).default(20),
+  }).strict(),
+  get_case_timeline: z.object({
+    caseId: z.string().uuid(),
+    limit: z.number().int().min(1).max(50).default(25),
+  }).strict(),
+  search_knowledge_resources: z.object({
+    query: z.string().min(2).max(300),
+    type: z.enum(['blog','doc','all']).default('all'),
+    category: z.string().max(100).optional(),
+    serviceSlug: z.string().max(160).optional(),
+    limit: z.number().int().min(1).max(10).default(5),
+  }).strict(),
+  get_official_sources: z.object({
+    serviceSlug: z.string().max(160).optional(),
+    topic: z.string().max(120).optional(),
+    limit: z.number().int().min(1).max(10).default(5),
+  }).strict(),
+  find_relevant_services: z.object({
+    query: z.string().min(2).max(300),
+    category: z.string().max(100).optional(),
+    limit: z.number().int().min(1).max(3).default(2),
+  }).strict(),
 } satisfies Record<string, z.ZodTypeAny>;
 
 type ToolName = keyof typeof kiaToolValidators;
@@ -207,6 +244,14 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_user_expedientes: 'List the authenticated user\'s own cases (expedientes). Use when the user asks "mis expedientes", "mis trámites", "qué tengo pendiente", or any question about their own cases. Returns status, service name, and ID.',
   get_user_companies: 'List the authenticated user\'s own companies. Use when the user asks "mis empresas", "mis sociedades", or questions about their company data.',
   get_user_pending_docs: 'List documents pending upload or review for the authenticated user. Use when the user asks "qué documentos me piden", "documentos pendientes", or similar.',
+  get_user_orders: 'List recent orders/payments for the authenticated user, optionally scoped to one case. Read-only and safe for payment-status questions.',
+  get_user_subscriptions: 'List active/recent EXPERT subscriptions for the authenticated user or active company. Read-only.',
+  get_case_tasks: 'List operational tasks for one case owned by the authenticated user.',
+  get_case_documents: 'List documents for one case owned by the authenticated user.',
+  get_case_timeline: 'Return a compact operational timeline for one case from case updates, tasks, documents and email events.',
+  search_knowledge_resources: 'Search EXPERT blog articles and knowledge-base documents. Use to share a relevant guide or article with the user. Returns canonical public links.',
+  get_official_sources: 'Return official source links from the canonical EXPERT Regulatory Registry for a service or topic. Use when the user wants to verify information independently.',
+  find_relevant_services: 'Find up to three EXPERT services that materially match the user need. Use only after answering the question and only when a real service need or interest is detected.',
 };
 
 export const KIA_TOOL_DEFINITIONS: KiaToolDefinition[] = (Object.keys(kiaToolValidators) as ToolName[]).map((name) => ({

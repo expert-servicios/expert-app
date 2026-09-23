@@ -6,9 +6,15 @@ export interface ResolveKiaLocaleInput {
   latestMessage?: string | null;
 }
 
+const CYRILLIC_RE = /[\u0400-\u04FF]/;
+const SPANISH_SIGNAL_RE = /\b(que|qué|como|cómo|cuando|cuándo|donde|dónde|gracias|hola|quiero|necesito|puedo|podemos|tengo|tenemos|mi|mis|el|la|los|las|para|por|con|sin|expediente|documento|pago|firma|residencia|nacionalidad|empresa|factura|impuesto)\b/i;
+
 export function detectKiaMessageLocale(text: string | null | undefined): KiaLocale | null {
-  if (!text?.trim()) return null;
-  return /[\u0400-\u04FF]/.test(text) ? 'ru' : null;
+  const value = text?.trim() ?? '';
+  if (!value) return null;
+  if (CYRILLIC_RE.test(value)) return 'ru';
+  if (SPANISH_SIGNAL_RE.test(value)) return 'es';
+  return null;
 }
 
 export function normalizeKiaPreferredLanguage(value: unknown): KiaLocale {
