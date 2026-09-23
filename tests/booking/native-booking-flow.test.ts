@@ -72,6 +72,9 @@ describe('native booking public flow', () => {
     expect(route).toContain('ensureOnboardingTask');
     expect(route).toContain('onboardingPreparationEmail');
     expect(route).toContain('getAdminNotificationEmails');
+    expect(route).toContain('identity: BookingIdentity | null');
+    expect(route).toContain('Onboarding booking requires a resolved EXPERT client identity');
+    expect(route).toContain("company_id: identity?.companyId ?? null");
   });
 
   it('waits for Meet creation and compensates orphan events before reporting failure', () => {
