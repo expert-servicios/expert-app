@@ -119,6 +119,11 @@ describe('native booking public flow', () => {
     expect(adminRoute).toContain('requiere reconciliación tras fallo de sincronización');
     expect(adminRoute).toContain('La cita se conserva en EXPERT');
     expect(calendar).toContain('cal.events.patch');
+    expect(calendar).toContain('ensureCalendarMeetingUrlSA');
+    expect(calendar).toContain('expert-recover-');
+    expect(calendarProvider).toContain('ensureBookingCalendarMeetingUrl');
+    expect(adminRoute).toContain('ensureBookingCalendarMeetingUrl');
+    expect(adminRoute).toContain('if (!meetingUrl)');
     expect(calendar).toContain('status === 404 || status === 410');
     expect(calendarProvider).toContain('deleteBookingCalendarEvent');
     expect(legacyCalWebhook).toContain('appointment_end: payload.endTime');
