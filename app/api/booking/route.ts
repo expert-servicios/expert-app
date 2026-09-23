@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import {
   BookingCalendarCreationError,
+  BookingCalendarDeletionError,
   createBookingCalendarMeeting,
   deleteBookingCalendarEvent,
   getConfiguredBookingCalendarProvider,
@@ -535,8 +536,15 @@ export async function POST(request: NextRequest) {
       try {
         await deleteBookingCalendarEvent(providerEventId, calendarProvider);
       } catch (cleanupError) {
-        remoteCleanupSucceeded = false;
-        console.error('[booking] calendar compensation failed:', cleanupError);
+        if (
+          cleanupError instanceof BookingCalendarDeletionError &&
+          cleanupError.remoteDeleted
+        ) {
+          console.error('[booking] calendar deleted; token persistence failed:', cleanupError);
+        } else {
+          remoteCleanupSucceeded = false;
+          console.error('[booking] calendar compensation failed:', cleanupError);
+        }
       }
     }
     if (appointmentId) {
