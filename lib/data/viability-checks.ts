@@ -495,6 +495,17 @@ const nacionalidad_menor: ViabilityCheck = {
       ],
     },
     {
+      id: 'apellidos_actuales',
+      type: 'select',
+      label: '¿Cómo figura actualmente el menor respecto a sus apellidos?',
+      required: true,
+      options: [
+        { value: 'dos_o_mas', label: 'Ya figura con dos o más apellidos' },
+        { value: 'uno', label: 'Figura con un solo apellido' },
+        { value: 'no_seguro', label: 'No estoy seguro/a', escalates: true },
+      ],
+    },
+    {
       id: 'cert_nacimiento',
       type: 'boolean',
       label: '¿Dispones del certificado literal de nacimiento del menor expedido por el Registro Civil español?',
@@ -515,6 +526,7 @@ const nacionalidad_menor: ViabilityCheck = {
     { id: 'tie_padres', label: 'NIE/TIE de los progenitores o representantes, si procede', required: false },
     { id: 'empadronamiento', label: 'Empadronamiento familiar/colectivo actualizado', required: true },
     { id: 'centro_escolar', label: 'Certificado del centro escolar o educativo cuando corresponda por edad y escolarización', required: false },
+    { id: 'apellido_materno', label: 'Documento que acredite el apellido personal/de nacimiento de la madre, solo si la familia desea utilizarlo como segundo apellido del menor', required: false },
   ],
   aiCriteria: `Eres un experto en extranjería y nacionalidad española. Evalúa la viabilidad de la nacionalidad española por residencia de un menor nacido en España.
 
@@ -534,11 +546,17 @@ PRUEBAS:
 - Menores de 18 años: exentos de DELE A2 para nacionalidad.
 - Revisar documentación escolar/educativa cuando corresponda para acreditar integración.
 
+APELLIDOS PARA REGISTRO CIVIL:
+- Antes de preparar el formulario oficial, confirmar por escrito el nombre y los apellidos que se pretenden consignar tras la adquisición de la nacionalidad.
+- Si el menor usa un solo apellido, esta circunstancia no hace inviable el expediente: puede documentarse la duplicación del apellido actual o, si la familia lo prefiere, el apellido personal/de nacimiento de la madre cuando pueda acreditarse.
+- No pedir el certificado de nacimiento de la madre por defecto. Solo es un documento condicional si la familia elige utilizar un apellido materno distinto.
+- No presentar como libre elección la posibilidad de usar cualquier apellido ajeno a la filiación.
+
 CRITERIOS DE VIABILIDAD:
 - VIABLE: nacido en España + 1 año de residencia legal/continuada/inmediatamente anterior + documentación esencial + representación clara.
-- PARCIAL: cumple el año pero falta documentación subsanable o acreditación escolar/representativa.
+- PARCIAL: cumple el año pero falta documentación subsanable, acreditación escolar/representativa o todavía no se han cerrado los apellidos registrales.
 - NO VIABLE: no ha cumplido el año de residencia legal o ya no es menor para este servicio específico.
-- ESCALAR: desacuerdo entre progenitores, representación dudosa, interrupciones de residencia, filiación compleja, posible nacionalidad de origen o apatridia.`,
+- ESCALAR: desacuerdo entre progenitores, representación dudosa, interrupciones de residencia, filiación o apellidos complejos, posible nacionalidad de origen o apatridia.`,
 };
 
 // ── Permiso Inicial de Residencia ────────────────────────────────────────────
