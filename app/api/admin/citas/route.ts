@@ -164,6 +164,7 @@ export async function PATCH(request: NextRequest) {
       if (providerConfigured) {
         let existingRemoteEventUpdated = false;
         let reconciliationMeetingUrl: string | null = null;
+        let meetingUrlRecoveryEventId: string | null = null;
 
         try {
           const eventId = (
@@ -192,10 +193,15 @@ export async function PATCH(request: NextRequest) {
                 existingRemoteEventUpdated = true;
 
                 if (!meetingUrl) {
-                  meetingUrl = await ensureBookingCalendarMeetingUrl(
-                    syncedEventId,
-                    calendarProvider
-                  );
+                  try {
+                    meetingUrl = await ensureBookingCalendarMeetingUrl(
+                      syncedEventId,
+                      calendarProvider
+                    );
+                  } catch (meetingUrlError) {
+                    meetingUrlRecoveryEventId = syncedEventId;
+                    throw meetingUrlError;
+                  }
                 }
               } catch (updateError) {
                 if (
@@ -301,7 +307,7 @@ export async function PATCH(request: NextRequest) {
           const reconciliationEventId =
             creationError?.cleanupFailed === true
               ? creationError.eventId
-              : null;
+              : meetingUrlRecoveryEventId;
           const reconciliationProvider =
             creationError?.cleanupFailed === true
               ? creationError.provider
