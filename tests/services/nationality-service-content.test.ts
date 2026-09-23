@@ -81,6 +81,22 @@ describe('nationality minor service content and pricing', () => {
     expect(ru).toContain('Справка из школы или учебного центра');
   });
 
+  it('links surname guidance from the service and confirmation email template', () => {
+    const page = read('app/(public)/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana/page.tsx');
+    const templates = read('lib/email/templates.ts');
+    const blog = read('lib/utils/blog.ts');
+    const docs = read('lib/utils/docs.ts');
+
+    expect(page).toContain('/docs/apellidos-menor-nacionalidad-registro-civil');
+    expect(page).toContain('/blog/apellidos-menor-nacionalidad-espanola-registro-civil');
+    expect(page).toContain('Esta segunda opción es voluntaria');
+    expect(templates).toContain('nationalityMinorDataConfirmationRu');
+    expect(templates).toContain('/ru/docs/familii-rebenka-pri-poluchenii-grazhdanstva-ispanii');
+    expect(templates).toContain('/ru/blog/odna-familiya-u-rebenka-grazhdanstvo-ispanii');
+    expect(blog).toContain("slug: 'apellidos-menor-nacionalidad-espanola-registro-civil'");
+    expect(docs).toContain("slug: 'apellidos-menor-nacionalidad-registro-civil'");
+  });
+
   it('keeps the knowledge guide aligned with the mandatory disbursement', () => {
     const source = read('lib/utils/docs.ts');
     expect(source).not.toContain('Esta tasa se abona aparte de los honorarios profesionales');

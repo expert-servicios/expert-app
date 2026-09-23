@@ -556,6 +556,36 @@ export function contactAutoReply(nombre: string, asunto: string) {
   };
 }
 
+// ── 12b. Nacionalidad menor — confirmación de datos registrales (RU) ──────────
+export function nationalityMinorDataConfirmationRu(input: {
+  childName: string;
+  residenceStart: string;
+  address: string;
+  proposedRegistryName: string;
+}) {
+  const surnameDocUrl = `${BRAND.appUrl}/ru/docs/familii-rebenka-pri-poluchenii-grazhdanstva-ispanii`;
+  const surnameBlogUrl = `${BRAND.appUrl}/ru/blog/odna-familiya-u-rebenka-grazhdanstvo-ispanii`;
+
+  return {
+    subject: 'Руслана — повторное подтверждение данных для официального заявления',
+    html: base('Подтверждение данных для заявления', `
+      ${heading('Нужно подтвердить один важный пункт')}
+      ${para('Здравствуйте, Вячеслав и Яна!')}
+      ${para(`Мы уточнили правила указания фамилий при последующей регистрации ребёнка в испанском Registro Civil. Год начала легальной резиденции для заявления фиксируем как <strong>${escapeHtml(input.residenceStart)}</strong>.`)}
+      ${table(
+        detail('Имя ребёнка', escapeHtml(input.childName)),
+        detail('Адрес', escapeHtml(input.address)),
+        detail('Текущий вариант для Registro Civil', escapeHtml(input.proposedRegistryName))
+      )}
+      ${para('Если у ребёнка сейчас одна фамилия, есть два практических варианта: <strong>1) продублировать её</strong> — например, KONOVA KONOVA; либо <strong>2) использовать вторым компонентом личную/девичью фамилию матери</strong>, если семья этого хочет и может подтвердить её документально. Второй вариант является добровольным, а не обязательным.')}
+      ${para('Если вы выбираете фамилию матери до брака, пришлите документ, где она указана — например, свидетельство о рождении матери. Для иностранного документа проверим необходимость апостиля/легализации и, если документ не на испанском языке, официального перевода.')}
+      ${para(`Подробнее: <a href="${surnameDocUrl}" style="color:#c88b25;">краткая инструкция EXPERT</a> · <a href="${surnameBlogUrl}" style="color:#c88b25;">статья с примерами</a>.`)}
+      ${para('<strong>Пожалуйста, ответьте одним из вариантов:</strong><br>1. «Подтверждаем: RUSLANA KONOVA KONOVA».<br>2. «Хотим использовать фамилию матери до брака: ______». В этом случае приложите подтверждающий документ, если он уже есть.')}
+      ${para('После вашего ответа мы окончательно заполним официальный бланк и направим его на подпись.')}
+    `)
+  };
+}
+
 // ── 13. Holded — migration package confirmed ──────────────────────────────────
 export function holdedMigrationConfirmed(name: string, packageName: string, onboardingUrl: string, formacionUrl?: string) {
   const fallback = `${BRAND.appUrl}/cita`;

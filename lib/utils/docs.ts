@@ -29,6 +29,67 @@ export const docCategories: { slug: DocCategorySlug; name: string }[] = [
 export const docs: KnowledgeDoc[] = [
   ...getGeneratedBatch1KnowledgeDocs(),
   {
+    slug: 'apellidos-menor-nacionalidad-registro-civil',
+    category: 'extranjeria-nacionalidad',
+    title: 'Apellidos del menor al adquirir la nacionalidad española',
+    excerpt:
+      'Guía operativa para decidir entre duplicar un apellido único o acreditar el apellido personal de la madre antes de la inscripción española.',
+    tags: ['apellidos', 'nacionalidad española', 'Registro Civil', 'menores', 'apellido materno', 'traducción jurada'],
+    updatedAt: '23 sep 2026',
+    readTime: '6 min',
+    relatedServiceSlugs: ['nacionalidad-espanola-menor-nacido-en-espana'],
+    relatedServiceCategories: ['extranjeria-nacionalidad'],
+    seoTitle: 'Apellidos del menor al adquirir la nacionalidad española | EXPERT',
+    seoDescription:
+      'Qué hacer si el menor tiene un solo apellido: duplicarlo o acreditar el apellido personal de la madre. Documentación y traducción jurada.',
+    body: `
+## Regla operativa
+
+Para un extranjero con filiación determinada que adquiere la nacionalidad española, la regla registral parte de los apellidos derivados de la filiación. La Instrucción de 23 de mayo de 2007 indica que, en principio, se consignan el primer apellido del padre y el primer apellido personal de la madre.
+
+Si el interesado solo venía usando **un apellido** y no se determina otro apellido por la filiación, ese apellido se **duplica**.
+
+## Opción A: duplicar el apellido actual
+
+Es la opción más sencilla cuando la familia no desea aportar documentación adicional sobre el apellido personal de la madre.
+
+Ejemplo: **KONOVA → KONOVA KONOVA**.
+
+## Opción B: incorporar el apellido personal o de nacimiento de la madre
+
+Es posible plantear el segundo apellido a partir del apellido personal/de nacimiento de la madre cuando pueda acreditarse.
+
+No es obligatorio elegir esta opción. Si la familia prefiere la duplicación, no es necesario aportar un certificado de nacimiento de la madre solo por este motivo.
+
+Cuando la madre usa actualmente un apellido adquirido por matrimonio, conviene revisar su documentación de nacimiento para identificar el apellido personal que corresponde a su filiación.
+
+## Documentación
+
+Para acreditar el apellido materno puede utilizarse, entre otros documentos idóneos, el **certificado de nacimiento de la madre**.
+
+Si el documento es extranjero:
+
+- revisar si requiere apostilla o legalización;
+- revisar que sea válido y legible;
+- si no está en castellano, aportar la traducción oficial correspondiente;
+- una traducción de Traductor-Intérprete Jurado nombrado por el Ministerio de Asuntos Exteriores tiene carácter oficial en España.
+
+## Lo que no puede hacerse
+
+La solicitud de nacionalidad no permite escoger arbitrariamente un apellido sin conexión con la filiación. Si se pretende utilizar un apellido distinto, debe existir base jurídica y documental suficiente.
+
+## Antes de firmar la solicitud
+
+EXPERT recomienda confirmar por escrito:
+
+1. si se opta por duplicar el apellido actual;
+2. o si se quiere acreditar el apellido personal/de nacimiento de la madre;
+3. y, en este segundo caso, revisar el documento acreditativo antes de cerrar el formulario.
+
+**Fuentes oficiales**: [BOE - Instrucción sobre apellidos de extranjeros nacionalizados](https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948) · [Sede del Ministerio de Justicia - Nacionalidad por residencia](https://sede.mjusticia.gob.es/es/tramites/nacionalidad-espanola) · [MAEC - Traducción e interpretación jurada](https://www.exteriores.gob.es/es/ServiciosAlCiudadano/Paginas/Traductores-Interpretes-Jurados.aspx)
+    `
+  },
+  {
     slug: 'nacionalidad-espanola-menor-nacido-en-espana',
     category: 'extranjeria-nacionalidad',
     title: 'Nacionalidad española para menor nacido en España',
