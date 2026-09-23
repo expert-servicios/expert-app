@@ -272,9 +272,23 @@ export async function POST(request: NextRequest) {
       if (signedAuthorization) {
         bookingEmail = signedAuthorization.email;
         if (signedAuthorization.clientId) {
+          let signedCompanyId = signedAuthorization.companyId;
+          if (service.key === 'onboarding' && !signedCompanyId) {
+            const companyIds = await listOpenOnboardingCompanyIds(
+              admin,
+              signedAuthorization.clientId
+            );
+            if (companyIds.length > 1) {
+              return NextResponse.json(
+                { error: 'La invitación no identifica una empresa concreta. Abre el onboarding desde la empresa correspondiente en EXPERT.' },
+                { status: 409 }
+              );
+            }
+            signedCompanyId = companyIds[0] ?? null;
+          }
           privateIdentity = {
             clientId: signedAuthorization.clientId,
-            companyId: signedAuthorization.companyId,
+            companyId: signedCompanyId,
             source: 'auth_email',
           };
         }
