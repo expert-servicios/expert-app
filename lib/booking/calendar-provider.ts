@@ -3,6 +3,7 @@ import {
   CalendarMeetingCreationError,
   createCalendarMeetingSA,
   deleteCalendarEventSA,
+  ensureCalendarMeetingUrlSA,
   hasCalendarSA,
   listCalendarBusyWindowsSA,
   updateCalendarMeetingSA,
@@ -10,6 +11,7 @@ import {
 import {
   createMs365TeamsMeeting,
   deleteMs365CalendarEvent,
+  getMs365TeamsMeetingUrl,
   listMs365CalendarBusyWindows,
   updateMs365TeamsMeeting,
   type Ms365StoredTokens,
@@ -307,6 +309,25 @@ export async function createBookingCalendarMeeting(
       error
     );
   }
+}
+
+export async function ensureBookingCalendarMeetingUrl(
+  eventId: string,
+  provider = configuredProviderName()
+): Promise<string> {
+  if (provider === 'google') {
+    return ensureCalendarMeetingUrlSA(eventId);
+  }
+
+  const stored = await getMs365StoredTokens();
+  const result = await getMs365TeamsMeetingUrl(stored, eventId);
+  await persistMs365Refresh(result.refreshed);
+
+  if (!result.meetingUrl) {
+    throw new Error('Microsoft Teams URL could not be recovered for the existing event');
+  }
+
+  return result.meetingUrl;
 }
 
 export async function updateBookingCalendarMeeting(
