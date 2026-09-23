@@ -66,6 +66,22 @@ describe('nationality minor service content and pricing', () => {
     expect(block).toContain('exentos de DELE A2');
   });
 
+  it('treats registry surnames as an explicit pre-application gate', () => {
+    const viability = read('lib/data/viability-checks.ts');
+    const blueprint = read('lib/services/service-operational-blueprints.ts');
+
+    expect(viability).toContain("id: 'apellidos_actuales'");
+    expect(viability).toContain("value: 'uno'");
+    expect(viability).toContain('No pedir el certificado de nacimiento de la madre por defecto');
+    expect(viability).toContain('no se han cerrado los apellidos registrales');
+
+    expect(blueprint).toContain("key: 'registry_surnames'");
+    expect(blueprint).toContain("key: 'confirm_registry_surnames'");
+    expect(blueprint).toContain("phase: 'registry_data'");
+    expect(blueprint).toContain("key: 'maternal_birth_surname_evidence'");
+    expect(blueprint).toContain('No solicitar por defecto. Solo cuando la familia elija esta opción.');
+  });
+
   it('explains age, educational evidence and exam exemptions in ES and RU pages', () => {
     const es = read('app/(public)/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana/page.tsx');
     const ru = read('app/(localized)/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii/page.tsx');
