@@ -4,6 +4,10 @@ import { sendEmail } from '@/lib/email/send';
 import { holdedDemoActivated, holdedOnboardingDone } from '@/lib/email/templates';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { getBookingFormacionUrl } from '@/lib/utils/cal';
+import {
+  createPrivateBookingAuthorization,
+  withPrivateBookingAuthorization,
+} from '@/lib/booking/private-booking-authorization';
 
 const HOLDED_HELP_URL = `${getPublicAppUrl()}/holded/pack-starter`;
 const bookingFormacionUrl = getBookingFormacionUrl();
@@ -96,10 +100,22 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (newStatus === 'onboarding_done' && demo.status === 'demo_active') {
+      const bookingToken = await createPrivateBookingAuthorization({
+        service: 'formacion-holded',
+        email: demo.email,
+        clientId: null,
+        companyId: null,
+        source: 'holded_demo',
+        sourceRef: id,
+      });
+      const authorizedBookingUrl = withPrivateBookingAuthorization(
+        BOOKING_FORMACION,
+        bookingToken
+      );
       await sendEmail({
         to: demo.email,
         eventType: 'holded_demo.onboarding_done',
-        ...holdedOnboardingDone(demo.name, BOOKING_FORMACION),
+        ...holdedOnboardingDone(demo.name, authorizedBookingUrl),
         metadata: { demo_id: id }
       });
     }
