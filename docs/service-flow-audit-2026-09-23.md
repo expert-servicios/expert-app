@@ -10,7 +10,7 @@ Baseline: main at `fca0cfa7`. This is an inventory and shared-boundary regressio
 - 10 entries have specialized operational blueprints; 44 resolve through getServiceChecklist. The generic paid-order fallback creates a manual intake task, not a complete specialized checklist. These counts must not be treated as 40 broken services: subscriptions, Academy and Holded have distinct paths.
 - Three monthly plans and two quote-plan aliases are added separately by the registry; their environment-bound prices were not validated. Academy fulfillment and subscription onboarding were covered by existing automated tests, not a live purchase.
 - Connected database snapshot: 1 order, 2 cases, 11 internal tasks, 0 catalog_services rows. Its sample is insufficient to demonstrate catalog-wide operational readiness. Confirm environment and catalog synchronization before migration or scale-up; do not seed blindly.
-- 62 test files / 332 tests pass, covering services, payments, onboarding, cart, quotes, Stripe retries, Academy, client document views and payment email localization. ESLint passes on changed files. Tests use fixtures/mocks or source assertions; no real payment, client email, signature or filing was performed.
+- 62 test files / 334 tests pass, covering services, payments, onboarding, cart, quotes, Stripe retries, Academy, client document views and payment email localization. ESLint passes on changed files. Tests use fixtures/mocks or source assertions; no real payment, client email, signature or filing was performed.
 
 ## Reproduced and corrected
 
