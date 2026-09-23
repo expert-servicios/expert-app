@@ -162,7 +162,6 @@ export default async function GraciasPagoPage({ searchParams }: Props) {
       <>
         {academySuccessTracker}
         <ThankYou />
-        {showHoldedBooking && <HoldedBookingSection />}
         {showCertificateSuccess && service && <CertificateSuccessSection service={service} />}
       </>
     );
