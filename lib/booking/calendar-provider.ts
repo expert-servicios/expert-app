@@ -197,7 +197,10 @@ export async function createBookingCalendarMeeting(
 
     if (!result.meetingUrl) {
       try {
-        const cleanup = await deleteMs365CalendarEvent(stored, result.eventId);
+        const cleanupTokens = result.refreshed
+          ? { ...stored, ...result.refreshed }
+          : stored;
+        const cleanup = await deleteMs365CalendarEvent(cleanupTokens, result.eventId);
         await persistMs365Refresh(cleanup.refreshed);
         throw new BookingCalendarCreationError(
           'Microsoft Teams meeting URL was not created',
