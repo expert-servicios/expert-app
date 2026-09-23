@@ -106,8 +106,13 @@ describe('native booking public flow', () => {
     expect(adminRoute).toContain('existingRemoteEventUpdated');
     expect(adminRoute).toContain('keepSynchronizedSchedule');
     expect(adminRoute).toContain('reconciliationMeetingUrl');
+    expect(adminRoute).toContain('creationError?.cleanupFailed === true && creationError.meetingUrl');
     expect(adminRoute).toContain('provider_booking_id: reconciliationEventId ?? current.provider_booking_id');
     expect(adminRoute).toContain("[current.admin_notes?.trim(), reconciliationNotice]");
+    expect(adminRoute).toContain("error: 'No se pudo persistir el estado de reconciliación de Calendar.'");
+    expect(adminRoute).toContain('recovery: {');
+    expect(adminRoute).toContain('if (!keepSynchronizedSchedule)');
+    expect(adminRoute).toContain('Existing remote event and local schedule now agree');
     expect(adminRoute).toContain('requiere reconciliación tras fallo de sincronización');
     expect(adminRoute).toContain('La cita se conserva en EXPERT');
     expect(calendar).toContain('cal.events.patch');
@@ -129,6 +134,13 @@ describe('native booking public flow', () => {
     expect(microsoft).toContain("if (!text.trim()) return null");
     expect(calendarProvider).toContain('cleanupTokens = result.refreshed');
     expect(calendarProvider).toContain('Microsoft token persistence failed after event creation and cleanup failed');
+    expect(calendarProvider).toContain('result.meetingUrl');
+    expect(calendarProvider).toContain('BookingCalendarDeletionError');
+    expect(calendarProvider).toContain('remoteDeleted');
+    expect(route).toContain('cleanupError instanceof BookingCalendarDeletionError');
+    expect(route).toContain('cleanupError.remoteDeleted');
+    expect(adminRoute).toContain('calendarError instanceof BookingCalendarDeletionError');
+    expect(adminRoute).toContain('calendarError.remoteDeleted');
     expect(calendarProvider).toContain('result.eventId');
     expect(calendarProvider).toContain('remote event was compensated');
   });
