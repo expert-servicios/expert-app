@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { syncDocumentToDrive } from '@/lib/integrations/google-drive';
 import {
+  prepareMs365StoredTokens,
   syncDocumentToMs365Files,
   type Ms365FilesTarget,
   type Ms365StoredTokens,
@@ -125,12 +126,18 @@ export async function syncDocumentToMirror(
   }
 
   const stored = await getMs365StoredTokens();
-  const result = await syncDocumentToMs365Files(stored, {
+  const prepared = await prepareMs365StoredTokens(stored);
+
+  // Persist any rotated refresh token before creating folders/files remotely.
+  // This prevents a successful remote mirror from leaving EXPERT with stale
+  // credentials if the token write were to fail afterwards.
+  await persistMs365Refresh(prepared.refreshed);
+
+  const result = await syncDocumentToMs365Files(prepared.stored, {
     target: configuredMs365FilesTarget(),
     rootFolderId,
     ...input,
   });
-  await persistMs365Refresh(result.refreshed);
 
   return {
     provider: 'ms365',
