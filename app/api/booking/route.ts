@@ -173,7 +173,7 @@ async function runNativeAdministrativeWorkflow(input: {
       meetingUrl: input.meetingUrl,
     });
     await sendEmail({
-      to: bookingEmail,
+      to: input.email,
       eventType: 'onboarding.preparation',
       ...preparation,
       metadata: {
@@ -387,7 +387,7 @@ export async function POST(request: NextRequest) {
         admin,
         identity: privateIdentity,
         serviceKey: service.key,
-        appointmentId,
+        appointmentId: appointmentId!,
         name: input.name,
         email: bookingEmail,
         start,
