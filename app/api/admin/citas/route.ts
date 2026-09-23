@@ -130,7 +130,7 @@ export async function PATCH(request: NextRequest) {
     {
       const calendarProvider =
         calendarProviderFromBookingProvider(appt.booking_provider) ??
-        getConfiguredBookingCalendarProvider();
+        (appt.google_event_id ? 'google' : getConfiguredBookingCalendarProvider());
 
       const nativeProvider = calendarProviderFromBookingProvider(appt.booking_provider);
       const requiresRemoteSync = Boolean(
@@ -196,18 +196,30 @@ export async function PATCH(request: NextRequest) {
               bookingProvider = created.bookingProvider;
             }
 
+            const syncedBookingProvider = bookingProvider ?? (
+              calendarProvider === 'ms365' ? 'ms365_native' : 'google_native'
+            );
+            const syncedGoogleEventId = calendarProvider === 'google'
+              ? syncedEventId
+              : null;
+
             await admin
               .from('appointments')
               .update({
-                google_event_id: calendarProvider === 'google' ? syncedEventId : null,
+                google_event_id: syncedGoogleEventId,
                 provider_booking_id: syncedEventId,
-                booking_provider: bookingProvider ?? (
-                  calendarProvider === 'ms365' ? 'ms365_native' : 'google_native'
-                ),
+                booking_provider: syncedBookingProvider,
                 meeting_url: meetingUrl,
                 updated_at: new Date().toISOString(),
               })
               .eq('id', appt.id);
+
+            // Keep the response/email payload aligned with the synchronized
+            // database row instead of the pre-sync Supabase snapshot.
+            appt.google_event_id = syncedGoogleEventId;
+            appt.provider_booking_id = syncedEventId;
+            appt.booking_provider = syncedBookingProvider;
+            appt.meeting_url = meetingUrl;
           } else if (appt.status === 'cancelled' && eventId) {
             await deleteBookingCalendarEvent(eventId, calendarProvider);
           }
