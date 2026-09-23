@@ -131,15 +131,16 @@ export async function ensureServiceOrderFulfillment(
     }
 
     caseId = createdCase.id;
+  }
 
-    const { error: orderLinkError } = await admin
-      .from('orders')
-      .update({ case_id: caseId })
-      .eq('id', input.orderId);
+  // Retry the reverse link even when an earlier attempt already created the case.
+  const { error: orderLinkError } = await admin
+    .from('orders')
+    .update({ case_id: caseId })
+    .eq('id', input.orderId);
 
-    if (orderLinkError) {
-      throw new Error(`Could not link case ${caseId} to order ${input.orderId}: ${orderLinkError.message}`);
-    }
+  if (orderLinkError) {
+    throw new Error(`Could not link case ${caseId} to order ${input.orderId}: ${orderLinkError.message}`);
   }
 
   const tasks = services.flatMap((service) =>
@@ -157,7 +158,8 @@ export async function ensureServiceOrderFulfillment(
       .eq('case_id', caseId)
       .eq('source', 'system')
       .eq('title', task.title)
-      .in('status', ['pendiente', 'en_progreso'])
+      // A payment replay must also preserve completed or cancelled work.
+      .limit(1)
       .maybeSingle();
 
     if (taskLookupError) {
