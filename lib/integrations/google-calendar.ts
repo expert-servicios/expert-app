@@ -199,8 +199,94 @@ export async function upsertCalendarEventSA(
   }
 }
 
+export interface CalendarBusyWindow {
+  start: string;
+  end: string;
+}
+
+export async function listCalendarBusyWindowsSA(
+  timeMin: string,
+  timeMax: string
+): Promise<CalendarBusyWindow[]> {
+  const cal = await getCalendarSAClient();
+  if (!cal) throw new Error('Google Calendar service account is not configured');
+
+  const { data } = await cal.events.list({
+    calendarId: 'primary',
+    timeMin,
+    timeMax,
+    singleEvents: true,
+    orderBy: 'startTime',
+    showDeleted: false,
+    maxResults: 2500,
+  });
+
+  return (data.items ?? [])
+    .filter((event: any) => event.status !== 'cancelled' && event.transparency !== 'transparent')
+    .map((event: any) => ({
+      start: event.start?.dateTime ?? event.start?.date ?? '',
+      end: event.end?.dateTime ?? event.end?.date ?? '',
+    }))
+    .filter((window: CalendarBusyWindow) => Boolean(window.start && window.end));
+}
+
+export interface CalendarMeetingInput {
+  summary: string;
+  description?: string;
+  start: string;
+  end: string;
+  attendeeEmail: string;
+  timezone?: string;
+  reminderMinutesBefore?: number[];
+}
+
+export interface CalendarMeetingResult {
+  eventId: string;
+  meetUrl: string | null;
+}
+
+export async function createCalendarMeetingSA(
+  input: CalendarMeetingInput
+): Promise<CalendarMeetingResult> {
+  const cal = await getCalendarSAClient();
+  if (!cal) throw new Error('Google Calendar service account is not configured');
+
+  const reminders = input.reminderMinutesBefore ?? [1440, 60];
+  const requestId = `expert-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  const { data } = await cal.events.insert({
+    calendarId: 'primary',
+    conferenceDataVersion: 1,
+    sendUpdates: 'all',
+    resource: {
+      summary: input.summary,
+      description: input.description,
+      start: { dateTime: input.start, timeZone: input.timezone ?? 'Europe/Madrid' },
+      end: { dateTime: input.end, timeZone: input.timezone ?? 'Europe/Madrid' },
+      attendees: [{ email: input.attendeeEmail }],
+      conferenceData: {
+        createRequest: {
+          requestId,
+          conferenceSolutionKey: { type: 'hangoutsMeet' },
+        },
+      },
+      reminders: {
+        useDefault: false,
+        overrides: reminders.map((minutes) => ({ method: 'email', minutes })),
+      },
+    },
+  });
+
+  if (!data.id) throw new Error('Google Calendar did not return an event id');
+
+  return {
+    eventId: data.id,
+    meetUrl: data.hangoutLink ?? null,
+  };
+}
+
 export async function deleteCalendarEventSA(eventId: string): Promise<void> {
   const cal = await getCalendarSAClient();
   if (!cal) return;
-  await cal.events.delete({ calendarId: 'primary', eventId }).catch(() => {});
+  await cal.events.delete({ calendarId: 'primary', eventId, sendUpdates: 'all' }).catch(() => {});
 }
