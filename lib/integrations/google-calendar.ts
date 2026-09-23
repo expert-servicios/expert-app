@@ -286,15 +286,30 @@ export async function createCalendarMeetingSA(
   });
 
   if (!data.id) throw new Error('Google Calendar did not return an event id');
+  if (data.hangoutLink) return { eventId: data.id, meetUrl: data.hangoutLink };
 
-  return {
-    eventId: data.id,
-    meetUrl: data.hangoutLink ?? null,
-  };
+  // Conference creation may complete asynchronously. Do not confirm the local
+  // appointment until Google exposes the Meet link or reports failure.
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 250 : 500));
+    const { data: refreshed } = await cal.events.get({
+      calendarId: 'primary',
+      eventId: data.id,
+    });
+    if (refreshed.hangoutLink) {
+      return { eventId: data.id, meetUrl: refreshed.hangoutLink };
+    }
+    const status = refreshed.conferenceData?.createRequest?.status?.statusCode;
+    if (status === 'failure') {
+      throw new Error('Google Meet conference creation failed');
+    }
+  }
+
+  throw new Error('Google Meet conference creation did not complete in time');
 }
 
 export async function deleteCalendarEventSA(eventId: string): Promise<void> {
   const cal = await getCalendarSAClient();
-  if (!cal) return;
-  await cal.events.delete({ calendarId: 'primary', eventId, sendUpdates: 'all' }).catch(() => {});
+  if (!cal) throw new Error('Google Calendar service account is not configured');
+  await cal.events.delete({ calendarId: 'primary', eventId, sendUpdates: 'all' });
 }
