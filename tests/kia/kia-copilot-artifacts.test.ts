@@ -147,8 +147,9 @@ describe('canonical KIA widget artifact integration', () => {
   const protectedLayout = source('app/(protected)/layout.tsx');
   const dashboardLayout = source('app/(protected)/dashboard/layout.tsx');
 
-  it('derives artifacts from authorized results and the final validated decision', () => {
-    expect(api).toContain('buildKiaCopilotArtifacts(result.toolResults, result.decision)');
+  it('derives artifacts from authorized results plus safe canonical knowledge and the final validated decision', () => {
+    expect(api).toContain('const artifactToolResults = automaticKnowledgeResult');
+    expect(api).toContain('buildKiaCopilotArtifacts(artifactToolResults, result.decision)');
     expect(api).toContain('artifacts,');
     expect(api).not.toContain('buildKiaCopilotArtifacts(parsed.data');
   });
