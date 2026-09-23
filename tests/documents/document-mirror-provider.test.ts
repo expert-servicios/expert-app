@@ -44,11 +44,17 @@ describe('document mirror providers', () => {
     expect(microsoft).toContain("'@odata.nextLink'");
     expect(microsoft).toContain('pagination safety limit');
     expect(microsoft).toContain('conflictBehavior=rename');
+    expect(microsoft).toContain('prepareMs365StoredTokens');
+    expect(mirror).toContain('await persistMs365Refresh(prepared.refreshed)');
+    expect(mirror.indexOf('await persistMs365Refresh(prepared.refreshed)')).toBeLessThan(
+      mirror.indexOf('await syncDocumentToMs365Files(prepared.stored')
+    );
   });
 
   it('keeps the external mirror non-blocking for case uploads', () => {
     expect(route).toContain("console.error('[Document mirror]'");
-    expect(route).toContain('void (async () => {');
+    expect(route).toContain("import { after, NextRequest, NextResponse } from 'next/server'");
+    expect(route).toContain('after(async () => {');
     expect(route.indexOf(".from('documents')\n      .insert")).toBeLessThan(
       route.indexOf('await syncDocumentToMirror({')
     );
