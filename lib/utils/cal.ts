@@ -32,7 +32,7 @@ function legacyCalUrl(envVar: string | undefined): string | null {
 }
 
 function nativeBookingEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_NATIVE_BOOKING_ENABLED === 'true';
+  return process.env.NEXT_PUBLIC_NATIVE_BOOKING_ENABLED !== 'false';
 }
 
 function bookingUrl(
