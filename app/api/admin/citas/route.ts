@@ -159,6 +159,9 @@ export async function PATCH(request: NextRequest) {
       }
 
       if (providerConfigured) {
+        let existingRemoteEventUpdated = false;
+        let reconciliationMeetingUrl: string | null = null;
+
         try {
           const eventId = (
             calendarProvider === 'google'
@@ -182,6 +185,7 @@ export async function PATCH(request: NextRequest) {
                 timezone: 'Europe/Madrid',
                 reminderMinutesBefore: [1440, 60],
               }, calendarProvider);
+              existingRemoteEventUpdated = true;
             } else {
               const created = await createBookingCalendarMeeting({
                 summary: `Cita: ${appt.service ?? 'Consultoría'} — ${appt.name}`,
@@ -194,6 +198,7 @@ export async function PATCH(request: NextRequest) {
               }, calendarProvider);
               syncedEventId = created.eventId;
               meetingUrl = created.meetingUrl;
+              reconciliationMeetingUrl = created.meetingUrl;
               bookingProvider = created.bookingProvider;
             }
 
@@ -246,24 +251,42 @@ export async function PATCH(request: NextRequest) {
         } catch (calendarError) {
           console.error('[citas] calendar sync:', calendarError);
 
-          const reconciliationEventId =
+          const creationError =
             calendarError instanceof BookingCalendarCreationError
-              ? calendarError.eventId
+              ? calendarError
+              : null;
+          const reconciliationEventId =
+            creationError?.cleanupFailed === true
+              ? creationError.eventId
               : null;
           const reconciliationProvider =
-            calendarError instanceof BookingCalendarCreationError
-              ? calendarError.provider
+            creationError?.cleanupFailed === true
+              ? creationError.provider
               : calendarProvider;
+
+          const keepSynchronizedSchedule =
+            existingRemoteEventUpdated && !reconciliationEventId;
+
+          const reconciliationNotice = reconciliationEventId
+            ? `Evento remoto ${reconciliationEventId} requiere reconciliación tras fallo de sincronización.`
+            : null;
+          const reconciledAdminNotes = reconciliationNotice
+            ? [current.admin_notes?.trim(), reconciliationNotice]
+                .filter(Boolean)
+                .join('\n\n')
+            : current.admin_notes;
 
           const { error: restoreError } = await admin
             .from('appointments')
             .update({
-              status: current.status,
-              confirmed_date: current.confirmed_date,
-              confirmed_time: current.confirmed_time,
-              appointment_date: current.appointment_date,
-              appointment_end: current.appointment_end,
-              meeting_url: current.meeting_url,
+              status: keepSynchronizedSchedule ? appt.status : current.status,
+              confirmed_date: keepSynchronizedSchedule ? appt.confirmed_date : current.confirmed_date,
+              confirmed_time: keepSynchronizedSchedule ? appt.confirmed_time : current.confirmed_time,
+              appointment_date: keepSynchronizedSchedule ? appt.appointment_date : current.appointment_date,
+              appointment_end: keepSynchronizedSchedule ? appt.appointment_end : current.appointment_end,
+              meeting_url: reconciliationEventId
+                ? (reconciliationMeetingUrl ?? current.meeting_url)
+                : (keepSynchronizedSchedule ? appt.meeting_url : current.meeting_url),
               google_event_id: reconciliationEventId && reconciliationProvider === 'google'
                 ? reconciliationEventId
                 : current.google_event_id,
@@ -271,9 +294,7 @@ export async function PATCH(request: NextRequest) {
               booking_provider: reconciliationEventId
                 ? (reconciliationProvider === 'ms365' ? 'ms365_native' : 'google_native')
                 : current.booking_provider,
-              admin_notes: reconciliationEventId
-                ? `Evento remoto ${reconciliationEventId} requiere reconciliación tras fallo de sincronización.`
-                : current.admin_notes,
+              admin_notes: reconciledAdminNotes,
               updated_at: new Date().toISOString(),
             })
             .eq('id', id);
