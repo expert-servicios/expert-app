@@ -427,9 +427,27 @@ export async function createMs365TeamsMeeting(
   const eventId = String(data?.id ?? '');
   if (!eventId) throw new Error('Microsoft Graph did not return an event id');
 
+  let meetingUrl = data?.onlineMeeting?.joinUrl ?? null;
+  if (!meetingUrl) {
+    // Graph normally returns onlineMeeting immediately, but allow a short
+    // propagation window before the provider-level compensation deletes the event.
+    for (let attempt = 0; attempt < 6 && !meetingUrl; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 250 : 500));
+      try {
+        const refreshedEvent = await graphGet(
+          access_token,
+          `/events/${encodeURIComponent(eventId)}?$select=id,onlineMeeting`
+        );
+        meetingUrl = refreshedEvent?.onlineMeeting?.joinUrl ?? null;
+      } catch {
+        // A transient read failure should not lose the known event id.
+      }
+    }
+  }
+
   return {
     eventId,
-    meetingUrl: data?.onlineMeeting?.joinUrl ?? null,
+    meetingUrl,
     refreshed: refreshed ? { ...stored, ...refreshed } : null,
   };
 }
@@ -450,9 +468,9 @@ export async function updateMs365TeamsMeeting(
   const body: Record<string, unknown> = {};
 
   if (input.summary !== undefined) body.subject = input.summary;
-  if (input.description !== undefined) {
-    body.body = { contentType: 'HTML', content: input.description };
-  }
+  // Do not replace the body of an existing Teams event. Microsoft documents
+  // that removing the online-meeting blob from body content can disable the
+  // online meeting. EXPERT updates subject/time/reminders only.
   if (input.start) body.start = graphDateTime(input.start);
   if (input.end) body.end = graphDateTime(input.end);
   if (input.reminderMinutesBefore?.length) {
