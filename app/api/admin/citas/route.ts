@@ -10,6 +10,7 @@ import {
   calendarProviderFromBookingProvider,
   createBookingCalendarMeeting,
   deleteBookingCalendarEvent,
+  ensureBookingCalendarMeetingUrl,
   getConfiguredBookingCalendarProvider,
   isBookingCalendarConfigured,
   updateBookingCalendarMeeting,
@@ -189,6 +190,13 @@ export async function PATCH(request: NextRequest) {
                   reminderMinutesBefore: [1440, 60],
                 }, calendarProvider);
                 existingRemoteEventUpdated = true;
+
+                if (!meetingUrl) {
+                  meetingUrl = await ensureBookingCalendarMeetingUrl(
+                    syncedEventId,
+                    calendarProvider
+                  );
+                }
               } catch (updateError) {
                 if (
                   updateError instanceof BookingCalendarUpdateError &&
