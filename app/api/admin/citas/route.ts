@@ -3,7 +3,12 @@ import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { citaConfirmed } from '@/lib/email/templates';
-import { upsertCalendarEventSA, deleteCalendarEventSA, hasCalendarSA } from '@/lib/integrations/google-calendar';
+import {
+  upsertCalendarEventSA,
+  updateCalendarMeetingSA,
+  deleteCalendarEventSA,
+  hasCalendarSA,
+} from '@/lib/integrations/google-calendar';
 import { formatMadridDate, formatMadridTime, madridLocalToDate } from '@/lib/booking/native-booking';
 
 async function requireAdmin(request: NextRequest) {
@@ -69,7 +74,7 @@ export async function PATCH(request: NextRequest) {
 
     const { data: current, error: currentError } = await admin
       .from('appointments')
-      .select('id,name,email,service,status,confirmed_date,confirmed_time,meeting_url,google_event_id,appointment_date,appointment_end,booking_provider,provider_booking_id')
+      .select('id,name,email,service,status,confirmed_date,confirmed_time,meeting_url,admin_notes,google_event_id,appointment_date,appointment_end,booking_provider,provider_booking_id')
       .eq('id', id)
       .single();
     if (currentError || !current) {
@@ -126,18 +131,31 @@ export async function PATCH(request: NextRequest) {
         if (appt.status === 'confirmed' && appt.appointment_date && appt.appointment_end) {
           const start = new Date(appt.appointment_date as string);
           const end = new Date(appt.appointment_end as string);
-          const syncedEventId = await upsertCalendarEventSA(
-            {
+          let syncedEventId: string;
+
+          if (eventId) {
+            syncedEventId = await updateCalendarMeetingSA(eventId, {
               summary: `Cita: ${appt.service ?? 'Consultoría'} — ${appt.name}`,
               description: `Cliente: ${appt.name} (${appt.email})\nServicio: ${appt.service ?? ''}\n${appt.meeting_url ? `Reunión: ${appt.meeting_url}` : ''}`.trim(),
+              start: start.toISOString(),
+              end: end.toISOString(),
+              timezone: 'Europe/Madrid',
+              reminderMinutesBefore: [1440, 60],
+            });
+          } else {
+            const createdEventId = await upsertCalendarEventSA({
+              summary: `Cita: ${appt.service ?? 'Consultoría'} — ${appt.name}`,
+              description: `Cliente: ${appt.name} (${appt.email})\nServicio: ${appt.service ?? ''}`.trim(),
               date: formatMadridDate(start),
               startTime: formatMadridTime(start),
               endTime: formatMadridTime(end),
               reminderMinutesBefore: [1440, 60],
-            },
-            eventId ?? undefined
-          );
-          if (syncedEventId && syncedEventId !== appt.google_event_id) {
+            });
+            if (!createdEventId) throw new Error('Google Calendar event sync returned no event id');
+            syncedEventId = createdEventId;
+          }
+
+          if (syncedEventId !== appt.google_event_id) {
             await admin
               .from('appointments')
               .update({
@@ -153,8 +171,21 @@ export async function PATCH(request: NextRequest) {
         }
       } catch (calendarError) {
         console.error('[citas] calendar sync:', calendarError);
+        await admin
+          .from('appointments')
+          .update({
+            status: current.status,
+            confirmed_date: current.confirmed_date,
+            confirmed_time: current.confirmed_time,
+            appointment_date: current.appointment_date,
+            appointment_end: current.appointment_end,
+            meeting_url: current.meeting_url,
+            admin_notes: current.admin_notes,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id);
         return NextResponse.json({
-          error: 'La cita se actualizó en EXPERT, pero Calendar no pudo sincronizarse. Requiere reconciliación.'
+          error: 'Calendar no pudo sincronizarse. EXPERT ha restaurado la cita al estado anterior.'
         }, { status: 502 });
       }
     }
