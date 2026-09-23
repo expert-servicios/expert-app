@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { syncDocumentToDrive } from '@/lib/integrations/google-drive';
+import {
+  getConfiguredDocumentMirrorProvider,
+  isDocumentMirrorConfigured,
+  syncDocumentToMirror,
+} from '@/lib/documents/document-mirror';
 import { notifyTenantAdminDocUploaded } from '@/lib/email/notify-tenant-admins';
 import { notifyAdmins } from '@/lib/integrations/push';
 import {
@@ -202,8 +206,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }).catch(() => {});
     }
 
-    // Drive is a secondary copy. Storage + documents remains the canonical record.
-    if (process.env.GOOGLE_DRIVE_CLIENTS_FOLDER_ID) {
+    // External file mirror is secondary. Supabase Storage + documents remains
+    // the canonical record and must never depend on Google Drive/OneDrive/SharePoint.
+    const mirrorProvider = getConfiguredDocumentMirrorProvider();
+    if (isDocumentMirrorConfigured(mirrorProvider)) {
       void (async () => {
         try {
           const { data: clientProfile } = await adminSupabase
@@ -214,23 +220,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           const clientName = clientProfile?.full_name ?? clientProfile?.email ?? `cliente-${clientId}`;
           const serviceName = caseData.service ?? 'Expediente';
 
-          const driveResult = await syncDocumentToDrive({
+          const mirrorResult = await syncDocumentToMirror({
             fileBuffer: buffer,
             fileName: validation.safeName,
             mimeType: validation.contentType,
             clientName,
             serviceName,
-          });
+          }, mirrorProvider);
 
-          if (driveResult) {
-            const { error: drivePersistError } = await adminSupabase
+          if (mirrorResult) {
+            const { error: mirrorPersistError } = await adminSupabase
               .from('documents')
-              .update({ drive_file_id: driveResult.fileId })
+              .update({ drive_file_id: mirrorResult.storageId })
               .eq('id', doc.id);
-            if (drivePersistError) console.error('[Drive sync] file id persistence:', drivePersistError.message);
+            if (mirrorPersistError) {
+              console.error('[Document mirror] file id persistence:', mirrorPersistError.message);
+            }
           }
         } catch (error) {
-          console.error('[Drive sync]', error);
+          console.error('[Document mirror]', error);
         }
       })();
     }
