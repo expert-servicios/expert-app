@@ -221,7 +221,15 @@ export async function listCalendarBusyWindowsSA(
     maxResults: 2500,
   });
 
-  return (data.items ?? [])
+  type BusyEvent = {
+    status?: string | null;
+    transparency?: string | null;
+    start?: { dateTime?: string | null; date?: string | null } | null;
+    end?: { dateTime?: string | null; date?: string | null } | null;
+  };
+
+  const items = (data.items ?? []) as BusyEvent[];
+  return items
     .filter((event) => event.status !== 'cancelled' && event.transparency !== 'transparent')
     .map((event) => ({
       start: event.start?.dateTime ?? event.start?.date ?? '',
