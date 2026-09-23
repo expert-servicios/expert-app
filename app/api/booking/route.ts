@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import {
-  CalendarMeetingCreationError,
-  createCalendarMeetingSA,
-  deleteCalendarEventSA,
-  listCalendarBusyWindowsSA,
-} from '@/lib/integrations/google-calendar';
+  BookingCalendarCreationError,
+  createBookingCalendarMeeting,
+  deleteBookingCalendarEvent,
+  getConfiguredBookingCalendarProvider,
+  listBookingCalendarBusyWindows,
+} from '@/lib/booking/calendar-provider';
 import { sendEmail } from '@/lib/email/send';
 import { caseOpened, citaConfirmed } from '@/lib/email/templates';
 import { onboardingPreparationEmail } from '@/lib/email/onboarding-templates';
@@ -192,7 +193,7 @@ async function runNativeAdministrativeWorkflow(input: {
       ...preparation,
       metadata: {
         appointment_id: input.appointmentId,
-        booking_provider: 'google_native',
+        booking_provider: calendarProvider === 'ms365' ? 'ms365_native' : 'google_native',
         onboarding_phase: 'pre_meeting',
       },
       idempotencyKey: `native/onboarding-preparation/${input.appointmentId}`,
@@ -233,7 +234,8 @@ async function runNativeAdministrativeWorkflow(input: {
 
 export async function POST(request: NextRequest) {
   let appointmentId: string | null = null;
-  let googleEventId: string | null = null;
+  let providerEventId: string | null = null;
+  let calendarProvider = getConfiguredBookingCalendarProvider();
 
   try {
     const body = await request.json();
@@ -368,13 +370,15 @@ export async function POST(request: NextRequest) {
     }
     const end = new Date(start.getTime() + service.durationMinutes * 60_000);
 
-    // Google is the external source of truth for calendar occupancy. Check it
-    // immediately before acquiring the local booking lock.
-    const googleBusy = await listCalendarBusyWindowsSA(
+    // The selected calendar provider is the external source of truth for
+    // occupancy. Check it immediately before acquiring the local booking lock.
+    calendarProvider = getConfiguredBookingCalendarProvider();
+    const calendarBusy = await listBookingCalendarBusyWindows(
       start.toISOString(),
-      end.toISOString()
+      end.toISOString(),
+      calendarProvider
     );
-    const busy = googleBusy.map((window) => ({
+    const busy = calendarBusy.map((window) => ({
       start: new Date(window.start),
       end: new Date(window.end),
     }));
@@ -428,7 +432,7 @@ export async function POST(request: NextRequest) {
 
     appointmentId = appointment.id;
 
-    const meeting = await createCalendarMeetingSA({
+    const meeting = await createBookingCalendarMeeting({
       summary: `${service.label} — ${input.name}`,
       description: [
         `Reserva creada desde EXPERT.`,
@@ -442,16 +446,17 @@ export async function POST(request: NextRequest) {
       attendeeEmail: bookingEmail,
       timezone: BOOKING_TIMEZONE,
       reminderMinutesBefore: service.durationMinutes >= 60 ? [1440, 60] : [1440, 30],
-    });
-    googleEventId = meeting.eventId;
+    }, calendarProvider);
+    providerEventId = meeting.eventId;
 
     const { error: finalizeError } = await admin
       .from('appointments')
       .update({
         status: 'confirmed',
-        google_event_id: meeting.eventId,
+        google_event_id: meeting.provider === 'google' ? meeting.eventId : null,
+        booking_provider: meeting.bookingProvider,
         provider_booking_id: meeting.eventId,
-        meeting_url: meeting.meetUrl,
+        meeting_url: meeting.meetingUrl,
         updated_at: new Date().toISOString(),
       })
       .eq('id', appointmentId);
@@ -462,7 +467,7 @@ export async function POST(request: NextRequest) {
 
     if (
       (service.key === 'onboarding' || service.key === 'formacion-holded') &&
-      meeting.meetUrl
+      meeting.meetingUrl
     ) {
       await runNativeAdministrativeWorkflow({
         admin,
@@ -474,7 +479,7 @@ export async function POST(request: NextRequest) {
         start,
         localDate,
         localTime,
-        meetingUrl: meeting.meetUrl,
+        meetingUrl: meeting.meetingUrl,
       }).catch(async (workflowError) => {
         console.error('[booking] administrative workflow:', workflowError);
         await admin
@@ -498,11 +503,11 @@ export async function POST(request: NextRequest) {
     await sendEmail({
       to: bookingEmail,
       eventType: 'cita.confirmed',
-      ...citaConfirmed(input.name, service.label, formattedDate, localTime, meeting.meetUrl),
+      ...citaConfirmed(input.name, service.label, formattedDate, localTime, meeting.meetingUrl),
       metadata: {
         appointment_id: appointmentId,
-        google_event_id: meeting.eventId,
-        booking_provider: 'google_native',
+        provider_event_id: meeting.eventId,
+        booking_provider: meeting.bookingProvider,
       },
       idempotencyKey: `booking/confirmed/${appointmentId}`,
     }).catch((error) => console.error('[booking] confirmation email:', error));
@@ -512,20 +517,21 @@ export async function POST(request: NextRequest) {
       appointmentId,
       start: start.toISOString(),
       end: end.toISOString(),
-      meetingUrl: meeting.meetUrl,
+      meetingUrl: meeting.meetingUrl,
     });
   } catch (error) {
     console.error('[booking]', error);
 
-    if (!googleEventId && error instanceof CalendarMeetingCreationError) {
-      googleEventId = error.eventId;
+    if (!providerEventId && error instanceof BookingCalendarCreationError) {
+      providerEventId = error.eventId;
+      calendarProvider = error.provider;
     }
 
     const admin = getSupabaseAdmin();
     let remoteCleanupSucceeded = true;
-    if (googleEventId) {
+    if (providerEventId) {
       try {
-        await deleteCalendarEventSA(googleEventId);
+        await deleteBookingCalendarEvent(providerEventId, calendarProvider);
       } catch (cleanupError) {
         remoteCleanupSucceeded = false;
         console.error('[booking] calendar compensation failed:', cleanupError);
@@ -540,10 +546,10 @@ export async function POST(request: NextRequest) {
             .from('appointments')
             .update({
               status: 'cancelled',
-              google_event_id: googleEventId,
-              provider_booking_id: googleEventId,
-              booking_provider: 'google_native',
-              admin_notes: 'Google Calendar cleanup failed after booking error. Reconcile remote event before deleting this row.',
+              google_event_id: calendarProvider === 'google' ? providerEventId : null,
+              provider_booking_id: providerEventId,
+              booking_provider: calendarProvider === 'ms365' ? 'ms365_native' : 'google_native',
+              admin_notes: 'Calendar cleanup failed after booking error. Reconcile the remote event before deleting this row.',
               updated_at: new Date().toISOString(),
             })
             .eq('id', appointmentId);
