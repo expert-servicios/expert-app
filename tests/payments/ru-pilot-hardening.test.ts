@@ -29,11 +29,11 @@ describe('Russian nationality pilot hardening', () => {
     expect(holdedStatus).toContain("new.status = 'paid_invoice_error'");
   });
 
-  it('links all six Russian resources from the service route', () => {
+  it('links all Russian nationality resources from the service route', () => {
     const layout = read('app/(localized)/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii/layout.tsx');
     const component = read('components/i18n/RuNationalityRelatedResources.tsx');
 
-    expect(RU_NATIONALITY_RESOURCES).toHaveLength(6);
+    expect(RU_NATIONALITY_RESOURCES).toHaveLength(8);
     expect(layout).toContain('RuNationalityRelatedResources');
     for (const resource of RU_NATIONALITY_RESOURCES) {
       expect(component).toContain("RU_NATIONALITY_RESOURCES");
