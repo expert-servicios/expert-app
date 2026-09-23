@@ -98,8 +98,13 @@ describe('native booking public flow', () => {
     expect(adminRoute).toContain('requiresRemoteSync');
     expect(adminRoute).toContain('El proveedor de calendario de esta cita no está conectado');
     expect(adminRoute).toContain('EXPERT ha restaurado la cita al estado anterior');
+    expect(adminRoute).toContain('metadataSyncError');
+    expect(adminRoute).toContain('Only advertise fresh values after the metadata write succeeded');
     expect(adminRoute).toContain('appt.meeting_url = meetingUrl');
     expect(adminRoute).toContain('appt.provider_booking_id = syncedEventId');
+    expect(adminRoute).toContain('reconciliationEventId');
+    expect(adminRoute).toContain('provider_booking_id: reconciliationEventId ?? current.provider_booking_id');
+    expect(adminRoute).toContain('requiere reconciliación tras fallo de sincronización');
     expect(adminRoute).toContain('La cita se conserva en EXPERT');
     expect(calendar).toContain('cal.events.patch');
     expect(calendar).toContain('status === 404 || status === 410');
