@@ -25,6 +25,7 @@ interface AvailabilityResponse {
 
 interface Props {
   serviceKey: string;
+  bookingAuth?: string | null;
 }
 
 function groupByDate(slots: Slot[]) {
@@ -46,7 +47,7 @@ function dateLabel(date: string) {
   }).format(parsed);
 }
 
-export function NativeBookingForm({ serviceKey }: Props) {
+export function NativeBookingForm({ serviceKey, bookingAuth }: Props) {
   const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
   const [availabilityError, setAvailabilityError] = useState('');
   const [loadingSlots, setLoadingSlots] = useState(true);
@@ -60,7 +61,9 @@ export function NativeBookingForm({ serviceKey }: Props) {
     setLoadingSlots(true);
     setAvailabilityError('');
     try {
-      const res = await fetch(`/api/booking/availability?service=${encodeURIComponent(serviceKey)}&days=14`, {
+      const params = new URLSearchParams({ service: serviceKey, days: '14' });
+      if (bookingAuth) params.set('auth', bookingAuth);
+      const res = await fetch(`/api/booking/availability?${params.toString()}`, {
         cache: 'no-store',
       });
       const data = (await res.json()) as AvailabilityResponse;
@@ -108,6 +111,7 @@ export function NativeBookingForm({ serviceKey }: Props) {
           service: serviceKey,
           start: selected.start,
           recaptcha_token,
+          booking_auth: bookingAuth ?? undefined,
         }),
       });
       const data = await res.json();
