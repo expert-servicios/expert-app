@@ -38,15 +38,20 @@ export async function GET(request: NextRequest) {
       listCalendarBusyWindowsSA(now.toISOString(), rangeEnd.toISOString()),
       getSupabaseAdmin()
         .from('appointments')
-        .select('appointment_date,appointment_end')
+        .select('appointment_date,appointment_end,status,created_at')
         .in('status', ['pending_calendar', 'confirmed'])
         .not('appointment_end', 'is', null)
         .lt('appointment_date', rangeEnd.toISOString())
         .gt('appointment_end', now.toISOString()),
     ]);
 
+    const pendingCutoff = Date.now() - 10 * 60_000;
     const dbBusy = (dbResult.data ?? [])
-      .filter((row) => row.appointment_date && row.appointment_end)
+      .filter((row) => {
+        if (!row.appointment_date || !row.appointment_end) return false;
+        if (row.status !== 'pending_calendar') return true;
+        return new Date(row.created_at as string).getTime() >= pendingCutoff;
+      })
       .map((row) => ({
         start: new Date(row.appointment_date as string),
         end: new Date(row.appointment_end as string),
