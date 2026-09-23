@@ -65,6 +65,7 @@ const documentGroups = [
       'Datos de contacto: teléfono, correo electrónico y domicilio actual.',
       'Firmas y asistencia de los representantes legales según la edad del menor y la patria potestad.',
       'Documentación adicional si solo uno de los progenitores puede firmar.',
+      'Certificado de nacimiento o de matrimonio de la madre que recoja su apellido personal anterior al matrimonio, con traducción oficial y legalización/apostilla cuando procedan. Solo si hace falta prueba adicional tras revisar los documentos existentes.',
       'Opcional: certificado de nacimiento de la madre, con apostilla/legalización y traducción oficial cuando proceda, si la familia quiere acreditar su apellido personal/de nacimiento como segundo apellido del menor.',
     ],
   },

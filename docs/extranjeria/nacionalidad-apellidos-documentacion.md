@@ -1,4 +1,4 @@
-# Национальность / Nacionalidad: apellidos y documentación materna
+# Nacionalidad: apellidos y documentación materna
 
 Criterio operativo revisado el 23/09/2026. Aplicable a nacionalidad; no convertirlo en requisito general de otros trámites de extranjería.
 
@@ -35,3 +35,10 @@ Podemos continuar preparando las partes independientes del expediente mientras s
 ## Control interno
 
 Registrar el dato declarado, el documento y página que lo acredita, la fase del trámite y cualquier consulta o requerimiento. Mantener separadas preferencia familiar y conclusión profesional. No trasladar nombres, NIE, pasaportes ni otros datos de expedientes reales a ejemplos públicos. Si un formulario enviado contiene una base incorrecta, marcarlo como sustituido y corregirlo antes de la firma o presentación.
+
+## Checklist documental condicional
+
+- [ ] Certificado de nacimiento o de matrimonio de la madre que recoja su apellido personal anterior al matrimonio, con traducción oficial y legalización/apostilla cuando procedan. Solo si hace falta prueba adicional tras revisar los documentos existentes.
+- [ ] Registrar documento y página que acredita el apellido y las formalidades comprobadas.
+
+La regla no es una novedad de 2026: ya consta en la Instrucción de 23 de mayo de 2007. No afirmar que los apellidos nunca se podrán cambiar: los artículos 53 a 57 de la Ley del Registro Civil regulan cambios sujetos a requisitos y procedimientos.

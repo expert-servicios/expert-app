@@ -98,6 +98,8 @@ Podemos continuar preparando las partes independientes del expediente mientras s
     body: `
 ## Apellido personal de la madre y documentos adicionales
 
+- Certificado de nacimiento o de matrimonio de la madre que recoja su apellido personal anterior al matrimonio, con traducción oficial y legalización/apostilla cuando procedan. Solo si hace falta prueba adicional tras revisar los documentos existentes.
+
 El certificado de nacimiento de la madre no es un requisito general de toda solicitud inicial del menor. Primero revisamos los documentos existentes; si falta acreditar su apellido personal, consultamos qué prueba adicional admite el Registro Civil competente, incluido un certificado de matrimonio que recoja el apellido anterior. La duplicación de un apellido no se elige para evitar documentos o traducciones.
 
 [Consulta la guía de apellidos, alternativas documentales y traducción](/docs/apellidos-menor-nacionalidad-registro-civil).
@@ -307,6 +309,8 @@ Con esa documentación se puede reconstruir la línea temporal del menor y decid
       'Documentación del menor y de los progenitores para preparar la solicitud de nacionalidad española por residencia.',
     body: `
 ## Apellido personal de la madre y documentos adicionales
+
+- Certificado de nacimiento o de matrimonio de la madre que recoja su apellido personal anterior al matrimonio, con traducción oficial y legalización/apostilla cuando procedan. Solo si hace falta prueba adicional tras revisar los documentos existentes.
 
 El certificado de nacimiento de la madre no es un requisito general de toda solicitud inicial del menor. Primero revisamos los documentos existentes; si falta acreditar su apellido personal, consultamos qué prueba adicional admite el Registro Civil competente, incluido un certificado de matrimonio que recoja el apellido anterior. La duplicación de un apellido no se elige para evitar documentos o traducciones.
 
