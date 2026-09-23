@@ -253,6 +253,18 @@ export interface CalendarMeetingResult {
   meetUrl: string | null;
 }
 
+export class CalendarMeetingCreationError extends Error {
+  eventId: string;
+  cleanupFailed: boolean;
+
+  constructor(message: string, eventId: string, cleanupFailed: boolean, cause?: unknown) {
+    super(message, { cause });
+    this.name = 'CalendarMeetingCreationError';
+    this.eventId = eventId;
+    this.cleanupFailed = cleanupFailed;
+  }
+}
+
 export async function createCalendarMeetingSA(
   input: CalendarMeetingInput
 ): Promise<CalendarMeetingResult> {
@@ -314,10 +326,22 @@ export async function createCalendarMeetingSA(
         eventId: data.id,
         sendUpdates: 'all',
       });
+      throw new CalendarMeetingCreationError(
+        error instanceof Error ? error.message : 'Google Meet creation failed',
+        data.id,
+        false,
+        error
+      );
     } catch (cleanupError) {
+      if (cleanupError instanceof CalendarMeetingCreationError) throw cleanupError;
       console.error('[Calendar SA] cleanup after Meet creation failure:', cleanupError);
+      throw new CalendarMeetingCreationError(
+        error instanceof Error ? error.message : 'Google Meet creation failed',
+        data.id,
+        true,
+        cleanupError
+      );
     }
-    throw error;
   }
 }
 
