@@ -3,10 +3,13 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { sendEmail } from '@/lib/email/send';
 import { holdedDemoActivated, holdedOnboardingDone } from '@/lib/email/templates';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
+import { getBookingFormacionUrl } from '@/lib/utils/cal';
 
 const HOLDED_HELP_URL = `${getPublicAppUrl()}/holded/pack-starter`;
-const CAL_FORMACION_LINK = process.env.NEXT_PUBLIC_CAL_FORMACION_LINK;
-const CAL_FORMACION = CAL_FORMACION_LINK ? `https://cal.com/${CAL_FORMACION_LINK}` : `${getPublicAppUrl()}/cita`;
+const bookingFormacionUrl = getBookingFormacionUrl();
+const BOOKING_FORMACION = bookingFormacionUrl
+  ? new URL(bookingFormacionUrl, `${getPublicAppUrl()}/`).toString()
+  : `${getPublicAppUrl()}/cita?tipo=formacion-holded`;
 
 const VALID_STATUSES = ['pending', 'demo_active', 'onboarding_done', 'training_done', 'converted', 'closed'] as const;
 type DemoStatus = typeof VALID_STATUSES[number];
@@ -96,7 +99,7 @@ export async function PATCH(request: NextRequest) {
       await sendEmail({
         to: demo.email,
         eventType: 'holded_demo.onboarding_done',
-        ...holdedOnboardingDone(demo.name, CAL_FORMACION),
+        ...holdedOnboardingDone(demo.name, BOOKING_FORMACION),
         metadata: { demo_id: id }
       });
     }
