@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import {
   getConfiguredDocumentMirrorProvider,
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     // the canonical record and must never depend on Google Drive/OneDrive/SharePoint.
     const mirrorProvider = getConfiguredDocumentMirrorProvider();
     if (isDocumentMirrorConfigured(mirrorProvider)) {
-      void (async () => {
+      after(async () => {
         try {
           const { data: clientProfile } = await adminSupabase
             .from('profiles')
@@ -240,7 +240,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         } catch (error) {
           console.error('[Document mirror]', error);
         }
-      })();
+      });
     }
 
     if (!isAdmin) {
