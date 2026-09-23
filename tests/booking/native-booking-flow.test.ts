@@ -141,6 +141,8 @@ describe('native booking public flow', () => {
     expect(route).toContain('cleanupError.remoteDeleted');
     expect(adminRoute).toContain('calendarError instanceof BookingCalendarDeletionError');
     expect(adminRoute).toContain('calendarError.remoteDeleted');
+    expect(adminRoute).toContain('deleteError.remoteDeleted');
+    expect(adminRoute).toContain("calendar deleted; token persistence failed");
     expect(calendarProvider).toContain('result.eventId');
     expect(calendarProvider).toContain('remote event was compensated');
   });
