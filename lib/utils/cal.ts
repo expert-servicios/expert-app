@@ -38,10 +38,15 @@ function nativeBookingEnabled(): boolean {
 function bookingUrl(
   nativePath: string,
   googleUrl: string | undefined,
-  legacyCalLink: string | undefined
+  legacyCalLink: string | undefined,
+  options: { allowExternalGoogleFallback?: boolean } = {}
 ): string | null {
   if (nativeBookingEnabled()) return nativePath;
-  return absoluteUrl(googleUrl) ?? legacyCalUrl(legacyCalLink);
+
+  const googleFallback =
+    options.allowExternalGoogleFallback === false ? null : absoluteUrl(googleUrl);
+
+  return googleFallback ?? legacyCalUrl(legacyCalLink);
 }
 
 export function getBookingProvider(url: string | null | undefined): BookingProvider {
@@ -78,7 +83,13 @@ export function getBookingOnboardingUrl(): string | null {
   return bookingUrl(
     '/cita?tipo=onboarding',
     process.env.NEXT_PUBLIC_GOOGLE_BOOKING_ONBOARDING_URL,
-    process.env.NEXT_PUBLIC_CAL_ONBOARDING_LINK
+    process.env.NEXT_PUBLIC_CAL_ONBOARDING_LINK,
+    {
+      // External Google Appointment Schedules do not currently write back to
+      // EXPERT appointments. In rollback mode, onboarding must therefore stay
+      // on the legacy Cal flow until external Google ingestion exists.
+      allowExternalGoogleFallback: false,
+    }
   );
 }
 
