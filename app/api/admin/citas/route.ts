@@ -257,7 +257,18 @@ export async function PATCH(request: NextRequest) {
             appt.booking_provider = syncedBookingProvider;
             appt.meeting_url = meetingUrl;
           } else if (appt.status === 'cancelled' && eventId) {
-            await deleteBookingCalendarEvent(eventId, calendarProvider);
+            try {
+              await deleteBookingCalendarEvent(eventId, calendarProvider);
+            } catch (deleteError) {
+              if (
+                deleteError instanceof BookingCalendarDeletionError &&
+                deleteError.remoteDeleted
+              ) {
+                console.error('[citas] calendar deleted; token persistence failed:', deleteError);
+              } else {
+                throw deleteError;
+              }
+            }
           }
         } catch (calendarError) {
           console.error('[citas] calendar sync:', calendarError);
