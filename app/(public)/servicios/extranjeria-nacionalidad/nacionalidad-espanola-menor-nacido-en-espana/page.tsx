@@ -65,6 +65,7 @@ const documentGroups = [
       'Datos de contacto: teléfono, correo electrónico y domicilio actual.',
       'Firmas y asistencia de los representantes legales según la edad del menor y la patria potestad.',
       'Documentación adicional si solo uno de los progenitores puede firmar.',
+      'Opcional: certificado de nacimiento de la madre, con apostilla/legalización y traducción oficial cuando proceda, si la familia quiere acreditar su apellido personal/de nacimiento como segundo apellido del menor.',
     ],
   },
 ];
@@ -127,6 +128,11 @@ const faqItems = [
     q: '¿Tienen que firmar los dos progenitores?',
     a:
       'En menores de 14 años actúan los representantes legales. Si ambos ejercen la patria potestad y existe acuerdo, deben intervenir conforme al modelo aplicable; si no existe acuerdo, revisamos la resolución de jurisdicción voluntaria necesaria. Entre 14 y 17 años, el menor formula la solicitud asistido por sus representantes legales.',
+  },
+  {
+    q: '¿Qué ocurre si el menor tiene un solo apellido?',
+    a:
+      'Antes de cerrar la solicitud conviene decidir cómo quedarán los apellidos en la inscripción española. Si solo consta un apellido y no se acredita otro por filiación, puede duplicarse. Como alternativa, la familia puede acreditar el apellido personal o de nacimiento de la madre para utilizarlo como segundo apellido. Esta segunda opción es voluntaria y requiere documentación suficiente; no se puede elegir libremente un apellido ajeno a la filiación.',
   },
   {
     q: '¿El menor tiene que hacer CCSE o DELE?',
@@ -306,7 +312,7 @@ export default function NacionalidadMenorPage() {
             </ul>
           </div>
 
-          <div>
+          <div className="border border-[#D4A017]/25 bg-white p-6">\n            <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4A017]">Apellidos y Registro Civil</p>\n            <h2 className="mt-2 font-serif text-2xl font-bold text-[#0D1B2A]">Si el menor tiene un solo apellido</h2>\n            <p className="mt-3 text-sm leading-7 text-[#23364D]">\n              La familia puede optar por duplicar el apellido actual o, si lo prefiere, acreditar el apellido personal/de nacimiento de la madre para utilizarlo como segundo apellido. La segunda opción es voluntaria y debe documentarse.\n            </p>\n            <div className="mt-4 flex flex-col gap-2 text-sm">\n              <Link href="/docs/apellidos-menor-nacionalidad-registro-civil" className="font-semibold text-[#D4A017] underline underline-offset-4">\n                Ver guía en la base de conocimientos\n              </Link>\n              <Link href="/blog/apellidos-menor-nacionalidad-espanola-registro-civil" className="font-semibold text-[#D4A017] underline underline-offset-4">\n                Leer artículo explicativo\n              </Link>\n            </div>\n          </div>\n\n          <div>
             <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">Preguntas frecuentes</h2>
             <div className="mt-6 space-y-5">
               {faqItems.map(({ q, a }) => (
