@@ -33,23 +33,25 @@ export async function getAuthorizedBookingEmails(
   const normalizedAuth = normalizeEmail(authEmail);
   if (normalizedAuth) emails.add(normalizedAuth);
 
-  if (companyId) {
-    const { data: membership, error: membershipError } = await admin
-      .from('profile_companies')
-      .select('company_id')
-      .eq('profile_id', clientId)
-      .eq('company_id', companyId)
-      .maybeSingle();
-    if (membershipError) throw membershipError;
+  const { data: memberships, error: membershipError } = await admin
+    .from('profile_companies')
+    .select('company_id')
+    .eq('profile_id', clientId);
+  if (membershipError) throw membershipError;
 
-    if (membership) {
-      const { data: company, error: companyError } = await admin
-        .from('companies')
-        .select('email')
-        .eq('id', companyId)
-        .maybeSingle();
-      if (companyError) throw companyError;
-      const companyEmail = normalizeEmail(company?.email);
+  const allowedCompanyIds = (memberships ?? []).map((row) => row.company_id as string);
+  const companyIds = companyId
+    ? allowedCompanyIds.filter((id) => id === companyId)
+    : allowedCompanyIds;
+
+  if (companyIds.length) {
+    const { data: companies, error: companyError } = await admin
+      .from('companies')
+      .select('id,email')
+      .in('id', companyIds);
+    if (companyError) throw companyError;
+    for (const company of companies ?? []) {
+      const companyEmail = normalizeEmail(company.email);
       if (companyEmail) emails.add(companyEmail);
     }
   }
@@ -84,6 +86,21 @@ export async function loadOnboardingAppointmentsForIdentity(
     const bTime = b.appointment_date ? new Date(b.appointment_date).getTime() : 0;
     return bTime - aTime;
   });
+}
+
+export async function listOpenOnboardingCompanyIds(
+  admin: AdminClient,
+  clientId: string,
+): Promise<string[]> {
+  const { data, error } = await admin
+    .from('subscriptions')
+    .select('company_id')
+    .eq('client_id', clientId)
+    .in('status', ['active', 'trialing'])
+    .is('post_purchase_onboarding_at', null)
+    .limit(20);
+  if (error) throw error;
+  return [...new Set((data ?? []).map((row) => row.company_id).filter(Boolean))] as string[];
 }
 
 async function resolveSingleOpenOnboardingCompanyId(admin: AdminClient, clientId: string): Promise<string | null> {
