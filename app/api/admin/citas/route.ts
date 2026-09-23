@@ -5,6 +5,7 @@ import { sendEmail } from '@/lib/email/send';
 import { citaConfirmed } from '@/lib/email/templates';
 import {
   BookingCalendarCreationError,
+  BookingCalendarDeletionError,
   calendarProviderFromBookingProvider,
   createBookingCalendarMeeting,
   deleteBookingCalendarEvent,
@@ -228,12 +229,22 @@ export async function PATCH(request: NextRequest) {
                 try {
                   await deleteBookingCalendarEvent(syncedEventId, calendarProvider);
                 } catch (cleanupError) {
+                  if (
+                    cleanupError instanceof BookingCalendarDeletionError &&
+                    cleanupError.remoteDeleted
+                  ) {
+                    // Remote deletion succeeded; only refreshed-token
+                    // persistence failed. Do not retain a deleted event ID.
+                    throw metadataSyncError;
+                  }
+
                   throw new BookingCalendarCreationError(
                     'Calendar metadata persistence failed after event creation and cleanup failed',
                     calendarProvider,
                     syncedEventId,
                     true,
-                    cleanupError
+                    cleanupError,
+                    meetingUrl
                   );
                 }
               }
@@ -263,6 +274,9 @@ export async function PATCH(request: NextRequest) {
             creationError?.cleanupFailed === true
               ? creationError.provider
               : calendarProvider;
+          if (creationError?.cleanupFailed === true && creationError.meetingUrl) {
+            reconciliationMeetingUrl = creationError.meetingUrl;
+          }
 
           const keepSynchronizedSchedule =
             existingRemoteEventUpdated && !reconciliationEventId;
@@ -301,13 +315,34 @@ export async function PATCH(request: NextRequest) {
 
           if (restoreError) {
             console.error('[citas] failed to persist calendar reconciliation state:', restoreError);
+
+            if (reconciliationEventId) {
+              return NextResponse.json({
+                error: 'No se pudo persistir el estado de reconciliación de Calendar.',
+                recovery: {
+                  provider: reconciliationProvider,
+                  eventId: reconciliationEventId,
+                  meetingUrl: reconciliationMeetingUrl,
+                },
+              }, { status: 500 });
+            }
+
+            return NextResponse.json({
+              error: 'Calendar se sincronizó parcialmente, pero EXPERT no pudo persistir el estado de recuperación.'
+            }, { status: 500 });
           }
 
-          return NextResponse.json({
-            error: reconciliationEventId
-              ? 'Calendar no pudo sincronizarse por completo. EXPERT ha conservado el identificador remoto para reconciliación.'
-              : 'Calendar no pudo sincronizarse. EXPERT ha restaurado la cita al estado anterior.'
-          }, { status: 502 });
+          if (!keepSynchronizedSchedule) {
+            return NextResponse.json({
+              error: reconciliationEventId
+                ? 'Calendar no pudo sincronizarse por completo. EXPERT ha conservado el identificador remoto para reconciliación.'
+                : 'Calendar no pudo sincronizarse. EXPERT ha restaurado la cita al estado anterior.'
+            }, { status: 502 });
+          }
+
+          // Existing remote event and local schedule now agree on the requested
+          // time. Continue to the normal confirmation/response path.
+          appt.meeting_url = current.meeting_url;
         }
       }
     }
@@ -371,10 +406,18 @@ export async function DELETE(request: NextRequest) {
       try {
         await deleteBookingCalendarEvent(remoteEventId, calendarProvider);
       } catch (calendarError) {
-        console.error('[admin/citas] DELETE calendar:', calendarError);
-        return NextResponse.json({
-          error: 'No se pudo eliminar el evento remoto. La cita se conserva en EXPERT para poder reconciliarla.'
-        }, { status: 502 });
+        if (
+          calendarError instanceof BookingCalendarDeletionError &&
+          calendarError.remoteDeleted
+        ) {
+          console.error('[admin/citas] DELETE token persistence:', calendarError);
+          // The remote event is already gone; continue deleting the local row.
+        } else {
+          console.error('[admin/citas] DELETE calendar:', calendarError);
+          return NextResponse.json({
+            error: 'No se pudo eliminar el evento remoto. La cita se conserva en EXPERT para poder reconciliarla.'
+          }, { status: 502 });
+        }
       }
     }
 
