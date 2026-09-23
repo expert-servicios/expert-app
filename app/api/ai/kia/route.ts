@@ -38,8 +38,7 @@ import { runSampledKiaShadow } from '@/lib/ai/kia/evals/kia-shadow-sampler';
 import { resolveKiaLocale } from '@/lib/ai/kia/kia-locale';
 import { resolveKiaContextToken } from '@/lib/ai/kia/kia-context-token';
 import { loadKiaConversation, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
-import { searchKiaKnowledgeResources } from '@/lib/ai/kia/kia-knowledge-discovery';
-import type { KiaToolResult } from '@/lib/ai/kia/kia-tool-definitions';
+import { buildAutomaticKiaKnowledgeResult } from '@/lib/ai/kia/kia-knowledge-discovery';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -63,42 +62,6 @@ function sessionCompanyId(data: unknown): string | null {
   return typeof value === 'string' ? value : null;
 }
 
-const KNOWLEDGE_SILENT_INTENTS = new Set([
-  'greeting',
-  'case_status',
-  'checkout',
-  'book_call',
-  'complete_profile',
-  'connect_holded',
-  'send_documents',
-  'report_request',
-  'export_report',
-]);
-
-function buildAutomaticKnowledgeResult(input: {
-  message: string;
-  intent: string;
-  serviceSlug?: string;
-  existingToolResults: KiaToolResult[];
-}): KiaToolResult | null {
-  if (input.message.trim().length < 8) return null;
-  if (KNOWLEDGE_SILENT_INTENTS.has(input.intent)) return null;
-  if (input.existingToolResults.some((item) => item.toolName === 'search_knowledge_resources')) return null;
-
-  const resources = searchKiaKnowledgeResources({
-    query: input.message,
-    type: 'all',
-    serviceSlug: input.serviceSlug,
-    limit: 3,
-  });
-  if (!resources.length) return null;
-
-  return {
-    toolName: 'search_knowledge_resources',
-    ok: true,
-    result: { resources },
-  };
-}
 
 export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -379,7 +342,7 @@ export async function POST(request: NextRequest) {
     userMessage: message,
     presentationContext,
   });
-  const automaticKnowledgeResult = buildAutomaticKnowledgeResult({
+  const automaticKnowledgeResult = buildAutomaticKiaKnowledgeResult({
     message,
     intent: result.decision.intent,
     serviceSlug: contextualServiceSlug,
