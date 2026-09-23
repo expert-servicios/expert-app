@@ -132,7 +132,32 @@ export async function PATCH(request: NextRequest) {
         calendarProviderFromBookingProvider(appt.booking_provider) ??
         getConfiguredBookingCalendarProvider();
 
-      if (await isBookingCalendarConfigured(calendarProvider)) {
+      const nativeProvider = calendarProviderFromBookingProvider(appt.booking_provider);
+      const requiresRemoteSync = Boolean(
+        nativeProvider || appt.google_event_id || appt.provider_booking_id
+      );
+      const providerConfigured = await isBookingCalendarConfigured(calendarProvider);
+
+      if (!providerConfigured && requiresRemoteSync) {
+        await admin
+          .from('appointments')
+          .update({
+            status: current.status,
+            confirmed_date: current.confirmed_date,
+            confirmed_time: current.confirmed_time,
+            appointment_date: current.appointment_date,
+            appointment_end: current.appointment_end,
+            meeting_url: current.meeting_url,
+            admin_notes: current.admin_notes,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', id);
+        return NextResponse.json({
+          error: 'El proveedor de calendario de esta cita no está conectado. EXPERT ha restaurado el estado anterior.'
+        }, { status: 503 });
+      }
+
+      if (providerConfigured) {
         try {
           const eventId = (
             calendarProvider === 'google'
@@ -258,7 +283,12 @@ export async function DELETE(request: NextRequest) {
         : appt.provider_booking_id
     ) as string | null;
 
-    if (calendarProvider && remoteEventId && await isBookingCalendarConfigured(calendarProvider)) {
+    if (calendarProvider && remoteEventId) {
+      if (!(await isBookingCalendarConfigured(calendarProvider))) {
+        return NextResponse.json({
+          error: 'El proveedor de calendario de esta cita no está conectado. La cita se conserva en EXPERT.'
+        }, { status: 503 });
+      }
       try {
         await deleteBookingCalendarEvent(remoteEventId, calendarProvider);
       } catch (calendarError) {
