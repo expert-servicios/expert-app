@@ -452,6 +452,22 @@ export async function createMs365TeamsMeeting(
   };
 }
 
+export async function getMs365TeamsMeetingUrl(
+  stored: Ms365StoredTokens,
+  eventId: string
+): Promise<{ meetingUrl: string | null; refreshed: Ms365StoredTokens | null }> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  const data = await graphGet(
+    access_token,
+    `/events/${encodeURIComponent(eventId)}?$select=id,onlineMeeting`
+  );
+
+  return {
+    meetingUrl: data?.onlineMeeting?.joinUrl ?? null,
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
+}
+
 export async function updateMs365TeamsMeeting(
   stored: Ms365StoredTokens,
   eventId: string,
