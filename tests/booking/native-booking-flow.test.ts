@@ -94,6 +94,8 @@ describe('native booking public flow', () => {
     expect(adminRoute).toContain('madridLocalToDate');
     expect(adminRoute).toContain('provider_booking_id');
     expect(adminRoute).toContain('updateBookingCalendarMeeting');
+    expect(adminRoute).toContain('requiresRemoteSync');
+    expect(adminRoute).toContain('El proveedor de calendario de esta cita no está conectado');
     expect(adminRoute).toContain('EXPERT ha restaurado la cita al estado anterior');
     expect(adminRoute).toContain('La cita se conserva en EXPERT');
     expect(calendar).toContain('cal.events.patch');
