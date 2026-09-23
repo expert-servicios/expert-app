@@ -41,6 +41,9 @@ describe('document mirror providers', () => {
     expect(microsoft).toContain('findOrCreateMs365Folder');
     expect(microsoft).toContain('syncDocumentToMs365Files');
     expect(microsoft).toContain("'@microsoft.graph.conflictBehavior': 'fail'");
+    expect(microsoft).toContain("'@odata.nextLink'");
+    expect(microsoft).toContain('pagination safety limit');
+    expect(microsoft).toContain('conflictBehavior=rename');
   });
 
   it('keeps the external mirror non-blocking for case uploads', () => {
