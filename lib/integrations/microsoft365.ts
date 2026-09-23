@@ -10,6 +10,7 @@ const SCOPES = [
   'offline_access',
   'Mail.Read',
   'Mail.Send',
+  'Calendars.ReadWrite',
 ].join(' ');
 
 function getRedirectUri() {
@@ -88,22 +89,44 @@ async function graphGet(accessToken: string, path: string) {
 }
 
 async function graphPatch(accessToken: string, path: string, body: object) {
-  await fetch(`${GRAPH_BASE}${path}`, {
-    method: 'PATCH',
-    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-}
-
-async function graphPost(accessToken: string, path: string, body: object) {
   const res = await fetch(`${GRAPH_BASE}${path}`, {
-    method: 'POST',
+    method: 'PATCH',
     headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `Graph PATCH ${path} failed: ${res.status}`);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+async function graphPost(accessToken: string, path: string, body: object, headers?: Record<string, string>) {
+  const res = await fetch(`${GRAPH_BASE}${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      ...headers,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
     throw new Error(err?.error?.message ?? `Graph POST ${path} failed: ${res.status}`);
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+async function graphDelete(accessToken: string, path: string) {
+  const res = await fetch(`${GRAPH_BASE}${path}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (res.status === 404 || res.status === 410) return;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `Graph DELETE ${path} failed: ${res.status}`);
   }
 }
 
@@ -296,4 +319,153 @@ export async function sendNewMail(
     saveToSentItems: true,
   });
   return { refreshed: refreshed ? { ...stored, ...refreshed } : null };
+}
+
+
+export interface Ms365CalendarBusyWindow {
+  start: string;
+  end: string;
+}
+
+export interface Ms365MeetingInput {
+  summary: string;
+  description?: string;
+  start: string;
+  end: string;
+  attendeeEmail: string;
+  timezone?: string;
+  reminderMinutesBefore?: number[];
+}
+
+export interface Ms365MeetingResult {
+  eventId: string;
+  meetingUrl: string | null;
+  refreshed: Ms365StoredTokens | null;
+}
+
+function graphDateTime(value: string): { dateTime: string; timeZone: string } {
+  return {
+    dateTime: new Date(value).toISOString().replace(/Z$/, ''),
+    timeZone: 'UTC',
+  };
+}
+
+export async function listMs365CalendarBusyWindows(
+  stored: Ms365StoredTokens,
+  timeMin: string,
+  timeMax: string
+): Promise<{ windows: Ms365CalendarBusyWindow[]; refreshed: Ms365StoredTokens | null }> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  const params = new URLSearchParams({
+    startDateTime: new Date(timeMin).toISOString(),
+    endDateTime: new Date(timeMax).toISOString(),
+    '$select': 'start,end,showAs,isCancelled',
+    '$orderby': 'start/dateTime',
+    '$top': '1000',
+  });
+  const data = await graphGet(access_token, `/calendarView?${params.toString()}`);
+
+  const windows = (data.value ?? [])
+    .filter((event: Record<string, unknown>) =>
+      !event.isCancelled &&
+      !['free', 'workingElsewhere'].includes(String(event.showAs ?? '').toLowerCase())
+    )
+    .map((event: Record<string, unknown>) => {
+      const start = event.start as { dateTime?: string; timeZone?: string } | undefined;
+      const end = event.end as { dateTime?: string; timeZone?: string } | undefined;
+      return {
+        start: start?.dateTime ? new Date(`${start.dateTime}Z`).toISOString() : '',
+        end: end?.dateTime ? new Date(`${end.dateTime}Z`).toISOString() : '',
+      };
+    })
+    .filter((window: Ms365CalendarBusyWindow) => Boolean(window.start && window.end));
+
+  return {
+    windows,
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
+}
+
+export async function createMs365TeamsMeeting(
+  stored: Ms365StoredTokens,
+  input: Ms365MeetingInput
+): Promise<Ms365MeetingResult> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  const reminder = Math.min(...(input.reminderMinutesBefore ?? [60]));
+
+  const data = await graphPost(access_token, '/events', {
+    subject: input.summary,
+    body: {
+      contentType: 'HTML',
+      content: input.description ?? '',
+    },
+    start: graphDateTime(input.start),
+    end: graphDateTime(input.end),
+    attendees: [{
+      emailAddress: { address: input.attendeeEmail },
+      type: 'required',
+    }],
+    isOnlineMeeting: true,
+    onlineMeetingProvider: 'teamsForBusiness',
+    isReminderOn: true,
+    reminderMinutesBeforeStart: reminder,
+  });
+
+  const eventId = String(data?.id ?? '');
+  if (!eventId) throw new Error('Microsoft Graph did not return an event id');
+
+  return {
+    eventId,
+    meetingUrl: data?.onlineMeeting?.joinUrl ?? null,
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
+}
+
+export async function updateMs365TeamsMeeting(
+  stored: Ms365StoredTokens,
+  eventId: string,
+  input: {
+    summary?: string;
+    description?: string;
+    start?: string;
+    end?: string;
+    timezone?: string;
+    reminderMinutesBefore?: number[];
+  }
+): Promise<{ eventId: string; refreshed: Ms365StoredTokens | null }> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  const body: Record<string, unknown> = {};
+
+  if (input.summary !== undefined) body.subject = input.summary;
+  if (input.description !== undefined) {
+    body.body = { contentType: 'HTML', content: input.description };
+  }
+  if (input.start) body.start = graphDateTime(input.start);
+  if (input.end) body.end = graphDateTime(input.end);
+  if (input.reminderMinutesBefore?.length) {
+    body.isReminderOn = true;
+    body.reminderMinutesBeforeStart = Math.min(...input.reminderMinutesBefore);
+  }
+
+  const data = await graphPatch(
+    access_token,
+    `/events/${encodeURIComponent(eventId)}`,
+    body
+  );
+
+  return {
+    eventId: String(data?.id ?? eventId),
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
+}
+
+export async function deleteMs365CalendarEvent(
+  stored: Ms365StoredTokens,
+  eventId: string
+): Promise<{ refreshed: Ms365StoredTokens | null }> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  await graphDelete(access_token, `/events/${encodeURIComponent(eventId)}`);
+  return {
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
 }
