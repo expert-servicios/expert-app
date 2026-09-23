@@ -31,7 +31,16 @@ function legacyCalUrl(envVar: string | undefined): string | null {
   return `https://cal.com/${link}`;
 }
 
-function bookingUrl(googleUrl: string | undefined, legacyCalLink: string | undefined): string | null {
+function nativeBookingEnabled(): boolean {
+  return process.env.NEXT_PUBLIC_NATIVE_BOOKING_ENABLED === 'true';
+}
+
+function bookingUrl(
+  nativePath: string,
+  googleUrl: string | undefined,
+  legacyCalLink: string | undefined
+): string | null {
+  if (nativeBookingEnabled()) return nativePath;
   return absoluteUrl(googleUrl) ?? legacyCalUrl(legacyCalLink);
 }
 
@@ -51,6 +60,7 @@ export function getBookingProvider(url: string | null | undefined): BookingProvi
 
 export function getBookingMeetingUrl(): string | null {
   return bookingUrl(
+    '/cita?tipo=consulta-inicial',
     process.env.NEXT_PUBLIC_GOOGLE_BOOKING_REUNION_URL,
     process.env.NEXT_PUBLIC_CAL_REUNION_LINK
   );
@@ -58,6 +68,7 @@ export function getBookingMeetingUrl(): string | null {
 
 export function getBookingDemoUrl(): string | null {
   return bookingUrl(
+    '/cita?tipo=demo-holded',
     process.env.NEXT_PUBLIC_GOOGLE_BOOKING_DEMO_URL,
     process.env.NEXT_PUBLIC_CAL_DEMO_LINK
   );
@@ -65,6 +76,7 @@ export function getBookingDemoUrl(): string | null {
 
 export function getBookingOnboardingUrl(): string | null {
   return bookingUrl(
+    '/cita?tipo=onboarding',
     process.env.NEXT_PUBLIC_GOOGLE_BOOKING_ONBOARDING_URL,
     process.env.NEXT_PUBLIC_CAL_ONBOARDING_LINK
   );
@@ -72,6 +84,7 @@ export function getBookingOnboardingUrl(): string | null {
 
 export function getBookingFormacionUrl(): string | null {
   return bookingUrl(
+    '/cita?tipo=formacion-holded',
     process.env.NEXT_PUBLIC_GOOGLE_BOOKING_FORMACION_URL,
     process.env.NEXT_PUBLIC_CAL_FORMACION_LINK
   );
@@ -79,6 +92,7 @@ export function getBookingFormacionUrl(): string | null {
 
 export function getBookingAcademyUrl(): string | null {
   return bookingUrl(
+    '/cita?tipo=academy-admision',
     process.env.NEXT_PUBLIC_GOOGLE_BOOKING_ACADEMY_URL,
     process.env.NEXT_PUBLIC_CAL_ACADEMY_LINK
   );
