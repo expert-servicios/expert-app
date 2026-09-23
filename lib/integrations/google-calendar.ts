@@ -288,28 +288,100 @@ export async function createCalendarMeetingSA(
   if (!data.id) throw new Error('Google Calendar did not return an event id');
   if (data.hangoutLink) return { eventId: data.id, meetUrl: data.hangoutLink };
 
-  // Conference creation may complete asynchronously. Do not confirm the local
-  // appointment until Google exposes the Meet link or reports failure.
-  for (let attempt = 0; attempt < 6; attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 250 : 500));
-    const { data: refreshed } = await cal.events.get({
-      calendarId: 'primary',
-      eventId: data.id,
-    });
-    if (refreshed.hangoutLink) {
-      return { eventId: data.id, meetUrl: refreshed.hangoutLink };
+  try {
+    // Conference creation may complete asynchronously. Do not confirm the local
+    // appointment until Google exposes the Meet link or reports failure.
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 250 : 500));
+      const { data: refreshed } = await cal.events.get({
+        calendarId: 'primary',
+        eventId: data.id,
+      });
+      if (refreshed.hangoutLink) {
+        return { eventId: data.id, meetUrl: refreshed.hangoutLink };
+      }
+      const status = refreshed.conferenceData?.createRequest?.status?.statusCode;
+      if (status === 'failure') {
+        throw new Error('Google Meet conference creation failed');
+      }
     }
-    const status = refreshed.conferenceData?.createRequest?.status?.statusCode;
-    if (status === 'failure') {
-      throw new Error('Google Meet conference creation failed');
+
+    throw new Error('Google Meet conference creation did not complete in time');
+  } catch (error) {
+    try {
+      await cal.events.delete({
+        calendarId: 'primary',
+        eventId: data.id,
+        sendUpdates: 'all',
+      });
+    } catch (cleanupError) {
+      console.error('[Calendar SA] cleanup after Meet creation failure:', cleanupError);
     }
+    throw error;
+  }
+}
+
+export async function updateCalendarMeetingSA(
+  eventId: string,
+  input: {
+    summary?: string;
+    description?: string;
+    start?: string;
+    end?: string;
+    timezone?: string;
+    reminderMinutesBefore?: number[];
+  }
+): Promise<string> {
+  const cal = await getCalendarSAClient();
+  if (!cal) throw new Error('Google Calendar service account is not configured');
+
+  const resource: Record<string, unknown> = {};
+  if (input.summary !== undefined) resource.summary = input.summary;
+  if (input.description !== undefined) resource.description = input.description;
+  if (input.start) {
+    resource.start = {
+      dateTime: input.start,
+      timeZone: input.timezone ?? 'Europe/Madrid',
+    };
+  }
+  if (input.end) {
+    resource.end = {
+      dateTime: input.end,
+      timeZone: input.timezone ?? 'Europe/Madrid',
+    };
+  }
+  if (input.reminderMinutesBefore) {
+    resource.reminders = {
+      useDefault: false,
+      overrides: input.reminderMinutesBefore.map((minutes) => ({
+        method: 'email',
+        minutes,
+      })),
+    };
   }
 
-  throw new Error('Google Meet conference creation did not complete in time');
+  const { data } = await cal.events.patch({
+    calendarId: 'primary',
+    eventId,
+    sendUpdates: 'all',
+    conferenceDataVersion: 1,
+    resource,
+  });
+
+  if (!data.id) throw new Error('Google Calendar did not return the updated event id');
+  return data.id;
 }
 
 export async function deleteCalendarEventSA(eventId: string): Promise<void> {
   const cal = await getCalendarSAClient();
   if (!cal) throw new Error('Google Calendar service account is not configured');
-  await cal.events.delete({ calendarId: 'primary', eventId, sendUpdates: 'all' });
+
+  try {
+    await cal.events.delete({ calendarId: 'primary', eventId, sendUpdates: 'all' });
+  } catch (error) {
+    const status = (error as { response?: { status?: number }; code?: number }).response?.status
+      ?? (error as { code?: number }).code;
+    if (status === 404 || status === 410) return;
+    throw error;
+  }
 }
