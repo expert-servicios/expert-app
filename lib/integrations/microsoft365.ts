@@ -74,7 +74,7 @@ async function ensureFreshToken(stored: Ms365StoredTokens) {
   }
   // Do not request new scopes during refresh. Existing Mail-only connections
   // must keep refreshing successfully until the admin explicitly reconnects
-  // and consents to Calendars.ReadWrite.
+  // and consents to any newly-added Calendar/Files scopes.
   const tokens = await fetchToken({ grant_type: 'refresh_token', refresh_token: stored.refresh_token });
   const refreshed = {
     access_token: tokens.access_token,
