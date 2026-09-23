@@ -111,6 +111,8 @@ describe('native booking public flow', () => {
     expect(microsoft).toContain("isOnlineMeeting: true");
     expect(microsoft).toContain("onlineMeetingProvider: 'teamsForBusiness'");
     expect(microsoft).toContain("data?.onlineMeeting?.joinUrl");
+    expect(microsoft).toContain('readOptionalGraphJson');
+    expect(microsoft).toContain("if (!text.trim()) return null");
   });
 
   it('persists administrative workflow failures for reconciliation', () => {
