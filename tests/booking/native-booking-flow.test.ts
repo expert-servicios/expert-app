@@ -12,6 +12,10 @@ describe('native booking public flow', () => {
   const adminRoute = read('app/api/admin/citas/route.ts');
   const dashboardRoute = read('app/api/dashboard/citas/route.ts');
   const badge = read('components/site/CalBadge.tsx');
+  const privateAuth = read('lib/booking/private-booking-authorization.ts');
+  const stripeWebhook = read('app/api/stripe/webhook/route.ts');
+  const holdedDemoAdmin = read('app/api/admin/holded-demos/route.ts');
+  const legacyCalWebhook = read('app/api/webhooks/cal/route.ts');
 
   it('protects public booking creation', () => {
     expect(route).toContain("action: 'booking_create'");
@@ -49,12 +53,18 @@ describe('native booking public flow', () => {
     expect(route).toContain('start.getTime() > now + BOOKING_MAX_DAYS');
   });
 
-  it('binds private bookings to authenticated authorized emails', () => {
-    expect(route).toContain('resolveAuthenticatedBookingIdentity');
+  it('binds private bookings to a real entitlement and authorized email', () => {
+    expect(route).toContain('verifyPrivateBookingAuthorization');
+    expect(route).toContain('listOpenOnboardingCompanyIds');
     expect(route).toContain('getAuthorizedBookingEmails');
     expect(route).toContain('bookingEmail');
+    expect(route).toContain("source: 'auth_email'");
+    expect(route).toContain('una suscripción activa');
     expect(dashboardRoute).toContain('getAuthorizedBookingEmails');
     expect(dashboardRoute).toContain(".in('email', emails)");
+    expect(privateAuth).toContain("purpose: 'private_booking'");
+    expect(stripeWebhook).toContain('createPrivateBookingAuthorization');
+    expect(holdedDemoAdmin).toContain("source: 'holded_demo'");
   });
 
   it('runs onboarding and training operational side effects for native bookings', () => {
@@ -64,16 +74,31 @@ describe('native booking public flow', () => {
     expect(route).toContain('getAdminNotificationEmails');
   });
 
-  it('waits for Meet creation before reporting success', () => {
+  it('waits for Meet creation and compensates orphan events before reporting failure', () => {
     expect(calendar).toContain('cal.events.get');
     expect(calendar).toContain('Google Meet conference creation did not complete in time');
+    expect(calendar).toContain('CalendarMeetingCreationError');
+    expect(calendar).toContain('cleanup after Meet creation failure');
+    expect(route).toContain('error instanceof CalendarMeetingCreationError');
+    expect(route).toContain('provider_booking_id: googleEventId');
   });
 
   it('keeps admin moves and deletes synchronized with native Calendar events', () => {
     expect(adminRoute).toContain('appointment_end');
     expect(adminRoute).toContain('madridLocalToDate');
     expect(adminRoute).toContain('provider_booking_id');
+    expect(adminRoute).toContain('updateCalendarMeetingSA');
+    expect(adminRoute).toContain('EXPERT ha restaurado la cita al estado anterior');
     expect(adminRoute).toContain('La cita se conserva en EXPERT');
+    expect(calendar).toContain('cal.events.patch');
+    expect(calendar).toContain('status === 404 || status === 410');
+    expect(legacyCalWebhook).toContain('appointment_end: payload.endTime');
+  });
+
+  it('persists administrative workflow failures for reconciliation', () => {
+    expect(route).toContain('Administrative booking workflow failed');
+    expect(route).toContain(".update({");
+    expect(route).toContain('admin_notes');
   });
 
   it('honors provider rollback URL in the floating badge', () => {
