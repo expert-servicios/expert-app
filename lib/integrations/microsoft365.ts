@@ -11,6 +11,7 @@ const SCOPES = [
   'Mail.Read',
   'Mail.Send',
   'Calendars.ReadWrite',
+  'Files.ReadWrite',
 ].join(' ');
 
 function getRedirectUri() {
@@ -73,7 +74,7 @@ async function ensureFreshToken(stored: Ms365StoredTokens) {
   }
   // Do not request new scopes during refresh. Existing Mail-only connections
   // must keep refreshing successfully until the admin explicitly reconnects
-  // and consents to Calendars.ReadWrite.
+  // and consents to newly added Calendar/Files scopes.
   const tokens = await fetchToken({ grant_type: 'refresh_token', refresh_token: stored.refresh_token });
   const refreshed = {
     access_token: tokens.access_token,
@@ -497,6 +498,234 @@ export async function deleteMs365CalendarEvent(
   const { access_token, refreshed } = await ensureFreshToken(stored);
   await graphDelete(access_token, `/events/${encodeURIComponent(eventId)}`);
   return {
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
+}
+
+
+export interface Ms365DriveFileSummary {
+  id: string;
+  name: string;
+  mimeType: string;
+  webViewLink: string;
+  size: string | null;
+  createdTime: string | null;
+}
+
+export interface Ms365DriveSyncResult {
+  fileId: string;
+  webViewLink: string;
+  refreshed: Ms365StoredTokens | null;
+}
+
+const GRAPH_API_ROOT = 'https://graph.microsoft.com/v1.0';
+
+function ms365DriveBasePath(): string {
+  const driveId = process.env.MS365_DOCUMENT_DRIVE_ID?.trim();
+  return driveId
+    ? `/drives/${encodeURIComponent(driveId)}`
+    : '/me/drive';
+}
+
+function safeDriveFolderName(value: string): string {
+  return value
+    .replace(/[~"#%&*:<>?/\\{|}]/g, '_')
+    .replace(/\.+$/g, '')
+    .trim()
+    .slice(0, 100) || 'Sin nombre';
+}
+
+async function graphDriveRequest(
+  accessToken: string,
+  path: string,
+  init: RequestInit = {}
+): Promise<Response> {
+  const res = await fetch(`${GRAPH_API_ROOT}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      ...(init.headers ?? {}),
+    },
+  });
+  return res;
+}
+
+async function graphDriveJson(
+  accessToken: string,
+  path: string,
+  init: RequestInit = {}
+) {
+  const res = await graphDriveRequest(accessToken, path, init);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `Graph Drive request failed: ${res.status}`);
+  }
+  return res.json();
+}
+
+async function listDriveChildren(
+  accessToken: string,
+  parentId: string
+): Promise<Record<string, unknown>[]> {
+  const base = ms365DriveBasePath();
+  const data = await graphDriveJson(
+    accessToken,
+    `${base}/items/${encodeURIComponent(parentId)}/children?$select=id,name,folder,file,webUrl,size,createdDateTime&$top=200`
+  );
+  return (data.value ?? []) as Record<string, unknown>[];
+}
+
+async function findOrCreateMs365Folder(
+  accessToken: string,
+  parentId: string,
+  folderName: string
+): Promise<string> {
+  const name = safeDriveFolderName(folderName);
+  const existing = (await listDriveChildren(accessToken, parentId)).find((item) =>
+    String(item.name ?? '').toLocaleLowerCase('es-ES') === name.toLocaleLowerCase('es-ES') &&
+    Boolean(item.folder)
+  );
+  if (existing?.id) return String(existing.id);
+
+  const base = ms365DriveBasePath();
+  try {
+    const created = await graphDriveJson(
+      accessToken,
+      `${base}/items/${encodeURIComponent(parentId)}/children`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          folder: {},
+          '@microsoft.graph.conflictBehavior': 'fail',
+        }),
+      }
+    );
+    if (!created?.id) throw new Error('Microsoft Graph did not return a folder id');
+    return String(created.id);
+  } catch (error) {
+    // A concurrent upload may have created the folder after our first read.
+    const concurrent = (await listDriveChildren(accessToken, parentId)).find((item) =>
+      String(item.name ?? '').toLocaleLowerCase('es-ES') === name.toLocaleLowerCase('es-ES') &&
+      Boolean(item.folder)
+    );
+    if (concurrent?.id) return String(concurrent.id);
+    throw error;
+  }
+}
+
+async function getMs365DriveRootId(accessToken: string): Promise<string> {
+  const base = ms365DriveBasePath();
+  const root = await graphDriveJson(accessToken, `${base}/root?$select=id`);
+  if (!root?.id) throw new Error('Microsoft Graph did not return a drive root id');
+  return String(root.id);
+}
+
+async function resolveMs365ServiceFolder(
+  accessToken: string,
+  clientName: string,
+  serviceName: string
+): Promise<string> {
+  const rootId = await getMs365DriveRootId(accessToken);
+  const configuredRoot = process.env.MS365_DOCUMENTS_ROOT_FOLDER?.trim() || 'EXPERT Clientes';
+  const expertRootId = await findOrCreateMs365Folder(accessToken, rootId, configuredRoot);
+  const clientFolderId = await findOrCreateMs365Folder(accessToken, expertRootId, clientName);
+  return findOrCreateMs365Folder(accessToken, clientFolderId, serviceName);
+}
+
+export async function syncDocumentToMs365Drive(
+  stored: Ms365StoredTokens,
+  input: {
+    fileBuffer: Buffer;
+    fileName: string;
+    mimeType: string;
+    clientName: string;
+    serviceName: string;
+  }
+): Promise<Ms365DriveSyncResult> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  const serviceFolderId = await resolveMs365ServiceFolder(
+    access_token,
+    input.clientName,
+    input.serviceName
+  );
+  const base = ms365DriveBasePath();
+  const safeName = input.fileName
+    .replace(/[~"#%&*:<>?/\\{|}]/g, '_')
+    .trim()
+    .slice(0, 180) || 'documento';
+
+  const res = await graphDriveRequest(
+    access_token,
+    `${base}/items/${encodeURIComponent(serviceFolderId)}:/${encodeURIComponent(safeName)}:/content`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': input.mimeType || 'application/octet-stream' },
+      body: new Uint8Array(input.fileBuffer),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `Microsoft Drive upload failed: ${res.status}`);
+  }
+  const data = await res.json();
+  if (!data?.id) throw new Error('Microsoft Graph did not return an uploaded file id');
+
+  return {
+    fileId: String(data.id),
+    webViewLink: String(data.webUrl ?? ''),
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
+}
+
+export async function listMs365DriveFilesForClient(
+  stored: Ms365StoredTokens,
+  clientName: string,
+  serviceName?: string
+): Promise<{ files: Ms365DriveFileSummary[]; refreshed: Ms365StoredTokens | null }> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  const rootId = await getMs365DriveRootId(access_token);
+  const configuredRoot = process.env.MS365_DOCUMENTS_ROOT_FOLDER?.trim() || 'EXPERT Clientes';
+
+  const findFolder = async (parentId: string, name: string): Promise<string | null> => {
+    const safeName = safeDriveFolderName(name);
+    const folder = (await listDriveChildren(access_token, parentId)).find((item) =>
+      String(item.name ?? '').toLocaleLowerCase('es-ES') === safeName.toLocaleLowerCase('es-ES') &&
+      Boolean(item.folder)
+    );
+    return folder?.id ? String(folder.id) : null;
+  };
+
+  const expertRootId = await findFolder(rootId, configuredRoot);
+  if (!expertRootId) return { files: [], refreshed: refreshed ? { ...stored, ...refreshed } : null };
+
+  const clientFolderId = await findFolder(expertRootId, clientName);
+  if (!clientFolderId) return { files: [], refreshed: refreshed ? { ...stored, ...refreshed } : null };
+
+  const searchParentId = serviceName
+    ? await findFolder(clientFolderId, serviceName)
+    : clientFolderId;
+  if (!searchParentId) return { files: [], refreshed: refreshed ? { ...stored, ...refreshed } : null };
+
+  const files = (await listDriveChildren(access_token, searchParentId))
+    .filter((item) => Boolean(item.file) && !item.folder)
+    .map((item) => {
+      const file = item.file as { mimeType?: string } | undefined;
+      return {
+        id: String(item.id ?? ''),
+        name: String(item.name ?? ''),
+        mimeType: String(file?.mimeType ?? 'application/octet-stream'),
+        webViewLink: String(item.webUrl ?? ''),
+        size: item.size == null ? null : String(item.size),
+        createdTime: item.createdDateTime == null ? null : String(item.createdDateTime),
+      };
+    })
+    .filter((item) => Boolean(item.id && item.name))
+    .sort((a, b) => String(b.createdTime ?? '').localeCompare(String(a.createdTime ?? '')));
+
+  return {
+    files,
     refreshed: refreshed ? { ...stored, ...refreshed } : null,
   };
 }
