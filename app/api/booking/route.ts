@@ -7,11 +7,16 @@ import {
   listCalendarBusyWindowsSA,
 } from '@/lib/integrations/google-calendar';
 import { sendEmail } from '@/lib/email/send';
-import { citaConfirmed } from '@/lib/email/templates';
+import { caseOpened, citaConfirmed } from '@/lib/email/templates';
+import { onboardingPreparationEmail } from '@/lib/email/onboarding-templates';
+import { ensureOnboardingTask, findOpenOnboardingCase } from '@/lib/admin/onboarding-followup';
+import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients';
+import { getAuthorizedBookingEmails, resolveAuthenticatedBookingIdentity, type BookingIdentity } from '@/lib/admin/onboarding-booking-identity';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkRateLimit, checkSpam, getClientIp } from '@/lib/utils/spam-guard';
 import {
   BOOKING_CLOSE_HOUR,
+  BOOKING_MAX_DAYS,
   BOOKING_OPEN_HOUR,
   BOOKING_SLOT_STEP_MINUTES,
   BOOKING_TIMEZONE,
@@ -43,7 +48,9 @@ async function authenticatedUser(request: NextRequest) {
 function isValidServiceSlot(start: Date, durationMinutes: number): boolean {
   if (!Number.isFinite(start.getTime())) return false;
   if (!isMadridWeekday(start)) return false;
-  if (start.getTime() < Date.now() + 30 * 60_000) return false;
+  const now = Date.now();
+  if (start.getTime() < now + 30 * 60_000) return false;
+  if (start.getTime() > now + BOOKING_MAX_DAYS * 24 * 60 * 60_000) return false;
 
   const time = formatMadridTime(start);
   const [hour, minute] = time.split(':').map(Number);
@@ -55,6 +62,159 @@ function isValidServiceSlot(start: Date, durationMinutes: number): boolean {
   const localDate = formatMadridDate(start);
   const roundTrip = madridLocalToDate(localDate, time);
   return Math.abs(roundTrip.getTime() - start.getTime()) < 60_000;
+}
+
+async function runNativeAdministrativeWorkflow(input: {
+  admin: ReturnType<typeof getSupabaseAdmin>;
+  identity: BookingIdentity;
+  serviceKey: 'onboarding' | 'formacion-holded';
+  appointmentId: string;
+  name: string;
+  email: string;
+  start: Date;
+  localDate: string;
+  localTime: string;
+  meetingUrl: string;
+}) {
+  const { admin, identity } = input;
+  const serviceLabel = input.serviceKey === 'onboarding' ? 'Sesión de onboarding' : 'Formación Holded';
+  let caseId: string | null = null;
+  let createdCase = false;
+
+  if (input.serviceKey === 'onboarding') {
+    const existing = await findOpenOnboardingCase(identity.clientId, identity.companyId);
+    if (existing) caseId = existing.id;
+  }
+
+  if (!caseId) {
+    let existingQuery = admin
+      .from('cases')
+      .select('id')
+      .eq('client_id', identity.clientId)
+      .eq('service', serviceLabel)
+      .neq('state', 'finalizado');
+    existingQuery = identity.companyId
+      ? existingQuery.eq('company_id', identity.companyId)
+      : existingQuery.is('company_id', null);
+    const { data: existingCase, error: existingError } = await existingQuery
+      .order('opened_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existingError) throw existingError;
+    caseId = existingCase?.id ?? null;
+  }
+
+  if (!caseId) {
+    const { data: newCase, error } = await admin
+      .from('cases')
+      .insert({
+        client_id: identity.clientId,
+        company_id: identity.companyId,
+        category: input.serviceKey === 'onboarding' ? 'onboarding' : 'formacion',
+        service: serviceLabel,
+        state: 'en_proceso',
+        status: 'nuevo',
+        next_action: input.serviceKey === 'onboarding'
+          ? 'Verificar Holded y finalizar el alta'
+          : null,
+        admin_note: `Expediente creado automáticamente desde reserva nativa EXPERT (${input.appointmentId})`,
+        opened_at: new Date().toISOString(),
+      })
+      .select('id')
+      .single();
+    if (error || !newCase) throw error ?? new Error('Could not create booking case');
+    caseId = newCase.id;
+    createdCase = true;
+  } else if (input.serviceKey === 'onboarding') {
+    await admin
+      .from('cases')
+      .update({
+        next_action: `Onboarding reservado para ${input.start.toISOString()}. Verificar Holded y finalizar el alta.`,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', caseId);
+  }
+
+  if (input.serviceKey === 'onboarding') {
+    let subscriptionQuery = admin
+      .from('subscriptions')
+      .select('id,company_id')
+      .eq('client_id', identity.clientId)
+      .in('status', ['active', 'trialing'])
+      .is('post_purchase_onboarding_at', null);
+    subscriptionQuery = identity.companyId
+      ? subscriptionQuery.eq('company_id', identity.companyId)
+      : subscriptionQuery.is('company_id', null);
+    const { data: activeSubscription, error: subscriptionError } = await subscriptionQuery
+      .limit(1)
+      .maybeSingle();
+    if (subscriptionError) throw subscriptionError;
+    if (activeSubscription) {
+      await ensureOnboardingTask({
+        clientId: identity.clientId,
+        companyId: activeSubscription.company_id,
+        caseId,
+        dueDate: input.localDate,
+        priority: 'alta',
+        description: `Onboarding reservado para ${input.localDate} ${input.localTime}. Verificar conexión Holded y finalizar el alta después de la sesión.`,
+      });
+    }
+
+    const preparation = onboardingPreparationEmail({
+      name: input.name,
+      meetingDate: new Intl.DateTimeFormat('es-ES', {
+        timeZone: BOOKING_TIMEZONE,
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }).format(input.start),
+      meetingTime: input.localTime,
+      meetingUrl: input.meetingUrl,
+    });
+    await sendEmail({
+      to: bookingEmail,
+      eventType: 'onboarding.preparation',
+      ...preparation,
+      metadata: {
+        appointment_id: input.appointmentId,
+        booking_provider: 'google_native',
+        onboarding_phase: 'pre_meeting',
+      },
+      idempotencyKey: `native/onboarding-preparation/${input.appointmentId}`,
+    });
+  }
+
+  if (createdCase && caseId) {
+    await sendEmail({
+      to: input.email,
+      eventType: 'case.opened',
+      ...caseOpened(input.name, serviceLabel, null, ''),
+      metadata: {
+        case_id: caseId,
+        company_id: identity.companyId,
+        source: 'native_booking',
+        appointment_id: input.appointmentId,
+      },
+      idempotencyKey: `native/case-opened/${input.appointmentId}`,
+    });
+  }
+
+  const adminEmails = await getAdminNotificationEmails();
+  if (adminEmails.length) {
+    await sendEmail({
+      to: adminEmails,
+      eventType: 'onboarding.booking.admin',
+      subject: `Reserva ${serviceLabel} — ${input.name}`,
+      html: `<p>Nueva reserva administrativa registrada en EXPERT.</p><p><strong>Cliente:</strong> ${input.name} (${input.email})</p><p><strong>Servicio:</strong> ${serviceLabel}</p><p><strong>Inicio:</strong> ${input.start.toISOString()}</p><p><strong>Reunión:</strong> ${input.meetingUrl}</p>`,
+      metadata: {
+        appointment_id: input.appointmentId,
+        company_id: identity.companyId,
+        booking_provider: 'google_native',
+      },
+      idempotencyKey: `native/admin-booking/${input.appointmentId}`,
+    });
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -89,7 +249,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Inicia sesión para reservar este tipo de cita.' }, { status: 401 });
     }
 
-    const spam = checkSpam({ name: input.name, email: input.email, message: input.notes });
+    const admin = getSupabaseAdmin();
+    let bookingEmail = input.email.toLowerCase();
+    let privateIdentity: BookingIdentity | null = null;
+    if (!service.public && user) {
+      if (!user.email) {
+        return NextResponse.json({ error: 'La cuenta autenticada no tiene un email válido.' }, { status: 400 });
+      }
+      privateIdentity = await resolveAuthenticatedBookingIdentity(admin, user.id);
+      const authorizedEmails = await getAuthorizedBookingEmails(
+        admin,
+        user.id,
+        privateIdentity.companyId,
+        user.email
+      );
+      const requestedEmail = input.email.toLowerCase();
+      bookingEmail = authorizedEmails.includes(requestedEmail)
+        ? requestedEmail
+        : user.email.toLowerCase();
+    }
+
+    const spam = checkSpam({ name: input.name, email: bookingEmail, message: input.notes });
     if (spam.isSpam) return NextResponse.json({ ok: true });
 
     const recaptcha = await verifyRecaptchaToken({
@@ -120,8 +300,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Ese horario acaba de ocuparse. Elige otro.' }, { status: 409 });
     }
 
-    const admin = getSupabaseAdmin();
-
     // Release stale local locks from interrupted booking attempts. Only the
     // temporary state is eligible for cleanup; confirmed appointments are
     // never touched here.
@@ -139,7 +317,7 @@ export async function POST(request: NextRequest) {
       .from('appointments')
       .insert({
         name: input.name,
-        email: input.email.toLowerCase(),
+        email: bookingEmail,
         phone: input.phone,
         appointment_type: service.key,
         appointment_date: start.toISOString(),
@@ -172,14 +350,14 @@ export async function POST(request: NextRequest) {
       summary: `${service.label} — ${input.name}`,
       description: [
         `Reserva creada desde EXPERT.`,
-        `Cliente: ${input.name} (${input.email})`,
+        `Cliente: ${input.name} (${bookingEmail})`,
         `Teléfono: ${input.phone}`,
         input.notes ? `Notas: ${input.notes}` : '',
         appointmentId ? `EXPERT appointment: ${appointmentId}` : '',
       ].filter(Boolean).join('\n'),
       start: start.toISOString(),
       end: end.toISOString(),
-      attendeeEmail: input.email.toLowerCase(),
+      attendeeEmail: bookingEmail,
       timezone: BOOKING_TIMEZONE,
       reminderMinutesBefore: service.durationMinutes >= 60 ? [1440, 60] : [1440, 30],
     });
@@ -198,6 +376,27 @@ export async function POST(request: NextRequest) {
 
     if (finalizeError) {
       throw new Error(`Could not finalize appointment: ${finalizeError.message}`);
+    }
+
+    if (
+      privateIdentity &&
+      (service.key === 'onboarding' || service.key === 'formacion-holded') &&
+      meeting.meetUrl
+    ) {
+      await runNativeAdministrativeWorkflow({
+        admin,
+        identity: privateIdentity,
+        serviceKey: service.key,
+        appointmentId,
+        name: input.name,
+        email: bookingEmail,
+        start,
+        localDate,
+        localTime,
+        meetingUrl: meeting.meetUrl,
+      }).catch((workflowError) => {
+        console.error('[booking] administrative workflow:', workflowError);
+      });
     }
 
     const formattedDate = new Intl.DateTimeFormat('es-ES', {
@@ -231,15 +430,31 @@ export async function POST(request: NextRequest) {
     console.error('[booking]', error);
 
     const admin = getSupabaseAdmin();
+    let remoteCleanupSucceeded = true;
     if (googleEventId) {
-      await deleteCalendarEventSA(googleEventId).catch(() => {});
+      try {
+        await deleteCalendarEventSA(googleEventId);
+      } catch (cleanupError) {
+        remoteCleanupSucceeded = false;
+        console.error('[booking] calendar compensation failed:', cleanupError);
+      }
     }
     if (appointmentId) {
       try {
-        await admin.from('appointments').delete().eq('id', appointmentId);
-      } catch {
-        // Best-effort compensation. The pending row no longer blocks once
-        // status/cleanup is reconciled by the operational audit.
+        if (remoteCleanupSucceeded) {
+          await admin.from('appointments').delete().eq('id', appointmentId);
+        } else {
+          await admin
+            .from('appointments')
+            .update({
+              status: 'cancelled',
+              admin_notes: 'Google Calendar cleanup failed after booking error. Reconcile remote event before deleting this row.',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', appointmentId);
+        }
+      } catch (cleanupError) {
+        console.error('[booking] local compensation failed:', cleanupError);
       }
     }
 
