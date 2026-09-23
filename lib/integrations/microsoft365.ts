@@ -636,7 +636,7 @@ async function uploadMs365FileContent(
   fileBuffer: Buffer
 ): Promise<{ id: string; webUrl: string | null }> {
   const safeName = safeMs365ItemName(fileName);
-  const url = `${base}/items/${encodeURIComponent(parentId)}:/${encodeURIComponent(safeName)}:/content`;
+  const url = `${base}/items/${encodeURIComponent(parentId)}:/${encodeURIComponent(safeName)}:/content?@microsoft.graph.conflictBehavior=rename`;
   const res = await fetch(url, {
     method: 'PUT',
     headers: {
