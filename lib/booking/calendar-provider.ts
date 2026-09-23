@@ -72,6 +72,26 @@ export class BookingCalendarCreationError extends Error {
   }
 }
 
+export class BookingCalendarUpdateError extends Error {
+  provider: BookingCalendarProviderName;
+  eventId: string;
+  remoteUpdated: boolean;
+
+  constructor(
+    message: string,
+    provider: BookingCalendarProviderName,
+    eventId: string,
+    remoteUpdated: boolean,
+    cause?: unknown
+  ) {
+    super(message, { cause });
+    this.name = 'BookingCalendarUpdateError';
+    this.provider = provider;
+    this.eventId = eventId;
+    this.remoteUpdated = remoteUpdated;
+  }
+}
+
 export class BookingCalendarDeletionError extends Error {
   provider: BookingCalendarProviderName;
   eventId: string;
@@ -299,8 +319,32 @@ export async function updateBookingCalendarMeeting(
   }
 
   const stored = await getMs365StoredTokens();
-  const result = await updateMs365TeamsMeeting(stored, eventId, input);
-  await persistMs365Refresh(result.refreshed);
+  let result: Awaited<ReturnType<typeof updateMs365TeamsMeeting>>;
+
+  try {
+    result = await updateMs365TeamsMeeting(stored, eventId, input);
+  } catch (error) {
+    throw new BookingCalendarUpdateError(
+      'Microsoft Calendar event update failed',
+      'ms365',
+      eventId,
+      false,
+      error
+    );
+  }
+
+  try {
+    await persistMs365Refresh(result.refreshed);
+  } catch (error) {
+    throw new BookingCalendarUpdateError(
+      'Microsoft Calendar event was updated but refreshed token persistence failed',
+      'ms365',
+      result.eventId,
+      true,
+      error
+    );
+  }
+
   return result.eventId;
 }
 
