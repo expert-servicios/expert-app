@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { listDriveFilesForClient } from '@/lib/integrations/google-drive';
+import {
+  getConfiguredDocumentCopyProvider,
+  listExternalDocumentCopiesForClient,
+} from '@/lib/documents/external-copy-provider';
 
 export async function GET(
   request: NextRequest,
@@ -36,9 +39,19 @@ export async function GET(
     const { data: authUser } = await admin.auth.admin.getUserById(caseData.client_id);
     const clientName = clientProfile?.full_name ?? authUser?.user?.email?.split('@')[0] ?? 'Cliente';
 
-    const files = await listDriveFilesForClient(clientName, caseData.service);
+    const provider = getConfiguredDocumentCopyProvider();
+    const files = await listExternalDocumentCopiesForClient(
+      clientName,
+      caseData.service,
+      provider
+    );
 
-    return NextResponse.json({ files, clientName, serviceName: caseData.service });
+    return NextResponse.json({
+      files,
+      provider,
+      clientName,
+      serviceName: caseData.service,
+    });
   } catch (err) {
     console.error('[cases/[id]/drive-files]', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
