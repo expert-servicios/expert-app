@@ -17,7 +17,7 @@ export const articles: Article[] = [
   {
     slug: 'apellidos-menor-nacionalidad-espanola-registro-civil',
     category: 'Extranjería',
-    title: 'Apellidos de un menor al adquirir la nacionalidad española: qué opciones existen',
+    title: 'Apellidos de un menor al adquirir la nacionalidad española: filiación y documentos',
     excerpt:
       'Qué ocurre cuando un menor extranjero tiene un solo apellido y va a adquirir la nacionalidad española: duplicación, apellido materno y documentación acreditativa.',
     date: '23 sep 2026',
@@ -25,51 +25,35 @@ export const articles: Article[] = [
     tags: ['nacionalidad española', 'apellidos', 'Registro Civil', 'menores', 'apellido materno'],
     relatedServiceSlugs: ['nacionalidad-espanola-menor-nacido-en-espana'],
     body: `
-## Por qué hay que decidir los apellidos antes de cerrar la solicitud
+## Los apellidos se determinan por la filiación
 
-Cuando una persona extranjera adquiere la nacionalidad española, los apellidos que constarán en el Registro Civil español no siempre coinciden exactamente con la forma en que figuraban en sus documentos extranjeros.
+Con carácter general, al adquirir la nacionalidad española se toman el primer apellido del padre y el primero de los personales de la madre, conforme a las reglas españolas. El apellido actual de la madre puede haber sido adquirido por matrimonio: el pasaporte o la TIE no demuestran por sí solos que sea su apellido personal de nacimiento.
 
-La **Instrucción de 23 de mayo de 2007 de la Dirección General de los Registros y del Notariado** establece que, cuando la filiación está determinada, deben aplicarse en principio las reglas españolas: primer apellido del padre y primer apellido personal de la madre. Si la persona venía usando un solo apellido y no se determina otro por la filiación, ese apellido se duplica.
+La duplicación de un único apellido corresponde a los supuestos previstos en la normativa, como cuando la filiación no determina otros apellidos o resulta imposible acreditar la identidad de los progenitores. No es una alternativa de libre elección para evitar documentos. No querer aportar o traducir un certificado no equivale a desconocer el apellido materno ni a una imposibilidad de acreditación. La firma de ambos progenitores no sustituye esa base jurídica.
 
-## Si el menor actualmente tiene un solo apellido
+## ¿Es obligatorio aportar el nacimiento de la madre?
 
-Hay dos escenarios prácticos habituales:
+No es un requisito general de toda solicitud inicial de nacionalidad de un menor. Hay que distinguir la documentación para presentar la solicitud de la necesaria para determinar los apellidos en la inscripción posterior. Su ausencia, por sí sola, no bloquea automáticamente toda solicitud; puede ser necesario aclarar datos o atender un requerimiento.
 
-1. **Duplicar el apellido actual.** Si el menor figura como, por ejemplo, «KONOVA» y no se acredita un apellido materno distinto que deba incorporarse, la inscripción española puede quedar como «KONOVA KONOVA».
-2. **Incorporar el apellido personal de la madre.** Si la familia quiere que el segundo apellido refleje el apellido de nacimiento/personal de la madre, debe poder acreditarlo documentalmente.
+Antes de solicitar documentos nuevos, revisamos el literal completo de nacimiento del menor, incluidas sus observaciones, y la documentación familiar disponible. Si consta el apellido personal materno de forma suficiente, puede evitarse pedir otra prueba. Un certificado de matrimonio que recoja el apellido anterior puede ser una alternativa: la Sede Judicial de Aragón contempla nacimiento y/o matrimonio de la madre cuando ese dato no consta en el nacimiento del solicitante. Debe confirmarse su suficiencia ante el Registro Civil competente; ese criterio local no garantiza la aceptación en todos los registros.
 
-La segunda opción no obliga a la familia a aportar documentación adicional si prefiere la duplicación. Es una **opción** que conviene valorar antes de cerrar los datos registrales.
+## Traducción y legalización: comprobar antes de gastar
 
-## ¿Puede elegirse cualquier apellido?
+Si hace falta aportar un documento extranjero, comprobamos las formalidades aplicables según el documento, su origen y los convenios. Justicia contempla traducción o cotejo consular con la legalización correspondiente, además de traducción jurada. La disponibilidad y el coste de la vía consular deben consultarse.
 
-No. La adquisición de la nacionalidad no permite escoger libremente un apellido ajeno a la filiación. El apellido alternativo debe poder vincularse jurídicamente al padre o a la madre y acreditarse.
+El artículo 95 de la Ley del Registro Civil permite que su encargado prescinda de la traducción si le consta el contenido. Es una decisión del Registro, no una exención automática para presentar documentos sin traducir en la solicitud telemática de nacionalidad.
 
-Si la madre cambió de apellido por matrimonio conforme a su legislación nacional, puede ser relevante acreditar cuál era su apellido personal o de nacimiento, porque la normativa española toma como referencia el primer apellido personal de la madre.
+## Qué hacemos antes de firmar
 
-## ¿Qué documento puede servir para acreditar el apellido materno?
+1. Confirmar el apellido personal de la madre y si hubo cambio por matrimonio.
+2. Identificar qué documento ya disponible acredita ese dato; separar la preferencia familiar de lo jurídicamente acreditado.
+3. Si falta prueba, consultar al órgano competente qué alternativa acepta antes de encargar certificados o traducciones.
+4. Resolver la casilla de apellidos conforme a los hechos y documentos. No marcar «se desconoce» solo porque la familia no desea aportar documentación.
+5. Si llega un requerimiento, atenderlo en su plazo o plantear las alternativas procedentes. Si la familia rechaza toda prueba admitida, explicar y documentar la limitación sin prometer una inscripción concreta.
 
-Un documento habitual es el **certificado de nacimiento de la madre**. Cuando se trata de un documento extranjero:
+Podemos continuar preparando las partes independientes del expediente mientras se aclara el apellido. El formulario final debe ser coherente con la documentación y la revisión profesional.
 
-- debe ser auténtico y válido;
-- puede necesitar apostilla o legalización, según el país y el convenio aplicable;
-- si no está en castellano, debe aportarse con la traducción oficial que corresponda. En España, las traducciones realizadas por Traductores-Intérpretes Jurados nombrados por el Ministerio de Asuntos Exteriores tienen carácter oficial.
-
-No recomendamos pedir este documento de forma automática a todas las familias. Solo resulta útil cuando desean utilizar un apellido materno distinto del que ya consta en la documentación del menor.
-
-## Ejemplo
-
-Si la menor figura actualmente como **RUSLANA KONOVA**:
-
-- opción sencilla: **RUSLANA KONOVA KONOVA**;
-- opción alternativa, si se acredita que el apellido personal/de nacimiento de la madre es, por ejemplo, IVANOVA: **RUSLANA KONOVA IVANOVA**.
-
-El ejemplo es ilustrativo: el apellido concreto siempre debe coincidir con la documentación acreditativa.
-
-## Recomendación práctica
-
-Antes de firmar la solicitud de nacionalidad, conviene confirmar por escrito qué opción quiere la familia. Si opta por el apellido materno, EXPERT revisará primero el documento que lo acredita para evitar incoherencias con el expediente.
-
-**Fuentes oficiales**: [BOE - Instrucción de 23 de mayo de 2007](https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948) · [Ministerio de Justicia - Nacionalidad por residencia](https://sede.mjusticia.gob.es/es/tramites/nacionalidad-espanola) · [Ministerio de Asuntos Exteriores - Traducción e interpretación jurada](https://www.exteriores.gob.es/es/ServiciosAlCiudadano/Paginas/Traductores-Interpretes-Jurados.aspx)
+**Fuentes oficiales, revisadas el 23/09/2026**: [Instrucción de 23 de mayo de 2007](https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948) · [Ministerio: documentación de nacionalidad](https://www.mjusticia.gob.es/en/ciudadania/nacionalidad/informacion-nacionalidad) · [Registro Civil de Aragón: documentación posterior a la concesión](https://sedejudicial.aragon.es/registro-civil/nacionalidad/jura-de-nacionalidad-espanola/) · [Ley del Registro Civil, artículo 95](https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a95) · [Justicia: traducción y legalización](https://www.mjusticia.gob.es/es/Ciudadano/TramitesGestiones/Documents/advertencia-legalizacion-documentos.pdf).
     `
   },
   {

@@ -31,6 +31,18 @@ Para extranjeros: necesitan ademas el certificado de antecedentes del pais de or
 - EXPERT orienta sobre que paises requieren apostilla y cuales legalizacion consular.
 </justicia_antecedentes_penales>
 
+
+<nacionalidad_apellidos_documentacion>
+Criterio revisado 23/09/2026. Distinguir solicitud inicial y posterior inscripción registral.
+- No pedir automáticamente el nacimiento de la madre en todos los expedientes de menores. Revisar primero el literal completo del solicitante y la documentación familiar existente.
+- Confirmar el apellido personal materno y si cambió por matrimonio. TIE/pasaporte pueden mostrar solo el apellido actual, sin acreditar el personal de nacimiento.
+- Si falta prueba, consultar al órgano competente si admite matrimonio con apellido anterior u otro documento idóneo antes de encargar nacimiento/traducción. El criterio publicado en Aragón no garantiza aceptación en otro Registro.
+- La duplicación depende del supuesto legal y la filiación. No presentarla como elección para ahorrar documentos; no equiparar negativa a aportar/traducir con desconocimiento o imposibilidad. Firmas de padres no subsanan una afirmación sin base.
+- Traducción: comprobar reglas y convenios; existen vías consulares y traducción jurada. Art. 95 LRC: el encargado puede prescindir de traducción si le consta el contenido, sin exención automática en ENARES.
+- Si hay requerimiento, revisar su contenido y plazo. Ante negativa a toda prueba aceptada, documentar limitación y escalar; no prometer apellidos concretos ni bloquear automáticamente las partes independientes del expediente.
+Fuentes: https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948 ; https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a95 ; https://sedejudicial.aragon.es/registro-civil/nacionalidad/jura-de-nacionalidad-espanola/
+</nacionalidad_apellidos_documentacion>
+
 <justicia_registro_civil>
 REGISTRO CIVIL — CERTIFICADOS DE NACIMIENTO, MATRIMONIO Y DEFUNCION:
 
@@ -39,16 +51,16 @@ Donde se solicitan: en el Registro Civil del municipio donde se inscribio el hec
 Certificado de nacimiento:
 - Necesario para: solicitud de nacionalidad española, tramites de extranjeria, adopciones.
 - Online: https://sede.mjusticia.gob.es/ (apartado "Registro Civil").
-- Si es de otro pais: solicitar al Registro Civil del pais de origen. Si se va a usar en España, debe estar apostillado y traducido por traductor jurado.
+- Si es de otro pais: solicitar al Registro Civil del pais de origen. Si se va a usar en España, comprobar legalización/apostilla y traducción oficial según documento, país y convenios; no exigirlas de forma automática.
 
 Certificado de matrimonio:
 - Para reagrupacion familiar, tramites de residencia para conyuge, herencias.
 - Mismo proceso que el de nacimiento.
-- Si el matrimonio fue en el extranjero: apostilla + traduccion jurada.
+- Si el matrimonio fue en el extranjero: comprobar legalización/apostilla y traducción oficial según las reglas aplicables.
 
 Libro de familia:
 - Documento espanol que recoge nacimientos, matrimonios y defunciones de la unidad familiar.
-- Para parejas extranjeras: equivalente al libro de familia de su pais, apostillado y traducido.
+- Para parejas extranjeras: equivalente al libro de familia de su pais, con formalidades de legalización y traducción cuando procedan.
 </justicia_registro_civil>
 
 <justicia_apostilla>
@@ -67,7 +79,7 @@ Como apostillar un documento español para usarlo en el extranjero:
 
 Traduccion jurada:
 - Es diferente de la apostilla. La traduccion jurada es realizada por un traductor-interprete jurado autorizado por el Ministerio de Asuntos Exteriores.
-- Necesaria cuando el documento no esta en español.
+- Comprobar si procede traducción oficial; existen vías consulares y excepciones aplicables. No prometer exención por decisión del cliente.
 - EXPERT puede orientar sobre traductores jurados o gestionarlo como parte del servicio de extranjeria.
 </justicia_apostilla>
 

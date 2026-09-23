@@ -278,6 +278,7 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'representation', label: 'Representación/firma del menor correctamente resuelta según edad y patria potestad', required: true, clientCheckable: false },
     ],
     documents: [
+      { key: 'maternal_personal_surname', label: 'Prueba adicional del apellido personal materno: nacimiento o matrimonio, si procede; revisar primero los documentos existentes', required: false, conditionalWhen: 'Solo si la documentación existente no basta y el órgano competente exige prueba adicional para determinar los apellidos; no es requisito general de toda solicitud inicial' },
       { key: 'birth_certificate', label: 'Certificación literal de nacimiento española', required: true },
       { key: 'minor_passport', label: 'Pasaporte completo y en vigor del menor', required: true },
       { key: 'minor_residence', label: 'NIE/TIE y resolución que permita acreditar el inicio de residencia legal del menor', required: true },
@@ -450,6 +451,7 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'integration', label: 'Requisitos de integración/pruebas o exenciones correctamente determinados', required: true, clientCheckable: false },
     ],
     documents: [
+      { key: 'maternal_personal_surname', label: 'Prueba adicional del apellido personal materno: nacimiento o matrimonio, si procede; revisar primero los documentos existentes', required: false, conditionalWhen: 'Solo si la documentación existente no basta y el órgano competente exige prueba adicional para determinar los apellidos; no es requisito general de toda solicitud inicial' },
       { key: 'passport', label: 'Pasaporte completo y en vigor', required: true },
       { key: 'residence', label: 'TIE/NIE y documentación de residencia legal', required: true },
       { key: 'birth', label: 'Certificado de nacimiento del país de origen, legalizado/apostillado y traducido cuando proceda', required: true },

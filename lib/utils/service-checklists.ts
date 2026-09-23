@@ -434,6 +434,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Edad actual del menor: menos de 14 años o entre 14 y 17 años',
       'Si existe acuerdo entre quienes ejercen la patria potestad y quién actuará como representante o asistente',
       'Diferencias en nombres/apellidos entre documentos (transliteración)',
+      'Apellido personal de la madre, posible cambio por matrimonio y documento existente que lo acredita',
     ],
     requiredDocs: [
       'Certificación literal de nacimiento española (Registro Civil)',
@@ -455,7 +456,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Hay alguna diferencia de nombre o apellidos entre documentos?',
     ],
     botInstructions:
-      'La residencia del menor debe ser de al menos 1 año, legal, continuada e inmediatamente anterior a la solicitud. Nacer en España no da la nacionalidad automáticamente. Diferenciar menores de 14 años y menores de 14 a 17 años para firma/representación. Los menores están exentos de CCSE y, si tienen menos de 18 años, de DELE A2. La tasa de 104,05 € (Modelo 790 código 026) se cobra junto con el servicio como suplido obligatorio separado de los honorarios de 302,50 € IVA incluido.',
+      'La residencia del menor debe ser de al menos 1 año, legal, continuada e inmediatamente anterior a la solicitud. Nacer en España no da la nacionalidad automáticamente. Diferenciar menores de 14 años y menores de 14 a 17 años para firma/representación. Los menores están exentos de CCSE y, si tienen menos de 18 años, de DELE A2. La tasa de 104,05 € (Modelo 790 código 026) se cobra junto con el servicio como suplido obligatorio separado de los honorarios de 302,50 € IVA incluido. Para apellidos, comprobar filiación y apellido personal materno; no ofrecer duplicación como libre elección ni marcar desconocimiento por negativa a aportar documentos. No pedir automáticamente nacimiento de la madre o traducción: revisar pruebas existentes, posible certificado de matrimonio y criterio del Registro competente. Distinguir solicitud inicial e inscripción posterior; escalar la duda concreta sin bloquear tareas independientes.',
     estimatedPrice: '406,55 € total: 302,50 € honorarios IVA incluido + 104,05 € suplido',
   },
 

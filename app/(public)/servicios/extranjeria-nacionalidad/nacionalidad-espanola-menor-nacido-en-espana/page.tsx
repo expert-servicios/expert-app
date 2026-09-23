@@ -104,6 +104,8 @@ const notIncludedItems = [
 ];
 
 const faqItems = [
+  {"q": "¿Hay que aportar siempre el certificado de nacimiento de la madre?", "a": "No es un requisito general de toda solicitud inicial de nacionalidad de un menor. Primero revisamos los documentos existentes para acreditar su apellido personal. Si hace falta prueba adicional, un certificado de matrimonio que recoja el apellido anterior puede ser una alternativa, sujeta a la aceptación del Registro Civil competente. No encargues certificados ni traducciones nuevos sin revisar antes qué hace falta."},
+  {"q": "¿Se puede duplicar el apellido para evitar aportar documentos?", "a": "La duplicación depende de los supuestos legales y de la filiación; no es una elección para evitar documentación. El pasaporte o la TIE de la madre pueden recoger un apellido adquirido por matrimonio. No querer aportar o traducir un documento no equivale a desconocer su apellido personal. Revisamos los hechos y la prueba antes de cerrar el formulario."},
   {
     q: '¿La tasa está incluida en el precio?',
     a:
@@ -132,7 +134,7 @@ const faqItems = [
   {
     q: '¿Qué ocurre si el menor tiene un solo apellido?',
     a:
-      'Antes de cerrar la solicitud conviene decidir cómo quedarán los apellidos en la inscripción española. Si solo consta un apellido y no se acredita otro por filiación, puede duplicarse. Como alternativa, la familia puede acreditar el apellido personal o de nacimiento de la madre para utilizarlo como segundo apellido. Esta segunda opción es voluntaria y requiere documentación suficiente; no se puede elegir libremente un apellido ajeno a la filiación.',
+      'La duplicación depende de los supuestos legales y de la filiación; no es una elección para evitar documentación. El pasaporte o la TIE de la madre pueden recoger un apellido adquirido por matrimonio. No querer aportar o traducir un documento no equivale a desconocer su apellido personal. Revisamos los hechos y la prueba antes de cerrar el formulario.',
   },
   {
     q: '¿El menor tiene que hacer CCSE o DELE?',
@@ -312,7 +314,23 @@ export default function NacionalidadMenorPage() {
             </ul>
           </div>
 
-          <div className="border border-[#D4A017]/25 bg-white p-6">\n            <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4A017]">Apellidos y Registro Civil</p>\n            <h2 className="mt-2 font-serif text-2xl font-bold text-[#0D1B2A]">Si el menor tiene un solo apellido</h2>\n            <p className="mt-3 text-sm leading-7 text-[#23364D]">\n              La familia puede optar por duplicar el apellido actual o, si lo prefiere, acreditar el apellido personal/de nacimiento de la madre para utilizarlo como segundo apellido. La segunda opción es voluntaria y debe documentarse.\n            </p>\n            <div className="mt-4 flex flex-col gap-2 text-sm">\n              <Link href="/docs/apellidos-menor-nacionalidad-registro-civil" className="font-semibold text-[#D4A017] underline underline-offset-4">\n                Ver guía en la base de conocimientos\n              </Link>\n              <Link href="/blog/apellidos-menor-nacionalidad-espanola-registro-civil" className="font-semibold text-[#D4A017] underline underline-offset-4">\n                Leer artículo explicativo\n              </Link>\n            </div>\n          </div>\n\n          <div>
+          <div className="border border-[#D4A017]/25 bg-white p-6">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4A017]">Apellidos y Registro Civil</p>
+            <h2 className="mt-2 font-serif text-2xl font-bold text-[#0D1B2A]">Si el menor tiene un solo apellido</h2>
+            <p className="mt-3 text-sm leading-7 text-[#23364D]">
+              Comprobamos el apellido personal de la madre y su acreditación con los documentos existentes. La duplicación exige un supuesto legal; no se elige para evitar certificados o traducciones. Si hace falta prueba adicional, revisamos las alternativas antes de pedir documentos nuevos.
+            </p>
+            <div className="mt-4 flex flex-col gap-2 text-sm">
+              <Link href="/docs/apellidos-menor-nacionalidad-registro-civil" className="font-semibold text-[#D4A017] underline underline-offset-4">
+                Ver guía en la base de conocimientos
+              </Link>
+              <Link href="/blog/apellidos-menor-nacionalidad-espanola-registro-civil" className="font-semibold text-[#D4A017] underline underline-offset-4">
+                Leer artículo explicativo
+              </Link>
+            </div>
+          </div>
+
+          <div>
             <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">Preguntas frecuentes</h2>
             <div className="mt-6 space-y-5">
               {faqItems.map(({ q, a }) => (

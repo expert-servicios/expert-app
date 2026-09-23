@@ -1,10 +1,23 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { NATIONALITY_MINOR_SERVICE } from '@/lib/services/nationality-minor';
+import { getServiceDocumentChecklist, getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
+import { getGeneratedBatch1BlogArticles } from '@/lib/services/service-generated-content';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 
 describe('nationality minor service content and pricing', () => {
+  it('keeps additional maternal surname evidence out of the mandatory upload checklist', () => {
+    for (const slug of [NATIONALITY_MINOR_SERVICE.slug, 'nacionalidad-espanola']) {
+      const evidence = getServiceOperationalBlueprint(slug)?.documents.find((doc) => doc.key === 'maternal_personal_surname');
+      expect(evidence).toBeDefined();
+      expect(evidence?.required).toBe(false);
+      expect(evidence?.conditionalWhen).toBeTruthy();
+      expect(getServiceDocumentChecklist(slug)).not.toContain(evidence?.label);
+      const article = getGeneratedBatch1BlogArticles().find((item) => item.slug === `${slug}-documentos-y-errores-frecuentes`);
+      expect(article?.body).toContain(`${evidence?.label} — ${evidence?.conditionalWhen}`);
+    }
+  });
   it('keeps the canonical economic breakdown consistent', () => {
     expect(NATIONALITY_MINOR_SERVICE.professionalNetCents).toBe(25000);
     expect(NATIONALITY_MINOR_SERVICE.professionalGrossCents).toBe(30250);
@@ -89,7 +102,8 @@ describe('nationality minor service content and pricing', () => {
 
     expect(page).toContain('/docs/apellidos-menor-nacionalidad-registro-civil');
     expect(page).toContain('/blog/apellidos-menor-nacionalidad-espanola-registro-civil');
-    expect(page).toContain('Esta segunda opción es voluntaria');
+    expect(page).not.toContain('Esta segunda opción es voluntaria');
+    expect(page).toContain('no es una elección para evitar documentación');
     expect(templates).toContain('nationalityMinorDataConfirmationRu');
     expect(templates).toContain('/ru/docs/familii-rebenka-pri-poluchenii-grazhdanstva-ispanii');
     expect(templates).toContain('/ru/blog/odna-familiya-u-rebenka-grazhdanstvo-ispanii');

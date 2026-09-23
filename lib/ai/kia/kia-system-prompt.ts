@@ -27,7 +27,7 @@ const SS_CONTEXT_RE =
 const DGT_CONTEXT_RE =
   /\b(dgt|trafico|transferencia.*vehiculo|vehiculo.*transferencia|matriculacion|canje.*permiso|permiso.*conducir|puntos.*carnet|carnet.*puntos|baja.*vehiculo|multa.*trafico|permiso de circulacion|ficha tecnica|capitania)\b/i;
 const JUSTICIA_CONTEXT_RE =
-  /\b(antecedentes penales|registro civil|apostilla|certificado.*nacimiento|nacimiento.*certificado|certificado.*matrimonio|denominacion social|nota simple|registro.*propiedad|registro.*mercantil|deposito.*cuentas|rmc)\b/i;
+  /\b(nacionalidad|apellidos?|grazhdanstvo|familii|familiya|antecedentes penales|registro civil|apostilla|certificado.*nacimiento|nacimiento.*certificado|certificado.*matrimonio|denominacion social|nota simple|registro.*propiedad|registro.*mercantil|deposito.*cuentas|rmc)\b|гражданств|фамили/i;
 const PAE_CONTEXT_RE =
   /\b(pae|circe|crear empresa online|sl.*online|online.*sl|alta autonomo.*online|online.*alta autonomo|ventanilla unica|constitucion.*online|online.*constitucion)\b/i;
 const CCAA_CONTEXT_RE =
