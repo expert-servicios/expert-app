@@ -108,11 +108,14 @@ describe('native booking public flow', () => {
     expect(adminRoute).toContain('reconciliationMeetingUrl');
     expect(adminRoute).toContain('creationError?.cleanupFailed === true && creationError.meetingUrl');
     expect(adminRoute).toContain('provider_booking_id: reconciliationEventId ?? current.provider_booking_id');
-    expect(adminRoute).toContain("[current.admin_notes?.trim(), reconciliationNotice]");
+    expect(adminRoute).toContain('const baseAdminNotes = keepSynchronizedSchedule');
+    expect(adminRoute).toContain('appt.admin_notes');
+    expect(adminRoute).toContain("[baseAdminNotes?.trim(), reconciliationNotice]");
     expect(adminRoute).toContain("error: 'No se pudo persistir el estado de reconciliación de Calendar.'");
     expect(adminRoute).toContain('recovery: {');
     expect(adminRoute).toContain('if (!keepSynchronizedSchedule)');
     expect(adminRoute).toContain('Existing remote event and local schedule now agree');
+    expect(adminRoute).not.toContain('appt.meeting_url = current.meeting_url');
     expect(adminRoute).toContain('requiere reconciliación tras fallo de sincronización');
     expect(adminRoute).toContain('La cita se conserva en EXPERT');
     expect(calendar).toContain('cal.events.patch');
