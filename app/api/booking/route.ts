@@ -84,6 +84,7 @@ async function runNativeAdministrativeWorkflow(input: {
   localDate: string;
   localTime: string;
   meetingUrl: string;
+  bookingProvider: 'google_native' | 'ms365_native';
 }) {
   const { admin, identity } = input;
   const serviceLabel = input.serviceKey === 'onboarding' ? 'Sesión de onboarding' : 'Formación Holded';
@@ -225,7 +226,7 @@ async function runNativeAdministrativeWorkflow(input: {
       metadata: {
         appointment_id: input.appointmentId,
         company_id: identity?.companyId ?? null,
-        booking_provider: 'google_native',
+        booking_provider: input.bookingProvider,
       },
       idempotencyKey: `native/admin-booking/${input.appointmentId}`,
     });
@@ -415,7 +416,7 @@ export async function POST(request: NextRequest) {
         confirmed_date: localDate,
         confirmed_time: localTime,
         service: service.label,
-        booking_provider: 'google_native',
+        booking_provider: input.bookingProvider,
         provider_booking_id: null,
         meeting_url: null,
       })
@@ -480,6 +481,7 @@ export async function POST(request: NextRequest) {
         localDate,
         localTime,
         meetingUrl: meeting.meetingUrl,
+        bookingProvider: meeting.bookingProvider,
       }).catch(async (workflowError) => {
         console.error('[booking] administrative workflow:', workflowError);
         await admin
