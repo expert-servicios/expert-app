@@ -222,8 +222,8 @@ export async function listCalendarBusyWindowsSA(
   });
 
   return (data.items ?? [])
-    .filter((event: any) => event.status !== 'cancelled' && event.transparency !== 'transparent')
-    .map((event: any) => ({
+    .filter((event) => event.status !== 'cancelled' && event.transparency !== 'transparent')
+    .map((event) => ({
       start: event.start?.dateTime ?? event.start?.date ?? '',
       end: event.end?.dateTime ?? event.end?.date ?? '',
     }))
