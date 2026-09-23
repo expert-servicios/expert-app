@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  getBookingFormacionUrl,
   getBookingMeetingUrl,
   getBookingOnboardingUrl,
   getBookingProvider,
@@ -50,6 +51,15 @@ describe('Google booking provider migration', () => {
 
     expect(getBookingOnboardingUrl()).toBe('https://cal.com/expert/onboarding');
     expect(getBookingProvider(getBookingOnboardingUrl())).toBe('cal');
+  });
+
+  it('keeps training on Cal in rollback mode until external Google bookings are ingested', () => {
+    vi.stubEnv('NEXT_PUBLIC_NATIVE_BOOKING_ENABLED', 'false');
+    vi.stubEnv('NEXT_PUBLIC_GOOGLE_BOOKING_FORMACION_URL', 'https://calendar.app.google/training');
+    vi.stubEnv('NEXT_PUBLIC_CAL_FORMACION_LINK', 'expert/formacion');
+
+    expect(getBookingFormacionUrl()).toBe('https://cal.com/expert/formacion');
+    expect(getBookingProvider(getBookingFormacionUrl())).toBe('cal');
   });
 
 });
