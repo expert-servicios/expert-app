@@ -74,7 +74,7 @@ function isValidServiceSlot(start: Date, durationMinutes: number): boolean {
 
 async function runNativeAdministrativeWorkflow(input: {
   admin: ReturnType<typeof getSupabaseAdmin>;
-  identity: BookingIdentity;
+  identity: BookingIdentity | null;
   serviceKey: 'onboarding' | 'formacion-holded';
   appointmentId: string;
   name: string;
@@ -89,61 +89,67 @@ async function runNativeAdministrativeWorkflow(input: {
   let caseId: string | null = null;
   let createdCase = false;
 
+  if (identity) {
+    if (input.serviceKey === 'onboarding') {
+      const existing = await findOpenOnboardingCase(identity.clientId, identity.companyId);
+      if (existing) caseId = existing.id;
+    }
+
+    if (!caseId) {
+      let existingQuery = admin
+        .from('cases')
+        .select('id')
+        .eq('client_id', identity.clientId)
+        .eq('service', serviceLabel)
+        .neq('state', 'finalizado');
+      existingQuery = identity.companyId
+        ? existingQuery.eq('company_id', identity.companyId)
+        : existingQuery.is('company_id', null);
+      const { data: existingCase, error: existingError } = await existingQuery
+        .order('opened_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existingError) throw existingError;
+      caseId = existingCase?.id ?? null;
+    }
+
+    if (!caseId) {
+      const { data: newCase, error } = await admin
+        .from('cases')
+        .insert({
+          client_id: identity.clientId,
+          company_id: identity?.companyId ?? null,
+          category: input.serviceKey === 'onboarding' ? 'onboarding' : 'formacion',
+          service: serviceLabel,
+          state: 'en_proceso',
+          status: 'nuevo',
+          next_action: input.serviceKey === 'onboarding'
+            ? 'Verificar Holded y finalizar el alta'
+            : null,
+          admin_note: `Expediente creado automáticamente desde reserva nativa EXPERT (${input.appointmentId})`,
+          opened_at: new Date().toISOString(),
+        })
+        .select('id')
+        .single();
+      if (error || !newCase) throw error ?? new Error('Could not create booking case');
+      caseId = newCase.id;
+      createdCase = true;
+    } else if (input.serviceKey === 'onboarding') {
+      await admin
+        .from('cases')
+        .update({
+          next_action: `Onboarding reservado para ${input.start.toISOString()}. Verificar Holded y finalizar el alta.`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', caseId);
+    }
+  }
+
   if (input.serviceKey === 'onboarding') {
-    const existing = await findOpenOnboardingCase(identity.clientId, identity.companyId);
-    if (existing) caseId = existing.id;
-  }
+    if (!identity) {
+      throw new Error('Onboarding booking requires a resolved EXPERT client identity');
+    }
 
-  if (!caseId) {
-    let existingQuery = admin
-      .from('cases')
-      .select('id')
-      .eq('client_id', identity.clientId)
-      .eq('service', serviceLabel)
-      .neq('state', 'finalizado');
-    existingQuery = identity.companyId
-      ? existingQuery.eq('company_id', identity.companyId)
-      : existingQuery.is('company_id', null);
-    const { data: existingCase, error: existingError } = await existingQuery
-      .order('opened_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (existingError) throw existingError;
-    caseId = existingCase?.id ?? null;
-  }
-
-  if (!caseId) {
-    const { data: newCase, error } = await admin
-      .from('cases')
-      .insert({
-        client_id: identity.clientId,
-        company_id: identity.companyId,
-        category: input.serviceKey === 'onboarding' ? 'onboarding' : 'formacion',
-        service: serviceLabel,
-        state: 'en_proceso',
-        status: 'nuevo',
-        next_action: input.serviceKey === 'onboarding'
-          ? 'Verificar Holded y finalizar el alta'
-          : null,
-        admin_note: `Expediente creado automáticamente desde reserva nativa EXPERT (${input.appointmentId})`,
-        opened_at: new Date().toISOString(),
-      })
-      .select('id')
-      .single();
-    if (error || !newCase) throw error ?? new Error('Could not create booking case');
-    caseId = newCase.id;
-    createdCase = true;
-  } else if (input.serviceKey === 'onboarding') {
-    await admin
-      .from('cases')
-      .update({
-        next_action: `Onboarding reservado para ${input.start.toISOString()}. Verificar Holded y finalizar el alta.`,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', caseId);
-  }
-
-  if (input.serviceKey === 'onboarding') {
     let subscriptionQuery = admin
       .from('subscriptions')
       .select('id,company_id')
@@ -455,7 +461,6 @@ export async function POST(request: NextRequest) {
     }
 
     if (
-      privateIdentity &&
       (service.key === 'onboarding' || service.key === 'formacion-holded') &&
       meeting.meetUrl
     ) {
