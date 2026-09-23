@@ -119,7 +119,7 @@ export async function PATCH(request: NextRequest) {
       .from('appointments')
       .update(updatePayload)
       .eq('id', id)
-      .select('id,name,email,service,confirmed_date,confirmed_time,meeting_url,status,google_event_id,appointment_date,appointment_end,booking_provider,provider_booking_id')
+      .select('id,name,email,service,confirmed_date,confirmed_time,meeting_url,admin_notes,status,google_event_id,appointment_date,appointment_end,booking_provider,provider_booking_id')
       .single();
 
     if (error || !appt) {
