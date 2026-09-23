@@ -55,7 +55,29 @@ interface KiaContextSummary {
 
 function contextualWelcome(context: KiaContextSummary): ChatMessage {
   const name = context.firstName ? `, ${context.firstName}` : '';
-  const service = context.case?.service ?? context.company?.name ?? null;
+  const hasOpenCase = Boolean(context.case);
+
+  if (!hasOpenCase) {
+    if (context.preferredLanguage === 'ru') {
+      return {
+        id: 'context-welcome',
+        role: 'assistant',
+        text: `👋 Здравствуйте${name}! Чем могу помочь сегодня?`,
+        quickReplies: ['Мои дела', 'Holded', 'Налоговый вопрос'],
+        avatarState: 'bienvenida',
+      };
+    }
+
+    return {
+      id: 'context-welcome',
+      role: 'assistant',
+      text: `👋 ¡Hola${name}! ¿En qué te ayudo hoy?`,
+      quickReplies: ['Ver mis expedientes', 'Estado de Holded', 'Consulta fiscal'],
+      avatarState: 'bienvenida',
+    };
+  }
+
+  const service = context.case?.service ?? null;
   const nextAction = context.case?.next_action ?? null;
 
   if (context.preferredLanguage === 'ru') {
@@ -63,14 +85,12 @@ function contextualWelcome(context: KiaContextSummary): ChatMessage {
       id: 'context-welcome',
       role: 'assistant',
       text: [
-        `👋 Здравствуйте${name}! Я уже знаю, по какому вопросу вы открыли чат.`,
-        service ? `Мы говорим о: ${service}.` : null,
-        nextAction ? `Сейчас следующий шаг: ${nextAction}` : null,
-        'Можете сразу задать вопрос — повторно объяснять ситуацию не нужно 🙂',
+        `👋 Здравствуйте${name}! Вижу ваш открытый кейс.`,
+        service ? `Сейчас работаем по вопросу: ${service}.` : null,
+        nextAction ? `Следующий шаг: ${nextAction}` : null,
+        'Можете сразу задать вопрос по этому делу.',
       ].filter(Boolean).join('\n\n'),
-      quickReplies: context.case
-        ? ['Что сейчас нужно сделать?', 'Какие документы нужны?', 'Проверить статус']
-        : ['Что сейчас нужно сделать?', 'Проверить статус'],
+      quickReplies: ['Что сейчас нужно сделать?', 'Какие документы нужны?', 'Проверить статус'],
       avatarState: 'seguimiento',
     };
   }
@@ -79,14 +99,12 @@ function contextualWelcome(context: KiaContextSummary): ChatMessage {
     id: 'context-welcome',
     role: 'assistant',
     text: [
-      `👋 ¡Hola${name}! Ya sé sobre qué vienes a hablar.`,
-      service ? `Estamos con: ${service}.` : null,
-      nextAction ? `Ahora mismo el siguiente paso es: ${nextAction}` : null,
-      'Puedes preguntarme directamente; no necesitas volver a explicarme el caso 🙂',
+      `👋 ¡Hola${name}! Veo que tienes un expediente abierto.`,
+      service ? `Estamos trabajando en: ${service}.` : null,
+      nextAction ? `El siguiente paso es: ${nextAction}` : null,
+      'Puedes preguntarme directamente sobre este expediente.',
     ].filter(Boolean).join('\n\n'),
-    quickReplies: context.case
-      ? ['¿Qué tengo que hacer ahora?', '¿Qué documentos faltan?', 'Comprobar estado']
-      : ['¿Qué tengo que hacer ahora?', 'Comprobar estado'],
+    quickReplies: ['¿Qué tengo que hacer ahora?', '¿Qué documentos faltan?', 'Comprobar estado'],
     avatarState: 'seguimiento',
   };
 }
