@@ -6,10 +6,13 @@ Estado: aprobado para implementación progresiva
 
 ## 1. Objetivo
 
-Eliminar Cal.com como dependencia operativa de EXPERT y reutilizar la licencia existente de Google Workspace Business Standard como capa principal para:
+Eliminar Cal.com como dependencia operativa de EXPERT y reutilizar la licencia existente de Google Workspace Business Standard como infraestructura.
 
-- páginas de reserva mediante Google Calendar Appointment Schedules;
-- videollamadas mediante Google Meet;
+Decisión final de arquitectura (23/09/2026): EXPERT será el sistema de reservas. No dependemos de Google Appointment Schedules porque Google Calendar no expone una API pública para crear/administrar esas páginas. EXPERT consulta disponibilidad y crea la cita directamente mediante la API de Google Calendar.
+
+- reserva y selección de hueco dentro de EXPERT;
+- disponibilidad obtenida del calendario real de info@expertconsulting.es;
+- videollamadas mediante Google Meet creadas por API;
 - notas de reuniones mediante Gemini "Toma notas por mí";
 - archivo de notas y documentación en Google Drive;
 - sincronización de citas, expedientes y tareas con EXPERT/KIA.
@@ -18,15 +21,16 @@ La migración no debe borrar ni reescribir citas históricas de Cal.com.
 
 ## 2. Decisiones de arquitectura
 
-### 2.1 Google Workspace será el proveedor principal
+### 2.1 EXPERT será el proveedor de reservas
 
-Para la operativa propia de EXPERT:
+Para la operativa propia:
 
-- reservas: Google Calendar Appointment Schedules;
-- reunión: Google Meet;
+- interfaz y reglas de reservas: EXPERT;
+- disponibilidad: Google Calendar API;
+- reunión: Google Meet creado por API;
 - notas: Gemini en Meet;
 - documentos de notas: Google Drive;
-- estado operativo: Supabase/EXPERT.
+- estado operativo y control de concurrencia: Supabase/EXPERT.
 
 ### 2.2 EXPERT sigue siendo la fuente operativa
 
@@ -79,36 +83,30 @@ En la primera fase se conserva la API histórica getCal*Url() como alias de comp
    - Cal legacy: mantener iframe solo como compatibilidad;
    - sin proveedor: fallback a contacto.
 
-### Fase 2 — Crear agendas Google en Workspace
+### Fase 2 — Agenda nativa EXPERT
 
-Configuración manual inicial en info@expertconsulting.es:
+EXPERT implementa directamente:
 
-- Consulta inicial 15 min;
-- Demo Holded;
-- Onboarding;
-- Formación;
-- Entrevista Academy.
+- Consulta inicial: 15 min;
+- Demo Holded: 30 min;
+- Onboarding: 60 min;
+- Formación Holded: 120 min;
+- Entrevista Academy: duración configurable.
 
-Cada agenda debe usar disponibilidad real del calendario, crear Google Meet, tener recordatorios, solicitar solo datos necesarios y activar verificación por email cuando proceda. Stripe dentro de Calendar solo se usará si aporta una ventaja frente al checkout existente de EXPERT.
+El servidor consulta ocupación real en Google Calendar, combina esa ocupación con bloqueos locales y genera únicamente huecos válidos de lunes a viernes, 09:00-18:00, Europe/Madrid.
 
-Las URLs se guardan en Vercel; no se hardcodean.
+Antes de llamar a Google se adquiere un bloqueo local. PostgreSQL impide dos reservas activas solapadas. Si Calendar/Meet falla, se elimina el evento remoto si existe y se libera el bloqueo local.
 
-### Fase 3 — Ingesta de reservas Google
+### Fase 3 — Calendar + Meet por API
 
-No se debe inferir el formato de un evento de Appointment Schedules sin evidencia real.
+Al confirmar una reserva, EXPERT:
 
-Después de crear la primera agenda se capturará un evento de prueba y se documentarán:
-
-- event.id;
-- organizador;
-- asistentes;
-- conference data / Meet;
-- título;
-- descripción;
-- campos del formulario;
-- cualquier metadata estable que permita identificar la agenda.
-
-Con esa evidencia se implementará sincronización idempotente hacia appointments.
+- crea el evento en el calendario de info@expertconsulting.es;
+- invita al cliente;
+- solicita conferenceData de Google Meet;
+- almacena google_event_id / provider_booking_id / meeting_url;
+- envía confirmación EXPERT;
+- conserva Google como fuente externa de ocupación, no como source of truth operativo.
 
 Objetivo de esquema posterior:
 
