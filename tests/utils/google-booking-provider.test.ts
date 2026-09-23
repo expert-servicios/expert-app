@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   getBookingMeetingUrl,
+  getBookingOnboardingUrl,
   getBookingProvider,
 } from '@/lib/utils/cal';
 
@@ -40,6 +41,15 @@ describe('Google booking provider migration', () => {
     vi.stubEnv('NEXT_PUBLIC_CAL_REUNION_LINK', 'expert/reunion');
 
     expect(getBookingMeetingUrl()).toBe('/cita?tipo=consulta-inicial');
+  });
+
+  it('keeps onboarding on Cal in rollback mode until external Google bookings are ingested', () => {
+    vi.stubEnv('NEXT_PUBLIC_NATIVE_BOOKING_ENABLED', 'false');
+    vi.stubEnv('NEXT_PUBLIC_GOOGLE_BOOKING_ONBOARDING_URL', 'https://calendar.app.google/onboarding');
+    vi.stubEnv('NEXT_PUBLIC_CAL_ONBOARDING_LINK', 'expert/onboarding');
+
+    expect(getBookingOnboardingUrl()).toBe('https://cal.com/expert/onboarding');
+    expect(getBookingProvider(getBookingOnboardingUrl())).toBe('cal');
   });
 
 });
