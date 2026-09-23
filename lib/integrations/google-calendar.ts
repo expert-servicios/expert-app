@@ -345,6 +345,46 @@ export async function createCalendarMeetingSA(
   }
 }
 
+export async function ensureCalendarMeetingUrlSA(eventId: string): Promise<string> {
+  const cal = await getCalendarSAClient();
+  if (!cal) throw new Error('Google Calendar service account is not configured');
+
+  const readMeetUrl = async (): Promise<string | null> => {
+    const { data } = await cal.events.get({
+      calendarId: 'primary',
+      eventId,
+    });
+    return data.hangoutLink ?? null;
+  };
+
+  const existing = await readMeetUrl();
+  if (existing) return existing;
+
+  const requestId = `expert-recover-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  await cal.events.patch({
+    calendarId: 'primary',
+    eventId,
+    conferenceDataVersion: 1,
+    sendUpdates: 'all',
+    resource: {
+      conferenceData: {
+        createRequest: {
+          requestId,
+          conferenceSolutionKey: { type: 'hangoutsMeet' },
+        },
+      },
+    },
+  });
+
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 250 : 500));
+    const meetingUrl = await readMeetUrl();
+    if (meetingUrl) return meetingUrl;
+  }
+
+  throw new Error('Google Meet URL could not be recovered for the existing event');
+}
+
 export async function updateCalendarMeetingSA(
   eventId: string,
   input: {
