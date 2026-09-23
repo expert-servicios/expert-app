@@ -54,6 +54,32 @@ describe('KIA copilot artifact builder', () => {
     expect(artifacts[1]).toMatchObject({ type: 'link', url: '/dashboard/perfil' });
   });
 
+  it('renders EXPERT blog and knowledge-base results as visible links', () => {
+    const artifacts = buildKiaCopilotArtifacts([
+      result('search_knowledge_resources', {
+        resources: [
+          { type: 'blog', title: 'Artículo fiscal', url: '/blog/articulo-fiscal' },
+          { type: 'doc', title: 'Guía fiscal', url: '/docs/guia-fiscal' },
+        ],
+      }),
+    ], decision());
+
+    expect(artifacts).toEqual([
+      expect.objectContaining({
+        type: 'link',
+        title: 'Artículo · Artículo fiscal',
+        url: '/blog/articulo-fiscal',
+        cta: 'Leer artículo',
+      }),
+      expect.objectContaining({
+        type: 'link',
+        title: 'Guía · Guía fiscal',
+        url: '/docs/guia-fiscal',
+        cta: 'Abrir guía',
+      }),
+    ]);
+  });
+
   it('rejects unsafe and protocol-relative checkout URLs', () => {
     const unsafe = buildKiaCopilotArtifacts([
       result('generate_checkout_gate_link', { url: 'javascript:alert(1)' }),
