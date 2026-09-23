@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import {
+  CalendarMeetingCreationError,
   createCalendarMeetingSA,
   deleteCalendarEventSA,
   listCalendarBusyWindowsSA,
@@ -511,6 +512,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[booking]', error);
 
+    if (!googleEventId && error instanceof CalendarMeetingCreationError) {
+      googleEventId = error.eventId;
+    }
+
     const admin = getSupabaseAdmin();
     let remoteCleanupSucceeded = true;
     if (googleEventId) {
@@ -530,6 +535,9 @@ export async function POST(request: NextRequest) {
             .from('appointments')
             .update({
               status: 'cancelled',
+              google_event_id: googleEventId,
+              provider_booking_id: googleEventId,
+              booking_provider: 'google_native',
               admin_notes: 'Google Calendar cleanup failed after booking error. Reconcile remote event before deleting this row.',
               updated_at: new Date().toISOString(),
             })
