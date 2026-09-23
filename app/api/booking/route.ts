@@ -121,6 +121,17 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = getSupabaseAdmin();
+
+    // Release stale local locks from interrupted booking attempts. Only the
+    // temporary state is eligible for cleanup; confirmed appointments are
+    // never touched here.
+    const staleCutoff = new Date(Date.now() - 10 * 60_000).toISOString();
+    await admin
+      .from('appointments')
+      .delete()
+      .eq('status', 'pending_calendar')
+      .lt('created_at', staleCutoff);
+
     const localDate = formatMadridDate(start);
     const localTime = formatMadridTime(start);
 
