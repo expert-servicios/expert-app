@@ -102,8 +102,12 @@ describe('native booking public flow', () => {
     expect(adminRoute).toContain('Only advertise fresh values after the metadata write succeeded');
     expect(adminRoute).toContain('appt.meeting_url = meetingUrl');
     expect(adminRoute).toContain('appt.provider_booking_id = syncedEventId');
-    expect(adminRoute).toContain('reconciliationEventId');
+    expect(adminRoute).toContain("creationError?.cleanupFailed === true");
+    expect(adminRoute).toContain('existingRemoteEventUpdated');
+    expect(adminRoute).toContain('keepSynchronizedSchedule');
+    expect(adminRoute).toContain('reconciliationMeetingUrl');
     expect(adminRoute).toContain('provider_booking_id: reconciliationEventId ?? current.provider_booking_id');
+    expect(adminRoute).toContain("[current.admin_notes?.trim(), reconciliationNotice]");
     expect(adminRoute).toContain('requiere reconciliación tras fallo de sincronización');
     expect(adminRoute).toContain('La cita se conserva en EXPERT');
     expect(calendar).toContain('cal.events.patch');
