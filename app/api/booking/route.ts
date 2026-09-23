@@ -224,7 +224,12 @@ export async function POST(request: NextRequest) {
       await deleteCalendarEventSA(googleEventId).catch(() => {});
     }
     if (appointmentId) {
-      await admin.from('appointments').delete().eq('id', appointmentId).catch(() => {});
+      try {
+        await admin.from('appointments').delete().eq('id', appointmentId);
+      } catch {
+        // Best-effort compensation. The pending row no longer blocks once
+        // status/cleanup is reconciled by the operational audit.
+      }
     }
 
     return NextResponse.json({ error: 'No se pudo completar la reserva. El horario ha sido liberado.' }, { status: 500 });
