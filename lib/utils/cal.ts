@@ -97,7 +97,12 @@ export function getBookingFormacionUrl(): string | null {
   return bookingUrl(
     '/cita?tipo=formacion-holded',
     process.env.NEXT_PUBLIC_GOOGLE_BOOKING_FORMACION_URL,
-    process.env.NEXT_PUBLIC_CAL_FORMACION_LINK
+    process.env.NEXT_PUBLIC_CAL_FORMACION_LINK,
+    {
+      // External Google Appointment Schedules are not ingested into EXPERT yet.
+      // Training rollback must therefore stay on the legacy Cal webhook path.
+      allowExternalGoogleFallback: false,
+    }
   );
 }
 
