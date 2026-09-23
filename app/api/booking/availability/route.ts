@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { listCalendarBusyWindowsSA } from '@/lib/integrations/google-calendar';
+import { verifyPrivateBookingAuthorization } from '@/lib/booking/private-booking-authorization';
 import {
   BOOKING_MAX_DAYS,
   buildBookingSlots,
@@ -22,8 +23,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Tipo de cita no válido.' }, { status: 400 });
     }
 
-    if (!service.public && !(await hasAuthenticatedUser(request))) {
-      return NextResponse.json({ error: 'Inicia sesión para reservar este tipo de cita.' }, { status: 401 });
+    if (!service.public) {
+      const signed = service.key === 'onboarding' || service.key === 'formacion-holded'
+        ? await verifyPrivateBookingAuthorization(searchParams.get('auth'), service.key)
+        : null;
+      if (!signed && !(await hasAuthenticatedUser(request))) {
+        return NextResponse.json({ error: 'Esta reserva requiere una invitación válida o iniciar sesión.' }, { status: 401 });
+      }
     }
 
     const requestedDays = Number(searchParams.get('days') ?? 14);
