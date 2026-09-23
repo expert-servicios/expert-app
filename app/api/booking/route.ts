@@ -11,7 +11,13 @@ import { caseOpened, citaConfirmed } from '@/lib/email/templates';
 import { onboardingPreparationEmail } from '@/lib/email/onboarding-templates';
 import { ensureOnboardingTask, findOpenOnboardingCase } from '@/lib/admin/onboarding-followup';
 import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients';
-import { getAuthorizedBookingEmails, resolveAuthenticatedBookingIdentity, type BookingIdentity } from '@/lib/admin/onboarding-booking-identity';
+import {
+  getAuthorizedBookingEmails,
+  listOpenOnboardingCompanyIds,
+  resolveAuthenticatedBookingIdentity,
+  type BookingIdentity,
+} from '@/lib/admin/onboarding-booking-identity';
+import { verifyPrivateBookingAuthorization } from '@/lib/booking/private-booking-authorization';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkRateLimit, checkSpam, getClientIp } from '@/lib/utils/spam-guard';
 import {
@@ -37,6 +43,7 @@ const schema = z.object({
   start: z.string().datetime({ offset: true }),
   notes: z.string().trim().max(800).optional(),
   recaptcha_token: z.string().optional(),
+  booking_auth: z.string().max(4096).optional(),
 });
 
 async function authenticatedUser(request: NextRequest) {
@@ -245,28 +252,82 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await authenticatedUser(request);
-    if (!service.public && !user) {
-      return NextResponse.json({ error: 'Inicia sesión para reservar este tipo de cita.' }, { status: 401 });
-    }
+    const signedAuthorization =
+      !service.public && (service.key === 'onboarding' || service.key === 'formacion-holded')
+        ? await verifyPrivateBookingAuthorization(input.booking_auth, service.key)
+        : null;
 
     const admin = getSupabaseAdmin();
     let bookingEmail = input.email.toLowerCase();
     let privateIdentity: BookingIdentity | null = null;
-    if (!service.public && user) {
-      if (!user.email) {
-        return NextResponse.json({ error: 'La cuenta autenticada no tiene un email válido.' }, { status: 400 });
+
+    if (!service.public) {
+      if (!signedAuthorization && !user) {
+        return NextResponse.json(
+          { error: 'Esta reserva requiere una invitación válida o iniciar sesión.' },
+          { status: 401 }
+        );
       }
-      privateIdentity = await resolveAuthenticatedBookingIdentity(admin, user.id);
-      const authorizedEmails = await getAuthorizedBookingEmails(
-        admin,
-        user.id,
-        privateIdentity.companyId,
-        user.email
-      );
-      const requestedEmail = input.email.toLowerCase();
-      bookingEmail = authorizedEmails.includes(requestedEmail)
-        ? requestedEmail
-        : user.email.toLowerCase();
+
+      if (signedAuthorization) {
+        bookingEmail = signedAuthorization.email;
+        if (signedAuthorization.clientId) {
+          privateIdentity = {
+            clientId: signedAuthorization.clientId,
+            companyId: signedAuthorization.companyId,
+            source: 'auth_email',
+          };
+        }
+      } else if (user) {
+        if (!user.email) {
+          return NextResponse.json({ error: 'La cuenta autenticada no tiene un email válido.' }, { status: 400 });
+        }
+
+        if (service.key === 'onboarding') {
+          const companyIds = await listOpenOnboardingCompanyIds(admin, user.id);
+          if (companyIds.length === 0) {
+            return NextResponse.json(
+              { error: 'No hay un onboarding pendiente asociado a tu cuenta.' },
+              { status: 403 }
+            );
+          }
+          if (companyIds.length > 1) {
+            return NextResponse.json(
+              { error: 'Selecciona primero la empresa para la que quieres reservar el onboarding.' },
+              { status: 409 }
+            );
+          }
+        }
+
+        if (service.key === 'formacion-holded') {
+          const { data: entitlement, error: entitlementError } = await admin
+            .from('subscriptions')
+            .select('id')
+            .eq('client_id', user.id)
+            .in('status', ['active', 'trialing'])
+            .limit(1)
+            .maybeSingle();
+          if (entitlementError) throw entitlementError;
+          if (!entitlement) {
+            return NextResponse.json(
+              { error: 'La formación requiere una invitación válida o una suscripción activa.' },
+              { status: 403 }
+            );
+          }
+        }
+
+        privateIdentity = await resolveAuthenticatedBookingIdentity(admin, user.id);
+        const authorizedEmails = await getAuthorizedBookingEmails(
+          admin,
+          user.id,
+          privateIdentity.companyId,
+          user.email
+        );
+        const requestedEmail = input.email.toLowerCase();
+        bookingEmail = authorizedEmails.includes(requestedEmail)
+          ? requestedEmail
+          : user.email.toLowerCase();
+      }
     }
 
     const spam = checkSpam({ name: input.name, email: bookingEmail, message: input.notes });
@@ -394,8 +455,15 @@ export async function POST(request: NextRequest) {
         localDate,
         localTime,
         meetingUrl: meeting.meetUrl,
-      }).catch((workflowError) => {
+      }).catch(async (workflowError) => {
         console.error('[booking] administrative workflow:', workflowError);
+        await admin
+          .from('appointments')
+          .update({
+            admin_notes: `Administrative booking workflow failed: ${workflowError instanceof Error ? workflowError.message : String(workflowError)}`,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', appointmentId!);
       });
     }
 
@@ -408,7 +476,7 @@ export async function POST(request: NextRequest) {
     }).format(start);
 
     await sendEmail({
-      to: input.email,
+      to: bookingEmail,
       eventType: 'cita.confirmed',
       ...citaConfirmed(input.name, service.label, formattedDate, localTime, meeting.meetUrl),
       metadata: {
