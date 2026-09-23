@@ -578,11 +578,25 @@ async function listMs365ChildItems(
     '$select': 'id,name,folder,webUrl',
     '$top': '200',
   });
-  const data = await graphAbsoluteJson(
-    accessToken,
-    `${base}${parentPath}?${params.toString()}`
-  );
-  return (data?.value ?? []) as Array<{ id: string; name: string; folder?: unknown; webUrl?: string }>;
+
+  const items: Array<{ id: string; name: string; folder?: unknown; webUrl?: string }> = [];
+  let nextUrl: string | null = `${base}${parentPath}?${params.toString()}`;
+  let pageCount = 0;
+
+  while (nextUrl && pageCount < 50) {
+    const data = await graphAbsoluteJson(accessToken, nextUrl);
+    items.push(...((data?.value ?? []) as Array<{ id: string; name: string; folder?: unknown; webUrl?: string }>));
+    nextUrl = typeof data?.['@odata.nextLink'] === 'string'
+      ? data['@odata.nextLink']
+      : null;
+    pageCount += 1;
+  }
+
+  if (nextUrl) {
+    throw new Error('Microsoft Graph folder listing exceeded pagination safety limit');
+  }
+
+  return items;
 }
 
 async function findOrCreateMs365Folder(
