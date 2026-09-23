@@ -53,19 +53,42 @@ export class BookingCalendarCreationError extends Error {
   provider: BookingCalendarProviderName;
   eventId: string | null;
   cleanupFailed: boolean;
+  meetingUrl: string | null;
 
   constructor(
     message: string,
     provider: BookingCalendarProviderName,
     eventId: string | null,
     cleanupFailed = false,
-    cause?: unknown
+    cause?: unknown,
+    meetingUrl: string | null = null
   ) {
     super(message, { cause });
     this.name = 'BookingCalendarCreationError';
     this.provider = provider;
     this.eventId = eventId;
     this.cleanupFailed = cleanupFailed;
+    this.meetingUrl = meetingUrl;
+  }
+}
+
+export class BookingCalendarDeletionError extends Error {
+  provider: BookingCalendarProviderName;
+  eventId: string;
+  remoteDeleted: boolean;
+
+  constructor(
+    message: string,
+    provider: BookingCalendarProviderName,
+    eventId: string,
+    remoteDeleted: boolean,
+    cause?: unknown
+  ) {
+    super(message, { cause });
+    this.name = 'BookingCalendarDeletionError';
+    this.provider = provider;
+    this.eventId = eventId;
+    this.remoteDeleted = remoteDeleted;
   }
 }
 
@@ -209,7 +232,8 @@ export async function createBookingCalendarMeeting(
           'ms365',
           result.eventId,
           true,
-          cleanupError
+          cleanupError,
+          result.meetingUrl
         );
       }
 
@@ -285,11 +309,44 @@ export async function deleteBookingCalendarEvent(
   provider = configuredProviderName()
 ): Promise<void> {
   if (provider === 'google') {
-    await deleteCalendarEventSA(eventId);
-    return;
+    try {
+      await deleteCalendarEventSA(eventId);
+      return;
+    } catch (error) {
+      throw new BookingCalendarDeletionError(
+        'Google Calendar event deletion failed',
+        'google',
+        eventId,
+        false,
+        error
+      );
+    }
   }
 
   const stored = await getMs365StoredTokens();
-  const result = await deleteMs365CalendarEvent(stored, eventId);
-  await persistMs365Refresh(result.refreshed);
+  let result: Awaited<ReturnType<typeof deleteMs365CalendarEvent>>;
+
+  try {
+    result = await deleteMs365CalendarEvent(stored, eventId);
+  } catch (error) {
+    throw new BookingCalendarDeletionError(
+      'Microsoft Calendar event deletion failed',
+      'ms365',
+      eventId,
+      false,
+      error
+    );
+  }
+
+  try {
+    await persistMs365Refresh(result.refreshed);
+  } catch (error) {
+    throw new BookingCalendarDeletionError(
+      'Microsoft Calendar event was deleted but refreshed token persistence failed',
+      'ms365',
+      eventId,
+      true,
+      error
+    );
+  }
 }
