@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { X } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
-import { getCalDemoUrl } from '@/lib/utils/cal';
+import { getBookingProvider, getCalDemoUrl } from '@/lib/utils/cal';
 
 const WA_NUMBER = '34669045528';
 const SESSION_KEY = 'kia_bubble_dismissed';
@@ -224,11 +224,17 @@ export function WhatsAppChatWidget() {
                   key={action.label}
                   type="button"
                   onClick={() => {
-                    if (action.url && window.Cal) {
-                      const calLink = (() => { try { return new URL(action.url).pathname.slice(1); } catch { return action.url; } })();
+                    const provider = getBookingProvider(action.url);
+                    if (action.url && provider === 'cal' && window.Cal) {
+                      const calLink = (() => {
+                        try { return new URL(action.url).pathname.slice(1); }
+                        catch { return action.url; }
+                      })();
                       window.Cal('modal', { calLink, config: { layout: 'month_view' } });
+                    } else if (action.url) {
+                      window.location.assign(action.url);
                     } else {
-                      window.location.assign('/cita');
+                      window.location.assign('/cita?tipo=demo-holded');
                     }
                     dismiss();
                   }}

@@ -7,6 +7,10 @@ import { sendEmail } from '@/lib/email/send';
 import { syncOrderToHolded, syncSubscriptionToHolded } from '@/lib/integrations/holded';
 import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
 import { getCalOnboardingUrl, getCalFormacionUrl } from '@/lib/utils/cal';
+import {
+  createPrivateBookingAuthorization,
+  withPrivateBookingAuthorization,
+} from '@/lib/booking/private-booking-authorization';
 import { persistAcademyCertificationPayment, persistAcademyProgramPayment } from '@/lib/payments/academy-fulfillment';
 import { legacyOrderFields, requireCreatedOrderId } from '@/lib/payments/non-academy-order';
 import { ensureServiceOrderFulfillment } from '@/lib/payments/service-order-fulfillment';
@@ -25,6 +29,26 @@ import {
   subscriptionCreated,
   subscriptionPaymentFailed
 } from '@/lib/email/templates';
+
+async function getAuthorizedPrivateBookingUrl(
+  session: Stripe.Checkout.Session,
+  service: 'onboarding' | 'formacion-holded',
+  baseUrl: string,
+  email: string,
+): Promise<string> {
+  if (!baseUrl) return '';
+
+  const token = await createPrivateBookingAuthorization({
+    service,
+    email,
+    clientId: session.client_reference_id ?? session.metadata?.user_id ?? null,
+    companyId: session.metadata?.company_id ?? null,
+    source: 'stripe',
+    sourceRef: session.id,
+  });
+
+  return withPrivateBookingAuthorization(baseUrl, token);
+}
 
 function getAdminEmails(): string[] {
   return (process.env.ADMIN_EMAILS ?? 'info@expertconsulting.es')
@@ -875,8 +899,18 @@ export async function POST(req: NextRequest) {
         const holdedPackageSlugs = ['holded-pack-starter', 'holded-migracion-sin-inventario', 'holded-migracion-con-inventario'];
         const isHoldedMigration = slugList.some((s: string) => holdedPackageSlugs.includes(s));
         const isHoldedFormacion = slugList.includes('holded-modulo-formacion');
-        const calOnboarding = getCalOnboardingUrl() ?? '';
-        const calFormacion = getCalFormacionUrl() ?? '';
+        const calOnboarding = await getAuthorizedPrivateBookingUrl(
+          session,
+          'onboarding',
+          getCalOnboardingUrl() ?? '',
+          customerEmail
+        );
+        const calFormacion = await getAuthorizedPrivateBookingUrl(
+          session,
+          'formacion-holded',
+          getCalFormacionUrl() ?? '',
+          customerEmail
+        );
 
         if (isHoldedMigration) {
           const packageName = serviceName;
@@ -978,8 +1012,18 @@ export async function POST(req: NextRequest) {
         'Cliente';
 
       if (customerEmail) {
-        const calOnboarding = getCalOnboardingUrl() ?? '';
-        const calFormacion = getCalFormacionUrl() ?? '';
+        const calOnboarding = await getAuthorizedPrivateBookingUrl(
+          session,
+          'onboarding',
+          getCalOnboardingUrl() ?? '',
+          customerEmail
+        );
+        const calFormacion = await getAuthorizedPrivateBookingUrl(
+          session,
+          'formacion-holded',
+          getCalFormacionUrl() ?? '',
+          customerEmail
+        );
         const holdedAmountEur = Number(session.amount_total ?? 0) / 100;
         if (productType === 'holded') {
           const packageName = session.metadata?.package_name ?? 'Paquete Holded';

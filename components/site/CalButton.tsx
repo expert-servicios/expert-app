@@ -10,20 +10,23 @@ declare global {
 }
 
 interface Props {
-  url         : string | null; // https://cal.com/username/event-type
+  url         : string | null;
   title?      : string;
   subtitle?   : string;
   className?  : string;
   fallbackHref?: string;
   children    : ReactNode;
-  /**
-   * Analytics event fired before opening the booking modal/fallback. Takes
-   * primitive event name + props (not a callback) because this component is
-   * often rendered from a Server Component — functions can't cross that
-   * boundary as props, but strings/objects can.
-   */
   analyticsEvent?: AcademyAnalyticsEvent;
   analyticsProps?: AcademyAnalyticsProps;
+}
+
+function isCalUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === 'cal.com' || host.endsWith('.cal.com');
+  } catch {
+    return false;
+  }
 }
 
 function toCalLink(url: string): string {
@@ -36,10 +39,16 @@ export function CalButton({ url, className, fallbackHref = '/cita', children, an
       type="button"
       onClick={() => {
         if (analyticsEvent) trackAcademyEvent(analyticsEvent, analyticsProps);
-        if (url && window.Cal) {
-          window.Cal('modal', { calLink: toCalLink(url), config: { layout: 'month_view' } });
+
+        if (url) {
+          if (isCalUrl(url) && window.Cal) {
+            window.Cal('modal', { calLink: toCalLink(url), config: { layout: 'month_view' } });
+            return;
+          }
+          window.location.assign(url);
           return;
         }
+
         window.location.assign(fallbackHref);
       }}
       className={className}

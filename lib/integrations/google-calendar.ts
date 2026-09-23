@@ -199,8 +199,213 @@ export async function upsertCalendarEventSA(
   }
 }
 
+export interface CalendarBusyWindow {
+  start: string;
+  end: string;
+}
+
+export async function listCalendarBusyWindowsSA(
+  timeMin: string,
+  timeMax: string
+): Promise<CalendarBusyWindow[]> {
+  const cal = await getCalendarSAClient();
+  if (!cal) throw new Error('Google Calendar service account is not configured');
+
+  const { data } = await cal.events.list({
+    calendarId: 'primary',
+    timeMin,
+    timeMax,
+    singleEvents: true,
+    orderBy: 'startTime',
+    showDeleted: false,
+    maxResults: 2500,
+  });
+
+  type BusyEvent = {
+    status?: string | null;
+    transparency?: string | null;
+    start?: { dateTime?: string | null; date?: string | null } | null;
+    end?: { dateTime?: string | null; date?: string | null } | null;
+  };
+
+  const items = (data.items ?? []) as BusyEvent[];
+  return items
+    .filter((event) => event.status !== 'cancelled' && event.transparency !== 'transparent')
+    .map((event) => ({
+      start: event.start?.dateTime ?? event.start?.date ?? '',
+      end: event.end?.dateTime ?? event.end?.date ?? '',
+    }))
+    .filter((window: CalendarBusyWindow) => Boolean(window.start && window.end));
+}
+
+export interface CalendarMeetingInput {
+  summary: string;
+  description?: string;
+  start: string;
+  end: string;
+  attendeeEmail: string;
+  timezone?: string;
+  reminderMinutesBefore?: number[];
+}
+
+export interface CalendarMeetingResult {
+  eventId: string;
+  meetUrl: string | null;
+}
+
+export class CalendarMeetingCreationError extends Error {
+  eventId: string;
+  cleanupFailed: boolean;
+
+  constructor(message: string, eventId: string, cleanupFailed: boolean, cause?: unknown) {
+    super(message, { cause });
+    this.name = 'CalendarMeetingCreationError';
+    this.eventId = eventId;
+    this.cleanupFailed = cleanupFailed;
+  }
+}
+
+export async function createCalendarMeetingSA(
+  input: CalendarMeetingInput
+): Promise<CalendarMeetingResult> {
+  const cal = await getCalendarSAClient();
+  if (!cal) throw new Error('Google Calendar service account is not configured');
+
+  const reminders = input.reminderMinutesBefore ?? [1440, 60];
+  const requestId = `expert-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  const { data } = await cal.events.insert({
+    calendarId: 'primary',
+    conferenceDataVersion: 1,
+    sendUpdates: 'all',
+    resource: {
+      summary: input.summary,
+      description: input.description,
+      start: { dateTime: input.start, timeZone: input.timezone ?? 'Europe/Madrid' },
+      end: { dateTime: input.end, timeZone: input.timezone ?? 'Europe/Madrid' },
+      attendees: [{ email: input.attendeeEmail }],
+      conferenceData: {
+        createRequest: {
+          requestId,
+          conferenceSolutionKey: { type: 'hangoutsMeet' },
+        },
+      },
+      reminders: {
+        useDefault: false,
+        overrides: reminders.map((minutes) => ({ method: 'email', minutes })),
+      },
+    },
+  });
+
+  if (!data.id) throw new Error('Google Calendar did not return an event id');
+  if (data.hangoutLink) return { eventId: data.id, meetUrl: data.hangoutLink };
+
+  try {
+    // Conference creation may complete asynchronously. Do not confirm the local
+    // appointment until Google exposes the Meet link or reports failure.
+    for (let attempt = 0; attempt < 6; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 250 : 500));
+      const { data: refreshed } = await cal.events.get({
+        calendarId: 'primary',
+        eventId: data.id,
+      });
+      if (refreshed.hangoutLink) {
+        return { eventId: data.id, meetUrl: refreshed.hangoutLink };
+      }
+      const status = refreshed.conferenceData?.createRequest?.status?.statusCode;
+      if (status === 'failure') {
+        throw new Error('Google Meet conference creation failed');
+      }
+    }
+
+    throw new Error('Google Meet conference creation did not complete in time');
+  } catch (error) {
+    try {
+      await cal.events.delete({
+        calendarId: 'primary',
+        eventId: data.id,
+        sendUpdates: 'all',
+      });
+      throw new CalendarMeetingCreationError(
+        error instanceof Error ? error.message : 'Google Meet creation failed',
+        data.id,
+        false,
+        error
+      );
+    } catch (cleanupError) {
+      if (cleanupError instanceof CalendarMeetingCreationError) throw cleanupError;
+      console.error('[Calendar SA] cleanup after Meet creation failure:', cleanupError);
+      throw new CalendarMeetingCreationError(
+        error instanceof Error ? error.message : 'Google Meet creation failed',
+        data.id,
+        true,
+        cleanupError
+      );
+    }
+  }
+}
+
+export async function updateCalendarMeetingSA(
+  eventId: string,
+  input: {
+    summary?: string;
+    description?: string;
+    start?: string;
+    end?: string;
+    timezone?: string;
+    reminderMinutesBefore?: number[];
+  }
+): Promise<string> {
+  const cal = await getCalendarSAClient();
+  if (!cal) throw new Error('Google Calendar service account is not configured');
+
+  const resource: Record<string, unknown> = {};
+  if (input.summary !== undefined) resource.summary = input.summary;
+  if (input.description !== undefined) resource.description = input.description;
+  if (input.start) {
+    resource.start = {
+      dateTime: input.start,
+      timeZone: input.timezone ?? 'Europe/Madrid',
+    };
+  }
+  if (input.end) {
+    resource.end = {
+      dateTime: input.end,
+      timeZone: input.timezone ?? 'Europe/Madrid',
+    };
+  }
+  if (input.reminderMinutesBefore) {
+    resource.reminders = {
+      useDefault: false,
+      overrides: input.reminderMinutesBefore.map((minutes) => ({
+        method: 'email',
+        minutes,
+      })),
+    };
+  }
+
+  const { data } = await cal.events.patch({
+    calendarId: 'primary',
+    eventId,
+    sendUpdates: 'all',
+    conferenceDataVersion: 1,
+    resource,
+  });
+
+  if (!data.id) throw new Error('Google Calendar did not return the updated event id');
+  return data.id;
+}
+
 export async function deleteCalendarEventSA(eventId: string): Promise<void> {
   const cal = await getCalendarSAClient();
-  if (!cal) return;
-  await cal.events.delete({ calendarId: 'primary', eventId }).catch(() => {});
+  if (!cal) throw new Error('Google Calendar service account is not configured');
+
+  try {
+    await cal.events.delete({ calendarId: 'primary', eventId, sendUpdates: 'all' });
+  } catch (error) {
+    const status = (error as { response?: { status?: number }; code?: number }).response?.status
+      ?? (error as { code?: number }).code;
+    if (status === 404 || status === 410) return;
+    throw error;
+  }
 }
