@@ -11,6 +11,7 @@ const SCOPES = [
   'Mail.Read',
   'Mail.Send',
   'Calendars.ReadWrite',
+  'Files.ReadWrite',
 ].join(' ');
 
 function getRedirectUri() {
@@ -513,6 +514,186 @@ export async function deleteMs365CalendarEvent(
   const { access_token, refreshed } = await ensureFreshToken(stored);
   await graphDelete(access_token, `/events/${encodeURIComponent(eventId)}`);
   return {
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
+}
+
+
+export type Ms365FilesTarget = 'onedrive' | 'sharepoint';
+
+export interface Ms365FileSyncResult {
+  fileId: string;
+  webUrl: string | null;
+  refreshed: Ms365StoredTokens | null;
+}
+
+function ms365FilesDriveBase(target: Ms365FilesTarget): string {
+  if (target === 'sharepoint') {
+    const driveId = process.env.MS365_SHAREPOINT_DRIVE_ID?.trim();
+    if (!driveId) {
+      throw new Error('MS365_SHAREPOINT_DRIVE_ID is required for SharePoint file mirroring');
+    }
+    return `https://graph.microsoft.com/v1.0/drives/${encodeURIComponent(driveId)}`;
+  }
+  return 'https://graph.microsoft.com/v1.0/me/drive';
+}
+
+async function graphAbsoluteJson(
+  accessToken: string,
+  url: string,
+  init?: RequestInit
+) {
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(init?.headers ?? {}),
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `Microsoft Graph request failed: ${res.status}`);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+function safeMs365ItemName(name: string): string {
+  return name
+    .replace(/[\\/:*?"<>|#%]/g, '_')
+    .trim()
+    .slice(0, 120) || 'documento';
+}
+
+async function listMs365ChildItems(
+  accessToken: string,
+  base: string,
+  parentId: string | null
+): Promise<Array<{ id: string; name: string; folder?: unknown; webUrl?: string }>> {
+  const parentPath = parentId
+    ? `/items/${encodeURIComponent(parentId)}/children`
+    : '/root/children';
+  const params = new URLSearchParams({
+    '$select': 'id,name,folder,webUrl',
+    '$top': '200',
+  });
+  const data = await graphAbsoluteJson(
+    accessToken,
+    `${base}${parentPath}?${params.toString()}`
+  );
+  return (data?.value ?? []) as Array<{ id: string; name: string; folder?: unknown; webUrl?: string }>;
+}
+
+async function findOrCreateMs365Folder(
+  accessToken: string,
+  base: string,
+  parentId: string | null,
+  folderName: string
+): Promise<string> {
+  const safeName = safeMs365ItemName(folderName);
+  const findExisting = async () => {
+    const children = await listMs365ChildItems(accessToken, base, parentId);
+    return children.find(
+      (item) => item.folder && item.name.toLocaleLowerCase() === safeName.toLocaleLowerCase()
+    )?.id ?? null;
+  };
+
+  const existing = await findExisting();
+  if (existing) return existing;
+
+  const parentPath = parentId
+    ? `/items/${encodeURIComponent(parentId)}/children`
+    : '/root/children';
+
+  try {
+    const created = await graphAbsoluteJson(accessToken, `${base}${parentPath}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: safeName,
+        folder: {},
+        '@microsoft.graph.conflictBehavior': 'fail',
+      }),
+    });
+    const id = String(created?.id ?? '');
+    if (!id) throw new Error('Microsoft Graph did not return a folder id');
+    return id;
+  } catch (error) {
+    // Concurrent uploads may create the same client/service folder. Re-read
+    // before surfacing the failure.
+    const raced = await findExisting();
+    if (raced) return raced;
+    throw error;
+  }
+}
+
+async function uploadMs365FileContent(
+  accessToken: string,
+  base: string,
+  parentId: string,
+  fileName: string,
+  mimeType: string,
+  fileBuffer: Buffer
+): Promise<{ id: string; webUrl: string | null }> {
+  const safeName = safeMs365ItemName(fileName);
+  const url = `${base}/items/${encodeURIComponent(parentId)}:/${encodeURIComponent(safeName)}:/content`;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': mimeType || 'application/octet-stream',
+    },
+    body: new Uint8Array(fileBuffer),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `Microsoft Graph file upload failed: ${res.status}`);
+  }
+  const data = await res.json();
+  const id = String(data?.id ?? '');
+  if (!id) throw new Error('Microsoft Graph did not return an uploaded file id');
+  return { id, webUrl: data?.webUrl ?? null };
+}
+
+export async function syncDocumentToMs365Files(
+  stored: Ms365StoredTokens,
+  input: {
+    target: Ms365FilesTarget;
+    rootFolderId?: string | null;
+    fileBuffer: Buffer;
+    fileName: string;
+    mimeType: string;
+    clientName: string;
+    serviceName: string;
+  }
+): Promise<Ms365FileSyncResult> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  const base = ms365FilesDriveBase(input.target);
+
+  const clientFolderId = await findOrCreateMs365Folder(
+    access_token,
+    base,
+    input.rootFolderId?.trim() || null,
+    input.clientName
+  );
+  const serviceFolderId = await findOrCreateMs365Folder(
+    access_token,
+    base,
+    clientFolderId,
+    input.serviceName
+  );
+  const uploaded = await uploadMs365FileContent(
+    access_token,
+    base,
+    serviceFolderId,
+    input.fileName,
+    input.mimeType,
+    input.fileBuffer
+  );
+
+  return {
+    fileId: uploaded.id,
+    webUrl: uploaded.webUrl,
     refreshed: refreshed ? { ...stored, ...refreshed } : null,
   };
 }
