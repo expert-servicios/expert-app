@@ -121,6 +121,23 @@ export function buildKiaCopilotArtifacts(
       });
     }
 
+    if (toolResult.toolName === 'search_knowledge_resources' && Array.isArray(result.resources)) {
+      for (const resource of result.resources.slice(0, 3) as Array<Record<string, unknown>>) {
+        const url = safeArtifactUrl(resource.url);
+        const title = typeof resource.title === 'string' ? safeText(resource.title) : '';
+        if (!url || !title) continue;
+
+        const isKnowledgeDoc = resource.type === 'doc';
+        artifacts.push({
+          type: 'link',
+          title: `${isKnowledgeDoc ? 'Guía' : 'Artículo'} · ${title}`,
+          url,
+          cta: isKnowledgeDoc ? 'Abrir guía' : 'Leer artículo',
+          tone: 'info',
+        });
+      }
+    }
+
     if (
       toolResult.toolName === 'generate_holded_connection_link' &&
       decision.nextAction === 'send_holded_connect_link'

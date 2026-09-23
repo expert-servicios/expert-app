@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { resolveKiaContextToken } from '@/lib/ai/kia/kia-context-token';
+import { resolveEffectiveCaseStatus } from '@/lib/cases/case-status';
 
 export async function GET(request: NextRequest) {
   const token = new URL(request.url).searchParams.get('token')?.trim();
@@ -33,11 +34,12 @@ export async function GET(request: NextRequest) {
   if (context.case_id) {
     const { data } = await admin
       .from('cases')
-      .select('id,service,service_id,state,status,next_action,due_date,company_id,updated_at')
+      .select('id,service,service_id,state,status,next_action,due_date,company_id,updated_at,closed_at')
       .eq('id', context.case_id)
       .eq('client_id', user.id)
       .maybeSingle();
-    caseSummary = data ?? null;
+    const effectiveStatus = data ? resolveEffectiveCaseStatus(data.status, data.state) : null;
+    caseSummary = data && !data.closed_at && effectiveStatus !== 'finalizado' ? data : null;
   }
 
   let companySummary: Record<string, unknown> | null = null;

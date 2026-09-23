@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { findKiaRelevantServices, searchKiaKnowledgeResources } from '@/lib/ai/kia/kia-knowledge-discovery';
+import {
+  buildAutomaticKiaKnowledgeResult,
+  findKiaRelevantServices,
+  searchKiaKnowledgeResources,
+} from '@/lib/ai/kia/kia-knowledge-discovery';
 import { generateKiaContextToken, hashKiaContextToken } from '@/lib/ai/kia/kia-context-token';
 import { getKiaToolPolicy } from '@/lib/ai/kia/kia-tool-registry';
 
@@ -36,6 +40,36 @@ describe('KIA contextual conversations foundation', () => {
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.some((row) => String(row.url).startsWith('/docs/') || String(row.url).startsWith('/blog/'))).toBe(true);
     expect(rows.some((row) => String(row.title).toLowerCase().includes('nacionalidad'))).toBe(true);
+  });
+
+  it('auto-surfaces relevant editorial resources when the model did not request the tool', () => {
+    const result = buildAutomaticKiaKnowledgeResult({
+      message: 'nacionalidad menor nacido España residencia',
+      intent: 'service_selection',
+      existingToolResults: [],
+    });
+
+    expect(result?.toolName).toBe('search_knowledge_resources');
+    expect(Array.isArray(result?.result?.resources)).toBe(true);
+    expect((result?.result?.resources as unknown[])?.length).toBeGreaterThan(0);
+
+    expect(buildAutomaticKiaKnowledgeResult({
+      message: 'Hola, buenos días',
+      intent: 'greeting',
+      existingToolResults: [],
+    })).toBeNull();
+
+    expect(buildAutomaticKiaKnowledgeResult({
+      message: '¿Cómo va mi expediente?',
+      intent: 'case_status',
+      existingToolResults: [],
+    })).toBeNull();
+
+    expect(buildAutomaticKiaKnowledgeResult({
+      message: 'nacionalidad menor nacido España residencia',
+      intent: 'service_selection',
+      existingToolResults: [{ toolName: 'search_knowledge_resources', ok: true, result: { resources: [] } }],
+    })).toBeNull();
   });
 
   it('finds relevant services only from the canonical catalog', () => {
@@ -86,6 +120,18 @@ describe('KIA contextual conversations foundation', () => {
     expect(executor).toContain(".eq('profile_id', clientId)");
   });
 
+
+  it('keeps contextual welcome grounded in a currently open case', () => {
+    const widget = source('components/KiaCopilotWidget.tsx');
+    const contextRoute = source('app/api/ai/kia/context/route.ts');
+
+    expect(widget).not.toContain('Ya sé sobre qué vienes a hablar');
+    expect(widget).toContain('Veo que tienes un expediente abierto.');
+    expect(widget).toContain('¿En qué te ayudo hoy?');
+    expect(contextRoute).toContain('resolveEffectiveCaseStatus');
+    expect(contextRoute).toContain("effectiveStatus !== 'finalizado'");
+    expect(contextRoute).toContain('!data.closed_at');
+  });
 
   it('wires canonical server-side conversation persistence behind a feature flag', () => {
     const route = source('app/api/ai/kia/route.ts');

@@ -2,6 +2,7 @@ import { articles } from '@/lib/utils/blog';
 import { docs } from '@/lib/utils/docs';
 import { services } from '@/lib/utils/catalog';
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import type { KiaToolResult } from './kia-tool-definitions';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -67,6 +68,44 @@ export function searchKiaKnowledgeResources(input: {
 
   return rows.sort((a,b) => b.score - a.score || String(a.title).localeCompare(String(b.title))).slice(0, limit)
     .map(({ score, ...row }) => row);
+}
+
+
+const KIA_KNOWLEDGE_SILENT_INTENTS = new Set([
+  'greeting',
+  'case_status',
+  'checkout',
+  'book_call',
+  'complete_profile',
+  'connect_holded',
+  'send_documents',
+  'report_request',
+  'export_report',
+]);
+
+export function buildAutomaticKiaKnowledgeResult(input: {
+  message: string;
+  intent: string;
+  serviceSlug?: string;
+  existingToolResults: KiaToolResult[];
+}): KiaToolResult | null {
+  if (input.message.trim().length < 8) return null;
+  if (KIA_KNOWLEDGE_SILENT_INTENTS.has(input.intent)) return null;
+  if (input.existingToolResults.some((item) => item.toolName === 'search_knowledge_resources')) return null;
+
+  const resources = searchKiaKnowledgeResources({
+    query: input.message,
+    type: 'all',
+    serviceSlug: input.serviceSlug,
+    limit: 3,
+  });
+  if (!resources.length) return null;
+
+  return {
+    toolName: 'search_knowledge_resources',
+    ok: true,
+    result: { resources },
+  };
 }
 
 export function findKiaRelevantServices(input: {

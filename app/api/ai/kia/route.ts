@@ -38,6 +38,7 @@ import { runSampledKiaShadow } from '@/lib/ai/kia/evals/kia-shadow-sampler';
 import { resolveKiaLocale } from '@/lib/ai/kia/kia-locale';
 import { resolveKiaContextToken } from '@/lib/ai/kia/kia-context-token';
 import { loadKiaConversation, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
+import { buildAutomaticKiaKnowledgeResult } from '@/lib/ai/kia/kia-knowledge-discovery';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -60,6 +61,7 @@ function sessionCompanyId(data: unknown): string | null {
   const value = (data as Record<string, unknown>).company_id;
   return typeof value === 'string' ? value : null;
 }
+
 
 export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -340,7 +342,16 @@ export async function POST(request: NextRequest) {
     userMessage: message,
     presentationContext,
   });
-  const artifacts = buildKiaCopilotArtifacts(result.toolResults, result.decision);
+  const automaticKnowledgeResult = buildAutomaticKiaKnowledgeResult({
+    message,
+    intent: result.decision.intent,
+    serviceSlug: contextualServiceSlug,
+    existingToolResults: result.toolResults,
+  });
+  const artifactToolResults = automaticKnowledgeResult
+    ? [...result.toolResults, automaticKnowledgeResult]
+    : result.toolResults;
+  const artifacts = buildKiaCopilotArtifacts(artifactToolResults, result.decision);
   const reply = appendKiaFiscalNotice(result.userMessage, fiscalSignal);
 
   try {
