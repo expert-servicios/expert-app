@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { sendEmail } from '@/lib/email/send';
 import { citaConfirmed } from '@/lib/email/templates';
 import {
+  BookingCalendarCreationError,
   calendarProviderFromBookingProvider,
   createBookingCalendarMeeting,
   deleteBookingCalendarEvent,
@@ -203,7 +204,7 @@ export async function PATCH(request: NextRequest) {
               ? syncedEventId
               : null;
 
-            await admin
+            const { error: metadataSyncError } = await admin
               .from('appointments')
               .update({
                 google_event_id: syncedGoogleEventId,
@@ -214,8 +215,27 @@ export async function PATCH(request: NextRequest) {
               })
               .eq('id', appt.id);
 
-            // Keep the response/email payload aligned with the synchronized
-            // database row instead of the pre-sync Supabase snapshot.
+            if (metadataSyncError) {
+              // A newly-created remote meeting must not survive if EXPERT
+              // cannot persist its identifiers. Existing remote events already
+              // have durable identifiers in the current row.
+              if (!eventId) {
+                try {
+                  await deleteBookingCalendarEvent(syncedEventId, calendarProvider);
+                } catch (cleanupError) {
+                  throw new BookingCalendarCreationError(
+                    'Calendar metadata persistence failed after event creation and cleanup failed',
+                    calendarProvider,
+                    syncedEventId,
+                    true,
+                    cleanupError
+                  );
+                }
+              }
+              throw metadataSyncError;
+            }
+
+            // Only advertise fresh values after the metadata write succeeded.
             appt.google_event_id = syncedGoogleEventId;
             appt.provider_booking_id = syncedEventId;
             appt.booking_provider = syncedBookingProvider;
@@ -225,7 +245,17 @@ export async function PATCH(request: NextRequest) {
           }
         } catch (calendarError) {
           console.error('[citas] calendar sync:', calendarError);
-          await admin
+
+          const reconciliationEventId =
+            calendarError instanceof BookingCalendarCreationError
+              ? calendarError.eventId
+              : null;
+          const reconciliationProvider =
+            calendarError instanceof BookingCalendarCreationError
+              ? calendarError.provider
+              : calendarProvider;
+
+          const { error: restoreError } = await admin
             .from('appointments')
             .update({
               status: current.status,
@@ -234,12 +264,28 @@ export async function PATCH(request: NextRequest) {
               appointment_date: current.appointment_date,
               appointment_end: current.appointment_end,
               meeting_url: current.meeting_url,
-              admin_notes: current.admin_notes,
+              google_event_id: reconciliationEventId && reconciliationProvider === 'google'
+                ? reconciliationEventId
+                : current.google_event_id,
+              provider_booking_id: reconciliationEventId ?? current.provider_booking_id,
+              booking_provider: reconciliationEventId
+                ? (reconciliationProvider === 'ms365' ? 'ms365_native' : 'google_native')
+                : current.booking_provider,
+              admin_notes: reconciliationEventId
+                ? `Evento remoto ${reconciliationEventId} requiere reconciliación tras fallo de sincronización.`
+                : current.admin_notes,
               updated_at: new Date().toISOString(),
             })
             .eq('id', id);
+
+          if (restoreError) {
+            console.error('[citas] failed to persist calendar reconciliation state:', restoreError);
+          }
+
           return NextResponse.json({
-            error: 'Calendar no pudo sincronizarse. EXPERT ha restaurado la cita al estado anterior.'
+            error: reconciliationEventId
+              ? 'Calendar no pudo sincronizarse por completo. EXPERT ha conservado el identificador remoto para reconciliación.'
+              : 'Calendar no pudo sincronizarse. EXPERT ha restaurado la cita al estado anterior.'
           }, { status: 502 });
         }
       }
