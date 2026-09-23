@@ -206,7 +206,7 @@ async function runNativeAdministrativeWorkflow(input: {
       ...caseOpened(input.name, serviceLabel, null, ''),
       metadata: {
         case_id: caseId,
-        company_id: identity.companyId,
+        company_id: identity?.companyId ?? null,
         source: 'native_booking',
         appointment_id: input.appointmentId,
       },
@@ -223,7 +223,7 @@ async function runNativeAdministrativeWorkflow(input: {
       html: `<p>Nueva reserva administrativa registrada en EXPERT.</p><p><strong>Cliente:</strong> ${input.name} (${input.email})</p><p><strong>Servicio:</strong> ${serviceLabel}</p><p><strong>Inicio:</strong> ${input.start.toISOString()}</p><p><strong>Reunión:</strong> ${input.meetingUrl}</p>`,
       metadata: {
         appointment_id: input.appointmentId,
-        company_id: identity.companyId,
+        company_id: identity?.companyId ?? null,
         booking_provider: 'google_native',
       },
       idempotencyKey: `native/admin-booking/${input.appointmentId}`,
