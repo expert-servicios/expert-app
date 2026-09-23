@@ -143,6 +143,38 @@ function immigrationTasks(serviceName: string, applicationLabel: string): Servic
   ];
 }
 
+
+function nationalityMinorSteps(): ServiceCaseStep[] {
+  const base = immigrationCaseSteps('solicitud de nacionalidad por residencia');
+  return [
+    ...base.slice(0, 2),
+    {
+      key: 'registry_data',
+      title: 'Confirmación de datos registrales',
+      description: 'Cerrar nombre y apellidos para la futura inscripción en el Registro Civil antes de preparar el formulario oficial.',
+      clientVisible: true,
+    },
+    ...base.slice(2),
+  ];
+}
+
+function nationalityMinorTasks(): ServiceTaskTemplate[] {
+  const base = immigrationTasks('Nacionalidad menor nacido en España', 'solicitud de nacionalidad');
+  return [
+    ...base.slice(0, 2),
+    {
+      key: 'confirm_registry_surnames',
+      title: 'Confirmar apellidos para Registro Civil — Nacionalidad menor',
+      description: 'Confirmar por escrito cómo quedarán los apellidos. Si el menor usa un solo apellido, documentar si se duplica o si se acredita el apellido personal/de nacimiento de la madre antes de preparar la solicitud.',
+      priority: 'alta',
+      phase: 'registry_data',
+      humanApprovalRequired: true,
+      dueBusinessDays: 1,
+    },
+    ...base.slice(2),
+  ];
+}
+
 const certificatesCommonSteps: ServiceCaseStep[] = [
   {
     key: 'documents',
@@ -276,6 +308,7 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'born_in_spain', label: 'El menor ha nacido en España', required: true, clientCheckable: true },
       { key: 'legal_residence_year', label: 'El menor cumple el periodo legal de residencia aplicable antes de presentar', required: true, clientCheckable: false },
       { key: 'representation', label: 'Representación/firma del menor correctamente resuelta según edad y patria potestad', required: true, clientCheckable: false },
+      { key: 'registry_surnames', label: 'Nombre y apellidos para la futura inscripción en el Registro Civil confirmados antes de preparar la solicitud', required: true, clientCheckable: true },
     ],
     documents: [
       { key: 'birth_certificate', label: 'Certificación literal de nacimiento española', required: true },
@@ -284,13 +317,14 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'registration', label: 'Empadronamiento familiar/colectivo actualizado', required: true },
       { key: 'parents_identity', label: 'Pasaportes y NIE/TIE de progenitores o representantes', required: true },
       { key: 'representation_docs', label: 'Documentación adicional de representación si solo actúa uno de los progenitores', required: false, conditionalWhen: 'No firman ambos representantes con patria potestad' },
+      { key: 'maternal_birth_surname_evidence', label: 'Documento que acredite el apellido personal/de nacimiento de la madre, con apostilla/legalización y traducción oficial cuando proceda', required: false, conditionalWhen: 'La familia quiere usar como segundo apellido uno materno distinto del apellido actual del menor', notes: 'No solicitar por defecto. Solo cuando la familia elija esta opción.' },
     ],
-    steps: immigrationCaseSteps('solicitud de nacionalidad por residencia'),
-    tasks: immigrationTasks('Nacionalidad menor nacido en España', 'solicitud de nacionalidad'),
+    steps: nationalityMinorSteps(),
+    tasks: nationalityMinorTasks(),
     kia: {
-      userSummary: 'KIA guía a la familia para comprobar residencia legal del menor, representación y documentos antes de presentar.',
-      adminSummary: 'KIA prioriza cómputo de residencia, representación y coherencia documental; no autoriza presentación.',
-      escalationRules: ['Residencia legal dudosa', 'Firma/representación no resuelta', 'Datos personales incoherentes', 'Documentos extranjeros pendientes de legalización/traducción'],
+      userSummary: 'KIA guía a la familia para comprobar residencia legal del menor, representación, documentos y apellidos registrales antes de preparar la solicitud.',
+      adminSummary: 'KIA prioriza cómputo de residencia, representación, coherencia documental y cierre de nombre/apellidos para Registro Civil; no autoriza presentación.',
+      escalationRules: ['Residencia legal dudosa', 'Firma/representación no resuelta', 'Apellidos registrales no confirmados', 'Datos personales incoherentes', 'Documento extranjero de apellido materno pendiente de validación/legalización/traducción'],
     },
   },
   {
