@@ -94,9 +94,12 @@ describe('native booking public flow', () => {
     expect(adminRoute).toContain('madridLocalToDate');
     expect(adminRoute).toContain('provider_booking_id');
     expect(adminRoute).toContain('updateBookingCalendarMeeting');
+    expect(adminRoute).toContain("(appt.google_event_id ? 'google' : getConfiguredBookingCalendarProvider())");
     expect(adminRoute).toContain('requiresRemoteSync');
     expect(adminRoute).toContain('El proveedor de calendario de esta cita no está conectado');
     expect(adminRoute).toContain('EXPERT ha restaurado la cita al estado anterior');
+    expect(adminRoute).toContain('appt.meeting_url = meetingUrl');
+    expect(adminRoute).toContain('appt.provider_booking_id = syncedEventId');
     expect(adminRoute).toContain('La cita se conserva en EXPERT');
     expect(calendar).toContain('cal.events.patch');
     expect(calendar).toContain('status === 404 || status === 410');
@@ -116,6 +119,9 @@ describe('native booking public flow', () => {
     expect(microsoft).toContain('readOptionalGraphJson');
     expect(microsoft).toContain("if (!text.trim()) return null");
     expect(calendarProvider).toContain('cleanupTokens = result.refreshed');
+    expect(calendarProvider).toContain('Microsoft token persistence failed after event creation and cleanup failed');
+    expect(calendarProvider).toContain('result.eventId');
+    expect(calendarProvider).toContain('remote event was compensated');
   });
 
   it('persists administrative workflow failures for reconciliation', () => {
