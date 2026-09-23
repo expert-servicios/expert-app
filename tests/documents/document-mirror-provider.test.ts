@@ -29,7 +29,7 @@ describe('document mirror providers', () => {
     expect(microsoft).toContain("'Files.ReadWrite'");
     expect(microsoft).not.toContain("'Sites.ReadWrite.All'");
     expect(microsoft).toContain("MS365_SHAREPOINT_DRIVE_ID");
-    expect(microsoft).toContain("MS365_FILES_ROOT_FOLDER_ID");
+    expect(mirror).toContain("MS365_FILES_ROOT_FOLDER_ID");
     expect(env).toContain('DOCUMENT_MIRROR_PROVIDER=google');
     expect(env).toContain('MS365_FILES_TARGET=onedrive');
     expect(env).toContain('MS365_SHAREPOINT_DRIVE_ID=');
@@ -50,7 +50,7 @@ describe('document mirror providers', () => {
     expect(route).toContain("console.error('[Document mirror]'");
     expect(route).toContain('void (async () => {');
     expect(route.indexOf(".from('documents')\n      .insert")).toBeLessThan(
-      route.indexOf('syncDocumentToMirror')
+      route.indexOf('await syncDocumentToMirror({')
     );
   });
 });
