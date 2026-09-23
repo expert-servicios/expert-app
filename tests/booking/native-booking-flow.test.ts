@@ -9,6 +9,8 @@ describe('native booking public flow', () => {
   const availability = read('app/api/booking/availability/route.ts');
   const migration = read('supabase/migrations/20260923132714_native_google_booking.sql');
   const calendar = read('lib/integrations/google-calendar.ts');
+  const calendarProvider = read('lib/booking/calendar-provider.ts');
+  const microsoft = read('lib/integrations/microsoft365.ts');
   const adminRoute = read('app/api/admin/citas/route.ts');
   const dashboardRoute = read('app/api/dashboard/citas/route.ts');
   const badge = read('components/site/CalBadge.tsx');
@@ -24,9 +26,9 @@ describe('native booking public flow', () => {
     expect(route).toContain("status: 'pending_calendar'");
   });
 
-  it('creates Google Meet only after acquiring the local lock', () => {
-    expect(route.indexOf(".from('appointments')")).toBeLessThan(route.indexOf('createCalendarMeetingSA({'));
-    expect(route).toContain("booking_provider: 'google_native'");
+  it('creates the provider meeting only after acquiring the local lock', () => {
+    expect(route.indexOf(".from('appointments')")).toBeLessThan(route.indexOf('createBookingCalendarMeeting({'));
+    expect(route).toContain("calendarProvider === 'ms365' ? 'ms365_native' : 'google_native'");
     expect(route).toContain("status: 'confirmed'");
   });
 
@@ -43,9 +45,10 @@ describe('native booking public flow', () => {
     expect(migration).toContain("'confirmed'");
   });
 
-  it('uses both Google and local pending/confirmed occupancy', () => {
-    expect(availability).toContain('listCalendarBusyWindowsSA');
+  it('uses both the configured calendar provider and local pending/confirmed occupancy', () => {
+    expect(availability).toContain('listBookingCalendarBusyWindows');
     expect(availability).toContain("['pending_calendar', 'confirmed']");
+    expect(calendarProvider).toContain("BOOKING_CALENDAR_PROVIDER");
   });
 
   it('enforces the same maximum booking horizon on POST', () => {
@@ -82,20 +85,30 @@ describe('native booking public flow', () => {
     expect(calendar).toContain('Google Meet conference creation did not complete in time');
     expect(calendar).toContain('CalendarMeetingCreationError');
     expect(calendar).toContain('cleanup after Meet creation failure');
-    expect(route).toContain('error instanceof CalendarMeetingCreationError');
-    expect(route).toContain('provider_booking_id: googleEventId');
+    expect(route).toContain('error instanceof BookingCalendarCreationError');
+    expect(route).toContain('provider_booking_id: providerEventId');
   });
 
   it('keeps admin moves and deletes synchronized with native Calendar events', () => {
     expect(adminRoute).toContain('appointment_end');
     expect(adminRoute).toContain('madridLocalToDate');
     expect(adminRoute).toContain('provider_booking_id');
-    expect(adminRoute).toContain('updateCalendarMeetingSA');
+    expect(adminRoute).toContain('updateBookingCalendarMeeting');
     expect(adminRoute).toContain('EXPERT ha restaurado la cita al estado anterior');
     expect(adminRoute).toContain('La cita se conserva en EXPERT');
     expect(calendar).toContain('cal.events.patch');
     expect(calendar).toContain('status === 404 || status === 410');
+    expect(calendarProvider).toContain('deleteBookingCalendarEvent');
     expect(legacyCalWebhook).toContain('appointment_end: payload.endTime');
+  });
+
+  it('supports Microsoft Calendar + Teams without changing the Google default', () => {
+    expect(calendarProvider).toContain("return process.env.BOOKING_CALENDAR_PROVIDER?.trim().toLowerCase() === 'ms365'");
+    expect(calendarProvider).toContain("bookingProvider: 'ms365_native'");
+    expect(microsoft).toContain("'Calendars.ReadWrite'");
+    expect(microsoft).toContain("isOnlineMeeting: true");
+    expect(microsoft).toContain("onlineMeetingProvider: 'teamsForBusiness'");
+    expect(microsoft).toContain("data?.onlineMeeting?.joinUrl");
   });
 
   it('persists administrative workflow failures for reconciliation', () => {
