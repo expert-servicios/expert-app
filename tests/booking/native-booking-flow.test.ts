@@ -111,8 +111,11 @@ describe('native booking public flow', () => {
     expect(microsoft).toContain("isOnlineMeeting: true");
     expect(microsoft).toContain("onlineMeetingProvider: 'teamsForBusiness'");
     expect(microsoft).toContain("data?.onlineMeeting?.joinUrl");
+    expect(microsoft).toContain("?$select=id,onlineMeeting");
+    expect(microsoft).toContain('removing the online-meeting blob from body content can disable');
     expect(microsoft).toContain('readOptionalGraphJson');
     expect(microsoft).toContain("if (!text.trim()) return null");
+    expect(calendarProvider).toContain('cleanupTokens = result.refreshed');
   });
 
   it('persists administrative workflow failures for reconciliation', () => {
