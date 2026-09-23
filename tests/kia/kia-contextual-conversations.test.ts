@@ -22,7 +22,7 @@ describe('KIA contextual conversations foundation', () => {
   });
 
   it('defines canonical multichannel conversation and context-token tables', () => {
-    const migration = source('supabase/migrations/20260922201500_kia_contextual_conversations.sql');
+    const migration = source('supabase/migrations/20260923063614_kia_contextual_conversations.sql');
     expect(migration).toContain('create table if not exists public.kia_conversations');
     expect(migration).toContain('create table if not exists public.kia_conversation_messages');
     expect(migration).toContain('create table if not exists public.kia_context_tokens');
