@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { syncDocumentToDrive } from '@/lib/integrations/google-drive';
+import { syncDocumentExternalCopy } from '@/lib/documents/external-copy-provider';
 import { notifyTenantAdminDocUploaded } from '@/lib/email/notify-tenant-admins';
 import { notifyAdmins } from '@/lib/integrations/push';
 import {
@@ -202,38 +202,43 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }).catch(() => {});
     }
 
-    // Drive is a secondary copy. Storage + documents remains the canonical record.
-    if (process.env.GOOGLE_DRIVE_CLIENTS_FOLDER_ID) {
-      void (async () => {
-        try {
-          const { data: clientProfile } = await adminSupabase
-            .from('profiles')
-            .select('full_name,email')
-            .eq('id', clientId)
-            .maybeSingle();
-          const clientName = clientProfile?.full_name ?? clientProfile?.email ?? `cliente-${clientId}`;
-          const serviceName = caseData.service ?? 'Expediente';
+    // External document storage is a secondary copy only.
+    // Supabase Storage + documents remains the canonical record.
+    void (async () => {
+      try {
+        const { data: clientProfile } = await adminSupabase
+          .from('profiles')
+          .select('full_name,email')
+          .eq('id', clientId)
+          .maybeSingle();
+        const clientName = clientProfile?.full_name ?? clientProfile?.email ?? `cliente-${clientId}`;
+        const serviceName = caseData.service ?? 'Expediente';
 
-          const driveResult = await syncDocumentToDrive({
-            fileBuffer: buffer,
-            fileName: validation.safeName,
-            mimeType: validation.contentType,
-            clientName,
-            serviceName,
-          });
+        const copyResult = await syncDocumentExternalCopy({
+          documentId: doc.id,
+          fileBuffer: buffer,
+          fileName: validation.safeName,
+          mimeType: validation.contentType,
+          clientName,
+          serviceName,
+          companyId,
+        });
 
-          if (driveResult) {
-            const { error: drivePersistError } = await adminSupabase
-              .from('documents')
-              .update({ drive_file_id: driveResult.fileId })
-              .eq('id', doc.id);
-            if (drivePersistError) console.error('[Drive sync] file id persistence:', drivePersistError.message);
+        // Keep the legacy Google column populated for existing Admin/UI code.
+        // Provider-neutral tracing lives in external_mappings.
+        if (copyResult?.provider === 'google') {
+          const { error: drivePersistError } = await adminSupabase
+            .from('documents')
+            .update({ drive_file_id: copyResult.fileId })
+            .eq('id', doc.id);
+          if (drivePersistError) {
+            console.error('[External copy] legacy Google file id persistence:', drivePersistError.message);
           }
-        } catch (error) {
-          console.error('[Drive sync]', error);
         }
-      })();
-    }
+      } catch (error) {
+        console.error('[External document copy]', error);
+      }
+    })();
 
     if (!isAdmin) {
       const fallbackName = String(clientId).slice(0, 8);
