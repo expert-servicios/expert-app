@@ -194,7 +194,7 @@ async function runNativeAdministrativeWorkflow(input: {
       ...preparation,
       metadata: {
         appointment_id: input.appointmentId,
-        booking_provider: calendarProvider === 'ms365' ? 'ms365_native' : 'google_native',
+        booking_provider: input.bookingProvider,
         onboarding_phase: 'pre_meeting',
       },
       idempotencyKey: `native/onboarding-preparation/${input.appointmentId}`,
@@ -416,7 +416,7 @@ export async function POST(request: NextRequest) {
         confirmed_date: localDate,
         confirmed_time: localTime,
         service: service.label,
-        booking_provider: input.bookingProvider,
+        booking_provider: calendarProvider === 'ms365' ? 'ms365_native' : 'google_native',
         provider_booking_id: null,
         meeting_url: null,
       })
