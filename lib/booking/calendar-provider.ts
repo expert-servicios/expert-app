@@ -193,7 +193,34 @@ export async function createBookingCalendarMeeting(
   const stored = await getMs365StoredTokens();
   try {
     const result = await createMs365TeamsMeeting(stored, input);
-    await persistMs365Refresh(result.refreshed);
+
+    try {
+      await persistMs365Refresh(result.refreshed);
+    } catch (persistError) {
+      const cleanupTokens = result.refreshed
+        ? { ...stored, ...result.refreshed }
+        : stored;
+
+      try {
+        await deleteMs365CalendarEvent(cleanupTokens, result.eventId);
+      } catch (cleanupError) {
+        throw new BookingCalendarCreationError(
+          'Microsoft token persistence failed after event creation and cleanup failed',
+          'ms365',
+          result.eventId,
+          true,
+          cleanupError
+        );
+      }
+
+      throw new BookingCalendarCreationError(
+        'Microsoft token persistence failed after event creation; remote event was compensated',
+        'ms365',
+        null,
+        false,
+        persistError
+      );
+    }
 
     if (!result.meetingUrl) {
       try {
