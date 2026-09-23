@@ -87,6 +87,18 @@ describe('KIA contextual conversations foundation', () => {
   });
 
 
+  it('keeps contextual welcome grounded in a currently open case', () => {
+    const widget = source('components/KiaCopilotWidget.tsx');
+    const contextRoute = source('app/api/ai/kia/context/route.ts');
+
+    expect(widget).not.toContain('Ya sé sobre qué vienes a hablar');
+    expect(widget).toContain('Veo que tienes un expediente abierto.');
+    expect(widget).toContain('¿En qué te ayudo hoy?');
+    expect(contextRoute).toContain('resolveEffectiveCaseStatus');
+    expect(contextRoute).toContain("effectiveStatus !== 'finalizado'");
+    expect(contextRoute).toContain('!data.closed_at');
+  });
+
   it('wires canonical server-side conversation persistence behind a feature flag', () => {
     const route = source('app/api/ai/kia/route.ts');
     const store = source('lib/ai/kia/kia-conversation-store.ts');
