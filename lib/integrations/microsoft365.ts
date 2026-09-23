@@ -71,7 +71,10 @@ async function ensureFreshToken(stored: Ms365StoredTokens) {
   if (Date.now() < stored.expires_at - 60_000) {
     return { access_token: stored.access_token, refreshed: null };
   }
-  const tokens = await fetchToken({ grant_type: 'refresh_token', refresh_token: stored.refresh_token, scope: SCOPES });
+  // Do not request new scopes during refresh. Existing Mail-only connections
+  // must keep refreshing successfully until the admin explicitly reconnects
+  // and consents to Calendars.ReadWrite.
+  const tokens = await fetchToken({ grant_type: 'refresh_token', refresh_token: stored.refresh_token });
   const refreshed = {
     access_token: tokens.access_token,
     refresh_token: tokens.refresh_token ?? stored.refresh_token,
