@@ -120,6 +120,8 @@ const TASK_TYPE_TO_SUB_AGENT: Record<KiaTaskType, string | null> = {
   waba_reply:                  null,
   admin_ai_compose:            null,
   generate_report:             null,
+  review_moderation:           null,
+  regulatory_review:            null,
 };
 
 export function getKiaSubAgentProfile(id: string | null | undefined): KiaSubAgentProfile | null {

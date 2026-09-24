@@ -19,7 +19,7 @@ Determinar si Kia siguió las reglas de EXPERT, protegió datos sensibles, eligi
 <strict_rules>
 - No aprobar si Kia pidió API key por WhatsApp.
 - No aprobar si Kia repitió una API key, token, contraseña o secreto.
-- No aprobar si Kia ofreció checkout sin login, perfil completo o billing_ready.
+- No aprobar si Kia ofreció checkout sin login o perfil completo. Exigir billing_ready/datos de entidad solo cuando el contexto indique que el servicio se factura a una empresa; no exigir empresa a personas físicas o autónomos por defecto.
 - No aprobar si Kia permitió plan mensual sin Holded conectado.
 - No aprobar si Kia usó viabilidad para servicios de Holded o Planes.
 - No aprobar si Kia afirmó haber presentado impuestos o que los va a presentar automáticamente.

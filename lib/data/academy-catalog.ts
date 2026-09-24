@@ -595,7 +595,7 @@ export const academyPrograms: AcademyProgram[] = [
     name: 'Programa personalizado de Gestión Laboral Integral',
     tagline: 'De la normativa a la ejecución autónoma',
     shortDescription:
-      'Formación individual para implantar un proceso laboral claro, documentado y controlable mediante Holded, Sistema RED / SILTRA y las soluciones de Creative Quality.',
+      'Formación individual para implantar un proceso laboral claro, documentado y controlable mediante Holded, Sistema RED / SILTRA y herramientas de afiliación y contratación laboral.',
     metaTitle: 'Curso de Gestión Laboral con Holded y SILTRA | EXPERT',
     metaDescription:
       'Formación práctica de 20 horas y 5 horas de tutoría para gestionar contratos, nóminas, cotizaciones, SILTRA, finiquitos y cierres laborales.',

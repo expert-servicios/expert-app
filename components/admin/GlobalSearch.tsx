@@ -2,18 +2,19 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, X, User, FolderOpen, Calendar, FileText, Loader2 } from 'lucide-react';
+import { Search, X, User, Building2, FolderOpen, Calendar, FileText, Loader2 } from 'lucide-react';
 
 interface SearchResult {
   id: string;
-  type: 'client' | 'case' | 'appointment' | 'quote' | 'document';
+  type: 'person' | 'company' | 'case' | 'appointment' | 'quote' | 'document';
   title: string;
   subtitle: string;
   href: string;
 }
 
 const TYPE_CONFIG = {
-  client:      { icon: User,       label: 'Cliente',     color: 'text-blue-600 bg-blue-50' },
+  person:      { icon: User,       label: 'Persona',     color: 'text-blue-600 bg-blue-50' },
+  company:     { icon: Building2,  label: 'Empresa',     color: 'text-slate-600 bg-slate-50' },
   case:        { icon: FolderOpen, label: 'Expediente',  color: 'text-amber-600 bg-amber-50' },
   appointment: { icon: Calendar,   label: 'Cita',        color: 'text-green-600 bg-green-50' },
   quote:       { icon: FileText,   label: 'Presupuesto', color: 'text-purple-600 bg-purple-50' },
@@ -111,7 +112,7 @@ export function GlobalSearch() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Buscar clientes, expedientes, documentos, citas…"
+            placeholder="Buscar personas, empresas, CIF/NIF, expedientes, documentos, citas…"
             className="flex-1 bg-transparent text-sm text-[#07111d] placeholder:text-[#9ca3af] outline-none"
           />
           {loading
@@ -161,7 +162,7 @@ export function GlobalSearch() {
 
           {!query && (
             <div className="px-4 py-6 text-center text-xs text-[#9ca3af]">
-              Escribe para buscar en clientes, expedientes, citas y presupuestos
+              Escribe para buscar personas, empresas, expedientes, citas y presupuestos
             </div>
           )}
         </div>

@@ -202,7 +202,7 @@ const FALLBACK_SOURCES: Array<OfficialSource & { keywords: RegExp[] }> = [
   {
     title: 'PAE Electronico / CIRCE - Creacion de empresa online',
     url: 'https://paeelectronico.es/',
-    snippet: 'Portal oficial para crear una Sociedad Limitada (SL) online via CIRCE o tramitar el alta de autonomo sin desplazamientos. Requiere certificado digital.',
+    snippet: 'Portal oficial PAE/CIRCE para tramitar electrónicamente la creación de empresas y el alta de autónomos mediante DUE. La constitución de una SL incluye escritura pública y coordinación notarial; verificar el canal de identificación y firma vigente.',
     keywords: [/pae|circe|crear empresa online|sl online|alta autonomo online|ventanilla unica.*empresa|constitucion.*sl.*online/i],
   },
   // ── Registro Mercantil Central ────────────────────────────────────────────────
@@ -231,7 +231,7 @@ const FALLBACK_SOURCES: Array<OfficialSource & { keywords: RegExp[] }> = [
     url: 'https://www.agenciatributaria.es/',
     snippet: [
       'Los impuestos de transmisiones (ITP), sucesiones y donaciones (ISD) y actos juridicos documentados (AJD) son gestionados por cada CCAA.',
-      'ITP en compraventas de segunda mano: 6% Madrid, 7-10% Andalucia, 10% Valencia y Cataluna, 4% Pais Vasco (aprox, verificar).',
+      'ITP/AJD varian por CCAA y cambian con frecuencia. En Comunitat Valenciana el tipo general inmobiliario es 9% desde 1/06/2026 (11% por encima de 1.000.000 EUR) y el AJD general de los demas casos es 1,4%; comprobar siempre reducciones y supuestos especiales.',
       'ISD herencias: bonificacion 99% en Madrid y Andalucia para familiares directos; tipos significativos en Cataluna y otras CCAA.',
       'Sedes: Valencia atv.gva.es | Cataluna atc.gencat.cat | Andalucia juntadeandalucia.es | Madrid madrid.org.',
     ].join(' '),

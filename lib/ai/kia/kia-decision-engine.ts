@@ -1,5 +1,5 @@
 import { buildKiaContext, type KiaContext, type KiaContextInput } from './kia-context-builder';
-import { buildKiaSystemPrompt } from './kia-system-prompt';
+import { buildKiaSystemPrompt, shouldIncludeJusticia } from './kia-system-prompt';
 import {
   buildFallbackDecision,
   extractJsonObject,
@@ -59,6 +59,7 @@ export async function runKiaDecision(input: {
   contextInput: KiaContextInput;
   locale?: 'es' | 'ru';
   allowTools?: boolean;
+  includeOfficialSourceContext?: boolean;
   forceToolExecution?: boolean;
   allowedToolNames?: string[];
   toolAuthorization?: Pick<KiaToolAuthorizationContext, 'maxRiskTier' | 'allowedEffects' | 'autonomousOnly'>;
@@ -87,17 +88,19 @@ export async function runKiaDecision(input: {
     includeAeat    : /\b(irpf|renta|iva|hacienda|aeat|modelo\s*\d{2,3}|tributar|declaraci[oó]n.*renta|fiscal|036|037|130|303|390|720|151|no residente|irnr|renta web)\b/i.test(msg) || /irpf|iva|fiscal|no.residente|modelo.72|modelo.15|autonomo.gestion/i.test(slug),
     includeSs      : /\b(seguridad social|reta|cotizaci[oó]n|cuota.*aut[oó]nom|vida laboral|importass|cese de actividad|tarifa plana|baja.*laboral|alta.*aut[oó]nom|inss|tgss)\b/i.test(msg) || /alta.autonomo|autonomo|reta/i.test(slug),
     includeDgt     : /\b(dgt|trafico|transferencia.*vehiculo|vehiculo.*transferencia|matriculacion|canje.*permiso|permiso.*conducir|puntos.*carnet|baja.*vehiculo|multa.*trafico|permiso de circulacion|capitania)\b/i.test(msg) || /trafico|capitania/i.test(slug),
-    includeJusticia: /\b(antecedentes penales|registro civil|apostilla|certificado.*nacimiento|certificado.*matrimonio|denominacion social|nota simple|registro.*propiedad|registro.*mercantil|deposito.*cuentas)\b/i.test(msg) || /constitucion.sl|arraigo|nacionalidad|notaria|herencia/i.test(slug),
+    includeJusticia: shouldIncludeJusticia({ ...input.contextInput, message: msg, serviceSlug: slug }),
     includePae     : /\b(pae|circe|crear empresa online|sl.*online|alta autonomo.*online|ventanilla unica|constitucion.*online)\b/i.test(msg) || /constitucion.sl|alta.autonomo/i.test(slug),
     includeCcaa    : /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|suma.*alicante)\b/i.test(msg) || /notaria|herencia|compraventa/i.test(slug),
     includeAcademy : /\b(academy|business academy|programa superior|adgd0210|certificaci[oó]n oficial|entrevista de admisi[oó]n|matr[ií]cul|curso.*laboral|gesti[oó]n laboral integral|siltra)\b/i.test(msg) || /academy/i.test(slug) || /academy/i.test(input.contextInput.currentPage ?? ''),
     fewShotBlock,
   });
 
-  const officialSourceContext = await buildOfficialSourceContext(input.message).catch((err) => {
-    console.error('[KiaDecision] official source context failed:', safeErrorMessage(err));
-    return '';
-  });
+  const officialSourceContext = input.includeOfficialSourceContext === false
+    ? ''
+    : await buildOfficialSourceContext(input.message).catch((err) => {
+      console.error('[KiaDecision] official source context failed:', safeErrorMessage(err));
+      return '';
+    });
   const effectiveToolAuthorization: KiaToolAuthorizationContext = {
     ...input.toolAuthorization,
     channel: input.channel,
@@ -640,6 +643,34 @@ function applyBackendPolicyGuards(
     };
   }
 
+  const includedEntityCheckoutRequested =
+    context.company?.coverageSource === 'included_entity' &&
+    (
+      decision.intent === 'checkout' ||
+      decision.nextAction === 'send_checkout_link' ||
+      decision.nextAction === 'send_login_link' ||
+      /suscripci[oó]n|contratar.*plan|plan.*contratar|pagar.*plan/i.test(input.message)
+    );
+  if (includedEntityCheckoutRequested) {
+    const sourceName = context.company?.coveragePrimaryCompanyName?.trim();
+    rules.add('included_entity_uses_existing_subscription_coverage');
+    rules.add('do_not_create_second_subscription');
+    warnings.push('backend_policy_override_included_entity_checkout');
+    return {
+      ...decision,
+      intent: 'unknown',
+      nextAction: 'reply_only',
+      userMessage: sourceName
+        ? `Esta entidad ya está incluida en la cobertura de ${sourceName}. No necesita una segunda suscripción.`
+        : 'Esta entidad ya está incluida en una cobertura activa. No necesita una segunda suscripción.',
+      requiresManualReview: false,
+      requiresMeeting: false,
+      confidence: Math.max(decision.confidence, 0.95),
+      rulesApplied: Array.from(rules),
+      warnings,
+    };
+  }
+
   const monthlyPlanRequiresHolded = context.service?.flowType === 'subscription_readiness';
   if (monthlyPlanRequiresHolded && !context.company?.holdedConnected) {
     rules.add('monthly_plan_requires_holded');
@@ -676,7 +707,7 @@ function applyBackendPolicyGuards(
     };
   }
 
-  if (input.taskType === 'viability_reasoning' && /arraigo|nacionalidad|residencia|renovar|modelo 720|patrimonio|beckham|denegaron|requerimiento/.test(lower)) {
+  if (input.taskType === 'viability_reasoning' && /arraigo|nacionalidad|residencia|renovar|modelo 720|modelo 721|patrimonio|beckham|denegaron|requerimiento/.test(lower)) {
     rules.add('service_flowtype_viability_detected');
     rules.add('run_viability_before_checkout');
     warnings.push('backend_policy_override_viability');

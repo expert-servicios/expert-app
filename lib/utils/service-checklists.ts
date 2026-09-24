@@ -1,3 +1,4 @@
+import { getServiceOperationalBlueprint, BATCH1_OPERATIONAL_BLUEPRINTS } from '@/lib/services/service-operational-blueprints';
 export type ServiceChecklist = {
   serviceId: string;
   serviceName: string;
@@ -87,7 +88,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tu contrato es con una empresa española o estás desplazado?',
     ],
     botInstructions:
-      'El régimen Beckham tributa al 24% fijo sobre rentas en España hasta 600.000 €. Es fundamental verificar que el cliente NO haya sido residente en España los 5 años previos. El plazo para solicitar el Modelo 149 es de 6 meses desde el inicio de actividad. Precio: consultar según complejidad.',
+      'Consultar IMPARTIATES_149_151_RULES antes de informar elegibilidad, duración o plazo. Verificar causa del desplazamiento, residencia fiscal previa, fecha de inicio de actividad, fecha de entrada de asociados y documentación. Para el contribuyente principal, la opción del Modelo 149 tiene como regla general 6 meses desde el inicio de actividad. Precio: consultar según complejidad.',
     estimatedPrice: 'Consultar',
   },
 
@@ -119,7 +120,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes ya NIE español?',
     ],
     botInstructions:
-      'El Modelo 210 se presenta: para imputación de inmuebles en enero del año siguiente; para alquileres, trimestralmente. No residentes fuera de la UE no pueden deducir gastos, solo el tipo fijo del 24%. Los residentes UE/EEE sí pueden deducir gastos. Verificar siempre si hay convenio de doble imposición. Precio: desde 80 € por modelo.',
+      'Los plazos del Modelo 210 cambiaron por la Orden HAC/623/2026 y existen reglas transitorias según tipo de renta y fecha de devengo. Consultar IRNR_210_2026_TRANSITION antes de informar un plazo. Verificar también tipo aplicable, deducibilidad de gastos y convenio de doble imposición según residencia fiscal. Precio: desde 80 € por modelo.',
     estimatedPrice: 'Desde 80 € / modelo',
   },
 
@@ -148,7 +149,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes operaciones con clientes o proveedores de otros países de la UE?',
     ],
     botInstructions:
-      'Plazos: del 1 al 20 de abril (1T), julio (2T), octubre (3T) y hasta el 30 de enero (4T). Pedir siempre las facturas con suficiente antelación. Si el cliente usa Holded, podemos extraer los datos directamente. Precio: desde 60 € / trimestre.',
+      'Consultar AEAT_TAX_CALENDAR_2026 para el vencimiento exacto del Modelo 303 y revisar si existe obligación de Modelo 390 mediante INFORMATIVE_RETURNS_2026. Pedir siempre la documentación con antelación. Precio: desde 60 € / trimestre.',
     estimatedPrice: 'Desde 60 € / trimestre',
   },
 
@@ -180,7 +181,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tenéis bases imponibles negativas de ejercicios anteriores?',
     ],
     botInstructions:
-      'El IS se presenta en los 25 días siguientes a los 6 meses del cierre (normalmente julio para ejercicios con cierre en diciembre). Si la contabilidad la lleva EXPERT, el IS está incluido en el plan mensual. Precio: consultar según volumen y complejidad.',
+      'Consultar AEAT_TAX_CALENDAR_2026 para el vencimiento exacto del Modelo 200 del ejercicio y IS_RATES_2026 para el tipo aplicable. No calcular el plazo desde una frase estática. Si la contabilidad la lleva EXPERT, el IS está incluido en el plan mensual. Precio: consultar según volumen y complejidad.',
     estimatedPrice: 'Consultar',
   },
 
@@ -212,7 +213,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Ha habido cambios de más de 20.000 € respecto al último año declarado?',
     ],
     botInstructions:
-      'La obligación existe si el valor supera 50.000 € en al menos una de las tres categorías (cuentas, valores/fondos, inmuebles). Plazo: del 1 enero al 31 de marzo. Solo hay que presentarlo cuando se supera el umbral por primera vez, y luego cuando alguna categoría sube más de 20.000 €. Las sanciones por no presentar son muy elevadas. Precio: 190 € + IVA.',
+      'Consultar MODEL_720_RULES antes de concluir que existe obligación. Clasificar los bienes por categoría, aplicar reglas de valoración y exenciones, revisar si hubo declaración previa y pérdidas de titularidad. La ventana ordinaria es 1 de enero a 31 de marzo del año siguiente. Precio: 190 € + IVA.',
     estimatedPrice: '190 € + IVA',
   },
 
@@ -223,13 +224,13 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     requiredData: [
       'Qué modelo/s necesita presentar',
       'Ejercicio o período',
-      'Si tiene operaciones con terceros >3.005,06 € anuales (Modelo 347)',
+      'Si tiene operaciones con terceros que puedan superar el umbral general del Modelo 347 y si concurre alguna exclusión',
       'Si tiene operaciones intracomunitarias (Modelo 349)',
       'Si ha pagado alquileres con retención (Modelo 180)',
       'Si ha pagado nóminas o rendimientos profesionales con retención (Modelo 190)',
     ],
     requiredDocs: [
-      'Datos de proveedores/clientes con operaciones anuales superiores a 3.005 €',
+      'Datos de proveedores/clientes y detalle anual suficiente para revisar el umbral y exclusiones del Modelo 347',
       'Libro de facturas emitidas y recibidas del año',
       'Contratos de arrendamiento y retenciones practicadas',
       'Nóminas y retenciones a trabajadores y profesionales',
@@ -239,7 +240,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes la contabilidad ordenada del ejercicio?',
     ],
     botInstructions:
-      'Estos modelos son puramente informativos pero las sanciones por no presentarlos o presentarlos fuera de plazo son importantes. Verificar siempre el plazo específico de cada modelo. Precio: desde 50 € / modelo.',
+      'Consultar INFORMATIVE_RETURNS_2026 para obligación, periodicidad, umbrales y exoneraciones, y AEAT_TAX_CALENDAR_2026 para vencimientos exactos. No asumir que todos los modelos son anuales ni que todo obligado al 303 presenta 390. Precio: desde 50 € / modelo.',
     estimatedPrice: 'Desde 50 € / modelo',
   },
 
@@ -265,8 +266,8 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Fotografía reciente tamaño carné',
       'Formulario EX-01 o EX-02 (lo preparamos nosotros)',
       'Justificante de pago de la tasa Modelo 790 código 052',
-      'Certificado de empadronamiento (mínimo 3 años continuados si es arraigo)',
-      'Contrato de trabajo o oferta laboral firmada por empresa (si aplica)',
+      'Pruebas de permanencia continuada según la modalidad de arraigo aplicable',
+      'Documentación específica de la modalidad: vínculos, medios económicos, integración o relación laboral, según proceda',
       'Nóminas o extractos bancarios con medios económicos suficientes',
       'Seguro médico privado sin copago ni carencia (si no cotiza a la SS)',
       'Certificado de antecedentes penales del país de origen (apostillado y traducido si aplica)',
@@ -290,7 +291,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     serviceName: 'Arraigo Social',
     category: 'extranjeria-nacionalidad',
     requiredData: [
-      'Años de permanencia en España (mínimo 3 años)',
+      'Años de permanencia en España (mínimo 2 años)',
       'Si tiene empadronamiento continuo que lo acredite',
       'Si tiene oferta de trabajo firmada por empleador',
       'Si tiene vínculos familiares con residentes o españoles',
@@ -299,9 +300,9 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     ],
     requiredDocs: [
       'Pasaporte en vigor (todas las páginas)',
-      'Certificado de empadronamiento histórico (3 años)',
+      'Pruebas de permanencia continuada durante al menos 2 años',
       'Informe de arraigo social del ayuntamiento',
-      'Contrato de trabajo o promesa de contrato (si aplica)',
+      'Medios económicos suficientes (si aplica)',
       'Certificado de antecedentes penales en España',
       'Certificado de antecedentes penales del país de origen (apostillado y traducido)',
       'Documentación de vínculos familiares si aplica (libro de familia, etc.)',
@@ -310,12 +311,12 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     ],
     keyQuestions: [
       '¿Cuántos años llevas en España? ¿Tienes el padrón que lo acredite?',
-      '¿Tienes oferta de trabajo o vínculos familiares en España?',
+      '¿Tienes vínculos familiares con residentes y medios económicos, o puedes obtener informe de integración social?',
       '¿Tienes el certificado de antecedentes del país de origen?',
       '¿El ayuntamiento ya te ha dado o pediste el informe de arraigo social?',
     ],
     botInstructions:
-      'Verificar los 3 años de empadronamiento continuo es el requisito clave. El informe de arraigo del ayuntamiento suele tardar semanas — conviene pedirlo cuanto antes. Precio: 490 € + IVA. La resolución tarda 3–6 meses según delegación.',
+      'Verificar al menos 2 años de permanencia continuada y la vía correcta (familia+medios o integración social). Precio: 490 € + IVA. El plazo administrativo de resolución es de 3 meses.',
     estimatedPrice: '490 € + IVA',
   },
 
@@ -454,7 +455,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Hay alguna diferencia de nombre o apellidos entre documentos?',
     ],
     botInstructions:
-      'La residencia del menor debe ser de al menos 1 año, legal, continuada e inmediatamente anterior a la solicitud. Nacer en España no da la nacionalidad automáticamente. Diferenciar menores de 14 años y menores de 14 a 17 años para firma/representación. Los menores están exentos de CCSE y, si tienen menos de 18 años, de DELE A2. La tasa de 104,05 € (Modelo 790 código 026) se cobra junto con el servicio como suplido obligatorio separado de los honorarios de 302,50 € IVA incluido.',
+      'La residencia del menor debe ser de al menos 1 año, legal, continuada e inmediatamente anterior a la solicitud. Nacer en España no da la nacionalidad automáticamente. Diferenciar menores de 14 años y menores de 14 a 17 años para firma/representación. Los menores están exentos de CCSE y, si tienen menos de 18 años, de DELE A2. La tasa de 104,05 € (Modelo 790 código 026) se cobra junto con el servicio como suplido obligatorio separado de los honorarios de 302,50 € IVA incluido. Para apellidos, comprobar filiación y apellido personal materno; no ofrecer duplicación como libre elección ni marcar desconocimiento por negativa a aportar documentos. No pedir automáticamente nacimiento de la madre o traducción: revisar pruebas existentes, posible certificado de matrimonio y criterio del Registro competente. Distinguir solicitud inicial e inscripción posterior; escalar la duda concreta sin bloquear tareas independientes.',
     estimatedPrice: '406,55 € total: 302,50 € honorarios IVA incluido + 104,05 € suplido',
   },
 
@@ -575,7 +576,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Alguno de los socios es extranjero y tiene NIE?',
     ],
     botInstructions:
-      'El proceso completo tarda 7–15 días hábiles. Hay que ir al notario con todos los socios. Los gastos de notaría y registro mercantil van aparte (aprox. 400–600 €). El CIF definitivo puede tardar unos días adicionales. Precio honorarios: 490 € + IVA.',
+      'El proceso completo tarda 7–15 días hábiles. Hay que ir al notario con todos los socios. Los gastos de notaría y registro mercantil van aparte (aprox. 400–600 €). El NIF definitivo puede requerir documentación o comunicación adicional según el circuito utilizado. Precio honorarios: 490 € + IVA.',
     estimatedPrice: '490 € + IVA (+ notaría y registro ~400–600 €)',
   },
 
@@ -595,7 +596,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Facturas emitidas del mes',
       'Facturas recibidas del mes',
       'Extractos bancarios del mes',
-      'Alta en Hacienda (Modelo 036/037)',
+      'Alta en Hacienda (Modelo 036)',
       'CIF (para sociedades)',
     ],
     keyQuestions: [
@@ -632,7 +633,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes las facturas del trimestre preparadas?',
     ],
     botInstructions:
-      'Plazos: del 1 al 20 de los meses de abril, julio, octubre y hasta el 30 de enero. Importante enviar la documentación con suficiente antelación. Precio: desde 120 € / trimestre.',
+      'Consultar AEAT_TAX_CALENDAR_2026 para vencimientos exactos e IRPF_PAYMENT_FRACTIONS_2026 para Modelos 130/131 antes de calcular. Importante enviar la documentación con suficiente antelación. Precio: desde 120 € / trimestre.',
     estimatedPrice: 'Desde 120 € / trimestre',
   },
 
@@ -661,9 +662,10 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Cuándo quieres celebrar la Junta General?',
       '¿Necesitas también el Impuesto de Sociedades?',
       '¿La sociedad tiene auditor?',
+      '¿Ha cambiado la titularidad real o la cadena de control desde las últimas cuentas?',
     ],
     botInstructions:
-      'El plazo para depositar las cuentas es el mes siguiente a la aprobación en Junta (normalmente hasta el 30 de julio). La falta de depósito puede generar cierre registral. Si la contabilidad la lleva EXPERT, el depósito suele estar incluido en el plan mensual. Precio: consultar.',
+      'Consultar ANNUAL_ACCOUNTS_LSC_RULES para formulación, junta y depósito; BENEFICIAL_OWNERSHIP_RCTR_RULES para la hoja/declaración de titularidad real y cambios de control; y REGISTRY_CLOSURE_RRM_RULES si existe incumplimiento. Precio: consultar.',
     estimatedPrice: 'Consultar',
   },
 
@@ -676,7 +678,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Datos de la sociedad (CIF, denominación, domicilio)',
       'Si hay acuerdo unánime de todos los socios o se necesita convocatoria de Junta',
       'Datos del nuevo administrador o apoderado (DNI/NIE, dirección)',
-      'Si se quieren otorgar poderes generales o especiales (para qué actos)',
+      'Si se quieren otorgar poderes generales, para pleitos o para actos concretos y cuál es exactamente su alcance',
     ],
     requiredDocs: [
       'Escrituras de constitución actualizadas de la sociedad',
@@ -688,11 +690,11 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     keyQuestions: [
       '¿Qué modificación necesitas hacer en la empresa?',
       '¿Estáis de acuerdo todos los socios?',
-      '¿Necesitas poderes para una gestión concreta o poderes generales?',
+      '¿Necesitas un poder general mercantil, un poder para pleitos o un poder limitado a actos concretos?',
       '¿Hay que convocar Junta o es decisión del administrador?',
     ],
     botInstructions:
-      'Muchas modificaciones requieren escritura notarial e inscripción en el Registro Mercantil. El plazo varía: notaría 1–5 días, registro 5–15 días hábiles. Para poderes simples (sin cargo registral) el proceso es más rápido. Precio: consultar según tipo de modificación.',
+      'Consultar MERCANTILE_POWERS_RRM_RULES antes de afirmar que un poder debe inscribirse: los poderes generales mercantiles son registrables y existen excepciones para pleitos y actos concretos. Verificar también si la operación altera administración, control o titularidad real. Precio: consultar según el acto.',
     estimatedPrice: 'Consultar',
   },
 
@@ -709,7 +711,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     ],
     requiredDocs: [
       'DNI / NIE en vigor',
-      'Alta en Hacienda (Modelo 036/037) original',
+      'Alta en Hacienda (Modelo 036) original',
       'Para sociedades: escrituras y libro de actas de la sociedad',
       'Última declaración del IVA e IRPF presentada',
     ],
@@ -751,7 +753,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes el contrato de compraventa firmado?',
     ],
     botInstructions:
-      'El ITP varía por comunidad autónoma (6–10%). La transferencia se debe hacer en un plazo de 30 días desde la compraventa. Precio del servicio: desde 80 €.',
+      'Consultar DGT_VEHICLE_TRANSFER_2026 para plazo y condiciones, DGT_FEES_2026 para la tasa y la regla tributaria de la CCAA para el ITP. No aplicar un rango nacional aproximado. Precio del servicio: desde 80 €.',
     estimatedPrice: 'Desde 80 €',
   },
 
@@ -778,7 +780,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes la ficha técnica homologada?',
     ],
     botInstructions:
-      'El impuesto de matriculación (IEDMT) se paga en la primera matriculación en España o si el vehículo supera ciertos límites de emisiones de CO₂. Precio: consultar según caso.',
+      'Consultar VEHICLE_IMPORT_REGISTRATION_2026 para distinguir vehículo nacional, UE y fuera de UE; IEDMT_REGISTRATION_2026 para hecho imponible, exenciones, base y tipo; y DGT_FEES_2026 para la tasa. No concluir la cuota únicamente por emisiones de CO₂. Precio: consultar según caso.',
     estimatedPrice: 'Consultar',
   },
 
@@ -802,7 +804,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Has puesto denuncia?',
     ],
     botInstructions:
-      'Mientras espera el duplicado del carnet, el titular no puede conducir salvo que tenga resguardo provisional en vigor. Precio: desde 50 €.',
+      'Consultar DGT_DUPLICATES_PERMITS_2026 para clasificar documento y causa, y DGT_FEES_2026 para la tasa. Diferenciar duplicado, renovación, copia eITV y canje. Precio: desde 50 €.',
     estimatedPrice: 'Desde 50 €',
   },
 
@@ -829,7 +831,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Tienes toda la documentación técnica de la embarcación?',
     ],
     botInstructions:
-      'Los trámites de embarcaciones dependen de la Capitanía Marítima de cada provincia. Precio: consultar según trámite.',
+      'Consultar MARITIME_RECREATIONAL_CRAFT_2026. Clasificar primero eslora, marcado CE, lista/uso y acto registral; la tasa 025 no tiene un importe único aplicable a todos los trámites. Precio: consultar según trámite.',
     estimatedPrice: 'Consultar',
   },
 
@@ -865,7 +867,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Hay hipoteca pendiente del vendedor?',
     ],
     botInstructions:
-      'Para segunda mano: ITP (6–10% según CCAA). Para vivienda nueva: IVA 10% + AJD. El comprador tiene 30 días hábiles para liquidar el impuesto tras la escritura. Verificar siempre la nota simple para cargas. Precio: consultar según operación.',
+      'Para segunda mano se aplica TPO según la CCAA y para vivienda nueva puede corresponder IVA + AJD según el supuesto. En Comunitat Valenciana consultar VALENCIA_PROPERTY_TRANSFER_BASE_2026 para la base y VALENCIA_ITPAJD_2026 para el tipo. Verificar nota simple, valor de referencia y plazo autonómico. Precio: consultar según operación.',
     estimatedPrice: 'Consultar',
   },
 
@@ -898,7 +900,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿En qué comunidad autónoma vivía el fallecido?',
     ],
     botInstructions:
-      'El Impuesto de Sucesiones debe liquidarse en 6 meses desde el fallecimiento (prorrogables otros 6). Las reducciones varían enormemente por comunidad autónoma. La renuncia a la herencia debe hacerse ante notario. Precio: consultar según caudal hereditario.',
+      'En Comunitat Valenciana consultar VALENCIA_SUCCESSIONS_650_2026 para plazo, prórroga y operativa, y VALENCIA_ISD_2026 para beneficios fiscales. No confundir plazo tributario con aceptación o renuncia civil de la herencia. Precio: consultar según caudal hereditario.',
     estimatedPrice: 'Consultar',
   },
 
@@ -926,7 +928,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿En qué comunidad autónoma reside quien recibe la donación?',
     ],
     botInstructions:
-      'El Impuesto de Donaciones lo paga el receptor y varía mucho por CCAA. Madrid y Andalucía tienen reducciones de hasta el 99% para donaciones entre padres e hijos. Las donaciones de dinero en efectivo superiores a 2.500 € deben justificarse con transferencia bancaria. Precio: consultar.',
+      'Consultar VALENCIA_DONATIONS_651_2026 para competencia, plazo y Modelo 651, y VALENCIA_ISD_2026 para beneficios fiscales. No usar la residencia del donatario como única regla territorial: en inmuebles importa dónde radica el bien. Precio: consultar.',
     estimatedPrice: 'Consultar',
   },
 
@@ -952,7 +954,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿El banco ya te ha dado el certificado de deuda cero?',
     ],
     botInstructions:
-      'El banco solo emite el certificado de deuda cero — la cancelación registral la debe hacer el titular. Este trámite es necesario si se va a vender el inmueble o pedir otro préstamo. Precio: desde 150 €.',
+      'Consultar VALENCIA_MORTGAGE_CANCELLATION_2026. Distinguir deuda extinguida de carga registral; la cancelación ordinaria requiere escritura pública del acreedor, Modelo 600 exento y presentación registral. Precio: desde 150 €.',
     estimatedPrice: 'Desde 150 €',
   },
 
@@ -964,7 +966,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     category: 'certificado-digital',
     requiredData: [
       'Domicilio completo (calle, número, piso, código postal, localidad)',
-      'Si prefiere la cita presencial o por videoconferencia',
+      'Confirmación de que dispone de conexión y equipo para completar la identificación e instalación online',
       'Si tiene ordenador con Windows o macOS disponible para la instalación',
     ],
     requiredDocs: [
@@ -973,10 +975,10 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
     keyQuestions: [
       '¿Tienes el DNI o TIE en vigor? Necesitamos una foto o escáner de ambas caras.',
       '¿Cuál es tu domicilio completo (calle, número, piso, CP, localidad)?',
-      '¿Prefieres la cita presencial o por videoconferencia?',
+      '¿Tienes disponible el equipo en el que quieres instalar el certificado para completar el proceso online?',
     ],
     botInstructions:
-      'Solo necesitamos la copia de la tarjeta DNI/TIE (foto o escáner de ambas caras) y el domicilio completo. Somos Punto de Registro Autorizado de Camerfirma. Proceso: menos de 15 minutos. Emision en el momento de la cita. Precio: 90 € + IVA. Validez: 2–3 años. Tras el pago online confirmamos la cita en menos de 24 horas.',
+      'Solo necesitamos la copia de la tarjeta DNI/TIE (foto o escáner de ambas caras) y el domicilio completo. EXPERT tramita el certificado 100 % online dentro del proceso Camerfirma. Precio: 90 € + IVA. Vigencia de la modalidad comercializada por EXPERT: 5 años. Plazo máximo de tramitación: 24 horas laborables desde documentación completa e identidad validada.',
     estimatedPrice: '90 €',
   },
 
@@ -1001,7 +1003,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Dispones de las escrituras o nota mercantil actualizada (o estatutos y acta si es asociación)?',
     ],
     botInstructions:
-      'Para el certificado de entidad necesitamos: copia de DNI/TIE del representante, dirección de la entidad, y documentos de constitución (escrituras o nota mercantil para sociedades; estatutos y acta para asociaciones). Somos Punto de Registro Autorizado de Camerfirma. Precio: 150 € + IVA. Plazo: 24–48 horas desde la verificación del representante.',
+      'Para el certificado de entidad necesitamos: copia de DNI/TIE del representante, dirección de la entidad y documentación que acredite la entidad y las facultades de representación. EXPERT tramita el certificado 100 % online dentro del proceso Camerfirma. Precio: 150 € + IVA. Vigencia: 2 años. Plazo máximo: 24 horas laborables desde expediente completo y representante/facultades validados.',
     estimatedPrice: '150 €',
   },
 
@@ -1014,7 +1016,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'CIF o NIF de la entidad',
       'Nombre y cargo del representante legal (presidente, secretario, etc.)',
       'Si tiene estatutos y acta de nombramiento del cargo actualizados',
-      'Si prefiere la cita presencial o por videoconferencia',
+      'Confirmación de que dispone de conexión y equipo para completar la identificación e instalación online',
     ],
     requiredDocs: [
       'CIF o NIF de la entidad',
@@ -1027,10 +1029,10 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Qué tipo de entidad es?',
       '¿Tienes los estatutos y el acta de nombramiento del representante actualizados?',
       '¿Para qué trámites necesita el certificado la entidad?',
-      '¿Prefieres la cita presencial o por videoconferencia?',
+      '¿Tienes disponible el equipo en el que quieres instalar el certificado para completar el proceso online?',
     ],
     botInstructions:
-      'El certificado de entidad sin ánimo de lucro sigue el mismo proceso que el de entidad comercial pero adaptado a la documentación de estas organizaciones (estatutos + acta en lugar de escrituras). Precio: 150 €. Plazo: 24–48 horas desde la verificación. Somos Punto de Registro Autorizado de Camerfirma.',
+      'El certificado de entidad sin ánimo de lucro sigue el mismo proceso online que el de entidad comercial, adaptado a la documentación de estas organizaciones (estatutos + acta en lugar de escrituras). Precio: 150 €. Plazo máximo: 24 horas laborables desde expediente completo y representante/facultades validados. EXPERT tramita el certificado dentro del proceso Camerfirma.',
     estimatedPrice: '150 €',
   },
 
@@ -1135,7 +1137,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Exportación CSV/Excel de facturas emitidas por período',
       'Exportación CSV/Excel de facturas recibidas (opcional, si disponible)',
       'Exportación de maestro de clientes y proveedores',
-      'Modelo 036/037 o alta fiscal (para datos fiscales de la empresa)',
+      'Modelo 036 o alta fiscal (para datos fiscales de la empresa)',
     ],
     keyQuestions: [
       '¿Ya tienes cuenta activa de Holded?',
@@ -1174,7 +1176,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       'Exportación de ubicaciones de almacén si aplica',
       'Exportación de facturas emitidas/recibidas si se migra historial',
       'Exportación de maestro de clientes y proveedores',
-      'Modelo 036/037 o alta fiscal para datos de empresa',
+      'Modelo 036 o alta fiscal para datos de empresa',
     ],
     keyQuestions: [
       '¿Ya tienes cuenta activa de Holded?',
@@ -1276,14 +1278,47 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
   },
 ];
 
-/** Returns the checklist for a given service ID, or undefined if not found */
-export function getServiceChecklist(serviceId: string): ServiceChecklist | undefined {
-  return SERVICE_CHECKLISTS.find((c) => c.serviceId === serviceId);
+function operationalChecklist(serviceId: string): ServiceChecklist | undefined {
+  const blueprint = getServiceOperationalBlueprint(serviceId);
+  if (!blueprint) return undefined;
+
+  return {
+    serviceId: blueprint.slug,
+    serviceName: blueprint.canonicalName,
+    category: blueprint.category,
+    requiredData: blueprint.requirements.map((item) => item.label),
+    requiredDocs: blueprint.documents.filter((item) => item.required).map((item) => item.label),
+    keyQuestions: blueprint.requirements
+      .filter((item) => item.clientCheckable)
+      .map((item) => item.label),
+    botInstructions: [
+      blueprint.kia.userSummary,
+      ...blueprint.documents
+        .filter((item) => !item.required && item.conditionalWhen)
+        .map((item) => `Documento condicional: ${item.label}. Cuándo procede: ${item.conditionalWhen}.`),
+      `Escalar a revisión humana si: ${blueprint.kia.escalationRules.join('; ')}.`,
+    ].join(' '),
+  };
 }
 
-/** Returns checklists for all services in a given category */
+/** Returns the canonical checklist. Batch 1 is generated from operational blueprints. */
+export function getServiceChecklist(serviceId: string): ServiceChecklist | undefined {
+  return operationalChecklist(serviceId) ?? SERVICE_CHECKLISTS.find((c) => c.serviceId === serviceId);
+}
+
+/** Returns category checklists, replacing any legacy Batch 1 copies with canonical blueprints. */
 export function getChecklistsByCategory(category: string): ServiceChecklist[] {
-  return SERVICE_CHECKLISTS.filter((c) => c.category === category);
+  const canonical = BATCH1_OPERATIONAL_BLUEPRINTS
+    .filter((item) => item.category === category)
+    .map((item) => operationalChecklist(item.slug))
+    .filter((item): item is ServiceChecklist => Boolean(item));
+
+  const canonicalIds = new Set(canonical.map((item) => item.serviceId));
+  const legacy = SERVICE_CHECKLISTS.filter(
+    (item) => item.category === category && !canonicalIds.has(item.serviceId),
+  );
+
+  return [...canonical, ...legacy];
 }
 
 /** Formats a checklist into a concise text block for AI prompt injection */

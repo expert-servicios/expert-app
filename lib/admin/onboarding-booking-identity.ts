@@ -11,6 +11,8 @@ type AppointmentRow = {
   confirmed_date: string | null;
   confirmed_time: string | null;
   email?: string | null;
+  client_id?: string | null;
+  company_id?: string | null;
 };
 
 export type BookingIdentity = {
@@ -33,23 +35,25 @@ export async function getAuthorizedBookingEmails(
   const normalizedAuth = normalizeEmail(authEmail);
   if (normalizedAuth) emails.add(normalizedAuth);
 
-  if (companyId) {
-    const { data: membership, error: membershipError } = await admin
-      .from('profile_companies')
-      .select('company_id')
-      .eq('profile_id', clientId)
-      .eq('company_id', companyId)
-      .maybeSingle();
-    if (membershipError) throw membershipError;
+  const { data: memberships, error: membershipError } = await admin
+    .from('profile_companies')
+    .select('company_id')
+    .eq('profile_id', clientId);
+  if (membershipError) throw membershipError;
 
-    if (membership) {
-      const { data: company, error: companyError } = await admin
-        .from('companies')
-        .select('email')
-        .eq('id', companyId)
-        .maybeSingle();
-      if (companyError) throw companyError;
-      const companyEmail = normalizeEmail(company?.email);
+  const allowedCompanyIds = (memberships ?? []).map((row) => row.company_id as string);
+  const companyIds = companyId
+    ? allowedCompanyIds.filter((id) => id === companyId)
+    : allowedCompanyIds;
+
+  if (companyIds.length) {
+    const { data: companies, error: companyError } = await admin
+      .from('companies')
+      .select('id,email')
+      .in('id', companyIds);
+    if (companyError) throw companyError;
+    for (const company of companies ?? []) {
+      const companyEmail = normalizeEmail(company.email);
       if (companyEmail) emails.add(companyEmail);
     }
   }
@@ -63,13 +67,27 @@ export async function loadOnboardingAppointmentsForIdentity(
   companyId: string | null | undefined,
   authEmail: string | null | undefined,
 ): Promise<AppointmentRow[]> {
-  const emails = await getAuthorizedBookingEmails(admin, clientId, companyId, authEmail);
-  if (!emails.length) return [];
+  let scopedQuery = admin
+    .from('appointments')
+    .select('id,email,client_id,company_id,service,appointment_type,status,appointment_date,confirmed_date,confirmed_time')
+    .eq('client_id', clientId)
+    .neq('status', 'cancelled');
+  scopedQuery = companyId
+    ? scopedQuery.eq('company_id', companyId)
+    : scopedQuery.is('company_id', null);
+  const { data: scopedRows, error: scopedError } = await scopedQuery
+    .order('appointment_date', { ascending: false });
+  if (scopedError) throw scopedError;
 
-  const results = await Promise.all(emails.map(async (email) => {
+  // Legacy rows created before entity-scoped appointments remain discoverable by
+  // authorized email, but are never rewritten or attributed automatically.
+  const emails = await getAuthorizedBookingEmails(admin, clientId, companyId, authEmail);
+  const legacyResults = await Promise.all(emails.map(async (email) => {
     const { data, error } = await admin
       .from('appointments')
-      .select('id,email,service,appointment_type,status,appointment_date,confirmed_date,confirmed_time')
+      .select('id,email,client_id,company_id,service,appointment_type,status,appointment_date,confirmed_date,confirmed_time')
+      .is('client_id', null)
+      .is('company_id', null)
       .ilike('email', email)
       .neq('status', 'cancelled')
       .order('appointment_date', { ascending: false });
@@ -78,12 +96,28 @@ export async function loadOnboardingAppointmentsForIdentity(
   }));
 
   const unique = new Map<string, AppointmentRow>();
-  for (const row of results.flat()) unique.set(row.id, row);
+  for (const row of scopedRows ?? []) unique.set(row.id, row as AppointmentRow);
+  for (const row of legacyResults.flat()) unique.set(row.id, row);
   return [...unique.values()].sort((a, b) => {
     const aTime = a.appointment_date ? new Date(a.appointment_date).getTime() : 0;
     const bTime = b.appointment_date ? new Date(b.appointment_date).getTime() : 0;
     return bTime - aTime;
   });
+}
+
+export async function listOpenOnboardingCompanyIds(
+  admin: AdminClient,
+  clientId: string,
+): Promise<string[]> {
+  const { data, error } = await admin
+    .from('subscriptions')
+    .select('company_id')
+    .eq('client_id', clientId)
+    .in('status', ['active', 'trialing'])
+    .is('post_purchase_onboarding_at', null)
+    .limit(20);
+  if (error) throw error;
+  return [...new Set((data ?? []).map((row) => row.company_id).filter(Boolean))] as string[];
 }
 
 async function resolveSingleOpenOnboardingCompanyId(admin: AdminClient, clientId: string): Promise<string | null> {
@@ -98,6 +132,17 @@ async function resolveSingleOpenOnboardingCompanyId(admin: AdminClient, clientId
 
   const companyIds = [...new Set((data ?? []).map((row) => row.company_id).filter(Boolean))] as string[];
   return companyIds.length === 1 ? companyIds[0] : null;
+}
+
+export async function resolveAuthenticatedBookingIdentity(
+  admin: AdminClient,
+  clientId: string,
+): Promise<BookingIdentity> {
+  return {
+    clientId,
+    companyId: await resolveSingleOpenOnboardingCompanyId(admin, clientId),
+    source: 'auth_email',
+  };
 }
 
 /**

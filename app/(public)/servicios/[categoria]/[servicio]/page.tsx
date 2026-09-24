@@ -14,12 +14,18 @@ import { getDocsForService } from '@/lib/utils/docs';
 import { getArticlesForService } from '@/lib/utils/blog';
 import { getCalMeetingUrl } from '@/lib/utils/cal';
 import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
+import { ServiceShareActions } from '@/components/services/ServiceShareActions';
+import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
+import { getCompanionServices } from '@/lib/services/service-merchandising';
+import { getRuServicePath } from '@/lib/services/service-localized-content';
+
+export const revalidate = 300;
 
 const CAL_REUNION_URL = getCalMeetingUrl();
 
 function FreeMeetingButton({ className, children }: { className: string; children: ReactNode }) {
   return (
-    <CalButton url={CAL_REUNION_URL} fallbackHref="/contacto" className={className}>
+    <CalButton url={CAL_REUNION_URL} fallbackHref="/cita?tipo=consulta-inicial" className={className}>
       {children}
     </CalButton>
   );
@@ -49,11 +55,22 @@ export async function generateMetadata({
   const canonicalUrl = `https://expertconsulting.es/servicios/${categoria}/${servicio}`;
   const shareImageUrl = `https://expertconsulting.es/api/services/og?slug=${encodeURIComponent(servicio)}&variant=square`;
 
+  const ruPath = getRuServicePath(servicio);
+
   return {
     title,
     description,
     alternates: {
-      canonical: canonicalUrl
+      canonical: canonicalUrl,
+      ...(ruPath
+        ? {
+            languages: {
+              'es-ES': canonicalUrl,
+              'ru-RU': `https://expertconsulting.es${ruPath}`,
+              'x-default': canonicalUrl,
+            },
+          }
+        : {}),
     },
     openGraph: {
       title,
@@ -99,8 +116,10 @@ export default async function ServicioDetallePage({
 
   const category = getCategory(categoria);
   const showViability   = hasSpecificViabilityCheck(servicio);
+  const isCertificateCategory = categoria === 'certificado-digital';
+  const isStandaloneCertificate = servicio === 'certificado-digital-persona-fisica' || servicio === 'certificado-digital-entidad';
   const viabilityCheck  = showViability ? getViabilityCheck(servicio) : null;
-  const relatedServices = getServicesByCategory(categoria as CategorySlug).filter((s) => s.slug !== servicio).slice(0, 3);
+  const companionServices = getCompanionServices(service);
   const relatedDocs = getDocsForService(service.slug);
   const relatedArticles = getArticlesForService(service.slug);
   const canonicalUrl = `https://expertconsulting.es/servicios/${categoria}/${servicio}`;
@@ -217,12 +236,14 @@ export default async function ServicioDetallePage({
             >
               Caso complejo
             </Link>
-            <Link
-              href={selfGuidedHref}
-              className="inline-flex min-h-12 items-center justify-center border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-[#D4A017] hover:text-[#D4A017]"
-            >
-              Hazlo por tu cuenta
-            </Link>
+            {!isCertificateCategory && (
+              <Link
+                href={selfGuidedHref}
+                className="inline-flex min-h-12 items-center justify-center border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-[#D4A017] hover:text-[#D4A017]"
+              >
+                Hazlo por tu cuenta
+              </Link>
+            )}
             <FreeMeetingButton className="inline-flex min-h-12 items-center justify-center border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-white/50 hover:text-white">
               Reunión gratuita 15 min
             </FreeMeetingButton>
@@ -237,6 +258,24 @@ export default async function ServicioDetallePage({
             </div>
           )}
         </div>
+
+        {isStandaloneCertificate && (
+          <div className="mx-auto mt-8 max-w-5xl border border-[#D4A017]/45 bg-[#D4A017]/10 p-5 md:flex md:items-center md:justify-between md:gap-6">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#D4A017]">Oferta conjunta</p>
+              <p className="mt-2 font-serif text-xl font-bold text-white">Persona física + entidad mercantil · 200 € + IVA</p>
+              <p className="mt-2 text-sm leading-6 text-white/60">
+                Por separado: 240 € + IVA. Con el pack ahorras 40 €. Todo online y sin presencia física.
+              </p>
+            </div>
+            <Link
+              href="/servicios/certificado-digital/pack-certificados-digitales"
+              className="mt-4 inline-flex min-h-11 shrink-0 items-center justify-center bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#F2C14E] md:mt-0"
+            >
+              Ver pack de 200 €
+            </Link>
+          </div>
+        )}
 
         <div className="mx-auto mt-10 max-w-5xl">
           <div className="h-px bg-gradient-to-r from-[#D4A017]/60 via-[#D4A017]/20 to-transparent" />
@@ -403,6 +442,63 @@ export default async function ServicioDetallePage({
               </div>
             ) : null}
 
+            {service.deliveryOptions && service.deliveryOptions.length > 0 && (
+              <section className="border border-[#D4A017]/30 bg-white p-6 md:p-7">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Modalidades disponibles</p>
+                <h2 className="mt-3 font-serif text-2xl font-bold text-[#0D1B2A]">Elige cómo quieres realizar el servicio</h2>
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  {service.deliveryOptions.map((option) => {
+                    const optionHref = option.mode === 'guided'
+                      ? `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&origen=${encodedServiceSlug}&modalidad=guided`
+                      : `${budgetHref}&modalidad=full_service`;
+                    return (
+                      <div key={option.mode} className="border border-[#D4A017]/25 bg-[#F8F6F1] p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">{option.label}</p>
+                            <h3 className="mt-2 font-serif text-xl font-bold text-[#0D1B2A]">{option.price}</h3>
+                          </div>
+                          {option.mode === 'guided'
+                            ? <GraduationCap className="h-6 w-6 shrink-0 text-[#D4A017]" />
+                            : <CheckCircle2 className="h-6 w-6 shrink-0 text-[#D4A017]" />}
+                        </div>
+                        <p className="mt-3 text-sm leading-6 text-[#23364D]">{option.description}</p>
+                        {option.duration && <p className="mt-2 text-xs font-semibold text-[#23364D]/70">{option.duration}</p>}
+                        <ul className="mt-4 space-y-2">
+                          {option.includes.map((item) => (
+                            <li key={item} className="flex items-start gap-2 text-sm leading-5 text-[#23364D]">
+                              <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A017]" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        {option.notIncluded && option.notIncluded.length > 0 && (
+                          <div className="mt-4 border-t border-[#D4A017]/20 pt-3">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">No incluido</p>
+                            <ul className="mt-2 space-y-1.5">
+                              {option.notIncluded.map((item) => (
+                                <li key={item} className="text-xs leading-5 text-[#6B7280]">• {item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        <Link
+                          href={optionHref}
+                          className="mt-5 inline-flex min-h-11 items-center justify-center bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+                        >
+                          {option.mode === 'guided' ? 'Solicitar formación guiada' : 'Solicitar servicio completo'}
+                        </Link>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="mt-4 text-xs leading-5 text-[#6B7280]">
+                  Estas modalidades se solicitan primero como presupuesto. El pago online se activará cuando exista una configuración Stripe real y validada para cada modalidad.
+                </p>
+              </section>
+            )}
+
+            {!service.deliveryOptions?.length && (
             <section className="bg-[#0D1B2A] p-6 text-white md:p-7">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Elegir vía</p>
               <h2 className="mt-3 font-serif text-2xl font-bold">Servicio completo, presupuesto complejo, formación o reunión gratuita</h2>
@@ -451,6 +547,7 @@ export default async function ServicioDetallePage({
                 </div>
               </div>
             </section>
+            )}
 
             {relatedArticles.length > 0 && (
               <div className="border border-[#D4A017]/20 bg-white p-6">
@@ -627,14 +724,26 @@ export default async function ServicioDetallePage({
               </div>
             )}
 
-            {relatedServices.length > 0 && (
+            <ServiceRatingSummary serviceSlug={service.slug} />
+
+            <ServiceShareActions
+              url={canonicalUrl}
+              title={service.name}
+              text={service.shortDescription}
+              compact
+            />
+
+            {companionServices.length > 0 && (
               <div className="border border-[#D4A017]/20 bg-white p-5">
-                <p className="mb-4 text-[10px] font-bold uppercase tracking-wider text-[#23364D]">Otros servicios del área</p>
+                <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-[#23364D]">Servicios complementarios</p>
+                <p className="mb-4 text-xs leading-5 text-[#23364D]/65">
+                  Gestiones que suelen acompañar o completar este servicio.
+                </p>
                 <ul className="space-y-1">
-                  {relatedServices.map((s) => (
+                  {companionServices.map((s) => (
                     <li key={s.slug}>
                       <Link
-                        href={`/servicios/${categoria}/${s.slug}`}
+                        href={`/servicios/${s.categoria}/${s.slug}`}
                         className="flex items-center gap-2 px-2 py-2 text-sm font-medium text-[#0D1B2A] transition hover:bg-[#F8F6F1] hover:text-[#D4A017]"
                       >
                         <span className="text-[#D4A017]/50">→</span>
@@ -643,12 +752,6 @@ export default async function ServicioDetallePage({
                     </li>
                   ))}
                 </ul>
-                <Link
-                  href={`/servicios/${categoria}`}
-                  className="mt-3 block px-2 py-2 text-sm font-bold text-[#D4A017] transition hover:text-[#F2C14E]"
-                >
-                  Ver todos los servicios →
-                </Link>
               </div>
             )}
           </aside>

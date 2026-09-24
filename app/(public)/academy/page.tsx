@@ -122,7 +122,7 @@ export default function AcademyPage() {
             </TrackedAnchor>
             <CalButton
               url={calAcademyUrl}
-              fallbackHref="/cita"
+              fallbackHref="/cita?tipo=academy-admision"
               analyticsEvent="course_meeting_click"
               analyticsProps={{ program_slug: program.slug, cta_location: 'hero' }}
               className="inline-flex items-center gap-2 border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017]/10"

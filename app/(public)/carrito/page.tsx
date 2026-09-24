@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingBag, Trash2, ArrowRight, ArrowLeft, Plus } from 'lucide-react';
-import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartDisbursements, useCart } from '@/contexts/CartContext';
+import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartDisbursements, resolveCartLocale, useCart } from '@/contexts/CartContext';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { QuickProfileGate } from '@/components/cart/QuickProfileGate';
+import { CompanyCheckoutGate } from '@/components/cart/CompanyCheckoutGate';
+import { getPublicServicePath } from '@/lib/i18n/service-routes';
 
 const HOLDED_PACKAGE_PRICE_IDS = [
   'price_1SxNObLeYwwgvux4fLN9k8YG',
@@ -41,13 +44,68 @@ const HOLDED_ADDONS = [
   },
 ];
 
-export default function CarritoPage() {
+const COPY = {
+  es: {
+    continueServices: 'Seguir añadiendo servicios',
+    title: 'Tu cesta de servicios',
+    intro: 'Revisa los servicios seleccionados y tramita el pedido en un solo pago.',
+    empty: 'Tu cesta está vacía',
+    emptyHint: 'Explora nuestros servicios y añade los que necesitas',
+    allServices: 'Ver todos los servicios',
+    selectedOne: 'servicio seleccionado',
+    selectedMany: 'servicios seleccionados',
+    remove: 'Eliminar',
+    clear: 'Vaciar cesta',
+    summary: 'Resumen del pedido',
+    serviceOne: 'servicio',
+    serviceMany: 'servicios',
+    disbursement: 'Este pedido incluye una tasa oficial obligatoria como suplido. Se cobra junto con el servicio para pagarla en nombre y por cuenta del cliente, pero queda separada de los honorarios profesionales.',
+    mandate: 'Confirmo que autorizo a EXPERT / Ksenia Ilicheva a abonar la tasa oficial indicada en nombre y por cuenta del cliente. Entiendo que este importe es un suplido, se cobra por el importe exacto y no forma parte de los honorarios profesionales.',
+    mandateRequired: 'Debes aceptar expresamente el mandato de suplido antes de continuar.',
+    tax: 'Precios sin IVA. El total exacto con IVA se calcula y confirma en la pasarela de pago Stripe.',
+    checkoutError: 'No hemos podido iniciar el pago.',
+    redirecting: 'Redirigiendo...',
+    checkout: 'Tramitar pedido',
+    help: '¿Dudas? Escríbenos por WhatsApp',
+  },
+  ru: {
+    continueServices: 'Продолжить выбор услуг',
+    title: 'Корзина услуг',
+    intro: 'Проверьте выбранные услуги и перейдите к безопасной оплате.',
+    empty: 'Корзина пуста',
+    emptyHint: 'Выберите нужную услугу и добавьте её в корзину',
+    allServices: 'Вернуться к услугам',
+    selectedOne: 'выбранная услуга',
+    selectedMany: 'выбранные услуги',
+    remove: 'Удалить',
+    clear: 'Очистить корзину',
+    summary: 'Итого по заказу',
+    serviceOne: 'услуга',
+    serviceMany: 'услуги',
+    disbursement: 'Заказ включает обязательную государственную пошлину как suplido. EXPERT получает её вместе с оплатой услуги, чтобы перечислить от имени и за счёт клиента; она учитывается отдельно от профессионального вознаграждения.',
+    mandate: 'Подтверждаю, что поручаю EXPERT / Ksenia Ilicheva оплатить указанную государственную пошлину от имени и за счёт клиента. Понимаю, что эта сумма является suplido, взимается в точном размере и не относится к профессиональному вознаграждению.',
+    mandateRequired: 'Перед продолжением необходимо подтвердить поручение на оплату пошлины как suplido.',
+    tax: 'Цены услуг указаны без IVA. Точная итоговая сумма с IVA рассчитывается и подтверждается в Stripe.',
+    checkoutError: 'Не удалось перейти к оплате.',
+    redirecting: 'Переходим к оплате...',
+    checkout: 'Перейти к оплате',
+    help: 'Есть вопросы? Напишите нам в WhatsApp',
+  },
+} as const;
+
+function CarritoContent() {
+  const searchParams = useSearchParams();
   const { items, removeItem, clearCart } = useCart();
+  const locale = searchParams.get('lang') === 'ru' || resolveCartLocale(items) === 'ru' ? 'ru' : 'es';
+  const t = COPY[locale];
+  const cartPath = locale === 'ru' ? '/carrito?lang=ru' : '/carrito';
+  const servicesPath = locale === 'ru' ? '/ru/uslugi' : '/servicios';
   const hasHoldedPackage = items.some(i => HOLDED_PACKAGE_PRICE_IDS.includes(i.priceId));
   const visibleAddons = ADDONS_ENABLED ? HOLDED_ADDONS.filter(a => !items.some(i => i.priceId === a.priceId)) : [];
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);
+  const [needsCompany, setNeedsCompany] = useState(false);
   const [disbursementMandateAccepted, setDisbursementMandateAccepted] = useState(false);
   const hasDisbursements = cartContainsDisbursements(items);
   const disbursements = collectCartDisbursements(items);
@@ -57,37 +115,44 @@ export default function CarritoPage() {
     window.location.href = url;
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (companyId?: string) => {
     if (items.length === 0) return;
     if (hasDisbursements && !disbursementMandateAccepted) {
-      setError('Debes aceptar expresamente el mandato de suplido antes de continuar.');
+      setError(t.mandateRequired);
       return;
     }
     setLoading(true);
     setError(null);
     setNeedsProfile(false);
+    if (!companyId) setNeedsCompany(false);
     try {
       const res  = await fetch('/api/services/checkout', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify(buildCartCheckoutPayload(items, disbursementMandateAccepted)),
+        body   : JSON.stringify(buildCartCheckoutPayload(items, disbursementMandateAccepted, companyId)),
       });
       const data = await res.json() as { url?: string; error?: string; requiresAuth?: boolean; code?: string };
       if (res.status === 401 || data.requiresAuth) {
-        window.location.href = '/auth/login?next=/carrito';
+        window.location.href = `/auth/login?next=${encodeURIComponent(cartPath)}&lang=${locale}`;
         return;
       }
       if (res.status === 409 && data.code === 'profile_required') {
         setNeedsProfile(true);
+        setNeedsCompany(false);
+        return;
+      }
+      if (res.status === 409 && data.code === 'company_required') {
+        setNeedsCompany(true);
+        setNeedsProfile(false);
         return;
       }
       if (data.url) {
         goToCheckoutUrl(data.url);
         return;
       }
-      setError(data.error ?? 'No hemos podido iniciar el pago.');
+      setError(locale === 'ru' ? t.checkoutError : (data.error ?? t.checkoutError));
     } catch {
-      setError('No hemos podido iniciar el pago.');
+      setError(t.checkoutError);
     } finally {
       setLoading(false);
     }
@@ -99,15 +164,15 @@ export default function CarritoPage() {
       <div className="bg-[#0D1B2A] px-6 pb-10 pt-12 text-[#F8F6F1]">
         <div className="mx-auto max-w-3xl">
           <Link
-            href="/servicios"
+            href={servicesPath}
             className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.24em] text-[#D4A017] hover:text-[#F2C14E]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Seguir añadiendo servicios
+            {t.continueServices}
           </Link>
-          <h1 className="mt-4 font-serif text-3xl font-bold md:text-4xl">Tu cesta de servicios</h1>
+          <h1 className="mt-4 font-serif text-3xl font-bold md:text-4xl">{t.title}</h1>
           <p className="mt-3 text-sm text-white/55">
-            Revisa los servicios seleccionados y tramita el pedido en un solo pago.
+            {t.intro}
           </p>
         </div>
       </div>
@@ -118,17 +183,17 @@ export default function CarritoPage() {
           <div className="flex flex-col items-center justify-center gap-6 py-20 text-center">
             <ShoppingBag className="h-16 w-16 text-[#D4A017]/30" />
             <div>
-              <p className="text-xl font-semibold text-[#0D1B2A]">Tu cesta está vacía</p>
+              <p className="text-xl font-semibold text-[#0D1B2A]">{t.empty}</p>
               <p className="mt-2 text-sm text-[#23364D]/60">
-                Explora nuestros servicios y añade los que necesitas
+                {t.emptyHint}
               </p>
             </div>
             <Link
-              href="/servicios"
+              href={servicesPath}
               className="inline-flex items-center gap-2 rounded-xl bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]"
             >
               <ArrowRight className="h-4 w-4" />
-              Ver todos los servicios
+              {t.allServices}
             </Link>
           </div>
         ) : (
@@ -136,7 +201,7 @@ export default function CarritoPage() {
             {/* Items */}
             <div className="space-y-3">
               <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">
-                {items.length} {items.length === 1 ? 'servicio seleccionado' : 'servicios seleccionados'}
+                {items.length} {items.length === 1 ? t.selectedOne : t.selectedMany}
               </p>
               <ul className="space-y-3">
                 {items.map(item => (
@@ -146,7 +211,7 @@ export default function CarritoPage() {
                   >
                     <div className="min-w-0 flex-1">
                       <Link
-                        href={`/servicios/${item.category}/${item.slug}`}
+                        href={getPublicServicePath(item, item.locale ?? locale)}
                         className="font-semibold text-[#0D1B2A] transition hover:text-[#D4A017]"
                       >
                         {item.name}
@@ -161,7 +226,7 @@ export default function CarritoPage() {
                     <button
                       type="button"
                       onClick={() => removeItem(item.priceId)}
-                      aria-label={`Eliminar ${item.name}`}
+                      aria-label={`${t.remove} ${item.name}`}
                       className="shrink-0 rounded-lg p-2 text-[#23364D]/40 transition hover:bg-red-50 hover:text-red-600"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -175,7 +240,7 @@ export default function CarritoPage() {
                 onClick={clearCart}
                 className="mt-2 text-xs text-[#23364D]/50 transition hover:text-red-600"
               >
-                Vaciar cesta
+                {t.clear}
               </button>
 
               {/* Upsell: módulos Holded */}
@@ -209,9 +274,9 @@ export default function CarritoPage() {
             {/* Summary sidebar */}
             <div className="overflow-hidden rounded-2xl border border-[#D4A017]/30 bg-white lg:sticky lg:top-6">
               <div className="border-b border-[#D4A017]/20 bg-[#D4A017]/8 px-6 py-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">Resumen del pedido</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">{t.summary}</p>
                 <p className="mt-1 text-sm text-[#23364D]">
-                  {items.length} {items.length === 1 ? 'servicio' : 'servicios'}
+                  {items.length} {items.length === 1 ? t.serviceOne : t.serviceMany}
                 </p>
               </div>
               <div className="space-y-4 p-6">
@@ -226,7 +291,7 @@ export default function CarritoPage() {
                 {hasDisbursements && (
                   <>
                     <div className="rounded-xl border border-[#D4A017]/25 bg-[#F8F6F1] px-4 py-3 text-xs leading-5 text-[#23364D]/70">
-                      Este pedido incluye una tasa oficial obligatoria como suplido. Se cobra junto con el servicio para pagarla en nombre y por cuenta del cliente, pero queda separada de los honorarios profesionales.
+                      {t.disbursement}
                     </div>
                     <label className="flex items-start gap-2.5 rounded-xl border border-[#D4A017]/30 bg-[#F8F6F1] p-3 text-xs leading-5 text-[#23364D]">
                       <input
@@ -239,40 +304,50 @@ export default function CarritoPage() {
                         className="mt-1 h-4 w-4 shrink-0 accent-[#D4A017]"
                       />
                       <span>
-                        Confirmo que autorizo a EXPERT / Ksenia Ilicheva a abonar la tasa oficial indicada en nombre y por cuenta del cliente. Entiendo que este importe es un suplido, se cobra por el importe exacto y no forma parte de los honorarios profesionales.
+                        {t.mandate}
                       </span>
                     </label>
                   </>
                 )}
                 <div className="border-t border-[#D4A017]/20 pt-3 text-xs text-[#23364D]/60 leading-relaxed">
-                  Precios sin IVA. El total exacto con IVA se calcula y confirma en la pasarela de pago Stripe.
+                  {t.tax}
                 </div>
                 {error && (
                   <p role="alert" aria-live="assertive" className="rounded-xl bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700">{error}</p>
                 )}
-                {needsProfile ? (
+                {needsCompany ? (
+                  <CompanyCheckoutGate
+                    locale={locale}
+                    loading={loading}
+                    returnPath={cartPath}
+                    onContinue={(companyId) => { void handleCheckout(companyId); }}
+                  />
+                ) : needsProfile ? (
                   <QuickProfileGate
                     priceIds={items.map(i => i.priceId)}
+                    locale={locale}
+                    loginNextPath={cartPath}
                     disbursements={disbursements}
                     disbursementMandateAccepted={disbursementMandateAccepted}
+                    onCompanyRequired={() => { setNeedsProfile(false); setNeedsCompany(true); }}
                     onCheckoutUrl={goToCheckoutUrl}
                   />
                 ) : (
                   <button
                     type="button"
-                    onClick={handleCheckout}
+                    onClick={() => { void handleCheckout(); }}
                     disabled={loading || (hasDisbursements && !disbursementMandateAccepted)}
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4A017] py-3 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
                   >
                     <ArrowRight className="h-4 w-4" />
-                    {loading ? 'Redirigiendo...' : 'Tramitar pedido'}
+                    {loading ? t.redirecting : t.checkout}
                   </button>
                 )}
                 <a
                   href="https://wa.me/34669045528"
                   className="block text-center text-sm font-medium text-[#23364D] transition hover:text-[#D4A017]"
                 >
-                  ¿Dudas? Escríbenos por WhatsApp
+                  {t.help}
                 </a>
               </div>
             </div>
@@ -280,5 +355,14 @@ export default function CarritoPage() {
         )}
       </div>
     </main>
+  );
+}
+
+
+export default function CarritoPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[#F8F6F1]" />}>
+      <CarritoContent />
+    </Suspense>
   );
 }

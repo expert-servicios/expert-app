@@ -47,6 +47,20 @@ export type PublicCategorySlug = (typeof categories)[number]['slug'];
 export type HiddenCategorySlug = 'formacion';
 export type CategorySlug = PublicCategorySlug | HiddenCategorySlug;
 
+export type ServiceDeliveryMode = 'full_service' | 'guided';
+
+export type ServiceDeliveryOption = {
+  mode: ServiceDeliveryMode;
+  label: string;
+  description: string;
+  price: string;
+  duration?: string;
+  stripePriceId?: string;
+  checkoutLabel?: string;
+  includes: string[];
+  notIncluded?: string[];
+};
+
 export type Service = {
   slug: string;
   categoria: CategorySlug;
@@ -62,6 +76,7 @@ export type Service = {
   stripePriceId?: string;
   checkoutLabel?: string;
   checkoutLegal?: string;
+  deliveryOptions?: ServiceDeliveryOption[];
   audience?: string[];
   requirements?: string[];
   keyPoints?: { title: string; text: string }[];
@@ -106,7 +121,7 @@ export const services: Service[] = [
     name: 'Modelo 151 — Régimen Beckham',
     shortDescription: 'Tributación especial para expatriados desplazados a España.',
     description:
-      'El régimen especial de impatriados (popularmente conocido como Ley Beckham) permite tributar al tipo fijo del 24% sobre rentas obtenidas en España durante los primeros años de residencia. Gestionamos la solicitud de activación del régimen y la declaración anual del Modelo 151.',
+      'El régimen especial de impatriados (popularmente conocido como Ley Beckham) permite, cuando se cumplen sus requisitos, tributar bajo las reglas especiales del artículo 93 LIRPF. Gestionamos la opción mediante el Modelo 149, la revisión de elegibilidad y la declaración anual del Modelo 151.',
     price: 'Consultar',
     duration: '5–10 días hábiles',
     includes: [
@@ -118,7 +133,7 @@ export const services: Service[] = [
     ],
     faqs: [
       { q: '¿Quién puede acogerse al régimen Beckham?', a: 'Trabajadores y directivos desplazados a España que no hayan sido residentes los 5 años anteriores, bajo determinadas condiciones.' },
-      { q: '¿Cuánto tiempo dura el régimen?', a: 'Hasta 5 años desde la activación, renovable en algunas circunstancias.' },
+      { q: '¿Cuánto tiempo dura el régimen?', a: 'Se aplica en el período impositivo en que se adquiere la residencia fiscal en España bajo el régimen y en los cinco períodos impositivos siguientes, siempre que se mantengan los requisitos.' },
       { q: '¿Cubre también a mi familia?', a: 'El régimen es individual, aunque el cónyuge e hijos pueden acogerse bajo ciertos requisitos.' }
     ]
   },
@@ -139,8 +154,8 @@ export const services: Service[] = [
       'Asesoramiento sobre convenios de doble imposición'
     ],
     faqs: [
-      { q: '¿Cuándo debo presentar el Modelo 210?', a: 'Depende del tipo de renta. Para imputaciones de inmuebles, en enero del año siguiente. Para alquileres, trimestralmente.' },
-      { q: '¿Necesito representante fiscal?', a: 'Sí, si eres no residente en la UE con propiedades en España, es obligatorio tener un representante fiscal en España.' }
+      { q: '¿Cuándo debo presentar el Modelo 210?', a: 'Depende del tipo de renta y de la fecha de devengo. La Orden HAC/623/2026 modificó los plazos y estableció una transición específica para 2026, por lo que revisamos el periodo oficial aplicable antes de presentar.' },
+      { q: '¿Necesito representante fiscal?', a: 'No por el mero hecho de ser no residente o tener un inmueble en España. La obligación existe en determinados supuestos previstos por la normativa; revisamos tu caso antes de indicarlo como requisito.' }
     ]
   },
   {
@@ -160,7 +175,7 @@ export const services: Service[] = [
       'Alerta de plazos y recordatorios'
     ],
     faqs: [
-      { q: '¿Cuáles son los plazos trimestrales?', a: 'Del 1 al 20 de los meses de abril, julio, octubre y enero (este último hasta el 30).' },
+      { q: '¿Cuáles son los plazos trimestrales?', a: 'El patrón general es trimestral, pero verificamos el vencimiento exacto del período en el calendario AEAT vigente antes de presentar.' },
       { q: '¿Puedo llevar yo las facturas y que solo presentéis?', a: 'Sí, puedes enviarnos el registro de facturas y nos encargamos de la liquidación y presentación.' }
     ]
   },
@@ -210,7 +225,7 @@ export const services: Service[] = [
     name: 'Modelo 720 — Bienes en el Extranjero',
     shortDescription: 'Declaración de bienes y derechos situados en el extranjero ante la AEAT.',
     description:
-      'El Modelo 720 es una declaración informativa obligatoria para residentes fiscales en España que posean bienes o derechos en el extranjero por valor superior a 50.000 € en alguna de sus tres categorías: cuentas bancarias, valores e inmuebles. Analizamos tu obligación de declarar, preparamos el modelo y lo presentamos en plazo para evitar sanciones.',
+      'El Modelo 720 es una declaración informativa sobre determinadas categorías de bienes y derechos situados en el extranjero. La obligación depende de la categoría, los umbrales, las reglas de valoración y las exenciones aplicables. Analizamos primero si existe obligación y después preparamos y presentamos el modelo.',
     price: '190 € + IVA',
     stripePriceId: 'price_1TXMmVLeYwwgvux4e9hXI90o',
     duration: '3–5 días hábiles',
@@ -229,10 +244,10 @@ export const services: Service[] = [
       'Número de identificación fiscal extranjero (si aplica)'
     ],
     faqs: [
-      { q: '¿Quién está obligado a presentar el Modelo 720?', a: 'Personas físicas y jurídicas residentes en España que tengan bienes o derechos en el extranjero cuyo valor supere los 50.000 € en alguna de las tres categorías (cuentas, valores o inmuebles).' },
+      { q: '¿Quién está obligado a presentar el Modelo 720?', a: 'Puede existir obligación cuando se superan los umbrales legales en alguna de las tres categorías de información, pero antes hay que aplicar las reglas de valoración y las exenciones correspondientes.' },
       { q: '¿Cuándo hay que presentarlo?', a: 'Entre el 1 de enero y el 31 de marzo del año siguiente al ejercicio que se declara.' },
-      { q: '¿Qué pasa si no lo presento?', a: 'Las sanciones por no presentar o presentar incorrectamente pueden ser muy elevadas. Es imprescindible declarar si se supera el umbral.' },
-      { q: '¿Tengo que presentarlo cada año?', a: 'Solo en el año en que se supera el umbral por primera vez, y posteriormente cuando alguna categoría experimente un incremento superior a 20.000 € respecto al último ejercicio declarado.' }
+      { q: '¿Qué pasa si no lo presento?', a: 'La falta de presentación puede generar consecuencias tributarias y sancionadoras. Antes de concluir que existe obligación verificamos categoría, umbral, exenciones y ejercicio.' },
+      { q: '¿Tengo que presentarlo cada año?', a: 'No necesariamente. Tras una primera declaración hay que revisar el incremento respecto de la última presentada y también otros supuestos que pueden obligar a informar, como determinadas pérdidas de titularidad.' }
     ]
   },
 
@@ -241,213 +256,252 @@ export const services: Service[] = [
     slug: 'arraigo-social',
     categoria: 'extranjeria-nacionalidad',
     name: 'Arraigo Social',
-    shortDescription: 'Residencia legal en España por arraigo social — 3 años de permanencia + oferta de empleo o medios económicos.',
-    metaTitle: 'Arraigo Social en España — Residencia Legal · EXPERT Asesoría',
-    metaDescription: 'Tramitamos tu arraigo social en España desde 490 € + IVA. 3 años de permanencia, oferta de empleo o medios económicos. Evaluación previa gratuita.',
+    shortDescription: 'Residencia temporal por circunstancias excepcionales para personas extranjeras con al menos 2 años de permanencia continuada en España y vínculos familiares o integración social acreditable.',
+    metaTitle: 'Arraigo Social en España 2026 · 2 años de permanencia | EXPERT Asesoría',
+    metaDescription: 'Tramitamos el arraigo social conforme al Reglamento vigente: 2 años de permanencia continuada, vínculos familiares y medios económicos o informe de integración social. 490 € + IVA.',
     description:
-      'El arraigo social (art. 124 del RD 557/2011) es la vía más habitual para regularizar la situación de personas extracomunitarias que llevan al menos 3 años en España sin permiso de residencia. Gestionamos el expediente completo: evaluación de requisitos, preparación y revisión de toda la documentación, elaboración del informe de arraigo y presentación ante la Oficina de Extranjería. Te acompañamos hasta la resolución favorable y la obtención del TIE.',
+      'El arraigo social es una autorización de residencia temporal por circunstancias excepcionales regulada por la Ley Orgánica 4/2000 y el Real Decreto 1155/2024. Con carácter general exige haber permanecido en España de forma continuada durante al menos 2 años y cumplir los requisitos generales del arraigo. Además, debe acreditarse bien la existencia de determinados vínculos familiares con personas extranjeras residentes y medios económicos suficientes, bien un informe favorable de integración social cuando no concurran esos vínculos. EXPERT revisa la vía aplicable, prepara el expediente y lo presenta ante Extranjería.',
     price: '490 € + IVA',
     stripePriceId: 'price_1TXMmQLeYwwgvux4ivP7Uhn8',
     checkoutLabel: 'Contratar — 490 € + IVA',
-    duration: '3–6 meses (según Delegación)',
+    checkoutLegal: 'La tasa administrativa Modelo 790 código 052, epígrafe 2.3.1, no está incluida en los honorarios y se abona aparte.',
+    officialFee: '38,28 € — Modelo 790 código 052, epígrafe 2.3.1 (a cargo del solicitante)',
+    duration: 'Resolución administrativa: hasta 3 meses desde la entrada de la solicitud en el órgano competente',
     keyPoints: [
-      { title: '3 años de permanencia', text: 'Debes acreditar al menos 3 años de permanencia continuada en España mediante empadronamiento, contratos, facturas u otros medios de prueba.' },
-      { title: 'Oferta de empleo o medios económicos', text: 'Puedes acreditar medios económicos suficientes (IPREM) o una oferta de empleo firmada. También es posible acreditar vínculos familiares con residentes legales.' },
-      { title: 'Sin antecedentes penales', text: 'Requisito imprescindible: no tener antecedentes penales en España ni en los países de residencia de los últimos 5 años.' },
+      { title: '2 años de permanencia continuada', text: 'Debes acreditar al menos 2 años de permanencia continuada en España. Las ausencias durante ese periodo no pueden superar 90 días.' },
+      { title: 'Vínculos familiares o integración social', text: 'Si existen determinados vínculos familiares con personas extranjeras residentes, deben acreditarse también medios económicos suficientes. Si no existen esos vínculos, se valora el esfuerzo de integración mediante informe favorable de integración social.' },
+      { title: 'Autorización de trabajo asociada', text: 'La concesión lleva aparejada autorización para trabajar por cuenta ajena o propia en España durante su vigencia, sin limitación de ámbito geográfico u ocupación.' },
     ],
     audience: [
-      'Extracomunitarios con más de 3 años en España sin permiso de residencia',
-      'Personas con arraigo acreditable pero sin contrato de trabajo en vigor',
-      'Personas con vínculos familiares de primer grado con residentes legales en España',
-      'Quienes tengan oferta de empleo y 3 años de permanencia acreditada',
+      'Personas extranjeras que se encuentran en España y pueden acreditar al menos 2 años de permanencia continuada',
+      'Personas con cónyuge o pareja registrada, ascendientes o descendientes de primer grado con residencia legal en España',
+      'Personas sin esos vínculos familiares que pueden acreditar integración social mediante el informe correspondiente',
     ],
     requirements: [
-      '3 años de permanencia continuada en España (empadronamiento + pruebas adicionales)',
-      'Oferta de empleo firmada, medios económicos suficientes o vínculo familiar de primer grado con residente legal',
-      'Sin antecedentes penales en España ni en el país de origen (últimos 5 años)',
-      'Pasaporte en vigor',
-      'Certificado de antecedentes penales de España y del país de origen',
+      'Encontrarse en España y no ser solicitante de protección internacional durante la solicitud y su tramitación',
+      'Acreditar al menos 2 años de permanencia continuada en España',
+      'No superar 90 días de ausencia durante ese periodo de 2 años',
+      'Carecer de antecedentes penales en España y en los países donde se haya residido durante los cinco años anteriores a la entrada en España',
+      'No encontrarse, en su caso, dentro de un compromiso de no retorno',
+      'No ser titular de una autorización de estancia o residencia ni estar interesado en un procedimiento de concesión, prórroga, renovación o modificación de estancia o residencia',
+      'Acreditar vínculos familiares y medios económicos suficientes o, en su defecto, informe favorable de integración social',
+      'Abonar la tasa administrativa correspondiente',
     ],
     includes: [
-      'Evaluación previa de viabilidad y requisitos',
-      'Revisión y organización de toda la documentación',
-      'Elaboración del informe de arraigo',
-      'Cumplimentación del formulario EX-01',
-      'Presentación telemática ante la Oficina de Extranjería',
-      'Seguimiento activo y atención a requerimientos',
-      'Orientación para la obtención del TIE tras la resolución',
+      'Evaluación previa de la vía de arraigo aplicable',
+      'Revisión y organización de la documentación',
+      'Comprobación de permanencia continuada y ausencias',
+      'Revisión de vínculos familiares, medios económicos o informe de integración social según el caso',
+      'Cumplimentación del formulario EX-10',
+      'Preparación y presentación telemática ante la Oficina de Extranjería',
+      'Seguimiento ordinario del expediente',
+      'Orientación para la solicitud del TIE tras resolución favorable',
     ],
-    requiredDocs: [
-      'Pasaporte en vigor (todas las páginas)',
-      'Certificado de empadronamiento histórico (3 años mínimo)',
-      'Certificado de antecedentes penales de España (Registro Central de Penados)',
-      'Certificado de antecedentes penales del país de origen (apostillado y traducido)',
-      'Oferta de empleo firmada (si aplica) o documentación de medios económicos',
-      'Documentación acreditativa de vínculos familiares (si aplica)',
-      'Fotografía reciente en color (tamaño carné)',
-      'Justificante de pago de tasa Modelo 790 cód. 052',
+    documents: [
+      {
+        title: 'Identidad y permanencia',
+        items: [
+          'Copia completa del pasaporte en vigor, cédula de inscripción o título de viaje válido',
+          'Documentación que acredite al menos 2 años de permanencia continuada en España',
+          'Certificado de antecedentes penales del país o países en los que se haya residido durante los cinco últimos años anteriores a la entrada en España, cuando proceda',
+        ],
+      },
+      {
+        title: 'Vía familiar o integración',
+        items: [
+          'Documentación acreditativa del vínculo familiar, cuando se invoque esta vía',
+          'Documentación acreditativa de medios económicos suficientes, cuando corresponda',
+          'Informe favorable de integración social emitido por el órgano competente, cuando no se acrediten los vínculos familiares previstos',
+        ],
+      },
+      {
+        title: 'Solicitud',
+        items: [
+          'Formulario oficial EX-10',
+          'Justificante del abono de la tasa Modelo 790 código 052, epígrafe 2.3.1',
+        ],
+      },
     ],
     process: [
-      { title: 'Evaluación inicial', text: 'Analizamos tu caso, verificamos que cumples los 3 años de permanencia y detectamos posibles incidencias antes de preparar el expediente.' },
-      { title: 'Organización documental', text: 'Te indicamos exactamente qué documentos necesitas y cómo obtener los que te faltan (antecedentes, empadronamiento histórico, etc.).' },
-      { title: 'Preparación y revisión', text: 'Redactamos el informe de arraigo, cumplimentamos el formulario EX-01 y revisamos toda la documentación antes de la presentación.' },
-      { title: 'Presentación y seguimiento', text: 'Presentamos el expediente telemáticamente y hacemos seguimiento activo, respondiendo a cualquier requerimiento de la Administración.' },
-      { title: 'Resolución y TIE', text: 'Te notificamos la resolución favorable y te orientamos sobre cómo solicitar el TIE en comisaría.' },
+      { title: 'Evaluación inicial', text: 'Comprobamos permanencia, situación administrativa, antecedentes, posibles vínculos familiares y la vía concreta por la que debe tramitarse el arraigo social.' },
+      { title: 'Checklist documental', text: 'Definimos la documentación exacta según se tramite por vínculos familiares y medios económicos o mediante informe de integración social.' },
+      { title: 'Preparación del expediente', text: 'Cumplimentamos el EX-10, ordenamos la documentación y revisamos que el expediente sea coherente antes de presentarlo.' },
+      { title: 'Presentación y tasa', text: 'Presentamos el expediente telemáticamente y te indicamos el abono de la tasa 790-052 correspondiente.' },
+      { title: 'Seguimiento y TIE', text: 'Hacemos seguimiento ordinario del expediente y, si la resolución es favorable, te orientamos sobre la solicitud de la TIE.' },
     ],
     notIncluded: [
-      'Tasa administrativa Modelo 790 cód. 052 (abono por el cliente)',
-      'Traducciones juradas de documentos extranjeros',
-      'Apostillas o legalizaciones de documentos del país de origen',
-      'Recursos administrativos en caso de denegación',
+      'Tasa administrativa Modelo 790 código 052, epígrafe 2.3.1',
+      'Obtención del informe oficial de integración social por parte de la Administración competente',
+      'Traducciones juradas',
+      'Apostillas o legalizaciones',
+      'Obtención de certificados extranjeros',
+      'Recursos administrativos o judiciales en caso de denegación',
+      'Actuaciones extraordinarias derivadas de requerimientos complejos',
     ],
     reviewBeforeHiring: [
-      'Si no tienes empadronamiento continuo de 3 años, podría no ser la vía adecuada',
-      'Si tienes antecedentes penales, consulta primero — puede afectar al resultado',
+      'Si no puedes acreditar al menos 2 años de permanencia continuada en España, este servicio puede no ser la vía adecuada',
+      'Si eres solicitante de protección internacional o tienes otro procedimiento de estancia/residencia en curso, debe revisarse antes de contratar',
+      'Si has tenido ausencias superiores a 90 días durante los 2 años previos, conviene revisar la viabilidad',
+      'Si existen antecedentes penales o un compromiso de no retorno, es necesaria una revisión previa',
     ],
     finalCta: {
-      title: '¿Llevas 3 años en España y quieres regularizar tu situación?',
-      text: 'El arraigo social puede ser tu vía. Te evaluamos el caso sin compromiso y gestionamos todo el expediente para que puedas obtener tu residencia legal.',
+      title: '¿Llevas al menos 2 años en España y quieres regularizar tu situación?',
+      text: 'Revisamos si el arraigo social encaja con tu caso, definimos la vía documental correcta y preparamos el expediente completo para su presentación.',
     },
     faqs: [
-      { q: '¿Cuánto tiempo tengo que llevar en España?', a: 'Mínimo 3 años de permanencia continuada y acreditada. No es suficiente el empadronamiento solo: se recomiendan facturas, contratos o cualquier documento que sitúe al solicitante en España durante ese período.' },
-      { q: '¿Necesito contrato de trabajo?', a: 'Es la opción más habitual, pero no la única. También puedes acreditar medios económicos suficientes (IPREM mensual) o vínculos familiares de primer grado con un residente legal.' },
-      { q: '¿Qué pasa si me deniegan el arraigo?', a: 'Cabe interponer recurso de reposición ante la misma Oficina de Extranjería o recurso contencioso-administrativo. Te orientamos sobre las opciones en caso de denegación.' },
-      { q: '¿Puedo trabajar mientras tramito el arraigo social?', a: 'No. Hasta que no se resuelve favorablemente y se obtiene el TIE, no se puede trabajar de forma regular. Algunas resoluciones incluyen autorización de trabajo y otras no.' },
-      { q: '¿Necesito venir en persona a vuestra oficina?', a: 'No. Todo el proceso se gestiona online. Tú nos envías la documentación escaneada y nosotros preparamos y presentamos el expediente.' },
+      { q: '¿Cuánto tiempo tengo que llevar en España?', a: 'Con carácter general debes acreditar al menos 2 años de permanencia continuada en España inmediatamente anteriores a la solicitud. Durante ese periodo, las ausencias no pueden superar 90 días.' },
+      { q: '¿Necesito contrato de trabajo para el arraigo social?', a: 'No como requisito específico del arraigo social vigente. El contrato de trabajo es propio del arraigo sociolaboral. En arraigo social se valoran los vínculos familiares y medios económicos o, en su defecto, la integración social acreditada mediante informe favorable.' },
+      { q: '¿Qué formulario se presenta?', a: 'El formulario oficial es el EX-10 para autorizaciones de residencia temporal por circunstancias excepcionales.' },
+      { q: '¿Cuál es la tasa?', a: 'La tasa vigente es el Modelo 790 código 052, epígrafe 2.3.1. Actualmente asciende a 38,28 € y se abona por la persona solicitante.' },
+      { q: '¿Cuánto tarda Extranjería en resolver?', a: 'El plazo administrativo de resolución es de 3 meses desde el día siguiente a la entrada de la solicitud en el registro del órgano competente.' },
+      { q: '¿Podré trabajar si me conceden el arraigo social?', a: 'Sí. La concesión lleva aparejada autorización para trabajar por cuenta propia o ajena en España durante la vigencia de la autorización, sin limitación de ámbito geográfico u ocupación.' },
+      { q: '¿EXPERT emite el informe de integración social?', a: 'No. El informe lo emite el órgano competente de la Comunidad Autónoma o, cuando proceda, el Ayuntamiento. EXPERT puede indicarte cuándo es necesario y revisar que se incorpore correctamente al expediente.' },
     ],
   },
   {
     slug: 'arraigo-familiar',
     categoria: 'extranjeria-nacionalidad',
     name: 'Arraigo Familiar',
-    shortDescription: 'Residencia por vínculo familiar con ciudadano español o residente legal en España.',
-    metaTitle: 'Arraigo Familiar en España — Residencia Legal · EXPERT Asesoría',
-    metaDescription: 'Tramitamos tu arraigo familiar en España desde 390 € + IVA. Padre/madre de menor español, cónyuge de español o residente legal. Evaluación previa incluida.',
+    shortDescription: 'Residencia por circunstancias excepcionales en los supuestos de arraigo familiar vigentes del RD 1155/2024.',
+    metaTitle: 'Arraigo Familiar 2026 · Supuestos vigentes | EXPERT',
+    metaDescription: 'Revisamos si tu caso encaja en el arraigo familiar vigente: progenitor/tutor de menor UE/EEE/Suiza o familiar que presta apoyo a persona con discapacidad UE/EEE/Suiza.',
     description:
-      'El arraigo familiar (art. 125 del RD 557/2011, modificado por RD 629/2022) permite obtener una autorización de residencia de 2 años cuando existen vínculos familiares con ciudadanos españoles o con residentes legales en España. Los supuestos principales son: ser padre o madre de un menor con nacionalidad española, ser hijo/a de padre o madre originariamente español, o ser cónyuge o pareja de hecho registrada de un residente legal con convivencia acreditada.',
+      'El arraigo familiar vigente debe analizarse conforme al Real Decreto 1155/2024. No es una vía genérica para cualquier familiar de ciudadano español o residente. Entre sus supuestos están el padre, madre o tutor de un menor nacional de otro Estado de la UE, EEE o Suiza cuando se acrediten las condiciones exigidas, y determinados familiares que prestan apoyo a una persona con discapacidad nacional de esos Estados. Los familiares de ciudadanos españoles pueden estar sujetos a una autorización específica distinta y deben clasificarse antes de contratar.',
     price: '390 € + IVA',
     stripePriceId: 'price_1TXMmTLeYwwgvux4OvsyKGL2',
     checkoutLabel: 'Contratar — 390 € + IVA',
-    duration: '3–5 meses',
+    duration: 'Resolución administrativa: hasta 3 meses',
     keyPoints: [
-      { title: 'No requiere años de permanencia (algunos supuestos)', text: 'A diferencia del arraigo social, el arraigo familiar no exige en todos los casos un período mínimo de permanencia en España — lo fundamental es acreditar el vínculo familiar.' },
-      { title: 'Residencia de 2 años renovable', text: 'La autorización concedida es de residencia temporal de 2 años, incluye autorización de trabajo y es renovable.' },
-      { title: 'Tres supuestos principales', text: 'Padre/madre de menor español, hijo/a de español de origen, o cónyuge/pareja de hecho de residente legal con convivencia acreditada.' },
+      { title: 'Primero hay que clasificar el vínculo', text: 'No todo vínculo con español o residente encaja en arraigo familiar. La vía correcta depende de la nacionalidad y situación del familiar de referencia.' },
+      { title: 'Supuestos tasados', text: 'El arraigo familiar vigente contempla supuestos específicos; EXPERT valida primero si el caso pertenece realmente a esta modalidad.' },
+      { title: 'Control humano obligatorio', text: 'Si el vínculo corresponde a otra autorización familiar, el expediente se redirige antes de presentar.' },
     ],
     audience: [
-      'Padres o madres de hijos/as con nacionalidad española',
-      'Hijos/as de ciudadanos españoles de origen (nacidos españoles, no por adquisición)',
-      'Cónyuges o parejas de hecho de residentes legales en España',
-      'Extracomunitarios con vínculo familiar acreditable con español o residente legal',
+      'Padres, madres o tutores de menores nacionales de otro Estado UE/EEE/Suiza que cumplan las condiciones legales',
+      'Familiares que prestan apoyo a una persona con discapacidad nacional UE/EEE/Suiza cuando concurran los requisitos',
+      'Personas que necesitan determinar si su vínculo familiar corresponde a arraigo familiar u otra autorización',
     ],
     requirements: [
-      'Acreditar el vínculo familiar según el supuesto: filiación, matrimonio o pareja de hecho registrada',
-      'Convivencia acreditada (para el supuesto de cónyuge/pareja de residente legal)',
-      'Sin antecedentes penales en España ni en el país de origen',
-      'Pasaporte en vigor',
-      'Documentación del familiar de referencia (DNI/TIE en vigor)',
+      'Encontrarse en uno de los supuestos legales de arraigo familiar vigentes',
+      'Acreditar el vínculo familiar y la nacionalidad/situación del familiar de referencia',
+      'Acreditar convivencia, cargo, obligaciones paternofiliales o apoyo cuando lo exija el supuesto',
+      'Cumplir los requisitos generales aplicables a las autorizaciones de arraigo',
+      'Abonar la tasa administrativa correspondiente',
     ],
     includes: [
-      'Evaluación del supuesto aplicable y viabilidad del expediente',
-      'Revisión y organización de la documentación',
-      'Cumplimentación del formulario EX-01',
-      'Presentación ante la Oficina de Extranjería',
-      'Seguimiento del expediente y atención a requerimientos',
+      'Clasificación previa de la vía migratoria correcta',
+      'Evaluación del supuesto vigente de arraigo familiar',
+      'Revisión y organización de documentación',
+      'Preparación del formulario EX-10 cuando corresponda',
+      'Presentación telemática tras validación profesional',
+      'Seguimiento ordinario del expediente',
     ],
     requiredDocs: [
-      'Pasaporte en vigor (todas las páginas)',
-      'DNI o TIE del familiar de referencia (español o residente legal)',
-      'Documento acreditativo del vínculo: libro de familia, certificado de nacimiento, partida de matrimonio o acta de pareja de hecho',
-      'Certificado de empadronamiento actualizado (máx. 3 meses)',
-      'Certificado de antecedentes penales de España',
-      'Certificado de antecedentes penales del país de origen (apostillado y traducido si aplica)',
-      'Fotografía reciente en color (tamaño carné)',
+      'Pasaporte completo o documento de viaje admitido',
+      'Documento de identidad/nacionalidad del familiar de referencia',
+      'Documento acreditativo del vínculo familiar',
+      'Pruebas de convivencia, cargo, tutela, apoyo u obligaciones paternofiliales según el supuesto',
+      'Certificado de antecedentes penales cuando proceda',
+      'Documentación adicional exigible según el supuesto concreto',
     ],
     process: [
-      { title: 'Evaluación del vínculo familiar', text: 'Determinamos qué supuesto de arraigo familiar te corresponde y qué documentos necesitas.' },
-      { title: 'Preparación documental', text: 'Revisamos y organizamos toda la documentación. Te indicamos cómo obtener los certificados de antecedentes apostillados.' },
-      { title: 'Presentación y seguimiento', text: 'Presentamos el expediente y hacemos seguimiento activo hasta la resolución.' },
-      { title: 'Resolución y TIE', text: 'Te informamos de la resolución y te orientamos sobre cómo recoger el TIE en comisaría.' },
+      { title: 'Clasificación del supuesto', text: 'Determinamos si el caso corresponde realmente a arraigo familiar o a otra autorización familiar.' },
+      { title: 'Validación del vínculo', text: 'Revisamos parentesco, nacionalidad y condiciones específicas del familiar de referencia.' },
+      { title: 'Preparación documental', text: 'Cerramos el checklist exacto y revisamos documentos extranjeros, traducciones y legalizaciones.' },
+      { title: 'Presentación y seguimiento', text: 'Presentamos solo tras aprobación profesional y hacemos seguimiento ordinario.' },
     ],
     notIncluded: [
-      'Tasa administrativa Modelo 790 cód. 052 (abono por el cliente)',
-      'Traducciones juradas de documentos extranjeros',
-      'Apostillas o legalizaciones de documentos del país de origen',
-      'Recursos en caso de denegación',
+      'Traducciones juradas, apostillas o legalizaciones',
+      'Recursos administrativos o judiciales',
+      'Trámites de otra modalidad migratoria si el caso no corresponde a arraigo familiar',
+    ],
+    reviewBeforeHiring: [
+      'Si tu familiar de referencia es ciudadano español, revisaremos primero si corresponde la autorización específica para familiares de españoles',
+      'Si no está claro el supuesto legal, no se presenta automáticamente',
     ],
     finalCta: {
-      title: '¿Tienes un familiar español o residente legal en España?',
-      text: 'El arraigo familiar puede ser tu vía más rápida para obtener la residencia legal. Evaluamos tu caso sin compromiso.',
+      title: '¿No sabes qué vía familiar te corresponde?',
+      text: 'Clasificamos primero tu caso para evitar tramitar una modalidad incorrecta.',
     },
     faqs: [
-      { q: '¿Cómo acredito el vínculo familiar?', a: 'Mediante libro de familia, certificado de nacimiento, sentencia de filiación, certificado de matrimonio o registro de pareja de hecho, según el supuesto.' },
-      { q: '¿Necesito llevar años en España para el arraigo familiar?', a: 'Depende del supuesto. El arraigo familiar como padre/madre de menor español no exige tiempo mínimo de permanencia. El supuesto de cónyuge/pareja de residente legal sí requiere acreditar convivencia.' },
-      { q: '¿El arraigo familiar incluye autorización de trabajo?', a: 'Sí. Las autorizaciones de residencia por arraigo familiar concedidas desde 2022 incluyen en general autorización para trabajar.' },
+      { q: '¿Cualquier familiar de español puede pedir arraigo familiar?', a: 'No. La normativa vigente separa distintos regímenes y autorizaciones. Primero hay que clasificar el vínculo y la situación del familiar de referencia.' },
+      { q: '¿Qué formulario se usa?', a: 'Cuando el supuesto corresponde a arraigo familiar se utiliza el formulario de circunstancias excepcionales aplicable; EXPERT valida la vía antes de preparar la solicitud.' },
+      { q: '¿Se presenta automáticamente al contratar?', a: 'No. La presentación exige validación profesional del supuesto y de la documentación.' },
     ],
   },
   {
     slug: 'arraigo-laboral',
     categoria: 'extranjeria-nacionalidad',
-    name: 'Arraigo Laboral',
-    shortDescription: 'Residencia legal por arraigo laboral — 2 años en España con relación laboral irregular acreditable.',
-    metaTitle: 'Arraigo Laboral en España — Residencia Legal · EXPERT Asesoría',
-    metaDescription: 'Tramitamos tu arraigo laboral en España desde 490 € + IVA. 2 años de permanencia + relación laboral irregular acreditable. Art. 123 RD 557/2011.',
+    name: 'Arraigo Sociolaboral',
+    shortDescription: 'Residencia por arraigo sociolaboral: 2 años de permanencia y uno o varios contratos que sumen al menos 20 horas semanales.',
+    metaTitle: 'Arraigo Sociolaboral 2026 · Requisitos y contratos | EXPERT',
+    metaDescription: 'Arraigo sociolaboral conforme al RD 1155/2024: 2 años en España, contrato/s con al menos 20 h semanales globales y salario conforme SMI o convenio.',
     description:
-      'El arraigo laboral (art. 123 del RD 557/2011) permite regularizar la situación de personas extracomunitarias que llevan al menos 2 años en España y han trabajado de forma irregular durante un mínimo de 6 meses. Requiere acreditar la relación laboral mediante sentencia judicial, acta de la Inspección de Trabajo o resolución del SEPE. Es la única vía de arraigo que puede obtenerse con solo 2 años de permanencia, aunque su instrucción es compleja y requiere una documentación específica.',
+      'El arraigo sociolaboral es la modalidad vigente regulada por el Real Decreto 1155/2024. Con carácter general exige al menos 2 años de permanencia continuada en España y contar con uno o varios contratos de trabajo que garanticen el salario mínimo interprofesional o el salario de convenio en proporción a la jornada, con una suma no inferior a 20 horas semanales. También se revisan la situación y solvencia del empleador o empleadores. El antiguo esquema de arraigo laboral basado en acreditar una relación laboral irregular mediante acta o sentencia no debe utilizarse como regla operativa actual.',
     price: '490 € + IVA',
     stripePriceId: 'price_1TZYl8LeYwwgvux4EWcyxqwn',
     checkoutLabel: 'Contratar — 490 € + IVA',
-    duration: '3–6 meses',
+    checkoutLegal: 'La tasa Modelo 790 código 052, epígrafe 2.3.1, se abona aparte.',
+    duration: 'Resolución administrativa: hasta 3 meses',
     keyPoints: [
-      { title: '2 años de permanencia (no 3)', text: 'El arraigo laboral solo exige 2 años de permanencia en España, frente a los 3 años del arraigo social.' },
-      { title: 'Relación laboral acreditable', text: 'Debes acreditar haber trabajado al menos 6 meses mediante resolución firme de la Inspección de Trabajo, sentencia judicial o resolución del SEPE.' },
-      { title: 'Sin oferta de empleo', text: 'No se exige una oferta de empleo para el momento de la solicitud, a diferencia del arraigo social.' },
+      { title: '2 años de permanencia', text: 'Debe acreditarse permanencia continuada durante al menos los 2 años anteriores a la solicitud, revisando periodos no computables.' },
+      { title: '20 horas semanales globales', text: 'Puede existir uno o varios contratos; la suma de jornadas debe alcanzar al menos 20 horas semanales y respetar salario aplicable.' },
+      { title: 'Empleador viable', text: 'Se comprueba que el empleador esté al corriente y disponga de medios suficientes para las obligaciones del contrato.' },
     ],
     audience: [
-      'Extracomunitarios con 2 años de permanencia en España que han trabajado de forma irregular',
-      'Personas que cuentan con acta de la Inspección de Trabajo o sentencia judicial que acredita la relación laboral',
-      'Trabajadores agrícolas, del hogar u otros sectores con mayor incidencia de trabajo irregular',
+      'Personas extranjeras con al menos 2 años de permanencia continuada en España y contrato de trabajo',
+      'Personas con varios contratos parciales que conjuntamente alcancen los requisitos de jornada y salario',
+      'Casos con empleos estacionales o varios empleadores que necesitan revisar el encaje reglamentario',
     ],
     requirements: [
-      '2 años de permanencia continuada en España',
-      'Relación laboral irregular de al menos 6 meses acreditada mediante: acta de Inspección de Trabajo, resolución del SEPE o sentencia judicial',
-      'Sin antecedentes penales en España ni en el país de origen (últimos 5 años)',
-      'Pasaporte en vigor',
+      'Permanencia continuada mínima de 2 años en España',
+      'Situación compatible con la solicitud y revisión de periodos como solicitante de protección internacional',
+      'Uno o varios contratos firmados que sumen al menos 20 horas semanales',
+      'Salario conforme al SMI o convenio aplicable, en proporción a la jornada',
+      'Empleador/es al corriente de obligaciones tributarias y de Seguridad Social y con solvencia suficiente',
+      'Carecer de antecedentes penales en los términos legalmente exigibles',
     ],
     includes: [
-      'Evaluación previa del expediente y la documentación disponible',
-      'Revisión de la resolución o acta acreditativa de la relación laboral',
-      'Preparación del formulario EX-01 y documentación completa',
-      'Presentación ante la Oficina de Extranjería',
-      'Seguimiento del expediente y atención a requerimientos',
+      'Evaluación previa del expediente',
+      'Revisión del periodo de permanencia',
+      'Revisión de contrato/s, jornada y salario',
+      'Revisión documental del empleador y solvencia',
+      'Preparación de EX-10 y expediente',
+      'Presentación telemática y seguimiento ordinario',
     ],
     requiredDocs: [
-      'Pasaporte en vigor (todas las páginas)',
-      'Acta de la Inspección de Trabajo, resolución del SEPE o sentencia judicial acreditativa de la relación laboral (mínimo 6 meses)',
-      'Certificado de empadronamiento histórico (2 años)',
-      'Certificado de antecedentes penales de España',
-      'Certificado de antecedentes penales del país de origen (apostillado y traducido)',
-      'Fotografía reciente en color (tamaño carné)',
+      'Pasaporte completo',
+      'Pruebas de permanencia continuada durante al menos 2 años',
+      'Certificado de antecedentes penales extranjero cuando proceda',
+      'Contrato o contratos firmados',
+      'NIF y documentación societaria/representación del empleador cuando proceda',
+      'Documentación de solvencia del empleador (IRPF, IVA, Impuesto sobre Sociedades o VILE, según proceda)',
+      'Titulación, homologación o reconocimiento cuando la profesión sea regulada',
+    ],
+    process: [
+      { title: 'Comprobar permanencia', text: 'Reconstruimos los 2 años y revisamos periodos que no sean computables.' },
+      { title: 'Validar contrato/s', text: 'Comprobamos jornada global, salario, firmas y condiciones.' },
+      { title: 'Validar empleador', text: 'Revisamos obligaciones y solvencia suficiente.' },
+      { title: 'Preparar y presentar', text: 'Preparamos EX-10, tasa y presentación en Mercurio tras aprobación humana.' },
     ],
     notIncluded: [
-      'Procedimiento judicial o inspección para obtener el acta (servicio diferenciado)',
-      'Tasa administrativa Modelo 790 cód. 052',
-      'Traducciones juradas y apostillas',
-      'Recursos en caso de denegación',
+      'Tasa administrativa Modelo 790 código 052',
+      'Traducciones juradas, apostillas o legalizaciones',
+      'Recursos administrativos o judiciales',
     ],
     reviewBeforeHiring: [
-      'Sin resolución firme que acredite la relación laboral, el arraigo laboral no es viable — consulta antes de contratar',
-      'Si tienes antecedentes penales, consulta previamente',
+      'Si no dispones todavía de contrato/s, hay que revisar otra vía de arraigo',
+      'Si los contratos no suman 20 horas semanales o existen dudas salariales, se revisa antes de presentar',
     ],
     finalCta: {
-      title: '¿Llevas 2 años en España y tienes acta de la Inspección de Trabajo?',
-      text: 'El arraigo laboral puede ser tu vía. Revisamos tu documentación y gestionamos el expediente completo.',
+      title: '¿Llevas 2 años en España y tienes uno o varios contratos?',
+      text: 'Revisamos jornada, salario, empleador y documentación antes de preparar el arraigo sociolaboral.',
     },
     faqs: [
-      { q: '¿Qué documentos acreditan la relación laboral?', a: 'Los únicos válidos son: resolución firme de la Inspección de Trabajo (ITSS), sentencia judicial o resolución del SEPE. No valen nóminas, contratos o declaraciones del empleador por sí solas.' },
-      { q: '¿Cómo puedo obtener el acta de la Inspección de Trabajo?', a: 'Normalmente mediante una denuncia ante la ITSS. Podemos orientarte sobre este proceso o derivarte a profesionales especializados en derecho laboral.' },
-      { q: '¿Se exige oferta de empleo para el arraigo laboral?', a: 'No. El arraigo laboral no exige disponer de un contrato o una oferta de empleo en el momento de la solicitud.' },
-      { q: '¿Cuánto tiempo tarda?', a: 'Entre 3 y 6 meses desde la presentación, dependiendo de la Oficina de Extranjería. El plazo legal de resolución es de 3 meses.' },
+      { q: '¿Sigue existiendo el antiguo arraigo laboral?', a: 'La modalidad operativa vigente es el arraigo sociolaboral regulado por el RD 1155/2024. La lógica antigua basada en relación laboral irregular no debe usarse como requisito actual.' },
+      { q: '¿Puedo presentar varios contratos?', a: 'Sí, en los supuestos admitidos; la suma debe cumplir la jornada mínima global y las demás condiciones reglamentarias.' },
+      { q: '¿Cuántas horas necesito?', a: 'La suma de los contratos debe representar una jornada semanal no inferior a 20 horas en cómputo global.' },
+      { q: '¿Qué formulario se presenta?', a: 'Se utiliza el formulario EX-10 para esta autorización por circunstancias excepcionales.' },
     ],
   },
   {
@@ -728,6 +782,8 @@ export const services: Service[] = [
         'Podemos ayudarte a preparar y presentar su solicitud de nacionalidad española por residencia, revisando previamente si cumple el plazo legal de 1 año y si la documentación está completa.'
     },
     faqs: [
+  {"q": "¿Hay que aportar siempre el certificado de nacimiento de la madre?", "a": "No es un requisito general de toda solicitud inicial de nacionalidad de un menor. Primero revisamos los documentos existentes para acreditar su apellido personal. Si hace falta prueba adicional, un certificado de matrimonio que recoja el apellido anterior puede ser una alternativa, sujeta a la aceptación del Registro Civil competente. No encargues certificados ni traducciones nuevos sin revisar antes qué hace falta."},
+  {"q": "¿Se puede duplicar el apellido para evitar aportar documentos?", "a": "La duplicación depende de los supuestos legales y de la filiación; no es una elección para evitar documentación. El pasaporte o la TIE de la madre pueden recoger un apellido adquirido por matrimonio. No querer aportar o traducir un documento no equivale a desconocer su apellido personal. Revisamos los hechos y la prueba antes de cerrar el formulario."},
       {
         q: '¿Mi hijo obtiene la nacionalidad automáticamente por haber nacido en España?',
         a:
@@ -802,7 +858,7 @@ export const services: Service[] = [
     metaTitle: 'Reagrupación Familiar en España · EXPERT Asesoría',
     metaDescription: 'Tramitamos la reagrupación familiar en España desde 390 € + IVA. Cónyuge, hijos y ascendientes. Evaluación de ingresos, vivienda y documentación incluida.',
     description:
-      'La reagrupación familiar (arts. 52-60 de la LO 4/2000 y arts. 52-60 del RD 557/2011) permite que los residentes legales en España traigan a vivir con ellos a sus familiares más cercanos: cónyuge o pareja de hecho, hijos menores de 18 años y ascendientes dependientes. Gestionamos el expediente completo: evaluación de los requisitos económicos y de vivienda, preparación de toda la documentación y presentación ante la Oficina de Extranjería o en el Consulado español del país de origen del familiar.',
+      'La reagrupación familiar se tramita conforme a la Ley Orgánica 4/2000 y al Reglamento aprobado por el RD 1155/2024. Revisamos qué familiares pueden reagruparse, los recursos fijos y regulares, la vivienda adecuada y la documentación exigible antes de presentar el expediente.',
     price: '390 € + IVA',
     stripePriceId: 'price_1TZYlBLeYwwgvux4c3bW4zwF',
     checkoutLabel: 'Contratar — 390 € + IVA',
@@ -819,7 +875,7 @@ export const services: Service[] = [
     ],
     requirements: [
       'Autorización de residencia del reagrupante vigente (al menos 1 año de residencia previa)',
-      'Ingresos suficientes: al menos 150 % del IPREM mensual para el primer familiar reagrupado',
+      'Ingresos suficientes: referencia general del 150 % del IPREM para una unidad familiar de dos miembros y 50 % adicional por cada miembro extra, con posibles minoraciones en supuestos con menores',
       'Vivienda en condiciones de habitabilidad suficiente (informe del Ayuntamiento)',
       'Parentesco acreditable: matrimonio, filiación o dependencia económica',
       'Familiar sin antecedentes penales',
@@ -854,7 +910,7 @@ export const services: Service[] = [
     },
     faqs: [
       { q: '¿Qué familiares puedo reagrupar?', a: 'Cónyuge o pareja de hecho inscrita, hijos menores de 18 años (o mayores si son dependientes), y ascendientes (padres) dependientes económicamente.' },
-      { q: '¿Cuánto dinero tengo que ganar?', a: 'Al menos el 150 % del IPREM mensual para el primer familiar (aprox. 1.200 € netos/mes en 2025) y un 50 % adicional por cada familiar extra.' },
+      { q: '¿Cuánto dinero tengo que ganar?', a: 'Como regla general, una unidad familiar de dos miembros exige recursos mensuales equivalentes al 150 % del IPREM y se añade el 50 % por cada miembro adicional. En determinados casos con menores la cuantía puede minorarse, por lo que revisamos el supuesto concreto.' },
       { q: '¿Necesito un piso grande?', a: 'Depende del número de personas. El Ayuntamiento emite un informe de habitabilidad según los metros cuadrados y el número de ocupantes.' },
       { q: '¿Mi cónyuge puede trabajar cuando llegue?', a: 'Si reagrupas a tu cónyuge, la autorización de residencia que se le concede incluye en general autorización para trabajar.' },
     ],
@@ -882,8 +938,8 @@ export const services: Service[] = [
       'Formulario de solicitud (EX-01 o EX-02) cumplimentado',
       'Fotografía reciente en color tamaño carné',
       'Justificante de pago de la tasa (Modelo 790 código 052)',
-      'Certificado de empadronamiento (mínimo 3 años continuados si aplica arraigo)',
-      'Contrato de trabajo o oferta laboral firmada (si aplica)',
+      'Pruebas de permanencia continuada según la modalidad de arraigo aplicable',
+      'Documentación específica según la modalidad de residencia o arraigo aplicable',
       'Medios económicos suficientes (nóminas, extractos bancarios o similar)',
       'Seguro médico privado sin copago y sin carencia (si no cotiza a SS)',
       'Antecedentes penales del país de origen apostillados y traducidos',
@@ -905,12 +961,12 @@ export const services: Service[] = [
     name: 'Alta de Autónomo',
     shortDescription: 'Tramitación del alta en el RETA y gestión de la actividad económica.',
     description:
-      'Gestionamos tu alta como autónomo en la Agencia Tributaria (Modelo 036/037) y en la Seguridad Social (RETA), con asesoramiento sobre el epígrafe de actividad más adecuado, cuota de autónomos, tarifa plana y obligaciones fiscales desde el inicio.',
+      'Gestionamos tu alta como autónomo en la Agencia Tributaria (Modelo 036) y en la Seguridad Social (RETA), con asesoramiento sobre el epígrafe de actividad más adecuado, cuota de autónomos, tarifa plana y obligaciones fiscales desde el inicio.',
     price: '120 € + IVA',
     stripePriceId: 'price_1TXMmKLeYwwgvux4oXpYh27g',
     duration: '1–3 días hábiles',
     includes: [
-      'Modelo 036/037 — Alta en Hacienda',
+      'Modelo 036 — Alta en Hacienda',
       'Alta en el RETA (Seguridad Social)',
       'Asesoramiento sobre epígrafe y base de cotización',
       'Información sobre tarifa plana y bonificaciones',
@@ -918,7 +974,7 @@ export const services: Service[] = [
     ],
     faqs: [
       { q: '¿Cuánto tarda el alta?', a: 'El alta fiscal es inmediata. El alta en el RETA puede tardar 1–3 días.' },
-      { q: '¿Cuál es la cuota de autónomos en 2025?', a: 'Con el nuevo sistema de cotización por ingresos reales, la cuota varía entre 200 € y 590 € aproximadamente según el tramo de rendimientos netos.' }
+      { q: '¿Cuál será mi cuota de autónomos?', a: 'En 2026 depende del tramo de rendimientos netos, la base elegida dentro del tramo y los tipos aplicables. La calculamos con la tabla oficial vigente; no usamos un rango aproximado genérico.' }
     ]
   },
   {
@@ -937,7 +993,7 @@ export const services: Service[] = [
       'Escritura pública notarial',
       'Inscripción en Registro Mercantil',
       'Alta en Hacienda (Modelo 036)',
-      'Obtención del CIF definitivo'
+      'Obtención del NIF definitivo'
     ],
     faqs: [
       { q: '¿Cuánto capital mínimo se necesita?', a: 'Desde 1 euro, aunque lo habitual es un capital inicial de 3.000 €.' },
@@ -945,38 +1001,70 @@ export const services: Service[] = [
     ]
   },
   {
-    // TODO(stripe): stripePriceId es un identificador sintético — sustituir por un
-    // price_id real de Stripe (o confirmar que no hace falta, ver lib/integrations/service-checkout.ts,
-    // que usa price_data dinámico y solo necesita una clave única) antes de activar en producción.
     slug: 'constitucion-sl-circe',
     categoria: 'empresas-autonomos',
     name: 'Constitución de SL por CIRCE',
-    shortDescription: 'Constitución telemática de Sociedad Limitada a través del sistema CIRCE, más rápida y económica.',
+    shortDescription: 'Constitución telemática de Sociedad Limitada a través del sistema CIRCE, con opción de gestión completa o acompañamiento guiado.',
     description:
-      'Constituimos tu Sociedad Limitada mediante el sistema CIRCE (Centro de Información y Red de Creación de Empresas): tramitación 100% telemática con el Documento Único Electrónico (DUE), denominación social, estatutos tipo, notaría y alta fiscal coordinados en un único circuito. Es la vía más rápida y económica para socios que puedan acogerse a estatutos estandarizados.',
-    price: '180 € + IVA',
-    stripePriceId: 'price_circe_sl_constitucion',
-    duration: '3–7 días hábiles',
+      'Puedes contratar la constitución completa de tu Sociedad Limitada mediante CIRCE o elegir una sesión guiada para preparar el proceso por tu cuenta. En la gestión completa coordinamos el DUE, denominación social, estatutos tipo, notaría, inscripción registral y alta fiscal. La modalidad guiada es formativa y no incluye la presentación ni ejecución del trámite por EXPERT.',
+    price: 'Desde 180 € + IVA',
+    duration: 'Gestión completa: 3–7 días hábiles · Formación guiada: 2 horas',
+    deliveryOptions: [
+      {
+        mode: 'full_service',
+        label: 'Servicio completo',
+        description: 'EXPERT gestiona la constitución por CIRCE de principio a fin.',
+        price: '499 € + IVA',
+        duration: '3–7 días hábiles',
+        includes: [
+          'Revisión de viabilidad para CIRCE y estatutos tipo',
+          'Certificado de denominación social',
+          'Documento Único Electrónico (DUE)',
+          'Coordinación con notaría adherida a CIRCE',
+          'Inscripción en Registro Mercantil',
+          'Alta fiscal y obtención del NIF definitivo'
+        ],
+        notIncluded: [
+          'Aranceles notariales y registrales',
+          'Certificados o trámites personales de socios extranjeros',
+          'Pactos de socios o estatutos a medida'
+        ]
+      },
+      {
+        mode: 'guided',
+        label: 'Formación guiada',
+        description: 'Sesión práctica individual para preparar el trámite CIRCE por tu cuenta con apoyo profesional.',
+        price: '180 € + IVA',
+        duration: '2 horas',
+        includes: [
+          'Sesión one to one de 2 horas',
+          'Checklist personalizado',
+          'Revisión guiada de datos y documentación',
+          'Explicación paso a paso del circuito CIRCE',
+          'Resolución de dudas durante la sesión'
+        ],
+        notIncluded: [
+          'Presentación del DUE por EXPERT',
+          'Gestión de notaría o Registro Mercantil',
+          'Seguimiento posterior del expediente'
+        ]
+      }
+    ],
     includes: [
-      'Certificado de denominación social (BORME)',
-      'Documento Único Electrónico (DUE) vía CIRCE',
-      'Estatutos sociales tipo (modelo estandarizado)',
-      'Coordinación con notaría adherida al sistema CIRCE',
-      'Inscripción en Registro Mercantil',
-      'Alta fiscal en Hacienda (Modelo 036) y obtención del CIF definitivo'
+      'Modalidad a elegir: gestión completa o acompañamiento guiado',
+      'Revisión previa de requisitos para CIRCE',
+      'Orientación sobre documentación y pasos necesarios'
     ],
     requirements: [
       'Todos los socios deben aportar DNI/NIE en vigor',
-      'Aplica solo a sociedades que puedan usar estatutos tipo (sin pactos parasociales complejos)'
+      'La vía CIRCE con estatutos tipo no es adecuada para estructuras societarias complejas'
     ],
     faqs: [
-      { q: '¿En qué se diferencia de la constitución de SL estándar?', a: 'CIRCE usa un circuito telemático con estatutos tipo, por lo que es más rápido y económico. Si necesitas estatutos a medida o pactos de socios complejos, la vía estándar es más adecuada.' },
-      { q: '¿Puedo usar CIRCE si hay socios extranjeros?', a: 'Sí, siempre que dispongan de NIE. Si algún socio aún no tiene NIF/NIE, puedes contratar también el servicio de "NIF para socio extranjero".' }
+      { q: '¿Qué diferencia hay entre las dos modalidades?', a: 'En el servicio completo EXPERT realiza y coordina el trámite. En la formación guiada te enseñamos a prepararlo y gestionarlo por tu cuenta; no presentamos el expediente en tu nombre.' },
+      { q: '¿Puedo usar CIRCE si hay socios extranjeros?', a: 'Sí, siempre que dispongan de la identificación fiscal necesaria. Si algún socio no dispone de NIF/NIE, ese trámite debe resolverse previamente.' }
     ]
   },
   {
-    // TODO(stripe): stripePriceId es un identificador sintético — sustituir por un
-    // price_id real de Stripe (o confirmar que no hace falta) antes de activar en producción.
     slug: 'nif-socio-extranjero',
     categoria: 'empresas-autonomos',
     name: 'NIF para Socio Extranjero',
@@ -985,7 +1073,6 @@ export const services: Service[] = [
       'Tramitamos el Número de Identificación Fiscal (NIF) para socios, administradores o apoderados extranjeros que van a participar en una sociedad española y no disponen de NIE. Necesario para poder constituir la sociedad, firmar ante notario y figurar en el Registro Mercantil.',
     price: '60 € + IVA / persona',
     servicePriceDetail: 'Precio por cada socio o administrador que necesite NIF.',
-    stripePriceId: 'price_circe_nif_socio_extranjero',
     duration: '5–10 días hábiles',
     includes: [
       'Cumplimentación del Modelo 030 / EX-15',
@@ -998,7 +1085,7 @@ export const services: Service[] = [
       'Poder de representación si no se tramita en persona'
     ],
     faqs: [
-      { q: '¿Cuántos NIF necesito tramitar?', a: 'Uno por cada socio o administrador extranjero sin NIE que vaya a figurar en la escritura de constitución. Puedes añadir varias unidades en el carrito, una por persona.' },
+      { q: '¿Cuántos NIF necesito tramitar?', a: 'Uno por cada socio o administrador extranjero sin NIE que vaya a figurar en la escritura de constitución. El presupuesto se calcula por persona según la cantidad necesaria.' },
       { q: '¿El NIF sustituye al NIE?', a: 'No. El NIF es exclusivamente a efectos fiscales para poder constituir la sociedad; si el socio va a residir en España necesitará tramitar además su NIE/TIE.' }
     ]
   },
@@ -1052,7 +1139,7 @@ export const services: Service[] = [
     price: 'Consultar',
     duration: 'Variable',
     includes: [
-      'Baja en Hacienda (Modelo 036/037)',
+      'Baja en Hacienda (Modelo 036)',
       'Baja en el RETA',
       'Liquidación de impuestos pendientes',
       'Para sociedades: acta de disolución, escritura e inscripción registral'
@@ -1078,8 +1165,8 @@ export const services: Service[] = [
       'Justificante de presentación'
     ],
     faqs: [
-      { q: '¿Cuándo hay que depositar las cuentas anuales?', a: 'Dentro del mes siguiente a la aprobación en Junta (normalmente hasta el 30 de julio para ejercicios cerrados a 31 de diciembre).' },
-      { q: '¿Qué pasa si no deposito las cuentas?', a: 'La sociedad puede quedar en situación de cierre registral y el ICAC puede imponer multas de hasta 300.000 €.' }
+      { q: '¿Cuándo hay que depositar las cuentas anuales?', a: 'Dentro del mes siguiente a su aprobación. La fecha concreta depende del cierre del ejercicio y de la fecha real de aprobación; no usamos un 30/31 de julio como plazo universal.' },
+      { q: '¿Qué pasa si no deposito las cuentas?', a: 'Puede producirse cierre registral y existe un régimen sancionador. El cierre tiene excepciones legales y la cuantía de la sanción depende, entre otros factores, del tamaño de la sociedad y de sus cifras contables.' }
     ]
   },
   {
@@ -1088,7 +1175,7 @@ export const services: Service[] = [
     name: 'Apoderamientos y Modificaciones Mercantiles',
     shortDescription: 'Cambio de administrador, modificación de estatutos, poderes notariales y compraventa de participaciones.',
     description:
-      'Gestionamos todo tipo de modificaciones societarias: cambio o nombramiento de administrador, modificación de estatutos sociales, otorgamiento y revocación de poderes notariales, ampliaciones y reducciones de capital, compraventa de participaciones sociales y otras operaciones registrales.',
+      'Gestionamos modificaciones societarias y apoderamientos: cambios de administrador, estatutos, otorgamiento o revocación de poderes, capital, participaciones y otras operaciones registrales. Antes de inscribir clasificamos el acto y el alcance del poder, porque no todos los poderes tienen el mismo régimen registral.',
     price: 'Consultar',
     duration: '7–20 días hábiles',
     includes: [
@@ -1100,7 +1187,7 @@ export const services: Service[] = [
     ],
     faqs: [
       { q: '¿Cómo cambio al administrador de mi empresa?', a: 'Se acuerda en Junta General o por el propio órgano de administración, se eleva a escritura notarial y se inscribe en el Registro Mercantil.' },
-      { q: '¿Qué es un poder notarial y para qué sirve?', a: 'Es un documento que otorga a una persona la facultad de actuar en nombre de otra o de la empresa. Puede ser general o especial (para actos concretos).' }
+      { q: '¿Qué es un poder notarial y para qué sirve?', a: 'Es un instrumento de representación voluntaria. Antes de tramitarlo hay que definir su alcance: los poderes generales mercantiles suelen acceder al Registro Mercantil, mientras que existen excepciones legales para determinados poderes para pleitos o actos concretos.' }
     ]
   },
 
@@ -1129,9 +1216,9 @@ export const services: Service[] = [
     slug: 'matriculacion',
     categoria: 'trafico-capitania-maritima',
     name: 'Matriculación de Vehículos',
-    shortDescription: 'Primera matriculación de vehículos nuevos e importados.',
+    shortDescription: 'Primera matriculación e importación de vehículos, con circuito diferenciado UE y fuera de la UE.',
     description:
-      'Gestionamos la primera matriculación de vehículos nuevos o importados: liquidación del IEDMT (impuesto de matriculación), presentación de documentación ante la DGT, obtención de placas y entrega del permiso de circulación definitivo.',
+      'Gestionamos la primera matriculación y la importación de vehículos, diferenciando procedencia UE y fuera de la UE. Revisamos homologación/ITV, fiscalidad de la adquisición o importación, IEDMT, documentación aduanera cuando proceda y trámite final ante la DGT.',
     price: 'Consultar',
     duration: '5–10 días hábiles',
     includes: [
@@ -1141,7 +1228,7 @@ export const services: Service[] = [
       'Obtención de placas y permiso de circulación'
     ],
     faqs: [
-      { q: '¿Cuándo debo pagar el impuesto de matriculación?', a: 'En la primera matriculación en España o cuando el vehículo supera ciertos límites de emisiones de CO₂.' }
+      { q: '¿Cuándo debo pagar el impuesto de matriculación?', a: 'Depende del hecho imponible, posibles exenciones o no sujeciones, la categoría del vehículo, sus emisiones oficiales y la base aplicable. Lo verificamos antes de presentar el Modelo 576 o la vía que corresponda.' }
     ]
   },
   {
@@ -1150,7 +1237,7 @@ export const services: Service[] = [
     name: 'Duplicado de Documentos de Tráfico',
     shortDescription: 'Obtención de duplicados del permiso de conducir, de circulación o ficha técnica.',
     description:
-      'Tramitamos duplicados de permiso de conducir, permiso de circulación o ficha técnica del vehículo por pérdida, robo o deterioro ante la DGT o la prefectura correspondiente.',
+      'Tramitamos duplicados y renovaciones documentales de tráfico según el documento y la causa: permiso de conducir, permiso de circulación y ficha técnica/eITV. Verificamos el canal, la tasa y si el caso es realmente un duplicado o un trámite distinto.',
     price: 'Desde 50 € + IVA',
     duration: '2–5 días hábiles',
     includes: [
@@ -1158,7 +1245,7 @@ export const services: Service[] = [
       'Obtención del duplicado correspondiente'
     ],
     faqs: [
-      { q: '¿Puedo conducir mientras espero el duplicado del carnet?', a: 'No, necesitas tener el permiso físico o el resguardo provisional en vigor para circular legalmente.' }
+      { q: '¿Puedo conducir mientras llega el duplicado?', a: 'Cuando la DGT emite autorización provisional, ésta permite conducir en España durante su vigencia mientras llega el permiso definitivo. Revisamos el justificante concreto del expediente.' }
     ]
   },
   {
@@ -1167,7 +1254,7 @@ export const services: Service[] = [
     name: 'Trámites de Embarcaciones',
     shortDescription: 'Matriculación, transferencias y gestiones ante Capitanía Marítima.',
     description:
-      'Gestionamos los trámites de embarcaciones de recreo ante Capitanía Marítima: matriculación, cambio de titularidad, despachos, abanderamiento y documentación para titulaciones náuticas. También tramitamos bajas y transferencias de motos de agua.',
+      'Gestionamos trámites de embarcaciones de recreo ante la Administración marítima: inscripción y abanderamiento/matriculación cuando proceda, cambios registrales, cambio de titularidad, bajas y permisos/certificados de navegación. La vía depende de eslora, marcado CE, lista/uso y acto registral.',
     price: 'Consultar',
     duration: '5–15 días hábiles',
     includes: [
@@ -1177,7 +1264,7 @@ export const services: Service[] = [
       'Tramitación de bajas'
     ],
     faqs: [
-      { q: '¿Dónde se tramitan los permisos de embarcaciones en España?', a: 'Ante la Capitanía Marítima de la provincia correspondiente, dependiente de la Dirección General de la Marina Mercante.' }
+      { q: '¿Dónde se tramitan los documentos de una embarcación?', a: 'Depende del trámite. Las Capitanías/Distritos Marítimos y la sede electrónica de Transportes gestionan distintos procedimientos de registro, abanderamiento, cambios de titularidad y permisos de navegación.' }
     ]
   },
 
@@ -1199,8 +1286,8 @@ export const services: Service[] = [
       'Inscripción en el Registro de la Propiedad'
     ],
     faqs: [
-      { q: '¿Qué impuestos paga el comprador de un piso de segunda mano?', a: 'El Impuesto de Transmisiones Patrimoniales (ITP), cuyo tipo varía según la comunidad autónoma (entre el 6% y el 10% del precio).' },
-      { q: '¿Y si compro una vivienda nueva?', a: 'En vivienda nueva pagas IVA (10%) más Actos Jurídicos Documentados (AJD, entre el 0,5% y el 1,5% según CCAA).' }
+      { q: '¿Qué impuestos paga el comprador de un piso de segunda mano?', a: 'El Impuesto de Transmisiones Patrimoniales (ITP), cuyo tipo depende de la comunidad autónoma, del valor y de posibles tipos reducidos. Verificamos la normativa autonómica vigente antes de calcularlo.' },
+      { q: '¿Y si compro una vivienda nueva?', a: 'En vivienda nueva puede resultar aplicable IVA más Actos Jurídicos Documentados (AJD). El tipo de AJD y los beneficios fiscales dependen de la comunidad autónoma y del supuesto concreto.' }
     ]
   },
   {
@@ -1220,7 +1307,7 @@ export const services: Service[] = [
       'Inscripción en Registro de la Propiedad y otras gestiones'
     ],
     faqs: [
-      { q: '¿Cuánto tiempo tengo para aceptar la herencia?', a: 'No hay plazo para aceptar, pero el Impuesto de Sucesiones debe liquidarse en 6 meses (prorrogable otros 6).' },
+      { q: '¿Cuánto tiempo tengo para tramitar el Impuesto de Sucesiones?', a: 'En Comunitat Valenciana, cuando resulte competente, el Modelo 650 se presenta en general en 6 meses desde el fallecimiento y puede solicitarse prórroga dentro de los primeros 5 meses. La aceptación civil de la herencia es una cuestión distinta.' },
       { q: '¿Puedo renunciar a la herencia?', a: 'Sí, la renuncia es pura y simple, y puede hacerse ante notario.' }
     ]
   },
@@ -1240,7 +1327,7 @@ export const services: Service[] = [
       'Inscripción registral si hay inmuebles'
     ],
     faqs: [
-      { q: '¿Cuánto se paga por una donación entre padres e hijos?', a: 'Depende de la comunidad autónoma. Algunas tienen reducciones muy significativas (hasta el 99% en Madrid o Andalucía para ciertas donaciones).' }
+      { q: '¿Cuánto se paga por una donación entre padres e hijos?', a: 'Depende de la comunidad competente, el tipo de bien, parentesco, valoración y requisitos formales. En Comunitat Valenciana revisamos VALENCIA_ISD_2026 y el Modelo 651 antes de cuantificar.' }
     ]
   },
   {
@@ -1249,7 +1336,7 @@ export const services: Service[] = [
     name: 'Cancelación de Hipoteca',
     shortDescription: 'Cancelación registral de la hipoteca una vez pagado el préstamo.',
     description:
-      'Cuando terminas de pagar la hipoteca, el banco no cancela automáticamente la carga en el Registro de la Propiedad. Gestionamos la obtención del certificado de deuda cero, la firma notarial de la escritura de cancelación y la inscripción registral.',
+      'Cuando se extingue la deuda hipotecaria, la carga no desaparece automáticamente del Registro de la Propiedad. Gestionamos la documentación bancaria, la escritura pública de cancelación, la autoliquidación exenta cuando corresponda y la inscripción registral.',
     price: 'Desde 150 € + IVA',
     duration: '2–4 semanas',
     includes: [
@@ -1259,7 +1346,7 @@ export const services: Service[] = [
       'Nota simple registral actualizada'
     ],
     faqs: [
-      { q: '¿Por qué el banco no cancela la hipoteca por su cuenta?', a: 'El banco solo emite el certificado de deuda cero. La cancelación registral debe tramitarla el titular del préstamo.' }
+      { q: '¿Por qué sigue apareciendo la hipoteca si el préstamo ya está pagado?', a: 'Porque extinguir la deuda y cancelar la carga registral son actos distintos. La cancelación registral requiere escritura pública del acreedor y presentación en el Registro; no es automática.' }
     ]
   },
 
@@ -1268,19 +1355,20 @@ export const services: Service[] = [
     slug: 'certificado-digital-persona-fisica',
     categoria: 'certificado-digital',
     name: 'Certificado Digital Persona Física — Camerfirma',
-    shortDescription: 'Obtén tu certificado digital cualificado Camerfirma. Válido ante AEAT, Seguridad Social y todos los organismos públicos.',
+    shortDescription: 'Certificado digital cualificado Camerfirma 100 % online, sin presencia física. Identificación con EXPERT y tramitación en un máximo de 24 horas laborables desde documentación e identidad validadas.',
     description:
-      'Somos Punto de Registro Autorizado de Camerfirma. Tramitamos la obtención o renovación de tu certificado digital cualificado de persona física, imprescindible para firmar documentos electrónicamente y relacionarte con la AEAT, Seguridad Social, Notarías y cualquier organismo público o privado. El proceso es inmediato: verificación de identidad presencial o por videoconferencia, emisión y instalación en el mismo acto.',
+      'EXPERT gestiona la tramitación dentro del proceso Camerfirma y realiza la identificación y validación necesarias para la emisión del certificado. La tramitación es 100 % online, sin desplazamientos ni presencia física. Una vez recibida la documentación completa y validada la identidad, EXPERT tramita el certificado en un plazo máximo de 24 horas laborables e incluye asistencia para su instalación y prueba de funcionamiento.',
     price: '90 € + IVA',
-    duration: 'Inmediato (presencial o videoconferencia)',
+    duration: 'Máximo 24 horas laborables desde documentación completa e identidad validada',
     stripePriceId: 'price_1TZYiBLeYwwgvux4EO07gS0W',
     checkoutLabel: 'Solicitar certificado digital',
+    checkoutLegal: 'Certificado personal: la contratación y la factura se vinculan al perfil de la persona titular.',
     metaTitle: 'Certificado Digital Persona Física Camerfirma · 90 € + IVA | EXPERT Asesoría',
-    metaDescription: 'Obtén tu certificado digital Camerfirma para persona física desde 90 € + IVA. Tramitación inmediata presencial o por videoconferencia. Punto de Registro Autorizado.',
+    metaDescription: 'Certificado digital Camerfirma para persona física por 90 € + IVA. 100 % online, sin presencia física. Identificación con EXPERT y tramitación máxima de 24 horas laborables.',
     keyPoints: [
       { title: 'Reconocido oficialmente', text: 'Válido ante AEAT, Seguridad Social, Notarías y todos los organismos públicos y privados.' },
-      { title: 'Inmediato', text: 'Emisión en el mismo acto, presencialmente o por videoconferencia sin desplazamiento.' },
-      { title: 'Vigencia 2–3 años', text: 'Certificado con larga validez. Te avisamos cuando se aproxime la renovación.' },
+      { title: '100 % online', text: 'Identificación y tramitación remotas con EXPERT dentro del proceso Camerfirma, sin presencia física.' },
+      { title: 'Vigencia 5 años', text: 'La modalidad de persona física comercializada por EXPERT tiene una vigencia de 5 años.' },
       { title: 'Instalación incluida', text: 'Te ayudamos a instalarlo y probarlo en tu equipo para que funcione desde el primer minuto.' },
     ],
     audience: [
@@ -1295,7 +1383,7 @@ export const services: Service[] = [
       'Ordenador con Windows o macOS para la instalación',
     ],
     includes: [
-      'Verificación de identidad presencial o por videoconferencia',
+      'Identificación y validación online por EXPERT dentro del proceso Camerfirma',
       'Emisión del certificado digital cualificado Camerfirma',
       'Instalación y configuración en tu equipo',
       'Prueba de funcionamiento antes de finalizar',
@@ -1312,48 +1400,50 @@ export const services: Service[] = [
     ],
     process: [
       { title: 'Solicita y paga online', text: 'Completa el formulario y realiza el pago. Recibirás confirmación inmediata.' },
-      { title: 'Confirmamos la cita', text: 'Te contactamos en menos de 24 h para fijar la cita presencial o por videoconferencia.' },
-      { title: 'Verificación de identidad', text: 'Verificamos la copia de tu DNI/TIE y domicilio. El proceso dura menos de 15 minutos.' },
-      { title: 'Emisión e instalación', text: 'El certificado se genera en el momento y te ayudamos a instalarlo y probarlo.' },
+      { title: 'Validación online', text: 'Revisamos la documentación y realizamos la identificación remota necesaria, sin desplazamientos.' },
+      { title: 'Documentación e identidad validadas', text: 'Cuando la documentación está completa y la identidad ha quedado validada, comienza el SLA de tramitación.' },
+      { title: 'Tramitación en máximo 24 h laborables', text: 'Tramitamos la emisión y te ayudamos a instalar y comprobar el certificado en tu equipo.' },
     ],
     notIncluded: [
       'Renovación al vencer el certificado (se tramita aparte, mismo precio)',
       'Soporte técnico general del equipo o sistema operativo',
     ],
     reviewBeforeHiring: [
-      'Ten a mano una copia (foto o escáner) de tu DNI/TIE antes de la cita',
-      'El certificado se instala en el equipo que uses en la sesión — lleva el que uses habitualmente',
+      'Ten preparada una copia legible de tu DNI/TIE antes de iniciar la identificación online',
+      'Ten disponible el equipo habitual en el que quieres instalar el certificado para completar la asistencia remota'
     ],
     finalCta: {
       title: '¿Listo para tener tu certificado digital hoy?',
-      text: 'Solicítalo ahora y te llamamos para fijar la cita. En menos de 24 horas tienes tu certificado instalado y funcionando.',
+      text: 'Solicítalo online. En cuanto la documentación esté completa y la identidad validada, EXPERT tramita la emisión en un máximo de 24 horas laborables y te ayuda con la instalación.',
     },
     faqs: [
       { q: '¿Qué documentos necesito para el certificado de persona física?', a: 'Solo la copia de tu tarjeta DNI o TIE (foto o escáner de ambas caras) y tu domicilio completo. Nada más.' },
-      { q: '¿Puedo hacerlo por videoconferencia sin ir a vuestra oficina?', a: 'Sí. Por videoconferencia nos envías la copia del DNI/TIE antes de la sesión y en la videollamada verificamos tu identidad. Todo en menos de 15 minutos.' },
+      { q: '¿Tengo que acudir presencialmente?', a: 'No. La tramitación con EXPERT es 100 % online. Realizamos la identificación y validación remotas dentro del proceso Camerfirma, sin necesidad de acudir físicamente a una oficina.' },
       { q: '¿Qué diferencia hay entre el certificado de persona física y el de entidad?', a: 'El de persona física te identifica a ti como individuo. El de entidad identifica a tu empresa o sociedad y permite actuar en su nombre.' },
-      { q: '¿Cuánto dura el certificado Camerfirma?', a: 'Entre 2 y 3 años según el tipo. Te avisamos con tiempo para renovarlo sin interrupciones.' },
+      { q: '¿Cuánto dura el certificado Camerfirma?', a: 'La modalidad de persona física comercializada por EXPERT tiene una vigencia de 5 años. Antes de contratar revisamos que esta sea la modalidad adecuada para tu uso.' },
       { q: '¿Es válido para todos los organismos?', a: 'Sí. Camerfirma es una Autoridad de Certificación reconocida y su certificado es válido en AEAT, Seguridad Social, DGT, Notarías y cualquier organismo público o privado.' },
-      { q: '¿Qué pasa si ya tengo uno caducado?', a: 'Sin problema. Lo renovamos con el mismo proceso. El precio es el mismo: 90 € + IVA.' },
+      { q: '¿Cuál es el plazo de tramitación?', a: 'Máximo 24 horas laborables desde que EXPERT dispone de la documentación completa y la identidad ha quedado validada. Si falta documentación, el plazo comienza cuando el expediente está completo.' },
+      { q: '¿Qué pasa si ya tengo uno caducado?', a: 'Sin problema. Lo renovamos con el mismo proceso online. El precio es el mismo: 90 € + IVA.' },
     ],
   },
   {
     slug: 'certificado-digital-entidad',
     categoria: 'certificado-digital',
     name: 'Certificado Digital de Entidad — Camerfirma',
-    shortDescription: 'Certificado digital cualificado para tu empresa, asociación o entidad. Actúa digitalmente en nombre de tu organización.',
+    shortDescription: 'Certificado digital Camerfirma para entidad mercantil, 100 % online y sin presencia física. EXPERT valida al representante y tramita la emisión en máximo 24 horas laborables desde expediente completo.',
     description:
-      'Como Punto de Registro Autorizado de Camerfirma, tramitamos el certificado digital de entidad (persona jurídica) para que tu empresa, asociación o cualquier organización pueda firmar documentos electrónicamente y relacionarse de forma segura con la AEAT, Seguridad Social, Registros y cualquier organismo público o privado. El proceso incluye la verificación del representante legal y la emisión e instalación en 24–48 horas.',
+      'EXPERT gestiona la tramitación dentro del proceso Camerfirma. Revisamos la documentación de la entidad y las facultades del representante, realizamos la identificación y validación online y tramitamos la emisión sin presencia física. Una vez recibida la documentación completa y validado el representante, el plazo máximo de tramitación es de 24 horas laborables. Incluye asistencia para instalación y prueba de funcionamiento.',
     price: '150 € + IVA',
-    duration: '24–48 h desde la verificación',
+    duration: 'Máximo 24 horas laborables desde documentación completa y representante validado',
     stripePriceId: 'price_1TZYiDLeYwwgvux4ovAjIxrz',
     checkoutLabel: 'Solicitar certificado de entidad',
+    checkoutLegal: 'Certificado de entidad: la contratación y la factura deben vincularse a la organización para la que se emite.',
     metaTitle: 'Certificado Digital de Entidad Camerfirma · 150 € + IVA | EXPERT Asesoría',
-    metaDescription: 'Certificado digital Camerfirma para empresas y entidades desde 150 € + IVA. Tramitación en 24–48 h. Punto de Registro Autorizado. Válido ante AEAT, SS y todos los organismos.',
+    metaDescription: 'Certificado digital Camerfirma para entidad mercantil por 150 € + IVA. 100 % online, sin presencia física. Tramitación máxima de 24 horas laborables con EXPERT.',
     keyPoints: [
       { title: 'Para cualquier entidad', text: 'Válido para SL, SA, asociaciones, fundaciones, comunidades de propietarios y cualquier persona jurídica.' },
       { title: 'Firma en nombre de la empresa', text: 'Permite actuar y firmar electrónicamente en nombre de tu organización ante cualquier organismo.' },
-      { title: 'Tramitación ágil', text: 'Emisión en 24–48 h desde la verificación del representante legal.' },
+      { title: 'Vigencia 2 años', text: 'La modalidad de entidad comercializada por EXPERT tiene una vigencia de 2 años.' },
       { title: 'Instalación incluida', text: 'Configuramos el certificado en el equipo del representante y verificamos su correcto funcionamiento.' },
     ],
     audience: [
@@ -1369,7 +1459,7 @@ export const services: Service[] = [
       'Ordenador con Windows o macOS para la instalación',
     ],
     includes: [
-      'Verificación documental de la entidad y del representante legal',
+      'Verificación documental de la entidad y validación online del representante por EXPERT',
       'Emisión del certificado digital de entidad Camerfirma',
       'Instalación y configuración en el equipo del representante',
       'Prueba de funcionamiento antes de finalizar',
@@ -1395,8 +1485,8 @@ export const services: Service[] = [
     process: [
       { title: 'Solicita y paga online', text: 'Completa el formulario con los datos de la entidad y realiza el pago. Recibirás confirmación inmediata.' },
       { title: 'Nos envías la documentación', text: 'Copia del DNI/TIE del representante y los documentos de la entidad (escrituras, nota mercantil o estatutos).' },
-      { title: 'Verificación del representante', text: 'Verificamos la identidad del representante presencialmente o por videoconferencia. Menos de 15 minutos.' },
-      { title: 'Emisión e instalación', text: 'Emitimos el certificado en 24–48 h y te ayudamos a instalarlo y probarlo.' },
+      { title: 'Identificación online del representante', text: 'EXPERT realiza la identificación y validación remotas dentro del proceso Camerfirma, sin presencia física.' },
+      { title: 'Tramitación en máximo 24 h laborables', text: 'Desde documentación completa y representante validado, tramitamos la emisión y te ayudamos a instalar y probar el certificado.' },
     ],
     notIncluded: [
       'Renovación al vencer (se tramita aparte, mismo precio)',
@@ -1409,15 +1499,108 @@ export const services: Service[] = [
     ],
     finalCta: {
       title: '¿Tu empresa necesita certificado digital?',
-      text: 'Solicítalo ahora. En 24–48 horas tu entidad puede firmar electrónicamente y operar con cualquier organismo sin desplazamientos.',
+      text: 'Solicítalo online. Con documentación completa y representante validado, EXPERT tramita la emisión en un máximo de 24 horas laborables, sin desplazamientos.'
     },
     faqs: [
       { q: '¿Qué documentos necesita la empresa para el certificado digital?', a: 'La copia del DNI/TIE del representante, la dirección de la entidad, y los documentos de constitución: escrituras o nota mercantil para sociedades, o estatutos y acta de nombramiento para asociaciones y fundaciones.' },
       { q: '¿Quién puede solicitar el certificado de entidad?', a: 'El representante legal que figure en las escrituras o nota mercantil (administrador único, solidario, etc.). Si no figura directamente, se necesitan poderes notariales.' },
-      { q: '¿Cuánto tiempo tarda?', a: '24–48 horas desde que verificamos la documentación y la identidad del representante.' },
+      { q: '¿Cuánto tiempo tarda?', a: 'Máximo 24 horas laborables desde que EXPERT dispone de la documentación completa de la entidad y la identidad/facultades del representante han quedado validadas.' },
+      { q: '¿Es necesario acudir presencialmente?', a: 'No. La identificación del representante y la tramitación se realizan online con EXPERT dentro del proceso Camerfirma, sin presencia física.' },
       { q: '¿Qué diferencia hay con el certificado de persona física?', a: 'El de entidad identifica a la organización y permite actuar y firmar en su nombre. El de persona física solo identifica al individuo.' },
-      { q: '¿Cuánto dura el certificado?', a: 'Entre 2 y 3 años. Te avisamos con antelación para renovarlo sin interrupciones.' },
+      { q: '¿Cuánto dura el certificado?', a: 'La modalidad de entidad comercializada por EXPERT tiene una vigencia de 2 años. La renovación se tramita como una nueva gestión cuando se aproxima el vencimiento.' },
       { q: '¿Es válido para todos los organismos?', a: 'Sí. Camerfirma es reconocida por AEAT, Seguridad Social, Registros Mercantiles, Notarías y cualquier organismo público o privado.' },
+    ],
+  },
+  {
+    slug: 'pack-certificados-digitales',
+    categoria: 'certificado-digital',
+    name: 'Pack Certificados Digitales — Persona Física + Entidad',
+    shortDescription: 'Oferta conjunta: certificado digital Camerfirma de persona física + certificado de entidad mercantil por 200 € + IVA. 100 % online y sin presencia física.',
+    description:
+      'Pack de lanzamiento EXPERT para obtener en un único pedido el certificado digital Camerfirma de la persona física representante y el certificado digital de su entidad mercantil. EXPERT gestiona la tramitación dentro del proceso Camerfirma, realiza la identificación y validación online y revisa tanto la documentación personal como la societaria. El proceso es 100 % online, sin desplazamientos. Una vez recibida toda la documentación y validadas la identidad y las facultades de representación, ambos certificados se tramitan en un plazo máximo de 24 horas laborables.',
+    price: '200 € + IVA',
+    duration: 'Máximo 24 horas laborables desde expediente completo e identidades/facultades validadas',
+    stripePriceId: 'price_1S2X6ZLeYwwgvux4sPrfxFD7',
+    checkoutLabel: 'Contratar pack — 200 € + IVA',
+    checkoutLegal: 'El pack incluye un certificado personal para el usuario titular y un certificado para la entidad mercantil seleccionada. Para contratar debes vincular una entidad a tu cuenta EXPERT.',
+    metaTitle: 'Pack Certificados Digitales Camerfirma · Persona + Empresa · 200 € + IVA | EXPERT',
+    metaDescription: 'Oferta certificado digital persona física + entidad mercantil por 200 € + IVA. 100 % online, sin presencia física y tramitación máxima de 24 horas laborables con EXPERT.',
+    keyPoints: [
+      { title: 'Ahorro de 40 €', text: 'Contratados por separado suman 240 € + IVA. Con el pack pagas 200 € + IVA.' },
+      { title: '100 % online', text: 'Identificación, validación documental y tramitación remotas con EXPERT dentro del proceso Camerfirma.' },
+      { title: 'Dos certificados, un pedido', text: 'Incluye el certificado personal del representante y el certificado de la entidad mercantil seleccionada.' },
+      { title: 'Máximo 24 h laborables', text: 'El plazo comienza cuando EXPERT dispone de toda la documentación y ha validado identidad y facultades de representación.' },
+    ],
+    audience: [
+      'Administradores y representantes legales que necesitan certificado personal y de su sociedad',
+      'Socios/administradores que están digitalizando la gestión de su empresa',
+      'Empresarios que quieren centralizar ambos certificados en una sola contratación',
+    ],
+    requirements: [
+      'Cuenta EXPERT a nombre de la persona física titular del certificado personal',
+      'Entidad mercantil creada o vinculada en EXPERT para el certificado de entidad',
+      'DNI o TIE en vigor del representante',
+      'Documentación actualizada de la entidad y, cuando proceda, poderes o nombramiento',
+      'Equipo Windows o macOS para la instalación',
+    ],
+    includes: [
+      'Certificado digital Camerfirma de persona física — modalidad EXPERT con vigencia de 5 años',
+      'Certificado digital Camerfirma de entidad — modalidad EXPERT con vigencia de 2 años',
+      'Identificación y validación online del titular/representante por EXPERT',
+      'Revisión documental de la entidad y de las facultades de representación',
+      'Tramitación de ambos certificados',
+      'Instalación y configuración asistida',
+      'Prueba de funcionamiento',
+      'Soporte técnico relacionado con los certificados durante 30 días',
+    ],
+    documents: [
+      {
+        title: 'Persona física / representante',
+        items: [
+          'DNI o TIE en vigor — copia legible de ambas caras',
+          'Domicilio completo',
+          'Datos de contacto',
+        ],
+      },
+      {
+        title: 'Entidad mercantil',
+        items: [
+          'Razón social y NIF/CIF',
+          'Dirección fiscal completa',
+          'Escritura, nota mercantil o documentación registral actualizada',
+          'Poderes o documento de nombramiento cuando sean necesarios para acreditar la representación',
+        ],
+      },
+    ],
+    process: [
+      { title: 'Contrata el pack', text: 'Inicia sesión, completa tu perfil personal y selecciona o crea la entidad mercantil a la que corresponde el segundo certificado.' },
+      { title: 'Sube la documentación', text: 'Recibimos en un único flujo la documentación personal y societaria.' },
+      { title: 'Identificación y validación online', text: 'EXPERT verifica identidad, documentación y facultades dentro del proceso Camerfirma, sin presencia física.' },
+      { title: 'Tramitación', text: 'Con el expediente completo y validado, tramitamos ambos certificados en un máximo de 24 horas laborables.' },
+      { title: 'Instalación y prueba', text: 'Te ayudamos a instalar los certificados y comprobamos su funcionamiento.' },
+    ],
+    notIncluded: [
+      'Renovaciones futuras al vencer cada certificado',
+      'Obtención de escrituras, notas registrales, poderes o documentos que no aporte el cliente',
+      'Modificación de cargos o poderes societarios',
+      'Soporte técnico general del ordenador o sistema operativo',
+    ],
+    reviewBeforeHiring: [
+      'El titular del certificado personal debe ser la misma persona que realiza la identificación',
+      'Para el certificado de entidad deben poder acreditarse las facultades del representante',
+      'El plazo máximo de 24 horas laborables comienza cuando la documentación está completa y todas las validaciones necesarias han finalizado',
+    ],
+    finalCta: {
+      title: 'Dos certificados, una sola contratación y 40 € de ahorro',
+      text: 'Completa tu perfil, vincula tu sociedad y tramita online el certificado personal y el de tu entidad por 200 € + IVA.',
+    },
+    faqs: [
+      { q: '¿Qué incluye exactamente la oferta?', a: 'Incluye el certificado Camerfirma de persona física del representante y el certificado Camerfirma de la entidad mercantil seleccionada, además de identificación online, revisión documental, instalación y prueba de funcionamiento.' },
+      { q: '¿Cuánto ahorro frente a contratarlos por separado?', a: 'El certificado personal cuesta 90 € + IVA y el de entidad 150 € + IVA. Por separado son 240 € + IVA; el pack cuesta 200 € + IVA, por lo que ahorras 40 €.' },
+      { q: '¿Tengo que ir presencialmente a una oficina?', a: 'No. El proceso con EXPERT se realiza 100 % online. EXPERT realiza la identificación y validación remotas dentro del proceso Camerfirma.' },
+      { q: '¿Cuál es el plazo?', a: 'Máximo 24 horas laborables desde que la documentación personal y societaria está completa y quedan validadas la identidad y las facultades del representante.' },
+      { q: '¿Necesito crear la empresa en EXPERT?', a: 'Sí. El checkout del pack necesita vincular la entidad mercantil para que el certificado empresarial, el pedido y el expediente queden asociados correctamente.' },
+      { q: '¿Qué vigencia tiene cada certificado?', a: 'La modalidad de persona física comercializada por EXPERT tiene 5 años de vigencia y la modalidad de entidad, 2 años.' },
     ],
   },
 
@@ -1427,9 +1610,9 @@ export const services: Service[] = [
     name: 'Certificado Digital Entidad Sin Ánimo de Lucro — Camerfirma',
     shortDescription: 'Certificado digital cualificado Camerfirma para asociaciones, fundaciones y entidades sin ánimo de lucro.',
     description:
-      'Las entidades sin ánimo de lucro (asociaciones, fundaciones, ONG, comunidades religiosas…) también tienen obligaciones digitales ante la AEAT, la Seguridad Social y otros organismos. Como Punto de Registro Autorizado de Camerfirma, tramitamos el certificado digital de entidad adaptado a estas organizaciones, con verificación del representante legal y emisión en 24–48 horas.',
+      'Las entidades sin ánimo de lucro (asociaciones, fundaciones, ONG, comunidades religiosas…) también tienen obligaciones digitales ante la AEAT, la Seguridad Social y otros organismos. EXPERT tramita el certificado digital de entidad adaptado a estas organizaciones dentro del proceso Camerfirma, con validación online del representante y un plazo máximo de 24 horas laborables desde expediente completo y facultades validadas.',
     price: '150 € + IVA',
-    duration: '24–48 h desde la verificación',
+    duration: 'Máximo 24 horas laborables desde expediente completo y representante/facultades validados',
     includes: [
       'Verificación documental de la entidad y del representante legal',
       'Emisión del certificado digital de entidad sin ánimo de lucro Camerfirma',
@@ -1439,7 +1622,7 @@ export const services: Service[] = [
     ],
     faqs: [
       { q: '¿Qué documentación necesita una asociación para el certificado digital?', a: 'Estatutos de la asociación, acta de nombramiento del representante legal o presidente en vigor, y DNI/NIE de dicha persona.' },
-      { q: '¿Cuánto tarda?', a: '24–48 horas desde que verificamos la documentación y la identidad del representante legal.' },
+      { q: '¿Cuánto tarda?', a: 'Máximo 24 horas laborables desde que el expediente está completo y la identidad y facultades del representante han quedado validadas.' },
     ],
   },
 
@@ -1524,7 +1707,6 @@ export const services: Service[] = [
     metaTitle: 'Migración laboral a Holded desde 50 € por empleado | EXPERT',
     metaDescription: 'Migramos y validamos los datos laborales de tu plantilla en Holded por 50 € + IVA por empleado. Revisión previa, configuración y nómina de prueba.',
     price: '50 € + IVA / empleado',
-    stripePriceId: 'price_1UDKyMLeYwwgvux40YFzyVwi',
     duration: '3–5 días hábiles para hasta 15 empleados',
     includes: [
       'Revisión documental previa',
@@ -1550,7 +1732,7 @@ export const services: Service[] = [
     faqs: [
       { q: '¿Cuál es el pedido mínimo?', a: 'El pedido mínimo es de 5 empleados, equivalente a 250 € + IVA.' },
       { q: '¿Incluye la gestión mensual?', a: 'No. Es una implantación puntual; la gestión mensual se contrata por separado.' },
-      { q: '¿Cómo se contrata?', a: 'Primero realizamos una revisión de 15 minutos y confirmamos el número de expedientes facturables. Después enviamos el enlace de pago con la cantidad correcta.' },
+      { q: '¿Cómo se contrata?', a: 'Primero confirmamos el número de empleados a migrar. Después emitimos un presupuesto estructurado con la cantidad correcta (mínimo 5 empleados) y el pago se realiza desde el área privada.' },
     ],
   },
   {

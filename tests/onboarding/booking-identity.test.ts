@@ -7,13 +7,13 @@ function source(path: string): string {
 }
 
 describe('onboarding booking identity', () => {
-  it('only adds the contracting company email after membership validation', () => {
+  it('derives authorized company emails from durable profile-company memberships', () => {
     const helper = source('lib/admin/onboarding-booking-identity.ts');
     expect(helper).toContain(".from('profile_companies')");
     expect(helper).toContain(".eq('profile_id', clientId)");
-    expect(helper).toContain(".eq('company_id', companyId)");
+    expect(helper).toContain('allowedCompanyIds');
     expect(helper).toContain(".from('companies')");
-    expect(helper).toContain(".select('email')");
+    expect(helper).toContain(".select('id,email')");
   });
 
   it('loads appointments using both authorized identities', () => {

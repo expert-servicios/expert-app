@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, CheckCircle2, XCircle, Award, User } from 'lucide-react';
+import { Star, CheckCircle2, Award, User } from 'lucide-react';
 
 interface Review {
   id: string;
@@ -10,7 +10,16 @@ interface Review {
   comment: string | null;
   allow_publish: boolean;
   status: 'pending' | 'approved' | 'rejected';
+  published: boolean;
   featured: boolean;
+  comment_publishable: boolean;
+  moderation_status: 'pending' | 'approved' | 'hold_for_review' | 'comment_not_publishable';
+  moderation_reason: string | null;
+  moderated_by: 'kia' | 'human' | null;
+  moderation_policy_version: string | null;
+  moderation_model: string | null;
+  moderated_at: string | null;
+  human_override_reason: string | null;
   created_at: string;
   service_name: string | null;
   client_name: string | null;
@@ -69,10 +78,20 @@ export function ReviewModerationCard({ review }: { review: Review }) {
             {review.allow_publish && (
               <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">Autoriza publicación</span>
             )}
+            {review.published && (
+              <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">Publicada</span>
+            )}
           </div>
 
           {review.service_name && (
             <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-[#c88b25]">{review.service_name}</p>
+          )}
+
+          {review.moderated_by && (
+            <div className="mt-2 rounded-lg bg-[#f8f4eb] px-3 py-2 text-xs text-[#29384a]">
+              Moderación: <strong>{review.moderated_by === 'kia' ? 'KIA' : 'humana'}</strong> · {review.moderation_status}
+              {review.moderation_reason ? <> · {review.moderation_reason}</> : null}
+            </div>
           )}
 
           {review.comment ? (
@@ -102,14 +121,24 @@ export function ReviewModerationCard({ review }: { review: Review }) {
               <CheckCircle2 className="h-3.5 w-3.5" /> Aprobar
             </button>
           )}
-          {review.status !== 'rejected' && (
+          {review.status === 'approved' && review.comment && (
             <button
               type="button"
               disabled={loading !== null}
-              onClick={() => patch({ status: 'rejected' })}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+              onClick={() => patch({ comment_publishable: !review.comment_publishable, human_override_reason: 'Decisión manual desde panel de reseñas' })}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-50"
             >
-              <XCircle className="h-3.5 w-3.5" /> Rechazar
+              {review.comment_publishable ? 'Ocultar comentario' : 'Mostrar comentario'}
+            </button>
+          )}
+          {review.status === 'approved' && review.allow_publish && (
+            <button
+              type="button"
+              disabled={loading !== null}
+              onClick={() => patch({ published: !review.published })}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 disabled:opacity-50"
+            >
+              {review.published ? 'Ocultar' : 'Publicar'}
             </button>
           )}
           {review.status === 'approved' && (

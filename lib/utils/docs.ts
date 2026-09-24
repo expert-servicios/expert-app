@@ -1,6 +1,8 @@
 import type { CategorySlug } from './catalog';
+import { getGeneratedBatch1KnowledgeDocs } from '@/lib/services/service-generated-content';
+import { proteccionDatosKnowledgeDocs } from '@/lib/content/proteccion-datos-docs';
 
-export type DocCategorySlug = 'extranjeria-nacionalidad' | 'fiscalidad' | 'empresas' | 'tramites' | 'holded';
+export type DocCategorySlug = 'extranjeria-nacionalidad' | 'fiscalidad' | 'empresas' | 'proteccion-datos' | 'tramites' | 'holded';
 
 export type KnowledgeDoc = {
   slug: string;
@@ -21,11 +23,261 @@ export const docCategories: { slug: DocCategorySlug; name: string }[] = [
   { slug: 'extranjeria-nacionalidad', name: 'Extranjería y Nacionalidad' },
   { slug: 'fiscalidad', name: 'Fiscalidad' },
   { slug: 'empresas', name: 'Empresas y Autónomos' },
+  { slug: 'proteccion-datos', name: 'Protección de datos' },
   { slug: 'tramites', name: 'Trámites' },
   { slug: 'holded', name: 'Holded' }
 ];
 
 export const docs: KnowledgeDoc[] = [
+  ...getGeneratedBatch1KnowledgeDocs(),
+  ...proteccionDatosKnowledgeDocs,
+  {
+    slug: 'conectar-google-workspace-expert',
+    category: 'empresas',
+    title: 'Cómo conectar Google Workspace con EXPERT',
+    excerpt: 'Guía paso a paso para autorizar Gmail, Google Calendar y Drive en EXPERT mediante OAuth, con conexión separada por entidad fiscal.',
+    tags: ['Google Workspace', 'Gmail', 'Google Calendar', 'Google Drive', 'OAuth', 'integraciones EXPERT'],
+    updatedAt: '24 sep 2026',
+    readTime: '6 min',
+    seoTitle: 'Conectar Google Workspace con EXPERT | Guía paso a paso',
+    seoDescription: 'Cómo conectar Gmail, Calendar y Drive con EXPERT de forma segura mediante OAuth y por entidad fiscal.',
+    body: `
+## Qué conecta EXPERT
+
+La integración de Google Workspace permite vincular a una entidad de EXPERT el ecosistema de Google que utilizas en el trabajo.
+
+La conexión se realiza mediante **OAuth 2.0 de Google**. No tienes que comunicar a EXPERT tu contraseña de Google.
+
+EXPERT solicita actualmente permisos para:
+
+- **Gmail**: leer y gestionar mensajes necesarios para la operativa autorizada y enviar correo en tu nombre cuando una acción lo requiera.
+- **Google Calendar**: consultar y crear o modificar eventos necesarios para citas y coordinación.
+- **Google Drive**: acceso de lectura para localizar documentación autorizada.
+- **Identidad de la cuenta**: confirmar qué cuenta de Google has conectado.
+
+La conexión se guarda separada para cada entidad fiscal de tu cuenta EXPERT.
+
+## Antes de empezar
+
+1. Inicia sesión en EXPERT.
+2. Comprueba que la entidad correcta está creada en tu perfil.
+3. Ten abierta la cuenta de Google Workspace o Google que quieras conectar.
+4. Si gestionas varias entidades, decide a cuál quieres asociar esta cuenta.
+
+## Conexión directa
+
+[Conectar Google Workspace con EXPERT](https://expertconsulting.es/dashboard/integraciones/productividad?provider=google)
+
+Al abrir el enlace:
+
+1. EXPERT te mostrará tus entidades fiscales.
+2. Elige la entidad que quieres vincular.
+3. Pulsa **Conectar Google Workspace**.
+4. Google mostrará su pantalla oficial de autorización.
+5. Revisa los permisos y confirma.
+6. Google te devolverá automáticamente a EXPERT.
+7. Comprueba que la entidad aparece como **Conectada**.
+
+## Si tienes dos empresas o actividades
+
+La autorización se vincula a una entidad concreta de EXPERT.
+
+Si quieres utilizar la misma cuenta de Google para dos entidades, realiza la conexión desde cada entidad. Esto permite mantener separados expedientes, documentación, calendarios e integraciones dentro de EXPERT.
+
+## Seguridad
+
+- EXPERT no recibe tu contraseña de Google.
+- Los tokens OAuth se almacenan cifrados.
+- La integración queda vinculada a tu usuario y a una entidad fiscal concreta.
+- El acceso se limita a los permisos mostrados durante el consentimiento.
+- Puedes revocar el acceso desde tu cuenta de Google.
+
+## Cómo revocar el acceso
+
+Desde tu Cuenta de Google puedes revisar y retirar el acceso de aplicaciones de terceros. Tras revocarlo, EXPERT dejará de poder utilizar esa conexión y será necesario volver a autorizarla si quieres reactivarla.
+
+## Problemas habituales
+
+### He elegido la cuenta Google equivocada
+
+Cancela la autorización o revoca posteriormente el acceso y vuelve a iniciar el proceso con la cuenta correcta.
+
+### Tengo varias entidades en EXPERT
+
+Selecciona expresamente la entidad antes de pulsar el botón de conexión.
+
+### Google muestra una pantalla adicional de consentimiento
+
+Es normal cuando se solicitan permisos de Workspace. Lee los permisos antes de aceptar.
+
+### Mi administrador de Google Workspace bloquea la aplicación
+
+En organizaciones con políticas restrictivas puede ser necesaria la aprobación del administrador de Google Workspace.
+
+## Fuentes oficiales
+
+- Google Workspace — OAuth y scopes de Gmail: https://developers.google.com/workspace/gmail/api/auth/scopes
+- Google Calendar API — scopes OAuth: https://developers.google.com/identity/protocols/oauth2/scopes
+- Autorización OAuth de servidor: https://developers.google.com/workspace/gmail/api/auth/web-server
+    `
+  },
+  {
+    slug: 'conectar-microsoft-365-expert',
+    category: 'empresas',
+    title: 'Cómo conectar Microsoft 365 con EXPERT',
+    excerpt: 'Guía paso a paso para autorizar Outlook, Calendar, OneDrive y Teams en EXPERT mediante Microsoft Graph y OAuth.',
+    tags: ['Microsoft 365', 'Outlook', 'Calendar', 'OneDrive', 'Teams', 'Microsoft Graph', 'OAuth'],
+    updatedAt: '24 sep 2026',
+    readTime: '6 min',
+    seoTitle: 'Conectar Microsoft 365 con EXPERT | Guía paso a paso',
+    seoDescription: 'Cómo conectar Outlook, Calendar, OneDrive y Teams con EXPERT de forma segura mediante Microsoft Graph OAuth.',
+    body: `
+## Qué conecta EXPERT
+
+La integración de Microsoft 365 permite vincular a una entidad de EXPERT tu cuenta profesional de Microsoft.
+
+La autorización se realiza mediante **OAuth 2.0 y Microsoft Graph**. EXPERT no solicita ni almacena tu contraseña de Microsoft.
+
+La conexión puede autorizar:
+
+- **Outlook**: lectura del correo y envío autorizado.
+- **Microsoft Calendar**: lectura y gestión de eventos.
+- **OneDrive / archivos de Microsoft 365**: acceso a los archivos necesarios para la operativa autorizada.
+- **Teams**: creación de reuniones online cuando se utiliza el calendario Microsoft.
+
+## Antes de empezar
+
+1. Inicia sesión en EXPERT.
+2. Comprueba que la entidad fiscal correcta aparece en tu perfil.
+3. Ten acceso a la cuenta Microsoft 365 que quieras conectar.
+4. Si tu organización utiliza políticas de administración centralizada, puede ser necesaria la aprobación del administrador de Microsoft 365.
+
+## Conexión directa
+
+[Conectar Microsoft 365 con EXPERT](https://expertconsulting.es/dashboard/integraciones/productividad?provider=microsoft)
+
+Al abrir el enlace:
+
+1. EXPERT te mostrará tus entidades fiscales.
+2. Selecciona la entidad que quieres vincular.
+3. Pulsa **Conectar Microsoft 365**.
+4. Microsoft abrirá su pantalla oficial de consentimiento.
+5. Revisa los permisos solicitados.
+6. Confirma la autorización.
+7. Microsoft te devolverá automáticamente a EXPERT.
+8. Verifica que la conexión figure como **Conectada**.
+
+## Permisos utilizados
+
+La capa actual de Microsoft 365 utiliza permisos delegados de Microsoft Graph para:
+
+- leer correo;
+- enviar correo;
+- leer y modificar calendario;
+- trabajar con archivos autorizados de Microsoft 365;
+- mantener acceso mediante refresh token mientras la autorización siga vigente.
+
+La autorización actúa en nombre del usuario que ha dado el consentimiento.
+
+## Si tienes varias entidades
+
+EXPERT mantiene cada integración separada por entidad fiscal.
+
+Por ejemplo, una misma persona puede tener:
+
+- una sociedad mercantil;
+- y una actividad profesional como persona física.
+
+Cada una puede conservar su propia relación de integraciones, expedientes y documentación dentro de EXPERT.
+
+## Seguridad
+
+- EXPERT no recibe tu contraseña de Microsoft.
+- Los tokens OAuth se almacenan cifrados.
+- La conexión queda asociada a tu usuario y a la entidad seleccionada.
+- Los permisos efectivos son los que Microsoft muestra en su pantalla de consentimiento.
+- Puedes retirar el consentimiento posteriormente desde tu cuenta Microsoft o mediante las herramientas de administración de tu organización.
+
+## Problemas habituales
+
+### Microsoft pide aprobación del administrador
+
+Algunas organizaciones bloquean determinados permisos para usuarios normales. En ese caso debe intervenir el administrador de Microsoft 365 de la empresa.
+
+### He conectado una cuenta equivocada
+
+Revoca el consentimiento y vuelve a conectar usando la cuenta correcta.
+
+### Tengo más de una empresa
+
+Selecciona la entidad concreta antes de autorizar Microsoft 365.
+
+### Uso una cuenta Microsoft personal
+
+Algunas funciones empresariales, especialmente relacionadas con Teams o administración corporativa, dependen del tipo de cuenta y licencia disponibles.
+
+## Fuentes oficiales
+
+- Microsoft Graph — referencia de permisos: https://learn.microsoft.com/es-es/graph/permissions-reference
+- Microsoft Graph — autenticación y autorización: https://learn.microsoft.com/es-es/graph/auth/
+    `
+  },
+  {
+    slug: 'apellidos-menor-nacionalidad-registro-civil',
+    category: 'extranjeria-nacionalidad',
+    title: 'Apellidos del menor al adquirir la nacionalidad española',
+    excerpt:
+      'Cómo acreditar el apellido personal materno, revisar documentos existentes y resolver dudas antes de la inscripción española.',
+    tags: ['apellidos', 'nacionalidad española', 'Registro Civil', 'menores', 'apellido materno', 'traducción jurada'],
+    updatedAt: '24 sep 2026',
+    readTime: '6 min',
+    relatedServiceSlugs: ['nacionalidad-espanola-menor-nacido-en-espana'],
+    relatedServiceCategories: ['extranjeria-nacionalidad'],
+    seoTitle: 'Apellidos del menor al adquirir la nacionalidad española | EXPERT',
+    seoDescription:
+      'Apellido personal de la madre, duplicación en los supuestos legales y alternativas documentales y de traducción.',
+    body: `
+## Los apellidos se determinan por la filiación
+
+Con carácter general, al adquirir la nacionalidad española se toman el primer apellido del padre y el primero de los personales de la madre, conforme a las reglas españolas. El apellido actual de la madre puede haber sido adquirido por matrimonio: el pasaporte o la TIE no demuestran por sí solos que sea su apellido personal de nacimiento.
+
+La duplicación de un único apellido corresponde a los supuestos previstos en la normativa, como cuando la filiación no determina otros apellidos o resulta imposible acreditar la identidad de los progenitores. No es una alternativa de libre elección para evitar documentos. No querer aportar o traducir un certificado no equivale a desconocer el apellido materno ni a una imposibilidad de acreditación. La firma de ambos progenitores no sustituye esa base jurídica.
+
+## Elegir el orden de los apellidos
+
+Primero se determina qué apellidos corresponden por filiación; después se revisa su orden. Cuando ambas líneas están determinadas, los progenitores pueden acordar cuál de sus respectivos primeros apellidos se transmite en primer lugar antes de la inscripción. No hay que confundir esta elección de orden con elegir apellidos ajenos a la filiación o duplicar uno para evitar documentos. Así lo regulan el [artículo 49.2 de la Ley del Registro Civil](https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a49) y el [artículo 109 del Código Civil](https://www.boe.es/buscar/act.php?id=BOE-A-1889-4763#art109).
+
+Antes de ofrecer los dos órdenes, comprobamos la inscripción existente del menor y si ya hay un orden establecido para hermanos de los mismos progenitores: ese antecedente puede determinar el que corresponda. No se cambia una inscripción existente simplemente editando la solicitud de nacionalidad. Si hay dudas, debe revisarlas el Registro Civil competente.
+
+Si no hay acuerdo o no se comunica el orden, el Registro requiere a los progenitores para que lo indiquen en un plazo máximo de tres días; si no responden, lo determina atendiendo al interés superior del menor. No se impone automáticamente el apellido paterno primero. Los cambios posteriores tienen un procedimiento: el [artículo 53.1 de la Ley del Registro Civil](https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a53) contempla la inversión del orden, pero no una modificación informal del expediente.
+
+Recogemos la conformidad de ambos progenitores con el orden propuesto y comprobamos la forma exacta de los apellidos en los documentos antes de preparar la versión para firma. La [Instrucción de 23 de mayo de 2007, primera.4](https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948#pr-2) contempla la variante masculina o femenina del apellido según el sexo de quien adquiere la nacionalidad. La identificación actual del pasaporte/TIE se mantiene separada de los apellidos propuestos para la inscripción española.
+
+## ¿Es obligatorio aportar el nacimiento de la madre?
+
+No es un requisito general de toda solicitud inicial de nacionalidad de un menor. Hay que distinguir la documentación para presentar la solicitud de la necesaria para determinar los apellidos en la inscripción posterior. Su ausencia, por sí sola, no bloquea automáticamente toda solicitud; puede ser necesario aclarar datos o atender un requerimiento.
+
+Antes de solicitar documentos nuevos, revisamos el literal completo de nacimiento del menor, incluidas sus observaciones, y la documentación familiar disponible. Si consta el apellido personal materno de forma suficiente, puede evitarse pedir otra prueba. Un certificado de matrimonio que recoja el apellido anterior puede ser una alternativa: la Sede Judicial de Aragón contempla nacimiento y/o matrimonio de la madre cuando ese dato no consta en el nacimiento del solicitante. Debe confirmarse su suficiencia ante el Registro Civil competente; ese criterio local no garantiza la aceptación en todos los registros.
+
+## Traducción y legalización: comprobar antes de gastar
+
+Si hace falta aportar un documento extranjero, comprobamos las formalidades aplicables según el documento, su origen y los convenios. Justicia contempla traducción o cotejo consular con la legalización correspondiente, además de traducción jurada. La disponibilidad y el coste de la vía consular deben consultarse.
+
+El artículo 95 de la Ley del Registro Civil permite que su encargado prescinda de la traducción si le consta el contenido. Es una decisión del Registro, no una exención automática para presentar documentos sin traducir en la solicitud telemática de nacionalidad.
+
+## Qué hacemos antes de firmar
+
+1. Confirmar el apellido personal de la madre y si hubo cambio por matrimonio.
+2. Identificar qué documento ya disponible acredita ese dato; separar la preferencia familiar de lo jurídicamente acreditado.
+3. Si falta prueba, consultar al órgano competente qué alternativa acepta antes de encargar certificados o traducciones.
+4. Resolver la casilla de apellidos conforme a los hechos y documentos. No marcar «se desconoce» solo porque la familia no desea aportar documentación.
+5. Si llega un requerimiento, atenderlo en su plazo o plantear las alternativas procedentes. Si la familia rechaza toda prueba admitida, explicar y documentar la limitación sin prometer una inscripción concreta.
+
+Podemos continuar preparando las partes independientes del expediente mientras se aclara el apellido. El formulario final debe ser coherente con la documentación y la revisión profesional.
+
+**Fuentes oficiales, revisadas el 24/09/2026**: [Instrucción de 23 de mayo de 2007](https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948) · [Ministerio: documentación de nacionalidad](https://www.mjusticia.gob.es/en/ciudadania/nacionalidad/informacion-nacionalidad) · [Registro Civil de Aragón: documentación posterior a la concesión](https://sedejudicial.aragon.es/registro-civil/nacionalidad/jura-de-nacionalidad-espanola/) · [Ley del Registro Civil, artículo 95](https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a95) · [Justicia: traducción y legalización](https://www.mjusticia.gob.es/es/Ciudadano/TramitesGestiones/Documents/advertencia-legalizacion-documentos.pdf).
+    `
+  },
   {
     slug: 'nacionalidad-espanola-menor-nacido-en-espana',
     category: 'extranjeria-nacionalidad',
@@ -48,6 +300,15 @@ export const docs: KnowledgeDoc[] = [
     seoDescription:
       'Requisitos, documentación, plazo de 1 año de residencia legal, tasa 790-026 y proceso para solicitar la nacionalidad española de un menor nacido en España.',
     body: `
+## Apellido personal de la madre y documentos adicionales
+
+- Certificado de nacimiento o de matrimonio de la madre que recoja su apellido personal anterior al matrimonio, con traducción oficial y legalización/apostilla cuando procedan. Solo si hace falta prueba adicional tras revisar los documentos existentes.
+
+El certificado de nacimiento de la madre no es un requisito general de toda solicitud inicial del menor. Primero revisamos los documentos existentes; si falta acreditar su apellido personal, consultamos qué prueba adicional admite el Registro Civil competente, incluido un certificado de matrimonio que recoja el apellido anterior. La duplicación de un apellido no se elige para evitar documentos o traducciones.
+
+[Consulta la guía de apellidos, alternativas documentales y traducción](/docs/apellidos-menor-nacionalidad-registro-civil).
+
+
 ## Resumen del trámite
 
 Si tu hijo o hija ha nacido en España y ya cuenta con residencia legal, puede tener derecho a solicitar la nacionalidad española por residencia con un plazo reducido de **1 año de residencia legal, continuada e inmediatamente anterior a la solicitud**.
@@ -251,6 +512,15 @@ Con esa documentación se puede reconstruir la línea temporal del menor y decid
     seoDescription:
       'Documentación del menor y de los progenitores para preparar la solicitud de nacionalidad española por residencia.',
     body: `
+## Apellido personal de la madre y documentos adicionales
+
+- Certificado de nacimiento o de matrimonio de la madre que recoja su apellido personal anterior al matrimonio, con traducción oficial y legalización/apostilla cuando procedan. Solo si hace falta prueba adicional tras revisar los documentos existentes.
+
+El certificado de nacimiento de la madre no es un requisito general de toda solicitud inicial del menor. Primero revisamos los documentos existentes; si falta acreditar su apellido personal, consultamos qué prueba adicional admite el Registro Civil competente, incluido un certificado de matrimonio que recoja el apellido anterior. La duplicación de un apellido no se elige para evitar documentos o traducciones.
+
+[Consulta la guía de apellidos, alternativas documentales y traducción](/docs/apellidos-menor-nacionalidad-registro-civil).
+
+
 ## Documentos del menor
 
 Para preparar el expediente de nacionalidad española por residencia de un menor nacido en España, normalmente se revisa:
@@ -433,109 +703,354 @@ En EXPERT revisamos tu viabilidad, preparamos el expediente y presentamos la sol
   {
     slug: 'arraigo-social-requisitos-y-proceso',
     category: 'extranjeria-nacionalidad',
-    title: 'Arraigo social: requisitos, documentación y proceso completo',
-    excerpt: 'Guía detallada sobre el arraigo social en España: quién puede pedirlo, qué documentos necesita y cómo funciona el proceso paso a paso.',
-    tags: ['arraigo social', 'residencia temporal', 'empadronamiento', 'antecedentes penales', 'EX-10'],
-    updatedAt: '18 may 2026',
-    readTime: '10 min',
+    title: 'Arraigo social 2026: requisitos, documentación y proceso',
+    excerpt: 'Guía actualizada sobre el arraigo social: 2 años de permanencia, vínculos familiares o integración social, EX-10, tasa y pasos del expediente.',
+    tags: ['arraigo social', 'residencia temporal', '2 años', 'integración social', 'EX-10', 'tasa 790-052'],
+    updatedAt: '19 sep 2026',
+    readTime: '12 min',
     relatedServiceSlugs: ['arraigo-social'],
     relatedServiceCategories: ['extranjeria-nacionalidad'],
-    seoTitle: 'Arraigo social en España: requisitos y documentación | Guía completa',
-    seoDescription: 'Requisitos, documentos y proceso para obtener el arraigo social en España. Vía más habitual para regularizar la situación tras 3 años de permanencia.',
+    seoTitle: 'Arraigo social 2026: requisitos, documentos y proceso | EXPERT',
+    seoDescription: 'Guía de arraigo social 2026: 2 años de permanencia, vínculos familiares o informe de integración, EX-10, tasa 38,28 € y plazo de resolución.',
     body: `
-## ¿Qué es el arraigo social?
+## Qué es el arraigo social
 
-El arraigo social es una **autorización de residencia temporal** que permite regularizar la situación en España a personas extracomunitarias que llevan al menos 3 años de permanencia continuada en el país.
+El **arraigo social** es una autorización de residencia temporal por circunstancias excepcionales para determinadas personas extranjeras que se encuentran en España y pueden acreditar una permanencia continuada mínima de **2 años**.
 
-Es una de las vías más utilizadas para obtener el primer permiso de residencia legal. Una vez concedida, la autorización tiene una vigencia inicial de **1 año**, renovable.
+La regulación vigente se encuentra en la Ley Orgánica 4/2000 y en el **Real Decreto 1155/2024**. La información oficial del Ministerio fue actualizada en abril de 2026.
 
-## Quién puede solicitarlo
+## Requisito temporal: 2 años, no 3
 
-Para poder solicitar el arraigo social es necesario cumplir todos los requisitos siguientes:
+El requisito general actual es haber permanecido de forma continuada en España durante **al menos los 2 años inmediatamente anteriores a la solicitud**.
 
-- **Permanencia continuada de al menos 3 años** en España, aunque sea en situación irregular.
-- **Ausencia de antecedentes penales** en España y en el país o países de residencia anteriores durante los últimos 5 años.
-- **No estar incurso en causa de prohibición de entrada** en España o en otro país con el que España tenga acuerdo de control.
-- Acreditar **vínculos con España** mediante alguna de las vías siguientes:
-  - Oferta de trabajo firmada por un empleador.
-  - Vínculos familiares con ciudadanos españoles o residentes legales (cónyuge, pareja de hecho, ascendientes, descendientes).
-  - Informe de arraigo emitido por el Ayuntamiento o los servicios sociales competentes.
+Durante ese periodo:
 
-## Documentación necesaria
+- las ausencias de España no pueden superar **90 días**;
+- debe poder acreditarse la presencia efectiva en España;
+- si la persona fue solicitante de protección internacional, el tiempo de permanencia mientras se tramitaba esa solicitud no computa hasta que exista resolución firme administrativa y, en su caso, judicial.
 
-El expediente básico incluye:
+No es correcto seguir aplicando la antigua regla general de 3 años.
 
-- **Modelo EX-10** cumplimentado y firmado.
-- **Pasaporte** en vigor con copia de todas las páginas.
-- **Fotografía** reciente en color tamaño carné.
-- **Justificante de pago** de la tasa modelo 790 código 052.
-- **Certificado de empadronamiento con historial** que acredite los 3 años de permanencia.
-- **Certificado de antecedentes penales de España**, obtenido en el Ministerio de Justicia o la Policía Nacional.
-- **Certificado de antecedentes penales del país de origen**, apostillado y con traducción jurada al español.
-- Según la vía de arraigo elegida: **contrato de trabajo firmado**, **informe de arraigo municipal** o **documentación del vínculo familiar**.
+## Dos vías para acreditar el arraigo social
 
-## El empadronamiento: el documento más importante
+### 1. Vínculos familiares y medios económicos
 
-El certificado de empadronamiento es el núcleo del expediente. Hay que solicitar el **certificado con historial completo**, no solo el volante de residencia actual.
+Puede utilizarse esta vía cuando existen determinados vínculos con personas extranjeras titulares de una autorización de residencia:
 
-Puntos críticos:
+- cónyuge;
+- pareja de hecho registrada;
+- familiares de primer grado en línea directa.
 
-- Un período sin empadronamiento puede interrumpir el cómputo de los 3 años.
-- Si hubo cambios de domicilio, cada Ayuntamiento genera su propio histórico; hay que solicitar todos.
-- En algunos Ayuntamientos el certificado histórico tarda días o semanas: solicitarlo con antelación.
+Además deben acreditarse medios económicos suficientes. La hoja informativa oficial indica, con carácter general, un mínimo del **100 % del IPREM para el familiar residente y otro 100 % para la persona solicitante**, es decir, un total del 200 % del IPREM con independencia del número de miembros de la unidad de convivencia.
 
-## Los antecedentes penales del país de origen
+### 2. Informe de integración social
 
-Este documento suele generar los mayores retrasos. Hay que tener en cuenta:
+Si no se acreditan los vínculos familiares previstos, puede recurrirse al **informe favorable de integración social** emitido por la Comunidad Autónoma o, cuando corresponda, por el Ayuntamiento del domicilio habitual.
 
-- Cada país tiene su propio organismo emisor. Comprueba cuál es el competente en tu caso.
-- El documento original debe llevar la **apostilla del Convenio de La Haya** para ser válido en España. Si tu país no forma parte del Convenio, se necesita legalización consular.
-- Una vez apostillado, debe ser traducido por un **traductor jurado** reconocido por el Ministerio de Asuntos Exteriores de España.
-- Los certificados de antecedentes suelen tener una vigencia de **3 meses**. Solicítalo cuando el resto de la documentación esté lista.
+EXPERT no emite este informe. Podemos indicar cuándo procede, revisar la documentación y comprobar que se incorpore correctamente al expediente.
 
-## La vía más habitual: oferta de trabajo
+## Documentación básica
 
-Para el arraigo social mediante oferta de trabajo, el contrato debe:
+La documentación exacta depende del caso, pero normalmente debe revisarse:
 
-- Estar firmado por empresa y trabajador.
-- Indicar categoría, jornada y salario conforme al convenio colectivo aplicable.
-- Tener una duración de al menos 1 año o ser indefinido.
-- Cumplir los requisitos mínimos de jornada (generalmente 30 horas semanales o la jornada completa del sector).
+- formulario oficial **EX-10**;
+- copia completa del pasaporte, cédula de inscripción o título de viaje en vigor;
+- pruebas de permanencia continuada durante al menos 2 años;
+- certificado de antecedentes penales del país o países en los que se haya residido durante los cinco años anteriores a la entrada en España, cuando proceda;
+- documentación acreditativa de los vínculos familiares, si se utiliza esa vía;
+- documentación de medios económicos suficientes, cuando corresponda;
+- informe favorable de integración social, si se utiliza la vía de integración;
+- justificante del abono de la tasa administrativa.
 
-La empresa no está obligada a esperar a que se resuelva el expediente para mantener el contrato: lo que se aporta es la oferta de trabajo, no la formalización definitiva.
+Los documentos públicos extranjeros deben cumplir, cuando proceda, los requisitos de legalización o apostilla y traducción jurada.
 
-## Proceso y plazos
+## Cómo acreditar los 2 años
 
-El expediente se presenta en la **Oficina de Extranjería** de la provincia donde el solicitante esté empadronado.
+El empadronamiento histórico es una prueba muy útil, pero **no es la única**.
 
-| Fase | Plazo aproximado |
-|---|---|
-| Preparación de documentación | 2–4 semanas |
-| Presentación en Extranjería | 1 día |
-| Resolución administrativa | 3 meses (plazo legal) |
-| Recogida del TIE en comisaría | 30–45 días tras resolución |
+La propia Administración indica que pueden valorarse documentos emitidos o registrados por administraciones públicas españolas, por ejemplo:
 
-Si la Administración no resuelve en 3 meses, opera el silencio administrativo negativo. En la práctica, las oficinas suelen resolver, aunque con variaciones según la provincia.
+- empadronamiento;
+- hospitalización;
+- consultas en la sanidad pública;
+- documentación municipal;
+- documentación autonómica;
+- documentación estatal que permita situar al solicitante en España.
 
-## Errores más frecuentes
+La clave es construir una línea temporal coherente y suficiente.
 
-- Empadronamiento con períodos sin cobertura o cambios de domicilio no regularizados.
-- Antecedentes del país de origen sin apostillar o con traducción no jurada.
-- Contrato de trabajo que no cumple los requisitos mínimos de jornada.
-- Presentar la solicitud en la oficina incorrecta (debe ser la de la provincia de empadronamiento).
-- Documentos caducados (pasaporte, antecedentes penales) al momento de la presentación.
+## Formulario y tasa
 
-## ¿Y después del arraigo?
+El formulario oficial es el **EX-10**.
 
-La autorización inicial de arraigo social tiene vigencia de **1 año**. Si se ha mantenido la relación laboral, puede renovarse por períodos de 2 años. Tras 5 años de residencia legal y continuada, se puede acceder a la **residencia de larga duración**.
+La tasa aplicable es el **Modelo 790 código 052, epígrafe 2.3.1**, correspondiente a las autorizaciones de residencia temporal por circunstancias excepcionales por arraigo.
+
+La cuantía vigente es **38,28 €**. Esta tasa administrativa no forma parte de los honorarios profesionales de EXPERT.
+
+## Presentación y plazo de resolución
+
+La solicitud se presenta ante la Oficina de Extranjería competente.
+
+El plazo administrativo de resolución es de **3 meses**, contado desde el día siguiente a la entrada de la solicitud en el registro del órgano competente.
+
+Si transcurre ese plazo sin notificación, la solicitud puede entenderse desestimada por silencio administrativo, sin perjuicio de que el procedimiento pueda continuar hasta resolución expresa.
+
+## ¿Se puede trabajar con el arraigo social?
+
+La concesión del arraigo social lleva aparejada autorización para trabajar:
+
+- por cuenta ajena;
+- por cuenta propia;
+- en todo el territorio español;
+- sin limitación de ocupación durante la vigencia de la autorización.
+
+La autorización de arraigo social y sus prórrogas tienen, con carácter general, una vigencia de **1 año**.
+
+## Después de la concesión
+
+Tras la notificación favorable, la persona extranjera debe solicitar personalmente la **TIE** dentro del plazo indicado por la normativa y las instrucciones administrativas aplicables.
+
+## Errores frecuentes
+
+1. Aplicar todavía el requisito antiguo de 3 años.
+2. Confundir arraigo social con arraigo sociolaboral y exigir contrato de trabajo.
+3. Presentar EX-01 en lugar de EX-10.
+4. Aportar solo un volante actual de padrón sin construir prueba suficiente de los 2 años.
+5. No revisar las ausencias del territorio español.
+6. No comprobar si el tiempo como solicitante de protección internacional puede computarse.
+7. Afirmar que un asesor privado puede emitir el informe oficial de integración.
+8. No separar la tasa administrativa de los honorarios profesionales.
+
+## Fuentes oficiales
+
+- Ministerio de Inclusión, Seguridad Social y Migraciones — Hoja 28, Arraigo social: https://www.inclusion.gob.es/web/migraciones/w/autorizacion-residencia-temporal-por-circunstancias-excepcionales.-arraigo-social
+- Real Decreto 1155/2024: https://www.boe.es/eli/es/rd/2024/11/19/1155
+- Orden PJC/617/2025 — tasas de extranjería: https://www.boe.es/eli/es/o/2025/06/13/pjc617/con
     `
   },
+  {
+    slug: 'arraigo-social-acreditar-dos-anos',
+    category: 'extranjeria-nacionalidad',
+    title: 'Cómo acreditar los 2 años de permanencia para el arraigo social',
+    excerpt: 'Checklist práctico para construir la prueba de permanencia continuada de 2 años exigida actualmente para el arraigo social.',
+    tags: ['arraigo social', '2 años', 'permanencia continuada', 'empadronamiento histórico', 'prueba de residencia'],
+    updatedAt: '19 sep 2026',
+    readTime: '7 min',
+    relatedServiceSlugs: ['arraigo-social'],
+    relatedServiceCategories: ['extranjeria-nacionalidad'],
+    seoTitle: 'Cómo acreditar 2 años para arraigo social | Checklist 2026',
+    seoDescription: 'Qué documentos sirven para acreditar los 2 años de permanencia continuada del arraigo social y cómo revisar ausencias y periodos sin padrón.',
+    body: `
+## El padrón ayuda, pero no es la única prueba
+
+Para el arraigo social vigente se exige acreditar **2 años de permanencia continuada en España**. La Administración da preferencia a documentos que hayan sido emitidos o registrados por organismos públicos españoles.
+
+Un historial de empadronamiento completo es muy útil, pero no debe analizarse de forma aislada.
+
+## Documentos que pueden reforzar la permanencia
+
+La hoja informativa oficial menciona expresamente, entre otros:
+
+- certificados o historiales de empadronamiento;
+- documentos de hospitalización;
+- consultas médicas en la sanidad pública;
+- documentación municipal;
+- documentos autonómicos;
+- documentos estatales que identifiquen al solicitante y permitan situarlo en España.
+
+También pueden existir otras pruebas útiles según las circunstancias, pero conviene priorizar documentación oficial y construir una cronología clara.
+
+## Cómo preparar la línea temporal
+
+Recomendamos ordenar la prueba por meses:
+
+1. identificar la fecha desde la que deben computarse los 2 años;
+2. obtener todos los historiales de padrón de los municipios donde se haya residido;
+3. localizar posibles periodos sin padrón;
+4. cubrir esos periodos con documentación pública alternativa;
+5. revisar sellos del pasaporte y desplazamientos;
+6. comprobar que las ausencias acumuladas no superen 90 días;
+7. verificar si existió una solicitud de protección internacional y qué periodos pueden computar.
+
+## Cambios de domicilio
+
+Cambiar de Ayuntamiento no impide por sí mismo cumplir el requisito. El problema aparece cuando quedan huecos documentales importantes.
+
+Si has vivido en varios municipios, conviene solicitar los certificados históricos de cada uno y ordenarlos cronológicamente.
+
+## Ausencias de España
+
+Durante los 2 años exigidos, las ausencias no pueden superar **90 días**.
+
+Antes de presentar, revisa:
+
+- sellos de entrada y salida;
+- billetes y reservas si fueran relevantes;
+- fechas de viajes prolongados;
+- cualquier documentación que pueda contradecir la presencia alegada.
+
+## Solicitantes de protección internacional
+
+El tiempo durante el que una solicitud de protección internacional estuvo en tramitación **no computa** para este requisito hasta la resolución firme administrativa y, en su caso, judicial.
+
+Este punto debe revisarse antes de calcular la fecha más temprana de presentación.
+
+## Checklist final
+
+- [ ] 2 años completos inmediatamente anteriores a la solicitud.
+- [ ] Ausencias no superiores a 90 días.
+- [ ] Historial de padrón de todos los municipios relevantes.
+- [ ] Pruebas oficiales para posibles huecos.
+- [ ] Pasaporte completo revisado.
+- [ ] Periodos de protección internacional correctamente descontados, si existieron.
+- [ ] Cronología documental coherente.
+
+## Fuentes oficiales
+
+- Ministerio de Inclusión — Hoja 28, Arraigo social: https://www.inclusion.gob.es/web/migraciones/w/autorizacion-residencia-temporal-por-circunstancias-excepcionales.-arraigo-social
+- Real Decreto 1155/2024: https://www.boe.es/eli/es/rd/2024/11/19/1155
+    `
+  },  {
+    slug: 'arraigo-social-vinculos-medios-e-informe-integracion',
+    category: 'extranjeria-nacionalidad',
+    title: 'Arraigo social: vínculos familiares, medios económicos e informe de integración',
+    excerpt: 'Cómo decidir qué vía documental corresponde en el arraigo social y qué debe prepararse si existen vínculos familiares o si se necesita informe de integración.',
+    tags: ['arraigo social', 'vínculos familiares', 'medios económicos', 'informe de integración', 'residencia'],
+    updatedAt: '19 sep 2026',
+    readTime: '8 min',
+    relatedServiceSlugs: ['arraigo-social'],
+    relatedServiceCategories: ['extranjeria-nacionalidad'],
+    seoTitle: 'Arraigo social: vínculos, medios e integración | Guía 2026',
+    seoDescription: 'Guía sobre las dos vías documentales del arraigo social: vínculos familiares con medios económicos o informe favorable de integración social.',
+    body: `
+## Por qué esta elección importa
+
+Cumplir los 2 años de permanencia no basta por sí solo. En el arraigo social actual hay que determinar **qué vía documental justifica el arraigo**.
+
+La estrategia depende de la existencia o no de determinados vínculos familiares con personas extranjeras residentes en España.
+
+## Vía 1: vínculos familiares
+
+Pueden ser relevantes determinados vínculos con:
+
+- cónyuge;
+- pareja de hecho registrada;
+- ascendientes de primer grado;
+- descendientes de primer grado;
+
+siempre que la persona familiar sea titular de una autorización de residencia válida y se cumplan los demás requisitos.
+
+No basta con afirmar el parentesco. Hay que documentarlo correctamente.
+
+## Documentos habituales para acreditar el vínculo
+
+Según el caso pueden ser necesarios:
+
+- certificado de matrimonio;
+- certificado de pareja registrada;
+- certificado de nacimiento;
+- documentación de filiación;
+- TIE o resolución de residencia del familiar;
+- empadronamiento conjunto cuando sea útil para el expediente.
+
+Si los documentos son extranjeros, debe comprobarse si requieren:
+
+- apostilla;
+- legalización;
+- traducción jurada.
+
+## Medios económicos
+
+Cuando se utiliza la vía familiar, también deben acreditarse medios económicos suficientes.
+
+La hoja informativa oficial del Ministerio establece como referencia general:
+
+- 100 % del IPREM para el familiar residente;
+- 100 % adicional del IPREM para la persona solicitante.
+
+Por tanto, la referencia general es el **200 % del IPREM**, con independencia del número total de miembros de la unidad de convivencia.
+
+Antes de presentar conviene revisar:
+
+- origen de los ingresos;
+- estabilidad;
+- disponibilidad real;
+- titularidad;
+- documentación bancaria o laboral que los respalda.
+
+## Vía 2: informe favorable de integración social
+
+Si no existen los vínculos familiares previstos, puede utilizarse el **informe favorable de integración social**.
+
+Este informe no lo emite EXPERT.
+
+Lo emite:
+
+- la Comunidad Autónoma competente;
+- o, cuando proceda según la organización territorial, el Ayuntamiento del domicilio habitual.
+
+## Qué puede valorar el informe
+
+La regulación permite valorar, entre otros elementos:
+
+- integración en la sociedad española;
+- participación en actividades formativas;
+- conocimiento de valores constitucionales;
+- derechos y deberes;
+- conocimiento lingüístico;
+- participación en programas de inserción sociolaboral o cultural.
+
+Los criterios concretos pueden variar según la administración competente.
+
+## Cuándo pedir el informe
+
+No conviene esperar al último momento.
+
+Antes de solicitarlo:
+
+1. confirma que realmente necesitas esta vía;
+2. revisa el órgano competente en tu municipio/comunidad;
+3. comprueba cita y documentación;
+4. solicita el informe con margen suficiente;
+5. controla su fecha y contenido antes de incorporarlo al expediente.
+
+## Errores frecuentes
+
+- Pedir informe de integración cuando el expediente encaja mejor por vía familiar.
+- Aportar parentesco sin demostrar residencia legal del familiar.
+- Confundir medios económicos con una simple transferencia aislada.
+- Presentar documentos familiares sin apostilla o traducción cuando son exigibles.
+- Pensar que el informe de integración sustituye el requisito de 2 años.
+- Presentar sin revisar si existe otro procedimiento migratorio incompatible.
+
+## Checklist de decisión
+
+### Vía familiar
+- [ ] Existe vínculo familiar previsto legalmente.
+- [ ] El familiar tiene residencia válida en España.
+- [ ] El vínculo puede documentarse.
+- [ ] Hay medios económicos suficientes y acreditables.
+
+### Vía integración
+- [ ] No concurren los vínculos familiares previstos.
+- [ ] Se cumplen los 2 años.
+- [ ] Puede solicitarse informe favorable de integración social.
+- [ ] Se conoce el órgano competente.
+- [ ] Se dispone del resto de documentación del expediente.
+
+## Fuentes oficiales
+
+- Ministerio de Inclusión — Arraigo social: https://www.inclusion.gob.es/web/migraciones/w/autorizacion-residencia-temporal-por-circunstancias-excepcionales.-arraigo-social
+- Real Decreto 1155/2024: https://www.boe.es/eli/es/rd/2024/11/19/1155
+    `
+  },
+
   {
     slug: 'permiso-residencia-inicial-vias-y-documentos',
     category: 'extranjeria-nacionalidad',
     title: 'Permiso inicial de residencia: vías disponibles y documentación',
     excerpt: 'Análisis de las principales vías para obtener el primer permiso de residencia en España, con los documentos necesarios para cada una y los plazos reales.',
-    tags: ['permiso de residencia', 'arraigo', 'reagrupación familiar', 'TIE', 'EX-01', 'extranjería'],
+    tags: ['permiso de residencia', 'arraigo', 'reagrupación familiar', 'TIE', 'EX-10', 'extranjería'],
     updatedAt: '18 may 2026',
     readTime: '11 min',
     relatedServiceSlugs: ['permiso-residencia-inicial'],
@@ -552,7 +1067,7 @@ Sin este permiso, la estancia más allá de 90 días (para quienes lo necesiten)
 ## Principales vías de acceso
 
 ### Arraigo social
-La vía más utilizada. Requiere **3 años de permanencia continuada** en España y acreditar vínculos mediante oferta de trabajo, vínculo familiar o informe de arraigo.
+Con carácter general, exige **2 años de permanencia continuada** en España y acreditar vínculos familiares con medios económicos suficientes o, si no concurren esos vínculos, un informe favorable de integración social.
 
 ### Arraigo laboral
 Requiere acreditar **2 años de estancia irregular** y una relación laboral no declarada de al menos 6 meses. El empresario debe regularizar el contrato.
@@ -571,14 +1086,14 @@ Tramitado desde el consulado del país de origen: trabajo, estudios, nómada dig
 
 ## Documentación base para el arraigo social (vía más común)
 
-- Modelo EX-01 cumplimentado.
+- Modelo EX-10 cumplimentado.
 - Pasaporte en vigor (copia de todas las páginas).
 - Fotografía reciente.
 - Tasa modelo 790 código 052.
-- Certificado de empadronamiento histórico (mínimo 3 años).
+- Documentación que acredite al menos 2 años de permanencia continuada.
 - Antecedentes penales de España.
 - Antecedentes penales del país de origen (apostillados + traducción jurada).
-- Documentación de la vía elegida: contrato de trabajo, informe de arraigo o documentación familiar.
+- Documentación de vínculos familiares y medios económicos o informe favorable de integración social, según la vía.
 
 ## La tasa administrativa
 
@@ -655,12 +1170,12 @@ Tras **5 años de residencia legal y continuada** en España se puede solicitar 
 - Permite trabajar por cuenta propia o ajena sin autorización laboral específica.
 - Es renovable cada 5 años sin riesgo de denegación si se mantienen los requisitos.
 
-### Requisitos para la larga duración
+### Requisitos para la larga duración nacional
 
-1. 5 años de residencia legal y continuada en España.
-2. Ausencia de antecedentes penales.
-3. Medios económicos suficientes: al menos el 150 % del IPREM mensual para el titular (aprox. 900 €/mes en 2025), más el 50 % por familiar a cargo.
-4. Seguro médico si no se cotiza a la Seguridad Social.
+1. Haber residido legalmente y de forma continuada en España durante los 5 años previos, salvo los demás supuestos específicos previstos por la normativa.
+2. Cumplir los requisitos generales del procedimiento (antecedentes, orden público y demás condiciones aplicables al supuesto).
+
+No debe añadirse un requisito general del 150 % del IPREM ni de seguro médico: esos requisitos pertenecen a otras autorizaciones y no forman parte de la regla general de la larga duración nacional.
 
 ## Períodos de desempleo y la renovación
 
@@ -767,31 +1282,28 @@ Si estás casado, puedes optar por declaración individual o conjunta. La conjun
     slug: 'regimen-beckham-modelo-151-guia',
     category: 'fiscalidad',
     title: 'Régimen Beckham (Modelo 151): quién puede acogerse y cómo funciona',
-    excerpt: 'Guía técnica sobre el régimen especial de impatriados: requisitos de acceso, tipo fijo del 24%, cómo solicitar el Modelo 149 y diferencias con el IRPF ordinario.',
+    excerpt: 'Guía técnica sobre el régimen especial de impatriados: requisitos de acceso, Modelo 149, tributación especial y diferencias con el IRPF ordinario.',
     tags: ['Modelo 151', 'Régimen Beckham', 'impatriados', 'expatriados', 'Modelo 149'],
     updatedAt: '18 may 2026',
     readTime: '10 min',
     relatedServiceSlugs: ['modelo-151'],
     relatedServiceCategories: ['declaraciones-impuestos'],
     seoTitle: 'Régimen Beckham y Modelo 151: guía completa | EXPERT Asesoría',
-    seoDescription: 'Todo sobre el régimen especial de impatriados: quién puede acogerse, tipo fijo del 24%, cómo solicitar la opción y cuándo conviene frente al IRPF ordinario.',
+    seoDescription: 'Todo sobre el régimen especial de impatriados: quién puede acogerse, cómo solicitar la opción, tributación aplicable y diferencias con el IRPF ordinario.',
     body: `
 ## ¿Qué es el régimen especial de impatriados?
 
-El régimen especial de impatriados (popularmente llamado **Ley Beckham**) permite a personas que se desplazan a España por motivos laborales tributar al **tipo fijo del 24 %** sobre sus rentas obtenidas en España (hasta 600.000 €), en lugar del tipo progresivo general del IRPF (que puede llegar al 47 %).
+El régimen especial de impatriados (popularmente llamado **Ley Beckham**) aplica reglas especiales de tributación a determinados contribuyentes que se desplazan a España y cumplen los requisitos del artículo 93 LIRPF. Para los rendimientos sujetos a la escala especial, el 24 % se aplica hasta 600.000 € y el 47 % sobre el exceso; antes de informar o calcular hay que revisar la causa del desplazamiento y el supuesto concreto.
 
 La declaración anual se presenta mediante el **Modelo 151**, distinto del Modelo 100 que usan los residentes ordinarios.
 
 ## Requisitos para acogerse
 
-Para aplicar el régimen en 2025 es necesario cumplir **todos** los requisitos siguientes:
+Para aplicar el régimen hay que verificar **todos** los requisitos vigentes del supuesto concreto, entre ellos la residencia previa y la causa legal del desplazamiento:
 
 - **No haber sido residente fiscal en España** durante los 5 años anteriores al desplazamiento.
-- Desplazarse a España por:
-  - Un **contrato de trabajo** con empresa española.
-  - Para **ejercer funciones de administrador** de una sociedad española (no vinculada o con vinculación permitida).
-  - Como **nómada digital**: trabajador remoto con visado de nómada digital.
-- El trabajo o la administración deben realizarse **efectivamente en España**.
+- Comprobar si el desplazamiento encaja en alguno de los supuestos actualmente admitidos por la norma (laboral, determinados administradores, actividad emprendedora/profesional o teletrabajo internacional, entre otros casos previstos).
+- Revisar además los requisitos específicos del supuesto y la documentación que exige la AEAT.
 
 ## Cómo solicitar la opción al régimen
 
@@ -806,7 +1318,7 @@ Este es un plazo crítico: si se presenta fuera de plazo, el régimen no puede a
 | Hasta 600.000 € | 24 % |
 | Exceso sobre 600.000 € | 47 % |
 
-Las **rentas obtenidas fuera de España** (salvo rendimientos del trabajo) quedan **exentas** de tributación en España, lo que puede suponer una ventaja significativa para quienes mantengan patrimonio o rentas en el extranjero.
+La determinación de las rentas sometidas a gravamen sigue las reglas especiales del artículo 93 LIRPF y, en lo no previsto, las reglas del IRNR aplicables al régimen. No debe concluirse que una renta extranjera está exenta únicamente por su localización: hay que clasificar el tipo de renta y aplicar las especialidades correspondientes.
 
 ## Duración del régimen
 
@@ -814,10 +1326,10 @@ El régimen se aplica durante el **año del desplazamiento y los 5 siguientes** 
 
 ## ¿Cuándo conviene acogerse?
 
-No siempre resulta más ventajoso que el IRPF ordinario. El tipo fijo del 24 % es más favorable cuando:
+No siempre resulta más ventajoso que el IRPF ordinario. La escala especial puede resultar más favorable cuando:
 
 - Los rendimientos del trabajo son elevados (superan los tramos altos del IRPF).
-- Se tienen rentas o patrimonio en el extranjero que quedarían exentas.
+- La estructura de rentas y patrimonio hace que las reglas especiales del régimen resulten favorables frente al IRPF ordinario, tras revisar cada fuente de renta.
 - No se aplican deducciones personales significativas (hipoteca, hijos, etc.).
 
 Si los ingresos son moderados o hay muchas deducciones personales, el IRPF ordinario puede resultar más beneficioso. **Es imprescindible calcular ambas opciones antes de decidir**.
@@ -827,7 +1339,7 @@ Si los ingresos son moderados o hay muchas deducciones personales, el IRPF ordin
 | Aspecto | Régimen Beckham | IRPF ordinario |
 |---|---|---|
 | Tipo impositivo | 24 % (fijo hasta 600.000 €) | 19 %–47 % (progresivo) |
-| Rentas extranjeras | En general exentas | Tributación mundial |
+| Rentas extranjeras | Según reglas especiales del art. 93/IRNR y tipo de renta | Tributación mundial con reglas ordinarias |
 | Modelo de declaración | Modelo 151 | Modelo 100 |
 | Duración | Hasta 6 años | Indefinido |
 | Reducción por trabajo | No aplica | Sí aplica |
@@ -838,8 +1350,8 @@ Mientras se esté bajo el régimen Beckham:
 
 - Se presenta el **Modelo 151** anualmente en lugar del Modelo 100.
 - Las retenciones a cuenta son del 24 % (no el tipo marginal).
-- Si se obtienen rentas en el extranjero que no tributan en España, en muchos casos no hay obligación de incluirlas en la declaración española.
-- El **Modelo 720** (bienes en el extranjero) puede no ser aplicable durante el régimen.
+- La inclusión de rentas se determina conforme a las reglas especiales del régimen y al tipo concreto de renta.
+- El contribuyente acogido al régimen especial del artículo 93 no está obligado a presentar el **Modelo 720** por bienes y derechos en el extranjero; la situación de cónyuge u otros familiares se analiza separadamente.
 
 ## Causas de exclusión del régimen
 
@@ -888,8 +1400,8 @@ Las rentas que deben declararse en España como no residente incluyen:
 ### Modelo 210 — El más habitual
 Se usa para la mayoría de rentas obtenidas por no residentes:
 
-- **Alquileres**: presentación trimestral (meses de abril, julio, octubre y enero).
-- **Imputación de rentas**: presentación anual entre el 1 de enero y el 31 de diciembre del año siguiente.
+- **Alquileres**: desde 2026 el plazo depende de si se agrupan las rentas del año o se presentan separadamente y de la fecha de devengo. Debe consultarse la transición de la Orden HAC/623/2026 antes de presentar.
+- **Imputación de rentas**: el plazo también fue modificado por la Orden HAC/623/2026; para 2026 debe resolverse con la regla transitoria aplicable.
 - **Ganancias patrimoniales por venta de inmueble**: dentro de los 3 meses siguientes a la transmisión.
 
 ### Modelo 211 — Retención por compraventa de inmueble
@@ -931,7 +1443,7 @@ Un error frecuente es pensar que si no se cobra alquiler no hay que declarar. Si
     tags: ['certificado digital', 'Camerfirma', 'firma electrónica', 'AEAT', 'Seguridad Social'],
     updatedAt: '18 may 2026',
     readTime: '8 min',
-    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'certificado-digital-entidad'],
+    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'certificado-digital-entidad', 'pack-certificados-digitales'],
     relatedServiceCategories: ['certificado-digital'],
     seoTitle: 'Certificado digital Camerfirma: guía completa | EXPERT Asesoría',
     seoDescription: 'Cómo obtener el certificado digital Camerfirma para persona física o entidad. Diferencias, usos, proceso y documentación necesaria.',
@@ -951,19 +1463,19 @@ El certificado digital es un fichero electrónico que identifica de forma segura
 
 Camerfirma es una **Autoridad de Certificación española acreditada**, perteneciente a las Cámaras de Comercio de España. Sus certificados son reconocidos por todas las Administraciones Públicas españolas y por organismos europeos.
 
-En EXPERT somos **Punto de Registro Autorizado de Camerfirma**, lo que nos permite emitir certificados directamente en nuestras instalaciones o por videoconferencia.
+En EXPERT tramitamos certificados Camerfirma y gestionamos la identificación y verificación necesarias para la emisión. Para las modalidades comercializadas por EXPERT, el proceso se realiza online sin necesidad de acudir a una oficina pública.
 
 ## Tipos de certificado
 
 ### Persona física
 Identifica a un individuo en sus relaciones personales y profesionales. Válido para cualquier persona física, incluyendo autónomos que actúan en nombre propio.
 
-**Precio: 90 €** | **Tiempo de emisión: inmediato** (presencial o videoconferencia)
+**Precio EXPERT: 90 € + IVA** | **Vigencia de la modalidad comercializada: 5 años**
 
 ### Entidad (persona jurídica)
 Identifica a la organización (empresa, asociación, fundación, comunidad de propietarios...) y permite actuar y firmar en nombre de ella.
 
-**Precio: 150 €** | **Tiempo de emisión: 24–48 horas** desde la verificación del representante
+**Precio EXPERT: 150 € + IVA** | **Vigencia de la modalidad comercializada: 2 años**
 
 ## Diferencias clave
 
@@ -972,7 +1484,7 @@ Identifica a la organización (empresa, asociación, fundación, comunidad de pr
 | Identifica a | El individuo | La organización |
 | Firma en nombre de | Sí mismo | La entidad |
 | Documentación | DNI/NIE | CIF + escrituras + DNI del representante |
-| Tiempo de emisión | Inmediato | 24–48 h |
+| Tiempo de tramitación EXPERT | Máximo 24 h laborables desde documentación e identidad validadas | Máximo 24 h laborables desde expediente completo y representante/facultades validados |
 | Precio | 90 € | 150 € |
 
 ## Documentación necesaria
@@ -991,14 +1503,14 @@ Identifica a la organización (empresa, asociación, fundación, comunidad de pr
 ## Proceso de obtención
 
 1. **Solicitud**: tramitamos la solicitud en el sistema de Camerfirma.
-2. **Verificación de identidad**: presencial en nuestras instalaciones o por videoconferencia (eIDAS).
-3. **Emisión**: el certificado se genera en el momento (persona física) o en 24–48 horas (entidad).
+2. **Verificación de identidad**: online en nuestras instalaciones o por videoconferencia (eIDAS).
+3. **Tramitación**: en los servicios EXPERT de persona física, entidad mercantil y pack, el plazo máximo es de 24 horas laborables desde que la documentación está completa y la identidad/facultades han quedado validadas.
 4. **Instalación**: te ayudamos a instalarlo y configurarlo en tu equipo.
 5. **Prueba**: verificamos que funciona correctamente antes de terminar.
 
 ## Validez y renovación
 
-Los certificados Camerfirma tienen una validez de **2 a 3 años** según el tipo. Cuando se aproxima la caducidad, te avisamos para renovarlo antes de que expire.
+La vigencia depende de la modalidad concreta. En el catálogo EXPERT, la modalidad de persona física se ofrece con **5 años** de vigencia y la modalidad de entidad con **2 años**.
 
 Si el certificado caduca sin renovar, es necesario obtener uno nuevo con el mismo proceso de verificación de identidad.
 
@@ -1007,6 +1519,329 @@ Si el certificado caduca sin renovar, es necesario obtener uno nuevo con el mism
 **Para persona física**: no es necesario desplazarte. La verificación se puede hacer por videoconferencia. Solo necesitas conexión a internet y tu DNI/NIE.
 
 **Para entidad**: el representante legal debe verificar su identidad (también se puede hacer por videoconferencia). Sí es necesario enviar previamente la documentación de la empresa por email para la verificación documental.
+    `
+  },
+
+  {
+    slug: 'certificado-digital-persona-fisica-documentacion-instalacion',
+    category: 'tramites',
+    title: 'Certificado digital de persona física: documentos, instalación y uso',
+    excerpt: 'Qué debes preparar antes de la cita, cómo se instala el certificado Camerfirma y qué revisar para empezar a usarlo correctamente.',
+    tags: ['certificado digital persona física', 'Camerfirma', 'DNI', 'TIE', 'instalación certificado'],
+    updatedAt: '19 sep 2026',
+    readTime: '7 min',
+    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'pack-certificados-digitales'],
+    relatedServiceCategories: ['certificado-digital'],
+    seoTitle: 'Certificado digital persona física: documentos e instalación | EXPERT',
+    seoDescription: 'Checklist para obtener e instalar el certificado digital Camerfirma de persona física: documentación, equipo, copia de seguridad y primeros usos.',
+    body: `
+## Qué debes preparar
+
+Para la modalidad de persona física que tramita EXPERT conviene tener preparado:
+
+- DNI o TIE en vigor, por ambas caras.
+- Domicilio completo.
+- Un ordenador Windows o macOS en el que quieras instalar el certificado.
+- Acceso al correo electrónico que utilices durante el proceso.
+
+## Verificación de identidad
+
+En los servicios EXPERT incluidos en el catálogo de lanzamiento, la identificación y validación se realizan de forma remota dentro del proceso Camerfirma. No es necesario acudir físicamente a una oficina.
+
+## Instalación
+
+Una vez emitido:
+
+1. instalamos el certificado en el equipo elegido;
+2. verificamos que el navegador y el sistema lo reconozcan;
+3. hacemos una prueba de acceso o firma cuando procede;
+4. explicamos cómo conservar una copia de seguridad.
+
+## Copia de seguridad
+
+La copia de seguridad es especialmente importante en certificados software.
+
+Guárdala:
+- en un soporte seguro;
+- protegida con contraseña;
+- fuera del equipo principal cuando sea posible.
+
+No envíes el fichero del certificado ni su contraseña por mensajería insegura.
+
+## Usos habituales
+
+- identificarte ante AEAT;
+- realizar trámites con Seguridad Social;
+- presentar escritos y solicitudes;
+- firmar documentos;
+- acceder a sedes electrónicas compatibles.
+
+## Vigencia del servicio EXPERT
+
+La modalidad de persona física comercializada por EXPERT tiene una vigencia de **5 años**.
+
+La renovación o nueva emisión al finalizar la vigencia se contrata aparte.
+
+## Fuente
+
+Camerfirma — certificados digitales:
+https://www.camerfirma.com/new-certificados-digitales/
+    `
+  },
+  {
+    slug: 'certificado-digital-persona-fisica-seguridad-copia-renovacion',
+    category: 'tramites',
+    title: 'Cómo proteger tu certificado digital personal: copia, contraseña y renovación',
+    excerpt: 'Buenas prácticas para guardar, usar y renovar un certificado digital de persona física sin perder acceso ni comprometer tus claves.',
+    tags: ['seguridad certificado digital', 'copia seguridad', 'renovación certificado', 'firma electrónica'],
+    updatedAt: '19 sep 2026',
+    readTime: '6 min',
+    relatedServiceSlugs: ['certificado-digital-persona-fisica'],
+    relatedServiceCategories: ['certificado-digital'],
+    seoTitle: 'Seguridad del certificado digital: copia y renovación | EXPERT',
+    seoDescription: 'Cómo proteger un certificado digital personal: copia segura, contraseña, cambio de equipo, pérdida y renovación.',
+    body: `
+## El certificado es una credencial sensible
+
+Un certificado digital permite identificarte y firmar electrónicamente. Debe tratarse como una credencial de alto valor.
+
+Nunca compartas el fichero, su contraseña ni las claves privadas.
+
+## Copia de seguridad recomendada
+
+1. crea una copia exportable protegida por contraseña;
+2. guárdala en un soporte seguro;
+3. evita carpetas compartidas;
+4. no la envíes por email sin protección;
+5. conserva la contraseña en un gestor seguro.
+
+## Si cambias de ordenador
+
+Exporta y prueba la copia antes de borrar o sustituir el equipo antiguo.
+
+## Si pierdes el certificado
+
+Si existe riesgo de acceso no autorizado hay que valorar la revocación. No sigas utilizando una credencial si no puedes garantizar el control de su clave privada.
+
+## Renovación
+
+La modalidad de persona física comercializada por EXPERT tiene una vigencia de **5 años**. Conviene iniciar la revisión antes del vencimiento para evitar interrupciones.
+
+## Fuente
+
+Camerfirma — certificados digitales:
+https://www.camerfirma.com/new-certificados-digitales/
+    `
+  },
+  {
+    slug: 'certificado-digital-entidad-documentos-representante',
+    category: 'tramites',
+    title: 'Certificado digital de entidad: documentación del representante y de la organización',
+    excerpt: 'Checklist para preparar la documentación de una sociedad, asociación u otra entidad y acreditar correctamente las facultades del representante.',
+    tags: ['certificado digital entidad', 'representante legal', 'Camerfirma', 'empresa', 'poderes'],
+    updatedAt: '19 sep 2026',
+    readTime: '8 min',
+    relatedServiceSlugs: ['certificado-digital-entidad', 'pack-certificados-digitales'],
+    relatedServiceCategories: ['certificado-digital'],
+    seoTitle: 'Certificado digital de entidad: documentos del representante | EXPERT',
+    seoDescription: 'Qué documentos necesita una entidad y su representante para tramitar un certificado digital Camerfirma con EXPERT.',
+    body: `
+## Dos bloques de documentación
+
+En un certificado vinculado a una organización hay que verificar la identidad de la persona que actúa y la existencia de la entidad y sus facultades de representación.
+
+## Documentación del representante
+
+Normalmente se revisa:
+
+- DNI o TIE en vigor;
+- datos de contacto;
+- cargo o condición en la que actúa.
+
+## Documentación de la entidad
+
+Según el tipo de organización pueden ser necesarios:
+
+- CIF/NIF de la entidad;
+- escritura de constitución;
+- nota o certificación registral;
+- estatutos;
+- acta de nombramiento;
+- escritura de poder;
+- documento acreditativo de facultades.
+
+## Representante legal y apoderado no son lo mismo
+
+Camerfirma distingue certificados y figuras según las facultades del titular. EXPERT revisa tipo de entidad, cargo, poderes y uso previsto antes de emitir.
+
+## Vigencia
+
+La modalidad de entidad comercializada por EXPERT tiene una vigencia de **2 años**.
+
+## Fuentes
+
+Camerfirma — certificados para empresas:
+https://www.camerfirma.com/certificados-digitales-empresas/
+
+Camerfirma — representante legal:
+https://www.camerfirma.com/certificado-cualificado-de-representacion/
+    `
+  },
+  {
+    slug: 'certificado-digital-entidad-tipos-usos-seguridad',
+    category: 'tramites',
+    title: 'Certificados digitales para empresa: representación, corporativo y sello electrónico',
+    excerpt: 'Cómo distinguir entre certificado de representante, certificado corporativo y sello electrónico antes de contratar una modalidad para tu organización.',
+    tags: ['certificado empresa', 'representante legal', 'certificado corporativo', 'sello electrónico', 'Camerfirma'],
+    updatedAt: '19 sep 2026',
+    readTime: '8 min',
+    relatedServiceSlugs: ['certificado-digital-entidad'],
+    relatedServiceCategories: ['certificado-digital'],
+    seoTitle: 'Certificados digitales para empresa: tipos y diferencias | EXPERT',
+    seoDescription: 'Diferencias entre certificado de representante, corporativo y sello electrónico y cómo elegir la modalidad adecuada para una entidad.',
+    body: `
+## No todos los certificados de empresa son equivalentes
+
+Camerfirma comercializa distintas figuras para organizaciones. Elegir la correcta depende de quién firma y con qué facultades.
+
+## Certificado de representante
+
+Está orientado a personas físicas con facultades para representar legalmente a la organización.
+
+## Certificado corporativo
+
+Acredita la pertenencia de una persona a una organización. Camerfirma indica que el corporativo no otorga por sí mismo poderes generales de representación.
+
+## Sello electrónico
+
+El sello electrónico se utiliza para identificar a la entidad en determinados procesos o documentos automatizados y no equivale a la firma personal de un representante.
+
+## Antes de contratar
+
+Conviene definir:
+- quién utilizará el certificado;
+- si debe actuar ante Administraciones Públicas;
+- si debe firmar contratos en nombre de la entidad;
+- si se trata de un empleado sin poderes;
+- si se necesita automatización;
+- qué facultades constan en los poderes.
+
+## Vigencia
+
+La modalidad de entidad comercializada por EXPERT tiene una vigencia de **2 años**.
+
+## Fuentes
+
+Camerfirma — certificados para empresas:
+https://www.camerfirma.com/certificados-digitales-empresas/
+
+Camerfirma — certificado corporativo:
+https://www.camerfirma.com/certificados-digitales/certificado-digital-cualificado-corporativo/
+
+Camerfirma — sello electrónico:
+https://www.camerfirma.com/certificado-sello-electronico-digital/
+    `
+  },
+
+  {
+    slug: 'pack-certificados-digitales-checklist',
+    category: 'tramites',
+    title: 'Pack de certificados digitales: checklist completo antes de contratar',
+    excerpt: 'Qué necesita preparar un administrador o representante para tramitar online su certificado personal y el de la entidad en un único pedido.',
+    tags: ['pack certificados digitales', 'Camerfirma', 'administrador', 'representante legal', 'empresa'],
+    updatedAt: '19 sep 2026',
+    readTime: '7 min',
+    relatedServiceSlugs: ['pack-certificados-digitales'],
+    relatedServiceCategories: ['certificado-digital'],
+    seoTitle: 'Pack certificados digitales: checklist persona + empresa | EXPERT',
+    seoDescription: 'Checklist del pack Camerfirma de EXPERT: certificado personal + entidad por 200 € + IVA, documentación, entidad vinculada, identificación online y plazo.',
+    body: `
+## Antes de empezar
+
+El pack reúne dos certificados distintos:
+
+- certificado de persona física del titular/representante;
+- certificado de la entidad mercantil seleccionada.
+
+Se contratan juntos, pero cada certificado mantiene su propia identidad y función.
+
+## Datos personales
+
+Prepara:
+
+- DNI o TIE en vigor;
+- domicilio completo;
+- teléfono y correo de contacto;
+- equipo en el que se instalarán los certificados.
+
+## Datos de la entidad
+
+La empresa debe estar vinculada a tu cuenta EXPERT.
+
+Revisa:
+
+- razón social;
+- NIF/CIF;
+- domicilio fiscal;
+- forma jurídica;
+- datos registrales.
+
+## Documentación societaria
+
+Según el caso pueden ser necesarios:
+
+- escritura de constitución;
+- nota mercantil actualizada;
+- nombramiento de administrador;
+- poder notarial;
+- documentación equivalente que permita comprobar la representación.
+
+## Identificación
+
+La tramitación con EXPERT se realiza **100 % online**.
+
+EXPERT gestiona la tramitación dentro del proceso Camerfirma y realiza la identificación y validación remotas necesarias para la emisión.
+
+## Cuándo empieza el plazo de 24 horas
+
+El plazo máximo de 24 horas laborables **no empieza al pagar**.
+
+Empieza cuando:
+
+1. la documentación personal está completa;
+2. la documentación de la entidad está completa;
+3. la identidad está validada;
+4. las facultades de representación están verificadas.
+
+## Precio
+
+- Persona física: 90 € + IVA.
+- Entidad: 150 € + IVA.
+- Total por separado: 240 € + IVA.
+- Pack: **200 € + IVA**.
+- Ahorro: **40 €**.
+
+## Después del pago
+
+EXPERT crea un expediente del pack con dos entregables:
+
+1. certificado personal;
+2. certificado de entidad.
+
+Ambos se gestionan dentro del mismo pedido, manteniendo trazabilidad separada.
+
+## Vigencia
+
+- persona física: modalidad EXPERT de 5 años;
+- entidad: modalidad EXPERT de 2 años.
+
+## Fuente
+
+Camerfirma — certificados digitales:
+https://www.camerfirma.com/new-certificados-digitales/
+
+Camerfirma — representante legal:
+https://www.camerfirma.com/certificado-cualificado-de-representacion/
     `
   },
 
@@ -1022,15 +1857,15 @@ Si el certificado caduca sin renovar, es necesario obtener uno nuevo con el mism
     relatedServiceSlugs: ['alta-autonomo'],
     relatedServiceCategories: ['empresas-autonomos'],
     seoTitle: 'Alta de autónomo en España: guía completa de trámites',
-    seoDescription: 'Cómo darse de alta como autónomo en España: Modelo 036, RETA, elección de epígrafe, cuota 2025 y obligaciones fiscales del primer año.',
+    seoDescription: 'Cómo darse de alta como autónomo en España: Modelo 036, RETA, elección de epígrafe, cotización 2026 y obligaciones fiscales del primer año.',
     body: `
 ## ¿Cuándo hay que darse de alta?
 
 En España, debes darte de alta como autónomo **antes de comenzar a ejercer cualquier actividad económica habitual**. Emitir una factura sin estar dado de alta puede generar sanciones de la AEAT y de la Seguridad Social.
 
-## Paso 1: Alta en Hacienda (Modelo 036 o 037)
+## Paso 1: Alta en Hacienda (Modelo 036)
 
-El primer trámite es comunicar a la AEAT el inicio de actividad mediante el **Modelo 036** (completo) o el **Modelo 037** (simplificado, apto para la mayoría de autónomos).
+El primer trámite es comunicar a la AEAT el inicio de actividad mediante el **Modelo 036**. El Modelo 037 quedó suprimido con efectos de 3 de febrero de 2025 y su simplificación se integró en las herramientas del Modelo 036.
 
 En este modelo indicarás:
 
@@ -1052,19 +1887,11 @@ En este trámite elegirás tu **base de cotización**, que determina:
 - La **cuota mensual** a pagar.
 - Las **prestaciones** a las que tendrás derecho (enfermedad, accidente, jubilación).
 
-## Cuota de autónomos en 2025
+## Cotización de autónomos en 2026
 
-Desde 2023 rige el sistema de cotización por **ingresos reales**:
+En 2026 sigue vigente el sistema de cotización por **rendimientos netos**, con una tabla reducida y una tabla general de bases mínimas y máximas. La base que puedes elegir depende del tramo de rendimientos previsto y puede modificarse, dentro de los periodos habilitados, si cambian tus previsiones.
 
-| Rendimientos netos mensuales | Cuota aprox. |
-|---|---|
-| Menos de 670 € | ~200 €/mes |
-| 670 €–1.166 € | ~260–290 €/mes |
-| 1.166 €–1.700 € | ~294–350 €/mes |
-| 1.700 €–3.000 € | ~370–420 €/mes |
-| Más de 6.000 € | ~590 €/mes |
-
-**Tarifa plana**: los nuevos autónomos pagan **80 €/mes durante los primeros 12 meses**, prorrogable si los ingresos no superan el SMI. Algunas comunidades autónomas tienen bonificaciones adicionales.
+No usamos una cuota fija genérica: antes del alta comprobamos el tramo 2026, la base elegida y los tipos vigentes. La cifra de **80 €/mes** correspondía a la cuota reducida fijada expresamente para **2023–2025**; para un alta en 2026 debe verificarse la cuantía oficial vigente y si se cumplen los requisitos del beneficio.
 
 ## Obligaciones fiscales desde el primer día
 
@@ -1074,11 +1901,13 @@ Como autónomo en régimen general, tus obligaciones trimestrales son:
 - **Modelo 130** (IRPF trimestral): pago fraccionado a cuenta del IRPF.
 - Si tienes empleados: **Modelo 111** (retenciones IRPF empleados) y **Modelo 115** (retenciones alquileres).
 
-Anualmente:
+Anualmente pueden resultar aplicables, entre otros:
 
-- **Modelo 390**: resumen anual de IVA (enero).
-- **Modelo 190**: resumen anual de retenciones de trabajo (enero).
-- **Modelo 100**: declaración de la renta (mayo–junio).
+- **Modelo 390**: resumen anual de IVA, cuando no exista exoneración.
+- **Modelo 190**: resumen anual de retenciones de trabajo y determinadas actividades.
+- **Modelo 100**: declaración anual de IRPF.
+
+Los vencimientos exactos se verifican en el calendario AEAT del ejercicio correspondiente.
 
 ## Errores frecuentes en el alta
 

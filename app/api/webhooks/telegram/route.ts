@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { resolveVerifiedTelegramIdentity } from '@/lib/ai/kia/kia-channel-identity';
 import { consumeTelegramLinkCode } from '@/lib/ai/kia/kia-telegram-linking';
@@ -12,6 +12,11 @@ import {
 } from '@/lib/ai/kia/kia-policy-enforced-decision';
 import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
 import { safeErrorMessage } from '@/lib/ai/kia/kia-redaction';
+import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
+import { serviceProductionManifest } from '@/lib/services/service-production-manifest';
+import { runRegulatoryPulse } from '@/lib/regulatory/regulatory-monitor';
+import { getCurrentRegulatoryValue, getRegulatoryPulseSummary } from '@/lib/regulatory/regulatory-values';
+import { resolveKiaLocale } from '@/lib/ai/kia/kia-locale';
 import {
   escapeTelegramHtml,
   isConfiguredTelegramAdminChat,
@@ -39,17 +44,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, ignored: true });
   }
 
-  // Current rollout remains restricted to the configured admin chat. This is
-  // separate from EXPERT identity: both the configured chat and an active,
-  // verified persisted identity binding are required before KIA can run.
-  if (!isConfiguredTelegramAdminChat(inbound.chatId)) {
-    return NextResponse.json({ ok: true, ignored: true });
-  }
-
   const admin = getSupabaseAdmin();
   const parts = inbound.text.split(/\s+/);
   const command = parts[0]?.toLowerCase();
   const telegramToolsEnabled = process.env.KIA_TELEGRAM_TOOLS_ENABLED?.toLowerCase() === 'true';
+  const telegramClientsEnabled = process.env.KIA_TELEGRAM_CLIENTS_ENABLED?.toLowerCase() === 'true';
+  const adminChat = isConfiguredTelegramAdminChat(inbound.chatId);
+
+  if (!adminChat && !telegramClientsEnabled) {
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: 'El canal KIA para clientes en Telegram todavía no está habilitado. Usa el portal EXPERT mientras se completa el despliegue.',
+    });
+    return NextResponse.json({ ok: true, ignored: true, reason: 'client_telegram_disabled' });
+  }
 
   if (command === '/link') {
     const code = parts[1]?.trim();
@@ -98,6 +106,8 @@ export async function POST(request: NextRequest) {
         'Canal Telegram conectado en modo seguro.',
         '/status — comprobar conexión, identidad y tools',
         '/link CÓDIGO — vincular este Telegram con una sesión EXPERT autenticada',
+        '/servicio SLUG — ver requisitos, documentos y pasos del servicio',
+        ...(adminChat ? ['/lote1 — ver estado operativo del lote 1', '/legal status|cambios|valor|revisar — Regulatory Pulse'] : []),
         identity
           ? `Identidad EXPERT verificada. Chat KIA: activo. Tools R0/R1 read: ${telegramToolsEnabled ? 'activadas' : 'bloqueadas por feature flag'}.`
           : 'Identidad EXPERT aún no vinculada o no verificada. KIA permanece bloqueada.',
@@ -137,7 +147,7 @@ export async function POST(request: NextRequest) {
 
   const { data: profile, error: profileError } = await admin
     .from('profiles')
-    .select('active_company_id')
+    .select('active_company_id,preferred_language')
     .eq('id', identity.profileId)
     .maybeSingle();
 
@@ -148,6 +158,8 @@ export async function POST(request: NextRequest) {
   }
 
   const companyId = profile?.active_company_id ?? null;
+  const profileLocale = profile?.preferred_language === 'ru' ? 'ru' : 'es';
+  const responseLocale = resolveKiaLocale({ latestMessage: inbound.text, preferredLanguage: profileLocale });
   let actor;
   try {
     actor = await resolveKiaActorCapabilities({
@@ -168,6 +180,163 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'actor_inactive_or_tenant_mismatch' });
   }
 
+  if (command === '/legal' && adminChat) {
+    const action = parts[1]?.toLowerCase() ?? 'status';
+
+    if (action === 'status') {
+      const summary = await getRegulatoryPulseSummary();
+      const lastRun = summary.lastRun;
+      const sourceErrors = summary.sources.filter((source) => source.last_error);
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: [
+          '<b>KIA Regulatory Pulse</b>',
+          lastRun
+            ? `Última ejecución: ${escapeTelegramHtml(lastRun.run_type)} · ${escapeTelegramHtml(lastRun.status)} · ${escapeTelegramHtml(lastRun.started_at)}`
+            : 'Sin ejecuciones registradas.',
+          `Cambios pendientes: ${summary.pendingChanges.length}`,
+          `Fuentes activas: ${summary.sources.length}`,
+          `Fuentes con error: ${sourceErrors.length}`,
+        ].join('\n'),
+      });
+      return NextResponse.json({ ok: true, command: 'legal_status' });
+    }
+
+    if (action === 'cambios') {
+      const summary = await getRegulatoryPulseSummary();
+      const rows = summary.pendingChanges.slice(0, 10).map((change) => {
+        const source = Array.isArray(change.source) ? change.source[0] : change.source;
+        return `• [${change.severity ?? 'pending'}] ${source?.authority ?? 'Fuente'} — ${change.summary ?? change.change_type ?? 'Pendiente de clasificación'}`;
+      });
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: ['<b>Cambios regulatorios pendientes</b>', ...(rows.length ? rows.map(escapeTelegramHtml) : ['Sin cambios pendientes.'])].join('\n'),
+      });
+      return NextResponse.json({ ok: true, command: 'legal_changes', count: rows.length });
+    }
+
+    if (action === 'valor') {
+      const valueKey = parts[2]?.trim();
+      if (!valueKey) {
+        await sendTelegramMessage({ chatId: inbound.chatId, text: 'Uso: /legal valor SMI_MONTHLY' });
+        return NextResponse.json({ ok: true, command: 'legal_value', found: false });
+      }
+      const value = await getCurrentRegulatoryValue(valueKey);
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: value
+          ? [
+              `<b>${escapeTelegramHtml(value.label)}</b>`,
+              `Valor: ${escapeTelegramHtml(String(value.numeric_value ?? value.text_value ?? '—'))} ${escapeTelegramHtml(value.unit ?? '')}`,
+              `Periodo: ${escapeTelegramHtml(value.period_key)}`,
+              value.availability_mode === 'latest_published'
+                ? `Disponibilidad: último dato oficial publicado (periodo ${escapeTelegramHtml(value.period_key)})`
+                : `Vigencia: ${escapeTelegramHtml(value.valid_from)} → ${escapeTelegramHtml(value.valid_to ?? 'sin fecha fin')}`,
+              `Verificado: ${escapeTelegramHtml(value.verified_at)}`,
+            ].join('\n')
+          : `No existe un valor vigente para ${escapeTelegramHtml(valueKey)}.`,
+      });
+      return NextResponse.json({ ok: true, command: 'legal_value', found: Boolean(value) });
+    }
+
+    if (action === 'revisar') {
+      const scopeType = parts[2]?.toLowerCase();
+      const scopeValue = parts.slice(3).join(' ').trim();
+      const validScope = ['source', 'authority', 'topic', 'service'].includes(scopeType ?? '');
+      const hasScope = validScope && Boolean(scopeValue);
+
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: hasScope
+          ? `Revisión regulatoria iniciada · ${escapeTelegramHtml(scopeType!)}: ${escapeTelegramHtml(scopeValue)}.`
+          : 'Revisión regulatoria completa iniciada.',
+      });
+
+      after(async () => {
+        const result = await runRegulatoryPulse({
+          runType: 'manual',
+          forceAll: !hasScope,
+          sourceKey: scopeType === 'source' ? scopeValue : undefined,
+          authority: scopeType === 'authority' ? scopeValue : undefined,
+          topic: scopeType === 'topic' ? scopeValue : undefined,
+          serviceKey: scopeType === 'service' ? scopeValue : undefined,
+        }).catch((error) => ({
+          sourcesChecked: 0,
+          sourcesChanged: 0,
+          errors: [{ sourceKey: hasScope ? scopeValue : 'manual', error: safeErrorMessage(error) }],
+        }));
+
+        await sendTelegramMessage({
+          chatId: inbound.chatId,
+          text: [
+            '<b>Revisión regulatoria terminada</b>',
+            `Fuentes revisadas: ${result.sourcesChecked}`,
+            `Cambios detectados: ${result.sourcesChanged}`,
+            `Errores: ${result.errors.length}`,
+          ].join('\n'),
+        });
+      });
+
+      return NextResponse.json({
+        ok: true,
+        command: 'legal_review_started',
+        scope: hasScope ? { type: scopeType, value: scopeValue } : 'all',
+      });
+    }
+
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: 'Comandos: /legal status · /legal cambios · /legal valor SMI_MONTHLY · /legal revisar [source|authority|topic|service] VALOR',
+    });
+    return NextResponse.json({ ok: true, command: 'legal_help' });
+  }
+
+  if (command === '/servicio') {
+    const slug = parts[1]?.trim();
+    const blueprint = slug ? getServiceOperationalBlueprint(slug) : null;
+    if (!blueprint) {
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'Indica un slug válido del servicio. Ejemplo: /servicio arraigo-social',
+      });
+      return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'service_blueprint_not_found' });
+    }
+
+    const requirements = blueprint.requirements.map((item) => `• ${item.label}`).join('\n');
+    const documents = blueprint.documents
+      .filter((item) => item.required)
+      .map((item) => `• ${item.label}`)
+      .join('\n');
+    const steps = blueprint.steps.map((item, index) => `${index + 1}. ${item.title}`).join('\n');
+
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: [
+        `<b>${escapeTelegramHtml(blueprint.canonicalName)}</b>`,
+        '',
+        '<b>Requisitos</b>',
+        escapeTelegramHtml(requirements),
+        '',
+        '<b>Documentación obligatoria</b>',
+        escapeTelegramHtml(documents),
+        '',
+        '<b>Pasos</b>',
+        escapeTelegramHtml(steps),
+      ].join('\n'),
+    });
+
+    return NextResponse.json({ ok: true, identityLinked: true, routed: true, command: 'servicio', serviceSlug: blueprint.slug });
+  }
+
+  if (command === '/lote1' && adminChat) {
+    const rows = serviceProductionManifest.map((entry) => `• ${entry.slug}: ${entry.stage}`);
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: ['<b>Lote 1 · estado de producción</b>', ...rows.map(escapeTelegramHtml)].join('\n'),
+    });
+    return NextResponse.json({ ok: true, identityLinked: true, routed: true, command: 'lote1' });
+  }
+
   const telegramPolicy = resolveKiaPolicyToolNames('telegram_verified', actor);
   if (!telegramPolicy.ok) {
     console.warn('[Telegram KIA] policy denied:', telegramPolicy.reason);
@@ -180,6 +349,7 @@ export async function POST(request: NextRequest) {
       taskType: 'chat_reply',
       channel: 'telegram',
       message: inbound.text,
+      locale: responseLocale,
       allowTools: telegramToolsEnabled,
       forceToolExecution: telegramToolsEnabled,
       contextInput: {

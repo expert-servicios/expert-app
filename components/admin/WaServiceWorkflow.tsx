@@ -43,7 +43,7 @@ const WORKFLOW_SERVICES: ServiceOption[] = [
   },
   {
     id: 'autonomo', label: 'Gestión Autónomo / IVA trimestral', category: 'Fiscal',
-    docs: ['DNI / NIE', 'Alta en Hacienda (036/037) y RETA', 'Facturas emitidas del trimestre', 'Facturas recibidas (gastos)', 'Extracto bancario del trimestre'],
+    docs: ['DNI / NIE', 'Alta en Hacienda (Modelo 036) y RETA', 'Facturas emitidas del trimestre', 'Facturas recibidas (gastos)', 'Extracto bancario del trimestre'],
     price: '80–120 €/trimestre',
   },
   {

@@ -5,6 +5,8 @@ import { docs } from '@/lib/utils/docs';
 import { getAcademyKnowledgeArticles } from '@/lib/utils/academy-knowledge';
 import { shouldIndexLocale } from '@/lib/i18n/feature-flags';
 import { PUBLIC_ROUTE_KEYS, PUBLIC_ROUTE_MAP } from '@/lib/i18n/public-routes';
+import { getLocalizedServicePresentations } from '@/lib/services/service-localized-content';
+import { getCatalogService } from '@/lib/utils/catalog';
 
 const BASE = 'https://expertconsulting.es';
 
@@ -64,7 +66,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/privacidad`,    changeFrequency: 'yearly', priority: 0.2, lastModified: now },
     { url: `${BASE}/cookies`,       changeFrequency: 'yearly', priority: 0.2, lastModified: now },
     { url: `${BASE}/condiciones`,   changeFrequency: 'yearly', priority: 0.2, lastModified: now },
-    { url: `${BASE}/terminos`,      changeFrequency: 'yearly', priority: 0.2, lastModified: now }
+    { url: `${BASE}/terminos`,      changeFrequency: 'yearly', priority: 0.2, lastModified: now },
+    { url: `${BASE}/politica-de-resenas`, changeFrequency: 'yearly', priority: 0.25, lastModified: now }
   ];
 
   const categoryRoutes: MetadataRoute.Sitemap = categories
@@ -108,25 +111,47 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(`${article.updatedAt}T00:00:00Z`),
     }));
 
+  const russianServiceRoutes: MetadataRoute.Sitemap = getLocalizedServicePresentations('ru')
+    .filter((localized) => localized.indexable === true)
+    .flatMap((localized) => {
+      const service = getCatalogService(localized.serviceSlug);
+      if (!service) return [];
+
+      const esPath = `/servicios/${service.categoria}/${service.slug}`;
+      return [{
+        url: `${BASE}${localized.path}`,
+        changeFrequency: localized.sitemapChangeFrequency ?? 'monthly',
+        priority: localized.sitemapPriority ?? 0.8,
+        lastModified: now,
+        alternates: {
+          languages: {
+            'es-ES': `${BASE}${esPath}`,
+            'ru-RU': `${BASE}${localized.path}`,
+          },
+        },
+      }];
+    });
+
   const russianRoutes: MetadataRoute.Sitemap = shouldIndexLocale('ru')
     ? PUBLIC_ROUTE_KEYS
         .filter((routeKey) => routeKey !== 'nationalityMinor')
         .map((routeKey) => ({
-        url: `${BASE}${PUBLIC_ROUTE_MAP[routeKey].ru}`,
-        changeFrequency: 'monthly' as const,
-        priority: routeKey === 'home' ? 0.9 : 0.7,
-        lastModified: now,
-        alternates: {
-          languages: {
-            'es-ES': `${BASE}${PUBLIC_ROUTE_MAP[routeKey].es}`,
-            'ru-RU': `${BASE}${PUBLIC_ROUTE_MAP[routeKey].ru}`,
+          url: `${BASE}${PUBLIC_ROUTE_MAP[routeKey].ru}`,
+          changeFrequency: 'monthly' as const,
+          priority: routeKey === 'home' ? 0.9 : 0.7,
+          lastModified: now,
+          alternates: {
+            languages: {
+              'es-ES': `${BASE}${PUBLIC_ROUTE_MAP[routeKey].es}`,
+              'ru-RU': `${BASE}${PUBLIC_ROUTE_MAP[routeKey].ru}`,
+            },
           },
-        },
-      }))
+        }))
     : [];
 
   return [
     ...staticRoutes,
+    ...russianServiceRoutes,
     ...russianRoutes,
     ...categoryRoutes,
     ...serviceRoutes,

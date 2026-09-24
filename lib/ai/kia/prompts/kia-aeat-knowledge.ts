@@ -35,53 +35,58 @@ Quien lo aplica: autonomos y empresas que realizan actividades economicas sujeta
 Tipos generales: 21% (general), 10% (reducido, ej. hosteleria, transporte), 4% (superreducido, ej. alimentos basicos).
 Algunos autonomos en regimen de modulos o en actividades exentas no aplican IVA.
 
-Modelos y plazos (trimestral):
-- Modelo 303 — liquidacion trimestral del IVA.
-  * 1T: 1-20 abril | 2T: 1-20 julio | 3T: 1-20 octubre | 4T: 1-30 enero del ano siguiente.
-- Modelo 390 — resumen anual del IVA. Plazo: 1-30 enero del ano siguiente.
-- Modelo 349 — operaciones intracomunitarias (si facturas a empresas de la UE sin IVA).
-- Verificar plazos exactos en: https://sede.agenciatributaria.gob.es/Sede/todas-gestiones/impuestos-tasas/iva.html
+Modelos recurrentes de IVA e informativas:
+- Modelo 303 — liquidacion periodica del IVA; para vencimientos exactos consultar AEAT_TAX_CALENDAR_2026.
+- Modelo 390 — resumen anual del IVA: consultar INFORMATIVE_RETURNS_2026 para obligacion/exoneraciones y AEAT_TAX_CALENDAR_2026 para fecha exacta.
+- Modelo 349 — operaciones intracomunitarias: la periodicidad puede ser mensual o trimestral segun el volumen y las reglas aplicables; consultar INFORMATIVE_RETURNS_2026.
+- No inferir periodicidad o fecha exacta solo por el nombre del modelo.
 </aeat_iva>
 
 <aeat_autonomos>
 AUTONOMOS EN HACIENDA:
 
 Alta en Hacienda (obligatoria antes o al inicio de la actividad):
-- Modelo 036 o 037 (version simplificada) — declaracion censal.
+- Modelo 036 — declaracion censal; las herramientas de asistencia incorporan la simplificacion que antes ofrecía el Modelo 037.
   * Indica la actividad economica (epigrafe IAE), la fecha de inicio, el tipo de IRPF y si eres sujeto pasivo de IVA.
 - Si no tienes certificado digital ni Cl@ve PIN, EXPERT puede gestionar el alta.
 
-IRPF trimestral (pagos fraccionados):
-- Modelo 130 — estimacion directa normal o simplificada (la mayoria de autonomos).
-  * Plazos: mismos que IVA (abril, julio, octubre, enero).
-- Modelo 131 — estimacion objetiva (modulos).
-- Se ingresa el 20% del rendimiento neto trimestral (menos retenciones soportadas).
+IRPF pagos fraccionados:
+- Modelos 130 y 131: consultar IRPF_PAYMENT_FRACTIONS_2026 antes de calcular o decidir obligacion.
+- Modelo 130: estimacion directa; usar acumulado desde 1 de enero, pagos previos, retenciones y excepciones del 70% cuando procedan.
+- Modelo 131: estimacion objetiva; el porcentaje depende del tipo de actividad, datos-base/modulos y personal asalariado.
+- En 3T y 4T de 2026 existen reglas especiales para actividades que cumplan requisitos en La Palma; no reutilizar porcentajes generales sin comprobar el territorio y el supuesto.
+- Para vencimientos exactos consultar AEAT_TAX_CALENDAR_2026.
 
 Retenciones en facturas:
 - Autonomos en estimacion directa deben incluir retencion IRPF en sus facturas si el cliente es empresa o profesional (generalmente 15%, reducida al 7% los primeros anos de actividad).
 - La retencion la ingresa el pagador a Hacienda via modelo 111 trimestral.
 
 Baja en Hacienda:
-- Tambien con modelo 036/037, indicando la fecha de cese de actividad.
+- Tambien con modelo 036, indicando la fecha de cese de actividad.
 </aeat_autonomos>
 
 <aeat_otros_modelos>
 OTROS MODELOS FRECUENTES:
 
 Modelo 720 — bienes y derechos en el extranjero:
-- Obligacion informativa (no impositiva) para residentes fiscales con bienes, cuentas o seguros en el extranjero que superen 50.000 EUR por categoria.
-- Plazo: 1 enero - 31 marzo del ano siguiente.
-- Importante: las sanciones por no presentar fueron muy altas historicamente; revisar la normativa actualizada con EXPERT.
-- Mas info: https://sede.agenciatributaria.gob.es/Sede/procedimientoini/GI34.shtml
+- Consultar MODEL_720_RULES antes de decidir si existe obligacion. El umbral no se aplica a todos los activos como una bolsa unica: hay categorias, reglas de valoracion y exenciones.
+- La ventana ordinaria es 1 enero - 31 marzo del ano siguiente, pero revisar siempre el ejercicio y los supuestos de declaracion posterior.
+- No tratar criptomonedas como Modelo 720 por defecto.
 
-Modelo 151 / Ley Beckham (regimen especial de impatriados):
-- Para trabajadores desplazados a Espana que cumplen requisitos: tributar como no residente (tipo fijo 24%) durante maximo 6 anos.
-- Solicitud en los 6 meses desde inicio de la actividad en Espana.
-- Requiere revision profesional — EXPERT gestiona la solicitud y la declaracion anual.
+Modelo 721 — monedas virtuales situadas en el extranjero:
+- Consultar MODEL_721_RULES. Verificar ubicacion del custodio, exclusiones y saldo conjunto antes de concluir que existe obligacion.
+- No confundir saldo fiat en una cuenta extranjera con moneda virtual del Modelo 721.
+
+Modelo 151 / regimen especial de desplazados:
+- Consultar IMPARTIATES_149_151_RULES antes de informar requisitos, duracion o plazo.
+- El Modelo 149 comunica opcion/renuncia/exclusion/fin del desplazamiento; el plazo de opcion depende de si es contribuyente principal o asociado.
+- La declaracion anual del contribuyente acogido al regimen se presenta mediante Modelo 151.
+- EXPERT revisa elegibilidad y documentacion antes de tramitar.
 
 IRNR / No Residentes (modelo 210):
 - Para personas sin residencia fiscal en Espana que obtienen rentas en Espana (alquiler de inmuebles, dividendos, etc.).
-- Trimestral si hay renta de alquiler; anual si es imputacion de renta.
+- La Orden HAC/623/2026 modifico los plazos del Modelo 210 y establecio reglas transitorias para devengos de 2026. No responder con una regla atemporal de "alquiler trimestral".
+- Para alquileres e imputaciones inmobiliarias, consultar IRNR_210_2026_TRANSITION segun tipo de renta y fecha de devengo.
 - EXPERT gestiona el modelo 210 para no residentes con inmuebles en Espana.
 
 Notificaciones electronicas (DEHu / DEHU):
@@ -89,6 +94,14 @@ Notificaciones electronicas (DEHu / DEHU):
 - Es imprescindible tener certificado digital o Cl@ve activos para recibirlas.
 - Portal: https://dehu.redsara.es/
 - Si no se accede en plazo, la notificacion se tiene por recibida igualmente.
+
+
+NIF de sociedades y otras entidades:
+- Consultar ENTITY_NIF_036_RULES.
+- Distinguir NIF provisional y definitivo. La solicitud y la aportacion de documentacion pendiente se articulan mediante Modelo 036.
+- No pedir una duplicacion manual del tramite si CIRCE, notaria o Registro ya han transmitido la informacion a la AEAT.
+- Usar NIF como denominacion actual del identificador fiscal; no presentar CIF como el nombre juridico vigente.
+
 </aeat_otros_modelos>
 
 <aeat_acceso_digital>

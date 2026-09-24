@@ -17,6 +17,9 @@ type Task = {
   assigned_to: string | null;
   due_date: string | null;
   source: 'manual' | 'kia' | 'system';
+  metadata?: Record<string, unknown> | null;
+  blocked_by?: string[];
+  blocked_by_titles?: string[];
   created_at: string;
   completed_at: string | null;
   client: { id: string; full_name: string | null } | null;
@@ -37,6 +40,7 @@ const FILTERS: Array<{ value: TaskFilter; label: string }> = [
 export default function AdminTasksPage() {
   const searchParams = useSearchParams();
   const clientId = searchParams.get('clientId');
+  const caseId = searchParams.get('caseId');
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState('');
@@ -53,6 +57,7 @@ export default function AdminTasksPage() {
     try {
       const params = new URLSearchParams();
       if (clientId) params.set('clientId', clientId);
+      if (caseId) params.set('caseId', caseId);
       const qs = params.toString() ? `?${params.toString()}` : '';
       const res = await fetch(`/api/admin/tasks${qs}`, { cache: 'no-store' });
       const json = await res.json();
@@ -61,7 +66,7 @@ export default function AdminTasksPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error de conexión');
     } finally { setLoading(false); }
-  }, [clientId]);
+  }, [clientId, caseId]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -72,14 +77,23 @@ export default function AdminTasksPage() {
   }), [tasks, filter]);
 
   async function setStatus(id: string, status: Task['status']) {
+    const skipReason = status === 'cancelada'
+      ? window.prompt('Indica por qué este paso no aplica. Ej.: el mandato se firmó por otra vía y no existe certificado DocuSign.')
+      : null;
+    if (status === 'cancelada' && (!skipReason || skipReason.trim().length < 8)) {
+      setError('Para marcar un paso como “No aplica” debes indicar un motivo suficiente.');
+      return;
+    }
+
     setSaving(id); setError('');
     try {
       const res = await fetch('/api/admin/tasks', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status }),
+        body: JSON.stringify({ id, status, ...(skipReason ? { skipReason: skipReason.trim() } : {}) }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'No se pudo actualizar');
+      if (json.warning) setError(json.warning);
       await load();
     } catch (e) { setError(e instanceof Error ? e.message : 'No se pudo actualizar'); }
     finally { setSaving(''); }
@@ -120,6 +134,7 @@ export default function AdminTasksPage() {
   const openCount = tasks.filter((t) => t.status === 'pendiente' || t.status === 'en_progreso').length;
   const overdueCount = tasks.filter((t) => t.due_date && t.due_date < today && t.status !== 'completada' && t.status !== 'cancelada').length;
   const contextualName = clientId ? tasks.find((task) => task.client)?.client?.full_name : null;
+  const contextualCase = caseId ? tasks.find((task) => task.case)?.case : null;
 
   return (
     <main className="min-h-screen bg-[#f8f4eb] px-6 py-8 text-[#07111d]">
@@ -128,8 +143,9 @@ export default function AdminTasksPage() {
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#c88b25]">Admin · Operaciones</p>
             <h1 className="mt-1 font-serif text-3xl font-bold">Tareas pendientes</h1>
-            <p className="mt-2 text-sm text-[#52606d]">{clientId ? `Vista contextual del cliente${contextualName ? ` · ${contextualName}` : ''}.` : 'Seguimiento operativo generado por EXPERT, KIA o manualmente.'}</p>
-            {clientId && <Link href={`/admin/clientes/${clientId}/operaciones`} className="mt-2 inline-block text-xs font-bold text-[#c88b25]">← Volver a Operaciones 360º</Link>}
+            <p className="mt-2 text-sm text-[#52606d]">{caseId ? `Workflow del expediente${contextualCase?.service ? ` · ${contextualCase.service}` : ''}.` : clientId ? `Vista contextual del cliente${contextualName ? ` · ${contextualName}` : ''}.` : 'Seguimiento operativo generado por EXPERT, KIA o manualmente.'}</p>
+            {caseId && <Link href={`/admin/expedientes/${caseId}`} className="mt-2 inline-block text-xs font-bold text-[#c88b25]">← Volver al expediente</Link>}
+            {!caseId && clientId && <Link href={`/admin/clientes/${clientId}/operaciones`} className="mt-2 inline-block text-xs font-bold text-[#c88b25]">← Volver a Operaciones 360º</Link>}
           </div>
           <div className="flex gap-2">
             <button type="button" onClick={() => void load()} className="rounded-xl border border-[#d8cbb5] bg-white p-2.5" title="Actualizar"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></button>
@@ -164,15 +180,27 @@ export default function AdminTasksPage() {
         <div className="mt-4 space-y-3">
           {loading && !tasks.length ? <div className="flex justify-center py-14"><Loader2 className="h-6 w-6 animate-spin text-[#c88b25]" /></div> : visible.length === 0 ? <div className="rounded-2xl border border-[#d8cbb5] bg-white p-10 text-center text-sm text-[#6b7280]">No hay tareas en este filtro.</div> : visible.map((task) => {
             const overdue = Boolean(task.due_date && task.due_date < today && task.status !== 'completada' && task.status !== 'cancelada');
-            return <div key={task.id} className={`rounded-2xl border bg-white p-5 shadow-sm ${overdue ? 'border-red-200' : 'border-[#d8cbb5]'}`}>
+            const blocked = Boolean(task.blocked_by?.length);
+            return <div key={task.id} className={`rounded-2xl border bg-white p-5 shadow-sm ${overdue ? 'border-red-200' : blocked ? 'border-amber-300' : 'border-[#d8cbb5]'}`}>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2"><ListTodo className="h-4 w-4 text-[#c88b25]" /><h2 className="font-semibold">{task.title}</h2><span className="rounded-full bg-[#f8f4eb] px-2 py-0.5 text-[10px] font-bold uppercase">{task.source}</span><span className="rounded-full bg-[#f8f4eb] px-2 py-0.5 text-[10px] font-bold">{priorityLabel[task.priority]}</span></div>
                   {task.description && <p className="mt-2 text-sm leading-6 text-[#52606d]">{task.description}</p>}
+                  {blocked && <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">Bloqueada hasta completar: {(task.blocked_by_titles?.length ? task.blocked_by_titles : task.blocked_by)?.join(', ')}</div>}
+                  {Array.isArray(task.metadata?.reference_urls) && task.metadata.reference_urls.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                      <span className="font-semibold text-[#52606d]">Referencias:</span>
+                      {(task.metadata.reference_urls as Array<{ label?: string; url?: string }>).filter((item) => item?.url).map((item, index) => (
+                        <a key={`${item.url}-${index}`} href={item.url} target="_blank" rel="noopener noreferrer" className="font-bold text-[#9a6a17] underline underline-offset-2">
+                          {item.label || 'Fuente'}
+                        </a>
+                      ))}
+                    </div>
+                  )}
                   <div className="mt-3 flex flex-wrap gap-3 text-xs text-[#6b7280]">
                     {task.due_date && <span className={overdue ? 'font-bold text-red-700' : ''}>Vence: {new Date(`${task.due_date}T12:00:00`).toLocaleDateString('es-ES')}</span>}
                     {task.client && <Link href={`/admin/clientes/${task.client.id}`} className="font-bold text-[#9a6a17]">Cliente: {task.client.full_name ?? task.client.id.slice(0, 8)}</Link>}
-                    {task.case && <Link href={`/admin/expedientes?caseId=${task.case.id}`} className="font-bold text-[#9a6a17]">Expediente: {task.case.service}</Link>}
+                    {task.case && <Link href={`/admin/expedientes/${task.case.id}`} className="font-bold text-[#9a6a17]">Expediente: {task.case.service}</Link>}
                     <span>{task.assignee ? `Asignada a: ${task.assignee.full_name ?? 'Sin nombre'}` : 'Sin asignar'}</span>
                   </div>
                 </div>
@@ -184,8 +212,9 @@ export default function AdminTasksPage() {
                     className="rounded-lg border border-[#d8cbb5] px-2 py-1.5 text-xs"
                   />
                   <div className="flex gap-2">
-                    {task.status === 'pendiente' && <button type="button" disabled={saving === task.id} onClick={() => void setStatus(task.id, 'en_progreso')} className="inline-flex items-center gap-1 rounded-lg border border-[#d8cbb5] px-3 py-2 text-xs font-bold"><CircleDashed className="h-3.5 w-3.5" />Iniciar</button>}
-                    {(task.status === 'pendiente' || task.status === 'en_progreso') && <button type="button" disabled={saving === task.id} onClick={() => void setStatus(task.id, 'completada')} className="inline-flex items-center gap-1 rounded-lg bg-green-700 px-3 py-2 text-xs font-bold text-white"><CheckCircle2 className="h-3.5 w-3.5" />Completar</button>}
+                    {task.status === 'pendiente' && <button type="button" disabled={saving === task.id || blocked} onClick={() => void setStatus(task.id, 'en_progreso')} className="inline-flex items-center gap-1 rounded-lg border border-[#d8cbb5] px-3 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50"><CircleDashed className="h-3.5 w-3.5" />Iniciar</button>}
+                    {(task.status === 'pendiente' || task.status === 'en_progreso') && <button type="button" disabled={saving === task.id || blocked} onClick={() => void setStatus(task.id, 'completada')} className="inline-flex items-center gap-1 rounded-lg bg-green-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"><CheckCircle2 className="h-3.5 w-3.5" />Completar</button>}
+                    {(task.status === 'pendiente' || task.status === 'en_progreso') && task.metadata?.skip_allowed === true && <button type="button" disabled={saving === task.id || blocked} onClick={() => void setStatus(task.id, 'cancelada')} className="inline-flex items-center gap-1 rounded-lg border border-[#d8cbb5] px-3 py-2 text-xs font-bold text-[#52606d] disabled:cursor-not-allowed disabled:opacity-50">No aplica</button>}
                   </div>
                 </div>
               </div>

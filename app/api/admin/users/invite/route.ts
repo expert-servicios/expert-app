@@ -9,7 +9,7 @@ import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
 const inviteSchema = z.object({
   email: z.string().email('Email inválido'),
   fullName: z.string().min(2, 'Nombre demasiado corto').optional(),
-  entityType: z.enum(['empresa', 'autonomo']).optional(),
+  entityType: z.enum(['particular', 'empresa', 'autonomo']).optional(),
   company: z.string().optional(),
   phone: z.string().optional(),
   taxId: z.string().optional(),
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 
     let companyId: string | null = null;
     let createdCompanyId: string | null = null;
-    const shouldCreateEntity = Boolean(company || normalizedTaxId || entityType === 'autonomo');
+    const shouldCreateEntity = entityType !== 'particular' && Boolean(company || normalizedTaxId || entityType === 'autonomo');
 
     if (shouldCreateEntity) {
       const { data: memberships, error: membershipsError } = await admin

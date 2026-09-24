@@ -16,19 +16,29 @@ interface Quote {
   client_id: string | null;
 }
 
-const quoteStatuses = ['draft', 'sent', 'accepted', 'paid', 'expired'] as const;
+const quoteStatuses = ['draft', 'sent', 'accepted', 'expired'] as const;
 
-type QuoteStatus = (typeof quoteStatuses)[number];
+type EditableQuoteStatus = (typeof quoteStatuses)[number];
+
+type QuoteStatus = EditableQuoteStatus | 'paid';
 
 interface AdminQuoteCardProps {
   quote: Quote;
+}
+
+function toDatetimeLocal(value: string | null): string {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
 }
 
 export function AdminQuoteCard({ quote }: AdminQuoteCardProps) {
   const router = useRouter();
   const [amount, setAmount] = useState<string>(quote.amount_eur.toFixed(2));
   const [status, setStatus] = useState<QuoteStatus>(quote.status as QuoteStatus);
-  const [expiresAt, setExpiresAt] = useState<string>(quote.expires_at ?? '');
+  const [expiresAt, setExpiresAt] = useState<string>(toDatetimeLocal(quote.expires_at));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -39,7 +49,7 @@ export function AdminQuoteCard({ quote }: AdminQuoteCardProps) {
     const payload: Record<string, unknown> = {
       amount_eur: parseFloat(amount),
       status,
-      expires_at: expiresAt || undefined
+      expires_at: expiresAt ? new Date(expiresAt).toISOString() : undefined
     };
 
     try {
@@ -113,6 +123,7 @@ export function AdminQuoteCard({ quote }: AdminQuoteCardProps) {
               onChange={(event) => setStatus(event.target.value as QuoteStatus)}
               className="mt-2 w-full rounded-xl border border-[#d8cbb5] bg-white px-4 py-3 text-[#07111d] outline-none focus:border-[#c88b25]"
             >
+              {status === 'paid' && <option value="paid">paid</option>}
               {quoteStatuses.map((item) => (
                 <option key={item} value={item}>
                   {item}

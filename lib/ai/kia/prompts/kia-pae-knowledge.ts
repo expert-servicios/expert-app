@@ -12,18 +12,18 @@ PAE (Puntos de Atencion al Emprendedor):
 - El PAE Electronico permite hacer algunos tramites de forma 100% online.
 
 CIRCE (Centro de Informacion y Red de Creacion de Empresas):
-- Sistema oficial del Ministerio de Industria para constituir una Sociedad Limitada (SL) de forma online sin ir a la notaria fisicamente (usando firma electronica).
+- Sistema oficial para tramitar de forma electronica la creacion de empresas y otros procedimientos mediante el DUE. La constitucion de una SL sigue incluyendo escritura publica; CIRCE coordina el paso notarial, pero no debe describirse como si la escritura dejara de ser necesaria.
 - Tambien permite gestionar el alta de autonomo via internet.
 - Disponible en: https://www.circe.es/ y https://paeelectronico.es/
 
-Requisito imprescindible para usar PAE/CIRCE: tener un certificado digital activo (FNMT, Camerfirma u otro reconocido). Sin el, no es posible hacer el tramite online.
+El acceso electronico puede requerir Cl@ve o certificado electronico segun el tramite y el perfil del usuario. Verificar siempre el mecanismo de identificacion vigente en PAE/CIRCE.
 </pae_que_es>
 
 <pae_alta_autonomo_online>
 ALTA DE AUTONOMO ONLINE (via PAE Electronico):
 
 Que incluye el tramite online:
-1. Alta en Hacienda (modelo 036/037) — actividad economica, epigrafe IAE, fecha de inicio.
+1. Alta en Hacienda (modelo 036) — actividad economica, epigrafe IAE, fecha de inicio.
 2. Alta en la Seguridad Social (RETA) — cotizacion, base elegida, cuota reducida si procede.
 3. Opcionalmente: alta en el Ayuntamiento si la actividad requiere licencia.
 
@@ -39,7 +39,7 @@ Proceso online en el PAE:
 2. Seleccionar "Alta de autonomo".
 3. Rellenar los datos de actividad: epigrafe IAE, fecha de inicio, regimen fiscal.
 4. Confirmar datos personales y bancarios.
-5. El sistema envia el 036/037 a Hacienda y el alta en RETA a la SS automaticamente.
+5. El sistema envia el Modelo 036 a Hacienda y el alta en RETA a la SS automaticamente.
 6. Se recibe confirmacion digital de ambas altas.
 
 Es facil si: la actividad es sencilla, el cliente conoce su epigrafe, tiene certificado digital y no tiene dudas sobre el regimen fiscal.
@@ -49,17 +49,17 @@ EXPERT gestiona el alta de autonomo (svc_alta_autonomo): incluye Hacienda + RETA
 </pae_alta_autonomo_online>
 
 <pae_constitucion_sl_online>
-CONSTITUCION DE SL ONLINE (via CIRCE / PAE Electronico):
+CONSTITUCION DE SL VIA CIRCE / PAE ELECTRONICO:
 
 Que permite CIRCE:
-- Constituir una Sociedad Limitada (SL) sin ir presencialmente a la notaria: usando firma electronica se puede firmar la escritura con un notario online.
+- Tramitar de forma integrada la constitucion de una Sociedad Limitada (SL), incluido el paso de escritura publica y su coordinacion con notaria. El canal concreto de firma/notaria debe verificarse en el procedimiento vigente.
 - Usar estatutos tipo simplificados (tramite mas rapido pero menos flexible).
 - Integra en un solo proceso: denominacion social (RMC), escritura notarial, inscripcion en Registro Mercantil, alta en Hacienda.
 
 Requisitos para hacerlo solo por CIRCE:
 - Certificado digital activo de todos los socios.
 - Certificado de denominacion social negativa del RMC (hasta 5 nombres alternativos; plazo 3-5 dias; coste ~16 EUR).
-- Capital social minimo: 3.000 EUR (puede ser en especie o dinero, pero debe estar disponible).
+- Capital social: consultar SL_CAPITAL_RULES. El minimo legal puede ser inferior a 3.000 EUR, pero por debajo de ese umbral existen salvaguardas legales especificas.
 - Datos de los socios: DNI/NIE, porcentaje de participacion, domicilio.
 - Objeto social decidido (actividad principal).
 - Domicilio social en España.
@@ -68,10 +68,10 @@ Proceso simplificado via CIRCE:
 1. Solicitar denominacion social negativa en rmc.es.
 2. Acceder a paeelectronico.es con certificado digital.
 3. Rellenar el formulario de constitucion: socios, capital, objeto, domicilio, administrador.
-4. El sistema agenda cita con notario online o presencial.
-5. Firma electronica o presencial de la escritura.
+4. CIRCE coordina la cita y el paso notarial conforme al canal disponible.
+5. Se otorga la escritura publica por la via notarial que corresponda.
 6. CIRCE envia automaticamente al Registro Mercantil para inscripcion.
-7. Alta en Hacienda (modelo 036) automatica via CIRCE.
+7. CIRCE coordina la informacion fiscal; para NIF provisional/definitivo y documentacion pendiente consultar ENTITY_NIF_036_RULES y verificar que informacion ya ha sido transmitida a AEAT.
 8. Plazo total estimado con estatutos tipo: 5-10 dias habiles.
 
 Limitaciones de CIRCE / estatutos tipo:

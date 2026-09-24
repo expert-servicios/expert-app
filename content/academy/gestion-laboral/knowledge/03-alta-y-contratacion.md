@@ -50,7 +50,7 @@ Incorporar al trabajador en TGSS, SEPE y Holded. El alta debe estar admitida ant
 7. Comprobar admisión, no solo envío.
 8. Descargar justificante y consultar IDC.
 
-La interfaz exacta se validará en el área privada de Creative Quality.
+La interfaz exacta se validará en el área privada de las herramientas de afiliación y contratación utilizadas en el curso.
 
 ### 3. Preparar, firmar y comunicar contrato
 
@@ -113,7 +113,7 @@ Autorización dudosa, alta fuera de plazo, bonificación, sustitución, fijo dis
 ## Fuentes
 
 - [TGSS: alta, baja y variación](https://www.seg-social.es/wps/portal/wss/internet/InformacionUtil/44539/44113/44136)
-- [Creative Quality: NetContrata](https://www.creative-quality.es/netcontrata/)
+- NetContrata / DelegaRed: documentación operativa disponible en el entorno contratado.
 - [Holded Academy: crear contratos](https://help.holded.com/es/articles/10484753-como-crear-contratos)
 
 ## Historial

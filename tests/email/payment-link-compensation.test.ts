@@ -39,33 +39,18 @@ describe('critical payment-link email compensation', () => {
     expect(subscriptionRoute).toContain("status: expireFailed ? 'open' : 'expired'");
   });
 
-  it('compensates only the request-created initial quote after safe Stripe expiration', () => {
-    expect(quoteRoute).toContain("await adminSupabase.from('leads').delete().eq('id', lead.id)");
+  it('keeps quote validity independent from Stripe Checkout lifetime', () => {
+    expect(quoteRoute).not.toContain('stripe.checkout.sessions.create');
+    expect(quoteRoute).toContain('/dashboard/presupuestos');
     expect(quoteRoute).toContain("code: 'email_failed_safe_retry'");
     expect(quoteRoute).toContain("code: 'email_failed_cleanup_manual_review'");
-    expect(quoteRoute).toContain("code: 'email_failed_manual_review'");
-    const expireIndex = quoteRoute.indexOf('await stripe.checkout.sessions.expire(session.id)');
-    const safeCleanupIndex = quoteRoute.lastIndexOf("from('leads').delete().eq('id', lead.id)");
-    expect(expireIndex).toBeGreaterThan(0);
-    expect(safeCleanupIndex).toBeGreaterThan(expireIndex);
   });
 
-  it('restores the previous quote session reference if resend email fails', () => {
-    expect(quoteResendRoute).toContain('const previousSessionId = quote.stripe_checkout_id ?? null');
-    expect(quoteResendRoute).toContain(".update({ stripe_checkout_id: previousSessionId, status: quote.status })");
-    expect(quoteResendRoute).toContain(".eq('stripe_checkout_id', session.id)");
-  });
-
-  it('expires the previous quote link only after the new email succeeds', () => {
-    const sendIndex = quoteResendRoute.indexOf("eventType: 'quote.payment_link_resent'");
-    const previousExpireIndex = quoteResendRoute.indexOf('await stripe.checkout.sessions.expire(previousSessionId)');
-    expect(sendIndex).toBeGreaterThan(0);
-    expect(previousExpireIndex).toBeGreaterThan(sendIndex);
-  });
-
-  it('surfaces manual review instead of hiding a duplicate-link risk', () => {
-    expect(quoteResendRoute).toContain("code: 'previous_link_manual_review'");
-    expect(quoteResendRoute).toContain("code: expireFailed ? 'email_failed_manual_review' : 'email_failed_previous_link_kept'");
+  it('resends the quote through EXPERT without creating or replacing Stripe sessions', () => {
+    expect(quoteResendRoute).not.toContain('stripe.checkout.sessions.create');
+    expect(quoteResendRoute).toContain('/dashboard/presupuestos');
+    expect(quoteResendRoute).toContain("code: 'quote_expired'");
+    expect(quoteResendRoute).toContain("code: 'email_failed_safe_retry'");
   });
 });
 

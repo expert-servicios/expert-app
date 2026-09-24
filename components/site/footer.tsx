@@ -175,10 +175,11 @@ export function Footer() {
 
           <CalButton
             url={CAL_REUNION_URL}
+            fallbackHref="/cita?tipo=consulta-inicial"
             className="mt-5 flex w-full items-center justify-center gap-2 rounded-md border border-[#D4A017]/50 px-4 py-2.5 text-sm font-semibold text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017]/10"
           >
             <Calendar className="h-4 w-4 shrink-0" />
-            Programar una reunión
+            Consulta gratuita · 15 min
           </CalButton>
         </div>
       </div>

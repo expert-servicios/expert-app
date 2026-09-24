@@ -1,0 +1,333 @@
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { isRulesetSchemaUnavailable } from './regulatory-schema-compat';
+
+type AuditIssue = {
+  code: string;
+  severity: 'info' | 'warning' | 'critical';
+  message: string;
+  entity?: string;
+};
+
+type AuditDependencyRow = {
+  id: string;
+  source_id: string | null;
+  value_key: string | null;
+  ruleset_key: string | null;
+  dependency_type: string;
+  dependency_key: string;
+};
+
+function daysBetween(a: string, b = new Date()) {
+  return Math.floor((b.getTime() - new Date(a).getTime()) / 86_400_000);
+}
+
+function minutesBetween(a: string, b = new Date()) {
+  return Math.floor((b.getTime() - new Date(a).getTime()) / 60_000);
+}
+
+export async function runRegulatoryHealthAudit() {
+  const admin = getSupabaseAdmin();
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+
+  const [
+    { data: sources, error: sourcesError },
+    { data: values, error: valuesError },
+    { data: runs, error: runsError },
+  ] = await Promise.all([
+    admin.from('regulatory_sources')
+      .select('id,source_key,authority,check_frequency,last_success_at,last_fingerprint,last_error,metadata')
+      .eq('active', true),
+    admin.from('regulatory_values')
+      .select('id,value_key,period_key,valid_from,valid_to,source_id,metadata')
+      .order('value_key', { ascending: true })
+      .order('valid_from', { ascending: true }),
+    admin.from('regulatory_review_runs')
+      .select('id,run_type,status,started_at,finished_at')
+      .order('started_at', { ascending: false })
+      .limit(100),
+  ]);
+
+  if (sourcesError) throw new Error(sourcesError.message);
+  if (valuesError) throw new Error(valuesError.message);
+  if (runsError) throw new Error(runsError.message);
+
+  const { data: rulesetsRaw, error: rulesetsError } = await admin
+    .from('regulatory_rulesets')
+    .select('id,ruleset_key,schema_version,valid_from,valid_to,source_id,metadata')
+    .order('ruleset_key', { ascending: true })
+    .order('valid_from', { ascending: true });
+
+  const rulesetSchemaAvailable = !isRulesetSchemaUnavailable(rulesetsError);
+  if (rulesetsError && rulesetSchemaAvailable) throw new Error(rulesetsError.message);
+  const rulesets = rulesetSchemaAvailable ? (rulesetsRaw ?? []) : [];
+
+  const { data: dependenciesRaw, error: depsError } = await admin
+    .from('regulatory_dependencies')
+    .select(rulesetSchemaAvailable
+      ? 'id,source_id,value_key,ruleset_key,dependency_type,dependency_key'
+      : 'id,source_id,value_key,dependency_type,dependency_key')
+    .eq('active', true);
+
+  if (depsError) throw new Error(depsError.message);
+  const dependencyRows = (dependenciesRaw ?? []) as unknown as Array<
+    Omit<AuditDependencyRow, 'ruleset_key'> & { ruleset_key?: string | null }
+  >;
+  const dependencies: AuditDependencyRow[] = dependencyRows.map((dependency) => ({
+    id: dependency.id,
+    source_id: dependency.source_id,
+    value_key: dependency.value_key,
+    dependency_type: dependency.dependency_type,
+    dependency_key: dependency.dependency_key,
+    ruleset_key: rulesetSchemaAvailable ? (dependency.ruleset_key ?? null) : null,
+  }));
+
+  const issues: AuditIssue[] = [];
+  const sourceIds = new Set((sources ?? []).map((source) => source.id));
+  const valueKeys = new Set((values ?? []).map((value) => value.value_key));
+  const rulesetKeys = new Set((rulesets ?? []).map((ruleset) => ruleset.ruleset_key));
+
+  for (const source of sources ?? []) {
+    if (!source.last_fingerprint) {
+      issues.push({
+        code: 'source_missing_baseline',
+        severity: 'warning',
+        entity: source.source_key,
+        message: `${source.authority} · ${source.source_key} no tiene baseline.`,
+      });
+    }
+    if (source.last_error) {
+      issues.push({
+        code: 'source_error',
+        severity: 'critical',
+        entity: source.source_key,
+        message: `${source.authority} · ${source.source_key}: ${source.last_error}`,
+      });
+    }
+    const sourceMetadata = (source.metadata ?? {}) as Record<string, unknown>;
+    if (!source.last_success_at && sourceMetadata.monitoring_mode !== 'manual_reference') {
+      issues.push({
+        code: 'source_never_succeeded',
+        severity: 'critical',
+        entity: source.source_key,
+        message: `${source.authority} · ${source.source_key} nunca ha tenido una lectura correcta.`,
+      });
+    }
+    if (source.last_success_at) {
+      const maxDays = source.check_frequency === 'daily' ? 2 : source.check_frequency === 'monthly' ? 40 : 90;
+      if (daysBetween(source.last_success_at, now) > maxDays) {
+        issues.push({
+          code: 'source_stale',
+          severity: 'critical',
+          entity: source.source_key,
+          message: `${source.source_key} lleva más de ${maxDays} días sin lectura correcta.`,
+        });
+      }
+    }
+  }
+
+  for (const value of values ?? []) {
+    if (!value.source_id) {
+      issues.push({
+        code: 'value_missing_source',
+        severity: 'critical',
+        entity: value.value_key,
+        message: `${value.value_key} no tiene fuente canónica asociada.`,
+      });
+    } else if (!sourceIds.has(value.source_id)) {
+      issues.push({
+        code: 'value_source_inactive',
+        severity: 'critical',
+        entity: value.value_key,
+        message: `${value.value_key} apunta a una fuente inactiva o inexistente.`,
+      });
+    }
+  }
+  const byKey = new Map<string, NonNullable<typeof values>>();
+  for (const value of values ?? []) {
+    const list = byKey.get(value.value_key) ?? [];
+    list.push(value);
+    byKey.set(value.value_key, list);
+  }
+
+  for (const [valueKey, rows] of byKey) {
+    const current = rows.filter((row) =>
+      row.valid_from <= today && (row.valid_to == null || row.valid_to >= today),
+    );
+    const latest = rows[rows.length - 1];
+    const latestMetadata = (latest?.metadata ?? {}) as Record<string, unknown>;
+    if (current.length === 0 && latestMetadata.availability_mode !== 'latest_published') {
+      issues.push({
+        code: 'value_no_current_record',
+        severity: 'warning',
+        entity: valueKey,
+        message: `${valueKey} no tiene un valor vigente para ${today}.`,
+      });
+    }
+    if (current.length === 0 && latest && latestMetadata.availability_mode === 'latest_published') {
+      const maxAgeDays = typeof latestMetadata.max_age_days === 'number' ? latestMetadata.max_age_days : 62;
+      if (daysBetween(`${latest.valid_from}T00:00:00Z`, now) > maxAgeDays) {
+        issues.push({
+          code: 'value_latest_published_stale',
+          severity: 'critical',
+          entity: valueKey,
+          message: `${valueKey} supera la antigüedad máxima de ${maxAgeDays} días sin un nuevo dato oficial.`,
+        });
+      }
+    }
+
+    for (let i = 1; i < rows.length; i += 1) {
+      const previous = rows[i - 1];
+      const next = rows[i];
+      if (previous.valid_to == null || previous.valid_to >= next.valid_from) {
+        issues.push({
+          code: 'value_overlap',
+          severity: 'critical',
+          entity: valueKey,
+          message: `${valueKey} tiene vigencias solapadas entre ${previous.period_key} y ${next.period_key}.`,
+        });
+      }
+    }
+  }
+
+  for (const ruleset of rulesets ?? []) {
+    if (!ruleset.source_id) {
+      issues.push({
+        code: 'ruleset_missing_source',
+        severity: 'critical',
+        entity: ruleset.ruleset_key,
+        message: `${ruleset.ruleset_key} no tiene fuente canónica asociada.`,
+      });
+    } else if (!sourceIds.has(ruleset.source_id)) {
+      issues.push({
+        code: 'ruleset_source_inactive',
+        severity: 'critical',
+        entity: ruleset.ruleset_key,
+        message: `${ruleset.ruleset_key} apunta a una fuente inactiva o inexistente.`,
+      });
+    }
+  }
+
+  const rulesetsByKey = new Map<string, NonNullable<typeof rulesets>>();
+  for (const ruleset of rulesets ?? []) {
+    const list = rulesetsByKey.get(ruleset.ruleset_key) ?? [];
+    list.push(ruleset);
+    rulesetsByKey.set(ruleset.ruleset_key, list);
+  }
+
+  for (const [rulesetKey, rows] of rulesetsByKey) {
+    const current = rows.filter((row) =>
+      row.valid_from <= today && (row.valid_to == null || row.valid_to >= today),
+    );
+    if (current.length === 0) {
+      issues.push({
+        code: 'ruleset_no_current_record',
+        severity: 'warning',
+        entity: rulesetKey,
+        message: `${rulesetKey} no tiene una regla vigente para ${today}.`,
+      });
+    }
+    if (current.length > 1) {
+      issues.push({
+        code: 'ruleset_multiple_current_records',
+        severity: 'critical',
+        entity: rulesetKey,
+        message: `${rulesetKey} tiene más de una versión vigente para ${today}.`,
+      });
+    }
+
+    for (let i = 1; i < rows.length; i += 1) {
+      const previous = rows[i - 1];
+      const next = rows[i];
+      if (previous.valid_to == null || previous.valid_to >= next.valid_from) {
+        issues.push({
+          code: 'ruleset_overlap',
+          severity: 'critical',
+          entity: rulesetKey,
+          message: `${rulesetKey} tiene vigencias solapadas entre versiones regulatorias.`,
+        });
+      }
+    }
+  }
+
+  const sourceDependencyCounts = new Map<string, number>();
+  const rulesetSourceIds = new Map<string, Set<string>>();
+  for (const ruleset of rulesets ?? []) {
+    if (!ruleset.source_id) continue;
+    const ids = rulesetSourceIds.get(ruleset.ruleset_key) ?? new Set<string>();
+    ids.add(ruleset.source_id);
+    rulesetSourceIds.set(ruleset.ruleset_key, ids);
+  }
+  for (const dependency of dependencies ?? []) {
+    const sourceIdsForDependency = new Set<string>();
+    if (dependency.source_id) sourceIdsForDependency.add(dependency.source_id);
+    if (dependency.ruleset_key) {
+      for (const rulesetSourceId of rulesetSourceIds.get(dependency.ruleset_key) ?? []) {
+        sourceIdsForDependency.add(rulesetSourceId);
+      }
+    }
+    for (const sourceId of sourceIdsForDependency) {
+      sourceDependencyCounts.set(
+        sourceId,
+        (sourceDependencyCounts.get(sourceId) ?? 0) + 1,
+      );
+    }
+  }
+
+  for (const source of sources ?? []) {
+    const metadata = (source.metadata ?? {}) as Record<string, unknown>;
+    if ((sourceDependencyCounts.get(source.id) ?? 0) === 0 && metadata.discovery_only !== true) {
+      issues.push({
+        code: 'source_without_dependency',
+        severity: 'warning',
+        entity: source.source_key,
+        message: `${source.source_key} está activa pero no tiene ninguna dependencia explícita.`,
+      });
+    }
+  }
+  for (const dependency of dependencies ?? []) {
+    if (dependency.source_id && !sourceIds.has(dependency.source_id)) {
+      issues.push({
+        code: 'dependency_orphan_source',
+        severity: 'critical',
+        entity: dependency.id,
+        message: `Dependencia ${dependency.dependency_type}:${dependency.dependency_key} apunta a una fuente inexistente.`,
+      });
+    }
+    if (dependency.value_key && !valueKeys.has(dependency.value_key)) {
+      issues.push({
+        code: 'dependency_orphan_value',
+        severity: 'critical',
+        entity: dependency.id,
+        message: `Dependencia ${dependency.dependency_type}:${dependency.dependency_key} apunta al valor inexistente ${dependency.value_key}.`,
+      });
+    }
+    if (dependency.ruleset_key && !rulesetKeys.has(dependency.ruleset_key)) {
+      issues.push({
+        code: 'dependency_orphan_ruleset',
+        severity: 'critical',
+        entity: dependency.id,
+        message: `Dependencia ${dependency.dependency_type}:${dependency.dependency_key} apunta al ruleset inexistente ${dependency.ruleset_key}.`,
+      });
+    }
+  }
+
+  for (const run of runs ?? []) {
+    if (run.status === 'running' && minutesBetween(run.started_at, now) >= 15) {
+      issues.push({
+        code: 'run_stuck',
+        severity: 'critical',
+        entity: run.id,
+        message: `Ejecución ${run.run_type} permanece running desde ${run.started_at}.`,
+      });
+    }
+  }
+
+  return {
+    checkedAt: now.toISOString(),
+    issues,
+    critical: issues.filter((issue) => issue.severity === 'critical').length,
+    warnings: issues.filter((issue) => issue.severity === 'warning').length,
+    healthy: issues.length === 0,
+  };
+}

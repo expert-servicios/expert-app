@@ -142,20 +142,37 @@ CRITERIOS DE VIABILIDAD:
 const arraigo_social: ViabilityCheck = {
   serviceSlug: 'arraigo-social',
   serviceName: 'Arraigo Social',
-  intro: 'El arraigo social requiere 3 años de empadronamiento y, en la mayoría de los casos, contrato de trabajo. Verifica tu situación en 3 minutos.',
+  intro: 'El arraigo social exige, con carácter general, 2 años de permanencia continuada en España y acreditar vínculos familiares + medios económicos o integración social. Verifica tu situación en 3 minutos.',
   estimatedMinutes: 3,
   questions: [
     {
-      id: 'anios_empadronado',
+      id: 'anios_permanencia',
       type: 'select',
-      label: '¿Cuántos años llevas empadronado ininterrumpidamente en España?',
-      hint: 'Las ausencias de más de 90 días seguidos pueden interrumpir el cómputo.',
+      label: '¿Cuánto tiempo llevas en España de forma continuada?',
+      hint: 'Para el arraigo social actual se exigen, con carácter general, al menos 2 años inmediatamente anteriores a la solicitud.',
       required: true,
       options: [
-        { value: 'menos_de_3', label: 'Menos de 3 años', disqualifies: true },
-        { value: 'exactamente_3', label: 'Exactamente 3 años (o a punto de cumplirlos)' },
-        { value: 'mas_de_3', label: 'Más de 3 años' },
+        { value: 'menos_de_2', label: 'Menos de 2 años', disqualifies: true },
+        { value: 'dos_o_mas', label: '2 años o más' },
       ],
+    },
+    {
+      id: 'ausencias',
+      type: 'select',
+      label: 'Durante esos 2 años, ¿cuánto tiempo has estado fuera de España?',
+      required: true,
+      options: [
+        { value: 'hasta_90', label: '90 días o menos' },
+        { value: 'mas_90', label: 'Más de 90 días', escalates: true },
+      ],
+    },
+    {
+      id: 'proteccion_internacional',
+      type: 'boolean',
+      label: '¿Has sido solicitante de protección internacional durante parte de ese periodo?',
+      hint: 'Ese tiempo puede afectar al cómputo y debe revisarse antes de fijar la fecha de solicitud.',
+      required: true,
+      escalatesIfTrue: true,
     },
     {
       id: 'situacion_actual',
@@ -163,83 +180,91 @@ const arraigo_social: ViabilityCheck = {
       label: '¿Cuál es tu situación migratoria actual en España?',
       required: true,
       options: [
-        { value: 'sin_permiso',   label: 'Sin permiso de residencia (situación irregular)' },
-        { value: 'caducado',      label: 'Permiso caducado (en renovación o no renovado)' },
-        { value: 'otro_permiso',  label: 'Tengo otro tipo de permiso vigente' },
+        { value: 'sin_permiso', label: 'Sin autorización de estancia o residencia' },
+        { value: 'otro_procedimiento', label: 'Tengo otro procedimiento de estancia/residencia en curso', escalates: true },
+        { value: 'permiso_vigente', label: 'Tengo una autorización vigente', escalates: true },
       ],
     },
     {
-      id: 'contrato_trabajo',
+      id: 'vinculos',
       type: 'boolean',
-      label: '¿Tienes una oferta o contrato de trabajo de al menos 30 horas semanales?',
-      hint: 'Si no tienes contrato, también puede solicitarse mediante medios económicos propios, vínculos familiares u otras excepciones.',
+      label: '¿Tienes cónyuge, pareja registrada, ascendientes o descendientes de primer grado con residencia legal en España?',
       required: true,
     },
     {
-      id: 'medios_propios',
+      id: 'medios_economicos',
       type: 'boolean',
-      label: 'Si no tienes contrato: ¿Dispones de medios económicos propios suficientes (mínimo ~600€/mes)?',
-      hint: 'Solo relevante si no tienes contrato de trabajo. Si tienes contrato, puedes omitir esta pregunta.',
+      label: 'Si tienes esos vínculos, ¿puedes acreditar medios económicos suficientes?',
       required: false,
+    },
+    {
+      id: 'informe_integracion',
+      type: 'select',
+      label: 'Si no tienes esos vínculos, ¿tienes o puedes solicitar informe favorable de integración social?',
+      required: false,
+      options: [
+        { value: 'si', label: 'Sí' },
+        { value: 'en_tramite', label: 'Está en trámite' },
+        { value: 'no', label: 'No / no lo sé', escalates: true },
+      ],
     },
     {
       id: 'antecedentes',
       type: 'boolean',
-      label: '¿Tienes antecedentes penales en España o en tu país de origen?',
-      hint: 'Los antecedentes penales en vigor suponen causa de denegación directa.',
+      label: '¿Tienes antecedentes penales relevantes en España o en los países donde residiste antes de entrar en España?',
       required: true,
-      disqualifiesIfTrue: true,
-    },
-    {
-      id: 'prohibicion_entrada',
-      type: 'boolean',
-      label: '¿Tienes alguna resolución de expulsión o prohibición de entrada en España o la UE vigente?',
-      required: true,
-      disqualifiesIfTrue: true,
+      escalatesIfTrue: true,
     },
   ],
   docs: [
-    { id: 'pasaporte', label: 'Pasaporte en vigor (todas las páginas)', required: true },
+    { id: 'pasaporte', label: 'Pasaporte en vigor (copia completa)', required: true },
     {
-      id: 'empadronamiento_historico',
-      label: 'Empadronamiento histórico de los últimos 3 años',
+      id: 'permanencia',
+      label: 'Pruebas de permanencia continuada durante al menos 2 años',
       required: true,
-      howToGet: 'Solicítalo en tu Ayuntamiento o en la sede electrónica municipal con certificado digital.',
+      howToGet: 'Prioriza certificados de empadronamiento histórico y otra documentación emitida o registrada por administraciones públicas.',
     },
     {
-      id: 'contrato_oferta',
-      label: 'Contrato de trabajo u oferta laboral (firmada por empleador)',
+      id: 'vinculos_familiares',
+      label: 'Documentación acreditativa de vínculos familiares (si aplica)',
       required: false,
     },
     {
-      id: 'nominas',
-      label: 'Últimas 3 nóminas (si ya trabajas)',
+      id: 'medios',
+      label: 'Documentación de medios económicos suficientes (si aplica)',
+      required: false,
+    },
+    {
+      id: 'informe_integracion',
+      label: 'Informe favorable de integración social (si aplica)',
       required: false,
     },
     {
       id: 'antecedentes_pais_origen',
-      label: 'Certificado de antecedentes penales del país de origen (apostillado y traducido)',
+      label: 'Certificado de antecedentes penales del país o países correspondientes, cuando proceda',
       required: true,
-      howToGet: 'Solicítalo en el consulado o ministerio de justicia de tu país. Debe apostillarse y traducirse al español.',
+      howToGet: 'Debe cumplir los requisitos de apostilla/legalización y traducción jurada cuando correspondan.',
     },
-    { id: 'foto', label: 'Foto reciente en fondo blanco (tamaño carné)', required: true },
   ],
-  aiCriteria: `Eres un experto en extranjería española. Evalúa si el caso es VIABLE para el Arraigo Social.
+  aiCriteria: `Eres un experto en extranjería española. Evalúa si el caso es VIABLE para el Arraigo Social conforme al régimen vigente.
 
 NORMATIVA APLICABLE:
-- Art. 124 del RD 557/2011 (Reglamento de la Ley de Extranjería, modificado por RD 629/2022).
-- Requisitos imprescindibles:
-  1. Permanencia continuada en España de al menos 3 años (ausencias <90 días sin interrumpir el cómputo).
-  2. Empadronamiento continuado durante esos 3 años.
-  3. Ausencia de antecedentes penales en España y país de origen.
-  4. No tener resolución de expulsión o prohibición de entrada vigente.
-  5. Contrato de trabajo de mínimo 30h/semana, O bien relaciones familiares con residentes legales en España, O medios económicos propios.
+- Ley Orgánica 4/2000.
+- Real Decreto 1155/2024.
+- Requisitos clave:
+  1. Permanencia continuada en España de al menos 2 años inmediatamente anteriores a la solicitud.
+  2. Ausencias no superiores a 90 días durante ese periodo.
+  3. Revisar periodos como solicitante de protección internacional antes de computarlos.
+  4. No ser titular de autorización de estancia/residencia ni estar inmerso en otro procedimiento incompatible, salvo revisión profesional.
+  5. Carecer de antecedentes penales en los términos legalmente exigibles.
+  6. Acreditar vínculos familiares con personas extranjeras residentes + medios económicos suficientes, O informe favorable de integración social si no concurren esos vínculos.
+  7. El contrato de trabajo NO es requisito específico del arraigo social; esa lógica corresponde al arraigo sociolaboral.
 
 CRITERIOS DE VIABILIDAD:
-- VIABLE: Cumple años de empadronamiento, sin antecedentes, con contrato de trabajo o medios propios.
-- PARCIAL: Cumple tiempo pero sin contrato (explorar otras vías: vínculos familiares, medios propios, arraigo familiar).
-- NO VIABLE: Menos de 3 años de empadronamiento, antecedentes penales en vigor, o prohibición de entrada vigente.
-- ESCALAR: Situaciones mixtas, ausencias prolongadas, historiales migratorios complejos.`,
+- VIABLE: 2+ años, ausencias <=90 días, situación compatible, sin incidencias penales relevantes, y vía familiar+medios o integración social acreditable.
+- PARCIAL: Cumple tiempo pero falta completar medios económicos o informe de integración.
+- NO VIABLE: Menos de 2 años de permanencia acreditable.
+- ESCALAR: Protección internacional previa, ausencias >90 días, antecedentes, otro procedimiento migratorio, dudas sobre cómputo o documentación.`,
 };
 
 // ── Arraigo Familiar ──────────────────────────────────────────────────────────
@@ -247,97 +272,57 @@ CRITERIOS DE VIABILIDAD:
 const arraigo_familiar: ViabilityCheck = {
   serviceSlug: 'arraigo-familiar',
   serviceName: 'Arraigo Familiar',
-  intro: 'El arraigo familiar se basa en vínculos con ciudadanos españoles o residentes legales. Verifica en 2 minutos si cumples los requisitos.',
-  estimatedMinutes: 2,
+  intro: 'El arraigo familiar vigente se limita a supuestos específicos. Primero debemos identificar el vínculo y la nacionalidad/situación del familiar de referencia.',
+  estimatedMinutes: 3,
   questions: [
     {
-      id: 'vinculo',
+      id: 'familiar_tipo',
       type: 'select',
-      label: '¿Cuál es tu vínculo con el ciudadano español o el residente legal?',
+      label: '¿Cuál es el supuesto familiar que quieres acreditar?',
       required: true,
       options: [
-        { value: 'hijo_de_espanol',        label: 'Soy hijo/a de padre o madre de nacionalidad española' },
-        { value: 'padre_de_hijo_espanol',  label: 'Soy padre/madre de un hijo/a con nacionalidad española' },
-        { value: 'conyuge_de_espanol',     label: 'Estoy casado/a o en pareja de hecho con ciudadano/a español/a' },
-        { value: 'otro',                   label: 'Otro vínculo familiar', escalates: true },
+        { value: 'progenitor_tutor_menor_ue', label: 'Padre/madre/tutor de menor nacional UE/EEE/Suiza' },
+        { value: 'apoyo_discapacidad_ue', label: 'Familiar que presta apoyo a persona con discapacidad nacional UE/EEE/Suiza' },
+        { value: 'familiar_espanol', label: 'Familiar de ciudadano español', escalates: true },
+        { value: 'otro', label: 'Otro vínculo familiar', escalates: true },
       ],
     },
     {
-      id: 'familiar_acredita',
+      id: 'convivencia_cargo',
       type: 'boolean',
-      label: '¿Puede el familiar acreditar la ciudadanía española o la residencia legal vigente?',
+      label: '¿Puedes acreditar convivencia, cargo, tutela, apoyo u obligaciones familiares cuando el supuesto lo exige?',
       required: true,
       disqualifiesIfFalse: true,
     },
     {
-      id: 'convivencia',
+      id: 'familiar_documentado',
       type: 'boolean',
-      label: '¿Convives o has convivido con ese familiar en España?',
-      hint: 'No siempre es obligatorio, pero refuerza la solicitud.',
-      required: false,
-    },
-    {
-      id: 'situacion_actual',
-      type: 'select',
-      label: '¿Cuál es tu situación migratoria actual?',
+      label: '¿Dispones de documentación que acredite la nacionalidad/situación del familiar y el vínculo?',
       required: true,
-      options: [
-        { value: 'irregular', label: 'Sin permiso de residencia' },
-        { value: 'caducado',  label: 'Permiso caducado' },
-        { value: 'otro',      label: 'Tengo otro tipo de permiso vigente' },
-      ],
+      disqualifiesIfFalse: true,
     },
     {
       id: 'antecedentes',
       type: 'boolean',
-      label: '¿Tienes antecedentes penales en España o en tu país de origen?',
+      label: '¿Tienes antecedentes penales relevantes?',
       required: true,
       escalatesIfTrue: true,
     },
   ],
   docs: [
-    { id: 'pasaporte', label: 'Pasaporte en vigor (todas las páginas)', required: true },
-    {
-      id: 'doc_familiar',
-      label: 'DNI español o TIE del familiar de referencia',
-      required: true,
-    },
-    {
-      id: 'doc_vinculo',
-      label: 'Documento acreditativo del vínculo familiar (libro de familia, partida de nacimiento, certificado de matrimonio)',
-      required: true,
-    },
-    {
-      id: 'empadronamiento',
-      label: 'Empadronamiento actualizado (máx. 3 meses)',
-      required: true,
-    },
-    {
-      id: 'antecedentes_pais_origen',
-      label: 'Certificado de antecedentes penales del país de origen (apostillado y traducido si aplica)',
-      required: false,
-    },
-    { id: 'foto', label: 'Foto reciente en fondo blanco (tamaño carné)', required: true },
+    { id: 'pasaporte', label: 'Pasaporte completo o documento de viaje admitido', required: true },
+    { id: 'doc_familiar', label: 'Documento de identidad/nacionalidad del familiar de referencia', required: true },
+    { id: 'doc_vinculo', label: 'Documento acreditativo del vínculo familiar', required: true },
+    { id: 'prueba_cargo', label: 'Prueba de convivencia, cargo, tutela, apoyo u obligaciones paternofiliales según el supuesto', required: true },
+    { id: 'antecedentes', label: 'Certificado de antecedentes penales cuando proceda', required: false },
   ],
-  aiCriteria: `Eres un experto en extranjería española. Evalúa si el caso es VIABLE para el Arraigo Familiar.
-
-NORMATIVA APLICABLE:
-- Art. 125 del RD 557/2011 (Reglamento de la Ley de Extranjería, modificado por RD 629/2022).
-- Supuestos de arraigo familiar:
-  A) Ser padre/madre de un menor con nacionalidad española (no requiere tiempo mínimo de estancia).
-  B) Ser hijo/a de padre o madre originariamente español (nacido español, no por adquisición).
-  C) Ser cónyuge o pareja de hecho registrada de residente legal en España (se requiere convivencia acreditada).
-- En todos los casos: ausencia de antecedentes penales y no tener orden de expulsión vigente.
-- No se requiere un tiempo mínimo de empadronamiento en todos los supuestos (a diferencia del arraigo social).
-
-CRITERIOS DE VIABILIDAD:
-- VIABLE: Tiene el vínculo familiar correcto, el familiar acredita su situación legal, sin antecedentes graves.
-- PARCIAL: Vínculo familiar pero dudas sobre la documentación acreditativa o la situación del familiar.
-- NO VIABLE: Sin vínculo familiar acreditable, familiar sin situación legal regularizada.
-- ESCALAR: Antecedentes penales, órdenes de expulsión previas, situaciones familiares complejas.`,
+  aiCriteria: `Evalúa si el caso encaja en el arraigo familiar vigente conforme al RD 1155/2024 y la hoja informativa 31 actualizada en abril de 2026.
+- NO tratarlo como vía genérica para familiares de españoles o residentes.
+- VIABLE: supuesto legal vigente claramente identificado y vínculo/cargo/apoyo acreditable.
+- PARCIAL: falta documentación pero el supuesto parece encajar.
+- ESCALAR: familiar de ciudadano español, otro vínculo no previsto, dudas sobre régimen aplicable, antecedentes o situación migratoria compleja.
+- NO VIABLE: el supuesto no pertenece al arraigo familiar vigente y corresponde otra autorización.`,
 };
-
-// ── Nacionalidad Española ─────────────────────────────────────────────────────
 
 const nacionalidad: ViabilityCheck = {
   serviceSlug: 'nacionalidad-espanola',
@@ -510,6 +495,28 @@ const nacionalidad_menor: ViabilityCheck = {
       ],
     },
     {
+      id: 'apellidos_actuales',
+      type: 'select',
+      label: '¿Cómo figura actualmente el menor respecto a sus apellidos?',
+      required: true,
+      options: [
+        { value: 'dos_o_mas', label: 'Ya figura con dos o más apellidos' },
+        { value: 'uno', label: 'Figura con un solo apellido' },
+        { value: 'no_seguro', label: 'No estoy seguro/a', escalates: true },
+      ],
+    },
+    {
+      id: 'apellido_materno_cambio',
+      type: 'select',
+      label: '¿La madre usa actualmente un apellido distinto de su apellido personal/de nacimiento por matrimonio u otro cambio?',
+      required: true,
+      options: [
+        { value: 'si', label: 'Sí' },
+        { value: 'no', label: 'No' },
+        { value: 'no_seguro', label: 'No estoy seguro/a', escalates: true },
+      ],
+    },
+    {
       id: 'cert_nacimiento',
       type: 'boolean',
       label: '¿Dispones del certificado literal de nacimiento del menor expedido por el Registro Civil español?',
@@ -530,6 +537,7 @@ const nacionalidad_menor: ViabilityCheck = {
     { id: 'tie_padres', label: 'NIE/TIE de los progenitores o representantes, si procede', required: false },
     { id: 'empadronamiento', label: 'Empadronamiento familiar/colectivo actualizado', required: true },
     { id: 'centro_escolar', label: 'Certificado del centro escolar o educativo cuando corresponda por edad y escolarización', required: false },
+    { id: 'apellido_materno', label: 'Certificado de nacimiento o matrimonio de la madre que acredite su apellido personal anterior al matrimonio, solo si la documentación existente no basta y hace falta prueba adicional', required: false },
   ],
   aiCriteria: `Eres un experto en extranjería y nacionalidad española. Evalúa la viabilidad de la nacionalidad española por residencia de un menor nacido en España.
 
@@ -549,11 +557,21 @@ PRUEBAS:
 - Menores de 18 años: exentos de DELE A2 para nacionalidad.
 - Revisar documentación escolar/educativa cuando corresponda para acreditar integración.
 
+APELLIDOS PARA REGISTRO CIVIL:
+- Antes de preparar o enviar a firma el formulario oficial, separar la identidad extranjera vigente del menor de los apellidos que corresponderán a la futura inscripción española.
+- Si el menor usa un solo apellido, comprobar la filiación y el apellido personal de la madre. Si la madre cambió de apellido por matrimonio, identificar su apellido personal/de nacimiento con la documentación ya disponible.
+- No ofrecer la duplicación del apellido como libre elección para evitar documentación cuando la línea materna está determinada o puede acreditarse.
+- No marcar que se desconoce el apellido materno por mera preferencia de la familia.
+- Confirmar el orden de los apellidos con ambos progenitores y comprobar si ya existe un orden registral previo para hermanos de la misma filiación.
+- Guía EXPERT: /docs/apellidos-menor-nacionalidad-registro-civil
+- Instrucción DGRN 23/05/2007: https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948
+- Ley del Registro Civil, art. 49: https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a49
+
 CRITERIOS DE VIABILIDAD:
-- VIABLE: nacido en España + 1 año de residencia legal/continuada/inmediatamente anterior + documentación esencial + representación clara.
-- PARCIAL: cumple el año pero falta documentación subsanable o acreditación escolar/representativa.
+- VIABLE: nacido en España + 1 año de residencia legal/continuada/inmediatamente anterior + documentación esencial + representación clara + apellidos registrales cerrados.
+- PARCIAL: cumple el año pero falta documentación subsanable, acreditación escolar/representativa o todavía no se han cerrado los apellidos registrales.
 - NO VIABLE: no ha cumplido el año de residencia legal o ya no es menor para este servicio específico.
-- ESCALAR: desacuerdo entre progenitores, representación dudosa, interrupciones de residencia, filiación compleja, posible nacionalidad de origen o apatridia.`,
+- ESCALAR: desacuerdo entre progenitores, representación dudosa, interrupciones de residencia, filiación o apellidos complejos, posible nacionalidad de origen o apatridia.`,
 };
 
 // ── Permiso Inicial de Residencia ────────────────────────────────────────────
@@ -605,7 +623,7 @@ const permiso_residencia: ViabilityCheck = {
   aiCriteria: `Eres un experto en extranjería española. Evalúa qué vía de residencia es más adecuada para el caso del cliente.
 
 NORMATIVA: LO 4/2000 y RD 557/2011. Las vías principales son:
-- Arraigo social (art. 124): 3 años + empadronamiento + contrato trabajo o medios económicos.
+- Arraigo social vigente: 2 años de permanencia continuada + vínculos familiares y medios económicos o informe favorable de integración social.
 - Arraigo familiar (art. 125): vínculo familiar con español o residente legal.
 - Arraigo laboral (art. 123): 2 años + relación laboral irregular acreditable.
 - Residencia por trabajo (art. 36-46): oferta de trabajo, cupo o situación nacional de empleo favorable.
@@ -657,61 +675,84 @@ const generic: ViabilityCheck = {
 
 const arraigo_laboral: ViabilityCheck = {
   serviceSlug: 'arraigo-laboral',
-  serviceName: 'Arraigo Laboral',
-  intro: 'El arraigo laboral requiere 2 años de permanencia y una relación laboral irregular acreditada por la Inspección de Trabajo. Verifica tu situación en 2 minutos.',
-  estimatedMinutes: 2,
+  serviceName: 'Arraigo Sociolaboral',
+  intro: 'El arraigo sociolaboral exige, con carácter general, 2 años de permanencia y uno o varios contratos que sumen al menos 20 horas semanales.',
+  estimatedMinutes: 3,
   questions: [
     {
       id: 'tiempo_espana',
       type: 'boolean',
-      label: '¿Llevas al menos 2 años de permanencia continuada en España?',
+      label: '¿Puedes acreditar al menos 2 años de permanencia continuada en España?',
       required: true,
       disqualifiesIfFalse: true,
     },
     {
-      id: 'acta_inspeccion',
+      id: 'proteccion_internacional',
+      type: 'boolean',
+      label: '¿Has sido solicitante de protección internacional durante parte de ese periodo?',
+      required: true,
+      escalatesIfTrue: true,
+    },
+    {
+      id: 'contratos',
+      type: 'boolean',
+      label: '¿Tienes uno o varios contratos de trabajo firmados?',
+      required: true,
+      disqualifiesIfFalse: true,
+    },
+    {
+      id: 'horas',
       type: 'select',
-      label: '¿Dispones de resolución que acredite la relación laboral irregular?',
+      label: '¿Cuántas horas semanales suman todos los contratos?',
       required: true,
       options: [
-        { value: 'acta_itss',   label: 'Sí, tengo acta de la Inspección de Trabajo (ITSS)' },
-        { value: 'sentencia',   label: 'Sí, tengo sentencia judicial firme' },
-        { value: 'sepe',        label: 'Sí, tengo resolución del SEPE' },
-        { value: 'no',          label: 'No tengo ninguno de estos documentos', disqualifies: true },
-        { value: 'tramitando',  label: 'Estoy en proceso de obtenerlo', escalates: true },
+        { value: 'menos_20', label: 'Menos de 20 horas', disqualifies: true },
+        { value: '20_o_mas', label: '20 horas o más' },
       ],
     },
     {
-      id: 'meses_laboral',
-      type: 'select',
-      label: '¿Cuántos meses de relación laboral acredita el documento?',
+      id: 'salario',
+      type: 'boolean',
+      label: '¿El salario respeta el SMI o convenio aplicable en proporción a la jornada?',
       required: true,
-      options: [
-        { value: 'menos_6', label: 'Menos de 6 meses', disqualifies: true },
-        { value: '6_o_mas', label: '6 meses o más' },
-      ],
+      disqualifiesIfFalse: true,
+    },
+    {
+      id: 'empleador_solvente',
+      type: 'boolean',
+      label: '¿El empleador o empleadores están al corriente y pueden acreditar solvencia suficiente?',
+      required: true,
+      escalatesIfTrue: false,
     },
     {
       id: 'antecedentes',
       type: 'boolean',
-      label: '¿Tienes antecedentes penales en España o en tu país de origen?',
+      label: '¿Tienes antecedentes penales relevantes?',
       required: true,
       escalatesIfTrue: true,
     },
   ],
   docs: [
-    { id: 'pasaporte', label: 'Pasaporte en vigor', required: true },
-    { id: 'acta_itss', label: 'Acta de la Inspección de Trabajo, sentencia judicial o resolución del SEPE', required: true },
-    { id: 'empadronamiento', label: 'Certificado de empadronamiento histórico (2 años)', required: true },
-    { id: 'antecedentes_espana', label: 'Certificado de antecedentes penales de España', required: true },
-    { id: 'antecedentes_origen', label: 'Certificado de antecedentes penales del país de origen (apostillado)', required: true },
+    { id: 'pasaporte', label: 'Pasaporte completo', required: true },
+    { id: 'permanencia', label: 'Pruebas de permanencia continuada durante al menos 2 años', required: true },
+    { id: 'contratos', label: 'Contrato o contratos de trabajo firmados', required: true },
+    { id: 'empleador_docs', label: 'NIF y documentación societaria/representación del empleador cuando proceda', required: true },
+    { id: 'solvencia', label: 'IRPF/IVA/Impuesto sobre Sociedades/VILE u otra prueba de solvencia según proceda', required: true },
+    { id: 'antecedentes', label: 'Certificado de antecedentes penales extranjero cuando proceda', required: true },
+    { id: 'cualificacion', label: 'Titulación/homologación cuando la profesión sea regulada', required: false },
   ],
-  aiCriteria: `Evalúa si el caso es VIABLE para el Arraigo Laboral (art. 123 RD 557/2011).
-REQUISITOS: 2 años de permanencia + relación laboral irregular acreditable durante al menos 6 meses mediante acta de la ITSS, sentencia judicial o resolución del SEPE. Sin antecedentes penales.
-VIABLE: cumple 2 años y tiene documento válido con ≥6 meses. PARCIAL: tiene el documento pero con período inferior o hay dudas sobre continuidad. NO VIABLE: sin acta/sentencia/resolución, o menos de 2 años de permanencia.`,
+  aiCriteria: `Evalúa conforme al arraigo sociolaboral vigente (RD 1155/2024; hoja 29 actualizada en abril de 2026).
+REQUISITOS CLAVE:
+- 2 años de permanencia continuada.
+- Uno o varios contratos de trabajo.
+- Jornada semanal global no inferior a 20 horas.
+- Salario conforme SMI o convenio aplicable, proporcional a la jornada.
+- Empleador/es al corriente de obligaciones y con solvencia suficiente.
+- No aplicar como regla actual el antiguo arraigo laboral basado en acta ITSS/sentencia.
+VIABLE: cumple los requisitos anteriores.
+PARCIAL/ESCALAR: protección internacional previa, dudas de cómputo, salario, solvencia o profesión regulada.
+NO VIABLE: menos de 2 años o contratos que no alcanzan la jornada mínima.`,
 };
-
-// ── Reagrupación Familiar ─────────────────────────────────────────────────────
 
 const reagrupacion_familiar: ViabilityCheck = {
   serviceSlug: 'reagrupacion-familiar',

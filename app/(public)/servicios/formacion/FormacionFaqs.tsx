@@ -9,7 +9,7 @@ const faqs = [
   },
   {
     q: '¿Qué pasa si no tengo certificado digital?',
-    a: 'Podemos orientarte para obtenerlo antes de la sesión. Como Punto de Registro Autorizado de Camerfirma, tramitamos certificados digitales para personas físicas y representantes de empresa. Reserva primero una llamada gratuita y te explicamos cómo.'
+    a: 'Podemos orientarte para obtenerlo antes de la sesión. En EXPERT tramitamos certificados digitales Camerfirma para personas físicas y entidades. Reserva primero una llamada gratuita y te explicamos cómo.'
   },
   {
     q: '¿Necesito tener Holded contratado para todas las sesiones?',

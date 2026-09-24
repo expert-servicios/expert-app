@@ -7,6 +7,7 @@ interface Profile {
   full_name: string | null;
   phone: string | null;
   profile_completed: boolean | null;
+  client_type?: 'particular' | 'autonomo' | 'empresa' | null;
 }
 
 interface ServiceInfo {
@@ -17,23 +18,34 @@ interface ServiceInfo {
   category: string;
 }
 
+type BillingPolicy = 'profile_only' | 'company_only' | 'flexible';
+
+interface BillingCompany {
+  id: string;
+  name: string;
+  taxId: string | null;
+  legalForm: string | null;
+}
+
 interface Props {
   profile: Profile | null;
   service: ServiceInfo;
+  billingPolicy: BillingPolicy;
+  companies: BillingCompany[];
 }
 
 type CheckoutResponse = {
   url?: string;
   error?: string;
   requiresAuth?: boolean;
-  code?: 'profile_required';
+  code?: 'profile_required' | 'company_required' | 'billing_required';
 };
 
 function text(v: string | null | undefined) {
   return v ?? '';
 }
 
-export function ProfileCompletionWizard({ profile, service }: Props) {
+export function ProfileCompletionWizard({ profile, service, billingPolicy, companies }: Props) {
   const [fullName, setFullName] = useState(text(profile?.full_name));
   const [phone, setPhone] = useState(text(profile?.phone));
 
@@ -44,6 +56,18 @@ export function ProfileCompletionWizard({ profile, service }: Props) {
 
   const [checking, setChecking] = useState(false);
   const [checkErr, setCheckErr] = useState<string | null>(null);
+
+  const profileCanBeBilled = billingPolicy !== 'company_only' && profile?.client_type !== 'empresa';
+  const initialBillingTarget = billingPolicy === 'profile_only'
+    ? 'profile'
+    : !profileCanBeBilled && companies.length === 1
+      ? companies[0].id
+      : billingPolicy === 'flexible' && profileCanBeBilled
+        ? 'profile'
+        : '';
+  const [billingTarget, setBillingTarget] = useState(initialBillingTarget);
+  const needsBillingChoice = billingPolicy !== 'profile_only';
+  const billingReadyToContinue = !needsBillingChoice || Boolean(billingTarget);
 
   const canSave = useMemo(() => Boolean(fullName.trim() && phone.trim()), [fullName, phone]);
 
@@ -80,7 +104,10 @@ export function ProfileCompletionWizard({ profile, service }: Props) {
       const res = await fetch('/api/services/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId: service.priceId }),
+        body: JSON.stringify({
+          priceId: service.priceId,
+          ...(billingTarget && billingTarget !== 'profile' ? { companyId: billingTarget } : {}),
+        }),
       });
       const data = await res.json() as CheckoutResponse;
       if (res.status === 401 || data.requiresAuth) {
@@ -90,6 +117,10 @@ export function ProfileCompletionWizard({ profile, service }: Props) {
       if (res.status === 409 && data.code === 'profile_required') {
         setSaved(false);
         setCheckErr(data.error ?? 'Completa tus datos antes de pagar.');
+        return;
+      }
+      if (res.status === 409 && data.code === 'company_required') {
+        setCheckErr(data.error ?? 'Selecciona la entidad que contratará el servicio.');
         return;
       }
       if (data.url) {
@@ -146,14 +177,61 @@ export function ProfileCompletionWizard({ profile, service }: Props) {
         </div>
       )}
 
+      {saved && needsBillingChoice && (
+        <div className="rounded-2xl border border-[#D4A017]/20 bg-white p-6 shadow-sm">
+          <p className="font-semibold text-[#0D1B2A]">¿A nombre de quién se contrata?</p>
+          <p className="mt-1 text-sm text-[#23364D]/60">
+            Elige el destinatario fiscal antes de pasar a Stripe.
+          </p>
+
+          <div className="mt-4 space-y-2">
+            {profileCanBeBilled && (
+              <button
+                type="button"
+                onClick={() => { setBillingTarget('profile'); setCheckErr(null); }}
+                className={`w-full rounded-xl border px-4 py-3 text-left text-sm transition ${
+                  billingTarget === 'profile'
+                    ? 'border-[#D4A017] bg-[#D4A017]/10 font-semibold text-[#0D1B2A]'
+                    : 'border-[#d8cbb5] text-[#29384a] hover:border-[#D4A017]'
+                }`}
+              >
+                {profile?.client_type === 'autonomo' ? 'A mi nombre · empresario individual / autónomo' : 'A mi nombre · persona física'}
+              </button>
+            )}
+
+            {companies.map((company) => (
+              <button
+                key={company.id}
+                type="button"
+                onClick={() => { setBillingTarget(company.id); setCheckErr(null); }}
+                className={`w-full rounded-xl border px-4 py-3 text-left text-sm transition ${
+                  billingTarget === company.id
+                    ? 'border-[#D4A017] bg-[#D4A017]/10 font-semibold text-[#0D1B2A]'
+                    : 'border-[#d8cbb5] text-[#29384a] hover:border-[#D4A017]'
+                }`}
+              >
+                <span className="block">{company.name}</span>
+                {company.taxId && <span className="mt-0.5 block text-xs font-normal text-[#29384a]/60">NIF/CIF: {company.taxId}</span>}
+              </button>
+            ))}
+          </div>
+
+          {!profileCanBeBilled && companies.length === 0 && (
+            <p className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-800">
+              Este servicio requiere una entidad fiscal vinculada. Añádela desde tu panel antes de continuar.
+            </p>
+          )}
+        </div>
+      )}
+
       {saved && (
         <div className="space-y-3">
           {checkErr && <p className="rounded-xl bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700">{checkErr}</p>}
-          <button type="button" onClick={handleCheckout} disabled={checking} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4A017] py-4 text-base font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60">
+          <button type="button" onClick={handleCheckout} disabled={checking || !billingReadyToContinue} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4A017] py-4 text-base font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60">
             {checking ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
             {checking ? 'Redirigiendo a Stripe...' : `Pagar - ${service.displayPrice}`}
           </button>
-          <p className="text-center text-xs text-[#23364D]/50">Pago seguro con Stripe. Direccion de facturacion y NIF/CIF se piden en la pasarela de pago.</p>
+          <p className="text-center text-xs text-[#23364D]/50">Pago seguro con Stripe. La pasarela pedirá solo los datos fiscales que correspondan al destinatario de la factura.</p>
         </div>
       )}
     </div>

@@ -153,7 +153,8 @@ export const footerLinks = {
     { label: 'Aviso legal', href: '/aviso-legal' },
     { label: 'Privacidad', href: '/privacidad' },
     { label: 'Cookies', href: '/cookies' },
-    { label: 'Condiciones de contratación', href: '/condiciones' }
+    { label: 'Condiciones de contratación', href: '/condiciones' },
+    { label: 'Política de reseñas', href: '/politica-de-resenas' }
   ],
   contact: [
     { label: 'WhatsApp', href: '/contacto' },

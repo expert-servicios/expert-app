@@ -7,8 +7,13 @@ import { sendEmail } from '@/lib/email/send';
 import { syncOrderToHolded, syncSubscriptionToHolded } from '@/lib/integrations/holded';
 import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
 import { getCalOnboardingUrl, getCalFormacionUrl } from '@/lib/utils/cal';
+import {
+  createPrivateBookingAuthorization,
+  withPrivateBookingAuthorization,
+} from '@/lib/booking/private-booking-authorization';
 import { persistAcademyCertificationPayment, persistAcademyProgramPayment } from '@/lib/payments/academy-fulfillment';
 import { legacyOrderFields, requireCreatedOrderId } from '@/lib/payments/non-academy-order';
+import { ensureServiceOrderFulfillment } from '@/lib/payments/service-order-fulfillment';
 import {
   academyEnrollmentConfirmed,
   academyEnrollmentConfirmedAdmin,
@@ -25,6 +30,26 @@ import {
   subscriptionPaymentFailed
 } from '@/lib/email/templates';
 
+async function getAuthorizedPrivateBookingUrl(
+  session: Stripe.Checkout.Session,
+  service: 'onboarding' | 'formacion-holded',
+  baseUrl: string,
+  email: string,
+): Promise<string> {
+  if (!baseUrl) return '';
+
+  const token = await createPrivateBookingAuthorization({
+    service,
+    email,
+    clientId: session.client_reference_id ?? session.metadata?.user_id ?? null,
+    companyId: session.metadata?.company_id ?? null,
+    source: 'stripe',
+    sourceRef: session.id,
+  });
+
+  return withPrivateBookingAuthorization(baseUrl, token);
+}
+
 function getAdminEmails(): string[] {
   return (process.env.ADMIN_EMAILS ?? 'info@expertconsulting.es')
     .split(',')
@@ -34,6 +59,7 @@ function getAdminEmails(): string[] {
 
 type SupabaseAdmin = ReturnType<typeof getSupabaseAdmin>;
 type SubscriptionRecord = { clientId: string; companyId: string | null; planName: string; periodEnd: string | null };
+
 
 function getPlanName(priceId: string, fallback?: string | null): string {
   if (fallback) return fallback;
@@ -547,7 +573,7 @@ export async function POST(req: NextRequest) {
       if (quoteId) {
         const { data: quote, error: quoteFetchError } = await supabaseAdmin
           .from('quotes')
-          .select('client_id,lead_id,title,docs_checklist')
+          .select('client_id,lead_id,title,docs_checklist,company_id')
           .eq('id', quoteId)
           .single();
 
@@ -558,15 +584,47 @@ export async function POST(req: NextRequest) {
           const paymentId = (session.payment_intent as string) ?? session.id;
           const currency = session.currency?.toUpperCase() ?? 'EUR';
 
-          // ── Idempotency: skip if order already exists for this payment ──
-          const { data: existingOrder } = await supabaseAdmin
-            .from('orders')
-            .select('id')
-            .eq('stripe_payment_id', paymentId)
-            .maybeSingle();
+          // ── Idempotency: protect both the Stripe payment and the quote itself ──
+          const [{ data: existingOrder }, { data: existingQuoteOrder }] = await Promise.all([
+            supabaseAdmin
+              .from('orders')
+              .select('id')
+              .eq('stripe_payment_id', paymentId)
+              .maybeSingle(),
+            supabaseAdmin
+              .from('orders')
+              .select('id,stripe_payment_id')
+              .eq('quote_id', quoteId)
+              .limit(1)
+              .maybeSingle(),
+          ]);
 
           if (existingOrder) {
             console.log('[webhook] order already exists for payment', paymentId, '— skipping');
+          } else if (existingQuoteOrder) {
+            console.error('[webhook] duplicate payment detected for quote', {
+              quoteId,
+              existingPaymentId: existingQuoteOrder.stripe_payment_id,
+              newPaymentId: paymentId,
+              sessionId: session.id,
+            });
+            await supabaseAdmin.from('audit_logs').insert({
+              action: 'quote.duplicate_payment_detected',
+              entity: 'quotes',
+              entity_id: quoteId,
+              metadata: {
+                existing_order_id: existingQuoteOrder.id,
+                existing_payment_id: existingQuoteOrder.stripe_payment_id,
+                new_payment_id: paymentId,
+                new_session_id: session.id,
+              }
+            }).then(() => {});
+            notifyAdmins({
+              title: '⚠️ Pago duplicado detectado en presupuesto',
+              body: `${quote.title ?? 'Presupuesto'} · requiere revisión manual en Stripe`,
+              url: '/admin/presupuestos',
+              tag: `quote-duplicate-payment-${quoteId}`,
+            }).catch(() => {});
           } else {
             await supabaseAdmin
               .from('quotes')
@@ -586,6 +644,7 @@ export async function POST(req: NextRequest) {
               source: 'quote',
               quote_id: quoteId,
               client_id: quote.client_id,
+              company_id: quote.company_id ?? null,
               stripe_payment_id: paymentId,
               amount_eur: amountEur,
               ...legacyOrderFields(amountEur, quote.title),
@@ -660,7 +719,7 @@ export async function POST(req: NextRequest) {
               const quoteJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_order_holded', {
                 clientName, clientEmail,
                 description: quote.title ?? 'Servicio EXPERT',
-                amountEur, orderId: newOrderId, localEntity: 'orders',
+                amountEur, orderId: newOrderId, companyId: quote.company_id ?? null, localEntity: 'orders',
               });
               await startHoldedJob(supabaseAdmin, quoteJobId);
               syncOrderToHolded({
@@ -669,6 +728,7 @@ export async function POST(req: NextRequest) {
                 description: quote.title ?? 'Servicio EXPERT',
                 amountEur,
                 orderId: newOrderId,
+                companyId: quote.company_id ?? null,
                 localEntity: 'orders'
               }).then((result) => {
                 void resolveHoldedJob(supabaseAdmin, quoteJobId, result.error ? 'failed' : 'success', result.error);
@@ -758,10 +818,28 @@ export async function POST(req: NextRequest) {
         catalogOrderMetadata = (existingCatalogOrder.metadata ?? catalogOrderMetadata) as Record<string, unknown>;
       }
 
-      // The nationality fulfillment trigger runs AFTER INSERT and links the newly
-      // created operational case back to the order. Re-read the order so admin
-      // notifications can link directly to the case without guessing.
       if (!catalogOrderId) throw new Error('Catalog order id missing after persistence');
+
+      const catalogServiceSlugs = (session.metadata?.service_slugs ?? session.metadata?.service_slug ?? '')
+        .split(',')
+        .map((slug) => slug.trim())
+        .filter(Boolean);
+      const catalogServiceSlug = catalogServiceSlugs[0] ?? '';
+
+      await ensureServiceOrderFulfillment(supabaseAdmin, {
+        orderId: catalogOrderId,
+        serviceSlug: catalogServiceSlug,
+        serviceSlugs: catalogServiceSlugs,
+        serviceName,
+        clientId: session.client_reference_id ?? null,
+        companyId: session.metadata?.company_id ?? null,
+        checkoutLocale: session.metadata?.checkout_locale === 'ru' ? 'ru' : 'es',
+      });
+
+      // Operational blueprints create/reconcile the case and its task plan.
+      // Existing database-triggered cases remain idempotently supported.
+      // Re-read the order so notifications always resolve the linked case.
+
       const { data: fulfilledCatalogOrder, error: fulfilledCatalogOrderError } = await supabaseAdmin
         .from('orders')
         .select('id,case_id')
@@ -822,8 +900,18 @@ export async function POST(req: NextRequest) {
         const holdedPackageSlugs = ['holded-pack-starter', 'holded-migracion-sin-inventario', 'holded-migracion-con-inventario'];
         const isHoldedMigration = slugList.some((s: string) => holdedPackageSlugs.includes(s));
         const isHoldedFormacion = slugList.includes('holded-modulo-formacion');
-        const calOnboarding = getCalOnboardingUrl() ?? '';
-        const calFormacion = getCalFormacionUrl() ?? '';
+        const calOnboarding = await getAuthorizedPrivateBookingUrl(
+          session,
+          'onboarding',
+          getCalOnboardingUrl() ?? '',
+          customerEmail
+        );
+        const calFormacion = await getAuthorizedPrivateBookingUrl(
+          session,
+          'formacion-holded',
+          getCalFormacionUrl() ?? '',
+          customerEmail
+        );
 
         if (isHoldedMigration) {
           const packageName = serviceName;
@@ -888,7 +976,7 @@ export async function POST(req: NextRequest) {
         const catalogJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_order_holded', {
           clientName: customerName, clientEmail: customerEmail,
           description: serviceName, amountEur,
-          orderId: catalogOrderId ?? session.id, localEntity: 'orders',
+          orderId: catalogOrderId ?? session.id, companyId: session.metadata?.company_id ?? null, localEntity: 'orders',
         });
         await startHoldedJob(supabaseAdmin, catalogJobId);
         syncOrderToHolded({
@@ -897,6 +985,7 @@ export async function POST(req: NextRequest) {
           description: serviceName,
           amountEur,
           orderId: catalogOrderId ?? session.id,
+          companyId: session.metadata?.company_id ?? null,
           localEntity: 'orders'
         }).then((result) => {
           void resolveHoldedJob(supabaseAdmin, catalogJobId, result.error ? 'failed' : 'success', result.error);
@@ -924,8 +1013,18 @@ export async function POST(req: NextRequest) {
         'Cliente';
 
       if (customerEmail) {
-        const calOnboarding = getCalOnboardingUrl() ?? '';
-        const calFormacion = getCalFormacionUrl() ?? '';
+        const calOnboarding = await getAuthorizedPrivateBookingUrl(
+          session,
+          'onboarding',
+          getCalOnboardingUrl() ?? '',
+          customerEmail
+        );
+        const calFormacion = await getAuthorizedPrivateBookingUrl(
+          session,
+          'formacion-holded',
+          getCalFormacionUrl() ?? '',
+          customerEmail
+        );
         const holdedAmountEur = Number(session.amount_total ?? 0) / 100;
         if (productType === 'holded') {
           const packageName = session.metadata?.package_name ?? 'Paquete Holded';
@@ -940,12 +1039,12 @@ export async function POST(req: NextRequest) {
           void enqueueHoldedSync(supabaseAdmin, 'sync_holded_migration', {
             clientName: customerName, clientEmail: customerEmail,
             description: packageName, amountEur: holdedAmountEur,
-            orderId: session.id, localEntity: 'stripe_checkout_sessions',
+            orderId: session.id, companyId: session.metadata?.company_id ?? null, localEntity: 'stripe_checkout_sessions',
           }).then((migJobId) => {
             startHoldedJob(supabaseAdmin, migJobId).then(() => syncOrderToHolded({
               clientName: customerName, clientEmail: customerEmail,
               description: packageName, amountEur: holdedAmountEur,
-              orderId: session.id, localEntity: 'stripe_checkout_sessions',
+              orderId: session.id, companyId: session.metadata?.company_id ?? null, localEntity: 'stripe_checkout_sessions',
             })).then((result) => resolveHoldedJob(supabaseAdmin, migJobId, result.error ? 'failed' : 'success', result.error))
               .catch((err) => {
                 console.error('[webhook] holded sync (migration) failed:', err);
@@ -964,12 +1063,12 @@ export async function POST(req: NextRequest) {
           void enqueueHoldedSync(supabaseAdmin, 'sync_holded_formacion', {
             clientName: customerName, clientEmail: customerEmail,
             description: 'Formación EXPERT — sesión 2 h', amountEur: holdedAmountEur,
-            orderId: session.id, localEntity: 'stripe_checkout_sessions',
+            orderId: session.id, companyId: session.metadata?.company_id ?? null, localEntity: 'stripe_checkout_sessions',
           }).then((formJobId) => {
             startHoldedJob(supabaseAdmin, formJobId).then(() => syncOrderToHolded({
               clientName: customerName, clientEmail: customerEmail,
               description: 'Formación EXPERT — sesión 2 h', amountEur: holdedAmountEur,
-              orderId: session.id, localEntity: 'stripe_checkout_sessions',
+              orderId: session.id, companyId: session.metadata?.company_id ?? null, localEntity: 'stripe_checkout_sessions',
             })).then((result) => resolveHoldedJob(supabaseAdmin, formJobId, result.error ? 'failed' : 'success', result.error))
               .catch((err) => {
                 console.error('[webhook] holded sync (formacion) failed:', err);

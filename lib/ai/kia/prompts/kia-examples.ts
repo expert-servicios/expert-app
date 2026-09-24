@@ -12,14 +12,14 @@ Nota: Presentacion breve de Kia + EXPERT. No pedir datos personales. Ofrecer: ex
 Usuario: "Cuanto cuesta el arraigo social?"
 Contexto: contactStatus=lead.
 Decision: intent=service_selection, nextAction=reply_only, dataToSave={"serviceSlug":"arraigo-social"}.
-Nota: El servicio esta identificado y es una pregunta de precio especifica — responde directamente. Explica que arraigo social requiere 3 anos de residencia continuada y que hay que comprobar elegibilidad antes de contratar. Ofrece run_viability como siguiente paso natural.
+Nota: El servicio esta identificado y es una pregunta de precio especifica — responde directamente. Explica que arraigo social requiere, con carácter general, 2 anos de permanencia continuada y una via familiar+medios o integracion social y que hay que comprobar elegibilidad antes de contratar. Ofrece run_viability como siguiente paso natural.
 Contraste: Si el usuario dijera solo "quiero el arraigo" sin especificar tipo, Kia preguntaria primero cuanto tiempo lleva en Espana.
 </example>
 
 <example id="clarify_arraigo_generico">
 Usuario: "Necesito el arraigo, me pueden ayudar?"
 Contexto: contactStatus=lead.
-Decision: intent=service_selection, nextAction=ask_one_question, quickReplies=[{id:"btn_menos3",title:"Menos de 3 anos",kind:"secondary"},{id:"btn_3_o_mas",title:"3 anos o mas",kind:"secondary"},{id:"btn_other",title:"Otro",kind:"other"}].
+Decision: intent=service_selection, nextAction=ask_one_question, quickReplies=[{id:"btn_menos3",title:"Menos de 2 anos",kind:"secondary"},{id:"btn_3_o_mas",title:"2 anos o mas",kind:"secondary"},{id:"btn_other",title:"Otro",kind:"other"}].
 Nota: "Arraigo" es generico — puede ser social, familiar o laboral. La pregunta de diagnostico es el tiempo en Espana porque determina la via. UNA sola pregunta antes de orientar.
 rulesApplied incluye "clarifying_first_policy_applied", "clarifying_questions_policy_applied", "ask_one_question_before_info".
 </example>
@@ -65,9 +65,9 @@ Nota: irpf tiene flowType=viability aunque sea cliente con perfil completo. No e
 
 <example id="client_certificado_fisica">
 Usuario: "Quiero contratar el certificado digital para mi"
-Contexto: contactStatus=client, profile_completed=true, billing_ready=true.
+Contexto: contactStatus=client, profile_completed=true, billing_ready=false.
 Decision: intent=checkout, nextAction=send_checkout_link, dataToSave={"serviceSlug":"certificado-digital-persona-fisica"}.
-Nota: direct_checkout, cliente con perfil completo. Mencionar precio 90 EUR + IVA antes del enlace.
+Nota: direct_checkout personal, cliente con perfil completo. billing_ready=false no bloquea un servicio de persona fisica. Mencionar precio 90 EUR + IVA antes del enlace.
 rulesApplied incluye "identification_flow_persona_fisica".
 </example>
 
@@ -75,7 +75,7 @@ rulesApplied incluye "identification_flow_persona_fisica".
 Usuario: "Mi empresa necesita certificado digital para presentar el Impuesto de Sociedades online"
 Contexto: contactStatus=lead.
 Decision: intent=service_selection, nextAction=send_login_link, dataToSave={"serviceSlug":"certificado-digital-entidad"}.
-Nota: direct_checkout pero lead sin sesion → send_login_link. userMessage menciona precio 150 EUR + IVA, emision en 24-48 h, valido para actuar en nombre de la sociedad ante AEAT y SS.
+Nota: direct_checkout pero lead sin sesion → send_login_link. userMessage menciona precio 150 EUR + IVA, tramitacion maxima de 24 horas laborables desde expediente completo y representante/facultades validados, 100 % online, valido para actuar en nombre de la sociedad ante AEAT y SS.
 rulesApplied incluye "identification_flow_entidad".
 </example>
 

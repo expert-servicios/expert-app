@@ -242,7 +242,7 @@ export const SERVICES: Record<string, KiaServiceDef> = {
     area: 'fiscal', category: 'declaraciones-impuestos',
     docs: [
       'DNI / NIE en vigor',
-      'Alta en Hacienda y RETA (modelo 036/037)',
+      'Alta en Hacienda y RETA (modelo 036)',
       'Facturas emitidas del trimestre',
       'Facturas recibidas (gastos deducibles)',
       'Extracto bancario del trimestre',
@@ -370,8 +370,8 @@ export const SERVICES: Record<string, KiaServiceDef> = {
     area: 'extranjeria', category: 'extranjeria-nacionalidad',
     docs: [
       'Pasaporte en vigor',
-      'Empadronamiento histórico (últimos 2-3 años según tipo)',
-      'Contrato de trabajo o informe arraigo social / familiar',
+      'Pruebas de permanencia según la modalidad de arraigo',
+      'Documentación específica según tipo de arraigo: vínculos, medios, integración o relación laboral',
       'Medios económicos suficientes (nóminas o extracto bancario)',
     ],
   },
@@ -436,8 +436,8 @@ export const SERVICES: Record<string, KiaServiceDef> = {
     stripePriceId: 'price_1TXMmQLeYwwgvux4ivP7Uhn8',
     docs: [
       'Pasaporte en vigor (todas las páginas)',
-      'Empadronamiento histórico (mínimo 3 años)',
-      'Contrato de trabajo firmado por empleador (vigente)',
+      'Pruebas de permanencia continuada (mínimo 2 años)',
+      'Vínculos familiares + medios económicos o informe de integración social',
       'Ausencia de antecedentes penales en España y país de origen',
     ],
   },
@@ -639,7 +639,7 @@ export const PRECAL_FLOWS: Record<string, PrecalQuestion[]> = {
     },
     {
       key: 'contrato',
-      text: { es: '¿Tienes contrato de trabajo firmado o informe de arraigo social del ayuntamiento?', ru: 'Есть ли у вас трудовой договор или отчёт об интеграции от мэрии?' },
+      text: { es: '¿Tu caso se basa en vínculos familiares e integración social o en una relación laboral?', ru: 'Ваш случай основан на семейных связях и социальной интеграции или на трудовых отношениях?' },
       type: 'buttons',
       options: [
         { id: 'si_contrato', label: { es: 'Tengo contrato', ru: 'Есть договор' } },
@@ -651,21 +651,28 @@ export const PRECAL_FLOWS: Record<string, PrecalQuestion[]> = {
 
   arraigo_familiar: [
     {
-      key: 'familiar',
-      text: { es: '¿Tienes padre, madre o hijo/a con nacionalidad española o residencia legal en España?', ru: 'Есть ли у вас родитель или ребёнок — гражданин Испании или законный резидент?' },
+      key: 'supuesto',
+      text: {
+        es: '¿Tu caso es progenitor/tutor de menor UE/EEE/Suiza o familiar que presta apoyo a una persona con discapacidad UE/EEE/Suiza?',
+        ru: 'Ваш случай связан с родителем/опекуном несовершеннолетнего гражданина ЕС/ЕЭЗ/Швейцарии или поддержкой родственника с инвалидностью из этих стран?',
+      },
       type: 'buttons',
       options: [
-        { id: 'si', label: { es: 'Sí', ru: 'Да' } },
-        { id: 'no', label: { es: 'No', ru: 'Нет' }, escalate: true },
+        { id: 'menor_ue', label: { es: 'Progenitor / tutor de menor', ru: 'Родитель / опекун ребёнка' } },
+        { id: 'apoyo_discapacidad', label: { es: 'Apoyo a familiar con discapacidad', ru: 'Поддержка родственника с инвалидностью' } },
+        { id: 'otro', label: { es: 'Otro vínculo familiar', ru: 'Другая семейная связь' }, escalate: true },
       ],
     },
     {
-      key: 'tiempo_espana',
-      text: { es: '¿Cuánto tiempo llevas en España?', ru: 'Как долго вы в Испании?' },
+      key: 'condiciones',
+      text: {
+        es: '¿Puedes acreditar el vínculo y las condiciones de convivencia/cargo/apoyo que correspondan?',
+        ru: 'Можете подтвердить родство и необходимые условия совместного проживания/содержания/поддержки?',
+      },
       type: 'buttons',
       options: [
-        { id: 'menos_2', label: { es: 'Menos de 2 años', ru: 'Менее 2 лет'    }, escalate: true },
-        { id: '2_mas',   label: { es: '2 años o más',    ru: '2 года и больше' } },
+        { id: 'si', label: { es: 'Sí', ru: 'Да' } },
+        { id: 'no', label: { es: 'No / no sé', ru: 'Нет / не знаю' }, escalate: true },
       ],
     },
   ],
@@ -673,20 +680,26 @@ export const PRECAL_FLOWS: Record<string, PrecalQuestion[]> = {
   arraigo_laboral: [
     {
       key: 'tiempo_espana',
-      text: { es: '¿Llevas más de 2 años en España sin permiso de trabajo?', ru: 'Вы в Испании более 2 лет без разрешения на работу?' },
+      text: {
+        es: '¿Puedes acreditar al menos 2 años de permanencia continuada en España?',
+        ru: 'Можете подтвердить не менее 2 лет непрерывного пребывания в Испании?',
+      },
       type: 'buttons',
       options: [
-        { id: 'si', label: { es: 'Sí, más de 2 años', ru: 'Да, более 2 лет' } },
-        { id: 'no', label: { es: 'No',                 ru: 'Нет'             }, escalate: true },
+        { id: 'si', label: { es: 'Sí', ru: 'Да' } },
+        { id: 'no', label: { es: 'No', ru: 'Нет' }, escalate: true },
       ],
     },
     {
-      key: 'relacion_laboral',
-      text: { es: '¿Tienes acta de la ITSS, sentencia judicial o resolución del SEPE que pruebe la relación laboral?', ru: 'Есть акт ITSS, решение суда или SEPE, подтверждающее трудовые отношения?' },
+      key: 'contratos',
+      text: {
+        es: '¿Tienes uno o varios contratos firmados que sumen al menos 20 horas semanales?',
+        ru: 'Есть один или несколько подписанных трудовых договоров с общей занятостью не менее 20 часов в неделю?',
+      },
       type: 'buttons',
       options: [
-        { id: 'si', label: { es: 'Sí, lo tengo',  ru: 'Да, есть' } },
-        { id: 'no', label: { es: 'No lo tengo',   ru: 'Нет'      }, escalate: true },
+        { id: 'si', label: { es: 'Sí', ru: 'Да' } },
+        { id: 'no', label: { es: 'No / menos de 20 h', ru: 'Нет / менее 20 ч' }, escalate: true },
       ],
     },
   ],

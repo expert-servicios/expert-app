@@ -37,6 +37,13 @@ const serviceCategories = [
     ]
   },
   {
+    id: 'proteccion-datos',
+    title: 'Protección de datos',
+    services: [
+      { id: 'proteccion-datos-rgpd', name: 'RGPD / LOPDGDD — revisión e implantación', description: 'Revisión personalizada de tratamientos, documentación, proveedores, web y riesgos' }
+    ]
+  },
+  {
     id: 'formacion',
     title: 'Formación y acompañamiento',
     services: [
@@ -53,10 +60,17 @@ function getServiceName(serviceId: string): string {
   return serviceId.replace(/-/g, ' ');
 }
 
-function buildContextNote(params: { serviceFromUrl: string | null; originFromUrl: string | null; typeFromUrl: string | null }): string {
+function buildContextNote(params: {
+  serviceFromUrl: string | null;
+  originFromUrl: string | null;
+  typeFromUrl: string | null;
+  modeFromUrl: string | null;
+}): string {
   const parts: string[] = [];
   if (params.serviceFromUrl) parts.push(`Servicio solicitado: ${getServiceName(params.serviceFromUrl)} (${params.serviceFromUrl}).`);
   if (params.typeFromUrl === 'caso-complejo') parts.push('Tipo de solicitud: caso complejo.');
+  if (params.modeFromUrl === 'full_service') parts.push('Modalidad solicitada: servicio completo.');
+  if (params.modeFromUrl === 'guided') parts.push('Modalidad solicitada: formación guiada.');
   if (params.originFromUrl) parts.push(`Origen de la solicitud: ${getServiceName(params.originFromUrl)} (${params.originFromUrl}).`);
   return parts.join('\n');
 }
@@ -66,7 +80,15 @@ export function SolicitudPresupuestoForm() {
   const serviceFromUrl = searchParams.get('servicio');
   const originFromUrl = searchParams.get('origen');
   const typeFromUrl = searchParams.get('tipo');
-  const contextNote = buildContextNote({ serviceFromUrl, originFromUrl, typeFromUrl });
+  const modeFromUrl = searchParams.get('modalidad');
+  const summaryFromUrl = searchParams.get('resumen');
+  const rgpdProjectId = searchParams.get('rgpd_project_id');
+  const rgpdVersion = searchParams.get('rgpd_version');
+  const baseContextNote = buildContextNote({ serviceFromUrl, originFromUrl, typeFromUrl, modeFromUrl });
+  const rgpdContext = rgpdProjectId
+    ? 'Referencia expediente RGPD: ' + rgpdProjectId + (rgpdVersion ? ' · versión ' + rgpdVersion : '') + '.'
+    : '';
+  const contextNote = [baseContextNote, rgpdContext, summaryFromUrl].filter(Boolean).join('\n');
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

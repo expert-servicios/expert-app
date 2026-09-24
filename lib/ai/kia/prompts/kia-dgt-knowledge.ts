@@ -17,21 +17,21 @@ Documentos necesarios (comprador y vendedor):
 - Contrato de compraventa firmado por ambas partes.
 - Certificado de la ITV en vigor (si el vehiculo tiene mas de 4 años).
 - Justificante de pago del Impuesto de Transmisiones Patrimoniales (ITP) — modelo 620 o equivalente de la CCAA.
-- Justificante de pago de la plusvalia municipal si aplica (Impuesto sobre Vehículos de Traccion Mecanica — IVTM en el ayuntamiento).
+- Comprobar que el IVTM del vehiculo esta al corriente cuando proceda. No confundir IVTM con la plusvalia municipal inmobiliaria.
 
 Proceso:
 1. Firmar el contrato de compraventa.
-2. Pagar el ITP en la Consejeria de Hacienda de la CCAA del comprador (plazo: 30 dias habiles desde la compraventa). Tipo general aproximado: 4-8% segun CCAA sobre el valor venal del vehiculo.
-3. Presentar la transferencia en la DGT: online via sede.dgt.gob.es (recomendado, con certificado digital) o en la Jefatura Provincial de Trafico.
-4. Plazo para notificar la transferencia a la DGT: 30 dias desde la compraventa.
+2. Liquidar o acreditar exencion/no sujecion del impuesto autonómico que corresponda. No usar un porcentaje nacional aproximado: resolver la CCAA, modelo y valoracion aplicables.
+3. Consultar DGT_VEHICLE_TRANSFER_2026 para condiciones de transferibilidad y plazo.
+4. El comprador debe solicitar el cambio de titularidad en la DGT dentro de 30 dias desde la firma del contrato.
 5. La DGT emite el nuevo permiso de circulacion a nombre del comprador.
 
-Tasa DGT por transferencia: consultar importe actualizado en sede.dgt.gob.es (en torno a 55-60 EUR aprox).
+Tasa DGT: consultar DGT_FEES_2026 y aplicar el tipo de tasa del tramite concreto.
 EXPERT gestiona todo el proceso por el cliente: ITP + transferencia DGT.
 </dgt_transferencia_vehiculo>
 
 <dgt_matriculacion>
-MATRICULACION DE VEHICULO NUEVO O IMPORTADO:
+MATRICULACION E IMPORTACION DE VEHICULOS:
 
 Vehiculo nuevo (compra a concesionario):
 - El concesionario normalmente gestiona la matriculacion incluida en el precio.
@@ -39,25 +39,21 @@ Vehiculo nuevo (compra a concesionario):
 
 Vehiculo importado (de fuera de España):
 - Homologacion tecnica (si el vehiculo no tiene ficha tecnica española).
-- Pago del Impuesto de Matriculacion (IEDMT) si aplica (vehiculos con CO2 superiores a ciertos limites).
-- Presentacion en Jefatura de Trafico: documentacion del vehiculo, seguro, ITV, justificante de pago de impuestos.
-- EXPERT asesora y gestiona matriculaciones de vehiculos importados.
+- Consultar IEDMT_REGISTRATION_2026 antes de calcular o afirmar si existe cuota: revisar hecho imponible, exencion/no sujecion, categoria, emisiones oficiales, territorio y base.
+- Para vehiculos procedentes de la UE o de fuera de la UE consultar VEHICLE_IMPORT_REGISTRATION_2026; no mezclar ambos circuitos.
+- Fuera de la UE existe capa aduanera previa y puede ser necesario certificado H1 tras el despacho.
+- Para la tasa DGT consultar DGT_FEES_2026.
+- EXPERT asesora y gestiona matriculaciones e importaciones de vehiculos segun el caso.
 </dgt_matriculacion>
 
 <dgt_canje_permiso>
 CANJE DE PERMISO DE CONDUCIR EXTRANJERO:
 
-Convenios de reciprocidad: España tiene acuerdos de canje directo con muchos paises (UE/EEE, y otros como Marruecos, Argentina, Colombia, etc.).
-
-Proceso general para paises con convenio:
-1. Solicitar cita previa en la Jefatura Provincial de Trafico: https://sede.dgt.gob.es/
-2. Documentos: NIE o TIE vigente, permiso de conducir extranjero original, traduccion jurada si no es de la UE, fotografia, justificante pago tasa.
-3. El permiso extranjero queda retenido mientras dura el tramite.
-4. Plazo estimado de resolucion: variable (semanas a meses segun provincia y carga).
-
-Paises sin convenio: requieren superar pruebas teorica y practica en España.
-UE/EEE: canje directo sin pruebas, tramite simplificado.
-EXPERT gestiona el canje de permiso extranjero como parte del servicio de trafico.
+Consultar DGT_DUPLICATES_PERMITS_2026 antes de orientar un canje.
+- UE/EEE: la via de canje no exige examen de conduccion, sin perjuicio de los requisitos administrativos aplicables.
+- Otros paises: comprobar siempre la pagina DGT vigente de convenios y las condiciones especificas del pais y clase de permiso.
+- No mantener listas estaticas de paises ni asumir que todo pais sin convenio sigue exactamente el mismo circuito.
+EXPERT gestiona el canje de permiso extranjero dentro de los servicios de trafico cuando el caso es tramitable.
 </dgt_canje_permiso>
 
 <dgt_otros_tramites>
@@ -68,9 +64,12 @@ Informe de puntos del carnet:
 - Necesita certificado digital, Cl@ve o SMS con DNI/NIE + fecha nacimiento + numero permiso.
 - Es gratuito y puede consultarse en cualquier momento.
 
-Duplicado del permiso de circulacion:
-- Por perdida, robo o deterioro. Tramite online en sede DGT o en Jefatura.
-- Requiere denuncia si es por robo.
+Duplicados y documentacion de trafico:
+- Consultar DGT_DUPLICATES_PERMITS_2026.
+- Distinguir permiso de conducir, permiso de circulacion y ficha tecnica/eITV.
+- Perdida, robo o deterioro pueden dar lugar a duplicado, pero cambios de datos o caracteristicas pueden ser renovacion u otro tramite.
+- No afirmar que la denuncia es siempre requisito del duplicado: verificar el canal y supuesto concreto.
+- Para tasas consultar DGT_FEES_2026.
 
 Baja definitiva de vehiculo (desguace):
 - El desguace autorizado realiza la baja automaticamente al recibir el vehiculo.
@@ -104,11 +103,13 @@ ITV (Inspeccion Tecnica de Vehiculos):
 
 <dgt_kia_rules>
 REGLAS DE KIA PARA PREGUNTAS SOBRE DGT Y TRAFICO:
-- Para transferencias: recordar siempre que el comprador debe pagar el ITP antes de presentar la transferencia en DGT.
+- Para transferencias: consultar DGT_VEHICLE_TRANSFER_2026; el comprador debe acreditar pago, exencion o no sujecion del impuesto autonómico aplicable antes de completar el cambio de titularidad.
 - Para vehiculos de empresa: las transferencias requieren documentacion adicional (escrituras, representante legal).
 - Para canje de permiso extranjero: verificar si el pais tiene convenio de reciprocidad con España antes de orientar el proceso.
 - Si el cliente pregunta por multas de trafico: orientacion inicial sobre plazos de recurso; si es complejo, derivar a EXPERT (recurso administrativo trafico).
-- EXPERT gestiona: transferencias, matriculaciones, canje de permisos, bajas, duplicados y tramites con Capitania Maritima. Servicio: svc_trafico.
+- Para duplicados/canjes consultar DGT_DUPLICATES_PERMITS_2026.
+- Para embarcaciones de recreo consultar MARITIME_RECREATIONAL_CRAFT_2026.
+- EXPERT gestiona: transferencias, matriculaciones, canjes, bajas, duplicados y tramites maritimos segun el expediente. Servicio: svc_trafico.
 - Sede DGT: https://sede.dgt.gob.es/ | App miDGT para consultas rapidas.
 </dgt_kia_rules>
 </dgt_knowledge>

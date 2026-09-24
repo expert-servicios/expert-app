@@ -1,5 +1,6 @@
 ﻿import { ImageResponse } from 'next/og';
 import { categories, services } from '@/lib/utils/catalog';
+import { getLocalizedServicePresentation } from '@/lib/services/service-localized-content';
 
 export const runtime = 'edge';
 
@@ -21,6 +22,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const slug = searchParams.get('slug') ?? '';
   const variant = searchParams.get('variant') === 'hero' ? 'hero' : 'square';
+  const lang = searchParams.get('lang') === 'ru' ? 'ru' : 'es';
   const service = services.find((item) => item.slug === slug);
 
   if (!service) {
@@ -31,8 +33,20 @@ export async function GET(request: Request) {
   const isHero = variant === 'hero';
   const width = isHero ? 1600 : 1200;
   const height = isHero ? 900 : 1200;
-  const titleSize = service.name.length > 62 ? (isHero ? 58 : 54) : isHero ? 68 : 64;
-  const summary = trimText(service.metaDescription ?? service.shortDescription, isHero ? 170 : 150);
+
+  const localized = getLocalizedServicePresentation(service.slug, lang);
+  const serviceTitle = localized?.title ?? service.name;
+  const categoryName = localized?.categoryLabel ?? category?.name ?? 'Servicio profesional';
+  const summary = trimText(
+    localized?.summary ?? service.metaDescription ?? service.shortDescription,
+    isHero ? 170 : 150,
+  );
+  const titleSize = serviceTitle.length > 62 ? (isHero ? 58 : 54) : isHero ? 68 : 64;
+  const cardTitle = localized?.socialCardTitle
+    ?? (lang === 'ru' ? 'Онлайн-услуга EXPERT' : 'Expediente preparado con criterio documental');
+  const cardText = localized?.socialCardText
+    ?? (lang === 'ru' ? 'Проверка, подготовка и сопровождение процесса.' : 'Revisión, formularios, presentación y seguimiento inicial.');
+  const footerText = lang === 'ru' ? 'Онлайн-оформление в Испании' : 'Gestión online desde España';
 
   return new ImageResponse(
     (
@@ -75,9 +89,9 @@ export async function GET(request: Request) {
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div style={{ width: 86, height: 7, background: colors.gold }} />
-            <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.25 }}>Expediente preparado con criterio documental</div>
+            <div style={{ fontSize: 28, fontWeight: 700, lineHeight: 1.25 }}>{cardTitle}</div>
             <div style={{ color: colors.ink, fontSize: 22, lineHeight: 1.45 }}>
-              Revisión, formularios, presentación y seguimiento inicial.
+              {cardText}
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -125,10 +139,10 @@ export async function GET(request: Request) {
                 textTransform: 'uppercase'
               }}
             >
-              {category?.name ?? 'Servicio profesional'}
+              {categoryName}
             </div>
             <div style={{ fontFamily: 'Georgia, Times New Roman, serif', fontSize: titleSize, fontWeight: 700, lineHeight: 1.04 }}>
-              {service.name}
+              {serviceTitle}
             </div>
             <div style={{ maxWidth: isHero ? 760 : 820, color: colors.gray, fontSize: isHero ? 28 : 30, lineHeight: 1.35 }}>
               {summary}
@@ -136,7 +150,7 @@ export async function GET(request: Request) {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 18, color: colors.cream, fontSize: 24, fontWeight: 700 }}>
             <div style={{ width: 130, height: 5, background: colors.gold }} />
-            <span>Gestión online desde España</span>
+            <span>{footerText}</span>
           </div>
         </div>
       </div>

@@ -15,7 +15,7 @@ export const holdedPackStarterKnowledge = {
 
   // ── Checkout requirements ────────────────────────────────────────────────
   requiresProfileCompleted             : true,
-  requiresBillingReady                 : true,
+  requiresBillingReady                 : false, // conditional: company data only when billing to a linked entity
   requiresHoldedConnectionBeforeCheckout: false,
   allowsCheckoutWithoutHoldedAccount   : true,
 
@@ -82,7 +82,7 @@ export const holdedPackStarterKnowledge = {
   ],
 
   optionalDocs: [
-    'Alta censal 036 / 037 si la tiene (opcional).',
+    'Alta censal Modelo 036 si la tiene (opcional).',
     'Escritura de constitución si es sociedad y ya la tiene (opcional).',
     'Logo de empresa si quiere incluirlo en facturas (opcional).',
     'Ejemplo de factura anterior si ya facturaba (opcional).',

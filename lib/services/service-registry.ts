@@ -1,6 +1,7 @@
 import { services as catalogServices } from '@/lib/utils/catalog';
 import { hasSpecificViabilityCheck } from '@/lib/data/viability-checks';
 import { getReadinessCheck, hasReadinessCheck } from '@/lib/data/service-readiness-checks';
+import { getServiceBillingPolicy } from '@/lib/payments/service-billing-scope';
 
 export type ServiceFlowType =
   | 'viability'
@@ -90,7 +91,11 @@ function buildRegistry(): Map<string, ServiceRegistryEntry> {
       isSubscription: isMonthlyPlan,
       requiresHoldedConnectionBeforeCheckout: false,
       requiresProfileCompleted: isMonthlyPlan || Boolean(svc.stripePriceId),
-      requiresBillingReady: isMonthlyPlan || Boolean(svc.stripePriceId),
+      // One-off catalog checkouts only require profile billing readiness when
+      // the service is intrinsically company-only. Flexible services can be
+      // bought by an autonomo/persona or a linked company; the checkout API
+      // validates the selected company dynamically when that scope applies.
+      requiresBillingReady: isMonthlyPlan || getServiceBillingPolicy(svc.slug) === 'company_only',
     });
   }
 

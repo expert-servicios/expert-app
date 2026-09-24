@@ -7,6 +7,8 @@ export interface CatalogItem {
   suggestedPrice: number;
   mode: 'payment' | 'subscription';
   stripePriceEnvKey?: string;
+  /** Canonical public catalog slug used to resolve invoice recipient. */
+  serviceSlug?: string;
 }
 
 export const ADMIN_CATALOG: CatalogItem[] = [
@@ -84,6 +86,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   // ── Fiscalidad ───────────────────────────────────────────────────────────────
   {
     id: 'irpf',
+    serviceSlug: 'irpf',
     label: 'Declaración de la Renta (IRPF)',
     category: 'servicio',
     subcategory: 'Fiscalidad',
@@ -93,6 +96,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   },
   {
     id: 'modelo-303',
+    serviceSlug: 'iva-trimestral',
     label: 'IVA trimestral (Modelo 303)',
     category: 'servicio',
     subcategory: 'Fiscalidad',
@@ -102,6 +106,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   },
   {
     id: 'impuesto-sociedades',
+    serviceSlug: 'impuesto-sociedades',
     label: 'Impuesto sobre Sociedades (Mod. 200)',
     category: 'servicio',
     subcategory: 'Fiscalidad',
@@ -111,6 +116,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   },
   {
     id: 'modelo-151',
+    serviceSlug: 'modelo-151',
     label: 'Ley Beckham (Modelo 151)',
     category: 'servicio',
     subcategory: 'Fiscalidad',
@@ -122,15 +128,17 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   // ── Extranjería y Nacionalidad ───────────────────────────────────────────────
   {
     id: 'arraigo-social',
+    serviceSlug: 'arraigo-social',
     label: 'Arraigo Social',
     category: 'servicio',
     subcategory: 'Extranjería y Nacionalidad',
-    description: 'Solicitud de autorización de residencia por arraigo social (3 años)',
+    description: 'Solicitud de autorización de residencia por arraigo social (2 años + vínculos/integración)',
     suggestedPrice: 350,
     mode: 'payment'
   },
   {
     id: 'renovacion-residencia',
+    serviceSlug: 'renovacion-residencia',
     label: 'Renovación de Residencia',
     category: 'servicio',
     subcategory: 'Extranjería y Nacionalidad',
@@ -140,6 +148,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   },
   {
     id: 'reagrupacion-familiar',
+    serviceSlug: 'reagrupacion-familiar',
     label: 'Reagrupación Familiar',
     category: 'servicio',
     subcategory: 'Extranjería y Nacionalidad',
@@ -149,6 +158,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   },
   {
     id: 'nie-certificado',
+    serviceSlug: 'nie-pasaporte',
     label: 'NIE / Certificado de Registro',
     category: 'servicio',
     subcategory: 'Extranjería y Nacionalidad',
@@ -158,6 +168,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   },
   {
     id: 'nacionalidad-espanola',
+    serviceSlug: 'nacionalidad-espanola',
     label: 'Nacionalidad Española',
     category: 'servicio',
     subcategory: 'Extranjería y Nacionalidad',
@@ -167,6 +178,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   },
   {
     id: 'nacionalidad-menor-nacido-espana',
+    serviceSlug: 'nacionalidad-espanola-menor-nacido-en-espana',
     label: 'Nacionalidad menor nacido en España',
     category: 'servicio',
     subcategory: 'Extranjería y Nacionalidad',
@@ -178,6 +190,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   // ── Empresas y Autónomos ─────────────────────────────────────────────────────
   {
     id: 'alta-autonomo',
+    serviceSlug: 'alta-autonomo',
     label: 'Alta de Autónomo',
     category: 'servicio',
     subcategory: 'Empresas y Autónomos',
@@ -187,6 +200,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   },
   {
     id: 'constitucion-sl',
+    serviceSlug: 'constitucion-sl',
     label: 'Constitución de SL',
     category: 'servicio',
     subcategory: 'Empresas y Autónomos',
@@ -196,6 +210,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   },
   {
     id: 'migracion-holded',
+    serviceSlug: 'holded-migracion-sin-inventario',
     label: 'Migración a Holded',
     category: 'servicio',
     subcategory: 'Empresas y Autónomos',
@@ -207,6 +222,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   // ── Notaría y Propiedades ────────────────────────────────────────────────────
   {
     id: 'compraventa-inmueble',
+    serviceSlug: 'compraventa-inmueble',
     label: 'Compraventa de Inmueble',
     category: 'servicio',
     subcategory: 'Notaría y Propiedades',
@@ -216,6 +232,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   },
   {
     id: 'herencia',
+    serviceSlug: 'herencia',
     label: 'Herencia y Sucesiones',
     category: 'servicio',
     subcategory: 'Notaría y Propiedades',
@@ -227,6 +244,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   // ── Tráfico y Capitanía ──────────────────────────────────────────────────────
   {
     id: 'matriculacion-vehiculo',
+    serviceSlug: 'matriculacion',
     label: 'Matriculación de Vehículo',
     category: 'servicio',
     subcategory: 'Tráfico y Capitanía Marítima',
@@ -236,6 +254,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
   },
   {
     id: 'transferencia-vehiculo',
+    serviceSlug: 'transferencia-vehiculo',
     label: 'Transferencia de Vehículo',
     category: 'servicio',
     subcategory: 'Tráfico y Capitanía Marítima',

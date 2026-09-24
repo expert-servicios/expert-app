@@ -10,7 +10,8 @@ describe('Russian nationality pilot hardening', () => {
     expect(source).toContain("process.env.HOLDED_CREATE_INVOICES_FROM_STRIPE === 'true'");
     expect(source).toContain("const automatic = params.source !== 'manual'");
     expect(source).toContain('if (automatic && !createInvoices)');
-    expect(source).toContain(".select('amount_eur')");
+    expect(source).toContain(".select('amount_eur,company_id')");
+    expect(source).toContain('resolvedCompanyId');
     expect(source).toContain('resolvedAmountEur');
     expect(source).toContain('callerAmountEur');
   });
@@ -28,11 +29,11 @@ describe('Russian nationality pilot hardening', () => {
     expect(holdedStatus).toContain("new.status = 'paid_invoice_error'");
   });
 
-  it('links all six Russian resources from the service route', () => {
+  it('links all Russian nationality resources from the service route', () => {
     const layout = read('app/(localized)/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii/layout.tsx');
     const component = read('components/i18n/RuNationalityRelatedResources.tsx');
 
-    expect(RU_NATIONALITY_RESOURCES).toHaveLength(6);
+    expect(RU_NATIONALITY_RESOURCES).toHaveLength(8);
     expect(layout).toContain('RuNationalityRelatedResources');
     for (const resource of RU_NATIONALITY_RESOURCES) {
       expect(component).toContain("RU_NATIONALITY_RESOURCES");

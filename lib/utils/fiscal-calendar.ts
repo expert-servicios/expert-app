@@ -142,7 +142,25 @@ function lastDayOfFebruary(year: number): string {
 }
 
 function verified(deadline: string): boolean {
-  return Number(deadline.slice(0, 4)) <= AEAT_VERIFIED_CALENDAR_YEAR;
+  return Number(deadline.slice(0, 4)) === AEAT_VERIFIED_CALENDAR_YEAR;
+}
+
+const VERIFIED_2026_DEADLINES: Partial<Record<string, string>> = {
+  '180:2025:ANNUAL': '2026-02-02',
+  '190:2025:ANNUAL': '2026-02-02',
+  '347:2025:ANNUAL': '2026-03-02',
+  '200:2025:ANNUAL': '2026-07-27',
+  '202:2026:1P': '2026-04-20',
+  '202:2026:2P': '2026-10-20',
+  '202:2026:3P': '2026-12-21',
+  '303:2025:4T': '2026-01-30',
+  '130:2025:4T': '2026-01-30',
+  '111:2025:4T': '2026-01-20',
+  '115:2025:4T': '2026-01-20',
+};
+
+function resolveVerifiedDeadline(modelo: string, taxYear: number, key: string, nominal: string): string {
+  return VERIFIED_2026_DEADLINES[`${modelo}:${taxYear}:${key}`] ?? nominal;
 }
 
 function obligation(
@@ -158,8 +176,8 @@ function obligation(
     modelo: template.modelo,
     description: `${template.title} · ${periodLabel}`,
     period_label: periodLabel,
-    deadline,
-    deadline_verified: verified(deadline),
+    deadline: resolveVerifiedDeadline(template.modelo, taxYear, key, deadline),
+    deadline_verified: verified(resolveVerifiedDeadline(template.modelo, taxYear, key, deadline)),
   };
 }
 

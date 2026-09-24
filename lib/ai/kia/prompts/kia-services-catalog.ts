@@ -22,7 +22,7 @@ FISCALIDAD (categoria: declaraciones-impuestos):
   impuestos-trimestrales        → direct_checkout | Pagos fraccionados IRPF autonomo (mod. 130)
 
 EXTRANJERIA Y NACIONALIDAD (categoria: extranjeria-nacionalidad):
-  arraigo-social                → viability      | Arraigo social (3 anos de residencia)
+  arraigo-social                → viability      | Arraigo social (2 anos de permanencia + via familiar/integracion)
   arraigo-familiar              → viability      | Arraigo familiar (conyuge/hijo de espanol o residente legal)
   arraigo-laboral               → viability      | Arraigo laboral (relacion laboral previa no documentada)
   renovacion-residencia         → viability      | Renovacion permiso de residencia
@@ -68,6 +68,7 @@ HOLDED — readiness:
 CERTIFICADO DIGITAL — direct_checkout:
   certificado-digital-persona-fisica    | 90 EUR + IVA  | Autonomos, particulares, cualquier persona fisica
   certificado-digital-entidad           | 150 EUR + IVA | SL, SA, asociaciones, fundaciones, comunidades de propietarios
+  pack-certificados-digitales             | 200 EUR + IVA | Persona fisica + entidad mercantil; ahorro 40 EUR
   certificado-digital-sin-animo-lucro   | Consultar     | ONG, entidades religiosas y otras entidades no lucrativas
 
 TRAFICO Y CAPITANIA MARITIMA — direct_checkout:

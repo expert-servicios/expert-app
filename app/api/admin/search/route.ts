@@ -3,7 +3,7 @@ import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '
 
 interface SearchResult {
   id: string;
-  type: 'client' | 'case' | 'appointment' | 'quote' | 'document';
+  type: 'person' | 'company' | 'case' | 'appointment' | 'quote' | 'document';
   title: string;
   subtitle: string;
   href: string;
@@ -29,123 +29,147 @@ export async function GET(request: NextRequest) {
   const lq = q.toLowerCase();
   const results: SearchResult[] = [];
 
-  // Run all searches in parallel
-  const [profilesRes, authUsersRes, casesRes, appointmentsRes, quotesRes, documentsRes] = await Promise.all([
+  const [
+    profilesRes,
+    authUsersRes,
+    companiesRes,
+    casesRes,
+    appointmentsRes,
+    quotesRes,
+    documentsRes,
+  ] = await Promise.all([
     admin
       .from('profiles')
-      .select('id, full_name, email, phone')
-      .eq('role', 'client')
-      .or(`full_name.ilike.%${q}%,email.ilike.%${q}%,phone.ilike.%${q}%`)
-      .limit(5),
+      .select('id,full_name,email,phone,role,status,tax_id')
+      .or(`full_name.ilike.%${q}%,email.ilike.%${q}%,phone.ilike.%${q}%,tax_id.ilike.%${q}%`)
+      .limit(7),
 
-    listAllAuthUsers(), // for email fallback
+    listAllAuthUsers(),
+
+    admin
+      .from('companies')
+      .select('id,razon_social,nombre_comercial,cif_nif,email,telefono,status')
+      .or(`razon_social.ilike.%${q}%,nombre_comercial.ilike.%${q}%,cif_nif.ilike.%${q}%,email.ilike.%${q}%,telefono.ilike.%${q}%`)
+      .limit(7),
 
     admin
       .from('cases')
-      .select('id, service, category, state, client_id')
+      .select('id,service,category,state,client_id')
       .or(`service.ilike.%${q}%,category.ilike.%${q}%`)
       .neq('state', 'finalizado')
       .limit(5),
 
     admin
       .from('appointments')
-      .select('id, name, email, service, status')
+      .select('id,name,email,service,status')
       .or(`name.ilike.%${q}%,email.ilike.%${q}%,service.ilike.%${q}%`)
       .limit(4),
 
     admin
       .from('quotes')
-      .select('id, title, amount_eur, status, client_id')
+      .select('id,title,amount_eur,status,client_id')
       .ilike('title', `%${q}%`)
       .limit(4),
 
     admin
       .from('documents')
-      .select('id, original_name, state, case_id, client_id')
+      .select('id,original_name,state,case_id,client_id')
       .ilike('original_name', `%${q}%`)
       .limit(5),
   ]);
 
-  // Build email map for profiles without email column
-  const authEmailById = new Map(authUsersRes.map((u) => [u.id, u.email ?? '']));
+  const authEmailById = new Map(authUsersRes.map((user) => [user.id, user.email ?? '']));
 
-  // Clients
-  for (const p of profilesRes.data ?? []) {
-    const email = p.email ?? authEmailById.get(p.id) ?? '';
-    if (!email && !p.full_name) continue;
+  for (const profile of profilesRes.data ?? []) {
+    const email = profile.email ?? authEmailById.get(profile.id) ?? '';
+    if (!email && !profile.full_name) continue;
+    const isClient = profile.role === 'client';
     results.push({
-      id: p.id,
-      type: 'client',
-      title: p.full_name ?? email,
-      subtitle: email,
-      href: `/admin/clientes/${p.id}`,
+      id: profile.id,
+      type: 'person',
+      title: profile.full_name ?? email,
+      subtitle: [isClient ? 'Cliente' : profile.role, email, profile.tax_id].filter(Boolean).join(' · '),
+      href: isClient ? `/admin/clientes/${profile.id}` : '/admin/usuarios',
     });
   }
 
-  // Fetch client names for cases/quotes
+  for (const company of companiesRes.data ?? []) {
+    results.push({
+      id: company.id,
+      type: 'company',
+      title: company.nombre_comercial || company.razon_social || company.cif_nif || company.id,
+      subtitle: [company.cif_nif, company.email, company.status].filter(Boolean).join(' · '),
+      href: `/admin/empresas/${company.id}`,
+    });
+  }
+
   const clientIds = [
-    ...(casesRes.data ?? []).map((c) => c.client_id),
-    ...(quotesRes.data ?? []).map((q) => q.client_id).filter(Boolean),
+    ...(casesRes.data ?? []).map((item) => item.client_id),
+    ...(quotesRes.data ?? []).map((item) => item.client_id).filter(Boolean),
   ].filter(Boolean) as string[];
 
   const clientNameMap = new Map<string, string>();
   if (clientIds.length > 0) {
     const { data: clientProfiles } = await admin
       .from('profiles')
-      .select('id, full_name')
-      .in('id', clientIds);
-    for (const cp of clientProfiles ?? []) {
-      const email = authEmailById.get(cp.id) ?? '';
-      clientNameMap.set(cp.id, cp.full_name ?? email);
+      .select('id,full_name')
+      .in('id', [...new Set(clientIds)]);
+
+    for (const profile of clientProfiles ?? []) {
+      const email = authEmailById.get(profile.id) ?? '';
+      clientNameMap.set(profile.id, profile.full_name ?? email);
     }
   }
 
-  // Cases
-  for (const c of casesRes.data ?? []) {
-    const clientName = clientNameMap.get(c.client_id) ?? '';
+  for (const item of casesRes.data ?? []) {
+    const clientName = clientNameMap.get(item.client_id) ?? '';
     results.push({
-      id: c.id,
+      id: item.id,
       type: 'case',
-      title: c.service,
-      subtitle: `${c.state}${clientName ? ` · ${clientName}` : ''}`,
-      href: `/admin/expedientes/${c.id}`,
+      title: item.service,
+      subtitle: `${item.state}${clientName ? ` · ${clientName}` : ''}`,
+      href: `/admin/expedientes/${item.id}`,
     });
   }
 
-  // Appointments
-  for (const a of appointmentsRes.data ?? []) {
-    if (!a.name.toLowerCase().includes(lq) && !a.email.toLowerCase().includes(lq) && !a.service.toLowerCase().includes(lq)) continue;
+  for (const item of appointmentsRes.data ?? []) {
+    if (
+      !item.name.toLowerCase().includes(lq) &&
+      !item.email.toLowerCase().includes(lq) &&
+      !item.service.toLowerCase().includes(lq)
+    ) continue;
+
     results.push({
-      id: a.id,
+      id: item.id,
       type: 'appointment',
-      title: a.name,
-      subtitle: `${a.service} · ${a.status}`,
-      href: `/admin/citas`,
+      title: item.name,
+      subtitle: `${item.service} · ${item.status}`,
+      href: '/admin/citas',
     });
   }
 
-  // Quotes
-  for (const q of quotesRes.data ?? []) {
-    const clientName = q.client_id ? clientNameMap.get(q.client_id) ?? '' : '';
+  for (const item of quotesRes.data ?? []) {
+    const clientName = item.client_id ? clientNameMap.get(item.client_id) ?? '' : '';
     results.push({
-      id: q.id,
+      id: item.id,
       type: 'quote',
-      title: q.title,
-      subtitle: `${q.amount_eur}€ · ${q.status}${clientName ? ` · ${clientName}` : ''}`,
-      href: `/admin/presupuestos/${q.id}`,
+      title: item.title,
+      subtitle: `${item.amount_eur}€ · ${item.status}${clientName ? ` · ${clientName}` : ''}`,
+      href: `/admin/presupuestos/${item.id}`,
     });
   }
 
-  // Documents
-  for (const d of documentsRes.data ?? []) {
+  for (const item of documentsRes.data ?? []) {
     results.push({
-      id: d.id,
+      id: item.id,
       type: 'document',
-      title: d.original_name,
-      subtitle: `Documento · ${d.state}${d.case_id ? ' · ver expediente' : ''}`,
-      href: d.case_id ? `/admin/expedientes/${d.case_id}` : (d.client_id ? `/admin/clientes/${d.client_id}` : '/admin/documentos'),
+      title: item.original_name,
+      subtitle: `Documento · ${item.state}${item.case_id ? ' · ver expediente' : ''}`,
+      href: item.case_id
+        ? `/admin/expedientes/${item.case_id}`
+        : (item.client_id ? `/admin/clientes/${item.client_id}` : '/admin/documentos'),
     });
   }
 
-  return NextResponse.json({ results: results.slice(0, 18) });
+  return NextResponse.json({ results: results.slice(0, 24) });
 }

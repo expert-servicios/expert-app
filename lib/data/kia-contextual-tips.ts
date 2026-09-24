@@ -33,7 +33,7 @@ export const kiaContextualTips: KiaTip[] = [
   // ── Autonomo — alta ──
   {
     id      : 'alta-autonomo-cotizacion',
-    text    : 'En 2025 la cuota de autónomos depende de tus rendimientos netos reales. El primer año tienes tarifa plana de 80 €/mes.',
+    text    : 'En 2026 la cotización de autónomos se determina por rendimientos netos y por los tramos oficiales vigentes. Si es un alta inicial, revisamos además si procede una cuota reducida y cuál es su importe vigente antes de calcularla.',
     serviceSlug: 'alta-autonomo',
   },
 

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
+const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8').replace(/\r\n/g, '\n');
 const historical = (file: string) => source(`supabase/migration-history-archive/pre-baseline-20260912/${file}`);
 
 describe('onboarding completion experience', () => {
@@ -22,6 +22,19 @@ describe('onboarding completion experience', () => {
     expect(templates).toContain('Crear una factura de venta');
     expect(templates).toContain('Registrar una factura o ticket de compra');
     expect(templates).toContain('Espacio de Cliente Responsable');
+  });
+
+  it('invites an included entity to onboarding exactly once after admin validation', () => {
+    const benefits = source('app/api/admin/clientes/[id]/subscription-benefits/route.ts');
+    const templates = source('lib/email/onboarding-templates.ts');
+    expect(benefits).toContain("input.benefitType === 'included_entity'");
+    expect(benefits).toContain('getCalOnboardingUrl()');
+    expect(benefits).toContain('sendEmailOnce({');
+    expect(benefits).toContain("eventType: 'onboarding.included_entity.invitation'");
+    expect(benefits).toContain('onboarding/included-entity/');
+    expect(benefits).toContain('beneficiary_company_id: input.beneficiaryCompanyId');
+    expect(templates).toContain('Reservar segunda sesión de onboarding');
+    expect(templates).toContain('sin una segunda cuota');
   });
 
   it('shows Stripe invoices read-only for the authenticated active company', () => {

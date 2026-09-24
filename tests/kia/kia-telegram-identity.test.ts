@@ -18,7 +18,7 @@ describe('KIA M7.2b/M7.2c Telegram identity and routing', () => {
   });
 
   it('keeps the binding table service-role only and without secrets', () => {
-    const migration = source('supabase/migrations/20260916190000_kia_channel_identities.sql');
+    const migration = source('supabase/migrations/20260916191059_kia_channel_identities.sql');
     expect(migration).toContain('enable row level security');
     expect(migration).toContain('revoke all on table public.kia_channel_identities from anon, authenticated');
     expect(migration).toContain('grant select, insert, update on table public.kia_channel_identities to service_role');

@@ -40,7 +40,7 @@ interface Company {
   web: string | null;
 }
 
-export function CompanyEditForm({ company }: { company: Company }) {
+export function CompanyEditForm({ company, returnPath }: { company: Company; returnPath?: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -82,7 +82,11 @@ export function CompanyEditForm({ company }: { company: Company }) {
         setError(data.error ?? 'Error al guardar.');
       } else {
         setSaved(true);
-        router.refresh();
+        if (returnPath) {
+          router.push(returnPath);
+        } else {
+          router.refresh();
+        }
       }
     } catch {
       setError('Error de conexión.');
@@ -109,8 +113,8 @@ export function CompanyEditForm({ company }: { company: Company }) {
             <Input value={form.nombre_comercial} onChange={(e) => set('nombre_comercial', e.target.value)} placeholder="Nombre de marca" />
           </div>
           <div>
-            <Label text="CIF / NIF" />
-            <Input value={form.cif_nif} onChange={(e) => set('cif_nif', e.target.value)} placeholder="B12345678" />
+            <Label text="CIF / NIF *" />
+            <Input required value={form.cif_nif} onChange={(e) => set('cif_nif', e.target.value)} placeholder="B12345678" />
           </div>
           <div className="sm:col-span-2">
             <Label text="Forma jurídica *" />
@@ -130,12 +134,12 @@ export function CompanyEditForm({ company }: { company: Company }) {
         <legend className="mb-3 text-xs font-bold uppercase tracking-widest text-[#c88b25]">Dirección fiscal</legend>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Label text="Dirección" />
-            <Input value={form.direccion} onChange={(e) => set('direccion', e.target.value)} placeholder="Calle Mayor, 10" />
+            <Label text="Dirección *" />
+            <Input required value={form.direccion} onChange={(e) => set('direccion', e.target.value)} placeholder="Calle Mayor, 10" />
           </div>
           <div>
-            <Label text="Ciudad" />
-            <Input value={form.ciudad} onChange={(e) => set('ciudad', e.target.value)} placeholder="Alicante" />
+            <Label text="Ciudad *" />
+            <Input required value={form.ciudad} onChange={(e) => set('ciudad', e.target.value)} placeholder="Alicante" />
           </div>
           <div>
             <Label text="Provincia" />
@@ -149,12 +153,12 @@ export function CompanyEditForm({ company }: { company: Company }) {
             </select>
           </div>
           <div>
-            <Label text="Código postal" />
-            <Input maxLength={5} value={form.codigo_postal} onChange={(e) => set('codigo_postal', e.target.value)} placeholder="03001" />
+            <Label text="Código postal *" />
+            <Input required maxLength={5} value={form.codigo_postal} onChange={(e) => set('codigo_postal', e.target.value)} placeholder="03001" />
           </div>
           <div>
-            <Label text="País (código ISO)" />
-            <Input maxLength={2} value={form.pais} onChange={(e) => set('pais', e.target.value.toUpperCase().slice(0, 2))} placeholder="ES" />
+            <Label text="País (código ISO) *" />
+            <Input required maxLength={2} value={form.pais} onChange={(e) => set('pais', e.target.value.toUpperCase().slice(0, 2))} placeholder="ES" />
           </div>
         </div>
       </fieldset>

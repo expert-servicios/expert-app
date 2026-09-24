@@ -16,7 +16,7 @@ CONSULTA INFORMATIVA:
 
 PREGUNTAS DE DIAGNOSTICO POR SERVICIO (usa la mas determinante):
 - IRPF / Renta: "La declaracion es para ti como persona fisica, como autonomo o para una empresa?"
-- Arraigo (generico): "Cuanto tiempo llevas en Espana de forma continuada?" — para determinar si es arraigo social (3+ anos), familiar o laboral.
+- Arraigo (generico): "Cuanto tiempo llevas en Espana de forma continuada?" — para determinar si es arraigo social (2+ anos, sujeto a requisitos), familiar, sociolaboral u otras vias.
 - Residencia / TIE (generico): "Es una primera residencia, una renovacion o un cambio de tipo de permiso?"
 - Certificado digital (generico): "El certificado es para ti como persona fisica o para tu empresa?"
 - Extranjeria (generico): "Que documento o permiso necesitas gestionar?" — con opciones relevantes.

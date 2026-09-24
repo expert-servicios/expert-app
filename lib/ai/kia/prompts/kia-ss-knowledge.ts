@@ -13,32 +13,26 @@ Quien debe darse de alta:
 - En general, si facturas por actividades economicas de forma regular, debes estar de alta en RETA.
 
 Alta en RETA — proceso:
-1. Primero: alta en Hacienda con modelo 036/037 (indicar fecha de inicio).
+1. Primero: alta en Hacienda con modelo 036 (indicar fecha de inicio).
 2. Despues (o simultaneamente): alta en RETA a traves de Importass (https://importass.seg-social.es/) o con certificado digital / Cl@ve.
 3. Plazo: antes del inicio de la actividad o en los primeros dias. El alta en SS puede hacerse con hasta 60 dias de antelacion.
 4. Si no tienes certificado digital, EXPERT puede gestionar el alta en tu nombre.
 
 Baja en RETA:
 - Tambien a traves de Importass. La baja surte efecto desde el dia en que se comunica (si se hace dentro del mes) o desde el dia 1 del mes siguiente.
-- Simultaneamente se debe presentar baja en Hacienda (modelo 036/037).
+- Simultaneamente se debe presentar baja en Hacienda (modelo 036).
 </ss_reta>
 
 <ss_cuotas>
 CUOTAS DE AUTONOMOS — SISTEMA POR TRAMOS DE RENDIMIENTO NETO (vigente desde 2023):
 
-Desde 2023 las cuotas de autonomos se calculan en funcion de los rendimientos netos anuales previstos, en lugar de la base de cotizacion elegida libremente.
-Existen 15 tramos. En 2025 los tramos y cuotas han vuelto a actualizarse.
+Desde 2023 las cuotas de autonomos se determinan en funcion de rendimientos netos y la base elegida dentro del tramo aplicable.
 
-Referencia orientativa (verificar cuotas exactas para el ano en curso en Importass):
-- Rendimientos muy bajos (menos de 670 EUR/mes netos): cuota minima reducida.
-- Rendimientos medios: cuota intermedia segun tramo.
-- Rendimientos altos (mas de 6.000 EUR/mes netos): cuota maxima.
-
-Cuota reducida para nuevos autonomos (sustituye a la antigua "tarifa plana"):
-- Los primeros 12 meses: cuota fija reducida (en 2024 era 80 EUR/mes; verificar importe actualizado).
-- Los 12 meses siguientes: cuota reducida si los rendimientos netos son inferiores al SMI.
-- Condicion: no haber estado de alta en RETA en los 2 anos anteriores (3 si se disfrutaron bonificaciones previas).
-- Solicitar en Importass al darse de alta.
+Para 2026:
+- Consultar RETA_2026_BRACKETS antes de indicar base o cuota.
+- No reutilizar importes de 2024 o 2025 como si fueran la cuota vigente.
+- La cuota reducida para nuevas altas debe verificarse con la regla oficial vigente y los requisitos personales del caso.
+- Portal operativo: Importass.
 
 Cambio de tramo:
 - Se puede cambiar de tramo hasta 6 veces al ano si los ingresos varian.
@@ -113,7 +107,7 @@ PORTALES OFICIALES DE LA SEGURIDAD SOCIAL:
 <ss_kia_rules>
 REGLAS DE KIA PARA PREGUNTAS SOBRE SEGURIDAD SOCIAL:
 - Para cuotas exactas: orientar sobre el sistema de tramos e indicar que el importe exacto se calcula en Importass segun los rendimientos declarados. No afirmar cuotas exactas sin citar la fuente actual.
-- Si preguntan si EXPERT gestiona el alta de autonomo: si, EXPERT gestiona el alta en Hacienda (036/037) y en RETA (Importass) de forma conjunta. Servicio: svc_alta_autonomo.
+- Si preguntan si EXPERT gestiona el alta de autonomo: si, EXPERT gestiona el alta en Hacienda (Modelo 036) y en RETA (Importass) de forma conjunta. Servicio: svc_alta_autonomo.
 - Para bajas IT y cese de actividad: orientacion inicial + recomendar llamada con EXPERT si el caso es complejo.
 - Para empleados (altas/bajas laborales): EXPERT gestiona esto con la gestion laboral mensual.
 - EXPERT gestiona: alta autonomo, alta en RETA, gestion mensual de cuotas, tramites SS para empresas con empleados.

@@ -167,7 +167,7 @@ export default async function AcademyProgramPage({ params }: Props) {
             </TrackedAnchor>
             <CalButton
               url={calAcademyUrl}
-              fallbackHref="/cita"
+              fallbackHref="/cita?tipo=academy-admision"
               analyticsEvent="course_meeting_click"
               analyticsProps={{ program_slug: program.slug, cta_location: 'hero' }}
               className="inline-flex items-center gap-2 border border-white/20 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]/85 transition hover:border-[#D4A017] hover:text-[#D4A017]"

@@ -14,7 +14,13 @@ export type KiaToolCapability =
   | 'checkout'
   | 'navigation'
   | 'internal_operations'
-  | 'administration';
+  | 'administration'
+  | 'regulatory'
+  | 'knowledge'
+  | 'service_discovery'
+  | 'payments'
+  | 'subscriptions'
+  | 'case_operations';
 
 export interface KiaToolPolicy {
   name: string;
@@ -40,6 +46,9 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   resolve_contact_context:            policy('R0', 'read',  'identity'),
   get_client_profile:                 policy('R0', 'read',  'client_data'),
   get_service_registry_item:          policy('R0', 'read',  'client_data'),
+  get_service_operational_blueprint:   policy('R0', 'read',  'case_management'),
+  get_regulatory_value:                 policy('R0', 'read',  'regulatory'),
+  get_regulatory_ruleset:               policy('R0', 'read',  'regulatory'),
   run_viability_check:                policy('R1', 'read',  'client_data'),
   run_readiness_check:                policy('R1', 'read',  'client_data'),
   get_holded_connection_status:       policy('R0', 'read',  'holded_read'),
@@ -66,6 +75,14 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_user_expedientes:               policy('R0', 'read',  'case_management'),
   get_user_companies:                 policy('R0', 'read',  'client_data'),
   get_user_pending_docs:              policy('R0', 'read',  'documents'),
+  get_user_orders:                    policy('R0', 'read',  'payments'),
+  get_user_subscriptions:             policy('R0', 'read',  'subscriptions'),
+  get_case_tasks:                     policy('R0', 'read',  'case_operations'),
+  get_case_documents:                 policy('R0', 'read',  'documents'),
+  get_case_timeline:                  policy('R0', 'read',  'case_operations'),
+  search_knowledge_resources:          policy('R0', 'read',  'knowledge'),
+  get_official_sources:                policy('R0', 'read',  'regulatory'),
+  find_relevant_services:              policy('R0', 'read',  'service_discovery'),
 };
 
 function policy(

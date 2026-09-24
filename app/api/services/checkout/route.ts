@@ -15,9 +15,8 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { isCompanyBillingReady, missingCompanyBillingFields } from '@/lib/companies/billing-readiness';
 import { resolveServiceBillingScope } from '@/lib/payments/service-billing-scope';
 import { resolveServiceCheckoutLocale, type CheckoutLocale } from '@/lib/payments/service-checkout-locale';
-
-const RU_NACIONALIDAD_PATH = '/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii';
-const NACIONALIDAD_MENOR_SLUG = 'nacionalidad-espanola-menor-nacido-en-espana';
+import { getPublicServicePath } from '@/lib/i18n/service-routes';
+import { readRequestAttribution } from '@/lib/marketing/server-attribution';
 
 const checkoutSchema = z.object({
   priceId                    : z.string().min(1).optional(),
@@ -29,8 +28,7 @@ const checkoutSchema = z.object({
 }).refine(d => d.priceId ?? d.priceIds, { message: 'priceId or priceIds is required' });
 
 function serviceReturnPath(service: { slug: string; category: string }, locale: CheckoutLocale) {
-  if (locale === 'ru' && service.slug === NACIONALIDAD_MENOR_SLUG) return RU_NACIONALIDAD_PATH;
-  return `/servicios/${service.category}/${service.slug}`;
+  return getPublicServicePath(service, locale);
 }
 
 export async function POST(request: NextRequest) {
@@ -44,7 +42,7 @@ export async function POST(request: NextRequest) {
     const admin = getSupabaseAdmin();
     const { data: profile, error: profileError } = await admin
       .from('profiles')
-      .select('id,full_name,phone,email,profile_completed,active_company_id,client_type,stripe_customer_id')
+      .select('id,full_name,phone,email,profile_completed,client_type,stripe_customer_id')
       .eq('id', user.id)
       .maybeSingle();
 
@@ -75,7 +73,6 @@ export async function POST(request: NextRequest) {
     const billingResolution = resolveServiceBillingScope({
       serviceSlugs: checkoutServices.map(service => service.slug),
       explicitCompanyId: input.companyId,
-      activeCompanyId: profile.active_company_id,
       clientType: profile.client_type,
     });
 
@@ -163,8 +160,9 @@ export async function POST(request: NextRequest) {
         ? `${appUrl}${primaryReturnPath}`
         : `${appUrl}/carrito`;
     const successUrl = locale === 'ru'
-      ? `${appUrl}/ru/spasibo/oplata?service=${checkoutServices[0].slug}`
-      : `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}`;
+      ? `${appUrl}/ru/spasibo/oplata?service=${checkoutServices[0].slug}&session_id={CHECKOUT_SESSION_ID}`
+      : `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}&session_id={CHECKOUT_SESSION_ID}`;
+    const acquisition = readRequestAttribution(request);
     const checkoutMetadata = {
       ...getServiceCheckoutMetadata(checkoutServices, checkoutDisbursements),
       user_id: user.id,
@@ -172,6 +170,12 @@ export async function POST(request: NextRequest) {
       checkout_locale: locale,
       ...(companyId ? { company_id: companyId } : {}),
       disbursement_mandate_accepted: checkoutDisbursements.length > 0 ? 'true' : 'false',
+      ...(acquisition?.source ? { acquisition_source: acquisition.source } : {}),
+      ...(acquisition?.utmSource ? { utm_source: acquisition.utmSource } : {}),
+      ...(acquisition?.utmMedium ? { utm_medium: acquisition.utmMedium } : {}),
+      ...(acquisition?.utmCampaign ? { utm_campaign: acquisition.utmCampaign } : {}),
+      ...(acquisition?.campaign ? { campaign: acquisition.campaign } : {}),
+      ...(acquisition?.originPath ? { acquisition_origin_path: acquisition.originPath.slice(0, 500) } : {}),
     };
     const shouldCollectTaxId = billingResolution.scope === 'company';
 
@@ -211,6 +215,7 @@ export async function POST(request: NextRequest) {
         revenue_amount_cents: checkoutMetadata.revenue_amount_cents ?? '0',
         checkout_total_net_cents: checkoutMetadata.checkout_total_net_cents ?? '0',
         disbursement_mandate_accepted: checkoutMetadata.disbursement_mandate_accepted,
+        acquisition: acquisition ?? null,
       },
     });
 

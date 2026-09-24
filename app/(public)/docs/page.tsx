@@ -6,14 +6,14 @@ import { docCategories, docs, getAllDocTags } from '@/lib/utils/docs';
 export const metadata: Metadata = {
   title: 'Base de conocimientos | Guías de trámites en España | EXPERT',
   description:
-    'Guías detalladas sobre extranjería, nacionalidad, fiscalidad, empresas, trámites administrativos y Holded. Busca por tema, categoría o tag.',
+    'Guías detalladas sobre extranjería, nacionalidad, fiscalidad, empresas, protección de datos, trámites administrativos y Holded. Busca por tema, categoría o tag.',
   alternates: {
     canonical: 'https://expertconsulting.es/docs'
   },
   openGraph: {
     title: 'Base de conocimientos | EXPERT',
     description:
-      'Guías detalladas sobre trámites en España: extranjería, nacionalidad, fiscalidad, empresas y gestión administrativa.',
+      'Guías detalladas sobre trámites en España: extranjería, nacionalidad, fiscalidad, empresas, protección de datos y gestión administrativa.',
     url: 'https://expertconsulting.es/docs',
     type: 'website'
   }

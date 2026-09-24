@@ -40,6 +40,21 @@ export interface Anomaly {
   status   : string;
 }
 
+function normalizeAnomalySeverity(value: unknown): Anomaly['severity'] {
+  switch (String(value ?? '').toLowerCase()) {
+    case 'critical':
+      return 'critical';
+    case 'alta':
+    case 'media':
+    case 'warning':
+      return 'warning';
+    case 'baja':
+    case 'info':
+    default:
+      return 'info';
+  }
+}
+
 export interface MonthlyFlow {
   month    : string; // e.g. 'Ene 2025'
   sales    : number;
@@ -267,13 +282,19 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
   ]);
 
   // ── Fetch internal data ────────────────────────────────────────────────────
-  const { data: anomalyRows } = await admin
-    .from('accounting_anomalies')
-    .select('id, anomaly_type, severity, description, status')
-    .eq('client_id', input.clientId)
-    .in('status', ['open', 'pending'])
-    .order('severity', { ascending: false })
-    .limit(20);
+  // accounting_anomalies is entity-scoped by company_id, not client_id.
+  // Reports without a resolved company cannot safely include accounting anomalies.
+  const anomalyRows = input.companyId
+    ? (
+        await admin
+          .from('accounting_anomalies')
+          .select('id, anomaly_type, severity, description, status')
+          .eq('company_id', input.companyId)
+          .in('status', ['open', 'pending'])
+          .order('severity', { ascending: false })
+          .limit(20)
+      ).data
+    : [];
 
   const { data: companyRow } = await admin
     .from('companies')
@@ -317,7 +338,7 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
   const anomalies: Anomaly[] = (anomalyRows ?? []).map((r) => ({
     id      : String(r.id),
     type    : String(r.anomaly_type ?? ''),
-    severity: (r.severity as 'info' | 'warning' | 'critical') ?? 'info',
+    severity: normalizeAnomalySeverity(r.severity),
     detail  : String(r.description ?? ''),
     status  : String(r.status ?? ''),
   }));

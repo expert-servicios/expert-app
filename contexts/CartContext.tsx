@@ -37,12 +37,13 @@ export function resolveCartLocale(items: CartItem[]): CartLocale {
   return items.length > 0 && items.every(item => item.locale === 'ru') ? 'ru' : 'es';
 }
 
-export function buildCartCheckoutPayload(items: CartItem[], disbursementMandateAccepted = false) {
+export function buildCartCheckoutPayload(items: CartItem[], disbursementMandateAccepted = false, companyId?: string) {
   const disbursements = collectCartDisbursements(items);
 
   return {
     priceIds: items.map(i => i.priceId),
     locale: resolveCartLocale(items),
+    ...(companyId ? { companyId } : {}),
     ...(disbursements.length > 0
       ? { disbursements, disbursementMandateAccepted }
       : {}),

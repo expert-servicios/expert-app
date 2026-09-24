@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     let query = admin
       .from('reviews')
-      .select('id,case_id,client_id,rating,comment,allow_publish,status,featured,created_at,service_name,profiles!reviews_client_id_fkey(full_name,email:id)')
+      .select('id,case_id,client_id,rating,comment,allow_publish,status,published,featured,comment_publishable,moderation_status,moderation_reason,moderated_by,moderation_policy_version,moderation_model,moderated_at,human_override_reason,created_at,service_name,profiles!reviews_client_id_fkey(full_name,email:id)')
       .order('created_at', { ascending: false });
 
     if (status !== 'all') {

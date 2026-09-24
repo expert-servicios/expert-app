@@ -6,9 +6,8 @@ import { usePathname } from 'next/navigation';
 import { X, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartDisbursements, resolveCartLocale, useCart } from '@/contexts/CartContext';
 import { QuickProfileGate } from '@/components/cart/QuickProfileGate';
-
-const RU_NACIONALIDAD_PATH = '/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii';
-const NACIONALIDAD_MENOR_SLUG = 'nacionalidad-espanola-menor-nacido-en-espana';
+import { CompanyCheckoutGate } from '@/components/cart/CompanyCheckoutGate';
+import { getPublicServicePath } from '@/lib/i18n/service-routes';
 
 const COPY = {
   es: {
@@ -53,24 +52,23 @@ export function CartSidebar() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);
+  const [needsCompany, setNeedsCompany] = useState(false);
   const [disbursementMandateAccepted, setDisbursementMandateAccepted] = useState(false);
   const hasDisbursements = cartContainsDisbursements(items);
   const disbursements = collectCartDisbursements(items);
   const locale = items.length === 0 && pathname.startsWith('/ru/') ? 'ru' : resolveCartLocale(items);
   const t = COPY[locale];
-  const loginNextPath = locale === 'ru' ? RU_NACIONALIDAD_PATH : '/carrito';
+  const loginNextPath = locale === 'ru' ? '/carrito?lang=ru' : '/carrito';
 
   const itemHref = (item: { category: string; slug: string; locale?: 'es' | 'ru' }) =>
-    item.locale === 'ru' && item.slug === NACIONALIDAD_MENOR_SLUG
-      ? RU_NACIONALIDAD_PATH
-      : `/servicios/${item.category}/${item.slug}`;
+    getPublicServicePath(item, item.locale ?? locale);
 
   const goToCheckoutUrl = (url: string) => {
     clearCart();
     window.location.href = url;
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (companyId?: string) => {
     if (items.length === 0) return;
     if (hasDisbursements && !disbursementMandateAccepted) {
       setError(t.mandateRequired);
@@ -79,11 +77,12 @@ export function CartSidebar() {
     setLoading(true);
     setError(null);
     setNeedsProfile(false);
+    if (!companyId) setNeedsCompany(false);
     try {
       const res  = await fetch('/api/services/checkout', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify(buildCartCheckoutPayload(items, disbursementMandateAccepted)),
+        body   : JSON.stringify(buildCartCheckoutPayload(items, disbursementMandateAccepted, companyId)),
       });
       const data = await res.json() as { url?: string; error?: string; requiresAuth?: boolean; code?: string };
       if (res.status === 401 || data.requiresAuth) {
@@ -92,6 +91,12 @@ export function CartSidebar() {
       }
       if (res.status === 409 && data.code === 'profile_required') {
         setNeedsProfile(true);
+        setNeedsCompany(false);
+        return;
+      }
+      if (res.status === 409 && data.code === 'company_required') {
+        setNeedsCompany(true);
+        setNeedsProfile(false);
         return;
       }
       if (data.url) {
@@ -216,19 +221,27 @@ export function CartSidebar() {
               </label>
             )}
             {error && <p role="alert" aria-live="assertive" className="text-xs font-semibold text-red-700">{error}</p>}
-            {needsProfile ? (
+            {needsCompany ? (
+              <CompanyCheckoutGate
+                locale={locale}
+                loading={loading}
+                returnPath={locale === 'ru' ? '/carrito?lang=ru' : '/carrito'}
+                onContinue={(companyId) => { void handleCheckout(companyId); }}
+              />
+            ) : needsProfile ? (
               <QuickProfileGate
                 priceIds={items.map(i => i.priceId)}
                 disbursements={disbursements}
                 disbursementMandateAccepted={disbursementMandateAccepted}
                 locale={locale}
                 loginNextPath={loginNextPath}
+                onCompanyRequired={() => { setNeedsProfile(false); setNeedsCompany(true); }}
                 onCheckoutUrl={goToCheckoutUrl}
               />
             ) : (
               <button
                 type="button"
-                onClick={handleCheckout}
+                onClick={() => { void handleCheckout(); }}
                 disabled={loading || (hasDisbursements && !disbursementMandateAccepted)}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4A017] py-3 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
               >
@@ -237,7 +250,7 @@ export function CartSidebar() {
               </button>
             )}
             <Link
-              href={locale === 'ru' ? RU_NACIONALIDAD_PATH : '/carrito'}
+              href={locale === 'ru' ? '/carrito?lang=ru' : '/carrito'}
               onClick={close}
               className="block text-center text-sm font-medium text-[#23364D] transition hover:text-[#D4A017]"
             >

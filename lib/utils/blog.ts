@@ -1,3 +1,6 @@
+import { getGeneratedBatch1BlogArticles } from '@/lib/services/service-generated-content';
+import { proteccionDatosBlogArticles } from '@/lib/content/proteccion-datos-blog';
+
 export type Article = {
   slug: string;
   category: string;
@@ -11,6 +14,60 @@ export type Article = {
 };
 
 export const articles: Article[] = [
+  ...getGeneratedBatch1BlogArticles(),
+  ...proteccionDatosBlogArticles,
+  {
+    slug: 'apellidos-menor-nacionalidad-espanola-registro-civil',
+    category: 'Extranjería',
+    title: 'Apellidos de un menor al adquirir la nacionalidad española: filiación y documentos',
+    excerpt:
+      'Qué ocurre cuando un menor extranjero tiene un solo apellido y va a adquirir la nacionalidad española: duplicación, apellido materno y documentación acreditativa.',
+    date: '24 sep 2026',
+    readTime: '7 min',
+    tags: ['nacionalidad española', 'apellidos', 'Registro Civil', 'menores', 'apellido materno'],
+    relatedServiceSlugs: ['nacionalidad-espanola-menor-nacido-en-espana'],
+    body: `
+## Los apellidos se determinan por la filiación
+
+Con carácter general, al adquirir la nacionalidad española se toman el primer apellido del padre y el primero de los personales de la madre, conforme a las reglas españolas. El apellido actual de la madre puede haber sido adquirido por matrimonio: el pasaporte o la TIE no demuestran por sí solos que sea su apellido personal de nacimiento.
+
+La duplicación de un único apellido corresponde a los supuestos previstos en la normativa, como cuando la filiación no determina otros apellidos o resulta imposible acreditar la identidad de los progenitores. No es una alternativa de libre elección para evitar documentos. No querer aportar o traducir un certificado no equivale a desconocer el apellido materno ni a una imposibilidad de acreditación. La firma de ambos progenitores no sustituye esa base jurídica.
+
+## Elegir el orden de los apellidos
+
+Primero se determina qué apellidos corresponden por filiación; después se revisa su orden. Cuando ambas líneas están determinadas, los progenitores pueden acordar cuál de sus respectivos primeros apellidos se transmite en primer lugar antes de la inscripción. No hay que confundir esta elección de orden con elegir apellidos ajenos a la filiación o duplicar uno para evitar documentos. Así lo regulan el [artículo 49.2 de la Ley del Registro Civil](https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a49) y el [artículo 109 del Código Civil](https://www.boe.es/buscar/act.php?id=BOE-A-1889-4763#art109).
+
+Antes de ofrecer los dos órdenes, comprobamos la inscripción existente del menor y si ya hay un orden establecido para hermanos de los mismos progenitores: ese antecedente puede determinar el que corresponda. No se cambia una inscripción existente simplemente editando la solicitud de nacionalidad. Si hay dudas, debe revisarlas el Registro Civil competente.
+
+Si no hay acuerdo o no se comunica el orden, el Registro requiere a los progenitores para que lo indiquen en un plazo máximo de tres días; si no responden, lo determina atendiendo al interés superior del menor. No se impone automáticamente el apellido paterno primero. Los cambios posteriores tienen un procedimiento: el [artículo 53.1 de la Ley del Registro Civil](https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a53) contempla la inversión del orden, pero no una modificación informal del expediente.
+
+Recogemos la conformidad de ambos progenitores con el orden propuesto y comprobamos la forma exacta de los apellidos en los documentos antes de preparar la versión para firma. La [Instrucción de 23 de mayo de 2007, primera.4](https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948#pr-2) contempla la variante masculina o femenina del apellido según el sexo de quien adquiere la nacionalidad. La identificación actual del pasaporte/TIE se mantiene separada de los apellidos propuestos para la inscripción española.
+
+## ¿Es obligatorio aportar el nacimiento de la madre?
+
+No es un requisito general de toda solicitud inicial de nacionalidad de un menor. Hay que distinguir la documentación para presentar la solicitud de la necesaria para determinar los apellidos en la inscripción posterior. Su ausencia, por sí sola, no bloquea automáticamente toda solicitud; puede ser necesario aclarar datos o atender un requerimiento.
+
+Antes de solicitar documentos nuevos, revisamos el literal completo de nacimiento del menor, incluidas sus observaciones, y la documentación familiar disponible. Si consta el apellido personal materno de forma suficiente, puede evitarse pedir otra prueba. Un certificado de matrimonio que recoja el apellido anterior puede ser una alternativa: la Sede Judicial de Aragón contempla nacimiento y/o matrimonio de la madre cuando ese dato no consta en el nacimiento del solicitante. Debe confirmarse su suficiencia ante el Registro Civil competente; ese criterio local no garantiza la aceptación en todos los registros.
+
+## Traducción y legalización: comprobar antes de gastar
+
+Si hace falta aportar un documento extranjero, comprobamos las formalidades aplicables según el documento, su origen y los convenios. Justicia contempla traducción o cotejo consular con la legalización correspondiente, además de traducción jurada. La disponibilidad y el coste de la vía consular deben consultarse.
+
+El artículo 95 de la Ley del Registro Civil permite que su encargado prescinda de la traducción si le consta el contenido. Es una decisión del Registro, no una exención automática para presentar documentos sin traducir en la solicitud telemática de nacionalidad.
+
+## Qué hacemos antes de firmar
+
+1. Confirmar el apellido personal de la madre y si hubo cambio por matrimonio.
+2. Identificar qué documento ya disponible acredita ese dato; separar la preferencia familiar de lo jurídicamente acreditado.
+3. Si falta prueba, consultar al órgano competente qué alternativa acepta antes de encargar certificados o traducciones.
+4. Resolver la casilla de apellidos conforme a los hechos y documentos. No marcar «se desconoce» solo porque la familia no desea aportar documentación.
+5. Si llega un requerimiento, atenderlo en su plazo o plantear las alternativas procedentes. Si la familia rechaza toda prueba admitida, explicar y documentar la limitación sin prometer una inscripción concreta.
+
+Podemos continuar preparando las partes independientes del expediente mientras se aclara el apellido. El formulario final debe ser coherente con la documentación y la revisión profesional.
+
+**Fuentes oficiales, revisadas el 24/09/2026**: [Instrucción de 23 de mayo de 2007](https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948) · [Ministerio: documentación de nacionalidad](https://www.mjusticia.gob.es/en/ciudadania/nacionalidad/informacion-nacionalidad) · [Registro Civil de Aragón: documentación posterior a la concesión](https://sedejudicial.aragon.es/registro-civil/nacionalidad/jura-de-nacionalidad-espanola/) · [Ley del Registro Civil, artículo 95](https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a95) · [Justicia: traducción y legalización](https://www.mjusticia.gob.es/es/Ciudadano/TramitesGestiones/Documents/advertencia-legalizacion-documentos.pdf).
+    `
+  },
   {
     slug: 'nacionalidad-menor-nacido-espana-requisitos',
     category: 'Extranjería',
@@ -195,7 +252,7 @@ Los archivos deben verse completos, sin cortes, sombras ni páginas omitidas. Un
   {
     slug: 'modelo-151-beckham-guia',
     category: 'Fiscalidad',
-    title: 'Guía completa del Modelo 151 y el Régimen Beckham en 2025',
+    title: 'Guía completa del Modelo 151 y el Régimen Beckham',
     excerpt:
       'Todo lo que necesitas saber sobre la tributación especial para impatriados: quién puede acogerse, cómo solicitarlo, plazos y diferencias con el IRPF ordinario.',
     date: '12 abr 2025',
@@ -205,20 +262,13 @@ Los archivos deben verse completos, sin cortes, sombras ni páginas omitidas. Un
     body: `
 ## ¿Qué es el Régimen Beckham?
 
-El régimen especial de impatriados, popularmente conocido como **Ley Beckham**, permite a las personas que se desplazan a España por motivos laborales tributar en el IRPF a un tipo fijo del **24 % sobre las rentas obtenidas en territorio español** (hasta 600.000 €), en lugar del tipo progresivo general que puede llegar al 47 %.
+El régimen especial de impatriados, popularmente conocido como **Ley Beckham**, aplica reglas especiales a determinados contribuyentes desplazados a España que cumplen el artículo 93 LIRPF. Para los rendimientos sujetos a la escala especial, el 24 % se aplica hasta 600.000 € y el 47 % sobre el exceso.
 
 Su nombre popular proviene del futbolista David Beckham, que lo utilizó al fichar por el Real Madrid en 2003, aunque desde entonces el régimen se ha reformado en varias ocasiones.
 
 ## ¿Quién puede acogerse?
 
-Para poder aplicar este régimen en 2025 es necesario cumplir **todos** los siguientes requisitos:
-
-- **No haber sido residente fiscal en España** durante los 5 años anteriores al desplazamiento.
-- Desplazarse a España como consecuencia de un **contrato de trabajo** (o para ejercer funciones de administrador de una sociedad) o de la **adquisición de la condición de administrador** de una sociedad no vinculada.
-- El trabajo debe realizarse **efectivamente en España**.
-- Los trabajos deben realizarse para una empresa o entidad residente en España, o para un establecimiento permanente en España.
-
-Desde 2023 también pueden acogerse los **nómadas digitales** (trabajadores por cuenta propia o ajena que prestan servicios de forma remota mediante el uso exclusivo de medios y sistemas informáticos) que obtengan el visado de nómada digital.
+La elegibilidad debe revisarse según la causa concreta del desplazamiento y los requisitos vigentes. El régimen ya no se limita a un contrato laboral clásico: contempla, entre otros supuestos legales, determinados administradores, teletrabajo internacional y ciertas actividades emprendedoras o profesionales. Antes de optar se verifica también la residencia fiscal previa y la documentación exigida por la AEAT.
 
 ## ¿Cuánto se paga con el Modelo 151?
 
@@ -227,7 +277,7 @@ Desde 2023 también pueden acogerse los **nómadas digitales** (trabajadores por
 | Hasta 600.000 € | 24 % |
 | Exceso sobre 600.000 € | 47 % |
 
-Las rentas obtenidas **fuera de España** (salvo rendimientos del trabajo) quedan **exentas** de tributación en España, lo que supone una ventaja adicional significativa para quienes mantengan patrimonio o rentas en el extranjero.
+Las rentas no se clasifican como exentas únicamente por haberse obtenido fuera de España. Debe aplicarse la regla especial del artículo 93 LIRPF y, cuando corresponda, las reglas del IRNR al tipo concreto de renta.
 
 ## Cómo solicitar la opción al régimen
 
@@ -255,60 +305,160 @@ En EXPERT te ayudamos a evaluar tu situación y a tramitar el Modelo 149 si deci
   {
     slug: 'arraigo-social-2025',
     category: 'Extranjería',
-    title: '¿Cómo obtener el arraigo social en 2025? Requisitos y pasos',
+    title: 'Arraigo social en 2026: requisitos, 2 años de permanencia y documentación',
     excerpt:
-      'Explicamos los cambios normativos recientes en los permisos de arraigo social, los documentos que necesitas y los errores más comunes en la presentación.',
-    date: '28 mar 2025',
-    readTime: '6 min',
-    tags: ['arraigo social', 'residencia', 'extranjería', 'autorización de residencia'],
+      'Guía actualizada del arraigo social: 2 años de permanencia, vínculos familiares o informe de integración, EX-10, tasa y errores a evitar.',
+    date: '19 sep 2026',
+    readTime: '8 min',
+    tags: ['arraigo social', 'residencia', 'extranjería', '2 años', 'EX-10'],
     relatedServiceSlugs: ['arraigo-social'],
     body: `
-## ¿Qué es el arraigo social?
+## Qué ha cambiado en el arraigo social
 
-El arraigo social es una **autorización de residencia temporal** que permite regularizar la situación en España a personas extranjeras que llevan un tiempo prolongado en el país sin documentación en regla. Es una de las vías más utilizadas para obtener la primera autorización de residencia en España.
+La regulación actual del arraigo social ya no responde al esquema antiguo de **3 años + oferta de empleo**.
 
-## Requisitos para 2025
+Con el Reglamento vigente, el requisito general es acreditar **2 años de permanencia continuada en España** y cumplir el resto de condiciones legales aplicables.
 
-Para solicitar el arraigo social debes cumplir los siguientes requisitos:
+Además, el arraigo social debe encajarse correctamente en una de estas vías:
 
-- **Tiempo de permanencia:** Llevar al menos **3 años** de permanencia continuada en España, acreditados mediante empadronamiento histórico, informes consulares, entradas de pasaporte u otros documentos admitidos.
-- **No tener antecedentes penales:** Ni en España ni en los países de residencia anteriores durante los últimos 5 años.
-- **Vínculos con España:** Demostrar arraigo mediante alguna de estas vías:
-  - **Oferta de trabajo** firmada por un empleador español (mínimo 30 horas semanales, 1 año de duración).
-  - **Vínculos familiares** con residentes legales o ciudadanos españoles (cónyuge, pareja de hecho, ascendientes, descendientes).
-  - **Informe de arraigo** emitido por el Ayuntamiento o los servicios sociales de la comunidad autónoma.
+- vínculos familiares con determinadas personas extranjeras residentes + medios económicos suficientes;
+- o informe favorable de integración social cuando no concurren esos vínculos.
 
-## Documentos necesarios
+## Requisito temporal
 
-1. Solicitud en Modelo EX–10
-2. Pasaporte válido (completo, con todas las páginas)
-3. Certificado de empadronamiento histórico (mínimo 3 años)
-4. Certificado de antecedentes penales del país de origen (apostillado o legalizado y traducido)
-5. Certificado de antecedentes penales del Registro Central de Penados (España)
-6. Según la vía elegida: contrato de trabajo firmado, informe de arraigo o documentación de vínculo familiar
+Debes acreditar al menos **2 años de permanencia continuada** inmediatamente anteriores a la solicitud.
 
-## Errores más comunes
+Durante ese periodo:
 
-- **Empadronamiento discontinuo:** Cada cambio de domicilio o baja padronal puede interrumpir el período. Comprueba tu historial completo antes de presentar.
-- **Antecedentes en el país de origen caducados:** El certificado de antecedentes penales del extranjero tiene validez de 3 meses. Solicítalo al final del proceso.
-- **Contratos de trabajo inadecuados:** El contrato debe ser a jornada completa o parcial con un mínimo de horas, cumplir con el Convenio Colectivo aplicable y estar firmado por ambas partes.
-- **Informes de arraigo insuficientes:** Cada Comunidad Autónoma tiene sus propios criterios. En algunas, el informe tarda varios meses en emitirse.
+- las ausencias no pueden superar 90 días;
+- conviene construir una cronología documental completa;
+- el empadronamiento histórico es muy útil, pero puede complementarse con otra documentación oficial.
 
-## Plazos y resolución
+## Ya no se exige contrato de trabajo como requisito propio del arraigo social
 
-La Delegación o Subdelegación del Gobierno tiene **3 meses** para resolver desde la presentación de la solicitud. Pasado ese plazo sin respuesta, se entiende desestimada por silencio administrativo (aunque en la práctica se suele resolver).
+El contrato de trabajo pertenece a la lógica del **arraigo sociolaboral**.
 
-Una vez aprobada, la autorización tiene una validez de **1 año**, renovable si se mantiene la relación laboral.
+En el arraigo social actual se revisan:
 
-En EXPERT te acompañamos durante todo el proceso, desde la evaluación previa hasta la obtención de la tarjeta TIE.
+- vínculos familiares y medios económicos; o
+- integración social mediante informe favorable.
+
+Confundir ambas figuras puede llevar a preparar mal el expediente desde el inicio.
+
+## Documentación principal
+
+Según el caso, normalmente se revisan:
+
+1. Formulario EX-10.
+2. Pasaporte completo en vigor.
+3. Pruebas de permanencia continuada durante 2 años.
+4. Antecedentes penales del país o países correspondientes, cuando proceda.
+5. Documentación del vínculo familiar, si se usa esa vía.
+6. Documentación de medios económicos.
+7. Informe favorable de integración social, si corresponde.
+8. Justificante de la tasa 790-052.
+
+## Tasa
+
+La tasa aplicable es el **Modelo 790 código 052, epígrafe 2.3.1**.
+
+La cuantía vigente es **38,28 €** y se abona aparte de los honorarios profesionales.
+
+## Plazo de resolución
+
+El plazo administrativo de resolución es de **3 meses** desde la entrada de la solicitud en el registro del órgano competente.
+
+## ¿Se puede trabajar si se concede?
+
+Sí. La concesión del arraigo social lleva aparejada autorización para trabajar por cuenta ajena o propia durante su vigencia, sin limitación de ámbito geográfico u ocupación.
+
+## Errores que seguimos viendo
+
+- usar todavía el requisito antiguo de 3 años;
+- pedir contrato de trabajo como requisito del arraigo social;
+- usar EX-01 en lugar de EX-10;
+- no revisar ausencias superiores a 90 días;
+- depender únicamente de un volante actual de padrón;
+- pensar que una asesoría privada puede emitir el informe oficial de integración;
+- no separar tasa administrativa y honorarios.
+
+## Antes de contratar
+
+Conviene comprobar primero:
+
+- fecha exacta desde la que puedes acreditar permanencia;
+- posibles periodos como solicitante de protección internacional;
+- ausencias del territorio español;
+- vía familiar o vía de integración social;
+- antecedentes y situación administrativa actual.
+
+En EXPERT revisamos estos puntos antes de presentar el expediente.
+
+Fuentes oficiales:
+- Ministerio de Inclusión: https://www.inclusion.gob.es/web/migraciones/w/autorizacion-residencia-temporal-por-circunstancias-excepcionales.-arraigo-social
+- Real Decreto 1155/2024: https://www.boe.es/eli/es/rd/2024/11/19/1155
+- Orden PJC/617/2025: https://www.boe.es/eli/es/o/2025/06/13/pjc617/con
     `
   },
   {
+    slug: 'arraigo-social-vs-sociolaboral-2026',
+    category: 'Extranjería',
+    title: 'Arraigo social vs. arraigo sociolaboral en 2026: diferencias clave',
+    excerpt:
+      'Qué vía encaja según tu situación: vínculos e integración social frente a una vía vinculada a relaciones laborales.',
+    date: '19 sep 2026',
+    readTime: '6 min',
+    tags: ['arraigo social', 'arraigo sociolaboral', 'residencia', 'extranjería'],
+    relatedServiceSlugs: ['arraigo-social'],
+    body: `
+## No son el mismo permiso
+
+Desde la reforma del Reglamento de Extranjería es especialmente importante no confundir **arraigo social** con **arraigo sociolaboral**.
+
+Ambos son autorizaciones por circunstancias excepcionales, pero responden a requisitos y pruebas distintas.
+
+## Arraigo social
+
+El arraigo social se apoya en:
+
+- 2 años de permanencia continuada en España;
+- vínculos familiares con determinadas personas extranjeras residentes y medios económicos suficientes;
+- o, en ausencia de esos vínculos, informe favorable de integración social.
+
+No exige contrato de trabajo como requisito específico.
+
+## Arraigo sociolaboral
+
+El arraigo sociolaboral utiliza una vía vinculada a una o varias relaciones laborales que cumplan los requisitos reglamentarios.
+
+Por tanto, si tu principal elemento de regularización es una relación laboral, puede que la figura correcta no sea el arraigo social.
+
+## Cómo elegir bien la vía
+
+Antes de presentar conviene revisar:
+
+1. tiempo de permanencia en España;
+2. situación migratoria actual;
+3. existencia de vínculos familiares;
+4. medios económicos;
+5. posibilidad de obtener informe de integración;
+6. existencia y características de una relación laboral;
+7. antecedentes y posibles incompatibilidades.
+
+## Por qué importa
+
+Elegir mal la vía puede provocar requerimientos innecesarios, documentos que no sirven para el expediente elegido, pérdida de tiempo o una denegación evitable.
+
+Fuentes oficiales:
+- Ministerio de Inclusión — arraigo social: https://www.inclusion.gob.es/web/migraciones/w/autorizacion-residencia-temporal-por-circunstancias-excepcionales.-arraigo-social
+- Real Decreto 1155/2024: https://www.boe.es/eli/es/rd/2024/11/19/1155
+    `
+  },  {
     slug: 'alta-autonomo-espana',
     category: 'Empresas',
     title: 'Alta de autónomo en España: todo lo que debes saber antes de empezar',
     excerpt:
-      'Pasos para darte de alta como autónomo, cuota a pagar en 2025, tarifa plana, modelos trimestrales y las obligaciones que te esperan el primer año.',
+      'Pasos para darte de alta como autónomo, cotización por rendimientos en 2026, modelos fiscales y obligaciones del primer año.',
     date: '15 mar 2025',
     readTime: '7 min',
     tags: ['autónomos', 'alta autónomo', 'Hacienda', 'Seguridad Social'],
@@ -320,8 +470,8 @@ En España, debes darte de alta como autónomo **antes de comenzar a ejercer cua
 
 ## Pasos para el alta
 
-### 1. Alta en Hacienda (Modelo 036 o 037)
-El Modelo 037 es la versión simplificada para la mayoría de los autónomos. En él indicarás:
+### 1. Alta en Hacienda (Modelo 036)
+Desde el 3 de febrero de 2025 el Modelo 037 está suprimido; el alta censal se tramita mediante el Modelo 036. En él indicarás:
 - **Epígrafe del IAE** (actividad económica)
 - **Régimen de IVA** aplicable (general, simplificado, recargo de equivalencia, exento...)
 - Fecha de inicio de la actividad
@@ -331,26 +481,17 @@ Debes presentarla **antes del inicio de la actividad** o como máximo el primer 
 
 En este momento elegirás tu **base de cotización**, que determinará la cuota mensual a pagar y tus futuras prestaciones.
 
-## Cuota de autónomos en 2025
+## Cotización de autónomos en 2026
 
-Desde 2023 rige el nuevo sistema de cotización por ingresos reales, con tramos progresivos:
+En 2026 la cotización se determina por **rendimientos netos** y por las bases mínima y máxima del tramo aplicable. La tabla oficial de 2026 contiene tres tramos reducidos y doce tramos generales, y la base puede ajustarse durante el año en los periodos habilitados.
 
-| Rendimientos netos mensuales | Cuota aprox. |
-|---|---|
-| Menos de 670 € | ~200 €/mes |
-| 670 € – 900 € | ~260 €/mes |
-| 900 € – 1.166 € | ~290 €/mes |
-| 1.166 € – 1.300 € | ~294 €/mes |
-| 1.300 € – 1.700 € | ~350 €/mes |
-| Más de 6.000 € | ~590 €/mes |
-
-**Tarifa plana:** Los nuevos autónomos pagan **80 €/mes durante 12 meses**, prorrogable si los rendimientos no superan el SMI. En algunas comunidades autónomas existen bonificaciones adicionales.
+Antes de calcular una cuota hay que comprobar el tramo, la base seleccionada y los tipos vigentes. La cuantía reducida de **80 €/mes estaba fijada para 2023–2025**; para altas en 2026 no debe reutilizarse automáticamente y se verifica el beneficio vigente en la fuente oficial.
 
 ## Obligaciones fiscales del primer año
 
 Como autónomo en régimen general, deberás presentar:
 
-- **Modelo 130** (IRPF trimestral): 20 % del beneficio neto en los primeros 3 años, luego según retenciones.
+- **Modelo 130** (IRPF): pago fraccionado calculado con las reglas vigentes sobre el rendimiento neto acumulado desde el inicio del año, descontando pagos previos y retenciones cuando proceda. Determinadas actividades profesionales pueden quedar exentas de presentarlo si cumplen el umbral legal de ingresos sometidos a retención.
 - **Modelo 303** (IVA trimestral): diferencia entre IVA repercutido y soportado.
 - **Modelo 390** (Resumen anual de IVA): en enero del año siguiente.
 - **Modelo 100** (Declaración de la Renta): en mayo-junio.
@@ -418,7 +559,7 @@ Tributas solo por las **rentas de fuente española**: alquileres, dividendos, ga
 Para residentes:
 - Certificado de retenciones del empleador
 - Datos de inmuebles (referencia catastral, valor, % de propiedad)
-- Extractos de cuentas bancarias en el extranjero (si supera 50.000 €, también el Modelo 720)
+- Extractos y datos de bienes/derechos en el extranjero suficientes para revisar si existe obligación de Modelo 720 por categoría, valoración, umbrales y exenciones
 - Certificado de residencia fiscal del país de origen (si solicitas deducción por doble imposición)
 
 Para no residentes:
@@ -503,7 +644,7 @@ Si estás planteándote migrar, contáctanos para una valoración gratuita de tu
     date: '5 feb 2025',
     readTime: '4 min',
     tags: ['certificado digital', 'empresas', 'trámites online', 'firma electrónica'],
-    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'certificado-digital-entidad'],
+    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'certificado-digital-entidad', 'pack-certificados-digitales'],
     body: `
 ## ¿Para qué sirve el certificado digital?
 
@@ -531,7 +672,7 @@ A diferencia del de representante, el sello no está vinculado a una persona fí
 
 **Camerfirma** es una Autoridad de Certificación española acreditada, perteneciente a las Cámaras de Comercio de España. Sus certificados están reconocidos por todas las Administraciones Públicas españolas y por buena parte de los organismos europeos.
 
-En EXPERT somos **Punto de Registro Autorizado de Camerfirma**, lo que significa que podemos emitir certificados directamente en nuestras instalaciones o por videoconferencia, sin necesidad de desplazamientos a una oficina de la Cámara de Comercio.
+En EXPERT tramitamos certificados Camerfirma y gestionamos online la identificación y verificación necesarias para la emisión, sin necesidad de acudir a una oficina pública.
 
 ## Proceso de obtención
 
@@ -542,7 +683,7 @@ En EXPERT somos **Punto de Registro Autorizado de Camerfirma**, lo que significa
 
 ## ¿Cada cuánto hay que renovarlo?
 
-Los certificados Camerfirma tienen una validez de **2 o 3 años** según el tipo. La renovación debe realizarse antes de que caduque; si caduca, habrá que solicitar uno nuevo con un nuevo proceso de verificación de identidad.
+La vigencia depende de la modalidad concreta. En el catálogo EXPERT, la modalidad de persona física se comercializa con **5 años** de vigencia y la modalidad de entidad con **2 años**. La renovación debe revisarse antes del vencimiento.
 
 Contacta con nosotros para gestionar tu certificado digital sin desplazamientos.
 
@@ -552,6 +693,253 @@ Si además de el certificado digital quieres gestionar trámites personales desd
 
 - [Qué es Cl@ve y para qué sirve →](/blog/que-es-clave-identificacion-electronica)
 - [Cómo registrarse en Cl@ve →](/blog/como-registrarse-en-clave)
+    `
+  },
+  {
+    slug: 'certificado-digital-persona-fisica-usos-aeat-seguridad-social',
+    category: 'Trámites',
+    title: 'Certificado digital de persona física: usos en AEAT, Seguridad Social y sedes electrónicas',
+    excerpt:
+      'Qué trámites puedes hacer con tu certificado digital personal y cuándo conviene usarlo frente a otros sistemas de identificación.',
+    date: '19 sep 2026',
+    readTime: '6 min',
+    tags: ['certificado digital', 'persona física', 'AEAT', 'Seguridad Social', 'sede electrónica'],
+    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'pack-certificados-digitales'],
+    body: `
+## Un certificado para identificarte y firmar
+
+El certificado digital de persona física permite identificarte electrónicamente y, cuando el trámite lo admite, firmar documentos o solicitudes.
+
+## Usos habituales
+
+Entre los usos más frecuentes están:
+
+- AEAT: consultas, declaraciones, certificados y escritos;
+- Seguridad Social: informes, trámites y comunicaciones;
+- DGT y otras sedes administrativas;
+- firma de documentos electrónicos;
+- presentación de solicitudes y recursos.
+
+## Certificado digital y Cl@ve no son lo mismo
+
+Cl@ve es un sistema de identificación pública muy útil para trámites personales. El certificado digital, en cambio, puede aportar firma electrónica y se utiliza también en procedimientos y aplicaciones donde Cl@ve no está disponible.
+
+## Antes de instalarlo
+
+Comprueba:
+- que el DNI/TIE está en vigor;
+- que usarás un equipo de confianza;
+- que podrás hacer una copia de seguridad segura;
+- que conoces la fecha de caducidad.
+
+## Modalidad EXPERT
+
+El servicio EXPERT para persona física cuesta **90 € + IVA** y la modalidad comercializada tiene **5 años de vigencia**.
+
+Incluye verificación, emisión, instalación y prueba de funcionamiento.
+    `
+  },
+  {
+    slug: 'certificado-digital-persona-fisica-vs-clave-dnie',
+    category: 'Trámites',
+    title: 'Certificado digital, Cl@ve o DNIe: qué elegir para tus trámites',
+    excerpt:
+      'Comparativa práctica entre certificado digital, Cl@ve y DNI electrónico para saber qué sistema te conviene según el trámite.',
+    date: '19 sep 2026',
+    readTime: '6 min',
+    tags: ['certificado digital', 'Cl@ve', 'DNIe', 'identificación electrónica'],
+    relatedServiceSlugs: ['certificado-digital-persona-fisica'],
+    body: `
+## Tres sistemas distintos
+
+En España puedes identificarte electrónicamente con distintas herramientas. No todas sirven para exactamente lo mismo.
+
+## Certificado digital
+
+Ventajas:
+- identificación electrónica;
+- firma de documentos;
+- uso en muchas sedes;
+- puede instalarse en el equipo habitual.
+
+## Cl@ve
+
+Ventajas:
+- cómoda para trámites personales frecuentes;
+- no requiere custodiar un fichero de certificado;
+- especialmente útil desde móvil.
+
+## DNIe
+
+Ventajas:
+- integra certificado en el documento nacional de identidad;
+- permite identificación y firma si se dispone del soporte y claves necesarios.
+
+## Qué elegir
+
+Si necesitas trabajar de forma habitual con varias sedes y firmar electrónicamente, un certificado software suele ser la opción más versátil.
+
+Si solo haces consultas personales puntuales, Cl@ve puede ser suficiente.
+
+## Servicio EXPERT
+
+Tramitamos el certificado Camerfirma de persona física por **90 € + IVA**, con instalación y prueba de funcionamiento.
+    `
+  },
+  {
+    slug: 'certificado-digital-entidad-representante-o-sello',
+    category: 'Trámites',
+    title: 'Certificado de representante, corporativo o sello: cuál necesita tu empresa',
+    excerpt:
+      'Las empresas pueden necesitar certificados distintos según quién firma y para qué. Explicamos cómo distinguir representación, pertenencia y sello electrónico.',
+    date: '19 sep 2026',
+    readTime: '7 min',
+    tags: ['certificado empresa', 'representante legal', 'sello electrónico', 'Camerfirma'],
+    relatedServiceSlugs: ['certificado-digital-entidad', 'pack-certificados-digitales'],
+    body: `
+## El error más frecuente: pedir "un certificado de empresa" sin definir el uso
+
+Camerfirma distingue varias figuras para organizaciones.
+
+## Representante
+
+Se utiliza cuando una persona debe actuar en nombre de la organización dentro de las facultades correspondientes.
+
+## Corporativo
+
+Acredita la pertenencia a una entidad, pero no equivale automáticamente a poderes generales de representación.
+
+## Sello electrónico
+
+Está orientado a identificar a la organización en determinados procesos y automatizaciones.
+
+## Antes de contratar
+
+Define:
+- quién será el titular;
+- qué trámites hará;
+- si necesita actuar ante Administraciones Públicas;
+- si firma contratos;
+- si existe poder suficiente;
+- si el uso será manual o automatizado.
+
+## Servicio EXPERT
+
+La modalidad de entidad comercializada por EXPERT cuesta **150 € + IVA** y tiene **2 años de vigencia**. Revisamos la representación y la documentación antes de emitir.
+
+Fuentes:
+https://www.camerfirma.com/certificados-digitales-empresas/
+    `
+  },
+  {
+    slug: 'certificado-digital-entidad-cambio-administrador-revocacion',
+    category: 'Trámites',
+    title: 'Certificado digital de empresa: qué hacer si cambia el administrador o representante',
+    excerpt:
+      'Qué revisar cuando cambia el representante de una sociedad y por qué conviene controlar certificados, accesos y revocaciones.',
+    date: '19 sep 2026',
+    readTime: '6 min',
+    tags: ['certificado digital empresa', 'administrador', 'representante', 'revocación'],
+    relatedServiceSlugs: ['certificado-digital-entidad'],
+    body: `
+## El certificado está ligado a una situación de representación
+
+Cuando cambia el administrador, apoderado o persona autorizada, no basta con actualizar el organigrama interno. Hay que revisar los certificados y accesos digitales asociados.
+
+## Checklist de cambio
+
+1. Identifica los certificados activos.
+2. Comprueba quién figura como titular o representante.
+3. Revisa las facultades del nuevo cargo.
+4. Valora la revocación de credenciales que ya no deben utilizarse.
+5. Tramita el nuevo certificado adecuado.
+6. Actualiza inventario interno y fechas de vencimiento.
+
+## Por qué importa
+
+Mantener un certificado de representación en manos de alguien que ya no debe actuar puede generar un riesgo operativo y de seguridad.
+
+## Control recomendado
+
+La empresa debería registrar:
+- tipo de certificado;
+- titular;
+- fecha de emisión;
+- fecha de caducidad;
+- equipo o dispositivo;
+- responsable de custodia;
+- estado: activo, revocado o sustituido.
+
+## Servicio EXPERT
+
+Tramitamos la modalidad de entidad por **150 € + IVA**, con **2 años de vigencia**, revisando documentación y facultades del representante.
+
+Fuentes:
+https://www.camerfirma.com/certificado-cualificado-de-representacion/
+    `
+  },
+  {
+    slug: 'pack-certificados-digitales-persona-empresa',
+    category: 'Trámites',
+    title: 'Certificado personal + certificado de empresa: cuándo conviene contratar ambos',
+    excerpt:
+      'Si eres administrador o representante, explicamos por qué el certificado personal y el de la entidad cumplen funciones distintas y cuándo tiene sentido tramitarlos juntos.',
+    date: '19 sep 2026',
+    readTime: '6 min',
+    tags: ['certificado digital', 'empresa', 'administrador', 'Camerfirma', 'representante'],
+    relatedServiceSlugs: ['pack-certificados-digitales'],
+    body: `
+## Dos certificados, dos identidades
+
+El certificado de persona física identifica al individuo.
+
+El certificado de entidad se utiliza para actuar digitalmente en el contexto de la organización y depende de la modalidad y de las facultades del representante.
+
+Por eso un administrador puede necesitar ambos.
+
+## Cuándo tiene sentido contratar los dos
+
+El pack es especialmente útil si:
+
+- eres administrador o representante de una sociedad;
+- haces trámites personales y empresariales;
+- necesitas trabajar con AEAT, Seguridad Social u otras sedes;
+- quieres centralizar emisión, instalación y control de vencimientos.
+
+## Una sola contratación
+
+EXPERT permite contratar ambos certificados en un solo pedido por **200 € + IVA**.
+
+Por separado:
+
+- persona física: 90 € + IVA;
+- entidad: 150 € + IVA;
+- total: 240 € + IVA.
+
+El ahorro es de 40 €.
+
+## 100 % online
+
+La tramitación con EXPERT se realiza online, sin presencia física.
+
+EXPERT gestiona la tramitación dentro del proceso Camerfirma y realiza las validaciones necesarias de identidad y representación.
+
+## Plazo
+
+El SLA máximo es de **24 horas laborables** desde que:
+
+- la documentación está completa;
+- la identidad está validada;
+- las facultades del representante están confirmadas.
+
+## Un pedido, dos entregables
+
+Aunque el pago es único, EXPERT gestiona dos entregables operativos:
+
+1. certificado personal;
+2. certificado de entidad.
+
+Esto permite mantener trazabilidad y control documental sin duplicar el proceso de compra.
     `
   },
   {
@@ -602,9 +990,9 @@ Lo más importante es no precipitarse: una migración bien hecha te ahorra meses
   {
     slug: 'ley-antifraude-software-contable',
     category: 'Fiscalidad',
-    title: 'Ley Antifraude y software contable: lo que debes saber en 2025',
+    title: 'Ley Antifraude y sistemas de facturación: situación en 2026',
     excerpt:
-      'La Ley 11/2021 prohíbe el software de doble uso y exige sistemas de facturación certificados. Analizamos qué implica para autónomos, pymes y sus asesores.',
+      'La Ley 11/2021 prohíbe el software de doble uso y el RRSIF exige sistemas de facturación adaptados a sus requisitos. Analizamos qué implica para autónomos, sociedades y asesores.',
     date: '5 may 2026',
     readTime: '6 min',
     tags: ['Ley Antifraude', 'software contable', 'facturación', 'VeriFactu'],
@@ -635,16 +1023,16 @@ El desarrollo reglamentario de esta prohibición se concreta en el **Real Decret
 
 | Colectivo | Fecha de entrada en vigor |
 |---|---|
-| Grandes empresas (facturación > 6 M€) | 1 de julio de 2025 |
-| Resto de empresas y autónomos | 1 de julio de 2026 |
-| Software de terceros (ERP, gestión) | Deben certificarse antes de esas fechas |
+| Contribuyentes del Impuesto sobre Sociedades sujetos al reglamento | Antes del 1 de enero de 2027 |
+| Resto de obligados del artículo 3.1, incluidos empresarios/profesionales en IRPF cuando proceda | Antes del 1 de julio de 2027 |
+| Proveedores de software | Deben entregar soluciones adaptadas a tiempo para que cada obligado cumpla su fecha aplicable |
 
 ## ¿Qué debo hacer?
 
 Si usas un programa de facturación o contabilidad:
 
 1. **Verifica que tu proveedor de software esté adaptando su producto** a los requisitos del Reglamento. Pregunta explícitamente si cumplirá con VeriFactu antes de las fechas indicadas.
-2. **Si usas hojas de cálculo o facturas en Word/PDF**, debes migrar a un sistema certificado. Excel no cumple los requisitos.
+2. **Si usas hojas de cálculo o facturas en Word/PDF**, debes migrar a un sistema adaptado al RRSIF. Excel no cumple los requisitos.
 3. **Si eres asesor o gestoría**, asegúrate de que los programas que usas para tus clientes también estén certificados.
 
 ## Holded y la Ley Antifraude
@@ -657,64 +1045,76 @@ En EXPERT, como Holded Solution Partner, te ayudamos a evaluar si tu sistema act
   {
     slug: 'verifactu-facturacion-electronica',
     category: 'Fiscalidad',
-    title: 'VeriFactu: la facturación electrónica obligatoria que llega en 2025-2026',
+    title: 'VERI*FACTU y RRSIF: las fechas obligatorias pasan a 2027',
     excerpt:
-      'El sistema VeriFactu será obligatorio para grandes empresas desde julio de 2025 y para pymes y autónomos desde julio de 2026. Explicamos cómo funciona y cómo prepararte.',
+      'Los sistemas de facturación sujetos al RRSIF deberán adaptarse antes del 1 de enero o del 1 de julio de 2027, según el tipo de obligado. Explicamos la diferencia entre RRSIF y la modalidad VERI*FACTU.',
     date: '8 may 2026',
     readTime: '7 min',
     tags: ['VeriFactu', 'facturación electrónica', 'AEAT', 'software de facturación'],
     relatedServiceSlugs: ['contabilidad-mensual', 'formacion-holded'],
     body: `
-## ¿Qué es VeriFactu?
+## ¿Qué es VERI*FACTU?
 
-**VERI*FACTU** es el sistema de verificación de facturas de la Agencia Tributaria española, regulado por el **Real Decreto 1007/2023**. Permite a empresas y autónomos enviar sus registros de facturación directamente a la AEAT en tiempo real, garantizando su autenticidad e integridad mediante una cadena de huellas digitales (hash).
+**VERI*FACTU** es una de las dos modalidades previstas por el Reglamento de sistemas informáticos de facturación (RRSIF), aprobado por el **Real Decreto 1007/2023**. En esta modalidad, el sistema remite a la AEAT los registros de facturación inmediatamente después de producirlos y las facturas pueden ser cotejadas por el destinatario mediante el código QR.
 
-El nombre es un acrónimo de **VERIficación de FACTURas**.
+No debe confundirse VERI*FACTU con todo el RRSIF: también existe la modalidad **NO VERI*FACTU**, que cumple el mismo reglamento sin remitir automáticamente cada registro a la AEAT.
 
-## ¿Es obligatorio o voluntario?
+## ¿Es obligatorio VERI*FACTU?
 
-Aquí es donde existe confusión. El sistema funciona en dos niveles:
+La obligación es utilizar, cuando resulte aplicable el RRSIF, un sistema informático de facturación adaptado. Dentro de ese marco existen dos modalidades de cumplimiento:
 
-### 1. Sistemas VERI*FACTU (envío a la AEAT)
-Es **voluntario** optar por esta modalidad. Las empresas que lo adoptan envían cada factura a la AEAT en el momento de su emisión. A cambio, obtienen ciertas ventajas:
-- Quedan **exoneradas** de expedir factura electrónica a sus clientes en determinados supuestos.
-- Generan confianza adicional frente a la Administración.
+### 1. Sistemas VERI*FACTU
 
-### 2. Sistemas de facturación no VERI*FACTU
-Si no se opta por el envío a la AEAT, el software debe igualmente cumplir los **requisitos técnicos del Reglamento**: encadenamiento de registros, hash, QR en facturas, inmutabilidad de datos. Esto es **obligatorio** para todos.
+La elección de esta modalidad es **voluntaria**. El sistema remite los registros de facturación a la AEAT inmediatamente después de producirlos. Entre sus efectos prácticos:
 
-## Requisitos técnicos obligatorios para todo el software
+- la AEAT conserva los registros remitidos;
+- se simplifican determinadas obligaciones técnicas de conservación y seguridad que sí recaen sobre NO VERI*FACTU;
+- el destinatario puede cotejar mediante el QR que el registro de la factura se encuentra en poder de la AEAT.
 
-Independientemente de si se opta por VeriFactu o no, todos los sistemas de facturación deberán:
+### 2. Sistemas NO VERI*FACTU
 
-- **Generar un código hash** único para cada registro de facturación, encadenado con el anterior (similar a una blockchain).
-- **Incluir un código QR** en cada factura que permita a la AEAT verificar su autenticidad.
-- **Garantizar la inmutabilidad** de los registros: ningún registro podrá modificarse o eliminarse sin dejar huella.
-- **Conservar los registros** durante el período de prescripción tributaria (generalmente 4 años, pero se recomienda 6).
+No remiten automáticamente los registros de facturación a la AEAT, pero deben cumplir el RRSIF con **medidas adicionales de seguridad**, entre ellas la firma de los registros, el registro de eventos y los mecanismos reglamentarios de conservación, exportación y comprobación.
 
-## Calendario de implantación
+Las facturas emitidas mediante un SIF sujeto al reglamento incorporan el **código QR** exigido; la capacidad de cotejo en sede depende de la modalidad utilizada.
 
-| Colectivo | Obligatorio desde |
-|---|---|
-| Grandes empresas (> 6 M€ de facturación) | **1 julio 2025** |
-| Pymes, autónomos y resto de empresas | **1 julio 2026** |
+## Requisitos técnicos comunes y diferencias entre modalidades
 
-Los **proveedores de software** (ERP, programas de facturación, contabilidad) deberán tener sus productos certificados antes de que sus clientes estén obligados a cumplir.
+Los SIF incluidos en el RRSIF deben generar registros de facturación en el formato reglamentario y asegurar su integridad, conservación, accesibilidad, legibilidad, trazabilidad e inalterabilidad. El encadenamiento mediante huellas y el QR forman parte del esquema técnico previsto por la normativa.
+
+La forma de asegurar la conservación e inalterabilidad cambia según la modalidad: **VERI*FACTU** remite los registros a la AEAT, mientras que **NO VERI*FACTU** debe implementar controles adicionales como firma electrónica de registros y registro de eventos.
+
+## Calendario de implantación vigente
+
+- **Contribuyentes del Impuesto sobre Sociedades**: deben tener sus sistemas adaptados **antes del 1 de enero de 2027**.
+- **Resto de obligados tributarios del artículo 3.1 del RRSIF**: deben tenerlos operativos **antes del 1 de julio de 2027**.
+- Los obligados que llevan sus libros registro mediante **SII** cuentan con una exclusión específica del RRSIF en los términos previstos por la norma.
+
+Los productores y comercializadores de SIF debían ofrecer productos adaptados dentro del plazo reglamentario derivado de la Orden HAC/1177/2024; la AEAT sitúa ese vencimiento en **29 de julio de 2025**, sin perjuicio de la adaptación de sistemas incluidos en determinados contratos de mantenimiento plurianual a las fechas aplicables a sus usuarios.
 
 ## ¿Qué pasa con la factura electrónica entre empresas (B2B)?
 
-VeriFactu es distinto a la **obligación de factura electrónica B2B** que introduce la Ley Crea y Crece (Ley 18/2022). Esta última, pendiente de reglamentación definitiva, exigirá la emisión de facturas en formato electrónico estructurado (principalmente **Facturae** o **UBL**) entre empresas y autónomos.
+VERI*FACTU es distinto de la **factura electrónica obligatoria B2B** de la Ley 18/2022. El **Real Decreto 238/2026, de 25 de marzo**, ya desarrolla el sistema español de factura electrónica entre empresarios y profesionales y entró en vigor el 20 de abril de 2026.
 
-Ambas normativas son complementarias pero independientes. VeriFactu se centra en la integridad y trazabilidad; la factura electrónica B2B, en el formato de intercambio.
+Su aplicación efectiva no comienza simplemente por la entrada en vigor del real decreto: el cómputo de los plazos se vincula a la entrada en vigor de la orden ministerial que desarrolle la solución pública de facturación electrónica. Desde ese momento, la obligación será exigible en dos fases:
+
+- a los **12 meses** para empresarios y profesionales cuyo volumen de operaciones del año anterior haya superado **8 millones de euros**;
+- a los **24 meses** para el resto.
+
+Por tanto, RRSIF/VERI*FACTU y factura electrónica B2B son obligaciones relacionadas con la digitalización de la facturación, pero **no son la misma norma ni tienen el mismo calendario**.
 
 ## Cómo prepararte ahora
 
-1. **Pregunta a tu proveedor de software** si su sistema cumplirá con el Reglamento antes de julio de 2025 (grandes empresas) o julio de 2026 (pymes/autónomos).
-2. **Evita soluciones improvisadas** (Excel, Word, facturas manuales): no podrán cumplir los requisitos técnicos.
-3. **Considera migrar a un ERP cloud** como Holded, que puede adaptarse a los requisitos de forma centralizada sin que tengas que gestionar la actualización tú mismo.
-4. **Revisa tus procesos internos**: VeriFactu implica que cada factura queda registrada permanentemente. Errores en facturas emitidas requerirán facturas rectificativas, no eliminaciones.
+1. **Confirma con tu proveedor** que el sistema estará adaptado al RRSIF antes de la fecha que corresponda: 1 de enero de 2027 para contribuyentes del Impuesto sobre Sociedades y 1 de julio de 2027 para el resto de obligados incluidos.
+2. **Revisa si concurre alguna exclusión**, especialmente si llevas los libros registro mediante SII.
+3. **Decide la modalidad** que encaja mejor con tu operativa: VERI*FACTU o NO VERI*FACTU.
+4. **Revisa tus procesos de facturación, rectificación y conservación** antes de la entrada en obligación para asegurar la trazabilidad exigida.
 
-En EXPERT te ayudamos a evaluar tu situación actual y a preparar tu sistema de facturación para el cumplimiento de la normativa VeriFactu.
+**Fuentes oficiales**:
+- [Agencia Tributaria — FAQ de Sistemas Informáticos de Facturación y VERI*FACTU](https://sede.agenciatributaria.gob.es/Sede/iva/sistemas-informaticos-facturacion-verifactu/preguntas-frecuentes.html)
+- [BOE — Real Decreto-ley 15/2025](https://www.boe.es/buscar/doc.php?id=BOE-A-2025-24446)
+- [BOE — Real Decreto 238/2026](https://www.boe.es/eli/es/rd/2026/03/25/238)
+
+En EXPERT te ayudamos a evaluar tu situación actual y a preparar tu sistema de facturación para cumplir el RRSIF y coordinarlo con la futura obligación de factura electrónica B2B.
     `
   },
   {
@@ -1063,7 +1463,7 @@ O puedes empezar directamente con el Pack Starter si ya sabes que no tienes hist
   {
     slug: 'permiso-residencia-inicial-guia-2025',
     category: 'Extranjería',
-    title: 'Permiso inicial de residencia en España: guía completa 2025',
+    title: 'Permiso inicial de residencia en España: guía actualizada',
     excerpt:
       'Todo lo que necesitas saber para obtener tu primer permiso de residencia en España: vías disponibles, requisitos, plazos y errores más comunes que debes evitar.',
     date: '14 may 2026',
@@ -1079,42 +1479,26 @@ Sin este permiso, la estancia en España más allá de 90 días (para quienes lo
 
 ## Vías para obtener el primer permiso de residencia
 
-Existen varias vías según tu situación personal:
+La vía correcta depende de la situación personal. El Reglamento vigente diferencia, entre otras, autorizaciones por trabajo, reagrupación, residencia no lucrativa y circunstancias excepcionales.
 
-### 1. Arraigo social
-Requiere **3 años de estancia continuada** en España, aunque sea en situación irregular, y un contrato de trabajo o medios económicos propios. Es una de las vías más utilizadas.
+Dentro de los arraigos, el RD 1155/2024 reorganizó las figuras en **arraigo de segunda oportunidad, sociolaboral, social, socioformativo y familiar**. No debe utilizarse la antigua clasificación de arraigo laboral como si siguiera siendo una categoría vigente.
 
-### 2. Arraigo laboral
-Requiere acreditar **2 años de estancia irregular** y una relación laboral no declarada de al menos 6 meses. El empresario debe regularizar el contrato.
+## Requisitos generales para el arraigo social
 
-### 3. Arraigo familiar
-Para personas que tienen un vínculo familiar de primer grado (hijo/a español/a o padre/madre de menor español/a). No requiere tiempo mínimo de estancia.
-
-### 4. Circunstancias excepcionales
-Incluye casos de protección internacional, colaboración con autoridades, trata de seres humanos y violencia de género.
-
-### 5. Residencia por reagrupación familiar
-Cuando un familiar con residencia legal en España solicita traerte.
-
-### 6. Visado de larga duración
-Tramitado en el consulado español de tu país de origen antes de viajar. Incluye el visado de trabajo, el visado de estudiante o el visado de nómada digital.
-
-## Requisitos generales para el arraigo social (la vía más común)
-
-- **Estancia continuada en España de al menos 3 años** (acreditada mediante empadronamiento, contrato de arrendamiento, facturas, etc.)
+- **Permanencia continuada en España de al menos 2 años**, con ausencias no superiores a 90 días.
 - **Ausencia de antecedentes penales** en España y en el país de origen (últimos 5 años)
-- **Contrato de trabajo** de al menos 30 horas semanales, **o** medios económicos propios equivalentes al 100 % del IPREM mensual
+- **Vínculos familiares y medios económicos**, o informe favorable de integración social, según la vía.
 - **No estar en situación de prohibición de entrada** en España o en la UE
-- **Formulario EX-01** cumplimentado y firmado
+- **Formulario EX-10** cumplimentado y firmado
 
 ## Documentos necesarios
 
 1. Pasaporte en vigor (todas las páginas fotocopiadas)
-2. Formulario EX-01 (solicitud)
+2. Formulario oficial correspondiente a la vía elegida (para arraigo social, EX-10)
 3. Fotografía reciente en color tamaño carné
 4. Justificante de pago de la tasa modelo 790 código 052
-5. Certificado de empadronamiento (con historial de 3 años o más)
-6. Contrato de trabajo firmado por empresa y trabajador
+5. Documentación que acredite 2 años de permanencia continuada
+6. Documentación de vínculos familiares y medios económicos, o informe favorable de integración social
 7. Antecedentes penales del país de origen (apostillados y traducidos oficialmente)
 8. Certificado de antecedentes penales de España (solicitado en la Policía o por internet)
 
@@ -1133,19 +1517,19 @@ El **plazo legal de resolución es de 3 meses**. Si la Administración no resuel
 
 1. **Pasaporte caducado o próximo a caducar**: debe tener validez mínima igual al permiso solicitado (generalmente 1 año).
 2. **Antecedentes del país de origen sin apostillar o sin traducción jurada**: son documentos extranjeros que necesitan apostilla del Convenio de La Haya y traducción oficial al español.
-3. **Empadronamiento que no refleja continuidad**: una baja en el padrón (aunque sea temporal) puede romper el cómputo de los 3 años.
-4. **Contrato de trabajo que no cumple las horas mínimas**: contratos a tiempo parcial con pocas horas pueden no ser suficientes.
+3. **Empadronamiento que no refleja continuidad**: los periodos sin padrón deben revisarse y, si procede, cubrirse con otras pruebas oficiales.
+4. **Confundir arraigo social con sociolaboral**: el contrato de trabajo no es el requisito central del arraigo social vigente.
 5. **Presentar la solicitud en la oficina incorrecta**: debes solicitar en la Oficina de Extranjería de la provincia donde estás empadronado.
 
 ## ¿Puedo trabajar mientras tramito el permiso?
 
-Con el **arraigo social**: no, salvo autorización expresa provisional.
-Con el **arraigo laboral**: sí, porque se pide autorización de trabajo simultánea.
+Con el **arraigo social**: la autorización para trabajar nace con la concesión; la mera presentación no habilita por sí sola para trabajar.
+En el **arraigo sociolaboral**, la habilitación para trabajar deriva de la autorización concedida y de sus condiciones; la mera presentación de la solicitud no equivale por sí sola a autorización para trabajar.
 Con visado de trabajo: sí, desde el momento en que la empresa obtiene la autorización previa de trabajo.
 
 ## ¿Qué pasa después? La tarjeta TIE
 
-Una vez resuelta favorablemente la solicitud, tienes **30 días hábiles** para solicitar la Tarjeta de Identidad de Extranjero (TIE) en la comisaría de Policía de tu localidad. Para ello necesitarás:
+Una vez resuelta favorablemente la solicitud, debe solicitarse la Tarjeta de Identidad de Extranjero (TIE) dentro del plazo específico aplicable al procedimiento, que normalmente se expresa como **un mes** en la comisaría de Policía de tu localidad. Para ello necesitarás:
 
 - Resolución favorable de Extranjería
 - Pasaporte original
@@ -1159,7 +1543,7 @@ En EXPERT gestionamos el proceso completo, desde la evaluación de tu situación
   {
     slug: 'documentos-permiso-residencia-espana',
     category: 'Extranjería',
-    title: 'Lista completa de documentos para el permiso de residencia en España (2025)',
+    title: 'Documentos para permisos de residencia en España: guía actualizada',
     excerpt:
       'Qué documentos necesitas exactamente, cómo obtenerlos, cómo apostillarlos y traducirlos, y qué errores de documentación son los más frecuentes en Extranjería.',
     date: '14 may 2026',
@@ -1186,7 +1570,7 @@ Esta guía recoge los documentos más habituales, cómo obtenerlos correctamente
 ## Formulario de solicitud
 
 Dependiendo del trámite:
-- **EX-01**: autorización de residencia temporal (arraigo social, familiar, laboral, circunstancias excepcionales).
+- **EX-10**: autorizaciones de residencia temporal por circunstancias excepcionales, incluido el arraigo social.
 - **EX-02**: autorización de residencia temporal por reagrupación familiar.
 
 Descárgalos siempre de la web oficial del Ministerio de Inclusión, Seguridad Social y Migraciones, ya que los modelos se actualizan periódicamente.
@@ -1207,7 +1591,7 @@ Descárgalos siempre de la web oficial del Ministerio de Inclusión, Seguridad S
 ## Certificado de empadronamiento
 
 - Solicítalo en tu Ayuntamiento o Junta de Distrito, en persona o por internet.
-- Para el arraigo social debe reflejar **al menos 3 años continuados** de residencia en España.
+- Para el arraigo social actual debe poder acreditarse **al menos 2 años de permanencia continuada** en España.
 - Pide el **certificado de empadronamiento con historial** (no solo el volante de residencia actual), para que refleje la antigüedad.
 - Atención: si te diste de baja en el padrón aunque sea brevemente, eso puede interrumpir el cómputo.
 
@@ -1259,7 +1643,7 @@ Si no presentas contrato de trabajo (o como complemento):
 | Documento | Dónde obtenerlo | Vigencia |
 |---|---|---|
 | Pasaporte | Consulado / embajada de tu país | Según fecha de caducidad |
-| Formulario EX-01 / EX-02 | Web del Ministerio | Sin caducidad |
+| Formulario EX-10 / EX-02 | Web del Ministerio | Sin caducidad |
 | Fotografía carné | Estudio fotográfico | — |
 | Tasa modelo 790-052 | Banco / internet | — |
 | Empadronamiento con historial | Ayuntamiento | 3 meses |
@@ -1337,12 +1721,7 @@ Sí. Haber percibido prestación por desempleo se considera una situación de co
 
 ## De la residencia temporal a la larga duración
 
-Para acceder a la **residencia de larga duración** necesitas:
-
-1. **5 años de residencia legal y continuada** en España (los períodos de prórroga administrativa cuentan).
-2. No tener **antecedentes penales** en España ni en el país de origen.
-3. Acreditar **medios económicos suficientes**: al menos el 150 % del IPREM mensual para el titular (aprox. 900 €/mes en 2025), más el 50 % por cada familiar a cargo.
-4. Disponer de **seguro médico** si no cotizas a la Seguridad Social.
+Para acceder a la **residencia de larga duración nacional** la regla general es acreditar **5 años de residencia legal y continuada** en España y cumplir los demás requisitos del procedimiento. No existe, con carácter general, un requisito del 150 % del IPREM ni un seguro médico como los que se exigen en otras autorizaciones; no deben trasladarse esos requisitos a esta figura.
 
 La residencia de larga duración abre también la puerta a acumular tiempo para solicitar la **nacionalidad española por residencia** (10 años como regla general, 2 años para nacionales de países iberoamericanos o con tratados especiales).
 
@@ -1509,7 +1888,7 @@ Además del vínculo familiar, se necesita:
 
 | Aspecto | Arraigo social | Arraigo familiar |
 |---|---|---|
-| Tiempo de permanencia exigido | 3 años | No requerido |
+| Tiempo de permanencia exigido | 2 años | Depende de la vía aplicable |
 | Vínculo necesario | Oferta trabajo, informe o familia | Vínculo familiar directo |
 | Autorización laboral | Incluida con contrato de trabajo | Incluida |
 
@@ -1613,7 +1992,7 @@ Para poder reagrupar, el residente en España debe:
 
 1. Tener autorización de residencia en vigor **mínimo de 1 año** y haber solicitado la renovación.
 2. Disponer de **vivienda adecuada** para el número de familiares a reagrupar (acreditada mediante contrato de arrendamiento o escritura de propiedad).
-3. Contar con **medios económicos suficientes**: al menos el 150 % del IPREM mensual (aprox. 900 €/mes en 2025) para el reagrupante solo, más el 50 % por cada familiar adicional.
+3. Contar con **medios económicos suficientes**: para una unidad familiar de dos miembros (reagrupante + una persona reagrupada), la referencia general es el 150 % del IPREM mensual; por cada miembro adicional se añade el 50 %. En determinados casos con menores existen reglas de minoración que deben revisarse.
 
 ## Proceso de tramitación
 
@@ -1644,62 +2023,50 @@ La solicitud se resuelve en un plazo legal de **3 meses**. La práctica varía p
   {
     slug: 'permiso-residencia-inversores',
     category: 'Extranjería',
-    title: 'Permiso de residencia para inversores en España: Golden Visa y alternativas',
-    excerpt: 'Opciones para obtener residencia en España a través de la inversión: Golden Visa, visado de no lucrativa y otros permisos. Requisitos, plazos y proceso.',
+    title: 'Golden Visa en España: derogación y alternativas de residencia',
+    excerpt: 'La vía de residencia para inversores de la Ley 14/2013 dejó de admitir nuevas solicitudes desde el 3 de abril de 2025. Explicamos el régimen transitorio y alternativas vigentes.',
     date: '18 may 2026',
     readTime: '7 min',
     tags: ['Golden Visa', 'inversores', 'residencia inversión', 'visado inversor', 'extranjería'],
-    relatedServiceSlugs: ['inversores'],
+    relatedServiceSlugs: ['permiso-residencia-inicial'],
     body: `
-## Residencia en España para inversores
+## La Golden Visa ya no está abierta a nuevas solicitudes
 
-España ofrece varias vías para que ciudadanos extracomunitarios obtengan residencia a través de la inversión económica o la disponibilidad de medios suficientes. Las más relevantes son la **Golden Visa** y el **visado de residencia no lucrativa**.
+Los artículos 63 a 67 de la Ley 14/2013, que regulaban los visados y autorizaciones de residencia para inversores, quedaron **sin contenido con efectos de 3 de abril de 2025**.
 
-## Golden Visa (Visado de Inversor)
+Esto significa que una nueva inversión inmobiliaria, financiera o empresarial realizada ahora no abre por sí sola la antigua vía de Golden Visa.
 
-Regulada por la Ley 14/2013, la Golden Visa permite obtener residencia a través de una inversión significativa en España:
+### Régimen transitorio
 
-| Tipo de inversión | Mínimo |
-|---|---|
-| Inmuebles en España | 500.000 € |
-| Deuda pública española | 2.000.000 € |
-| Acciones de sociedades españolas | 1.000.000 € |
-| Depósitos en entidades financieras españolas | 1.000.000 € |
-| Inversión en proyectos empresariales de interés general | Sin mínimo fijo |
+Las solicitudes presentadas antes de la entrada en vigor de la derogación pueden resolverse conforme a la normativa aplicable cuando se presentaron. Las autorizaciones de inversor que ya estaban vigentes conservan su validez y determinadas renovaciones se tramitan bajo las reglas transitorias correspondientes.
 
-### Ventajas de la Golden Visa
-- No requiere residencia efectiva en España (basta con 1 visita al año).
-- Incluye a cónyuge e hijos menores.
-- Renovable cada 2 años (primera vez) y cada 5 años (posteriores).
-- Permite acceso al espacio Schengen.
+Para nuevas solicitudes hay que estudiar otra autorización vigente según el perfil: actividad emprendedora, profesional altamente cualificado, teletrabajo internacional, residencia no lucrativa u otra vía del Reglamento de Extranjería.
 
 ## Visado de Residencia No Lucrativa
 
 Para personas que no necesitan trabajar en España y disponen de medios económicos suficientes para sostenerse y a su familia sin ejercer actividad laboral.
 
 **Requisitos principales:**
-- Medios económicos mínimos: al menos el 400 % del IPREM mensual (aprox. 2.400 €/mes en 2025) para el solicitante, más el 100 % por cada familiar adicional.
+- Medios económicos mínimos: al menos el 400 % del IPREM mensual para el solicitante, más el 100 % del IPREM por cada familiar adicional, usando el IPREM vigente al presentar la solicitud.
 - Seguro médico privado sin copago ni carencia en España.
 - Ausencia de antecedentes penales.
 - No haber trabajado en España en los últimos años.
 
-## Permiso de inversor por tramitación inicial y renovación
+## Alternativas actuales
 
-Para inversiones de menor cuantía o situaciones específicas, existen permisos de residencia vinculados a inversión que no alcanzan los umbrales de la Golden Visa pero que pueden tramitarse como autorización de residencia por circunstancias excepcionales o por cuenta propia empresarial.
-
-En EXPERT analizamos cada caso para determinar la vía más adecuada según el perfil y la inversión del cliente. El precio del servicio de tramitación inicial y renovación es de **250 €/persona**.
+La inversión por sí sola ya no genera una nueva autorización de residencia para inversores. EXPERT revisa el perfil personal, profesional y económico para determinar qué vía vigente puede encajar y, cuando existe una autorización de inversor previa, si resulta aplicable el régimen transitorio de renovación.
 
 ## Documentación general
 
 - Pasaporte en vigor.
-- Acreditación de la inversión (escritura de compraventa, certificado bancario, etc.).
+- Documentación económica o profesional que corresponda a la vía vigente que se vaya a solicitar.
 - Certificado de antecedentes penales.
 - Seguro médico privado.
 - Formulario de solicitud correspondiente.
 
 ## Plazos
 
-La Golden Visa se tramita ante la Unidad de Grandes Empresas (UGE-CE), con resolución en unos **20 días hábiles**. El visado no lucrativo se tramita en el consulado español del país de residencia del solicitante.
+Las nuevas solicitudes deben seguir el procedimiento y plazo de la autorización vigente elegida. El visado no lucrativo, por ejemplo, se solicita a través del consulado español competente conforme a su procedimiento específico.
     `
   },
 
@@ -1741,7 +2108,7 @@ Las constituciones de sociedades están sujetas a la modalidad de Operaciones So
 La escritura se inscribe en el Registro Mercantil de la provincia del domicilio social. Desde la inscripción, la sociedad tiene personalidad jurídica plena.
 
 ### 6. Alta fiscal en Hacienda (Modelo 036)
-Una vez inscrita, se solicita el **CIF definitivo** y se realiza el alta censal en la AEAT.
+Una vez inscrita, se solicita el **NIF definitivo** y se realiza el alta censal en la AEAT.
 
 ## Costes aproximados
 
@@ -1755,14 +2122,14 @@ Una vez inscrita, se solicita el **CIF definitivo** y se realiza el alta censal 
 
 ## Plazos
 
-El proceso completo, desde la reserva de denominación hasta la obtención del CIF definitivo, lleva habitualmente entre **7 y 15 días hábiles**.
+El proceso completo, desde la reserva de denominación hasta la obtención del NIF definitivo, lleva habitualmente entre **7 y 15 días hábiles**.
 
 ## ¿SL o autónomo?
 
 La elección entre SL y autónomo depende del nivel de ingresos, la actividad y la estructura prevista:
 
 - **Autónomo**: más sencillo, menos costes de mantenimiento, ideal para ingresos por debajo de 40.000–50.000 €/año.
-- **SL**: mejor cuando los ingresos son elevados (tipo IS del 25 % frente al IRPF progresivo), cuando hay varios socios o cuando interesa separar el patrimonio personal del profesional.
+- **SL**: puede resultar adecuada cuando hay ingresos elevados, varios socios o interés en separar el patrimonio personal del profesional. La comparación fiscal exige aplicar el tipo de IS que corresponda a la entidad y compararlo con el IRPF efectivo; no debe asumirse un 25 % universal.
     `
   },
   {
@@ -1786,7 +2153,7 @@ Liquida la diferencia entre el IVA repercutido (cobrado a clientes) y el IVA sop
 - Si el IVA pagado supera al cobrado → resultado negativo, compensable en trimestres siguientes o devuelto al final del año.
 
 ### Modelo 130 — Pago fraccionado del IRPF
-Adelanto trimestral del IRPF del autónomo. Se calcula aplicando el **20 % sobre el beneficio neto** del trimestre (ingresos menos gastos), restando los pagos fraccionados anteriores del año.
+Adelanto a cuenta del IRPF del autónomo. En estimación directa, la regla general parte del rendimiento neto acumulado desde el 1 de enero y aplica el porcentaje correspondiente, restando pagos fraccionados previos y retenciones/ingresos a cuenta cuando proceda.
 
 ### Modelo 111 — Retenciones de trabajadores
 Si el autónomo tiene empleados, ingresa las retenciones de IRPF practicadas sobre sus nóminas.
@@ -1837,7 +2204,7 @@ Debes darte de baja cuando **cesas de forma definitiva en el ejercicio de la act
 
 ## Trámites necesarios
 
-### Baja en Hacienda (Modelo 036 o 037)
+### Baja en Hacienda (Modelo 036)
 Se presenta la baja censal ante la AEAT, indicando la fecha de cese de la actividad. Esto cancela las obligaciones de presentación de modelos trimestrales a partir de esa fecha.
 
 ### Baja en la Seguridad Social (RETA)
@@ -2020,7 +2387,7 @@ Sí, pero necesitas llevar:
 
 ## Plazos
 
-Los duplicados se tramitan generalmente en **2 a 5 días hábiles** desde la presentación de la solicitud. Con gestoría autorizada, el proceso puede ser más ágil al evitar citas previas en las oficinas de tráfico.
+La tramitación y la entrega no tienen un único plazo para todos los documentos. En el duplicado del permiso de conducir, la DGT facilita un documento provisional y sitúa la llegada del permiso definitivo aproximadamente en torno a mes y medio. Para permiso de circulación y ficha técnica/eITV hay que revisar el canal concreto.
     `
   },
   {
@@ -2065,7 +2432,7 @@ Documentación necesaria:
 Las embarcaciones que van a navegar por aguas españolas o internacionales necesitan:
 
 - **Abanderamiento**: acreditar el pabellón (bandera) bajo la que navega la embarcación.
-- **Despacho de navegación**: autorización para cada salida a mar abierto, requerido para embarcaciones de cierto tamaño o recorrido.
+- **Permiso/certificado de navegación y despacho**: su régimen depende del tipo de embarcación, lista, uso y procedimiento aplicable; no todas las embarcaciones de recreo siguen el mismo régimen ni requieren una autorización individual para cada salida.
 
 ## Baja de embarcación
 
@@ -2073,7 +2440,7 @@ La baja (cancelación de matrícula) se tramita ante Capitanía Marítima cuando
 
 ## Titulaciones náuticas
 
-Capitanía Marítima también gestiona (junto con las Comunidades Autónomas) las titulaciones náuticas de recreo: Patrón de Embarcaciones de Recreo (PER), Patrón de Recreo (PR) y otros títulos. Aunque la gestión varía por comunidad, la validación oficial corresponde a la Marina Mercante.
+Las titulaciones náuticas de recreo tienen un reparto competencial que puede variar entre la Administración marítima estatal y las comunidades autónomas. Antes de indicar examen, expedición o renovación hay que comprobar la autoridad competente y el título concreto.
     `
   },
 
@@ -2094,27 +2461,18 @@ La fiscalidad de la compraventa depende principalmente de si la vivienda es **nu
 
 ## Vivienda de segunda mano: ITP
 
-El comprador paga el **Impuesto de Transmisiones Patrimoniales (ITP)**, que corresponde a la Comunidad Autónoma donde está situado el inmueble.
+El comprador puede quedar sujeto a **Transmisiones Patrimoniales Onerosas (TPO)** en vivienda usada, mientras que otras operaciones pueden tributar por IVA + AJD. En Comunitat Valenciana, antes de calcular hay que comprobar también el **valor de referencia**, porque puede determinar la base mínima de tributación.
 
-Los tipos generales en 2025 según comunidad autónoma:
+Los tipos de TPO dependen de la comunidad autónoma, del valor del inmueble y de los posibles tipos reducidos. No usamos una tabla autonómica estática para calcularlos.
 
-| Comunidad Autónoma | Tipo general |
-|---|---|
-| Madrid | 6 % |
-| Cataluña | 10 % |
-| Andalucía | 7 % |
-| Valencia | 10 % |
-| País Vasco | 4 % |
-| Otras | 6 %–10 % |
-
-La base imponible es el **precio de compraventa**, siempre que no sea inferior al valor de referencia del Catastro. Si el precio escriturado es inferior al valor de referencia, Hacienda tomará el valor de referencia como base.
+En Comunitat Valenciana verificamos la regla autonómica vigente para el tipo y la regla específica de valor de referencia para la base imponible. Cuando existe valor de referencia, puede actuar como base mínima; si el valor declarado o la contraprestación son superiores, se aplica el importe mayor conforme a la regla vigente.
 
 ## Vivienda nueva: IVA + AJD
 
 Si compras una vivienda nueva directamente al promotor, pagas:
 
 - **IVA**: 10 % sobre el precio de venta (21 % para locales comerciales).
-- **Actos Jurídicos Documentados (AJD)**: entre el 0,5 % y el 1,5 % del valor escriturado, según la comunidad autónoma.
+- **Actos Jurídicos Documentados (AJD)**: el tipo y la base dependen de la comunidad autónoma y del supuesto concreto; se verifica la regla autonómica vigente antes de calcular.
 
 En vivienda de protección oficial (VPO) el IVA puede ser del 4 %.
 
@@ -2256,7 +2614,7 @@ En comunidades con fuerte bonificación del ISD (Madrid, Andalucía), tanto la d
     body: `
 ## ¿Por qué el banco no cancela la hipoteca automáticamente?
 
-Una confusión muy habitual: cuando terminas de pagar el préstamo hipotecario, la **deuda queda saldada económicamente**, pero la hipoteca sigue inscrita como carga en el Registro de la Propiedad. El banco solo emite el certificado de deuda cero; la cancelación registral es obligación del deudor.
+Una confusión muy habitual: cuando terminas de pagar el préstamo hipotecario, la **deuda queda saldada económicamente**, pero la hipoteca sigue inscrita como carga en el Registro de la Propiedad. El pago extingue la deuda, pero no elimina por sí solo la carga registral. La cancelación registral no es automática y se tramita mediante escritura pública otorgada por el acreedor y su posterior inscripción.
 
 Si no cancelas registralmente la hipoteca, la carga sigue figurando en la nota simple del inmueble, lo que puede:
 
@@ -2292,7 +2650,7 @@ Los costes aproximados incluyen:
 
 ## ¿Cuánto tiempo tengo para cancelar?
 
-No hay plazo legal para cancelar la hipoteca en el Registro. Puede hacerse en cualquier momento después de saldar la deuda. Pero conviene hacerlo cuanto antes para evitar problemas en futuras transacciones.
+La cancelación registral ordinaria no es obligatoria por el mero pago de la deuda, pero resulta conveniente si se quiere dejar la finca libre de la carga. Existen además supuestos especiales de cancelación por caducidad que requieren revisar fechas y antecedentes registrales.
     `
   },
 
@@ -2831,7 +3189,7 @@ Si prefieres que lo hagamos nosotros, el servicio **Migración con inventario** 
     date: '25 may 2026',
     readTime: '5 min',
     tags: ['Cl@ve', 'identificación electrónica', 'trámites online', 'sede electrónica', 'administración pública'],
-    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'certificado-digital-entidad'],
+    relatedServiceSlugs: ['certificado-digital-persona-fisica'],
     body: `
 ## ¿Qué es Cl@ve?
 
@@ -2900,7 +3258,7 @@ El registro en Cl@ve puede hacerse online en menos de 10 minutos si tienes certi
     date: '25 may 2026',
     readTime: '6 min',
     tags: ['Cl@ve', 'registro Cl@ve', 'identificación electrónica', 'certificado digital', 'sede electrónica'],
-    relatedServiceSlugs: ['certificado-digital-persona-fisica', 'certificado-digital-entidad'],
+    relatedServiceSlugs: ['certificado-digital-persona-fisica'],
     body: `
 ## Qué necesitas antes de empezar
 
@@ -3242,7 +3600,7 @@ Este checklist no sustituye la revisión de tu asesor, pero te permite llegar al
 - Si arrendaste un local, el modelo 115 está revisado.
 
 ### 5. Pago fraccionado de IRPF (autónomos)
-- En estimación directa, el modelo 130 se calcula sobre el rendimiento real del trimestre: confirma que ingresos y gastos están completos antes de calcularlo.
+- En estimación directa, el modelo 130 se calcula con el rendimiento neto acumulado desde el 1 de enero, no con el beneficio aislado del trimestre. Hay que revisar además pagos anteriores, retenciones y posibles reglas especiales.
 - En estimación objetiva, el modelo 131 depende de los signos, índices o módulos de tu actividad.
 
 ### 6. Cuadre general antes de presentar
