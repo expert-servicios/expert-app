@@ -88,8 +88,11 @@ describe('nationality client/admin polish', () => {
     expect(blueprint).toContain('skipAllowed: true');
     expect(fulfillment).toContain('skip_allowed: Boolean(task.skipAllowed)');
     expect(api).toContain("metadata.skip_allowed !== true");
+    expect(api).toContain('WORKFLOW_SKIP_REASON_REQUIRED');
+    expect(api).toContain('skipped_reason: parsed.data.skipReason');
     expect(api).toContain("metadata.skipped_as_not_applicable === true");
     expect(api).toContain('isSatisfiedTask');
+    expect(page).toContain('window.prompt');
     expect(page).toContain('No aplica');
   });
 
