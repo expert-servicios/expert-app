@@ -39,6 +39,7 @@ export function RgpdAccountSave() {
   const [message, setMessage] = useState('');
   const [projects, setProjects] = useState<SavedProject[]>([]);
   const [authRequired, setAuthRequired] = useState(false);
+  const [requestingReviewId, setRequestingReviewId] = useState<string | null>(null);
 
   const loadProjects = async () => {
     try {
@@ -91,6 +92,36 @@ export function RgpdAccountSave() {
       setMessage('No se pudo conectar con el servidor. Tu copia local sigue intacta.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const requestReview = async (project: SavedProject) => {
+    if (requestingReviewId) return;
+    setRequestingReviewId(project.id);
+    setMessage('');
+
+    try {
+      const res = await fetch('/api/rgpd/projects/' + project.id + '/request-review', {
+        method: 'POST',
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 401) {
+        setAuthRequired(true);
+        setMessage('Para solicitar revisión debes iniciar sesión.');
+        return;
+      }
+
+      if (!res.ok || !data.quote_url) {
+        setMessage('No se pudo iniciar la solicitud de revisión.');
+        return;
+      }
+
+      window.location.assign(data.quote_url);
+    } catch {
+      setMessage('No se pudo iniciar la solicitud de revisión.');
+    } finally {
+      setRequestingReviewId(null);
     }
   };
 
@@ -147,11 +178,25 @@ export function RgpdAccountSave() {
           </div>
           <div className="mt-3 space-y-2 text-sm text-[#23364D]">
             {projects.map((project) => (
-              <div key={project.id} className="flex flex-wrap items-center justify-between gap-2 border border-[#D4A017]/15 bg-[#F8F6F1] px-3 py-2">
-                <span>Versión {project.version} · {project.status}</span>
-                <span className="text-xs text-[#6B7280]">
-                  {new Date(project.created_at).toLocaleString('es-ES')}
-                </span>
+              <div key={project.id} className="flex flex-wrap items-center justify-between gap-3 border border-[#D4A017]/15 bg-[#F8F6F1] px-3 py-2">
+                <div>
+                  <span>Versión {project.version} · {project.status}</span>
+                  <span className="ml-2 text-xs text-[#6B7280]">
+                    {new Date(project.created_at).toLocaleString('es-ES')}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => requestReview(project)}
+                  disabled={requestingReviewId === project.id || project.status === 'review_requested'}
+                  className="min-h-9 border border-[#D4A017]/30 px-3 text-xs font-bold disabled:opacity-50"
+                >
+                  {project.status === 'review_requested'
+                    ? 'Revisión solicitada'
+                    : requestingReviewId === project.id
+                      ? 'Preparando…'
+                      : 'Solicitar revisión'}
+                </button>
               </div>
             ))}
           </div>
