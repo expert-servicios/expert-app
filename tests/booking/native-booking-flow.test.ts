@@ -9,6 +9,7 @@ describe('native booking public flow', () => {
   const availability = read('app/api/booking/availability/route.ts');
   const migration = read('supabase/migrations/20260923132714_native_google_booking.sql');
   const calendar = read('lib/integrations/google-calendar.ts');
+  const googleMeet = read('lib/integrations/google-meet.ts');
   const calendarProvider = read('lib/booking/calendar-provider.ts');
   const microsoft = read('lib/integrations/microsoft365.ts');
   const adminRoute = read('app/api/admin/citas/route.ts');
@@ -129,6 +130,16 @@ describe('native booking public flow', () => {
     expect(calendar).toContain('status === 404 || status === 410');
     expect(calendarProvider).toContain('deleteBookingCalendarEvent');
     expect(legacyCalWebhook).toContain('appointment_end: payload.endTime');
+  });
+
+  it('keeps Google Meet auto-artifacts opt-in and non-blocking', () => {
+    expect(googleMeet).toContain("meetings.space.settings");
+    expect(googleMeet).toContain("raw || 'off'");
+    expect(googleMeet).toContain("transcriptionConfig");
+    expect(googleMeet).toContain("smartNotesConfig");
+    expect(googleMeet).toContain("recordingConfig");
+    expect(googleMeet).toContain("configureGoogleMeetAutoArtifactsBestEffort");
+    expect(calendar).toContain("configureGoogleMeetAutoArtifactsBestEffort");
   });
 
   it('supports Microsoft Calendar + Teams without changing the Google default', () => {
