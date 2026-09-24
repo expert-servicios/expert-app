@@ -20,7 +20,6 @@ const CALENDAR_SA_SCOPES = [
 
 const MEET_SA_SCOPES = [
   'https://www.googleapis.com/auth/meetings.space.settings',
-  'https://www.googleapis.com/auth/meetings.space.readonly',
 ];
 const CALENDAR_SA_IMPERSONATE = 'info@expertconsulting.es';
 
