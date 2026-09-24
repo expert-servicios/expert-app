@@ -63,8 +63,14 @@ describe('batch 1 operational automation', () => {
     expect(fulfillment).toContain(".eq('order_id', input.orderId)");
     expect(fulfillment).toContain(".eq('title', task.title)");
     expect(fulfillment).toContain('human_approval_required');
+    expect(fulfillment).toContain('depends_on: task.dependsOn ?? []');
+    expect(fulfillment).toContain('blocks_submission: Boolean(task.blocksSubmission)');
+    expect(fulfillment).toContain('reference_urls: task.referenceUrls ?? []');
+    expect(fulfillment).toContain(".select('id,service_id,checklist_json')");
+    expect(fulfillment).toContain('Could not hydrate legacy service case');
+    expect(fulfillment).toContain('Could not hydrate service task');
     expect(fulfillment).toContain('service_manual_intake');
-    expect(fulfillment).toContain('service-operational-blueprint-v2');
+    expect(fulfillment).toContain('service-operational-blueprint-v5');
     expect(fulfillment).not.toContain('if (!blueprint) return null');
     expect(webhook).toContain('serviceSlugs: catalogServiceSlugs');
     expect(webhook).toContain('serviceName,');
