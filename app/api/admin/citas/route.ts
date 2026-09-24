@@ -4,9 +4,13 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { sendEmail } from '@/lib/email/send';
 import { citaConfirmed } from '@/lib/email/templates';
 import {
+  BookingCalendarCreationError,
+  BookingCalendarDeletionError,
+  BookingCalendarUpdateError,
   calendarProviderFromBookingProvider,
   createBookingCalendarMeeting,
   deleteBookingCalendarEvent,
+  ensureBookingCalendarMeetingUrl,
   getConfiguredBookingCalendarProvider,
   isBookingCalendarConfigured,
   updateBookingCalendarMeeting,
@@ -116,7 +120,7 @@ export async function PATCH(request: NextRequest) {
       .from('appointments')
       .update(updatePayload)
       .eq('id', id)
-      .select('id,name,email,service,confirmed_date,confirmed_time,meeting_url,status,google_event_id,appointment_date,appointment_end,booking_provider,provider_booking_id')
+      .select('id,name,email,service,confirmed_date,confirmed_time,meeting_url,admin_notes,status,google_event_id,appointment_date,appointment_end,booking_provider,provider_booking_id')
       .single();
 
     if (error || !appt) {
@@ -130,7 +134,7 @@ export async function PATCH(request: NextRequest) {
     {
       const calendarProvider =
         calendarProviderFromBookingProvider(appt.booking_provider) ??
-        getConfiguredBookingCalendarProvider();
+        (appt.google_event_id ? 'google' : getConfiguredBookingCalendarProvider());
 
       const nativeProvider = calendarProviderFromBookingProvider(appt.booking_provider);
       const requiresRemoteSync = Boolean(
@@ -158,6 +162,10 @@ export async function PATCH(request: NextRequest) {
       }
 
       if (providerConfigured) {
+        let existingRemoteEventUpdated = false;
+        let reconciliationMeetingUrl: string | null = null;
+        let meetingUrlRecoveryEventId: string | null = null;
+
         try {
           const eventId = (
             calendarProvider === 'google'
@@ -173,14 +181,39 @@ export async function PATCH(request: NextRequest) {
             let bookingProvider = appt.booking_provider as string | null;
 
             if (eventId) {
-              syncedEventId = await updateBookingCalendarMeeting(eventId, {
-                summary: `Cita: ${appt.service ?? 'Consultoría'} — ${appt.name}`,
-                description: `Cliente: ${appt.name} (${appt.email})\nServicio: ${appt.service ?? ''}\n${appt.meeting_url ? `Reunión: ${appt.meeting_url}` : ''}`.trim(),
-                start: start.toISOString(),
-                end: end.toISOString(),
-                timezone: 'Europe/Madrid',
-                reminderMinutesBefore: [1440, 60],
-              }, calendarProvider);
+              try {
+                syncedEventId = await updateBookingCalendarMeeting(eventId, {
+                  summary: `Cita: ${appt.service ?? 'Consultoría'} — ${appt.name}`,
+                  description: `Cliente: ${appt.name} (${appt.email})\nServicio: ${appt.service ?? ''}\n${appt.meeting_url ? `Reunión: ${appt.meeting_url}` : ''}`.trim(),
+                  start: start.toISOString(),
+                  end: end.toISOString(),
+                  timezone: 'Europe/Madrid',
+                  reminderMinutesBefore: [1440, 60],
+                }, calendarProvider);
+                existingRemoteEventUpdated = true;
+
+                if (!meetingUrl) {
+                  try {
+                    meetingUrl = await ensureBookingCalendarMeetingUrl(
+                      syncedEventId,
+                      calendarProvider
+                    );
+                  } catch (meetingUrlError) {
+                    meetingUrlRecoveryEventId = syncedEventId;
+                    throw meetingUrlError;
+                  }
+                }
+              } catch (updateError) {
+                if (
+                  updateError instanceof BookingCalendarUpdateError &&
+                  updateError.remoteUpdated
+                ) {
+                  existingRemoteEventUpdated = true;
+                  syncedEventId = updateError.eventId;
+                  throw updateError;
+                }
+                throw updateError;
+              }
             } else {
               const created = await createBookingCalendarMeeting({
                 summary: `Cita: ${appt.service ?? 'Consultoría'} — ${appt.name}`,
@@ -193,42 +226,164 @@ export async function PATCH(request: NextRequest) {
               }, calendarProvider);
               syncedEventId = created.eventId;
               meetingUrl = created.meetingUrl;
+              reconciliationMeetingUrl = created.meetingUrl;
               bookingProvider = created.bookingProvider;
             }
 
-            await admin
+            const syncedBookingProvider = bookingProvider ?? (
+              calendarProvider === 'ms365' ? 'ms365_native' : 'google_native'
+            );
+            const syncedGoogleEventId = calendarProvider === 'google'
+              ? syncedEventId
+              : null;
+
+            const { error: metadataSyncError } = await admin
               .from('appointments')
               .update({
-                google_event_id: calendarProvider === 'google' ? syncedEventId : null,
+                google_event_id: syncedGoogleEventId,
                 provider_booking_id: syncedEventId,
-                booking_provider: bookingProvider ?? (
-                  calendarProvider === 'ms365' ? 'ms365_native' : 'google_native'
-                ),
+                booking_provider: syncedBookingProvider,
                 meeting_url: meetingUrl,
                 updated_at: new Date().toISOString(),
               })
               .eq('id', appt.id);
+
+            if (metadataSyncError) {
+              // A newly-created remote meeting must not survive if EXPERT
+              // cannot persist its identifiers. Existing remote events already
+              // have durable identifiers in the current row.
+              if (!eventId) {
+                try {
+                  await deleteBookingCalendarEvent(syncedEventId, calendarProvider);
+                } catch (cleanupError) {
+                  if (
+                    cleanupError instanceof BookingCalendarDeletionError &&
+                    cleanupError.remoteDeleted
+                  ) {
+                    // Remote deletion succeeded; only refreshed-token
+                    // persistence failed. Do not retain a deleted event ID.
+                    throw metadataSyncError;
+                  }
+
+                  throw new BookingCalendarCreationError(
+                    'Calendar metadata persistence failed after event creation and cleanup failed',
+                    calendarProvider,
+                    syncedEventId,
+                    true,
+                    cleanupError,
+                    meetingUrl
+                  );
+                }
+              }
+              throw metadataSyncError;
+            }
+
+            // Only advertise fresh values after the metadata write succeeded.
+            appt.google_event_id = syncedGoogleEventId;
+            appt.provider_booking_id = syncedEventId;
+            appt.booking_provider = syncedBookingProvider;
+            appt.meeting_url = meetingUrl;
           } else if (appt.status === 'cancelled' && eventId) {
-            await deleteBookingCalendarEvent(eventId, calendarProvider);
+            try {
+              await deleteBookingCalendarEvent(eventId, calendarProvider);
+            } catch (deleteError) {
+              if (
+                deleteError instanceof BookingCalendarDeletionError &&
+                deleteError.remoteDeleted
+              ) {
+                console.error('[citas] calendar deleted; token persistence failed:', deleteError);
+              } else {
+                throw deleteError;
+              }
+            }
           }
         } catch (calendarError) {
           console.error('[citas] calendar sync:', calendarError);
-          await admin
+
+          const creationError =
+            calendarError instanceof BookingCalendarCreationError
+              ? calendarError
+              : null;
+          const reconciliationEventId =
+            creationError?.cleanupFailed === true
+              ? creationError.eventId
+              : meetingUrlRecoveryEventId;
+          const reconciliationProvider =
+            creationError?.cleanupFailed === true
+              ? creationError.provider
+              : calendarProvider;
+          if (creationError?.cleanupFailed === true && creationError.meetingUrl) {
+            reconciliationMeetingUrl = creationError.meetingUrl;
+          }
+
+          const keepSynchronizedSchedule =
+            existingRemoteEventUpdated && !reconciliationEventId;
+
+          const reconciliationNotice = reconciliationEventId
+            ? `Evento remoto ${reconciliationEventId} requiere reconciliación tras fallo de sincronización.`
+            : null;
+          const baseAdminNotes = keepSynchronizedSchedule
+            ? appt.admin_notes
+            : current.admin_notes;
+          const reconciledAdminNotes = reconciliationNotice
+            ? [baseAdminNotes?.trim(), reconciliationNotice]
+                .filter(Boolean)
+                .join('\n\n')
+            : baseAdminNotes;
+
+          const { error: restoreError } = await admin
             .from('appointments')
             .update({
-              status: current.status,
-              confirmed_date: current.confirmed_date,
-              confirmed_time: current.confirmed_time,
-              appointment_date: current.appointment_date,
-              appointment_end: current.appointment_end,
-              meeting_url: current.meeting_url,
-              admin_notes: current.admin_notes,
+              status: keepSynchronizedSchedule ? appt.status : current.status,
+              confirmed_date: keepSynchronizedSchedule ? appt.confirmed_date : current.confirmed_date,
+              confirmed_time: keepSynchronizedSchedule ? appt.confirmed_time : current.confirmed_time,
+              appointment_date: keepSynchronizedSchedule ? appt.appointment_date : current.appointment_date,
+              appointment_end: keepSynchronizedSchedule ? appt.appointment_end : current.appointment_end,
+              meeting_url: reconciliationEventId
+                ? (reconciliationMeetingUrl ?? current.meeting_url)
+                : (keepSynchronizedSchedule ? appt.meeting_url : current.meeting_url),
+              google_event_id: reconciliationEventId && reconciliationProvider === 'google'
+                ? reconciliationEventId
+                : current.google_event_id,
+              provider_booking_id: reconciliationEventId ?? current.provider_booking_id,
+              booking_provider: reconciliationEventId
+                ? (reconciliationProvider === 'ms365' ? 'ms365_native' : 'google_native')
+                : current.booking_provider,
+              admin_notes: reconciledAdminNotes,
               updated_at: new Date().toISOString(),
             })
             .eq('id', id);
-          return NextResponse.json({
-            error: 'Calendar no pudo sincronizarse. EXPERT ha restaurado la cita al estado anterior.'
-          }, { status: 502 });
+
+          if (restoreError) {
+            console.error('[citas] failed to persist calendar reconciliation state:', restoreError);
+
+            if (reconciliationEventId) {
+              return NextResponse.json({
+                error: 'No se pudo persistir el estado de reconciliación de Calendar.',
+                recovery: {
+                  provider: reconciliationProvider,
+                  eventId: reconciliationEventId,
+                  meetingUrl: reconciliationMeetingUrl,
+                },
+              }, { status: 500 });
+            }
+
+            return NextResponse.json({
+              error: 'Calendar se sincronizó parcialmente, pero EXPERT no pudo persistir el estado de recuperación.'
+            }, { status: 500 });
+          }
+
+          if (!keepSynchronizedSchedule) {
+            return NextResponse.json({
+              error: reconciliationEventId
+                ? 'Calendar no pudo sincronizarse por completo. EXPERT ha conservado el identificador remoto para reconciliación.'
+                : 'Calendar no pudo sincronizarse. EXPERT ha restaurado la cita al estado anterior.'
+            }, { status: 502 });
+          }
+
+          // Existing remote event and local schedule now agree on the requested
+          // time. Continue to the normal confirmation/response path with the
+          // already-persisted values from the initial Admin update.
         }
       }
     }
@@ -292,10 +447,18 @@ export async function DELETE(request: NextRequest) {
       try {
         await deleteBookingCalendarEvent(remoteEventId, calendarProvider);
       } catch (calendarError) {
-        console.error('[admin/citas] DELETE calendar:', calendarError);
-        return NextResponse.json({
-          error: 'No se pudo eliminar el evento remoto. La cita se conserva en EXPERT para poder reconciliarla.'
-        }, { status: 502 });
+        if (
+          calendarError instanceof BookingCalendarDeletionError &&
+          calendarError.remoteDeleted
+        ) {
+          console.error('[admin/citas] DELETE token persistence:', calendarError);
+          // The remote event is already gone; continue deleting the local row.
+        } else {
+          console.error('[admin/citas] DELETE calendar:', calendarError);
+          return NextResponse.json({
+            error: 'No se pudo eliminar el evento remoto. La cita se conserva en EXPERT para poder reconciliarla.'
+          }, { status: 502 });
+        }
       }
     }
 

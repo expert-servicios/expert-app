@@ -90,7 +90,10 @@ describe('Client 360 recurring operations', () => {
     expect(documentsRoute).toContain("code: 'case_company_required'");
     expect(documentsRoute).toContain('checklist_item_key: checklistItemKey');
     expect(documentsRoute).toContain('client_comment: clientComment');
-    expect(documentsRoute).toContain('.update({ drive_file_id: driveResult.fileId })');
+    expect(documentsRoute).toContain('syncDocumentToMirror');
+    expect(documentsRoute).toContain('.update({ drive_file_id: mirrorResult.storageId })');
+    expect(documentsRoute).toContain('Supabase Storage + documents remains');
+    expect(documentsRoute).toContain('isDocumentMirrorConfigured');
     expect(documentsRoute).not.toContain('.update({ metadata:');
   });
 

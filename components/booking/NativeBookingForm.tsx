@@ -26,6 +26,7 @@ interface AvailabilityResponse {
 interface Props {
   serviceKey: string;
   bookingAuth?: string | null;
+  companyId?: string | null;
 }
 
 function groupByDate(slots: Slot[]) {
@@ -38,6 +39,13 @@ function groupByDate(slots: Slot[]) {
   return Array.from(groups.entries());
 }
 
+function redirectToLoginForEntityOnboarding(serviceKey: string, companyId?: string | null) {
+  if (serviceKey !== 'onboarding' || !companyId || typeof window === 'undefined') return false;
+  const next = `/cita?tipo=onboarding&companyId=${encodeURIComponent(companyId)}`;
+  window.location.assign(`/auth/login?next=${encodeURIComponent(next)}`);
+  return true;
+}
+
 function dateLabel(date: string) {
   const parsed = new Date(`${date}T12:00:00+02:00`);
   return new Intl.DateTimeFormat('es-ES', {
@@ -47,7 +55,7 @@ function dateLabel(date: string) {
   }).format(parsed);
 }
 
-export function NativeBookingForm({ serviceKey, bookingAuth }: Props) {
+export function NativeBookingForm({ serviceKey, bookingAuth, companyId }: Props) {
   const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
   const [availabilityError, setAvailabilityError] = useState('');
   const [loadingSlots, setLoadingSlots] = useState(true);
@@ -67,6 +75,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth }: Props) {
         cache: 'no-store',
       });
       const data = (await res.json()) as AvailabilityResponse;
+      if (res.status === 401 && redirectToLoginForEntityOnboarding(serviceKey, companyId)) return;
       if (!res.ok) throw new Error(data.error ?? 'No se pudo consultar la agenda.');
       setAvailability(data);
       setSelected((current) =>
@@ -112,11 +121,13 @@ export function NativeBookingForm({ serviceKey, bookingAuth }: Props) {
           start: selected.start,
           recaptcha_token,
           booking_auth: bookingAuth ?? undefined,
+          company_id: companyId ?? undefined,
         }),
       });
       const data = await res.json();
 
       if (!res.ok) {
+        if (res.status === 401 && redirectToLoginForEntityOnboarding(serviceKey, companyId)) return;
         if (res.status === 409) await loadAvailability();
         throw new Error(data.error ?? 'No se pudo completar la reserva.');
       }

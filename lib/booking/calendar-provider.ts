@@ -3,6 +3,7 @@ import {
   CalendarMeetingCreationError,
   createCalendarMeetingSA,
   deleteCalendarEventSA,
+  ensureCalendarMeetingUrlSA,
   hasCalendarSA,
   listCalendarBusyWindowsSA,
   updateCalendarMeetingSA,
@@ -10,6 +11,7 @@ import {
 import {
   createMs365TeamsMeeting,
   deleteMs365CalendarEvent,
+  getMs365TeamsMeetingUrl,
   listMs365CalendarBusyWindows,
   updateMs365TeamsMeeting,
   type Ms365StoredTokens,
@@ -53,19 +55,62 @@ export class BookingCalendarCreationError extends Error {
   provider: BookingCalendarProviderName;
   eventId: string | null;
   cleanupFailed: boolean;
+  meetingUrl: string | null;
 
   constructor(
     message: string,
     provider: BookingCalendarProviderName,
     eventId: string | null,
     cleanupFailed = false,
-    cause?: unknown
+    cause?: unknown,
+    meetingUrl: string | null = null
   ) {
     super(message, { cause });
     this.name = 'BookingCalendarCreationError';
     this.provider = provider;
     this.eventId = eventId;
     this.cleanupFailed = cleanupFailed;
+    this.meetingUrl = meetingUrl;
+  }
+}
+
+export class BookingCalendarUpdateError extends Error {
+  provider: BookingCalendarProviderName;
+  eventId: string;
+  remoteUpdated: boolean;
+
+  constructor(
+    message: string,
+    provider: BookingCalendarProviderName,
+    eventId: string,
+    remoteUpdated: boolean,
+    cause?: unknown
+  ) {
+    super(message, { cause });
+    this.name = 'BookingCalendarUpdateError';
+    this.provider = provider;
+    this.eventId = eventId;
+    this.remoteUpdated = remoteUpdated;
+  }
+}
+
+export class BookingCalendarDeletionError extends Error {
+  provider: BookingCalendarProviderName;
+  eventId: string;
+  remoteDeleted: boolean;
+
+  constructor(
+    message: string,
+    provider: BookingCalendarProviderName,
+    eventId: string,
+    remoteDeleted: boolean,
+    cause?: unknown
+  ) {
+    super(message, { cause });
+    this.name = 'BookingCalendarDeletionError';
+    this.provider = provider;
+    this.eventId = eventId;
+    this.remoteDeleted = remoteDeleted;
   }
 }
 
@@ -193,7 +238,35 @@ export async function createBookingCalendarMeeting(
   const stored = await getMs365StoredTokens();
   try {
     const result = await createMs365TeamsMeeting(stored, input);
-    await persistMs365Refresh(result.refreshed);
+
+    try {
+      await persistMs365Refresh(result.refreshed);
+    } catch (persistError) {
+      const cleanupTokens = result.refreshed
+        ? { ...stored, ...result.refreshed }
+        : stored;
+
+      try {
+        await deleteMs365CalendarEvent(cleanupTokens, result.eventId);
+      } catch (cleanupError) {
+        throw new BookingCalendarCreationError(
+          'Microsoft token persistence failed after event creation and cleanup failed',
+          'ms365',
+          result.eventId,
+          true,
+          cleanupError,
+          result.meetingUrl
+        );
+      }
+
+      throw new BookingCalendarCreationError(
+        'Microsoft token persistence failed after event creation; remote event was compensated',
+        'ms365',
+        null,
+        false,
+        persistError
+      );
+    }
 
     if (!result.meetingUrl) {
       try {
@@ -238,6 +311,25 @@ export async function createBookingCalendarMeeting(
   }
 }
 
+export async function ensureBookingCalendarMeetingUrl(
+  eventId: string,
+  provider = configuredProviderName()
+): Promise<string> {
+  if (provider === 'google') {
+    return ensureCalendarMeetingUrlSA(eventId);
+  }
+
+  const stored = await getMs365StoredTokens();
+  const result = await getMs365TeamsMeetingUrl(stored, eventId);
+  await persistMs365Refresh(result.refreshed);
+
+  if (!result.meetingUrl) {
+    throw new Error('Microsoft Teams URL could not be recovered for the existing event');
+  }
+
+  return result.meetingUrl;
+}
+
 export async function updateBookingCalendarMeeting(
   eventId: string,
   input: BookingCalendarMeetingUpdate,
@@ -248,8 +340,32 @@ export async function updateBookingCalendarMeeting(
   }
 
   const stored = await getMs365StoredTokens();
-  const result = await updateMs365TeamsMeeting(stored, eventId, input);
-  await persistMs365Refresh(result.refreshed);
+  let result: Awaited<ReturnType<typeof updateMs365TeamsMeeting>>;
+
+  try {
+    result = await updateMs365TeamsMeeting(stored, eventId, input);
+  } catch (error) {
+    throw new BookingCalendarUpdateError(
+      'Microsoft Calendar event update failed',
+      'ms365',
+      eventId,
+      false,
+      error
+    );
+  }
+
+  try {
+    await persistMs365Refresh(result.refreshed);
+  } catch (error) {
+    throw new BookingCalendarUpdateError(
+      'Microsoft Calendar event was updated but refreshed token persistence failed',
+      'ms365',
+      result.eventId,
+      true,
+      error
+    );
+  }
+
   return result.eventId;
 }
 
@@ -258,11 +374,44 @@ export async function deleteBookingCalendarEvent(
   provider = configuredProviderName()
 ): Promise<void> {
   if (provider === 'google') {
-    await deleteCalendarEventSA(eventId);
-    return;
+    try {
+      await deleteCalendarEventSA(eventId);
+      return;
+    } catch (error) {
+      throw new BookingCalendarDeletionError(
+        'Google Calendar event deletion failed',
+        'google',
+        eventId,
+        false,
+        error
+      );
+    }
   }
 
   const stored = await getMs365StoredTokens();
-  const result = await deleteMs365CalendarEvent(stored, eventId);
-  await persistMs365Refresh(result.refreshed);
+  let result: Awaited<ReturnType<typeof deleteMs365CalendarEvent>>;
+
+  try {
+    result = await deleteMs365CalendarEvent(stored, eventId);
+  } catch (error) {
+    throw new BookingCalendarDeletionError(
+      'Microsoft Calendar event deletion failed',
+      'ms365',
+      eventId,
+      false,
+      error
+    );
+  }
+
+  try {
+    await persistMs365Refresh(result.refreshed);
+  } catch (error) {
+    throw new BookingCalendarDeletionError(
+      'Microsoft Calendar event was deleted but refreshed token persistence failed',
+      'ms365',
+      eventId,
+      true,
+      error
+    );
+  }
 }
