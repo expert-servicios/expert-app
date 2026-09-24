@@ -42,7 +42,10 @@ export async function GET(request: NextRequest) {
 
   const oauthState = await verifyOAuthState(request, 'google_calendar', state);
   if (!code || !oauthState.ok) {
-    return redirectClearingState(`${appUrl}/dashboard/calendario-fiscal?error=oauth`);
+    const destination = oauthState.ok && oauthState.purpose === 'client_productivity'
+      ? `${appUrl}/dashboard/integraciones/productividad?error=oauth&provider=google`
+      : `${appUrl}/dashboard/calendario-fiscal?error=oauth`;
+    return redirectClearingState(destination);
   }
 
   const supabase = createServerSupabaseClient(request);
