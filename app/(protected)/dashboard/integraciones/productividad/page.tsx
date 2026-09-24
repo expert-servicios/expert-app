@@ -29,18 +29,13 @@ export default async function ProductivityIntegrationsPage({
   if (!user) redirect('/auth/login?next=/dashboard/integraciones/productividad');
 
   const admin = getSupabaseAdmin();
-  const [{ data: profile }, { data: memberships }, { data: integrations }] = await Promise.all([
+  const [{ data: profile }, { data: memberships }] = await Promise.all([
     admin.from('profiles').select('active_company_id').eq('id', user.id).single(),
     admin
       .from('profile_companies')
       .select('company_id,role,company:companies(id,razon_social,nombre_comercial,cif_nif,status)')
-      .eq('profile_id', user.id),
-    admin
-      .from('client_integrations')
-      .select('id,company_id,provider,status,consent_at,last_success_at')
-      .eq('client_id', user.id)
-      .in('provider', ['google_workspace', 'microsoft_365'])
-      .neq('status', 'revoked'),
+      .eq('profile_id', user.id)
+      .eq('role', 'owner'),
   ]);
 
   const companies = (memberships ?? [])
@@ -50,6 +45,16 @@ export default async function ProductivityIntegrationsPage({
     })
     .filter(Boolean)
     .sort((a, b) => Number(b!.id === profile?.active_company_id) - Number(a!.id === profile?.active_company_id));
+
+  const companyIds = companies.map((company) => company!.id);
+  const { data: integrations } = companyIds.length
+    ? await admin
+        .from('client_integrations')
+        .select('id,company_id,provider,status,consent_at,last_success_at')
+        .in('company_id', companyIds)
+        .in('provider', ['google_workspace', 'microsoft_365'])
+        .neq('status', 'revoked')
+    : { data: [] };
 
   const connected = new Map(
     (integrations ?? []).map((item) => [`${item.company_id}:${item.provider}`, item]),
