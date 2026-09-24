@@ -637,4 +637,4 @@ No cierres el expediente únicamente porque el acceso dejó de estar expuesto.
 **Revisado el 24/09/2026.**
     `
   }
-] as const;
+];
