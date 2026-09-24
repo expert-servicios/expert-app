@@ -92,7 +92,11 @@ describe('native booking public flow', () => {
     expect(calendar).toContain("GOOGLE_MEET_AUTO_TRANSCRIPTION");
     expect(calendar).toContain("smartNotesConfig");
     expect(calendar).toContain("transcriptionConfig");
-    expect(calendar).toContain("autoGenerationType: 'ON'");
+    expect(calendar).toContain("autoTranscriptionGeneration: 'ON'");
+    expect(calendar).toContain("autoSmartNotesGeneration: 'ON'");
+    expect(calendar).toContain('config.artifactConfig.transcriptionConfig.autoTranscriptionGeneration');
+    expect(calendar).toContain('config.artifactConfig.smartNotesConfig.autoSmartNotesGeneration');
+    expect(calendar).not.toContain("autoGenerationType: 'ON'");
     expect(calendar).not.toContain('GOOGLE_MEET_AUTO_RECORDING');
   });
 
