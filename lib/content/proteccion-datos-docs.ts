@@ -640,5 +640,130 @@ No cierres el expediente únicamente porque el acceso dejó de estar expuesto.
 
 **Revisado el 24/09/2026.**
     `
+  },
+  {
+    slug: 'alta-inscripcion-aepd-tramites-empresa',
+    category: 'proteccion-datos' as const,
+    title: '¿Hay que darse de alta en la AEPD? Trámites reales para empresas',
+    excerpt:
+      'Aclara una duda muy habitual: desde 2018 no existe un alta general ni inscripción de ficheros en la AEPD. Te explicamos qué debes mantener internamente y qué comunicaciones sí pueden ser obligatorias.',
+    tags: ['AEPD', 'alta protección de datos', 'inscripción ficheros', 'RAT', 'DPD', 'RGPD'],
+    updatedAt: '24 sep 2026',
+    readTime: '7 min',
+    seoTitle: '¿Hay que darse de alta en la AEPD? Guía para empresas | EXPERT',
+    seoDescription:
+      'Desde 2018 no existe un alta general de empresas ni inscripción de ficheros en la AEPD. Consulta qué trámites sí existen: RAT, DPD, brechas y consultas previas.',
+    body: `
+## Respuesta corta: no existe un alta general en la AEPD
+
+Una empresa, autónomo o profesional que empieza a tratar datos personales **no tiene que darse de alta en la Agencia Española de Protección de Datos ni inscribir sus ficheros**.
+
+La AEPD confirma que esta obligación desapareció con la aplicación del RGPD el **25 de mayo de 2018**.
+
+La antigua notificación de ficheros al Registro General de Protección de Datos fue sustituida por un modelo de **responsabilidad proactiva**: la organización debe conocer sus tratamientos, documentarlos y poder demostrar que cumple.
+
+## Entonces, ¿qué sustituye a la antigua inscripción?
+
+Principalmente, el **Registro de Actividades de Tratamiento (RAT)**.
+
+El RAT es un documento interno de la empresa. No se presenta rutinariamente ante la AEPD ni se "inscribe" en ningún registro público.
+
+Debe mantenerse actualizado y estar disponible si la autoridad de control lo solicita.
+
+Puedes preparar el tuyo con nuestra guía:
+[Cómo preparar el Registro de Actividades de Tratamiento](/docs/registro-actividades-tratamiento-rat-pymes).
+
+## Qué debe hacer normalmente una pyme
+
+Como regla práctica, una pequeña empresa debería:
+
+1. Identificar sus tratamientos de datos.
+2. Preparar y mantener el RAT cuando resulte exigible o recomendable.
+3. Definir la base jurídica de cada finalidad.
+4. Informar correctamente a clientes, trabajadores, proveedores y otros interesados.
+5. Regular a los encargados del tratamiento.
+6. Aplicar medidas de seguridad proporcionadas al riesgo.
+7. Tener procedimientos para ejercicio de derechos y brechas.
+8. Revisar web, formularios, cookies y comunicaciones comerciales.
+
+Puedes empezar con nuestro [checklist RGPD para autónomos y pymes](/docs/checklist-rgpd-autonomos-pymes) o con la [herramienta gratuita de autoimplantación](/herramientas/rgpd).
+
+## Trámites que sí pueden existir ante la AEPD
+
+Aunque no exista un alta general, sí hay actuaciones concretas que pueden requerir comunicación a la Agencia.
+
+### 1. Comunicación del Delegado de Protección de Datos (DPD)
+
+Si una entidad designa un DPD —porque está obligada o porque lo hace voluntariamente— debe comunicar a la autoridad de control su **designación, nombramiento y cese**.
+
+La LOPDGDD establece un plazo de **10 días** para esta comunicación.
+
+La AEPD dispone de un formulario específico en su Sede Electrónica.
+
+Importante: no todas las pymes están obligadas a designar DPD. Hay que comprobar los supuestos del artículo 37 RGPD y del artículo 34 LOPDGDD.
+
+### 2. Notificación de brechas de datos personales
+
+Si una brecha puede suponer un riesgo para los derechos y libertades de las personas, puede existir obligación de notificarla a la AEPD.
+
+Como regla general, el RGPD establece que debe hacerse sin dilación indebida y, a ser posible, dentro de las **72 horas** desde que el responsable tiene constancia.
+
+Consulta nuestro [protocolo de brechas](/docs/protocolo-brechas-datos-personales-72-horas).
+
+### 3. Consulta previa por tratamientos de alto riesgo
+
+Cuando una Evaluación de Impacto relativa a la Protección de Datos (EIPD) concluye que el tratamiento entrañaría un alto riesgo que no puede mitigarse suficientemente, el responsable debe consultar a la autoridad de control **antes de iniciar el tratamiento**.
+
+No es un trámite ordinario de una pyme de bajo riesgo; aparece en escenarios concretos de alto riesgo.
+
+### 4. Presentación de documentación o escritos
+
+La Sede Electrónica de la AEPD permite presentar documentación por registro, consultar expedientes y recibir notificaciones electrónicas cuando existe un procedimiento o una actuación concreta.
+
+Esto tampoco equivale a una inscripción general de la empresa.
+
+## ¿Debo enviar mi RAT a la AEPD?
+
+No de forma rutinaria.
+
+El RAT se mantiene internamente y debe ponerse a disposición de la autoridad si esta lo requiere.
+
+La AEPD explica expresamente que el RAT sustituyó a la antigua inscripción de ficheros.
+
+## ¿Debo obtener un número de registro AEPD para demostrar cumplimiento?
+
+No existe un número general de "empresa inscrita en protección de datos" que acredite cumplimiento del RGPD.
+
+Tampoco debe confundirse:
+
+- comunicación de un DPD;
+- un expediente concreto ante la AEPD;
+- certificaciones voluntarias;
+- documentación interna de cumplimiento;
+
+con un supuesto "alta RGPD" general.
+
+## Señal de alerta comercial
+
+Desconfía de ofertas que presenten como obligación actual:
+
+- "dar de alta la empresa en la AEPD";
+- "registrar los ficheros en la AEPD";
+- "obtener un número AEPD" como requisito general;
+- pagar una tasa por una supuesta inscripción ordinaria.
+
+Ese modelo corresponde a obligaciones anteriores al RGPD o a una explicación incorrecta de los trámites actuales.
+
+## Fuentes oficiales
+
+- AEPD — ¿sigue siendo obligatoria la inscripción de ficheros?: https://www.aepd.es/preguntas-frecuentes/2-tus-obligaciones-como-responsable-del-tratamiento/2-aplicacion-de-la-normativa/FAQ-0205-sobre-la-obligatoriedad-de-la-inscripcion-de-ficheros
+- AEPD — Registro de Actividades de Tratamiento: https://www.aepd.es/derechos-y-deberes/cumple-tus-deberes/medidas-de-cumplimiento/actividades-tratamiento
+- AEPD — Delegado de Protección de Datos: https://www.aepd.es/derechos-y-deberes/cumple-tus-deberes/medidas-de-cumplimiento/delegado-de-proteccion-de-datos
+- AEPD — Sede electrónica y trámites: https://www.aepd.es/preguntas-frecuentes/12-sede-electronica/FAQ-1202-tramites-ante-la-sede-electronica
+- LOPDGDD, artículo 34: https://www.boe.es/buscar/act.php?id=BOE-A-2018-16673
+
+**Revisado el 24/09/2026.**
+    `
   }
+
 ];
