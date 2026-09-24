@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { RgpdImplementationPlan } from '@/components/tools/RgpdImplementationPlan';
 
 type Answer = boolean | 'none' | 'basic' | 'advanced';
 
@@ -88,6 +89,7 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
     if (answers.processors === true || answers.international === true || answers.innovative === true) modules.push('processors');
     if (answers.website === true || answers.cookies === 'basic' || answers.cookies === 'advanced') modules.push('web');
 
+    const moduleIds = MODULES.filter(([id]) => modules.includes(id)).map(([id]) => id);
     const moduleLabels = MODULES.filter(([id]) => modules.includes(id)).map(([, label]) => label);
 
     let tier = 'Autoimplantación guiada';
@@ -120,7 +122,7 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
         }
       : null;
 
-    return { score, hardFlags, moduleLabels, tier, level, message, estimatedHours, estimatedPrice };
+    return { score, hardFlags, moduleIds, moduleLabels, tier, level, message, estimatedHours, estimatedPrice };
   }, [answers, hourlyRateEur]);
 
   const isResult = step >= QUESTIONS.length;
@@ -283,6 +285,10 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
                 )}
               </div>
             </div>
+
+            {result.level !== 'high' && (
+              <RgpdImplementationPlan moduleIds={result.moduleIds} />
+            )}
 
             {result.hardFlags.length > 0 && (
               <div className="mt-5 border-l-4 border-[#D4A017] bg-[#D4A017]/8 p-4">
