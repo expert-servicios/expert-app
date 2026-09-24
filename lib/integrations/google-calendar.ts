@@ -333,12 +333,12 @@ export async function configureMeetAutoArtifactsSA(
     const updateMask: string[] = [];
 
     if (transcription) {
-      artifactConfig.transcriptionConfig = { autoGenerationType: 'ON' };
-      updateMask.push('config.artifactConfig.transcriptionConfig.autoGenerationType');
+      artifactConfig.transcriptionConfig = { autoTranscriptionGeneration: 'ON' };
+      updateMask.push('config.artifactConfig.transcriptionConfig.autoTranscriptionGeneration');
     }
     if (smartNotes) {
-      artifactConfig.smartNotesConfig = { autoGenerationType: 'ON' };
-      updateMask.push('config.artifactConfig.smartNotesConfig.autoGenerationType');
+      artifactConfig.smartNotesConfig = { autoSmartNotesGeneration: 'ON' };
+      updateMask.push('config.artifactConfig.smartNotesConfig.autoSmartNotesGeneration');
     }
 
     const patchResponse = await fetch(
