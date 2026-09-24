@@ -6,7 +6,7 @@ function source(path: string) {
 }
 
 describe('entity-scoped onboarding appointments', () => {
-  const migration = source('supabase/migrations/20260924083500_entity_scoped_appointments.sql');
+  const migration = source('supabase/migrations/20260924083358_entity_scoped_appointments.sql');
   const booking = source('app/api/booking/route.ts');
   const page = source('app/(public)/cita/page.tsx');
   const form = source('components/booking/NativeBookingForm.tsx');
