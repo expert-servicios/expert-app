@@ -14,6 +14,14 @@ const SCOPES = [
   'https://www.googleapis.com/auth/userinfo.email',
 ];
 
+const PRODUCTIVITY_SCOPES = [
+  'https://www.googleapis.com/auth/userinfo.email',
+  'https://www.googleapis.com/auth/gmail.modify',
+  'https://www.googleapis.com/auth/gmail.send',
+  'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/drive.readonly',
+];
+
 const CALENDAR_SA_SCOPES = ['https://www.googleapis.com/auth/calendar.events'];
 const CALENDAR_SA_IMPERSONATE = 'info@expertconsulting.es';
 
@@ -67,6 +75,16 @@ export async function getAuthUrl(state?: string): Promise<string> {
   });
 }
 
+export async function getProductivityAuthUrl(state?: string): Promise<string> {
+  const client = await getOAuth2Client();
+  return client.generateAuthUrl({
+    access_type: 'offline',
+    scope: PRODUCTIVITY_SCOPES,
+    prompt: 'consent',
+    state,
+  });
+}
+
 export async function exchangeCode(code: string): Promise<StoredTokens> {
   const client = await getOAuth2Client();
   const { tokens } = await client.getToken(code);
@@ -75,6 +93,23 @@ export async function exchangeCode(code: string): Promise<StoredTokens> {
     refresh_token: tokens.refresh_token!,
     expiry_date: tokens.expiry_date!,
     scope: tokens.scope,
+  };
+}
+
+export async function exchangeProductivityCode(code: string): Promise<StoredTokens & { email: string | null }> {
+  const client = await getOAuth2Client();
+  const { tokens } = await client.getToken(code);
+  client.setCredentials(tokens);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { google } = (await import('googleapis')) as any;
+  const oauth2 = google.oauth2({ version: 'v2', auth: client });
+  const { data } = await oauth2.userinfo.get();
+  return {
+    access_token: tokens.access_token!,
+    refresh_token: tokens.refresh_token!,
+    expiry_date: tokens.expiry_date!,
+    scope: tokens.scope,
+    email: data.email ?? null,
   };
 }
 
