@@ -8,6 +8,7 @@ import { RgpdWorkspace } from '@/components/tools/RgpdWorkspace';
 import { RgpdProviderInventory } from '@/components/tools/RgpdProviderInventory';
 import { RgpdRetentionMatrix } from '@/components/tools/RgpdRetentionMatrix';
 import { RgpdFinalReview } from '@/components/tools/RgpdFinalReview';
+import { RgpdAccountSave } from '@/components/tools/RgpdAccountSave';
 
 type Answer = boolean | 'none' | 'basic' | 'advanced';
 
@@ -297,6 +298,7 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
                 <RgpdProviderInventory />
                 <RgpdRetentionMatrix />
                 <RgpdFinalReview />
+                <RgpdAccountSave />
               </>
             )}
 
