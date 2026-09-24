@@ -47,6 +47,7 @@ const schema = z.object({
   notes: z.string().trim().max(800).optional(),
   recaptcha_token: z.string().optional(),
   booking_auth: z.string().max(4096).optional(),
+  company_id: z.string().uuid().optional(),
 });
 
 async function authenticatedUser(request: NextRequest) {
@@ -308,7 +309,26 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'La cuenta autenticada no tiene un email válido.' }, { status: 400 });
         }
 
-        if (service.key === 'onboarding') {
+        if (service.key === 'onboarding' && input.company_id) {
+          const { data: membership, error: membershipError } = await admin
+            .from('profile_companies')
+            .select('company_id')
+            .eq('profile_id', user.id)
+            .eq('company_id', input.company_id)
+            .maybeSingle();
+          if (membershipError) throw membershipError;
+          if (!membership) {
+            return NextResponse.json(
+              { error: 'La entidad seleccionada no pertenece a tu cuenta EXPERT.' },
+              { status: 403 }
+            );
+          }
+          privateIdentity = {
+            clientId: user.id,
+            companyId: input.company_id,
+            source: 'auth_email',
+          };
+        } else if (service.key === 'onboarding') {
           const companyIds = await listOpenOnboardingCompanyIds(admin, user.id);
           if (companyIds.length === 0) {
             return NextResponse.json(
@@ -341,7 +361,9 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        privateIdentity = await resolveAuthenticatedBookingIdentity(admin, user.id);
+        if (!privateIdentity) {
+          privateIdentity = await resolveAuthenticatedBookingIdentity(admin, user.id);
+        }
         const authorizedEmails = await getAuthorizedBookingEmails(
           admin,
           user.id,
@@ -417,6 +439,8 @@ export async function POST(request: NextRequest) {
         confirmed_date: localDate,
         confirmed_time: localTime,
         service: service.label,
+        client_id: privateIdentity?.clientId ?? null,
+        company_id: privateIdentity?.companyId ?? null,
         booking_provider: calendarProvider === 'ms365' ? 'ms365_native' : 'google_native',
         provider_booking_id: null,
         meeting_url: null,
