@@ -111,7 +111,7 @@ export async function ensureServiceOrderFulfillment(
           : 'Revisar el pedido pagado y definir el checklist operativo',
         docs_checklist: requiredDocuments,
         checklist_json: {
-          standard: 'service-operational-blueprint-v2',
+          standard: 'service-operational-blueprint-v5',
           service_slugs: slugs,
           specialized: isFullySpecialized,
           services: services.map((service) => ({
