@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingBag, Trash2, ArrowRight, ArrowLeft, Plus } from 'lucide-react';
@@ -93,7 +93,7 @@ const COPY = {
   },
 } as const;
 
-export default function CarritoPage() {
+function CarritoContent() {
   const searchParams = useSearchParams();
   const { items, removeItem, clearCart } = useCart();
   const locale = searchParams.get('lang') === 'ru' || resolveCartLocale(items) === 'ru' ? 'ru' : 'es';
@@ -355,5 +355,14 @@ export default function CarritoPage() {
         )}
       </div>
     </main>
+  );
+}
+
+
+export default function CarritoPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[#F8F6F1]" />}>
+      <CarritoContent />
+    </Suspense>
   );
 }
