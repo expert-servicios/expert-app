@@ -31,6 +31,8 @@ const service = (() => {
   };
 })();
 
+const DURATION_RU = 'Максимум 24 рабочих часа с момента получения полного пакета документов и подтверждения личности';
+
 const OFFER_PRICE =
   service.price.match(/[0-9]+(?:[.,][0-9]+)?/)?.[0]?.replace(',', '.') ?? service.price;
 
@@ -209,7 +211,7 @@ export default function RuCertificatePersonPage() {
             </div>
             <div className="border border-[#D4A017]/50 bg-[#D4A017]/10 p-5">
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4A017]">Срок</p>
-              <p className="mt-2 text-xl font-bold text-white">{service.duration}</p>
+              <p className="mt-2 text-xl font-bold text-white">{DURATION_RU}</p>
               <p className="mt-1 text-xs leading-5 text-white/55">Полностью онлайн, без личного визита.</p>
             </div>
           </div>
@@ -343,7 +345,7 @@ export default function RuCertificatePersonPage() {
             <div className="border-b border-[#D4A017]/20 bg-[#D4A017]/8 px-6 py-4">
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">Цена</p>
               <p className="mt-1 text-2xl font-bold">{service.price}</p>
-              <p className="mt-2 text-xs leading-5 text-[#23364D]/65">{service.duration}</p>
+              <p className="mt-2 text-xs leading-5 text-[#23364D]/65">{DURATION_RU}</p>
             </div>
             <div className="space-y-3 px-6 py-5">
               <AddToCartButton

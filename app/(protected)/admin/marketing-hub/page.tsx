@@ -50,6 +50,34 @@ type DiagnosticsPayload = {
   };
 };
 
+type MetaCatalogDraft = {
+  retailerId: string;
+  name: string;
+  price: { amount: number; currency: 'EUR' } | null;
+  imageUrl: string | null;
+  marketingReady: boolean;
+  warnings: string[];
+};
+
+type MetaCatalogExcludedService = {
+  retailerId: string;
+  name: string;
+  reason: 'quote_price' | 'missing_offer' | 'archived';
+};
+
+type MetaCatalogPayload = {
+  drafts: MetaCatalogDraft[];
+  excluded: MetaCatalogExcludedService[];
+  readyCount: number;
+  blockedCount: number;
+};
+
+const EXCLUSION_LABEL: Record<MetaCatalogExcludedService['reason'], string> = {
+  quote_price: 'Precio "Consultar"',
+  missing_offer: 'Sin oferta comercial',
+  archived: 'Archivado (solo suscripción o sin precio)',
+};
+
 function Metric({ label, value, detail }: { label: string; value: string | number; detail?: string }) {
   return (
     <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
@@ -62,6 +90,7 @@ function Metric({ label, value, detail }: { label: string; value: string | numbe
 
 export default function MarketingHubPage() {
   const [data, setData] = useState<DiagnosticsPayload | null>(null);
+  const [catalog, setCatalog] = useState<MetaCatalogPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
   const [testMessage, setTestMessage] = useState<string | null>(null);
@@ -69,9 +98,13 @@ export default function MarketingHubPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/meta/diagnostics', { cache: 'no-store' });
-      if (!response.ok) throw new Error('No se pudo cargar Marketing Hub');
-      setData(await response.json());
+      const [diagnosticsResponse, catalogResponse] = await Promise.all([
+        fetch('/api/admin/meta/diagnostics', { cache: 'no-store' }),
+        fetch('/api/admin/meta/catalog', { cache: 'no-store' }),
+      ]);
+      if (!diagnosticsResponse.ok) throw new Error('No se pudo cargar Marketing Hub');
+      setData(await diagnosticsResponse.json());
+      setCatalog(catalogResponse.ok ? await catalogResponse.json() : null);
     } finally {
       setLoading(false);
     }
@@ -197,6 +230,88 @@ export default function MarketingHubPage() {
             </table>
           </div>
         </section>
+
+        <section className="mt-6 overflow-hidden rounded-2xl border border-[#d8cbb5] bg-white">
+          <div className="border-b border-[#eee6d8] p-5">
+            <h2 className="font-serif text-xl font-bold text-[#07111d]">Catálogo para Meta</h2>
+            <p className="mt-1 text-sm text-[#5b6470]">
+              Proyección de solo lectura de lo que se exportaría al catálogo de comercio de Meta a partir de las tablas C2.
+              No crea ni sincroniza nada.
+            </p>
+            {catalog ? (
+              <p className="mt-2 text-sm font-semibold text-[#07111d]">
+                {catalog.readyCount} listos de {catalog.readyCount + catalog.blockedCount}
+              </p>
+            ) : null}
+          </div>
+          <div className="max-h-[32rem] overflow-auto">
+            <table className="min-w-full text-sm">
+              <thead className="sticky top-0 bg-[#f8f4eb] text-left text-xs uppercase text-[#6b7280]">
+                <tr>
+                  <th className="px-4 py-3">Servicio (retailer_id)</th>
+                  <th className="px-4 py-3">Precio</th>
+                  <th className="px-4 py-3">Imagen</th>
+                  <th className="px-4 py-3">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#eee6d8]">
+                {(catalog?.drafts ?? []).map((draft) => (
+                  <tr key={draft.retailerId}>
+                    <td className="px-4 py-3 font-mono text-xs font-semibold">{draft.retailerId}</td>
+                    <td className="px-4 py-3">{draft.price ? `${draft.price.amount.toFixed(2)} ${draft.price.currency}` : '—'}</td>
+                    <td className="px-4 py-3">{draft.imageUrl ? 'OK' : 'Falta'}</td>
+                    <td className="px-4 py-3">
+                      {draft.marketingReady ? (
+                        <span className="inline-flex items-center gap-1 font-semibold text-green-700">
+                          <CheckCircle2 className="h-4 w-4" /> Listo
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 font-semibold text-amber-800" title={draft.warnings.join(', ')}>
+                          <AlertTriangle className="h-4 w-4" /> {draft.warnings.join(', ')}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {catalog && catalog.drafts.length === 0 && catalog.excluded.length === 0 ? (
+              <p className="p-5 text-sm text-[#5b6470]">
+                No hay servicios en catalog_services todavía. Ejecuta el backfill (scripts/backfill-meta-catalog-c2.ts --apply) primero.
+              </p>
+            ) : null}
+          </div>
+        </section>
+
+        {catalog && catalog.excluded.length > 0 ? (
+          <section className="mt-6 overflow-hidden rounded-2xl border border-[#d8cbb5] bg-white">
+            <div className="border-b border-[#eee6d8] p-5">
+              <h2 className="font-serif text-xl font-bold text-[#07111d]">Fuera del catálogo de Meta</h2>
+              <p className="mt-1 text-sm text-[#5b6470]">
+                {catalog.excluded.length} servicios sin precio fijo o &ldquo;desde&rdquo; (p. ej. &ldquo;Consultar&rdquo;). Meta exige un
+                número por artículo, así que se quedan fuera en vez de mostrar un precio inventado.
+              </p>
+            </div>
+            <div className="max-h-64 overflow-auto">
+              <table className="min-w-full text-sm">
+                <thead className="sticky top-0 bg-[#f8f4eb] text-left text-xs uppercase text-[#6b7280]">
+                  <tr>
+                    <th className="px-4 py-3">Servicio (retailer_id)</th>
+                    <th className="px-4 py-3">Motivo</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#eee6d8]">
+                  {catalog.excluded.map((item) => (
+                    <tr key={item.retailerId}>
+                      <td className="px-4 py-3 font-mono text-xs font-semibold">{item.retailerId}</td>
+                      <td className="px-4 py-3 text-[#5b6470]">{EXCLUSION_LABEL[item.reason]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ) : null}
       </div>
     </main>
   );
