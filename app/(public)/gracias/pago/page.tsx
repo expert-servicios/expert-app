@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import Link from 'next/link';
 import { createServerClient } from '@supabase/ssr';
 import { AlertCircle, Calendar, CheckCircle2, FileText, GraduationCap, ShieldCheck } from 'lucide-react';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
@@ -41,8 +42,8 @@ function UnverifiedPayment() {
         Revisa tus expedientes o vuelve a iniciar sesión; si el cargo se ha completado, el pedido aparecerá automáticamente.
       </p>
       <div className="mt-6 flex justify-center gap-3">
-        <a href="/dashboard/expedientes" className="bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A]">Ver mis expedientes</a>
-        <a href="/auth/login?next=/dashboard/expedientes" className="border border-[#D4A017] px-5 py-3 text-sm font-bold text-[#9a6a17]">Iniciar sesión</a>
+        <Link href="/dashboard/expedientes" className="bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A]">Ver mis expedientes</Link>
+        <Link href="/auth/login?next=/dashboard/expedientes" className="border border-[#D4A017] px-5 py-3 text-sm font-bold text-[#9a6a17]">Iniciar sesión</Link>
       </div>
     </main>
   );
@@ -71,9 +72,9 @@ function NationalitySuccessSection() {
           </div>
         ))}
       </div>
-      <a href="/dashboard/expedientes" className="mt-6 inline-flex min-h-11 items-center justify-center bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] hover:bg-[#F2C14E]">
+      <Link href="/dashboard/expedientes" className="mt-6 inline-flex min-h-11 items-center justify-center bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] hover:bg-[#F2C14E]">
         Abrir mis expedientes
-      </a>
+      </Link>
     </section>
   );
 }
