@@ -162,6 +162,12 @@ export default async function AdminRgpdReviewsPage({ searchParams }: { searchPar
                     <p className="mt-2 text-[#526171]">{item.requester?.full_name || 'Sin nombre de perfil'}</p>
                     <p className="text-xs text-[#6f665b]">{item.requester?.email || item.company.contact_email || 'Email no disponible'}</p>
                     <p className="mt-3 break-all text-[10px] text-[#918677]">ID: {item.id}</p>
+                    <Link
+                      href={'/admin/rgpd-revisiones/' + item.id}
+                      className="mt-3 inline-flex min-h-9 items-center rounded-xl border border-[#D4A017]/30 px-3 text-xs font-bold text-[#07111d]"
+                    >
+                      Abrir snapshot
+                    </Link>
                     {item.status === 'review_requested' && (
                       <div className="mt-4">
                         <AcceptRgpdReviewButton projectId={item.id} />
