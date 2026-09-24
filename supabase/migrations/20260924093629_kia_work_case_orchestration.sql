@@ -98,6 +98,8 @@ declare c public.kia_work_connections; t public.internal_tasks; claim public.kia
   prior public.kia_work_events; policy jsonb; next_tasks jsonb; outcome jsonb; verified boolean := false;
 begin
   c := public.kia_work_lock_scope(p_connection);
+  -- Serialize retries for the same event before reading/inserting the idempotency ledger.
+  perform pg_advisory_xact_lock(hashtextextended(p_event->>'event_id', 0));
   select * into prior from public.kia_work_events where event_id=(p_event->>'event_id')::uuid;
   if found then
     if prior.connection_id<>p_connection or prior.payload_hash<>p_hash then raise exception 'work_event_conflict'; end if;
@@ -147,7 +149,7 @@ begin
         select 1 from jsonb_array_elements_text(c.task_policies->n.id::text->'dependencies') d
         where not exists(select 1 from public.internal_tasks dep where dep.id=d.value::uuid
           and dep.case_id=c.case_id and dep.status='completada'));
-  if p_event->>'result'='succeeded' and jsonb_array_length(next_tasks)>0 then
+  if p_event->>'result'='succeeded' then
     update public.cases set next_action=next_tasks->0->>'title' where id=c.case_id
       and next_action is not distinct from claim.case_next_action;
   end if;
