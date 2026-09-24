@@ -3,9 +3,10 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { KiaWorkResults } from '@/components/admin/KiaWorkResults';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
 vi.mock('@/lib/utils/server-fetch', () => ({ fetchWithCookies: vi.fn() }));
+vi.mock('@/components/admin/KiaWorkControls', () => ({ KiaWorkControls: () => null }));
 const row = { id: 'result', title: 'Documento', received_at: '2026-09-24T10:00:00Z', requires_review: false, reason: null };
 async function render(result: Record<string, unknown>) {
-  vi.mocked(fetchWithCookies).mockResolvedValue({ results: [{ ...row, ...result }] });
+  vi.mocked(fetchWithCookies).mockResolvedValue({ results: [{ ...row, error_code: null, ...result }], tasks: [], connections: [], evidence: { documents: [], emails: [], administrative_actions: [] } });
   return renderToStaticMarkup(await KiaWorkResults({ caseId: 'case' }));
 }
 describe('Professional Work activity view', () => {
