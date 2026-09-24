@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { CloudDownload, CloudUpload, History } from 'lucide-react';
+import { CloudDownload, CloudUpload, History, Trash2 } from 'lucide-react';
 
 type SavedProject = {
   id: string;
@@ -41,6 +41,7 @@ export function RgpdAccountSave() {
   const [authRequired, setAuthRequired] = useState(false);
   const [requestingReviewId, setRequestingReviewId] = useState<string | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadProjects = async () => {
     try {
@@ -148,6 +149,42 @@ export function RgpdAccountSave() {
     }
   };
 
+  const removeSavedDraft = async (project: SavedProject) => {
+    if (deletingId || project.status !== 'draft') return;
+    if (!window.confirm('¿Eliminar definitivamente la versión ' + project.version + ' guardada en tu cuenta EXPERT? Tu copia local no se borrará.')) return;
+
+    setDeletingId(project.id);
+    setMessage('');
+
+    try {
+      const res = await fetch('/api/rgpd/projects/' + project.id, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 401) {
+        setAuthRequired(true);
+        setMessage('Para eliminar una versión debes iniciar sesión.');
+        return;
+      }
+
+      if (res.status === 409) {
+        setMessage('Esta versión ya forma parte de una revisión profesional y no puede eliminarse desde autoservicio.');
+        return;
+      }
+
+      if (!res.ok) {
+        setMessage(data.error ?? 'No se pudo eliminar esta versión.');
+        return;
+      }
+
+      setMessage('Versión ' + project.version + ' eliminada de tu cuenta. La copia local no se ha modificado.');
+      await loadProjects();
+    } catch {
+      setMessage('No se pudo eliminar esta versión.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const requestReview = async (project: SavedProject) => {
     if (requestingReviewId) return;
     setRequestingReviewId(project.id);
@@ -251,15 +288,27 @@ export function RgpdAccountSave() {
                   <button
                     type="button"
                     onClick={() => requestReview(project)}
-                    disabled={requestingReviewId === project.id || project.status === 'review_requested'}
+                    disabled={requestingReviewId === project.id || project.status !== 'draft'}
                     className="min-h-9 border border-[#D4A017]/30 px-3 text-xs font-bold disabled:opacity-50"
                   >
-                    {project.status === 'review_requested'
-                      ? 'Revisión solicitada'
+                    {project.status !== 'draft'
+                      ? 'Revisión bloqueada'
                       : requestingReviewId === project.id
                         ? 'Preparando…'
                         : 'Solicitar revisión'}
                   </button>
+                  {project.status === 'draft' && (
+                    <button
+                      type="button"
+                      onClick={() => removeSavedDraft(project)}
+                      disabled={deletingId === project.id}
+                      aria-label={'Eliminar versión ' + project.version}
+                      className="inline-flex min-h-9 items-center gap-1.5 border border-red-200 px-3 text-xs font-bold text-red-700 disabled:opacity-50"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      {deletingId === project.id ? 'Eliminando…' : 'Eliminar'}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
