@@ -1,35 +1,38 @@
 # Progreso de implementación KIA–Work
 
-Última actualización: 24/09/2026. Continuar sobre la rama `feat/kia-work-case-orchestration` y la [PR #444](https://github.com/expert-servicios/expert-app/pull/444). No empezar de nuevo ni modificar el repositorio de trabajo personal del usuario.
+Última actualización: 24/09/2026.
 
-**Último punto funcional verificado: `bf08a0ea`**, que incluye la bandeja durable de `b2916330` y la vista de actividad. CI Linux [35986616068](https://github.com/expert-servicios/expert-app/actions/runs/35986616068): **224 archivos / 1.242 pruebas aprobadas**, tipos y lint aprobados. Preflight de migraciones y ambas compilaciones Vercel también aprobados. Esto sustituye los avisos de «CI pendiente» de los incrementos descritos debajo. Siguen pendientes revisión de PR, migraciones en staging y activación/piloto; no confundir validación con despliegue.
+## Estado actual confirmado
 
-La cuenta mostró 100 % de uso semanal consumido al cerrar este bloque. No se canjearon créditos de reinicio. Todo el código de los tres incrementos está subido. Próximo paso: delegación visual y resolución guiada de incidencias, conservando las verificaciones existentes. No repetir la implementación de bandeja, reintentos o vista de actividad.
+- La implementación de KIA–Work de la PR #444 está fusionada en `main` mediante `b2d9d0e4353de1b10195363122aee4047c823f67`.
+- La PR documental #443 está cerrada y su contenido útil quedó incorporado en #444.
+- Después se fusionaron #471 (representación y firmas de nacionalidad) y #427 (consolidación RLS de `user_profiles_ext`). El `main` verificado en esta actualización es `b53155ff1b5795c5b7084ec8fc5036e1a6525c07`.
+- CI de `main` #1867: correcto.
+- Despliegues de producción `app` y `ksenia-expert`: READY sobre el mismo SHA de `main`.
+- No se observaron errores de runtime Vercel en la hora posterior a la actualización ni errores PostgreSQL en la ventana post-despliegue revisada.
+- Producción ya registra las migraciones `20260924170000_kia_work_case_orchestration` y `20260924171500_kia_work_result_inbox`.
+- Security Advisor confirma las tablas KIA Work como RLS sin policies. La comprobación de ACL verifica que no tienen grants para `anon` ni `authenticated`; el acceso queda restringido a `service_role`, de forma intencional.
+- `KIA_WORK_CONNECTOR_ENABLED` sigue siendo una bandera de activación explícita en código. La configuración real del entorno debe verificarse antes del piloto; no asumir activación por el hecho de que el despliegue esté READY.
 
-## Punto de recuperación confirmado
+## Funcionalidad ya implementada
 
-Commit funcional: `157fc153`. Implementa credenciales limitadas a expediente/tareas, reservas, evidencia y cierre transaccional; continuidad Telegram/copiloto; firma de KIA en `sendEmail`; cabeceras de respuesta Gmail; documentos e identidades de particulares sin empresa ficticia.
+El conector dispone de credenciales limitadas a expediente/tareas, reservas con caducidad, verificación de evidencia, idempotencia por evento y cierre transaccional. Incluye recepción durable mediante inbox, reintentos acotados, recuperación segura, vista de actividad en Admin, continuidad contextual con Telegram/copiloto, firma de KIA en `sendEmail`, cabeceras nativas de respuesta Gmail y soporte para particulares sin empresa ficticia.
 
-Validación de ese commit: CI Linux **222 archivos de pruebas / 1.232 pruebas aprobadas**, tipos y lint aprobados, comprobación del historial de migraciones de solo lectura aprobada y ambas compilaciones Vercel aprobadas. Pruebas adicionales de las funciones SQL en PostgreSQL WASM aprobadas. No se enviaron mensajes reales ni se presentó o pagó ningún expediente.
+Las migraciones canónicas actuales son:
 
-La PR tiene incorporación automática preparada, pero `main` exige revisión aprobada. La PR documental #443 sigue abierta y su contenido está incluido en #444; comprobar ambas antes de incorporar cambios para evitar conflictos entre ellas. No eludir las protecciones de `main`.
+1. `20260924170000_kia_work_case_orchestration.sql`
+2. `20260924171500_kia_work_result_inbox.sql`
 
-La migración `20260924093629_kia_work_case_orchestration.sql` y la bandera `KIA_WORK_CONNECTOR_ENABLED` requieren despliegue/configuración. Una compilación de prueba aprobada no acredita que la migración esté aplicada ni que el piloto esté operativo. Detalle: [guía operativa](kia-work-connector-runbook.md).
+No reutilizar en documentación ni despliegues los nombres provisionales `20260924093629` o `20260924101525`.
 
-## Continuación autorizada
+## Pendientes reales
 
-Segundo incremento: recepción durable y cron de verificación implementados en `20260924101525_kia_work_result_inbox.sql`, `work-inbox.ts` y `/api/cron/kia-work-results`. El receptor guarda antes de verificar; reintenta errores temporales hasta cinco veces y recupera cierres ya confirmados. No prolonga permisos o reservas originales ni repite efectos externos. HTTP 202 y salida 2 del adaptador distinguen pendiente de completado. Pruebas locales: 23 pruebas del conector/cron aprobadas y SQL real aprobado, incluida exclusión de trabajadores y recuperación de una reserva interrumpida. Pendiente de CI de este nuevo incremento y de aplicación de la nueva migración en staging.
-
-Tercer incremento: vista «Actividad de KIA» en el expediente de Admin, bajo la misma bandera. Muestra los últimos 50 resultados y distingue recibido, verificado, tarea pendiente y revisión. La API de lectura vuelve a comprobar acceso profesional al expediente; no devuelve credenciales ni metadatos internos completos. Es una vista de consulta, no un botón para saltarse la verificación o dar una tarea por terminada. La delegación visual y resolución guiada de incidencias siguen pendientes. Revisión React: componente de servidor, carga con Suspense, sin estado cliente ni duplicación de peticiones, claves estables, fechas explícitas Europe/Madrid y texto de estado accesible.
-
-La usuaria ha pedido guardar y subir el progreso y continuar la implementación mientras quede uso disponible. No consumir créditos de reinicio sin autorización específica. No reactivar seguimientos nocturnos pausados.
-
-Orden de trabajo:
-
-1. Recepción durable y reintentos: implementados; validar el nuevo incremento en CI y staging. Añadir una interfaz para los resultados que pasan a revisión.
-2. Pantalla profesional para delegar y revocar tareas sin configuración técnica.
-3. Firma y CTA en composición nativa Gmail/MS365, continuidad real del hilo y autorización ligada al contenido exacto.
-4. Ensayo con esquema completo en staging y piloto desplegado; registrar pruebas y bloqueos reales.
+1. Pantalla profesional para delegar y revocar tareas sin configuración técnica.
+2. Interfaz guiada para conciliar resultados en estado `review`.
+3. Firma y CTA en composición nativa Gmail/MS365, continuidad real del hilo y autorización vinculada al contenido exacto que se ejecutará.
+4. Verificar la bandera de producción `KIA_WORK_CONNECTOR_ENABLED` y realizar un piloto controlado con credencial acotada.
+5. Registrar el resultado del piloto, incluidos bloqueos, expiraciones, reintentos y revocación.
+6. Mantener fuera del conector la autorización de firma, pago y presentación definitiva.
 
 ## Límites que deben conservarse
 
@@ -40,8 +43,10 @@ Orden de trabajo:
 - Si hay timeout, conciliar el resultado: nunca repetir a ciegas un correo, pago o presentación.
 - No publicar como terminado lo que esté preparado, pendiente de aprobación o sin verificar.
 
-## Entorno de validación local
+## Referencias operativas
 
-Windows: dependencias compartidas mediante junction en el worktree; no modificar las del repositorio personal. Para comprobar tipos se utilizó una configuración temporal externa con `next-intl` de la versión declarada, porque faltaba en las dependencias locales compartidas. Lint terminó sin errores. Dos diferencias de pruebas locales se debieron a saltos de línea y zona horaria; CI Linux pasó todas. No introducir normalizaciones masivas de archivos como parte de esta implementación.
-
-El script `scripts/test-kia-work-sql.mjs` tiene instrucciones en la guía operativa y utiliza un paquete PGlite instalado fuera del repositorio. Los controles SQL son representativos y no sustituyen staging.
+- Guía: [KIA–Work: conector de resultados](kia-work-connector-runbook.md)
+- Diseño: [orquestación de expedientes](kia-work-case-orchestration.md)
+- Endpoint Work: `/api/kia/work`
+- Gestión profesional de conexiones: `/api/admin/kia/work-connections`
+- Cron de verificación: `/api/cron/kia-work-results`
