@@ -3,6 +3,17 @@ import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { isStaffRole } from '@/lib/auth/roles';
 
+function addBusinessDays(from: Date, businessDays: number): string {
+  const date = new Date(from);
+  let remaining = Math.max(0, businessDays);
+  while (remaining > 0) {
+    date.setUTCDate(date.getUTCDate() + 1);
+    const day = date.getUTCDay();
+    if (day !== 0 && day !== 6) remaining -= 1;
+  }
+  return date.toISOString().slice(0, 10);
+}
+
 async function requireStaff(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -186,5 +197,70 @@ export async function PATCH(request: NextRequest) {
 
   const { error } = await auth.admin.from('internal_tasks').update(updatePayload).eq('id', parsed.data.id);
   if (error) return NextResponse.json({ error: 'No se pudo actualizar la tarea' }, { status: 500 });
+
+  if (parsed.data.status === 'completada') {
+    const { data: completedTask } = await auth.admin
+      .from('internal_tasks')
+      .select('case_id')
+      .eq('id', parsed.data.id)
+      .maybeSingle();
+
+    if (completedTask?.case_id) {
+      const { data: siblings, error: siblingLoadError } = await auth.admin
+        .from('internal_tasks')
+        .select('id,status,due_date,metadata')
+        .eq('case_id', completedTask.case_id)
+        .in('status', ['pendiente', 'en_progreso']);
+
+      if (siblingLoadError) {
+        return NextResponse.json({ error: 'La tarea se completó, pero no se pudieron recalcular los pasos siguientes' }, { status: 500 });
+      }
+
+      const allCaseTasks = await auth.admin
+        .from('internal_tasks')
+        .select('status,metadata')
+        .eq('case_id', completedTask.case_id);
+
+      if (allCaseTasks.error) {
+        return NextResponse.json({ error: 'La tarea se completó, pero no se pudieron validar los pasos siguientes' }, { status: 500 });
+      }
+
+      for (const sibling of siblings ?? []) {
+        if (sibling.due_date) continue;
+        const metadata = (sibling.metadata as Record<string, unknown> | null) ?? null;
+        const dependsOn = Array.isArray(metadata?.depends_on)
+          ? metadata.depends_on.filter((item): item is string => typeof item === 'string')
+          : [];
+        if (!dependsOn.length) continue;
+
+        const dependenciesComplete = dependsOn.every((dependencyKey) =>
+          (allCaseTasks.data ?? []).some((candidate) => {
+            const candidateMetadata = (candidate.metadata as Record<string, unknown> | null) ?? null;
+            return candidate.status === 'completada' && candidateMetadata?.task_key === dependencyKey;
+          }),
+        );
+        if (!dependenciesComplete) continue;
+
+        const dueBusinessDays = typeof metadata?.due_business_days === 'number'
+          ? metadata.due_business_days
+          : null;
+        if (dueBusinessDays === null) continue;
+
+        const { error: unlockError } = await auth.admin
+          .from('internal_tasks')
+          .update({
+            due_date: addBusinessDays(new Date(), dueBusinessDays),
+            updated_at: now,
+          })
+          .eq('id', sibling.id)
+          .is('due_date', null);
+
+        if (unlockError) {
+          return NextResponse.json({ error: 'La tarea se completó, pero no se pudo activar el plazo del siguiente paso' }, { status: 500 });
+        }
+      }
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }
