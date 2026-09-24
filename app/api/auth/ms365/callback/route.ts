@@ -45,7 +45,10 @@ export async function GET(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== oauthState.userId) {
-    return redirectClearingState(new URL('/admin/correo?error=oauth_denied', request.url));
+    const path = oauthState.purpose === 'client_productivity'
+      ? '/dashboard/integraciones/productividad?error=session&provider=microsoft'
+      : '/admin/correo?error=oauth_denied';
+    return redirectClearingState(new URL(path, request.url));
   }
 
   try {
@@ -56,7 +59,10 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .maybeSingle();
     if (profile?.status === 'inactive') {
-      return redirectClearingState(new URL('/auth/login?error=inactive', request.url));
+      const path = oauthState.purpose === 'client_productivity'
+        ? '/dashboard/integraciones/productividad?error=inactive&provider=microsoft'
+        : '/auth/login?error=inactive';
+      return redirectClearingState(new URL(path, request.url));
     }
 
     const tokens = await exchangeMs365Code(code);
