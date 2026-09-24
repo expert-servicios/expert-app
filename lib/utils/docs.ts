@@ -29,6 +29,197 @@ export const docCategories: { slug: DocCategorySlug; name: string }[] = [
 export const docs: KnowledgeDoc[] = [
   ...getGeneratedBatch1KnowledgeDocs(),
   {
+    slug: 'conectar-google-workspace-expert',
+    category: 'empresas',
+    title: 'Cómo conectar Google Workspace con EXPERT',
+    excerpt: 'Guía paso a paso para autorizar Gmail, Google Calendar y Drive en EXPERT mediante OAuth, con conexión separada por entidad fiscal.',
+    tags: ['Google Workspace', 'Gmail', 'Google Calendar', 'Google Drive', 'OAuth', 'integraciones EXPERT'],
+    updatedAt: '24 sep 2026',
+    readTime: '6 min',
+    seoTitle: 'Conectar Google Workspace con EXPERT | Guía paso a paso',
+    seoDescription: 'Cómo conectar Gmail, Calendar y Drive con EXPERT de forma segura mediante OAuth y por entidad fiscal.',
+    body: `
+## Qué conecta EXPERT
+
+La integración de Google Workspace permite vincular a una entidad de EXPERT el ecosistema de Google que utilizas en el trabajo.
+
+La conexión se realiza mediante **OAuth 2.0 de Google**. No tienes que comunicar a EXPERT tu contraseña de Google.
+
+EXPERT solicita actualmente permisos para:
+
+- **Gmail**: leer y gestionar mensajes necesarios para la operativa autorizada y enviar correo en tu nombre cuando una acción lo requiera.
+- **Google Calendar**: consultar y crear o modificar eventos necesarios para citas y coordinación.
+- **Google Drive**: acceso de lectura para localizar documentación autorizada.
+- **Identidad de la cuenta**: confirmar qué cuenta de Google has conectado.
+
+La conexión se guarda separada para cada entidad fiscal de tu cuenta EXPERT.
+
+## Antes de empezar
+
+1. Inicia sesión en EXPERT.
+2. Comprueba que la entidad correcta está creada en tu perfil.
+3. Ten abierta la cuenta de Google Workspace o Google que quieras conectar.
+4. Si gestionas varias entidades, decide a cuál quieres asociar esta cuenta.
+
+## Conexión directa
+
+[Conectar Google Workspace con EXPERT](https://expertconsulting.es/dashboard/integraciones/productividad?provider=google)
+
+Al abrir el enlace:
+
+1. EXPERT te mostrará tus entidades fiscales.
+2. Elige la entidad que quieres vincular.
+3. Pulsa **Conectar Google Workspace**.
+4. Google mostrará su pantalla oficial de autorización.
+5. Revisa los permisos y confirma.
+6. Google te devolverá automáticamente a EXPERT.
+7. Comprueba que la entidad aparece como **Conectada**.
+
+## Si tienes dos empresas o actividades
+
+La autorización se vincula a una entidad concreta de EXPERT.
+
+Si quieres utilizar la misma cuenta de Google para dos entidades, realiza la conexión desde cada entidad. Esto permite mantener separados expedientes, documentación, calendarios e integraciones dentro de EXPERT.
+
+## Seguridad
+
+- EXPERT no recibe tu contraseña de Google.
+- Los tokens OAuth se almacenan cifrados.
+- La integración queda vinculada a tu usuario y a una entidad fiscal concreta.
+- El acceso se limita a los permisos mostrados durante el consentimiento.
+- Puedes revocar el acceso desde tu cuenta de Google.
+
+## Cómo revocar el acceso
+
+Desde tu Cuenta de Google puedes revisar y retirar el acceso de aplicaciones de terceros. Tras revocarlo, EXPERT dejará de poder utilizar esa conexión y será necesario volver a autorizarla si quieres reactivarla.
+
+## Problemas habituales
+
+### He elegido la cuenta Google equivocada
+
+Cancela la autorización o revoca posteriormente el acceso y vuelve a iniciar el proceso con la cuenta correcta.
+
+### Tengo varias entidades en EXPERT
+
+Selecciona expresamente la entidad antes de pulsar el botón de conexión.
+
+### Google muestra una pantalla adicional de consentimiento
+
+Es normal cuando se solicitan permisos de Workspace. Lee los permisos antes de aceptar.
+
+### Mi administrador de Google Workspace bloquea la aplicación
+
+En organizaciones con políticas restrictivas puede ser necesaria la aprobación del administrador de Google Workspace.
+
+## Fuentes oficiales
+
+- Google Workspace — OAuth y scopes de Gmail: https://developers.google.com/workspace/gmail/api/auth/scopes
+- Google Calendar API — scopes OAuth: https://developers.google.com/identity/protocols/oauth2/scopes
+- Autorización OAuth de servidor: https://developers.google.com/workspace/gmail/api/auth/web-server
+    `
+  },
+  {
+    slug: 'conectar-microsoft-365-expert',
+    category: 'empresas',
+    title: 'Cómo conectar Microsoft 365 con EXPERT',
+    excerpt: 'Guía paso a paso para autorizar Outlook, Calendar, OneDrive y Teams en EXPERT mediante Microsoft Graph y OAuth.',
+    tags: ['Microsoft 365', 'Outlook', 'Calendar', 'OneDrive', 'Teams', 'Microsoft Graph', 'OAuth'],
+    updatedAt: '24 sep 2026',
+    readTime: '6 min',
+    seoTitle: 'Conectar Microsoft 365 con EXPERT | Guía paso a paso',
+    seoDescription: 'Cómo conectar Outlook, Calendar, OneDrive y Teams con EXPERT de forma segura mediante Microsoft Graph OAuth.',
+    body: `
+## Qué conecta EXPERT
+
+La integración de Microsoft 365 permite vincular a una entidad de EXPERT tu cuenta profesional de Microsoft.
+
+La autorización se realiza mediante **OAuth 2.0 y Microsoft Graph**. EXPERT no solicita ni almacena tu contraseña de Microsoft.
+
+La conexión puede autorizar:
+
+- **Outlook**: lectura del correo y envío autorizado.
+- **Microsoft Calendar**: lectura y gestión de eventos.
+- **OneDrive / archivos de Microsoft 365**: acceso a los archivos necesarios para la operativa autorizada.
+- **Teams**: creación de reuniones online cuando se utiliza el calendario Microsoft.
+
+## Antes de empezar
+
+1. Inicia sesión en EXPERT.
+2. Comprueba que la entidad fiscal correcta aparece en tu perfil.
+3. Ten acceso a la cuenta Microsoft 365 que quieras conectar.
+4. Si tu organización utiliza políticas de administración centralizada, puede ser necesaria la aprobación del administrador de Microsoft 365.
+
+## Conexión directa
+
+[Conectar Microsoft 365 con EXPERT](https://expertconsulting.es/dashboard/integraciones/productividad?provider=microsoft)
+
+Al abrir el enlace:
+
+1. EXPERT te mostrará tus entidades fiscales.
+2. Selecciona la entidad que quieres vincular.
+3. Pulsa **Conectar Microsoft 365**.
+4. Microsoft abrirá su pantalla oficial de consentimiento.
+5. Revisa los permisos solicitados.
+6. Confirma la autorización.
+7. Microsoft te devolverá automáticamente a EXPERT.
+8. Verifica que la conexión figure como **Conectada**.
+
+## Permisos utilizados
+
+La capa actual de Microsoft 365 utiliza permisos delegados de Microsoft Graph para:
+
+- leer correo;
+- enviar correo;
+- leer y modificar calendario;
+- trabajar con archivos autorizados de Microsoft 365;
+- mantener acceso mediante refresh token mientras la autorización siga vigente.
+
+La autorización actúa en nombre del usuario que ha dado el consentimiento.
+
+## Si tienes varias entidades
+
+EXPERT mantiene cada integración separada por entidad fiscal.
+
+Por ejemplo, una misma persona puede tener:
+
+- una sociedad mercantil;
+- y una actividad profesional como persona física.
+
+Cada una puede conservar su propia relación de integraciones, expedientes y documentación dentro de EXPERT.
+
+## Seguridad
+
+- EXPERT no recibe tu contraseña de Microsoft.
+- Los tokens OAuth se almacenan cifrados.
+- La conexión queda asociada a tu usuario y a la entidad seleccionada.
+- Los permisos efectivos son los que Microsoft muestra en su pantalla de consentimiento.
+- Puedes retirar el consentimiento posteriormente desde tu cuenta Microsoft o mediante las herramientas de administración de tu organización.
+
+## Problemas habituales
+
+### Microsoft pide aprobación del administrador
+
+Algunas organizaciones bloquean determinados permisos para usuarios normales. En ese caso debe intervenir el administrador de Microsoft 365 de la empresa.
+
+### He conectado una cuenta equivocada
+
+Revoca el consentimiento y vuelve a conectar usando la cuenta correcta.
+
+### Tengo más de una empresa
+
+Selecciona la entidad concreta antes de autorizar Microsoft 365.
+
+### Uso una cuenta Microsoft personal
+
+Algunas funciones empresariales, especialmente relacionadas con Teams o administración corporativa, dependen del tipo de cuenta y licencia disponibles.
+
+## Fuentes oficiales
+
+- Microsoft Graph — referencia de permisos: https://learn.microsoft.com/es-es/graph/permissions-reference
+- Microsoft Graph — autenticación y autorización: https://learn.microsoft.com/es-es/graph/auth/
+    `
+  },
+  {
     slug: 'apellidos-menor-nacionalidad-registro-civil',
     category: 'extranjeria-nacionalidad',
     title: 'Apellidos del menor al adquirir la nacionalidad española',
