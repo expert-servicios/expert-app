@@ -590,10 +590,10 @@ export default async function PlanesPage({ searchParams }: Props) {
               Habla con Kia ahora
             </Link>
             <Link
-              href="/cita"
+              href="/cita?tipo=consulta-inicial"
               className="inline-flex min-h-11 items-center justify-center border border-[#D4A017]/50 px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017] hover:text-[#0D1B2A]"
             >
-              Reservar cita con un asesor
+              Consulta gratuita · 15 min
             </Link>
           </div>
         </div>

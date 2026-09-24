@@ -53,7 +53,7 @@ export async function proxy(request: NextRequest) {
   // Protect /dashboard and /admin — admin role check is in app/(protected)/admin/layout.tsx
   if (!user && isProtectedPath) {
     const loginUrl = new URL('/auth/login', request.url);
-    loginUrl.searchParams.set('next', pathname);
+    loginUrl.searchParams.set('next', `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
   }
 

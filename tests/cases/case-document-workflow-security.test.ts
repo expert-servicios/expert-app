@@ -28,13 +28,17 @@ describe('case document workflow security', () => {
     expect(documentsRoute).toContain("code: 'case_company_required'");
   });
 
-  it('persists the Admin task before confirming the case review transition', () => {
+  it('persists or updates the Admin task before confirming the case review transition', () => {
     const taskLookup = reviewRoute.indexOf(".from('internal_tasks')");
-    const caseUpdate = reviewRoute.indexOf(".from('cases')\n      .update({");
+    const caseLookup = reviewRoute.indexOf(".from('cases')", taskLookup);
+    const caseUpdate = reviewRoute.indexOf(".update(casePatch)", caseLookup);
     expect(taskLookup).toBeGreaterThan(-1);
-    expect(caseUpdate).toBeGreaterThan(taskLookup);
+    expect(caseLookup).toBeGreaterThan(taskLookup);
+    expect(caseUpdate).toBeGreaterThan(caseLookup);
     expect(reviewRoute).toContain("return NextResponse.json({ error: 'No se pudo preparar la tarea de revisión' }");
     expect(reviewRoute).toContain("return NextResponse.json({ error: 'No se pudo actualizar la tarea de revisión' }");
     expect(reviewRoute).toContain("return NextResponse.json({ error: 'No se pudo crear la tarea de revisión' }");
+    expect(reviewRoute).toContain('const shouldMoveToReview');
+    expect(reviewRoute).toContain("effectiveStatus === 'nuevo' || effectiveStatus === 'pendiente_cliente'");
   });
 });

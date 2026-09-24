@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
     if (triggerEvent === 'BOOKING_RESCHEDULED') {
       const confirmedDate = payload.startTime.slice(0, 10);
       const confirmedTime = payload.startTime.slice(11, 16);
-      const { data: appointment, error: rescheduleError } = await admin.from('appointments').update({ appointment_date: payload.startTime, confirmed_date: confirmedDate, confirmed_time: confirmedTime, status: 'confirmed', meeting_url: payload.videoCallUrl ?? null, updated_at: new Date().toISOString() }).eq('cal_uid', payload.uid).select('id,name,email,service,appointment_type,google_event_id').maybeSingle();
+      const { data: appointment, error: rescheduleError } = await admin.from('appointments').update({ appointment_date: payload.startTime, appointment_end: payload.endTime, confirmed_date: confirmedDate, confirmed_time: confirmedTime, status: 'confirmed', meeting_url: payload.videoCallUrl ?? null, updated_at: new Date().toISOString() }).eq('cal_uid', payload.uid).select('id,name,email,service,appointment_type,google_event_id').maybeSingle();
       if (rescheduleError) console.error('[cal/webhook] BOOKING_RESCHEDULED update failed:', rescheduleError.message, 'uid:', payload.uid);
       if (appointment?.google_event_id && hasCalendarSA()) {
         const eventId = await upsertCalendarEventSA({ summary: `Onboarding / cita — ${appointment.name}`, description: `Cliente: ${appointment.name} (${appointment.email})\nServicio: ${appointment.service ?? ''}${payload.videoCallUrl ? `\nReunión: ${payload.videoCallUrl}` : ''}`, date: confirmedDate, startTime: confirmedTime, endTime: payload.endTime.slice(11, 16), reminderMinutesBefore: [1440, 60] }, appointment.google_event_id);

@@ -35,6 +35,10 @@ import { KIA_DECISION_JSON_SCHEMA } from '@/lib/ai/kia/kia-output-schema';
 import { KIA_TOOL_DEFINITIONS } from '@/lib/ai/kia/kia-tool-definitions';
 import { redactSensitiveText, safeErrorMessage, stableHash } from '@/lib/ai/kia/kia-redaction';
 import { runSampledKiaShadow } from '@/lib/ai/kia/evals/kia-shadow-sampler';
+import { resolveKiaLocale } from '@/lib/ai/kia/kia-locale';
+import { resolveKiaContextToken } from '@/lib/ai/kia/kia-context-token';
+import { loadKiaConversation, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
+import { buildAutomaticKiaKnowledgeResult } from '@/lib/ai/kia/kia-knowledge-discovery';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -49,6 +53,7 @@ const requestSchema = z.object({
   pageData    : z.record(z.string(), z.unknown()).optional(),
   companyId   : z.string().uuid().optional(),
   history     : z.array(historyItemSchema).max(8).optional(),
+  contextToken: z.string().min(16).max(200).optional(),
 }).strict();
 
 function sessionCompanyId(data: unknown): string | null {
@@ -56,6 +61,7 @@ function sessionCompanyId(data: unknown): string | null {
   const value = (data as Record<string, unknown>).company_id;
   return typeof value === 'string' ? value : null;
 }
+
 
 export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -83,12 +89,12 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_request', details: parsed.error.flatten() }, { status: 400 });
   }
-  const { message, sessionId, currentPage, currentTask, pageData, companyId, history = [] } = parsed.data;
+  const { message, sessionId, currentPage, currentTask, pageData, companyId, history = [], contextToken } = parsed.data;
 
   const admin = getSupabaseAdmin();
   const { data: profile, error: profileError } = await admin
     .from('profiles')
-    .select('tenant_id, active_company_id')
+    .select('tenant_id, active_company_id, preferred_language')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -97,7 +103,42 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'profile_lookup_failed' }, { status: 500 });
   }
 
-  const resolvedCompanyId = companyId ?? profile?.active_company_id ?? undefined;
+  let contextualCaseId: string | undefined;
+  let contextualServiceSlug: string | undefined;
+  let contextualTask: string | undefined;
+  let contextualCompanyId: string | undefined;
+
+  if (contextToken) {
+    const contextual = await resolveKiaContextToken({
+      admin,
+      token: contextToken,
+      profileId: user.id,
+      tenantId: profile?.tenant_id ?? null,
+    }).catch(() => null);
+
+    if (!contextual) {
+      return NextResponse.json({ error: 'invalid_context_token' }, { status: 403 });
+    }
+
+    contextualCaseId = contextual.case_id ?? undefined;
+    contextualServiceSlug = contextual.service_slug ?? undefined;
+    contextualTask = contextual.intent_hint ?? undefined;
+    contextualCompanyId = contextual.company_id ?? undefined;
+
+    if (contextualCaseId && !contextualServiceSlug) {
+      const { data: contextualCase } = await admin
+        .from('cases')
+        .select('service_id')
+        .eq('id', contextualCaseId)
+        .eq('client_id', user.id)
+        .maybeSingle();
+      contextualServiceSlug = contextualCase?.service_id ?? undefined;
+    }
+  }
+
+  const resolvedCompanyId = companyId ?? contextualCompanyId ?? profile?.active_company_id ?? undefined;
+  const profileLocale = profile?.preferred_language === 'ru' ? 'ru' : 'es';
+  const responseLocale = resolveKiaLocale({ latestMessage: message, preferredLanguage: profileLocale });
 
   if (resolvedCompanyId) {
     const { data: membership, error: membershipError } = await admin
@@ -152,10 +193,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'policy_denied' }, { status: 403 });
   }
 
+  const contextualPersistenceEnabled =
+    process.env.KIA_CONTEXTUAL_CONVERSATIONS_ENABLED?.toLowerCase() === 'true';
   let effectiveSessionId = sessionId;
   let effectiveHistory = history;
 
-  if (sessionId) {
+  if (sessionId && contextualPersistenceEnabled) {
+    const stored = await loadKiaConversation({
+      admin,
+      conversationId: sessionId,
+      profileId: user.id,
+      companyId: companyScope,
+    }).catch((err) => {
+      console.error('[KiaCopilot] contextual conversation lookup failed:', safeErrorMessage(err));
+      return null;
+    });
+
+    if (!stored) {
+      effectiveSessionId = undefined;
+      effectiveHistory = [];
+    } else {
+      effectiveHistory = stored.messages.map((item) => ({ role: item.role, text: item.text }));
+    }
+  } else if (sessionId) {
     const { data: existingSession, error: sessionError } = await admin
       .from('kia_sessions')
       .select('id, data')
@@ -187,7 +247,7 @@ export async function POST(request: NextRequest) {
       taskType   : 'chat_reply',
       channel    : 'dashboard',
       message,
-      locale     : 'es',
+      locale     : responseLocale,
       allowTools : true,
       forceToolExecution: process.env.KIA_COPILOT_TOOLS_ENABLED?.toLowerCase() !== 'false',
       contextInput: {
@@ -196,8 +256,10 @@ export async function POST(request: NextRequest) {
         clientId    : user.id,
         companyId   : resolvedCompanyId,
         currentPage : currentPage ?? '/',
-        currentTask : currentTask,
+        currentTask : currentTask ?? contextualTask,
         pageData    : pageData,
+        caseId      : contextualCaseId,
+        serviceSlug : contextualServiceSlug,
         latestMessage: message,
         syntheticRecentMessages,
       },
@@ -222,7 +284,7 @@ export async function POST(request: NextRequest) {
     const shadowRequest = {
       taskType: shadowTaskType,
       systemPrompt: buildKiaSystemPrompt({
-        locale: 'es',
+        locale: responseLocale,
         channel: 'dashboard',
         taskType: shadowTaskType,
       }),
@@ -280,37 +342,69 @@ export async function POST(request: NextRequest) {
     userMessage: message,
     presentationContext,
   });
-  const artifacts = buildKiaCopilotArtifacts(result.toolResults, result.decision);
+  const automaticKnowledgeResult = buildAutomaticKiaKnowledgeResult({
+    message,
+    intent: result.decision.intent,
+    serviceSlug: contextualServiceSlug,
+    existingToolResults: result.toolResults,
+  });
+  const artifactToolResults = automaticKnowledgeResult
+    ? [...result.toolResults, automaticKnowledgeResult]
+    : result.toolResults;
+  const artifacts = buildKiaCopilotArtifacts(artifactToolResults, result.decision);
   const reply = appendKiaFiscalNotice(result.userMessage, fiscalSignal);
 
   try {
-    const sessionData = {
-      last_message: message,
-      last_reply  : reply,
-      intent      : result.decision.intent,
-      next_action : result.decision.nextAction,
-      avatar_state: avatarState,
-      company_id  : companyScope,
-    };
-
-    if (effectiveSessionId) {
-      await admin
-        .from('kia_sessions')
-        .update({ data: sessionData, updated_at: new Date().toISOString() })
-        .eq('id', effectiveSessionId)
-        .eq('user_id', user.id);
+    if (contextualPersistenceEnabled) {
+      effectiveSessionId = await persistKiaConversationTurn({
+        admin,
+        conversationId: effectiveSessionId,
+        tenantId: actor.tenantId,
+        profileId: user.id,
+        companyId: companyScope,
+        caseId: contextualCaseId ?? null,
+        serviceSlug: contextualServiceSlug ?? null,
+        topic: contextualTask ?? currentTask ?? null,
+        originType: contextToken ? 'email' : 'dashboard',
+        channel: 'dashboard',
+        userMessage: message,
+        assistantMessage: reply,
+        intent: result.decision.intent,
+        avatarState,
+        metadata: {
+          next_action: result.decision.nextAction,
+          contextual: Boolean(contextToken),
+        },
+      });
     } else {
-      const { data: createdSession } = await admin
-        .from('kia_sessions')
-        .insert({
-          channel  : 'dashboard',
-          user_id  : user.id,
-          phone    : null,
-          data     : sessionData,
-        })
-        .select('id')
-        .single();
-      effectiveSessionId = createdSession?.id ?? undefined;
+      const sessionData = {
+        last_message: message,
+        last_reply  : reply,
+        intent      : result.decision.intent,
+        next_action : result.decision.nextAction,
+        avatar_state: avatarState,
+        company_id  : companyScope,
+      };
+
+      if (effectiveSessionId) {
+        await admin
+          .from('kia_sessions')
+          .update({ data: sessionData, updated_at: new Date().toISOString() })
+          .eq('id', effectiveSessionId)
+          .eq('user_id', user.id);
+      } else {
+        const { data: createdSession } = await admin
+          .from('kia_sessions')
+          .insert({
+            channel  : 'dashboard',
+            user_id  : user.id,
+            phone    : null,
+            data     : sessionData,
+          })
+          .select('id')
+          .single();
+        effectiveSessionId = createdSession?.id ?? undefined;
+      }
     }
   } catch (err) {
     console.warn('[KiaCopilot] session save failed:', err);

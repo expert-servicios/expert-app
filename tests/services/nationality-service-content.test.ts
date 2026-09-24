@@ -1,10 +1,28 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { NATIONALITY_MINOR_SERVICE } from '@/lib/services/nationality-minor';
+import { getServiceDocumentChecklist, getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
+import { getGeneratedBatch1BlogArticles } from '@/lib/services/service-generated-content';
+import { getServiceChecklist, formatChecklistForPrompt } from '@/lib/utils/service-checklists';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 
 describe('nationality minor service content and pricing', () => {
+  it('keeps additional maternal surname evidence out of the mandatory upload checklist', () => {
+    for (const slug of [NATIONALITY_MINOR_SERVICE.slug, 'nacionalidad-espanola']) {
+      const evidence = getServiceOperationalBlueprint(slug)?.documents.find((doc) => doc.key === 'maternal_personal_surname');
+      expect(evidence).toBeDefined();
+      expect(evidence?.required).toBe(false);
+      expect(evidence?.conditionalWhen).toBeTruthy();
+      expect(getServiceDocumentChecklist(slug)).not.toContain(evidence?.label);
+      const checklist = getServiceChecklist(slug)!;
+      expect(checklist.requiredData.some((item) => item.includes('Apellido personal de la madre'))).toBe(true);
+      expect(checklist.requiredDocs).not.toContain(evidence?.label);
+      expect(formatChecklistForPrompt(checklist)).toContain(`Cuándo procede: ${evidence?.conditionalWhen}`);
+      const article = getGeneratedBatch1BlogArticles().find((item) => item.slug === `${slug}-documentos-y-errores-frecuentes`);
+      expect(article?.body).toContain(`${evidence?.label} — ${evidence?.conditionalWhen}`);
+    }
+  });
   it('keeps the canonical economic breakdown consistent', () => {
     expect(NATIONALITY_MINOR_SERVICE.professionalNetCents).toBe(25000);
     expect(NATIONALITY_MINOR_SERVICE.professionalGrossCents).toBe(30250);
@@ -66,6 +84,41 @@ describe('nationality minor service content and pricing', () => {
     expect(block).toContain('exentos de DELE A2');
   });
 
+  it('uses a gated operational workflow before nationality submission', () => {
+    const blueprint = getServiceOperationalBlueprint(NATIONALITY_MINOR_SERVICE.slug)!;
+    const task = (key: string) => blueprint.tasks.find((item) => item.key === key);
+
+    expect(blueprint.steps.map((step) => step.key)).toEqual([
+      'intake',
+      'representation_mandate',
+      'legal_residence',
+      'registry_surnames',
+      'official_application',
+      'signatures',
+      'final_review',
+      'fee',
+      'submit',
+      'follow_up',
+    ]);
+
+    expect(task('confirm_maternal_birth_surname')?.blocksSubmission).toBe(true);
+    expect(task('confirm_registry_surname_order')?.dependsOn).toContain('confirm_maternal_birth_surname');
+    expect(task('prepare_official_application')?.dependsOn).toContain('confirm_registry_surname_order');
+    expect(task('pre_submission_validation')?.dependsOn).toContain('archive_docusign_completion_certificate');
+    expect(task('pay_790_026_fee')?.dependsOn).toContain('pre_submission_validation');
+    expect(task('submit_and_archive_receipt')?.dependsOn).toEqual(
+      expect.arrayContaining(['pre_submission_validation', 'pay_790_026_fee']),
+    );
+    expect(task('confirm_registry_surname_order')?.description).toContain('No marcar que se desconoce el apellido materno');
+    expect(task('confirm_registry_surname_order')?.referenceUrls?.some((link) => link.url.includes('BOE-A-2007-12948'))).toBe(true);
+
+    const fulfillment = read('lib/payments/service-order-fulfillment.ts');
+    expect(fulfillment).toContain('depends_on: task.dependsOn ?? []');
+    expect(fulfillment).toContain('blocks_submission: Boolean(task.blocksSubmission)');
+    expect(fulfillment).toContain('reference_urls: task.referenceUrls ?? []');
+    expect(fulfillment).toContain("blueprint_version: blueprintSlug ? '5' : null");
+  });
+
   it('explains age, educational evidence and exam exemptions in ES and RU pages', () => {
     const es = read('app/(public)/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana/page.tsx');
     const ru = read('app/(localized)/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii/page.tsx');
@@ -79,6 +132,52 @@ describe('nationality minor service content and pricing', () => {
     expect(ru).toContain('освобождены от CCSE');
     expect(ru).toContain('от DELE A2');
     expect(ru).toContain('Справка из школы или учебного центра');
+  });
+
+  it('keeps the public ES and RU process aligned with the gated workflow', () => {
+    const es = read('app/(public)/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana/page.tsx');
+    const ru = read('app/(localized)/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii/page.tsx');
+
+    for (const marker of [
+      'Representación y residencia legal',
+      'Apellidos para Registro Civil',
+      'Modelo y firmas',
+      'Validación final y tasa',
+      'Presentación y seguimiento',
+    ]) {
+      expect(es).toContain(marker);
+    }
+
+    for (const marker of [
+      'Представительство и легальная резиденция',
+      'Фамилии для Registro Civil',
+      'Официальная форма и подписи',
+      'Финальная проверка и пошлина',
+      'Подача и сопровождение',
+    ]) {
+      expect(ru).toContain(marker);
+    }
+
+    expect(es).toContain('No usamos la duplicación de un apellido como atajo documental');
+    expect(ru).toContain('Удвоение одной фамилии не используется как способ избежать подтверждающих документов');
+  });
+
+  it('links surname guidance from the service and confirmation email template', () => {
+    const page = read('app/(public)/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana/page.tsx');
+    const templates = read('lib/email/templates.ts');
+    const blog = read('lib/utils/blog.ts');
+    const docs = read('lib/utils/docs.ts');
+
+    expect(page).toContain('/docs/apellidos-menor-nacionalidad-registro-civil');
+    expect(page).toContain('/blog/apellidos-menor-nacionalidad-espanola-registro-civil');
+    expect(page).not.toContain('Esta segunda opción es voluntaria');
+    expect(page).not.toContain('si la familia quiere acreditar');
+    expect(page).toContain('no es una elección para evitar documentación');
+    expect(templates).toContain('nationalityMinorDataConfirmationRu');
+    expect(templates).toContain('/ru/docs/familii-rebenka-pri-poluchenii-grazhdanstva-ispanii');
+    expect(templates).toContain('/ru/blog/odna-familiya-u-rebenka-grazhdanstvo-ispanii');
+    expect(blog).toContain("slug: 'apellidos-menor-nacionalidad-espanola-registro-civil'");
+    expect(docs).toContain("slug: 'apellidos-menor-nacionalidad-registro-civil'");
   });
 
   it('keeps the knowledge guide aligned with the mandatory disbursement', () => {

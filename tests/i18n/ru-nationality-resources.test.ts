@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { RU_NATIONALITY_RESOURCES, getRuNationalityResource } from '@/lib/i18n/ru-nationality-resources';
 
 describe('Russian nationality resources', () => {
-  it('keeps three knowledge guides and three blog articles aligned with Spanish resources', () => {
-    expect(RU_NATIONALITY_RESOURCES.filter((item) => item.kind === 'docs')).toHaveLength(3);
-    expect(RU_NATIONALITY_RESOURCES.filter((item) => item.kind === 'blog')).toHaveLength(3);
+  it('keeps knowledge guides and blog articles aligned with Spanish resources', () => {
+    expect(RU_NATIONALITY_RESOURCES.filter((item) => item.kind === 'docs')).toHaveLength(4);
+    expect(RU_NATIONALITY_RESOURCES.filter((item) => item.kind === 'blog')).toHaveLength(4);
     expect(RU_NATIONALITY_RESOURCES.every((item) => item.esPath.startsWith(item.kind === 'docs' ? '/docs/' : '/blog/'))).toBe(true);
   });
 

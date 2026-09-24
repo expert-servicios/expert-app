@@ -34,6 +34,7 @@ const planesLinks = [
 const recursosLinks = [
   { label: 'Blog', href: '/blog' },
   { label: 'Base de conocimientos', href: '/docs' },
+  { label: 'Autoimplantación RGPD', href: '/herramientas/rgpd' },
 ];
 
 const formacionLinks = [

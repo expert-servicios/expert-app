@@ -48,7 +48,7 @@ describe('canonical case status compatibility', () => {
 
     expect(adminList).toContain('resolveEffectiveCaseStatus(c.status, c.state)');
     expect(adminDetail).toContain('resolveEffectiveCaseStatus(current.status, current.state)');
-    expect(clientList).toContain('legacy_state: c.state');
+    expect(clientList).toContain('legacy_state: caseRow.state');
     expect(clientList).toContain('state: caseStatusToVisualState(effectiveStatus)');
   });
 });

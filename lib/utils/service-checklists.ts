@@ -455,7 +455,7 @@ export const SERVICE_CHECKLISTS: ServiceChecklist[] = [
       '¿Hay alguna diferencia de nombre o apellidos entre documentos?',
     ],
     botInstructions:
-      'La residencia del menor debe ser de al menos 1 año, legal, continuada e inmediatamente anterior a la solicitud. Nacer en España no da la nacionalidad automáticamente. Diferenciar menores de 14 años y menores de 14 a 17 años para firma/representación. Los menores están exentos de CCSE y, si tienen menos de 18 años, de DELE A2. La tasa de 104,05 € (Modelo 790 código 026) se cobra junto con el servicio como suplido obligatorio separado de los honorarios de 302,50 € IVA incluido.',
+      'La residencia del menor debe ser de al menos 1 año, legal, continuada e inmediatamente anterior a la solicitud. Nacer en España no da la nacionalidad automáticamente. Diferenciar menores de 14 años y menores de 14 a 17 años para firma/representación. Los menores están exentos de CCSE y, si tienen menos de 18 años, de DELE A2. La tasa de 104,05 € (Modelo 790 código 026) se cobra junto con el servicio como suplido obligatorio separado de los honorarios de 302,50 € IVA incluido. Para apellidos, comprobar filiación y apellido personal materno; no ofrecer duplicación como libre elección ni marcar desconocimiento por negativa a aportar documentos. No pedir automáticamente nacimiento de la madre o traducción: revisar pruebas existentes, posible certificado de matrimonio y criterio del Registro competente. Distinguir solicitud inicial e inscripción posterior; escalar la duda concreta sin bloquear tareas independientes.',
     estimatedPrice: '406,55 € total: 302,50 € honorarios IVA incluido + 104,05 € suplido',
   },
 
@@ -1291,7 +1291,13 @@ function operationalChecklist(serviceId: string): ServiceChecklist | undefined {
     keyQuestions: blueprint.requirements
       .filter((item) => item.clientCheckable)
       .map((item) => item.label),
-    botInstructions: `${blueprint.kia.userSummary} Escalar a revisión humana si: ${blueprint.kia.escalationRules.join('; ')}.`,
+    botInstructions: [
+      blueprint.kia.userSummary,
+      ...blueprint.documents
+        .filter((item) => !item.required && item.conditionalWhen)
+        .map((item) => `Documento condicional: ${item.label}. Cuándo procede: ${item.conditionalWhen}.`),
+      `Escalar a revisión humana si: ${blueprint.kia.escalationRules.join('; ')}.`,
+    ].join(' '),
   };
 }
 
