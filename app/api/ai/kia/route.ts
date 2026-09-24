@@ -40,6 +40,7 @@ import { resolveKiaContextToken } from '@/lib/ai/kia/kia-context-token';
 import { loadKiaConversation, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import { findCaseConversation } from '@/lib/ai/kia/kia-telegram-context';
 import { buildAutomaticKiaKnowledgeResult } from '@/lib/ai/kia/kia-knowledge-discovery';
+import { resolveKiaStaffPreview } from '@/lib/ai/kia/kia-staff-preview';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -108,6 +109,7 @@ export async function POST(request: NextRequest) {
   let contextualServiceSlug: string | undefined;
   let contextualTask: string | undefined;
   let contextualCompanyId: string | undefined;
+  let staffPreview: Awaited<ReturnType<typeof resolveKiaStaffPreview>> = null;
 
   if (contextToken) {
     const contextual = await resolveKiaContextToken({
@@ -121,17 +123,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'invalid_context_token' }, { status: 403 });
     }
 
-    contextualCaseId = contextual.case_id ?? undefined;
-    contextualServiceSlug = contextual.service_slug ?? undefined;
+    staffPreview = await resolveKiaStaffPreview({ admin, actorId: user.id, metadata: contextual.metadata }).catch(() => null);
+    contextualCaseId = staffPreview?.caseRow.id ?? contextual.case_id ?? undefined;
+    contextualServiceSlug = staffPreview?.serviceSlug ?? contextual.service_slug ?? undefined;
     contextualTask = contextual.intent_hint ?? undefined;
-    contextualCompanyId = contextual.company_id ?? undefined;
+    contextualCompanyId = staffPreview?.companyId ?? contextual.company_id ?? undefined;
 
     if (contextualCaseId && !contextualServiceSlug) {
       const { data: contextualCase } = await admin
         .from('cases')
         .select('service_id')
         .eq('id', contextualCaseId)
-        .eq('client_id', user.id)
+        .eq('client_id', staffPreview?.clientId ?? user.id)
         .maybeSingle();
       contextualServiceSlug = contextualCase?.service_id ?? undefined;
     }
@@ -141,7 +144,7 @@ export async function POST(request: NextRequest) {
   const profileLocale = profile?.preferred_language === 'ru' ? 'ru' : 'es';
   const responseLocale = resolveKiaLocale({ latestMessage: message, preferredLanguage: profileLocale });
 
-  if (resolvedCompanyId) {
+  if (resolvedCompanyId && !staffPreview) {
     const { data: membership, error: membershipError } = await admin
       .from('profile_companies')
       .select('company_id')
@@ -175,7 +178,7 @@ export async function POST(request: NextRequest) {
     actor = await resolveKiaActorCapabilities({
       admin,
       userId: user.id,
-      clientId: user.id,
+      clientId: staffPreview?.clientId ?? user.id,
       companyId: companyScope,
       featureFlags: getEnabledKiaPolicyFeatureFlags(),
     });
@@ -200,7 +203,30 @@ export async function POST(request: NextRequest) {
   let effectiveHistory = history;
 
   if (!sessionId && contextualPersistenceEnabled && contextualCaseId) {
-    const stored = await findCaseConversation(admin, user.id, profile?.tenant_id ?? null, contextualCaseId, companyScope);
+    let stored = null;
+    if (staffPreview) {
+      const previewQuery = admin.from('kia_conversations')
+        .select('id')
+        .eq('profile_id', user.id)
+        .eq('case_id', contextualCaseId)
+        .eq('status', 'active')
+        .contains('metadata', { staff_preview: true, preview_client_id: staffPreview.clientId });
+      const { data: previewConversation, error: previewError } = await (
+        actor.tenantId ? previewQuery.eq('tenant_id', actor.tenantId) : previewQuery.is('tenant_id', null)
+      ).order('updated_at', { ascending: false }).limit(1).maybeSingle();
+      if (previewError) {
+        console.error('[KiaCopilot] staff preview conversation lookup failed:', previewError.message);
+      } else if (previewConversation) {
+        stored = await loadKiaConversation({
+          admin,
+          conversationId: previewConversation.id,
+          profileId: user.id,
+          companyId: companyScope,
+        });
+      }
+    } else {
+      stored = await findCaseConversation(admin, user.id, profile?.tenant_id ?? null, contextualCaseId, companyScope);
+    }
     if (stored) {
       effectiveSessionId = stored.conversation.id;
       effectiveHistory = stored.messages.map(item => ({ role: item.role, text: item.text }));
@@ -262,7 +288,7 @@ export async function POST(request: NextRequest) {
       contextInput: {
         channel     : 'dashboard',
         userId      : user.id,
-        clientId    : user.id,
+        clientId    : staffPreview?.clientId ?? user.id,
         companyId   : resolvedCompanyId,
         currentPage : currentPage ?? '/',
         currentTask : currentTask ?? contextualTask,
@@ -325,7 +351,7 @@ export async function POST(request: NextRequest) {
   }
 
   const authoritativeCaseStatuses = result.decision.intent === 'case_status'
-    ? await loadKiaAuthoritativeCaseStatuses(admin, user.id, companyScope)
+    ? await loadKiaAuthoritativeCaseStatuses(admin, staffPreview?.clientId ?? user.id, companyScope)
     : null;
 
   const fiscalSignal = shouldLoadKiaFiscalSignal({
@@ -333,7 +359,7 @@ export async function POST(request: NextRequest) {
     currentPage,
     intent: result.decision.intent,
   })
-    ? await loadKiaAuthoritativeFiscalSignal(admin, user.id, companyScope)
+    ? await loadKiaAuthoritativeFiscalSignal(admin, staffPreview?.clientId ?? user.id, companyScope)
     : null;
 
   const presentationContext = buildKiaPresentationContext(
@@ -383,6 +409,9 @@ export async function POST(request: NextRequest) {
         metadata: {
           next_action: result.decision.nextAction,
           contextual: Boolean(contextToken),
+          staff_preview: Boolean(staffPreview),
+          preview_client_id: staffPreview?.clientId ?? null,
+          preview_case_id: staffPreview?.caseRow.id ?? null,
         },
       });
     } else {
