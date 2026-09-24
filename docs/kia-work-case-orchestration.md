@@ -76,7 +76,7 @@ Recepción: comprobar autenticidad sobre cuerpo original, fecha/ventana de repla
 
 Procesamiento: verificar pertenencia y reserva; consultar evidencia; aplicar transición con comparación de versión. En una transacción guardar evento aplicado, cierre de tarea, cambio permitido de expediente y mensajes pendientes de salida. Conflicto de versión exige releer, no sobrescribir. Responder `202` significa recibido, no completado; el adaptador consulta hasta resultado persistido. Fallos de autenticación no se reintentan como efectos de negocio.
 
-Una cola persistente procesa reintentos con backoff, límite y cola de incidencias. La reserva caduca si Work se interrumpe, sin marcar completada la tarea. La reconciliación periódica consulta operaciones inciertas antes de repetir envío/cargo/presentación. Mismo efecto de negocio tiene clave única aunque llegue por Work y webhook a la vez. Objetivo: efectos idempotentes con entrega repetible, no promesa de entrega «exactamente una vez».
+Una cola persistente procesa reintentos con backoff, límite y cola de incidencias. La reserva caduca si Work se interrumpe, sin marcar completada la tarea. La reconciliación periódica consulta operaciones inciertas antes de repetir envío/cargo/presentación. En la implementación actual, la idempotencia de Work se serializa por `event_id`; la deduplicación del mismo efecto entre proveedores distintos requiere un identificador estable de efecto derivado de la acción y queda como requisito antes de habilitar esa convergencia. Objetivo: efectos idempotentes con entrega repetible, no promesa de entrega «exactamente una vez».
 
 ## 5. Evidencia, cierre y siguiente paso
 
