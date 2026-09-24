@@ -38,6 +38,8 @@ export type MetaCatalogPrice = {
   taxIncluded: false;
 };
 
+export type MetaCatalogAvailability = 'in stock' | 'out of stock';
+
 export type MetaServiceCatalogDraft = {
   retailerId: string;
   name: string;
@@ -47,6 +49,7 @@ export type MetaServiceCatalogDraft = {
   landingUrl: string;
   imageUrl: string | null;
   price: MetaCatalogPrice | null;
+  availability: MetaCatalogAvailability;
   marketingReady: boolean;
   warnings: string[];
 };
