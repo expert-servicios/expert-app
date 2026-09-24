@@ -64,7 +64,7 @@ function buildQuoteHref(params: {
   return `/solicitar-presupuesto?${qs.toString()}`;
 }
 
-export function RgpdSelfAssessment() {
+export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, Answer>>({});
 
@@ -104,8 +104,24 @@ export function RgpdSelfAssessment() {
       message = 'Puedes completar gran parte del trabajo con la herramienta, pero recomendamos una revisión final de coherencia, proveedores, web y medidas de seguridad.';
     }
 
-    return { score, hardFlags, moduleLabels, tier, level, message };
-  }, [answers]);
+    const estimatedHours =
+      level === 'low'
+        ? { min: 0, max: 2 }
+        : level === 'medium'
+          ? { min: 3, max: 5 }
+          : hardFlags.length >= 3 || score >= 14
+            ? { min: 8, max: 12 }
+            : { min: 5, max: 8 };
+
+    const estimatedPrice = hourlyRateEur && hourlyRateEur > 0
+      ? {
+          min: estimatedHours.min * hourlyRateEur,
+          max: estimatedHours.max * hourlyRateEur,
+        }
+      : null;
+
+    return { score, hardFlags, moduleLabels, tier, level, message, estimatedHours, estimatedPrice };
+  }, [answers, hourlyRateEur]);
 
   const isResult = step >= QUESTIONS.length;
 
@@ -227,6 +243,21 @@ export function RgpdSelfAssessment() {
                 <h2 className="mt-1 font-serif text-2xl font-bold">{result.tier}</h2>
                 <p className="mt-3 text-sm leading-7 text-[#23364D]">{result.message}</p>
               </div>
+            </div>
+
+            <div className="mt-5 border border-[#D4A017]/20 bg-white p-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-[#6B7280]">Esfuerzo profesional estimado</p>
+              <p className="mt-1 text-lg font-bold">
+                {result.estimatedHours.min === 0
+                  ? 'Autoimplantación gratuita · revisión opcional hasta 2 h'
+                  : `${result.estimatedHours.min}–${result.estimatedHours.max} h`}
+              </p>
+              {result.estimatedPrice && result.estimatedHours.min > 0 && (
+                <p className="mt-1 text-sm text-[#23364D]">
+                  Estimación económica: <strong>{result.estimatedPrice.min.toLocaleString('es-ES')}–{result.estimatedPrice.max.toLocaleString('es-ES')} € + IVA</strong>.
+                  El presupuesto final depende del alcance validado.
+                </p>
+              )}
             </div>
 
             <div className="mt-7 grid gap-5 md:grid-cols-2">
