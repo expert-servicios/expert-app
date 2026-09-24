@@ -16,7 +16,8 @@ try {
     ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(30_000) });
   const result = await response.json();
   console.log(JSON.stringify(result, null, 2));
-  if (!response.ok) process.exitCode = 1;
+  if (response.status === 202) process.exitCode = 2; // Persisted, not yet verified or completed.
+  else if (!response.ok) process.exitCode = 1;
 } catch {
   console.error('Result unconfirmed. Keep the same event_id and payload for reconciliation; do not repeat the external action.');
   process.exitCode = 1;

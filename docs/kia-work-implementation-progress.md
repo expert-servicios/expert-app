@@ -14,11 +14,13 @@ La migración `20260924093629_kia_work_case_orchestration.sql` y la bandera `KIA
 
 ## Continuación autorizada
 
+Segundo incremento: recepción durable y cron de verificación implementados en `20260924101525_kia_work_result_inbox.sql`, `work-inbox.ts` y `/api/cron/kia-work-results`. El receptor guarda antes de verificar; reintenta errores temporales hasta cinco veces y recupera cierres ya confirmados. No prolonga permisos o reservas originales ni repite efectos externos. HTTP 202 y salida 2 del adaptador distinguen pendiente de completado. Pruebas locales: 23 pruebas del conector/cron aprobadas y SQL real aprobado, incluida exclusión de trabajadores y recuperación de una reserva interrumpida. Pendiente de CI de este nuevo incremento y de aplicación de la nueva migración en staging.
+
 La usuaria ha pedido guardar y subir el progreso y continuar la implementación mientras quede uso disponible. No consumir créditos de reinicio sin autorización específica. No reactivar seguimientos nocturnos pausados.
 
 Orden de trabajo:
 
-1. Recepción durable de resultados pendientes, reintentos de verificación y conciliación sin repetir actuaciones externas. Mantener revocación, versiones y ámbito de permisos en cada reintento.
+1. Recepción durable y reintentos: implementados; validar el nuevo incremento en CI y staging. Añadir una interfaz para los resultados que pasan a revisión.
 2. Pantalla profesional para delegar y revocar tareas sin configuración técnica.
 3. Firma y CTA en composición nativa Gmail/MS365, continuidad real del hilo y autorización ligada al contenido exacto.
 4. Ensayo con esquema completo en staging y piloto desplegado; registrar pruebas y bloqueos reales.

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkConnection, WorkError } from '@/lib/ai/kia/work-auth';
 import { workErrorResponse, workRpcError } from '@/lib/ai/kia/work-http';
-import { digestWorkValue, workEventSchema, workTaskPolicySchema } from '@/lib/ai/kia/work-contract';
-import { verifyWorkEvidence } from '@/lib/ai/kia/work-evidence';
+import { digestWorkValue, workEventSchema } from '@/lib/ai/kia/work-contract';
+import { processWorkInbox } from '@/lib/ai/kia/work-inbox';
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,14 +46,17 @@ export async function PATCH(request: NextRequest) {
       if (prior.connection_id !== connection.id || prior.payload_hash !== hash) throw new WorkError('event_conflict');
       return NextResponse.json(prior.result, { headers: { 'Cache-Control': 'no-store' } });
     }
-    if (Math.abs(Date.now() - Date.parse(event.occurred_at)) > 15 * 60_000) throw new WorkError('event_expired');
-    const policy = workTaskPolicySchema.safeParse(connection.task_policies[event.task_id]);
-    if (!policy.success) throw new WorkError('task_not_authorized', 403);
-    const witness = await verifyWorkEvidence(admin, connection.case_id, connection.client_id, policy.data, event);
-    const { data, error } = await admin.rpc('kia_work_complete', {
-      p_connection: connection.id, p_event: event, p_hash: hash, p_witness: witness,
+    const { error } = await admin.rpc('kia_work_receive', {
+      p_connection: connection.id, p_event: event, p_hash: hash,
     });
     if (error) throw workRpcError(error);
-    return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
+    await processWorkInbox(admin, event.event_id);
+    const receipt = await admin.from('kia_work_inbox').select('state,result,last_error').eq('event_id', event.event_id)
+      .eq('connection_id', connection.id).single();
+    if (receipt.error) throw new WorkError('inbox_unavailable', 503);
+    return NextResponse.json(receipt.data.state === 'applied' ? receipt.data.result : {
+      event_id: event.event_id, state: receipt.data.state, error: receipt.data.last_error,
+    }, { status: receipt.data.state === 'applied' ? 200 : receipt.data.state === 'review' ? 409 : 202,
+      headers: { 'Cache-Control': 'no-store' } });
   } catch (error) { return workErrorResponse(error); }
 }

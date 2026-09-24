@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/kia-work-results",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/checkout-expiry",
       "schedule": "0 6 * * *"
     },

@@ -33,13 +33,15 @@ Cada política incluye `dependencies`, UUID de tareas del mismo expediente. Se r
 
 El evento incluye `schema_version:1`, `event_id` UUID estable, `task_id`, `run_id`, `claim_version`, `occurred_at` ISO con zona horaria y `result`. `succeeded` exige `evidence`; `blocked`, `failed` y `cancelled` exigen `reason`. Los eventos nuevos deben tener menos de 15 minutos. Un evento ya aplicado puede repetirse mientras la conexión siga autorizada.
 
-Un timeout no acredita ni niega una actuación. Conservar el fichero y repetir el **mismo resultado**, nunca la actuación externa. Si la reserva caduca, consultar contexto y conciliar antes de reservar de nuevo. No sobrescribir una edición humana. Esta entrega registra atómicamente eventos aplicados; todavía no incluye bandeja durable de eventos sin verificar ni cron de conciliación.
+Un timeout no acredita ni niega una actuación. Conservar el fichero y repetir el **mismo resultado**, nunca la actuación externa. La migración `20260924101525_kia_work_result_inbox.sql` añade recepción durable antes de verificar, reservas de procesamiento de dos minutos y un máximo de cinco intentos ante errores temporales. El cron autenticado `/api/cron/kia-work-results` se programa cada cinco minutos y solo trabaja con el conector activado. Verifica resultados; no reenvía correos ni repite actuaciones.
+
+HTTP 202 significa guardado, todavía pendiente de verificación; el adaptador termina con código 2. HTTP 200 devuelve el resultado aplicado. HTTP 409 con estado `review` exige conciliación. La revocación, caducidad, cambio de ámbito o edición humana no se eluden con reintentos. Si caduca la reserva original de la tarea, el resultado pasa a revisión. Consultar contexto y conciliar antes de reservar de nuevo. Si la aplicación del resultado se confirmó en la base de datos pero faltó actualizar la bandeja, el trabajador recupera el resultado del registro existente sin verificar ni ejecutar otra vez la acción.
 
 En Telegram, los registros `failed` y `received` sin `processed_at` requieren conciliación. No borrar sus identificadores para forzar reenvíos: el proveedor puede haber aceptado un mensaje aunque se perdiera la respuesta. La aceptación no garantiza entrega al destinatario.
 
 ## Pendientes del diseño completo
 
-Pantalla de delegación sin configuración técnica; firma/CTA en composición nativa Gmail/MS365 (el helper actual corresponde a `sendEmail`); cola de conciliación automática; asociación de autorizaciones con el contenido exacto que se ejecutará; piloto desplegado. Identificación, firma, pago y presentación siguen bajo control humano, utilizando Chrome. No se reactiva seguimiento nocturno pausado.
+Pantalla de delegación sin configuración técnica; firma/CTA en composición nativa Gmail/MS365 (el helper actual corresponde a `sendEmail`); interfaz para conciliación de casos que requieren revisión; asociación de autorizaciones con el contenido exacto que se ejecutará; piloto desplegado. Identificación, firma, pago y presentación siguen bajo control humano, utilizando Chrome. No se reactiva seguimiento nocturno pausado.
 
 ## Validación
 
