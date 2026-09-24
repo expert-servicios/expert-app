@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, ChevronLeft, ChevronRight, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { RgpdImplementationPlan } from '@/components/tools/RgpdImplementationPlan';
+import { RgpdWorkspace } from '@/components/tools/RgpdWorkspace';
 
 type Answer = boolean | 'none' | 'basic' | 'advanced';
 
@@ -287,7 +288,10 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
             </div>
 
             {result.level !== 'high' && (
-              <RgpdImplementationPlan moduleIds={result.moduleIds} />
+              <>
+                <RgpdImplementationPlan moduleIds={result.moduleIds} />
+                <RgpdWorkspace />
+              </>
             )}
 
             {result.hardFlags.length > 0 && (
