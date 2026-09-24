@@ -15,7 +15,7 @@ export async function GET(
 
   const { data, error } = await supabase
     .from('rgpd_self_implementation_projects')
-    .select('id,version,status,payload,created_at,updated_at')
+    .select('id,version,status,payload,created_at,updated_at,review_summary,review_completed_at')
     .eq('id', id)
     .eq('user_id', user.id)
     .maybeSingle();
