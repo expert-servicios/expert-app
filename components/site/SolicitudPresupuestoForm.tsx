@@ -82,8 +82,13 @@ export function SolicitudPresupuestoForm() {
   const typeFromUrl = searchParams.get('tipo');
   const modeFromUrl = searchParams.get('modalidad');
   const summaryFromUrl = searchParams.get('resumen');
+  const rgpdProjectId = searchParams.get('rgpd_project_id');
+  const rgpdVersion = searchParams.get('rgpd_version');
   const baseContextNote = buildContextNote({ serviceFromUrl, originFromUrl, typeFromUrl, modeFromUrl });
-  const contextNote = [baseContextNote, summaryFromUrl].filter(Boolean).join('\n');
+  const rgpdContext = rgpdProjectId
+    ? 'Referencia expediente RGPD: ' + rgpdProjectId + (rgpdVersion ? ' · versión ' + rgpdVersion : '') + '.'
+    : '';
+  const contextNote = [baseContextNote, rgpdContext, summaryFromUrl].filter(Boolean).join('\n');
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
