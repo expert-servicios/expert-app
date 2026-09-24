@@ -59,7 +59,7 @@ describe('nationality client/admin polish', () => {
     expect(blueprint).toContain('Подтвердить с обоими родителями');
     expect(cases).toContain("task.metadata.client_action_required === true");
     expect(cases).toContain('client_action: typeof clientAction ===');
-    expect(cases).toContain('const { checklist_json: _privateChecklist');
+    expect(cases).toContain("delete (safeCase as { checklist_json?: unknown }).checklist_json");
     expect(casePage).toContain('caseItem.client_action');
     expect(casePage).toContain('Necesitamos una acción por tu parte');
     expect(casePage).toContain('Нужно Ваше действие');
