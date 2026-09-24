@@ -1,6 +1,14 @@
 # KIA Contextual Conversations — arquitectura y roadmap
 
-Última revisión: 22/09/2026.
+Última revisión: 24/09/2026.
+
+## Actualización de continuidad desde Work
+
+El [contrato de KIA para tramitación y eventos desde Work](kia-work-case-orchestration.md) concreta la siguiente fase: evidencia de ejecución → cierre de tarea → siguiente paso autorizado → comunicación contextual. Incluye firma KIA, correo en hilo, copiloto, Telegram y expedientes personales sin empresa.
+
+La checklist de fases que sigue conserva el plan original del 22/09; no representa un inventario actualizado de despliegue. En main ya hay migración de conversaciones/tokens, resolver contextual y helper de CTA integrado en el envío, con flag y opt-in por mensaje. La matriz del nuevo contrato distingue código verificado de activación pendiente. No marcar toda la fase como terminada solo por existir esos componentes.
+
+Objetivo acordado el 24/09: un CTA contextual en cada correo operativo de expediente y estado consultado de nuevo al responder. Se mantiene el rollout por piloto de la sección 15 hasta verificar todas las vías de envío, autenticación y recuperación. No se activa ningún flag en esta entrega.
 
 ## 1. Visión
 
