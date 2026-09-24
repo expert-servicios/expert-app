@@ -84,6 +84,41 @@ describe('nationality minor service content and pricing', () => {
     expect(block).toContain('exentos de DELE A2');
   });
 
+  it('uses a gated operational workflow before nationality submission', () => {
+    const blueprint = getServiceOperationalBlueprint(NATIONALITY_MINOR_SERVICE.slug)!;
+    const task = (key: string) => blueprint.tasks.find((item) => item.key === key);
+
+    expect(blueprint.steps.map((step) => step.key)).toEqual([
+      'intake',
+      'representation_mandate',
+      'legal_residence',
+      'registry_surnames',
+      'official_application',
+      'signatures',
+      'final_review',
+      'fee',
+      'submit',
+      'follow_up',
+    ]);
+
+    expect(task('confirm_maternal_birth_surname')?.blocksSubmission).toBe(true);
+    expect(task('confirm_registry_surname_order')?.dependsOn).toContain('confirm_maternal_birth_surname');
+    expect(task('prepare_official_application')?.dependsOn).toContain('confirm_registry_surname_order');
+    expect(task('pre_submission_validation')?.dependsOn).toContain('archive_docusign_completion_certificate');
+    expect(task('pay_790_026_fee')?.dependsOn).toContain('pre_submission_validation');
+    expect(task('submit_and_archive_receipt')?.dependsOn).toEqual(
+      expect.arrayContaining(['pre_submission_validation', 'pay_790_026_fee']),
+    );
+    expect(task('confirm_registry_surname_order')?.description).toContain('No marcar que se desconoce el apellido materno');
+    expect(task('confirm_registry_surname_order')?.referenceUrls?.some((link) => link.url.includes('BOE-A-2007-12948'))).toBe(true);
+
+    const fulfillment = read('lib/payments/service-order-fulfillment.ts');
+    expect(fulfillment).toContain('depends_on: task.dependsOn ?? []');
+    expect(fulfillment).toContain('blocks_submission: Boolean(task.blocksSubmission)');
+    expect(fulfillment).toContain('reference_urls: task.referenceUrls ?? []');
+    expect(fulfillment).toContain("blueprint_version: blueprintSlug ? '5' : null");
+  });
+
   it('explains age, educational evidence and exam exemptions in ES and RU pages', () => {
     const es = read('app/(public)/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana/page.tsx');
     const ru = read('app/(localized)/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii/page.tsx');
