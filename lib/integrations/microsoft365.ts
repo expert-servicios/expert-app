@@ -35,6 +35,7 @@ interface TokenResponse {
   access_token: string;
   refresh_token: string;
   expires_in: number;
+  scope?: string;
 }
 
 export type Ms365StoredTokens = { access_token: string; refresh_token: string; expires_at: number };
@@ -65,6 +66,7 @@ export async function exchangeMs365Code(code: string) {
     refresh_token: tokens.refresh_token,
     expires_at: Date.now() + tokens.expires_in * 1000,
     email,
+    scope: tokens.scope ?? '',
   };
 }
 
