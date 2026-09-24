@@ -160,8 +160,8 @@ export async function POST(request: NextRequest) {
         ? `${appUrl}${primaryReturnPath}`
         : `${appUrl}/carrito`;
     const successUrl = locale === 'ru'
-      ? `${appUrl}/ru/spasibo/oplata?service=${checkoutServices[0].slug}`
-      : `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}`;
+      ? `${appUrl}/ru/spasibo/oplata?service=${checkoutServices[0].slug}&session_id={CHECKOUT_SESSION_ID}`
+      : `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}&session_id={CHECKOUT_SESSION_ID}`;
     const acquisition = readRequestAttribution(request);
     const checkoutMetadata = {
       ...getServiceCheckoutMetadata(checkoutServices, checkoutDisbursements),

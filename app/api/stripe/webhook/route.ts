@@ -833,6 +833,7 @@ export async function POST(req: NextRequest) {
         serviceName,
         clientId: session.client_reference_id ?? null,
         companyId: session.metadata?.company_id ?? null,
+        checkoutLocale: session.metadata?.checkout_locale === 'ru' ? 'ru' : 'es',
       });
 
       // Operational blueprints create/reconcile the case and its task plan.
