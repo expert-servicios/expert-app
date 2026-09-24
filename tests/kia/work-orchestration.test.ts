@@ -17,7 +17,7 @@ function adminWith(row: unknown, bytes = 'document') {
 describe('Work evidence boundary', () => {
   it('serializes event retries before ledger lookup and clears stale final next_action', () => {
     const migration = readFileSync(
-      resolve(process.cwd(), 'supabase/migrations/20260924093629_kia_work_case_orchestration.sql'),
+      resolve(process.cwd(), 'supabase/migrations/20260924170000_kia_work_case_orchestration.sql'),
       'utf8',
     );
     expect(migration).toContain("pg_advisory_xact_lock(hashtextextended(p_event->>'event_id', 0))");
