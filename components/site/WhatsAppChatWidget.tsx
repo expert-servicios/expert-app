@@ -65,6 +65,7 @@ type Action =
 
 const ANON_BASE: Action[] = [
   { kind: 'link',     href: '/servicios',  label: 'Ver catálogo',       icon: '📋' },
+  { kind: 'link',     href: '/cita?tipo=consulta-inicial', label: 'Consulta gratis 15 min', icon: '📅' },
   { kind: 'cal', url: CAL_DEMO, label: 'Reservar demo Holded', icon: '📅' },
   { kind: 'wa',       msg: 'Hola, tengo una consulta fiscal.', label: 'Consulta fiscal', icon: '💬' },
 ];
