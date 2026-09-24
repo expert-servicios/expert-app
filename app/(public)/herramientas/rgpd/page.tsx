@@ -16,6 +16,9 @@ export const metadata: Metadata = {
 };
 
 export default function RgpdToolPage() {
+  const configuredRate = Number(process.env.RGPD_PRO_HOURLY_RATE_EUR ?? '');
+  const hourlyRateEur = Number.isFinite(configuredRate) && configuredRate > 0 ? configuredRate : undefined;
+
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
       <section className="bg-[#0D1B2A] px-6 py-14 text-[#F8F6F1]">
@@ -31,7 +34,7 @@ export default function RgpdToolPage() {
       </section>
 
       <section className="mx-auto grid max-w-6xl gap-8 px-6 py-12 lg:grid-cols-[1fr_340px] lg:items-start">
-        <RgpdSelfAssessment />
+        <RgpdSelfAssessment hourlyRateEur={hourlyRateEur} />
 
         <aside className="space-y-5">
           <div className="border border-[#D4A017]/25 bg-white p-5">
