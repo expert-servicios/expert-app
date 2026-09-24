@@ -30,3 +30,35 @@ export async function GET(
 
   return NextResponse.json({ project: data });
 }
+
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
+  const supabase = createServerSupabaseClient(request);
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return NextResponse.json({ error: 'authentication_required' }, { status: 401 });
+  }
+
+  const { data, error } = await supabase
+    .from('rgpd_self_implementation_projects')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .select('id,version')
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json({ error: 'delete_failed' }, { status: 500 });
+  }
+
+  if (!data) {
+    return NextResponse.json({ error: 'project_not_found' }, { status: 404 });
+  }
+
+  return NextResponse.json({ ok: true, deleted: data });
+}
