@@ -52,12 +52,21 @@ export async function GET(request: NextRequest) {
     }
 
     const allTasks = tasks.data ?? [];
-    const titles = new Map(allTasks.map(task => [task.id, task.title]));
-    const byKey = new Map(allTasks.map(task => [taskKey(task), task]).filter(([key]) => Boolean(key)));
+    const titles = new Map<string, string>();
+    const byKey = new Map<string, (typeof allTasks)[number]>();
+    for (const task of allTasks) {
+      titles.set(task.id, task.title);
+      const key = taskKey(task);
+      if (key) byKey.set(key, task);
+    }
     const taskOptions = allTasks.map(task => {
-      const dependencies = dependencyKeys(task).map(key => byKey.get(key)).filter(Boolean);
-      const unresolvedDependency = dependencyKeys(task).some(key => !byKey.has(key));
-      const blockedBy = dependencies.filter(dep => dep!.status !== 'completada').map(dep => dep!.title);
+      const depKeys = dependencyKeys(task);
+      const dependencies = depKeys.flatMap(key => {
+        const dependency = byKey.get(key);
+        return dependency ? [dependency] : [];
+      });
+      const unresolvedDependency = depKeys.some(key => !byKey.has(key));
+      const blockedBy = dependencies.filter(dep => dep.status !== 'completada').map(dep => dep.title);
       const explicitWorkflow = dependencyKeys(task).length > 0 || Boolean(taskKey(task));
       const currentStep = task.status === 'en_progreso' || task.title === caseRow.next_action;
       return {
@@ -66,7 +75,7 @@ export async function GET(request: NextRequest) {
         description: task.description,
         status: task.status,
         task_key: taskKey(task),
-        dependencies: dependencies.map(dep => ({ id: dep!.id, title: dep!.title, status: dep!.status })),
+        dependencies: dependencies.map(dep => ({ id: dep.id, title: dep.title, status: dep.status })),
         delegatable: ['pendiente', 'en_progreso'].includes(task.status) && !unresolvedDependency && blockedBy.length === 0
           && (explicitWorkflow || currentStep),
         blocked_by: blockedBy,
@@ -127,8 +136,14 @@ export async function POST(request: NextRequest) {
     const { data: caseTasks, error } = await admin.from('internal_tasks').select('id,case_id,client_id,status,title,metadata')
       .eq('case_id', caseRow.id).eq('client_id', caseRow.client_id);
     if (error) throw new WorkError('tasks_unavailable', 503);
-    const byId = new Map((caseTasks ?? []).map(task => [task.id, task]));
-    const byTaskKey = new Map((caseTasks ?? []).map(task => [taskKey(task), task]).filter(([key]) => Boolean(key)));
+    const scopedTasks = caseTasks ?? [];
+    const byId = new Map<string, (typeof scopedTasks)[number]>();
+    const byTaskKey = new Map<string, (typeof scopedTasks)[number]>();
+    for (const task of scopedTasks) {
+      byId.set(task.id, task);
+      const key = taskKey(task);
+      if (key) byTaskKey.set(key, task);
+    }
 
     const [documentEvidence, actionEvidence, emailEvidence] = await Promise.all([
       admin.from('documents').select('checklist_item_key')
@@ -149,15 +164,18 @@ export async function POST(request: NextRequest) {
       const explicitWorkflow = depKeys.length > 0 || Boolean(taskKey(task));
       const currentStep = task.status === 'en_progreso' || task.title === caseRow.next_action;
       if (!explicitWorkflow && !currentStep) throw new WorkError('work_task_not_delegatable', 409);
-      const dependencies = depKeys.map(key => byTaskKey.get(key));
-      if (dependencies.some(dep => !dep)) throw new WorkError('dependency_unresolved', 409);
-      if (dependencies.some(dep => dep!.status !== 'completada')) throw new WorkError('work_dependencies_pending', 409);
+      const dependencies = depKeys.map(key => {
+        const dependency = byTaskKey.get(key);
+        if (!dependency) throw new WorkError('dependency_unresolved', 409);
+        return dependency;
+      });
+      if (dependencies.some(dep => dep.status !== 'completada')) throw new WorkError('work_dependencies_pending', 409);
 
       const policy = requested.policy;
       if (policy.kind === 'document_archived' && !documentTargets.has(policy.target)) throw new WorkError('invalid_evidence_target', 400);
       if (policy.kind === 'administrative_action_completed' && !actionTargets.has(policy.target)) throw new WorkError('invalid_evidence_target', 400);
       if (policy.kind === 'email_sent' && !emailTargets.has(policy.target)) throw new WorkError('invalid_evidence_target', 400);
-      policies[task.id] = { ...policy, dependencies: dependencies.map(dep => dep!.id) };
+      policies[task.id] = { ...policy, dependencies: dependencies.map(dep => dep.id) };
     }
 
     const token = `kw_${randomBytes(32).toString('base64url')}`;
