@@ -76,6 +76,22 @@ describe('batch 1 operational automation', () => {
     expect(webhook).toContain('serviceName,');
   });
 
+  it('enforces blueprint task dependencies in the Admin workspace', () => {
+    const tasksApi = read('app/api/admin/tasks/route.ts');
+    const tasksPage = read('app/(protected)/admin/tareas/page.tsx');
+
+    expect(tasksApi).toContain("select('id,title,description,status,priority,assigned_to,case_id,client_id,lead_id,due_date,source,metadata");
+    expect(tasksApi).toContain("metadata?.depends_on");
+    expect(tasksApi).toContain("candidate.status === 'completada'");
+    expect(tasksApi).toContain("candidateMetadata?.task_key === dependencyKey");
+    expect(tasksApi).toContain("'La tarea está bloqueada por pasos anteriores pendientes'");
+    expect(tasksApi).toContain('status: 409');
+
+    expect(tasksPage).toContain('blocked_by?: string[]');
+    expect(tasksPage).toContain('Bloqueada hasta completar:');
+    expect(tasksPage).toContain('saving === task.id || blocked');
+  });
+
   it('keeps current Arraigo Sociolaboral rules and retires the old operational logic', () => {
     const service = getCatalogService('arraigo-laboral');
     const viability = read('lib/data/viability-checks.ts');
