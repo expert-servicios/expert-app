@@ -198,6 +198,8 @@ export async function PATCH(request: NextRequest) {
   const { error } = await auth.admin.from('internal_tasks').update(updatePayload).eq('id', parsed.data.id);
   if (error) return NextResponse.json({ error: 'No se pudo actualizar la tarea' }, { status: 500 });
 
+  let postCompletionWarning: string | null = null;
+
   if (parsed.data.status === 'completada') {
     const { data: completedTask } = await auth.admin
       .from('internal_tasks')
@@ -213,19 +215,19 @@ export async function PATCH(request: NextRequest) {
         .in('status', ['pendiente', 'en_progreso']);
 
       if (siblingLoadError) {
-        return NextResponse.json({ error: 'La tarea se completó, pero no se pudieron recalcular los pasos siguientes' }, { status: 500 });
+        postCompletionWarning = 'La tarea se completó, pero no se pudieron recalcular los pasos siguientes';
       }
 
-      const allCaseTasks = await auth.admin
+      const allCaseTasks = postCompletionWarning ? { data: null, error: null } : await auth.admin
         .from('internal_tasks')
         .select('status,metadata')
         .eq('case_id', completedTask.case_id);
 
       if (allCaseTasks.error) {
-        return NextResponse.json({ error: 'La tarea se completó, pero no se pudieron validar los pasos siguientes' }, { status: 500 });
+        postCompletionWarning = 'La tarea se completó, pero no se pudieron validar los pasos siguientes';
       }
 
-      for (const sibling of siblings ?? []) {
+      for (const sibling of postCompletionWarning ? [] : (siblings ?? [])) {
         if (sibling.due_date) continue;
         const metadata = (sibling.metadata as Record<string, unknown> | null) ?? null;
         const dependsOn = Array.isArray(metadata?.depends_on)
@@ -256,11 +258,12 @@ export async function PATCH(request: NextRequest) {
           .is('due_date', null);
 
         if (unlockError) {
-          return NextResponse.json({ error: 'La tarea se completó, pero no se pudo activar el plazo del siguiente paso' }, { status: 500 });
+          postCompletionWarning = 'La tarea se completó, pero no se pudo activar el plazo de uno de los pasos siguientes';
+          break;
         }
       }
     }
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, warning: postCompletionWarning });
 }
