@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Building2, CreditCard, FileText, Mail, Plug, RefreshCw, User } from 'lucide-react';
 
 type CompanyCoverage = {
@@ -47,6 +48,10 @@ export function Client360ContextBar({ clientId }: { clientId: string }) {
   const [data, setData] = useState<Client360 | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const requestedCompanyId = searchParams.get('companyId');
 
   const load = async () => {
     setLoading(true);
@@ -65,7 +70,17 @@ export function Client360ContextBar({ clientId }: { clientId: string }) {
 
   useEffect(() => { void load(); }, [clientId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const activeCompany = useMemo(() => data?.companies.find((company) => company.id === data.profile.active_company_id) ?? data?.companies[0] ?? null, [data]);
+  const activeCompany = useMemo(() => {
+    if (!data) return null;
+    const requested = requestedCompanyId
+      ? data.companies.find((company) => company.id === requestedCompanyId) ?? null
+      : null;
+    return requested
+      ?? data.companies.find((company) => company.id === data.profile.active_company_id)
+      ?? data.companies[0]
+      ?? null;
+  }, [data, requestedCompanyId]);
+
   const activeCoverage = activeCompany ? data?.commercialCoverageByCompany?.[activeCompany.id] ?? null : null;
   const activeSubscription = activeCompany
     ? data?.subs.find((sub) => sub.company_id === activeCompany.id && (sub.status === 'active' || sub.status === 'trialing')) ?? null
@@ -74,11 +89,14 @@ export function Client360ContextBar({ clientId }: { clientId: string }) {
     ? data?.checkoutSessions.find((session) => session.company_id === activeCompany.id && session.status === 'open') ?? null
     : null;
   const activeIntegrations = activeCompany
-    ? data?.integrations.filter((integration) => integration.status === 'active' && (integration.company_id === activeCompany.id || integration.company_id === null)) ?? []
+    ? data?.integrations.filter((integration) => integration.status === 'active' && integration.company_id === activeCompany.id) ?? []
     : [];
   const openCases = activeCompany
-    ? data?.cases.filter((item) => item.state !== 'finalizado' && (item.company_id === activeCompany.id || item.company_id == null)) ?? []
-    : data?.cases.filter((item) => item.state !== 'finalizado') ?? [];
+    ? data?.cases.filter((item) => item.state !== 'finalizado' && item.state !== 'cerrado' && item.company_id === activeCompany.id) ?? []
+    : data?.cases.filter((item) => item.state !== 'finalizado' && item.state !== 'cerrado') ?? [];
+  const companyQuotes = activeCompany
+    ? data?.quotes.filter((quote) => quote.company_id === activeCompany.id) ?? []
+    : data?.quotes ?? [];
 
   const commercialLabel = activeCoverage?.source === 'included_entity'
     ? `Entidad incluida · ${activeCoverage.planName ?? 'cobertura activa'}`
@@ -87,6 +105,22 @@ export function Client360ContextBar({ clientId }: { clientId: string }) {
       : openCheckout
         ? `Checkout ${openCheckout.status}`
         : 'Sin cobertura activa';
+
+  function chooseCompany(companyId: string) {
+    const next = new URLSearchParams(searchParams.toString());
+    if (companyId) next.set('companyId', companyId);
+    else next.delete('companyId');
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
+
+  const companyQuery = activeCompany ? `companyId=${encodeURIComponent(activeCompany.id)}` : '';
+  const childHref = (path: string) => companyQuery ? `${path}?${companyQuery}` : path;
+  const externalHref = (path: string, params: Record<string, string>) => {
+    const query = new URLSearchParams(params);
+    if (activeCompany) query.set('companyId', activeCompany.id);
+    return `${path}?${query.toString()}`;
+  };
 
   if (loading && !data) {
     return <div className="border-b border-[#d8cbb5] bg-white px-6 py-3 text-xs text-[#8a9aab]"><RefreshCw className="mr-2 inline h-3.5 w-3.5 animate-spin" />Cargando contexto del cliente…</div>;
@@ -100,7 +134,7 @@ export function Client360ContextBar({ clientId }: { clientId: string }) {
     <section className="border-b border-[#d8cbb5] bg-white shadow-sm">
       <div className="mx-auto max-w-7xl px-6 py-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <User className="h-4 w-4 text-[#c88b25]" />
               <h1 className="font-serif text-xl font-bold text-[#07111d]">{data.profile.full_name || data.profile.email}</h1>
@@ -109,12 +143,31 @@ export function Client360ContextBar({ clientId }: { clientId: string }) {
               <Badge ok={data.profile.billing_ready}>Facturación</Badge>
             </div>
             <p className="mt-1 text-xs text-[#8a9aab]">{data.profile.email}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#29384a]">
-              <Building2 className="h-3.5 w-3.5 text-[#c88b25]" />
-              <span className="font-semibold">{activeCompany?.name ?? 'Sin entidad activa'}</span>
-              {activeCompany?.nif && <span className="font-mono text-[#8a9aab]">{activeCompany.nif}</span>}
-              {activeCoverage?.source === 'included_entity' ? <Badge ok>Incluida</Badge> : null}
-            </div>
+
+            {data.companies.length > 0 ? (
+              <div className="mt-3 flex max-w-2xl flex-wrap items-center gap-2">
+                <Building2 className="h-3.5 w-3.5 text-[#c88b25]" />
+                <select
+                  aria-label="Contexto de entidad en Cliente 360"
+                  value={activeCompany?.id ?? ''}
+                  onChange={(event) => chooseCompany(event.target.value)}
+                  className="min-w-[260px] rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 text-xs font-semibold text-[#29384a] outline-none focus:border-[#c88b25]"
+                >
+                  {data.companies.map((company) => (
+                    <option key={company.id} value={company.id}>{company.name}{company.nif ? ` · ${company.nif}` : ''}</option>
+                  ))}
+                </select>
+                {activeCompany?.id === data.profile.active_company_id
+                  ? <Badge ok>Activa en portal</Badge>
+                  : <Badge>Contexto Admin</Badge>}
+                {activeCoverage?.source === 'included_entity' ? <Badge ok>Incluida</Badge> : null}
+              </div>
+            ) : (
+              <div className="mt-2 flex items-center gap-2 text-xs text-[#8a9aab]">
+                <Building2 className="h-3.5 w-3.5" /> Sin entidad vinculada
+              </div>
+            )}
+            <p className="mt-1 text-[10px] text-[#8a9aab]">Cambiar este selector solo cambia el contexto de trabajo Admin; no modifica la entidad activa del portal del cliente.</p>
           </div>
 
           <button type="button" onClick={() => void load()} title="Actualizar contexto" className="rounded-lg border border-[#d8cbb5] p-2 text-[#29384a] hover:border-[#c88b25]">
@@ -123,37 +176,37 @@ export function Client360ContextBar({ clientId }: { clientId: string }) {
         </div>
 
         <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
-          <Link href={`/admin/expedientes?clientId=${clientId}${activeCompany ? `&companyId=${activeCompany.id}` : ''}`} className="rounded-xl border border-[#f0e8d8] bg-[#fbf8f2] p-3 hover:border-[#c88b25]">
+          <Link href={externalHref('/admin/expedientes', { clientId })} className="rounded-xl border border-[#f0e8d8] bg-[#fbf8f2] p-3 hover:border-[#c88b25]">
             <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#8a9aab]"><FileText className="h-3.5 w-3.5" />Expedientes</p>
             <p className="mt-1 text-sm font-bold text-[#07111d]">{openCases.length} abiertos</p>
             <p className="text-[10px] text-[#8a9aab]">Contexto: {activeCompany?.name ?? 'cliente'}</p>
           </Link>
-          <Link href="/admin/presupuestos" className="rounded-xl border border-[#f0e8d8] bg-[#fbf8f2] p-3 hover:border-[#c88b25]">
+          <Link href={externalHref('/admin/presupuestos', { clientId })} className="rounded-xl border border-[#f0e8d8] bg-[#fbf8f2] p-3 hover:border-[#c88b25]">
             <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#8a9aab]"><CreditCard className="h-3.5 w-3.5" />Presupuesto</p>
-            <p className="mt-1 text-sm font-bold text-[#07111d]">{data.quotes[0]?.service ?? 'Sin presupuesto'}</p>
-            {data.quotes[0] && <p className="text-[10px] text-[#8a9aab]">{data.quotes[0].status} · {data.quotes[0].amount_eur} € base</p>}
+            <p className="mt-1 text-sm font-bold text-[#07111d]">{companyQuotes[0]?.service ?? 'Sin presupuesto'}</p>
+            {companyQuotes[0] && <p className="text-[10px] text-[#8a9aab]">{companyQuotes[0].status} · {companyQuotes[0].amount_eur} € base</p>}
           </Link>
-          <Link href="/admin/suscripciones" className="rounded-xl border border-[#f0e8d8] bg-[#fbf8f2] p-3 hover:border-[#c88b25]">
+          <Link href={externalHref('/admin/suscripciones', { clientId })} className="rounded-xl border border-[#f0e8d8] bg-[#fbf8f2] p-3 hover:border-[#c88b25]">
             <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#8a9aab]"><CreditCard className="h-3.5 w-3.5" />Cobertura</p>
             <p className="mt-1 text-sm font-bold text-[#07111d]">{commercialLabel}</p>
             {activeCoverage?.source === 'included_entity' && activeCoverage.primaryCompanyName ? (
               <p className="text-[10px] text-[#8a9aab]">Contratante: {activeCoverage.primaryCompanyName}</p>
             ) : (
-              <p className="text-[10px] text-[#8a9aab]">{activeSubscription ? 'Suscripción directa' : `${data.checkoutSessions.length} intento(s) registrado(s)`}</p>
+              <p className="text-[10px] text-[#8a9aab]">{activeSubscription ? 'Suscripción directa' : openCheckout ? 'Checkout abierto' : 'Sin contratación activa'}</p>
             )}
           </Link>
-          <Link href={`/admin/clientes/${clientId}/comunicaciones`} className="rounded-xl border border-[#f0e8d8] bg-[#fbf8f2] p-3 hover:border-[#c88b25]">
+          <Link href={childHref(`/admin/clientes/${clientId}/comunicaciones`)} className="rounded-xl border border-[#f0e8d8] bg-[#fbf8f2] p-3 hover:border-[#c88b25]">
             <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#8a9aab]"><Mail className="h-3.5 w-3.5" />Comunicaciones</p>
             <p className="mt-1 text-sm font-bold text-[#07111d]">{data.emailEvents.length} emails EXPERT</p>
             <p className="text-[10px] text-[#8a9aab]">Abrir historial unificado</p>
           </Link>
-          <div className="rounded-xl border border-[#f0e8d8] bg-[#fbf8f2] p-3">
+          <Link href={childHref(`/admin/clientes/${clientId}/integraciones`)} className="rounded-xl border border-[#f0e8d8] bg-[#fbf8f2] p-3 hover:border-[#c88b25]">
             <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#8a9aab]"><Plug className="h-3.5 w-3.5" />Integraciones</p>
             <p className="mt-1 text-sm font-bold text-[#07111d]">{activeIntegrations.length} activas</p>
             <div className="mt-1 flex flex-wrap gap-1">
-              {activeIntegrations.length ? activeIntegrations.map((integration) => <Badge key={integration.id} ok>{integration.provider}</Badge>) : <span className="text-[10px] text-[#8a9aab]">Sin integración registrada para esta entidad</span>}
+              {activeIntegrations.length ? activeIntegrations.map((integration) => <Badge key={integration.id} ok>{integration.provider}</Badge>) : <span className="text-[10px] text-[#8a9aab]">Sin integración para esta entidad</span>}
             </div>
-          </div>
+          </Link>
         </div>
       </div>
     </section>

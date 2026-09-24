@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CalendarClock, CheckCircle2, CircleDot, RefreshCw, Save, XCircle } from 'lucide-react';
 import { FiscalTemplatePanel } from './FiscalTemplatePanel';
@@ -25,12 +25,14 @@ function statusLabel(status: Obligation['status']) {
 
 export default function ClientFiscalObligationsPage() {
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const requestedCompanyId = searchParams.get('companyId');
   const [context, setContext] = useState<OperationsPayload | null>(null);
   const [obligations, setObligations] = useState<Obligation[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [companyId, setCompanyId] = useState('');
+  const [companyId, setCompanyId] = useState(requestedCompanyId ?? '');
   const [kind, setKind] = useState('Declaración fiscal');
   const [modelCode, setModelCode] = useState('');
   const [title, setTitle] = useState('');
@@ -50,15 +52,17 @@ export default function ClientFiscalObligationsPage() {
       if (!ctxRes.ok) throw new Error(ctx.error ?? 'No se pudo cargar el cliente');
       if (!obligationsRes.ok) throw new Error(fiscal.error ?? 'No se pudieron cargar las obligaciones');
       setContext(ctx); setObligations(fiscal.obligations ?? []);
-      if (!companyId && ctx.companies?.length === 1) setCompanyId(ctx.companies[0].id);
+      if (!companyId && requestedCompanyId && ctx.companies?.some((company: Company) => company.id === requestedCompanyId)) setCompanyId(requestedCompanyId);
+      else if (!companyId && ctx.companies?.length === 1) setCompanyId(ctx.companies[0].id);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error de conexión');
     } finally { setLoading(false); }
-  }, [companyId, id]);
+  }, [companyId, id, requestedCompanyId]);
 
   useEffect(() => { void load(); }, [load]);
 
-  const open = useMemo(() => obligations.filter((item) => item.status === 'planned' || item.status === 'in_progress'), [obligations]);
+  const visibleObligations = useMemo(() => companyId ? obligations.filter((item) => item.company_id === companyId) : obligations, [obligations, companyId]);
+  const open = useMemo(() => visibleObligations.filter((item) => item.status === 'planned' || item.status === 'in_progress'), [visibleObligations]);
   const companyById = useMemo(() => new Map((context?.companies ?? []).map((company) => [company.id, company])), [context]);
 
   const create = async () => {
@@ -119,9 +123,9 @@ export default function ClientFiscalObligationsPage() {
         </section>
 
         <section className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-serif text-lg font-bold">Seguimiento fiscal</h2><span className="text-xs text-[#6b7280]">{open.length} abiertas · {obligations.length} total</span></div>
+          <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-serif text-lg font-bold">Seguimiento fiscal</h2><span className="text-xs text-[#6b7280]">{open.length} abiertas · {visibleObligations.length} en contexto</span></div>
           <div className="mt-4 space-y-3">
-            {obligations.length === 0 ? <p className="text-sm text-[#6b7280]">Todavía no hay obligaciones fiscales confirmadas.</p> : obligations.map((item) => {
+            {visibleObligations.length === 0 ? <p className="text-sm text-[#6b7280]">Todavía no hay obligaciones fiscales confirmadas para esta entidad.</p> : visibleObligations.map((item) => {
               const company = companyById.get(item.company_id);
               return <article key={item.id} className="rounded-xl border border-[#eee6d8] p-4"><div className="flex flex-wrap items-start justify-between gap-4"><div><div className="flex flex-wrap items-center gap-2"><CalendarClock className="h-4 w-4 text-[#c88b25]" /><h3 className="font-bold">{item.model_code ? `Modelo ${item.model_code} · ` : ''}{item.title || item.kind}</h3><span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold">{statusLabel(item.status)}</span></div><p className="mt-1 text-xs text-[#52606d]">{company?.name ?? 'Entidad'} · vence {new Date(`${item.due_date}T12:00:00`).toLocaleDateString('es-ES')}{item.period_key ? ` · ${item.period_key}` : ''}</p>{item.notes && <p className="mt-2 text-xs leading-5 text-[#6b7280]">{item.notes}</p>}<div className="mt-2 flex flex-wrap gap-2 text-[10px] text-[#8a9aab]"><span>{item.task_id ? 'Tarea Admin vinculada' : 'Tarea pendiente de sincronización'}</span><span>{item.google_event_id ? 'Calendario Admin sincronizado' : 'Sin evento Calendar'}</span><span>{item.source === 'system' ? 'Generada desde plantilla confirmada' : 'Alta manual'}</span></div></div><div className="flex flex-wrap gap-2">{item.status === 'planned' && <button disabled={saving} onClick={() => void setStatus(item.id, 'in_progress')} className="inline-flex items-center gap-1 rounded-lg border border-[#d8cbb5] px-2.5 py-1.5 text-[11px] font-bold"><CircleDot className="h-3.5 w-3.5" />En curso</button>}{(item.status === 'planned' || item.status === 'in_progress') && <button disabled={saving} onClick={() => void setStatus(item.id, 'completed')} className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-bold text-emerald-800"><CheckCircle2 className="h-3.5 w-3.5" />Completar</button>}{(item.status === 'planned' || item.status === 'in_progress') && <button disabled={saving} onClick={() => void setStatus(item.id, 'cancelled')} className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-[11px] font-bold text-red-700"><XCircle className="h-3.5 w-3.5" />Cancelar</button>}</div></div></article>;
             })}
