@@ -48,7 +48,7 @@ describe('Client 360 communications operations', () => {
 
   it('shows Communications as a first-class Client 360 navigation destination', () => {
     const nav = source('app/(protected)/admin/clientes/[id]/ClientOperationsNav.tsx');
-    expect(nav).toContain(`/admin/clientes/${'${clientId}'}/comunicaciones`);
+    expect(nav).toContain("childHref('/comunicaciones')");
     expect(nav).toContain('Comunicaciones');
   });
 });

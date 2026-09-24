@@ -15,6 +15,18 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 
   const { id: clientId } = await params;
+  const requestedCompanyId = request.nextUrl.searchParams.get('companyId');
+  if (requestedCompanyId) {
+    const { data: membership, error: membershipError } = await admin
+      .from('profile_companies')
+      .select('company_id')
+      .eq('profile_id', clientId)
+      .eq('company_id', requestedCompanyId)
+      .maybeSingle();
+    if (membershipError) return NextResponse.json({ error: 'No se pudo validar la entidad' }, { status: 500 });
+    if (!membership) return NextResponse.json({ error: 'La entidad no pertenece a este cliente' }, { status: 403 });
+  }
+
   const [{ data: subscriptions, error }, { data: authUser }] = await Promise.all([
     admin.from('subscriptions').select('id,status,company_id,post_purchase_onboarding_at,created_at').eq('client_id', clientId).order('created_at', { ascending: false }),
     admin.auth.admin.getUserById(clientId),
@@ -25,7 +37,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: 'No se pudo cargar el estado de onboarding' }, { status: 500 });
   }
 
-  const active = (subscriptions ?? []).find((sub) => sub.status === 'active' || sub.status === 'trialing') ?? null;
+  const active = (subscriptions ?? []).find((sub) =>
+    (sub.status === 'active' || sub.status === 'trialing')
+    && (!requestedCompanyId || sub.company_id === requestedCompanyId)
+  ) ?? null;
   const email = authUser.user?.email ?? '';
   let meetingScheduled = false;
   let meetingOccurred = false;
@@ -62,7 +77,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .maybeSingle();
     holdedConnected = Boolean(integration);
   }
-  if (!holdedConnected) {
+  if (!holdedConnected && !requestedCompanyId) {
     const [{ data: connection }, { data: holdedEvent }] = await Promise.all([
       admin.from('holded_mcp_connections').select('id').eq('supabase_user_id', clientId).eq('channel', 'claude').eq('status', 'connected').limit(1).maybeSingle(),
       email ? admin.from('holded_mcp_events').select('id').eq('user_email', email).in('event_type', ['user_connected', 'first_activity']).eq('channel', 'claude').limit(1).maybeSingle() : Promise.resolve({ data: null }),

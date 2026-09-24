@@ -37,12 +37,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   const { id: clientId } = await params;
+  const requestedCompanyId = new URL(request.url).searchParams.get('companyId');
   const [profileRes, authRes, membershipsRes, casesRes, tasksRes, clientSubsRes, checkoutsRes, ordersRes] = await Promise.all([
     admin.from('profiles').select('id,full_name,email,active_company_id,status').eq('id', clientId).single(),
     admin.auth.admin.getUserById(clientId),
     admin.from('profile_companies').select('company_id,company:companies(id,razon_social,nombre_comercial,cif_nif,stripe_customer_id,status,tenant_id)').eq('profile_id', clientId),
     admin.from('cases').select('id,service,category,state,status,priority,next_action,company_id,opened_at,updated_at').eq('client_id', clientId).order('updated_at', { ascending: false }).limit(50),
-    admin.from('internal_tasks').select('id,title,description,status,priority,due_date,case_id,source,created_at,updated_at').eq('client_id', clientId).order('due_date', { ascending: true, nullsFirst: false }).limit(50),
+    admin.from('internal_tasks').select('id,title,description,status,priority,due_date,case_id,company_id,source,created_at,updated_at').eq('client_id', clientId).order('due_date', { ascending: true, nullsFirst: false }).limit(50),
     admin.from('subscriptions').select('id,plan_name,status,company_id,current_period_start,current_period_end,canceled_at,stripe_subscription_id,created_at').eq('client_id', clientId).order('created_at', { ascending: false }).limit(30),
     admin.from('checkout_sessions').select('id,stripe_session_id,status,company_id,metadata,created_at,updated_at').eq('user_id', clientId).order('created_at', { ascending: false }).limit(30),
     admin.from('orders').select('id,amount_eur,currency,status,source,company_id,stripe_session_id,stripe_payment_id,holded_invoice_id,holded_sync_error,created_at,service_slugs').or(`client_id.eq.${clientId},user_id.eq.${clientId}`).order('created_at', { ascending: false }).limit(50),
@@ -65,6 +66,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }] : [];
   });
   const companyIds = companies.map((company) => company.id);
+  if (requestedCompanyId && !companyIds.includes(requestedCompanyId)) {
+    return NextResponse.json({ error: 'La entidad seleccionada no pertenece a este cliente' }, { status: 403 });
+  }
   const tenantIds = Array.from(new Set(companies.map((company) => company.tenantId).filter((value): value is string => Boolean(value))));
   const caseIds = (casesRes.data ?? []).map((item) => item.id);
 
@@ -288,10 +292,29 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const email = authRes.data.user?.email ?? profileRes.data.email ?? '';
   const today = new Date().toISOString().slice(0, 10);
-  const openTasks = (tasksRes.data ?? []).filter((task) => task.status === 'pendiente' || task.status === 'en_progreso');
-  const openCases = (casesRes.data ?? []).filter((item) => item.state !== 'finalizado');
-  const activeSubs = subscriptions.filter((sub) => sub.status === 'active' || sub.status === 'trialing');
-  const activeIntegrations = (integrationsRes.data ?? []).filter((item) => item.status === 'active');
+  const inSelectedCompany = <T extends { company_id?: string | null }>(rows: T[]): T[] =>
+    requestedCompanyId ? rows.filter((row) => row.company_id === requestedCompanyId) : rows;
+
+  const scopedTasks = inSelectedCompany(tasksRes.data ?? []);
+  const scopedCases = inSelectedCompany(casesRes.data ?? []);
+  const scopedSubscriptions = inSelectedCompany(subscriptions);
+  const scopedCheckouts = inSelectedCompany(checkoutsRes.data ?? []);
+  const scopedOrders = inSelectedCompany(ordersRes.data ?? []);
+  const scopedObligations = inSelectedCompany(obligationsRes.data ?? []);
+  const scopedIntegrations = inSelectedCompany(integrationsRes.data ?? []);
+  const scopedDocuments = inSelectedCompany(documents)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const scopedStripeInvoices = requestedCompanyId
+    ? stripeInvoices.filter((invoice) => invoice.companyId === requestedCompanyId)
+    : stripeInvoices;
+  const scopedStripeErrors = requestedCompanyId
+    ? stripeErrors.filter((item) => item.companyId === requestedCompanyId)
+    : stripeErrors;
+
+  const openTasks = scopedTasks.filter((task) => task.status === 'pendiente' || task.status === 'en_progreso');
+  const openCases = scopedCases.filter((item) => item.state !== 'finalizado' && item.state !== 'cerrado');
+  const activeSubs = scopedSubscriptions.filter((sub) => sub.status === 'active' || sub.status === 'trialing');
+  const activeIntegrations = scopedIntegrations.filter((item) => item.status === 'active');
 
   return NextResponse.json({
     client: {
@@ -299,6 +322,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       name: profileRes.data.full_name ?? email,
       email,
       activeCompanyId: profileRes.data.active_company_id,
+      selectedCompanyId: requestedCompanyId,
       status: profileRes.data.status,
     },
     companies: companiesWithStripe,
@@ -307,22 +331,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       overdueTasks: openTasks.filter((task) => task.due_date && task.due_date < today).length,
       openCases: openCases.length,
       activeSubscriptions: activeSubs.length,
-      documents: documents.length,
-      pendingDocuments: documents.filter((doc) => doc.state === 'pendiente').length,
-      obligations: (obligationsRes.data ?? []).length,
+      documents: scopedDocuments.length,
+      pendingDocuments: scopedDocuments.filter((doc) => doc.state === 'pendiente').length,
+      obligations: scopedObligations.length,
       activeIntegrations: activeIntegrations.length,
-      stripeInvoices: stripeInvoices.length,
-      localOrders: (ordersRes.data ?? []).length,
+      stripeInvoices: scopedStripeInvoices.length,
+      localOrders: scopedOrders.length,
     },
-    tasks: tasksRes.data ?? [],
-    cases: casesRes.data ?? [],
-    subscriptions,
-    checkoutSessions: checkoutsRes.data ?? [],
-    orders: ordersRes.data ?? [],
-    obligations: obligationsRes.data ?? [],
-    integrations: integrationsRes.data ?? [],
-    documents: documents.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-    stripeInvoices,
-    stripeErrors,
+    tasks: scopedTasks,
+    cases: scopedCases,
+    subscriptions: scopedSubscriptions,
+    checkoutSessions: scopedCheckouts,
+    orders: scopedOrders,
+    obligations: scopedObligations,
+    integrations: scopedIntegrations,
+    documents: scopedDocuments,
+    stripeInvoices: scopedStripeInvoices,
+    stripeErrors: scopedStripeErrors,
   });
 }

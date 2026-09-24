@@ -89,7 +89,7 @@ describe('Stripe invoice legal-entity attribution', () => {
   });
 
   it('exposes invoice attribution from Client 360 with confirmation and visible history', () => {
-    expect(nav).toContain('href={`/admin/clientes/${clientId}/stripe/facturas`}');
+    expect(nav).toContain("href={childHref('/stripe/facturas')}");
     expect(page).toContain('Atribución de facturas Stripe');
     expect(page).toContain('window.confirm');
     expect(page).toContain('Historial de atribuciones');

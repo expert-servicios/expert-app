@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Building2, CheckCircle2, CreditCard, Link2, RefreshCw, Search, ShieldCheck } from 'lucide-react';
 
@@ -75,9 +75,11 @@ function companyName(data: Payload | null, companyId: string | null) {
 
 export default function StripeReconciliationPage() {
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const requestedCompanyId = searchParams.get('companyId');
   const [data, setData] = useState<Payload | null>(null);
   const [customerId, setCustomerId] = useState('');
-  const [selectedCompanyId, setSelectedCompanyId] = useState('');
+  const [selectedCompanyId, setSelectedCompanyId] = useState(requestedCompanyId ?? '');
   const [newCompanyName, setNewCompanyName] = useState('');
   const [newCompanyTaxId, setNewCompanyTaxId] = useState('');
   const [newCompanyForm, setNewCompanyForm] = useState<'sl' | 'autonomo' | 'sa' | 'slne' | 'cb' | 'cooperativa' | 'fundacion' | 'otra'>('sl');
@@ -95,6 +97,7 @@ export default function StripeReconciliationPage() {
       const json = await response.json();
       if (!response.ok) throw new Error(json.error ?? 'No se pudo cargar la reconciliación Stripe');
       setData(json);
+      if (requestedCompanyId && json.companies?.some((company: Company) => company.id === requestedCompanyId)) setSelectedCompanyId(requestedCompanyId);
       if (json.evidence && !json.evidence.deleted) {
         const latestInvoice = json.evidence.invoices?.[0];
         setNewCompanyName((current) => current || latestInvoice?.customerName || json.evidence.name || '');
@@ -105,7 +108,7 @@ export default function StripeReconciliationPage() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, requestedCompanyId]);
 
   useEffect(() => { void load(); }, [load]);
 

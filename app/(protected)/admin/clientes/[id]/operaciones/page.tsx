@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
@@ -33,7 +33,7 @@ type Payload = {
     stripeInvoices: number;
     localOrders: number;
   };
-  tasks: Array<{ id: string; title: string; description: string | null; status: string; priority: string; due_date: string | null; case_id: string | null; source: string }>;
+  tasks: Array<{ id: string; title: string; description: string | null; status: string; priority: string; due_date: string | null; case_id: string | null; company_id: string | null; source: string }>;
   cases: Array<{ id: string; service: string; category: string | null; state: string; status: string; priority: string | null; next_action: string | null; company_id: string | null; opened_at: string; updated_at: string }>;
   subscriptions: Array<{ id: string; plan_name: string; status: string; company_id: string | null; current_period_start: string | null; current_period_end: string | null; stripe_subscription_id: string; created_at: string }>;
   checkoutSessions: Array<{ id: string; stripe_session_id: string; status: string; company_id: string | null; created_at: string; metadata: Record<string, unknown> | null }>;
@@ -62,6 +62,9 @@ function companyName(data: Payload, id: string | null) {
 
 export default function ClientRecurringOperationsPage() {
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const companyId = searchParams.get('companyId');
+  const companyQuery = companyId ? `?companyId=${encodeURIComponent(companyId)}` : '';
   const [data, setData] = useState<Payload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -69,7 +72,7 @@ export default function ClientRecurringOperationsPage() {
   const load = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const response = await fetch(`/api/admin/clientes/${id}/operations`, { cache: 'no-store' });
+      const response = await fetch(`/api/admin/clientes/${id}/operations${companyQuery}`, { cache: 'no-store' });
       const json = await response.json();
       if (!response.ok) throw new Error(json.error ?? 'No se pudieron cargar las operaciones del cliente');
       setData(json);
@@ -78,7 +81,7 @@ export default function ClientRecurringOperationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, companyQuery]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -101,8 +104,8 @@ export default function ClientRecurringOperationsPage() {
             <p className="mt-1 text-sm text-[#52606d]">{data?.client.name} · {data?.client.email}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href={`/admin/clientes/${id}/documentos`} className="rounded-xl border border-[#d8cbb5] bg-white px-4 py-2 text-xs font-bold">Documentación</Link>
-            <Link href={`/admin/clientes/${id}/integraciones`} className="rounded-xl border border-[#d8cbb5] bg-white px-4 py-2 text-xs font-bold">Integraciones</Link>
+            <Link href={`/admin/clientes/${id}/documentos${companyQuery}`} className="rounded-xl border border-[#d8cbb5] bg-white px-4 py-2 text-xs font-bold">Documentación</Link>
+            <Link href={`/admin/clientes/${id}/integraciones${companyQuery}`} className="rounded-xl border border-[#d8cbb5] bg-white px-4 py-2 text-xs font-bold">Integraciones</Link>
             <button type="button" onClick={() => void load()} className="rounded-xl border border-[#d8cbb5] bg-white p-2.5" title="Actualizar"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></button>
           </div>
         </div>
@@ -121,7 +124,7 @@ export default function ClientRecurringOperationsPage() {
 
             <section className="grid gap-5 lg:grid-cols-2">
               <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
-                <div className="flex items-center justify-between"><h2 className="font-serif text-lg font-bold">Tareas y próximos pasos</h2><Link href={`/admin/tareas?clientId=${id}`} className="text-xs font-bold text-[#c88b25]">Abrir tareas →</Link></div>
+                <div className="flex items-center justify-between"><h2 className="font-serif text-lg font-bold">Tareas y próximos pasos</h2><Link href={`/admin/tareas?clientId=${id}${companyId ? `&companyId=${encodeURIComponent(companyId)}` : ``}`} className="text-xs font-bold text-[#c88b25]">Abrir tareas →</Link></div>
                 <div className="mt-4 space-y-3">
                   {openTasks.length === 0 ? <p className="text-sm text-[#6b7280]">Sin tareas operativas abiertas.</p> : openTasks.slice(0, 8).map((task) => {
                     const overdue = Boolean(task.due_date && task.due_date < today);
@@ -131,7 +134,7 @@ export default function ClientRecurringOperationsPage() {
               </div>
 
               <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
-                <div className="flex items-center justify-between"><h2 className="font-serif text-lg font-bold">Expedientes</h2><Link href={`/admin/expedientes?clientId=${id}`} className="text-xs font-bold text-[#c88b25]">Ver todos →</Link></div>
+                <div className="flex items-center justify-between"><h2 className="font-serif text-lg font-bold">Expedientes</h2><Link href={`/admin/expedientes?clientId=${id}${companyId ? `&companyId=${encodeURIComponent(companyId)}` : ``}`} className="text-xs font-bold text-[#c88b25]">Ver todos →</Link></div>
                 <div className="mt-4 space-y-3">
                   {openCases.length === 0 ? <p className="text-sm text-[#6b7280]">Sin expedientes abiertos.</p> : openCases.slice(0, 8).map((item) => <Link key={item.id} href={`/admin/expedientes/${item.id}`} className="block rounded-xl border border-[#eee6d8] p-3 hover:border-[#c88b25]"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{item.service}</p><Badge>{item.state}</Badge><Badge tone={item.priority === 'alta' || item.priority === 'critica' ? 'warn' : 'neutral'}>{item.priority ?? 'media'}</Badge></div>{item.next_action && <p className="mt-1 text-xs text-[#52606d]">Siguiente: {item.next_action}</p>}<p className="mt-2 text-[11px] text-[#8a9aab]">{companyName(data, item.company_id)}</p></Link>)}
                 </div>
@@ -140,7 +143,7 @@ export default function ClientRecurringOperationsPage() {
 
             <section className="grid gap-5 lg:grid-cols-2">
               <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
-                <div className="flex items-center justify-between"><h2 className="font-serif text-lg font-bold">Stripe y cobros</h2><Link href={`/admin/suscripciones?clientId=${id}`} className="text-xs font-bold text-[#c88b25]">Suscripciones →</Link></div>
+                <div className="flex items-center justify-between"><h2 className="font-serif text-lg font-bold">Stripe y cobros</h2><Link href={`/admin/suscripciones?clientId=${id}${companyId ? `&companyId=${encodeURIComponent(companyId)}` : ``}`} className="text-xs font-bold text-[#c88b25]">Suscripciones →</Link></div>
                 <div className="mt-4 space-y-3">
                   {activeSubscriptions.map((sub) => <div key={sub.id} className="rounded-xl border border-emerald-200 bg-emerald-50 p-3"><div className="flex flex-wrap items-center gap-2"><CreditCard className="h-4 w-4" /><p className="font-semibold">{sub.plan_name}</p><Badge tone="ok">{sub.status}</Badge></div><p className="mt-2 text-xs text-[#52606d]">{companyName(data, sub.company_id)}{sub.current_period_end ? ` · próximo periodo hasta ${new Date(sub.current_period_end).toLocaleDateString('es-ES')}` : ''}</p></div>)}
                   {data.stripeInvoices.slice(0, 8).map((invoice) => <div key={invoice.id} className="rounded-xl border border-[#eee6d8] p-3"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex flex-wrap items-center gap-2"><ReceiptText className="h-4 w-4" /><p className="font-semibold">{invoice.number ?? 'Factura Stripe'}</p><Badge tone={invoice.status === 'paid' ? 'ok' : invoice.status === 'open' ? 'warn' : 'neutral'}>{invoice.status ?? 'sin estado'}</Badge></div><p className="mt-1 text-xs text-[#52606d]">{invoice.companyName} · {invoice.amountPaid.toFixed(2)} {invoice.currency} pagados</p></div><div className="flex gap-2">{invoice.hostedInvoiceUrl && <a href={invoice.hostedInvoiceUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#d8cbb5] px-2.5 py-1.5 text-[11px] font-bold">Abrir <SquareArrowOutUpRight className="ml-1 inline h-3 w-3" /></a>}{invoice.invoicePdf && <a href={invoice.invoicePdf} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-[#d8cbb5] px-2.5 py-1.5 text-[11px] font-bold">PDF</a>}</div></div></div>)}
@@ -159,12 +162,12 @@ export default function ClientRecurringOperationsPage() {
 
             <section className="grid gap-5 lg:grid-cols-2">
               <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
-                <div className="flex items-center justify-between"><h2 className="font-serif text-lg font-bold">Documentación</h2><Link href={`/admin/clientes/${id}/documentos`} className="text-xs font-bold text-[#c88b25]">Documentación 360º →</Link></div>
+                <div className="flex items-center justify-between"><h2 className="font-serif text-lg font-bold">Documentación</h2><Link href={`/admin/clientes/${id}/documentos${companyQuery}`} className="text-xs font-bold text-[#c88b25]">Documentación 360º →</Link></div>
                 <div className="mt-4 grid grid-cols-3 gap-3"><div className="rounded-xl bg-[#fbf8f2] p-3"><p className="text-[11px] text-[#6b7280]">Total</p><p className="text-2xl font-bold">{data.summary.documents}</p></div><div className="rounded-xl bg-[#fbf8f2] p-3"><p className="text-[11px] text-[#6b7280]">Pendientes</p><p className="text-2xl font-bold">{data.summary.pendingDocuments}</p></div><div className="rounded-xl bg-[#fbf8f2] p-3"><p className="text-[11px] text-[#6b7280]">Con Drive/Storage</p><p className="text-2xl font-bold">{data.documents.length}</p></div></div>
               </div>
 
               <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
-                <div className="flex items-center justify-between"><h2 className="font-serif text-lg font-bold">Integraciones</h2><Link href={`/admin/clientes/${id}/integraciones`} className="text-xs font-bold text-[#c88b25]">Gestionar →</Link></div>
+                <div className="flex items-center justify-between"><h2 className="font-serif text-lg font-bold">Integraciones</h2><Link href={`/admin/clientes/${id}/integraciones${companyQuery}`} className="text-xs font-bold text-[#c88b25]">Gestionar →</Link></div>
                 <div className="mt-4 space-y-3">{data.integrations.length === 0 ? <p className="text-sm text-[#6b7280]">Sin integraciones registradas.</p> : data.integrations.map((integration) => <div key={integration.id} className="rounded-xl border border-[#eee6d8] p-3"><div className="flex flex-wrap items-center gap-2"><Plug className="h-4 w-4" /><p className="font-semibold capitalize">{integration.provider}</p><Badge tone={integration.status === 'active' ? 'ok' : integration.last_error ? 'danger' : 'neutral'}>{integration.status}</Badge></div><p className="mt-1 text-xs text-[#52606d]">{companyName(data, integration.company_id)}{integration.last_success_at ? ` · última OK ${new Date(integration.last_success_at).toLocaleString('es-ES')}` : ''}</p>{integration.last_error && <p className="mt-1 text-xs text-red-700">{integration.last_error}</p>}</div>)}</div>
               </div>
             </section>
