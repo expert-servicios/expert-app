@@ -15,7 +15,7 @@ function adminWith(row: unknown, bytes = 'document') {
   return { admin: { from: () => query, storage: { from: () => ({ download }) } } as unknown as WorkAdmin, download };
 }
 describe('Work evidence boundary', () => {
-  it('serializes event retries and clears stale next_action after the final successful task', () => {
+  it('serializes event retries before ledger lookup and clears stale final next_action', () => {
     const migration = readFileSync(
       resolve(process.cwd(), 'supabase/migrations/20260924093629_kia_work_case_orchestration.sql'),
       'utf8',
