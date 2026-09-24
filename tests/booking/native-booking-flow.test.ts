@@ -98,6 +98,11 @@ describe('native booking public flow', () => {
     expect(calendar).toContain('config.artifactConfig.smartNotesConfig.autoSmartNotesGeneration');
     expect(calendar).not.toContain("autoGenerationType: 'ON'");
     expect(calendar).not.toContain('GOOGLE_MEET_AUTO_RECORDING');
+    expect(calendar).toContain('MEET_API_TIMEOUT_MS = 5_000');
+    expect(calendar).toContain('setTimeout(() => controller.abort(), MEET_API_TIMEOUT_MS)');
+    expect(calendar).toContain("configureMeetArtifact(token, space.name, 'transcription')");
+    expect(calendar).toContain("configureMeetArtifact(token, space.name, 'smartNotes')");
+    expect(calendar).toContain('const results = await Promise.all(operations)');
   });
 
   it('waits for Meet creation and compensates orphan events before reporting failure', () => {
