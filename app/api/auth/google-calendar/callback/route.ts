@@ -5,6 +5,28 @@ import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { clearOAuthStateCookie, verifyOAuthState } from '@/lib/auth/oauth-state';
 import { saveClientProductivityIntegration } from '@/lib/integrations/productivity/client-productivity-oauth';
 
+function googleGrantedPermissions(scope: string | null | undefined) {
+  const granted = new Set((scope ?? '').split(/\s+/).filter(Boolean));
+  const permissions = {
+    mailRead: granted.has('https://www.googleapis.com/auth/gmail.modify')
+      || granted.has('https://www.googleapis.com/auth/gmail.readonly')
+      || granted.has('https://mail.google.com/'),
+    mailSend: granted.has('https://www.googleapis.com/auth/gmail.send')
+      || granted.has('https://mail.google.com/'),
+    calendarReadWrite: granted.has('https://www.googleapis.com/auth/calendar.events')
+      || granted.has('https://www.googleapis.com/auth/calendar'),
+    filesRead: granted.has('https://www.googleapis.com/auth/drive.readonly')
+      || granted.has('https://www.googleapis.com/auth/drive.file')
+      || granted.has('https://www.googleapis.com/auth/drive'),
+    filesWrite: granted.has('https://www.googleapis.com/auth/drive.file')
+      || granted.has('https://www.googleapis.com/auth/drive'),
+  };
+  if (!permissions.mailRead || !permissions.mailSend || !permissions.calendarReadWrite || !permissions.filesRead) {
+    throw new Error('Google Workspace did not grant all mandatory productivity permissions');
+  }
+  return permissions;
+}
+
 function redirectClearingState(url: string): NextResponse {
   const response = NextResponse.redirect(url);
   clearOAuthStateCookie(response);
@@ -56,6 +78,7 @@ export async function GET(request: NextRequest) {
           expiry_date: tokens.expiry_date,
           scope: tokens.scope ?? null,
         },
+        permissionsDetected: googleGrantedPermissions(tokens.scope),
       });
       return redirectClearingState(`${appUrl}${oauthState.next ?? '/dashboard/integraciones/productividad?connected=google'}`);
     }
