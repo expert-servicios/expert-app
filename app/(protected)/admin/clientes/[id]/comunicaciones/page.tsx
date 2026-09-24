@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Building2, ExternalLink, FileText, Link2, Mail, MessageCircle, RefreshCw, Search } from 'lucide-react';
 
@@ -59,11 +59,12 @@ type ChannelFilter = 'all' | Communication['channel'];
 export default function ClientCommunicationsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [data, setData] = useState<Payload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [channel, setChannel] = useState<ChannelFilter>('all');
-  const [companyFilter, setCompanyFilter] = useState<CompanyFilter>('all');
+  const [companyFilter, setCompanyFilter] = useState<CompanyFilter>(searchParams.get('companyId') ?? 'all');
   const [caseFilter, setCaseFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
@@ -99,6 +100,11 @@ export default function ClientCommunicationsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const requested = searchParams.get('companyId');
+    if (requested && requested !== companyFilter) setCompanyFilter(requested); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [searchParams, companyFilter]);
 
   const filtered = useMemo(() => {
     if (!data) return [];

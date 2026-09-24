@@ -60,10 +60,10 @@ describe('Client 360 recurring operations', () => {
   });
 
   it('exposes tasks, cases, documents, deadlines and integrations from Client 360 navigation', () => {
-    expect(operationsNav).toContain('href={`/admin/clientes/${clientId}/operaciones`}');
-    expect(operationsNav).toContain('href={`/admin/clientes/${clientId}/documentos`}');
-    expect(operationsNav).toContain('href={`/admin/tareas?clientId=${clientId}`}');
-    expect(operationsNav).toContain('href={`/admin/clientes/${clientId}/integraciones`}');
+    expect(operationsNav).toContain("href={childHref('/operaciones')}");
+    expect(operationsNav).toContain("href={childHref('/documentos')}");
+    expect(operationsNav).toContain("href={adminHref('/admin/tareas')}");
+    expect(operationsNav).toContain("href={childHref('/integraciones')}");
     expect(clientLayout).toContain('<ClientOperationsNav clientId={id} />');
     expect(operationsPage).toContain('Tareas y próximos pasos');
     expect(operationsPage).toContain('Plazos y calendario');

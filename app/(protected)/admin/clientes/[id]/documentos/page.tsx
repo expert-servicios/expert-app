@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { AlertTriangle, ArrowLeft, Building2, CheckCircle2, Download, ExternalLink, FileText, FolderOpen, Mail, Pencil, RefreshCw, Save, Search, XCircle } from 'lucide-react';
 import DocumentHistory from './DocumentHistory';
@@ -127,10 +127,11 @@ function buildDuplicateSignals(documents: DocumentItem[]) {
 export default function ClientDocumentsPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [data, setData] = useState<Payload | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [companyFilter, setCompanyFilter] = useState('all');
+  const [companyFilter, setCompanyFilter] = useState(searchParams.get('companyId') ?? 'all');
   const [query, setQuery] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -158,6 +159,11 @@ export default function ClientDocumentsPage() {
   }, [companyFilter, id]);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    const requested = searchParams.get('companyId');
+    if (requested && requested !== companyFilter) setCompanyFilter(requested); // eslint-disable-line react-hooks/set-state-in-effect
+  }, [searchParams, companyFilter]);
 
   const duplicateSignals = useMemo(() => buildDuplicateSignals(data?.documents ?? []), [data]);
 
