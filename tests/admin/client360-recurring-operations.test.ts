@@ -109,6 +109,11 @@ describe('Client 360 recurring operations', () => {
     expect(checklistComponent).toContain('Отправить документы на проверку');
     expect(documentReviewRoute).toContain("return NextResponse.json({ error: 'No se pudo crear la tarea de revisión' }");
     expect(documentReviewRoute).toContain('Preparar y presentar solicitud de nacionalidad');
-    expect(documentReviewRoute).toContain('Pagar tasa 790-026 de 104,05 € como suplido');
+    expect(documentReviewRoute).toContain('formalizar y archivar mandato de representación');
+    expect(documentReviewRoute).toContain('cerrar apellidos registrales');
+    expect(documentReviewRoute).toContain('No ofrecer duplicación como libre elección');
+    expect(documentReviewRoute).toContain('certificado de finalización');
+    expect(documentReviewRoute).toContain('Nunca duplicar el pago');
+    expect(documentReviewRoute).toContain('Presentar solo con autorización profesional expresa');
   });
 });
