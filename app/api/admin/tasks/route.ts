@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
   let query = auth.admin
     .from('internal_tasks')
-    .select('id,title,description,status,priority,assigned_to,case_id,client_id,lead_id,due_date,source,created_at,updated_at,completed_at')
+    .select('id,title,description,status,priority,assigned_to,case_id,client_id,lead_id,due_date,source,metadata,created_at,updated_at,completed_at')
     .order('due_date', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });
 
@@ -53,13 +53,36 @@ export async function GET(request: NextRequest) {
   const caseMap = new Map((casesRes.data ?? []).map((item) => [item.id, item]));
   const assigneeMap = new Map((assigneesRes.data ?? []).map((item) => [item.id, item]));
 
+  const caseTaskMap = new Map<string, Array<{ status: string; metadata: Record<string, unknown> | null }>>();
+  for (const task of tasks ?? []) {
+    if (!task.case_id) continue;
+    const list = caseTaskMap.get(task.case_id) ?? [];
+    list.push({ status: task.status, metadata: (task.metadata as Record<string, unknown> | null) ?? null });
+    caseTaskMap.set(task.case_id, list);
+  }
+
   return NextResponse.json({
-    tasks: (tasks ?? []).map((task) => ({
-      ...task,
-      client: task.client_id ? profileMap.get(task.client_id) ?? null : null,
-      case: task.case_id ? caseMap.get(task.case_id) ?? null : null,
-      assignee: task.assigned_to ? assigneeMap.get(task.assigned_to) ?? null : null,
-    })),
+    tasks: (tasks ?? []).map((task) => {
+      const metadata = (task.metadata as Record<string, unknown> | null) ?? null;
+      const dependsOn = Array.isArray(metadata?.depends_on)
+        ? metadata.depends_on.filter((item): item is string => typeof item === 'string')
+        : [];
+      const siblings = task.case_id ? caseTaskMap.get(task.case_id) ?? [] : [];
+      const blockedBy = dependsOn.filter((dependencyKey) =>
+        !siblings.some((candidate) =>
+          candidate.status === 'completada'
+          && candidate.metadata?.task_key === dependencyKey
+        ),
+      );
+
+      return {
+        ...task,
+        blocked_by: blockedBy,
+        client: task.client_id ? profileMap.get(task.client_id) ?? null : null,
+        case: task.case_id ? caseMap.get(task.case_id) ?? null : null,
+        assignee: task.assigned_to ? assigneeMap.get(task.assigned_to) ?? null : null,
+      };
+    }),
   });
 }
 
@@ -107,6 +130,48 @@ export async function PATCH(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
   if (parsed.data.status === undefined && parsed.data.assignedTo === undefined) {
     return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 });
+  }
+
+  if (parsed.data.status === 'en_progreso' || parsed.data.status === 'completada') {
+    const { data: task, error: taskLookupError } = await auth.admin
+      .from('internal_tasks')
+      .select('id,case_id,metadata')
+      .eq('id', parsed.data.id)
+      .maybeSingle();
+
+    if (taskLookupError || !task) {
+      return NextResponse.json({ error: 'No se pudo cargar la tarea' }, { status: 404 });
+    }
+
+    const metadata = (task.metadata as Record<string, unknown> | null) ?? null;
+    const dependsOn = Array.isArray(metadata?.depends_on)
+      ? metadata.depends_on.filter((item): item is string => typeof item === 'string')
+      : [];
+
+    if (dependsOn.length && task.case_id) {
+      const { data: siblingTasks, error: siblingsError } = await auth.admin
+        .from('internal_tasks')
+        .select('status,metadata')
+        .eq('case_id', task.case_id);
+
+      if (siblingsError) {
+        return NextResponse.json({ error: 'No se pudieron validar las dependencias de la tarea' }, { status: 500 });
+      }
+
+      const blockedBy = dependsOn.filter((dependencyKey) =>
+        !(siblingTasks ?? []).some((candidate) => {
+          const candidateMetadata = (candidate.metadata as Record<string, unknown> | null) ?? null;
+          return candidate.status === 'completada' && candidateMetadata?.task_key === dependencyKey;
+        }),
+      );
+
+      if (blockedBy.length) {
+        return NextResponse.json({
+          error: 'La tarea está bloqueada por pasos anteriores pendientes',
+          blockedBy,
+        }, { status: 409 });
+      }
+    }
   }
 
   const now = new Date().toISOString();
