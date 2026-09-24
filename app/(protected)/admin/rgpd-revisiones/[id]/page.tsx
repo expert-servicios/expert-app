@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft, Building2, Database, FileText, Server, ShieldCheck, UserRound } from 'lucide-react';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
+import { CompleteRgpdReviewForm } from '@/components/admin/CompleteRgpdReviewForm';
 
 type ApiResponse = {
   project: {
@@ -13,7 +14,13 @@ type ApiResponse = {
     consent_at: string | null;
     created_at: string;
     updated_at: string;
+    reviewer_id: string | null;
+    review_started_at: string | null;
+    review_completed_at: string | null;
+    review_task_id: string | null;
+    review_summary: string | null;
     requester: { id: string; full_name: string | null; email: string | null } | null;
+    reviewer: { id: string; full_name: string | null; email: string | null } | null;
   };
 };
 
@@ -217,6 +224,35 @@ export default async function AdminRgpdReviewDetailPage({
               {project.consent_at ? new Date(project.consent_at).toLocaleString('es-ES') : 'No consta fecha'}
             </p>
           </section>
+
+          {project.reviewer && (
+            <section className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
+              <h2 className="font-bold text-[#07111d]">Revisor asignado</h2>
+              <p className="mt-3 text-sm text-[#23364D]">{project.reviewer.full_name || 'Sin nombre'}</p>
+              <p className="text-xs text-[#6f665b]">{project.reviewer.email || 'Email no disponible'}</p>
+              {project.review_started_at && (
+                <p className="mt-2 text-xs text-[#8c8173]">
+                  Inicio: {new Date(project.review_started_at).toLocaleString('es-ES')}
+                </p>
+              )}
+            </section>
+          )}
+
+          {project.status === 'in_review' && (
+            <CompleteRgpdReviewForm projectId={project.id} />
+          )}
+
+          {project.status === 'completed' && project.review_summary && (
+            <section className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+              <h2 className="font-bold text-emerald-950">Conclusiones profesionales</h2>
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-emerald-950">{project.review_summary}</p>
+              {project.review_completed_at && (
+                <p className="mt-3 text-xs text-emerald-800">
+                  Cerrada: {new Date(project.review_completed_at).toLocaleString('es-ES')}
+                </p>
+              )}
+            </section>
+          )}
 
           <section className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
             <h2 className="font-bold text-[#07111d]">Progreso local guardado</h2>
