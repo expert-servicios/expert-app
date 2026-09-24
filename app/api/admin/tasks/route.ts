@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
   const clientIds = [...new Set((tasks ?? []).map((task) => task.client_id).filter(Boolean))] as string[];
   const caseIds = [...new Set((tasks ?? []).map((task) => task.case_id).filter(Boolean))] as string[];
   const assigneeIds = [...new Set((tasks ?? []).map((task) => task.assigned_to).filter(Boolean))] as string[];
-  const [profilesRes, casesRes, assigneesRes] = await Promise.all([
+  const [profilesRes, casesRes, assigneesRes, caseTasksRes] = await Promise.all([
     clientIds.length
       ? auth.admin.from('profiles').select('id,full_name').in('id', clientIds)
       : Promise.resolve({ data: [] as Array<{ id: string; full_name: string | null }> }),
@@ -82,13 +82,16 @@ export async function GET(request: NextRequest) {
     assigneeIds.length
       ? auth.admin.from('profiles').select('id,full_name').in('id', assigneeIds)
       : Promise.resolve({ data: [] as Array<{ id: string; full_name: string | null }> }),
+    caseIds.length
+      ? auth.admin.from('internal_tasks').select('case_id,title,status,metadata').in('case_id', caseIds)
+      : Promise.resolve({ data: [] as Array<{ case_id: string | null; title: string; status: string; metadata: unknown }> }),
   ]);
   const profileMap = new Map((profilesRes.data ?? []).map((item) => [item.id, item]));
   const caseMap = new Map((casesRes.data ?? []).map((item) => [item.id, item]));
   const assigneeMap = new Map((assigneesRes.data ?? []).map((item) => [item.id, item]));
 
   const caseTaskMap = new Map<string, Array<{ title: string; status: string; metadata: Record<string, unknown> }>>();
-  for (const task of tasks ?? []) {
+  for (const task of caseTasksRes.data ?? []) {
     if (!task.case_id) continue;
     const list = caseTaskMap.get(task.case_id) ?? [];
     list.push({ title: task.title, status: task.status, metadata: taskMetadata(task.metadata) });
@@ -248,8 +251,10 @@ export async function PATCH(request: NextRequest) {
   if (error) return NextResponse.json({ error: 'No se pudo actualizar la tarea' }, { status: 500 });
 
   let postCompletionWarning: string | null = null;
+  const resolvedForDependencies = parsed.data.status === 'completada'
+    || (parsed.data.status === 'cancelada' && loadedTask !== null && taskMetadata(loadedTask.metadata).skip_allowed === true);
 
-  if (parsed.data.status === 'completada' || parsed.data.status === 'cancelada') {
+  if (resolvedForDependencies) {
     const { data: completedTask } = await auth.admin
       .from('internal_tasks')
       .select('case_id')
@@ -313,7 +318,7 @@ export async function PATCH(request: NextRequest) {
     }
   }
 
-  if (parsed.data.status === 'completada' || parsed.data.status === 'cancelada') {
+  if (resolvedForDependencies) {
     const { data: completedTask } = await auth.admin
       .from('internal_tasks')
       .select('case_id')
