@@ -115,21 +115,21 @@ export function RgpdImplementationPlan({ moduleIds }: { moduleIds: string[] }) {
 
       <div className="mt-6 space-y-5">
         {safeIds.map((id) => {
-          const module = MODULES[id];
+          const planModule = MODULES[id];
           return (
             <div key={id} className="border border-[#D4A017]/20 bg-white p-4">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h4 className="font-bold">{module.title}</h4>
-                  <p className="mt-1 text-sm text-[#23364D]">{module.description}</p>
+                  <h4 className="font-bold">{planModule.title}</h4>
+                  <p className="mt-1 text-sm text-[#23364D]">{planModule.description}</p>
                 </div>
-                <Link href={module.href} className="text-sm font-bold text-[#8A6710] hover:underline">
+                <Link href={planModule.href} className="text-sm font-bold text-[#8A6710] hover:underline">
                   Abrir guía →
                 </Link>
               </div>
 
               <div className="mt-4 space-y-2">
-                {module.tasks.map((task, index) => {
+                {planModule.tasks.map((task, index) => {
                   const key = `${id}:${index}`;
                   const checked = Boolean(done[key]);
                   return (
