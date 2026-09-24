@@ -39,16 +39,17 @@ export async function saveClientProductivityIntegration(input: {
   provider: ProductivityProvider;
   accountEmail: string | null;
   secret: Record<string, unknown>;
+  permissionsDetected: Record<string, boolean>;
 }): Promise<string> {
   await assertClientCompanyMembership(input.userId, input.companyId);
 
   const admin = getSupabaseAdmin();
   const now = new Date().toISOString();
-  const permissions = PRODUCTIVITY_PERMISSIONS[input.provider];
+  const permissions = input.permissionsDetected;
 
   const { data: existing, error: existingError } = await admin
     .from('client_integrations')
-    .select('id')
+    .select('id,client_id,company_id,provider,mode,api_version,permissions_detected,permissions_enabled,status,sync_mode,last_sync_at,last_success_at,last_error,connected_by,disconnected_at,consent_at,consent_version,channel,updated_at')
     .eq('company_id', input.companyId)
     .eq('provider', input.provider)
     .neq('status', 'revoked')
@@ -58,6 +59,15 @@ export async function saveClientProductivityIntegration(input: {
   if (existingError) throw existingError;
 
   let integrationId = existing?.id ?? null;
+  const { data: previousSecretRow, error: previousSecretError } = existing?.id
+    ? await admin
+        .from('client_integration_secrets')
+        .select('encrypted_api_key')
+        .eq('integration_id', existing.id)
+        .maybeSingle()
+    : { data: null, error: null };
+  if (previousSecretError) throw previousSecretError;
+  const previousSecret = previousSecretRow?.encrypted_api_key ?? null;
 
   if (!integrationId) {
     const { data: created, error: createError } = await admin
@@ -127,6 +137,25 @@ export async function saveClientProductivityIntegration(input: {
     })
     .eq('id', integrationId);
 
-  if (activateError) throw activateError;
+  if (activateError) {
+    if (previousSecret) {
+      await admin
+        .from('client_integration_secrets')
+        .upsert({
+          integration_id: integrationId,
+          encrypted_api_key: previousSecret,
+          updated_at: now,
+        }, { onConflict: 'integration_id' });
+    } else {
+      await admin
+        .from('client_integration_secrets')
+        .delete()
+        .eq('integration_id', integrationId);
+    }
+    if (!existing?.id) {
+      await admin.from('client_integrations').delete().eq('id', integrationId);
+    }
+    throw activateError;
+  }
   return integrationId;
 }
