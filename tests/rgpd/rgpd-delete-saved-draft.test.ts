@@ -10,6 +10,7 @@ const ui = source('components/tools/RgpdAccountSave.tsx');
 describe('RGPD saved draft deletion', () => {
   it('requires authentication and exact ownership', () => {
     expect(route).toContain('supabase.auth.getUser()');
+    expect(route).toContain('const admin = getSupabaseAdmin()');
     expect(route).toContain(".eq('user_id', user.id)");
     expect(route).toContain(".eq('id', id)");
   });
