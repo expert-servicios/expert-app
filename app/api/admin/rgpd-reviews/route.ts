@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminClient } from '@/lib/auth/require-admin';
 
-const ALLOWED_STATUSES = ['draft', 'review_requested', 'archived'] as const;
+const ALLOWED_STATUSES = ['draft', 'review_requested', 'in_review', 'completed', 'archived'] as const;
 
 export async function GET(request: NextRequest) {
   try {
