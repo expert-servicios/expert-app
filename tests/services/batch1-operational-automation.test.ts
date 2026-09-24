@@ -81,16 +81,17 @@ describe('batch 1 operational automation', () => {
     const tasksPage = read('app/(protected)/admin/tareas/page.tsx');
 
     expect(tasksApi).toContain("select('id,title,description,status,priority,assigned_to,case_id,client_id,lead_id,due_date,source,metadata");
-    expect(tasksApi).toContain("metadata?.depends_on");
-    expect(tasksApi).toContain("candidate.status === 'completada'");
-    expect(tasksApi).toContain("candidateMetadata?.task_key === dependencyKey");
+    expect(tasksApi).toContain('dependencyKeys(metadata)');
+    expect(tasksApi).toContain('isSatisfiedTask');
+    expect(tasksApi).toContain("metadata.skipped_as_not_applicable === true");
+    expect(tasksApi).toContain("metadata.skip_allowed !== true");
     expect(tasksApi).toContain("'La tarea está bloqueada por pasos anteriores pendientes'");
     expect(tasksApi).toContain('status: 409');
     expect(tasksApi).toContain('due_business_days');
     expect(tasksApi).toContain('addBusinessDays(new Date(), dueBusinessDays)');
     expect(tasksApi).toContain("postCompletionWarning = 'La tarea se completó");
     expect(tasksApi).toContain('warning: postCompletionWarning');
-    expect(tasksApi).toContain("candidateMetadata?.task_key");
+    expect(tasksApi).toContain('taskKey(candidateMetadata)');
     expect(tasksApi).toContain("metadata?.sequence_index");
     expect(tasksApi).toContain("next_action: nextAction");
 
@@ -98,10 +99,16 @@ describe('batch 1 operational automation', () => {
     expect(fulfillment).toContain('if (task.dependsOn?.length) return null');
     expect(fulfillment).toContain('due_business_days: task.dueBusinessDays ?? null');
     expect(fulfillment).toContain('sequence_index: sequenceIndex');
+    expect(fulfillment).toContain('skip_allowed: Boolean(task.skipAllowed)');
+    expect(fulfillment).toContain('client_action_required: Boolean(task.clientActionRequired)');
+    expect(fulfillment).toContain("checkout_locale: input.checkoutLocale ?? 'es'");
 
     expect(tasksPage).toContain('blocked_by?: string[]');
+    expect(tasksPage).toContain('blocked_by_titles?: string[]');
     expect(tasksPage).toContain('Bloqueada hasta completar:');
     expect(tasksPage).toContain('saving === task.id || blocked');
+    expect(tasksPage).toContain('No aplica');
+    expect(tasksPage).toContain('/admin/expedientes/');
     expect(tasksPage).toContain('if (json.warning) setError(json.warning)');
   });
 

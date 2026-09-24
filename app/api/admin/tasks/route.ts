@@ -14,6 +14,27 @@ function addBusinessDays(from: Date, businessDays: number): string {
   return date.toISOString().slice(0, 10);
 }
 
+function taskMetadata(value: unknown): Record<string, unknown> {
+  return (value && typeof value === 'object' && !Array.isArray(value))
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function taskKey(metadata: Record<string, unknown>): string | null {
+  return typeof metadata.task_key === 'string' ? metadata.task_key : null;
+}
+
+function dependencyKeys(metadata: Record<string, unknown>): string[] {
+  return Array.isArray(metadata.depends_on)
+    ? metadata.depends_on.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
+function isSatisfiedTask(status: string, metadata: Record<string, unknown>): boolean {
+  return status === 'completada'
+    || (status === 'cancelada' && metadata.skipped_as_not_applicable === true);
+}
+
 async function requireStaff(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -31,6 +52,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const status = searchParams.get('status');
   const clientId = searchParams.get('clientId');
+  const caseId = searchParams.get('caseId');
   const assignedTo = searchParams.get('assignedTo');
 
   let query = auth.admin
@@ -41,6 +63,7 @@ export async function GET(request: NextRequest) {
 
   if (status && status !== 'all') query = query.eq('status', status);
   if (clientId) query = query.eq('client_id', clientId);
+  if (caseId) query = query.eq('case_id', caseId);
   if (assignedTo) query = query.eq('assigned_to', assignedTo);
 
   const { data: tasks, error } = await query;
@@ -49,7 +72,7 @@ export async function GET(request: NextRequest) {
   const clientIds = [...new Set((tasks ?? []).map((task) => task.client_id).filter(Boolean))] as string[];
   const caseIds = [...new Set((tasks ?? []).map((task) => task.case_id).filter(Boolean))] as string[];
   const assigneeIds = [...new Set((tasks ?? []).map((task) => task.assigned_to).filter(Boolean))] as string[];
-  const [profilesRes, casesRes, assigneesRes] = await Promise.all([
+  const [profilesRes, casesRes, assigneesRes, caseTasksRes] = await Promise.all([
     clientIds.length
       ? auth.admin.from('profiles').select('id,full_name').in('id', clientIds)
       : Promise.resolve({ data: [] as Array<{ id: string; full_name: string | null }> }),
@@ -59,36 +82,41 @@ export async function GET(request: NextRequest) {
     assigneeIds.length
       ? auth.admin.from('profiles').select('id,full_name').in('id', assigneeIds)
       : Promise.resolve({ data: [] as Array<{ id: string; full_name: string | null }> }),
+    caseIds.length
+      ? auth.admin.from('internal_tasks').select('case_id,title,status,metadata').in('case_id', caseIds)
+      : Promise.resolve({ data: [] as Array<{ case_id: string | null; title: string; status: string; metadata: unknown }> }),
   ]);
   const profileMap = new Map((profilesRes.data ?? []).map((item) => [item.id, item]));
   const caseMap = new Map((casesRes.data ?? []).map((item) => [item.id, item]));
   const assigneeMap = new Map((assigneesRes.data ?? []).map((item) => [item.id, item]));
 
-  const caseTaskMap = new Map<string, Array<{ status: string; metadata: Record<string, unknown> | null }>>();
-  for (const task of tasks ?? []) {
+  const caseTaskMap = new Map<string, Array<{ title: string; status: string; metadata: Record<string, unknown> }>>();
+  for (const task of caseTasksRes.data ?? []) {
     if (!task.case_id) continue;
     const list = caseTaskMap.get(task.case_id) ?? [];
-    list.push({ status: task.status, metadata: (task.metadata as Record<string, unknown> | null) ?? null });
+    list.push({ title: task.title, status: task.status, metadata: taskMetadata(task.metadata) });
     caseTaskMap.set(task.case_id, list);
   }
 
   return NextResponse.json({
     tasks: (tasks ?? []).map((task) => {
-      const metadata = (task.metadata as Record<string, unknown> | null) ?? null;
-      const dependsOn = Array.isArray(metadata?.depends_on)
-        ? metadata.depends_on.filter((item): item is string => typeof item === 'string')
-        : [];
+      const metadata = taskMetadata(task.metadata);
+      const dependsOn = dependencyKeys(metadata);
       const siblings = task.case_id ? caseTaskMap.get(task.case_id) ?? [] : [];
       const blockedBy = dependsOn.filter((dependencyKey) =>
         !siblings.some((candidate) =>
-          candidate.status === 'completada'
-          && candidate.metadata?.task_key === dependencyKey
+          taskKey(candidate.metadata) === dependencyKey
+          && isSatisfiedTask(candidate.status, candidate.metadata)
         ),
+      );
+      const blockedByTitles = blockedBy.map((dependencyKey) =>
+        siblings.find((candidate) => taskKey(candidate.metadata) === dependencyKey)?.title ?? dependencyKey,
       );
 
       return {
         ...task,
         blocked_by: blockedBy,
+        blocked_by_titles: blockedByTitles,
         client: task.client_id ? profileMap.get(task.client_id) ?? null : null,
         case: task.case_id ? caseMap.get(task.case_id) ?? null : null,
         assignee: task.assigned_to ? assigneeMap.get(task.assigned_to) ?? null : null,
@@ -132,6 +160,7 @@ const patchSchema = z.object({
   id: z.string().uuid(),
   status: z.enum(['pendiente', 'en_progreso', 'completada', 'cancelada']).optional(),
   assignedTo: z.string().uuid().nullable().optional(),
+  skipReason: z.string().trim().min(8).max(500).optional(),
 });
 
 export async function PATCH(request: NextRequest) {
@@ -143,23 +172,39 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 });
   }
 
-  if (parsed.data.status === 'en_progreso' || parsed.data.status === 'completada') {
+  let loadedTask: { id: string; case_id: string | null; source: string; metadata: unknown } | null = null;
+  if (parsed.data.status !== undefined) {
     const { data: task, error: taskLookupError } = await auth.admin
       .from('internal_tasks')
-      .select('id,case_id,metadata')
+      .select('id,case_id,source,metadata')
       .eq('id', parsed.data.id)
       .maybeSingle();
 
     if (taskLookupError || !task) {
       return NextResponse.json({ error: 'No se pudo cargar la tarea' }, { status: 404 });
     }
+    loadedTask = task;
 
-    const metadata = (task.metadata as Record<string, unknown> | null) ?? null;
-    const dependsOn = Array.isArray(metadata?.depends_on)
-      ? metadata.depends_on.filter((item): item is string => typeof item === 'string')
-      : [];
+    const metadata = taskMetadata(task.metadata);
+    if (parsed.data.status === 'cancelada' && metadata.task_kind === 'service_blueprint_step') {
+      if (metadata.skip_allowed !== true) {
+        return NextResponse.json({
+          error: 'Este paso del workflow no puede marcarse como no aplicable',
+          code: 'WORKFLOW_SKIP_NOT_ALLOWED',
+        }, { status: 409 });
+      }
+      if (!parsed.data.skipReason) {
+        return NextResponse.json({
+          error: 'Indica por qué este paso no aplica antes de omitirlo',
+          code: 'WORKFLOW_SKIP_REASON_REQUIRED',
+        }, { status: 400 });
+      }
+    }
 
-    if (dependsOn.length && task.case_id) {
+    const dependsOn = dependencyKeys(metadata);
+
+    if ((parsed.data.status === 'en_progreso' || parsed.data.status === 'completada' || parsed.data.status === 'cancelada')
+      && dependsOn.length && task.case_id) {
       const { data: siblingTasks, error: siblingsError } = await auth.admin
         .from('internal_tasks')
         .select('status,metadata')
@@ -171,8 +216,9 @@ export async function PATCH(request: NextRequest) {
 
       const blockedBy = dependsOn.filter((dependencyKey) =>
         !(siblingTasks ?? []).some((candidate) => {
-          const candidateMetadata = (candidate.metadata as Record<string, unknown> | null) ?? null;
-          return candidate.status === 'completada' && candidateMetadata?.task_key === dependencyKey;
+          const candidateMetadata = taskMetadata(candidate.metadata);
+          return taskKey(candidateMetadata) === dependencyKey
+            && isSatisfiedTask(candidate.status, candidateMetadata);
         }),
       );
 
@@ -190,6 +236,23 @@ export async function PATCH(request: NextRequest) {
   if (parsed.data.status !== undefined) {
     updatePayload.status = parsed.data.status;
     updatePayload.completed_at = parsed.data.status === 'completada' ? now : null;
+    if (parsed.data.status === 'cancelada' && loadedTask && taskMetadata(loadedTask.metadata).skip_allowed === true) {
+      updatePayload.metadata = {
+        ...taskMetadata(loadedTask.metadata),
+        skipped_as_not_applicable: true,
+        skipped_at: now,
+        skipped_by: auth.actorId,
+        skipped_reason: parsed.data.skipReason,
+      };
+    } else if (loadedTask && taskMetadata(loadedTask.metadata).skipped_as_not_applicable === true) {
+      updatePayload.metadata = {
+        ...taskMetadata(loadedTask.metadata),
+        skipped_as_not_applicable: false,
+        skipped_at: null,
+        skipped_by: null,
+        skipped_reason: null,
+      };
+    }
   }
   if (parsed.data.assignedTo !== undefined) {
     updatePayload.assigned_to = parsed.data.assignedTo;
@@ -199,8 +262,10 @@ export async function PATCH(request: NextRequest) {
   if (error) return NextResponse.json({ error: 'No se pudo actualizar la tarea' }, { status: 500 });
 
   let postCompletionWarning: string | null = null;
+  const resolvedForDependencies = parsed.data.status === 'completada'
+    || (parsed.data.status === 'cancelada' && loadedTask !== null && taskMetadata(loadedTask.metadata).skip_allowed === true);
 
-  if (parsed.data.status === 'completada') {
+  if (resolvedForDependencies) {
     const { data: completedTask } = await auth.admin
       .from('internal_tasks')
       .select('case_id')
@@ -229,16 +294,15 @@ export async function PATCH(request: NextRequest) {
 
       for (const sibling of postCompletionWarning ? [] : (siblings ?? [])) {
         if (sibling.due_date) continue;
-        const metadata = (sibling.metadata as Record<string, unknown> | null) ?? null;
-        const dependsOn = Array.isArray(metadata?.depends_on)
-          ? metadata.depends_on.filter((item): item is string => typeof item === 'string')
-          : [];
+        const metadata = taskMetadata(sibling.metadata);
+        const dependsOn = dependencyKeys(metadata);
         if (!dependsOn.length) continue;
 
         const dependenciesComplete = dependsOn.every((dependencyKey) =>
           (allCaseTasks.data ?? []).some((candidate) => {
-            const candidateMetadata = (candidate.metadata as Record<string, unknown> | null) ?? null;
-            return candidate.status === 'completada' && candidateMetadata?.task_key === dependencyKey;
+            const candidateMetadata = taskMetadata(candidate.metadata);
+            return taskKey(candidateMetadata) === dependencyKey
+              && isSatisfiedTask(candidate.status, candidateMetadata);
           }),
         );
         if (!dependenciesComplete) continue;
@@ -265,7 +329,7 @@ export async function PATCH(request: NextRequest) {
     }
   }
 
-  if (parsed.data.status === 'completada') {
+  if (resolvedForDependencies) {
     const { data: completedTask } = await auth.admin
       .from('internal_tasks')
       .select('case_id')
@@ -283,10 +347,9 @@ export async function PATCH(request: NextRequest) {
       } else {
         const completedKeys = new Set(
           (allTasksForNextAction ?? [])
-            .filter((candidate) => candidate.status === 'completada')
             .map((candidate) => {
-              const candidateMetadata = (candidate.metadata as Record<string, unknown> | null) ?? null;
-              return typeof candidateMetadata?.task_key === 'string' ? candidateMetadata.task_key : null;
+              const candidateMetadata = taskMetadata(candidate.metadata);
+              return isSatisfiedTask(candidate.status, candidateMetadata) ? taskKey(candidateMetadata) : null;
             })
             .filter((value): value is string => Boolean(value)),
         );
@@ -294,10 +357,8 @@ export async function PATCH(request: NextRequest) {
         const actionable = (allTasksForNextAction ?? [])
           .filter((candidate) => candidate.status === 'pendiente' || candidate.status === 'en_progreso')
           .map((candidate) => {
-            const metadata = (candidate.metadata as Record<string, unknown> | null) ?? null;
-            const dependsOn = Array.isArray(metadata?.depends_on)
-              ? metadata.depends_on.filter((item): item is string => typeof item === 'string')
-              : [];
+            const metadata = taskMetadata(candidate.metadata);
+            const dependsOn = dependencyKeys(metadata);
             const blocked = dependsOn.some((dependencyKey) => !completedKeys.has(dependencyKey));
             const sequenceIndex = typeof metadata?.sequence_index === 'number'
               ? metadata.sequence_index

@@ -36,10 +36,51 @@ export function resolveCaseDetailGuidance(input: {
   checklistCount: number;
   uploadedCount: number;
   reviewedCount: number;
+  locale?: 'es' | 'ru';
 }): KiaSurfaceGuidance {
+  const isRu = input.locale === 'ru';
   const detail = input.uploadedCount > 0
-    ? `${input.uploadedCount} documento${input.uploadedCount === 1 ? '' : 's'} subido${input.uploadedCount === 1 ? '' : 's'}${input.reviewedCount > 0 ? ` · ${input.reviewedCount} revisado${input.reviewedCount === 1 ? '' : 's'}` : ''}`
+    ? isRu
+      ? `${input.uploadedCount} файл${input.uploadedCount === 1 ? '' : 'а/ов'} загружено${input.reviewedCount > 0 ? ` · проверено: ${input.reviewedCount}` : ''}`
+      : `${input.uploadedCount} documento${input.uploadedCount === 1 ? '' : 's'} subido${input.uploadedCount === 1 ? '' : 's'}${input.reviewedCount > 0 ? ` · ${input.reviewedCount} revisado${input.reviewedCount === 1 ? '' : 's'}` : ''}`
     : undefined;
+
+  if (isRu) {
+    switch (input.caseState) {
+      case 'nuevo':
+        return { state: 'ayuda', title: 'Expediente открыт', message: 'Мы готовим следующий шаг и сообщим, если потребуется документ или подтверждение.' };
+      case 'docs_pendientes':
+      case 'pendiente_documentacion': {
+        const missingUploads = input.checklistCount > 0 && input.uploadedCount < input.checklistCount;
+        return {
+          state: missingUploads ? 'aviso' : 'duda',
+          title: missingUploads ? 'Нужны документы для продолжения' : 'Проверьте запрошенные документы',
+          message: missingUploads
+            ? 'Загрузите отсутствующие документы из checklist. Если пункт не относится к Вашей ситуации или документ уже есть у EXPERT, укажите это в комментарии.'
+            : 'Документы уже загружены, но expediente ещё ожидает проверки. Не дублируйте файлы без необходимости.',
+          detail,
+        };
+      }
+      case 'docs_recibidos':
+      case 'en_revision':
+        return { state: 'seguimiento', title: 'Документы проверяются', message: 'Сейчас ничего дополнительно делать не нужно, если команда не запросит новые сведения.', detail };
+      case 'en_tramitacion':
+      case 'en_proceso':
+        return { state: 'seguimiento', title: 'Процедура в работе', message: 'Expediente продвигается по этапам. Здесь будут отображаться следующие подтверждённые действия.', detail };
+      case 'pendiente_externo':
+        return { state: 'seguimiento', title: 'Ожидаем внешний ответ', message: 'Следующий шаг зависит от органа, поставщика или третьей стороны. Мы сообщим об изменении статуса.', detail };
+      case 'resolucion_recibida':
+        return { state: 'confianza', title: 'Решение получено', message: 'Команда проверяет полученное решение и готовит следующий подтверждённый шаг.', detail };
+      case 'presentado':
+        return { state: 'confianza', title: 'Заявление подано', message: 'Подача подтверждена в expediente. Мы отслеживаем следующий этап, не предполагая результат заранее.', detail };
+      case 'entregado':
+        return { state: 'exito', title: 'Результат услуги передан', message: 'Проверьте итоговые документы и используйте сообщения expediente, если нужна консультация.', detail };
+      case 'finalizado':
+        return { state: 'exito', title: 'Expediente завершён', message: 'Здесь остаются история, документы и сообщения по услуге.', detail };
+      default:
+        return { state: 'seguimiento', title: 'Я слежу за этим expediente вместе с Вами', message: 'Статус берётся из подтверждённых данных expediente. Следующий шаг будет показан отдельно, когда потребуется Ваше действие.', detail };
+    }
+  }
 
   switch (input.caseState) {
     case 'nuevo':
