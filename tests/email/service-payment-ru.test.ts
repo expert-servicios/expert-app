@@ -71,10 +71,16 @@ describe('Russian nationality service payment emails', () => {
     expect(client.html).toContain('ya está cobrada como suplido');
     expect(client.html).not.toContain('se abonará aparte');
     expect(client.html).not.toContain('te avisaremos para el pago de la tasa');
+    expect(client.html).toContain('/docs/apellidos-menor-nacionalidad-registro-civil');
+    expect(client.html).toContain('Instrucción oficial de 23 de mayo de 2007');
+    expect(client.html).toContain('la duplicación de un único apellido no se trata como una elección');
 
     expect(admin.html).toContain('Español (es)');
     expect(admin.html).toContain('No debe volver a cobrarse');
     expect(admin.html).toContain('/admin/expedientes/case_es');
+    expect(admin.html).toContain('Gate operativo antes de preparar el modelo');
+    expect(admin.html).toContain('apellido materno «desconocido»');
+    expect(admin.html).toContain('/docs/apellidos-menor-nacionalidad-registro-civil');
   });
 
   it('keeps professional revenue, VAT and disbursement separated', () => {
@@ -119,6 +125,9 @@ describe('Russian nationality service payment emails', () => {
     expect(template.html).toContain('104,05');
     expect(template.html).toContain('406,55');
     expect(template.html).toContain('Мы открываем expediente');
+    expect(template.html).toContain('удвоение одной фамилии не используется как способ отказаться');
+    expect(template.html).toContain('/ru/docs/familii-rebenka-pri-poluchenii-grazhdanstva-ispanii');
+    expect(template.html).toContain('/ru/blog/odna-familiya-u-rebenka-grazhdanstvo-ispanii');
     expect(template.html).not.toContain('se abonará aparte');
     expect(template.html).not.toContain('listo para el pago de la tasa');
   });
@@ -141,8 +150,11 @@ describe('Russian nationality service payment emails', () => {
     expect(template.html).toContain('Vyacheslav Test');
     expect(template.html).toContain('pilot@example.com');
     expect(template.html).toContain('expediente ya creado automáticamente');
-    expect(template.html).toContain('Solicitar la documentación pendiente');
-    expect(template.html).toContain('No abonar la tasa 790-026 hasta validar viabilidad y documentación');
+    expect(template.html).toContain('revisar primero los documentos ya disponibles');
+    expect(template.html).toContain('apellido personal de la madre');
+    expect(template.html).toContain('certificado de finalización DocuSign');
+    expect(template.html).toContain('No abonar nuevamente la tasa');
+    expect(template.html).toContain('/ru/docs/familii-rebenka-pri-poluchenii-grazhdanstva-ispanii');
     expect(template.html).toContain('cs_test_123');
     expect(template.html).toContain('case_test_123');
     expect(template.html).toContain('order_test_123');
