@@ -19,6 +19,7 @@ function addBusinessDays(from: Date, businessDays: number): string {
 }
 
 function taskDueDate(task: ServiceTaskTemplate): string | null {
+  if (task.dependsOn?.length) return null;
   return typeof task.dueBusinessDays === 'number'
     ? addBusinessDays(new Date(), task.dueBusinessDays)
     : null;
@@ -204,6 +205,7 @@ export async function ensureServiceOrderFulfillment(
       depends_on: task.dependsOn ?? [],
       blocks_submission: Boolean(task.blocksSubmission),
       reference_urls: task.referenceUrls ?? [],
+      due_business_days: task.dueBusinessDays ?? null,
       blueprint_version: blueprintSlug ? '5' : null,
     };
 
