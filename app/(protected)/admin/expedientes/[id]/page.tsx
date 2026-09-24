@@ -11,6 +11,7 @@ import { AiCaseActions } from '@/components/admin/AiCaseActions';
 import { AdminDeliverableUpload } from '@/components/admin/AdminDeliverableUpload';
 import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
 import { CaseOperationsEditor } from '@/components/admin/CaseOperationsEditor';
+import { CaseWorkflowPanel } from '@/components/admin/CaseWorkflowPanel';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 interface Document {
@@ -35,6 +36,7 @@ interface CaseDetail {
   id: string;
   category: string;
   service: string;
+  service_id: string | null;
   state: string;
   status: string | null;
   effective_status: 'nuevo' | 'pendiente_cliente' | 'en_revision' | 'listo_para_presentar' | 'presentado' | 'finalizado' | 'bloqueado';
@@ -43,6 +45,7 @@ interface CaseDetail {
   client_id: string;
   admin_note: string | null;
   docs_checklist: string[] | null;
+  checklist_json: Record<string, unknown> | null;
   assigned_to: string | null;
   priority: 'baja' | 'media' | 'alta' | 'critica' | null;
   next_action: string | null;
@@ -124,6 +127,8 @@ export default async function AdminCaseDetailPage({
           initialNextAction={c.next_action}
           initialDueDate={c.due_date}
         />
+
+        <CaseWorkflowPanel serviceId={c.service_id} checklistJson={c.checklist_json} />
 
         <Link
           href={`/admin/tareas?caseId=${id}`}
