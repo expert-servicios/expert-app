@@ -82,6 +82,7 @@ export default function AdminTasksPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'No se pudo actualizar');
+      if (json.warning) setError(json.warning);
       await load();
     } catch (e) { setError(e instanceof Error ? e.message : 'No se pudo actualizar'); }
     finally { setSaving(''); }
