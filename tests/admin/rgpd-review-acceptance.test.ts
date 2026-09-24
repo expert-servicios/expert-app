@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
 
-const migration = source('supabase/migrations/20260924160600_rgpd_professional_review_lifecycle.sql');
+const migration = source('supabase/migrations/20260924160041_rgpd_professional_review_lifecycle.sql');
 const route = source('app/api/admin/rgpd-reviews/[id]/accept/route.ts');
 const page = source('app/(protected)/admin/rgpd-revisiones/page.tsx');
 
