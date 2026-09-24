@@ -33,14 +33,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const taskDescription = isNationality
       ? [
           'El cliente ha enviado documentación a revisión.',
-          '1. Revisar documentación cargada y comentarios por punto de checklist.',
-          '2. Confirmar viabilidad documental y residencia legal mínima.',
-          '3. Rellenar solicitud de nacionalidad por residencia.',
-          '4. Pagar tasa 790-026 de 104,05 € como suplido.',
-          '5. Adjuntar justificante de pago de tasa al expediente.',
-          '6. Presentar solicitud telemática.',
-          '7. Subir justificante de presentación al expediente.',
-          '8. Cambiar estado a presentado y avisar al cliente.',
+          '1. Revisar documentación cargada y comentarios por punto de checklist; no volver a pedir documentos ya disponibles.',
+          '2. Confirmar viabilidad documental, residencia legal propia del menor y representación/patria potestad.',
+          '3. Si EXPERT presenta, formalizar y archivar mandato de representación y, si se usa DocuSign, también el certificado de finalización.',
+          '4. Antes de preparar el modelo, cerrar apellidos registrales: revisar filiación, apellido personal de la madre y posibles cambios por matrimonio. No ofrecer duplicación como libre elección cuando la línea materna está determinada.',
+          '5. Confirmar con ambos progenitores el orden de apellidos y comprobar orden previo de hermanos si procede.',
+          '6. Rellenar la solicitud oficial distinguiendo identidad extranjera vigente y datos para futura inscripción española.',
+          '7. Obtener y validar las firmas necesarias; no reutilizar versiones retiradas del formulario.',
+          '8. Completar validación pre-presentación profesional.',
+          '9. Comprobar si la tasa 790-026 ya está pagada; si no lo está, pagar el importe oficial vigente y archivar justificante/NRC. Nunca duplicar el pago.',
+          '10. Presentar solo con autorización profesional expresa.',
+          '11. Archivar justificante, número de registro y copia final presentada; después activar seguimiento.',
+          'Guía apellidos: /docs/apellidos-menor-nacionalidad-registro-civil',
+          'Fuente BOE: https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948',
         ].join('\n')
       : 'El cliente ha marcado la documentación como enviada. Revisar archivos y comentarios, validar suficiencia y actualizar el expediente.';
 
@@ -101,7 +106,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .update({
         status: 'en_revision',
         state: 'en_revision',
-        next_action: 'Revisar documentación enviada por el cliente y preparar la solicitud',
+        next_action: isNationality
+          ? 'Revisar documentación, residencia, representación y apellidos registrales antes de preparar el modelo oficial'
+          : 'Revisar documentación enviada por el cliente y preparar la solicitud',
         updated_at: now,
       })
       .eq('id', caseId);
