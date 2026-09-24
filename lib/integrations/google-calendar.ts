@@ -363,7 +363,10 @@ export async function ensureCalendarMeetingUrlSA(eventId: string): Promise<strin
   };
 
   const existing = await readMeetUrl();
-  if (existing) return existing;
+  if (existing) {
+    await configureGoogleMeetAutoArtifactsBestEffort(existing);
+    return existing;
+  }
 
   const requestId = `expert-recover-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   await cal.events.patch({
