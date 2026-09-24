@@ -44,21 +44,38 @@ export async function DELETE(
     return NextResponse.json({ error: 'authentication_required' }, { status: 401 });
   }
 
-  const { data, error } = await supabase
+  const { data: existing, error: lookupError } = await supabase
+    .from('rgpd_self_implementation_projects')
+    .select('id,version,status')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (lookupError) {
+    return NextResponse.json({ error: 'project_lookup_failed' }, { status: 500 });
+  }
+
+  if (!existing) {
+    return NextResponse.json({ error: 'project_not_found' }, { status: 404 });
+  }
+
+  if (existing.status !== 'draft') {
+    return NextResponse.json(
+      { error: 'project_locked_for_professional_traceability' },
+      { status: 409 }
+    );
+  }
+
+  const { error } = await supabase
     .from('rgpd_self_implementation_projects')
     .delete()
     .eq('id', id)
     .eq('user_id', user.id)
-    .select('id,version')
-    .maybeSingle();
+    .eq('status', 'draft');
 
   if (error) {
     return NextResponse.json({ error: 'delete_failed' }, { status: 500 });
   }
 
-  if (!data) {
-    return NextResponse.json({ error: 'project_not_found' }, { status: 404 });
-  }
-
-  return NextResponse.json({ ok: true, deleted: data });
+  return NextResponse.json({ ok: true, deleted: { id: existing.id, version: existing.version } });
 }
