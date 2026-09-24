@@ -141,7 +141,7 @@ describe('KIA authoritative case-status wiring', () => {
 
   it('loads the authoritative snapshot only for case-status presentation and never from browser state', () => {
     expect(route).toContain("result.decision.intent === 'case_status'");
-    expect(route).toContain('loadKiaAuthoritativeCaseStatuses(admin, user.id, companyScope)');
+    expect(route).toContain('loadKiaAuthoritativeCaseStatuses(admin, staffPreview?.clientId ?? user.id, companyScope)');
     expect(route).toContain('buildKiaAvatarDecision(');
     expect(route).toContain('decision: avatarDecision');
     expect(route).not.toContain('authoritativeCaseStatuses: parsed.data');
