@@ -16,7 +16,7 @@ function requestedArtifacts(): MeetAutoArtifact[] {
   const raw = process.env.GOOGLE_MEET_AUTO_ARTIFACTS?.trim().toLowerCase();
   if (raw === 'off' || raw === 'false' || raw === 'none') return [];
 
-  const requested = (raw || 'transcription,smart_notes')
+  const requested = (raw || 'off')
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean);
