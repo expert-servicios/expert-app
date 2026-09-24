@@ -39,9 +39,7 @@ const NAV_GROUPS: NavGroup[] = [
     short: "Clientes",
     icon: Users,
     items: [
-      { label: "Clientes", href: "/admin/clientes" },
-      { label: "Usuarios", href: "/admin/usuarios" },
-      { label: "Empresas", href: "/admin/empresas" },
+      { label: "Directorio 360", href: "/admin/directorio" },
       { label: "Onboarding", href: "/admin/onboarding" },
       { label: "Calendario", href: "/admin/calendario-fiscal" },
     ],
@@ -57,6 +55,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Documentos", href: "/admin/documentos" },
       { label: "Citas", href: "/admin/citas" },
       { label: "Presupuestos", href: "/admin/presupuestos" },
+      { label: "Revisiones RGPD", href: "/admin/rgpd-revisiones" },
     ],
   },
   {

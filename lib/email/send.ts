@@ -1,6 +1,7 @@
 import { getResendClient } from '@/lib/integrations/resend';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { BRAND } from './templates';
+import { maybeAppendKiaContextualCta } from './kia-contextual-cta';
 import {
   calculateRussianNationalityAmounts,
   isNationalityPayment,
@@ -219,6 +220,14 @@ export async function sendEmail({
   subject = localized.subject;
   html = localized.html;
   metadata = localized.metadata;
+
+  const contextual = await maybeAppendKiaContextualCta({
+    admin: supabase,
+    html,
+    metadata,
+  });
+  html = contextual.html;
+  metadata = contextual.metadata;
 
   const effectiveIdempotencyKey = idempotencyKey ?? deriveIdempotencyKey(eventType, metadata);
 

@@ -11,7 +11,23 @@ type OAuthStatePayload = {
   provider: OAuthProvider;
   userId: string;
   requiresAdmin: boolean;
+  purpose?: 'default' | 'client_productivity';
+  companyId?: string | null;
+  next?: string | null;
 };
+
+function safeOAuthNext(value: unknown): string | null {
+  if (typeof value !== 'string' || !value) return null;
+  try {
+    const base = new URL('https://expert.invalid');
+    const resolved = new URL(value, base);
+    if (resolved.origin !== base.origin) return null;
+    if (!resolved.pathname.startsWith('/')) return null;
+    return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+  } catch {
+    return null;
+  }
+}
 
 function getOAuthStateSecret(): Uint8Array {
   const secret =
@@ -31,6 +47,9 @@ export async function createOAuthState(params: {
   provider: OAuthProvider;
   userId: string;
   requiresAdmin?: boolean;
+  purpose?: 'default' | 'client_productivity';
+  companyId?: string | null;
+  next?: string | null;
 }): Promise<{ state: string; cookieValue: string }> {
   const state = crypto.randomUUID();
   const cookieValue = await new SignJWT({
@@ -38,6 +57,9 @@ export async function createOAuthState(params: {
     provider: params.provider,
     userId: params.userId,
     requiresAdmin: params.requiresAdmin === true,
+    purpose: params.purpose ?? 'default',
+    companyId: params.companyId ?? null,
+    next: params.next ?? null,
   } satisfies OAuthStatePayload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -72,7 +94,7 @@ export async function verifyOAuthState(
   provider: OAuthProvider,
   state: string | null
 ): Promise<
-  | { ok: true; userId: string; requiresAdmin: boolean }
+  | { ok: true; userId: string; requiresAdmin: boolean; purpose: 'default' | 'client_productivity'; companyId: string | null; next: string | null }
   | { ok: false; reason: string }
 > {
   if (!state) return { ok: false, reason: 'missing_state' };
@@ -92,6 +114,9 @@ export async function verifyOAuthState(
       ok: true,
       userId: payload.userId,
       requiresAdmin: payload.requiresAdmin === true,
+      purpose: payload.purpose === 'client_productivity' ? 'client_productivity' : 'default',
+      companyId: typeof payload.companyId === 'string' && payload.companyId ? payload.companyId : null,
+      next: safeOAuthNext(payload.next),
     };
   } catch {
     return { ok: false, reason: 'invalid_state_cookie' };

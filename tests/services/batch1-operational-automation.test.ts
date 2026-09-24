@@ -63,6 +63,53 @@ describe('batch 1 operational automation', () => {
     expect(fulfillment).toContain(".eq('order_id', input.orderId)");
     expect(fulfillment).toContain(".eq('title', task.title)");
     expect(fulfillment).toContain('human_approval_required');
+    expect(fulfillment).toContain('depends_on: task.dependsOn ?? []');
+    expect(fulfillment).toContain('blocks_submission: Boolean(task.blocksSubmission)');
+    expect(fulfillment).toContain('reference_urls: task.referenceUrls ?? []');
+    expect(fulfillment).toContain(".select('id,service_id,checklist_json')");
+    expect(fulfillment).toContain('Could not hydrate legacy service case');
+    expect(fulfillment).toContain('Could not hydrate service task');
+    expect(fulfillment).toContain('service_manual_intake');
+    expect(fulfillment).toContain('service-operational-blueprint-v5');
+    expect(fulfillment).not.toContain('if (!blueprint) return null');
+    expect(webhook).toContain('serviceSlugs: catalogServiceSlugs');
+    expect(webhook).toContain('serviceName,');
+  });
+
+  it('enforces blueprint task dependencies in the Admin workspace', () => {
+    const tasksApi = read('app/api/admin/tasks/route.ts');
+    const tasksPage = read('app/(protected)/admin/tareas/page.tsx');
+
+    expect(tasksApi).toContain("select('id,title,description,status,priority,assigned_to,case_id,client_id,lead_id,due_date,source,metadata");
+    expect(tasksApi).toContain('dependencyKeys(metadata)');
+    expect(tasksApi).toContain('isSatisfiedTask');
+    expect(tasksApi).toContain("metadata.skipped_as_not_applicable === true");
+    expect(tasksApi).toContain("metadata.skip_allowed !== true");
+    expect(tasksApi).toContain("'La tarea está bloqueada por pasos anteriores pendientes'");
+    expect(tasksApi).toContain('status: 409');
+    expect(tasksApi).toContain('due_business_days');
+    expect(tasksApi).toContain('addBusinessDays(new Date(), dueBusinessDays)');
+    expect(tasksApi).toContain("postCompletionWarning = 'La tarea se completó");
+    expect(tasksApi).toContain('warning: postCompletionWarning');
+    expect(tasksApi).toContain('taskKey(candidateMetadata)');
+    expect(tasksApi).toContain("metadata?.sequence_index");
+    expect(tasksApi).toContain("next_action: nextAction");
+
+    const fulfillment = read('lib/payments/service-order-fulfillment.ts');
+    expect(fulfillment).toContain('if (task.dependsOn?.length) return null');
+    expect(fulfillment).toContain('due_business_days: task.dueBusinessDays ?? null');
+    expect(fulfillment).toContain('sequence_index: sequenceIndex');
+    expect(fulfillment).toContain('skip_allowed: Boolean(task.skipAllowed)');
+    expect(fulfillment).toContain('client_action_required: Boolean(task.clientActionRequired)');
+    expect(fulfillment).toContain("checkout_locale: input.checkoutLocale ?? 'es'");
+
+    expect(tasksPage).toContain('blocked_by?: string[]');
+    expect(tasksPage).toContain('blocked_by_titles?: string[]');
+    expect(tasksPage).toContain('Bloqueada hasta completar:');
+    expect(tasksPage).toContain('saving === task.id || blocked');
+    expect(tasksPage).toContain('No aplica');
+    expect(tasksPage).toContain('/admin/expedientes/');
+    expect(tasksPage).toContain('if (json.warning) setError(json.warning)');
   });
 
   it('keeps current Arraigo Sociolaboral rules and retires the old operational logic', () => {

@@ -46,10 +46,10 @@ export function Hero() {
 
           <div className="mt-8 flex flex-col gap-4 sm:flex-row">
             <Link
-              href="/cita"
+              href="/cita?tipo=consulta-inicial"
               className="inline-flex min-h-12 items-center justify-center rounded-md bg-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
             >
-              Reservar cita gratuita
+              Consulta gratuita · 15 min
             </Link>
             <Link
               href="/planes"

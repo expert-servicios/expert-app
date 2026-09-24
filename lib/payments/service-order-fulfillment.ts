@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   getServiceOperationalBlueprint,
+  type ServiceOperationalBlueprint,
   type ServiceTaskTemplate,
 } from '@/lib/services/service-operational-blueprints';
 
@@ -18,9 +19,31 @@ function addBusinessDays(from: Date, businessDays: number): string {
 }
 
 function taskDueDate(task: ServiceTaskTemplate): string | null {
+  if (task.dependsOn?.length) return null;
   return typeof task.dueBusinessDays === 'number'
     ? addBusinessDays(new Date(), task.dueBusinessDays)
     : null;
+}
+
+type ResolvedService = {
+  slug: string;
+  blueprint: ServiceOperationalBlueprint | null;
+};
+
+function unique(values: string[]): string[] {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function genericTask(service: ResolvedService): ServiceTaskTemplate {
+  return {
+    key: `manual-intake-${service.slug}`,
+    title: `Iniciar servicio: ${service.slug}`,
+    description: 'Revisar el pedido pagado, confirmar alcance y preparar el checklist operativo con el cliente.',
+    phase: 'intake',
+    priority: 'alta',
+    dueBusinessDays: 1,
+    humanApprovalRequired: true,
+  };
 }
 
 export async function ensureServiceOrderFulfillment(
@@ -28,18 +51,41 @@ export async function ensureServiceOrderFulfillment(
   input: {
     orderId: string;
     serviceSlug: string;
+    serviceSlugs?: string[];
+    serviceName?: string | null;
     clientId: string | null;
     companyId: string | null;
+    checkoutLocale?: 'es' | 'ru' | null;
   },
 ): Promise<string | null> {
   if (!input.clientId) return null;
 
-  const blueprint = getServiceOperationalBlueprint(input.serviceSlug);
-  if (!blueprint) return null;
+  const slugs = unique([...(input.serviceSlugs ?? []), input.serviceSlug]);
+  if (slugs.length === 0) {
+    throw new Error(`Could not fulfill service order ${input.orderId}: missing service slug`);
+  }
+
+  const services: ResolvedService[] = slugs.map((slug) => ({
+    slug,
+    blueprint: getServiceOperationalBlueprint(slug),
+  }));
+  const blueprints = services
+    .map((service) => service.blueprint)
+    .filter((blueprint): blueprint is ServiceOperationalBlueprint => Boolean(blueprint));
+  const isFullySpecialized = blueprints.length === services.length;
+  const primaryBlueprint = blueprints[0] ?? null;
+
+  const requiredDocuments = unique(
+    blueprints.flatMap((blueprint) =>
+      blueprint.documents.filter((document) => document.required).map((document) => document.label),
+    ),
+  );
+  const serviceLabel = input.serviceName?.trim()
+    || services.map((service) => service.blueprint?.canonicalName ?? service.slug).join(', ');
 
   const { data: existingCase, error: caseLookupError } = await admin
     .from('cases')
-    .select('id,service_id')
+    .select('id,service_id,checklist_json')
     .eq('order_id', input.orderId)
     .maybeSingle();
 
@@ -55,21 +101,29 @@ export async function ensureServiceOrderFulfillment(
       .insert({
         client_id: input.clientId,
         company_id: input.companyId,
-        category: blueprint.category,
-        service: blueprint.canonicalName,
-        service_id: blueprint.slug,
+        category: services.length === 1 && primaryBlueprint ? primaryBlueprint.category : 'servicios',
+        service: serviceLabel,
+        service_id: slugs.join(','),
         order_id: input.orderId,
-        state: blueprint.initialState,
-        status: blueprint.initialStatus,
-        priority: blueprint.initialPriority,
-        next_action: blueprint.initialNextAction,
-        docs_checklist: blueprint.documents.filter((doc) => doc.required).map((doc) => doc.label),
+        state: primaryBlueprint?.initialState ?? 'nuevo',
+        status: primaryBlueprint?.initialStatus ?? 'nuevo',
+        priority: primaryBlueprint?.initialPriority ?? 'alta',
+        next_action: isFullySpecialized
+          ? primaryBlueprint?.initialNextAction ?? 'Revisar el pedido y comenzar la prestación'
+          : 'Revisar el pedido pagado y definir el checklist operativo',
+        docs_checklist: requiredDocuments,
         checklist_json: {
-          standard: 'service-operational-blueprint-v1',
-          service_slug: blueprint.slug,
-          requirements: blueprint.requirements,
-          documents: blueprint.documents,
-          steps: blueprint.steps,
+          standard: 'service-operational-blueprint-v5',
+          service_slugs: slugs,
+          specialized: isFullySpecialized,
+          checkout_locale: input.checkoutLocale ?? 'es',
+          services: services.map((service) => ({
+            service_slug: service.slug,
+            blueprint_available: Boolean(service.blueprint),
+            requirements: service.blueprint?.requirements ?? [],
+            documents: service.blueprint?.documents ?? [],
+            steps: service.blueprint?.steps ?? [],
+          })),
         },
       })
       .select('id')
@@ -80,31 +134,131 @@ export async function ensureServiceOrderFulfillment(
     }
 
     caseId = createdCase.id;
+  }
 
-    const { error: orderLinkError } = await admin
-      .from('orders')
-      .update({ case_id: caseId })
-      .eq('id', input.orderId);
+  // Retry the reverse link even when an earlier attempt already created the case.
+  const { error: orderLinkError } = await admin
+    .from('orders')
+    .update({ case_id: caseId })
+    .eq('id', input.orderId);
 
-    if (orderLinkError) {
-      throw new Error(`Could not link case ${caseId} to order ${input.orderId}: ${orderLinkError.message}`);
+  if (orderLinkError) {
+    throw new Error(`Could not link case ${caseId} to order ${input.orderId}: ${orderLinkError.message}`);
+  }
+
+  if (existingCase?.id && !existingCase.checklist_json && isFullySpecialized && primaryBlueprint) {
+    const { error: hydrateCaseError } = await admin
+      .from('cases')
+      .update({
+        priority: primaryBlueprint.initialPriority,
+        next_action: primaryBlueprint.initialNextAction,
+        docs_checklist: requiredDocuments,
+        checklist_json: {
+          standard: 'service-operational-blueprint-v5',
+          service_slugs: slugs,
+          specialized: true,
+          checkout_locale: input.checkoutLocale ?? 'es',
+          services: services.map((service) => ({
+            service_slug: service.slug,
+            blueprint_available: Boolean(service.blueprint),
+            requirements: service.blueprint?.requirements ?? [],
+            documents: service.blueprint?.documents ?? [],
+            steps: service.blueprint?.steps ?? [],
+          })),
+        },
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existingCase.id);
+
+    if (hydrateCaseError) {
+      throw new Error(`Could not hydrate legacy service case ${existingCase.id}: ${hydrateCaseError.message}`);
     }
   }
 
-  for (const task of blueprint.tasks) {
+  const tasks = services.flatMap((service, serviceIndex) =>
+    (service.blueprint?.tasks ?? [genericTask(service)]).map((task, taskIndex) => ({
+      task,
+      serviceSlug: service.slug,
+      blueprintSlug: service.blueprint?.slug ?? null,
+      sequenceIndex: serviceIndex * 100 + taskIndex,
+    })),
+  );
+
+  for (const { task, serviceSlug, blueprintSlug, sequenceIndex } of tasks) {
     const { data: existingTask, error: taskLookupError } = await admin
       .from('internal_tasks')
-      .select('id')
+      .select('id,metadata,due_date')
       .eq('case_id', caseId)
       .eq('source', 'system')
-      .eq('title', task.title)
-      .in('status', ['pendiente', 'en_progreso'])
+      .eq('metadata->>service_slug', serviceSlug)
+      .eq('metadata->>task_key', task.key)
+      // A payment replay must also preserve completed or cancelled work.
+      .limit(1)
       .maybeSingle();
 
     if (taskLookupError) {
       throw new Error(`Could not resolve service task ${task.key}: ${taskLookupError.message}`);
     }
-    if (existingTask) continue;
+
+    const blueprintTaskMetadata = {
+      ...(blueprintSlug
+        ? { task_kind: 'service_blueprint_step' }
+        : { task_kind: 'service_manual_intake' }),
+      service_slug: serviceSlug,
+      blueprint_slug: blueprintSlug,
+      task_key: task.key,
+      phase: task.phase,
+      human_approval_required: Boolean(task.humanApprovalRequired),
+      depends_on: task.dependsOn ?? [],
+      blocks_submission: Boolean(task.blocksSubmission),
+      skip_allowed: Boolean(task.skipAllowed),
+      client_action_required: Boolean(task.clientActionRequired),
+      client_action: task.clientAction ?? null,
+      reference_urls: task.referenceUrls ?? [],
+      due_business_days: task.dueBusinessDays ?? null,
+      sequence_index: sequenceIndex,
+      blueprint_version: blueprintSlug ? '5' : null,
+    };
+
+    if (existingTask) {
+      const { error: taskHydrateError } = await admin
+        .from('internal_tasks')
+        .update({
+          description: task.description,
+          priority: task.priority,
+          due_date: existingTask.due_date ?? taskDueDate(task),
+          metadata: {
+            ...((existingTask.metadata as Record<string, unknown> | null) ?? {}),
+            ...blueprintTaskMetadata,
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingTask.id);
+
+      if (taskHydrateError) {
+        throw new Error(`Could not hydrate service task ${task.key}: ${taskHydrateError.message}`);
+      }
+      continue;
+    }
+
+    // Old tasks without identity can only be reused when the title maps to one
+    // task in this order. Never consume another service's identified task.
+    if (tasks.filter((entry) => entry.task.title === task.title).length === 1) {
+      const { data: legacyTask, error: legacyLookupError } = await admin
+        .from('internal_tasks')
+        .select('id')
+        .eq('case_id', caseId)
+        .eq('source', 'system')
+        .eq('title', task.title)
+        .is('metadata->>service_slug', null)
+        .is('metadata->>task_key', null)
+        .limit(1)
+        .maybeSingle();
+      if (legacyLookupError) {
+        throw new Error(`Could not resolve legacy service task ${task.key}: ${legacyLookupError.message}`);
+      }
+      if (legacyTask) continue;
+    }
 
     const { error: taskCreateError } = await admin
       .from('internal_tasks')
@@ -118,14 +272,7 @@ export async function ensureServiceOrderFulfillment(
         company_id: input.companyId,
         due_date: taskDueDate(task),
         source: 'system',
-        metadata: {
-          task_kind: 'service_blueprint_step',
-          service_slug: blueprint.slug,
-          task_key: task.key,
-          phase: task.phase,
-          human_approval_required: Boolean(task.humanApprovalRequired),
-          blueprint_version: '1',
-        },
+        metadata: blueprintTaskMetadata,
       });
 
     if (taskCreateError) {

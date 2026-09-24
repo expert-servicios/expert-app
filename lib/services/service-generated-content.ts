@@ -121,7 +121,7 @@ ${sourceBlock}
 export function getGeneratedBatch1BlogArticles() {
   return BATCH1_OPERATIONAL_BLUEPRINTS.flatMap((profile) => {
     const reqs = profile.requirements.map((item) => item.label);
-    const docs = profile.documents.map((item) => item.label);
+    const docs = profile.documents.map((item) => item.conditionalWhen ? `${item.label} — ${item.conditionalWhen}` : item.label);
 
     return [
       {

@@ -2,8 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmailOnce } from '@/lib/email/send';
-import { welcomeEmail } from '@/lib/email/templates';
+import { welcomeEmail, newUserRegisteredAdmin } from '@/lib/email/templates';
 import { safeRedirectPath } from '@/lib/auth/safe-redirect';
+import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients';
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
       const admin = getSupabaseAdmin();
       const { data: profile } = await admin
         .from('profiles')
-        .select('full_name, welcome_email_sent, role, status')
+        .select('full_name, phone, welcome_email_sent, role, status')
         .eq('id', user.id)
         .single();
 
@@ -83,6 +84,23 @@ export async function GET(request: NextRequest) {
             metadata: { user_id: user.id },
             idempotencyKey: `user-welcome/${user.id}`,
           });
+
+          const adminEmails = await getAdminNotificationEmails();
+          if (adminEmails.length) {
+            const adminTpl = newUserRegisteredAdmin({
+              name: displayName,
+              email: user.email,
+              phone: profile.phone ?? null,
+              registrationMethod: 'Auto-registro (web)',
+            });
+            await sendEmailOnce({
+              to: adminEmails,
+              eventType: 'new_user_admin_alert',
+              ...adminTpl,
+              metadata: { user_id: user.id },
+              idempotencyKey: `user-signup-admin-alert/${user.id}`,
+            });
+          }
 
           const { error: welcomeFlagError } = await admin
             .from('profiles')

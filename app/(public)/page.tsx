@@ -680,7 +680,7 @@ function Formacion() {
         <div className="mt-8">
           <CalButton
             url={calAcademyUrl}
-            fallbackHref="/cita"
+            fallbackHref="/cita?tipo=academy-admision"
             className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#D4A017]/10"
           >
             Reservar entrevista de admisión
@@ -860,7 +860,7 @@ function FinalCta() {
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           <Link
-            href="/cita"
+            href="/cita?tipo=consulta-inicial"
             className="inline-flex min-h-12 items-center justify-center bg-[#D4A017] px-8 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
           >
             Reservar cita gratuita

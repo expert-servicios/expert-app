@@ -37,6 +37,13 @@ const serviceCategories = [
     ]
   },
   {
+    id: 'proteccion-datos',
+    title: 'Protección de datos',
+    services: [
+      { id: 'proteccion-datos-rgpd', name: 'RGPD / LOPDGDD — revisión e implantación', description: 'Revisión personalizada de tratamientos, documentación, proveedores, web y riesgos' }
+    ]
+  },
+  {
     id: 'formacion',
     title: 'Formación y acompañamiento',
     services: [
@@ -74,7 +81,14 @@ export function SolicitudPresupuestoForm() {
   const originFromUrl = searchParams.get('origen');
   const typeFromUrl = searchParams.get('tipo');
   const modeFromUrl = searchParams.get('modalidad');
-  const contextNote = buildContextNote({ serviceFromUrl, originFromUrl, typeFromUrl, modeFromUrl });
+  const summaryFromUrl = searchParams.get('resumen');
+  const rgpdProjectId = searchParams.get('rgpd_project_id');
+  const rgpdVersion = searchParams.get('rgpd_version');
+  const baseContextNote = buildContextNote({ serviceFromUrl, originFromUrl, typeFromUrl, modeFromUrl });
+  const rgpdContext = rgpdProjectId
+    ? 'Referencia expediente RGPD: ' + rgpdProjectId + (rgpdVersion ? ' · versión ' + rgpdVersion : '') + '.'
+    : '';
+  const contextNote = [baseContextNote, rgpdContext, summaryFromUrl].filter(Boolean).join('\n');
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

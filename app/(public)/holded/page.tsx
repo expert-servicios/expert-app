@@ -323,10 +323,13 @@ export default async function HoldedPage() {
               >
                 Ver migración laboral <ArrowRight className="h-4 w-4" />
               </Link>
-              <HoldedCalButton className="inline-flex min-h-12 items-center justify-center gap-2 border border-white/25 px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:border-[#D4A017]">
+              <Link
+                href="/cita?tipo=consulta-inicial"
+                className="inline-flex min-h-12 items-center justify-center gap-2 border border-white/25 px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:border-[#D4A017]"
+              >
                 <Calendar className="h-4 w-4" />
                 Revisión previa — 15 min
-              </HoldedCalButton>
+              </Link>
             </div>
           </div>
           <div className="border border-[#D4A017]/35 bg-white/5 p-7">

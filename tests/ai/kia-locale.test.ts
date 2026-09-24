@@ -11,9 +11,9 @@ describe('Kia locale contract', () => {
     expect(resolveKiaLocale({ explicit: 'ru', preferredLanguage: 'es', latestMessage: 'Hola' })).toBe('ru');
   });
 
-  it('detects Cyrillic Russian messages without treating all Latin text as Spanish', () => {
+  it('detects Russian and clear Spanish messages while keeping neutral Latin text unresolved', () => {
     expect(detectKiaMessageLocale('Здравствуйте, нужна помощь с Holded')).toBe('ru');
-    expect(detectKiaMessageLocale('Necesito ayuda con Holded')).toBeNull();
+    expect(detectKiaMessageLocale('Necesito ayuda con Holded')).toBe('es');
     expect(detectKiaMessageLocale('Holded')).toBeNull();
   });
 

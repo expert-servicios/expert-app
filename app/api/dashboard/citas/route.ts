@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import {
+  getAuthorizedBookingEmails,
+  resolveAuthenticatedBookingIdentity,
+} from '@/lib/admin/onboarding-booking-identity';
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,10 +14,19 @@ export async function GET(request: NextRequest) {
     }
 
     const admin = getSupabaseAdmin();
+    const identity = await resolveAuthenticatedBookingIdentity(admin, user.id);
+    const emails = await getAuthorizedBookingEmails(
+      admin,
+      user.id,
+      identity.companyId,
+      user.email
+    );
+    if (!emails.length) return NextResponse.json({ appointments: [] });
+
     const { data: appointments, error } = await admin
       .from('appointments')
       .select('id,service,status,confirmed_date,confirmed_time,meeting_url,notes,created_at')
-      .ilike('email', user.email)
+      .in('email', emails)
       .order('confirmed_date', { ascending: false, nullsFirst: false });
 
     if (error) {

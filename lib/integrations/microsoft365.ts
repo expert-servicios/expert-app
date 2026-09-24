@@ -10,6 +10,8 @@ const SCOPES = [
   'offline_access',
   'Mail.Read',
   'Mail.Send',
+  'Calendars.ReadWrite',
+  'Files.ReadWrite',
 ].join(' ');
 
 function getRedirectUri() {
@@ -33,6 +35,7 @@ interface TokenResponse {
   access_token: string;
   refresh_token: string;
   expires_in: number;
+  scope?: string;
 }
 
 export type Ms365StoredTokens = { access_token: string; refresh_token: string; expires_at: number };
@@ -63,6 +66,7 @@ export async function exchangeMs365Code(code: string) {
     refresh_token: tokens.refresh_token,
     expires_at: Date.now() + tokens.expires_in * 1000,
     email,
+    scope: tokens.scope ?? '',
   };
 }
 
@@ -70,13 +74,26 @@ async function ensureFreshToken(stored: Ms365StoredTokens) {
   if (Date.now() < stored.expires_at - 60_000) {
     return { access_token: stored.access_token, refreshed: null };
   }
-  const tokens = await fetchToken({ grant_type: 'refresh_token', refresh_token: stored.refresh_token, scope: SCOPES });
+  // Do not request new scopes during refresh. Existing Mail-only connections
+  // must keep refreshing successfully until the admin explicitly reconnects
+  // and consents to any newly-added Calendar/Files scopes.
+  const tokens = await fetchToken({ grant_type: 'refresh_token', refresh_token: stored.refresh_token });
   const refreshed = {
     access_token: tokens.access_token,
     refresh_token: tokens.refresh_token ?? stored.refresh_token,
     expires_at: Date.now() + tokens.expires_in * 1000,
   };
   return { access_token: refreshed.access_token, refreshed };
+}
+
+export async function prepareMs365StoredTokens(
+  stored: Ms365StoredTokens
+): Promise<{ stored: Ms365StoredTokens; refreshed: Ms365StoredTokens | null }> {
+  const { refreshed } = await ensureFreshToken(stored);
+  return {
+    stored: refreshed ? { ...stored, ...refreshed } : stored,
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
 }
 
 async function graphGet(accessToken: string, path: string) {
@@ -87,23 +104,55 @@ async function graphGet(accessToken: string, path: string) {
   return res.json();
 }
 
-async function graphPatch(accessToken: string, path: string, body: object) {
-  await fetch(`${GRAPH_BASE}${path}`, {
-    method: 'PATCH',
-    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+async function readOptionalGraphJson(res: Response) {
+  const text = await res.text();
+  if (!text.trim()) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
 }
 
-async function graphPost(accessToken: string, path: string, body: object) {
+async function graphPatch(accessToken: string, path: string, body: object) {
   const res = await fetch(`${GRAPH_BASE}${path}`, {
-    method: 'POST',
+    method: 'PATCH',
     headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `Graph PATCH ${path} failed: ${res.status}`);
+  }
+  return readOptionalGraphJson(res);
+}
+
+async function graphPost(accessToken: string, path: string, body: object, headers?: Record<string, string>) {
+  const res = await fetch(`${GRAPH_BASE}${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      ...headers,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
     throw new Error(err?.error?.message ?? `Graph POST ${path} failed: ${res.status}`);
+  }
+  return readOptionalGraphJson(res);
+}
+
+async function graphDelete(accessToken: string, path: string) {
+  const res = await fetch(`${GRAPH_BASE}${path}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (res.status === 404 || res.status === 410) return;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `Graph DELETE ${path} failed: ${res.status}`);
   }
 }
 
@@ -296,4 +345,381 @@ export async function sendNewMail(
     saveToSentItems: true,
   });
   return { refreshed: refreshed ? { ...stored, ...refreshed } : null };
+}
+
+
+export interface Ms365CalendarBusyWindow {
+  start: string;
+  end: string;
+}
+
+export interface Ms365MeetingInput {
+  summary: string;
+  description?: string;
+  start: string;
+  end: string;
+  attendeeEmail: string;
+  timezone?: string;
+  reminderMinutesBefore?: number[];
+}
+
+export interface Ms365MeetingResult {
+  eventId: string;
+  meetingUrl: string | null;
+  refreshed: Ms365StoredTokens | null;
+}
+
+function graphDateTime(value: string): { dateTime: string; timeZone: string } {
+  return {
+    dateTime: new Date(value).toISOString().replace(/Z$/, ''),
+    timeZone: 'UTC',
+  };
+}
+
+export async function listMs365CalendarBusyWindows(
+  stored: Ms365StoredTokens,
+  timeMin: string,
+  timeMax: string
+): Promise<{ windows: Ms365CalendarBusyWindow[]; refreshed: Ms365StoredTokens | null }> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  const params = new URLSearchParams({
+    startDateTime: new Date(timeMin).toISOString(),
+    endDateTime: new Date(timeMax).toISOString(),
+    '$select': 'start,end,showAs,isCancelled',
+    '$orderby': 'start/dateTime',
+    '$top': '1000',
+  });
+  const data = await graphGet(access_token, `/calendarView?${params.toString()}`);
+
+  const windows = (data.value ?? [])
+    .filter((event: Record<string, unknown>) =>
+      !event.isCancelled &&
+      !['free', 'workingElsewhere'].includes(String(event.showAs ?? '').toLowerCase())
+    )
+    .map((event: Record<string, unknown>) => {
+      const start = event.start as { dateTime?: string; timeZone?: string } | undefined;
+      const end = event.end as { dateTime?: string; timeZone?: string } | undefined;
+      return {
+        start: start?.dateTime ? new Date(`${start.dateTime}Z`).toISOString() : '',
+        end: end?.dateTime ? new Date(`${end.dateTime}Z`).toISOString() : '',
+      };
+    })
+    .filter((window: Ms365CalendarBusyWindow) => Boolean(window.start && window.end));
+
+  return {
+    windows,
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
+}
+
+export async function createMs365TeamsMeeting(
+  stored: Ms365StoredTokens,
+  input: Ms365MeetingInput
+): Promise<Ms365MeetingResult> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  const reminder = Math.min(...(input.reminderMinutesBefore ?? [60]));
+
+  const data = await graphPost(access_token, '/events', {
+    subject: input.summary,
+    body: {
+      contentType: 'HTML',
+      content: input.description ?? '',
+    },
+    start: graphDateTime(input.start),
+    end: graphDateTime(input.end),
+    attendees: [{
+      emailAddress: { address: input.attendeeEmail },
+      type: 'required',
+    }],
+    isOnlineMeeting: true,
+    onlineMeetingProvider: 'teamsForBusiness',
+    isReminderOn: true,
+    reminderMinutesBeforeStart: reminder,
+  });
+
+  const eventId = String(data?.id ?? '');
+  if (!eventId) throw new Error('Microsoft Graph did not return an event id');
+
+  let meetingUrl = data?.onlineMeeting?.joinUrl ?? null;
+  if (!meetingUrl) {
+    // Graph normally returns onlineMeeting immediately, but allow a short
+    // propagation window before the provider-level compensation deletes the event.
+    for (let attempt = 0; attempt < 6 && !meetingUrl; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 250 : 500));
+      try {
+        const refreshedEvent = await graphGet(
+          access_token,
+          `/events/${encodeURIComponent(eventId)}?$select=id,onlineMeeting`
+        );
+        meetingUrl = refreshedEvent?.onlineMeeting?.joinUrl ?? null;
+      } catch {
+        // A transient read failure should not lose the known event id.
+      }
+    }
+  }
+
+  return {
+    eventId,
+    meetingUrl,
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
+}
+
+export async function getMs365TeamsMeetingUrl(
+  stored: Ms365StoredTokens,
+  eventId: string
+): Promise<{ meetingUrl: string | null; refreshed: Ms365StoredTokens | null }> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  const data = await graphGet(
+    access_token,
+    `/events/${encodeURIComponent(eventId)}?$select=id,onlineMeeting`
+  );
+
+  return {
+    meetingUrl: data?.onlineMeeting?.joinUrl ?? null,
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
+}
+
+export async function updateMs365TeamsMeeting(
+  stored: Ms365StoredTokens,
+  eventId: string,
+  input: {
+    summary?: string;
+    description?: string;
+    start?: string;
+    end?: string;
+    timezone?: string;
+    reminderMinutesBefore?: number[];
+  }
+): Promise<{ eventId: string; refreshed: Ms365StoredTokens | null }> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  const body: Record<string, unknown> = {};
+
+  if (input.summary !== undefined) body.subject = input.summary;
+  // Do not replace the body of an existing Teams event. Microsoft documents
+  // that removing the online-meeting blob from body content can disable the
+  // online meeting. EXPERT updates subject/time/reminders only.
+  if (input.start) body.start = graphDateTime(input.start);
+  if (input.end) body.end = graphDateTime(input.end);
+  if (input.reminderMinutesBefore?.length) {
+    body.isReminderOn = true;
+    body.reminderMinutesBeforeStart = Math.min(...input.reminderMinutesBefore);
+  }
+
+  const data = await graphPatch(
+    access_token,
+    `/events/${encodeURIComponent(eventId)}`,
+    body
+  );
+
+  return {
+    eventId: String(data?.id ?? eventId),
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
+}
+
+export async function deleteMs365CalendarEvent(
+  stored: Ms365StoredTokens,
+  eventId: string
+): Promise<{ refreshed: Ms365StoredTokens | null }> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  await graphDelete(access_token, `/events/${encodeURIComponent(eventId)}`);
+  return {
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
+}
+
+
+export type Ms365FilesTarget = 'onedrive' | 'sharepoint';
+
+export interface Ms365FileSyncResult {
+  fileId: string;
+  webUrl: string | null;
+  refreshed: Ms365StoredTokens | null;
+}
+
+function ms365FilesDriveBase(target: Ms365FilesTarget): string {
+  if (target === 'sharepoint') {
+    const driveId = process.env.MS365_SHAREPOINT_DRIVE_ID?.trim();
+    if (!driveId) {
+      throw new Error('MS365_SHAREPOINT_DRIVE_ID is required for SharePoint file mirroring');
+    }
+    return `https://graph.microsoft.com/v1.0/drives/${encodeURIComponent(driveId)}`;
+  }
+  return 'https://graph.microsoft.com/v1.0/me/drive';
+}
+
+async function graphAbsoluteJson(
+  accessToken: string,
+  url: string,
+  init?: RequestInit
+) {
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(init?.headers ?? {}),
+    },
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `Microsoft Graph request failed: ${res.status}`);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+function safeMs365ItemName(name: string): string {
+  return name
+    .replace(/[\\/:*?"<>|#%]/g, '_')
+    .trim()
+    .slice(0, 120) || 'documento';
+}
+
+async function listMs365ChildItems(
+  accessToken: string,
+  base: string,
+  parentId: string | null
+): Promise<Array<{ id: string; name: string; folder?: unknown; webUrl?: string }>> {
+  const parentPath = parentId
+    ? `/items/${encodeURIComponent(parentId)}/children`
+    : '/root/children';
+  const params = new URLSearchParams({
+    '$select': 'id,name,folder,webUrl',
+    '$top': '200',
+  });
+
+  const items: Array<{ id: string; name: string; folder?: unknown; webUrl?: string }> = [];
+  let nextUrl: string | null = `${base}${parentPath}?${params.toString()}`;
+  let pageCount = 0;
+
+  while (nextUrl && pageCount < 50) {
+    const data = await graphAbsoluteJson(accessToken, nextUrl);
+    items.push(...((data?.value ?? []) as Array<{ id: string; name: string; folder?: unknown; webUrl?: string }>));
+    nextUrl = typeof data?.['@odata.nextLink'] === 'string'
+      ? data['@odata.nextLink']
+      : null;
+    pageCount += 1;
+  }
+
+  if (nextUrl) {
+    throw new Error('Microsoft Graph folder listing exceeded pagination safety limit');
+  }
+
+  return items;
+}
+
+async function findOrCreateMs365Folder(
+  accessToken: string,
+  base: string,
+  parentId: string | null,
+  folderName: string
+): Promise<string> {
+  const safeName = safeMs365ItemName(folderName);
+  const findExisting = async () => {
+    const children = await listMs365ChildItems(accessToken, base, parentId);
+    return children.find(
+      (item) => item.folder && item.name.toLocaleLowerCase() === safeName.toLocaleLowerCase()
+    )?.id ?? null;
+  };
+
+  const existing = await findExisting();
+  if (existing) return existing;
+
+  const parentPath = parentId
+    ? `/items/${encodeURIComponent(parentId)}/children`
+    : '/root/children';
+
+  try {
+    const created = await graphAbsoluteJson(accessToken, `${base}${parentPath}`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: safeName,
+        folder: {},
+        '@microsoft.graph.conflictBehavior': 'fail',
+      }),
+    });
+    const id = String(created?.id ?? '');
+    if (!id) throw new Error('Microsoft Graph did not return a folder id');
+    return id;
+  } catch (error) {
+    // Concurrent uploads may create the same client/service folder. Re-read
+    // before surfacing the failure.
+    const raced = await findExisting();
+    if (raced) return raced;
+    throw error;
+  }
+}
+
+async function uploadMs365FileContent(
+  accessToken: string,
+  base: string,
+  parentId: string,
+  fileName: string,
+  mimeType: string,
+  fileBuffer: Buffer
+): Promise<{ id: string; webUrl: string | null }> {
+  const safeName = safeMs365ItemName(fileName);
+  const url = `${base}/items/${encodeURIComponent(parentId)}:/${encodeURIComponent(safeName)}:/content?@microsoft.graph.conflictBehavior=rename`;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': mimeType || 'application/octet-stream',
+    },
+    body: new Uint8Array(fileBuffer),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? `Microsoft Graph file upload failed: ${res.status}`);
+  }
+  const data = await res.json();
+  const id = String(data?.id ?? '');
+  if (!id) throw new Error('Microsoft Graph did not return an uploaded file id');
+  return { id, webUrl: data?.webUrl ?? null };
+}
+
+export async function syncDocumentToMs365Files(
+  stored: Ms365StoredTokens,
+  input: {
+    target: Ms365FilesTarget;
+    rootFolderId?: string | null;
+    fileBuffer: Buffer;
+    fileName: string;
+    mimeType: string;
+    clientName: string;
+    serviceName: string;
+  }
+): Promise<Ms365FileSyncResult> {
+  const { access_token, refreshed } = await ensureFreshToken(stored);
+  const base = ms365FilesDriveBase(input.target);
+
+  const clientFolderId = await findOrCreateMs365Folder(
+    access_token,
+    base,
+    input.rootFolderId?.trim() || null,
+    input.clientName
+  );
+  const serviceFolderId = await findOrCreateMs365Folder(
+    access_token,
+    base,
+    clientFolderId,
+    input.serviceName
+  );
+  const uploaded = await uploadMs365FileContent(
+    access_token,
+    base,
+    serviceFolderId,
+    input.fileName,
+    input.mimeType,
+    input.fileBuffer
+  );
+
+  return {
+    fileId: uploaded.id,
+    webUrl: uploaded.webUrl,
+    refreshed: refreshed ? { ...stored, ...refreshed } : null,
+  };
 }
