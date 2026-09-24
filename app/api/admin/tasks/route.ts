@@ -160,6 +160,7 @@ const patchSchema = z.object({
   id: z.string().uuid(),
   status: z.enum(['pendiente', 'en_progreso', 'completada', 'cancelada']).optional(),
   assignedTo: z.string().uuid().nullable().optional(),
+  skipReason: z.string().trim().min(8).max(500).optional(),
 });
 
 export async function PATCH(request: NextRequest) {
@@ -185,11 +186,19 @@ export async function PATCH(request: NextRequest) {
     loadedTask = task;
 
     const metadata = taskMetadata(task.metadata);
-    if (parsed.data.status === 'cancelada' && metadata.task_kind === 'service_blueprint_step' && metadata.skip_allowed !== true) {
-      return NextResponse.json({
-        error: 'Este paso del workflow no puede marcarse como no aplicable',
-        code: 'WORKFLOW_SKIP_NOT_ALLOWED',
-      }, { status: 409 });
+    if (parsed.data.status === 'cancelada' && metadata.task_kind === 'service_blueprint_step') {
+      if (metadata.skip_allowed !== true) {
+        return NextResponse.json({
+          error: 'Este paso del workflow no puede marcarse como no aplicable',
+          code: 'WORKFLOW_SKIP_NOT_ALLOWED',
+        }, { status: 409 });
+      }
+      if (!parsed.data.skipReason) {
+        return NextResponse.json({
+          error: 'Indica por qué este paso no aplica antes de omitirlo',
+          code: 'WORKFLOW_SKIP_REASON_REQUIRED',
+        }, { status: 400 });
+      }
     }
 
     const dependsOn = dependencyKeys(metadata);
@@ -233,6 +242,7 @@ export async function PATCH(request: NextRequest) {
         skipped_as_not_applicable: true,
         skipped_at: now,
         skipped_by: auth.actorId,
+        skipped_reason: parsed.data.skipReason,
       };
     } else if (loadedTask && taskMetadata(loadedTask.metadata).skipped_as_not_applicable === true) {
       updatePayload.metadata = {
@@ -240,6 +250,7 @@ export async function PATCH(request: NextRequest) {
         skipped_as_not_applicable: false,
         skipped_at: null,
         skipped_by: null,
+        skipped_reason: null,
       };
     }
   }
