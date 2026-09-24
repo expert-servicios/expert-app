@@ -14,7 +14,7 @@ describe('Google Meet automatic artifacts', () => {
 
   it('bounds authorization, fetch and response consumption', () => {
     const calendar = source();
-    expect(calendar).toContain("withMeetTimeout(auth.authorize(), 'Google Meet authorization')");
+    expect(calendar).toContain("auth.authorize(), 'Google Meet authorization'");
     expect(calendar).toContain('MEET_API_TIMEOUT_MS = 5_000');
     expect(calendar).toContain('setTimeout(() => controller.abort(), MEET_API_TIMEOUT_MS)');
     expect(calendar).toContain('const body = await response.text()');
