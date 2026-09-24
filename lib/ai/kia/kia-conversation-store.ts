@@ -21,7 +21,7 @@ export async function loadKiaConversation(input: {
 
   const { data: messages, error: messagesError } = await input.admin
     .from('kia_conversation_messages')
-    .select('role,body,created_at')
+    .select('role,body,created_at,metadata')
     .eq('conversation_id', conversation.id)
     .in('role', ['user','assistant'])
     .order('created_at', { ascending: false })
@@ -32,6 +32,7 @@ export async function loadKiaConversation(input: {
   return {
     conversation,
     messages: (messages ?? [])
+      .filter(row => row.role !== 'assistant' || !['prepared', 'failed'].includes(row.metadata?.delivery_state))
       .reverse()
       .map((row) => ({
         role: row.role as 'user' | 'assistant',
@@ -82,6 +83,12 @@ export async function persistKiaConversationTurn(input: {
     if (error) throw error;
     conversationId = created.id;
   } else {
+    const { data: existing, error: lookupError } = await input.admin.from('kia_conversations')
+      .select('id,company_id,case_id,metadata,status,tenant_id').eq('id', conversationId).eq('profile_id', input.profileId).maybeSingle();
+    if (lookupError) throw lookupError;
+    if (!existing || existing.status !== 'active' || (existing.company_id ?? null) !== (input.companyId ?? null)
+      || (existing.case_id ?? null) !== (input.caseId ?? null)
+      || (existing.tenant_id ?? null) !== (input.tenantId ?? null)) throw new Error('conversation_scope_changed');
     const { error } = await input.admin
       .from('kia_conversations')
       .update({
@@ -90,6 +97,7 @@ export async function persistKiaConversationTurn(input: {
         topic: input.topic ?? null,
         last_message_at: now,
         updated_at: now,
+        metadata: { ...existing.metadata, ...input.metadata },
       })
       .eq('id', conversationId)
       .eq('profile_id', input.profileId);

@@ -103,6 +103,20 @@ export async function sendTelegramMessage({ chatId, text }: TelegramOutbound): P
   }
 }
 
+/** For audited conversations: require provider acceptance and never retry an ambiguous send blindly. */
+export async function sendTelegramMessageConfirmed({ chatId, text }: TelegramOutbound): Promise<number> {
+  const token = getBotToken();
+  if (!token || !chatId) throw new Error('telegram_not_configured');
+  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  const body = await res.json();
+  if (!res.ok || body.ok !== true || !Number.isSafeInteger(body.result?.message_id)) throw new Error('telegram_send_unconfirmed');
+  return body.result.message_id;
+}
+
 /** Sends a Telegram message to the configured admin chat. No-op if TELEGRAM_ADMIN_CHAT_ID is unset. */
 export async function notifyAdminsTelegram(text: string): Promise<void> {
   const chatId = getAdminChatId();

@@ -227,12 +227,6 @@ export async function POST(request: NextRequest) {
   if (caseRow.client_id !== clientId) {
     return NextResponse.json({ error: 'El expediente no pertenece a este cliente' }, { status: 409 });
   }
-  if (!caseRow.company_id) {
-    return NextResponse.json({
-      error: 'Asigna una entidad al expediente antes de guardar adjuntos. No se infiere una entidad automáticamente.',
-      code: 'case_company_required',
-    }, { status: 409 });
-  }
   if (threadError || !linkedThread || linkedThread.case_id !== caseId) {
     return NextResponse.json({
       error: 'El hilo de correo no está vinculado a este expediente. Vuelve a vincularlo desde Comunicaciones antes de guardar el adjunto.',
@@ -240,7 +234,8 @@ export async function POST(request: NextRequest) {
     }, { status: 409 });
   }
 
-  const { data: membership, error: membershipError } = await admin
+  if (caseRow.company_id) {
+    const { data: membership, error: membershipError } = await admin
     .from('profile_companies')
     .select('company_id')
     .eq('profile_id', clientId)
@@ -248,6 +243,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle();
   if (membershipError || !membership) {
     return NextResponse.json({ error: 'La entidad del expediente no está vinculada al cliente' }, { status: 409 });
+  }
   }
 
   let messageContext: MessageContext;
@@ -273,13 +269,16 @@ export async function POST(request: NextRequest) {
 
   const { data: existing } = await admin
     .from('email_attachment_documents')
-    .select('document_id')
+    .select('document_id,case_id,client_id')
     .eq('provider', provider)
     .eq('account_email', accountEmail)
     .eq('message_id', messageId)
     .eq('attachment_id', attachmentId)
     .maybeSingle();
   if (existing?.document_id) {
+    if (existing.case_id !== caseId || existing.client_id !== clientId) {
+      return NextResponse.json({ error: 'El adjunto ya pertenece a otro expediente' }, { status: 409 });
+    }
     return NextResponse.json({ documentId: existing.document_id, existing: true });
   }
 
@@ -353,13 +352,16 @@ export async function POST(request: NextRequest) {
     if (sourceError.code === '23505') {
       const { data: concurrent } = await admin
         .from('email_attachment_documents')
-        .select('document_id')
+        .select('document_id,case_id,client_id')
         .eq('provider', provider)
         .eq('account_email', accountEmail)
         .eq('message_id', messageId)
         .eq('attachment_id', attachmentId)
         .maybeSingle();
       if (concurrent?.document_id) {
+        if (concurrent.case_id !== caseId || concurrent.client_id !== clientId) {
+          return NextResponse.json({ error: 'El adjunto ya pertenece a otro expediente' }, { status: 409 });
+        }
         return NextResponse.json({ documentId: concurrent.document_id, existing: true });
       }
     }

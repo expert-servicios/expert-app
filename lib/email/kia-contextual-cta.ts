@@ -12,11 +12,15 @@ function s(metadata: Record<string, unknown>, key: string): string | null {
 export async function maybeAppendKiaContextualCta(input: {
   admin: AdminClient;
   html: string;
+  recipients?: string[];
   metadata?: Record<string, unknown>;
 }): Promise<{ html: string; metadata?: Record<string, unknown> }> {
   const metadata = input.metadata ?? {};
   const enabled = process.env.KIA_CONTEXTUAL_EMAIL_CTA_ENABLED?.toLowerCase() === 'true';
   if (!enabled || metadata.kia_contextual_cta !== true) return input;
+  if (input.html.includes('data-kia-contextual-cta=')) return input;
+  // A personalized link must never be broadcast or attached to another client's email.
+  if (!input.recipients || input.recipients.length !== 1) return input;
 
   const profileId = s(metadata, 'profile_id') ?? s(metadata, 'client_id') ?? s(metadata, 'user_id');
   const caseId = s(metadata, 'case_id');
@@ -30,11 +34,12 @@ export async function maybeAppendKiaContextualCta(input: {
 
   const { data: profile, error: profileError } = await input.admin
     .from('profiles')
-    .select('id,tenant_id,status')
+    .select('id,tenant_id,status,email')
     .eq('id', profileId)
     .maybeSingle();
 
   if (profileError || !profile || profile.status === 'inactive') return input;
+  if (profile.email?.trim().toLowerCase() !== input.recipients[0].trim().toLowerCase()) return input;
 
   if (caseId) {
     const { data: ownedCase, error } = await input.admin
@@ -44,7 +49,7 @@ export async function maybeAppendKiaContextualCta(input: {
       .eq('client_id', profileId)
       .maybeSingle();
     if (error || !ownedCase) return input;
-    if (companyId && ownedCase.company_id && ownedCase.company_id !== companyId) return input;
+    if ((ownedCase.company_id ?? null) !== companyId) return input;
   }
 
   if (companyId) {

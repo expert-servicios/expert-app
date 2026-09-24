@@ -43,7 +43,7 @@ describe('KIA M7.2d Telegram linking', () => {
     expect(route).toContain('createServerSupabaseClient(request)');
     expect(route).toContain('supabase.auth.getUser()');
     expect(route).toContain("profile.status === 'inactive'");
-    expect(route).toContain('!profile.tenant_id');
+    expect(route).not.toContain('!profile.tenant_id');
     expect(route).toContain('createTelegramLinkCode');
   });
 

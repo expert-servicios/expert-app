@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     console.error('[Telegram link] profile lookup failed:', profileError.message);
     return NextResponse.json({ error: 'profile_lookup_failed' }, { status: 500 });
   }
-  if (!profile || profile.status === 'inactive' || !profile.tenant_id) {
+  if (!profile || profile.status === 'inactive') {
     return NextResponse.json({ error: 'profile_not_linkable' }, { status: 403 });
   }
 

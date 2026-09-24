@@ -1,6 +1,14 @@
 # Kia como Operador Interno — Rol y Límites
 
-> Última actualización: 2026-05-23
+> Última actualización: 2026-09-24. El contenido de mayo describe el motor interno inicial. Para la ampliación a Work, correo, copiloto y Telegram, consultar el [contrato de orquestación de expedientes](kia-work-case-orchestration.md), pendiente de implementación.
+
+## Ampliación acordada: KIA como encargada de tramitación
+
+KIA coordinará tareas autorizadas desde Work y registrará resultados en EXPERT mediante un adaptador autenticado. El cierre automático requiere evidencia verificada y conserva el actor real; el siguiente paso depende del workflow y de sus permisos. Ksenia no tendrá que marcar manualmente lo que ya se comprobó.
+
+La prohibición histórica de cambiar un expediente a `presentado` impide decidir o ejecutar una presentación por inferencia. La ampliación permite **registrar automáticamente una presentación efectivamente realizada y autorizada**, tras verificar su justificante oficial. No elimina el control humano de identificación, firma, pago y presentación final acordado para extranjería/nacionalidad. Tampoco habilita modificaciones de Holded ni otros permisos externos.
+
+KIA se identifica como asistente IA de EXPERT, con idioma del cliente, tono cercano y emoji moderado. Los correos operativos tendrán firma única de KIA y CTA contextual al expediente cuando se complete la integración. Esta actualización documental no activa envíos ni sustituye las reglas vigentes de autorización.
 
 ## Doble rol de Kia
 

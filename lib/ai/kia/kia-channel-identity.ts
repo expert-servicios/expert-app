@@ -4,7 +4,7 @@ type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
 export interface KiaChannelIdentity {
   id: string;
-  tenantId: string;
+  tenantId: string | null;
   profileId: string;
   channel: 'telegram';
   externalUserId: string;
@@ -41,7 +41,7 @@ export async function resolveVerifiedTelegramIdentity(params: {
 
   if (profileError) throw profileError;
   if (!profile || profile.status === 'inactive') return null;
-  if (!profile.tenant_id || profile.tenant_id !== identity.tenant_id) return null;
+  if (profile.tenant_id !== identity.tenant_id) return null;
 
   return {
     id: identity.id,

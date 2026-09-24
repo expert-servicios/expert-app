@@ -1,6 +1,14 @@
 # EXPERT - Roadmap maestro de implementacion
 
-Ultima actualizacion: 2026-06-04
+Ultima actualizacion: 2026-09-24 (anexo de orquestación KIA; el resto conserva su revisión histórica).
+
+## Prioridad operativa: KIA y Work
+
+Especificación: [KIA — tramitación, eventos y comunicaciones contextuales](kia-work-case-orchestration.md).
+
+Alcance acordado: KIA coordina expedientes desde Work, registra evidencia, completa tareas y calcula el siguiente paso; firma sus correos como asistente IA y mantiene contexto entre correo, copiloto y Telegram. La ejecución debe reutilizar las conversaciones, permisos y acciones administrativas existentes. Supabase conserva documentos canónicos; Google/Microsoft son proveedores y copias, no expedientes paralelos.
+
+Orden: adaptador autenticado y compatibilidad personal/empresa → verificación y cierre idempotente → continuidad de tareas → firma/CTA/hilo de correo → Telegram → piloto y carga. Estado: endpoints y persistencia inicial implementados detrás de flags y credenciales de servicio; no están activados para operación general. Ver criterios de aceptación y matriz de código existente en la especificación.
 
 ## Vision
 

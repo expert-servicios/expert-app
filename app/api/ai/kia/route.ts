@@ -38,6 +38,7 @@ import { runSampledKiaShadow } from '@/lib/ai/kia/evals/kia-shadow-sampler';
 import { resolveKiaLocale } from '@/lib/ai/kia/kia-locale';
 import { resolveKiaContextToken } from '@/lib/ai/kia/kia-context-token';
 import { loadKiaConversation, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
+import { findCaseConversation } from '@/lib/ai/kia/kia-telegram-context';
 import { buildAutomaticKiaKnowledgeResult } from '@/lib/ai/kia/kia-knowledge-discovery';
 
 const historyItemSchema = z.object({
@@ -197,6 +198,14 @@ export async function POST(request: NextRequest) {
     process.env.KIA_CONTEXTUAL_CONVERSATIONS_ENABLED?.toLowerCase() === 'true';
   let effectiveSessionId = sessionId;
   let effectiveHistory = history;
+
+  if (!sessionId && contextualPersistenceEnabled && contextualCaseId) {
+    const stored = await findCaseConversation(admin, user.id, profile?.tenant_id ?? null, contextualCaseId, companyScope);
+    if (stored) {
+      effectiveSessionId = stored.conversation.id;
+      effectiveHistory = stored.messages.map(item => ({ role: item.role, text: item.text }));
+    }
+  }
 
   if (sessionId && contextualPersistenceEnabled) {
     const stored = await loadKiaConversation({

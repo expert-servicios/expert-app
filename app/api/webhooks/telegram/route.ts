@@ -17,17 +17,49 @@ import { serviceProductionManifest } from '@/lib/services/service-production-man
 import { runRegulatoryPulse } from '@/lib/regulatory/regulatory-monitor';
 import { getCurrentRegulatoryValue, getRegulatoryPulseSummary } from '@/lib/regulatory/regulatory-values';
 import { resolveKiaLocale } from '@/lib/ai/kia/kia-locale';
+import { loadTelegramCaseContext, telegramContextPayload } from '@/lib/ai/kia/kia-telegram-context';
+import { persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import {
   escapeTelegramHtml,
   isConfiguredTelegramAdminChat,
   isTelegramWebhookAuthorized,
   parseTelegramInboundMessage,
-  sendTelegramMessage,
+  sendTelegramMessageConfirmed as sendTelegramMessage,
 } from '@/lib/integrations/telegram';
 
 const SECRET_HEADER = 'x-telegram-bot-api-secret-token';
 
 export async function POST(request: NextRequest) {
+  if (!isTelegramWebhookAuthorized(request.headers.get(SECRET_HEADER))) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+  const payload = await request.clone().json().catch(() => null);
+  const inbound = parseTelegramInboundMessage(payload);
+  if (!inbound) return NextResponse.json({ ok: true, ignored: true });
+  // Case data is never disclosed into groups, even for a linked administrator.
+  if (payload?.message?.chat?.type !== 'private') return NextResponse.json({ ok: true, ignored: true });
+  const admin = getSupabaseAdmin();
+  const { error } = await admin.from('kia_telegram_updates').insert({ update_id: inbound.updateId,
+    external_chat_id: inbound.chatId, external_user_id: inbound.userId, message_id: inbound.messageId });
+  if (error?.code === '23505') return NextResponse.json({ ok: true, duplicate: true });
+  if (error) return NextResponse.json({ error: 'ledger_unavailable' }, { status: 503 });
+  try {
+    const response = await handleTelegramUpdate(request);
+    const outcome = await response.clone().json();
+    const { error: auditError } = await admin.from('kia_telegram_updates').update({
+      status: outcome.reason === 'kia_error' ? 'failed' : outcome.ignored ? 'ignored' : 'processed',
+      processed_at: new Date().toISOString(), error: outcome.reason === 'kia_error' ? 'reconciliation_required' : null,
+    }).eq('update_id', inbound.updateId);
+    if (auditError) return NextResponse.json({ error: 'audit_pending_reconciliation' }, { status: 503 });
+    return response;
+  } catch {
+    await admin.from('kia_telegram_updates').update({ status: 'failed', error: 'reconciliation_required',
+      processed_at: new Date().toISOString() }).eq('update_id', inbound.updateId);
+    return NextResponse.json({ ok: true, reviewRequired: true });
+  }
+}
+
+async function handleTelegramUpdate(request: NextRequest) {
   if (!isTelegramWebhookAuthorized(request.headers.get(SECRET_HEADER))) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
@@ -98,7 +130,9 @@ export async function POST(request: NextRequest) {
     externalChatId: inbound.chatId,
   }).catch(() => null);
 
-  if (command === '/start' || command === '/help') {
+  const contextEnabled = process.env.KIA_CONTEXTUAL_CONVERSATIONS_ENABLED?.toLowerCase() === 'true';
+  const opensContext = contextEnabled && Boolean(telegramContextPayload(inbound.text));
+  if ((command === '/start' && !opensContext) || command === '/help') {
     await sendTelegramMessage({
       chatId: inbound.chatId,
       text: [
@@ -157,7 +191,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'profile_lookup_failed' });
   }
 
-  const companyId = profile?.active_company_id ?? null;
+  let caseContext: Awaited<ReturnType<typeof loadTelegramCaseContext>> = null;
+  if (contextEnabled) {
+    try {
+      caseContext = await loadTelegramCaseContext({ admin, profileId: identity.profileId,
+        tenantId: identity.tenantId, chatId: inbound.chatId, text: inbound.text });
+    } catch {
+      await sendTelegramMessage({ chatId: inbound.chatId, text: 'No puedo abrir este expediente. Accede desde un enlace nuevo en tu portal EXPERT.' });
+      return NextResponse.json({ ok: true, ignored: true, reason: 'invalid_case_context' });
+    }
+  }
+  const companyId = caseContext ? caseContext.companyId : profile?.active_company_id ?? null;
   const profileLocale = profile?.preferred_language === 'ru' ? 'ru' : 'es';
   const responseLocale = resolveKiaLocale({ latestMessage: inbound.text, preferredLanguage: profileLocale });
   let actor;
@@ -345,10 +389,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const message = opensContext
+      ? (responseLocale === 'ru' ? 'Покажи текущий статус моего дела и следующий шаг.' : 'Muéstrame el estado de mi expediente y el siguiente paso.')
+      : inbound.text;
     const result = await runPolicyEnforcedKiaDecision('telegram_verified', actor, {
       taskType: 'chat_reply',
       channel: 'telegram',
-      message: inbound.text,
+      message,
       locale: responseLocale,
       allowTools: telegramToolsEnabled,
       forceToolExecution: telegramToolsEnabled,
@@ -357,15 +404,33 @@ export async function POST(request: NextRequest) {
         userId: identity.profileId,
         clientId: identity.profileId,
         companyId: companyId ?? undefined,
+        caseId: caseContext?.caseId,
+        serviceSlug: caseContext?.serviceSlug ?? undefined,
+        syntheticRecentMessages: caseContext?.stored?.messages,
         currentPage: '/telegram',
-        latestMessage: inbound.text,
+        latestMessage: message,
       },
     });
 
-    await sendTelegramMessage({
+    const storedConversationId = contextEnabled ? await persistKiaConversationTurn({ admin, profileId: identity.profileId,
+      tenantId: identity.tenantId, companyId, caseId: caseContext?.caseId, serviceSlug: caseContext?.serviceSlug,
+      conversationId: caseContext?.stored?.conversation.id, channel: 'telegram', originType: 'telegram',
+      userMessage: message, assistantMessage: result.userMessage, intent: result.decision.intent,
+      metadata: { telegram_chat_id: inbound.chatId, telegram_update_id: inbound.updateId, delivery_state: 'prepared' } }) : null;
+
+    const outboundId = await sendTelegramMessage({
       chatId: inbound.chatId,
       text: escapeTelegramHtml(result.userMessage),
     });
+    if (storedConversationId) {
+      const { error } = await admin.from('kia_conversation_messages').update({ metadata: {
+        telegram_chat_id: inbound.chatId, telegram_update_id: inbound.updateId,
+        telegram_message_id: outboundId, delivery_state: 'sent',
+      } }).eq('conversation_id', storedConversationId)
+        .eq('role', 'assistant')
+        .contains('metadata', { telegram_update_id: inbound.updateId, delivery_state: 'prepared' });
+      if (error) throw new Error('telegram_delivery_audit_unavailable');
+    }
 
     return NextResponse.json({
       ok: true,
@@ -376,10 +441,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     console.error('[Telegram KIA] orchestrator failed:', safeErrorMessage(err));
-    await sendTelegramMessage({
-      chatId: inbound.chatId,
-      text: 'KIA ha encontrado un problema técnico y no ha ejecutado ninguna acción. Inténtalo de nuevo.',
-    });
     return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'kia_error' });
   }
 }
