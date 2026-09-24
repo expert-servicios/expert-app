@@ -37,6 +37,21 @@ describe('client productivity integrations', () => {
     expect(microsoftCallback).toContain("oauthState.purpose === 'client_productivity'");
   });
 
+  it('derives effective permissions from provider scopes and rejects incomplete grants', () => {
+    expect(googleCallback).toContain('googleGrantedPermissions(tokens.scope)');
+    expect(googleCallback).toContain('Google Workspace did not grant all mandatory productivity permissions');
+    expect(microsoftCallback).toContain('microsoftGrantedPermissions(tokens.scope)');
+    expect(microsoftCallback).toContain('Microsoft 365 did not grant all mandatory productivity permissions');
+    expect(storage).toContain('permissionsDetected: Record<string, boolean>');
+  });
+
+  it('restores or removes encrypted credentials when activation fails', () => {
+    expect(storage).toContain('const previousSecret');
+    expect(storage).toContain('if (previousSecret)');
+    expect(storage).toContain(".delete()\n        .eq('integration_id', integrationId)");
+    expect(storage).toContain("if (!existing?.id)");
+  });
+
   it('keeps the existing staff Microsoft mailbox flow separate', () => {
     expect(microsoftCallback).toContain("profile?.role !== 'admin'");
     expect(microsoftCallback).toContain("id: 'admin'");
