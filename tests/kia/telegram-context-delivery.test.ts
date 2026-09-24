@@ -1,8 +1,20 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { telegramContextPayload } from '@/lib/ai/kia/kia-telegram-context';
 import { sendTelegramMessageConfirmed } from '@/lib/integrations/telegram';
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 describe('Telegram contextual delivery', () => {
+  it('scopes stored context by tenant and finalizes only the prepared assistant row', () => {
+    const contextSource = readFileSync(resolve(process.cwd(), 'lib/ai/kia/kia-telegram-context.ts'), 'utf8');
+    const routeSource = readFileSync(resolve(process.cwd(), 'app/api/webhooks/telegram/route.ts'), 'utf8');
+    expect(contextSource).toContain("caseQuery.eq('tenant_id', tenantId)");
+    expect(contextSource).toContain("caseQuery.is('tenant_id', null)");
+    expect(contextSource).toContain("conversationQuery.eq('tenant_id', input.tenantId)");
+    expect(routeSource).toContain(".eq('role', 'assistant')");
+    expect(routeSource).toContain("delivery_state: 'prepared'");
+  });
+
   it('accepts only the bounded opaque context payload', () => {
     const token = 'a'.repeat(32);
     expect(telegramContextPayload(`/start ctx_${token}`)).toBe(token);
