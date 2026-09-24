@@ -16,6 +16,19 @@ type OAuthStatePayload = {
   next?: string | null;
 };
 
+function safeOAuthNext(value: unknown): string | null {
+  if (typeof value !== 'string' || !value) return null;
+  try {
+    const base = new URL('https://expert.invalid');
+    const resolved = new URL(value, base);
+    if (resolved.origin !== base.origin) return null;
+    if (!resolved.pathname.startsWith('/')) return null;
+    return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+  } catch {
+    return null;
+  }
+}
+
 function getOAuthStateSecret(): Uint8Array {
   const secret =
     process.env.OAUTH_STATE_SECRET ??
@@ -103,7 +116,7 @@ export async function verifyOAuthState(
       requiresAdmin: payload.requiresAdmin === true,
       purpose: payload.purpose === 'client_productivity' ? 'client_productivity' : 'default',
       companyId: typeof payload.companyId === 'string' && payload.companyId ? payload.companyId : null,
-      next: typeof payload.next === 'string' && payload.next.startsWith('/') && !payload.next.startsWith('//') ? payload.next : null,
+      next: safeOAuthNext(payload.next),
     };
   } catch {
     return { ok: false, reason: 'invalid_state_cookie' };
