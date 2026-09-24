@@ -67,12 +67,15 @@ export async function loadOnboardingAppointmentsForIdentity(
   companyId: string | null | undefined,
   authEmail: string | null | undefined,
 ): Promise<AppointmentRow[]> {
-  const { data: scopedRows, error: scopedError } = await admin
+  let scopedQuery = admin
     .from('appointments')
     .select('id,email,client_id,company_id,service,appointment_type,status,appointment_date,confirmed_date,confirmed_time')
     .eq('client_id', clientId)
-    .eq('company_id', companyId ?? null)
-    .neq('status', 'cancelled')
+    .neq('status', 'cancelled');
+  scopedQuery = companyId
+    ? scopedQuery.eq('company_id', companyId)
+    : scopedQuery.is('company_id', null);
+  const { data: scopedRows, error: scopedError } = await scopedQuery
     .order('appointment_date', { ascending: false });
   if (scopedError) throw scopedError;
 
