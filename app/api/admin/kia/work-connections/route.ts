@@ -130,19 +130,25 @@ export async function POST(request: NextRequest) {
     const byId = new Map((caseTasks ?? []).map(task => [task.id, task]));
     const byTaskKey = new Map((caseTasks ?? []).map(task => [taskKey(task), task]).filter(([key]) => Boolean(key)));
 
-    const documentTargets = new Set((await admin.from('documents').select('checklist_item_key')
-      .eq('case_id', caseRow.id).eq('client_id', caseRow.client_id).is('replaced_by', null).neq('state', 'rechazado')).data
-      ?.map(row => row.checklist_item_key).filter(Boolean) ?? []);
-    const actionTargets = new Set((await admin.from('administrative_actions').select('id').eq('case_id', caseRow.id)).data
-      ?.map(row => row.id) ?? []);
-    const emailTargets = new Set((await admin.from('email_events').select('event_type').eq('metadata->>case_id', caseRow.id)).data
-      ?.map(row => row.event_type) ?? []);
+    const [documentEvidence, actionEvidence, emailEvidence] = await Promise.all([
+      admin.from('documents').select('checklist_item_key')
+        .eq('case_id', caseRow.id).eq('client_id', caseRow.client_id).is('replaced_by', null).neq('state', 'rechazado'),
+      admin.from('administrative_actions').select('id').eq('case_id', caseRow.id),
+      admin.from('email_events').select('event_type').eq('metadata->>case_id', caseRow.id),
+    ]);
+    if (documentEvidence.error || actionEvidence.error || emailEvidence.error) throw new WorkError('evidence_unavailable', 503);
+    const documentTargets = new Set(documentEvidence.data?.map(row => row.checklist_item_key).filter(Boolean) ?? []);
+    const actionTargets = new Set(actionEvidence.data?.map(row => row.id) ?? []);
+    const emailTargets = new Set(emailEvidence.data?.map(row => row.event_type) ?? []);
 
     const policies: Record<string, unknown> = {};
     for (const requested of input.tasks) {
       const task = byId.get(requested.id);
       if (!task || !['pendiente', 'en_progreso'].includes(task.status)) throw new WorkError('work_task_not_available', 409);
       const depKeys = dependencyKeys(task);
+      const explicitWorkflow = depKeys.length > 0 || Boolean(taskKey(task));
+      const currentStep = task.status === 'en_progreso' || task.title === caseRow.next_action;
+      if (!explicitWorkflow && !currentStep) throw new WorkError('work_task_not_delegatable', 409);
       const dependencies = depKeys.map(key => byTaskKey.get(key));
       if (dependencies.some(dep => !dep)) throw new WorkError('dependency_unresolved', 409);
       if (dependencies.some(dep => dep!.status !== 'completada')) throw new WorkError('work_dependencies_pending', 409);
