@@ -12,6 +12,10 @@ export const proteccionDatosKnowledgeDocs = [
     seoDescription:
       'Checklist práctico de protección de datos para autónomos y pymes: RAT, bases jurídicas, información, encargados, seguridad, derechos y brechas.',
     body: `
+## Empieza por el cuestionario
+
+Antes de recorrer el checklist, puedes utilizar la [herramienta gratuita de autoimplantación RGPD](https://expertconsulting.es/herramientas/rgpd) para identificar qué bloques necesitas y si aparecen señales que aconsejan revisión profesional.
+
 ## Objetivo
 
 Este checklist sirve para hacer una primera revisión del cumplimiento de protección de datos de un autónomo o una pyme en España.

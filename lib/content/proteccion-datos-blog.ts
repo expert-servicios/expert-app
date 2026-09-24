@@ -9,6 +9,10 @@ export const proteccionDatosBlogArticles = [
     readTime: '10 min',
     tags: ['RGPD', 'LOPDGDD', 'pymes', 'autónomos', 'protección de datos', 'AEPD'],
     body: `
+## Herramienta gratuita de autoimplantación
+
+Si quieres empezar por un diagnóstico práctico, utiliza la [herramienta gratuita de autoimplantación RGPD de EXPERT](https://expertconsulting.es/herramientas/rgpd). El cuestionario se calcula localmente y deriva los casos con señales de mayor riesgo a revisión profesional.
+
 ## No es solo una política de privacidad
 
 Una empresa puede tener una política de privacidad publicada y seguir sin cumplir correctamente la normativa. En España, el marco principal está formado por el **Reglamento General de Protección de Datos (RGPD)** y la **Ley Orgánica 3/2018, de Protección de Datos Personales y garantía de los derechos digitales (LOPDGDD)**.
