@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 
 export async function GET(
   request: NextRequest,
@@ -44,7 +44,9 @@ export async function DELETE(
     return NextResponse.json({ error: 'authentication_required' }, { status: 401 });
   }
 
-  const { data: existing, error: lookupError } = await supabase
+  const admin = getSupabaseAdmin();
+
+  const { data: existing, error: lookupError } = await admin
     .from('rgpd_self_implementation_projects')
     .select('id,version,status')
     .eq('id', id)
@@ -66,7 +68,7 @@ export async function DELETE(
     );
   }
 
-  const { error } = await supabase
+  const { error } = await admin
     .from('rgpd_self_implementation_projects')
     .delete()
     .eq('id', id)
