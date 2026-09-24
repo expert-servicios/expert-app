@@ -51,7 +51,7 @@ describe('Client 360 fiscal obligations', () => {
   });
 
   it('exposes fiscal management contextually inside Client 360', () => {
-    expect(nav).toContain('href={`/admin/clientes/${clientId}/obligaciones`}');
+    expect(nav).toContain("href={childHref('/obligaciones')}");
     expect(page).toContain('Obligaciones y plazos');
     expect(page).toContain('Guardar y crear seguimiento');
     expect(page).toContain("setStatus(item.id, 'completed')");
