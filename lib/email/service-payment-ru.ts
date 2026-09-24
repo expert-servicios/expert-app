@@ -128,6 +128,8 @@ export function isNationalityPayment(params: {
 
 export function spanishNationalityPaymentConfirmedClient(amounts: NationalityServicePaymentAmounts) {
   const serviceUrl = `${APP_URL}/servicios/extranjeria-nacionalidad/${NATIONALITY_MINOR_SERVICE.slug}`;
+  const surnameGuideUrl = `${APP_URL}/docs/apellidos-menor-nacionalidad-registro-civil`;
+  const officialSurnameRuleUrl = 'https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948';
   return {
     subject: 'Pago recibido — comenzamos el expediente de nacionalidad | EXPERT',
     html: shell('Pago recibido', `
@@ -142,12 +144,13 @@ export function spanishNationalityPaymentConfirmedClient(amounts: NationalitySer
       ${para('La tasa 790-026 ya está cobrada como suplido. EXPERT la abonará en nombre y por cuenta del solicitante cuando el expediente haya sido revisado y esté listo para presentar. No forma parte de nuestros honorarios ni de su base imponible.')}
       ${para('<strong>Siguientes pasos:</strong>')}
       <ol style="margin:0 0 18px;padding-left:22px;color:#29384a;font-size:15px;line-height:1.7;">
-        <li>Abrimos el expediente en EXPERT.</li>
-        <li>Revisamos los datos del menor y de sus representantes legales.</li>
-        <li>Te indicamos la documentación pendiente y el canal seguro para subirla.</li>
-        <li>Comprobamos el año de residencia legal, continuada e inmediatamente anterior.</li>
-        <li>Cuando el expediente esté validado, abonamos la tasa y presentamos la solicitud.</li>
+        <li>Abrimos el expediente en EXPERT y revisamos primero la documentación ya disponible.</li>
+        <li>Comprobamos la residencia legal propia del menor y quién debe firmar o representar.</li>
+        <li>Antes de preparar el formulario, revisamos los apellidos para la futura inscripción española: filiación, apellido personal de la madre y posibles cambios por matrimonio. Si la línea materna está determinada, la duplicación de un único apellido no se trata como una elección para evitar documentación.</li>
+        <li>Confirmamos con los progenitores el orden de los apellidos y preparamos el modelo oficial solo cuando los datos estén cerrados.</li>
+        <li>Obtenemos las firmas, hacemos la validación final, comprobamos que la tasa no se haya pagado ya y solo después presentamos con autorización profesional.</li>
       </ol>
+      ${para(`Más información sobre apellidos y Registro Civil: <a href="${surnameGuideUrl}" style="color:#c88b25;">guía EXPERT</a> · <a href="${officialSurnameRuleUrl}" style="color:#c88b25;">Instrucción oficial de 23 de mayo de 2007</a>.`)}
       ${button('Ver descripción del servicio', serviceUrl)}
     `, 'es'),
   };
@@ -169,6 +172,8 @@ export function spanishNationalityPaymentConfirmedAdmin(input: {
   const caseUrl = input.caseId?.trim()
     ? APP_URL + '/admin/expedientes/' + encodeURIComponent(input.caseId.trim())
     : APP_URL + '/admin';
+  const surnameGuideUrl = APP_URL + '/docs/apellidos-menor-nacionalidad-registro-civil';
+  const officialSurnameRuleUrl = 'https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948';
   return {
     subject: `ACCIÓN: revisar expediente de nacionalidad — ${input.customerName?.trim() || 'cliente'}`,
     html: shell('Nuevo pago — revisar expediente', `
@@ -187,6 +192,18 @@ export function spanishNationalityPaymentConfirmedAdmin(input: {
         detail('Case ID', safeCase),
       )}
       ${para('La tasa ya está cobrada como suplido. No debe volver a cobrarse al cliente ni incluirse como ingreso profesional.')}
+      <div style="margin:22px 0;padding:18px;background:#fff8e8;border:1px solid #e1c06c;color:#29384a;font-size:14px;line-height:1.65;">
+        <strong>Gate operativo antes de preparar el modelo</strong>
+        <ol style="margin:10px 0 0;padding-left:20px;">
+          <li>Revisar documentación existente, residencia legal propia del menor y representación/patria potestad.</li>
+          <li>Si EXPERT presenta, formalizar el mandato y conservar el documento firmado y su certificado de finalización cuando se use DocuSign.</li>
+          <li>Resolver apellidos registrales: filiación, apellido personal de la madre, cambios por matrimonio y orden; comprobar hermanos si procede.</li>
+          <li>No marcar apellido materno «desconocido» ni duplicar un apellido para evitar documentación cuando ese dato sea conocido o acreditable.</li>
+          <li>Preparar el modelo, obtener firmas, validar el expediente y comprobar si la tasa ya está pagada antes de cualquier nuevo pago.</li>
+          <li>Presentar únicamente con autorización profesional expresa y archivar justificante y copia final presentada.</li>
+        </ol>
+      </div>
+      ${para(`Referencia interna: <a href="${surnameGuideUrl}" style="color:#c88b25;">guía de apellidos</a> · <a href="${officialSurnameRuleUrl}" style="color:#c88b25;">BOE — Instrucción 23/05/2007</a>.`)}
       ${button(input.caseId?.trim() ? 'Abrir expediente en Admin' : 'Abrir panel de administración', caseUrl)}
     `, 'es'),
   };
@@ -194,6 +211,9 @@ export function spanishNationalityPaymentConfirmedAdmin(input: {
 
 export function russianNationalityPaymentConfirmedClient(amounts: NationalityServicePaymentAmounts) {
   const serviceUrl = `${APP_URL}/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii`;
+  const surnameGuideUrl = `${APP_URL}/ru/docs/familii-rebenka-pri-poluchenii-grazhdanstva-ispanii`;
+  const surnameBlogUrl = `${APP_URL}/ru/blog/odna-familiya-u-rebenka-grazhdanstvo-ispanii`;
+  const officialSurnameRuleUrl = 'https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948';
   return {
     subject: 'Оплата получена — начинаем оформление гражданства | EXPERT',
     html: shell('Оплата получена', `
@@ -208,13 +228,14 @@ export function russianNationalityPaymentConfirmedClient(amounts: NationalitySer
       ${para('Государственная пошлина 790-026 оплачивается EXPERT от имени и за счёт заявителя. Она учитывается отдельно от наших профессиональных услуг и не входит в налоговую базу гонорара.')}
       ${para('<strong>Что происходит дальше:</strong>')}
       <ol style="margin:0 0 18px;padding-left:22px;color:#29384a;font-size:15px;line-height:1.7;">
-        <li>Мы открываем expediente в системе EXPERT.</li>
-        <li>Проверяем данные ребёнка и законных представителей.</li>
-        <li>Направляем список недостающих документов и способ безопасной передачи файлов.</li>
-        <li>После проверки срока легальной резиденции и полного комплекта документов готовим заявление.</li>
-        <li>Пошлина оплачивается и заявление подаётся после проверки готовности expediente.</li>
+        <li>Мы открываем expediente и сначала проверяем уже имеющиеся документы.</li>
+        <li>Проверяем собственную легальную резиденцию ребёнка и полномочия/подписи законных представителей.</li>
+        <li>До подготовки заявления отдельно проверяем будущие фамилии для испанского Registro Civil: происхождение, личную фамилию матери и возможную смену фамилии при браке. Если материнская линия установлена, удвоение одной фамилии не используется как способ отказаться от подтверждающих документов.</li>
+        <li>Согласовываем с родителями порядок фамилий и только после этого готовим официальный бланк для подписи.</li>
+        <li>После подписей проводим финальную проверку, проверяем, не оплачена ли уже пошлина, и подаём заявление только после профессионального подтверждения готовности.</li>
       </ol>
       ${para('Если какого-либо документа пока нет, сначала мы проверим имеющиеся документы и укажем, что именно необходимо дополнить.')}
+      ${para(`Подробнее о фамилиях: <a href="${surnameGuideUrl}" style="color:#c88b25;">инструкция EXPERT</a> · <a href="${surnameBlogUrl}" style="color:#c88b25;">статья с примерами</a> · <a href="${officialSurnameRuleUrl}" style="color:#c88b25;">официальная Инструкция 23.05.2007</a>.`)}
       ${button('Вернуться к описанию услуги', serviceUrl)}
       ${para('Вопросы можно также отправить в WhatsApp: <a href="https://wa.me/34669045528" style="color:#c88b25;">+34 669 045 528</a>.')}
     `),
@@ -237,6 +258,8 @@ export function russianNationalityPaymentConfirmedAdmin(input: {
   const caseUrl = input.caseId?.trim()
     ? APP_URL + '/admin/expedientes/' + encodeURIComponent(input.caseId.trim())
     : APP_URL + '/admin';
+  const surnameGuideUrl = APP_URL + '/ru/docs/familii-rebenka-pri-poluchenii-grazhdanstva-ispanii';
+  const officialSurnameRuleUrl = 'https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948';
   return {
     subject: `ACCIÓN: revisar expediente de nacionalidad — ${input.customerName?.trim() || 'cliente ruso'}`,
     html: shell('Nuevo pago ruso — revisar expediente', `
@@ -257,14 +280,16 @@ export function russianNationalityPaymentConfirmedAdmin(input: {
       <div style="margin:22px 0;padding:18px;background:#fff8e8;border:1px solid #e1c06c;color:#29384a;font-size:14px;line-height:1.65;">
         <strong>Checklist inicial</strong>
         <ol style="margin:10px 0 0;padding-left:20px;">
-          <li>Abrir la ficha del cliente y el expediente ya creado automáticamente.</li>
-          <li>Identificar al menor solicitante y a ambos progenitores/representantes.</li>
-          <li>Solicitar la documentación pendiente.</li>
-          <li>Comprobar el año de residencia legal, continuada e inmediatamente anterior.</li>
-          <li>No abonar la tasa 790-026 hasta validar viabilidad y documentación; el importe ya está cobrado como suplido.</li>
-          <li>Guardar justificante de la tasa y de la futura presentación dentro del expediente.</li>
+          <li>Abrir la ficha y revisar primero los documentos ya disponibles; no pedir duplicados.</li>
+          <li>Verificar residencia legal propia del menor, patria potestad, representación y mandato de EXPERT cuando proceda.</li>
+          <li>Resolver antes del modelo los apellidos registrales: filiación, apellido personal de la madre, cambio por matrimonio, orden y posibles hermanos con orden previo.</li>
+          <li>No marcar «apellido materno desconocido» ni duplicar un apellido para evitar documentación cuando el dato sea conocido o acreditable.</li>
+          <li>Preparar el modelo solo tras cerrar esos gates; obtener firmas válidas y archivar certificado de finalización DocuSign si se utilizó.</li>
+          <li>Completar validación pre-presentación. No abonar nuevamente la tasa si ya existe justificante/NRC; el importe fue cobrado como suplido.</li>
+          <li>Presentar solo con autorización profesional expresa y archivar justificante, número de registro y copia final presentada.</li>
         </ol>
       </div>
+      ${para(`Referencias: <a href="${surnameGuideUrl}" style="color:#c88b25;">guía RU de apellidos</a> · <a href="${officialSurnameRuleUrl}" style="color:#c88b25;">BOE — Instrucción 23/05/2007</a>.`)}
       ${button(input.caseId?.trim() ? 'Abrir expediente en Admin' : 'Abrir panel de administración', caseUrl)}
     `),
   };
