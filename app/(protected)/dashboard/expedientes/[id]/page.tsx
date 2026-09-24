@@ -237,6 +237,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
     checklistCount: checklist.length,
     uploadedCount,
     reviewedCount,
+    locale,
   });
 
   return (
