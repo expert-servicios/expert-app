@@ -51,7 +51,10 @@ export async function GET(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || user.id !== oauthState.userId) {
-    return redirectClearingState(`${appUrl}/dashboard/calendario-fiscal?error=oauth`);
+    const destination = oauthState.purpose === 'client_productivity'
+      ? `${appUrl}/dashboard/integraciones/productividad?error=session&provider=google`
+      : `${appUrl}/dashboard/calendario-fiscal?error=oauth`;
+    return redirectClearingState(destination);
   }
 
   try {
@@ -62,7 +65,10 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .maybeSingle();
     if (profile?.status === 'inactive') {
-      return redirectClearingState(`${appUrl}/dashboard/calendario-fiscal?error=inactive`);
+      const destination = oauthState.purpose === 'client_productivity'
+        ? `${appUrl}/dashboard/integraciones/productividad?error=inactive&provider=google`
+        : `${appUrl}/dashboard/calendario-fiscal?error=inactive`;
+      return redirectClearingState(destination);
     }
 
     if (oauthState.purpose === 'client_productivity') {
