@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
   let effectiveHistory = history;
 
   if (!sessionId && contextualPersistenceEnabled && contextualCaseId) {
-    const stored = await findCaseConversation(admin, user.id, contextualCaseId, companyScope);
+    const stored = await findCaseConversation(admin, user.id, profile?.tenant_id ?? null, contextualCaseId, companyScope);
     if (stored) {
       effectiveSessionId = stored.conversation.id;
       effectiveHistory = stored.messages.map(item => ({ role: item.role, text: item.text }));
