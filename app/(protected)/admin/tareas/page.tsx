@@ -77,11 +77,19 @@ export default function AdminTasksPage() {
   }), [tasks, filter]);
 
   async function setStatus(id: string, status: Task['status']) {
+    const skipReason = status === 'cancelada'
+      ? window.prompt('Indica por qué este paso no aplica. Ej.: el mandato se firmó por otra vía y no existe certificado DocuSign.')
+      : null;
+    if (status === 'cancelada' && (!skipReason || skipReason.trim().length < 8)) {
+      setError('Para marcar un paso como “No aplica” debes indicar un motivo suficiente.');
+      return;
+    }
+
     setSaving(id); setError('');
     try {
       const res = await fetch('/api/admin/tasks', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status }),
+        body: JSON.stringify({ id, status, ...(skipReason ? { skipReason: skipReason.trim() } : {}) }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'No se pudo actualizar');
