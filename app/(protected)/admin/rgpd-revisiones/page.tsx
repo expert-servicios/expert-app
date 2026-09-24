@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { AlertTriangle, ArrowLeft, Building2, FileCheck2, UserRound } from 'lucide-react';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
+import { AcceptRgpdReviewButton } from '@/components/admin/AcceptRgpdReviewButton';
 
 type ReviewItem = {
   id: string;
@@ -38,6 +39,8 @@ function one(value: string | string[] | undefined) {
 
 function statusLabel(status: string) {
   if (status === 'review_requested') return 'Revisión solicitada';
+  if (status === 'in_review') return 'En revisión';
+  if (status === 'completed') return 'Completado';
   if (status === 'archived') return 'Archivado';
   return 'Borrador';
 }
@@ -45,7 +48,7 @@ function statusLabel(status: string) {
 export default async function AdminRgpdReviewsPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   const rawStatus = one(params.status);
-  const status = ['draft', 'review_requested', 'archived'].includes(rawStatus)
+  const status = ['draft', 'review_requested', 'in_review', 'completed', 'archived'].includes(rawStatus)
     ? rawStatus
     : 'review_requested';
 
@@ -80,6 +83,8 @@ export default async function AdminRgpdReviewsPage({ searchParams }: { searchPar
         <div className="mb-5 flex flex-wrap gap-2">
           {[
             ['review_requested', 'Pendientes de revisión'],
+            ['in_review', 'En revisión'],
+            ['completed', 'Completados'],
             ['draft', 'Borradores guardados'],
             ['archived', 'Archivados'],
           ].map(([value, label]) => (
@@ -157,6 +162,11 @@ export default async function AdminRgpdReviewsPage({ searchParams }: { searchPar
                     <p className="mt-2 text-[#526171]">{item.requester?.full_name || 'Sin nombre de perfil'}</p>
                     <p className="text-xs text-[#6f665b]">{item.requester?.email || item.company.contact_email || 'Email no disponible'}</p>
                     <p className="mt-3 break-all text-[10px] text-[#918677]">ID: {item.id}</p>
+                    {item.status === 'review_requested' && (
+                      <div className="mt-4">
+                        <AcceptRgpdReviewButton projectId={item.id} />
+                      </div>
+                    )}
                   </div>
                 </div>
               </article>
