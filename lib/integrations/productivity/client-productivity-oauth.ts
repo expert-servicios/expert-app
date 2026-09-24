@@ -22,15 +22,25 @@ export const PRODUCTIVITY_PERMISSIONS = {
 
 export async function assertClientCompanyMembership(userId: string, companyId: string): Promise<void> {
   const admin = getSupabaseAdmin();
-  const { data, error } = await admin
-    .from('profile_companies')
-    .select('company_id')
-    .eq('profile_id', userId)
-    .eq('company_id', companyId)
-    .maybeSingle();
+  const [{ data: profile, error: profileError }, { data: membership, error: membershipError }] = await Promise.all([
+    admin
+      .from('profiles')
+      .select('role,status')
+      .eq('id', userId)
+      .maybeSingle(),
+    admin
+      .from('profile_companies')
+      .select('company_id,role')
+      .eq('profile_id', userId)
+      .eq('company_id', companyId)
+      .maybeSingle(),
+  ]);
 
-  if (error) throw error;
-  if (!data) throw new Error('Company does not belong to the authenticated client');
+  if (profileError) throw profileError;
+  if (membershipError) throw membershipError;
+  if (profile?.role !== 'client' || profile?.status === 'inactive' || membership?.role !== 'owner') {
+    throw new Error('Only an active client owner can connect a company productivity account');
+  }
 }
 
 export async function saveClientProductivityIntegration(input: {
@@ -76,12 +86,12 @@ export async function saveClientProductivityIntegration(input: {
         client_id: input.userId,
         company_id: input.companyId,
         provider: input.provider,
-        mode: 'oauth_delegated',
-        api_version: input.provider === 'microsoft_365' ? 'graph-v1.0' : 'google-v1',
+        mode: 'client_account',
+        api_version: 'v1',
         permissions_detected: permissions,
         permissions_enabled: permissions,
-        status: 'connecting',
-        sync_mode: 'delegated',
+        status: 'pending',
+        sync_mode: 'read_write',
         connected_by: input.userId,
         consent_at: now,
         consent_version: 'productivity-oauth-v1',
@@ -122,11 +132,11 @@ export async function saveClientProductivityIntegration(input: {
     .update({
       client_id: input.userId,
       company_id: input.companyId,
-      mode: 'oauth_delegated',
+      mode: 'client_account',
       permissions_detected: permissions,
       permissions_enabled: permissions,
       status: 'active',
-      sync_mode: 'delegated',
+      sync_mode: 'read_write',
       connected_by: input.userId,
       consent_at: now,
       consent_version: 'productivity-oauth-v1',
