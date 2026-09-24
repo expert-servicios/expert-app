@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
-import { CheckCircle2, FileText, MessageCircle, ShieldCheck } from 'lucide-react';
+import { createServerClient } from '@supabase/ssr';
+import { AlertCircle, CheckCircle2, FileText, ShieldCheck } from 'lucide-react';
 import { getPublicServicePath } from '@/lib/i18n/service-routes';
+import { verifyCompletedServiceCheckout } from '@/lib/payments/verify-service-checkout';
 
 const NATIONALITY_SLUG = 'nacionalidad-espanola-menor-nacido-en-espana';
 const CERTIFICATE_SERVICE_SLUGS = new Set([
@@ -14,6 +17,25 @@ export const metadata: Metadata = {
   title: 'Оплата подтверждена | EXPERT',
   robots: { index: false, follow: false },
 };
+
+function UnverifiedPayment() {
+  return (
+    <main className="min-h-screen bg-[#F8F6F1] px-6 py-16 text-[#0D1B2A]">
+      <div className="mx-auto max-w-2xl rounded-2xl border border-amber-200 bg-white p-8 text-center shadow-sm">
+        <AlertCircle className="mx-auto h-10 w-10 text-amber-600" />
+        <h1 className="mt-4 font-serif text-3xl font-bold">Проверяем оплату</h1>
+        <p className="mt-3 text-sm leading-7 text-[#23364D]">
+          Не удалось подтвердить связанную с Вашим аккаунтом сессию Stripe на этой странице. Не оплачивайте заказ повторно.
+          Откройте Ваши expediente или войдите в аккаунт заново: после подтверждения оплаты заказ появится автоматически.
+        </p>
+        <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+          <Link href="/dashboard/expedientes" className="bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A]">Мои expediente</Link>
+          <Link href="/auth/login?next=/dashboard/expedientes" className="border border-[#D4A017] px-5 py-3 text-sm font-bold text-[#9a6a17]">Войти</Link>
+        </div>
+      </div>
+    </main>
+  );
+}
 
 function CertificateSuccess({ service }: { service: string }) {
   const isBundle = service === 'pack-certificados-digitales';
@@ -116,17 +138,22 @@ function NationalitySuccess() {
         <div className="mt-8 space-y-3">
           <h2 className="font-serif text-xl font-bold">Что дальше</h2>
           <p className="text-sm leading-7 text-[#23364D]">
-            Отправьте документы по делу. Мы проверим срок легальной резиденции ребёнка и комплект документов, после чего подготовим заявление и оплатим пошлину от имени и за счёт клиента.
+            Откройте expediente в личном кабинете и проверьте checklist. Не загружайте повторно документы, которые уже есть у EXPERT.
+            Сначала мы проверим представительство, собственную легальную резиденцию ребёнка и фамилии для будущей записи в Registro Civil.
+            Только после этого подготовим окончательную форму для подписи, проведём финальную проверку, проверим наличие оплаты 790-026 и подадим заявление.
+          </p>
+          <p className="rounded-xl border border-[#D4A017]/25 bg-[#F8F6F1] px-4 py-3 text-xs leading-6 text-[#23364D]">
+            Пошлина уже включена в заказ как suplido. Не оплачивайте её повторно самостоятельно, если EXPERT прямо этого не попросит.
           </p>
         </div>
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <a
-            href="https://wa.me/34669045528"
+          <Link
+            href="/dashboard/expedientes"
             className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#F2C14E]"
           >
-            <MessageCircle className="h-4 w-4" /> Отправить документы в WhatsApp
-          </a>
+            Открыть мои expediente
+          </Link>
           <Link
             href={servicePath}
             className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#D4A017]/10"
@@ -142,9 +169,25 @@ function NationalitySuccess() {
 export default async function RuPaymentSuccessPage({
   searchParams,
 }: {
-  searchParams: Promise<{ service?: string }>;
+  searchParams: Promise<{ service?: string; session_id?: string }>;
 }) {
-  const { service } = await searchParams;
+  const { service, session_id: sessionId } = await searchParams;
+
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } },
+  );
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return <UnverifiedPayment />;
+
+  const verification = await verifyCompletedServiceCheckout({
+    sessionId,
+    userId: user.id,
+    expectedService: service ?? null,
+  });
+  if (!verification.ok || verification.locale !== 'ru') return <UnverifiedPayment />;
 
   if (service && CERTIFICATE_SERVICE_SLUGS.has(service)) {
     return <CertificateSuccess service={service} />;

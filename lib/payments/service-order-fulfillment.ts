@@ -55,6 +55,7 @@ export async function ensureServiceOrderFulfillment(
     serviceName?: string | null;
     clientId: string | null;
     companyId: string | null;
+    checkoutLocale?: 'es' | 'ru' | null;
   },
 ): Promise<string | null> {
   if (!input.clientId) return null;
@@ -115,6 +116,7 @@ export async function ensureServiceOrderFulfillment(
           standard: 'service-operational-blueprint-v5',
           service_slugs: slugs,
           specialized: isFullySpecialized,
+          checkout_locale: input.checkoutLocale ?? 'es',
           services: services.map((service) => ({
             service_slug: service.slug,
             blueprint_available: Boolean(service.blueprint),
@@ -155,6 +157,7 @@ export async function ensureServiceOrderFulfillment(
           standard: 'service-operational-blueprint-v5',
           service_slugs: slugs,
           specialized: true,
+          checkout_locale: input.checkoutLocale ?? 'es',
           services: services.map((service) => ({
             service_slug: service.slug,
             blueprint_available: Boolean(service.blueprint),
@@ -208,6 +211,9 @@ export async function ensureServiceOrderFulfillment(
       human_approval_required: Boolean(task.humanApprovalRequired),
       depends_on: task.dependsOn ?? [],
       blocks_submission: Boolean(task.blocksSubmission),
+      skip_allowed: Boolean(task.skipAllowed),
+      client_action_required: Boolean(task.clientActionRequired),
+      client_action: task.clientAction ?? null,
       reference_urls: task.referenceUrls ?? [],
       due_business_days: task.dueBusinessDays ?? null,
       sequence_index: sequenceIndex,

@@ -106,8 +106,10 @@ describe('Client 360 recurring operations', () => {
     expect(documentWorkflowMigration).toContain('checklist_item_key text');
     expect(documentWorkflowMigration).toContain('client_comment text');
     expect(documentNotesRoute).toContain(".from('case_document_notes')");
-    expect(checklistComponent).toContain('Todos los puntos son opcionales');
-    expect(checklistComponent).toContain('Все пункты необязательные');
+    expect(checklistComponent).toContain('No vuelvas a subir documentos que EXPERT ya tenga');
+    expect(checklistComponent).toContain('Не загружайте повторно то, что уже есть у EXPERT');
+    expect(checklistComponent).toContain("reviewMode?: 'initial' | 'additional' | 'closed'");
+    expect(checklistComponent).toContain('Avisar de documentos adicionales');
     expect(checklistComponent).toContain('Enviar documentos a revisión');
     expect(checklistComponent).toContain('Отправить документы на проверку');
     expect(documentReviewRoute).toContain("return NextResponse.json({ error: 'No se pudo crear la tarea de revisión' }");
@@ -115,6 +117,9 @@ describe('Client 360 recurring operations', () => {
     expect(documentReviewRoute).toContain('client_documents_ready: true');
     expect(documentReviewRoute).toContain("title: 'Revisar expediente de nacionalidad recién pagado'");
     expect(documentReviewRoute).toContain("blueprint_version: '5'");
+    expect(documentReviewRoute).toContain('canonicalReviewTask.due_date ??');
+    expect(documentReviewRoute).toContain('Revisar documentación adicional — Nacionalidad menor');
+    expect(documentReviewRoute).toContain("['listo_para_presentar', 'presentado', 'finalizado', 'bloqueado']");
     expect(documentReviewRoute).not.toContain('Preparar y presentar solicitud de nacionalidad');
   });
 });
