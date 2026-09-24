@@ -28,7 +28,7 @@ describe('case document workflow security', () => {
     expect(documentsRoute).toContain("code: 'case_company_required'");
   });
 
-  it('persists the Admin task before confirming the case review transition', () => {
+  it('persists or updates the Admin task before confirming the case review transition', () => {
     const taskLookup = reviewRoute.indexOf(".from('internal_tasks')");
     const caseLookup = reviewRoute.indexOf(".from('cases')", taskLookup);
     const caseUpdate = reviewRoute.indexOf(".update(casePatch)", caseLookup);
