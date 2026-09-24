@@ -472,5 +472,107 @@ El objetivo es reducir la probabilidad de repetición y dejar evidencia de las m
 
 **Fuentes revisadas el 24/09/2026.**
     `
+  },
+  {
+    slug: 'no-hay-que-inscribir-empresa-aepd-rgpd',
+    category: 'Protección de datos',
+    title: 'No tienes que “dar de alta” tu empresa en la AEPD: qué cambió con el RGPD',
+    excerpt:
+      'Desde 2018 desapareció la inscripción general de ficheros en la AEPD. Te explicamos qué obligación la sustituyó y qué trámites sí siguen existiendo.',
+    date: '24 sep 2026',
+    readTime: '7 min',
+    tags: ['AEPD', 'RGPD', 'RAT', 'inscripción ficheros', 'protección de datos', 'pymes'],
+    body: `
+## La inscripción general de ficheros ya no existe
+
+Todavía es frecuente encontrar ofertas comerciales que hablan de "dar de alta la empresa en la AEPD", "registrar los ficheros" u "obtener un número AEPD".
+
+Ese planteamiento corresponde al sistema anterior al RGPD.
+
+La Agencia Española de Protección de Datos confirma que desde el **25 de mayo de 2018** desapareció la obligación de inscribir ficheros, tanto para responsables públicos como privados.
+
+La antigua notificación fue sustituida por un modelo de **responsabilidad proactiva**: la empresa debe identificar sus tratamientos, documentarlos, aplicar medidas adecuadas y poder demostrar que cumple.
+
+## Qué sustituyó a la antigua inscripción
+
+La pieza principal es el **Registro de Actividades de Tratamiento (RAT)**.
+
+El RAT es un documento interno que describe los tratamientos de datos de la organización. Debe recoger, entre otros extremos:
+
+- finalidades;
+- categorías de interesados;
+- categorías de datos;
+- destinatarios;
+- transferencias internacionales, cuando existan;
+- plazos de supresión cuando sea posible;
+- medidas de seguridad cuando sea posible describirlas.
+
+No se presenta de forma rutinaria a la AEPD. Debe estar disponible si la autoridad de control lo requiere.
+
+Puedes consultar nuestra guía:
+[Cómo preparar el RAT para una pyme](https://expertconsulting.es/docs/registro-actividades-tratamiento-rat-pymes).
+
+## Entonces, ¿una empresa no hace nunca trámites ante la AEPD?
+
+Sí puede tener que hacerlos, pero son **trámites concretos**, no una inscripción general.
+
+Por ejemplo:
+
+- comunicar el nombramiento o cese de un Delegado de Protección de Datos cuando proceda;
+- notificar determinadas brechas de datos personales;
+- realizar una consulta previa si una EIPD concluye que existe un alto riesgo que no puede mitigarse adecuadamente;
+- presentar escritos o documentación dentro de un procedimiento concreto.
+
+La guía completa está aquí:
+[¿Hay que darse de alta en la AEPD? Trámites reales para empresas](https://expertconsulting.es/docs/alta-inscripcion-aepd-tramites-empresa).
+
+## Señales de alerta comercial
+
+Conviene desconfiar de mensajes que presenten como obligación general actual:
+
+- "inscribir tu empresa en la AEPD";
+- "registrar tus ficheros en la Agencia";
+- "obtener un número AEPD";
+- pagar una tasa por una supuesta inscripción ordinaria;
+- recibir un "certificado RGPD" genérico que, por sí solo, pretende acreditar cumplimiento.
+
+Una pyme puede necesitar ayuda profesional para implantar correctamente el RGPD, pero el servicio debe centrarse en los tratamientos reales de la empresa, no en reproducir un trámite que ya no existe.
+
+## Qué debería hacer una pequeña empresa en su lugar
+
+El recorrido correcto suele ser:
+
+1. inventariar tratamientos;
+2. preparar el RAT cuando corresponda;
+3. definir bases jurídicas;
+4. revisar cláusulas informativas;
+5. regular a los encargados;
+6. analizar web, cookies y marketing;
+7. aplicar medidas de seguridad;
+8. preparar procedimientos de derechos y brechas;
+9. revisar conservación y supresión;
+10. evaluar si existen factores de mayor riesgo.
+
+Puedes empezar con nuestra
+[herramienta gratuita de autoimplantación RGPD](https://expertconsulting.es/herramientas/rgpd).
+
+## El cumplimiento no es una inscripción
+
+Esta es la idea clave.
+
+El RGPD no funciona como una licencia administrativa que se obtiene una vez y queda cerrada. Es un sistema continuo de responsabilidad, documentación y revisión.
+
+Por eso, una empresa puede no tener que presentar ningún trámite ordinario ante la AEPD y, aun así, tener múltiples obligaciones de cumplimiento.
+
+## Fuentes oficiales
+
+- AEPD — Inscripción de ficheros: https://www.aepd.es/inscripcion-de-ficheros
+- AEPD — FAQ sobre la desaparición de la inscripción: https://www.aepd.es/preguntas-frecuentes/2-tus-obligaciones-como-responsable-del-tratamiento/2-aplicacion-de-la-normativa/FAQ-0205-sobre-la-obligatoriedad-de-la-inscripcion-de-ficheros
+- AEPD — Registro de Actividades de Tratamiento: https://www.aepd.es/derechos-y-deberes/cumple-tus-deberes/medidas-de-cumplimiento/actividades-tratamiento
+- RGPD — EUR-Lex: https://eur-lex.europa.eu/eli/reg/2016/679/oj/spa
+
+**Fuentes revisadas el 24/09/2026.**
+    `
   }
+
 ];
