@@ -42,6 +42,8 @@ export function RgpdAccountSave() {
   const [requestingReviewId, setRequestingReviewId] = useState<string | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [resultLoadingId, setResultLoadingId] = useState<string | null>(null);
+  const [reviewResults, setReviewResults] = useState<Record<string, { summary: string; completedAt: string | null }>>({});
 
   const loadProjects = async () => {
     try {
@@ -185,6 +187,49 @@ export function RgpdAccountSave() {
     }
   };
 
+  const loadReviewResult = async (project: SavedProject) => {
+    if (resultLoadingId || project.status !== 'completed') return;
+    if (reviewResults[project.id]) {
+      setReviewResults((prev) => {
+        const next = { ...prev };
+        delete next[project.id];
+        return next;
+      });
+      return;
+    }
+
+    setResultLoadingId(project.id);
+    setMessage('');
+
+    try {
+      const res = await fetch('/api/rgpd/projects/' + project.id, { method: 'GET' });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 401) {
+        setAuthRequired(true);
+        setMessage('Para consultar el resultado debes iniciar sesión.');
+        return;
+      }
+
+      if (!res.ok || data.project?.status !== 'completed' || typeof data.project?.review_summary !== 'string') {
+        setMessage('El resultado profesional todavía no está disponible.');
+        return;
+      }
+
+      setReviewResults((prev) => ({
+        ...prev,
+        [project.id]: {
+          summary: data.project.review_summary,
+          completedAt: data.project.review_completed_at ?? null,
+        },
+      }));
+    } catch {
+      setMessage('No se pudo cargar el resultado profesional.');
+    } finally {
+      setResultLoadingId(null);
+    }
+  };
+
   const requestReview = async (project: SavedProject) => {
     if (requestingReviewId) return;
     setRequestingReviewId(project.id);
@@ -297,6 +342,20 @@ export function RgpdAccountSave() {
                         ? 'Preparando…'
                         : 'Solicitar revisión'}
                   </button>
+                  {project.status === 'completed' && (
+                    <button
+                      type="button"
+                      onClick={() => loadReviewResult(project)}
+                      disabled={resultLoadingId === project.id}
+                      className="min-h-9 border border-emerald-200 px-3 text-xs font-bold text-emerald-800 disabled:opacity-50"
+                    >
+                      {resultLoadingId === project.id
+                        ? 'Cargando resultado…'
+                        : reviewResults[project.id]
+                          ? 'Ocultar resultado'
+                          : 'Ver resultado'}
+                    </button>
+                  )}
                   {project.status === 'draft' && (
                     <button
                       type="button"
@@ -310,6 +369,17 @@ export function RgpdAccountSave() {
                     </button>
                   )}
                 </div>
+                {reviewResults[project.id] && (
+                  <div className="w-full border-t border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
+                    <p className="font-bold">Conclusiones profesionales</p>
+                    <p className="mt-2 whitespace-pre-wrap leading-6">{reviewResults[project.id].summary}</p>
+                    {reviewResults[project.id].completedAt && (
+                      <p className="mt-3 text-xs text-emerald-800">
+                        Revisión cerrada: {new Date(reviewResults[project.id].completedAt as string).toLocaleString('es-ES')}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
