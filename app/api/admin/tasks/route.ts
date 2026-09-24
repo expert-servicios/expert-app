@@ -224,7 +224,7 @@ export async function PATCH(request: NextRequest) {
   if (parsed.data.status !== undefined) {
     updatePayload.status = parsed.data.status;
     updatePayload.completed_at = parsed.data.status === 'completada' ? now : null;
-    if (parsed.data.status === 'cancelada' && loadedTask) {
+    if (parsed.data.status === 'cancelada' && loadedTask && taskMetadata(loadedTask.metadata).skip_allowed === true) {
       updatePayload.metadata = {
         ...taskMetadata(loadedTask.metadata),
         skipped_as_not_applicable: true,
@@ -279,9 +279,7 @@ export async function PATCH(request: NextRequest) {
       for (const sibling of postCompletionWarning ? [] : (siblings ?? [])) {
         if (sibling.due_date) continue;
         const metadata = taskMetadata(sibling.metadata);
-        const dependsOn = Array.isArray(metadata?.depends_on)
-          ? metadata.depends_on.filter((item): item is string => typeof item === 'string')
-          : [];
+        const dependsOn = dependencyKeys(metadata);
         if (!dependsOn.length) continue;
 
         const dependenciesComplete = dependsOn.every((dependencyKey) =>
@@ -333,7 +331,6 @@ export async function PATCH(request: NextRequest) {
       } else {
         const completedKeys = new Set(
           (allTasksForNextAction ?? [])
-            .filter((candidate) => candidate.status === 'completada')
             .map((candidate) => {
               const candidateMetadata = taskMetadata(candidate.metadata);
               return isSatisfiedTask(candidate.status, candidateMetadata) ? taskKey(candidateMetadata) : null;
@@ -345,9 +342,7 @@ export async function PATCH(request: NextRequest) {
           .filter((candidate) => candidate.status === 'pendiente' || candidate.status === 'en_progreso')
           .map((candidate) => {
             const metadata = taskMetadata(candidate.metadata);
-            const dependsOn = Array.isArray(metadata?.depends_on)
-              ? metadata.depends_on.filter((item): item is string => typeof item === 'string')
-              : [];
+            const dependsOn = dependencyKeys(metadata);
             const blocked = dependsOn.some((dependencyKey) => !completedKeys.has(dependencyKey));
             const sequenceIndex = typeof metadata?.sequence_index === 'number'
               ? metadata.sequence_index
