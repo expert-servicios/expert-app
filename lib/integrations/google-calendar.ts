@@ -14,23 +14,34 @@ const SCOPES = [
   'https://www.googleapis.com/auth/userinfo.email',
 ];
 
-const CALENDAR_SA_SCOPES = ['https://www.googleapis.com/auth/calendar.events'];
+const CALENDAR_SA_SCOPES = [
+  'https://www.googleapis.com/auth/calendar.events',
+  'https://www.googleapis.com/auth/meetings.space.settings',
+  'https://www.googleapis.com/auth/meetings.space.readonly',
+];
 const CALENDAR_SA_IMPERSONATE = 'info@expertconsulting.es';
 
 export function hasCalendarSA(): boolean {
   return !!(process.env.GOOGLE_GMAIL_SA_EMAIL && process.env.GOOGLE_GMAIL_SA_PRIVATE_KEY);
 }
 
-async function getCalendarSAClient() {
+async function getCalendarSAAuthClient() {
   if (!hasCalendarSA()) return null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { google } = (await import('googleapis')) as any;
-  const auth = new google.auth.JWT({
+  return new google.auth.JWT({
     email: process.env.GOOGLE_GMAIL_SA_EMAIL!,
     key: process.env.GOOGLE_GMAIL_SA_PRIVATE_KEY!.replace(/\\n/g, '\n'),
     scopes: CALENDAR_SA_SCOPES,
     subject: CALENDAR_SA_IMPERSONATE,
   });
+}
+
+async function getCalendarSAClient() {
+  const auth = await getCalendarSAAuthClient();
+  if (!auth) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { google } = (await import('googleapis')) as any;
   return google.calendar({ version: 'v3', auth });
 }
 
@@ -238,6 +249,112 @@ export async function listCalendarBusyWindowsSA(
     .filter((window: CalendarBusyWindow) => Boolean(window.start && window.end));
 }
 
+export interface MeetAutoArtifactsResult {
+  configured: boolean;
+  spaceName: string | null;
+  error: string | null;
+}
+
+function envEnabled(name: string, defaultValue: boolean): boolean {
+  const raw = process.env[name]?.trim().toLowerCase();
+  if (!raw) return defaultValue;
+  return !['0', 'false', 'off', 'no'].includes(raw);
+}
+
+function meetCodeFromUrl(meetUrl: string): string | null {
+  try {
+    const url = new URL(meetUrl);
+    if (url.hostname !== 'meet.google.com') return null;
+    const code = url.pathname.split('/').filter(Boolean)[0];
+    return code || null;
+  } catch {
+    return null;
+  }
+}
+
+async function getMeetSABearerToken(): Promise<string> {
+  const auth = await getCalendarSAAuthClient();
+  if (!auth) throw new Error('Google Workspace service account is not configured');
+  const credentials = await auth.authorize();
+  const token = credentials.access_token;
+  if (!token) throw new Error('Google Workspace service account did not return an access token');
+  return token;
+}
+
+export async function configureMeetAutoArtifactsSA(
+  meetUrl: string
+): Promise<MeetAutoArtifactsResult> {
+  const smartNotes = envEnabled('GOOGLE_MEET_AUTO_SMART_NOTES', true);
+  const transcription = envEnabled('GOOGLE_MEET_AUTO_TRANSCRIPTION', true);
+
+  if (!smartNotes && !transcription) {
+    return { configured: false, spaceName: null, error: null };
+  }
+
+  const meetingCode = meetCodeFromUrl(meetUrl);
+  if (!meetingCode) {
+    return {
+      configured: false,
+      spaceName: null,
+      error: 'Google Meet URL did not contain a valid meeting code',
+    };
+  }
+
+  try {
+    const token = await getMeetSABearerToken();
+    const getResponse = await fetch(
+      `https://meet.googleapis.com/v2/spaces/${encodeURIComponent(meetingCode)}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!getResponse.ok) {
+      const detail = await getResponse.text().catch(() => '');
+      throw new Error(`Meet spaces.get failed: ${getResponse.status} ${detail}`.trim());
+    }
+
+    const space = await getResponse.json() as { name?: string };
+    if (!space.name) throw new Error('Google Meet did not return a canonical space name');
+
+    const artifactConfig: Record<string, unknown> = {};
+    const updateMask: string[] = [];
+
+    if (transcription) {
+      artifactConfig.transcriptionConfig = { autoGenerationType: 'ON' };
+      updateMask.push('config.artifactConfig.transcriptionConfig.autoGenerationType');
+    }
+    if (smartNotes) {
+      artifactConfig.smartNotesConfig = { autoGenerationType: 'ON' };
+      updateMask.push('config.artifactConfig.smartNotesConfig.autoGenerationType');
+    }
+
+    const patchResponse = await fetch(
+      `https://meet.googleapis.com/v2/${space.name}?updateMask=${encodeURIComponent(updateMask.join(','))}`,
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          config: {
+            artifactConfig,
+          },
+        }),
+      }
+    );
+
+    if (!patchResponse.ok) {
+      const detail = await patchResponse.text().catch(() => '');
+      throw new Error(`Meet spaces.patch failed: ${patchResponse.status} ${detail}`.trim());
+    }
+
+    return { configured: true, spaceName: space.name, error: null };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[Meet auto artifacts]', message);
+    return { configured: false, spaceName: null, error: message };
+  }
+}
+
 export interface CalendarMeetingInput {
   summary: string;
   description?: string;
@@ -251,6 +368,7 @@ export interface CalendarMeetingInput {
 export interface CalendarMeetingResult {
   eventId: string;
   meetUrl: string | null;
+  autoArtifacts?: MeetAutoArtifactsResult;
 }
 
 export class CalendarMeetingCreationError extends Error {
@@ -298,7 +416,10 @@ export async function createCalendarMeetingSA(
   });
 
   if (!data.id) throw new Error('Google Calendar did not return an event id');
-  if (data.hangoutLink) return { eventId: data.id, meetUrl: data.hangoutLink };
+  if (data.hangoutLink) {
+    const autoArtifacts = await configureMeetAutoArtifactsSA(data.hangoutLink);
+    return { eventId: data.id, meetUrl: data.hangoutLink, autoArtifacts };
+  }
 
   try {
     // Conference creation may complete asynchronously. Do not confirm the local
@@ -310,7 +431,12 @@ export async function createCalendarMeetingSA(
         eventId: data.id,
       });
       if (refreshed.hangoutLink) {
-        return { eventId: data.id, meetUrl: refreshed.hangoutLink };
+        const autoArtifacts = await configureMeetAutoArtifactsSA(refreshed.hangoutLink);
+        return {
+          eventId: data.id,
+          meetUrl: refreshed.hangoutLink,
+          autoArtifacts,
+        };
       }
       const status = refreshed.conferenceData?.createRequest?.status?.statusCode;
       if (status === 'failure') {
