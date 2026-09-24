@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { hashWorkToken, requireWorkProfessional, WorkError, workEnabled } from '@/lib/ai/kia/work-auth';
 import { workTaskPolicySchema } from '@/lib/ai/kia/work-contract';
 import { workErrorResponse } from '@/lib/ai/kia/work-http';
+import { processWorkInbox } from '@/lib/ai/kia/work-inbox';
 
 const grantSchema = z.object({
   case_id: z.uuid(),
@@ -11,25 +12,105 @@ const grantSchema = z.object({
   ttl_hours: z.number().int().min(1).max(24).default(8),
 }).strict();
 
+const reconcileSchema = z.object({
+  case_id: z.uuid(),
+  event_id: z.uuid(),
+  action: z.literal('retry_verification'),
+}).strict();
+
+function taskKey(task: { metadata?: unknown }) {
+  const metadata = task.metadata && typeof task.metadata === 'object' ? task.metadata as Record<string, unknown> : {};
+  return typeof metadata.task_key === 'string' ? metadata.task_key : null;
+}
+
+function dependencyKeys(task: { metadata?: unknown }) {
+  const metadata = task.metadata && typeof task.metadata === 'object' ? task.metadata as Record<string, unknown> : {};
+  return Array.isArray(metadata.depends_on) ? metadata.depends_on.filter((item): item is string => typeof item === 'string') : [];
+}
+
 export async function GET(request: NextRequest) {
   try {
     const caseId = z.uuid().safeParse(request.nextUrl.searchParams.get('case_id'));
     if (!caseId.success) throw new WorkError('invalid_case', 400);
-    const { admin } = await requireWorkProfessional(request, caseId.data);
-    const [inbox, tasks] = await Promise.all([
+    const { admin, caseRow } = await requireWorkProfessional(request, caseId.data);
+    const [inbox, tasks, connections, documents, actions, emailEvents] = await Promise.all([
       admin.from('kia_work_inbox').select('event_id,state,received_at,last_error,payload,result,kia_work_connections!inner(case_id)')
         .eq('kia_work_connections.case_id', caseId.data).order('received_at', { ascending: false }).limit(50),
-      admin.from('internal_tasks').select('id,title').eq('case_id', caseId.data),
+      admin.from('internal_tasks').select('id,title,description,status,metadata,created_at').eq('case_id', caseId.data)
+        .order('created_at', { ascending: true }),
+      admin.from('kia_work_connections').select('id,expires_at,revoked_at,created_at,task_policies')
+        .eq('case_id', caseId.data).order('created_at', { ascending: false }).limit(20),
+      admin.from('documents').select('checklist_item_key,checklist_item_label')
+        .eq('case_id', caseId.data).eq('client_id', caseRow.client_id).is('replaced_by', null).neq('state', 'rechazado'),
+      admin.from('administrative_actions').select('id,capability,action_type,state,requires_user_auth,requires_final_approval')
+        .eq('case_id', caseId.data).order('created_at', { ascending: false }).limit(50),
+      admin.from('email_events').select('event_type,subject,status,created_at').eq('metadata->>case_id', caseId.data)
+        .order('created_at', { ascending: false }).limit(50),
     ]);
-    if (inbox.error || tasks.error) throw new WorkError('inbox_unavailable', 503);
-    const titles = new Map((tasks.data ?? []).map(task => [task.id, task.title]));
-    return NextResponse.json({ results: (inbox.data ?? []).map(row => ({
-      id: row.event_id, state: row.state, received_at: row.received_at,
-      title: titles.get(row.payload?.task_id) ?? 'Tarea del expediente',
-      outcome: row.result?.result ?? null,
-      reason: row.payload?.result === 'succeeded' ? null : row.payload?.reason ?? null,
-      requires_review: row.state === 'review',
-    })) }, { headers: { 'Cache-Control': 'no-store' } });
+    if (inbox.error || tasks.error || connections.error || documents.error || actions.error || emailEvents.error) {
+      throw new WorkError('inbox_unavailable', 503);
+    }
+
+    const allTasks = tasks.data ?? [];
+    const titles = new Map(allTasks.map(task => [task.id, task.title]));
+    const byKey = new Map(allTasks.map(task => [taskKey(task), task]).filter(([key]) => Boolean(key)));
+    const taskOptions = allTasks.map(task => {
+      const dependencies = dependencyKeys(task).map(key => byKey.get(key)).filter(Boolean);
+      const unresolvedDependency = dependencyKeys(task).some(key => !byKey.has(key));
+      const blockedBy = dependencies.filter(dep => dep!.status !== 'completada').map(dep => dep!.title);
+      const explicitWorkflow = dependencyKeys(task).length > 0 || Boolean(taskKey(task));
+      const currentStep = task.status === 'en_progreso' || task.title === caseRow.next_action;
+      return {
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        task_key: taskKey(task),
+        dependencies: dependencies.map(dep => ({ id: dep!.id, title: dep!.title, status: dep!.status })),
+        delegatable: ['pendiente', 'en_progreso'].includes(task.status) && !unresolvedDependency && blockedBy.length === 0
+          && (explicitWorkflow || currentStep),
+        blocked_by: blockedBy,
+        blocked_reason: unresolvedDependency ? 'Hay dependencias del workflow que no se pueden resolver.' : null,
+      };
+    });
+
+    const documentTargets = new Map<string, string>();
+    for (const doc of documents.data ?? []) {
+      if (doc.checklist_item_key) documentTargets.set(doc.checklist_item_key, doc.checklist_item_label ?? doc.checklist_item_key);
+    }
+    const emailTargets = [...new Map((emailEvents.data ?? []).map(row => [row.event_type, row.subject || row.event_type])).entries()]
+      .map(([value, label]) => ({ value, label }));
+    const actionTargets = (actions.data ?? []).map(action => ({
+      value: action.id,
+      label: `${action.action_type} · ${action.capability}`,
+      state: action.state,
+      human_gate: Boolean(action.requires_user_auth || action.requires_final_approval),
+    }));
+
+    return NextResponse.json({
+      results: (inbox.data ?? []).map(row => ({
+        id: row.event_id, state: row.state, received_at: row.received_at,
+        title: titles.get(row.payload?.task_id) ?? 'Tarea del expediente',
+        outcome: row.result?.result ?? null,
+        reason: row.payload?.result === 'succeeded' ? null : row.payload?.reason ?? null,
+        error_code: row.last_error ?? null,
+        requires_review: row.state === 'review',
+      })),
+      tasks: taskOptions,
+      connections: (connections.data ?? []).map(connection => ({
+        id: connection.id,
+        expires_at: connection.expires_at,
+        revoked_at: connection.revoked_at,
+        created_at: connection.created_at,
+        task_ids: Object.keys(connection.task_policies ?? {}),
+        active: !connection.revoked_at && Date.parse(connection.expires_at) > Date.now(),
+      })),
+      evidence: {
+        documents: [...documentTargets.entries()].map(([value, label]) => ({ value, label })),
+        emails: emailTargets,
+        administrative_actions: actionTargets,
+      },
+    }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) { return workErrorResponse(error); }
 }
 
@@ -42,23 +123,37 @@ export async function POST(request: NextRequest) {
     const { admin, actorId, caseRow } = await requireWorkProfessional(request, input.case_id);
     const ids = input.tasks.map(t => t.id);
     if (new Set(ids).size !== ids.length) throw new WorkError('duplicate_task', 400);
-    const dependencies = [...new Set(input.tasks.flatMap(t => t.policy.dependencies))];
-    const { data: tasks, error } = await admin.from('internal_tasks').select('id,case_id,client_id,status')
-      .in('id', [...new Set([...ids, ...dependencies])]);
+
+    const { data: caseTasks, error } = await admin.from('internal_tasks').select('id,case_id,client_id,status,title,metadata')
+      .eq('case_id', caseRow.id).eq('client_id', caseRow.client_id);
     if (error) throw new WorkError('tasks_unavailable', 503);
-    for (const id of [...ids, ...dependencies]) {
-      const task = tasks?.find(t => t.id === id);
-      if (!task || task.case_id !== caseRow.id || task.client_id !== caseRow.client_id) throw new WorkError('task_scope_mismatch', 403);
+    const byId = new Map((caseTasks ?? []).map(task => [task.id, task]));
+    const byTaskKey = new Map((caseTasks ?? []).map(task => [taskKey(task), task]).filter(([key]) => Boolean(key)));
+
+    const documentTargets = new Set((await admin.from('documents').select('checklist_item_key')
+      .eq('case_id', caseRow.id).eq('client_id', caseRow.client_id).is('replaced_by', null).neq('state', 'rechazado')).data
+      ?.map(row => row.checklist_item_key).filter(Boolean) ?? []);
+    const actionTargets = new Set((await admin.from('administrative_actions').select('id').eq('case_id', caseRow.id)).data
+      ?.map(row => row.id) ?? []);
+    const emailTargets = new Set((await admin.from('email_events').select('event_type').eq('metadata->>case_id', caseRow.id)).data
+      ?.map(row => row.event_type) ?? []);
+
+    const policies: Record<string, unknown> = {};
+    for (const requested of input.tasks) {
+      const task = byId.get(requested.id);
+      if (!task || !['pendiente', 'en_progreso'].includes(task.status)) throw new WorkError('work_task_not_available', 409);
+      const depKeys = dependencyKeys(task);
+      const dependencies = depKeys.map(key => byTaskKey.get(key));
+      if (dependencies.some(dep => !dep)) throw new WorkError('dependency_unresolved', 409);
+      if (dependencies.some(dep => dep!.status !== 'completada')) throw new WorkError('work_dependencies_pending', 409);
+
+      const policy = requested.policy;
+      if (policy.kind === 'document_archived' && !documentTargets.has(policy.target)) throw new WorkError('invalid_evidence_target', 400);
+      if (policy.kind === 'administrative_action_completed' && !actionTargets.has(policy.target)) throw new WorkError('invalid_evidence_target', 400);
+      if (policy.kind === 'email_sent' && !emailTargets.has(policy.target)) throw new WorkError('invalid_evidence_target', 400);
+      policies[task.id] = { ...policy, dependencies: dependencies.map(dep => dep!.id) };
     }
-    // Reject cycles before a connection can strand its own workflow.
-    const policies = Object.fromEntries(input.tasks.map(t => [t.id, t.policy]));
-    const visiting = new Set<string>(); const visited = new Set<string>();
-    const visit = (id: string) => {
-      if (visiting.has(id)) throw new WorkError('dependency_cycle', 400);
-      if (visited.has(id)) return;
-      visiting.add(id); policies[id]?.dependencies.forEach(visit); visiting.delete(id); visited.add(id);
-    };
-    ids.forEach(visit);
+
     const token = `kw_${randomBytes(32).toString('base64url')}`;
     const expiresAt = new Date(Date.now() + input.ttl_hours * 3600_000).toISOString();
     const { data, error: insertError } = await admin.from('kia_work_connections').insert({
@@ -68,6 +163,33 @@ export async function POST(request: NextRequest) {
     }).select('id').single();
     if (insertError || !data) throw new WorkError('grant_failed', 503);
     return NextResponse.json({ id: data.id, token, expires_at: expiresAt }, { status: 201, headers: { 'Cache-Control': 'no-store' } });
+  } catch (error) { return workErrorResponse(error); }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    if (!workEnabled()) throw new WorkError('connector_disabled', 503);
+    const parsed = reconcileSchema.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) throw new WorkError('invalid_request', 400);
+    const { admin } = await requireWorkProfessional(request, parsed.data.case_id);
+    const { data: row, error } = await admin.from('kia_work_inbox').select('event_id,state,connection_id')
+      .eq('event_id', parsed.data.event_id).maybeSingle();
+    if (error) throw new WorkError('inbox_unavailable', 503);
+    if (!row || row.state !== 'review') throw new WorkError('review_not_available', 409);
+    const { data: connection, error: connectionError } = await admin.from('kia_work_connections').select('case_id')
+      .eq('id', row.connection_id).maybeSingle();
+    if (connectionError) throw new WorkError('authorization_unavailable', 503);
+    if (!connection || connection.case_id !== parsed.data.case_id) throw new WorkError('not_found', 404);
+
+    const reset = await admin.from('kia_work_inbox').update({
+      state: 'pending', attempts: 0, available_at: new Date().toISOString(), locked_until: null, last_error: null, result: null,
+    }).eq('event_id', row.event_id).eq('state', 'review');
+    if (reset.error) throw new WorkError('inbox_audit_unavailable', 503);
+    await processWorkInbox(admin, row.event_id);
+    const { data: refreshed, error: refreshedError } = await admin.from('kia_work_inbox')
+      .select('state,last_error,result').eq('event_id', row.event_id).single();
+    if (refreshedError) throw new WorkError('inbox_unavailable', 503);
+    return NextResponse.json(refreshed, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) { return workErrorResponse(error); }
 }
 
