@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 
 export async function POST(
   request: NextRequest,
@@ -13,7 +13,9 @@ export async function POST(
     return NextResponse.json({ error: 'authentication_required' }, { status: 401 });
   }
 
-  const { data: project, error: projectError } = await supabase
+  const admin = getSupabaseAdmin();
+
+  const { data: project, error: projectError } = await admin
     .from('rgpd_self_implementation_projects')
     .select('id,version,status')
     .eq('id', id)
@@ -28,11 +30,11 @@ export async function POST(
     return NextResponse.json({ error: 'project_not_found' }, { status: 404 });
   }
 
-  if (project.status === 'archived') {
-    return NextResponse.json({ error: 'project_archived' }, { status: 409 });
+  if (project.status !== 'draft') {
+    return NextResponse.json({ error: 'project_not_draft' }, { status: 409 });
   }
 
-  const { data: updated, error: updateError } = await supabase
+  const { data: updated, error: updateError } = await admin
     .from('rgpd_self_implementation_projects')
     .update({
       status: 'review_requested',
