@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { CheckCircle2, Clock, Phone, Calendar } from 'lucide-react';
 import { NativeBookingForm } from '@/components/booking/NativeBookingForm';
+import { redirect } from 'next/navigation';
+import { createServerSupabaseClient } from '@/lib/integrations/supabase';
 
 export const metadata: Metadata = {
   title: 'Reservar cita | EXPERT — Asesoría Fiscal y Legal',
@@ -41,6 +43,15 @@ export default async function CitaPage({
   const serviceKey = params.tipo?.trim() || 'consulta-inicial';
   const bookingAuth = params.auth?.trim() || null;
   const companyId = params.companyId?.trim() || null;
+
+  if (serviceKey === 'onboarding' && companyId && !bookingAuth) {
+    const supabase = createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      const next = `/cita?tipo=onboarding&companyId=${encodeURIComponent(companyId)}`;
+      redirect(`/auth/login?next=${encodeURIComponent(next)}`);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[#F8F6F1] text-[#0D1B2A]">
