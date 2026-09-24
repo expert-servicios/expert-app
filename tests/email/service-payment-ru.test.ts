@@ -149,7 +149,7 @@ describe('Russian nationality service payment emails', () => {
     expect(template.subject).toContain('ACCIÓN: revisar expediente');
     expect(template.html).toContain('Vyacheslav Test');
     expect(template.html).toContain('pilot@example.com');
-    expect(template.html).toContain('expediente ya creado automáticamente');
+    expect(template.html).toContain('la ficha y el expediente creados automáticamente');
     expect(template.html).toContain('revisar primero los documentos ya disponibles');
     expect(template.html).toContain('apellido personal de la madre');
     expect(template.html).toContain('certificado de finalización DocuSign');
