@@ -61,6 +61,7 @@ export default function RgpdToolPage() {
               <Link href="/docs/registro-actividades-tratamiento-rat-pymes" className="block hover:text-[#D4A017]">Registro de Actividades →</Link>
               <Link href="/docs/privacidad-formularios-cookies-web" className="block hover:text-[#D4A017]">Web y cookies →</Link>
               <Link href="/docs/protocolo-brechas-datos-personales-72-horas" className="block hover:text-[#D4A017]">Brechas de datos →</Link>
+              <Link href="/docs/alta-inscripcion-aepd-tramites-empresa" className="block hover:text-[#D4A017]">¿Hay que darse de alta en la AEPD? →</Link>
             </div>
           </div>
         </aside>
