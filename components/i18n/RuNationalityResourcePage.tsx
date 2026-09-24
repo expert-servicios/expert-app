@@ -32,6 +32,15 @@ export function RuNationalityResourcePage({ resource }: { resource: RuResource }
               {section.paragraphs?.map((paragraph) => (
                 <p key={paragraph} className="mt-4 text-[15px] leading-7 text-[#23364D]">{paragraph}</p>
               ))}
+              {section.links && (
+                <ul className="mt-4 space-y-2 text-sm leading-6">
+                  {section.links.map((link) => (
+                    <li key={link.href}>
+                      <a href={link.href} className="text-[#23364D] underline underline-offset-4 hover:text-[#0D1B2A]">{link.label}</a>
+                    </li>
+                  ))}
+                </ul>
+              )}
               {section.bullets && (
                 <ul className="mt-4 space-y-2.5">
                   {section.bullets.map((item) => (

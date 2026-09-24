@@ -19,6 +19,7 @@ function addBusinessDays(from: Date, businessDays: number): string {
 }
 
 function taskDueDate(task: ServiceTaskTemplate): string | null {
+  if (task.dependsOn?.length) return null;
   return typeof task.dueBusinessDays === 'number'
     ? addBusinessDays(new Date(), task.dueBusinessDays)
     : null;
@@ -83,7 +84,7 @@ export async function ensureServiceOrderFulfillment(
 
   const { data: existingCase, error: caseLookupError } = await admin
     .from('cases')
-    .select('id,service_id')
+    .select('id,service_id,checklist_json')
     .eq('order_id', input.orderId)
     .maybeSingle();
 
@@ -111,7 +112,7 @@ export async function ensureServiceOrderFulfillment(
           : 'Revisar el pedido pagado y definir el checklist operativo',
         docs_checklist: requiredDocuments,
         checklist_json: {
-          standard: 'service-operational-blueprint-v2',
+          standard: 'service-operational-blueprint-v5',
           service_slugs: slugs,
           specialized: isFullySpecialized,
           services: services.map((service) => ({
@@ -142,18 +143,47 @@ export async function ensureServiceOrderFulfillment(
     }
   }
 
-  const tasks = services.flatMap((service) =>
-    (service.blueprint?.tasks ?? [genericTask(service)]).map((task) => ({
+  if (existingCase?.id && !existingCase.checklist_json && isFullySpecialized && primaryBlueprint) {
+    const { error: hydrateCaseError } = await admin
+      .from('cases')
+      .update({
+        priority: primaryBlueprint.initialPriority,
+        next_action: primaryBlueprint.initialNextAction,
+        docs_checklist: requiredDocuments,
+        checklist_json: {
+          standard: 'service-operational-blueprint-v5',
+          service_slugs: slugs,
+          specialized: true,
+          services: services.map((service) => ({
+            service_slug: service.slug,
+            blueprint_available: Boolean(service.blueprint),
+            requirements: service.blueprint?.requirements ?? [],
+            documents: service.blueprint?.documents ?? [],
+            steps: service.blueprint?.steps ?? [],
+          })),
+        },
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existingCase.id);
+
+    if (hydrateCaseError) {
+      throw new Error(`Could not hydrate legacy service case ${existingCase.id}: ${hydrateCaseError.message}`);
+    }
+  }
+
+  const tasks = services.flatMap((service, serviceIndex) =>
+    (service.blueprint?.tasks ?? [genericTask(service)]).map((task, taskIndex) => ({
       task,
       serviceSlug: service.slug,
       blueprintSlug: service.blueprint?.slug ?? null,
+      sequenceIndex: serviceIndex * 100 + taskIndex,
     })),
   );
 
-  for (const { task, serviceSlug, blueprintSlug } of tasks) {
+  for (const { task, serviceSlug, blueprintSlug, sequenceIndex } of tasks) {
     const { data: existingTask, error: taskLookupError } = await admin
       .from('internal_tasks')
-      .select('id')
+      .select('id,metadata,due_date')
       .eq('case_id', caseId)
       .eq('source', 'system')
       .eq('title', task.title)
@@ -163,7 +193,44 @@ export async function ensureServiceOrderFulfillment(
     if (taskLookupError) {
       throw new Error(`Could not resolve service task ${task.key}: ${taskLookupError.message}`);
     }
-    if (existingTask) continue;
+
+    const blueprintTaskMetadata = {
+      ...(blueprintSlug
+        ? { task_kind: 'service_blueprint_step' }
+        : { task_kind: 'service_manual_intake' }),
+      service_slug: serviceSlug,
+      blueprint_slug: blueprintSlug,
+      task_key: task.key,
+      phase: task.phase,
+      human_approval_required: Boolean(task.humanApprovalRequired),
+      depends_on: task.dependsOn ?? [],
+      blocks_submission: Boolean(task.blocksSubmission),
+      reference_urls: task.referenceUrls ?? [],
+      due_business_days: task.dueBusinessDays ?? null,
+      sequence_index: sequenceIndex,
+      blueprint_version: blueprintSlug ? '5' : null,
+    };
+
+    if (existingTask) {
+      const { error: taskHydrateError } = await admin
+        .from('internal_tasks')
+        .update({
+          description: task.description,
+          priority: task.priority,
+          due_date: existingTask.due_date ?? taskDueDate(task),
+          metadata: {
+            ...((existingTask.metadata as Record<string, unknown> | null) ?? {}),
+            ...blueprintTaskMetadata,
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingTask.id);
+
+      if (taskHydrateError) {
+        throw new Error(`Could not hydrate service task ${task.key}: ${taskHydrateError.message}`);
+      }
+      continue;
+    }
 
     const { error: taskCreateError } = await admin
       .from('internal_tasks')
@@ -177,17 +244,7 @@ export async function ensureServiceOrderFulfillment(
         company_id: input.companyId,
         due_date: taskDueDate(task),
         source: 'system',
-        metadata: {
-          ...(blueprintSlug
-            ? { task_kind: 'service_blueprint_step' }
-            : { task_kind: 'service_manual_intake' }),
-          service_slug: serviceSlug,
-          blueprint_slug: blueprintSlug,
-          task_key: task.key,
-          phase: task.phase,
-          human_approval_required: Boolean(task.humanApprovalRequired),
-          blueprint_version: blueprintSlug ? '2' : null,
-        },
+        metadata: blueprintTaskMetadata,
       });
 
     if (taskCreateError) {

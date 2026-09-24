@@ -111,7 +111,10 @@ describe('Client 360 recurring operations', () => {
     expect(checklistComponent).toContain('Enviar documentos a revisión');
     expect(checklistComponent).toContain('Отправить документы на проверку');
     expect(documentReviewRoute).toContain("return NextResponse.json({ error: 'No se pudo crear la tarea de revisión' }");
-    expect(documentReviewRoute).toContain('Preparar y presentar solicitud de nacionalidad');
-    expect(documentReviewRoute).toContain('Pagar tasa 790-026 de 104,05 € como suplido');
+    expect(documentReviewRoute).toContain("metadata?.task_key === 'review_documents'");
+    expect(documentReviewRoute).toContain('client_documents_ready: true');
+    expect(documentReviewRoute).toContain("title: 'Revisar expediente de nacionalidad recién pagado'");
+    expect(documentReviewRoute).toContain("blueprint_version: '5'");
+    expect(documentReviewRoute).not.toContain('Preparar y presentar solicitud de nacionalidad');
   });
 });

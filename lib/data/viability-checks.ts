@@ -495,6 +495,28 @@ const nacionalidad_menor: ViabilityCheck = {
       ],
     },
     {
+      id: 'apellidos_actuales',
+      type: 'select',
+      label: '¿Cómo figura actualmente el menor respecto a sus apellidos?',
+      required: true,
+      options: [
+        { value: 'dos_o_mas', label: 'Ya figura con dos o más apellidos' },
+        { value: 'uno', label: 'Figura con un solo apellido' },
+        { value: 'no_seguro', label: 'No estoy seguro/a', escalates: true },
+      ],
+    },
+    {
+      id: 'apellido_materno_cambio',
+      type: 'select',
+      label: '¿La madre usa actualmente un apellido distinto de su apellido personal/de nacimiento por matrimonio u otro cambio?',
+      required: true,
+      options: [
+        { value: 'si', label: 'Sí' },
+        { value: 'no', label: 'No' },
+        { value: 'no_seguro', label: 'No estoy seguro/a', escalates: true },
+      ],
+    },
+    {
       id: 'cert_nacimiento',
       type: 'boolean',
       label: '¿Dispones del certificado literal de nacimiento del menor expedido por el Registro Civil español?',
@@ -515,6 +537,7 @@ const nacionalidad_menor: ViabilityCheck = {
     { id: 'tie_padres', label: 'NIE/TIE de los progenitores o representantes, si procede', required: false },
     { id: 'empadronamiento', label: 'Empadronamiento familiar/colectivo actualizado', required: true },
     { id: 'centro_escolar', label: 'Certificado del centro escolar o educativo cuando corresponda por edad y escolarización', required: false },
+    { id: 'apellido_materno', label: 'Certificado de nacimiento o matrimonio de la madre que acredite su apellido personal anterior al matrimonio, solo si la documentación existente no basta y hace falta prueba adicional', required: false },
   ],
   aiCriteria: `Eres un experto en extranjería y nacionalidad española. Evalúa la viabilidad de la nacionalidad española por residencia de un menor nacido en España.
 
@@ -534,11 +557,21 @@ PRUEBAS:
 - Menores de 18 años: exentos de DELE A2 para nacionalidad.
 - Revisar documentación escolar/educativa cuando corresponda para acreditar integración.
 
+APELLIDOS PARA REGISTRO CIVIL:
+- Antes de preparar o enviar a firma el formulario oficial, separar la identidad extranjera vigente del menor de los apellidos que corresponderán a la futura inscripción española.
+- Si el menor usa un solo apellido, comprobar la filiación y el apellido personal de la madre. Si la madre cambió de apellido por matrimonio, identificar su apellido personal/de nacimiento con la documentación ya disponible.
+- No ofrecer la duplicación del apellido como libre elección para evitar documentación cuando la línea materna está determinada o puede acreditarse.
+- No marcar que se desconoce el apellido materno por mera preferencia de la familia.
+- Confirmar el orden de los apellidos con ambos progenitores y comprobar si ya existe un orden registral previo para hermanos de la misma filiación.
+- Guía EXPERT: /docs/apellidos-menor-nacionalidad-registro-civil
+- Instrucción DGRN 23/05/2007: https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948
+- Ley del Registro Civil, art. 49: https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a49
+
 CRITERIOS DE VIABILIDAD:
-- VIABLE: nacido en España + 1 año de residencia legal/continuada/inmediatamente anterior + documentación esencial + representación clara.
-- PARCIAL: cumple el año pero falta documentación subsanable o acreditación escolar/representativa.
+- VIABLE: nacido en España + 1 año de residencia legal/continuada/inmediatamente anterior + documentación esencial + representación clara + apellidos registrales cerrados.
+- PARCIAL: cumple el año pero falta documentación subsanable, acreditación escolar/representativa o todavía no se han cerrado los apellidos registrales.
 - NO VIABLE: no ha cumplido el año de residencia legal o ya no es menor para este servicio específico.
-- ESCALAR: desacuerdo entre progenitores, representación dudosa, interrupciones de residencia, filiación compleja, posible nacionalidad de origen o apatridia.`,
+- ESCALAR: desacuerdo entre progenitores, representación dudosa, interrupciones de residencia, filiación o apellidos complejos, posible nacionalidad de origen o apatridia.`,
 };
 
 // ── Permiso Inicial de Residencia ────────────────────────────────────────────

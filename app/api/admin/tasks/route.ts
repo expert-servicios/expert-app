@@ -3,6 +3,17 @@ import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { isStaffRole } from '@/lib/auth/roles';
 
+function addBusinessDays(from: Date, businessDays: number): string {
+  const date = new Date(from);
+  let remaining = Math.max(0, businessDays);
+  while (remaining > 0) {
+    date.setUTCDate(date.getUTCDate() + 1);
+    const day = date.getUTCDay();
+    if (day !== 0 && day !== 6) remaining -= 1;
+  }
+  return date.toISOString().slice(0, 10);
+}
+
 async function requireStaff(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -24,7 +35,7 @@ export async function GET(request: NextRequest) {
 
   let query = auth.admin
     .from('internal_tasks')
-    .select('id,title,description,status,priority,assigned_to,case_id,client_id,lead_id,due_date,source,created_at,updated_at,completed_at')
+    .select('id,title,description,status,priority,assigned_to,case_id,client_id,lead_id,due_date,source,metadata,created_at,updated_at,completed_at')
     .order('due_date', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });
 
@@ -53,13 +64,36 @@ export async function GET(request: NextRequest) {
   const caseMap = new Map((casesRes.data ?? []).map((item) => [item.id, item]));
   const assigneeMap = new Map((assigneesRes.data ?? []).map((item) => [item.id, item]));
 
+  const caseTaskMap = new Map<string, Array<{ status: string; metadata: Record<string, unknown> | null }>>();
+  for (const task of tasks ?? []) {
+    if (!task.case_id) continue;
+    const list = caseTaskMap.get(task.case_id) ?? [];
+    list.push({ status: task.status, metadata: (task.metadata as Record<string, unknown> | null) ?? null });
+    caseTaskMap.set(task.case_id, list);
+  }
+
   return NextResponse.json({
-    tasks: (tasks ?? []).map((task) => ({
-      ...task,
-      client: task.client_id ? profileMap.get(task.client_id) ?? null : null,
-      case: task.case_id ? caseMap.get(task.case_id) ?? null : null,
-      assignee: task.assigned_to ? assigneeMap.get(task.assigned_to) ?? null : null,
-    })),
+    tasks: (tasks ?? []).map((task) => {
+      const metadata = (task.metadata as Record<string, unknown> | null) ?? null;
+      const dependsOn = Array.isArray(metadata?.depends_on)
+        ? metadata.depends_on.filter((item): item is string => typeof item === 'string')
+        : [];
+      const siblings = task.case_id ? caseTaskMap.get(task.case_id) ?? [] : [];
+      const blockedBy = dependsOn.filter((dependencyKey) =>
+        !siblings.some((candidate) =>
+          candidate.status === 'completada'
+          && candidate.metadata?.task_key === dependencyKey
+        ),
+      );
+
+      return {
+        ...task,
+        blocked_by: blockedBy,
+        client: task.client_id ? profileMap.get(task.client_id) ?? null : null,
+        case: task.case_id ? caseMap.get(task.case_id) ?? null : null,
+        assignee: task.assigned_to ? assigneeMap.get(task.assigned_to) ?? null : null,
+      };
+    }),
   });
 }
 
@@ -109,6 +143,48 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 });
   }
 
+  if (parsed.data.status === 'en_progreso' || parsed.data.status === 'completada') {
+    const { data: task, error: taskLookupError } = await auth.admin
+      .from('internal_tasks')
+      .select('id,case_id,metadata')
+      .eq('id', parsed.data.id)
+      .maybeSingle();
+
+    if (taskLookupError || !task) {
+      return NextResponse.json({ error: 'No se pudo cargar la tarea' }, { status: 404 });
+    }
+
+    const metadata = (task.metadata as Record<string, unknown> | null) ?? null;
+    const dependsOn = Array.isArray(metadata?.depends_on)
+      ? metadata.depends_on.filter((item): item is string => typeof item === 'string')
+      : [];
+
+    if (dependsOn.length && task.case_id) {
+      const { data: siblingTasks, error: siblingsError } = await auth.admin
+        .from('internal_tasks')
+        .select('status,metadata')
+        .eq('case_id', task.case_id);
+
+      if (siblingsError) {
+        return NextResponse.json({ error: 'No se pudieron validar las dependencias de la tarea' }, { status: 500 });
+      }
+
+      const blockedBy = dependsOn.filter((dependencyKey) =>
+        !(siblingTasks ?? []).some((candidate) => {
+          const candidateMetadata = (candidate.metadata as Record<string, unknown> | null) ?? null;
+          return candidate.status === 'completada' && candidateMetadata?.task_key === dependencyKey;
+        }),
+      );
+
+      if (blockedBy.length) {
+        return NextResponse.json({
+          error: 'La tarea está bloqueada por pasos anteriores pendientes',
+          blockedBy,
+        }, { status: 409 });
+      }
+    }
+  }
+
   const now = new Date().toISOString();
   const updatePayload: Record<string, unknown> = { updated_at: now };
   if (parsed.data.status !== undefined) {
@@ -121,5 +197,131 @@ export async function PATCH(request: NextRequest) {
 
   const { error } = await auth.admin.from('internal_tasks').update(updatePayload).eq('id', parsed.data.id);
   if (error) return NextResponse.json({ error: 'No se pudo actualizar la tarea' }, { status: 500 });
-  return NextResponse.json({ ok: true });
+
+  let postCompletionWarning: string | null = null;
+
+  if (parsed.data.status === 'completada') {
+    const { data: completedTask } = await auth.admin
+      .from('internal_tasks')
+      .select('case_id')
+      .eq('id', parsed.data.id)
+      .maybeSingle();
+
+    if (completedTask?.case_id) {
+      const { data: siblings, error: siblingLoadError } = await auth.admin
+        .from('internal_tasks')
+        .select('id,status,due_date,metadata')
+        .eq('case_id', completedTask.case_id)
+        .in('status', ['pendiente', 'en_progreso']);
+
+      if (siblingLoadError) {
+        postCompletionWarning = 'La tarea se completó, pero no se pudieron recalcular los pasos siguientes';
+      }
+
+      const allCaseTasks = postCompletionWarning ? { data: null, error: null } : await auth.admin
+        .from('internal_tasks')
+        .select('status,metadata')
+        .eq('case_id', completedTask.case_id);
+
+      if (allCaseTasks.error) {
+        postCompletionWarning = 'La tarea se completó, pero no se pudieron validar los pasos siguientes';
+      }
+
+      for (const sibling of postCompletionWarning ? [] : (siblings ?? [])) {
+        if (sibling.due_date) continue;
+        const metadata = (sibling.metadata as Record<string, unknown> | null) ?? null;
+        const dependsOn = Array.isArray(metadata?.depends_on)
+          ? metadata.depends_on.filter((item): item is string => typeof item === 'string')
+          : [];
+        if (!dependsOn.length) continue;
+
+        const dependenciesComplete = dependsOn.every((dependencyKey) =>
+          (allCaseTasks.data ?? []).some((candidate) => {
+            const candidateMetadata = (candidate.metadata as Record<string, unknown> | null) ?? null;
+            return candidate.status === 'completada' && candidateMetadata?.task_key === dependencyKey;
+          }),
+        );
+        if (!dependenciesComplete) continue;
+
+        const dueBusinessDays = typeof metadata?.due_business_days === 'number'
+          ? metadata.due_business_days
+          : null;
+        if (dueBusinessDays === null) continue;
+
+        const { error: unlockError } = await auth.admin
+          .from('internal_tasks')
+          .update({
+            due_date: addBusinessDays(new Date(), dueBusinessDays),
+            updated_at: now,
+          })
+          .eq('id', sibling.id)
+          .is('due_date', null);
+
+        if (unlockError) {
+          postCompletionWarning = 'La tarea se completó, pero no se pudo activar el plazo de uno de los pasos siguientes';
+          break;
+        }
+      }
+    }
+  }
+
+  if (parsed.data.status === 'completada') {
+    const { data: completedTask } = await auth.admin
+      .from('internal_tasks')
+      .select('case_id')
+      .eq('id', parsed.data.id)
+      .maybeSingle();
+
+    if (completedTask?.case_id) {
+      const { data: allTasksForNextAction, error: nextActionTasksError } = await auth.admin
+        .from('internal_tasks')
+        .select('title,status,metadata')
+        .eq('case_id', completedTask.case_id);
+
+      if (nextActionTasksError) {
+        postCompletionWarning = postCompletionWarning ?? 'La tarea se completó, pero no se pudo actualizar el siguiente paso del expediente';
+      } else {
+        const completedKeys = new Set(
+          (allTasksForNextAction ?? [])
+            .filter((candidate) => candidate.status === 'completada')
+            .map((candidate) => {
+              const candidateMetadata = (candidate.metadata as Record<string, unknown> | null) ?? null;
+              return typeof candidateMetadata?.task_key === 'string' ? candidateMetadata.task_key : null;
+            })
+            .filter((value): value is string => Boolean(value)),
+        );
+
+        const actionable = (allTasksForNextAction ?? [])
+          .filter((candidate) => candidate.status === 'pendiente' || candidate.status === 'en_progreso')
+          .map((candidate) => {
+            const metadata = (candidate.metadata as Record<string, unknown> | null) ?? null;
+            const dependsOn = Array.isArray(metadata?.depends_on)
+              ? metadata.depends_on.filter((item): item is string => typeof item === 'string')
+              : [];
+            const blocked = dependsOn.some((dependencyKey) => !completedKeys.has(dependencyKey));
+            const sequenceIndex = typeof metadata?.sequence_index === 'number'
+              ? metadata.sequence_index
+              : Number.MAX_SAFE_INTEGER;
+            return { title: candidate.title, blocked, sequenceIndex };
+          })
+          .filter((candidate) => !candidate.blocked)
+          .sort((a, b) => a.sequenceIndex - b.sequenceIndex);
+
+        const nextAction = actionable[0]?.title ?? null;
+        const { error: caseUpdateError } = await auth.admin
+          .from('cases')
+          .update({
+            next_action: nextAction,
+            updated_at: now,
+          })
+          .eq('id', completedTask.case_id);
+
+        if (caseUpdateError) {
+          postCompletionWarning = postCompletionWarning ?? 'La tarea se completó, pero no se pudo actualizar el siguiente paso del expediente';
+        }
+      }
+    }
+  }
+
+  return NextResponse.json({ ok: true, warning: postCompletionWarning });
 }
