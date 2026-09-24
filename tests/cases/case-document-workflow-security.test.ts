@@ -36,5 +36,7 @@ describe('case document workflow security', () => {
     expect(reviewRoute).toContain("return NextResponse.json({ error: 'No se pudo preparar la tarea de revisión' }");
     expect(reviewRoute).toContain("return NextResponse.json({ error: 'No se pudo actualizar la tarea de revisión' }");
     expect(reviewRoute).toContain("return NextResponse.json({ error: 'No se pudo crear la tarea de revisión' }");
+    expect(reviewRoute).toContain('const shouldMoveToReview');
+    expect(reviewRoute).toContain("effectiveStatus === 'nuevo' || effectiveStatus === 'pendiente_cliente'");
   });
 });
