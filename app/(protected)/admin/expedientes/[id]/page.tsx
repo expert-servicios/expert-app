@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
+import { KiaWorkResults } from '@/components/admin/KiaWorkResults';
 import { ArrowLeft, FolderOpen, User, Download, FileText, MessageSquare } from 'lucide-react';
 import { AdminCaseCard } from '@/components/cases/AdminCaseCard';
 import { DocStateSelect } from '@/components/admin/DocStateSelect';
@@ -128,6 +130,11 @@ export default async function AdminCaseDetailPage({
 
         {/* AI actions */}
         <AiCaseActions caseId={id} />
+        {process.env.KIA_WORK_CONNECTOR_ENABLED === 'true' ? (
+          <Suspense fallback={<p role="status">Cargando actividad de KIA…</p>}>
+            <KiaWorkResults caseId={id} />
+          </Suspense>
+        ) : null}
 
         {/* Docs checklist */}
         <CaseChecklistEditor caseId={id} initialItems={Array.isArray(c.docs_checklist) ? c.docs_checklist : []} />

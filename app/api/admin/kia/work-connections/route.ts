@@ -11,6 +11,28 @@ const grantSchema = z.object({
   ttl_hours: z.number().int().min(1).max(24).default(8),
 }).strict();
 
+export async function GET(request: NextRequest) {
+  try {
+    const caseId = z.uuid().safeParse(request.nextUrl.searchParams.get('case_id'));
+    if (!caseId.success) throw new WorkError('invalid_case', 400);
+    const { admin } = await requireWorkProfessional(request, caseId.data);
+    const [inbox, tasks] = await Promise.all([
+      admin.from('kia_work_inbox').select('event_id,state,received_at,last_error,payload,result,kia_work_connections!inner(case_id)')
+        .eq('kia_work_connections.case_id', caseId.data).order('received_at', { ascending: false }).limit(50),
+      admin.from('internal_tasks').select('id,title').eq('case_id', caseId.data),
+    ]);
+    if (inbox.error || tasks.error) throw new WorkError('inbox_unavailable', 503);
+    const titles = new Map((tasks.data ?? []).map(task => [task.id, task.title]));
+    return NextResponse.json({ results: (inbox.data ?? []).map(row => ({
+      id: row.event_id, state: row.state, received_at: row.received_at,
+      title: titles.get(row.payload?.task_id) ?? 'Tarea del expediente',
+      outcome: row.result?.result ?? null,
+      reason: row.payload?.result === 'succeeded' ? null : row.payload?.reason ?? null,
+      requires_review: row.state === 'review',
+    })) }, { headers: { 'Cache-Control': 'no-store' } });
+  } catch (error) { return workErrorResponse(error); }
+}
+
 export async function POST(request: NextRequest) {
   try {
     if (!workEnabled()) throw new WorkError('connector_disabled', 503);

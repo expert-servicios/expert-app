@@ -16,6 +16,8 @@ La migración `20260924093629_kia_work_case_orchestration.sql` y la bandera `KIA
 
 Segundo incremento: recepción durable y cron de verificación implementados en `20260924101525_kia_work_result_inbox.sql`, `work-inbox.ts` y `/api/cron/kia-work-results`. El receptor guarda antes de verificar; reintenta errores temporales hasta cinco veces y recupera cierres ya confirmados. No prolonga permisos o reservas originales ni repite efectos externos. HTTP 202 y salida 2 del adaptador distinguen pendiente de completado. Pruebas locales: 23 pruebas del conector/cron aprobadas y SQL real aprobado, incluida exclusión de trabajadores y recuperación de una reserva interrumpida. Pendiente de CI de este nuevo incremento y de aplicación de la nueva migración en staging.
 
+Tercer incremento: vista «Actividad de KIA» en el expediente de Admin, bajo la misma bandera. Muestra los últimos 50 resultados y distingue recibido, verificado, tarea pendiente y revisión. La API de lectura vuelve a comprobar acceso profesional al expediente; no devuelve credenciales ni metadatos internos completos. Es una vista de consulta, no un botón para saltarse la verificación o dar una tarea por terminada. La delegación visual y resolución guiada de incidencias siguen pendientes. Revisión React: componente de servidor, carga con Suspense, sin estado cliente ni duplicación de peticiones, claves estables, fechas explícitas Europe/Madrid y texto de estado accesible.
+
 La usuaria ha pedido guardar y subir el progreso y continuar la implementación mientras quede uso disponible. No consumir créditos de reinicio sin autorización específica. No reactivar seguimientos nocturnos pausados.
 
 Orden de trabajo:
