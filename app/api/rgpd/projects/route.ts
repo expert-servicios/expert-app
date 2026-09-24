@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 
 const MAX_PAYLOAD_BYTES = 250_000;
 
@@ -34,7 +34,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'payload_too_large' }, { status: 413 });
   }
 
-  const { data: previous, error: versionError } = await supabase
+  const admin = getSupabaseAdmin();
+
+  const { data: previous, error: versionError } = await admin
     .from('rgpd_self_implementation_projects')
     .select('version')
     .eq('user_id', user.id)
@@ -49,7 +51,7 @@ export async function POST(request: NextRequest) {
   const nextVersion = (previous?.version ?? 0) + 1;
   const now = new Date().toISOString();
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from('rgpd_self_implementation_projects')
     .insert({
       user_id: user.id,
