@@ -46,7 +46,7 @@ function database(failFirstLink = false) {
 const input = { orderId: 'order-1', serviceSlug: 'manual-test-service', clientId: 'client-1', companyId: null };
 
 describe('service fulfillment retries', () => {
-  it('keeps same-title tasks separate across services and preserves renamed completed tasks', async () => {
+  it('keys same-title tasks by service and task identity and preserves completed work', async () => {
     const { admin, state } = database();
     const cart = { ...input, serviceSlug: 'certificado-digital-persona-fisica', serviceSlugs: ['pack-certificados-digitales'] };
     await ensureServiceOrderFulfillment(admin, cart);
