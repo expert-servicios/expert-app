@@ -8,6 +8,7 @@
 // Once googleapis is installed, these functions work normally.
 
 import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { configureGoogleMeetAutoArtifactsBestEffort } from '@/lib/integrations/google-meet';
 
 const SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
@@ -298,7 +299,10 @@ export async function createCalendarMeetingSA(
   });
 
   if (!data.id) throw new Error('Google Calendar did not return an event id');
-  if (data.hangoutLink) return { eventId: data.id, meetUrl: data.hangoutLink };
+  if (data.hangoutLink) {
+    await configureGoogleMeetAutoArtifactsBestEffort(data.hangoutLink);
+    return { eventId: data.id, meetUrl: data.hangoutLink };
+  }
 
   try {
     // Conference creation may complete asynchronously. Do not confirm the local
@@ -310,6 +314,7 @@ export async function createCalendarMeetingSA(
         eventId: data.id,
       });
       if (refreshed.hangoutLink) {
+        await configureGoogleMeetAutoArtifactsBestEffort(refreshed.hangoutLink);
         return { eventId: data.id, meetUrl: refreshed.hangoutLink };
       }
       const status = refreshed.conferenceData?.createRequest?.status?.statusCode;
@@ -379,7 +384,10 @@ export async function ensureCalendarMeetingUrlSA(eventId: string): Promise<strin
   for (let attempt = 0; attempt < 6; attempt += 1) {
     await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 250 : 500));
     const meetingUrl = await readMeetUrl();
-    if (meetingUrl) return meetingUrl;
+    if (meetingUrl) {
+      await configureGoogleMeetAutoArtifactsBestEffort(meetingUrl);
+      return meetingUrl;
+    }
   }
 
   throw new Error('Google Meet URL could not be recovered for the existing event');
