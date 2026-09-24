@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { digestWorkValue, workEventSchema } from '@/lib/ai/kia/work-contract';
 import { verifyWorkEvidence } from '@/lib/ai/kia/work-evidence';
@@ -13,6 +15,17 @@ function adminWith(row: unknown, bytes = 'document') {
   return { admin: { from: () => query, storage: { from: () => ({ download }) } } as unknown as WorkAdmin, download };
 }
 describe('Work evidence boundary', () => {
+  it('serializes event retries and clears stale next_action after the final successful task', () => {
+    const migration = readFileSync(
+      resolve(process.cwd(), 'supabase/migrations/20260924093629_kia_work_case_orchestration.sql'),
+      'utf8',
+    );
+    expect(migration).toContain("pg_advisory_xact_lock(hashtextextended(p_event->>'event_id', 0))");
+    expect(migration).toContain("if p_event->>'result'='succeeded' then");
+    expect(migration).not.toContain("p_event->>'result'='succeeded' and jsonb_array_length(next_tasks)>0");
+    expect(migration).toContain("set next_action=next_tasks->0->>'title'");
+  });
+
   it('requires evidence for success and reasons for incomplete work', () => {
     expect(workEventSchema.safeParse(event).success).toBe(false);
     expect(workEventSchema.safeParse({ ...event, result: 'blocked', reason: 'Esperando firma' }).success).toBe(true);
