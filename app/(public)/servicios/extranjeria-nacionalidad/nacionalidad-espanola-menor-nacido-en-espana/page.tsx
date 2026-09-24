@@ -72,25 +72,28 @@ const documentGroups = [
 
 const processSteps = [
   {
-    title: 'Contratación y mandato de suplido',
-    text:
-      'Al contratar el servicio se pagan los honorarios profesionales y la tasa oficial obligatoria. La tasa 790-026 se cobra como suplido para abonarla en nombre y por cuenta del cliente.',
+    title: 'Apertura y revisión documental',
+    text: 'Tras el pago abrimos el expediente, revisamos primero la documentación ya disponible y señalamos únicamente los documentos realmente pendientes.',
   },
   {
-    title: 'Envío de documentación',
-    text: 'Después del pago, EXPERT abre el expediente y la documentación se carga en el área privada segura; WhatsApp queda para consultas y coordinación.',
+    title: 'Representación y residencia legal',
+    text: 'Verificamos quién debe intervenir por el menor, formalizamos el mandato de EXPERT cuando procede y comprobamos la residencia legal propia del menor.',
   },
   {
-    title: 'Revisión de viabilidad',
-    text: 'Comprobamos el requisito de 1 año de residencia legal, continuidad y documentación disponible.',
+    title: 'Apellidos para Registro Civil',
+    text: 'Antes de preparar el modelo oficial revisamos filiación, apellido personal de la madre, posibles cambios por matrimonio y el orden de los apellidos. No usamos la duplicación de un apellido como atajo documental.',
   },
   {
-    title: 'Preparación y presentación',
-    text: 'Preparamos la solicitud, formularios y documentación digitalizada, y presentamos el expediente cuando proceda.',
+    title: 'Modelo y firmas',
+    text: 'Preparamos la versión correcta del formulario y obtenemos las firmas que correspondan según edad, patria potestad y representación. Las versiones sustituidas quedan fuera del flujo.',
   },
   {
-    title: 'Justificante y seguimiento inicial',
-    text: 'Entregamos el justificante de presentación, el número de expediente y una primera orientación de seguimiento.',
+    title: 'Validación final y tasa',
+    text: 'Hacemos una revisión profesional pre-presentación, comprobamos que la tasa 790-026 no esté ya pagada y, si procede, la abonamos como suplido y archivamos el justificante.',
+  },
+  {
+    title: 'Presentación y seguimiento',
+    text: 'Presentamos únicamente cuando el expediente está validado, archivamos justificante y número de registro y activamos el seguimiento posterior.',
   },
 ];
 
