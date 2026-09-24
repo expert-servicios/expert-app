@@ -40,6 +40,12 @@ export type ServiceTaskTemplate = {
   dueBusinessDays?: number;
   dependsOn?: string[];
   blocksSubmission?: boolean;
+  skipAllowed?: boolean;
+  clientActionRequired?: boolean;
+  clientAction?: {
+    es: string;
+    ru: string;
+  };
   referenceUrls?: ServiceReferenceLink[];
 };
 
@@ -288,6 +294,11 @@ function nationalityMinorTasks(): ServiceTaskTemplate[] {
       humanApprovalRequired: true,
       dependsOn: ['confirm_maternal_birth_surname'],
       blocksSubmission: true,
+      clientActionRequired: true,
+      clientAction: {
+        es: 'Confirmar con ambos progenitores los apellidos del menor y el orden elegido para la futura inscripción española.',
+        ru: 'Подтвердить с обоими родителями фамилии ребёнка и выбранный порядок для будущей испанской регистрации.',
+      },
       referenceUrls: surnameReferences,
     },
     {
@@ -308,6 +319,11 @@ function nationalityMinorTasks(): ServiceTaskTemplate[] {
       phase: 'signatures',
       dependsOn: ['prepare_official_application'],
       blocksSubmission: true,
+      clientActionRequired: true,
+      clientAction: {
+        es: 'Firmar la versión final del modelo oficial que EXPERT haya validado y enviado expresamente para firma.',
+        ru: 'Подписать окончательную версию официального заявления, которую EXPERT проверил и отдельно направил на подпись.',
+      },
     },
     {
       key: 'archive_docusign_completion_certificate',
@@ -317,6 +333,7 @@ function nationalityMinorTasks(): ServiceTaskTemplate[] {
       phase: 'representation_mandate',
       dependsOn: ['prepare_representation_mandate'],
       blocksSubmission: true,
+      skipAllowed: true,
     },
     {
       key: 'pre_submission_validation',
