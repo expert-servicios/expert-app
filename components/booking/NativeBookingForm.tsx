@@ -26,6 +26,7 @@ interface AvailabilityResponse {
 interface Props {
   serviceKey: string;
   bookingAuth?: string | null;
+  companyId?: string | null;
 }
 
 function groupByDate(slots: Slot[]) {
@@ -47,7 +48,7 @@ function dateLabel(date: string) {
   }).format(parsed);
 }
 
-export function NativeBookingForm({ serviceKey, bookingAuth }: Props) {
+export function NativeBookingForm({ serviceKey, bookingAuth, companyId }: Props) {
   const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
   const [availabilityError, setAvailabilityError] = useState('');
   const [loadingSlots, setLoadingSlots] = useState(true);
@@ -112,6 +113,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth }: Props) {
           start: selected.start,
           recaptcha_token,
           booking_auth: bookingAuth ?? undefined,
+          company_id: companyId ?? undefined,
         }),
       });
       const data = await res.json();
