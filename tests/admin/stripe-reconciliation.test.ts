@@ -86,7 +86,7 @@ describe('Admin Stripe reconciliation', () => {
   });
 
   it('exposes the cockpit from Client 360 and requires human confirmation in the UI', () => {
-    expect(nav).toContain('href={`/admin/clientes/${clientId}/stripe`}');
+    expect(nav).toContain("href={childHref('/stripe')}");
     expect(page).toContain('Reconciliación Stripe');
     expect(page).toContain('window.confirm');
     expect(page).toContain("action: 'map_customer'");
