@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { CloudUpload, History } from 'lucide-react';
+import { CloudDownload, CloudUpload, History } from 'lucide-react';
 
 type SavedProject = {
   id: string;
@@ -40,6 +40,7 @@ export function RgpdAccountSave() {
   const [projects, setProjects] = useState<SavedProject[]>([]);
   const [authRequired, setAuthRequired] = useState(false);
   const [requestingReviewId, setRequestingReviewId] = useState<string | null>(null);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
 
   const loadProjects = async () => {
     try {
@@ -92,6 +93,58 @@ export function RgpdAccountSave() {
       setMessage('No se pudo conectar con el servidor. Tu copia local sigue intacta.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const restore = async (project: SavedProject) => {
+    if (restoringId) return;
+
+    const confirmed = window.confirm(
+      'Cargar la versión ' + project.version + ' reemplazará el trabajo RGPD guardado actualmente en este navegador. ¿Continuar?'
+    );
+    if (!confirmed) return;
+
+    setRestoringId(project.id);
+    setMessage('');
+
+    try {
+      const res = await fetch('/api/rgpd/projects/' + project.id, { method: 'GET' });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 401) {
+        setAuthRequired(true);
+        setMessage('Para recuperar una versión debes iniciar sesión.');
+        return;
+      }
+
+      if (!res.ok || !data.project?.payload) {
+        setMessage('No se pudo recuperar esta versión.');
+        return;
+      }
+
+      const payload = data.project.payload;
+      const mappings: Array<[string, unknown]> = [
+        ['expert-rgpd-company-profile-v1', payload.profile],
+        ['expert-rgpd-treatments-v1', payload.treatments],
+        ['expert-rgpd-provider-inventory-v1', payload.providers],
+        ['expert-rgpd-retention-matrix-v1', payload.retention],
+        ['expert-rgpd-implementation-progress-v1', payload.progress],
+      ];
+
+      for (const [key, value] of mappings) {
+        if (value === null || value === undefined) {
+          window.localStorage.removeItem(key);
+        } else {
+          window.localStorage.setItem(key, JSON.stringify(value));
+        }
+      }
+
+      setMessage('Versión ' + project.version + ' cargada. Actualizando la herramienta…');
+      window.location.reload();
+    } catch {
+      setMessage('No se pudo recuperar esta versión.');
+    } finally {
+      setRestoringId(null);
     }
   };
 
@@ -185,18 +238,29 @@ export function RgpdAccountSave() {
                     {new Date(project.created_at).toLocaleString('es-ES')}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => requestReview(project)}
-                  disabled={requestingReviewId === project.id || project.status === 'review_requested'}
-                  className="min-h-9 border border-[#D4A017]/30 px-3 text-xs font-bold disabled:opacity-50"
-                >
-                  {project.status === 'review_requested'
-                    ? 'Revisión solicitada'
-                    : requestingReviewId === project.id
-                      ? 'Preparando…'
-                      : 'Solicitar revisión'}
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => restore(project)}
+                    disabled={restoringId === project.id}
+                    className="inline-flex min-h-9 items-center gap-1.5 border border-[#D4A017]/30 px-3 text-xs font-bold disabled:opacity-50"
+                  >
+                    <CloudDownload className="h-3.5 w-3.5" />
+                    {restoringId === project.id ? 'Cargando…' : 'Cargar versión'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => requestReview(project)}
+                    disabled={requestingReviewId === project.id || project.status === 'review_requested'}
+                    className="min-h-9 border border-[#D4A017]/30 px-3 text-xs font-bold disabled:opacity-50"
+                  >
+                    {project.status === 'review_requested'
+                      ? 'Revisión solicitada'
+                      : requestingReviewId === project.id
+                        ? 'Preparando…'
+                        : 'Solicitar revisión'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
