@@ -33,6 +33,7 @@ describe('case document workflow security', () => {
     const caseUpdate = reviewRoute.indexOf(".from('cases')\n      .update({");
     expect(taskLookup).toBeGreaterThan(-1);
     expect(caseUpdate).toBeGreaterThan(taskLookup);
+    expect(reviewRoute).toContain(".update(casePatch)");
     expect(reviewRoute).toContain("return NextResponse.json({ error: 'No se pudo preparar la tarea de revisión' }");
     expect(reviewRoute).toContain("return NextResponse.json({ error: 'No se pudo actualizar la tarea de revisión' }");
     expect(reviewRoute).toContain("return NextResponse.json({ error: 'No se pudo crear la tarea de revisión' }");
