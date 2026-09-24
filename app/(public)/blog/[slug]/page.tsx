@@ -59,12 +59,12 @@ const categoryCta: Record<string, { text: string; ctaLabel: string; ctaHref: str
   Fiscalidad: {
     text: 'En EXPERT revisamos situaciones fiscales como esta a diario. Reserva una cita gratuita y te decimos exactamente qué necesitas.',
     ctaLabel: 'Reservar cita gratuita',
-    ctaHref: '/cita',
+    ctaHref: '/cita?tipo=consulta-inicial',
   },
   Extranjería: {
     text: 'Preparamos y acompañamos expedientes de extranjería y nacionalidad cada semana. Reserva una cita gratuita para revisar tu caso.',
     ctaLabel: 'Reservar cita gratuita',
-    ctaHref: '/cita',
+    ctaHref: '/cita?tipo=consulta-inicial',
   },
   Empresas: {
     text: '¿Quieres que Kia y nuestro equipo lleven la gestión de tu empresa? Descubre qué plan encaja contigo.',
