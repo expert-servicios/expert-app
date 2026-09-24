@@ -86,10 +86,19 @@ describe('batch 1 operational automation', () => {
     expect(tasksApi).toContain("candidateMetadata?.task_key === dependencyKey");
     expect(tasksApi).toContain("'La tarea está bloqueada por pasos anteriores pendientes'");
     expect(tasksApi).toContain('status: 409');
+    expect(tasksApi).toContain('due_business_days');
+    expect(tasksApi).toContain('addBusinessDays(new Date(), dueBusinessDays)');
+    expect(tasksApi).toContain("postCompletionWarning = 'La tarea se completó");
+    expect(tasksApi).toContain('warning: postCompletionWarning');
+
+    const fulfillment = read('lib/payments/service-order-fulfillment.ts');
+    expect(fulfillment).toContain('if (task.dependsOn?.length) return null');
+    expect(fulfillment).toContain('due_business_days: task.dueBusinessDays ?? null');
 
     expect(tasksPage).toContain('blocked_by?: string[]');
     expect(tasksPage).toContain('Bloqueada hasta completar:');
     expect(tasksPage).toContain('saving === task.id || blocked');
+    expect(tasksPage).toContain('if (json.warning) setError(json.warning)');
   });
 
   it('keeps current Arraigo Sociolaboral rules and retires the old operational logic', () => {
