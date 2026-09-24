@@ -1,7 +1,8 @@
 import type { CategorySlug } from './catalog';
 import { getGeneratedBatch1KnowledgeDocs } from '@/lib/services/service-generated-content';
+import { proteccionDatosKnowledgeDocs } from '@/lib/content/proteccion-datos-docs';
 
-export type DocCategorySlug = 'extranjeria-nacionalidad' | 'fiscalidad' | 'empresas' | 'tramites' | 'holded';
+export type DocCategorySlug = 'extranjeria-nacionalidad' | 'fiscalidad' | 'empresas' | 'proteccion-datos' | 'tramites' | 'holded';
 
 export type KnowledgeDoc = {
   slug: string;
@@ -22,12 +23,14 @@ export const docCategories: { slug: DocCategorySlug; name: string }[] = [
   { slug: 'extranjeria-nacionalidad', name: 'Extranjería y Nacionalidad' },
   { slug: 'fiscalidad', name: 'Fiscalidad' },
   { slug: 'empresas', name: 'Empresas y Autónomos' },
+  { slug: 'proteccion-datos', name: 'Protección de datos' },
   { slug: 'tramites', name: 'Trámites' },
   { slug: 'holded', name: 'Holded' }
 ];
 
 export const docs: KnowledgeDoc[] = [
   ...getGeneratedBatch1KnowledgeDocs(),
+  ...proteccionDatosKnowledgeDocs,
   {
     slug: 'conectar-google-workspace-expert',
     category: 'empresas',

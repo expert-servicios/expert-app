@@ -1,4 +1,5 @@
 import { getGeneratedBatch1BlogArticles } from '@/lib/services/service-generated-content';
+import { proteccionDatosBlogArticles } from '@/lib/content/proteccion-datos-blog';
 
 export type Article = {
   slug: string;
@@ -14,6 +15,7 @@ export type Article = {
 
 export const articles: Article[] = [
   ...getGeneratedBatch1BlogArticles(),
+  ...proteccionDatosBlogArticles,
   {
     slug: 'apellidos-menor-nacionalidad-espanola-registro-civil',
     category: 'Extranjería',
