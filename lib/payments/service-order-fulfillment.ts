@@ -186,7 +186,10 @@ export async function ensureServiceOrderFulfillment(
           task_key: task.key,
           phase: task.phase,
           human_approval_required: Boolean(task.humanApprovalRequired),
-          blueprint_version: blueprintSlug ? '2' : null,
+          depends_on: task.dependsOn ?? [],
+          blocks_submission: Boolean(task.blocksSubmission),
+          reference_urls: task.referenceUrls ?? [],
+          blueprint_version: blueprintSlug ? '5' : null,
         },
       });
 
