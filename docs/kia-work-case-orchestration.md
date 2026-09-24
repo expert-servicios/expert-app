@@ -1,8 +1,8 @@
 # KIA: tramitación desde Work y continuidad del expediente
 
-Fecha: 24/09/2026. Estado: **diseño aprobado por producto; implementación pendiente**.
+Fecha: 24/09/2026. Estado: **implementación inicial del conector preparada para revisión; despliegue y alcance restante pendientes**. Véase el [estado verificable y guía operativa](kia-work-connector-runbook.md).
 
-Esta entrega modifica documentación exclusivamente. No instala webhooks, activa bots, cambia permisos, envía comunicaciones ni habilita presentaciones. Extiende [Conversaciones contextuales](kia-contextual-conversations-roadmap.md) y [Operador interno](kia-internal-operator.md).
+Este documento describe el diseño completo; no acredita por sí mismo que cada capacidad esté implementada o activa. La guía operativa distingue lo entregado de lo pendiente. Extiende [Conversaciones contextuales](kia-contextual-conversations-roadmap.md) y [Operador interno](kia-internal-operator.md).
 
 ## 1. Objetivo y responsabilidad
 

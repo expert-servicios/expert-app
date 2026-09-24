@@ -6,6 +6,7 @@
  */
 
 import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { gmailReplyHeaders } from '@/lib/email/reply-headers';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyGoogle = any;
@@ -336,7 +337,12 @@ function buildRawMime(opts: {
   body: string;
   bodyHtml?: boolean;
   threadId?: string;
+  inReplyTo?: string;
+  references?: string;
 }): string {
+  for (const value of [opts.from, opts.to, opts.subject, opts.inReplyTo, opts.references]) {
+    if (value && /[\r\n]/.test(value)) throw new Error('Invalid MIME header');
+  }
   const fromLine = opts.from ? `From: ${opts.from}\r\n` : '';
   const contentType = opts.bodyHtml
     ? 'Content-Type: text/html; charset=utf-8'
@@ -344,6 +350,7 @@ function buildRawMime(opts: {
   const raw = [
     `${fromLine}To: ${opts.to}`,
     `Subject: ${opts.subject}`,
+    ...(opts.inReplyTo ? [`In-Reply-To: ${opts.inReplyTo}`, `References: ${opts.references}`] : []),
     contentType,
     'MIME-Version: 1.0',
     '',
@@ -360,8 +367,12 @@ async function _sendReply(
   gmail: AnyGoogle,
   opts: { threadId: string; to: string; subject: string; body: string; bodyHtml?: boolean; from?: string }
 ): Promise<void> {
-  const subject = opts.subject.startsWith('Re:') ? opts.subject : `Re: ${opts.subject}`;
-  const encoded = buildRawMime({ ...opts, subject });
+  const thread = await gmail.users.threads.get({ userId: 'me', id: opts.threadId, format: 'metadata',
+    metadataHeaders: ['Message-ID', 'References', 'Subject'] });
+  const parent = thread.data.messages?.at(-1);
+  if (!parent) throw new Error('Reply thread is unavailable');
+  const reply = gmailReplyHeaders(parent.payload?.headers ?? []);
+  const encoded = buildRawMime({ ...opts, ...reply });
   await gmail.users.messages.send({
     userId: 'me',
     requestBody: { raw: encoded, threadId: opts.threadId },

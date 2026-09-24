@@ -2,6 +2,7 @@ import { getResendClient } from '@/lib/integrations/resend';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { BRAND } from './templates';
 import { maybeAppendKiaContextualCta } from './kia-contextual-cta';
+import { appendKiaSignature } from './kia-signature';
 import {
   calculateRussianNationalityAmounts,
   isNationalityPayment,
@@ -221,8 +222,14 @@ export async function sendEmail({
   html = localized.html;
   metadata = localized.metadata;
 
+  html = appendKiaSignature(html, metadata);
+  if (metadata?.kia_author === true && metadata.kia_contextual_cta !== false) {
+    metadata = { ...metadata, kia_contextual_cta: true };
+  }
+
   const contextual = await maybeAppendKiaContextualCta({
     admin: supabase,
+    recipients,
     html,
     metadata,
   });
@@ -243,6 +250,7 @@ export async function sendEmail({
   const resend = getResendClient();
   const payload = {
     from: BRAND.from,
+    ...(metadata?.kia_author === true ? { replyTo: 'info@expertconsulting.es' } : {}),
     to: recipients,
     subject,
     html,

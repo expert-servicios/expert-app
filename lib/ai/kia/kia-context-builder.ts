@@ -91,7 +91,18 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
   const contact = phone ? await resolveKiaContactContext(admin, phone) : null;
   const clientId = input.clientId ?? contact?.clientId ?? input.userId ?? null;
   const leadId = input.leadId ?? contact?.leadId ?? null;
-  const resolvedCompanyId = await resolveAuthorizedCompanyId(admin, input.companyId, clientId);
+  let resolvedCompanyId: string | null;
+  if (input.caseId && clientId) {
+    const { data: scopedCase, error } = await admin.from('cases').select('company_id')
+      .eq('id', input.caseId).eq('client_id', clientId).maybeSingle();
+    if (error || !scopedCase || (input.companyId && input.companyId !== scopedCase.company_id)) {
+      throw new Error('case_context_scope_mismatch');
+    }
+    resolvedCompanyId = scopedCase.company_id
+      ? await resolveAuthorizedCompanyId(admin, scopedCase.company_id, clientId) : null;
+  } else {
+    resolvedCompanyId = await resolveAuthorizedCompanyId(admin, input.companyId, clientId);
+  }
 
   const openAiKey = (typeof process !== 'undefined' ? process.env.OPENAI_API_KEY : undefined)?.trim() ?? '';
   const shouldLoadMemories = Boolean(openAiKey && input.latestMessage && (phone || clientId || leadId));

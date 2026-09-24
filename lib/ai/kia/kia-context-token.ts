@@ -72,7 +72,7 @@ export async function resolveKiaContextToken(input: {
       .maybeSingle();
     if (caseError) throw caseError;
     if (!ownedCase) return null;
-    if (data.company_id && ownedCase.company_id && data.company_id !== ownedCase.company_id) return null;
+    if ((data.company_id ?? null) !== (ownedCase.company_id ?? null)) return null;
   }
 
   if (data.company_id) {

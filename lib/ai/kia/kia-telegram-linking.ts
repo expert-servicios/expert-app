@@ -15,7 +15,7 @@ export function hashTelegramLinkCode(code: string): string {
 export async function createTelegramLinkCode(params: {
   admin: AdminClient;
   profileId: string;
-  tenantId: string;
+  tenantId: string | null;
   now?: Date;
 }): Promise<{ code: string; expiresAt: string }> {
   const now = params.now ?? new Date();
@@ -38,7 +38,7 @@ export async function consumeTelegramLinkCode(params: {
   externalUserId: string | null;
   externalChatId: string;
   externalUsername?: string | null;
-}): Promise<{ profileId: string; tenantId: string; identityId: string }> {
+}): Promise<{ profileId: string; tenantId: string | null; identityId: string }> {
   if (!params.externalUserId) throw new Error('Telegram user id required');
   const { data, error } = await params.admin.rpc('kia_consume_telegram_link_token', {
     p_token_hash: hashTelegramLinkCode(params.code),
@@ -48,7 +48,7 @@ export async function consumeTelegramLinkCode(params: {
   });
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
-  if (!row?.profile_id || !row?.tenant_id || !row?.identity_id) {
+  if (!row?.profile_id || !row?.identity_id) {
     throw new Error('Telegram link consumption returned no identity');
   }
   return {

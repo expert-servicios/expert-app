@@ -35,10 +35,11 @@ describe('Email attachments to Documents 360', () => {
     expect(route).toContain(".from('email_attachment_documents')");
   });
 
-  it('requires a client-owned case with an explicitly linked company before saving', () => {
+  it('requires a client-owned case and validates company membership only for company cases', () => {
     const route = source('app/api/admin/correo/attachments/route.ts');
     expect(route).toContain('caseRow.client_id !== clientId');
-    expect(route).toContain('case_company_required');
+    expect(route).not.toContain('case_company_required');
+    expect(route).toContain('if (caseRow.company_id)');
     expect(route).toContain(".from('profile_companies')");
     expect(route).toContain(".eq('company_id', caseRow.company_id)");
     expect(route).not.toContain('company_id: clientId');
