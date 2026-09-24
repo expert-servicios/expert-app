@@ -4,6 +4,21 @@ import { exchangeMs365Code } from '@/lib/integrations/microsoft365';
 import { clearOAuthStateCookie, verifyOAuthState } from '@/lib/auth/oauth-state';
 import { saveClientProductivityIntegration } from '@/lib/integrations/productivity/client-productivity-oauth';
 
+function microsoftGrantedPermissions(scope: string | null | undefined) {
+  const granted = new Set((scope ?? '').split(/\s+/).filter(Boolean).map((value) => value.toLowerCase()));
+  const permissions = {
+    mailRead: granted.has('mail.read'),
+    mailSend: granted.has('mail.send'),
+    calendarReadWrite: granted.has('calendars.readwrite'),
+    filesRead: granted.has('files.readwrite') || granted.has('files.read'),
+    filesWrite: granted.has('files.readwrite'),
+  };
+  if (!permissions.mailRead || !permissions.mailSend || !permissions.calendarReadWrite || !permissions.filesRead) {
+    throw new Error('Microsoft 365 did not grant all mandatory productivity permissions');
+  }
+  return permissions;
+}
+
 function redirectClearingState(url: URL): NextResponse {
   const response = NextResponse.redirect(url);
   clearOAuthStateCookie(response);
@@ -59,7 +74,9 @@ export async function GET(request: NextRequest) {
           access_token: tokens.access_token,
           refresh_token: tokens.refresh_token,
           expires_at: tokens.expires_at,
+          scope: tokens.scope,
         },
+        permissionsDetected: microsoftGrantedPermissions(tokens.scope),
       });
       return redirectClearingState(new URL(oauthState.next ?? '/dashboard/integraciones/productividad?connected=microsoft', request.url));
     }
