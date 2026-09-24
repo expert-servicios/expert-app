@@ -72,7 +72,7 @@ describe('subscription commercial benefits', () => {
   });
 
   it('is accessible directly from Client 360 navigation', () => {
-    expect(nav).toContain('/beneficios`');
+    expect(nav).toContain("href={childHref('/beneficios')}");
     expect(nav).toContain('Beneficios');
   });
 });
