@@ -7,7 +7,7 @@ export type RuResource = {
   title: string;
   description: string;
   readTime: string;
-  sections: Array<{ title: string; paragraphs?: string[]; bullets?: string[]; numbered?: string[] }>;
+  sections: Array<{ title: string; paragraphs?: string[]; bullets?: string[]; numbered?: string[]; links?: Array<{ label: string; href: string }> }>;
 };
 
 export const RU_NATIONALITY_RESOURCES: RuResource[] = [
@@ -130,6 +130,21 @@ export const RU_NATIONALITY_RESOURCES: RuResource[] = [
     ]
   },
   {
+    "title": "Как выбрать порядок фамилий",
+    "paragraphs": [
+      "Сначала устанавливают фамилии, соответствующие происхождению ребёнка, затем их порядок. Когда установлены обе линии происхождения, родители по общему согласию могут определить, какая из их первых фамилий будет первой у ребёнка до регистрации. Выбор порядка не означает свободный выбор других фамилий или удвоение одной ради отказа от документов.",
+      "До выбора проверяем существующую запись ребёнка и наличие братьев или сестёр от тех же родителей: уже установленный для них порядок может определять порядок и для ребёнка. Существующая запись не меняется простым редактированием заявления на гражданство. Сомнения разрешает компетентный Registro Civil.",
+      "При отсутствии согласия или указания порядка Registro Civil предлагает родителям сообщить его в течение максимум трёх дней. Если ответа нет, порядок определяет регистратор в наилучших интересах ребёнка; фамилия отца не получает автоматического приоритета.",
+      "До подписи фиксируем согласие обоих родителей и проверяем точное написание. Инструкция 2007 года допускает мужскую или женскую форму фамилии по полу нового гражданина. Текущие данные паспорта/TIE сохраняются отдельно от фамилий для будущей испанской записи. Последующее изменение порядка возможно по установленной процедуре, а не простым исправлением заявления."
+    ],
+    "links": [
+      { "label": "Порядок фамилий: Ley del Registro Civil, artículo 49.2 (BOE, испанский)", "href": "https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a49" },
+      { "label": "Согласие родителей и братья/сёстры: Código Civil, artículo 109 (BOE, испанский)", "href": "https://www.boe.es/buscar/act.php?id=BOE-A-1889-4763#art109" },
+      { "label": "Последующее изменение порядка: artículo 53.1 (BOE, испанский)", "href": "https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a53" },
+      { "label": "Фамилии при приобретении гражданства: Instrucción de 23 de mayo de 2007 (BOE, испанский)", "href": "https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948#pr-2" }
+    ]
+  },
+  {
     "title": "Нужно ли свидетельство о рождении матери?",
     "paragraphs": [
       "Это не общий обязательный документ для первоначальной подачи заявления ребёнка. Требования к заявлению и документы для последующей регистрации фамилий необходимо различать. Отсутствие свидетельства матери само по себе не блокирует всё дело.",
@@ -156,14 +171,26 @@ export const RU_NATIONALITY_RESOURCES: RuResource[] = [
     ]
   },
   {
-    "title": "Официальные источники · проверено 23.09.2026",
-    "paragraphs": [
-      "BOE: Instrucción de 23 de mayo de 2007 — https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948",
-      "Registro Civil de Aragón — https://sedejudicial.aragon.es/registro-civil/nacionalidad/jura-de-nacionalidad-espanola/",
-      "Ley del Registro Civil, artículo 95 — https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a95",
-      "Ministerio de Justicia: traducción y legalización — https://www.mjusticia.gob.es/es/Ciudadano/TramitesGestiones/Documents/advertencia-legalizacion-documentos.pdf"
+    "title": "Официальные источники · проверено 24.09.2026",
+    "links": [
+        {
+            "label": "BOE: Instrucción de 23 de mayo de 2007 (официальный источник, испанский)",
+            "href": "https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948"
+        },
+        {
+            "label": "Registro Civil de Aragón (официальный источник, испанский)",
+            "href": "https://sedejudicial.aragon.es/registro-civil/nacionalidad/jura-de-nacionalidad-espanola/"
+        },
+        {
+            "label": "Ley del Registro Civil, artículo 95 (официальный источник, испанский)",
+            "href": "https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a95"
+        },
+        {
+            "label": "Ministerio de Justicia: traducción y legalización (официальный источник, испанский)",
+            "href": "https://www.mjusticia.gob.es/es/Ciudadano/TramitesGestiones/Documents/advertencia-legalizacion-documentos.pdf"
+        }
     ]
-  }
+}
 ],
   },
   {
@@ -187,6 +214,21 @@ export const RU_NATIONALITY_RESOURCES: RuResource[] = [
     ]
   },
   {
+    "title": "Как выбрать порядок фамилий",
+    "paragraphs": [
+      "Сначала устанавливают фамилии, соответствующие происхождению ребёнка, затем их порядок. Когда установлены обе линии происхождения, родители по общему согласию могут определить, какая из их первых фамилий будет первой у ребёнка до регистрации. Выбор порядка не означает свободный выбор других фамилий или удвоение одной ради отказа от документов.",
+      "До выбора проверяем существующую запись ребёнка и наличие братьев или сестёр от тех же родителей: уже установленный для них порядок может определять порядок и для ребёнка. Существующая запись не меняется простым редактированием заявления на гражданство. Сомнения разрешает компетентный Registro Civil.",
+      "При отсутствии согласия или указания порядка Registro Civil предлагает родителям сообщить его в течение максимум трёх дней. Если ответа нет, порядок определяет регистратор в наилучших интересах ребёнка; фамилия отца не получает автоматического приоритета.",
+      "До подписи фиксируем согласие обоих родителей и проверяем точное написание. Инструкция 2007 года допускает мужскую или женскую форму фамилии по полу нового гражданина. Текущие данные паспорта/TIE сохраняются отдельно от фамилий для будущей испанской записи. Последующее изменение порядка возможно по установленной процедуре, а не простым исправлением заявления."
+    ],
+    "links": [
+      { "label": "Порядок фамилий: Ley del Registro Civil, artículo 49.2 (BOE, испанский)", "href": "https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a49" },
+      { "label": "Согласие родителей и братья/сёстры: Código Civil, artículo 109 (BOE, испанский)", "href": "https://www.boe.es/buscar/act.php?id=BOE-A-1889-4763#art109" },
+      { "label": "Последующее изменение порядка: artículo 53.1 (BOE, испанский)", "href": "https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a53" },
+      { "label": "Фамилии при приобретении гражданства: Instrucción de 23 de mayo de 2007 (BOE, испанский)", "href": "https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948#pr-2" }
+    ]
+  },
+  {
     "title": "Нужно ли свидетельство о рождении матери?",
     "paragraphs": [
       "Это не общий обязательный документ для первоначальной подачи заявления ребёнка. Требования к заявлению и документы для последующей регистрации фамилий необходимо различать. Отсутствие свидетельства матери само по себе не блокирует всё дело.",
@@ -213,14 +255,26 @@ export const RU_NATIONALITY_RESOURCES: RuResource[] = [
     ]
   },
   {
-    "title": "Официальные источники · проверено 23.09.2026",
-    "paragraphs": [
-      "BOE: Instrucción de 23 de mayo de 2007 — https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948",
-      "Registro Civil de Aragón — https://sedejudicial.aragon.es/registro-civil/nacionalidad/jura-de-nacionalidad-espanola/",
-      "Ley del Registro Civil, artículo 95 — https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a95",
-      "Ministerio de Justicia: traducción y legalización — https://www.mjusticia.gob.es/es/Ciudadano/TramitesGestiones/Documents/advertencia-legalizacion-documentos.pdf"
+    "title": "Официальные источники · проверено 24.09.2026",
+    "links": [
+        {
+            "label": "BOE: Instrucción de 23 de mayo de 2007 (официальный источник, испанский)",
+            "href": "https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948"
+        },
+        {
+            "label": "Registro Civil de Aragón (официальный источник, испанский)",
+            "href": "https://sedejudicial.aragon.es/registro-civil/nacionalidad/jura-de-nacionalidad-espanola/"
+        },
+        {
+            "label": "Ley del Registro Civil, artículo 95 (официальный источник, испанский)",
+            "href": "https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a95"
+        },
+        {
+            "label": "Ministerio de Justicia: traducción y legalización (официальный источник, испанский)",
+            "href": "https://www.mjusticia.gob.es/es/Ciudadano/TramitesGestiones/Documents/advertencia-legalizacion-documentos.pdf"
+        }
     ]
-  }
+}
 ],
   },
 ];
