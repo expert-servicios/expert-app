@@ -426,7 +426,9 @@ async function handleTelegramUpdate(request: NextRequest) {
       const { error } = await admin.from('kia_conversation_messages').update({ metadata: {
         telegram_chat_id: inbound.chatId, telegram_update_id: inbound.updateId,
         telegram_message_id: outboundId, delivery_state: 'sent',
-      } }).eq('conversation_id', storedConversationId).contains('metadata', { telegram_update_id: inbound.updateId });
+      } }).eq('conversation_id', storedConversationId)
+        .eq('role', 'assistant')
+        .contains('metadata', { telegram_update_id: inbound.updateId, delivery_state: 'prepared' });
       if (error) throw new Error('telegram_delivery_audit_unavailable');
     }
 
