@@ -13,25 +13,26 @@ export async function GET(
 
     const { data: project, error } = await admin
       .from('rgpd_self_implementation_projects')
-      .select('id,user_id,company_id,version,status,payload,consent_at,created_at,updated_at')
+      .select('id,user_id,company_id,version,status,payload,consent_at,created_at,updated_at,reviewer_id,review_started_at,review_completed_at,review_task_id,review_summary')
       .eq('id', id)
       .maybeSingle();
 
     if (error) throw error;
     if (!project) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
 
-    const { data: profile, error: profileError } = await admin
-      .from('profiles')
-      .select('id,full_name,email')
-      .eq('id', project.user_id)
-      .maybeSingle();
+    const profileIds = [project.user_id, project.reviewer_id].filter((value): value is string => Boolean(value));
+    const { data: profiles, error: profileError } = profileIds.length
+      ? await admin.from('profiles').select('id,full_name,email').in('id', profileIds)
+      : { data: [], error: null };
 
     if (profileError) throw profileError;
+    const profilesById = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
 
     return NextResponse.json({
       project: {
         ...project,
-        requester: profile ?? null,
+        requester: profilesById.get(project.user_id) ?? null,
+        reviewer: project.reviewer_id ? profilesById.get(project.reviewer_id) ?? null : null,
       },
     });
   } catch (error) {
