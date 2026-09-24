@@ -4,9 +4,12 @@ import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
-function s(metadata: Record<string, unknown>, key: string): string | null {
-  const value = metadata[key];
-  return typeof value === 'string' && value.trim() ? value.trim() : null;
+function s(metadata: Record<string, unknown>, ...keys: string[]): string | null {
+  for (const key of keys) {
+    const value = metadata[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return null;
 }
 
 export async function maybeAppendKiaContextualCta(input: {
@@ -15,20 +18,42 @@ export async function maybeAppendKiaContextualCta(input: {
   recipients?: string[];
   metadata?: Record<string, unknown>;
 }): Promise<{ html: string; metadata?: Record<string, unknown> }> {
-  const metadata = input.metadata ?? {};
+  let metadata = input.metadata ?? {};
   const enabled = process.env.KIA_CONTEXTUAL_EMAIL_CTA_ENABLED?.toLowerCase() === 'true';
-  if (!enabled || metadata.kia_contextual_cta !== true) return input;
+  if (!enabled || metadata.kia_contextual_cta === false) return input;
   if (input.html.includes('data-kia-contextual-cta=')) return input;
   // A personalized link must never be broadcast or attached to another client's email.
   if (!input.recipients || input.recipients.length !== 1) return input;
 
-  const profileId = s(metadata, 'profile_id') ?? s(metadata, 'client_id') ?? s(metadata, 'user_id');
-  const caseId = s(metadata, 'case_id');
-  const companyId = s(metadata, 'company_id');
-  const serviceSlug = s(metadata, 'service_slug');
-  const taskId = s(metadata, 'task_id');
-  const intentHint = s(metadata, 'kia_intent_hint');
-  const originRef = s(metadata, 'email_event_ref');
+  let profileId = s(metadata, 'profile_id', 'profileId', 'client_id', 'clientId', 'user_id', 'userId');
+  const caseId = s(metadata, 'case_id', 'caseId');
+  let companyId = s(metadata, 'company_id', 'companyId');
+  let serviceSlug = s(metadata, 'service_slug', 'serviceSlug', 'service_id', 'serviceId');
+  const taskId = s(metadata, 'task_id', 'taskId');
+  const intentHint = s(metadata, 'kia_intent_hint', 'kiaIntentHint');
+  const originRef = s(metadata, 'email_event_ref', 'emailEventRef');
+
+  // Case emails are eligible by default. Generic emails remain opt-in through
+  // metadata.kia_contextual_cta=true or metadata.kia_author=true in sendEmail().
+  const explicitlyRequested = metadata.kia_contextual_cta === true;
+  if (!caseId && !explicitlyRequested) return input;
+
+  let ownedCase: { id: string; client_id: string; company_id: string | null; service_id: string | null } | null = null;
+  if (caseId) {
+    const { data, error } = await input.admin
+      .from('cases')
+      .select('id,client_id,company_id,service_id')
+      .eq('id', caseId)
+      .maybeSingle();
+    if (error || !data) return input;
+    ownedCase = data;
+
+    if (profileId && profileId !== data.client_id) return input;
+    profileId = data.client_id;
+    if (companyId && companyId !== (data.company_id ?? null)) return input;
+    companyId = data.company_id ?? null;
+    serviceSlug = serviceSlug ?? data.service_id ?? null;
+  }
 
   if (!profileId) return input;
 
@@ -41,16 +66,7 @@ export async function maybeAppendKiaContextualCta(input: {
   if (profileError || !profile || profile.status === 'inactive') return input;
   if (profile.email?.trim().toLowerCase() !== input.recipients[0].trim().toLowerCase()) return input;
 
-  if (caseId) {
-    const { data: ownedCase, error } = await input.admin
-      .from('cases')
-      .select('id,client_id,company_id')
-      .eq('id', caseId)
-      .eq('client_id', profileId)
-      .maybeSingle();
-    if (error || !ownedCase) return input;
-    if ((ownedCase.company_id ?? null) !== companyId) return input;
-  }
+  if (ownedCase && ownedCase.client_id !== profileId) return input;
 
   if (companyId) {
     const { data: membership, error } = await input.admin
@@ -74,8 +90,8 @@ export async function maybeAppendKiaContextualCta(input: {
     originRef,
     intentHint,
     metadata: {
-      event_type: s(metadata, 'event_type'),
-      pilot: true,
+      event_type: s(metadata, 'event_type', 'eventType'),
+      pilot: metadata.kia_contextual_pilot !== false,
     },
   });
 
@@ -104,12 +120,17 @@ export async function maybeAppendKiaContextualCta(input: {
     ? input.html.replace('</body>', `${block}</body>`)
     : `${input.html}${block}`;
 
-  return {
-    html,
-    metadata: {
-      ...metadata,
-      kia_contextual_cta_added: true,
-      kia_context_expires_at: expiresAt,
-    },
+  metadata = {
+    ...metadata,
+    profile_id: profileId,
+    ...(caseId ? { case_id: caseId } : {}),
+    ...(companyId ? { company_id: companyId } : {}),
+    ...(serviceSlug ? { service_slug: serviceSlug } : {}),
+    ...(taskId ? { task_id: taskId } : {}),
+    kia_contextual_cta: true,
+    kia_contextual_cta_added: true,
+    kia_context_expires_at: expiresAt,
   };
+
+  return { html, metadata };
 }
