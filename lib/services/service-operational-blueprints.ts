@@ -16,12 +16,18 @@ export type ServiceDocumentRule = {
   notes?: string;
 };
 
+export type ServiceReferenceLink = {
+  label: string;
+  url: string;
+};
+
 export type ServiceCaseStep = {
   key: string;
   title: string;
   description: string;
   clientVisible: boolean;
   humanApprovalRequired?: boolean;
+  referenceUrls?: ServiceReferenceLink[];
 };
 
 export type ServiceTaskTemplate = {
@@ -32,6 +38,9 @@ export type ServiceTaskTemplate = {
   phase: string;
   humanApprovalRequired?: boolean;
   dueBusinessDays?: number;
+  dependsOn?: string[];
+  blocksSubmission?: boolean;
+  referenceUrls?: ServiceReferenceLink[];
 };
 
 export type ServiceOperationalBlueprint = {
@@ -139,6 +148,215 @@ function immigrationTasks(serviceName: string, applicationLabel: string): Servic
       description: 'Guardar justificante/número de expediente y controlar requerimientos o resolución.',
       priority: 'media',
       phase: 'follow_up',
+    },
+  ];
+}
+
+
+const NATIONALITY_SURNAME_GUIDE = '/docs/apellidos-menor-nacionalidad-registro-civil';
+const NATIONALITY_SURNAME_BOE = 'https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948';
+const NATIONALITY_REGISTRY_ORDER_BOE = 'https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a49';
+const NATIONALITY_OFFICIAL_PROCEDURE = 'https://sede.mjusticia.gob.es/es/tramites/nacionalidad-espanola';
+
+function nationalityMinorSteps(): ServiceCaseStep[] {
+  const surnameReferences = [
+    { label: 'Guía EXPERT sobre apellidos', url: NATIONALITY_SURNAME_GUIDE },
+    { label: 'Instrucción DGRN 23/05/2007', url: NATIONALITY_SURNAME_BOE },
+    { label: 'Ley del Registro Civil, art. 49', url: NATIONALITY_REGISTRY_ORDER_BOE },
+  ];
+
+  return [
+    {
+      key: 'intake',
+      title: 'Validación inicial y documentación',
+      description: 'Comprobar nacimiento en España, identidad, documentación disponible, patria potestad y bloqueos antes de preparar ningún formulario.',
+      clientVisible: true,
+    },
+    {
+      key: 'representation_mandate',
+      title: 'Representación y mandato',
+      description: 'Confirmar quién firma por el menor, formalizar el mandato de representación de EXPERT cuando proceda y conservar tanto el documento firmado como su certificado de finalización.',
+      clientVisible: true,
+    },
+    {
+      key: 'legal_residence',
+      title: 'Residencia legal del menor',
+      description: 'Fijar documentalmente la fecha de inicio de residencia legal del menor y comprobar el año legal, continuado e inmediatamente anterior a la solicitud.',
+      clientVisible: true,
+    },
+    {
+      key: 'registry_surnames',
+      title: 'Apellidos y futura inscripción registral',
+      description: 'Separar la identidad extranjera actual de los apellidos que corresponderán en la inscripción española. Verificar filiación, apellido personal de la madre antes de cambios por matrimonio y orden de apellidos. La duplicación de un apellido no se ofrece como preferencia si la línea materna está determinada y acreditada.',
+      clientVisible: true,
+      humanApprovalRequired: true,
+      referenceUrls: surnameReferences,
+    },
+    {
+      key: 'official_application',
+      title: 'Preparación del modelo oficial',
+      description: 'Rellenar la solicitud con los datos actuales de identidad exactamente como constan en la documentación vigente y con los datos registrales previamente validados.',
+      clientVisible: true,
+    },
+    {
+      key: 'signatures',
+      title: 'Firmas del modelo',
+      description: 'Obtener las firmas válidas que correspondan según edad, patria potestad y forma de presentación. No reutilizar versiones retiradas u obsoletas del formulario.',
+      clientVisible: true,
+    },
+    {
+      key: 'final_review',
+      title: 'Validación pre-presentación',
+      description: 'Revisar documentación, mandato, apellidos, formulario, firmas y coherencia global. Ninguna presentación puede ejecutarse sin esta revisión profesional.',
+      clientVisible: true,
+      humanApprovalRequired: true,
+      referenceUrls: [{ label: 'Sede del Ministerio de Justicia', url: NATIONALITY_OFFICIAL_PROCEDURE }],
+    },
+    {
+      key: 'fee',
+      title: 'Tasa 790-026',
+      description: 'Abonar la tasa oficial solo cuando el expediente esté validado, evitando cualquier pago duplicado y archivando el justificante.',
+      clientVisible: true,
+    },
+    {
+      key: 'submit',
+      title: 'Presentación y justificante',
+      description: 'Presentar telemáticamente únicamente tras autorización profesional expresa y archivar el justificante y número de registro.',
+      clientVisible: true,
+      humanApprovalRequired: true,
+      referenceUrls: [{ label: 'Sede del Ministerio de Justicia', url: NATIONALITY_OFFICIAL_PROCEDURE }],
+    },
+    {
+      key: 'follow_up',
+      title: 'Seguimiento',
+      description: 'Controlar estado, requerimientos, notificaciones, resolución y siguientes actuaciones.',
+      clientVisible: true,
+    },
+  ];
+}
+
+function nationalityMinorTasks(): ServiceTaskTemplate[] {
+  const surnameReferences = [
+    { label: 'Guía EXPERT sobre apellidos', url: NATIONALITY_SURNAME_GUIDE },
+    { label: 'Instrucción DGRN 23/05/2007', url: NATIONALITY_SURNAME_BOE },
+    { label: 'Ley del Registro Civil, art. 49', url: NATIONALITY_REGISTRY_ORDER_BOE },
+  ];
+
+  return [
+    {
+      key: 'review_documents',
+      title: 'Revisar expediente de nacionalidad recién pagado',
+      description: 'Revisar documentación recibida, identificar al menor y a ambos progenitores/representantes, registrar faltantes reales y no pedir de nuevo documentos ya disponibles.',
+      priority: 'alta',
+      phase: 'intake',
+      dueBusinessDays: 1,
+    },
+    {
+      key: 'prepare_representation_mandate',
+      title: 'Formalizar mandato y representación — Nacionalidad menor',
+      description: 'Verificar patria potestad y representación. Si EXPERT presenta telemáticamente, preparar el mandato, obtener las firmas necesarias y conservar el documento firmado.',
+      priority: 'alta',
+      phase: 'representation_mandate',
+      dependsOn: ['review_documents'],
+      blocksSubmission: true,
+    },
+    {
+      key: 'verify_legal_residence_start',
+      title: 'Verificar inicio de residencia legal — Nacionalidad menor',
+      description: 'Determinar con evidencia la fecha de inicio de residencia legal propia del menor y comprobar el año legal, continuado e inmediatamente anterior.',
+      priority: 'critica',
+      phase: 'legal_residence',
+      dependsOn: ['review_documents'],
+      blocksSubmission: true,
+    },
+    {
+      key: 'confirm_maternal_birth_surname',
+      title: 'Verificar apellido personal de la madre — Nacionalidad menor',
+      description: 'Si la madre usa o usó un apellido adquirido por matrimonio, identificar su apellido personal/de nacimiento y revisar primero la documentación familiar ya disponible. Solicitar prueba adicional solo si realmente hace falta.',
+      priority: 'alta',
+      phase: 'registry_surnames',
+      dependsOn: ['review_documents'],
+      blocksSubmission: true,
+      referenceUrls: surnameReferences,
+    },
+    {
+      key: 'confirm_registry_surname_order',
+      title: 'Confirmar apellidos y orden registral — Nacionalidad menor',
+      description: 'Determinar los apellidos por filiación y confirmar su orden con ambos progenitores. Comprobar si existe un orden previo para hermanos con la misma filiación. No marcar que se desconoce el apellido materno ni duplicar un apellido para evitar documentación cuando ese dato es conocido o acreditable.',
+      priority: 'alta',
+      phase: 'registry_surnames',
+      humanApprovalRequired: true,
+      dependsOn: ['confirm_maternal_birth_surname'],
+      blocksSubmission: true,
+      referenceUrls: surnameReferences,
+    },
+    {
+      key: 'prepare_official_application',
+      title: 'Preparar modelo oficial — Nacionalidad menor',
+      description: 'Rellenar el modelo oficial distinguiendo la identidad extranjera vigente del menor de los datos previstos para la futura inscripción española. No enviar a firma hasta cerrar residencia, representación y apellidos.',
+      priority: 'alta',
+      phase: 'official_application',
+      dependsOn: ['prepare_representation_mandate', 'verify_legal_residence_start', 'confirm_registry_surname_order'],
+      blocksSubmission: true,
+      referenceUrls: [{ label: 'Sede del Ministerio de Justicia', url: NATIONALITY_OFFICIAL_PROCEDURE }],
+    },
+    {
+      key: 'obtain_application_signatures',
+      title: 'Obtener firmas del modelo oficial — Nacionalidad menor',
+      description: 'Obtener y verificar las firmas válidas de los representantes y, cuando corresponda por edad, del menor. Invalidar expresamente cualquier versión anterior retirada.',
+      priority: 'alta',
+      phase: 'signatures',
+      dependsOn: ['prepare_official_application'],
+      blocksSubmission: true,
+    },
+    {
+      key: 'archive_docusign_completion_certificate',
+      title: 'Archivar certificado de finalización del mandato — Nacionalidad menor',
+      description: 'Si el mandato se firmó por DocuSign, archivar tanto el mandato firmado como el certificado oficial de finalización. Una captura o una nota no sustituyen el certificado.',
+      priority: 'alta',
+      phase: 'representation_mandate',
+      dependsOn: ['prepare_representation_mandate'],
+      blocksSubmission: true,
+    },
+    {
+      key: 'pre_submission_validation',
+      title: 'Validar expediente antes de presentar — Nacionalidad menor',
+      description: 'Revisión profesional final de residencia, representación, apellidos, modelo, firmas, documentos y trazabilidad. Detener la presentación ante cualquier incoherencia.',
+      priority: 'critica',
+      phase: 'final_review',
+      humanApprovalRequired: true,
+      dependsOn: ['verify_legal_residence_start', 'confirm_registry_surname_order', 'prepare_official_application', 'obtain_application_signatures', 'archive_docusign_completion_certificate'],
+      blocksSubmission: true,
+      referenceUrls: [{ label: 'Sede del Ministerio de Justicia', url: NATIONALITY_OFFICIAL_PROCEDURE }],
+    },
+    {
+      key: 'pay_790_026_fee',
+      title: 'Abonar tasa 790-026 — Nacionalidad menor',
+      description: 'Comprobar primero si la tasa ya fue abonada. Si está pendiente, pagar el importe oficial vigente a nombre del interesado después de validar el expediente y archivar el justificante/NRC. Nunca repetir el pago.',
+      priority: 'alta',
+      phase: 'fee',
+      dependsOn: ['pre_submission_validation'],
+      blocksSubmission: true,
+      referenceUrls: [{ label: 'Sede del Ministerio de Justicia', url: NATIONALITY_OFFICIAL_PROCEDURE }],
+    },
+    {
+      key: 'submit_and_archive_receipt',
+      title: 'Presentar y archivar justificante — Nacionalidad menor',
+      description: 'Presentar solo con autorización profesional expresa. Archivar justificante, fecha, número de registro y copia final exactamente presentada.',
+      priority: 'critica',
+      phase: 'submit',
+      humanApprovalRequired: true,
+      dependsOn: ['pre_submission_validation', 'pay_790_026_fee'],
+      blocksSubmission: true,
+      referenceUrls: [{ label: 'Sede del Ministerio de Justicia', url: NATIONALITY_OFFICIAL_PROCEDURE }],
+    },
+    {
+      key: 'follow_up_after_submission',
+      title: 'Seguimiento posterior a presentación — Nacionalidad menor',
+      description: 'Activar solo después de presentación acreditada. Registrar notificaciones, requerimientos, plazos y resolución.',
+      priority: 'media',
+      phase: 'follow_up',
+      dependsOn: ['submit_and_archive_receipt'],
     },
   ];
 }
@@ -271,28 +489,29 @@ const blueprints: ServiceOperationalBlueprint[] = [
     initialState: 'pendiente_documentacion',
     initialStatus: 'nuevo',
     initialPriority: 'alta',
-    initialNextAction: 'Validar residencia legal del menor, representación y documentación',
+    initialNextAction: 'Revisar documentación, mandato, residencia legal y datos registrales antes de preparar el modelo oficial',
     requirements: [
       { key: 'born_in_spain', label: 'El menor ha nacido en España', required: true, clientCheckable: true },
-      { key: 'maternal_surname_review', label: 'Apellido personal de la madre, posible cambio por matrimonio y documento existente que lo acredita; revisar antes de solicitar prueba adicional', required: true, clientCheckable: true },
       { key: 'legal_residence_year', label: 'El menor cumple el periodo legal de residencia aplicable antes de presentar', required: true, clientCheckable: false },
       { key: 'representation', label: 'Representación/firma del menor correctamente resuelta según edad y patria potestad', required: true, clientCheckable: false },
+      { key: 'maternal_surname_review', label: 'Apellido personal de la madre, posible cambio por matrimonio y documento existente que lo acredita revisados antes de cerrar los apellidos registrales', required: true, clientCheckable: true },
+      { key: 'registry_surnames', label: 'Apellidos derivados de la filiación y su orden para la futura inscripción española confirmados antes de preparar la solicitud', required: true, clientCheckable: false },
     ],
     documents: [
-      { key: 'maternal_personal_surname', label: 'Certificado de nacimiento o de matrimonio de la madre que acredite su apellido personal anterior al matrimonio, con traducción oficial y legalización/apostilla cuando procedan; revisar primero los documentos existentes', required: false, conditionalWhen: 'Solo si la documentación existente no basta y el órgano competente exige prueba adicional para determinar los apellidos; no es requisito general de toda solicitud inicial' },
       { key: 'birth_certificate', label: 'Certificación literal de nacimiento española', required: true },
       { key: 'minor_passport', label: 'Pasaporte completo y en vigor del menor', required: true },
       { key: 'minor_residence', label: 'NIE/TIE y resolución que permita acreditar el inicio de residencia legal del menor', required: true },
       { key: 'registration', label: 'Empadronamiento familiar/colectivo actualizado', required: true },
       { key: 'parents_identity', label: 'Pasaportes y NIE/TIE de progenitores o representantes', required: true },
       { key: 'representation_docs', label: 'Documentación adicional de representación si solo actúa uno de los progenitores', required: false, conditionalWhen: 'No firman ambos representantes con patria potestad' },
+      { key: 'maternal_personal_surname', label: 'Certificado de nacimiento o de matrimonio de la madre que acredite su apellido personal anterior al matrimonio, con traducción oficial y legalización/apostilla cuando procedan; revisar primero los documentos existentes', required: false, conditionalWhen: 'Solo si la documentación existente no basta y el órgano competente exige prueba adicional para determinar los apellidos; no es requisito general de toda solicitud inicial' },
     ],
-    steps: immigrationCaseSteps('solicitud de nacionalidad por residencia'),
-    tasks: immigrationTasks('Nacionalidad menor nacido en España', 'solicitud de nacionalidad'),
+    steps: nationalityMinorSteps(),
+    tasks: nationalityMinorTasks(),
     kia: {
-      userSummary: 'KIA guía a la familia para comprobar residencia legal del menor, representación y documentos antes de presentar.',
-      adminSummary: 'KIA prioriza cómputo de residencia, representación y coherencia documental; no autoriza presentación.',
-      escalationRules: ['Residencia legal dudosa', 'Firma/representación no resuelta', 'Datos personales incoherentes', 'Documentos extranjeros pendientes de legalización/traducción'],
+      userSummary: 'KIA guía a la familia por un flujo secuencial: documentos, representación, residencia legal, apellidos registrales, modelo, firmas, validación, tasa, presentación y seguimiento. La identidad extranjera vigente se distingue de la futura inscripción española.',
+      adminSummary: 'KIA aplica gates bloqueantes antes de firma y presentación. En apellidos, verifica filiación y apellido personal de la madre; no ofrece la duplicación como elección para evitar documentos cuando la línea materna está determinada.',
+      escalationRules: ['Residencia legal dudosa', 'Firma/representación no resuelta', 'Apellido personal materno o filiación incoherentes', 'Orden de apellidos no confirmado', 'Existencia de hermanos con orden registral previo', 'Documento extranjero pendiente de validación/legalización/traducción', 'Modelo firmado que no coincide con los datos validados'],
     },
   },
   {
