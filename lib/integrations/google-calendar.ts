@@ -330,7 +330,7 @@ async function withMeetTimeout<T>(operation: Promise<T>, label: string): Promise
 async function getMeetSABearerToken(): Promise<string> {
   const auth = await getMeetSAAuthClient();
   if (!auth) throw new Error('Google Workspace service account is not configured');
-  const credentials = await withMeetTimeout(auth.authorize(), 'Google Meet authorization');
+  const credentials = await withMeetTimeout<{ access_token?: string | null }>(auth.authorize(), 'Google Meet authorization');
   const token = credentials.access_token;
   if (!token) throw new Error('Google Workspace service account did not return an access token');
   return token;
