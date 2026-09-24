@@ -51,7 +51,17 @@ describe('service fulfillment retries', () => {
     const cart = { ...input, serviceSlug: 'certificado-digital-persona-fisica', serviceSlugs: ['pack-certificados-digitales'] };
     await ensureServiceOrderFulfillment(admin, cart);
     expect(state.tasks).toHaveLength(7);
-    expect(state.tasks.filter(task => task.title === 'Emitir certificado digital persona física')).toHaveLength(2);
+    const sameTitleTasks = state.tasks.filter(task => task.title === 'Emitir certificado digital persona física');
+    expect(sameTitleTasks).toHaveLength(2);
+    expect(
+      sameTitleTasks.map(task => {
+        const metadata = task.metadata as Record<string, unknown>;
+        return `${metadata.service_slug}:${metadata.task_key}`;
+      }).sort(),
+    ).toEqual([
+      'certificado-digital-persona-fisica:issue',
+      'pack-certificados-digitales:issue_personal',
+    ]);
     state.tasks[0].title = 'Revisado por el gestor';
     state.tasks[0].status = 'completada';
     await ensureServiceOrderFulfillment(admin, cart);
