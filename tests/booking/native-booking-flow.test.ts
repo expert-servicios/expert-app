@@ -80,7 +80,7 @@ describe('native booking public flow', () => {
     expect(route).toContain("company_id: identity?.companyId ?? null");
   });
 
-  it('configures Meet Smart Notes and transcription without coupling Calendar scopes', () => {
+  it('configures Meet artifacts independently with bounded best-effort calls', () => {
     expect(calendar).toContain("const CALENDAR_SA_SCOPES = [");
     expect(calendar).toContain("'https://www.googleapis.com/auth/calendar.events'");
     expect(calendar).toContain("const MEET_SA_SCOPES = [");
