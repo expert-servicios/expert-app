@@ -11,6 +11,8 @@ type AppointmentRow = {
   confirmed_date: string | null;
   confirmed_time: string | null;
   email?: string | null;
+  client_id?: string | null;
+  company_id?: string | null;
 };
 
 export type BookingIdentity = {
@@ -65,13 +67,24 @@ export async function loadOnboardingAppointmentsForIdentity(
   companyId: string | null | undefined,
   authEmail: string | null | undefined,
 ): Promise<AppointmentRow[]> {
-  const emails = await getAuthorizedBookingEmails(admin, clientId, companyId, authEmail);
-  if (!emails.length) return [];
+  const { data: scopedRows, error: scopedError } = await admin
+    .from('appointments')
+    .select('id,email,client_id,company_id,service,appointment_type,status,appointment_date,confirmed_date,confirmed_time')
+    .eq('client_id', clientId)
+    .eq('company_id', companyId ?? null)
+    .neq('status', 'cancelled')
+    .order('appointment_date', { ascending: false });
+  if (scopedError) throw scopedError;
 
-  const results = await Promise.all(emails.map(async (email) => {
+  // Legacy rows created before entity-scoped appointments remain discoverable by
+  // authorized email, but are never rewritten or attributed automatically.
+  const emails = await getAuthorizedBookingEmails(admin, clientId, companyId, authEmail);
+  const legacyResults = await Promise.all(emails.map(async (email) => {
     const { data, error } = await admin
       .from('appointments')
-      .select('id,email,service,appointment_type,status,appointment_date,confirmed_date,confirmed_time')
+      .select('id,email,client_id,company_id,service,appointment_type,status,appointment_date,confirmed_date,confirmed_time')
+      .is('client_id', null)
+      .is('company_id', null)
       .ilike('email', email)
       .neq('status', 'cancelled')
       .order('appointment_date', { ascending: false });
@@ -80,7 +93,8 @@ export async function loadOnboardingAppointmentsForIdentity(
   }));
 
   const unique = new Map<string, AppointmentRow>();
-  for (const row of results.flat()) unique.set(row.id, row);
+  for (const row of scopedRows ?? []) unique.set(row.id, row as AppointmentRow);
+  for (const row of legacyResults.flat()) unique.set(row.id, row);
   return [...unique.values()].sort((a, b) => {
     const aTime = a.appointment_date ? new Date(a.appointment_date).getTime() : 0;
     const bTime = b.appointment_date ? new Date(b.appointment_date).getTime() : 0;
