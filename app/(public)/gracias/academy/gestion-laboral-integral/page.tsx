@@ -37,7 +37,7 @@ export default function GraciasGestionLaboralPage() {
                 actually books instead of implying a course session. */}
             <CalButton
               url={calAcademyUrl}
-              fallbackHref="/cita"
+              fallbackHref="/cita?tipo=academy-admision"
               className="inline-flex items-center gap-2 bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
             >
               <CalendarCheck className="h-4 w-4" />

@@ -25,7 +25,7 @@ const CAL_REUNION_URL = getCalMeetingUrl();
 
 function FreeMeetingButton({ className, children }: { className: string; children: ReactNode }) {
   return (
-    <CalButton url={CAL_REUNION_URL} fallbackHref="/contacto" className={className}>
+    <CalButton url={CAL_REUNION_URL} fallbackHref="/cita?tipo=consulta-inicial" className={className}>
       {children}
     </CalButton>
   );

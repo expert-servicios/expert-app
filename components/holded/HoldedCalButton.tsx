@@ -15,6 +15,7 @@ export function HoldedCalButton({ className, children }: Props) {
   return (
     <CalButton
       url={CAL_DEMO_URL}
+      fallbackHref="/cita?tipo=demo-holded"
       className={className}
     >
       {children}

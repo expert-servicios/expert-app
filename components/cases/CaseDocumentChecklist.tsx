@@ -28,8 +28,8 @@ type NoteRow = {
 const COPY = {
   es: {
     title: 'Documentación del expediente',
-    subtitle: 'Todos los puntos son opcionales. Sube lo que tengas y explica cualquier duda en el comentario de cada punto.',
-    optional: 'Opcional',
+    subtitle: 'Revisa cada punto y aporta lo que tengas disponible. No vuelvas a subir documentos que EXPERT ya tenga; si algo está pendiente o no aplica, explícalo en el comentario.',
+    optional: 'Aporta si procede',
     comment: 'Comentario o explicación',
     commentPlaceholder: 'Ej.: este documento no aplica, lo tengo pendiente, lo adjunto en otro archivo...',
     saveComment: 'Guardar comentario',
@@ -40,8 +40,11 @@ const COPY = {
     generalDocs: 'Otros documentos',
     sendReview: 'Enviar documentos a revisión',
     sendingReview: 'Enviando...',
-    readyHint: 'Cuando hayas subido todo lo disponible, envía el expediente a revisión. Admin recibirá un aviso y se creará la tarea interna.',
+    readyHint: 'Cuando hayas aportado todo lo disponible, avisa al equipo para iniciar la revisión.',
+    additionalHint: 'Si has añadido nuevos documentos durante la revisión, avisa al equipo. Esto no reinicia ni retrocede el expediente.',
+    sendAdditional: 'Avisar de documentos adicionales',
     sentOk: 'Documentación enviada a revisión.',
+    sentAdditionalOk: 'El equipo ha sido avisado de la documentación adicional.',
     deleteConfirm: '¿Eliminar este documento? Esta acción no se puede deshacer.',
     uploadError: 'Error al subir el archivo.',
     saveError: 'No se pudo guardar el comentario.',
@@ -51,8 +54,8 @@ const COPY = {
   },
   ru: {
     title: 'Документы по expediente',
-    subtitle: 'Все пункты необязательные. Загрузите то, что у Вас есть, и при необходимости оставьте комментарий к каждому пункту.',
-    optional: 'Необязательно',
+    subtitle: 'Проверьте каждый пункт и приложите имеющиеся документы. Не загружайте повторно то, что уже есть у EXPERT; если документ ожидается или не относится к Вашей ситуации, укажите это в комментарии.',
+    optional: 'Приложить при наличии',
     comment: 'Комментарий / пояснение',
     commentPlaceholder: 'Например: этот документ не относится к нашей ситуации, документ в процессе, файл приложен в другом пункте...',
     saveComment: 'Сохранить комментарий',
@@ -63,8 +66,11 @@ const COPY = {
     generalDocs: 'Другие документы',
     sendReview: 'Отправить документы на проверку',
     sendingReview: 'Отправляем...',
-    readyHint: 'Когда загрузите всё, что у Вас есть, отправьте expediente на проверку. Администратор получит уведомление и внутреннюю задачу.',
+    readyHint: 'Когда приложите всё доступное, сообщите команде, что документы готовы к проверке.',
+    additionalHint: 'Если во время проверки Вы добавили новые документы, сообщите об этом команде. Это не перезапускает и не откатывает expediente.',
+    sendAdditional: 'Сообщить о дополнительных документах',
     sentOk: 'Документы отправлены на проверку.',
+    sentAdditionalOk: 'Команда получила уведомление о дополнительных документах.',
     deleteConfirm: 'Удалить этот документ? Это действие нельзя отменить.',
     uploadError: 'Не удалось загрузить файл.',
     saveError: 'Не удалось сохранить комментарий.',
@@ -96,12 +102,14 @@ export function CaseDocumentChecklist({
   documents,
   notes,
   locale = 'es',
+  reviewMode = 'initial',
 }: {
   caseId: string;
   checklist: string[];
   documents: DocumentRow[];
   notes: NoteRow[];
   locale?: Locale;
+  reviewMode?: 'initial' | 'additional' | 'closed';
 }) {
   const router = useRouter();
   const t = COPY[locale];
@@ -212,7 +220,7 @@ export function CaseDocumentChecklist({
       const res = await fetch(`/api/cases/${caseId}/document-review`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? t.reviewError);
-      setMessage({ type: 'ok', text: t.sentOk });
+      setMessage({ type: 'ok', text: reviewMode === 'additional' ? t.sentAdditionalOk : t.sentOk });
       router.refresh();
     } catch (err) {
       setMessage({ type: 'error', text: err instanceof Error ? err.message : t.reviewError });
@@ -320,13 +328,15 @@ export function CaseDocumentChecklist({
         )}
       </div>
 
-      <div className="mt-5 rounded-2xl border border-[#d8cbb5] bg-[#f8f4eb] p-4">
-        <p className="mb-3 text-sm text-[#29384a]">{t.readyHint}</p>
-        <button type="button" onClick={submitForReview} disabled={submitting} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#07111d] px-5 py-3 text-sm font-bold text-white hover:bg-[#142033] disabled:opacity-60 sm:w-auto">
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          {submitting ? t.sendingReview : t.sendReview}
-        </button>
-      </div>
+      {reviewMode !== 'closed' && (
+        <div className="mt-5 rounded-2xl border border-[#d8cbb5] bg-[#f8f4eb] p-4">
+          <p className="mb-3 text-sm text-[#29384a]">{reviewMode === 'additional' ? t.additionalHint : t.readyHint}</p>
+          <button type="button" onClick={submitForReview} disabled={submitting} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#07111d] px-5 py-3 text-sm font-bold text-white hover:bg-[#142033] disabled:opacity-60 sm:w-auto">
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {submitting ? t.sendingReview : reviewMode === 'additional' ? t.sendAdditional : t.sendReview}
+          </button>
+        </div>
+      )}
     </section>
   );
 }

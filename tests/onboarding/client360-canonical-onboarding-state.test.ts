@@ -30,7 +30,9 @@ describe('canonical subscription onboarding state', () => {
   });
 
   it('matches authorized booking emails case-insensitively and requires the meeting to have occurred', () => {
-    expect(citas).toContain(".ilike('email', user.email)");
+    expect(citas).toContain('resolveAuthenticatedBookingIdentity');
+    expect(citas).toContain('getAuthorizedBookingEmails');
+    expect(citas).toContain(".in('email', emails)");
     expect(adminComplete).toContain('loadOnboardingAppointmentsForIdentity');
     expect(bookingIdentity).toContain(".ilike('email', email)");
     expect(bookingIdentity).toContain(".from('profile_companies')");

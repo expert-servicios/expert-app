@@ -89,6 +89,11 @@ interface GoogleStatus {
   calendarConnected: boolean;
 }
 
+interface MicrosoftStatus {
+  connected: boolean;
+  email: string | null;
+}
+
 async function getGoogleStatus(cookieHeader: string): Promise<GoogleStatus> {
   try {
     const headers = { cookie: cookieHeader };
@@ -105,6 +110,23 @@ async function getGoogleStatus(cookieHeader: string): Promise<GoogleStatus> {
     };
   } catch {
     return { gmailConnected: false, gmailEmail: null, calendarConnected: false };
+  }
+}
+
+async function getMicrosoftStatus(cookieHeader: string): Promise<MicrosoftStatus> {
+  try {
+    const res = await fetch(absoluteAppUrl('/api/admin/correo?action=status'), {
+      headers: { cookie: cookieHeader },
+      cache: 'no-store',
+    });
+    if (!res.ok) return { connected: false, email: null };
+    const data = await res.json();
+    return {
+      connected: data.ms365Connected ?? false,
+      email: data.ms365Email ?? null,
+    };
+  } catch {
+    return { connected: false, email: null };
   }
 }
 
@@ -137,10 +159,11 @@ async function getHoldedStatus(cookieHeader: string): Promise<HoldedStatus | nul
 
 export default async function AdminIntegracionesPage() {
   const cookieHeader = await getCookieHeader();
-  const [events, holdedStatus, googleStatus] = await Promise.all([
+  const [events, holdedStatus, googleStatus, microsoftStatus] = await Promise.all([
     getSyncEvents(cookieHeader),
     getHoldedStatus(cookieHeader),
     getGoogleStatus(cookieHeader),
+    getMicrosoftStatus(cookieHeader),
   ]);
   const failedCount = events.filter((event) => event.status === 'failed').length;
   const pendingCount = events.filter((event) => event.status === 'pending').length;
@@ -253,6 +276,46 @@ export default async function AdminIntegracionesPage() {
 
         {/* ── Stripe sync ── */}
         <StripeSyncPanel />
+
+        {/* ── Microsoft 365 ── */}
+        <section className="mb-6 rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50">
+                  <PlugZap className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Microsoft 365</p>
+                  <p className="text-sm font-semibold text-[#07111d]">Outlook · Calendar · Teams · OneDrive/SharePoint</p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-[#29384a]/70">
+                La reconexión actualiza el consentimiento para Mail.Read, Mail.Send, Calendars.ReadWrite y Files.ReadWrite.
+              </p>
+              {microsoftStatus.email ? (
+                <p className="mt-2 text-xs text-[#29384a]/70">{microsoftStatus.email}</p>
+              ) : null}
+            </div>
+            <div className="flex flex-col items-start gap-3 sm:items-end">
+              <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
+                microsoftStatus.connected
+                  ? 'border-green-200 bg-green-50 text-green-800'
+                  : 'border-amber-200 bg-amber-50 text-amber-800'
+              }`}>
+                {microsoftStatus.connected
+                  ? <><CheckCircle2 className="h-3.5 w-3.5" /> Conectado</>
+                  : <><TriangleAlert className="h-3.5 w-3.5" /> Requiere conexión</>}
+              </span>
+              <a
+                href="/api/auth/ms365"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#07111d] px-4 py-1.5 text-xs font-bold text-white transition hover:bg-[#1a2a3a]"
+              >
+                {microsoftStatus.connected ? 'Reautorizar Microsoft 365' : 'Conectar Microsoft 365'}
+              </a>
+            </div>
+          </div>
+        </section>
 
         {/* ── Google integrations ── */}
         <section className="mb-6 grid gap-4 sm:grid-cols-2">

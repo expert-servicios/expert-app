@@ -59,12 +59,12 @@ const categoryCta: Record<string, { text: string; ctaLabel: string; ctaHref: str
   Fiscalidad: {
     text: 'En EXPERT revisamos situaciones fiscales como esta a diario. Reserva una cita gratuita y te decimos exactamente qué necesitas.',
     ctaLabel: 'Reservar cita gratuita',
-    ctaHref: '/cita',
+    ctaHref: '/cita?tipo=consulta-inicial',
   },
   Extranjería: {
     text: 'Preparamos y acompañamos expedientes de extranjería y nacionalidad cada semana. Reserva una cita gratuita para revisar tu caso.',
     ctaLabel: 'Reservar cita gratuita',
-    ctaHref: '/cita',
+    ctaHref: '/cita?tipo=consulta-inicial',
   },
   Empresas: {
     text: '¿Quieres que Kia y nuestro equipo lleven la gestión de tu empresa? Descubre qué plan encaja contigo.',
@@ -80,6 +80,11 @@ const categoryCta: Record<string, { text: string; ctaLabel: string; ctaHref: str
     text: 'En EXPERT gestionamos este tipo de trámites a diario. Cuéntanos tu situación y te orientamos sin compromiso.',
     ctaLabel: 'Solicitar presupuesto',
     ctaHref: '/solicitar-presupuesto',
+  },
+  'Protección de datos': {
+    text: '¿Tienes dudas sobre RGPD, web, proveedores o una brecha? Reserva una primera consulta gratuita de 15 minutos para situar el caso.',
+    ctaLabel: 'Consulta gratuita · 15 min',
+    ctaHref: '/cita?tipo=consulta-inicial',
   },
   Formación: {
     text: '¿Quieres que tu equipo entienda los números, no solo los introduzca? Descubre los programas de EXPERT Business Academy.',

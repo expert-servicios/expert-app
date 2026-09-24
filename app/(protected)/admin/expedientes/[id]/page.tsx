@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, FolderOpen, User, Download, FileText, MessageSquare } from 'lucide-react';
+import { ArrowLeft, FolderOpen, User, Download, FileText, MessageSquare, ListTodo } from 'lucide-react';
 import { AdminCaseCard } from '@/components/cases/AdminCaseCard';
 import { DocStateSelect } from '@/components/admin/DocStateSelect';
 import { CaseChecklistEditor } from '@/components/admin/CaseChecklistEditor';
@@ -123,6 +123,20 @@ export default async function AdminCaseDetailPage({
           initialDueDate={c.due_date}
         />
 
+        <Link
+          href={`/admin/tareas?caseId=${id}`}
+          className="flex items-center justify-between rounded-2xl border border-[#d8cbb5] bg-white p-5 transition hover:border-[#c88b25]"
+        >
+          <div className="flex items-center gap-3">
+            <ListTodo className="h-5 w-5 text-[#c88b25]" />
+            <div>
+              <p className="font-semibold text-[#07111d]">Workflow y tareas del expediente</p>
+              <p className="mt-1 text-xs text-[#52606d]">Ver dependencias, pasos bloqueados, referencias y tareas que requieren intervención.</p>
+            </div>
+          </div>
+          <span className="text-sm font-bold text-[#c88b25]">Abrir →</span>
+        </Link>
+
         {/* Admin internal note */}
         <AdminNoteEditor caseId={id} initialNote={c.admin_note} />
 
@@ -132,22 +146,25 @@ export default async function AdminCaseDetailPage({
         {/* Docs checklist */}
         <CaseChecklistEditor caseId={id} initialItems={Array.isArray(c.docs_checklist) ? c.docs_checklist : []} />
 
-        {/* Holded sync */}
-        <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Holded Projects</p>
-              <p className="mt-1 text-sm text-[#29384a]">
-                Crear o enlazar este expediente como proyecto operativo en Holded.
-              </p>
+        {c.category !== 'extranjeria-nacionalidad' && (
+          <>
+          <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Holded Projects</p>
+                <p className="mt-1 text-sm text-[#29384a]">
+                  Crear o enlazar este expediente como proyecto operativo en Holded.
+                </p>
+              </div>
+              <HoldedSyncButton
+                endpoint="/api/admin/integrations/holded/sync-project"
+                payload={{ caseId: id }}
+                label="Sync proyecto"
+              />
             </div>
-            <HoldedSyncButton
-              endpoint="/api/admin/integrations/holded/sync-project"
-              payload={{ caseId: id }}
-              label="Sync proyecto"
-            />
           </div>
-        </div>
+          </>
+        )}
 
         {/* Message thread */}
         <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">

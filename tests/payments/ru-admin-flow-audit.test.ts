@@ -59,7 +59,7 @@ describe('Russian nationality admin flow audit', () => {
     const template = read('lib/email/service-payment-ru.ts');
     const send = read('lib/email/send.ts');
     expect(template).toContain('ACCIÓN: revisar expediente de nacionalidad');
-    expect(template).toContain('expediente ya creado automáticamente');
+    expect(template).toContain('la ficha y el expediente creados automáticamente');
     expect(template).toContain("detail('Case ID', safeCase)");
     expect(template).toContain("'/admin/expedientes/'");
     expect(send).toContain("caseId: stringMetadata(input.metadata, 'case_id')");

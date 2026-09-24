@@ -1,7 +1,8 @@
 import type { CategorySlug } from './catalog';
 import { getGeneratedBatch1KnowledgeDocs } from '@/lib/services/service-generated-content';
+import { proteccionDatosKnowledgeDocs } from '@/lib/content/proteccion-datos-docs';
 
-export type DocCategorySlug = 'extranjeria-nacionalidad' | 'fiscalidad' | 'empresas' | 'tramites' | 'holded';
+export type DocCategorySlug = 'extranjeria-nacionalidad' | 'fiscalidad' | 'empresas' | 'proteccion-datos' | 'tramites' | 'holded';
 
 export type KnowledgeDoc = {
   slug: string;
@@ -22,12 +23,261 @@ export const docCategories: { slug: DocCategorySlug; name: string }[] = [
   { slug: 'extranjeria-nacionalidad', name: 'Extranjería y Nacionalidad' },
   { slug: 'fiscalidad', name: 'Fiscalidad' },
   { slug: 'empresas', name: 'Empresas y Autónomos' },
+  { slug: 'proteccion-datos', name: 'Protección de datos' },
   { slug: 'tramites', name: 'Trámites' },
   { slug: 'holded', name: 'Holded' }
 ];
 
 export const docs: KnowledgeDoc[] = [
   ...getGeneratedBatch1KnowledgeDocs(),
+  ...proteccionDatosKnowledgeDocs,
+  {
+    slug: 'conectar-google-workspace-expert',
+    category: 'empresas',
+    title: 'Cómo conectar Google Workspace con EXPERT',
+    excerpt: 'Guía paso a paso para autorizar Gmail, Google Calendar y Drive en EXPERT mediante OAuth, con conexión separada por entidad fiscal.',
+    tags: ['Google Workspace', 'Gmail', 'Google Calendar', 'Google Drive', 'OAuth', 'integraciones EXPERT'],
+    updatedAt: '24 sep 2026',
+    readTime: '6 min',
+    seoTitle: 'Conectar Google Workspace con EXPERT | Guía paso a paso',
+    seoDescription: 'Cómo conectar Gmail, Calendar y Drive con EXPERT de forma segura mediante OAuth y por entidad fiscal.',
+    body: `
+## Qué conecta EXPERT
+
+La integración de Google Workspace permite vincular a una entidad de EXPERT el ecosistema de Google que utilizas en el trabajo.
+
+La conexión se realiza mediante **OAuth 2.0 de Google**. No tienes que comunicar a EXPERT tu contraseña de Google.
+
+EXPERT solicita actualmente permisos para:
+
+- **Gmail**: leer y gestionar mensajes necesarios para la operativa autorizada y enviar correo en tu nombre cuando una acción lo requiera.
+- **Google Calendar**: consultar y crear o modificar eventos necesarios para citas y coordinación.
+- **Google Drive**: acceso de lectura para localizar documentación autorizada.
+- **Identidad de la cuenta**: confirmar qué cuenta de Google has conectado.
+
+La conexión se guarda separada para cada entidad fiscal de tu cuenta EXPERT.
+
+## Antes de empezar
+
+1. Inicia sesión en EXPERT.
+2. Comprueba que la entidad correcta está creada en tu perfil.
+3. Ten abierta la cuenta de Google Workspace o Google que quieras conectar.
+4. Si gestionas varias entidades, decide a cuál quieres asociar esta cuenta.
+
+## Conexión directa
+
+[Conectar Google Workspace con EXPERT](https://expertconsulting.es/dashboard/integraciones/productividad?provider=google)
+
+Al abrir el enlace:
+
+1. EXPERT te mostrará tus entidades fiscales.
+2. Elige la entidad que quieres vincular.
+3. Pulsa **Conectar Google Workspace**.
+4. Google mostrará su pantalla oficial de autorización.
+5. Revisa los permisos y confirma.
+6. Google te devolverá automáticamente a EXPERT.
+7. Comprueba que la entidad aparece como **Conectada**.
+
+## Si tienes dos empresas o actividades
+
+La autorización se vincula a una entidad concreta de EXPERT.
+
+Si quieres utilizar la misma cuenta de Google para dos entidades, realiza la conexión desde cada entidad. Esto permite mantener separados expedientes, documentación, calendarios e integraciones dentro de EXPERT.
+
+## Seguridad
+
+- EXPERT no recibe tu contraseña de Google.
+- Los tokens OAuth se almacenan cifrados.
+- La integración queda vinculada a tu usuario y a una entidad fiscal concreta.
+- El acceso se limita a los permisos mostrados durante el consentimiento.
+- Puedes revocar el acceso desde tu cuenta de Google.
+
+## Cómo revocar el acceso
+
+Desde tu Cuenta de Google puedes revisar y retirar el acceso de aplicaciones de terceros. Tras revocarlo, EXPERT dejará de poder utilizar esa conexión y será necesario volver a autorizarla si quieres reactivarla.
+
+## Problemas habituales
+
+### He elegido la cuenta Google equivocada
+
+Cancela la autorización o revoca posteriormente el acceso y vuelve a iniciar el proceso con la cuenta correcta.
+
+### Tengo varias entidades en EXPERT
+
+Selecciona expresamente la entidad antes de pulsar el botón de conexión.
+
+### Google muestra una pantalla adicional de consentimiento
+
+Es normal cuando se solicitan permisos de Workspace. Lee los permisos antes de aceptar.
+
+### Mi administrador de Google Workspace bloquea la aplicación
+
+En organizaciones con políticas restrictivas puede ser necesaria la aprobación del administrador de Google Workspace.
+
+## Fuentes oficiales
+
+- Google Workspace — OAuth y scopes de Gmail: https://developers.google.com/workspace/gmail/api/auth/scopes
+- Google Calendar API — scopes OAuth: https://developers.google.com/identity/protocols/oauth2/scopes
+- Autorización OAuth de servidor: https://developers.google.com/workspace/gmail/api/auth/web-server
+    `
+  },
+  {
+    slug: 'conectar-microsoft-365-expert',
+    category: 'empresas',
+    title: 'Cómo conectar Microsoft 365 con EXPERT',
+    excerpt: 'Guía paso a paso para autorizar Outlook, Calendar, OneDrive y Teams en EXPERT mediante Microsoft Graph y OAuth.',
+    tags: ['Microsoft 365', 'Outlook', 'Calendar', 'OneDrive', 'Teams', 'Microsoft Graph', 'OAuth'],
+    updatedAt: '24 sep 2026',
+    readTime: '6 min',
+    seoTitle: 'Conectar Microsoft 365 con EXPERT | Guía paso a paso',
+    seoDescription: 'Cómo conectar Outlook, Calendar, OneDrive y Teams con EXPERT de forma segura mediante Microsoft Graph OAuth.',
+    body: `
+## Qué conecta EXPERT
+
+La integración de Microsoft 365 permite vincular a una entidad de EXPERT tu cuenta profesional de Microsoft.
+
+La autorización se realiza mediante **OAuth 2.0 y Microsoft Graph**. EXPERT no solicita ni almacena tu contraseña de Microsoft.
+
+La conexión puede autorizar:
+
+- **Outlook**: lectura del correo y envío autorizado.
+- **Microsoft Calendar**: lectura y gestión de eventos.
+- **OneDrive / archivos de Microsoft 365**: acceso a los archivos necesarios para la operativa autorizada.
+- **Teams**: creación de reuniones online cuando se utiliza el calendario Microsoft.
+
+## Antes de empezar
+
+1. Inicia sesión en EXPERT.
+2. Comprueba que la entidad fiscal correcta aparece en tu perfil.
+3. Ten acceso a la cuenta Microsoft 365 que quieras conectar.
+4. Si tu organización utiliza políticas de administración centralizada, puede ser necesaria la aprobación del administrador de Microsoft 365.
+
+## Conexión directa
+
+[Conectar Microsoft 365 con EXPERT](https://expertconsulting.es/dashboard/integraciones/productividad?provider=microsoft)
+
+Al abrir el enlace:
+
+1. EXPERT te mostrará tus entidades fiscales.
+2. Selecciona la entidad que quieres vincular.
+3. Pulsa **Conectar Microsoft 365**.
+4. Microsoft abrirá su pantalla oficial de consentimiento.
+5. Revisa los permisos solicitados.
+6. Confirma la autorización.
+7. Microsoft te devolverá automáticamente a EXPERT.
+8. Verifica que la conexión figure como **Conectada**.
+
+## Permisos utilizados
+
+La capa actual de Microsoft 365 utiliza permisos delegados de Microsoft Graph para:
+
+- leer correo;
+- enviar correo;
+- leer y modificar calendario;
+- trabajar con archivos autorizados de Microsoft 365;
+- mantener acceso mediante refresh token mientras la autorización siga vigente.
+
+La autorización actúa en nombre del usuario que ha dado el consentimiento.
+
+## Si tienes varias entidades
+
+EXPERT mantiene cada integración separada por entidad fiscal.
+
+Por ejemplo, una misma persona puede tener:
+
+- una sociedad mercantil;
+- y una actividad profesional como persona física.
+
+Cada una puede conservar su propia relación de integraciones, expedientes y documentación dentro de EXPERT.
+
+## Seguridad
+
+- EXPERT no recibe tu contraseña de Microsoft.
+- Los tokens OAuth se almacenan cifrados.
+- La conexión queda asociada a tu usuario y a la entidad seleccionada.
+- Los permisos efectivos son los que Microsoft muestra en su pantalla de consentimiento.
+- Puedes retirar el consentimiento posteriormente desde tu cuenta Microsoft o mediante las herramientas de administración de tu organización.
+
+## Problemas habituales
+
+### Microsoft pide aprobación del administrador
+
+Algunas organizaciones bloquean determinados permisos para usuarios normales. En ese caso debe intervenir el administrador de Microsoft 365 de la empresa.
+
+### He conectado una cuenta equivocada
+
+Revoca el consentimiento y vuelve a conectar usando la cuenta correcta.
+
+### Tengo más de una empresa
+
+Selecciona la entidad concreta antes de autorizar Microsoft 365.
+
+### Uso una cuenta Microsoft personal
+
+Algunas funciones empresariales, especialmente relacionadas con Teams o administración corporativa, dependen del tipo de cuenta y licencia disponibles.
+
+## Fuentes oficiales
+
+- Microsoft Graph — referencia de permisos: https://learn.microsoft.com/es-es/graph/permissions-reference
+- Microsoft Graph — autenticación y autorización: https://learn.microsoft.com/es-es/graph/auth/
+    `
+  },
+  {
+    slug: 'apellidos-menor-nacionalidad-registro-civil',
+    category: 'extranjeria-nacionalidad',
+    title: 'Apellidos del menor al adquirir la nacionalidad española',
+    excerpt:
+      'Cómo acreditar el apellido personal materno, revisar documentos existentes y resolver dudas antes de la inscripción española.',
+    tags: ['apellidos', 'nacionalidad española', 'Registro Civil', 'menores', 'apellido materno', 'traducción jurada'],
+    updatedAt: '24 sep 2026',
+    readTime: '6 min',
+    relatedServiceSlugs: ['nacionalidad-espanola-menor-nacido-en-espana'],
+    relatedServiceCategories: ['extranjeria-nacionalidad'],
+    seoTitle: 'Apellidos del menor al adquirir la nacionalidad española | EXPERT',
+    seoDescription:
+      'Apellido personal de la madre, duplicación en los supuestos legales y alternativas documentales y de traducción.',
+    body: `
+## Los apellidos se determinan por la filiación
+
+Con carácter general, al adquirir la nacionalidad española se toman el primer apellido del padre y el primero de los personales de la madre, conforme a las reglas españolas. El apellido actual de la madre puede haber sido adquirido por matrimonio: el pasaporte o la TIE no demuestran por sí solos que sea su apellido personal de nacimiento.
+
+La duplicación de un único apellido corresponde a los supuestos previstos en la normativa, como cuando la filiación no determina otros apellidos o resulta imposible acreditar la identidad de los progenitores. No es una alternativa de libre elección para evitar documentos. No querer aportar o traducir un certificado no equivale a desconocer el apellido materno ni a una imposibilidad de acreditación. La firma de ambos progenitores no sustituye esa base jurídica.
+
+## Elegir el orden de los apellidos
+
+Primero se determina qué apellidos corresponden por filiación; después se revisa su orden. Cuando ambas líneas están determinadas, los progenitores pueden acordar cuál de sus respectivos primeros apellidos se transmite en primer lugar antes de la inscripción. No hay que confundir esta elección de orden con elegir apellidos ajenos a la filiación o duplicar uno para evitar documentos. Así lo regulan el [artículo 49.2 de la Ley del Registro Civil](https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a49) y el [artículo 109 del Código Civil](https://www.boe.es/buscar/act.php?id=BOE-A-1889-4763#art109).
+
+Antes de ofrecer los dos órdenes, comprobamos la inscripción existente del menor y si ya hay un orden establecido para hermanos de los mismos progenitores: ese antecedente puede determinar el que corresponda. No se cambia una inscripción existente simplemente editando la solicitud de nacionalidad. Si hay dudas, debe revisarlas el Registro Civil competente.
+
+Si no hay acuerdo o no se comunica el orden, el Registro requiere a los progenitores para que lo indiquen en un plazo máximo de tres días; si no responden, lo determina atendiendo al interés superior del menor. No se impone automáticamente el apellido paterno primero. Los cambios posteriores tienen un procedimiento: el [artículo 53.1 de la Ley del Registro Civil](https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a53) contempla la inversión del orden, pero no una modificación informal del expediente.
+
+Recogemos la conformidad de ambos progenitores con el orden propuesto y comprobamos la forma exacta de los apellidos en los documentos antes de preparar la versión para firma. La [Instrucción de 23 de mayo de 2007, primera.4](https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948#pr-2) contempla la variante masculina o femenina del apellido según el sexo de quien adquiere la nacionalidad. La identificación actual del pasaporte/TIE se mantiene separada de los apellidos propuestos para la inscripción española.
+
+## ¿Es obligatorio aportar el nacimiento de la madre?
+
+No es un requisito general de toda solicitud inicial de nacionalidad de un menor. Hay que distinguir la documentación para presentar la solicitud de la necesaria para determinar los apellidos en la inscripción posterior. Su ausencia, por sí sola, no bloquea automáticamente toda solicitud; puede ser necesario aclarar datos o atender un requerimiento.
+
+Antes de solicitar documentos nuevos, revisamos el literal completo de nacimiento del menor, incluidas sus observaciones, y la documentación familiar disponible. Si consta el apellido personal materno de forma suficiente, puede evitarse pedir otra prueba. Un certificado de matrimonio que recoja el apellido anterior puede ser una alternativa: la Sede Judicial de Aragón contempla nacimiento y/o matrimonio de la madre cuando ese dato no consta en el nacimiento del solicitante. Debe confirmarse su suficiencia ante el Registro Civil competente; ese criterio local no garantiza la aceptación en todos los registros.
+
+## Traducción y legalización: comprobar antes de gastar
+
+Si hace falta aportar un documento extranjero, comprobamos las formalidades aplicables según el documento, su origen y los convenios. Justicia contempla traducción o cotejo consular con la legalización correspondiente, además de traducción jurada. La disponibilidad y el coste de la vía consular deben consultarse.
+
+El artículo 95 de la Ley del Registro Civil permite que su encargado prescinda de la traducción si le consta el contenido. Es una decisión del Registro, no una exención automática para presentar documentos sin traducir en la solicitud telemática de nacionalidad.
+
+## Qué hacemos antes de firmar
+
+1. Confirmar el apellido personal de la madre y si hubo cambio por matrimonio.
+2. Identificar qué documento ya disponible acredita ese dato; separar la preferencia familiar de lo jurídicamente acreditado.
+3. Si falta prueba, consultar al órgano competente qué alternativa acepta antes de encargar certificados o traducciones.
+4. Resolver la casilla de apellidos conforme a los hechos y documentos. No marcar «se desconoce» solo porque la familia no desea aportar documentación.
+5. Si llega un requerimiento, atenderlo en su plazo o plantear las alternativas procedentes. Si la familia rechaza toda prueba admitida, explicar y documentar la limitación sin prometer una inscripción concreta.
+
+Podemos continuar preparando las partes independientes del expediente mientras se aclara el apellido. El formulario final debe ser coherente con la documentación y la revisión profesional.
+
+**Fuentes oficiales, revisadas el 24/09/2026**: [Instrucción de 23 de mayo de 2007](https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948) · [Ministerio: documentación de nacionalidad](https://www.mjusticia.gob.es/en/ciudadania/nacionalidad/informacion-nacionalidad) · [Registro Civil de Aragón: documentación posterior a la concesión](https://sedejudicial.aragon.es/registro-civil/nacionalidad/jura-de-nacionalidad-espanola/) · [Ley del Registro Civil, artículo 95](https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a95) · [Justicia: traducción y legalización](https://www.mjusticia.gob.es/es/Ciudadano/TramitesGestiones/Documents/advertencia-legalizacion-documentos.pdf).
+    `
+  },
   {
     slug: 'nacionalidad-espanola-menor-nacido-en-espana',
     category: 'extranjeria-nacionalidad',
@@ -50,6 +300,15 @@ export const docs: KnowledgeDoc[] = [
     seoDescription:
       'Requisitos, documentación, plazo de 1 año de residencia legal, tasa 790-026 y proceso para solicitar la nacionalidad española de un menor nacido en España.',
     body: `
+## Apellido personal de la madre y documentos adicionales
+
+- Certificado de nacimiento o de matrimonio de la madre que recoja su apellido personal anterior al matrimonio, con traducción oficial y legalización/apostilla cuando procedan. Solo si hace falta prueba adicional tras revisar los documentos existentes.
+
+El certificado de nacimiento de la madre no es un requisito general de toda solicitud inicial del menor. Primero revisamos los documentos existentes; si falta acreditar su apellido personal, consultamos qué prueba adicional admite el Registro Civil competente, incluido un certificado de matrimonio que recoja el apellido anterior. La duplicación de un apellido no se elige para evitar documentos o traducciones.
+
+[Consulta la guía de apellidos, alternativas documentales y traducción](/docs/apellidos-menor-nacionalidad-registro-civil).
+
+
 ## Resumen del trámite
 
 Si tu hijo o hija ha nacido en España y ya cuenta con residencia legal, puede tener derecho a solicitar la nacionalidad española por residencia con un plazo reducido de **1 año de residencia legal, continuada e inmediatamente anterior a la solicitud**.
@@ -253,6 +512,15 @@ Con esa documentación se puede reconstruir la línea temporal del menor y decid
     seoDescription:
       'Documentación del menor y de los progenitores para preparar la solicitud de nacionalidad española por residencia.',
     body: `
+## Apellido personal de la madre y documentos adicionales
+
+- Certificado de nacimiento o de matrimonio de la madre que recoja su apellido personal anterior al matrimonio, con traducción oficial y legalización/apostilla cuando procedan. Solo si hace falta prueba adicional tras revisar los documentos existentes.
+
+El certificado de nacimiento de la madre no es un requisito general de toda solicitud inicial del menor. Primero revisamos los documentos existentes; si falta acreditar su apellido personal, consultamos qué prueba adicional admite el Registro Civil competente, incluido un certificado de matrimonio que recoja el apellido anterior. La duplicación de un apellido no se elige para evitar documentos o traducciones.
+
+[Consulta la guía de apellidos, alternativas documentales y traducción](/docs/apellidos-menor-nacionalidad-registro-civil).
+
+
 ## Documentos del menor
 
 Para preparar el expediente de nacionalidad española por residencia de un menor nacido en España, normalmente se revisa:

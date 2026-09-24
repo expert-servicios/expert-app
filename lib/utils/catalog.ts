@@ -782,6 +782,8 @@ export const services: Service[] = [
         'Podemos ayudarte a preparar y presentar su solicitud de nacionalidad española por residencia, revisando previamente si cumple el plazo legal de 1 año y si la documentación está completa.'
     },
     faqs: [
+  {"q": "¿Hay que aportar siempre el certificado de nacimiento de la madre?", "a": "No es un requisito general de toda solicitud inicial de nacionalidad de un menor. Primero revisamos los documentos existentes para acreditar su apellido personal. Si hace falta prueba adicional, un certificado de matrimonio que recoja el apellido anterior puede ser una alternativa, sujeta a la aceptación del Registro Civil competente. No encargues certificados ni traducciones nuevos sin revisar antes qué hace falta."},
+  {"q": "¿Se puede duplicar el apellido para evitar aportar documentos?", "a": "La duplicación depende de los supuestos legales y de la filiación; no es una elección para evitar documentación. El pasaporte o la TIE de la madre pueden recoger un apellido adquirido por matrimonio. No querer aportar o traducir un documento no equivale a desconocer su apellido personal. Revisamos los hechos y la prueba antes de cerrar el formulario."},
       {
         q: '¿Mi hijo obtiene la nacionalidad automáticamente por haber nacido en España?',
         a:

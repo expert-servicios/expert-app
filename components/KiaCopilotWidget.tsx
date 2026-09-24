@@ -9,7 +9,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { X, Send, Loader2, ChevronDown, ExternalLink } from 'lucide-react';
 import { KiaAvatar } from '@/components/kia/KiaAvatar';
 import type { KiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
@@ -34,6 +34,81 @@ interface KiaApiResponse {
   error?: string;
 }
 
+interface KiaContextSummary {
+  firstName: string | null;
+  preferredLanguage: 'es' | 'ru';
+  intentHint: string | null;
+  serviceSlug: string | null;
+  case: {
+    id: string;
+    service: string;
+    service_id: string | null;
+    state: string;
+    status: string;
+    next_action: string | null;
+    due_date: string | null;
+    company_id: string | null;
+    updated_at: string;
+  } | null;
+  company: { id: string; name: string | null } | null;
+}
+
+function contextualWelcome(context: KiaContextSummary): ChatMessage {
+  const name = context.firstName ? `, ${context.firstName}` : '';
+  const hasOpenCase = Boolean(context.case);
+
+  if (!hasOpenCase) {
+    if (context.preferredLanguage === 'ru') {
+      return {
+        id: 'context-welcome',
+        role: 'assistant',
+        text: `👋 Здравствуйте${name}! Чем могу помочь сегодня?`,
+        quickReplies: ['Мои дела', 'Holded', 'Налоговый вопрос'],
+        avatarState: 'bienvenida',
+      };
+    }
+
+    return {
+      id: 'context-welcome',
+      role: 'assistant',
+      text: `👋 ¡Hola${name}! ¿En qué te ayudo hoy?`,
+      quickReplies: ['Ver mis expedientes', 'Estado de Holded', 'Consulta fiscal'],
+      avatarState: 'bienvenida',
+    };
+  }
+
+  const service = context.case?.service ?? null;
+  const nextAction = context.case?.next_action ?? null;
+
+  if (context.preferredLanguage === 'ru') {
+    return {
+      id: 'context-welcome',
+      role: 'assistant',
+      text: [
+        `👋 Здравствуйте${name}! Вижу ваш открытый кейс.`,
+        service ? `Сейчас работаем по вопросу: ${service}.` : null,
+        nextAction ? `Следующий шаг: ${nextAction}` : null,
+        'Можете сразу задать вопрос по этому делу.',
+      ].filter(Boolean).join('\n\n'),
+      quickReplies: ['Что сейчас нужно сделать?', 'Какие документы нужны?', 'Проверить статус'],
+      avatarState: 'seguimiento',
+    };
+  }
+
+  return {
+    id: 'context-welcome',
+    role: 'assistant',
+    text: [
+      `👋 ¡Hola${name}! Veo que tienes un expediente abierto.`,
+      service ? `Estamos trabajando en: ${service}.` : null,
+      nextAction ? `El siguiente paso es: ${nextAction}` : null,
+      'Puedes preguntarme directamente sobre este expediente.',
+    ].filter(Boolean).join('\n\n'),
+    quickReplies: ['¿Qué tengo que hacer ahora?', '¿Qué documentos faltan?', 'Comprobar estado'],
+    avatarState: 'seguimiento',
+  };
+}
+
 function welcomeMessage(returning = false): ChatMessage {
   return {
     id: 'welcome',
@@ -46,10 +121,39 @@ function welcomeMessage(returning = false): ChatMessage {
   };
 }
 
-function useKiaChat(pathname: string) {
+function useKiaChat(pathname: string, contextToken?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage()]);
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    if (!contextToken) return;
+    let cancelled = false;
+
+    fetch(`/api/ai/kia/context?token=${encodeURIComponent(contextToken)}`, { cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) throw new Error('context_unavailable');
+        return res.json() as Promise<KiaContextSummary>;
+      })
+      .then((context) => {
+        if (!cancelled) {
+          setMessages([contextualWelcome(context)]);
+          setSessionId(undefined);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMessages([{
+            id: 'context-error',
+            role: 'assistant',
+            text: 'No he podido recuperar el contexto de este enlace. Puedes seguir preguntándome desde aquí.',
+            avatarState: 'aviso',
+          }]);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [contextToken]);
 
   useEffect(() => {
     const handleCompanyChanged = () => {
@@ -85,6 +189,7 @@ function useKiaChat(pathname: string) {
           message    : text,
           sessionId,
           currentPage: pathname,
+          contextToken,
           history,
         }),
       });
@@ -117,7 +222,7 @@ function useKiaChat(pathname: string) {
     } finally {
       setLoading(false);
     }
-  }, [loading, messages, pathname, sessionId]);
+  }, [contextToken, loading, messages, pathname, sessionId]);
 
   const reset = useCallback(() => {
     setMessages([welcomeMessage(true)]);
@@ -197,7 +302,9 @@ export default function KiaCopilotWidget() {
   const [input, setInput] = useState('');
   const [animatedMessageIds, setAnimatedMessageIds] = useState<Set<string>>(() => new Set());
   const pathname = usePathname();
-  const { messages, loading, send, reset } = useKiaChat(pathname);
+  const searchParams = useSearchParams();
+  const [contextToken] = useState<string | undefined>(() => searchParams.get('ctx') ?? undefined);
+  const { messages, loading, send, reset } = useKiaChat(pathname, contextToken);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -231,6 +338,12 @@ export default function KiaCopilotWidget() {
 
     return () => window.cancelAnimationFrame(frame);
   }, [animatedMessageIds, lastAssistantMessage, open]);
+
+  useEffect(() => {
+    if (searchParams.get('kia') === 'open' && contextToken) {
+      setOpen(true);
+    }
+  }, [contextToken, searchParams]);
 
   useEffect(() => {
     if (open) {

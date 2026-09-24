@@ -556,6 +556,39 @@ export function contactAutoReply(nombre: string, asunto: string) {
   };
 }
 
+// ── 12b. Nacionalidad menor — confirmación de datos registrales (RU) ──────────
+export function nationalityMinorDataConfirmationRu(input: {
+  childName: string;
+  residenceStart: string;
+  address: string;
+  proposedRegistryName: string;
+}) {
+  const surnameDocUrl = `${BRAND.appUrl}/ru/docs/familii-rebenka-pri-poluchenii-grazhdanstva-ispanii`;
+  const surnameBlogUrl = `${BRAND.appUrl}/ru/blog/odna-familiya-u-rebenka-grazhdanstvo-ispanii`;
+  const officialSurnameRuleUrl = 'https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948';
+  const registryOrderUrl = 'https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a49';
+
+  return {
+    subject: 'Данные Русланы — фамилии перед подготовкой официального заявления',
+    html: base('Подтверждение данных для заявления', `
+      ${heading('Перед подготовкой заявления нужно закрыть данные о фамилиях')}
+      ${para('Здравствуйте!')}
+      ${para(`Год начала легальной резиденции ребёнка для заявления фиксируем как <strong>${escapeHtml(input.residenceStart)}</strong>. Перед подготовкой и подписанием официального бланка отдельно проверяем фамилии для будущей записи в испанском Registro Civil.`)}
+      ${table(
+        detail('Имя ребёнка', escapeHtml(input.childName)),
+        detail('Адрес', escapeHtml(input.address)),
+        detail('Предварительный вариант — не подписывать до проверки', escapeHtml(input.proposedRegistryName))
+      )}
+      ${para('Важно различать текущую иностранную идентификацию ребёнка и фамилии, которые будут определены для испанской регистрации. Если у ребёнка сейчас одна фамилия, мы проверяем происхождение по обеим родительским линиям и личную фамилию матери. Если мать изменила фамилию при браке, её нынешняя фамилия в паспорте/TIE не заменяет проверку личной фамилии до брака.')}
+      ${para('Удвоение единственной фамилии не является свободным выбором. Нельзя отмечать в официальной форме, что фамилия матери неизвестна, только потому, что семья предпочитает одинаковые фамилии или не хочет представлять дополнительный документ. Если материнская фамилия известна или подтверждается документами, заявление должно соответствовать этим фактам.')}
+      ${para('Сначала мы проверяем уже имеющиеся документы. Новый сертификат или перевод просим только если имеющихся доказательств недостаточно. После определения двух фамилий отдельно согласовываем их порядок с обоими родителями и проверяем, нет ли уже установленного порядка у других общих детей.')}
+      ${para(`Подробнее: <a href="${surnameDocUrl}" style="color:#c88b25;">инструкция EXPERT</a> · <a href="${surnameBlogUrl}" style="color:#c88b25;">статья с примерами</a> · <a href="${officialSurnameRuleUrl}" style="color:#c88b25;">Инструкция DGRN 23.05.2007</a> · <a href="${registryOrderUrl}" style="color:#c88b25;">Ley del Registro Civil, art. 49</a>.`)}
+      ${para('<strong>Пожалуйста, подтвердите:</strong> личную фамилию матери при рождении, менялась ли она при браке, какой имеющийся документ это подтверждает и, после проверки двух фамилий, какой их порядок согласован обоими родителями.')}
+      ${para('Только после закрытия этого пункта готовим корректную версию официального заявления для подписи. Предыдущие версии с неподтверждёнными фамилиями использовать нельзя.')}
+    `)
+  };
+}
+
 // ── 13. Holded — migration package confirmed ──────────────────────────────────
 export function holdedMigrationConfirmed(name: string, packageName: string, onboardingUrl: string, formacionUrl?: string) {
   const fallback = `${BRAND.appUrl}/cita`;
