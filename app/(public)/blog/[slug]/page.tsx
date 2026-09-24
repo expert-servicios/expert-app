@@ -81,6 +81,11 @@ const categoryCta: Record<string, { text: string; ctaLabel: string; ctaHref: str
     ctaLabel: 'Solicitar presupuesto',
     ctaHref: '/solicitar-presupuesto',
   },
+  'Protección de datos': {
+    text: '¿Tienes dudas sobre RGPD, web, proveedores o una brecha? Reserva una primera consulta gratuita de 15 minutos para situar el caso.',
+    ctaLabel: 'Consulta gratuita · 15 min',
+    ctaHref: '/cita?tipo=consulta-inicial',
+  },
   Formación: {
     text: '¿Quieres que tu equipo entienda los números, no solo los introduzca? Descubre los programas de EXPERT Business Academy.',
     ctaLabel: 'Ver programas de formación',
