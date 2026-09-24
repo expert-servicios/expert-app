@@ -112,7 +112,8 @@ export async function GET(request: NextRequest) {
             ? (clientActionMap as Record<string, unknown>)[locale]
             : null;
 
-          const { checklist_json: _privateChecklist, ...safeCase } = caseRow;
+          const safeCase = { ...caseRow };
+          delete (safeCase as { checklist_json?: unknown }).checklist_json;
           return {
             ...safeCase,
             effective_status: effectiveStatus,
@@ -129,7 +130,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       cases: caseList.map((caseRow) => {
         const effectiveStatus = resolveEffectiveCaseStatus(caseRow.status, caseRow.state);
-        const { checklist_json: _privateChecklist, ...safeCase } = caseRow;
+        const safeCase = { ...caseRow };
+        delete (safeCase as { checklist_json?: unknown }).checklist_json;
         return {
           ...safeCase,
           effective_status: effectiveStatus,
