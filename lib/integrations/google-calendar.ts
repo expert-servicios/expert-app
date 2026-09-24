@@ -22,6 +22,7 @@ const MEET_SA_SCOPES = [
   'https://www.googleapis.com/auth/meetings.space.settings',
 ];
 const CALENDAR_SA_IMPERSONATE = 'info@expertconsulting.es';
+const MEET_API_TIMEOUT_MS = 5_000;
 
 export function hasCalendarSA(): boolean {
   return !!(process.env.GOOGLE_GMAIL_SA_EMAIL && process.env.GOOGLE_GMAIL_SA_PRIVATE_KEY);
@@ -295,6 +296,63 @@ async function getMeetSABearerToken(): Promise<string> {
   return token;
 }
 
+async function meetFetch(
+  url: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), MEET_API_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function configureMeetArtifact(
+  token: string,
+  spaceName: string,
+  artifact: 'transcription' | 'smartNotes',
+): Promise<string | null> {
+  const isTranscription = artifact === 'transcription';
+  const configKey = isTranscription ? 'transcriptionConfig' : 'smartNotesConfig';
+  const generationField = isTranscription
+    ? 'autoTranscriptionGeneration'
+    : 'autoSmartNotesGeneration';
+  const updateMask = `config.artifactConfig.${configKey}.${generationField}`;
+
+  try {
+    const response = await meetFetch(
+      `https://meet.googleapis.com/v2/${spaceName}?updateMask=${encodeURIComponent(updateMask)}`,
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          config: {
+            artifactConfig: {
+              [configKey]: { [generationField]: 'ON' },
+            },
+          },
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      throw new Error(
+        `Meet spaces.patch failed for ${artifact}: ${response.status} ${detail}`.trim(),
+      );
+    }
+
+    return null;
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+}
+
 export async function configureMeetAutoArtifactsSA(
   meetUrl: string
 ): Promise<MeetAutoArtifactsResult> {
@@ -316,9 +374,9 @@ export async function configureMeetAutoArtifactsSA(
 
   try {
     const token = await getMeetSABearerToken();
-    const getResponse = await fetch(
+    const getResponse = await meetFetch(
       `https://meet.googleapis.com/v2/spaces/${encodeURIComponent(meetingCode)}`,
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: { Authorization: `Bearer ${token}` } },
     );
     if (!getResponse.ok) {
       const detail = await getResponse.text().catch(() => '');
@@ -328,40 +386,33 @@ export async function configureMeetAutoArtifactsSA(
     const space = await getResponse.json() as { name?: string };
     if (!space.name) throw new Error('Google Meet did not return a canonical space name');
 
-    const artifactConfig: Record<string, unknown> = {};
-    const updateMask: string[] = [];
-
+    const operations: Array<Promise<{ artifact: string; error: string | null }>> = [];
     if (transcription) {
-      artifactConfig.transcriptionConfig = { autoTranscriptionGeneration: 'ON' };
-      updateMask.push('config.artifactConfig.transcriptionConfig.autoTranscriptionGeneration');
+      operations.push(
+        configureMeetArtifact(token, space.name, 'transcription')
+          .then((error) => ({ artifact: 'transcription', error })),
+      );
     }
     if (smartNotes) {
-      artifactConfig.smartNotesConfig = { autoSmartNotesGeneration: 'ON' };
-      updateMask.push('config.artifactConfig.smartNotesConfig.autoSmartNotesGeneration');
+      operations.push(
+        configureMeetArtifact(token, space.name, 'smartNotes')
+          .then((error) => ({ artifact: 'smartNotes', error })),
+      );
     }
 
-    const patchResponse = await fetch(
-      `https://meet.googleapis.com/v2/${space.name}?updateMask=${encodeURIComponent(updateMask.join(','))}`,
-      {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          config: {
-            artifactConfig,
-          },
-        }),
-      }
-    );
-
-    if (!patchResponse.ok) {
-      const detail = await patchResponse.text().catch(() => '');
-      throw new Error(`Meet spaces.patch failed: ${patchResponse.status} ${detail}`.trim());
+    const results = await Promise.all(operations);
+    const failures = results.filter((result) => result.error);
+    for (const failure of failures) {
+      console.error(`[Meet auto artifacts] ${failure.artifact}: ${failure.error}`);
     }
 
-    return { configured: true, spaceName: space.name, error: null };
+    return {
+      configured: results.some((result) => !result.error),
+      spaceName: space.name,
+      error: failures.length
+        ? failures.map((failure) => `${failure.artifact}: ${failure.error}`).join('; ')
+        : null,
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('[Meet auto artifacts]', message);
