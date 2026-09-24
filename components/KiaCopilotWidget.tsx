@@ -51,6 +51,7 @@ interface KiaContextSummary {
     updated_at: string;
   } | null;
   company: { id: string; name: string | null } | null;
+  staffPreview?: boolean;
 }
 
 function contextualWelcome(context: KiaContextSummary): ChatMessage {
@@ -125,6 +126,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage()]);
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+  const [staffPreview, setStaffPreview] = useState(false);
 
   useEffect(() => {
     if (!contextToken) return;
@@ -138,11 +140,13 @@ function useKiaChat(pathname: string, contextToken?: string) {
       .then((context) => {
         if (!cancelled) {
           setMessages([contextualWelcome(context)]);
+          setStaffPreview(Boolean(context.staffPreview));
           setSessionId(undefined);
         }
       })
       .catch(() => {
         if (!cancelled) {
+          setStaffPreview(false);
           setMessages([{
             id: 'context-error',
             role: 'assistant',
@@ -158,6 +162,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
   useEffect(() => {
     const handleCompanyChanged = () => {
       setMessages([welcomeMessage(true)]);
+      setStaffPreview(false);
       setSessionId(undefined);
       setLoading(false);
     };
@@ -229,7 +234,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
     setSessionId(undefined);
   }, []);
 
-  return { messages, loading, send, reset };
+  return { messages, loading, send, reset, staffPreview };
 }
 
 function KiaMessageArtifacts({ artifacts }: { artifacts: KiaCopilotArtifact[] }) {
@@ -304,7 +309,7 @@ export default function KiaCopilotWidget() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [contextToken] = useState<string | undefined>(() => searchParams.get('ctx') ?? undefined);
-  const { messages, loading, send, reset } = useKiaChat(pathname, contextToken);
+  const { messages, loading, send, reset, staffPreview } = useKiaChat(pathname, contextToken);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -424,6 +429,12 @@ export default function KiaCopilotWidget() {
             </button>
           </div>
         </div>
+
+        {staffPreview ? (
+          <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-900">
+            Modo prueba Admin · Vista cliente delegada · Solo lectura
+          </div>
+        ) : null}
 
         <div
           role="log"
