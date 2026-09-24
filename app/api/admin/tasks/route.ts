@@ -265,5 +265,63 @@ export async function PATCH(request: NextRequest) {
     }
   }
 
+  if (parsed.data.status === 'completada') {
+    const { data: completedTask } = await auth.admin
+      .from('internal_tasks')
+      .select('case_id')
+      .eq('id', parsed.data.id)
+      .maybeSingle();
+
+    if (completedTask?.case_id) {
+      const { data: allTasksForNextAction, error: nextActionTasksError } = await auth.admin
+        .from('internal_tasks')
+        .select('title,status,metadata')
+        .eq('case_id', completedTask.case_id);
+
+      if (nextActionTasksError) {
+        postCompletionWarning = postCompletionWarning ?? 'La tarea se completó, pero no se pudo actualizar el siguiente paso del expediente';
+      } else {
+        const completedKeys = new Set(
+          (allTasksForNextAction ?? [])
+            .filter((candidate) => candidate.status === 'completada')
+            .map((candidate) => {
+              const candidateMetadata = (candidate.metadata as Record<string, unknown> | null) ?? null;
+              return typeof candidateMetadata?.task_key === 'string' ? candidateMetadata.task_key : null;
+            })
+            .filter((value): value is string => Boolean(value)),
+        );
+
+        const actionable = (allTasksForNextAction ?? [])
+          .filter((candidate) => candidate.status === 'pendiente' || candidate.status === 'en_progreso')
+          .map((candidate) => {
+            const metadata = (candidate.metadata as Record<string, unknown> | null) ?? null;
+            const dependsOn = Array.isArray(metadata?.depends_on)
+              ? metadata.depends_on.filter((item): item is string => typeof item === 'string')
+              : [];
+            const blocked = dependsOn.some((dependencyKey) => !completedKeys.has(dependencyKey));
+            const sequenceIndex = typeof metadata?.sequence_index === 'number'
+              ? metadata.sequence_index
+              : Number.MAX_SAFE_INTEGER;
+            return { title: candidate.title, blocked, sequenceIndex };
+          })
+          .filter((candidate) => !candidate.blocked)
+          .sort((a, b) => a.sequenceIndex - b.sequenceIndex);
+
+        const nextAction = actionable[0]?.title ?? null;
+        const { error: caseUpdateError } = await auth.admin
+          .from('cases')
+          .update({
+            next_action: nextAction,
+            updated_at: now,
+          })
+          .eq('id', completedTask.case_id);
+
+        if (caseUpdateError) {
+          postCompletionWarning = postCompletionWarning ?? 'La tarea se completó, pero no se pudo actualizar el siguiente paso del expediente';
+        }
+      }
+    }
+  }
+
   return NextResponse.json({ ok: true, warning: postCompletionWarning });
 }
