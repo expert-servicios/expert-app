@@ -80,6 +80,22 @@ describe('native booking public flow', () => {
     expect(route).toContain("company_id: identity?.companyId ?? null");
   });
 
+  it('configures Meet Smart Notes and transcription without coupling Calendar scopes', () => {
+    expect(calendar).toContain("const CALENDAR_SA_SCOPES = [");
+    expect(calendar).toContain("'https://www.googleapis.com/auth/calendar.events'");
+    expect(calendar).toContain("const MEET_SA_SCOPES = [");
+    expect(calendar).toContain("'https://www.googleapis.com/auth/meetings.space.settings'");
+    expect(calendar).toContain("'https://www.googleapis.com/auth/meetings.space.readonly'");
+    expect(calendar).toContain('getMeetSAAuthClient');
+    expect(calendar).toContain('configureMeetAutoArtifactsSA');
+    expect(calendar).toContain("GOOGLE_MEET_AUTO_SMART_NOTES");
+    expect(calendar).toContain("GOOGLE_MEET_AUTO_TRANSCRIPTION");
+    expect(calendar).toContain("smartNotesConfig");
+    expect(calendar).toContain("transcriptionConfig");
+    expect(calendar).toContain("autoGenerationType: 'ON'");
+    expect(calendar).not.toContain('GOOGLE_MEET_AUTO_RECORDING');
+  });
+
   it('waits for Meet creation and compensates orphan events before reporting failure', () => {
     expect(calendar).toContain('cal.events.get');
     expect(calendar).toContain('Google Meet conference creation did not complete in time');
