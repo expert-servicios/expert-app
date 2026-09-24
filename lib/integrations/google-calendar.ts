@@ -287,23 +287,48 @@ function meetCodeFromUrl(meetUrl: string): string | null {
   }
 }
 
+async function withMeetTimeout<T>(operation: Promise<T>, label: string): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<T>((_, reject) => {
+        timeout = setTimeout(
+          () => reject(new Error(`${label} timed out after ${MEET_API_TIMEOUT_MS}ms`)),
+          MEET_API_TIMEOUT_MS,
+        );
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
 async function getMeetSABearerToken(): Promise<string> {
   const auth = await getMeetSAAuthClient();
   if (!auth) throw new Error('Google Workspace service account is not configured');
-  const credentials = await auth.authorize();
+  const credentials = await withMeetTimeout(auth.authorize(), 'Google Meet authorization');
   const token = credentials.access_token;
   if (!token) throw new Error('Google Workspace service account did not return an access token');
   return token;
 }
 
+type MeetHttpResult = {
+  ok: boolean;
+  status: number;
+  body: string;
+};
+
 async function meetFetch(
   url: string,
   init: RequestInit = {},
-): Promise<Response> {
+): Promise<MeetHttpResult> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), MEET_API_TIMEOUT_MS);
   try {
-    return await fetch(url, { ...init, signal: controller.signal });
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    const body = await response.text();
+    return { ok: response.ok, status: response.status, body };
   } finally {
     clearTimeout(timeout);
   }
@@ -341,9 +366,8 @@ async function configureMeetArtifact(
     );
 
     if (!response.ok) {
-      const detail = await response.text().catch(() => '');
       throw new Error(
-        `Meet spaces.patch failed for ${artifact}: ${response.status} ${detail}`.trim(),
+        `Meet spaces.patch failed for ${artifact}: ${response.status} ${response.body}`.trim(),
       );
     }
 
@@ -379,11 +403,10 @@ export async function configureMeetAutoArtifactsSA(
       { headers: { Authorization: `Bearer ${token}` } },
     );
     if (!getResponse.ok) {
-      const detail = await getResponse.text().catch(() => '');
-      throw new Error(`Meet spaces.get failed: ${getResponse.status} ${detail}`.trim());
+      throw new Error(`Meet spaces.get failed: ${getResponse.status} ${getResponse.body}`.trim());
     }
 
-    const space = await getResponse.json() as { name?: string };
+    const space = JSON.parse(getResponse.body) as { name?: string };
     if (!space.name) throw new Error('Google Meet did not return a canonical space name');
 
     const operations: Array<Promise<{ artifact: string; error: string | null }>> = [];
