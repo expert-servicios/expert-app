@@ -1,7 +1,7 @@
 export const proteccionDatosKnowledgeDocs = [
   {
     slug: 'checklist-rgpd-autonomos-pymes',
-    category: 'proteccion-datos',
+    category: 'proteccion-datos' as const,
     title: 'Checklist RGPD para autónomos y pymes',
     excerpt:
       'Lista práctica para revisar si tu negocio tiene cubiertos los principales bloques de protección de datos en España.',
@@ -202,7 +202,7 @@ La AEPD dispone de un listado orientativo de entidades obligadas.
   },
   {
     slug: 'registro-actividades-tratamiento-rat-pymes',
-    category: 'proteccion-datos',
+    category: 'proteccion-datos' as const,
     title: 'Cómo preparar el Registro de Actividades de Tratamiento (RAT)',
     excerpt:
       'Guía práctica para construir y mantener el RAT de una pyme: qué tratamientos separar y qué información debe documentarse.',
@@ -352,7 +352,7 @@ Para cada tratamiento crea una ficha con:
   },
   {
     slug: 'privacidad-formularios-cookies-web',
-    category: 'proteccion-datos',
+    category: 'proteccion-datos' as const,
     title: 'Checklist de privacidad para web, formularios y cookies',
     excerpt:
       'Qué revisar técnicamente y jurídicamente en una web empresarial: información, consentimientos, cookies, marketing y proveedores.',
@@ -506,7 +506,7 @@ Repite la auditoría cuando:
   },
   {
     slug: 'protocolo-brechas-datos-personales-72-horas',
-    category: 'proteccion-datos',
+    category: 'proteccion-datos' as const,
     title: 'Protocolo de brechas de datos: primeras 72 horas',
     excerpt:
       'Checklist interno para contener, investigar, documentar y decidir si una brecha debe notificarse a la AEPD y a las personas afectadas.',
