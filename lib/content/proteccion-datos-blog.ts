@@ -63,7 +63,7 @@ El **Registro de Actividades de Tratamiento (RAT)** es el mapa interno de los tr
 
 La AEPD explica que el RAT debe reflejar, entre otros elementos, las finalidades, categorías de interesados y datos, destinatarios, transferencias, plazos de supresión y, cuando sea posible, una descripción general de las medidas de seguridad.
 
-Puedes consultar nuestra guía práctica: https://expertconsulting.es/docs/registro-actividades-tratamiento-rat-pymes
+Puedes consultar nuestra [guía práctica del RAT](https://expertconsulting.es/docs/registro-actividades-tratamiento-rat-pymes).
 
 ## Proveedores que acceden a datos
 
@@ -116,7 +116,7 @@ Una estructura razonable incluye:
 - política de conservación y supresión;
 - documentación específica cuando exista alto riesgo.
 
-Puedes seguir nuestro checklist práctico: https://expertconsulting.es/docs/checklist-rgpd-autonomos-pymes
+Puedes seguir nuestro [checklist RGPD para autónomos y pymes](https://expertconsulting.es/docs/checklist-rgpd-autonomos-pymes).
 
 ## Fuentes oficiales
 
@@ -153,7 +153,7 @@ En la práctica suele utilizarse una primera capa breve junto al formulario y un
 
 La información debe ser coherente con el uso real. Si el formulario se utiliza únicamente para responder una consulta, no debe convertirse automáticamente en una autorización genérica para enviar publicidad.
 
-Consulta la guía práctica: https://expertconsulting.es/docs/privacidad-formularios-cookies-web
+Consulta la [guía práctica de privacidad para web, formularios y cookies](https://expertconsulting.es/docs/privacidad-formularios-cookies-web).
 
 ## No uses la misma casilla para todo
 
@@ -424,7 +424,7 @@ Aunque la conclusión sea que no procede notificar a la AEPD, el responsable deb
 
 Ese registro es esencial para demostrar por qué se tomó una determinada decisión.
 
-Consulta nuestro protocolo práctico: https://expertconsulting.es/docs/protocolo-brechas-datos-personales-72-horas
+Consulta nuestro [protocolo práctico de brechas de datos](https://expertconsulting.es/docs/protocolo-brechas-datos-personales-72-horas).
 
 ## Qué debe hacer un encargado del tratamiento
 
@@ -469,4 +469,4 @@ El objetivo es reducir la probabilidad de repetición y dejar evidencia de las m
 **Fuentes revisadas el 24/09/2026.**
     `
   }
-] as const;
+];
