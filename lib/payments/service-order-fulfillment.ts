@@ -171,15 +171,16 @@ export async function ensureServiceOrderFulfillment(
     }
   }
 
-  const tasks = services.flatMap((service) =>
-    (service.blueprint?.tasks ?? [genericTask(service)]).map((task) => ({
+  const tasks = services.flatMap((service, serviceIndex) =>
+    (service.blueprint?.tasks ?? [genericTask(service)]).map((task, taskIndex) => ({
       task,
       serviceSlug: service.slug,
       blueprintSlug: service.blueprint?.slug ?? null,
+      sequenceIndex: serviceIndex * 100 + taskIndex,
     })),
   );
 
-  for (const { task, serviceSlug, blueprintSlug } of tasks) {
+  for (const { task, serviceSlug, blueprintSlug, sequenceIndex } of tasks) {
     const { data: existingTask, error: taskLookupError } = await admin
       .from('internal_tasks')
       .select('id,metadata,due_date')
@@ -206,6 +207,7 @@ export async function ensureServiceOrderFulfillment(
       blocks_submission: Boolean(task.blocksSubmission),
       reference_urls: task.referenceUrls ?? [],
       due_business_days: task.dueBusinessDays ?? null,
+      sequence_index: sequenceIndex,
       blueprint_version: blueprintSlug ? '5' : null,
     };
 
