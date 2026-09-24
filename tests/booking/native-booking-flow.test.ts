@@ -85,7 +85,7 @@ describe('native booking public flow', () => {
     expect(calendar).toContain("'https://www.googleapis.com/auth/calendar.events'");
     expect(calendar).toContain("const MEET_SA_SCOPES = [");
     expect(calendar).toContain("'https://www.googleapis.com/auth/meetings.space.settings'");
-    expect(calendar).toContain("'https://www.googleapis.com/auth/meetings.space.readonly'");
+    expect(calendar).not.toContain("'https://www.googleapis.com/auth/meetings.space.readonly'");
     expect(calendar).toContain('getMeetSAAuthClient');
     expect(calendar).toContain('configureMeetAutoArtifactsSA');
     expect(calendar).toContain("GOOGLE_MEET_AUTO_SMART_NOTES");
