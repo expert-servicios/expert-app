@@ -55,6 +55,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Documentos", href: "/admin/documentos" },
       { label: "Citas", href: "/admin/citas" },
       { label: "Presupuestos", href: "/admin/presupuestos" },
+      { label: "Revisiones RGPD", href: "/admin/rgpd-revisiones" },
     ],
   },
   {

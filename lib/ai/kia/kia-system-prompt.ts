@@ -27,7 +27,7 @@ const SS_CONTEXT_RE =
 const DGT_CONTEXT_RE =
   /\b(dgt|trafico|transferencia.*vehiculo|vehiculo.*transferencia|matriculacion|canje.*permiso|permiso.*conducir|puntos.*carnet|carnet.*puntos|baja.*vehiculo|multa.*trafico|permiso de circulacion|ficha tecnica|capitania)\b/i;
 const JUSTICIA_CONTEXT_RE =
-  /\b(antecedentes penales|registro civil|apostilla|certificado.*nacimiento|nacimiento.*certificado|certificado.*matrimonio|denominacion social|nota simple|registro.*propiedad|registro.*mercantil|deposito.*cuentas|rmc)\b/i;
+  /\b(nacionalidad|apellidos?|grazhdanstvo|familii|familiya|antecedentes penales|registro civil|apostilla|certificado.*nacimiento|nacimiento.*certificado|certificado.*matrimonio|denominacion social|nota simple|registro.*propiedad|registro.*mercantil|deposito.*cuentas|rmc)\b|гражданств|фамили/i;
 const PAE_CONTEXT_RE =
   /\b(pae|circe|crear empresa online|sl.*online|online.*sl|alta autonomo.*online|online.*alta autonomo|ventanilla unica|constitucion.*online|online.*constitucion)\b/i;
 const CCAA_CONTEXT_RE =
@@ -81,6 +81,19 @@ function matchesContext(
   return re.test(text);
 }
 
+export function shouldIncludeJusticia(params: {
+  message?: string;
+  serviceSlug?: string;
+  currentPage?: string;
+  currentTask?: string;
+  pageData?: Record<string, unknown>;
+}): boolean {
+  return JUSTICIA_CONTEXT_RE.test(params.message ?? "")
+    || JUSTICIA_CONTEXT_RE.test(params.serviceSlug ?? "")
+    || /constitucion.sl|arraigo|notaria|herencia/i.test(params.serviceSlug ?? "")
+    || matchesContext(JUSTICIA_CONTEXT_RE, params);
+}
+
 export function buildKiaSystemPrompt(params: {
   locale: "es" | "ru";
   channel: KiaChannel;
@@ -111,7 +124,7 @@ export function buildKiaSystemPrompt(params: {
   const withSs = params.includeSs ?? matchesContext(SS_CONTEXT_RE, params);
   const withDgt = params.includeDgt ?? matchesContext(DGT_CONTEXT_RE, params);
   const withJusticia =
-    params.includeJusticia ?? matchesContext(JUSTICIA_CONTEXT_RE, params);
+    params.includeJusticia ?? shouldIncludeJusticia(params);
   const withPae = params.includePae ?? matchesContext(PAE_CONTEXT_RE, params);
   const withCcaa =
     params.includeCcaa ?? matchesContext(CCAA_CONTEXT_RE, params);
