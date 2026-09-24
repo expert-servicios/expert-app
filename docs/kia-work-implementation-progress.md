@@ -2,6 +2,10 @@
 
 Última actualización: 24/09/2026. Continuar sobre la rama `feat/kia-work-case-orchestration` y la [PR #444](https://github.com/expert-servicios/expert-app/pull/444). No empezar de nuevo ni modificar el repositorio de trabajo personal del usuario.
 
+**Último punto funcional verificado: `bf08a0ea`**, que incluye la bandeja durable de `b2916330` y la vista de actividad. CI Linux [35986616068](https://github.com/expert-servicios/expert-app/actions/runs/35986616068): **224 archivos / 1.242 pruebas aprobadas**, tipos y lint aprobados. Preflight de migraciones y ambas compilaciones Vercel también aprobados. Esto sustituye los avisos de «CI pendiente» de los incrementos descritos debajo. Siguen pendientes revisión de PR, migraciones en staging y activación/piloto; no confundir validación con despliegue.
+
+La cuenta mostró 100 % de uso semanal consumido al cerrar este bloque. No se canjearon créditos de reinicio. Todo el código de los tres incrementos está subido. Próximo paso: delegación visual y resolución guiada de incidencias, conservando las verificaciones existentes. No repetir la implementación de bandeja, reintentos o vista de actividad.
+
 ## Punto de recuperación confirmado
 
 Commit funcional: `157fc153`. Implementa credenciales limitadas a expediente/tareas, reservas, evidencia y cierre transaccional; continuidad Telegram/copiloto; firma de KIA en `sendEmail`; cabeceras de respuesta Gmail; documentos e identidades de particulares sin empresa ficticia.
