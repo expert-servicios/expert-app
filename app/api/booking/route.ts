@@ -298,6 +298,21 @@ export async function POST(request: NextRequest) {
             }
             signedCompanyId = companyIds[0] ?? null;
           }
+          if (signedCompanyId) {
+            const { data: membership, error: membershipError } = await admin
+              .from('profile_companies')
+              .select('company_id')
+              .eq('profile_id', signedAuthorization.clientId)
+              .eq('company_id', signedCompanyId)
+              .maybeSingle();
+            if (membershipError) throw membershipError;
+            if (!membership) {
+              return NextResponse.json(
+                { error: 'La invitación de onboarding ya no corresponde a una entidad vinculada al cliente.' },
+                { status: 403 }
+              );
+            }
+          }
           privateIdentity = {
             clientId: signedAuthorization.clientId,
             companyId: signedCompanyId,
@@ -533,6 +548,8 @@ export async function POST(request: NextRequest) {
       ...citaConfirmed(input.name, service.label, formattedDate, localTime, meeting.meetingUrl),
       metadata: {
         appointment_id: appointmentId,
+        client_id: privateIdentity?.clientId ?? null,
+        company_id: privateIdentity?.companyId ?? null,
         provider_event_id: meeting.eventId,
         booking_provider: meeting.bookingProvider,
       },
