@@ -16,6 +16,9 @@ const SCOPES = [
 
 const CALENDAR_SA_SCOPES = [
   'https://www.googleapis.com/auth/calendar.events',
+];
+
+const MEET_SA_SCOPES = [
   'https://www.googleapis.com/auth/meetings.space.settings',
   'https://www.googleapis.com/auth/meetings.space.readonly',
 ];
@@ -23,6 +26,18 @@ const CALENDAR_SA_IMPERSONATE = 'info@expertconsulting.es';
 
 export function hasCalendarSA(): boolean {
   return !!(process.env.GOOGLE_GMAIL_SA_EMAIL && process.env.GOOGLE_GMAIL_SA_PRIVATE_KEY);
+}
+
+async function getMeetSAAuthClient() {
+  if (!hasCalendarSA()) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { google } = (await import('googleapis')) as any;
+  return new google.auth.JWT({
+    email: process.env.GOOGLE_GMAIL_SA_EMAIL!,
+    key: process.env.GOOGLE_GMAIL_SA_PRIVATE_KEY!.replace(/\\n/g, '\n'),
+    scopes: MEET_SA_SCOPES,
+    subject: CALENDAR_SA_IMPERSONATE,
+  });
 }
 
 async function getCalendarSAAuthClient() {
@@ -273,7 +288,7 @@ function meetCodeFromUrl(meetUrl: string): string | null {
 }
 
 async function getMeetSABearerToken(): Promise<string> {
-  const auth = await getCalendarSAAuthClient();
+  const auth = await getMeetSAAuthClient();
   if (!auth) throw new Error('Google Workspace service account is not configured');
   const credentials = await auth.authorize();
   const token = credentials.access_token;
