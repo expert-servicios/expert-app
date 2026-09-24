@@ -26,78 +26,137 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const now = new Date().toISOString();
     const isNationality = caseData.service_id === NATIONALITY_MINOR_SLUG || caseData.service?.includes('гражданство');
-    const taskTitle = isNationality
-      ? 'Preparar y presentar solicitud de nacionalidad'
-      : 'Revisar documentación enviada por cliente';
 
-    const taskDescription = isNationality
-      ? [
-          'El cliente ha enviado documentación a revisión.',
-          '1. Revisar documentación cargada y comentarios por punto de checklist; no volver a pedir documentos ya disponibles.',
-          '2. Confirmar viabilidad documental, residencia legal propia del menor y representación/patria potestad.',
-          '3. Si EXPERT presenta, formalizar y archivar mandato de representación y, si se usa DocuSign, también el certificado de finalización.',
-          '4. Antes de preparar el modelo, cerrar apellidos registrales: revisar filiación, apellido personal de la madre y posibles cambios por matrimonio. No ofrecer duplicación como libre elección cuando la línea materna está determinada.',
-          '5. Confirmar con ambos progenitores el orden de apellidos y comprobar orden previo de hermanos si procede.',
-          '6. Rellenar la solicitud oficial distinguiendo identidad extranjera vigente y datos para futura inscripción española.',
-          '7. Obtener y validar las firmas necesarias; no reutilizar versiones retiradas del formulario.',
-          '8. Completar validación pre-presentación profesional.',
-          '9. Comprobar si la tasa 790-026 ya está pagada; si no lo está, pagar el importe oficial vigente y archivar justificante/NRC. Nunca duplicar el pago.',
-          '10. Presentar solo con autorización profesional expresa.',
-          '11. Archivar justificante, número de registro y copia final presentada; después activar seguimiento.',
-          'Guía apellidos: /docs/apellidos-menor-nacionalidad-registro-civil',
-          'Fuente BOE: https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948',
-        ].join('\n')
-      : 'El cliente ha marcado la documentación como enviada. Revisar archivos y comentarios, validar suficiencia y actualizar el expediente.';
+    if (isNationality) {
+      const { data: caseTasks, error: caseTasksError } = await admin
+        .from('internal_tasks')
+        .select('id,title,status,source,metadata')
+        .eq('case_id', caseId)
+        .in('status', ['pendiente', 'en_progreso']);
 
-    const taskPayload = {
-      title: taskTitle,
-      description: taskDescription,
-      status: 'pendiente',
-      priority: 'alta',
-      case_id: caseId,
-      client_id: caseData.client_id,
-      company_id: caseData.company_id,
-      due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-      source: 'document',
-      metadata: {
-        task_kind: 'client_documents_ready_for_review',
-        service_slug: caseData.service_id ?? null,
+      if (caseTasksError) {
+        console.error('[document-review] nationality task lookup failed:', caseTasksError.message);
+        return NextResponse.json({ error: 'No se pudo preparar la revisión documental' }, { status: 500 });
+      }
+
+      const canonicalReviewTask = (caseTasks ?? []).find((task) => {
+        const metadata = (task.metadata as Record<string, unknown> | null) ?? null;
+        return metadata?.task_key === 'review_documents';
+      });
+
+      const submissionMetadata = {
+        client_documents_ready: true,
         submitted_by: user.id,
         submitted_at: now,
-      },
-      updated_at: now,
-    };
+      };
 
-    const { data: existingTask, error: existingTaskError } = await admin
-      .from('internal_tasks')
-      .select('id')
-      .eq('case_id', caseId)
-      .eq('source', 'document')
-      .eq('title', taskTitle)
-      .in('status', ['pendiente', 'en_progreso'])
-      .maybeSingle();
+      if (canonicalReviewTask?.id) {
+        const existingMetadata = (canonicalReviewTask.metadata as Record<string, unknown> | null) ?? {};
+        const { error: updateTaskError } = await admin
+          .from('internal_tasks')
+          .update({
+            priority: 'alta',
+            due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+            metadata: {
+              ...existingMetadata,
+              ...submissionMetadata,
+            },
+            updated_at: now,
+          })
+          .eq('id', canonicalReviewTask.id);
 
-    if (existingTaskError) {
-      console.error('[document-review] existing task lookup failed:', existingTaskError.message);
-      return NextResponse.json({ error: 'No se pudo preparar la tarea de revisión' }, { status: 500 });
-    }
+        if (updateTaskError) {
+          console.error('[document-review] canonical nationality task update failed:', updateTaskError.message);
+          return NextResponse.json({ error: 'No se pudo actualizar la tarea de revisión' }, { status: 500 });
+        }
+      } else {
+        const { error: insertTaskError } = await admin
+          .from('internal_tasks')
+          .insert({
+            title: 'Revisar expediente de nacionalidad recién pagado',
+            description: 'Revisar la documentación enviada por el cliente, comentarios del checklist y faltantes reales antes de avanzar al siguiente gate del workflow.',
+            status: 'pendiente',
+            priority: 'alta',
+            case_id: caseId,
+            client_id: caseData.client_id,
+            company_id: caseData.company_id,
+            due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+            source: 'document',
+            metadata: {
+              task_kind: 'service_blueprint_step',
+              service_slug: caseData.service_id ?? NATIONALITY_MINOR_SLUG,
+              blueprint_slug: NATIONALITY_MINOR_SLUG,
+              task_key: 'review_documents',
+              phase: 'intake',
+              human_approval_required: false,
+              depends_on: [],
+              blocks_submission: false,
+              reference_urls: [],
+              due_business_days: 1,
+              sequence_index: 0,
+              blueprint_version: '5',
+              ...submissionMetadata,
+            },
+            updated_at: now,
+          });
 
-    if (existingTask?.id) {
-      const { error: updateTaskError } = await admin
-        .from('internal_tasks')
-        .update(taskPayload)
-        .eq('id', existingTask.id);
-      if (updateTaskError) {
-        console.error('[document-review] task update failed:', updateTaskError.message);
-        return NextResponse.json({ error: 'No se pudo actualizar la tarea de revisión' }, { status: 500 });
+        if (insertTaskError) {
+          console.error('[document-review] nationality fallback task insert failed:', insertTaskError.message);
+          return NextResponse.json({ error: 'No se pudo crear la tarea de revisión' }, { status: 500 });
+        }
       }
     } else {
-      const { error: insertTaskError } = await admin
+      const taskTitle = 'Revisar documentación enviada por cliente';
+      const taskPayload = {
+        title: taskTitle,
+        description: 'El cliente ha marcado la documentación como enviada. Revisar archivos y comentarios, validar suficiencia y actualizar el expediente.',
+        status: 'pendiente',
+        priority: 'alta',
+        case_id: caseId,
+        client_id: caseData.client_id,
+        company_id: caseData.company_id,
+        due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        source: 'document',
+        metadata: {
+          task_kind: 'client_documents_ready_for_review',
+          service_slug: caseData.service_id ?? null,
+          submitted_by: user.id,
+          submitted_at: now,
+        },
+        updated_at: now,
+      };
+
+      const { data: existingTask, error: existingTaskError } = await admin
         .from('internal_tasks')
-        .insert(taskPayload);
-      if (insertTaskError) {
-        console.error('[document-review] task insert failed:', insertTaskError.message);
-        return NextResponse.json({ error: 'No se pudo crear la tarea de revisión' }, { status: 500 });
+        .select('id')
+        .eq('case_id', caseId)
+        .eq('source', 'document')
+        .eq('title', taskTitle)
+        .in('status', ['pendiente', 'en_progreso'])
+        .maybeSingle();
+
+      if (existingTaskError) {
+        console.error('[document-review] existing task lookup failed:', existingTaskError.message);
+        return NextResponse.json({ error: 'No se pudo preparar la tarea de revisión' }, { status: 500 });
+      }
+
+      if (existingTask?.id) {
+        const { error: updateTaskError } = await admin
+          .from('internal_tasks')
+          .update(taskPayload)
+          .eq('id', existingTask.id);
+        if (updateTaskError) {
+          console.error('[document-review] task update failed:', updateTaskError.message);
+          return NextResponse.json({ error: 'No se pudo actualizar la tarea de revisión' }, { status: 500 });
+        }
+      } else {
+        const { error: insertTaskError } = await admin
+          .from('internal_tasks')
+          .insert(taskPayload);
+        if (insertTaskError) {
+          console.error('[document-review] task insert failed:', insertTaskError.message);
+          return NextResponse.json({ error: 'No se pudo crear la tarea de revisión' }, { status: 500 });
+        }
       }
     }
 
