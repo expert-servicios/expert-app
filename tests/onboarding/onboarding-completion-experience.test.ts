@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
+const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8').replace(/\r\n/g, '\n');
 const historical = (file: string) => source(`supabase/migration-history-archive/pre-baseline-20260912/${file}`);
 
 describe('onboarding completion experience', () => {

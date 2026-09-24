@@ -132,15 +132,16 @@ export async function ensureServiceOrderFulfillment(
     }
 
     caseId = createdCase.id;
+  }
 
-    const { error: orderLinkError } = await admin
-      .from('orders')
-      .update({ case_id: caseId })
-      .eq('id', input.orderId);
+  // Retry the reverse link even when an earlier attempt already created the case.
+  const { error: orderLinkError } = await admin
+    .from('orders')
+    .update({ case_id: caseId })
+    .eq('id', input.orderId);
 
-    if (orderLinkError) {
-      throw new Error(`Could not link case ${caseId} to order ${input.orderId}: ${orderLinkError.message}`);
-    }
+  if (orderLinkError) {
+    throw new Error(`Could not link case ${caseId} to order ${input.orderId}: ${orderLinkError.message}`);
   }
 
   if (existingCase?.id && !existingCase.checklist_json && isFullySpecialized && primaryBlueprint) {
@@ -186,8 +187,10 @@ export async function ensureServiceOrderFulfillment(
       .select('id,metadata,due_date')
       .eq('case_id', caseId)
       .eq('source', 'system')
-      .eq('title', task.title)
-      .in('status', ['pendiente', 'en_progreso'])
+      .eq('metadata->>service_slug', serviceSlug)
+      .eq('metadata->>task_key', task.key)
+      // A payment replay must also preserve completed or cancelled work.
+      .limit(1)
       .maybeSingle();
 
     if (taskLookupError) {
@@ -230,6 +233,25 @@ export async function ensureServiceOrderFulfillment(
         throw new Error(`Could not hydrate service task ${task.key}: ${taskHydrateError.message}`);
       }
       continue;
+    }
+
+    // Old tasks without identity can only be reused when the title maps to one
+    // task in this order. Never consume another service's identified task.
+    if (tasks.filter((entry) => entry.task.title === task.title).length === 1) {
+      const { data: legacyTask, error: legacyLookupError } = await admin
+        .from('internal_tasks')
+        .select('id')
+        .eq('case_id', caseId)
+        .eq('source', 'system')
+        .eq('title', task.title)
+        .is('metadata->>service_slug', null)
+        .is('metadata->>task_key', null)
+        .limit(1)
+        .maybeSingle();
+      if (legacyLookupError) {
+        throw new Error(`Could not resolve legacy service task ${task.key}: ${legacyLookupError.message}`);
+      }
+      if (legacyTask) continue;
     }
 
     const { error: taskCreateError } = await admin
