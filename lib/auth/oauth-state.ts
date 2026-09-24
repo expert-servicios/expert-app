@@ -11,6 +11,9 @@ type OAuthStatePayload = {
   provider: OAuthProvider;
   userId: string;
   requiresAdmin: boolean;
+  purpose?: 'default' | 'client_productivity';
+  companyId?: string | null;
+  next?: string | null;
 };
 
 function getOAuthStateSecret(): Uint8Array {
@@ -31,6 +34,9 @@ export async function createOAuthState(params: {
   provider: OAuthProvider;
   userId: string;
   requiresAdmin?: boolean;
+  purpose?: 'default' | 'client_productivity';
+  companyId?: string | null;
+  next?: string | null;
 }): Promise<{ state: string; cookieValue: string }> {
   const state = crypto.randomUUID();
   const cookieValue = await new SignJWT({
@@ -38,6 +44,9 @@ export async function createOAuthState(params: {
     provider: params.provider,
     userId: params.userId,
     requiresAdmin: params.requiresAdmin === true,
+    purpose: params.purpose ?? 'default',
+    companyId: params.companyId ?? null,
+    next: params.next ?? null,
   } satisfies OAuthStatePayload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -72,7 +81,7 @@ export async function verifyOAuthState(
   provider: OAuthProvider,
   state: string | null
 ): Promise<
-  | { ok: true; userId: string; requiresAdmin: boolean }
+  | { ok: true; userId: string; requiresAdmin: boolean; purpose: 'default' | 'client_productivity'; companyId: string | null; next: string | null }
   | { ok: false; reason: string }
 > {
   if (!state) return { ok: false, reason: 'missing_state' };
@@ -92,6 +101,9 @@ export async function verifyOAuthState(
       ok: true,
       userId: payload.userId,
       requiresAdmin: payload.requiresAdmin === true,
+      purpose: payload.purpose === 'client_productivity' ? 'client_productivity' : 'default',
+      companyId: typeof payload.companyId === 'string' && payload.companyId ? payload.companyId : null,
+      next: typeof payload.next === 'string' && payload.next.startsWith('/') && !payload.next.startsWith('//') ? payload.next : null,
     };
   } catch {
     return { ok: false, reason: 'invalid_state_cookie' };
