@@ -17,6 +17,15 @@ const scenarioLabel = {
   next_step: 'Siguiente paso de tu expediente',
 } as const;
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -67,12 +76,15 @@ export async function POST(request: NextRequest) {
   const clientName = client.full_name?.trim() || 'cliente';
   const service = caseRow.service || 'tu expediente';
   const nextAction = caseRow.next_action || 'Revisar el estado actualizado con KIA.';
+  const safeClientName = escapeHtml(clientName);
+  const safeService = escapeHtml(service);
+  const safeNextAction = escapeHtml(nextAction);
 
   const detail = parsed.data.scenario === 'documents'
     ? 'Hay documentación o una actuación pendiente dentro del expediente. KIA puede indicarte qué consta ahora mismo y qué falta.'
     : parsed.data.scenario === 'next_step'
-      ? `El siguiente paso registrado actualmente es: ${nextAction}`
-      : `Tu expediente «${service}» sigue activo. KIA puede explicarte el estado actual y los próximos pasos.`;
+      ? `El siguiente paso registrado actualmente es: ${safeNextAction}`
+      : `Tu expediente «${safeService}» sigue activo. KIA puede explicarte el estado actual y los próximos pasos.`;
 
   const html = `
     <div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;color:#07111d">
@@ -83,7 +95,7 @@ export async function POST(request: NextRequest) {
         <p style="font-size:12px;font-weight:700;color:#9a6700;background:#fff7db;padding:8px 10px;border-radius:8px">
           PRUEBA INTERNA · Vista cliente delegada · Solo lectura
         </p>
-        <p>Hola ${clientName},</p>
+        <p>Hola ${safeClientName},</p>
         <h2 style="font-size:20px">${scenarioLabel[parsed.data.scenario]}</h2>
         <p>${detail}</p>
         <p>Para comprobarlo o preguntarme cualquier duda, abre el expediente conmigo:</p>
