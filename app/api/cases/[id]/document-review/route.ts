@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { notifyAdmins } from '@/lib/integrations/push';
+import { resolveEffectiveCaseStatus } from '@/lib/cases/case-status';
 
 const NATIONALITY_MINOR_SLUG = 'nacionalidad-espanola-menor-nacido-en-espana';
 
@@ -25,14 +26,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     if (!isAdmin && caseData.client_id !== user.id) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
     const now = new Date().toISOString();
+    const effectiveStatus = resolveEffectiveCaseStatus(caseData.status, caseData.state);
+    if (!isAdmin && ['listo_para_presentar', 'presentado', 'finalizado', 'bloqueado'].includes(effectiveStatus)) {
+      return NextResponse.json({
+        error: 'El expediente ya ha superado la fase de revisión documental. Usa el hilo de mensajes si necesitas aportar una novedad.',
+        code: 'DOCUMENT_REVIEW_PHASE_CLOSED',
+      }, { status: 409 });
+    }
     const isNationality = caseData.service_id === NATIONALITY_MINOR_SLUG || caseData.service?.includes('гражданство');
 
     if (isNationality) {
       const { data: caseTasks, error: caseTasksError } = await admin
         .from('internal_tasks')
-        .select('id,title,status,source,metadata')
-        .eq('case_id', caseId)
-        .in('status', ['pendiente', 'en_progreso']);
+        .select('id,title,status,source,due_date,metadata')
+        .eq('case_id', caseId);
 
       if (caseTasksError) {
         console.error('[document-review] nationality task lookup failed:', caseTasksError.message);
@@ -50,13 +57,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         submitted_at: now,
       };
 
-      if (canonicalReviewTask?.id) {
+      if (canonicalReviewTask?.id && ['pendiente', 'en_progreso'].includes(canonicalReviewTask.status)) {
         const existingMetadata = (canonicalReviewTask.metadata as Record<string, unknown> | null) ?? {};
         const { error: updateTaskError } = await admin
           .from('internal_tasks')
           .update({
             priority: 'alta',
-            due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+            due_date: canonicalReviewTask.due_date ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
             metadata: {
               ...existingMetadata,
               ...submissionMetadata,
@@ -68,6 +75,63 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         if (updateTaskError) {
           console.error('[document-review] canonical nationality task update failed:', updateTaskError.message);
           return NextResponse.json({ error: 'No se pudo actualizar la tarea de revisión' }, { status: 500 });
+        }
+      } else if (canonicalReviewTask?.id) {
+        const additionalTitle = 'Revisar documentación adicional — Nacionalidad menor';
+        const { data: additionalTask, error: additionalLookupError } = await admin
+          .from('internal_tasks')
+          .select('id,due_date,metadata')
+          .eq('case_id', caseId)
+          .eq('source', 'document')
+          .eq('title', additionalTitle)
+          .in('status', ['pendiente', 'en_progreso'])
+          .maybeSingle();
+
+        if (additionalLookupError) {
+          return NextResponse.json({ error: 'No se pudo preparar la revisión de documentación adicional' }, { status: 500 });
+        }
+
+        if (additionalTask?.id) {
+          const { error: updateAdditionalError } = await admin
+            .from('internal_tasks')
+            .update({
+              priority: 'alta',
+              due_date: additionalTask.due_date ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+              metadata: {
+                ...((additionalTask.metadata as Record<string, unknown> | null) ?? {}),
+                ...submissionMetadata,
+                additional_documents: true,
+              },
+              updated_at: now,
+            })
+            .eq('id', additionalTask.id);
+          if (updateAdditionalError) {
+            return NextResponse.json({ error: 'No se pudo actualizar la revisión de documentación adicional' }, { status: 500 });
+          }
+        } else {
+          const { error: insertAdditionalError } = await admin
+            .from('internal_tasks')
+            .insert({
+              title: additionalTitle,
+              description: 'Revisar nuevos documentos o comentarios aportados después de completar la revisión documental inicial. No reiniciar ni retroceder el workflow principal.',
+              status: 'pendiente',
+              priority: 'alta',
+              case_id: caseId,
+              client_id: caseData.client_id,
+              company_id: caseData.company_id,
+              due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+              source: 'document',
+              metadata: {
+                task_kind: 'client_documents_additional_review',
+                service_slug: caseData.service_id ?? NATIONALITY_MINOR_SLUG,
+                ...submissionMetadata,
+                additional_documents: true,
+              },
+              updated_at: now,
+            });
+          if (insertAdditionalError) {
+            return NextResponse.json({ error: 'No se pudo crear la revisión de documentación adicional' }, { status: 500 });
+          }
         }
       } else {
         const { error: insertTaskError } = await admin
@@ -160,16 +224,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }
     }
 
+    const shouldMoveToReview = effectiveStatus === 'nuevo' || effectiveStatus === 'pendiente_cliente';
+    const casePatch: Record<string, unknown> = { updated_at: now };
+    if (shouldMoveToReview) {
+      casePatch.status = 'en_revision';
+      casePatch.state = 'en_revision';
+      casePatch.next_action = isNationality
+        ? 'Revisar documentación, residencia, representación y apellidos registrales antes de preparar el modelo oficial'
+        : 'Revisar documentación enviada por el cliente y preparar la solicitud';
+    }
+
     const { error: caseUpdateError } = await admin
       .from('cases')
-      .update({
-        status: 'en_revision',
-        state: 'en_revision',
-        next_action: isNationality
-          ? 'Revisar documentación, residencia, representación y apellidos registrales antes de preparar el modelo oficial'
-          : 'Revisar documentación enviada por el cliente y preparar la solicitud',
-        updated_at: now,
-      })
+      .update(casePatch)
       .eq('id', caseId);
 
     if (caseUpdateError) {
