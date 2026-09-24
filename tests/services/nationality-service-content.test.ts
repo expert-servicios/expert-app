@@ -134,6 +134,34 @@ describe('nationality minor service content and pricing', () => {
     expect(ru).toContain('Справка из школы или учебного центра');
   });
 
+  it('keeps the public ES and RU process aligned with the gated workflow', () => {
+    const es = read('app/(public)/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana/page.tsx');
+    const ru = read('app/(localized)/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii/page.tsx');
+
+    for (const marker of [
+      'Representación y residencia legal',
+      'Apellidos para Registro Civil',
+      'Modelo y firmas',
+      'Validación final y tasa',
+      'Presentación y seguimiento',
+    ]) {
+      expect(es).toContain(marker);
+    }
+
+    for (const marker of [
+      'Представительство и легальная резиденция',
+      'Фамилии для Registro Civil',
+      'Официальная форма и подписи',
+      'Финальная проверка и пошлина',
+      'Подача и сопровождение',
+    ]) {
+      expect(ru).toContain(marker);
+    }
+
+    expect(es).toContain('No usamos la duplicación de un apellido como atajo documental');
+    expect(ru).toContain('Удвоение одной фамилии не используется как способ избежать подтверждающих документов');
+  });
+
   it('links surname guidance from the service and confirmation email template', () => {
     const page = read('app/(public)/servicios/extranjeria-nacionalidad/nacionalidad-espanola-menor-nacido-en-espana/page.tsx');
     const templates = read('lib/email/templates.ts');
