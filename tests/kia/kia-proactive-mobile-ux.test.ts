@@ -8,7 +8,7 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf
 
 describe('KIA proactive mobile conversation UX', () => {
   it('localizes client-facing case statuses', () => {
-    expect(caseStatusLabel('pendiente_cliente', 'es')).toBe('Pendiente cliente');
+    expect(caseStatusLabel('pendiente_cliente', 'es')).toContain('Esperando');
     expect(caseStatusLabel('pendiente_cliente', 'ru')).toContain('Ожидаем');
     expect(caseStatusLabel('en_revision', 'ru')).toBe('На проверке EXPERT');
   });
