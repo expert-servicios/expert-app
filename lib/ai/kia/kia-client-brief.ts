@@ -168,7 +168,7 @@ export async function loadKiaClientCommunications(input: {
       text: compact(row.html, 700),
       createdAt: row.created_at,
       caseId: typeof metadata.case_id === 'string' ? metadata.case_id : null,
-      ref: `email-out:${row.id}`,
+      ref: typeof metadata.email_event_ref === 'string' ? metadata.email_event_ref : `email-out:${row.id}`,
     });
   }
   for (const row of inbound.data ?? []) {
