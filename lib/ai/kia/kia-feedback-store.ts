@@ -18,7 +18,10 @@ export function parseKiaFeedbackButtonId(buttonId: string): { rating: KiaRating;
 export async function storeKiaFeedback(input: {
   rating: KiaRating;
   decisionLogId: string;
-  phone: string;
+  phone?: string | null;
+  userMessage?: string | null;
+  kiaReply?: string | null;
+  feedbackContext?: Record<string, unknown>;
   clientId?: string | null;
   leadId?: string | null;
   channel?: string;
@@ -28,7 +31,7 @@ export async function storeKiaFeedback(input: {
   // Fetch the linked decision log to copy reply/intent context
   const { data: log } = await admin
     .from('kia_decision_logs')
-    .select('output_json, task_type')
+    .select('output_json, task_type, client_id, lead_id')
     .eq('id', input.decisionLogId)
     .maybeSingle();
 
@@ -36,14 +39,17 @@ export async function storeKiaFeedback(input: {
 
   await admin.from('kia_feedback').insert({
     decision_log_id: input.decisionLogId,
-    phone:           input.phone,
-    client_id:       input.clientId ?? null,
-    lead_id:         input.leadId ?? null,
+    phone:           input.phone ?? null,
+    client_id:       input.clientId ?? log?.client_id ?? null,
+    lead_id:         input.leadId ?? log?.lead_id ?? null,
     rating:          input.rating,
     channel:         input.channel ?? 'waba',
-    kia_reply:       typeof outputJson.userMessage === 'string' ? outputJson.userMessage.slice(0, 1000) : null,
+    kia_reply:       (input.kiaReply ?? (typeof outputJson.userMessage === 'string' ? outputJson.userMessage : null))?.slice(0, 1000) ?? null,
+    user_message:    input.userMessage?.slice(0, 1000) ?? null,
     intent:          typeof outputJson.intent === 'string' ? outputJson.intent : null,
     next_action:     typeof outputJson.nextAction === 'string' ? outputJson.nextAction : null,
     task_type:       log?.task_type ?? null,
+    approved_for_learning: false,
+    feedback_context: input.feedbackContext ?? {},
   });
 }

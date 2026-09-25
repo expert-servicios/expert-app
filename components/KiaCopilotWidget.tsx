@@ -11,7 +11,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { X, Send, Loader2, ChevronDown, ExternalLink } from 'lucide-react';
+import { X, Send, Loader2, ChevronDown, ExternalLink, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { KiaAvatar } from '@/components/kia/KiaAvatar';
 import type { KiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 import type { KiaCopilotArtifact } from '@/lib/ai/kia/kia-copilot-artifacts';
@@ -24,6 +24,9 @@ interface ChatMessage {
   quickReplies?: string[];
   avatarState?: KiaAvatarState;
   artifacts?: KiaCopilotArtifact[];
+  decisionLogId?: string;
+  sourceUserMessage?: string;
+  feedback?: 'positive' | 'negative';
 }
 
 interface KiaApiResponse {
@@ -34,6 +37,7 @@ interface KiaApiResponse {
   avatarState?: KiaAvatarState;
   artifacts?: KiaCopilotArtifact[];
   error?: string;
+  decisionLogId?: string | null;
 }
 
 interface KiaContextSummary {
@@ -218,6 +222,8 @@ function useKiaChat(pathname: string, contextToken?: string) {
         quickReplies: data.quickReplies?.length ? data.quickReplies : undefined,
         avatarState : data.avatarState ?? (data.error ? 'aviso' : 'ayuda'),
         artifacts   : data.artifacts?.length ? data.artifacts : undefined,
+        decisionLogId: data.decisionLogId ?? undefined,
+        sourceUserMessage: text,
       };
       setMessages((prev) => [...prev, assistantMsg]);
 
@@ -239,12 +245,33 @@ function useKiaChat(pathname: string, contextToken?: string) {
     }
   }, [contextLoading, contextToken, loading, messages, pathname, sessionId]);
 
+  const rate = useCallback(async (messageId: string, rating: 'positive' | 'negative') => {
+    const target = messages.find((message) => message.id === messageId);
+    if (!target?.decisionLogId || !target.sourceUserMessage || target.feedback) return;
+
+    const response = await fetch('/api/ai/kia/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        decisionLogId: target.decisionLogId,
+        rating,
+        userMessage: target.sourceUserMessage,
+      }),
+    });
+
+    if (response.ok) {
+      setMessages((previous) => previous.map((message) =>
+        message.id === messageId ? { ...message, feedback: rating } : message
+      ));
+    }
+  }, [messages]);
+
   const reset = useCallback(() => {
     setMessages(contextSummary ? [contextualWelcome(contextSummary)] : [welcomeMessage(true)]);
     setSessionId(undefined);
   }, [contextSummary]);
 
-  return { messages, loading, contextLoading, send, reset, staffPreview };
+  return { messages, loading, contextLoading, send, rate, reset, staffPreview };
 }
 
 function KiaMessageArtifacts({ artifacts }: { artifacts: KiaCopilotArtifact[] }) {
@@ -340,7 +367,7 @@ export default function KiaCopilotWidget() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [contextToken] = useState<string | undefined>(() => searchParams.get('ctx') ?? undefined);
-  const { messages, loading, contextLoading, send, reset, staffPreview } = useKiaChat(pathname, contextToken);
+  const { messages, loading, contextLoading, send, rate, reset, staffPreview } = useKiaChat(pathname, contextToken);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -508,6 +535,28 @@ export default function KiaCopilotWidget() {
                 </div>
                 {msg.role === 'assistant' && msg.artifacts?.length ? (
                   <KiaMessageArtifacts artifacts={msg.artifacts} />
+                ) : null}
+                {msg.role === 'assistant' && msg.decisionLogId && !staffPreview ? (
+                  <div className="mt-1.5 flex items-center gap-1 text-[#7a6e5f]">
+                    <button
+                      type="button"
+                      onClick={() => rate(msg.id, 'positive')}
+                      disabled={Boolean(msg.feedback)}
+                      aria-label="Esta respuesta fue útil"
+                      className={`rounded-md p-1 transition-colors hover:bg-[#f5f1eb] disabled:opacity-60 ${msg.feedback === 'positive' ? 'bg-[#f5f1eb] text-[#0D1B2A]' : ''}`}
+                    >
+                      <ThumbsUp size={12} aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => rate(msg.id, 'negative')}
+                      disabled={Boolean(msg.feedback)}
+                      aria-label="Esta respuesta no fue útil"
+                      className={`rounded-md p-1 transition-colors hover:bg-[#f5f1eb] disabled:opacity-60 ${msg.feedback === 'negative' ? 'bg-[#f5f1eb] text-[#0D1B2A]' : ''}`}
+                    >
+                      <ThumbsDown size={12} aria-hidden="true" />
+                    </button>
+                  </div>
                 ) : null}
                 {msg.role === 'assistant' && msg.quickReplies?.length ? (
                   <div className="mt-2 flex flex-wrap gap-1">

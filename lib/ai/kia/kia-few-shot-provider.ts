@@ -23,6 +23,7 @@ export async function getKiaFewShotExamples(params: {
     .from('kia_feedback')
     .select('user_message, kia_reply, intent')
     .eq('rating', 'positive')
+    .eq('approved_for_learning', true)
     .not('kia_reply', 'is', null)
     .not('user_message', 'is', null)
     .order('created_at', { ascending: false })
