@@ -23,6 +23,7 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   quickReplies?: string[];
+  proactiveSuggestions?: string[];
   avatarState?: KiaAvatarState;
   artifacts?: KiaCopilotArtifact[];
   decisionLogId?: string;
@@ -33,6 +34,7 @@ interface ChatMessage {
 interface KiaApiResponse {
   reply: string;
   quickReplies?: string[];
+  proactiveSuggestions?: string[];
   intent?: string;
   nextAction?: string;
   avatarState?: KiaAvatarState;
@@ -143,6 +145,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [staffPreview, setStaffPreview] = useState(false);
+  const [uiLocale, setUiLocale] = useState<'es' | 'ru'>('es');
 
   useEffect(() => {
     if (!contextToken) return;
@@ -156,6 +159,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
       .then((context) => {
         if (!cancelled) {
           setContextSummary(context);
+          setUiLocale(context.preferredLanguage);
           setContextLoading(false);
           setMessages([contextualWelcome(context)]);
           setStaffPreview(Boolean(context.staffPreview));
@@ -205,6 +209,10 @@ function useKiaChat(pathname: string, contextToken?: string) {
       }));
 
     const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', text };
+    const detectedLocale = contextSummary?.staffPreview
+      ? contextSummary.preferredLanguage
+      : (detectKiaMessageLocale(text) ?? contextSummary?.preferredLanguage ?? uiLocale);
+    setUiLocale(detectedLocale);
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
 
@@ -228,6 +236,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
         role        : 'assistant',
         text        : data.reply?.trim() || kiaFriendlyError(data.error ?? 'kia_error', detectKiaMessageLocale(text) ?? contextSummary?.preferredLanguage ?? 'es'),
         quickReplies: data.quickReplies?.length ? data.quickReplies : undefined,
+        proactiveSuggestions: data.proactiveSuggestions?.length ? data.proactiveSuggestions : undefined,
         avatarState : data.avatarState ?? (data.error ? 'aviso' : 'ayuda'),
         artifacts   : data.artifacts?.length ? data.artifacts : undefined,
         decisionLogId: data.decisionLogId ?? undefined,
@@ -244,14 +253,14 @@ function useKiaChat(pathname: string, contextToken?: string) {
         {
           id  : crypto.randomUUID(),
           role: 'assistant',
-          text: kiaFriendlyError('network_error', 'es'),
+          text: kiaFriendlyError('network_error', uiLocale),
           avatarState: 'aviso',
         },
       ]);
     } finally {
       setLoading(false);
     }
-  }, [contextLoading, contextSummary, contextToken, loading, messages, pathname, sessionId]);
+  }, [contextLoading, contextSummary, contextToken, loading, messages, pathname, sessionId, uiLocale]);
 
   const rate = useCallback(async (messageId: string, rating: 'positive' | 'negative') => {
     const target = messages.find((message) => message.id === messageId);
@@ -279,7 +288,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
     setSessionId(undefined);
   }, [contextSummary]);
 
-  return { messages, loading, contextLoading, send, rate, reset, staffPreview };
+  return { messages, loading, contextLoading, send, rate, reset, staffPreview, uiLocale };
 }
 
 function KiaMessageArtifacts({ artifacts }: { artifacts: KiaCopilotArtifact[] }) {
@@ -375,7 +384,7 @@ export default function KiaCopilotWidget() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [contextToken] = useState<string | undefined>(() => searchParams.get('ctx') ?? undefined);
-  const { messages, loading, contextLoading, send, rate, reset, staffPreview } = useKiaChat(pathname, contextToken);
+  const { messages, loading, contextLoading, send, rate, reset, staffPreview, uiLocale } = useKiaChat(pathname, contextToken);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -456,10 +465,8 @@ export default function KiaCopilotWidget() {
         aria-label="KIA copiloto"
         aria-modal="false"
         aria-hidden={!open}
-        className={`fixed bottom-[132px] right-4 z-[200] lg:bottom-20 ${open ? 'flex' : 'hidden'} flex-col`}
+        className={`fixed inset-x-2 top-[max(10px,env(safe-area-inset-top))] bottom-[calc(76px+env(safe-area-inset-bottom))] z-[200] sm:inset-x-auto sm:top-auto sm:bottom-[132px] sm:right-4 sm:h-[min(560px,calc(100vh-148px))] sm:w-[380px] lg:bottom-20 ${open ? 'flex' : 'hidden'} flex-col`}
         style={{
-          width         : 'min(380px, calc(100vw - 32px))',
-          height        : 'min(560px, calc(100vh - 148px))',
           background    : '#fff',
           borderRadius  : '16px',
           boxShadow     : '0 8px 32px rgba(13,27,42,0.18)',
@@ -510,10 +517,11 @@ export default function KiaCopilotWidget() {
           style={{ gap: '12px', display: 'flex', flexDirection: 'column' }}
         >
           {contextLoading ? (
-            <div role="status" className="flex items-start justify-start gap-2">
+            <div role="status" aria-label="KIA" className="flex items-start justify-start gap-2">
               <KiaAvatar state="pensando" size="xs" className="mt-0.5" />
-              <div className="rounded-2xl bg-[#f5f1eb] px-3 py-2 text-sm text-[#7a6e5f]">
-                Estoy abriendo este expediente para ti… 😊
+              <div className="flex items-center gap-1 rounded-2xl bg-[#f5f1eb] px-3 py-2 text-sm text-[#7a6e5f]">
+                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                <span aria-hidden="true">•••</span>
               </div>
             </div>
           ) : null}
@@ -581,13 +589,33 @@ export default function KiaCopilotWidget() {
                     ))}
                   </div>
                 ) : null}
+                {msg.role === 'assistant' && msg.proactiveSuggestions?.length ? (
+                  <div className="mt-3 rounded-xl bg-[#faf8f4] p-2.5">
+                    <p className="mb-2 text-[11px] font-semibold text-[#7a6e5f]">
+                      {uiLocale === 'ru' ? 'Я также могу помочь:' : 'También puedo ayudarte con:'}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {msg.proactiveSuggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => handleQuickReply(suggestion)}
+                          className="rounded-lg border border-[#e3d8c8] bg-white px-2.5 py-1.5 text-left text-xs text-[#3d3528] transition-colors hover:bg-[#f5f1eb]"
+                          disabled={loading || contextLoading}
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
           ))}
           {loading && (
             <div
               role="status"
-              aria-label="KIA está revisando tu consulta"
+              aria-label={uiLocale === 'ru' ? 'KIA проверяет запрос' : 'KIA está revisando tu consulta'}
               className="flex items-start justify-start gap-2"
             >
               <KiaAvatar state="pensando" size="xs" className="mt-0.5" />
@@ -596,7 +624,7 @@ export default function KiaCopilotWidget() {
                 style={{ background: '#f5f1eb', color: '#7a6e5f', borderBottomLeftRadius: '4px' }}
               >
                 <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                <span>Pensando…</span>
+                <span>{uiLocale === 'ru' ? 'Думаю…' : 'Pensando…'}</span>
               </div>
             </div>
           )}
@@ -612,8 +640,8 @@ export default function KiaCopilotWidget() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Escribe tu consulta…"
-            aria-label="Escribe tu consulta a KIA"
+            placeholder={uiLocale === 'ru' ? 'Напишите ваш вопрос…' : 'Escribe tu consulta…'}
+            aria-label={uiLocale === 'ru' ? 'Напишите вопрос KIA' : 'Escribe tu consulta a KIA'}
             rows={1}
             disabled={loading}
             className="flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none transition-colors focus:border-[#0D1B2A] disabled:opacity-50"
@@ -640,7 +668,7 @@ export default function KiaCopilotWidget() {
         aria-label={open ? 'Cerrar KIA' : 'Abrir KIA copiloto'}
         aria-expanded={open}
         aria-controls="kia-copilot-panel"
-        className="fixed bottom-[72px] right-4 z-[200] lg:bottom-4 flex items-center justify-center overflow-hidden rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
+        className={`fixed bottom-[calc(76px+env(safe-area-inset-bottom))] right-3 z-[200] sm:bottom-4 sm:right-4 ${open ? 'hidden sm:flex' : 'flex'} items-center justify-center overflow-hidden rounded-full shadow-lg transition-all hover:scale-105 active:scale-95`}
         style={{
           width     : '56px',
           height    : '56px',
