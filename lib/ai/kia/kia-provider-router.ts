@@ -146,13 +146,13 @@ export async function runKiaProviderRequest(
 ): Promise<KiaProviderResult> {
   const gatewayToken = getKiaGatewayToken();
   let lastError = "";
+  let lastFailedProvider: ProviderConfig | null = null;
 
   if (gatewayToken) {
     try {
       return await callGateway(gatewayToken, request);
     } catch (error) {
       lastError = safeErrorMessage(error);
-      lastFailedProvider = provider;
       console.error(
         "[Kia provider router] provider failed",
         redactJson({
@@ -166,7 +166,6 @@ export async function runKiaProviderRequest(
   }
 
   const providers = getKiaProviderOrder();
-  let lastFailedProvider: ProviderConfig | null = null;
   if (providers.length === 0) {
     return {
       provider: "openai",
@@ -183,6 +182,7 @@ export async function runKiaProviderRequest(
       return result;
     } catch (error) {
       lastError = safeErrorMessage(error);
+      lastFailedProvider = provider;
       console.error(
         "[Kia provider router] provider failed",
         redactJson({
