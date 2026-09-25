@@ -89,6 +89,23 @@ describe('KIA full client context from email', () => {
     expect(prompt).toContain('nombre de pila');
   });
 
+  it('keeps email origin identity stable across token and audit history', () => {
+    const send = source('lib/email/send.ts');
+    const contextual = source('lib/email/kia-contextual-cta.ts');
+    const brief = source('lib/ai/kia/kia-client-brief.ts');
+    expect(send).toContain('email_event_ref: emailOriginRef');
+    expect(contextual).toContain("const originRef = s(metadata, 'email_event_ref', 'emailEventRef')");
+    expect(brief).toContain("metadata.email_event_ref");
+  });
+
+  it('validates token tenant through canonical case/company scope for legacy profiles', () => {
+    const token = source('lib/ai/kia/kia-context-token.ts');
+    expect(token).toContain('if (input.tenantId && (data.tenant_id ?? null) !== input.tenantId) return null');
+    expect(token).toContain("select('id,client_id,company_id,tenant_id')");
+    expect(token).toContain("select('id,tenant_id')");
+    expect(token).toContain('if (!membership || !company) return null');
+  });
+
   it('acknowledges a generic originating email in the contextual welcome', () => {
     const widget = source('components/KiaCopilotWidget.tsx');
     const contextRoute = source('app/api/ai/kia/context/route.ts');
