@@ -7,6 +7,7 @@ import { resolveKiaLocale, type KiaLocale } from './kia-locale';
 import { resolveEffectiveCaseStatus } from '@/lib/cases/case-status';
 import { retrieveKiaMemories, type KiaMemory } from './kia-memory-retriever';
 import { loadKiaMemoryV2Context, mergeKiaMemoryContexts } from './kia-memory-v2-context';
+import { loadKiaClientBrief, type KiaClientBrief, type KiaOriginEmailContext } from './kia-client-brief';
 
 export interface KiaContextInput {
   channel: 'waba' | 'telegram' | 'admin' | 'email' | 'dashboard' | 'document';
@@ -25,6 +26,7 @@ export interface KiaContextInput {
   currentPage?: string;
   currentTask?: string;
   pageData?: Record<string, unknown>;
+  originEmail?: KiaOriginEmailContext | null;
 }
 
 export interface KiaContext {
@@ -82,6 +84,7 @@ export interface KiaContext {
     selectedMessage?: { id: string; text: string; direction: string; createdAt: string } | null;
   };
   memories: KiaMemory[];
+  clientBrief: KiaClientBrief | null;
 }
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
@@ -109,7 +112,7 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
   const shouldLoadMemories = Boolean(openAiKey && input.latestMessage && (phone || clientId || leadId));
   const memoryV2ReadEnabled = process.env.KIA_MEMORY_V2_READ_ENABLED?.toLowerCase() === 'true';
 
-  const [profile, company, service, documents, conversation, selectedMessage, accounting, legacyMemories] = await Promise.all([
+  const [profile, company, service, documents, conversation, selectedMessage, accounting, legacyMemories, clientBrief] = await Promise.all([
     loadProfile(admin, clientId, contact),
     loadCompany(admin, clientId, resolvedCompanyId),
     loadService(input.serviceSlug),
@@ -120,6 +123,13 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
     shouldLoadMemories
       ? retrieveKiaMemories({ query: input.latestMessage!, clientId, leadId, phone, openAiApiKey: openAiKey, supabase: admin }).catch(() => [] as KiaMemory[])
       : Promise.resolve([] as KiaMemory[]),
+    loadKiaClientBrief({
+      admin,
+      clientId,
+      caseId: input.caseId ?? null,
+      companyId: resolvedCompanyId,
+      originEmail: input.originEmail ?? null,
+    }).catch(() => null),
   ]);
 
   let memories = legacyMemories;
@@ -188,6 +198,7 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
       selectedMessage: input.syntheticSelectedMessage ?? selectedMessage,
     },
     memories,
+    clientBrief,
   };
 }
 
