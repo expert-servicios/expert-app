@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { getService } from '@/lib/services/service-registry';
 import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
+import { resolveEffectiveCaseStatus } from '@/lib/cases/case-status';
 import { getNationalityMinorAutonomyPolicy } from '@/lib/services/nationality-minor-autonomy';
 import { getCurrentRegulatoryValue } from '@/lib/regulatory/regulatory-values';
 import { getCurrentRegulatoryRuleset } from '@/lib/regulatory/regulatory-rulesets';
@@ -299,7 +300,7 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
 
         let query = admin
           .from('cases')
-          .select('id, service, category, status, priority, due_date, opened_at, company_id')
+          .select('id, service, service_id, category, status, state, next_action, priority, due_date, opened_at, company_id')
           .eq('client_id', clientId);
         if (companyId) query = query.eq('company_id', companyId);
         if (statusFilter === 'activos') {
@@ -310,7 +311,7 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         const { data, error } = await query.order('opened_at', { ascending: false }).limit(limit);
         if (error) return fail(toolCall.name, 'Error consultando expedientes.');
 
-        type CaseRow = { id: string; service: string; category: string | null; status: string; priority: string; due_date: string | null; opened_at: string; company_id: string | null };
+        type CaseRow = { id: string; service: string; service_id: string | null; category: string | null; status: string; state: string | null; next_action: string | null; priority: string; due_date: string | null; opened_at: string; company_id: string | null };
         const STATUS_LABELS: Record<string, string> = {
           nuevo: 'Nuevo',
           pendiente_cliente: 'Pendiente tu documentación',
@@ -327,9 +328,11 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
           expedientes: rows.map((c) => ({
             id: c.id,
             servicio: c.service,
+            servicio_slug: c.service_id,
             categoria: c.category,
-            estado: STATUS_LABELS[c.status] ?? c.status,
-            estado_raw: c.status,
+            estado: STATUS_LABELS[resolveEffectiveCaseStatus(c.status, c.state)] ?? resolveEffectiveCaseStatus(c.status, c.state),
+            estado_raw: resolveEffectiveCaseStatus(c.status, c.state),
+            siguiente_paso: c.next_action,
             prioridad: c.priority,
             vencimiento: c.due_date,
             fecha_apertura: c.opened_at,
