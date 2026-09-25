@@ -31,6 +31,14 @@ describe('KIA delegated preview language and provider fallback', () => {
     expect(widget).toContain("'¿Qué tengo que hacer ahora?'");
   });
 
+  it('answers basic case questions deterministically when providers fail', () => {
+    const engine = source('lib/ai/kia/kia-decision-engine.ts');
+    expect(engine).toContain('buildDeterministicCaseFallback');
+    expect(engine).toContain("'deterministic_case_fallback'");
+    expect(engine).toContain("intent: 'case_status'");
+    expect(engine).toContain("nextAction: 'reply_only'");
+  });
+
   it('attributes exhausted provider errors to the last failed provider', () => {
     const router = source('lib/ai/kia/kia-provider-router.ts');
     expect(router).toContain('lastFailedProvider = provider');
