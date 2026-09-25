@@ -551,6 +551,20 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         });
       }
 
+      case 'get_client_communications': {
+        const clientId = context.contact?.clientId;
+        if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+        const communications = await loadKiaClientCommunications({
+          admin,
+          clientId,
+          email: context.contact.email,
+          query: typeof args.query === 'string' ? args.query : undefined,
+          channel: (args.channel as 'all' | 'email' | 'whatsapp' | 'kia') ?? 'all',
+          limit: Number(args.limit ?? 20),
+        });
+        return ok(toolCall.name, { communications });
+      }
+
       case 'search_knowledge_resources':
         return ok(toolCall.name, {
           resources: searchKiaKnowledgeResources({
