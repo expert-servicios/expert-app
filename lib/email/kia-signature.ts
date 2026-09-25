@@ -28,8 +28,10 @@ export function appendKiaSignature(html: string, metadata?: Record<string, unkno
       ? 'Soy KIA 😊, asistente IA de EXPERT. Puedes seguir hablando conmigo por chat o Telegram.'
       : '¿Te queda alguna duda? 😊 KIA, la asistente IA de EXPERT, puede seguir contigo por chat o Telegram.');
 
-  const chatLabel = ru ? '💬 Чат с KIA' : '💬 Hablar con KIA';
-  const telegramLabel = '✈️ Telegram';
+  const ctaLabel = ru ? 'Поговорить с KIA:' : 'Hablar con KIA:';
+  const chatLabel = ru ? 'Чат' : 'Chat';
+  const telegramLabel = 'Telegram';
+  const telegramIcon = 'https://telegram.org/img/t_logo.png';
 
   const signature = `
     <table data-kia-signature="true" width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:28px 0 8px;border-top:1px solid #e8e0d4;padding-top:20px;">
@@ -40,15 +42,15 @@ export function appendKiaSignature(html: string, metadata?: Record<string, unkno
         <td valign="top" style="font-family:Arial,sans-serif;color:#07111d;">
           <div style="font-size:15px;font-weight:700;line-height:1.35;">KIA · EXPERT</div>
           <div style="margin-top:4px;font-size:13px;line-height:1.55;color:#465567;">${intro}</div>
-          <table cellpadding="0" cellspacing="0" role="presentation" style="margin-top:12px;border-collapse:collapse;">
+          <table data-kia-contact-cta="true" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:12px;border-collapse:collapse;">
             <tr>
-              <td style="padding:0 0 7px 0;">
-                <a href="${chatHref}" style="display:inline-block;background:#07111d;color:#fff;text-decoration:none;padding:9px 14px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;">${chatLabel}</a>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:0 0 7px 0;">
-                <a href="${telegramHref}" style="display:inline-block;background:#f3ead7;color:#07111d;text-decoration:none;padding:9px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid #d8cbb5;white-space:nowrap;">${telegramLabel}</a>
+              <td valign="middle" style="padding:0 8px 7px 0;font-size:12px;font-weight:700;color:#07111d;white-space:nowrap;">${ctaLabel}</td>
+              <td valign="middle" style="padding:0 0 7px 0;font-size:12px;white-space:nowrap;">
+                <a href="${chatHref}" style="color:#07111d;text-decoration:none;font-weight:700;">${chatLabel}</a>
+                <span style="color:#b8a98f;padding:0 7px;">·</span>
+                <a href="${telegramHref}" style="color:#07111d;text-decoration:none;font-weight:700;white-space:nowrap;">
+                  <img src="${telegramIcon}" width="16" height="16" alt="Telegram" style="display:inline-block;width:16px;height:16px;vertical-align:-3px;margin-right:4px;border:0;">${telegramLabel}
+                </a>
               </td>
             </tr>
           </table>
