@@ -256,7 +256,6 @@ function useKiaChat(pathname: string, contextToken?: string) {
         decisionLogId: target.decisionLogId,
         rating,
         userMessage: target.sourceUserMessage,
-        kiaReply: target.text,
       }),
     });
 
