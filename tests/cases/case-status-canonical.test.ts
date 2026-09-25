@@ -41,6 +41,14 @@ describe('canonical case status compatibility', () => {
     expect(card).not.toContain("fetch(\`/api/cases/\${caseItem.id}\`");
   });
 
+  it('exposes an explicit staff-only KIA preview action on each admin case card', () => {
+    const card = read('components/cases/AdminCaseCard.tsx');
+    expect(card).toContain("fetch('/api/admin/kia/client-preview-email'");
+    expect(card).toContain("body: JSON.stringify({ case_id: caseItem.id, scenario: 'status' })");
+    expect(card).toContain('Probar KIA');
+    expect(card).toContain('window.confirm');
+  });
+
   it('resolves historical divergence at read time without rewriting data', () => {
     const adminList = read('app/api/admin/cases/route.ts');
     const adminDetail = read('app/api/admin/cases/[id]/route.ts');
