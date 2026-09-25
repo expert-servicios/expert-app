@@ -39,7 +39,9 @@ import { resolveKiaLocale } from '@/lib/ai/kia/kia-locale';
 import { resolveKiaContextToken } from '@/lib/ai/kia/kia-context-token';
 import { loadKiaConversation, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import { findCaseConversation } from '@/lib/ai/kia/kia-telegram-context';
-import { buildAutomaticKiaKnowledgeResult } from '@/lib/ai/kia/kia-knowledge-discovery';
+import { buildAutomaticKiaKnowledgeResult, findKiaRelevantServices } from '@/lib/ai/kia/kia-knowledge-discovery';
+import { buildAutomaticKiaVisualResult } from '@/lib/ai/kia/kia-visual-discovery';
+import { detectKiaConversationOpportunity } from '@/lib/ai/kia/kia-contextual-opportunity';
 import { resolveKiaStaffPreview } from '@/lib/ai/kia/kia-staff-preview';
 import { kiaFriendlyError } from '@/lib/ai/kia/kia-error-copy';
 
@@ -387,9 +389,28 @@ export async function POST(request: NextRequest) {
     serviceSlug: contextualServiceSlug,
     existingToolResults: result.toolResults,
   });
-  const artifactToolResults = automaticKnowledgeResult
-    ? [...result.toolResults, automaticKnowledgeResult]
-    : result.toolResults;
+  const opportunity = detectKiaConversationOpportunity(message, result.decision);
+  const automaticVisualResult = buildAutomaticKiaVisualResult({
+    message,
+    existingToolResults: result.toolResults,
+  });
+  const alreadyDiscoveredService = result.toolResults.some((item) => item.toolName === 'find_relevant_services');
+  const automaticServiceResult = opportunity.allowServiceDiscovery && !alreadyDiscoveredService
+    ? {
+        toolName: 'find_relevant_services',
+        ok: true,
+        result: {
+          services: findKiaRelevantServices({ query: message, limit: 1 }),
+          opportunityReason: opportunity.reason,
+        },
+      }
+    : null;
+  const artifactToolResults = [
+    ...result.toolResults,
+    ...(automaticKnowledgeResult ? [automaticKnowledgeResult] : []),
+    ...(automaticVisualResult ? [automaticVisualResult] : []),
+    ...(automaticServiceResult?.result.services.length ? [automaticServiceResult] : []),
+  ];
   const artifacts = buildKiaCopilotArtifacts(artifactToolResults, result.decision);
   const reply = appendKiaFiscalNotice(result.userMessage, fiscalSignal);
 
