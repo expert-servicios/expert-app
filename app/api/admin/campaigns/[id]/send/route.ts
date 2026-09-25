@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { getResendClient } from '@/lib/integrations/resend';
 import { getSegmentRecipients, type SegmentKey } from '@/lib/campaigns/segments';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
-import { appendKiaSignature } from '@/lib/email/kia-signature';
+import { sendEmail } from '@/lib/email/send';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -55,7 +54,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   // Mark as sending
   await admin.from('campaigns').update({ status: 'sending', updated_at: new Date().toISOString() }).eq('id', id);
 
-  const resend = getResendClient();
   const appUrl = getPublicAppUrl();
   const from = process.env.RESEND_FROM_EMAIL ?? 'EXPERT <info@expertconsulting.es>';
 
@@ -81,28 +79,35 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     for (const recipient of batch) {
       const footer = buildUnsubscribeFooter(recipient.email, id, appUrl);
-      const html = appendKiaSignature(injectFooter(campaign.body_html, footer));
+      const html = injectFooter(campaign.body_html, footer);
 
       try {
-        const { data, error } = await resend.emails.send({
+        const resendId = await sendEmail({
           from,
-          to: [recipient.email],
+          to: recipient.email,
+          eventType: 'campaign.send',
           subject: campaign.subject,
           html,
           ...(campaign.body_text ? { text: campaign.body_text } : {}),
+          metadata: {
+            campaign_id: id,
+            recipient_name: recipient.name ?? null,
+            source: 'campaign',
+          },
+          idempotencyKey: `campaign/${id}/${recipient.email.toLowerCase()}`,
         });
 
         await admin.from('campaign_sends').insert({
           campaign_id: id,
           recipient_email: recipient.email,
           recipient_name: recipient.name ?? null,
-          status: error ? 'failed' : 'sent',
-          resend_id: data?.id ?? null,
-          error: error ? String(error) : null,
-          sent_at: error ? null : new Date().toISOString(),
+          status: 'sent',
+          resend_id: resendId,
+          error: null,
+          sent_at: new Date().toISOString(),
         });
 
-        if (error) failedCount++; else sentCount++;
+        sentCount++;
       } catch (err) {
         await admin.from('campaign_sends').insert({
           campaign_id: id,
