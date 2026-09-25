@@ -222,10 +222,15 @@ export async function sendEmail({
   html = localized.html;
   metadata = localized.metadata;
 
+  const preliminaryIdempotencyKey = idempotencyKey ?? deriveIdempotencyKey(eventType, metadata);
+  const emailOriginRef = stringMetadata(metadata, 'email_event_ref')
+    ?? (preliminaryIdempotencyKey ? `email:${preliminaryIdempotencyKey}` : `email:${crypto.randomUUID()}`);
+
   metadata = {
     ...(metadata ?? {}),
     event_type: eventType,
     email_subject: subject,
+    email_event_ref: emailOriginRef,
   };
 
   if (metadata?.kia_author === true && metadata.kia_contextual_cta !== false) {
@@ -241,7 +246,7 @@ export async function sendEmail({
   html = appendKiaSignature(contextual.html, contextual.metadata);
   metadata = contextual.metadata;
 
-  const effectiveIdempotencyKey = idempotencyKey ?? deriveIdempotencyKey(eventType, metadata);
+  const effectiveIdempotencyKey = preliminaryIdempotencyKey;
 
   if (effectiveIdempotencyKey) {
     if (effectiveIdempotencyKey.length > 256) {
