@@ -84,7 +84,7 @@ export interface KiaContext {
     selectedMessage?: { id: string; text: string; direction: string; createdAt: string } | null;
   };
   memories: KiaMemory[];
-  clientBrief: KiaClientBrief | null;
+  clientBrief?: KiaClientBrief | null;
 }
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
