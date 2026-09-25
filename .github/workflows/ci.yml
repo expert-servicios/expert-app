@@ -46,6 +46,9 @@ jobs:
       - name: Tests
         run: npm test
 
+      - name: KIA contract evals
+        run: npm run kia:eval
+
   migration-repair-contract:
     name: Supabase migration repair contract
     runs-on: ubuntu-latest
