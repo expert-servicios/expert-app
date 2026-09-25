@@ -7,6 +7,7 @@ export async function runKiaTechnicalChecks(): Promise<KiaHealthCheckResult[]> {
   checks.push(await checkSupabase());
   checks.push(await checkProviderConfig());
   checks.push(checkGatewayPrimaryConfig());
+  checks.push(checkThreeProviderFailoverPool());
   checks.push(await checkAnthropicStatus());
   checks.push(await checkOpenAiStatus());
   checks.push(checkWabaConfig());
@@ -193,6 +194,26 @@ function checkGatewayPrimaryConfig(): KiaHealthCheckResult {
     provider: configured ? 'vercel-ai-gateway' : null,
     model: configured ? gatewayModelForTask('chat_reply') : null,
     error: configured ? null : 'AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN no disponible: KIA caería solo a providers directos',
+  });
+}
+
+function checkThreeProviderFailoverPool(): KiaHealthCheckResult {
+  const providers = getKiaProviderOrder();
+  const configured = new Set(providers.map((provider) => provider.provider));
+  const missing = (['google', 'anthropic', 'openai'] as const).filter((provider) => !configured.has(provider));
+  return technicalResult({
+    checkId: 'three_provider_failover_pool',
+    title: 'Failover Gemini / Claude / OpenAI',
+    severity: 'critical',
+    status: missing.length === 0 ? 'passed' : 'warning',
+    actual: {
+      configuredProviders: Array.from(configured),
+      missingProviders: missing,
+      configuredCount: configured.size,
+    },
+    error: missing.length === 0
+      ? null
+      : `Redundancia incompleta: faltan ${missing.join(', ')} en el pool directo`,
   });
 }
 
