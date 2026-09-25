@@ -24,4 +24,10 @@ describe('KIA delegated preview language and provider fallback', () => {
     expect(widget).toContain("'Что сейчас нужно сделать?'");
     expect(widget).toContain("'¿Qué tengo que hacer ahora?'");
   });
+
+  it('attributes exhausted provider errors to the last failed provider', () => {
+    const router = source('lib/ai/kia/kia-provider-router.ts');
+    expect(router).toContain('lastFailedProvider = provider');
+    expect(router).toContain('const failedProvider = lastFailedProvider');
+  });
 });
