@@ -62,11 +62,14 @@ describe('Work evidence boundary', () => {
     await expect(verifyWorkEvidence(admin, 'case', 'client', { kind: 'administrative_action_completed', target: event.event_id, dependencies: [] },
       { ...event, evidence: { type: 'administrative_action', id: event.event_id } })).rejects.toThrow('administrative_action_not_verified');
   });
-  it('does not add KIA identity to human messages and adds it only once to KIA mail', () => {
-    expect(appendKiaSignature('Human')).toBe('Human');
-    const html = appendKiaSignature('<body>Hello</body>', { kia_author: true, preferred_language: 'ru' });
-    expect(html).toContain('ИИ-помощница');
-    expect(html).toContain('info@expertconsulting.es');
-    expect(appendKiaSignature(html, { kia_author: true })).toBe(html);
+  it('adds the same KIA copilot identity to every EXPERT email and never duplicates it', () => {
+    const human = appendKiaSignature('<body>Human</body>');
+    expect(human).toContain('data-kia-signature="true"');
+    expect(human).toContain('💬 Hablar con KIA');
+    expect(human).toContain('✈️ Telegram');
+    const authored = appendKiaSignature('<body>Hello</body>', { kia_author: true, preferred_language: 'ru' });
+    expect(authored).toContain('ИИ-помощница');
+    expect(authored).toContain('info@expertconsulting.es');
+    expect(appendKiaSignature(authored, { kia_author: true })).toBe(authored);
   });
 });

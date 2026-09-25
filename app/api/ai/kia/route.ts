@@ -140,8 +140,11 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const resolvedCompanyId = companyId ?? contextualCompanyId ?? profile?.active_company_id ?? undefined;
-  const profileLocale = profile?.preferred_language === 'ru' ? 'ru' : 'es';
+  const resolvedCompanyId = staffPreview
+    ? (staffPreview.companyId ?? undefined)
+    : (companyId ?? contextualCompanyId ?? profile?.active_company_id ?? undefined);
+  const effectivePreferredLanguage = staffPreview?.client.preferred_language ?? profile?.preferred_language ?? null;
+  const profileLocale = effectivePreferredLanguage === 'ru' ? 'ru' : 'es';
   const responseLocale = resolveKiaLocale({ latestMessage: message, preferredLanguage: profileLocale });
 
   if (resolvedCompanyId && !staffPreview) {

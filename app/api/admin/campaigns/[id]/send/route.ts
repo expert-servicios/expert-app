@@ -3,6 +3,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { getResendClient } from '@/lib/integrations/resend';
 import { getSegmentRecipients, type SegmentKey } from '@/lib/campaigns/segments';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
+import { appendKiaSignature } from '@/lib/email/kia-signature';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     for (const recipient of batch) {
       const footer = buildUnsubscribeFooter(recipient.email, id, appUrl);
-      const html = injectFooter(campaign.body_html, footer);
+      const html = appendKiaSignature(injectFooter(campaign.body_html, footer));
 
       try {
         const { data, error } = await resend.emails.send({
