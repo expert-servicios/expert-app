@@ -12,6 +12,11 @@ function s(metadata: Record<string, unknown>, ...keys: string[]): string | null 
   return null;
 }
 
+/**
+ * Resolves a safe contextual KIA entry for a one-recipient client email.
+ * It never renders a second CTA block. Instead it enriches metadata so the
+ * single KIA email signature can point Chat and Telegram at the same context.
+ */
 export async function maybeAppendKiaContextualCta(input: {
   admin: AdminClient;
   html: string;
@@ -19,10 +24,10 @@ export async function maybeAppendKiaContextualCta(input: {
   metadata?: Record<string, unknown>;
 }): Promise<{ html: string; metadata?: Record<string, unknown> }> {
   let metadata = input.metadata ?? {};
-  const enabled = process.env.KIA_CONTEXTUAL_EMAIL_CTA_ENABLED?.toLowerCase() === 'true';
+  const enabled = process.env.KIA_CONTEXTUAL_EMAIL_CTA_ENABLED?.toLowerCase() !== 'false';
   if (!enabled || metadata.kia_contextual_cta === false) return input;
-  if (input.html.includes('data-kia-contextual-cta=')) return input;
-  // A personalized link must never be broadcast or attached to another client's email.
+
+  // A personalized context must never be attached to a broadcast.
   if (!input.recipients || input.recipients.length !== 1) return input;
 
   let profileId = s(metadata, 'profile_id', 'profileId', 'client_id', 'clientId', 'user_id', 'userId');
@@ -33,8 +38,6 @@ export async function maybeAppendKiaContextualCta(input: {
   const intentHint = s(metadata, 'kia_intent_hint', 'kiaIntentHint');
   const originRef = s(metadata, 'email_event_ref', 'emailEventRef');
 
-  // Case emails are eligible by default. Generic emails remain opt-in through
-  // metadata.kia_contextual_cta=true or metadata.kia_author=true in sendEmail().
   const explicitlyRequested = metadata.kia_contextual_cta === true;
   if (!caseId && !explicitlyRequested) return input;
 
@@ -65,7 +68,6 @@ export async function maybeAppendKiaContextualCta(input: {
 
   if (profileError || !profile || profile.status === 'inactive') return input;
   if (profile.email?.trim().toLowerCase() !== input.recipients[0].trim().toLowerCase()) return input;
-
   if (ownedCase && ownedCase.client_id !== profileId) return input;
 
   if (companyId) {
@@ -95,30 +97,9 @@ export async function maybeAppendKiaContextualCta(input: {
     },
   });
 
-  const href = `${getPublicAppUrl().replace(/\/$/, '')}/kia/c/${encodeURIComponent(token)}`;
-  const locale = metadata.preferred_language === 'ru' || metadata.checkout_locale === 'ru' ? 'ru' : 'es';
-  const title = locale === 'ru'
-    ? '💬 Спросить KIA об этом'
-    : '💬 Hablar con KIA sobre esto';
-  const note = locale === 'ru'
-    ? 'KIA уже получит контекст этого сообщения — повторно объяснять ситуацию не нужно.'
-    : 'KIA abrirá este tema con contexto; no tendrás que volver a explicarlo.';
-
-  const block = `
-    <table data-kia-contextual-cta="true" width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:26px 0;">
-      <tr>
-        <td align="center">
-          <a href="${href}" style="display:inline-block;background:#07111d;color:#ffffff;text-decoration:none;padding:13px 20px;border-radius:12px;font-size:14px;font-weight:700;">
-            ${title}
-          </a>
-          <p style="margin:9px auto 0;max-width:440px;font-size:11px;line-height:1.5;color:#7b8794;">${note}</p>
-        </td>
-      </tr>
-    </table>`;
-
-  const html = input.html.includes('</body>')
-    ? input.html.replace('</body>', `${block}</body>`)
-    : `${input.html}${block}`;
+  const appUrl = getPublicAppUrl().replace(/\/$/, '');
+  const chatHref = `${appUrl}/kia/c/${encodeURIComponent(token)}`;
+  const telegramHref = `https://t.me/kia_expert_bot?start=ctx_${encodeURIComponent(token)}`;
 
   metadata = {
     ...metadata,
@@ -129,8 +110,10 @@ export async function maybeAppendKiaContextualCta(input: {
     ...(taskId ? { task_id: taskId } : {}),
     kia_contextual_cta: true,
     kia_contextual_cta_added: true,
+    kia_chat_href: chatHref,
+    kia_telegram_href: telegramHref,
     kia_context_expires_at: expiresAt,
   };
 
-  return { html, metadata };
+  return { html: input.html, metadata };
 }
