@@ -4,6 +4,7 @@ import { getViabilityCheck } from '@/lib/data/viability-checks';
 import { evaluateViability } from '@/lib/integrations/ai';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { getResendClient } from '@/lib/integrations/resend';
+import { appendKiaSignature } from '@/lib/email/kia-signature';
 import { getCatalogService } from '@/lib/utils/catalog';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkRateLimit, checkSpam, getClientIp } from '@/lib/utils/spam-guard';
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
         from: 'EXPERT Consultoría <noreply@expertconsulting.es>',
         to: body.clientEmail,
         subject: `Tu evaluación de viabilidad — ${check.serviceName}`,
-        html: buildEmailHtml({
+        html: appendKiaSignature(buildEmailHtml({
           clientName: body.clientName,
           serviceName: check.serviceName,
           resultLabel,
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
           nextSteps: viability.nextSteps,
           checkoutUrl: stripePriceId ? 'https://expertconsulting.es/servicios' : null,
           escalate: viability.escalate
-        })
+        }))
       });
       emailSent = true;
 
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
           from: 'EXPERT Consultoría <noreply@expertconsulting.es>',
           to: adminEmails,
           subject: `Nueva evaluación de viabilidad: ${check.serviceName} — ${resultLabel}`,
-          html: `<!DOCTYPE html>
+          html: appendKiaSignature(`<!DOCTYPE html>
 <html lang="es"><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
   <h1 style="font-size:18px;">Nueva evaluación de viabilidad</h1>
   <p><strong>Servicio:</strong> ${check.serviceName}</p>
@@ -159,7 +160,7 @@ export async function POST(request: NextRequest) {
   <p><strong>Cliente:</strong> ${body.clientName} — <a href="mailto:${body.clientEmail}">${body.clientEmail}</a>${body.clientPhone ? ` — ${body.clientPhone}` : ''}</p>
   <p><strong>Resumen IA:</strong> ${viability.summary}</p>
   ${viability.escalate ? '<p style="color:#991b1b;font-weight:700;">⚠️ Marcado para escalar a un asesor.</p>' : ''}
-</body></html>`,
+</body></html>`),
         });
       } catch (adminEmailErr) {
         console.error('[viabilidad] admin email error:', adminEmailErr);
