@@ -38,6 +38,17 @@ describe('KIA M7.2d Telegram linking', () => {
     expect(migration).toContain("set search_path = ''");
   });
 
+  it('supports one-tap deep-link linking from the authenticated KIA widget', () => {
+    const api = source('app/api/ai/kia/telegram-link/route.ts');
+    const webhook = source('app/api/webhooks/telegram/route.ts');
+    const widget = source('components/KiaCopilotWidget.tsx');
+    expect(api).toContain('deepLink: `https://t.me/kia_expert_bot?start=link_');
+    expect(webhook).toContain("startPayload.startsWith('link_')");
+    expect(webhook).toContain("via: 'deep_link'");
+    expect(widget).toContain("fetch('/api/ai/kia/telegram-link'");
+    expect(widget).toContain('Conectar Telegram');
+  });
+
   it('issues codes only from an authenticated EXPERT session', () => {
     const route = source('app/api/ai/kia/telegram-link/route.ts');
     expect(route).toContain('createServerSupabaseClient(request)');
