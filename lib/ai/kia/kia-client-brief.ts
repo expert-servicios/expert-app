@@ -237,7 +237,7 @@ export async function loadKiaClientBrief(input: {
   const [companiesRes, integrationsRes, casesRes, tasksRes, nbaRes, communications] = await Promise.all([
     companyIds.length
       ? input.admin.from('companies')
-          .select('id,razon_social,nombre_comercial')
+          .select('id,razon_social,nombre_comercial,tenant_id')
           .in('id', companyIds)
           .limit(20)
       : Promise.resolve({ data: [], error: null }),
@@ -308,10 +308,13 @@ export async function loadKiaClientBrief(input: {
 
   const currentCase = input.caseId ? caseLinks.find((item) => item.caseId === input.caseId) ?? null : null;
   const currentCompanyId = input.companyId ?? currentCase?.companyId ?? null;
-  const currentTenantId = currentCase?.tenantId
-    ?? (currentCompanyId ? (companyTenantById.get(currentCompanyId) ?? null) : null)
-    ?? profile.tenant_id
-    ?? null;
+  let currentTenantId = currentCase?.tenantId ?? null;
+  if (!currentTenantId && currentCompanyId) {
+    currentTenantId = companyTenantById.get(currentCompanyId) ?? null;
+  }
+  if (!currentTenantId) {
+    currentTenantId = profile.tenant_id ?? null;
+  }
 
   const membershipRoleByCompany = new Map((memberships ?? []).map((row) => [row.company_id, row.role ?? null]));
   const identity: KiaClientIdentityGraph = {
