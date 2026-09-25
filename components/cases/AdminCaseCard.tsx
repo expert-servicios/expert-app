@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { FolderOpen, ExternalLink } from 'lucide-react';
+import { FolderOpen, ExternalLink, Bot } from 'lucide-react';
 import { ALLOWED_TRANSITIONS, CASE_STATUS_LABELS, type CaseStatus } from '@/lib/cases/case-status';
 import StaffAssigneeSelect from '@/components/admin/StaffAssigneeSelect';
 
@@ -134,8 +134,16 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
         />
 
         <Link
+          href={`/admin/expedientes/${caseItem.id}?kiaTest=1`}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[#c88b25] bg-white px-4 py-2 text-xs font-semibold text-[#07111d] transition hover:bg-[#fff8e8]"
+        >
+          <Bot className="h-3 w-3 text-[#c88b25]" />
+          Probar KIA
+        </Link>
+
+        <Link
           href={`/admin/expedientes/${caseItem.id}`}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[#d8cbb5] px-4 py-2 text-xs font-semibold text-[#29384a] transition hover:border-[#c88b25] hover:text-[#07111d]"
+          className="inline-flex items-center gap-1.5 rounded-full border border-[#d8cbb5] px-4 py-2 text-xs font-semibold text-[#29384a] transition hover:border-[#c88b25] hover:text-[#07111d]"
         >
           <ExternalLink className="h-3 w-3" />
           Ver detalle
