@@ -126,7 +126,7 @@ export const KIA_CORE_EVAL_CASES: KiaEvalCase[] = [
       maxToolRiskTier: 'R1',
       forbiddenToolEffects: ['write', 'external_action'],
     },
-  },,
+  },
   {
     id: 'nationality-active-case-what-is-next',
     title: 'Nacionalidad menor: siguiente paso real del expediente',
