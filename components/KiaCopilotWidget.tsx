@@ -389,6 +389,7 @@ function KiaMessageArtifacts({ artifacts }: { artifacts: KiaCopilotArtifact[] })
 export default function KiaCopilotWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
+  const [telegramLinking, setTelegramLinking] = useState(false);
   const [animatedMessageIds, setAnimatedMessageIds] = useState<Set<string>>(() => new Set());
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -466,6 +467,29 @@ export default function KiaCopilotWidget() {
     send(text);
   }
 
+  async function handleConnectTelegram() {
+    if (telegramLinking) return;
+    setTelegramLinking(true);
+    try {
+      const response = await fetch('/api/ai/kia/telegram-link', { method: 'POST' });
+      const data = await response.json().catch(() => ({})) as { deepLink?: string; error?: string };
+      if (!response.ok || !data.deepLink) throw new Error(data.error ?? 'telegram_link_failed');
+      const popup = window.open(data.deepLink, '_blank', 'noopener,noreferrer');
+      if (!popup) window.location.href = data.deepLink;
+    } catch {
+      setMessages((previous) => [...previous, {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        text: uiLocale === 'ru'
+          ? 'Не удалось открыть безопасное подключение Telegram. Попробуйте ещё раз через несколько секунд.'
+          : 'No he podido abrir la vinculación segura de Telegram. Vuelve a intentarlo en unos segundos.',
+        avatarState: 'aviso',
+      }]);
+    } finally {
+      setTelegramLinking(false);
+    }
+  }
+
   return (
     <>
       <div
@@ -494,6 +518,18 @@ export default function KiaCopilotWidget() {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            {!staffPreview ? (
+              <button
+                type="button"
+                onClick={() => void handleConnectTelegram()}
+                disabled={telegramLinking}
+                title={uiLocale === 'ru' ? 'Подключить Telegram' : 'Conectar Telegram'}
+                aria-label={uiLocale === 'ru' ? 'Подключить Telegram' : 'Conectar Telegram'}
+                className="rounded-lg p-1 text-white transition-colors hover:bg-white/10 disabled:opacity-50"
+              >
+                {telegramLinking ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <Send size={15} aria-hidden="true" />}
+              </button>
+            ) : null}
             <button
               onClick={reset}
               title="Nueva conversación"
