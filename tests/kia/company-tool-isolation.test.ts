@@ -15,7 +15,7 @@ describe('KIA company tool isolation', () => {
     expect(executor).toContain("case 'get_user_expedientes'");
     expect(executor).toContain('const companyId = context.company?.id ?? null');
     expect(executor).toContain("if (companyId) query = query.eq('company_id', companyId)");
-    expect(executor).toContain(".select('id, service, category, status, priority, due_date, opened_at, company_id')");
+    expect(executor).toContain(".select('id, service, service_id, category, status, state, next_action, priority, due_date, opened_at, company_id')");
   });
 
   it('scopes pending documents to the active company', () => {
