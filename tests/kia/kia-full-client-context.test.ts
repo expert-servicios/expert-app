@@ -72,6 +72,13 @@ describe('KIA full client context from email', () => {
     expect(brief).toContain('compact(row.html, 700)');
   });
 
+  it('fails closed on cross-company records inside the client brief', () => {
+    const brief = source('lib/ai/kia/kia-client-brief.ts');
+    expect(brief).toContain('const allowedCompanyIds = new Set(companyIds)');
+    expect(brief).toContain('.filter((row) => !row.company_id || allowedCompanyIds.has(row.company_id))');
+    expect(brief).toContain('input.companyId && allowedCompanyIds.has(input.companyId)');
+  });
+
   it('offers a scoped R0 history lookup when the recent brief is insufficient', () => {
     const defs = source('lib/ai/kia/kia-tool-definitions.ts');
     const registry = source('lib/ai/kia/kia-tool-registry.ts');
