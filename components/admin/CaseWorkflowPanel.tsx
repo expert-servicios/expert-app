@@ -11,14 +11,14 @@ const minorNationalityTasks: WorkflowTask[] = [
   { key: 'validate', title: 'Validar requisitos y patria potestad', description: 'Residencia legal, edad, identidad y situación de los progenitores.' },
   { key: 'review_documents', title: 'Revisar documentación', description: 'Comprobar documentos del menor y progenitores.' },
   { key: 'prepare_representation_mandate', title: 'Preparar mandato voluntario', description: 'Mandato a favor de Ksenia como persona física.' },
-  { key: 'verify_signed_mandate', title: 'Validar mandato firmado', description: 'Archivar documento y evidencia de finalización.', humanApprovalRequired: true },
-  { key: 'verify_legal_residence_start', title: 'Verificar inicio de residencia legal', description: 'Confirmar TIE/resolución inicial; no inferir desde nacimiento o TIE actual.', humanApprovalRequired: true },
+  { key: 'verify_signed_mandate', title: 'Validar mandato firmado', description: 'KIA archiva y valida documento y evidencia de finalización; escala solo incidencias.' },
+  { key: 'verify_legal_residence_start', title: 'Verificar inicio de residencia legal', description: 'KIA confirma TIE/resolución inicial; no infiere desde nacimiento o TIE actual.' },
   { key: 'prepare_official_application', title: 'Pre-rellenar modelo oficial', description: 'Preparar el modelo normalizado del Ministerio.' },
   { key: 'obtain_parent_signatures', title: 'Obtener firmas de progenitores', description: 'Firma manuscrita del modelo oficial cuando corresponda.' },
-  { key: 'verify_official_application', title: 'Validar solicitud oficial', description: 'Revisar integridad, firmas y patria potestad.', humanApprovalRequired: true },
+  { key: 'verify_official_application', title: 'Validar solicitud oficial', description: 'KIA revisa integridad, firmas y patria potestad y gestiona correcciones con el cliente.' },
   { key: 'apply_recognized_signature', title: 'Firma electrónica reconocida de Ksenia', description: 'Aplicar certificado personal reconocido antes de presentar.', humanApprovalRequired: true },
-  { key: 'fee', title: 'Pagar / registrar tasa 790-026', description: 'Usar el suplido y archivar justificante.', humanApprovalRequired: true },
-  { key: 'final_review', title: 'Revisión final', description: 'Comprobar expediente completo antes de presentar.', humanApprovalRequired: true },
+  { key: 'fee', title: 'Pagar / registrar tasa 790-026', description: 'KIA comprueba pago previo, evita duplicados y archiva justificante; escala anomalías.' },
+  { key: 'final_review', title: 'Readiness final', description: 'KIA deja el expediente completo en LISTO PARA PRESENTAR o escala una excepción concreta.' },
   { key: 'submit', title: 'Presentar en Ministerio de Justicia', description: 'Presentación profesional con aprobación final.', humanApprovalRequired: true },
   { key: 'receipt', title: 'Archivar justificante y comunicar', description: 'Guardar número de expediente y avisar a la familia.' },
   { key: 'follow_up', title: 'Seguimiento', description: 'Control de requerimientos, notificaciones y resolución.' },
@@ -49,7 +49,7 @@ export function CaseWorkflowPanel({
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">Flujo jurídico-operativo</p>
           <p className="mt-1 text-xs text-[#52606d]">
-            Nacionalidad de menor: mandato, solicitud oficial firmada, firma reconocida, tasa y presentación.
+            Nacionalidad de menor: KIA prepara y valida de punta a punta; Admin entra en el gate final de firma/presentación.
           </p>
         </div>
       </div>
@@ -86,7 +86,7 @@ export function CaseWorkflowPanel({
       </div>
 
       <p className="mt-4 text-xs text-[#52606d]">
-        El SLA de 24 h solo comienza cuando mandato + solicitud oficial firmada + documentación obligatoria están validados.
+        Objetivo: cero intervención ordinaria de Admin hasta que mandato + documentación + solicitud firmada + tasa estén validados y el expediente quede LISTO PARA PRESENTAR.
       </p>
     </section>
   );
