@@ -11,15 +11,18 @@ describe('Universal KIA email signature', () => {
     expect(send).toContain('appendKiaSignature(contextual.html, contextual.metadata)');
   });
 
-  it('direct Resend routes also append the universal KIA signature', () => {
+  it('routes outbound templates through the central sender instead of bypassing context/audit', () => {
     const reviews = source('app/api/reviews/request/route.ts');
     const campaigns = source('app/api/admin/campaigns/[id]/send/route.ts');
     const viability = source('app/api/services/viabilidad/route.ts');
 
-    expect(reviews).toContain('appendKiaSignature');
-    expect(campaigns).toContain('appendKiaSignature');
-    expect(viability).toContain('appendKiaSignature(buildEmailHtml');
-    expect(viability).toContain('html: appendKiaSignature(`<!DOCTYPE html>');
+    for (const route of [reviews, campaigns, viability]) {
+      expect(route).toContain('sendEmail');
+      expect(route).not.toContain('resend.emails.send');
+    }
+    expect(campaigns).toContain("eventType: 'campaign.send'");
+    expect(viability).toContain("eventType: 'viability.assessment.client'");
+    expect(viability).toContain("eventType: 'viability.assessment.admin'");
   });
 
   it('renders a single KIA CTA zone with Chat and Telegram', () => {
