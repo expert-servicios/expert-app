@@ -13,6 +13,15 @@ describe('KIA production resilience', () => {
     expect(router.indexOf('callGateway(gatewayToken, request)')).toBeLessThan(router.indexOf('const providers = getKiaProviderOrder()'));
   });
 
+  it('routes normal KIA chat through Gemini first with cross-provider fallbacks', () => {
+    expect(router).toContain('google/gemini-3.6-flash');
+    expect(router).toContain('google/gemini-3.1-pro-preview');
+    expect(router).toContain('openai/gpt-5.6-sol');
+    expect(router).toContain('anthropic/claude-sonnet-5');
+    expect(router).toContain('if (taskType === "chat_reply" || taskType === "waba_reply") return GEMINI_CHAT_MODEL');
+    expect(router).toContain('models: gatewayFallbackModelsForTask(request.taskType)');
+  });
+
   it('keeps direct providers as fallback only', () => {
     expect(router).toContain('getKiaProviderOrder()');
     expect(router).toContain('provider: "vercel-ai-gateway"');
