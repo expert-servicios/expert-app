@@ -5,7 +5,7 @@ import type { KiaToolCall, KiaToolDefinition } from "./kia-tool-definitions";
 import { extractJsonObject } from "./kia-output-schema";
 import { redactJson, safeErrorMessage } from "./kia-redaction";
 
-export type KiaAiProvider = "anthropic" | "openai";
+export type KiaAiProvider = "anthropic" | "openai" | "google";
 export type KiaEffort = "low" | "medium" | "high" | "xhigh";
 
 export interface KiaProviderRequest {
@@ -25,6 +25,9 @@ const HAIKU = "claude-haiku-4-5-20251001";
 const AI_GATEWAY_CHAT_URL = "https://ai-gateway.vercel.sh/v1/chat/completions";
 const GATEWAY_DEFAULT_MODEL = "openai/gpt-5.4";
 const GATEWAY_REASONING_MODEL = "openai/gpt-5.6-sol";
+const GEMINI_CHAT_MODEL = "google/gemini-3.6-flash";
+const GEMINI_REASONING_MODEL = "google/gemini-3.1-pro-preview";
+const GATEWAY_ANTHROPIC_FALLBACK_MODEL = "anthropic/claude-sonnet-5";
 
 const SONNET_TASKS: KiaTaskType[] = [
   "viability_reasoning",
@@ -51,7 +54,24 @@ export function modelForTask(
 }
 
 export function gatewayModelForTask(taskType: KiaTaskType): string {
+  if (taskType === "chat_reply" || taskType === "waba_reply") return GEMINI_CHAT_MODEL;
   return SONNET_TASKS.includes(taskType) ? GATEWAY_REASONING_MODEL : GATEWAY_DEFAULT_MODEL;
+}
+
+export function gatewayFallbackModelsForTask(taskType: KiaTaskType): string[] {
+  if (taskType === "chat_reply" || taskType === "waba_reply") {
+    return [GATEWAY_DEFAULT_MODEL, GATEWAY_ANTHROPIC_FALLBACK_MODEL];
+  }
+  if (SONNET_TASKS.includes(taskType)) {
+    return [GEMINI_REASONING_MODEL, GATEWAY_ANTHROPIC_FALLBACK_MODEL];
+  }
+  return [GEMINI_CHAT_MODEL, GATEWAY_ANTHROPIC_FALLBACK_MODEL];
+}
+
+function gatewayProviderFromModel(model: string): KiaAiProvider {
+  if (model.startsWith("google/")) return "google";
+  if (model.startsWith("anthropic/")) return "anthropic";
+  return "openai";
 }
 
 function getKiaGatewayToken(): string | null {
@@ -323,19 +343,17 @@ async function callGateway(
     content: string;
   }> = [{ role: "system", content: request.systemPrompt }, ...request.messages];
 
+  // modelOverride is legacy direct-provider routing unless it is already a
+  // fully-qualified AI Gateway model id. This prevents old Claude defaults
+  // from forcing Gateway traffic back to Anthropic.
   const override = request.modelOverride?.trim();
-  const model = override
-    ? (override.includes("/")
-      ? override
-      : override.startsWith("claude-")
-        ? `anthropic/${override}`
-        : override.startsWith("gpt-")
-          ? `openai/${override}`
-          : gatewayModelForTask(request.taskType))
+  const model = override?.includes("/")
+    ? override
     : gatewayModelForTask(request.taskType);
 
   const body: Record<string, unknown> = {
     model,
+    models: gatewayFallbackModelsForTask(request.taskType),
     max_tokens: request.maxTokens ?? 900,
     temperature: request.temperature ?? 0.2,
     messages,
@@ -402,9 +420,10 @@ async function callGateway(
     throw new Error("AI Gateway returned an empty response");
   }
 
+  const resolvedModel = typeof data?.model === "string" ? data.model : model;
   return {
-    provider: "openai",
-    model: typeof data?.model === "string" ? data.model : model,
+    provider: gatewayProviderFromModel(resolvedModel),
+    model: resolvedModel,
     rawText,
     parsedJson,
     toolCalls,
