@@ -60,6 +60,7 @@ interface KiaContextSummary {
     updated_at: string;
   } | null;
   company: { id: string; name: string | null } | null;
+  originEmail?: { subject: string | null } | null;
   staffPreview?: boolean;
 }
 
@@ -79,8 +80,12 @@ function contextualWelcome(context: KiaContextSummary): ChatMessage {
       return {
         id: 'context-welcome',
         role: 'assistant',
-        text: `👋 Здравствуйте${name}! Чем могу помочь сегодня?`,
-        quickReplies: ['Мои дела', 'Holded', 'Налоговый вопрос'],
+        text: context.originEmail?.subject
+          ? `👋 Здравствуйте${name}! Я открыла письмо «${context.originEmail.subject}» и могу помочь по нему или по вашей ситуации в EXPERT.`
+          : `👋 Здравствуйте${name}! Чем могу помочь сегодня?`,
+        quickReplies: context.originEmail?.subject
+          ? ['Объясни это письмо', 'Что мне делать?', 'Проверь мою ситуацию']
+          : ['Мои дела', 'Holded', 'Налоговый вопрос'],
         avatarState: 'bienvenida',
       };
     }
@@ -88,8 +93,12 @@ function contextualWelcome(context: KiaContextSummary): ChatMessage {
     return {
       id: 'context-welcome',
       role: 'assistant',
-      text: `👋 ¡Hola${name}! ¿En qué te ayudo hoy?`,
-      quickReplies: ['Ver mis expedientes', 'Estado de Holded', 'Consulta fiscal'],
+      text: context.originEmail?.subject
+        ? `👋 ¡Hola${name}! He abierto el correo «${context.originEmail.subject}» y puedo ayudarte con él o con tu situación en EXPERT.`
+        : `👋 ¡Hola${name}! ¿En qué te ayudo hoy?`,
+      quickReplies: context.originEmail?.subject
+        ? ['Explícame este correo', '¿Qué tengo que hacer?', 'Revisa mi situación']
+        : ['Ver mis expedientes', 'Estado de Holded', 'Consulta fiscal'],
       avatarState: 'bienvenida',
     };
   }
