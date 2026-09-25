@@ -185,6 +185,11 @@ export const kiaToolValidators = {
     caseId: z.string().uuid(),
     limit: z.number().int().min(1).max(50).default(25),
   }).strict(),
+  get_client_communications: z.object({
+    query: z.string().max(200).optional(),
+    channel: z.enum(['all','email','whatsapp','kia']).default('all'),
+    limit: z.number().int().min(1).max(50).default(20),
+  }).strict(),
   search_knowledge_resources: z.object({
     query: z.string().min(2).max(300),
     type: z.enum(['blog','doc','all']).default('all'),
@@ -249,6 +254,7 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_case_tasks: 'List operational tasks for one case owned by the authenticated user.',
   get_case_documents: 'List documents for one case owned by the authenticated user.',
   get_case_timeline: 'Return a compact operational timeline for one case from case updates, tasks, documents and email events.',
+  get_client_communications: 'Search the authenticated client communication history across sent/received email, KIA conversations and linked WhatsApp. Use when recent context is insufficient or the user refers to an older message.',
   search_knowledge_resources: 'Search EXPERT blog articles and knowledge-base documents. Use to share a relevant guide or article with the user. Returns canonical public links.',
   get_official_sources: 'Return official source links from the canonical EXPERT Regulatory Registry for a service or topic. Use when the user wants to verify information independently.',
   find_relevant_services: 'Find EXPERT services for a concrete unmet need. Use only after answering the question and only when the user explicitly lacks something necessary, asks EXPERT to handle it, or clearly intends to contract. Do not use for mere topic affinity or when the user asks to do it themselves.',
