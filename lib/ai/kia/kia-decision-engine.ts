@@ -51,6 +51,7 @@ export interface KiaDecisionResult {
   toolResults: KiaToolResult[];
   userMessage: string;
   usedFallback: boolean;
+  decisionLogId?: string | null;
 }
 
 export async function runKiaDecision(input: {
@@ -130,7 +131,7 @@ export async function runKiaDecision(input: {
       input.channel,
       locale,
     );
-    await saveKiaDecisionLog({
+    const decisionLogId = await saveKiaDecisionLog({
       decision: clarifyDecision,
       channel: input.channel,
       context,
@@ -140,7 +141,7 @@ export async function runKiaDecision(input: {
       rawInput: { taskType: input.taskType, channel: input.channel, message: input.message, contextInput: input.contextInput },
       error: undefined,
     });
-    return { decision: clarifyDecision, context, toolResults: [], userMessage: clarifyDecision.userMessage, usedFallback: false };
+    return { decision: clarifyDecision, context, toolResults: [], userMessage: clarifyDecision.userMessage, usedFallback: false, decisionLogId };
   }
 
   const resolvedTaskType: KiaTaskType =
@@ -345,7 +346,7 @@ export async function runKiaDecision(input: {
   decision = finalizeDecisionPresentation(decision, input.channel, locale);
 
   const totalCost = costEstimates.length ? sumCostEstimates(costEstimates) : null;
-  await saveKiaDecisionLog({
+  const decisionLogId = await saveKiaDecisionLog({
     decision,
     channel: input.channel,
     context,
@@ -395,12 +396,13 @@ export async function runKiaDecision(input: {
     toolResults,
     userMessage: decision.userMessage,
     usedFallback,
+    decisionLogId,
   };
 }
 
 function finalizeDecisionPresentation(decision: KiaDecision, channel: KiaChannel, locale: 'es' | 'ru'): KiaDecision {
   const quickReplyAllowedActions: KiaDecision['nextAction'][] = ['ask_one_question', 'show_menu', 'reply_only'];
-  const shouldKeepQuickReplies = (channel === 'waba' || channel === 'dashboard' || decision.taskType === 'admin_ai_compose')
+  const shouldKeepQuickReplies = (channel === 'waba' || channel === 'dashboard' || channel === 'telegram' || decision.taskType === 'admin_ai_compose')
     && quickReplyAllowedActions.includes(decision.nextAction);
   const quickReplies = shouldKeepQuickReplies
     ? normalizeKiaQuickReplies(decision.quickReplies, locale, { ensureOther: true })
