@@ -19,6 +19,11 @@ import { getCurrentRegulatoryValue, getRegulatoryPulseSummary } from '@/lib/regu
 import { resolveKiaLocale } from '@/lib/ai/kia/kia-locale';
 import { kiaFriendlyError } from '@/lib/ai/kia/kia-error-copy';
 import { loadTelegramCaseContext, telegramContextPayload } from '@/lib/ai/kia/kia-telegram-context';
+import { buildAutomaticKiaKnowledgeResult, findKiaRelevantServices } from '@/lib/ai/kia/kia-knowledge-discovery';
+import { buildAutomaticKiaVisualResult } from '@/lib/ai/kia/kia-visual-discovery';
+import { detectKiaConversationOpportunity } from '@/lib/ai/kia/kia-contextual-opportunity';
+import { buildKiaCopilotArtifacts } from '@/lib/ai/kia/kia-copilot-artifacts';
+import { buildKiaTelegramPresentation } from '@/lib/ai/kia/kia-telegram-presentation';
 import { persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import {
   escapeTelegramHtml,
@@ -26,6 +31,7 @@ import {
   isTelegramWebhookAuthorized,
   parseTelegramInboundMessage,
   sendTelegramMessageConfirmed as sendTelegramMessage,
+  sendTelegramPhotoConfirmed,
 } from '@/lib/integrations/telegram';
 
 const SECRET_HEADER = 'x-telegram-bot-api-secret-token';
@@ -413,6 +419,40 @@ async function handleTelegramUpdate(request: NextRequest) {
       },
     });
 
+    const automaticKnowledgeResult = buildAutomaticKiaKnowledgeResult({
+      message,
+      intent: result.decision.intent,
+      serviceSlug: caseContext?.serviceSlug ?? undefined,
+      existingToolResults: result.toolResults,
+    });
+    const opportunity = detectKiaConversationOpportunity(message, result.decision);
+    const automaticVisualResult = buildAutomaticKiaVisualResult({
+      message,
+      existingToolResults: result.toolResults,
+    });
+    const alreadyDiscoveredService = result.toolResults.some((item) => item.toolName === 'find_relevant_services');
+    const automaticServiceResult = opportunity.allowServiceDiscovery && !alreadyDiscoveredService
+      ? {
+          toolName: 'find_relevant_services',
+          ok: true,
+          result: {
+            services: findKiaRelevantServices({ query: message, limit: 1 }),
+            opportunityReason: opportunity.reason,
+          },
+        }
+      : null;
+    const artifactToolResults = automaticKnowledgeResult
+      ? [...result.toolResults, automaticKnowledgeResult]
+      : [...result.toolResults];
+    if (automaticVisualResult) artifactToolResults.push(automaticVisualResult);
+    if (automaticServiceResult?.result.services.length) artifactToolResults.push(automaticServiceResult);
+    const artifacts = buildKiaCopilotArtifacts(artifactToolResults, result.decision);
+    const presentation = buildKiaTelegramPresentation({
+      reply: result.userMessage,
+      quickReplies: (result.decision.quickReplies ?? []).map((item) => item.title),
+      artifacts,
+    });
+
     const storedConversationId = contextEnabled ? await persistKiaConversationTurn({ admin, profileId: identity.profileId,
       tenantId: identity.tenantId, companyId, caseId: caseContext?.caseId, serviceSlug: caseContext?.serviceSlug,
       conversationId: caseContext?.stored?.conversation.id, channel: 'telegram', originType: 'telegram',
@@ -421,8 +461,16 @@ async function handleTelegramUpdate(request: NextRequest) {
 
     const outboundId = await sendTelegramMessage({
       chatId: inbound.chatId,
-      text: escapeTelegramHtml(result.userMessage),
+      text: escapeTelegramHtml(presentation.text),
+      quickReplies: presentation.quickReplies,
     });
+    for (const photo of presentation.photos) {
+      await sendTelegramPhotoConfirmed({
+        chatId: inbound.chatId,
+        photoUrl: photo.url,
+        caption: photo.caption,
+      });
+    }
     if (storedConversationId) {
       const { error } = await admin.from('kia_conversation_messages').update({ metadata: {
         telegram_chat_id: inbound.chatId, telegram_update_id: inbound.updateId,
