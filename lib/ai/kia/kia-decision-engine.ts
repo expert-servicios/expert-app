@@ -400,7 +400,7 @@ export async function runKiaDecision(input: {
 
 function finalizeDecisionPresentation(decision: KiaDecision, channel: KiaChannel, locale: 'es' | 'ru'): KiaDecision {
   const quickReplyAllowedActions: KiaDecision['nextAction'][] = ['ask_one_question', 'show_menu', 'reply_only'];
-  const shouldKeepQuickReplies = (channel === 'waba' || decision.taskType === 'admin_ai_compose')
+  const shouldKeepQuickReplies = (channel === 'waba' || channel === 'dashboard' || decision.taskType === 'admin_ai_compose')
     && quickReplyAllowedActions.includes(decision.nextAction);
   const quickReplies = shouldKeepQuickReplies
     ? normalizeKiaQuickReplies(decision.quickReplies, locale, { ensureOther: true })
