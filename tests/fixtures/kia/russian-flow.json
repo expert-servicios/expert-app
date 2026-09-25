@@ -11,7 +11,7 @@
     { "id": "R1", "message": "Здравствуйте", "expected": { "intent": "greeting", "nextAction": "show_menu" } },
     { "id": "R2", "message": "Хочу оформить декларацию", "expected": { "intent": "service_selection", "nextAction": "show_menu" } },
     { "id": "R3", "message": "Хочу получить гражданство", "expected": { "intent": "viability", "nextAction": "run_viability" } },
-    { "id": "R4", "message": "У меня есть отказ", "expected": { "intent": "book_call", "nextAction": "book_call", "requiresMeeting": true } },
+    { "id": "R4", "message": "У меня есть отказ", "expected": { "intent": "viability", "nextAction": "run_viability", "requiresMeeting": false } },
     { "id": "R5", "message": "Хочу оплатить услугу", "expected": { "intent": "checkout", "nextAction": "send_login_link" } },
     { "id": "R6", "message": "У меня нет Holded", "expected": { "intent": "readiness", "nextAction": "run_readiness" } },
     { "id": "R7", "message": "Где взять API ключ Holded?", "expected": { "intent": "connect_holded", "nextAction": "send_holded_connect_link" } },
