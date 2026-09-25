@@ -4,13 +4,13 @@ Ultima revision: 2026-05-23
 
 ## Casos manuales minimos
 
-1. Lead nuevo pide precio: Kia identifica lead y ofrece servicio, viabilidad, readiness o llamada.
+1. Lead nuevo pide precio: Kia identifica lead y responde con precio/viabilidad/readiness; no propone llamada salvo escalado real.
 2. Cliente con expediente pregunta estado: Kia usa flujo cliente, no lead.
 3. Usuario intenta contratar plan mensual sin Holded: Kia exige readiness y conexion Holded.
 4. Usuario pide pasar API key por WhatsApp: Kia no la pide y manda enlace al panel seguro.
 5. Servicio fiscal con viabilidad: Kia usa viabilidad, no readiness.
 6. Servicio Holded: Kia usa readiness, no viabilidad.
-7. Duda compleja: Kia ofrece llamada 15 minutos, no `needs_review`.
+7. Duda compleja: Kia orienta primero y solo ofrece llamada si el usuario la pide o el caso queda bloqueado/alto riesgo.
 8. IA no sabe responder: `needs_review` permitido.
 9. Documento recibido: Kia clasifica, guarda confianza y sugiere expediente/checklist.
 10. Dashboard Estado de empresa: Kia avisa que es resumen estimado pendiente de revision profesional.
@@ -19,7 +19,7 @@ Ultima revision: 2026-05-23
 
 ## Criterio de salida
 
-No activar WABA publico hasta que admin compose genere logs utiles y todos los casos anteriores pasen sin pedir datos sensibles ni saltarse gates de checkout/readiness.
+WABA está retirado. Usar estos casos para dashboard/Telegram y admin compose, sin pedir datos sensibles ni saltarse gates de checkout/readiness.
 
 ## Friend-Test En Produccion
 
