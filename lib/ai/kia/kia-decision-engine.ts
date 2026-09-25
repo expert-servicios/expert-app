@@ -41,6 +41,7 @@ import { selectSubAgentProfile } from './kia-sub-agent-router';
 import { estimateCost, sumCostEstimates, extractTokenUsageFromProviderResult, type KiaCostEstimate } from './kia-cost-tracker';
 import { detectKiaConversationOpportunity } from './kia-contextual-opportunity';
 import { kiaFriendlyError } from './kia-error-copy';
+import { caseStatusLabel, isCaseStatus } from '@/lib/cases/case-status';
 
 const KIA_MAX_TOOL_ITERATIONS = 5;
 const KIA_TOOL_LOOP_TIMEOUT_MS = 25_000;
@@ -427,10 +428,13 @@ function buildDeterministicCaseFallback(
   const nextAction = currentCase.nextAction?.trim() ?? '';
   const nextActionLocale = /[А-Яа-яЁё]/.test(nextAction) ? 'ru' : 'es';
   const safeNextAction = nextAction && nextActionLocale === locale ? nextAction : null;
+  const statusLabel = isCaseStatus(currentCase.status)
+    ? caseStatusLabel(currentCase.status, locale)
+    : currentCase.status.replaceAll('_', ' ');
 
   if (locale === 'ru') {
     const parts = [
-      `Текущий статус дела: ${currentCase.status}.`,
+      `Текущий статус дела: ${statusLabel}.`,
       safeNextAction ? `Следующий зарегистрированный шаг: ${safeNextAction}` : null,
       !safeNextAction ? 'Я не буду придумывать следующий шаг: он требует проверки данных дела.' : null,
     ];
@@ -438,7 +442,7 @@ function buildDeterministicCaseFallback(
   }
 
   const parts = [
-    `El estado actual del expediente es: ${currentCase.status}.`,
+    `El estado actual del expediente es: ${statusLabel}.`,
     safeNextAction ? `El siguiente paso registrado es: ${safeNextAction}` : null,
     !safeNextAction ? 'No voy a inventar el siguiente paso: requiere revisar los datos del expediente.' : null,
   ];
