@@ -67,6 +67,13 @@ export async function GET(request: NextRequest) {
     serviceSlug: staffPreview?.serviceSlug ?? context.service_slug,
     case: caseSummary,
     company: companySummary,
+    originEmail: context.origin_type === 'email' && context.metadata && typeof context.metadata === 'object'
+      ? {
+          subject: typeof (context.metadata as Record<string, unknown>).email_subject === 'string'
+            ? (context.metadata as Record<string, unknown>).email_subject
+            : null,
+        }
+      : null,
     staffPreview: Boolean(staffPreview),
   });
 }
