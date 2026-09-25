@@ -251,7 +251,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
     } finally {
       setLoading(false);
     }
-  }, [contextLoading, contextSummary?.preferredLanguage, contextToken, loading, messages, pathname, sessionId]);
+  }, [contextLoading, contextSummary, contextToken, loading, messages, pathname, sessionId]);
 
   const rate = useCallback(async (messageId: string, rating: 'positive' | 'negative') => {
     const target = messages.find((message) => message.id === messageId);
