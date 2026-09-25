@@ -12,6 +12,12 @@ describe('KIA delegated preview language and provider fallback', () => {
     expect(engine).toContain("userMessage: kiaFriendlyError('kia_error', locale)");
   });
 
+  it('keeps delegated preview in the client preferred language', () => {
+    const route = source('app/api/ai/kia/route.ts');
+    expect(route).toContain('const responseLocale = staffPreview');
+    expect(route).toContain('? profileLocale');
+  });
+
   it('does not mix opposite-language case fields into contextual welcome', () => {
     const widget = source('components/KiaCopilotWidget.tsx');
     expect(widget).toContain('contextualFieldForLocale');
