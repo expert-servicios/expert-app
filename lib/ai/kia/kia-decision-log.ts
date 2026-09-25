@@ -18,12 +18,12 @@ export async function saveKiaDecisionLog(input: {
   tokensOut?: number;
   estimatedCostUsd?: number;
   loopIterations?: number;
-}): Promise<void> {
-  if (process.env.KIA_AI_DECISION_LOGS_ENABLED?.toLowerCase() === 'false') return;
+}): Promise<string | null> {
+  if (process.env.KIA_AI_DECISION_LOGS_ENABLED?.toLowerCase() === 'false') return null;
 
   try {
     const admin = getSupabaseAdmin();
-    await admin.from('kia_decision_logs').insert({
+    const { data, error: insertError } = await admin.from('kia_decision_logs').insert({
       provider: input.providerResult?.provider ?? null,
       model: input.providerResult?.model ?? null,
       task_type: input.decision.taskType,
@@ -47,8 +47,11 @@ export async function saveKiaDecisionLog(input: {
       tokens_out: input.tokensOut ?? null,
       estimated_cost_usd: input.estimatedCostUsd ?? null,
       loop_iterations: input.loopIterations ?? 0,
-    });
+    }).select('id').single();
+    if (insertError) throw insertError;
+    return data?.id ?? null;
   } catch (error) {
     console.error('[Kia decision log] insert failed', safeErrorMessage(error));
+    return null;
   }
 }
