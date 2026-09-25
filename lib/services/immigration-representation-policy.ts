@@ -25,11 +25,10 @@ const policies: ImmigrationRepresentationPolicy[] = [
     canExpertPresent: true,
     evidence: ['Mandato o poder de representante voluntario', 'Identidad de representante y otorgantes'],
     filingRule: 'EXPERT puede presentar telemáticamente como representante voluntario cuando el mandato o poder esté acreditado.',
-    legalBasis: ['RD 1004/2015 art. 5', 'Ley 39/2015 art. 5'],
+    legalBasis: ['Orden JUS/1625/2016 arts. 2 y 4', 'RD 1004/2015 art. 5', 'Ley 39/2015 art. 5'],
     blockSubmissionUntilValidated: true,
     remoteOnly: true,
-    clientDigitalCredentialRequired: true,
-    credentialFallbackServiceSlug: 'certificado-digital-persona-fisica',
+    clientDigitalCredentialRequired: false,
   },
   {
     serviceSlug: 'nacionalidad-espanola',

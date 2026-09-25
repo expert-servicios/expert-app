@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { getService } from '@/lib/services/service-registry';
 import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
+import { getNationalityMinorAutonomyPolicy } from '@/lib/services/nationality-minor-autonomy';
 import { getCurrentRegulatoryValue } from '@/lib/regulatory/regulatory-values';
 import { getCurrentRegulatoryRuleset } from '@/lib/regulatory/regulatory-rulesets';
 import { getReadinessCheck, calculateReadinessResult } from '@/lib/data/service-readiness-checks';
@@ -80,6 +81,7 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
           userSummary: blueprint.kia.userSummary,
           adminSummary: blueprint.kia.adminSummary,
           escalationRules: blueprint.kia.escalationRules,
+          automationPolicy: getNationalityMinorAutonomyPolicy(blueprint.slug),
         });
       }
       case 'get_regulatory_value': {

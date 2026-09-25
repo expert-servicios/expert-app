@@ -12,7 +12,7 @@ describe('nationality representation on current main', () => {
     expect(policy?.authority).toBe('ministerio_justicia');
     expect(policy?.mode).toBe('justice_voluntary_mandate');
     expect(policy?.blockSubmissionUntilValidated).toBe(true);
-    expect(policy?.clientDigitalCredentialRequired).toBe(true);
+    expect(policy?.clientDigitalCredentialRequired).toBe(false);
   });
 
   it('keeps representation and signatures as blocking steps in the current blueprint', () => {

@@ -28,6 +28,7 @@ EXTRANJERIA Y NACIONALIDAD (categoria: extranjeria-nacionalidad):
   renovacion-residencia         → viability      | Renovacion permiso de residencia
   nacionalidad-espanola         → viability      | Nacionalidad espanola por residencia
   nacionalidad-espanola-menor-nacido-en-espana → viability | Nacionalidad menor nacido en Espana
+    EXPEDIENTE ACTIVO: usar get_service_operational_blueprint y su automationPolicy. KIA gestiona documentos, aclaraciones, firmas y correcciones en el mismo hilo hasta LISTO PARA PRESENTAR. No pedir documentos ya archivados. Escalar solo excepciones declaradas; la presentacion final conserva gate profesional.
   reagrupacion-familiar         → viability      | Reagrupacion familiar
   permiso-residencia-inicial    → viability      | Permiso de residencia inicial
   nie-pasaporte                 → direct_checkout | NIE o Pasaporte (urgente o no urgente)
