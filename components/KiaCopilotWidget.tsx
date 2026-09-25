@@ -14,6 +14,7 @@ import { X, Send, Loader2, ChevronDown, ExternalLink } from 'lucide-react';
 import { KiaAvatar } from '@/components/kia/KiaAvatar';
 import type { KiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 import type { KiaCopilotArtifact } from '@/lib/ai/kia/kia-copilot-artifacts';
+import { kiaFriendlyError } from '@/lib/ai/kia/kia-error-copy';
 
 interface ChatMessage {
   id: string;
@@ -156,7 +157,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
           setMessages([{
             id: 'context-error',
             role: 'assistant',
-            text: 'No he podido recuperar el contexto de este enlace. Puedes seguir preguntándome desde aquí.',
+            text: kiaFriendlyError('context_unavailable', 'es'),
             avatarState: 'aviso',
           }]);
         }
@@ -228,7 +229,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
         {
           id  : crypto.randomUUID(),
           role: 'assistant',
-          text: 'Tengo un problema técnico en este momento. Inténtalo de nuevo.',
+          text: kiaFriendlyError('network_error', 'es'),
           avatarState: 'aviso',
         },
       ]);

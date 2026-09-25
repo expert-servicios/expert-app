@@ -17,6 +17,7 @@ import { serviceProductionManifest } from '@/lib/services/service-production-man
 import { runRegulatoryPulse } from '@/lib/regulatory/regulatory-monitor';
 import { getCurrentRegulatoryValue, getRegulatoryPulseSummary } from '@/lib/regulatory/regulatory-values';
 import { resolveKiaLocale } from '@/lib/ai/kia/kia-locale';
+import { kiaFriendlyError } from '@/lib/ai/kia/kia-error-copy';
 import { loadTelegramCaseContext, telegramContextPayload } from '@/lib/ai/kia/kia-telegram-context';
 import { persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import {
@@ -169,13 +170,13 @@ async function handleTelegramUpdate(request: NextRequest) {
   }
 
   if (!checkKiaMessageRateLimit(identity.profileId)) {
-    await sendTelegramMessage({ chatId: inbound.chatId, text: 'Has alcanzado temporalmente el límite de mensajes de KIA. Inténtalo más tarde.' });
+    await sendTelegramMessage({ chatId: inbound.chatId, text: kiaFriendlyError('rate_limited', 'es') });
     return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'rate_limited' });
   }
 
   const costCap = await checkKiaDailyCostCap(identity.profileId);
   if (!costCap.ok) {
-    await sendTelegramMessage({ chatId: inbound.chatId, text: 'KIA ha alcanzado el límite diario de uso configurado.' });
+    await sendTelegramMessage({ chatId: inbound.chatId, text: kiaFriendlyError('daily_cost_cap_reached', 'es') });
     return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'daily_cost_cap_reached' });
   }
 
@@ -187,7 +188,7 @@ async function handleTelegramUpdate(request: NextRequest) {
 
   if (profileError) {
     console.error('[Telegram KIA] profile lookup failed:', profileError.message);
-    await sendTelegramMessage({ chatId: inbound.chatId, text: 'No he podido cargar el contexto EXPERT de forma segura.' });
+    await sendTelegramMessage({ chatId: inbound.chatId, text: kiaFriendlyError('profile_lookup_failed', 'es') });
     return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'profile_lookup_failed' });
   }
 
@@ -197,7 +198,7 @@ async function handleTelegramUpdate(request: NextRequest) {
       caseContext = await loadTelegramCaseContext({ admin, profileId: identity.profileId,
         tenantId: identity.tenantId, chatId: inbound.chatId, text: inbound.text });
     } catch {
-      await sendTelegramMessage({ chatId: inbound.chatId, text: 'No puedo abrir este expediente. Accede desde un enlace nuevo en tu portal EXPERT.' });
+      await sendTelegramMessage({ chatId: inbound.chatId, text: kiaFriendlyError('invalid_case_context', 'es') });
       return NextResponse.json({ ok: true, ignored: true, reason: 'invalid_case_context' });
     }
   }
@@ -215,7 +216,7 @@ async function handleTelegramUpdate(request: NextRequest) {
     });
   } catch (err) {
     console.error('[Telegram KIA] actor capability resolution failed:', safeErrorMessage(err));
-    await sendTelegramMessage({ chatId: inbound.chatId, text: 'No he podido validar tus permisos EXPERT de forma segura.' });
+    await sendTelegramMessage({ chatId: inbound.chatId, text: kiaFriendlyError('policy_context_failed', 'es') });
     return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'policy_context_failed' });
   }
 
@@ -384,7 +385,7 @@ async function handleTelegramUpdate(request: NextRequest) {
   const telegramPolicy = resolveKiaPolicyToolNames('telegram_verified', actor);
   if (!telegramPolicy.ok) {
     console.warn('[Telegram KIA] policy denied:', telegramPolicy.reason);
-    await sendTelegramMessage({ chatId: inbound.chatId, text: 'Tu perfil EXPERT no tiene autorización para usar KIA desde Telegram.' });
+    await sendTelegramMessage({ chatId: inbound.chatId, text: kiaFriendlyError('policy_denied', 'es') });
     return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'policy_denied' });
   }
 
