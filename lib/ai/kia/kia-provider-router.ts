@@ -23,9 +23,11 @@ export interface KiaProviderRequest {
 const SONNET = "claude-sonnet-4-6";
 const HAIKU = "claude-haiku-4-5-20251001";
 const AI_GATEWAY_CHAT_URL = "https://ai-gateway.vercel.sh/v1/chat/completions";
+const GEMINI_OPENAI_COMPAT_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const GATEWAY_DEFAULT_MODEL = "openai/gpt-5.4";
 const GATEWAY_REASONING_MODEL = "openai/gpt-5.6-sol";
 const GEMINI_CHAT_MODEL = "google/gemini-3.6-flash";
+const GEMINI_DIRECT_DEFAULT_MODEL = "gemini-3.8-flash";
 const GEMINI_REASONING_MODEL = "google/gemini-3.1-pro-preview";
 const GATEWAY_ANTHROPIC_FALLBACK_MODEL = "anthropic/claude-sonnet-5";
 
@@ -115,11 +117,33 @@ interface AnthropicResponseData {
 }
 
 export function getKiaProviderOrder(): ProviderConfig[] {
-  return getConfiguredWabaAiProviders().map((provider) => ({
+  const providers: ProviderConfig[] = getConfiguredWabaAiProviders().map((provider) => ({
     provider: provider.provider,
     apiKey: provider.apiKey,
     model: provider.model,
   }));
+
+  const geminiKey = process.env.GEMINI_API_KEY?.trim()
+    || process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
+  if (geminiKey) {
+    providers.push({
+      provider: "google",
+      apiKey: geminiKey,
+      model: process.env.GEMINI_MODEL?.trim() || GEMINI_DIRECT_DEFAULT_MODEL,
+    });
+  }
+
+  const requestedOrder = (process.env.KIA_DIRECT_PROVIDER_ORDER || "google,anthropic,openai")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter((value): value is KiaAiProvider =>
+      value === "google" || value === "anthropic" || value === "openai",
+    );
+  const priority = new Map(requestedOrder.map((provider, index) => [provider, index]));
+
+  return providers.sort((a, b) =>
+    (priority.get(a.provider) ?? 99) - (priority.get(b.provider) ?? 99),
+  );
 }
 
 export function defaultEffortForTask(taskType: KiaTaskType): KiaEffort {
@@ -178,7 +202,9 @@ export async function runKiaProviderRequest(
       const result =
         provider.provider === "anthropic"
           ? await callAnthropic(provider, request)
-          : await callOpenAi(provider, request);
+          : provider.provider === "google"
+            ? await callGoogle(provider, request)
+            : await callOpenAi(provider, request);
       return result;
     } catch (error) {
       lastError = safeErrorMessage(error);
@@ -383,7 +409,7 @@ async function callGateway(
         name: tool.name,
         description: tool.description,
         parameters: tool.input_schema,
-        strict: tool.strict === true,
+        ...(providerName === "openai" && tool.strict === true ? { strict: true } : {}),
       },
     }));
   }
@@ -437,9 +463,25 @@ async function callGateway(
   };
 }
 
+async function callGoogle(
+  provider: ProviderConfig,
+  request: KiaProviderRequest,
+): Promise<KiaProviderResult> {
+  return callOpenAiCompatible(provider, request, GEMINI_OPENAI_COMPAT_URL, "google");
+}
+
 async function callOpenAi(
   provider: ProviderConfig,
   request: KiaProviderRequest,
+): Promise<KiaProviderResult> {
+  return callOpenAiCompatible(provider, request, "https://api.openai.com/v1/chat/completions", "openai");
+}
+
+async function callOpenAiCompatible(
+  provider: ProviderConfig,
+  request: KiaProviderRequest,
+  endpoint: string,
+  providerName: "google" | "openai",
 ): Promise<KiaProviderResult> {
   const messages: Array<{
     role: "system" | WabaAiMessage["role"];
@@ -476,7 +518,7 @@ async function callOpenAi(
     }));
   }
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       authorization: `Bearer ${provider.apiKey}`,
@@ -509,9 +551,13 @@ async function callOpenAi(
         )
     : [];
 
+  if (!rawText && toolCalls.length === 0) {
+    throw new Error(`${providerName} returned an empty response`);
+  }
+
   return {
-    provider: "openai",
-    model: provider.model,
+    provider: providerName,
+    model: typeof data?.model === "string" ? data.model : provider.model,
     rawText,
     parsedJson: parseMaybeJson(rawText),
     toolCalls,
