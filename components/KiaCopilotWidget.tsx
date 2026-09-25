@@ -10,6 +10,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { X, Send, Loader2, ChevronDown, ExternalLink } from 'lucide-react';
 import { KiaAvatar } from '@/components/kia/KiaAvatar';
 import type { KiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
@@ -250,6 +251,27 @@ function KiaMessageArtifacts({ artifacts }: { artifacts: KiaCopilotArtifact[] })
   return (
     <div className="mt-2 space-y-2">
       {artifacts.map((artifact, index) => {
+        if (artifact.type === 'image') {
+          return (
+            <figure
+              key={`${artifact.type}-${index}`}
+              className="overflow-hidden rounded-xl border border-[#e8e0d4] bg-white"
+            >
+              <Image
+                src={artifact.imageUrl}
+                alt={artifact.alt}
+                width={920}
+                height={270}
+                className="h-auto w-full"
+              />
+              <figcaption className="px-3 py-2 text-[11px] leading-4 text-[#7a6e5f]">
+                <span className="font-semibold text-[#3d3528]">{artifact.title}</span>
+                {artifact.caption ? <span className="block mt-0.5">{artifact.caption}</span> : null}
+              </figcaption>
+            </figure>
+          );
+        }
+
         if (artifact.type === 'table') {
           return (
             <div
