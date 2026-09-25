@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { getKiaProviderOrder } from '../kia-provider-router';
+import { gatewayModelForTask, getKiaProviderOrder, isKiaGatewayConfigured } from '../kia-provider-router';
 import type { KiaHealthCheckResult } from './kia-health-types';
 
 export async function runKiaTechnicalChecks(): Promise<KiaHealthCheckResult[]> {
@@ -8,11 +8,7 @@ export async function runKiaTechnicalChecks(): Promise<KiaHealthCheckResult[]> {
   checks.push(await checkProviderConfig());
   checks.push(await checkAnthropicStatus());
   checks.push(await checkOpenAiStatus());
-  checks.push(checkEnvPresence('waba_config_present', 'technical', 'critical', 'WABA config presente', [
-    'META_WHATSAPP_ACCESS_TOKEN',
-    'META_WHATSAPP_PHONE_NUMBER_ID',
-    'META_APP_SECRET',
-  ]));
+  checks.push(checkWabaConfig());
   checks.push(checkEnvPresence('stripe_config_present', 'technical', 'critical', 'Stripe config presente', [
     'STRIPE_SECRET_KEY',
     'STRIPE_WEBHOOK_SECRET',
@@ -31,12 +27,15 @@ export async function runKiaBusinessChecks(): Promise<KiaHealthCheckResult[]> {
   const admin = getSupabaseAdmin();
   const results: KiaHealthCheckResult[] = [];
 
+  const wabaActive = isWabaChannelActive();
   const [{ count: pendingMessages }, { count: criticalNbas }, { count: recentRuns }] = await Promise.all([
-    admin
-      .from('whatsapp_conversations')
-      .select('id', { count: 'exact', head: true })
-      .eq('direction', 'inbound')
-      .eq('needs_review', true),
+    wabaActive
+      ? admin
+          .from('whatsapp_conversations')
+          .select('id', { count: 'exact', head: true })
+          .eq('direction', 'inbound')
+          .eq('needs_review', true)
+      : Promise.resolve({ count: 0 }),
     admin
       .from('next_best_actions')
       .select('id', { count: 'exact', head: true })
@@ -52,10 +51,10 @@ export async function runKiaBusinessChecks(): Promise<KiaHealthCheckResult[]> {
     checkId: 'business_pending_waba_messages',
     category: 'business',
     severity: 'warning',
-    status: (pendingMessages ?? 0) > 10 ? 'warning' : 'passed',
-    title: 'Mensajes WABA pendientes de revisión',
-    actual: { pendingMessages: pendingMessages ?? 0 },
-    error: (pendingMessages ?? 0) > 10 ? 'Más de 10 mensajes pendientes' : null,
+    status: wabaActive ? ((pendingMessages ?? 0) > 10 ? 'warning' : 'passed') : 'skipped',
+    title: wabaActive ? 'Mensajes WABA pendientes de revisión' : 'WABA retirado',
+    actual: { pendingMessages: pendingMessages ?? 0, wabaActive },
+    error: wabaActive && (pendingMessages ?? 0) > 10 ? 'Más de 10 mensajes pendientes' : null,
   });
 
   results.push({
@@ -160,16 +159,61 @@ async function checkStatusEndpoint(checkId: string, title: string, url: string):
 }
 
 async function checkProviderConfig(): Promise<KiaHealthCheckResult> {
+  const gatewayConfigured = isKiaGatewayConfigured();
   const providers = getKiaProviderOrder();
+  const configured = gatewayConfigured || providers.length > 0;
   return technicalResult({
     checkId: 'provider_router_configured',
     title: 'Provider router configurado',
     severity: 'critical',
-    status: providers.length > 0 ? 'passed' : 'failed',
-    actual: { providers: providers.map((provider) => ({ provider: provider.provider, model: provider.model })) },
-    provider: providers[0]?.provider ?? null,
-    model: providers[0]?.model ?? null,
-    error: providers.length > 0 ? null : 'No AI provider configured',
+    status: configured ? 'passed' : 'failed',
+    actual: {
+      gatewayConfigured,
+      gatewayChatModel: gatewayConfigured ? gatewayModelForTask('chat_reply') : null,
+      directProviders: providers.map((provider) => ({ provider: provider.provider, model: provider.model })),
+    },
+    provider: gatewayConfigured ? 'vercel-ai-gateway' : (providers[0]?.provider ?? null),
+    model: gatewayConfigured ? gatewayModelForTask('chat_reply') : (providers[0]?.model ?? null),
+    error: configured ? null : 'No AI provider or Vercel AI Gateway configured',
+  });
+}
+
+function isWabaChannelActive(): boolean {
+  if (process.env.WABA_PAUSED?.trim().toLowerCase() === 'true') return false;
+  if (process.env.KIA_STRUCTURED_AI_WABA_ENABLED?.trim().toLowerCase() === 'false') return false;
+  return Boolean(
+    process.env.META_WHATSAPP_ACCESS_TOKEN?.trim()
+    && process.env.META_WHATSAPP_PHONE_NUMBER_ID?.trim()
+    && process.env.META_APP_SECRET?.trim()
+  );
+}
+
+function checkWabaConfig(): KiaHealthCheckResult {
+  const active = isWabaChannelActive();
+  const configured = [
+    'META_WHATSAPP_ACCESS_TOKEN',
+    'META_WHATSAPP_PHONE_NUMBER_ID',
+    'META_APP_SECRET',
+  ].filter((name) => process.env[name]?.trim());
+
+  if (!active) {
+    return technicalResult({
+      checkId: 'waba_config_present',
+      title: 'WABA retirado / inactivo',
+      severity: 'info',
+      status: 'skipped',
+      actual: { active: false, configuredCount: configured.length },
+      error: null,
+    });
+  }
+
+  return technicalResult({
+    checkId: 'waba_config_present',
+    title: 'WABA configurado',
+    severity: 'warning',
+    status: configured.length === 3 ? 'passed' : 'warning',
+    actual: { active: true, configuredCount: configured.length },
+    error: configured.length === 3 ? null : 'WABA activo con configuración incompleta',
   });
 }
 
