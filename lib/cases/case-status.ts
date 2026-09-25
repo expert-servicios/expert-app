@@ -31,6 +31,16 @@ export const CASE_STATUS_LABELS: Record<CaseStatus, string> = {
   bloqueado:             'Bloqueado',
 };
 
+export const CASE_STATUS_LABELS_CLIENT_ES: Record<CaseStatus, string> = {
+  nuevo:                 'Expediente nuevo',
+  pendiente_cliente:     'Esperando información o documentación tuya',
+  en_revision:           'En revisión por EXPERT',
+  listo_para_presentar:  'Listo para presentar',
+  presentado:            'Presentado',
+  finalizado:            'Finalizado',
+  bloqueado:             'En pausa - requiere revisión',
+};
+
 export const CASE_STATUS_LABELS_RU: Record<CaseStatus, string> = {
   nuevo:                 'Новое дело',
   pendiente_cliente:     'Ожидаем информацию или документы от вас',
@@ -42,7 +52,7 @@ export const CASE_STATUS_LABELS_RU: Record<CaseStatus, string> = {
 };
 
 export function caseStatusLabel(status: CaseStatus, locale: 'es' | 'ru' = 'es'): string {
-  return locale === 'ru' ? CASE_STATUS_LABELS_RU[status] : CASE_STATUS_LABELS[status];
+  return locale === 'ru' ? CASE_STATUS_LABELS_RU[status] : CASE_STATUS_LABELS_CLIENT_ES[status];
 }
 
 export const CASE_PRIORITY_LABELS: Record<CasePriority, string> = {
