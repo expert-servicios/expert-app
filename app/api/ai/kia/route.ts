@@ -148,7 +148,11 @@ export async function POST(request: NextRequest) {
     : (companyId ?? contextualCompanyId ?? profile?.active_company_id ?? undefined);
   const effectivePreferredLanguage = staffPreview?.client.preferred_language ?? profile?.preferred_language ?? null;
   const profileLocale = effectivePreferredLanguage === 'ru' ? 'ru' : 'es';
-  const responseLocale = resolveKiaLocale({ latestMessage: message, preferredLanguage: profileLocale });
+  // A delegated client preview must behave exactly as the client would see it.
+  // Admin typing language must not override the preview client's preferred locale.
+  const responseLocale = staffPreview
+    ? profileLocale
+    : resolveKiaLocale({ latestMessage: message, preferredLanguage: profileLocale });
 
   if (resolvedCompanyId && !staffPreview) {
     const { data: membership, error: membershipError } = await admin
