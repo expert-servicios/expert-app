@@ -222,6 +222,12 @@ export async function sendEmail({
   html = localized.html;
   metadata = localized.metadata;
 
+  metadata = {
+    ...(metadata ?? {}),
+    event_type: eventType,
+    email_subject: subject,
+  };
+
   if (metadata?.kia_author === true && metadata.kia_contextual_cta !== false) {
     metadata = { ...metadata, kia_contextual_cta: true };
   }
