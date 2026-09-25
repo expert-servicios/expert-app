@@ -210,8 +210,11 @@ function simulateDecision(fixture, testCase) {
 }
 
 function checkoutDecision(base, lower, id) {
-  if (lower.includes('dudas') || lower.includes('para mi')) {
-    return asDecision(base, id === 'C10' ? 'viability' : 'book_call', id === 'C10' ? 'run_viability' : 'book_call', 'Antes de pagar resolvemos la duda con viabilidad o llamada de 15 minutos.', ['checkout_requires_clear_fit'], { requiresMeeting: id !== 'C10' });
+  if (lower.includes('dudas')) {
+    return asDecision(base, 'checkout', 'reply_only', 'Antes de pagar resuelvo tu duda directamente en el chat.', ['checkout_question_answered_before_sale'], { requiresMeeting: false });
+  }
+  if (lower.includes('para mi')) {
+    return asDecision(base, 'viability', 'run_viability', 'Antes de pagar comprobamos si el servicio encaja contigo.', ['checkout_requires_clear_fit'], { requiresMeeting: false });
   }
   if (lower.includes('rellenado todo')) {
     return asDecision(base, 'checkout', 'send_profile_link', 'Valido perfil y facturacion antes de crear checkout.', ['checkout_requires_profile_and_billing'], { missingData: ['profile_completed', 'billing_ready'] });
@@ -221,7 +224,7 @@ function checkoutDecision(base, lower, id) {
 
 function viabilityDecision(base, lower) {
   if (/(deneg|requer|sancion|sanción|inspeccion|embargo|multa)/.test(lower)) {
-    return asDecision(base, 'book_call', 'book_call', 'Es un caso sensible: doy orientacion inicial y recomiendo llamada de 15 minutos.', ['complex_legal_case_book_call_not_needs_review'], { requiresMeeting: true });
+    return asDecision(base, 'viability', 'run_viability', 'Es un caso sensible: doy orientación inicial y reviso viabilidad antes de escalar.', ['complex_case_guidance_before_human_escalation'], { requiresMeeting: false });
   }
   return asDecision(base, 'viability', 'run_viability', 'Iniciamos viabilidad del servicio fiscal o juridico.', ['fiscal_legal_uses_viability']);
 }
