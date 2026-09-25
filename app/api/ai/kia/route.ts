@@ -405,12 +405,11 @@ export async function POST(request: NextRequest) {
         },
       }
     : null;
-  const artifactToolResults = [
-    ...result.toolResults,
-    ...(automaticKnowledgeResult ? [automaticKnowledgeResult] : []),
-    ...(automaticVisualResult ? [automaticVisualResult] : []),
-    ...(automaticServiceResult?.result.services.length ? [automaticServiceResult] : []),
-  ];
+  const artifactToolResults = automaticKnowledgeResult
+    ? [...result.toolResults, automaticKnowledgeResult]
+    : [...result.toolResults];
+  if (automaticVisualResult) artifactToolResults.push(automaticVisualResult);
+  if (automaticServiceResult?.result.services.length) artifactToolResults.push(automaticServiceResult);
   const artifacts = buildKiaCopilotArtifacts(artifactToolResults, result.decision);
   const reply = appendKiaFiscalNotice(result.userMessage, fiscalSignal);
 
