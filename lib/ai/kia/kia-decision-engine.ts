@@ -114,7 +114,7 @@ export async function runKiaDecision(input: {
   const mediaInfo = input.mediaUrl ? { url: input.mediaUrl, type: input.mediaType ?? 'image/jpeg' } : null;
 
   const memoriesBlock = formatMemoriesForContext(context.memories ?? []);
-  const promptPayload = buildUserPayload(input.message, context, recentAssistantTexts, officialSourceContext, mediaInfo, memoriesBlock);
+  const promptPayload = buildUserPayload(input.message, context, locale, recentAssistantTexts, officialSourceContext, mediaInfo, memoriesBlock);
 
   let classification: KiaIntentClassification | null = null;
   if (input.channel === 'waba' && input.taskType === 'waba_reply') {
@@ -574,14 +574,24 @@ function buildToolResultsPayload(requests: KiaDecision['toolRequests'], results:
 function buildUserPayload(
   message: string,
   context: KiaContext,
+  locale: 'es' | 'ru',
   recentAssistantTexts: string[],
   officialSourceContext: string,
   mediaInfo?: { url: string; type: string } | null,
   memoriesBlock?: string,
 ): string {
+  const localizedContext = {
+    ...context,
+    cases: context.cases.map((caseItem) => ({
+      ...caseItem,
+      status: isCaseStatus(caseItem.status)
+        ? caseStatusLabel(caseItem.status, locale)
+        : caseItem.status.replaceAll('_', ' '),
+    })),
+  };
   const parts: string[] = [
     '<input>',
-    JSON.stringify(redactJson({ message, context }), null, 2),
+    JSON.stringify(redactJson({ message, context: localizedContext }), null, 2),
     '</input>',
   ];
   if (officialSourceContext) {
