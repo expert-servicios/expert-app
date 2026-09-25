@@ -14,6 +14,7 @@ import { X, Send, Loader2, ChevronDown, ExternalLink } from 'lucide-react';
 import { KiaAvatar } from '@/components/kia/KiaAvatar';
 import type { KiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 import type { KiaCopilotArtifact } from '@/lib/ai/kia/kia-copilot-artifacts';
+import { kiaFriendlyError } from '@/lib/ai/kia/kia-error-copy';
 
 interface ChatMessage {
   id: string;
