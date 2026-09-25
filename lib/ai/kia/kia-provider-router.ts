@@ -80,6 +80,10 @@ function getKiaGatewayToken(): string | null {
     || null;
 }
 
+export function isKiaGatewayConfigured(): boolean {
+  return Boolean(getKiaGatewayToken());
+}
+
 export interface KiaProviderResult {
   provider: KiaAiProvider;
   model: string;
