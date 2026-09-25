@@ -409,7 +409,7 @@ async function callGateway(
         name: tool.name,
         description: tool.description,
         parameters: tool.input_schema,
-        ...(providerName === "openai" && tool.strict === true ? { strict: true } : {}),
+        strict: tool.strict === true,
       },
     }));
   }
@@ -513,7 +513,7 @@ async function callOpenAiCompatible(
         name: tool.name,
         description: tool.description,
         parameters: tool.input_schema,
-        strict: tool.strict === true,
+        ...(providerName === "openai" && tool.strict === true ? { strict: true } : {}),
       },
     }));
   }
