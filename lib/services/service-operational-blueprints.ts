@@ -163,6 +163,7 @@ const NATIONALITY_SURNAME_GUIDE = '/docs/apellidos-menor-nacionalidad-registro-c
 const NATIONALITY_SURNAME_BOE = 'https://www.boe.es/buscar/act.php?id=BOE-A-2007-12948';
 const NATIONALITY_REGISTRY_ORDER_BOE = 'https://www.boe.es/buscar/act.php?id=BOE-A-2011-12628#a49';
 const NATIONALITY_OFFICIAL_PROCEDURE = 'https://sede.mjusticia.gob.es/es/tramites/nacionalidad-espanola';
+const NATIONALITY_SIGNATURE_GUIDE = '/docs/firmar-solicitud-nacionalidad-menor-progenitores';
 
 function nationalityMinorSteps(): ServiceCaseStep[] {
   const surnameReferences = [
@@ -195,7 +196,6 @@ function nationalityMinorSteps(): ServiceCaseStep[] {
       title: 'Apellidos y futura inscripción registral',
       description: 'Separar la identidad extranjera actual de los apellidos que corresponderán en la inscripción española. Verificar filiación, apellido personal de la madre antes de cambios por matrimonio y orden de apellidos. La duplicación de un apellido no se ofrece como preferencia si la línea materna está determinada y acreditada.',
       clientVisible: true,
-      humanApprovalRequired: true,
       referenceUrls: surnameReferences,
     },
     {
@@ -207,15 +207,15 @@ function nationalityMinorSteps(): ServiceCaseStep[] {
     {
       key: 'signatures',
       title: 'Firmas del modelo',
-      description: 'Obtener las firmas válidas que correspondan según edad, patria potestad y forma de presentación. No reutilizar versiones retiradas u obsoletas del formulario.',
+      description: 'Obtener las firmas válidas según edad y patria potestad. En menores de 14 años, los progenitores que ejercen la patria potestad firman como representantes legales; el representante voluntario es la persona mandataria que presenta. No reutilizar versiones retiradas u obsoletas.',
       clientVisible: true,
+      referenceUrls: [{ label: 'Guía EXPERT de firmas', url: NATIONALITY_SIGNATURE_GUIDE }],
     },
     {
       key: 'final_review',
       title: 'Validación pre-presentación',
-      description: 'Revisar documentación, mandato, apellidos, formulario, firmas y coherencia global. Ninguna presentación puede ejecutarse sin esta revisión profesional.',
+      description: 'KIA ejecuta la validación pre-presentación de documentación, mandato, apellidos, formulario, firmas, tasa y coherencia global hasta dejar el expediente listo para presentar. Solo escala excepciones no resolubles; la presentación final conserva aprobación profesional.',
       clientVisible: true,
-      humanApprovalRequired: true,
       referenceUrls: [{ label: 'Sede del Ministerio de Justicia', url: NATIONALITY_OFFICIAL_PROCEDURE }],
     },
     {
@@ -291,7 +291,6 @@ function nationalityMinorTasks(): ServiceTaskTemplate[] {
       description: 'Determinar los apellidos por filiación y confirmar su orden con ambos progenitores. Comprobar si existe un orden previo para hermanos con la misma filiación. No marcar que se desconoce el apellido materno ni duplicar un apellido para evitar documentación cuando ese dato es conocido o acreditable.',
       priority: 'alta',
       phase: 'registry_surnames',
-      humanApprovalRequired: true,
       dependsOn: ['confirm_maternal_birth_surname'],
       blocksSubmission: true,
       clientActionRequired: true,
@@ -314,7 +313,7 @@ function nationalityMinorTasks(): ServiceTaskTemplate[] {
     {
       key: 'obtain_application_signatures',
       title: 'Obtener firmas del modelo oficial — Nacionalidad menor',
-      description: 'Obtener y verificar las firmas válidas de los representantes y, cuando corresponda por edad, del menor. Invalidar expresamente cualquier versión anterior retirada.',
+      description: 'Obtener y verificar las firmas válidas. En menor de 14 años con ambos progenitores ejerciendo patria potestad, ambos firman en «Representante legal (si procede)». «Representante voluntario (si procede)» corresponde a la persona mandataria que presenta, normalmente Ksenia ILICHEVA cuando el mandato la designa. Invalidar expresamente cualquier versión anterior retirada.',
       priority: 'alta',
       phase: 'signatures',
       dependsOn: ['prepare_official_application'],
@@ -324,6 +323,7 @@ function nationalityMinorTasks(): ServiceTaskTemplate[] {
         es: 'Firmar la versión final del modelo oficial que EXPERT haya validado y enviado expresamente para firma.',
         ru: 'Подписать окончательную версию официального заявления, которую EXPERT проверил и отдельно направил на подпись.',
       },
+      referenceUrls: [{ label: 'Guía EXPERT de firmas', url: NATIONALITY_SIGNATURE_GUIDE }],
     },
     {
       key: 'archive_docusign_completion_certificate',
@@ -338,10 +338,9 @@ function nationalityMinorTasks(): ServiceTaskTemplate[] {
     {
       key: 'pre_submission_validation',
       title: 'Validar expediente antes de presentar — Nacionalidad menor',
-      description: 'Revisión profesional final de residencia, representación, apellidos, modelo, firmas, documentos y trazabilidad. Detener la presentación ante cualquier incoherencia.',
+      description: 'Validación automática final de residencia, representación, apellidos, modelo, firmas, documentos, tasa y trazabilidad. KIA debe resolver con el cliente las correcciones rutinarias y escalar solo incoherencias no resolubles. Al superar este gate, el expediente queda listo para presentar.',
       priority: 'critica',
       phase: 'final_review',
-      humanApprovalRequired: true,
       dependsOn: ['verify_legal_residence_start', 'confirm_registry_surname_order', 'prepare_official_application', 'obtain_application_signatures', 'archive_docusign_completion_certificate'],
       blocksSubmission: true,
       referenceUrls: [{ label: 'Sede del Ministerio de Justicia', url: NATIONALITY_OFFICIAL_PROCEDURE }],
@@ -526,9 +525,9 @@ const blueprints: ServiceOperationalBlueprint[] = [
     steps: nationalityMinorSteps(),
     tasks: nationalityMinorTasks(),
     kia: {
-      userSummary: 'KIA guía a la familia por un flujo secuencial: documentos, representación, residencia legal, apellidos registrales, modelo, firmas, validación, tasa, presentación y seguimiento. La identidad extranjera vigente se distingue de la futura inscripción española.',
-      adminSummary: 'KIA aplica gates bloqueantes antes de firma y presentación. En apellidos, verifica filiación y apellido personal de la madre; no ofrece la duplicación como elección para evitar documentos cuando la línea materna está determinada.',
-      escalationRules: ['Residencia legal dudosa', 'Firma/representación no resuelta', 'Apellido personal materno o filiación incoherentes', 'Orden de apellidos no confirmado', 'Existencia de hermanos con orden registral previo', 'Documento extranjero pendiente de validación/legalización/traducción', 'Modelo firmado que no coincide con los datos validados'],
+      userSummary: 'KIA gestiona de forma autónoma la preparación completa: revisa documentos ya disponibles, solicita solo faltantes reales, mantiene el mismo hilo con la familia, resuelve correcciones, prepara el modelo, controla firmas y tasa y deja el expediente listo para presentar. La identidad extranjera vigente se distingue de la futura inscripción española.',
+      adminSummary: 'Objetivo operativo: cero intervención ordinaria de Admin hasta LISTO PARA PRESENTAR. KIA aplica los gates, itera con el cliente en ES/RU y escala solo excepciones jurídicas o documentales no resolubles. La presentación definitiva permanece bajo aprobación profesional.',
+      escalationRules: ['Residencia legal no conciliable con evidencia', 'Patria potestad o representación en conflicto', 'Desacuerdo entre progenitores', 'Apellido personal materno o filiación incoherentes tras pedir la evidencia disponible', 'Documento dudoso, ilegible o potencialmente alterado', 'Pago duplicado o no conciliable', 'La sede exige identidad/firma personal de la representante', 'El cliente solicita intervención humana'],
     },
   },
   {
