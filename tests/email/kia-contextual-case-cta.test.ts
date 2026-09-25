@@ -6,11 +6,14 @@ const cta = readFileSync(resolve(process.cwd(), 'lib/email/kia-contextual-cta.ts
 const send = readFileSync(resolve(process.cwd(), 'lib/email/send.ts'), 'utf8');
 
 describe('KIA contextual email coverage', () => {
-  it('auto-enables a contextual CTA for an identifiable case email', () => {
+  it('auto-enables contextual KIA links for an identifiable case email', () => {
     expect(cta).toContain("const caseId = s(metadata, 'case_id', 'caseId')");
     expect(cta).toContain("if (!caseId && !explicitlyRequested) return input");
     expect(cta).toContain(".from('cases')");
     expect(cta).toContain("profileId = data.client_id");
+    expect(cta).toContain("kia_chat_href: chatHref");
+    expect(cta).toContain("kia_telegram_href: telegramHref");
+    expect(cta).not.toContain('data-kia-contextual-cta="true"');
   });
 
   it('normalizes legacy camelCase and canonical snake_case metadata', () => {
@@ -32,9 +35,10 @@ describe('KIA contextual email coverage', () => {
     expect(cta).toContain(".eq('company_id', companyId)");
   });
 
-  it('keeps the platform feature flag and explicit opt-out', () => {
+  it('keeps a global flag, explicit opt-out, and renders the signature after context resolution', () => {
     expect(cta).toContain('KIA_CONTEXTUAL_EMAIL_CTA_ENABLED');
     expect(cta).toContain('metadata.kia_contextual_cta === false');
     expect(send).toContain('maybeAppendKiaContextualCta');
+    expect(send.indexOf('maybeAppendKiaContextualCta')).toBeLessThan(send.indexOf('appendKiaSignature(contextual.html, contextual.metadata)'));
   });
 });
