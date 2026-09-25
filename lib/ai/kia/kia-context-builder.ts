@@ -4,6 +4,7 @@ import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolve
 import { getService } from '@/lib/services/service-registry';
 import { resolveCompanyCommercialCoverage, type CompanyCoverageSource } from '@/lib/subscriptions/company-commercial-coverage';
 import { resolveKiaLocale, type KiaLocale } from './kia-locale';
+import { resolveEffectiveCaseStatus } from '@/lib/cases/case-status';
 import { retrieveKiaMemories, type KiaMemory } from './kia-memory-retriever';
 import { loadKiaMemoryV2Context, mergeKiaMemoryContexts } from './kia-memory-v2-context';
 
@@ -65,7 +66,7 @@ export interface KiaContext {
     requiresHolded: boolean;
     hasCheckout: boolean;
   } | null;
-  cases: Array<{ id: string; serviceName: string; status: string; nextAction: string | null }>;
+  cases: Array<{ id: string; serviceName: string; serviceSlug: string | null; status: string; nextAction: string | null }>;
   documents: {
     pendingCount: number;
     recent: Array<{ id: string; type: string | null; status: string }>;
@@ -140,6 +141,7 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
   const contactCases = (contact?.openCases ?? []).slice(0, 5).map((c) => ({
     id: c.id,
     serviceName: c.service,
+    serviceSlug: null,
     status: c.state,
     nextAction: null,
   }));
@@ -414,17 +416,20 @@ async function loadCasesForClient(
   if (!clientId) return [];
   let query = admin
     .from('cases')
-    .select('id, service, state, opened_at')
+    .select('id, service, service_id, state, status, next_action, opened_at, closed_at')
     .eq('client_id', clientId)
-    .not('state', 'in', ['finalizado', 'cerrado', 'entregado']);
+    .is('closed_at', null);
   if (companyId) query = query.eq('company_id', companyId);
   const { data } = await query
     .order('opened_at', { ascending: false })
     .limit(10);
-  return (data ?? []).map((c: { id: string; service: string; state: string; opened_at: string }) => ({
-    id: c.id,
-    serviceName: c.service,
-    status: c.state,
-    nextAction: null,
-  }));
+  return (data ?? [])
+    .map((c: { id: string; service: string; service_id: string | null; state: string | null; status: string | null; next_action: string | null; opened_at: string; closed_at: string | null }) => ({
+      id: c.id,
+      serviceName: c.service,
+      serviceSlug: c.service_id,
+      status: resolveEffectiveCaseStatus(c.status, c.state),
+      nextAction: c.next_action,
+    }))
+    .filter((c) => !['finalizado', 'cerrado', 'entregado'].includes(c.status));
 }

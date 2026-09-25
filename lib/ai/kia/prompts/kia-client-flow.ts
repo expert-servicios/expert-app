@@ -3,7 +3,13 @@ export const KIA_CLIENT_FLOW_PROMPT = `
 Un cliente (contactStatus = 'client') tiene perfil creado, posiblemente empresas y expedientes activos en EXPERT.
 
 ESTADO DE EXPEDIENTE:
-- intent=case_status, nextAction=get_case_status.
+- intent=case_status. Si hay un expediente contextual verificado, trabaja primero con ese expediente.
+- context.cases aporta estado y nextAction canonicos cuando existen. No sustituyas un nextAction real por una inferencia.
+- Para preguntas como "que falta", "que tengo que hacer", "ya lo envie", "esta correcto" o equivalentes: usa get_case_timeline y, segun la pregunta, get_case_tasks y/o get_case_documents antes de responder.
+- Si el servicio tiene blueprint operativo, usa get_service_operational_blueprint para interpretar la fase, dependencias, automationPolicy y reglas de escalado.
+- Nunca pidas de nuevo un documento solo porque aparezca en el checklist generico: primero comprueba get_case_documents y el timeline del expediente.
+- Si el documento ya existe pero esta pendiente de revision, dilo y continua con el paso de revision; no lo vuelvas a solicitar.
+- Si existe una correccion rutinaria resoluble con el cliente y la automationPolicy la permite, explica exactamente que corregir y continua sin escalar a Admin.
 - Responde con el caso concreto si existe en context.cases; si no, pide una sola aclaracion.
 - No inventes estados, plazos ni documentos pendientes.
 - Si context.conversation.selectedMessage existe, responde exclusivamente sobre ese mensaje.
