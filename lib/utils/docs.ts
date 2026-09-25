@@ -29,6 +29,26 @@ export const docCategories: { slug: DocCategorySlug; name: string }[] = [
 ];
 
 export const docs: KnowledgeDoc[] = [
+  {
+    slug: 'firmar-solicitud-nacionalidad-menor-progenitores',
+    category: 'extranjeria-nacionalidad',
+    title: 'Cómo firmar la solicitud de nacionalidad de un menor',
+    excerpt:
+      'Dónde deben firmar los progenitores en el modelo de nacionalidad por residencia y cómo diferenciar representante legal y representante voluntario.',
+    tags: ['nacionalidad española', 'menores', 'firma', 'representante legal', 'representante voluntario'],
+    updatedAt: '25 sep 2026',
+    readTime: '6 min',
+    relatedServiceSlugs: ['nacionalidad-espanola-menor-nacido-en-espana'],
+    relatedServiceCategories: ['extranjeria-nacionalidad'],
+    seoTitle: 'Cómo firmar la solicitud de nacionalidad de un menor | EXPERT',
+    seoDescription:
+      'Guía práctica para saber dónde firman los padres en la solicitud de nacionalidad española de un menor y cómo corregir una firma en el bloque equivocado.',
+    body: `
+## Guía específica
+
+Consulta la guía completa en esta misma URL. Incluye la diferencia entre representante legal y representante voluntario, firma manuscrita, firma electrónica, firma mixta y cómo corregir una página firmada en el recuadro equivocado.
+    `
+  },
   ...getGeneratedBatch1KnowledgeDocs(),
   ...proteccionDatosKnowledgeDocs,
   {
