@@ -19,13 +19,46 @@ export interface KiaClientCommunication {
   ref: string;
 }
 
+export interface KiaClientIdentityGraph {
+  clientId: string;
+  profileTenantId: string | null;
+  activeCompanyId: string | null;
+  currentScope: {
+    caseId: string | null;
+    companyId: string | null;
+    tenantId: string | null;
+  };
+  memberships: Array<{
+    companyId: string;
+    tenantId: string | null;
+    role: string | null;
+  }>;
+  cases: Array<{
+    caseId: string;
+    companyId: string | null;
+    tenantId: string | null;
+  }>;
+  integrations: Array<{
+    integrationId: string;
+    provider: string;
+    mode: string | null;
+    companyId: string | null;
+    tenantId: string | null;
+    status: string;
+  }>;
+}
+
 export interface KiaClientBrief {
   firstName: string | null;
-  companies: Array<{ id: string; name: string | null }>;
+  identity: KiaClientIdentityGraph;
+  companies: Array<{ id: string; name: string | null; tenantId: string | null }>;
   integrations: Array<{
+    id: string;
     provider: string;
+    mode: string | null;
     status: string;
     companyId: string | null;
+    tenantId: string | null;
     lastSuccessAt: string | null;
     hasError: boolean;
   }>;
@@ -190,18 +223,18 @@ export async function loadKiaClientBrief(input: {
 
   const { data: profile } = await input.admin
     .from('profiles')
-    .select('full_name,email')
+    .select('full_name,email,active_company_id,tenant_id')
     .eq('id', input.clientId)
     .maybeSingle();
   if (!profile) return null;
 
   const { data: memberships } = await input.admin
     .from('profile_companies')
-    .select('company_id')
+    .select('company_id,role')
     .eq('profile_id', input.clientId);
   const companyIds = (memberships ?? []).map((row) => row.company_id).filter(Boolean);
 
-  const [companiesRes, integrationsRes, tasksRes, nbaRes, communications] = await Promise.all([
+  const [companiesRes, integrationsRes, casesRes, tasksRes, nbaRes, communications] = await Promise.all([
     companyIds.length
       ? input.admin.from('companies')
           .select('id,razon_social,nombre_comercial')
@@ -210,17 +243,22 @@ export async function loadKiaClientBrief(input: {
       : Promise.resolve({ data: [], error: null }),
     companyIds.length
       ? input.admin.from('client_integrations')
-          .select('provider,status,company_id,last_success_at,last_error,updated_at')
+          .select('id,provider,mode,status,company_id,last_success_at,last_error,updated_at')
           .or(`client_id.eq.${input.clientId},company_id.in.(${companyIds.join(',')})`)
           .neq('status', 'revoked')
           .order('updated_at', { ascending: false })
           .limit(30)
       : input.admin.from('client_integrations')
-          .select('provider,status,company_id,last_success_at,last_error,updated_at')
+          .select('id,provider,mode,status,company_id,last_success_at,last_error,updated_at')
           .eq('client_id', input.clientId)
           .neq('status', 'revoked')
           .order('updated_at', { ascending: false })
           .limit(30),
+    input.admin.from('cases')
+      .select('id,company_id,tenant_id,closed_at')
+      .eq('client_id', input.clientId)
+      .order('updated_at', { ascending: false })
+      .limit(30),
     input.admin.from('internal_tasks')
       .select('id,title,status,priority,due_date,case_id,company_id')
       .eq('client_id', input.clientId)
@@ -241,18 +279,65 @@ export async function loadKiaClientBrief(input: {
     }).catch(() => []),
   ]);
 
-  const companies = (companiesRes.data ?? []).map((row) => ({
-    id: row.id,
-    name: row.nombre_comercial ?? row.razon_social ?? null,
-  }));
+  const companyTenantById = new Map<string, string | null>();
+  const companies = (companiesRes.data ?? []).map((row) => {
+    companyTenantById.set(row.id, row.tenant_id ?? null);
+    return {
+      id: row.id,
+      name: row.nombre_comercial ?? row.razon_social ?? null,
+      tenantId: row.tenant_id ?? null,
+    };
+  });
 
   const integrations = (integrationsRes.data ?? []).map((row) => ({
+    id: row.id,
     provider: row.provider,
+    mode: row.mode ?? null,
     status: row.status,
     companyId: row.company_id ?? null,
+    tenantId: row.company_id ? (companyTenantById.get(row.company_id) ?? null) : null,
     lastSuccessAt: row.last_success_at ?? null,
     hasError: Boolean(row.last_error),
   }));
+
+  const caseLinks = (casesRes.data ?? []).map((row) => ({
+    caseId: row.id,
+    companyId: row.company_id ?? null,
+    tenantId: row.tenant_id ?? (row.company_id ? (companyTenantById.get(row.company_id) ?? null) : null),
+  }));
+
+  const currentCase = input.caseId ? caseLinks.find((item) => item.caseId === input.caseId) ?? null : null;
+  const currentCompanyId = input.companyId ?? currentCase?.companyId ?? null;
+  const currentTenantId = currentCase?.tenantId
+    ?? (currentCompanyId ? (companyTenantById.get(currentCompanyId) ?? null) : null)
+    ?? profile.tenant_id
+    ?? null;
+
+  const membershipRoleByCompany = new Map((memberships ?? []).map((row) => [row.company_id, row.role ?? null]));
+  const identity: KiaClientIdentityGraph = {
+    clientId: input.clientId,
+    profileTenantId: profile.tenant_id ?? null,
+    activeCompanyId: profile.active_company_id ?? null,
+    currentScope: {
+      caseId: input.caseId ?? null,
+      companyId: currentCompanyId,
+      tenantId: currentTenantId,
+    },
+    memberships: companies.map((company) => ({
+      companyId: company.id,
+      tenantId: company.tenantId,
+      role: membershipRoleByCompany.get(company.id) ?? null,
+    })),
+    cases: caseLinks,
+    integrations: integrations.map((integration) => ({
+      integrationId: integration.id,
+      provider: integration.provider,
+      mode: integration.mode,
+      companyId: integration.companyId,
+      tenantId: integration.tenantId,
+      status: integration.status,
+    })),
+  };
 
   const prioritize = <T extends { caseId?: string | null; companyId?: string | null }>(items: T[]) =>
     items.sort((a, b) => {
@@ -283,6 +368,7 @@ export async function loadKiaClientBrief(input: {
 
   return {
     firstName: (profile.full_name ?? '').trim().split(/\s+/)[0] || null,
+    identity,
     companies,
     integrations,
     pendingTasks,
