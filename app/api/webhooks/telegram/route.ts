@@ -98,6 +98,33 @@ async function handleTelegramUpdate(request: NextRequest) {
     return NextResponse.json({ ok: true, ignored: true, reason: 'client_telegram_disabled' });
   }
 
+  const startPayload = command === '/start' ? parts[1]?.trim() ?? '' : '';
+  const deepLinkCode = startPayload.startsWith('link_') ? startPayload.slice(5) : null;
+
+  if (deepLinkCode) {
+    try {
+      await consumeTelegramLinkCode({
+        admin,
+        code: deepLinkCode,
+        externalUserId: inbound.userId,
+        externalChatId: inbound.chatId,
+        externalUsername: inbound.username,
+      });
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: '✅ Telegram vinculado y verificado con tu identidad EXPERT. Ya puedes hablar con KIA en este chat.',
+      });
+      return NextResponse.json({ ok: true, linked: true, via: 'deep_link' });
+    } catch (err) {
+      console.warn('[Telegram link] deep-link consumption failed:', safeErrorMessage(err));
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'No se ha podido completar la vinculación. El enlace puede haber caducado o ya haberse usado. Genera uno nuevo desde EXPERT.',
+      });
+      return NextResponse.json({ ok: true, linked: false, reason: 'deep_link_rejected' });
+    }
+  }
+
   if (command === '/link') {
     const code = parts[1]?.trim();
     if (!code) {
