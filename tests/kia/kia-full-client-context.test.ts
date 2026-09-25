@@ -86,7 +86,7 @@ describe('KIA full client context from email', () => {
     expect(defs).toContain('get_client_communications');
     expect(registry).toContain("get_client_communications:          policy('R0', 'read',  'client_data')");
     expect(executor).toContain("case 'get_client_communications':");
-    expect(executor).toContain('clientId: context.contact?.clientId');
+    expect(executor).toContain('const clientId = context.contact?.clientId');
   });
 
   it('prioritizes origin email and first-name continuity without mixing unrelated history', () => {
