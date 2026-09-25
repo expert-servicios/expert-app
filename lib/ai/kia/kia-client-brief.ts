@@ -245,6 +245,7 @@ export async function loadKiaClientBrief(input: {
     .select('company_id,role')
     .eq('profile_id', input.clientId);
   const companyIds = (memberships ?? []).map((row) => row.company_id).filter(Boolean);
+  const allowedCompanyIds = new Set(companyIds);
 
   const [companiesRes, integrationsRes, casesRes, tasksRes, nbaRes, communications] = await Promise.all([
     companyIds.length
@@ -303,25 +304,30 @@ export async function loadKiaClientBrief(input: {
     };
   });
 
-  const integrations = (integrationsRes.data ?? []).map((row) => ({
-    id: row.id,
-    provider: row.provider,
-    mode: row.mode ?? null,
-    status: row.status,
-    companyId: row.company_id ?? null,
-    tenantId: row.company_id ? (companyTenantById.get(row.company_id) ?? null) : null,
-    lastSuccessAt: row.last_success_at ?? null,
-    hasError: Boolean(row.last_error),
-  }));
+  const integrations = (integrationsRes.data ?? [])
+    .filter((row) => !row.company_id || allowedCompanyIds.has(row.company_id))
+    .map((row) => ({
+      id: row.id,
+      provider: row.provider,
+      mode: row.mode ?? null,
+      status: row.status,
+      companyId: row.company_id ?? null,
+      tenantId: row.company_id ? (companyTenantById.get(row.company_id) ?? null) : null,
+      lastSuccessAt: row.last_success_at ?? null,
+      hasError: Boolean(row.last_error),
+    }));
 
-  const caseLinks = (casesRes.data ?? []).map((row) => ({
-    caseId: row.id,
-    companyId: row.company_id ?? null,
-    tenantId: row.tenant_id ?? (row.company_id ? (companyTenantById.get(row.company_id) ?? null) : null),
-  }));
+  const caseLinks = (casesRes.data ?? [])
+    .filter((row) => !row.company_id || allowedCompanyIds.has(row.company_id))
+    .map((row) => ({
+      caseId: row.id,
+      companyId: row.company_id ?? null,
+      tenantId: row.tenant_id ?? (row.company_id ? (companyTenantById.get(row.company_id) ?? null) : null),
+    }));
 
   const currentCase = input.caseId ? caseLinks.find((item) => item.caseId === input.caseId) ?? null : null;
-  const currentCompanyId = input.companyId ?? currentCase?.companyId ?? null;
+  const requestedCompanyId = input.companyId && allowedCompanyIds.has(input.companyId) ? input.companyId : null;
+  const currentCompanyId = requestedCompanyId ?? currentCase?.companyId ?? null;
   let currentTenantId = currentCase?.tenantId ?? null;
   if (!currentTenantId && currentCompanyId) {
     currentTenantId = companyTenantById.get(currentCompanyId) ?? null;
@@ -364,15 +370,17 @@ export async function loadKiaClientBrief(input: {
       return score(b) - score(a);
     });
 
-  const pendingTasks = prioritize((tasksRes.data ?? []).map((row) => ({
-    id: row.id,
-    title: row.title,
-    status: row.status,
-    priority: row.priority ?? null,
-    dueDate: row.due_date ?? null,
-    caseId: row.case_id ?? null,
-    companyId: row.company_id ?? null,
-  }))).slice(0, 12);
+  const pendingTasks = prioritize((tasksRes.data ?? [])
+    .filter((row) => !row.company_id || allowedCompanyIds.has(row.company_id))
+    .map((row) => ({
+      id: row.id,
+      title: row.title,
+      status: row.status,
+      priority: row.priority ?? null,
+      dueDate: row.due_date ?? null,
+      caseId: row.case_id ?? null,
+      companyId: row.company_id ?? null,
+    }))).slice(0, 12);
 
   const nextBestActions = (nbaRes.data ?? []).map((row) => ({
     id: row.id,
