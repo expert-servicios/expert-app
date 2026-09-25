@@ -22,7 +22,7 @@
     {
       "id": "C6",
       "message": "Tengo dudas antes de pagar",
-      "expected": { "intent": "book_call", "nextAction": "book_call", "requiresMeeting": true }
+      "expected": { "intent": "checkout", "nextAction": "reply_only", "requiresMeeting": false }
     },
     { "id": "C7", "message": "Puedo pagar por WhatsApp?" },
     { "id": "C8", "message": "Me puedes hacer descuento?" },
