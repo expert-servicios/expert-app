@@ -335,12 +335,22 @@ export async function runKiaDecision(input: {
         decision = repaired.decision;
       } else {
         usedFallback = true;
+        const contextualFallback = buildDeterministicCaseFallback(input.message, context, locale);
         decision = buildFallbackDecision({
           taskType: resolvedTaskType,
           contactStatus: context.contact.status,
-          userMessage: kiaFriendlyError('kia_error', locale),
+          userMessage: contextualFallback ?? kiaFriendlyError('kia_error', locale),
           reason: `Structured AI failed: ${safeErrorMessage(err)}`,
         });
+        if (contextualFallback) {
+          decision = {
+            ...decision,
+            intent: 'case_status',
+            nextAction: 'reply_only',
+            requiresManualReview: false,
+            rulesApplied: [...decision.rulesApplied, 'deterministic_case_fallback'],
+          };
+        }
       }
     }
   }
@@ -400,6 +410,39 @@ export async function runKiaDecision(input: {
     usedFallback,
     decisionLogId,
   };
+}
+
+function buildDeterministicCaseFallback(
+  message: string,
+  context: KiaContext,
+  locale: 'es' | 'ru',
+): string | null {
+  const currentCase = context.cases[0];
+  if (!currentCase) return null;
+
+  const isCaseQuestion = /\b(expediente|estado|documentos?|hacer ahora|siguiente paso|tr[aá]mite)\b/i.test(message)
+    || /(?:дело|статус|документ|что.*делать|следующ)/iu.test(message);
+  if (!isCaseQuestion) return null;
+
+  const nextAction = currentCase.nextAction?.trim() ?? '';
+  const nextActionLocale = /[А-Яа-яЁё]/.test(nextAction) ? 'ru' : 'es';
+  const safeNextAction = nextAction && nextActionLocale === locale ? nextAction : null;
+
+  if (locale === 'ru') {
+    const parts = [
+      `Текущий статус дела: ${currentCase.status}.`,
+      safeNextAction ? `Следующий зарегистрированный шаг: ${safeNextAction}` : null,
+      !safeNextAction ? 'Я не буду придумывать следующий шаг: он требует проверки данных дела.' : null,
+    ];
+    return parts.filter(Boolean).join(' ');
+  }
+
+  const parts = [
+    `El estado actual del expediente es: ${currentCase.status}.`,
+    safeNextAction ? `El siguiente paso registrado es: ${safeNextAction}` : null,
+    !safeNextAction ? 'No voy a inventar el siguiente paso: requiere revisar los datos del expediente.' : null,
+  ];
+  return parts.filter(Boolean).join(' ');
 }
 
 function finalizeDecisionPresentation(decision: KiaDecision, channel: KiaChannel, locale: 'es' | 'ru'): KiaDecision {
