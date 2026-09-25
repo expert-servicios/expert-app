@@ -40,10 +40,18 @@ export function appendKiaSignature(html: string, metadata?: Record<string, unkno
         <td valign="top" style="font-family:Arial,sans-serif;color:#07111d;">
           <div style="font-size:15px;font-weight:700;line-height:1.35;">KIA · EXPERT</div>
           <div style="margin-top:4px;font-size:13px;line-height:1.55;color:#465567;">${intro}</div>
-          <div style="margin-top:12px;">
-            <a href="${chatHref}" style="display:inline-block;margin:0 8px 8px 0;background:#07111d;color:#fff;text-decoration:none;padding:9px 14px;border-radius:20px;font-size:12px;font-weight:700;">${chatLabel}</a>
-            <a href="${telegramHref}" style="display:inline-block;margin:0 0 8px;background:#f3ead7;color:#07111d;text-decoration:none;padding:9px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid #d8cbb5;">${telegramLabel}</a>
-          </div>
+          <table cellpadding="0" cellspacing="0" role="presentation" style="margin-top:12px;border-collapse:collapse;">
+            <tr>
+              <td style="padding:0 0 7px 0;">
+                <a href="${chatHref}" style="display:inline-block;background:#07111d;color:#fff;text-decoration:none;padding:9px 14px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;">${chatLabel}</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0 0 7px 0;">
+                <a href="${telegramHref}" style="display:inline-block;background:#f3ead7;color:#07111d;text-decoration:none;padding:9px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid #d8cbb5;white-space:nowrap;">${telegramLabel}</a>
+              </td>
+            </tr>
+          </table>
           <div style="margin-top:2px;font-size:11px;color:#7b8794;">${ru ? 'KIA — виртуальная ассистентка EXPERT.' : 'KIA es una asistente virtual de EXPERT.'} · <a href="mailto:info@expertconsulting.es" style="color:#9a6700;text-decoration:none;">info@expertconsulting.es</a></div>
         </td>
       </tr>
