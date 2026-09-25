@@ -44,6 +44,7 @@ import { buildAutomaticKiaVisualResult } from '@/lib/ai/kia/kia-visual-discovery
 import { detectKiaConversationOpportunity } from '@/lib/ai/kia/kia-contextual-opportunity';
 import { resolveKiaStaffPreview } from '@/lib/ai/kia/kia-staff-preview';
 import { kiaFriendlyError } from '@/lib/ai/kia/kia-error-copy';
+import { buildKiaProactiveSuggestions } from '@/lib/ai/kia/kia-proactive-suggestions';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -476,9 +477,21 @@ export async function POST(request: NextRequest) {
     console.warn('[KiaCopilot] session save failed:', err);
   }
 
+  const quickReplies = (result.decision.quickReplies ?? []).map((replyItem) => replyItem.title);
+  const proactiveSuggestions = buildKiaProactiveSuggestions({
+    locale: responseLocale,
+    intent: result.decision.intent,
+    nextAction: result.decision.nextAction,
+    hasCase: result.context.cases.length > 0,
+    hasCompany: Boolean(result.context.company),
+    pendingDocuments: result.context.documents.pendingCount,
+    existingQuickReplies: quickReplies,
+  });
+
   const response = NextResponse.json({
     reply,
-    quickReplies: (result.decision.quickReplies ?? []).map((replyItem) => replyItem.title),
+    quickReplies,
+    proactiveSuggestions,
     intent     : result.decision.intent,
     nextAction : result.decision.nextAction,
     avatarState,
