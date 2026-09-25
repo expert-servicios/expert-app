@@ -114,6 +114,8 @@ export async function loadKiaClientCommunications(input: {
   query?: string | null;
   channel?: 'all' | 'email' | 'whatsapp' | 'kia';
   limit?: number;
+  caseId?: string | null;
+  originSubject?: string | null;
 }): Promise<KiaClientCommunication[]> {
   const channel = input.channel ?? 'all';
   const fetchLimit = Math.min(Math.max((input.limit ?? 20) * 3, 30), 100);
@@ -163,7 +165,7 @@ export async function loadKiaClientCommunications(input: {
       channel: 'email',
       direction: 'out',
       subject: row.subject ?? row.event_type ?? null,
-      text: compact(row.html, 1200),
+      text: compact(row.html, 700),
       createdAt: row.created_at,
       caseId: typeof metadata.case_id === 'string' ? metadata.case_id : null,
       ref: `email-out:${row.id}`,
@@ -174,7 +176,7 @@ export async function loadKiaClientCommunications(input: {
       channel: 'email',
       direction: 'in',
       subject: row.subject ?? null,
-      text: compact(row.snippet, 1200),
+      text: compact(row.snippet, 700),
       createdAt: row.date,
       caseId: row.case_id ?? null,
       ref: `email-in:${row.thread_id}`,
@@ -185,7 +187,7 @@ export async function loadKiaClientCommunications(input: {
       channel: 'whatsapp',
       direction: row.direction === 'inbound' ? 'in' : 'out',
       subject: null,
-      text: compact(row.body, 1200),
+      text: compact(row.body, 700),
       createdAt: row.created_at,
       caseId: row.case_id ?? null,
       ref: `whatsapp:${row.id}`,
@@ -198,7 +200,7 @@ export async function loadKiaClientCommunications(input: {
       channel: 'kia',
       direction: row.role === 'user' ? 'in' : 'out',
       subject: null,
-      text: compact(row.body, 1200),
+      text: compact(row.body, 700),
       createdAt: row.created_at,
       caseId: typeof metadata.case_id === 'string' ? metadata.case_id : null,
       ref: `kia:${row.id}`,
@@ -206,10 +208,20 @@ export async function loadKiaClientCommunications(input: {
   }
 
   const normalizedQuery = input.query?.trim().toLocaleLowerCase() ?? '';
+  const normalizedOrigin = input.originSubject?.trim().toLocaleLowerCase() ?? '';
+  const score = (item: KiaClientCommunication): number => {
+    let value = 0;
+    if (input.caseId && item.caseId === input.caseId) value += 10;
+    if (normalizedOrigin && (item.subject ?? '').toLocaleLowerCase() === normalizedOrigin) value += 8;
+    if (item.channel === 'email') value += 2;
+    if (item.direction === 'in') value += 1;
+    return value;
+  };
+
   return rows
     .filter((item) => !normalizedQuery || `${item.subject ?? ''} ${item.text}`.toLocaleLowerCase().includes(normalizedQuery))
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .slice(0, Math.min(Math.max(input.limit ?? 20, 1), 50));
+    .sort((a, b) => score(b) - score(a) || b.createdAt.localeCompare(a.createdAt))
+    .slice(0, Math.min(Math.max(input.limit ?? 12, 1), 50));
 }
 
 export async function loadKiaClientBrief(input: {
@@ -275,7 +287,9 @@ export async function loadKiaClientBrief(input: {
       admin: input.admin,
       clientId: input.clientId,
       email: profile.email,
-      limit: 24,
+      limit: 12,
+      caseId: input.caseId ?? null,
+      originSubject: input.originEmail?.subject ?? null,
     }).catch(() => []),
   ]);
 
