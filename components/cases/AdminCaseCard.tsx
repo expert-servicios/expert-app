@@ -31,6 +31,8 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
   const [message, setMessage] = useState<string | null>(null);
   const [assignedTo, setAssignedTo] = useState<string | null>(caseItem.assigned_to ?? null);
   const [assigning, setAssigning] = useState(false);
+  const [kiaTesting, setKiaTesting] = useState(false);
+  const [kiaTestSent, setKiaTestSent] = useState(false);
 
   const handleAssign = async (nextAssignee: string | null) => {
     setAssigning(true);
@@ -50,6 +52,31 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
   };
 
   const statusChanged = status !== initialStatus;
+
+  const handleKiaTest = async () => {
+    if (!window.confirm('Enviar una prueba de KIA a tu propio correo de Admin usando este expediente?')) return;
+    setKiaTesting(true);
+    setKiaTestSent(false);
+    setMessage(null);
+    try {
+      const response = await fetch('/api/admin/kia/client-preview-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ case_id: caseItem.id, scenario: 'status' }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setMessage(data.error ?? 'No se pudo enviar la prueba de KIA.');
+        return;
+      }
+      setKiaTestSent(true);
+      setMessage('Prueba KIA enviada a tu correo Admin.');
+    } catch {
+      setMessage('No se pudo enviar la prueba de KIA.');
+    } finally {
+      setKiaTesting(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -133,13 +160,15 @@ export function AdminCaseCard({ caseItem }: { caseItem: Case }) {
           className="rounded-xl border border-[#d8cbb5] bg-white px-3 py-2 text-sm text-[#07111d] outline-none focus:border-[#c88b25]"
         />
 
-        <Link
-          href={`/admin/expedientes/${caseItem.id}?kiaTest=1`}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[#c88b25] bg-white px-4 py-2 text-xs font-semibold text-[#07111d] transition hover:bg-[#fff8e8]"
+        <button
+          type="button"
+          onClick={() => void handleKiaTest()}
+          disabled={kiaTesting}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[#c88b25] bg-white px-4 py-2 text-xs font-semibold text-[#07111d] transition hover:bg-[#fff8e8] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Bot className="h-3 w-3 text-[#c88b25]" />
-          Probar KIA
-        </Link>
+          {kiaTesting ? 'Enviando…' : kiaTestSent ? 'Prueba enviada' : 'Probar KIA'}
+        </button>
 
         <Link
           href={`/admin/expedientes/${caseItem.id}`}
