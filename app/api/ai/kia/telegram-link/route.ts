@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
       code: link.code,
       expiresAt: link.expiresAt,
       command: `/link ${link.code}`,
+      deepLink: `https://t.me/kia_expert_bot?start=link_${encodeURIComponent(link.code)}`,
     });
   } catch (err) {
     console.error('[Telegram link] token creation failed:', safeErrorMessage(err));
