@@ -334,7 +334,7 @@ function antiTestDecision(base, lower) {
 
 function russianDecision(base, lower) {
   const ruBase = { ...base, dataToSave: { language: 'ru' } };
-  if (lower.includes('отказ')) return asDecision(ruBase, 'book_call', 'book_call', 'По такому вопросу лучше записаться на 15-минутный звонок.', ['russian_language_preserved'], { requiresMeeting: true });
+  if (lower.includes('отказ')) return asDecision(ruBase, 'viability', 'run_viability', 'Сначала разберём причину отказа и проверим дальнейшие варианты. Если потребуется участие специалиста, я предложу его только после этой проверки.', ['russian_language_preserved', 'complex_case_guidance_before_human_escalation'], { requiresMeeting: false });
   if (lower.includes('api')) return asDecision(ruBase, 'connect_holded', 'send_holded_connect_link', 'API ключ нужно подключить только через защищенный кабинет.', ['russian_language_preserved', 'never_request_api_key_in_whatsapp']);
   if (lower.includes('клиент')) return asDecision({ ...ruBase, contactStatus: 'client' }, 'case_status', 'get_case_status', 'Проверю ваш клиентский контекст и статус дела.', ['russian_language_preserved', 'client_flow_not_lead']);
   if (lower.includes('документы')) return asDecision(ruBase, 'send_documents', 'get_case_status', 'Проверю чек-лист документов по вашему делу.', ['russian_language_preserved']);
