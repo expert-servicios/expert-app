@@ -222,7 +222,6 @@ export async function sendEmail({
   html = localized.html;
   metadata = localized.metadata;
 
-  html = appendKiaSignature(html, metadata);
   if (metadata?.kia_author === true && metadata.kia_contextual_cta !== false) {
     metadata = { ...metadata, kia_contextual_cta: true };
   }
@@ -233,7 +232,7 @@ export async function sendEmail({
     html,
     metadata,
   });
-  html = contextual.html;
+  html = appendKiaSignature(contextual.html, contextual.metadata);
   metadata = contextual.metadata;
 
   const effectiveIdempotencyKey = idempotencyKey ?? deriveIdempotencyKey(eventType, metadata);
