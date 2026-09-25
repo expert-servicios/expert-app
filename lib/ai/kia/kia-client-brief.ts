@@ -103,7 +103,8 @@ function compact(value: string | null | undefined, max = 1200): string {
 }
 
 export function emailContextExcerpt(html: string, max = 3500): string {
-  const beforeSignature = html.split(/data-kia-signature=/i)[0] ?? html;
+  const signatureStart = html.search(/<table[^>]*data-kia-signature=/i);
+  const beforeSignature = signatureStart >= 0 ? html.slice(0, signatureStart) : html;
   return compact(beforeSignature, max);
 }
 
