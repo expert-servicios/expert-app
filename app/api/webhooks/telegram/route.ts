@@ -24,6 +24,7 @@ import { buildAutomaticKiaVisualResult } from '@/lib/ai/kia/kia-visual-discovery
 import { detectKiaConversationOpportunity } from '@/lib/ai/kia/kia-contextual-opportunity';
 import { buildKiaCopilotArtifacts } from '@/lib/ai/kia/kia-copilot-artifacts';
 import { buildKiaTelegramPresentation } from '@/lib/ai/kia/kia-telegram-presentation';
+import { buildKiaProactiveSuggestions } from '@/lib/ai/kia/kia-proactive-suggestions';
 import { persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import {
   escapeTelegramHtml,
@@ -474,9 +475,19 @@ async function handleTelegramUpdate(request: NextRequest) {
     if (automaticVisualResult) artifactToolResults.push(automaticVisualResult);
     if (automaticServiceResult?.result.services.length) artifactToolResults.push(automaticServiceResult);
     const artifacts = buildKiaCopilotArtifacts(artifactToolResults, result.decision);
+    const operationalQuickReplies = (result.decision.quickReplies ?? []).map((item) => item.title);
+    const proactiveSuggestions = buildKiaProactiveSuggestions({
+      locale: responseLocale,
+      intent: result.decision.intent,
+      nextAction: result.decision.nextAction,
+      hasCase: result.context.cases.length > 0,
+      hasCompany: Boolean(result.context.company),
+      pendingDocuments: result.context.documents.pendingCount,
+      existingQuickReplies: operationalQuickReplies,
+    });
     const presentation = buildKiaTelegramPresentation({
       reply: result.userMessage,
-      quickReplies: (result.decision.quickReplies ?? []).map((item) => item.title),
+      quickReplies: [...operationalQuickReplies, ...proactiveSuggestions],
       artifacts,
     });
 
