@@ -3,7 +3,7 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { getService } from '@/lib/services/service-registry';
 import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
-import { resolveEffectiveCaseStatus } from '@/lib/cases/case-status';
+import { caseStatusLabel, resolveEffectiveCaseStatus } from '@/lib/cases/case-status';
 import { getNationalityMinorAutonomyPolicy } from '@/lib/services/nationality-minor-autonomy';
 import { getCurrentRegulatoryValue } from '@/lib/regulatory/regulatory-values';
 import { getCurrentRegulatoryRuleset } from '@/lib/regulatory/regulatory-rulesets';
@@ -312,16 +312,8 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         if (error) return fail(toolCall.name, 'Error consultando expedientes.');
 
         type CaseRow = { id: string; service: string; service_id: string | null; category: string | null; status: string; state: string | null; next_action: string | null; priority: string; due_date: string | null; opened_at: string; company_id: string | null };
-        const STATUS_LABELS: Record<string, string> = {
-          nuevo: 'Nuevo',
-          pendiente_cliente: 'Pendiente tu documentación',
-          en_revision: 'En revisión',
-          listo_para_presentar: 'Listo para presentar',
-          presentado: 'Presentado',
-          finalizado: 'Finalizado',
-          bloqueado: 'Bloqueado',
-        };
         const rows = (data ?? []) as CaseRow[];
+        const locale = context.contact.language === 'ru' ? 'ru' : 'es';
         return ok(toolCall.name, {
           count: rows.length,
           company_id: companyId,
@@ -330,7 +322,7 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
             servicio: c.service,
             servicio_slug: c.service_id,
             categoria: c.category,
-            estado: STATUS_LABELS[resolveEffectiveCaseStatus(c.status, c.state)] ?? resolveEffectiveCaseStatus(c.status, c.state),
+            estado: caseStatusLabel(resolveEffectiveCaseStatus(c.status, c.state), locale),
             estado_raw: resolveEffectiveCaseStatus(c.status, c.state),
             siguiente_paso: c.next_action,
             prioridad: c.priority,
