@@ -58,12 +58,14 @@ describe('KIA M7.2d Telegram linking', () => {
     expect(route).toContain('createTelegramLinkCode');
   });
 
-  it('consumes /link before normal KIA identity routing', () => {
+  it('consumes /link before normal KIA identity routing and before the client rollout gate', () => {
     const route = source('app/api/webhooks/telegram/route.ts');
     expect(route).toContain("if (command === '/link')");
     expect(route).toContain('consumeTelegramLinkCode');
     expect(route).toContain('externalUserId: inbound.userId');
     expect(route).toContain('externalChatId: inbound.chatId');
     expect(route).toContain('resolveVerifiedTelegramIdentity');
+    expect(route.indexOf("if (command === '/link')")).toBeLessThan(route.indexOf("if (!adminChat && !telegramClientsEnabled)"));
+    expect(route.indexOf("startPayload.startsWith('link_')")).toBeLessThan(route.indexOf("if (!adminChat && !telegramClientsEnabled)"));
   });
 });
