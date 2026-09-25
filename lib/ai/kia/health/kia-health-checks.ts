@@ -6,6 +6,7 @@ export async function runKiaTechnicalChecks(): Promise<KiaHealthCheckResult[]> {
   const checks: KiaHealthCheckResult[] = [];
   checks.push(await checkSupabase());
   checks.push(await checkProviderConfig());
+  checks.push(checkGatewayPrimaryConfig());
   checks.push(await checkAnthropicStatus());
   checks.push(await checkOpenAiStatus());
   checks.push(checkWabaConfig());
@@ -175,6 +176,23 @@ async function checkProviderConfig(): Promise<KiaHealthCheckResult> {
     provider: gatewayConfigured ? 'vercel-ai-gateway' : (providers[0]?.provider ?? null),
     model: gatewayConfigured ? gatewayModelForTask('chat_reply') : (providers[0]?.model ?? null),
     error: configured ? null : 'No AI provider or Vercel AI Gateway configured',
+  });
+}
+
+function checkGatewayPrimaryConfig(): KiaHealthCheckResult {
+  const configured = isKiaGatewayConfigured();
+  return technicalResult({
+    checkId: 'gateway_primary_configured',
+    title: 'AI Gateway / Gemini primario',
+    severity: 'critical',
+    status: configured ? 'passed' : 'failed',
+    actual: {
+      gatewayConfigured: configured,
+      chatModel: configured ? gatewayModelForTask('chat_reply') : null,
+    },
+    provider: configured ? 'vercel-ai-gateway' : null,
+    model: configured ? gatewayModelForTask('chat_reply') : null,
+    error: configured ? null : 'AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN no disponible: KIA caería solo a providers directos',
   });
 }
 
