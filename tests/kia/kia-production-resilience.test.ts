@@ -27,6 +27,15 @@ describe('KIA production resilience', () => {
     expect(router).toContain('provider: "vercel-ai-gateway"');
   });
 
+  it('has an independent direct three-provider pool when Gateway is unavailable', () => {
+    expect(router).toContain('GEMINI_API_KEY');
+    expect(router).toContain('GOOGLE_GENERATIVE_AI_API_KEY');
+    expect(router).toContain('google,anthropic,openai');
+    expect(router).toContain('generativelanguage.googleapis.com/v1beta/openai/chat/completions');
+    expect(router).toContain('provider.provider === "google"');
+    expect(router).toContain('callGoogle(provider, request)');
+  });
+
   it('uses the unified KIA signature for preview email instead of an inline CTA', () => {
     expect(preview).toContain('kia_chat_href: href');
     expect(preview).toContain('kia_telegram_href: telegramHref');
