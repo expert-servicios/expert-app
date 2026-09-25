@@ -16,6 +16,7 @@ import { KiaAvatar } from '@/components/kia/KiaAvatar';
 import type { KiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 import type { KiaCopilotArtifact } from '@/lib/ai/kia/kia-copilot-artifacts';
 import { kiaFriendlyError } from '@/lib/ai/kia/kia-error-copy';
+import { detectKiaMessageLocale } from '@/lib/ai/kia/kia-locale';
 
 interface ChatMessage {
   id: string;
@@ -60,6 +61,13 @@ interface KiaContextSummary {
   staffPreview?: boolean;
 }
 
+function contextualFieldForLocale(value: string | null | undefined, locale: 'es' | 'ru'): string | null {
+  const text = value?.trim() ?? '';
+  if (!text) return null;
+  const detected = detectKiaMessageLocale(text);
+  return detected && detected !== locale ? null : text;
+}
+
 function contextualWelcome(context: KiaContextSummary): ChatMessage {
   const name = context.firstName ? `, ${context.firstName}` : '';
   const hasOpenCase = Boolean(context.case);
@@ -84,8 +92,8 @@ function contextualWelcome(context: KiaContextSummary): ChatMessage {
     };
   }
 
-  const service = context.case?.service ?? null;
-  const nextAction = context.case?.next_action ?? null;
+  const service = contextualFieldForLocale(context.case?.service, context.preferredLanguage);
+  const nextAction = contextualFieldForLocale(context.case?.next_action, context.preferredLanguage);
 
   if (context.preferredLanguage === 'ru') {
     return {
@@ -218,7 +226,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
       const assistantMsg: ChatMessage = {
         id          : crypto.randomUUID(),
         role        : 'assistant',
-        text        : data.reply ?? 'Lo siento, no pude procesar tu consulta.',
+        text        : data.reply?.trim() || kiaFriendlyError(data.error ?? 'kia_error', detectKiaMessageLocale(text) ?? contextSummary?.preferredLanguage ?? 'es'),
         quickReplies: data.quickReplies?.length ? data.quickReplies : undefined,
         avatarState : data.avatarState ?? (data.error ? 'aviso' : 'ayuda'),
         artifacts   : data.artifacts?.length ? data.artifacts : undefined,
@@ -243,7 +251,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
     } finally {
       setLoading(false);
     }
-  }, [contextLoading, contextToken, loading, messages, pathname, sessionId]);
+  }, [contextLoading, contextSummary, contextToken, loading, messages, pathname, sessionId]);
 
   const rate = useCallback(async (messageId: string, rating: 'positive' | 'negative') => {
     const target = messages.find((message) => message.id === messageId);

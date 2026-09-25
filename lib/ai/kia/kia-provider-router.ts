@@ -23,9 +23,11 @@ export interface KiaProviderRequest {
 const SONNET = "claude-sonnet-4-6";
 const HAIKU = "claude-haiku-4-5-20251001";
 const AI_GATEWAY_CHAT_URL = "https://ai-gateway.vercel.sh/v1/chat/completions";
+const GEMINI_OPENAI_COMPAT_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const GATEWAY_DEFAULT_MODEL = "openai/gpt-5.4";
 const GATEWAY_REASONING_MODEL = "openai/gpt-5.6-sol";
 const GEMINI_CHAT_MODEL = "google/gemini-3.6-flash";
+const GEMINI_DIRECT_DEFAULT_MODEL = "gemini-3.8-flash";
 const GEMINI_REASONING_MODEL = "google/gemini-3.1-pro-preview";
 const GATEWAY_ANTHROPIC_FALLBACK_MODEL = "anthropic/claude-sonnet-5";
 
@@ -114,12 +116,62 @@ interface AnthropicResponseData {
   error?: unknown;
 }
 
+type KiaProviderRouteKey = "gateway" | KiaAiProvider;
+const providerCooldownUntil = new Map<KiaProviderRouteKey, number>();
+
+function providerCooldownMs(error: string): number {
+  if (/HTTP\s+(401|403)\b/i.test(error)) return 5 * 60_000;
+  if (/HTTP\s+429\b/i.test(error)) return 60_000;
+  if (/HTTP\s+5\d\d\b|timeout|timed out|ECONNRESET|fetch failed/i.test(error)) return 30_000;
+  return 0;
+}
+
+function providerCoolingDown(provider: KiaProviderRouteKey): boolean {
+  const until = providerCooldownUntil.get(provider) ?? 0;
+  if (until <= Date.now()) {
+    providerCooldownUntil.delete(provider);
+    return false;
+  }
+  return true;
+}
+
+function markProviderFailure(provider: KiaProviderRouteKey, error: string): void {
+  const cooldownMs = providerCooldownMs(error);
+  if (cooldownMs > 0) providerCooldownUntil.set(provider, Date.now() + cooldownMs);
+}
+
+function clearProviderFailure(provider: KiaProviderRouteKey): void {
+  providerCooldownUntil.delete(provider);
+}
+
 export function getKiaProviderOrder(): ProviderConfig[] {
-  return getConfiguredWabaAiProviders().map((provider) => ({
+  const providers: ProviderConfig[] = getConfiguredWabaAiProviders().map((provider) => ({
     provider: provider.provider,
     apiKey: provider.apiKey,
     model: provider.model,
   }));
+
+  const geminiKey = process.env.GEMINI_API_KEY?.trim()
+    || process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
+  if (geminiKey) {
+    providers.push({
+      provider: "google",
+      apiKey: geminiKey,
+      model: process.env.GEMINI_MODEL?.trim() || GEMINI_DIRECT_DEFAULT_MODEL,
+    });
+  }
+
+  const requestedOrder = (process.env.KIA_DIRECT_PROVIDER_ORDER || "google,anthropic,openai")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter((value): value is KiaAiProvider =>
+      value === "google" || value === "anthropic" || value === "openai",
+    );
+  const priority = new Map(requestedOrder.map((provider, index) => [provider, index]));
+
+  return providers.sort((a, b) =>
+    (priority.get(a.provider) ?? 99) - (priority.get(b.provider) ?? 99),
+  );
 }
 
 export function defaultEffortForTask(taskType: KiaTaskType): KiaEffort {
@@ -146,12 +198,16 @@ export async function runKiaProviderRequest(
 ): Promise<KiaProviderResult> {
   const gatewayToken = getKiaGatewayToken();
   let lastError = "";
+  let lastFailedProvider: ProviderConfig | null = null;
 
-  if (gatewayToken) {
+  if (gatewayToken && !providerCoolingDown("gateway")) {
     try {
-      return await callGateway(gatewayToken, request);
+      const result = await callGateway(gatewayToken, request);
+      clearProviderFailure("gateway");
+      return result;
     } catch (error) {
       lastError = safeErrorMessage(error);
+      markProviderFailure("gateway", lastError);
       console.error(
         "[Kia provider router] provider failed",
         redactJson({
@@ -173,14 +229,20 @@ export async function runKiaProviderRequest(
     };
   }
   for (const provider of providers) {
+    if (providerCoolingDown(provider.provider)) continue;
     try {
       const result =
         provider.provider === "anthropic"
           ? await callAnthropic(provider, request)
-          : await callOpenAi(provider, request);
+          : provider.provider === "google"
+            ? await callGoogle(provider, request)
+            : await callOpenAi(provider, request);
+      clearProviderFailure(provider.provider);
       return result;
     } catch (error) {
       lastError = safeErrorMessage(error);
+      lastFailedProvider = provider;
+      markProviderFailure(provider.provider, lastError);
       console.error(
         "[Kia provider router] provider failed",
         redactJson({
@@ -193,10 +255,10 @@ export async function runKiaProviderRequest(
     }
   }
 
-  const fallbackProvider = providers[0];
+  const failedProvider = lastFailedProvider ?? providers[providers.length - 1] ?? providers[0];
   return {
-    provider: fallbackProvider.provider,
-    model: fallbackProvider.model,
+    provider: failedProvider.provider,
+    model: failedProvider.model,
     error: lastError || "All providers failed",
   };
 }
@@ -435,9 +497,25 @@ async function callGateway(
   };
 }
 
+async function callGoogle(
+  provider: ProviderConfig,
+  request: KiaProviderRequest,
+): Promise<KiaProviderResult> {
+  return callOpenAiCompatible(provider, request, GEMINI_OPENAI_COMPAT_URL, "google");
+}
+
 async function callOpenAi(
   provider: ProviderConfig,
   request: KiaProviderRequest,
+): Promise<KiaProviderResult> {
+  return callOpenAiCompatible(provider, request, "https://api.openai.com/v1/chat/completions", "openai");
+}
+
+async function callOpenAiCompatible(
+  provider: ProviderConfig,
+  request: KiaProviderRequest,
+  endpoint: string,
+  providerName: "google" | "openai",
 ): Promise<KiaProviderResult> {
   const messages: Array<{
     role: "system" | WabaAiMessage["role"];
@@ -469,12 +547,12 @@ async function callOpenAi(
         name: tool.name,
         description: tool.description,
         parameters: tool.input_schema,
-        strict: tool.strict === true,
+        ...(providerName === "openai" && tool.strict === true ? { strict: true } : {}),
       },
     }));
   }
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       authorization: `Bearer ${provider.apiKey}`,
@@ -507,9 +585,13 @@ async function callOpenAi(
         )
     : [];
 
+  if (!rawText && toolCalls.length === 0) {
+    throw new Error(`${providerName} returned an empty response`);
+  }
+
   return {
-    provider: "openai",
-    model: provider.model,
+    provider: providerName,
+    model: typeof data?.model === "string" ? data.model : provider.model,
     rawText,
     parsedJson: parseMaybeJson(rawText),
     toolCalls,
