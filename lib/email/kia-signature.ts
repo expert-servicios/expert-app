@@ -11,7 +11,7 @@ function stringMeta(metadata: Record<string, unknown> | undefined, key: string):
  */
 export function appendKiaSignature(html: string, metadata?: Record<string, unknown>): string {
   if (metadata?.kia_signature === false) return html;
-  if (html.includes('data-kia-signature=') || html.includes('data-kia-contextual-cta=')) return html;
+  if (html.includes('data-kia-signature=')) return html;
 
   const ru = metadata?.preferred_language === 'ru' || metadata?.checkout_locale === 'ru';
   const appUrl = getPublicAppUrl().replace(/\/$/, '');
