@@ -39,6 +39,7 @@ import { storeKiaMemory, buildMemorySummary } from './kia-memory-store';
 import { getKiaFewShotExamples, formatFewShotExamples } from './kia-few-shot-provider';
 import { selectSubAgentProfile } from './kia-sub-agent-router';
 import { estimateCost, sumCostEstimates, extractTokenUsageFromProviderResult, type KiaCostEstimate } from './kia-cost-tracker';
+import { detectKiaConversationOpportunity } from './kia-contextual-opportunity';
 
 const KIA_MAX_TOOL_ITERATIONS = 5;
 const KIA_TOOL_LOOP_TIMEOUT_MS = 25_000;
@@ -399,7 +400,7 @@ export async function runKiaDecision(input: {
 
 function finalizeDecisionPresentation(decision: KiaDecision, channel: KiaChannel, locale: 'es' | 'ru'): KiaDecision {
   const quickReplyAllowedActions: KiaDecision['nextAction'][] = ['ask_one_question', 'show_menu', 'reply_only'];
-  const shouldKeepQuickReplies = (channel === 'waba' || decision.taskType === 'admin_ai_compose')
+  const shouldKeepQuickReplies = (channel === 'waba' || channel === 'dashboard' || decision.taskType === 'admin_ai_compose')
     && quickReplyAllowedActions.includes(decision.nextAction);
   const quickReplies = shouldKeepQuickReplies
     ? normalizeKiaQuickReplies(decision.quickReplies, locale, { ensureOther: true })
@@ -610,6 +611,35 @@ function applyBackendPolicyGuards(
   const rules = new Set(decision.rulesApplied);
   const warnings = [...decision.warnings];
   const missingData = new Set(decision.missingData);
+  const opportunity = detectKiaConversationOpportunity(input.message, decision);
+
+  // Commercial and meeting CTAs are product-policy decisions, not model-only
+  // decisions. Remove unsupported discovery/escalation before any tool executes.
+  let guardedDecision = decision;
+  if (!opportunity.allowServiceDiscovery && decision.toolRequests.some((req) => req.toolName === 'find_relevant_services')) {
+    rules.add('service_offer_requires_concrete_need');
+    warnings.push('service_discovery_removed_without_concrete_need');
+    guardedDecision = {
+      ...guardedDecision,
+      toolRequests: guardedDecision.toolRequests.filter((req) => req.toolName !== 'find_relevant_services'),
+    };
+  }
+  if (!opportunity.allowMeetingSuggestion && (guardedDecision.nextAction === 'book_call' || guardedDecision.requiresMeeting)) {
+    rules.add('meeting_reserved_for_human_escalation');
+    warnings.push('meeting_suggestion_removed_without_escalation');
+    guardedDecision = {
+      ...guardedDecision,
+      nextAction: guardedDecision.nextAction === 'book_call' ? 'reply_only' : guardedDecision.nextAction,
+      requiresMeeting: false,
+    };
+  }
+  if (guardedDecision !== decision) {
+    decision = {
+      ...guardedDecision,
+      rulesApplied: Array.from(rules),
+      warnings,
+    };
+  }
 
   if ((input.channel === 'waba' || input.channel === 'email') && /(api key|clave api|token)/i.test(input.message)) {
     rules.add('never_request_api_key_in_whatsapp');

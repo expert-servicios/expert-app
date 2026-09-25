@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="270" viewBox="0 0 920 270" role="img" aria-labelledby="title desc">
+  <title id="title">Firma KIA de EXPERT</title>
+  <desc id="desc">Vista previa de la firma de correo de KIA con accesos a Chat y Telegram.</desc>
+  <rect width="920" height="270" rx="24" fill="#ffffff"/>
+  <rect x="1" y="1" width="918" height="268" rx="23" fill="none" stroke="#e8e0d4" stroke-width="2"/>
+  <line x1="36" y1="42" x2="884" y2="42" stroke="#e8e0d4" stroke-width="2"/>
+  <circle cx="96" cy="112" r="44" fill="#f3ead7" stroke="#d8cbb5" stroke-width="2"/>
+  <text x="96" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#07111d">KIA</text>
+  <text x="166" y="94" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#07111d">KIA · EXPERT</text>
+  <text x="166" y="124" font-family="Arial, sans-serif" font-size="17" fill="#465567">Asistente IA de EXPERT. Puedes seguir hablando conmigo por chat o Telegram.</text>
+  <rect x="166" y="150" width="168" height="44" rx="22" fill="#07111d"/>
+  <text x="250" y="178" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff">Hablar con KIA</text>
+  <rect x="350" y="150" width="138" height="44" rx="22" fill="#f3ead7" stroke="#d8cbb5"/>
+  <text x="419" y="178" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#07111d">Telegram</text>
+  <text x="166" y="224" font-family="Arial, sans-serif" font-size="14" fill="#7b8794">KIA es una asistente virtual de EXPERT · info@expertconsulting.es</text>
+</svg>

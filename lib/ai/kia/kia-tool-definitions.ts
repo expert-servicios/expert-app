@@ -251,7 +251,7 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_case_timeline: 'Return a compact operational timeline for one case from case updates, tasks, documents and email events.',
   search_knowledge_resources: 'Search EXPERT blog articles and knowledge-base documents. Use to share a relevant guide or article with the user. Returns canonical public links.',
   get_official_sources: 'Return official source links from the canonical EXPERT Regulatory Registry for a service or topic. Use when the user wants to verify information independently.',
-  find_relevant_services: 'Find up to three EXPERT services that materially match the user need. Use only after answering the question and only when a real service need or interest is detected.',
+  find_relevant_services: 'Find EXPERT services for a concrete unmet need. Use only after answering the question and only when the user explicitly lacks something necessary, asks EXPERT to handle it, or clearly intends to contract. Do not use for mere topic affinity or when the user asks to do it themselves.',
 };
 
 export const KIA_TOOL_DEFINITIONS: KiaToolDefinition[] = (Object.keys(kiaToolValidators) as ToolName[]).map((name) => ({

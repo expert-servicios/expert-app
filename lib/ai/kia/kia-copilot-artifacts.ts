@@ -4,7 +4,8 @@ import type { KiaToolResult } from './kia-tool-definitions';
 export type KiaCopilotArtifact =
   | { type: 'report'; title: string; url: string; period?: string; cta: string }
   | { type: 'table'; title: string; columns: string[]; rows: Array<Record<string, unknown>> }
-  | { type: 'link'; title: string; url: string; cta: string; tone?: 'warning' | 'info' };
+  | { type: 'link'; title: string; url: string; cta: string; tone?: 'warning' | 'info' }
+  | { type: 'image'; title: string; imageUrl: string; alt: string; caption?: string };
 
 const MAX_TABLE_ROWS = 20;
 const MAX_CELL_TEXT = 80;
@@ -138,6 +139,37 @@ export function buildKiaCopilotArtifacts(
       }
     }
 
+    if (toolResult.toolName === 'find_relevant_services' && Array.isArray(result.services)) {
+      for (const service of result.services.slice(0, 2) as Array<Record<string, unknown>>) {
+        const url = safeArtifactUrl(service.url);
+        const title = typeof service.name === 'string' ? safeText(service.name) : '';
+        if (!url || !title) continue;
+        artifacts.push({
+          type: 'link',
+          title,
+          url,
+          cta: 'Ver servicio',
+          tone: 'info',
+        });
+      }
+    }
+
+    if (toolResult.toolName === 'visual_resources' && Array.isArray(result.images)) {
+      for (const image of result.images.slice(0, 2) as Array<Record<string, unknown>>) {
+        const imageUrl = safeArtifactUrl(image.imageUrl);
+        const title = typeof image.title === 'string' ? safeText(image.title) : '';
+        const alt = typeof image.alt === 'string' ? safeText(image.alt) : title;
+        if (!imageUrl || !title || !alt) continue;
+        artifacts.push({
+          type: 'image',
+          title,
+          imageUrl,
+          alt,
+          caption: typeof image.caption === 'string' ? safeText(image.caption) : undefined,
+        });
+      }
+    }
+
     if (
       toolResult.toolName === 'generate_holded_connection_link' &&
       decision.nextAction === 'send_holded_connect_link'
@@ -174,6 +206,16 @@ export function buildKiaCopilotArtifacts(
       const url = safeArtifactUrl(result.url);
       if (url) artifacts.push({ type: 'link', title: 'Contratar servicio', url, cta: 'Ver opciones', tone: 'info' });
     }
+  }
+
+  if (decision.nextAction === 'book_call' && decision.requiresMeeting) {
+    artifacts.push({
+      type: 'link',
+      title: 'Hablar con Ksenia',
+      url: '/cita',
+      cta: 'Reservar reunión',
+      tone: 'info',
+    });
   }
 
   return artifacts.slice(0, 8);
