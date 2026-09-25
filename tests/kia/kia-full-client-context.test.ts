@@ -45,6 +45,33 @@ describe('KIA full client context from email', () => {
     ]) expect(brief).toContain(token);
   });
 
+  it('builds a canonical identity graph instead of reasoning from names or email', () => {
+    const brief = source('lib/ai/kia/kia-client-brief.ts');
+    expect(brief).toContain('export interface KiaClientIdentityGraph');
+    expect(brief).toContain('clientId: string');
+    expect(brief).toContain('activeCompanyId');
+    expect(brief).toContain('currentScope');
+    expect(brief).toContain('memberships');
+    expect(brief).toContain('integrationId');
+    expect(brief).toContain('tenantId');
+  });
+
+  it('keeps EXPERT tenant identity separate from external integration identity', () => {
+    const brief = source('lib/ai/kia/kia-client-brief.ts');
+    expect(brief).toContain('profileTenantId');
+    expect(brief).toContain('integrationId');
+    expect(brief).toContain('provider');
+    expect(brief).toContain('mode');
+  });
+
+  it('prioritizes current case and origin email while capping recent history', () => {
+    const brief = source('lib/ai/kia/kia-client-brief.ts');
+    expect(brief).toContain('if (input.caseId && item.caseId === input.caseId) value += 10');
+    expect(brief).toContain("if (normalizedOrigin && (item.subject ?? '').toLocaleLowerCase() === normalizedOrigin) value += 8");
+    expect(brief).toContain('limit: 12');
+    expect(brief).toContain('compact(row.html, 700)');
+  });
+
   it('offers a scoped R0 history lookup when the recent brief is insufficient', () => {
     const defs = source('lib/ai/kia/kia-tool-definitions.ts');
     const registry = source('lib/ai/kia/kia-tool-registry.ts');
