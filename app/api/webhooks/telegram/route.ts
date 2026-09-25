@@ -91,14 +91,6 @@ async function handleTelegramUpdate(request: NextRequest) {
   const telegramClientsEnabled = process.env.KIA_TELEGRAM_CLIENTS_ENABLED?.toLowerCase() === 'true';
   const adminChat = isConfiguredTelegramAdminChat(inbound.chatId);
 
-  if (!adminChat && !telegramClientsEnabled) {
-    await sendTelegramMessage({
-      chatId: inbound.chatId,
-      text: 'El canal KIA para clientes en Telegram todavía no está habilitado. Usa el portal EXPERT mientras se completa el despliegue.',
-    });
-    return NextResponse.json({ ok: true, ignored: true, reason: 'client_telegram_disabled' });
-  }
-
   const startPayload = command === '/start' ? parts[1]?.trim() ?? '' : '';
   const deepLinkCode = startPayload.startsWith('link_') ? startPayload.slice(5) : null;
 
@@ -157,6 +149,16 @@ async function handleTelegramUpdate(request: NextRequest) {
       });
       return NextResponse.json({ ok: true, linked: false, reason: 'link_rejected' });
     }
+  }
+
+  // Secure one-time identity linking is available before the client-channel rollout
+  // flag. Ordinary KIA conversation remains fail-closed until the channel is enabled.
+  if (!adminChat && !telegramClientsEnabled) {
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: 'El canal KIA para clientes en Telegram todavía no está habilitado. Usa el portal EXPERT mientras se completa el despliegue.',
+    });
+    return NextResponse.json({ ok: true, ignored: true, reason: 'client_telegram_disabled' });
   }
 
   const identity = await resolveVerifiedTelegramIdentity({
