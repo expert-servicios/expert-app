@@ -297,7 +297,16 @@ function useKiaChat(pathname: string, contextToken?: string) {
     setSessionId(undefined);
   }, [contextSummary]);
 
-  return { messages, loading, contextLoading, send, rate, reset, staffPreview, uiLocale };
+  const appendAssistantMessage = useCallback((text: string, avatarState: KiaAvatarState = 'ayuda') => {
+    setMessages((previous) => [...previous, {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      text,
+      avatarState,
+    }]);
+  }, []);
+
+  return { messages, loading, contextLoading, send, rate, reset, appendAssistantMessage, staffPreview, uiLocale };
 }
 
 function KiaMessageArtifacts({ artifacts }: { artifacts: KiaCopilotArtifact[] }) {
@@ -394,7 +403,7 @@ export default function KiaCopilotWidget() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [contextToken] = useState<string | undefined>(() => searchParams.get('ctx') ?? undefined);
-  const { messages, loading, contextLoading, send, rate, reset, staffPreview, uiLocale } = useKiaChat(pathname, contextToken);
+  const { messages, loading, contextLoading, send, rate, reset, appendAssistantMessage, staffPreview, uiLocale } = useKiaChat(pathname, contextToken);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -477,14 +486,12 @@ export default function KiaCopilotWidget() {
       const popup = window.open(data.deepLink, '_blank', 'noopener,noreferrer');
       if (!popup) window.location.href = data.deepLink;
     } catch {
-      setMessages((previous) => [...previous, {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        text: uiLocale === 'ru'
+      appendAssistantMessage(
+        uiLocale === 'ru'
           ? 'Не удалось открыть безопасное подключение Telegram. Попробуйте ещё раз через несколько секунд.'
           : 'No he podido abrir la vinculación segura de Telegram. Vuelve a intentarlo en unos segundos.',
-        avatarState: 'aviso',
-      }]);
+        'aviso',
+      );
     } finally {
       setTelegramLinking(false);
     }
