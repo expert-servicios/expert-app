@@ -7,7 +7,6 @@ const bodySchema = z.object({
   decisionLogId: z.string().uuid(),
   rating: z.enum(['positive', 'negative']),
   userMessage: z.string().min(1).max(1000),
-  kiaReply: z.string().min(1).max(1000),
 }).strict();
 
 export async function POST(request: NextRequest) {
@@ -32,8 +31,8 @@ export async function POST(request: NextRequest) {
 
   const output = (log.output_json ?? {}) as Record<string, unknown>;
   const canonicalReply = typeof output.userMessage === 'string' ? output.userMessage : '';
-  if (!canonicalReply || canonicalReply.slice(0, 1000) !== parsed.data.kiaReply.slice(0, 1000)) {
-    return NextResponse.json({ error: 'feedback_reply_mismatch' }, { status: 409 });
+  if (!canonicalReply) {
+    return NextResponse.json({ error: 'feedback_reply_missing' }, { status: 409 });
   }
 
   await storeKiaFeedback({
