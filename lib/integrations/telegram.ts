@@ -13,6 +13,7 @@ function getWebhookSecret(): string | undefined {
 export interface TelegramOutbound {
   chatId: string;
   text: string;
+  quickReplies?: string[];
 }
 
 export interface TelegramInboundMessage {
@@ -104,12 +105,24 @@ export async function sendTelegramMessage({ chatId, text }: TelegramOutbound): P
 }
 
 /** For audited conversations: require provider acceptance and never retry an ambiguous send blindly. */
-export async function sendTelegramMessageConfirmed({ chatId, text }: TelegramOutbound): Promise<number> {
+export async function sendTelegramMessageConfirmed({ chatId, text, quickReplies }: TelegramOutbound): Promise<number> {
   const token = getBotToken();
   if (!token || !chatId) throw new Error('telegram_not_configured');
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+      ...(quickReplies?.length ? {
+        reply_markup: {
+          keyboard: quickReplies.slice(0, 3).map((label) => [{ text: label }]),
+          resize_keyboard: true,
+          one_time_keyboard: true,
+        },
+      } : {}),
+    }),
     signal: AbortSignal.timeout(15_000),
   });
   const body = await res.json();
@@ -122,4 +135,27 @@ export async function notifyAdminsTelegram(text: string): Promise<void> {
   const chatId = getAdminChatId();
   if (!chatId) return;
   await sendTelegramMessage({ chatId, text });
+}
+
+
+export async function sendTelegramPhotoConfirmed(input: {
+  chatId: string;
+  photoUrl: string;
+  caption?: string;
+}): Promise<number> {
+  const token = getBotToken();
+  if (!token || !input.chatId) throw new Error('telegram_not_configured');
+  const res = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: input.chatId,
+      photo: input.photoUrl,
+      caption: input.caption?.slice(0, 900),
+    }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  const body = await res.json();
+  if (!res.ok || body.ok !== true || !Number.isSafeInteger(body.result?.message_id)) throw new Error('telegram_photo_send_unconfirmed');
+  return body.result.message_id;
 }
