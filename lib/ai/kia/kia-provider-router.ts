@@ -116,6 +116,34 @@ interface AnthropicResponseData {
   error?: unknown;
 }
 
+type KiaProviderRouteKey = "gateway" | KiaAiProvider;
+const providerCooldownUntil = new Map<KiaProviderRouteKey, number>();
+
+function providerCooldownMs(error: string): number {
+  if (/HTTP\s+(401|403)\b/i.test(error)) return 5 * 60_000;
+  if (/HTTP\s+429\b/i.test(error)) return 60_000;
+  if (/HTTP\s+5\d\d\b|timeout|timed out|ECONNRESET|fetch failed/i.test(error)) return 30_000;
+  return 0;
+}
+
+function providerCoolingDown(provider: KiaProviderRouteKey): boolean {
+  const until = providerCooldownUntil.get(provider) ?? 0;
+  if (until <= Date.now()) {
+    providerCooldownUntil.delete(provider);
+    return false;
+  }
+  return true;
+}
+
+function markProviderFailure(provider: KiaProviderRouteKey, error: string): void {
+  const cooldownMs = providerCooldownMs(error);
+  if (cooldownMs > 0) providerCooldownUntil.set(provider, Date.now() + cooldownMs);
+}
+
+function clearProviderFailure(provider: KiaProviderRouteKey): void {
+  providerCooldownUntil.delete(provider);
+}
+
 export function getKiaProviderOrder(): ProviderConfig[] {
   const providers: ProviderConfig[] = getConfiguredWabaAiProviders().map((provider) => ({
     provider: provider.provider,
@@ -172,11 +200,14 @@ export async function runKiaProviderRequest(
   let lastError = "";
   let lastFailedProvider: ProviderConfig | null = null;
 
-  if (gatewayToken) {
+  if (gatewayToken && !providerCoolingDown("gateway")) {
     try {
-      return await callGateway(gatewayToken, request);
+      const result = await callGateway(gatewayToken, request);
+      clearProviderFailure("gateway");
+      return result;
     } catch (error) {
       lastError = safeErrorMessage(error);
+      markProviderFailure("gateway", lastError);
       console.error(
         "[Kia provider router] provider failed",
         redactJson({
@@ -198,6 +229,7 @@ export async function runKiaProviderRequest(
     };
   }
   for (const provider of providers) {
+    if (providerCoolingDown(provider.provider)) continue;
     try {
       const result =
         provider.provider === "anthropic"
@@ -205,10 +237,12 @@ export async function runKiaProviderRequest(
           : provider.provider === "google"
             ? await callGoogle(provider, request)
             : await callOpenAi(provider, request);
+      clearProviderFailure(provider.provider);
       return result;
     } catch (error) {
       lastError = safeErrorMessage(error);
       lastFailedProvider = provider;
+      markProviderFailure(provider.provider, lastError);
       console.error(
         "[Kia provider router] provider failed",
         redactJson({
