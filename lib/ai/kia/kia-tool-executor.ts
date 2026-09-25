@@ -18,6 +18,7 @@ import { executeKiaHoldedLaborTool, type KiaHoldedLaborToolName } from './kia-ho
 import { resolveKiaCompanyHoldedAccess } from './kia-holded-access';
 import { executeLaborPayrollDiagnostics } from './kia-labor-payroll-diagnostics';
 import { findKiaRelevantServices, getKiaOfficialSources, searchKiaKnowledgeResources } from './kia-knowledge-discovery';
+import { loadKiaClientCommunications } from './kia-client-brief';
 
 const HOLDED_LABOR_TOOL_NAMES = new Set<KiaHoldedLaborToolName>([
   'get_holded_employees',
