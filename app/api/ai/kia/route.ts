@@ -41,6 +41,7 @@ import { loadKiaConversation, persistKiaConversationTurn } from '@/lib/ai/kia/ki
 import { findCaseConversation } from '@/lib/ai/kia/kia-telegram-context';
 import { buildAutomaticKiaKnowledgeResult } from '@/lib/ai/kia/kia-knowledge-discovery';
 import { resolveKiaStaffPreview } from '@/lib/ai/kia/kia-staff-preview';
+import { kiaFriendlyError } from '@/lib/ai/kia/kia-error-copy';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -73,11 +74,11 @@ export async function POST(request: NextRequest) {
   }
 
   if (!checkKiaMessageRateLimit(user.id)) {
-    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+    return NextResponse.json({ error: 'rate_limited', reply: kiaFriendlyError('rate_limited', 'es'), avatarState: 'aviso', artifacts: [] }, { status: 429 });
   }
   const costCap = await checkKiaDailyCostCap(user.id);
   if (!costCap.ok) {
-    return NextResponse.json({ error: 'daily_cost_cap_reached' }, { status: 429 });
+    return NextResponse.json({ error: 'daily_cost_cap_reached', reply: kiaFriendlyError('daily_cost_cap_reached', 'es'), avatarState: 'aviso', artifacts: [] }, { status: 429 });
   }
 
   let body: unknown;
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
 
   if (profileError) {
     console.error('[KiaCopilot] profile lookup failed:', profileError.message);
-    return NextResponse.json({ error: 'profile_lookup_failed' }, { status: 500 });
+    return NextResponse.json({ error: 'profile_lookup_failed', reply: kiaFriendlyError('profile_lookup_failed', 'es'), avatarState: 'aviso', artifacts: [] }, { status: 500 });
   }
 
   let contextualCaseId: string | undefined;
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
     }).catch(() => null);
 
     if (!contextual) {
-      return NextResponse.json({ error: 'invalid_context_token' }, { status: 403 });
+      return NextResponse.json({ error: 'invalid_context_token', reply: kiaFriendlyError('invalid_context_token', 'es'), avatarState: 'aviso', artifacts: [] }, { status: 403 });
     }
 
     staffPreview = await resolveKiaStaffPreview({ admin, actorId: user.id, metadata: contextual.metadata }).catch(() => null);
@@ -157,7 +158,7 @@ export async function POST(request: NextRequest) {
 
     if (membershipError) {
       console.error('[KiaCopilot] company membership lookup failed:', membershipError.message);
-      return NextResponse.json({ error: 'company_membership_check_failed' }, { status: 500 });
+      return NextResponse.json({ error: 'company_membership_check_failed', reply: kiaFriendlyError('company_membership_check_failed', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 500 });
     }
 
     if (!membership) {
@@ -165,8 +166,8 @@ export async function POST(request: NextRequest) {
         {
           error: companyId ? 'company_forbidden' : 'active_company_invalid',
           reply: companyId
-            ? 'La entidad seleccionada no pertenece a tu cuenta.'
-            : 'La entidad activa ya no está disponible. Selecciona una de tus empresas antes de usar KIA.',
+            ? kiaFriendlyError('company_forbidden', responseLocale)
+            : kiaFriendlyError('active_company_invalid', responseLocale),
           avatarState: 'aviso',
           artifacts: [],
         },
@@ -187,17 +188,17 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     console.error('[KiaCopilot] actor capability resolution failed:', safeErrorMessage(err));
-    return NextResponse.json({ error: 'policy_context_failed' }, { status: 500 });
+    return NextResponse.json({ error: 'policy_context_failed', reply: kiaFriendlyError('policy_context_failed', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 500 });
   }
 
   if (!actor.active) {
-    return NextResponse.json({ error: 'account_inactive' }, { status: 403 });
+    return NextResponse.json({ error: 'account_inactive', reply: kiaFriendlyError('account_inactive', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 403 });
   }
 
   const dashboardPolicy = resolveKiaPolicyToolNames('client_dashboard', actor);
   if (!dashboardPolicy.ok) {
     console.warn('[KiaCopilot] client dashboard policy denied:', dashboardPolicy.reason);
-    return NextResponse.json({ error: 'policy_denied' }, { status: 403 });
+    return NextResponse.json({ error: 'policy_denied', reply: kiaFriendlyError('policy_denied', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 403 });
   }
 
   const contextualPersistenceEnabled =
@@ -263,7 +264,7 @@ export async function POST(request: NextRequest) {
 
     if (sessionError) {
       console.error('[KiaCopilot] session scope lookup failed:', sessionError.message);
-      return NextResponse.json({ error: 'session_scope_check_failed' }, { status: 500 });
+      return NextResponse.json({ error: 'session_scope_check_failed', reply: kiaFriendlyError('session_scope_check_failed', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 500 });
     }
 
     if (!existingSession || sessionCompanyId(existingSession.data) !== companyScope) {
@@ -307,7 +308,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: 'kia_error',
-        reply: 'Lo siento, tengo un problema técnico en este momento. Inténtalo de nuevo.',
+        reply: kiaFriendlyError('kia_error', responseLocale),
         avatarState: 'aviso',
         artifacts: [],
       },
