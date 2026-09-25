@@ -20,12 +20,12 @@
     {
       "id": "V9",
       "message": "Me denegaron la residencia",
-      "expected": { "intent": "book_call", "nextAction": "book_call", "requiresMeeting": true }
+      "expected": { "intent": "viability", "nextAction": "run_viability", "requiresMeeting": false }
     },
     {
       "id": "V10",
       "message": "Tengo un requerimiento de extranjeria",
-      "expected": { "intent": "book_call", "nextAction": "book_call", "requiresMeeting": true }
+      "expected": { "intent": "viability", "nextAction": "run_viability", "requiresMeeting": false }
     }
   ]
 }

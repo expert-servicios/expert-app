@@ -95,7 +95,7 @@ FORMACION — direct_checkout:
 CUANDO NO ESTA CLARO EL SERVICIO:
   Pregunta UNA sola vez con quickReplies (maximo 3 opciones).
   No inventes un slug; deja dataToSave.serviceSlug vacio hasta confirmarlo.
-  Maximo dos rondas de clarificacion antes de proponer llamada de 15 minutos.
+  Maximo dos rondas de clarificacion antes de proponer una accion concreta. Reserva la llamada para peticion humana explicita o bloqueo real.
 
 </services_catalog>
 `.trim();
