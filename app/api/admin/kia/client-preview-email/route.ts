@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
   });
 
   const href = `${getPublicAppUrl().replace(/\/$/, '')}/kia/c/${encodeURIComponent(token)}`;
+  const telegramHref = `https://t.me/kia_expert_bot?start=ctx_${encodeURIComponent(token)}`;
   const clientName = client.full_name?.trim() || 'cliente';
   const service = caseRow.service || 'tu expediente';
   const nextAction = caseRow.next_action || 'Revisar el estado actualizado con KIA.';
@@ -98,12 +99,7 @@ export async function POST(request: NextRequest) {
         <p>Hola ${safeClientName},</p>
         <h2 style="font-size:20px">${scenarioLabel[parsed.data.scenario]}</h2>
         <p>${detail}</p>
-        <p>Para comprobarlo o preguntarme cualquier duda, abre el expediente conmigo:</p>
-        <p style="text-align:center;margin:28px 0">
-          <a href="${href}" style="background:#07111d;color:#fff;text-decoration:none;padding:13px 20px;border-radius:12px;font-weight:700">
-            Hablar con KIA sobre este expediente
-          </a>
-        </p>
+        <p>Al final del correo encontrarás la firma de KIA con acceso al mismo contexto por Chat y Telegram.</p>
         <p style="font-size:12px;color:#64748b">
           Esta copia se ha enviado a un miembro del equipo EXPERT para probar la experiencia del cliente. No cambia el expediente ni la identidad del cliente.
         </p>
@@ -118,6 +114,8 @@ export async function POST(request: NextRequest) {
     metadata: {
       kia_author: true,
       kia_contextual_cta: false,
+      kia_chat_href: href,
+      kia_telegram_href: telegramHref,
       staff_preview: true,
       preview_case_id: caseRow.id,
       preview_client_id: caseRow.client_id,

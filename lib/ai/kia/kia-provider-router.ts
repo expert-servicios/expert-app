@@ -5,7 +5,7 @@ import type { KiaToolCall, KiaToolDefinition } from "./kia-tool-definitions";
 import { extractJsonObject } from "./kia-output-schema";
 import { redactJson, safeErrorMessage } from "./kia-redaction";
 
-export type KiaAiProvider = "anthropic" | "openai";
+export type KiaAiProvider = "anthropic" | "openai" | "google";
 export type KiaEffort = "low" | "medium" | "high" | "xhigh";
 
 export interface KiaProviderRequest {
@@ -22,6 +22,12 @@ export interface KiaProviderRequest {
 
 const SONNET = "claude-sonnet-4-6";
 const HAIKU = "claude-haiku-4-5-20251001";
+const AI_GATEWAY_CHAT_URL = "https://ai-gateway.vercel.sh/v1/chat/completions";
+const GATEWAY_DEFAULT_MODEL = "openai/gpt-5.4";
+const GATEWAY_REASONING_MODEL = "openai/gpt-5.6-sol";
+const GEMINI_CHAT_MODEL = "google/gemini-3.6-flash";
+const GEMINI_REASONING_MODEL = "google/gemini-3.1-pro-preview";
+const GATEWAY_ANTHROPIC_FALLBACK_MODEL = "anthropic/claude-sonnet-5";
 
 const SONNET_TASKS: KiaTaskType[] = [
   "viability_reasoning",
@@ -45,6 +51,33 @@ export function modelForTask(
   if (SONNET_TASKS.includes(taskType)) return SONNET;
   if (taskType === "waba_reply" && allowTools) return SONNET;
   return HAIKU;
+}
+
+export function gatewayModelForTask(taskType: KiaTaskType): string {
+  if (taskType === "chat_reply" || taskType === "waba_reply") return GEMINI_CHAT_MODEL;
+  return SONNET_TASKS.includes(taskType) ? GATEWAY_REASONING_MODEL : GATEWAY_DEFAULT_MODEL;
+}
+
+export function gatewayFallbackModelsForTask(taskType: KiaTaskType): string[] {
+  if (taskType === "chat_reply" || taskType === "waba_reply") {
+    return [GATEWAY_DEFAULT_MODEL, GATEWAY_ANTHROPIC_FALLBACK_MODEL];
+  }
+  if (SONNET_TASKS.includes(taskType)) {
+    return [GEMINI_REASONING_MODEL, GATEWAY_ANTHROPIC_FALLBACK_MODEL];
+  }
+  return [GEMINI_CHAT_MODEL, GATEWAY_ANTHROPIC_FALLBACK_MODEL];
+}
+
+function gatewayProviderFromModel(model: string): KiaAiProvider {
+  if (model.startsWith("google/")) return "google";
+  if (model.startsWith("anthropic/")) return "anthropic";
+  return "openai";
+}
+
+function getKiaGatewayToken(): string | null {
+  return process.env.VERCEL_OIDC_TOKEN?.trim()
+    || process.env.AI_GATEWAY_API_KEY?.trim()
+    || null;
 }
 
 export interface KiaProviderResult {
@@ -107,16 +140,34 @@ export function defaultEffortForTask(taskType: KiaTaskType): KiaEffort {
 export async function runKiaProviderRequest(
   request: KiaProviderRequest,
 ): Promise<KiaProviderResult> {
+  const gatewayToken = getKiaGatewayToken();
+  let lastError = "";
+
+  if (gatewayToken) {
+    try {
+      return await callGateway(gatewayToken, request);
+    } catch (error) {
+      lastError = safeErrorMessage(error);
+      console.error(
+        "[Kia provider router] provider failed",
+        redactJson({
+          provider: "vercel-ai-gateway",
+          model: gatewayModelForTask(request.taskType),
+          taskType: request.taskType,
+          error: lastError,
+        }),
+      );
+    }
+  }
+
   const providers = getKiaProviderOrder();
   if (providers.length === 0) {
     return {
-      provider: "anthropic",
-      model: "none",
-      error: "No AI provider configured",
+      provider: "openai",
+      model: gatewayToken ? gatewayModelForTask(request.taskType) : "none",
+      error: lastError || "No AI provider configured",
     };
   }
-
-  let lastError = "";
   for (const provider of providers) {
     try {
       const result =
@@ -281,6 +332,103 @@ async function postAnthropic(
 
   const data = (await response.json()) as AnthropicResponseData;
   return { response, data };
+}
+
+async function callGateway(
+  token: string,
+  request: KiaProviderRequest,
+): Promise<KiaProviderResult> {
+  const messages: Array<{
+    role: "system" | WabaAiMessage["role"];
+    content: string;
+  }> = [{ role: "system", content: request.systemPrompt }, ...request.messages];
+
+  // modelOverride is legacy direct-provider routing unless it is already a
+  // fully-qualified AI Gateway model id. This prevents old Claude defaults
+  // from forcing Gateway traffic back to Anthropic.
+  const override = request.modelOverride?.trim();
+  const model = override?.includes("/")
+    ? override
+    : gatewayModelForTask(request.taskType);
+
+  const body: Record<string, unknown> = {
+    model,
+    models: gatewayFallbackModelsForTask(request.taskType),
+    max_tokens: request.maxTokens ?? 900,
+    temperature: request.temperature ?? 0.2,
+    messages,
+  };
+
+  if (request.responseSchema) {
+    body.response_format = {
+      type: "json_schema",
+      json_schema: {
+        name: "kia_decision",
+        strict: true,
+        schema: request.responseSchema,
+      },
+    };
+  }
+
+  if (request.tools?.length) {
+    body.tools = request.tools.map((tool) => ({
+      type: "function",
+      function: {
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.input_schema,
+        strict: tool.strict === true,
+      },
+    }));
+  }
+
+  const response = await fetch(AI_GATEWAY_CHAT_URL, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(extractApiError(data, response.status));
+
+  const message = data?.choices?.[0]?.message;
+  const rawText =
+    typeof message?.content === "string" ? message.content.trim() : "";
+  const toolCalls: KiaToolCall[] = Array.isArray(message?.tool_calls)
+    ? message.tool_calls
+        .filter(
+          (call: { function?: { name?: string } }) =>
+            typeof call?.function?.name === "string",
+        )
+        .map(
+          (call: {
+            id?: string;
+            function: { name: string; arguments?: string };
+          }) => ({
+            id: call.id,
+            name: call.function.name,
+            arguments: parseToolArguments(call.function.arguments),
+          }),
+        )
+    : [];
+
+  const parsedJson = parseMaybeJson(rawText);
+  if (!rawText && !parsedJson && toolCalls.length === 0) {
+    throw new Error("AI Gateway returned an empty response");
+  }
+
+  const resolvedModel = typeof data?.model === "string" ? data.model : model;
+  return {
+    provider: gatewayProviderFromModel(resolvedModel),
+    model: resolvedModel,
+    rawText,
+    parsedJson,
+    toolCalls,
+    usage: data?.usage,
+  };
 }
 
 async function callOpenAi(
