@@ -123,7 +123,9 @@ function welcomeMessage(returning = false): ChatMessage {
 }
 
 function useKiaChat(pathname: string, contextToken?: string) {
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [welcomeMessage()]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => contextToken ? [] : [welcomeMessage()]);
+  const [contextSummary, setContextSummary] = useState<KiaContextSummary | null>(null);
+  const [contextLoading, setContextLoading] = useState(Boolean(contextToken));
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [staffPreview, setStaffPreview] = useState(false);
@@ -139,6 +141,8 @@ function useKiaChat(pathname: string, contextToken?: string) {
       })
       .then((context) => {
         if (!cancelled) {
+          setContextSummary(context);
+          setContextLoading(false);
           setMessages([contextualWelcome(context)]);
           setStaffPreview(Boolean(context.staffPreview));
           setSessionId(undefined);
@@ -146,6 +150,8 @@ function useKiaChat(pathname: string, contextToken?: string) {
       })
       .catch(() => {
         if (!cancelled) {
+          setContextSummary(null);
+          setContextLoading(false);
           setStaffPreview(false);
           setMessages([{
             id: 'context-error',
@@ -161,6 +167,8 @@ function useKiaChat(pathname: string, contextToken?: string) {
 
   useEffect(() => {
     const handleCompanyChanged = () => {
+      setContextSummary(null);
+      setContextLoading(false);
       setMessages([welcomeMessage(true)]);
       setStaffPreview(false);
       setSessionId(undefined);
@@ -172,7 +180,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
   }, []);
 
   const send = useCallback(async (text: string) => {
-    if (!text.trim() || loading) return;
+    if (!text.trim() || loading || contextLoading) return;
 
     const history = messages
       .slice(-8)
@@ -227,14 +235,14 @@ function useKiaChat(pathname: string, contextToken?: string) {
     } finally {
       setLoading(false);
     }
-  }, [contextToken, loading, messages, pathname, sessionId]);
+  }, [contextLoading, contextToken, loading, messages, pathname, sessionId]);
 
   const reset = useCallback(() => {
-    setMessages([welcomeMessage(true)]);
+    setMessages(contextSummary ? [contextualWelcome(contextSummary)] : [welcomeMessage(true)]);
     setSessionId(undefined);
-  }, []);
+  }, [contextSummary]);
 
-  return { messages, loading, send, reset, staffPreview };
+  return { messages, loading, contextLoading, send, reset, staffPreview };
 }
 
 function KiaMessageArtifacts({ artifacts }: { artifacts: KiaCopilotArtifact[] }) {
@@ -309,12 +317,12 @@ export default function KiaCopilotWidget() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [contextToken] = useState<string | undefined>(() => searchParams.get('ctx') ?? undefined);
-  const { messages, loading, send, reset, staffPreview } = useKiaChat(pathname, contextToken);
+  const { messages, loading, contextLoading, send, reset, staffPreview } = useKiaChat(pathname, contextToken);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const lastAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
-  const currentKiaState: KiaAvatarState = loading
+  const currentKiaState: KiaAvatarState = loading || contextLoading
     ? 'pensando'
     : (lastAssistantMessage?.avatarState ?? 'bienvenida');
 
@@ -345,10 +353,10 @@ export default function KiaCopilotWidget() {
   }, [animatedMessageIds, lastAssistantMessage, open]);
 
   useEffect(() => {
-    if (searchParams.get('kia') === 'open' && contextToken) {
+    if (searchParams.get('kia') === 'open') {
       setOpen(true);
     }
-  }, [contextToken, searchParams]);
+  }, [searchParams]);
 
   useEffect(() => {
     if (open) {
@@ -443,6 +451,14 @@ export default function KiaCopilotWidget() {
           className="flex-1 overflow-y-auto px-4 py-3"
           style={{ gap: '12px', display: 'flex', flexDirection: 'column' }}
         >
+          {contextLoading ? (
+            <div role="status" className="flex items-start justify-start gap-2">
+              <KiaAvatar state="pensando" size="xs" className="mt-0.5" />
+              <div className="rounded-2xl bg-[#f5f1eb] px-3 py-2 text-sm text-[#7a6e5f]">
+                Estoy abriendo este expediente para ti… 😊
+              </div>
+            </div>
+          ) : null}
           {messages.map((msg) => (
             <div
               key={msg.id}
@@ -478,7 +494,7 @@ export default function KiaCopilotWidget() {
                         onClick={() => handleQuickReply(qr)}
                         className="rounded-full border px-3 py-1 text-xs transition-colors hover:bg-[#f5f1eb]"
                         style={{ borderColor: '#c8b89a', color: '#3d3528' }}
-                        disabled={loading}
+                        disabled={loading || contextLoading}
                       >
                         {qr}
                       </button>
@@ -529,7 +545,7 @@ export default function KiaCopilotWidget() {
           />
           <button
             onClick={handleSend}
-            disabled={loading || !input.trim()}
+            disabled={loading || contextLoading || !input.trim()}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors disabled:opacity-40"
             style={{ background: '#0D1B2A', color: '#fff' }}
             aria-label="Enviar"
