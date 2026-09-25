@@ -1,6 +1,7 @@
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { createKiaContextToken } from '@/lib/ai/kia/kia-context-token';
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { emailContextExcerpt } from '@/lib/ai/kia/kia-client-brief';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -39,7 +40,23 @@ export async function maybeAppendKiaContextualCta(input: {
   const originRef = s(metadata, 'email_event_ref', 'emailEventRef');
 
   const explicitlyRequested = metadata.kia_contextual_cta === true;
-  if (!caseId && !explicitlyRequested) return input;
+
+  if (!profileId && input.recipients[0]) {
+    const recipient = input.recipients[0].trim();
+    const { data: matchingProfiles, error: profileLookupError } = await input.admin
+      .from('profiles')
+      .select('id')
+      .ilike('email', recipient)
+      .eq('role', 'client')
+      .neq('status', 'inactive')
+      .limit(2);
+    if (profileLookupError) return input;
+    if ((matchingProfiles ?? []).length === 1) profileId = matchingProfiles![0].id;
+  }
+
+  // For any uniquely identified client email, create safe context even when
+  // there is no case. Generic/broadcast/non-client email keeps the generic signature.
+  if (!caseId && !explicitlyRequested && !profileId) return input;
 
   let ownedCase: { id: string; client_id: string; company_id: string | null; service_id: string | null } | null = null;
   if (caseId) {
@@ -93,6 +110,8 @@ export async function maybeAppendKiaContextualCta(input: {
     intentHint,
     metadata: {
       event_type: s(metadata, 'event_type', 'eventType'),
+      email_subject: s(metadata, 'email_subject', 'emailSubject'),
+      email_excerpt: emailContextExcerpt(input.html),
       pilot: metadata.kia_contextual_pilot !== false,
     },
   });
