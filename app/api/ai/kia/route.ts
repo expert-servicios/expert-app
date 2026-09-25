@@ -479,6 +479,7 @@ export async function POST(request: NextRequest) {
     nextAction : result.decision.nextAction,
     avatarState,
     artifacts,
+    decisionLogId: result.decisionLogId ?? null,
   });
   if (effectiveSessionId) response.headers.set('x-kia-session-id', effectiveSessionId);
   return response;
