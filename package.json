@@ -15,6 +15,7 @@
     "holded-mcp:test": "npm --prefix apps/holded-mcp test",
     "holded-mcp:dev": "npm --prefix apps/holded-mcp run dev",
     "kia:eval": "node scripts/kia-eval.mjs",
+    "kia:test:readiness": "vitest run tests/kia/kia-contextual-assistance.test.ts tests/kia/kia-learning-feedback.test.ts tests/kia/kia-feedback-review.test.ts tests/kia/kia-telegram-rich-responses.test.ts tests/kia/kia-copilot-artifacts.test.ts tests/kia/kia-contextual-conversations.test.ts tests/kia/kia-canonical-copilot-only.test.ts tests/kia/kia-unified-client-identity.test.ts tests/kia/kia-e2e-readiness-contract.test.ts && node scripts/kia-eval.mjs",
     "kia:auditor:test": "npx tsx scripts/kia-auditor-test.ts",
     "kia:f1f8:test": "npx tsx scripts/kia-f1-f8-test.ts",
     "test:regression": "npx tsx scripts/regression-test.ts"
