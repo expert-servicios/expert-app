@@ -113,6 +113,7 @@ export async function POST(request: NextRequest) {
   let contextualServiceSlug: string | undefined;
   let contextualTask: string | undefined;
   let contextualCompanyId: string | undefined;
+  let contextualOriginEmail: { ref: string | null; eventType: string | null; subject: string | null; excerpt: string | null } | null = null;
   let staffPreview: Awaited<ReturnType<typeof resolveKiaStaffPreview>> = null;
 
   if (contextToken) {
@@ -132,6 +133,17 @@ export async function POST(request: NextRequest) {
     contextualServiceSlug = staffPreview?.serviceSlug ?? contextual.service_slug ?? undefined;
     contextualTask = contextual.intent_hint ?? undefined;
     contextualCompanyId = staffPreview?.companyId ?? contextual.company_id ?? undefined;
+    const contextualMetadata = contextual.metadata && typeof contextual.metadata === 'object'
+      ? contextual.metadata as Record<string, unknown>
+      : {};
+    contextualOriginEmail = contextual.origin_type === 'email'
+      ? {
+          ref: contextual.origin_ref ?? null,
+          eventType: typeof contextualMetadata.event_type === 'string' ? contextualMetadata.event_type : null,
+          subject: typeof contextualMetadata.email_subject === 'string' ? contextualMetadata.email_subject : null,
+          excerpt: typeof contextualMetadata.email_excerpt === 'string' ? contextualMetadata.email_excerpt : null,
+        }
+      : null;
 
     if (contextualCaseId && !contextualServiceSlug) {
       const { data: contextualCase } = await admin
@@ -308,6 +320,7 @@ export async function POST(request: NextRequest) {
         serviceSlug : contextualServiceSlug,
         latestMessage: message,
         syntheticRecentMessages,
+        originEmail: contextualOriginEmail,
       },
     });
   } catch (err) {
