@@ -122,7 +122,7 @@ describe('get_user_expedientes', () => {
     expect(expedientes[0].id).toBe('case-1');
     expect(expedientes[0].servicio).toBe('Declaracion IRPF');
     expect(expedientes[0].estado_raw).toBe('en_revision');
-    expect(expedientes[0].estado).toBe('En revisión por EXPERT');
+    expect(expedientes[0].estado).toBe('Estamos revisando tu expediente');
     expect(expedientes[0].url).toMatch(/expedientes\/case-1/);
   });
 
