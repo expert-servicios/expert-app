@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { BRAND } from './templates';
 import { maybeAppendKiaContextualCta } from './kia-contextual-cta';
 import { appendKiaSignature } from './kia-signature';
+import { keepEmailKnowledgeLinksInLocale } from './email-knowledge-locale';
 import {
   calculateRussianNationalityAmounts,
   isNationalityPayment,
@@ -221,6 +222,8 @@ export async function sendEmail({
   subject = localized.subject;
   html = localized.html;
   metadata = localized.metadata;
+
+  html = keepEmailKnowledgeLinksInLocale({ subject, html, metadata });
 
   if (metadata?.kia_author === true && metadata.kia_contextual_cta !== false) {
     metadata = { ...metadata, kia_contextual_cta: true };
