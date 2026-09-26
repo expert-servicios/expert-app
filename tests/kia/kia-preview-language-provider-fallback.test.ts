@@ -9,7 +9,7 @@ describe('KIA delegated preview language and provider fallback', () => {
     const widget = source('components/KiaCopilotWidget.tsx');
     expect(widget).toContain("data.reply?.trim() || kiaFriendlyError");
     const engine = source('lib/ai/kia/kia-decision-engine.ts');
-    expect(engine).toContain("userMessage: contextualFallback ?? kiaFriendlyError('kia_error', locale)");
+    expect(engine).toContain("userMessage: contextualFallback?.userMessage ?? kiaFriendlyError('kia_error', locale)");
   });
 
   it('keeps delegated preview in the client preferred language', () => {
