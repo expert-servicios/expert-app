@@ -336,20 +336,21 @@ export async function runKiaDecision(input: {
         decision = repaired.decision;
       } else {
         usedFallback = true;
-        const contextualFallback = buildDeterministicCaseFallback(input.message, context, locale);
+        const contextualFallback = buildDeterministicAssistanceFallback(input.message, context, locale);
         decision = buildFallbackDecision({
           taskType: resolvedTaskType,
           contactStatus: context.contact.status,
-          userMessage: contextualFallback ?? kiaFriendlyError('kia_error', locale),
+          userMessage: contextualFallback?.userMessage ?? kiaFriendlyError('kia_error', locale),
           reason: `Structured AI failed: ${safeErrorMessage(err)}`,
         });
         if (contextualFallback) {
           decision = {
             ...decision,
-            intent: 'case_status',
-            nextAction: 'reply_only',
+            intent: contextualFallback.intent,
+            nextAction: contextualFallback.nextAction,
+            requiresMeeting: contextualFallback.requiresMeeting,
             requiresManualReview: false,
-            rulesApplied: [...decision.rulesApplied, 'deterministic_case_fallback'],
+            rulesApplied: [...decision.rulesApplied, contextualFallback.rule],
           };
         }
       }
@@ -413,11 +414,45 @@ export async function runKiaDecision(input: {
   };
 }
 
-function buildDeterministicCaseFallback(
+type DeterministicAssistanceFallback = {
+  userMessage: string;
+  intent: KiaDecision['intent'];
+  nextAction: KiaDecision['nextAction'];
+  requiresMeeting: boolean;
+  rule: string;
+};
+
+function buildDeterministicAssistanceFallback(
   message: string,
   context: KiaContext,
   locale: 'es' | 'ru',
-): string | null {
+): DeterministicAssistanceFallback | null {
+  const opportunity = detectKiaConversationOpportunity(message);
+
+  if (opportunity.allowMeetingSuggestion) {
+    return {
+      userMessage: locale === 'ru'
+        ? 'Конечно. Я могу помочь записаться на встречу с Ксенией. Ниже появится кнопка для бронирования.'
+        : 'Claro. Puedo ayudarte a reservar una reunión con Ksenia. Te dejo debajo el acceso para elegir horario.',
+      intent: 'book_call',
+      nextAction: 'book_call',
+      requiresMeeting: true,
+      rule: 'deterministic_human_escalation_fallback',
+    };
+  }
+
+  if (opportunity.allowServiceDiscovery) {
+    return {
+      userMessage: locale === 'ru'
+        ? 'Поняла. Сначала помогу определить, что именно вам нужно, и ниже покажу подходящую услугу EXPERT, если она соответствует вашей ситуации.'
+        : 'Entendido. Primero te ayudo a identificar exactamente qué necesitas y, si encaja con tu situación, te muestro debajo la opción de EXPERT correspondiente.',
+      intent: 'service_selection',
+      nextAction: 'reply_only',
+      requiresMeeting: false,
+      rule: 'deterministic_service_need_fallback',
+    };
+  }
+
   const currentCase = context.cases[0];
   if (!currentCase) return null;
 
@@ -434,19 +469,31 @@ function buildDeterministicCaseFallback(
 
   if (locale === 'ru') {
     const parts = [
-      `Текущий статус дела: ${statusLabel}.`,
-      safeNextAction ? `Следующий зарегистрированный шаг: ${safeNextAction}` : null,
-      !safeNextAction ? 'Я не буду придумывать следующий шаг: он требует проверки данных дела.' : null,
+      `Сейчас: ${statusLabel}.`,
+      safeNextAction ? `Следующий шаг: ${safeNextAction}` : null,
+      !safeNextAction ? 'Следующий шаг нужно уточнить по данным дела — придумывать его я не буду.' : null,
     ];
-    return parts.filter(Boolean).join(' ');
+    return {
+      userMessage: parts.filter(Boolean).join(' '),
+      intent: 'case_status',
+      nextAction: 'reply_only',
+      requiresMeeting: false,
+      rule: 'deterministic_case_fallback',
+    };
   }
 
   const parts = [
-    `El estado actual del expediente es: ${statusLabel}.`,
-    safeNextAction ? `El siguiente paso registrado es: ${safeNextAction}` : null,
-    !safeNextAction ? 'No voy a inventar el siguiente paso: requiere revisar los datos del expediente.' : null,
+    `Ahora mismo: ${statusLabel}.`,
+    safeNextAction ? `El siguiente paso es: ${safeNextAction}` : null,
+    !safeNextAction ? 'El siguiente paso requiere revisar los datos del expediente; no voy a inventarlo.' : null,
   ];
-  return parts.filter(Boolean).join(' ');
+  return {
+    userMessage: parts.filter(Boolean).join(' '),
+    intent: 'case_status',
+    nextAction: 'reply_only',
+    requiresMeeting: false,
+    rule: 'deterministic_case_fallback',
+  };
 }
 
 function finalizeDecisionPresentation(decision: KiaDecision, channel: KiaChannel, locale: 'es' | 'ru'): KiaDecision {
