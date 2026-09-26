@@ -19,6 +19,15 @@ export type NationalityMinorAutomationPolicy = {
     preferredLocales: readonly ['es', 'ru'];
     doNotRequestExistingDocuments: true;
     correctionLoopWithoutAdmin: true;
+    correctionProtocol: {
+      compareAgainstCanonicalVersion: true;
+      validateCriticalDataBeforeSignatures: true;
+      resendOnlyAffectedPages: true;
+      confirmWhatIsAlreadyCorrect: true;
+      askOnlyForRemainingCorrection: true;
+      neverDeclareReadyBeforeFinalGate: true;
+      rules: string[];
+    };
     links: {
       signatureGuideEs: string;
       signatureGuideRu: string;
@@ -61,6 +70,24 @@ const POLICY: NationalityMinorAutomationPolicy = {
     preferredLocales: ['es', 'ru'],
     doNotRequestExistingDocuments: true,
     correctionLoopWithoutAdmin: true,
+    correctionProtocol: {
+      compareAgainstCanonicalVersion: true,
+      validateCriticalDataBeforeSignatures: true,
+      resendOnlyAffectedPages: true,
+      confirmWhatIsAlreadyCorrect: true,
+      askOnlyForRemainingCorrection: true,
+      neverDeclareReadyBeforeFinalGate: true,
+      rules: [
+        'Antes de responder a un documento corregido, comparar la versión recibida con la última versión canónica marcada como vigente en el expediente; no asumir que una firma nueva implica que la versión sea correcta.',
+        'Validar primero los datos críticos que bloquearían la presentación (identidad, apellidos, opción registral, fecha/lugar cuando proceda) y después la colocación/integridad de las firmas.',
+        'Si el error está limitado a una página y el resto del documento sigue vigente, reenviar únicamente la página afectada para reducir confusión y evitar que el cliente firme una versión retirada.',
+        'Confirmar expresamente los puntos que ya están correctos antes de pedir la corrección restante; pedir una sola acción concreta siempre que sea posible.',
+        'No volver a solicitar certificados, documentos o datos que el expediente ya marque como recibidos, revisados o archivados.',
+        'Mantener la respuesta en el mismo hilo y en el idioma preferido del cliente; incluir enlaces a la guía solo cuando ayudan a ejecutar la corrección.',
+        'Tras recibir la nueva página, volver a comparar datos + firmas con la versión canónica. Solo entonces pasar a pre_submission_validation.',
+        'No comunicar que el expediente está listo para presentar hasta que el gate final confirme versión, firmas, tasa, documentos y trazabilidad.',
+      ],
+    },
     links: {
       signatureGuideEs: '/docs/firmar-solicitud-nacionalidad-menor-progenitores',
       signatureGuideRu: '/ru/docs/podpisat-zayavlenie-grazhdanstvo-rebenka-roditeli',

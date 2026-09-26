@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { requireAdminClient } from '@/lib/auth/require-admin';
-import { getResendClient } from '@/lib/integrations/resend';
-import { appendKiaSignature } from '@/lib/email/kia-signature';
+import { sendEmail } from '@/lib/email/send';
 
 export async function POST(request: NextRequest) {
   const admin = await requireAdminClient(request);
@@ -10,13 +9,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
 
-  const resend = getResendClient();
-
-  await resend.emails.send({
+  await sendEmail({
     from: process.env.RESEND_FROM_EMAIL ?? 'EXPERT <info@expertconsulting.es>',
-    to: ['cliente@ejemplo.com'],
+    to: 'cliente@ejemplo.com',
+    eventType: 'review.request',
     subject: 'Valora tu servicio en EXPERT',
-    html: appendKiaSignature('<p>Gracias por confiar en EXPERT. Comparte tu valoración con este enlace seguro.</p>')
+    html: '<p>Gracias por confiar en EXPERT. Comparte tu valoración con este enlace seguro.</p>',
+    metadata: { source: 'reviews_request' },
   });
 
   return NextResponse.json({ ok: true });

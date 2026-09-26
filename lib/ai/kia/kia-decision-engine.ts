@@ -41,6 +41,7 @@ import { selectSubAgentProfile } from './kia-sub-agent-router';
 import { estimateCost, sumCostEstimates, extractTokenUsageFromProviderResult, type KiaCostEstimate } from './kia-cost-tracker';
 import { detectKiaConversationOpportunity } from './kia-contextual-opportunity';
 import { kiaFriendlyError } from './kia-error-copy';
+import { caseStatusLabel, isCaseStatus } from '@/lib/cases/case-status';
 
 const KIA_MAX_TOOL_ITERATIONS = 5;
 const KIA_TOOL_LOOP_TIMEOUT_MS = 25_000;
@@ -113,7 +114,7 @@ export async function runKiaDecision(input: {
   const mediaInfo = input.mediaUrl ? { url: input.mediaUrl, type: input.mediaType ?? 'image/jpeg' } : null;
 
   const memoriesBlock = formatMemoriesForContext(context.memories ?? []);
-  const promptPayload = buildUserPayload(input.message, context, recentAssistantTexts, officialSourceContext, mediaInfo, memoriesBlock);
+  const promptPayload = buildUserPayload(input.message, context, locale, recentAssistantTexts, officialSourceContext, mediaInfo, memoriesBlock);
 
   let classification: KiaIntentClassification | null = null;
   if (input.channel === 'waba' && input.taskType === 'waba_reply') {
@@ -335,20 +336,21 @@ export async function runKiaDecision(input: {
         decision = repaired.decision;
       } else {
         usedFallback = true;
-        const contextualFallback = buildDeterministicCaseFallback(input.message, context, locale);
+        const contextualFallback = buildDeterministicAssistanceFallback(input.message, context, locale);
         decision = buildFallbackDecision({
           taskType: resolvedTaskType,
           contactStatus: context.contact.status,
-          userMessage: contextualFallback ?? kiaFriendlyError('kia_error', locale),
+          userMessage: contextualFallback?.userMessage ?? kiaFriendlyError('kia_error', locale),
           reason: `Structured AI failed: ${safeErrorMessage(err)}`,
         });
         if (contextualFallback) {
           decision = {
             ...decision,
-            intent: 'case_status',
-            nextAction: 'reply_only',
+            intent: contextualFallback.intent,
+            nextAction: contextualFallback.nextAction,
+            requiresMeeting: contextualFallback.requiresMeeting,
             requiresManualReview: false,
-            rulesApplied: [...decision.rulesApplied, 'deterministic_case_fallback'],
+            rulesApplied: [...decision.rulesApplied, contextualFallback.rule],
           };
         }
       }
@@ -412,11 +414,45 @@ export async function runKiaDecision(input: {
   };
 }
 
-function buildDeterministicCaseFallback(
+type DeterministicAssistanceFallback = {
+  userMessage: string;
+  intent: KiaDecision['intent'];
+  nextAction: KiaDecision['nextAction'];
+  requiresMeeting: boolean;
+  rule: string;
+};
+
+function buildDeterministicAssistanceFallback(
   message: string,
   context: KiaContext,
   locale: 'es' | 'ru',
-): string | null {
+): DeterministicAssistanceFallback | null {
+  const opportunity = detectKiaConversationOpportunity(message);
+
+  if (opportunity.allowMeetingSuggestion) {
+    return {
+      userMessage: locale === 'ru'
+        ? 'Конечно. Я могу помочь записаться на встречу с Ксенией. Ниже появится кнопка для бронирования.'
+        : 'Claro. Puedo ayudarte a reservar una reunión con Ksenia. Te dejo debajo el acceso para elegir horario.',
+      intent: 'book_call',
+      nextAction: 'book_call',
+      requiresMeeting: true,
+      rule: 'deterministic_human_escalation_fallback',
+    };
+  }
+
+  if (opportunity.allowServiceDiscovery) {
+    return {
+      userMessage: locale === 'ru'
+        ? 'Поняла. Сначала помогу определить, что именно вам нужно, и ниже покажу подходящую услугу EXPERT, если она соответствует вашей ситуации.'
+        : 'Entendido. Primero te ayudo a identificar exactamente qué necesitas y, si encaja con tu situación, te muestro debajo la opción de EXPERT correspondiente.',
+      intent: 'service_selection',
+      nextAction: 'reply_only',
+      requiresMeeting: false,
+      rule: 'deterministic_service_need_fallback',
+    };
+  }
+
   const currentCase = context.cases[0];
   if (!currentCase) return null;
 
@@ -427,22 +463,37 @@ function buildDeterministicCaseFallback(
   const nextAction = currentCase.nextAction?.trim() ?? '';
   const nextActionLocale = /[А-Яа-яЁё]/.test(nextAction) ? 'ru' : 'es';
   const safeNextAction = nextAction && nextActionLocale === locale ? nextAction : null;
+  const statusLabel = isCaseStatus(currentCase.status)
+    ? caseStatusLabel(currentCase.status, locale)
+    : currentCase.status.replaceAll('_', ' ');
 
   if (locale === 'ru') {
     const parts = [
-      `Текущий статус дела: ${currentCase.status}.`,
-      safeNextAction ? `Следующий зарегистрированный шаг: ${safeNextAction}` : null,
-      !safeNextAction ? 'Я не буду придумывать следующий шаг: он требует проверки данных дела.' : null,
+      `Сейчас: ${statusLabel}.`,
+      safeNextAction ? `Следующий шаг: ${safeNextAction}` : null,
+      !safeNextAction ? 'Следующий шаг нужно уточнить по данным дела — придумывать его я не буду.' : null,
     ];
-    return parts.filter(Boolean).join(' ');
+    return {
+      userMessage: parts.filter(Boolean).join(' '),
+      intent: 'case_status',
+      nextAction: 'reply_only',
+      requiresMeeting: false,
+      rule: 'deterministic_case_fallback',
+    };
   }
 
   const parts = [
-    `El estado actual del expediente es: ${currentCase.status}.`,
-    safeNextAction ? `El siguiente paso registrado es: ${safeNextAction}` : null,
-    !safeNextAction ? 'No voy a inventar el siguiente paso: requiere revisar los datos del expediente.' : null,
+    `Ahora mismo: ${statusLabel}.`,
+    safeNextAction ? `El siguiente paso es: ${safeNextAction}` : null,
+    !safeNextAction ? 'El siguiente paso requiere revisar los datos del expediente; no voy a inventarlo.' : null,
   ];
-  return parts.filter(Boolean).join(' ');
+  return {
+    userMessage: parts.filter(Boolean).join(' '),
+    intent: 'case_status',
+    nextAction: 'reply_only',
+    requiresMeeting: false,
+    rule: 'deterministic_case_fallback',
+  };
 }
 
 function finalizeDecisionPresentation(decision: KiaDecision, channel: KiaChannel, locale: 'es' | 'ru'): KiaDecision {
@@ -570,14 +621,24 @@ function buildToolResultsPayload(requests: KiaDecision['toolRequests'], results:
 function buildUserPayload(
   message: string,
   context: KiaContext,
+  locale: 'es' | 'ru',
   recentAssistantTexts: string[],
   officialSourceContext: string,
   mediaInfo?: { url: string; type: string } | null,
   memoriesBlock?: string,
 ): string {
+  const localizedContext = {
+    ...context,
+    cases: context.cases.map((caseItem) => ({
+      ...caseItem,
+      status: isCaseStatus(caseItem.status)
+        ? caseStatusLabel(caseItem.status, locale)
+        : caseItem.status.replaceAll('_', ' '),
+    })),
+  };
   const parts: string[] = [
     '<input>',
-    JSON.stringify(redactJson({ message, context }), null, 2),
+    JSON.stringify(redactJson({ message, context: localizedContext }), null, 2),
     '</input>',
   ];
   if (officialSourceContext) {

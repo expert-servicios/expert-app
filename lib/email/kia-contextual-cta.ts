@@ -1,6 +1,7 @@
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { createKiaContextToken } from '@/lib/ai/kia/kia-context-token';
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { emailContextExcerpt } from '@/lib/ai/kia/kia-client-brief';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -39,13 +40,29 @@ export async function maybeAppendKiaContextualCta(input: {
   const originRef = s(metadata, 'email_event_ref', 'emailEventRef');
 
   const explicitlyRequested = metadata.kia_contextual_cta === true;
-  if (!caseId && !explicitlyRequested) return input;
 
-  let ownedCase: { id: string; client_id: string; company_id: string | null; service_id: string | null } | null = null;
+  if (!profileId && input.recipients[0]) {
+    const recipient = input.recipients[0].trim();
+    const { data: matchingProfiles, error: profileLookupError } = await input.admin
+      .from('profiles')
+      .select('id')
+      .ilike('email', recipient)
+      .eq('role', 'client')
+      .neq('status', 'inactive')
+      .limit(2);
+    if (profileLookupError) return input;
+    if ((matchingProfiles ?? []).length === 1) profileId = matchingProfiles![0].id;
+  }
+
+  // For any uniquely identified client email, create safe context even when
+  // there is no case. Generic/broadcast/non-client email keeps the generic signature.
+  if (!caseId && !explicitlyRequested && !profileId) return input;
+
+  let ownedCase: { id: string; client_id: string; company_id: string | null; tenant_id: string | null; service_id: string | null } | null = null;
   if (caseId) {
     const { data, error } = await input.admin
       .from('cases')
-      .select('id,client_id,company_id,service_id')
+      .select('id,client_id,company_id,tenant_id,service_id')
       .eq('id', caseId)
       .maybeSingle();
     if (error || !data) return input;
@@ -70,19 +87,34 @@ export async function maybeAppendKiaContextualCta(input: {
   if (profile.email?.trim().toLowerCase() !== input.recipients[0].trim().toLowerCase()) return input;
   if (ownedCase && ownedCase.client_id !== profileId) return input;
 
+  let companyTenantId: string | null = null;
   if (companyId) {
-    const { data: membership, error } = await input.admin
-      .from('profile_companies')
-      .select('company_id')
-      .eq('profile_id', profileId)
-      .eq('company_id', companyId)
-      .maybeSingle();
-    if (error || !membership) return input;
+    const [{ data: membership, error: membershipError }, { data: company, error: companyError }] = await Promise.all([
+      input.admin
+        .from('profile_companies')
+        .select('company_id')
+        .eq('profile_id', profileId)
+        .eq('company_id', companyId)
+        .maybeSingle(),
+      input.admin
+        .from('companies')
+        .select('id,tenant_id')
+        .eq('id', companyId)
+        .maybeSingle(),
+    ]);
+    if (membershipError || companyError || !membership || !company) return input;
+    companyTenantId = company.tenant_id ?? null;
   }
+
+  const candidateTenantIds = [ownedCase?.tenant_id ?? null, companyTenantId, profile.tenant_id ?? null]
+    .filter((value): value is string => Boolean(value));
+  const distinctTenantIds = [...new Set(candidateTenantIds)];
+  if (distinctTenantIds.length > 1) return input;
+  const resolvedTenantId = distinctTenantIds[0] ?? null;
 
   const { token, expiresAt } = await createKiaContextToken({
     admin: input.admin,
-    tenantId: profile.tenant_id ?? null,
+    tenantId: resolvedTenantId,
     profileId,
     companyId,
     caseId,
@@ -93,6 +125,8 @@ export async function maybeAppendKiaContextualCta(input: {
     intentHint,
     metadata: {
       event_type: s(metadata, 'event_type', 'eventType'),
+      email_subject: s(metadata, 'email_subject', 'emailSubject'),
+      email_excerpt: emailContextExcerpt(input.html),
       pilot: metadata.kia_contextual_pilot !== false,
     },
   });

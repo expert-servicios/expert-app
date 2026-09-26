@@ -23,6 +23,7 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   quickReplies?: string[];
+  proactiveSuggestions?: string[];
   avatarState?: KiaAvatarState;
   artifacts?: KiaCopilotArtifact[];
   decisionLogId?: string;
@@ -33,6 +34,7 @@ interface ChatMessage {
 interface KiaApiResponse {
   reply: string;
   quickReplies?: string[];
+  proactiveSuggestions?: string[];
   intent?: string;
   nextAction?: string;
   avatarState?: KiaAvatarState;
@@ -58,6 +60,7 @@ interface KiaContextSummary {
     updated_at: string;
   } | null;
   company: { id: string; name: string | null } | null;
+  originEmail?: { subject: string | null } | null;
   staffPreview?: boolean;
 }
 
@@ -77,8 +80,12 @@ function contextualWelcome(context: KiaContextSummary): ChatMessage {
       return {
         id: 'context-welcome',
         role: 'assistant',
-        text: `👋 Здравствуйте${name}! Чем могу помочь сегодня?`,
-        quickReplies: ['Мои дела', 'Holded', 'Налоговый вопрос'],
+        text: context.originEmail?.subject
+          ? `👋 Здравствуйте${name}! Я открыла письмо «${context.originEmail.subject}» и могу помочь по нему или по вашей ситуации в EXPERT.`
+          : `👋 Здравствуйте${name}! Чем могу помочь сегодня?`,
+        quickReplies: context.originEmail?.subject
+          ? ['Объясни это письмо', 'Что мне делать?', 'Проверь мою ситуацию']
+          : ['Мои дела', 'Holded', 'Налоговый вопрос'],
         avatarState: 'bienvenida',
       };
     }
@@ -86,8 +93,12 @@ function contextualWelcome(context: KiaContextSummary): ChatMessage {
     return {
       id: 'context-welcome',
       role: 'assistant',
-      text: `👋 ¡Hola${name}! ¿En qué te ayudo hoy?`,
-      quickReplies: ['Ver mis expedientes', 'Estado de Holded', 'Consulta fiscal'],
+      text: context.originEmail?.subject
+        ? `👋 ¡Hola${name}! He abierto el correo «${context.originEmail.subject}» y puedo ayudarte con él o con tu situación en EXPERT.`
+        : `👋 ¡Hola${name}! ¿En qué te ayudo hoy?`,
+      quickReplies: context.originEmail?.subject
+        ? ['Explícame este correo', '¿Qué tengo que hacer?', 'Revisa mi situación']
+        : ['Ver mis expedientes', 'Estado de Holded', 'Consulta fiscal'],
       avatarState: 'bienvenida',
     };
   }
@@ -143,6 +154,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [staffPreview, setStaffPreview] = useState(false);
+  const [uiLocale, setUiLocale] = useState<'es' | 'ru'>('es');
 
   useEffect(() => {
     if (!contextToken) return;
@@ -156,6 +168,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
       .then((context) => {
         if (!cancelled) {
           setContextSummary(context);
+          setUiLocale(context.preferredLanguage);
           setContextLoading(false);
           setMessages([contextualWelcome(context)]);
           setStaffPreview(Boolean(context.staffPreview));
@@ -205,6 +218,10 @@ function useKiaChat(pathname: string, contextToken?: string) {
       }));
 
     const userMsg: ChatMessage = { id: crypto.randomUUID(), role: 'user', text };
+    const detectedLocale = contextSummary?.staffPreview
+      ? contextSummary.preferredLanguage
+      : (detectKiaMessageLocale(text) ?? contextSummary?.preferredLanguage ?? uiLocale);
+    setUiLocale(detectedLocale);
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
 
@@ -228,6 +245,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
         role        : 'assistant',
         text        : data.reply?.trim() || kiaFriendlyError(data.error ?? 'kia_error', detectKiaMessageLocale(text) ?? contextSummary?.preferredLanguage ?? 'es'),
         quickReplies: data.quickReplies?.length ? data.quickReplies : undefined,
+        proactiveSuggestions: data.proactiveSuggestions?.length ? data.proactiveSuggestions : undefined,
         avatarState : data.avatarState ?? (data.error ? 'aviso' : 'ayuda'),
         artifacts   : data.artifacts?.length ? data.artifacts : undefined,
         decisionLogId: data.decisionLogId ?? undefined,
@@ -244,14 +262,14 @@ function useKiaChat(pathname: string, contextToken?: string) {
         {
           id  : crypto.randomUUID(),
           role: 'assistant',
-          text: kiaFriendlyError('network_error', 'es'),
+          text: kiaFriendlyError('network_error', uiLocale),
           avatarState: 'aviso',
         },
       ]);
     } finally {
       setLoading(false);
     }
-  }, [contextLoading, contextSummary, contextToken, loading, messages, pathname, sessionId]);
+  }, [contextLoading, contextSummary, contextToken, loading, messages, pathname, sessionId, uiLocale]);
 
   const rate = useCallback(async (messageId: string, rating: 'positive' | 'negative') => {
     const target = messages.find((message) => message.id === messageId);
@@ -279,7 +297,16 @@ function useKiaChat(pathname: string, contextToken?: string) {
     setSessionId(undefined);
   }, [contextSummary]);
 
-  return { messages, loading, contextLoading, send, rate, reset, staffPreview };
+  const appendAssistantMessage = useCallback((text: string, avatarState: KiaAvatarState = 'ayuda') => {
+    setMessages((previous) => [...previous, {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      text,
+      avatarState,
+    }]);
+  }, []);
+
+  return { messages, loading, contextLoading, send, rate, reset, appendAssistantMessage, staffPreview, uiLocale };
 }
 
 function KiaMessageArtifacts({ artifacts }: { artifacts: KiaCopilotArtifact[] }) {
@@ -371,11 +398,12 @@ function KiaMessageArtifacts({ artifacts }: { artifacts: KiaCopilotArtifact[] })
 export default function KiaCopilotWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
+  const [telegramLinking, setTelegramLinking] = useState(false);
   const [animatedMessageIds, setAnimatedMessageIds] = useState<Set<string>>(() => new Set());
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [contextToken] = useState<string | undefined>(() => searchParams.get('ctx') ?? undefined);
-  const { messages, loading, contextLoading, send, rate, reset, staffPreview } = useKiaChat(pathname, contextToken);
+  const { messages, loading, contextLoading, send, rate, reset, appendAssistantMessage, staffPreview, uiLocale } = useKiaChat(pathname, contextToken);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -448,6 +476,27 @@ export default function KiaCopilotWidget() {
     send(text);
   }
 
+  async function handleConnectTelegram() {
+    if (telegramLinking) return;
+    setTelegramLinking(true);
+    try {
+      const response = await fetch('/api/ai/kia/telegram-link', { method: 'POST' });
+      const data = await response.json().catch(() => ({})) as { deepLink?: string; error?: string };
+      if (!response.ok || !data.deepLink) throw new Error(data.error ?? 'telegram_link_failed');
+      const popup = window.open(data.deepLink, '_blank', 'noopener,noreferrer');
+      if (!popup) window.location.href = data.deepLink;
+    } catch {
+      appendAssistantMessage(
+        uiLocale === 'ru'
+          ? 'Не удалось открыть безопасное подключение Telegram. Попробуйте ещё раз через несколько секунд.'
+          : 'No he podido abrir la vinculación segura de Telegram. Vuelve a intentarlo en unos segundos.',
+        'aviso',
+      );
+    } finally {
+      setTelegramLinking(false);
+    }
+  }
+
   return (
     <>
       <div
@@ -456,10 +505,8 @@ export default function KiaCopilotWidget() {
         aria-label="KIA copiloto"
         aria-modal="false"
         aria-hidden={!open}
-        className={`fixed bottom-[132px] right-4 z-[200] lg:bottom-20 ${open ? 'flex' : 'hidden'} flex-col`}
+        className={`fixed inset-x-2 top-[max(10px,env(safe-area-inset-top))] bottom-[calc(76px+env(safe-area-inset-bottom))] z-[200] sm:inset-x-auto sm:top-auto sm:bottom-[132px] sm:right-4 sm:h-[min(560px,calc(100vh-148px))] sm:w-[380px] lg:bottom-20 ${open ? 'flex' : 'hidden'} flex-col`}
         style={{
-          width         : 'min(380px, calc(100vw - 32px))',
-          height        : 'min(560px, calc(100vh - 148px))',
           background    : '#fff',
           borderRadius  : '16px',
           boxShadow     : '0 8px 32px rgba(13,27,42,0.18)',
@@ -478,6 +525,18 @@ export default function KiaCopilotWidget() {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            {!staffPreview ? (
+              <button
+                type="button"
+                onClick={() => void handleConnectTelegram()}
+                disabled={telegramLinking}
+                title={uiLocale === 'ru' ? 'Подключить Telegram' : 'Conectar Telegram'}
+                aria-label={uiLocale === 'ru' ? 'Подключить Telegram' : 'Conectar Telegram'}
+                className="rounded-lg p-1 text-white transition-colors hover:bg-white/10 disabled:opacity-50"
+              >
+                {telegramLinking ? <Loader2 size={15} className="animate-spin" aria-hidden="true" /> : <Send size={15} aria-hidden="true" />}
+              </button>
+            ) : null}
             <button
               onClick={reset}
               title="Nueva conversación"
@@ -510,10 +569,11 @@ export default function KiaCopilotWidget() {
           style={{ gap: '12px', display: 'flex', flexDirection: 'column' }}
         >
           {contextLoading ? (
-            <div role="status" className="flex items-start justify-start gap-2">
+            <div role="status" aria-label="KIA" className="flex items-start justify-start gap-2">
               <KiaAvatar state="pensando" size="xs" className="mt-0.5" />
-              <div className="rounded-2xl bg-[#f5f1eb] px-3 py-2 text-sm text-[#7a6e5f]">
-                Estoy abriendo este expediente para ti… 😊
+              <div className="flex items-center gap-1 rounded-2xl bg-[#f5f1eb] px-3 py-2 text-sm text-[#7a6e5f]">
+                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+                <span aria-hidden="true">•••</span>
               </div>
             </div>
           ) : null}
@@ -581,13 +641,33 @@ export default function KiaCopilotWidget() {
                     ))}
                   </div>
                 ) : null}
+                {msg.role === 'assistant' && msg.proactiveSuggestions?.length ? (
+                  <div className="mt-3 rounded-xl bg-[#faf8f4] p-2.5">
+                    <p className="mb-2 text-[11px] font-semibold text-[#7a6e5f]">
+                      {uiLocale === 'ru' ? 'Я также могу помочь:' : 'También puedo ayudarte con:'}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {msg.proactiveSuggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => handleQuickReply(suggestion)}
+                          className="rounded-lg border border-[#e3d8c8] bg-white px-2.5 py-1.5 text-left text-xs text-[#3d3528] transition-colors hover:bg-[#f5f1eb]"
+                          disabled={loading || contextLoading}
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
           ))}
           {loading && (
             <div
               role="status"
-              aria-label="KIA está revisando tu consulta"
+              aria-label={uiLocale === 'ru' ? 'KIA проверяет запрос' : 'KIA está revisando tu consulta'}
               className="flex items-start justify-start gap-2"
             >
               <KiaAvatar state="pensando" size="xs" className="mt-0.5" />
@@ -596,7 +676,7 @@ export default function KiaCopilotWidget() {
                 style={{ background: '#f5f1eb', color: '#7a6e5f', borderBottomLeftRadius: '4px' }}
               >
                 <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                <span>Pensando…</span>
+                <span>{uiLocale === 'ru' ? 'Думаю…' : 'Pensando…'}</span>
               </div>
             </div>
           )}
@@ -612,8 +692,8 @@ export default function KiaCopilotWidget() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Escribe tu consulta…"
-            aria-label="Escribe tu consulta a KIA"
+            placeholder={uiLocale === 'ru' ? 'Напишите ваш вопрос…' : 'Escribe tu consulta…'}
+            aria-label={uiLocale === 'ru' ? 'Напишите вопрос KIA' : 'Escribe tu consulta a KIA'}
             rows={1}
             disabled={loading}
             className="flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none transition-colors focus:border-[#0D1B2A] disabled:opacity-50"
@@ -640,7 +720,7 @@ export default function KiaCopilotWidget() {
         aria-label={open ? 'Cerrar KIA' : 'Abrir KIA copiloto'}
         aria-expanded={open}
         aria-controls="kia-copilot-panel"
-        className="fixed bottom-[72px] right-4 z-[200] lg:bottom-4 flex items-center justify-center overflow-hidden rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
+        className={`fixed bottom-[calc(76px+env(safe-area-inset-bottom))] right-3 z-[200] sm:bottom-4 sm:right-4 ${open ? 'hidden sm:flex' : 'flex'} items-center justify-center overflow-hidden rounded-full shadow-lg transition-all hover:scale-105 active:scale-95`}
         style={{
           width     : '56px',
           height    : '56px',

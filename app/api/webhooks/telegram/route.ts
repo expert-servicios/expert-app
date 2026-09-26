@@ -24,6 +24,7 @@ import { buildAutomaticKiaVisualResult } from '@/lib/ai/kia/kia-visual-discovery
 import { detectKiaConversationOpportunity } from '@/lib/ai/kia/kia-contextual-opportunity';
 import { buildKiaCopilotArtifacts } from '@/lib/ai/kia/kia-copilot-artifacts';
 import { buildKiaTelegramPresentation } from '@/lib/ai/kia/kia-telegram-presentation';
+import { buildKiaProactiveSuggestions } from '@/lib/ai/kia/kia-proactive-suggestions';
 import { persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import {
   escapeTelegramHtml,
@@ -90,12 +91,31 @@ async function handleTelegramUpdate(request: NextRequest) {
   const telegramClientsEnabled = process.env.KIA_TELEGRAM_CLIENTS_ENABLED?.toLowerCase() === 'true';
   const adminChat = isConfiguredTelegramAdminChat(inbound.chatId);
 
-  if (!adminChat && !telegramClientsEnabled) {
-    await sendTelegramMessage({
-      chatId: inbound.chatId,
-      text: 'El canal KIA para clientes en Telegram todavía no está habilitado. Usa el portal EXPERT mientras se completa el despliegue.',
-    });
-    return NextResponse.json({ ok: true, ignored: true, reason: 'client_telegram_disabled' });
+  const startPayload = command === '/start' ? parts[1]?.trim() ?? '' : '';
+  const deepLinkCode = startPayload.startsWith('link_') ? startPayload.slice(5) : null;
+
+  if (deepLinkCode) {
+    try {
+      await consumeTelegramLinkCode({
+        admin,
+        code: deepLinkCode,
+        externalUserId: inbound.userId,
+        externalChatId: inbound.chatId,
+        externalUsername: inbound.username,
+      });
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: '✅ Telegram vinculado y verificado con tu identidad EXPERT. Ya puedes hablar con KIA en este chat.',
+      });
+      return NextResponse.json({ ok: true, linked: true, via: 'deep_link' });
+    } catch (err) {
+      console.warn('[Telegram link] deep-link consumption failed:', safeErrorMessage(err));
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'No se ha podido completar la vinculación. El enlace puede haber caducado o ya haberse usado. Genera uno nuevo desde EXPERT.',
+      });
+      return NextResponse.json({ ok: true, linked: false, reason: 'deep_link_rejected' });
+    }
   }
 
   if (command === '/link') {
@@ -129,6 +149,16 @@ async function handleTelegramUpdate(request: NextRequest) {
       });
       return NextResponse.json({ ok: true, linked: false, reason: 'link_rejected' });
     }
+  }
+
+  // Secure one-time identity linking is available before the client-channel rollout
+  // flag. Ordinary KIA conversation remains fail-closed until the channel is enabled.
+  if (!adminChat && !telegramClientsEnabled) {
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: 'El canal KIA para clientes en Telegram todavía no está habilitado. Usa el portal EXPERT mientras se completa el despliegue.',
+    });
+    return NextResponse.json({ ok: true, ignored: true, reason: 'client_telegram_disabled' });
   }
 
   const identity = await resolveVerifiedTelegramIdentity({
@@ -447,9 +477,19 @@ async function handleTelegramUpdate(request: NextRequest) {
     if (automaticVisualResult) artifactToolResults.push(automaticVisualResult);
     if (automaticServiceResult?.result.services.length) artifactToolResults.push(automaticServiceResult);
     const artifacts = buildKiaCopilotArtifacts(artifactToolResults, result.decision);
+    const operationalQuickReplies = (result.decision.quickReplies ?? []).map((item) => item.title);
+    const proactiveSuggestions = buildKiaProactiveSuggestions({
+      locale: responseLocale,
+      intent: result.decision.intent,
+      nextAction: result.decision.nextAction,
+      hasCase: result.context.cases.length > 0,
+      hasCompany: Boolean(result.context.company),
+      pendingDocuments: result.context.documents.pendingCount,
+      existingQuickReplies: operationalQuickReplies,
+    });
     const presentation = buildKiaTelegramPresentation({
       reply: result.userMessage,
-      quickReplies: (result.decision.quickReplies ?? []).map((item) => item.title),
+      quickReplies: [...operationalQuickReplies, ...proactiveSuggestions],
       artifacts,
     });
 

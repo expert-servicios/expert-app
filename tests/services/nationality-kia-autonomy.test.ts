@@ -40,6 +40,12 @@ describe('KIA autonomous pre-filing for minor nationality', () => {
     expect(communication.sameThread).toBe(true);
     expect(communication.doNotRequestExistingDocuments).toBe(true);
     expect(communication.correctionLoopWithoutAdmin).toBe(true);
+    expect(communication.correctionProtocol.compareAgainstCanonicalVersion).toBe(true);
+    expect(communication.correctionProtocol.validateCriticalDataBeforeSignatures).toBe(true);
+    expect(communication.correctionProtocol.resendOnlyAffectedPages).toBe(true);
+    expect(communication.correctionProtocol.askOnlyForRemainingCorrection).toBe(true);
+    expect(communication.correctionProtocol.neverDeclareReadyBeforeFinalGate).toBe(true);
+    expect(communication.correctionProtocol.rules.join(' ')).toMatch(/versión canónica|página afectada|documentos ya/i);
     expect(communication.links.signatureGuideRu).toContain('/ru/docs/');
   });
 

@@ -8,9 +8,11 @@
   <text x="96" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#07111d">KIA</text>
   <text x="166" y="94" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#07111d">KIA · EXPERT</text>
   <text x="166" y="124" font-family="Arial, sans-serif" font-size="17" fill="#465567">Asistente IA de EXPERT. Puedes seguir hablando conmigo por chat o Telegram.</text>
-  <rect x="166" y="150" width="168" height="44" rx="22" fill="#07111d"/>
-  <text x="250" y="178" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#ffffff">Hablar con KIA</text>
-  <rect x="350" y="150" width="138" height="44" rx="22" fill="#f3ead7" stroke="#d8cbb5"/>
-  <text x="419" y="178" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#07111d">Telegram</text>
+  <text x="166" y="178" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#07111d">Hablar con KIA:</text>
+  <text x="292" y="178" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#07111d">Chat</text>
+  <text x="332" y="178" font-family="Arial, sans-serif" font-size="15" fill="#b8a98f">·</text>
+  <circle cx="358" cy="172" r="10" fill="#229ED9"/>
+  <path d="M352 172l12-5-3 11-4-3-3 2 1-4z" fill="#ffffff"/>
+  <text x="374" y="178" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#07111d">Telegram</text>
   <text x="166" y="224" font-family="Arial, sans-serif" font-size="14" fill="#7b8794">KIA es una asistente virtual de EXPERT · info@expertconsulting.es</text>
 </svg>

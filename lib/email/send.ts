@@ -24,6 +24,8 @@ interface SendEmailOptions {
   eventType: string;
   subject: string;
   html: string;
+  text?: string;
+  from?: string;
   metadata?: Record<string, unknown>;
   attachments?: EmailAttachment[];
   idempotencyKey?: string;
@@ -211,6 +213,8 @@ export async function sendEmail({
   eventType,
   subject,
   html,
+  text,
+  from,
   metadata,
   attachments,
   idempotencyKey,
@@ -221,6 +225,17 @@ export async function sendEmail({
   subject = localized.subject;
   html = localized.html;
   metadata = localized.metadata;
+
+  const preliminaryIdempotencyKey = idempotencyKey ?? deriveIdempotencyKey(eventType, metadata);
+  const emailOriginRef = stringMetadata(metadata, 'email_event_ref')
+    ?? (preliminaryIdempotencyKey ? `email:${preliminaryIdempotencyKey}` : `email:${crypto.randomUUID()}`);
+
+  metadata = {
+    ...(metadata ?? {}),
+    event_type: eventType,
+    email_subject: subject,
+    email_event_ref: emailOriginRef,
+  };
 
   if (metadata?.kia_author === true && metadata.kia_contextual_cta !== false) {
     metadata = { ...metadata, kia_contextual_cta: true };
@@ -235,7 +250,7 @@ export async function sendEmail({
   html = appendKiaSignature(contextual.html, contextual.metadata);
   metadata = contextual.metadata;
 
-  const effectiveIdempotencyKey = idempotencyKey ?? deriveIdempotencyKey(eventType, metadata);
+  const effectiveIdempotencyKey = preliminaryIdempotencyKey;
 
   if (effectiveIdempotencyKey) {
     if (effectiveIdempotencyKey.length > 256) {
@@ -248,11 +263,12 @@ export async function sendEmail({
   const eventMetadata = withIntentMetadata(metadata, effectiveIdempotencyKey);
   const resend = getResendClient();
   const payload = {
-    from: BRAND.from,
+    from: from ?? BRAND.from,
     ...(metadata?.kia_author === true ? { replyTo: 'info@expertconsulting.es' } : {}),
     to: recipients,
     subject,
     html,
+    ...(text ? { text } : {}),
     ...(attachments?.length
       ? {
           attachments: attachments.map((a) => ({

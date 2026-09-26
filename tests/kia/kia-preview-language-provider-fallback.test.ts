@@ -9,7 +9,7 @@ describe('KIA delegated preview language and provider fallback', () => {
     const widget = source('components/KiaCopilotWidget.tsx');
     expect(widget).toContain("data.reply?.trim() || kiaFriendlyError");
     const engine = source('lib/ai/kia/kia-decision-engine.ts');
-    expect(engine).toContain("userMessage: contextualFallback ?? kiaFriendlyError('kia_error', locale)");
+    expect(engine).toContain("userMessage: contextualFallback?.userMessage ?? kiaFriendlyError('kia_error', locale)");
   });
 
   it('keeps delegated preview in the client preferred language', () => {
@@ -33,10 +33,19 @@ describe('KIA delegated preview language and provider fallback', () => {
 
   it('answers basic case questions deterministically when providers fail', () => {
     const engine = source('lib/ai/kia/kia-decision-engine.ts');
-    expect(engine).toContain('buildDeterministicCaseFallback');
+    expect(engine).toContain('buildDeterministicAssistanceFallback');
     expect(engine).toContain("'deterministic_case_fallback'");
     expect(engine).toContain("intent: 'case_status'");
     expect(engine).toContain("nextAction: 'reply_only'");
+  });
+
+  it('keeps explicit human requests and concrete service needs useful during provider outages', () => {
+    const engine = source('lib/ai/kia/kia-decision-engine.ts');
+    expect(engine).toContain("'deterministic_human_escalation_fallback'");
+    expect(engine).toContain("'deterministic_service_need_fallback'");
+    expect(engine).toContain("intent: 'book_call'");
+    expect(engine).toContain("intent: 'service_selection'");
+    expect(engine).toContain("requiresMeeting: true");
   });
 
   it('attributes exhausted provider errors to the last failed provider', () => {

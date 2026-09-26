@@ -8,7 +8,7 @@ const send = readFileSync(resolve(process.cwd(), 'lib/email/send.ts'), 'utf8');
 describe('KIA contextual email coverage', () => {
   it('auto-enables contextual KIA links for an identifiable case email', () => {
     expect(cta).toContain("const caseId = s(metadata, 'case_id', 'caseId')");
-    expect(cta).toContain("if (!caseId && !explicitlyRequested) return input");
+    expect(cta).toContain("if (!caseId && !explicitlyRequested && !profileId) return input");
     expect(cta).toContain(".from('cases')");
     expect(cta).toContain("profileId = data.client_id");
     expect(cta).toContain("kia_chat_href: chatHref");

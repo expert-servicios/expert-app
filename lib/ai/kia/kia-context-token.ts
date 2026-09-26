@@ -61,29 +61,42 @@ export async function resolveKiaContextToken(input: {
   if (error) throw error;
   if (!data || data.revoked_at || new Date(data.expires_at) <= new Date()) return null;
   if (data.profile_id !== input.profileId) return null;
-  if ((data.tenant_id ?? null) !== (input.tenantId ?? null)) return null;
+  // A populated profile tenant is authoritative. Legacy profiles may have no
+  // tenant yet; in that case tenant scope is validated through case/company
+  // membership below rather than rejecting a valid canonical entity scope.
+  if (input.tenantId && (data.tenant_id ?? null) !== input.tenantId) return null;
 
   if (data.case_id) {
     const { data: ownedCase, error: caseError } = await input.admin
       .from('cases')
-      .select('id,client_id,company_id')
+      .select('id,client_id,company_id,tenant_id')
       .eq('id', data.case_id)
       .eq('client_id', input.profileId)
       .maybeSingle();
     if (caseError) throw caseError;
     if (!ownedCase) return null;
     if ((data.company_id ?? null) !== (ownedCase.company_id ?? null)) return null;
+    if ((data.tenant_id ?? null) !== (ownedCase.tenant_id ?? null) && ownedCase.tenant_id) return null;
   }
 
   if (data.company_id) {
-    const { data: membership, error: membershipError } = await input.admin
-      .from('profile_companies')
-      .select('company_id')
-      .eq('profile_id', input.profileId)
-      .eq('company_id', data.company_id)
-      .maybeSingle();
+    const [{ data: membership, error: membershipError }, { data: company, error: companyError }] = await Promise.all([
+      input.admin
+        .from('profile_companies')
+        .select('company_id')
+        .eq('profile_id', input.profileId)
+        .eq('company_id', data.company_id)
+        .maybeSingle(),
+      input.admin
+        .from('companies')
+        .select('id,tenant_id')
+        .eq('id', data.company_id)
+        .maybeSingle(),
+    ]);
     if (membershipError) throw membershipError;
-    if (!membership) return null;
+    if (companyError) throw companyError;
+    if (!membership || !company) return null;
+    if (company.tenant_id && (data.tenant_id ?? null) !== company.tenant_id) return null;
   }
 
   await input.admin.from('kia_context_tokens').update({ last_used_at: new Date().toISOString() }).eq('id', data.id);

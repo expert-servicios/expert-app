@@ -36,6 +36,8 @@ describe('KIA end-to-end readiness contract', () => {
     expect(telegram).toContain("payload?.message?.chat?.type !== 'private'");
     expect(telegram).toContain("runPolicyEnforcedKiaDecision('telegram_verified'");
     expect(telegram).toContain('buildKiaTelegramPresentation');
+    expect(telegram).toContain('buildKiaProactiveSuggestions');
+    expect(telegram).toContain("startPayload.startsWith('link_')");
     expect(telegram).toContain('sendTelegramPhotoConfirmed');
   });
 

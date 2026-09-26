@@ -38,6 +38,17 @@ describe('KIA M7.2d Telegram linking', () => {
     expect(migration).toContain("set search_path = ''");
   });
 
+  it('supports one-tap deep-link linking from the authenticated KIA widget', () => {
+    const api = source('app/api/ai/kia/telegram-link/route.ts');
+    const webhook = source('app/api/webhooks/telegram/route.ts');
+    const widget = source('components/KiaCopilotWidget.tsx');
+    expect(api).toContain('deepLink: `https://t.me/kia_expert_bot?start=link_');
+    expect(webhook).toContain("startPayload.startsWith('link_')");
+    expect(webhook).toContain("via: 'deep_link'");
+    expect(widget).toContain("fetch('/api/ai/kia/telegram-link'");
+    expect(widget).toContain('Conectar Telegram');
+  });
+
   it('issues codes only from an authenticated EXPERT session', () => {
     const route = source('app/api/ai/kia/telegram-link/route.ts');
     expect(route).toContain('createServerSupabaseClient(request)');
@@ -47,12 +58,14 @@ describe('KIA M7.2d Telegram linking', () => {
     expect(route).toContain('createTelegramLinkCode');
   });
 
-  it('consumes /link before normal KIA identity routing', () => {
+  it('consumes /link before normal KIA identity routing and before the client rollout gate', () => {
     const route = source('app/api/webhooks/telegram/route.ts');
     expect(route).toContain("if (command === '/link')");
     expect(route).toContain('consumeTelegramLinkCode');
     expect(route).toContain('externalUserId: inbound.userId');
     expect(route).toContain('externalChatId: inbound.chatId');
     expect(route).toContain('resolveVerifiedTelegramIdentity');
+    expect(route.indexOf("if (command === '/link')")).toBeLessThan(route.indexOf("if (!adminChat && !telegramClientsEnabled)"));
+    expect(route.indexOf("startPayload.startsWith('link_')")).toBeLessThan(route.indexOf("if (!adminChat && !telegramClientsEnabled)"));
   });
 });

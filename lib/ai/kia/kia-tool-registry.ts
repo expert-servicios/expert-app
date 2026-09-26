@@ -80,6 +80,7 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_case_tasks:                     policy('R0', 'read',  'case_operations'),
   get_case_documents:                 policy('R0', 'read',  'documents'),
   get_case_timeline:                  policy('R0', 'read',  'case_operations'),
+  get_client_communications:          policy('R0', 'read',  'client_data'),
   search_knowledge_resources:          policy('R0', 'read',  'knowledge'),
   get_official_sources:                policy('R0', 'read',  'regulatory'),
   find_relevant_services:              policy('R0', 'read',  'service_discovery'),

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { getViabilityCheck } from '@/lib/data/viability-checks';
 import { evaluateViability } from '@/lib/integrations/ai';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { getResendClient } from '@/lib/integrations/resend';
+import { sendEmail } from '@/lib/email/send';
 import { getCatalogService } from '@/lib/utils/catalog';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkRateLimit, checkSpam, getClientIp } from '@/lib/utils/spam-guard';
@@ -103,15 +103,15 @@ export async function POST(request: NextRequest) {
     // Send email report
     let emailSent = false;
     try {
-      const resend = getResendClient();
       const resultLabel =
         viability.result === 'viable' ? '🟢 VIABLE' :
         viability.result === 'parcial' ? '🟡 VIABLE PARCIAL' :
         '🔴 NO VIABLE';
 
-      await resend.emails.send({
+      await sendEmail({
         from: 'EXPERT Consultoría <noreply@expertconsulting.es>',
         to: body.clientEmail,
+        eventType: 'viability.assessment.client',
         subject: `Tu evaluación de viabilidad — ${check.serviceName}`,
         html: buildEmailHtml({
           clientName: body.clientName,
@@ -124,7 +124,13 @@ export async function POST(request: NextRequest) {
           nextSteps: viability.nextSteps,
           checkoutUrl: stripePriceId ? 'https://expertconsulting.es/servicios' : null,
           escalate: viability.escalate
-        })
+        }),
+        metadata: {
+          viability_assessment_id: assessment?.id ?? null,
+          service_slug: body.serviceSlug,
+          source: 'viability',
+        },
+        ...(assessment?.id ? { idempotencyKey: `viability/${assessment.id}/client` } : {}),
       });
       emailSent = true;
 
@@ -142,14 +148,14 @@ export async function POST(request: NextRequest) {
     const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((e) => e.trim()).filter(Boolean) ?? [];
     if (adminEmails.length) {
       try {
-        const resend = getResendClient();
         const resultLabel =
           viability.result === 'viable' ? '🟢 VIABLE' :
           viability.result === 'parcial' ? '🟡 VIABLE PARCIAL' :
           '🔴 NO VIABLE';
-        await resend.emails.send({
+        await sendEmail({
           from: 'EXPERT Consultoría <noreply@expertconsulting.es>',
           to: adminEmails,
+          eventType: 'viability.assessment.admin',
           subject: `Nueva evaluación de viabilidad: ${check.serviceName} — ${resultLabel}`,
           html: `<!DOCTYPE html>
 <html lang="es"><body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
@@ -160,6 +166,12 @@ export async function POST(request: NextRequest) {
   <p><strong>Resumen IA:</strong> ${viability.summary}</p>
   ${viability.escalate ? '<p style="color:#991b1b;font-weight:700;">⚠️ Marcado para escalar a un asesor.</p>' : ''}
 </body></html>`,
+          metadata: {
+            viability_assessment_id: assessment?.id ?? null,
+            service_slug: body.serviceSlug,
+            source: 'viability_admin',
+          },
+          ...(assessment?.id ? { idempotencyKey: `viability/${assessment.id}/admin` } : {}),
         });
       } catch (adminEmailErr) {
         console.error('[viabilidad] admin email error:', adminEmailErr);

@@ -11,7 +11,7 @@ const kiaRoute = readFileSync(resolve(process.cwd(), 'app/api/ai/kia/route.ts'),
 describe('Unified KIA client identity', () => {
   it('uses one visual KIA signature for Chat and Telegram', () => {
     expect(signature).toContain('/avatars/kia/kia-bienvenida.webp');
-    expect(signature).toContain('💬 Hablar con KIA');
+    expect(signature).toContain("ctaLabel = ru ? 'Поговорить с KIA:' : 'Hablar con KIA:'");
     expect(signature).toContain('https://t.me/kia_expert_bot');
     expect(signature).toContain('KIA es una asistente virtual de EXPERT');
   });
@@ -25,7 +25,8 @@ describe('Unified KIA client identity', () => {
 
   it('opens a contextual email case before showing generic Holded shortcuts', () => {
     expect(widget).toContain('contextToken ? [] : [welcomeMessage()]');
-    expect(widget).toContain('Estoy abriendo este expediente para ti… 😊');
+    expect(widget).not.toContain('Estoy abriendo este expediente para ti… 😊');
+    expect(widget).toContain('<span aria-hidden="true">•••</span>');
     expect(widget).toContain('setMessages([contextualWelcome(context)])');
     expect(widget).toContain('contextSummary ? [contextualWelcome(contextSummary)] : [welcomeMessage(true)]');
   });

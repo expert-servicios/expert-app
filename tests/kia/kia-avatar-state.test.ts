@@ -271,6 +271,6 @@ describe('KIA copilot avatar integration', () => {
     expect(widget).toContain('aria-live="polite"');
     expect(widget).toContain('aria-expanded={open}');
     expect(widget).toContain('aria-controls="kia-copilot-panel"');
-    expect(widget).toContain('aria-label="Escribe tu consulta a KIA"');
+    expect(widget).toContain("aria-label={uiLocale === 'ru' ? 'Напишите вопрос KIA' : 'Escribe tu consulta a KIA'}");
   });
 });

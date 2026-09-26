@@ -65,8 +65,9 @@ describe('Work evidence boundary', () => {
   it('adds the same KIA copilot identity to every EXPERT email and never duplicates it', () => {
     const human = appendKiaSignature('<body>Human</body>');
     expect(human).toContain('data-kia-signature="true"');
-    expect(human).toContain('💬 Hablar con KIA');
-    expect(human).toContain('✈️ Telegram');
+    expect(human).toContain('Hablar con KIA:');
+    expect(human).toContain('data-kia-contact-cta="true"');
+    expect(human).toContain('https://telegram.org/img/t_logo.png');
     const authored = appendKiaSignature('<body>Hello</body>', { kia_author: true, preferred_language: 'ru' });
     expect(authored).toContain('ИИ-помощница');
     expect(authored).toContain('info@expertconsulting.es');
