@@ -32,23 +32,23 @@ export const CASE_STATUS_LABELS: Record<CaseStatus, string> = {
 };
 
 export const CASE_STATUS_LABELS_CLIENT_ES: Record<CaseStatus, string> = {
-  nuevo:                 'Expediente nuevo',
-  pendiente_cliente:     'Esperando información o documentación tuya',
-  en_revision:           'En revisión por EXPERT',
-  listo_para_presentar:  'Listo para presentar',
-  presentado:            'Presentado',
-  finalizado:            'Finalizado',
-  bloqueado:             'En pausa - requiere revisión',
+  nuevo:                 'Acabamos de abrir tu expediente',
+  pendiente_cliente:     'Necesitamos información o documentación tuya para continuar',
+  en_revision:           'Estamos revisando tu expediente',
+  listo_para_presentar:  'Ya está preparado para presentar',
+  presentado:            'Ya está presentado ante el organismo',
+  finalizado:            'Tu trámite está finalizado',
+  bloqueado:             'Necesitamos revisar un punto antes de continuar',
 };
 
 export const CASE_STATUS_LABELS_RU: Record<CaseStatus, string> = {
-  nuevo:                 'Новое дело',
-  pendiente_cliente:     'Ожидаем информацию или документы от вас',
-  en_revision:           'На проверке EXPERT',
-  listo_para_presentar:  'Готово к подаче',
-  presentado:            'Подано',
-  finalizado:            'Завершено',
-  bloqueado:             'Приостановлено - требуется проверка',
+  nuevo:                 'Мы открыли ваше дело',
+  pendiente_cliente:     'Для продолжения нам нужна информация или документы от вас',
+  en_revision:           'Мы проверяем ваше дело',
+  listo_para_presentar:  'Всё готово к подаче',
+  presentado:            'Заявление уже подано в ведомство',
+  finalizado:            'Ваш процесс завершён',
+  bloqueado:             'Перед продолжением нужно проверить один момент',
 };
 
 export function caseStatusLabel(status: CaseStatus, locale: 'es' | 'ru' = 'es'): string {
