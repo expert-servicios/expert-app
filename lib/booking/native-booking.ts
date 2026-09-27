@@ -1,7 +1,7 @@
 export const BOOKING_TIMEZONE = 'Europe/Madrid';
 export const BOOKING_OPEN_HOUR = 9;
 export const BOOKING_CLOSE_HOUR = 18;
-export const BOOKING_SLOT_STEP_MINUTES = 15;
+export const BOOKING_SLOT_STEP_MINUTES = 60;
 export const BOOKING_MAX_DAYS = 21;
 
 export type BookingServiceKey =
