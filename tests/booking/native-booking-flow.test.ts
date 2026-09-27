@@ -21,7 +21,9 @@ describe('native booking public flow', () => {
 
   it('protects public booking creation', () => {
     expect(route).toContain("action: 'booking_create'");
-    expect(route).toContain('checkRateLimit(ip)');
+    expect(route).toContain('checkRateLimit(rateLimitKey)');
+    expect(route).toContain("rateLimitKey = `booking:${ip}`");
+    expect(route).toContain('releaseRateLimit(rateLimitKey)');
     expect(route).toContain('checkSpam(');
     expect(route).toContain("status: 'pending_calendar'");
   });
