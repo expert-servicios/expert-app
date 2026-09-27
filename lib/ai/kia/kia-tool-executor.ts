@@ -502,13 +502,29 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         if (!ownedCase) return fail(toolCall.name, 'Expediente no autorizado.');
         const { data, error } = await admin
           .from('documents')
-          .select('id,original_name,title,doc_type,kind,state,checklist_item_label,created_at,updated_at')
+          .select('id,original_name,title,doc_type,kind,state,checklist_item_label,file_path,created_at,updated_at')
           .eq('case_id', caseId)
           .eq('client_id', clientId)
           .order('created_at', { ascending: false })
           .limit(Number(args.limit ?? 20));
         if (error) return fail(toolCall.name, 'Error consultando documentos.');
-        return ok(toolCall.name, { documents: data ?? [] });
+        return ok(toolCall.name, {
+          documents: (data ?? []).map((doc) => ({
+            id: doc.id,
+            original_name: doc.original_name,
+            title: doc.title,
+            doc_type: doc.doc_type,
+            kind: doc.kind,
+            state: doc.state,
+            checklist_item_label: doc.checklist_item_label,
+            created_at: doc.created_at,
+            updated_at: doc.updated_at,
+            case_url: `/dashboard/expedientes/${caseId}`,
+            download_url: doc.file_path
+              ? `/api/documents/${doc.id}/download?redirect=1`
+              : null,
+          })),
+        });
       }
 
       case 'get_case_timeline': {
