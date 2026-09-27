@@ -132,7 +132,10 @@ export async function GET(request: NextRequest) {
       const linked = new Map((linkedRows ?? []).map((row) => [row.thread_id, row]));
       const linkedCaseIds = [...new Set((linkedRows ?? []).map((row) => row.case_id).filter((id): id is string => Boolean(id)))];
       const { data: linkedCases } = linkedCaseIds.length
-        ? await admin.from('cases').select('id,service,client_id').in('id', linkedCaseIds)
+        ? await admin.from('cases')
+            .select('id,service,client_id')
+            .in('id', linkedCaseIds)
+            .is('closed_at', null)
         : { data: [] as Array<{ id: string; service: string | null; client_id: string | null }> };
       const clientIds = [...new Set((linkedCases ?? []).map((row) => row.client_id).filter((id): id is string => Boolean(id)))];
       const { data: linkedClients } = clientIds.length
