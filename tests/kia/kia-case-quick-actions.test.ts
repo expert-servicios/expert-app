@@ -145,6 +145,15 @@ describe('KIA quick-action integration contracts', () => {
     expect(route).toContain('caseQuickActionPresentation?.reply ?? result.userMessage');
   });
 
+  it('uses the same contextual case actions in verified Telegram', () => {
+    const telegram = source('app/api/webhooks/telegram/route.ts');
+    expect(telegram).toContain('detectKiaCaseQuickAction(message)');
+    expect(telegram).toContain('buildKiaCaseQuickActionPresentation');
+    expect(telegram).toContain('buildKiaCaseQuickActionSuggestions');
+    expect(telegram).toContain("telegramPolicy.toolNames.includes('get_case_documents')");
+    expect(telegram).toContain('caseQuickActionPresentation?.reply ?? result.userMessage');
+  });
+
   it('returns case document navigation without leaking storage paths', () => {
     const executor = source('lib/ai/kia/kia-tool-executor.ts');
     expect(executor).toContain("download?redirect=1");
