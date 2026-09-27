@@ -57,6 +57,14 @@ export const AUTOMATION_CATALOG: AutomationDef[] = [
     group: 'Expedientes',
   },
   {
+    key: 'admin.case_activity',
+    title: 'Actividad de expedientes',
+    trigger: 'Cada novedad operativa en un expediente activo',
+    action: 'Aviso inmediato al administrador con enlace directo al expediente',
+    channel: 'PushApp + Telegram + Email admin',
+    group: 'Admin',
+  },
+  {
     key: 'admin.daily_summary',
     title: 'Resumen diario',
     trigger: 'Cada día a las 08:30 UTC',
