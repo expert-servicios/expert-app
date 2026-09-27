@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { notifyAdmins } from '@/lib/integrations/push';
+import { notifyAdminCaseActivity } from '@/lib/admin/case-admin-notifications';
 import { resolveEffectiveCaseStatus } from '@/lib/cases/case-status';
 
 const NATIONALITY_MINOR_SLUG = 'nacionalidad-espanola-menor-nacido-en-espana';
@@ -244,12 +244,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'La tarea se creó, pero no se pudo actualizar el expediente' }, { status: 500 });
     }
 
-    notifyAdmins({
-      title: '📂 Documentación lista para revisión',
-      body: `${caseData.service ?? 'Expediente'} — ${profile?.full_name ?? 'Cliente'}`,
-      url: `/admin/expedientes/${caseId}`,
-      tag: `case-docs-ready-${caseId}`,
-    }).catch(() => {});
+    void notifyAdminCaseActivity({
+      kind: 'document_ready_for_review',
+      caseId,
+      service: caseData.service ?? 'Expediente',
+      clientName: profile?.full_name ?? null,
+      detail: 'El cliente ha marcado la documentación como lista para revisión.',
+      eventRef: now,
+      occurredAt: now,
+    });
 
     return NextResponse.json({ ok: true });
   } catch (err) {
