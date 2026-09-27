@@ -10,6 +10,32 @@ export type KiaCaseQuickAction =
   | 'open_case'
   | 'human_review';
 
+
+export function buildKiaCaseQuickActionSuggestions(
+  action: KiaCaseQuickAction,
+  locale: 'es' | 'ru',
+): string[] {
+  const ru = locale === 'ru';
+  const byAction: Record<KiaCaseQuickAction, string[]> = {
+    next_step: ru
+      ? ['Открыть дело', 'Посмотреть документ', 'Проверка специалистом']
+      : ['Abrir expediente', 'Ver documento', 'Revisión humana'],
+    documents: ru
+      ? ['Открыть дело', 'Что делать дальше?', 'Проверка специалистом']
+      : ['Abrir expediente', '¿Qué hago ahora?', 'Revisión humana'],
+    status: ru
+      ? ['Что делать дальше?', 'Какие документы нужны?', 'Открыть дело']
+      : ['¿Qué hago ahora?', '¿Qué documentos faltan?', 'Abrir expediente'],
+    open_case: ru
+      ? ['Что делать дальше?', 'Какие документы нужны?', 'Проверка специалистом']
+      : ['¿Qué hago ahora?', '¿Qué documentos faltan?', 'Revisión humana'],
+    human_review: ru
+      ? ['Открыть дело', 'Что делать дальше?', 'Какие документы нужны?']
+      : ['Abrir expediente', '¿Qué hago ahora?', '¿Qué documentos faltan?'],
+  };
+  return byAction[action];
+}
+
 type CaseItem = KiaContext['cases'][number];
 
 type CaseDocument = {
