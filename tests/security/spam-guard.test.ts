@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { checkSpam, checkRateLimit } from '@/lib/utils/spam-guard';
+import { checkSpam, checkRateLimit, releaseRateLimit } from '@/lib/utils/spam-guard';
 
 describe('checkSpam', () => {
   it('permite email y nombre limpios', () => {
@@ -64,5 +64,15 @@ describe('checkRateLimit', () => {
     for (let i = 0; i < 5; i++) checkRateLimit(key1);
     // ip2 no ha llegado al límite
     expect(checkRateLimit(key2)).toBe(true);
+  });
+
+  it('devuelve un intento cuando una operacion interna falla', () => {
+    const key = `${keyBase}:refund`;
+    for (let i = 0; i < 5; i++) checkRateLimit(key);
+    expect(checkRateLimit(key)).toBe(false);
+
+    releaseRateLimit(key);
+
+    expect(checkRateLimit(key)).toBe(true);
   });
 });
