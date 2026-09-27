@@ -157,7 +157,7 @@ function documentLink(
   return {
     type: 'link',
     title,
-    url: document?.download_url || document?.case_url || caseDocumentsUrl,
+    url: document?.download_url || (staffPreview ? caseDocumentsUrl : document?.case_url || caseDocumentsUrl),
     cta: document?.download_url
       ? (locale === 'ru' ? 'Открыть документ' : 'Abrir documento')
       : (locale === 'ru' ? 'Открыть документы дела' : 'Ver documentos del expediente'),
