@@ -25,6 +25,12 @@ import { detectKiaConversationOpportunity } from '@/lib/ai/kia/kia-contextual-op
 import { buildKiaCopilotArtifacts } from '@/lib/ai/kia/kia-copilot-artifacts';
 import { buildKiaTelegramPresentation } from '@/lib/ai/kia/kia-telegram-presentation';
 import { buildKiaProactiveSuggestions } from '@/lib/ai/kia/kia-proactive-suggestions';
+import {
+  buildKiaCaseQuickActionPresentation,
+  buildKiaCaseQuickActionSuggestions,
+  detectKiaCaseQuickAction,
+} from '@/lib/ai/kia/kia-case-quick-actions';
+import { executeKiaToolCall } from '@/lib/ai/kia/kia-tool-executor';
 import { persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import {
   escapeTelegramHtml,
@@ -449,6 +455,32 @@ async function handleTelegramUpdate(request: NextRequest) {
       },
     });
 
+    const caseQuickAction = detectKiaCaseQuickAction(message);
+    const quickActionCase = caseContext?.caseId
+      ? result.context.cases.find((caseItem) => caseItem.id === caseContext.caseId) ?? result.context.cases[0] ?? null
+      : result.context.cases.length === 1
+        ? result.context.cases[0]
+        : null;
+    let caseQuickActionPresentation: ReturnType<typeof buildKiaCaseQuickActionPresentation> | null = null;
+
+    if (caseQuickAction && quickActionCase) {
+      let documentToolResult = null;
+      const needsDocuments = caseQuickAction === 'documents' || caseQuickAction === 'next_step';
+      if (needsDocuments && telegramToolsEnabled && telegramPolicy.toolNames.includes('get_case_documents')) {
+        documentToolResult = await executeKiaToolCall({
+          name: 'get_case_documents',
+          arguments: { caseId: quickActionCase.id, limit: 20 },
+        }, result.context);
+      }
+
+      caseQuickActionPresentation = buildKiaCaseQuickActionPresentation({
+        action: caseQuickAction,
+        locale: responseLocale,
+        caseItem: quickActionCase,
+        documentToolResult,
+      });
+    }
+
     const automaticKnowledgeResult = buildAutomaticKiaKnowledgeResult({
       message,
       intent: result.decision.intent,
@@ -476,19 +508,31 @@ async function handleTelegramUpdate(request: NextRequest) {
       : [...result.toolResults];
     if (automaticVisualResult) artifactToolResults.push(automaticVisualResult);
     if (automaticServiceResult?.result.services.length) artifactToolResults.push(automaticServiceResult);
-    const artifacts = buildKiaCopilotArtifacts(artifactToolResults, result.decision);
+    const modelArtifacts = buildKiaCopilotArtifacts(artifactToolResults, result.decision);
+    const contextualArtifacts = caseQuickActionPresentation?.artifacts ?? [];
+    const artifacts = [...contextualArtifacts, ...modelArtifacts]
+      .filter((artifact, index, items) => {
+        if (artifact.type !== 'link' && artifact.type !== 'report') return true;
+        return items.findIndex((candidate) =>
+          (candidate.type === 'link' || candidate.type === 'report') && candidate.url === artifact.url
+        ) === index;
+      })
+      .slice(0, 8);
+    const reply = caseQuickActionPresentation?.reply ?? result.userMessage;
     const operationalQuickReplies = (result.decision.quickReplies ?? []).map((item) => item.title);
-    const proactiveSuggestions = buildKiaProactiveSuggestions({
-      locale: responseLocale,
-      intent: result.decision.intent,
-      nextAction: result.decision.nextAction,
-      hasCase: result.context.cases.length > 0,
-      hasCompany: Boolean(result.context.company),
-      pendingDocuments: result.context.documents.pendingCount,
-      existingQuickReplies: operationalQuickReplies,
-    });
+    const proactiveSuggestions = caseQuickAction
+      ? buildKiaCaseQuickActionSuggestions(caseQuickAction, responseLocale)
+      : buildKiaProactiveSuggestions({
+          locale: responseLocale,
+          intent: result.decision.intent,
+          nextAction: result.decision.nextAction,
+          hasCase: result.context.cases.length > 0,
+          hasCompany: Boolean(result.context.company),
+          pendingDocuments: result.context.documents.pendingCount,
+          existingQuickReplies: operationalQuickReplies,
+        });
     const presentation = buildKiaTelegramPresentation({
-      reply: result.userMessage,
+      reply,
       quickReplies: [...operationalQuickReplies, ...proactiveSuggestions],
       artifacts,
     });
@@ -496,7 +540,7 @@ async function handleTelegramUpdate(request: NextRequest) {
     const storedConversationId = contextEnabled ? await persistKiaConversationTurn({ admin, profileId: identity.profileId,
       tenantId: identity.tenantId, companyId, caseId: caseContext?.caseId, serviceSlug: caseContext?.serviceSlug,
       conversationId: caseContext?.stored?.conversation.id, channel: 'telegram', originType: 'telegram',
-      userMessage: message, assistantMessage: result.userMessage, intent: result.decision.intent,
+      userMessage: message, assistantMessage: reply, intent: result.decision.intent,
       metadata: { telegram_chat_id: inbound.chatId, telegram_update_id: inbound.updateId, delivery_state: 'prepared' } }) : null;
 
     const outboundId = await sendTelegramMessage({
