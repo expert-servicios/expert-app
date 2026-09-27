@@ -45,6 +45,12 @@ import { detectKiaConversationOpportunity } from '@/lib/ai/kia/kia-contextual-op
 import { resolveKiaStaffPreview } from '@/lib/ai/kia/kia-staff-preview';
 import { kiaFriendlyError } from '@/lib/ai/kia/kia-error-copy';
 import { buildKiaProactiveSuggestions } from '@/lib/ai/kia/kia-proactive-suggestions';
+import {
+  buildKiaCaseQuickActionPresentation,
+  buildKiaCaseQuickActionSuggestions,
+  detectKiaCaseQuickAction,
+} from '@/lib/ai/kia/kia-case-quick-actions';
+import { executeKiaToolCall } from '@/lib/ai/kia/kia-tool-executor';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -407,6 +413,33 @@ export async function POST(request: NextRequest) {
     serviceSlug: contextualServiceSlug,
     existingToolResults: result.toolResults,
   });
+  const caseQuickAction = detectKiaCaseQuickAction(message);
+  const quickActionCase = contextualCaseId
+    ? result.context.cases.find((caseItem) => caseItem.id === contextualCaseId) ?? result.context.cases[0] ?? null
+    : result.context.cases.length === 1
+      ? result.context.cases[0]
+      : null;
+  let caseQuickActionPresentation: ReturnType<typeof buildKiaCaseQuickActionPresentation> | null = null;
+
+  if (caseQuickAction && quickActionCase) {
+    let documentToolResult = null;
+    const needsDocuments = caseQuickAction === 'documents' || caseQuickAction === 'next_step';
+    if (needsDocuments && dashboardPolicy.toolNames.includes('get_case_documents')) {
+      documentToolResult = await executeKiaToolCall({
+        name: 'get_case_documents',
+        arguments: { caseId: quickActionCase.id, limit: 20 },
+      }, result.context);
+    }
+
+    caseQuickActionPresentation = buildKiaCaseQuickActionPresentation({
+      action: caseQuickAction,
+      locale: responseLocale,
+      caseItem: quickActionCase,
+      documentToolResult,
+      staffPreview: Boolean(staffPreview),
+    });
+  }
+
   const opportunity = detectKiaConversationOpportunity(message, result.decision);
   const automaticVisualResult = buildAutomaticKiaVisualResult({
     message,
@@ -428,8 +461,20 @@ export async function POST(request: NextRequest) {
     : [...result.toolResults];
   if (automaticVisualResult) artifactToolResults.push(automaticVisualResult);
   if (automaticServiceResult?.result.services.length) artifactToolResults.push(automaticServiceResult);
-  const artifacts = buildKiaCopilotArtifacts(artifactToolResults, result.decision);
-  const reply = appendKiaFiscalNotice(result.userMessage, fiscalSignal);
+  const modelArtifacts = buildKiaCopilotArtifacts(artifactToolResults, result.decision);
+  const contextualArtifacts = caseQuickActionPresentation?.artifacts ?? [];
+  const artifacts = [...contextualArtifacts, ...modelArtifacts]
+    .filter((artifact, index, items) => {
+      if (artifact.type !== 'link' && artifact.type !== 'report') return true;
+      return items.findIndex((candidate) =>
+        (candidate.type === 'link' || candidate.type === 'report') && candidate.url === artifact.url
+      ) === index;
+    })
+    .slice(0, 8);
+  const reply = appendKiaFiscalNotice(
+    caseQuickActionPresentation?.reply ?? result.userMessage,
+    fiscalSignal,
+  );
 
   try {
     if (contextualPersistenceEnabled) {
@@ -491,15 +536,17 @@ export async function POST(request: NextRequest) {
   }
 
   const quickReplies = (result.decision.quickReplies ?? []).map((replyItem) => replyItem.title);
-  const proactiveSuggestions = buildKiaProactiveSuggestions({
-    locale: responseLocale,
-    intent: result.decision.intent,
-    nextAction: result.decision.nextAction,
-    hasCase: result.context.cases.length > 0,
-    hasCompany: Boolean(result.context.company),
-    pendingDocuments: result.context.documents.pendingCount,
-    existingQuickReplies: quickReplies,
-  });
+  const proactiveSuggestions = caseQuickAction
+    ? buildKiaCaseQuickActionSuggestions(caseQuickAction, responseLocale)
+    : buildKiaProactiveSuggestions({
+        locale: responseLocale,
+        intent: result.decision.intent,
+        nextAction: result.decision.nextAction,
+        hasCase: result.context.cases.length > 0,
+        hasCompany: Boolean(result.context.company),
+        pendingDocuments: result.context.documents.pendingCount,
+        existingQuickReplies: quickReplies,
+      });
 
   const response = NextResponse.json({
     reply,
