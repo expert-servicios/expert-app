@@ -253,22 +253,20 @@ export interface CalendarBusyWindow {
   end: string;
 }
 
+function bookingBusyCalendarIds(): string[] {
+  const configured = process.env.BOOKING_GOOGLE_BUSY_CALENDAR_IDS
+    ?.split(',')
+    .map((value) => value.trim())
+    .filter(Boolean) ?? [];
+  return Array.from(new Set(['primary', ...configured]));
+}
+
 export async function listCalendarBusyWindowsSA(
   timeMin: string,
   timeMax: string
 ): Promise<CalendarBusyWindow[]> {
   const cal = await getCalendarSAClient();
   if (!cal) throw new Error('Google Calendar service account is not configured');
-
-  const { data } = await cal.events.list({
-    calendarId: 'primary',
-    timeMin,
-    timeMax,
-    singleEvents: true,
-    orderBy: 'startTime',
-    showDeleted: false,
-    maxResults: 2500,
-  });
 
   type BusyEvent = {
     status?: string | null;
@@ -277,14 +275,29 @@ export async function listCalendarBusyWindowsSA(
     end?: { dateTime?: string | null; date?: string | null } | null;
   };
 
-  const items = (data.items ?? []) as BusyEvent[];
-  return items
-    .filter((event) => event.status !== 'cancelled' && event.transparency !== 'transparent')
-    .map((event) => ({
-      start: event.start?.dateTime ?? event.start?.date ?? '',
-      end: event.end?.dateTime ?? event.end?.date ?? '',
-    }))
-    .filter((window: CalendarBusyWindow) => Boolean(window.start && window.end));
+  const windows = await Promise.all(
+    bookingBusyCalendarIds().map(async (calendarId) => {
+      const { data } = await cal.events.list({
+        calendarId,
+        timeMin,
+        timeMax,
+        singleEvents: true,
+        orderBy: 'startTime',
+        showDeleted: false,
+        maxResults: 2500,
+      });
+
+      return ((data.items ?? []) as BusyEvent[])
+        .filter((event) => event.status !== 'cancelled' && event.transparency !== 'transparent')
+        .map((event) => ({
+          start: event.start?.dateTime ?? event.start?.date ?? '',
+          end: event.end?.dateTime ?? event.end?.date ?? '',
+        }))
+        .filter((window: CalendarBusyWindow) => Boolean(window.start && window.end));
+    })
+  );
+
+  return windows.flat();
 }
 
 export interface MeetAutoArtifactsResult {
