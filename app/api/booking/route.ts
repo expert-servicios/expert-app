@@ -22,7 +22,7 @@ import {
 } from '@/lib/admin/onboarding-booking-identity';
 import { verifyPrivateBookingAuthorization } from '@/lib/booking/private-booking-authorization';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
-import { checkRateLimit, checkSpam, getClientIp } from '@/lib/utils/spam-guard';
+import { checkRateLimit, checkSpam, getClientIp, releaseRateLimit } from '@/lib/utils/spam-guard';
 import {
   BOOKING_CLOSE_HOUR,
   BOOKING_MAX_DAYS,
@@ -239,6 +239,7 @@ export async function POST(request: NextRequest) {
   let appointmentId: string | null = null;
   let providerEventId: string | null = null;
   let calendarProvider = getConfiguredBookingCalendarProvider();
+  let rateLimitKey: string | null = null;
 
   try {
     const body = await request.json();
@@ -248,7 +249,8 @@ export async function POST(request: NextRequest) {
     }
 
     const ip = getClientIp(request.headers);
-    if (!checkRateLimit(ip)) {
+    rateLimitKey = `booking:${ip}`;
+    if (!checkRateLimit(rateLimitKey)) {
       return NextResponse.json({ error: 'Demasiadas solicitudes. Inténtalo más tarde.' }, { status: 429 });
     }
 
@@ -468,6 +470,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Ese horario acaba de ocuparse. Elige otro.' }, { status: 409 });
       }
       console.error('[booking] appointment lock insert:', insertError);
+      if (rateLimitKey) releaseRateLimit(rateLimitKey);
       return NextResponse.json({ error: 'No se pudo reservar el horario.' }, { status: 500 });
     }
 
@@ -565,6 +568,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('[booking]', error);
+    if (rateLimitKey) releaseRateLimit(rateLimitKey);
 
     if (!providerEventId && error instanceof BookingCalendarCreationError) {
       providerEventId = error.eventId;
