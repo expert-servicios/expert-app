@@ -37,6 +37,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Error al generar enlace de descarga' }, { status: 500 });
     }
 
+    if (request.nextUrl.searchParams.get('redirect') === '1') {
+      return NextResponse.redirect(signedData.signedUrl);
+    }
+
     return NextResponse.json({ url: signedData.signedUrl, name: doc.original_name });
   } catch (error) {
     console.error('Document download error:', error);
