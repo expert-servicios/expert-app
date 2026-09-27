@@ -1,6 +1,7 @@
 import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients';
 import { sendEmailOnce } from '@/lib/email/send';
 import { notifyAdmins } from '@/lib/integrations/push';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 export type AdminCaseActivityKind =
@@ -43,6 +44,17 @@ function htmlEscape(value: string): string {
 }
 
 export async function notifyAdminCaseActivity(input: AdminCaseActivityInput): Promise<void> {
+  const admin = getSupabaseAdmin();
+  const { data: setting, error: settingError } = await admin
+    .from('automation_settings')
+    .select('enabled')
+    .eq('key', 'admin.case_activity')
+    .maybeSingle();
+  if (settingError) {
+    console.error('[admin-case-notifications] setting lookup failed:', settingError.message);
+  }
+  if (setting?.enabled === false) return;
+
   const adminUrl = absoluteAppUrl(`/admin/expedientes/${input.caseId}`);
   const title = titleFor(input.kind);
   const client = input.clientName?.trim() || 'Cliente';
