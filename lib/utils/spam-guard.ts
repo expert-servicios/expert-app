@@ -78,6 +78,18 @@ export function checkRateLimit(ip: string): boolean {
   return true;
 }
 
+export function releaseRateLimit(ip: string): void {
+  const entry = ipHits.get(ip);
+  if (!entry) return;
+
+  if (entry.count <= 1) {
+    ipHits.delete(ip);
+    return;
+  }
+
+  entry.count--;
+}
+
 export function getClientIp(headers: Headers): string {
   return (
     headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
