@@ -18,7 +18,7 @@ describe('KIA multichannel feedback learning guard', () => {
   });
 
   it('generalizes the feedback schema beyond retired WABA', () => {
-    const migration = source('supabase/migrations/20260925121500_kia_feedback_multichannel_learning_guard.sql');
+    const migration = source('supabase/migrations/20260925101549_kia_feedback_multichannel_learning_guard.sql');
     expect(migration).toContain('alter column phone drop not null');
     expect(migration).toContain('approved_for_learning boolean not null default false');
     expect(migration).toContain('feedback_context jsonb');
