@@ -65,7 +65,7 @@ describe('private booking authorization', () => {
     expect(native).toContain('https://expertconsulting.es/cita?');
     expect(native).toContain('auth=');
 
-    const legacy = 'https://cal.com/expert/formacion';
+    const legacy = 'https://legacy-booking.example/expert/formacion';
     expect(withPrivateBookingAuthorization(legacy, token)).toBe(legacy);
   });
 });
