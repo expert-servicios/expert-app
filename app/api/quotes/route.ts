@@ -11,6 +11,10 @@ import { describeContentOrigin, normalizeContentOrigin } from '@/lib/marketing/c
 import { getCatalogService } from '@/lib/utils/catalog';
 import { createQuoteClaimToken } from '@/lib/quotes/quote-claim-token';
 
+function escapeIlikeLiteral(value: string): string {
+  return value.replace(/[\\%_]/g, (character) => `\\${character}`);
+}
+
 const LEGACY_SERVICE_SLUGS: Record<string, string> = {
   noResidentes: 'no-residentes',
   modelo151: 'modelo-151',
@@ -100,7 +104,7 @@ export async function POST(request: NextRequest) {
     const { data: leadByEmail, error: leadByEmailError } = await supabaseAdmin
       .from('leads')
       .select('id,message,metadata')
-      .eq('email', normalizedEmail)
+      .ilike('email', escapeIlikeLiteral(normalizedEmail))
       .limit(1)
       .maybeSingle();
     if (leadByEmailError) throw leadByEmailError;
