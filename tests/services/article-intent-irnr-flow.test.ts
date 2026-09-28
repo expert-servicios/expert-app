@@ -63,7 +63,8 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(calc).toContain("intent: 'irnr_quote'");
     expect(calc).not.toContain('titulares por inmueble:');
     expect(calc).toContain('`Inmuebles: ${properties.length}`');
-    expect(calc).toContain('`unidades declarativas: ${declarativeUnits}`');
+    expect(calc).toContain('`ejercicios: ${taxYears}`');
+    expect(calc).toContain('`unidades declarativas por ejercicio: ${declarativeUnits}`');
   });
 
   it('captures free questions as demand leads', () => {
