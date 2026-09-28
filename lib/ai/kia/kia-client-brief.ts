@@ -160,12 +160,18 @@ export async function loadKiaClientCommunications(input: {
 
   const rows: KiaClientCommunication[] = [];
 
-  const persistedInboundThreadIds = new Set<string>();
+  const persistedInboundThreadLatest = new Map<string, number>();
   for (const row of outbound.data ?? []) {
     const metadata = row.metadata && typeof row.metadata === 'object' ? row.metadata as Record<string, unknown> : {};
     const direction = metadata.direction === 'in' || row.event_type === 'email.inbound' ? 'in' : 'out';
     const threadId = typeof metadata.thread_id === 'string' ? metadata.thread_id : null;
-    if (direction === 'in' && threadId) persistedInboundThreadIds.add(threadId);
+    if (direction === 'in' && threadId) {
+      const timestamp = new Date(row.created_at).getTime();
+      persistedInboundThreadLatest.set(
+        threadId,
+        Math.max(persistedInboundThreadLatest.get(threadId) ?? 0, timestamp),
+      );
+    }
     rows.push({
       channel: 'email',
       direction,
@@ -181,7 +187,8 @@ export async function loadKiaClientCommunications(input: {
     });
   }
   for (const row of inbound.data ?? []) {
-    if (persistedInboundThreadIds.has(row.thread_id)) continue;
+    const persistedAt = persistedInboundThreadLatest.get(row.thread_id) ?? 0;
+    if (persistedAt >= new Date(row.date).getTime()) continue;
     rows.push({
       channel: 'email',
       direction: 'in',
