@@ -13,6 +13,7 @@ export function FreeConsultationForm({ origin, service }: { origin?: string | nu
   const [hp, setHp] = useState('');
   const [state, setState] = useState<'idle'|'loading'|'done'>('idle');
   const [error, setError] = useState('');
+  const meetingHref = `/cita?tipo=consulta-inicial${origin ? `&origen=${encodeURIComponent(origin)}` : ''}`;
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -46,7 +47,7 @@ export function FreeConsultationForm({ origin, service }: { origin?: string | nu
         <p className="mt-2 text-sm leading-6 text-[#23364D]">
           KIA y el equipo de EXPERT revisarán tu pregunta. Si prefieres explicarla en directo, también puedes reservar una reunión informativa gratuita de 15 minutos.
         </p>
-        <Link href="/cita?tipo=consulta-inicial" className="mt-4 inline-flex bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A]">
+        <Link href={meetingHref} className="mt-4 inline-flex bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A]">
           Reservar 15 minutos
         </Link>
       </div>
