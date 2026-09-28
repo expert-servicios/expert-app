@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { X, CalendarClock } from 'lucide-react';
 
 interface Props {
-  url      : string; // https://cal.com/username/event-type
+  url      : string; // Legacy external booking URL; do not use for new flows.
   title    : string;
   subtitle?: string;
   isOpen   : boolean;
