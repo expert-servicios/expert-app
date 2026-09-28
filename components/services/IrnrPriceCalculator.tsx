@@ -13,14 +13,24 @@ type PropertyRow = {
 export function IrnrPriceCalculator({ compact = false, origin = 'service:no-residentes' }: { compact?: boolean; origin?: string }) {
   const [properties, setProperties] = useState<PropertyRow[]>([{ holders: 1, rented: false }]);
 
-  const units = useMemo(
-    () => properties.reduce((total, property) => total + Math.max(1, property.holders), 0),
+  const standardUnits = useMemo(
+    () => properties.reduce(
+      (total, property) => total + (property.rented ? 0 : Math.max(1, property.holders)),
+      0,
+    ),
     [properties],
   );
-  const net = units > 0 ? 80 + Math.max(0, units - 1) * 30 : 0;
+  const rentalUnits = useMemo(
+    () => properties.reduce(
+      (total, property) => total + (property.rented ? Math.max(1, property.holders) : 0),
+      0,
+    ),
+    [properties],
+  );
+  const net = standardUnits > 0 ? 80 + Math.max(0, standardUnits - 1) * 30 : 0;
   const vat = Math.round(net * 0.21 * 100) / 100;
   const total = Math.round((net + vat) * 100) / 100;
-  const hasRental = properties.some((property) => property.rented);
+  const hasRental = rentalUnits > 0;
 
   const updateProperty = (index: number, patch: Partial<PropertyRow>) => {
     setProperties((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, ...patch } : row));
@@ -33,9 +43,13 @@ export function IrnrPriceCalculator({ compact = false, origin = 'service:no-resi
   const summary = [
     `Inmuebles: ${properties.length}`,
     `titulares por inmueble: ${holderDistribution}`,
-    `unidades declarativas estimadas: ${units}`,
-    rentedIndexes.length ? `inmuebles alquilados: ${rentedIndexes.join(',')}` : 'sin inmuebles alquilados',
-    `honorarios estimados para renta imputada: ${net} EUR + IVA`,
+    `unidades estándar no alquiladas: ${standardUnits}`,
+    rentedIndexes.length
+      ? `unidades alquiladas pendientes de revisión: ${rentalUnits}; inmuebles alquilados: ${rentedIndexes.join(',')}`
+      : 'sin inmuebles alquilados',
+    standardUnits > 0
+      ? `honorarios estimados para renta imputada: ${net} EUR + IVA`
+      : 'honorarios de inmuebles alquilados: pendientes de revisión',
   ].join('; ');
 
   const requestHref = `/solicitar-presupuesto?servicio=no-residentes&origen=${encodeURIComponent(origin)}&resumen=${encodeURIComponent(summary)}`;
@@ -106,14 +120,20 @@ export function IrnrPriceCalculator({ compact = false, origin = 'service:no-resi
 
       <div className="mt-5 border-t border-[#D4A017]/20 pt-5">
         <p className="text-xs uppercase tracking-wider text-[#6B7280]">Estimación</p>
-        <p className="mt-1 text-2xl font-bold text-[#0D1B2A]">{net.toLocaleString('es-ES', { minimumFractionDigits: 2 })} € + IVA</p>
-        <p className="mt-1 text-sm text-[#52606D]">
-          {units} unidad{units !== 1 ? 'es' : ''} declarativa{units !== 1 ? 's' : ''} · total con IVA: {total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €
-        </p>
+        {standardUnits > 0 ? (
+          <>
+            <p className="mt-1 text-2xl font-bold text-[#0D1B2A]">{net.toLocaleString('es-ES', { minimumFractionDigits: 2 })} € + IVA</p>
+            <p className="mt-1 text-sm text-[#52606D]">
+              {standardUnits} unidad{standardUnits !== 1 ? 'es' : ''} estándar no alquilada{standardUnits !== 1 ? 's' : ''} · total con IVA: {total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €
+            </p>
+          </>
+        ) : (
+          <p className="mt-1 text-xl font-bold text-[#0D1B2A]">Precio pendiente de revisión</p>
+        )}
         {hasRental && (
           <p className="mt-3 border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
-            Has marcado al menos un inmueble alquilado. La estimación anterior corresponde a renta imputada por inmuebles a disposición/no alquilados.
-            Los periodos de alquiler requieren revisar el alcance antes de confirmar precio.
+            {rentalUnits} unidad{rentalUnits !== 1 ? 'es' : ''} corresponde{rentalUnits === 1 ? '' : 'n'} a inmueble{rentalUnits !== 1 ? 's' : ''} alquilado{rentalUnits !== 1 ? 's' : ''} y no se incluye{rentalUnits === 1 ? '' : 'n'} en la tarifa estándar.
+            Revisaremos los periodos de alquiler antes de confirmar ese importe.
           </p>
         )}
       </div>
