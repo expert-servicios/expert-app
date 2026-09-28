@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const serviceSlugs = validated.services.map(canonicalServiceSlug);
+    const serviceSlugs = [...new Set(validated.services.map(canonicalServiceSlug))];
     const serviceSlugList = serviceSlugs.join(', ');
     const serviceList = serviceSlugs.map(serviceDisplayName).join(', ');
     const descriptionText = validated.description?.trim() || 'No se proporcionaron detalles adicionales.';
@@ -200,7 +200,9 @@ export async function POST(request: NextRequest) {
         status: 'draft',
         stripe_checkout_id: null,
         expires_at: null,
-        created_by: adminId
+        created_by: adminId,
+        service_slugs: serviceSlugs,
+        claim_email: normalizedEmail
       })
       .select('id')
       .single();
