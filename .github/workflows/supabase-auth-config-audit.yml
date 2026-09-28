@@ -1,4 +1,4 @@
-name: Supabase Platform Audit
+name: Supabase Migration Name Generator
 
 on:
   push:
@@ -9,42 +9,21 @@ permissions:
   contents: read
 
 jobs:
-  audit:
+  generate:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      PROJECT_REF: ybtpqscmqrrjjmuoryap
     steps:
-      - name: Verify token
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo "missing token"; exit 1; }
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
 
-      - name: Verify leaked password protection
+      - name: Generate migration filename
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error \
-            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth" \
-            | jq '{password_hibp_enabled,password_min_length,password_required_characters}'
-
-      - name: Check Postgres upgrade eligibility
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl --fail --silent --show-error \
-            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            "https://api.supabase.com/v1/projects/$PROJECT_REF/upgrade/eligibility" \
-            | jq '.'
-
-      - name: Check latest upgrade status
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl --fail --silent --show-error \
-            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            "https://api.supabase.com/v1/projects/$PROJECT_REF/upgrade/status" \
-            | jq '.'
+          mkdir -p "$RUNNER_TEMP/migration-name"
+          cd "$RUNNER_TEMP/migration-name"
+          supabase init >/dev/null
+          supabase migration new drop_pgjwt_before_pg17
+          find supabase/migrations -maxdepth 1 -type f -name '*_drop_pgjwt_before_pg17.sql' -printf '%f\n'
