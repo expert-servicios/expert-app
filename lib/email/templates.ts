@@ -129,7 +129,7 @@ export function quoteReceivedAdmin(name: string, email: string, services: string
     subject: `Nueva solicitud de presupuesto de ${safeName}`,
     html: base('Nueva solicitud', `
       ${heading('Nueva solicitud de presupuesto')}
-      ${para('Se ha recibida una nueva solicitud desde el sitio web.')}
+      ${para('Se ha recibido una nueva solicitud desde el sitio web.')}
       ${table(
         detail('Nombre', safeName),
         detail('Email', `<a href="mailto:${safeEmail}" style="color:#c88b25;">${safeEmail}</a>`),
