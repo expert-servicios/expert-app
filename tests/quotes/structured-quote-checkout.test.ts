@@ -40,6 +40,8 @@ describe('structured quote checkout contract', () => {
     expect(clientCheckoutRoute).toContain('unit_amount: Number(line.unit_amount_cents)');
     expect(clientCheckoutRoute).toContain('quantity: Number(line.quantity)');
     expect(clientCheckoutRoute).toContain('stripe.checkout.sessions.create');
+    expect(clientCheckoutRoute).toContain('quote.service_slugs ?? []');
+    expect(clientCheckoutRoute).toContain('service_slugs: quoteServiceSlugs.join');
   });
 
   it('reuses an open Stripe session and compensates a losing concurrent session', () => {
@@ -60,7 +62,8 @@ describe('structured quote checkout contract', () => {
     expect(stripeWebhookRoute).toContain('Pago duplicado detectado en presupuesto');
   });
 
-  it('hydrates specialized service fulfillment from quote lines or the originating lead', () => {
+  it('hydrates specialized service fulfillment from the quote snapshot before legacy lead fallback', () => {
+    expect(stripeWebhookRoute).toContain('Array.isArray(quote.service_slugs)');
     expect(stripeWebhookRoute).toContain('leadRequestedServices');
     expect(stripeWebhookRoute).toContain('conversion.requested_services');
     expect(stripeWebhookRoute).toContain('leadServiceSlugs');
@@ -68,6 +71,13 @@ describe('structured quote checkout contract', () => {
     expect(stripeWebhookRoute).toContain('ensureServiceOrderFulfillment');
     expect(stripeWebhookRoute).toContain('service_slugs: quoteServiceSlugs.length > 0');
     expect(stripeWebhookRoute).toContain('specializedQuoteCaseId');
+  });
+
+  it('retries idempotent fulfillment when the payment order already exists', () => {
+    expect(stripeWebhookRoute).toContain('order already exists for payment');
+    expect(stripeWebhookRoute).toContain('fulfillment retried');
+    expect(stripeWebhookRoute).toContain('orderId: existingOrder.id');
+    expect(stripeWebhookRoute).toContain('retriedSpecializedCaseId');
   });
 
   it('shows persisted concepts and quantities to the client before payment', () => {
