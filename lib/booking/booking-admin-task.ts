@@ -114,3 +114,87 @@ export async function cancelBookingAdminTask(
 
   return tasks.length;
 }
+
+
+export async function reconcileBookingAdminTasks(admin: AdminClient) {
+  const now = new Date();
+  const from = new Date(now.getTime() - 30 * 24 * 60 * 60_000).toISOString();
+  const to = new Date(now.getTime() + 120 * 24 * 60 * 60_000).toISOString();
+
+  const { data: appointments, error: appointmentError } = await admin
+    .from('appointments')
+    .select('id,name,email,service,appointment_type,appointment_date,confirmed_date,confirmed_time,meeting_url,status,client_id,company_id')
+    .gte('appointment_date', from)
+    .lte('appointment_date', to)
+    .order('appointment_date', { ascending: true })
+    .limit(500);
+  if (appointmentError) throw appointmentError;
+
+  const appointmentMap = new Map((appointments ?? []).map((appointment) => [appointment.id, appointment]));
+  const { data: tasks, error: taskError } = await admin
+    .from('internal_tasks')
+    .select('id,status,metadata')
+    .eq('source', 'system')
+    .contains('metadata', { task_kind: 'booking_meeting' })
+    .limit(1000);
+  if (taskError) throw taskError;
+
+  const taskByAppointment = new Map<string, { id: string; status: string }>();
+  for (const task of tasks ?? []) {
+    const metadata = task.metadata && typeof task.metadata === 'object' && !Array.isArray(task.metadata)
+      ? task.metadata as Record<string, unknown>
+      : {};
+    const appointmentId = typeof metadata.appointment_id === 'string' ? metadata.appointment_id : null;
+    if (appointmentId) taskByAppointment.set(appointmentId, { id: task.id, status: task.status });
+  }
+
+  let ensured = 0;
+  let cancelled = 0;
+
+  for (const appointment of appointments ?? []) {
+    if (appointment.status === 'confirmed') {
+      const localDate = appointment.confirmed_date
+        ?? (appointment.appointment_date ? appointment.appointment_date.slice(0, 10) : null);
+      const localTime = appointment.confirmed_time
+        ?? (appointment.appointment_date ? new Intl.DateTimeFormat('es-ES', {
+          timeZone: 'Europe/Madrid',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+        }).format(new Date(appointment.appointment_date)) : null);
+      if (!localDate || !localTime) continue;
+
+      await ensureBookingAdminTask({
+        admin,
+        appointmentId: appointment.id,
+        serviceKey: appointment.appointment_type ?? 'reunion',
+        serviceLabel: appointment.service ?? 'Reunión',
+        name: appointment.name,
+        email: appointment.email,
+        localDate,
+        localTime,
+        meetingUrl: appointment.meeting_url,
+        clientId: appointment.client_id,
+        companyId: appointment.company_id,
+      });
+      ensured++;
+    } else if (appointment.status === 'cancelled' || appointment.status === 'rescheduled') {
+      cancelled += await cancelBookingAdminTask(
+        admin,
+        appointment.id,
+        `Reconciliación: cita ${appointment.status}.`,
+      );
+    }
+  }
+
+  for (const [appointmentId] of taskByAppointment) {
+    if (appointmentMap.has(appointmentId)) continue;
+    cancelled += await cancelBookingAdminTask(
+      admin,
+      appointmentId,
+      'Reconciliación: la cita ya no existe en EXPERT.',
+    );
+  }
+
+  return { ensured, cancelled, scanned: appointments?.length ?? 0 };
+}
