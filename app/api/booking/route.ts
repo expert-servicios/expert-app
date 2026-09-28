@@ -19,6 +19,7 @@ import {
   verifyBookingManagementToken,
 } from '@/lib/booking/booking-management-token';
 import { caseOpened, citaConfirmed } from '@/lib/email/templates';
+import { ensureBookingAdminTask, cancelBookingAdminTask } from '@/lib/booking/booking-admin-task';
 import { onboardingPreparationEmail } from '@/lib/email/onboarding-templates';
 import { ensureOnboardingTask, findOpenOnboardingCase } from '@/lib/admin/onboarding-followup';
 import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients';
@@ -105,7 +106,7 @@ async function runNativeAdministrativeWorkflow(input: {
   localTime: string;
   meetingUrl: string;
   bookingProvider: 'google_native' | 'ms365_native';
-}) {
+}): Promise<string | null> {
   const { admin, identity } = input;
   const serviceLabel = input.serviceKey === 'onboarding' ? 'Sesión de onboarding' : 'Formación Holded';
   let caseId: string | null = null;
@@ -235,6 +236,8 @@ async function runNativeAdministrativeWorkflow(input: {
       idempotencyKey: `native/case-opened/${input.appointmentId}`,
     });
   }
+
+  return caseId;
 }
 
 export async function POST(request: NextRequest) {
@@ -547,6 +550,30 @@ export async function POST(request: NextRequest) {
       throw new Error(`Could not finalize appointment: ${finalizeError.message}`);
     }
 
+    let adminTaskCaseId: string | null = null;
+    let adminTaskClientId: string | null = privateIdentity?.clientId ?? null;
+    let adminTaskCompanyId: string | null = privateIdentity?.companyId ?? null;
+    let adminTaskLeadId: string | null = null;
+
+    if (!adminTaskClientId) {
+      const { data: profileMatch } = await admin
+        .from('profiles')
+        .select('id')
+        .eq('email', bookingEmail)
+        .limit(1)
+        .maybeSingle();
+      adminTaskClientId = profileMatch?.id ?? null;
+    }
+    if (!adminTaskClientId) {
+      const { data: leadMatch } = await admin
+        .from('leads')
+        .select('id')
+        .eq('email', bookingEmail)
+        .limit(1)
+        .maybeSingle();
+      adminTaskLeadId = leadMatch?.id ?? null;
+    }
+
     if (rescheduledAppointment) {
       const oldEventId = rescheduledAppointment.provider_booking_id ?? rescheduledAppointment.google_event_id;
       const oldProvider = calendarProviderFromBookingProvider(rescheduledAppointment.booking_provider)
@@ -562,6 +589,12 @@ export async function POST(request: NextRequest) {
         .eq('id', rescheduledAppointment.id)
         .eq('status', 'confirmed');
       if (rescheduleUpdateError) throw rescheduleUpdateError;
+
+      await cancelBookingAdminTask(
+        admin,
+        rescheduledAppointment.id,
+        `Cita sustituida por ${appointmentId}`,
+      );
 
       try {
         if (oldEventId && oldProvider) {
@@ -584,7 +617,7 @@ export async function POST(request: NextRequest) {
       (service.key === 'onboarding' || service.key === 'formacion-holded') &&
       meeting.meetingUrl
     ) {
-      await runNativeAdministrativeWorkflow({
+      adminTaskCaseId = await runNativeAdministrativeWorkflow({
         admin,
         identity: privateIdentity,
         serviceKey: service.key,
@@ -607,6 +640,31 @@ export async function POST(request: NextRequest) {
           .eq('id', appointmentId!);
       });
     }
+
+    await ensureBookingAdminTask({
+      admin,
+      appointmentId: appointmentId!,
+      serviceKey: service.key,
+      serviceLabel: service.label,
+      name: input.name,
+      email: bookingEmail,
+      localDate,
+      localTime,
+      meetingUrl: meeting.meetingUrl,
+      clientId: adminTaskClientId,
+      companyId: adminTaskCompanyId,
+      caseId: adminTaskCaseId,
+      leadId: adminTaskLeadId,
+    }).catch(async (taskError) => {
+      console.error('[booking] admin task:', taskError);
+      await admin
+        .from('appointments')
+        .update({
+          admin_notes: `Admin task creation failed: ${taskError instanceof Error ? taskError.message : String(taskError)}`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', appointmentId!);
+    });
 
     const formattedDate = new Intl.DateTimeFormat('es-ES', {
       timeZone: BOOKING_TIMEZONE,
