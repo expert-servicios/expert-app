@@ -93,11 +93,14 @@ export async function generateMetadata({
 }
 
 export default async function ServicioDetallePage({
-  params
+  params,
+  searchParams,
 }: {
   params: Promise<{ categoria: string; servicio: string }>;
+  searchParams: Promise<{ origen?: string | string[] }>;
 }) {
   const { categoria, servicio } = await params;
+  const resolvedSearchParams = await searchParams;
   if (categoria === 'gestiones-especializadas') {
     permanentRedirect(`/servicios/certificado-digital/${servicio}`);
   }
@@ -121,7 +124,9 @@ export default async function ServicioDetallePage({
   const relatedArticles = getArticlesForService(service.slug);
   const canonicalUrl = `https://expertconsulting.es/servicios/${categoria}/${servicio}`;
   const encodedServiceSlug = encodeURIComponent(service.slug);
-  const serviceOrigin = `service:${service.slug}`;
+  const incomingOriginValue = resolvedSearchParams.origen;
+  const incomingOrigin = Array.isArray(incomingOriginValue) ? incomingOriginValue[0] : incomingOriginValue;
+  const serviceOrigin = incomingOrigin?.trim().slice(0, 300) || `service:${service.slug}`;
   const encodedServiceOrigin = encodeURIComponent(serviceOrigin);
   const budgetHref = `/solicitar-presupuesto?servicio=${encodedServiceSlug}&origen=${encodedServiceOrigin}`;
   const complexBudgetHref = `${budgetHref}&tipo=caso-complejo`;
@@ -136,6 +141,7 @@ export default async function ServicioDetallePage({
     displayPrice: service.price ?? 'Consultar',
     slug        : service.slug,
     category    : service.categoria,
+    contentOrigin: serviceOrigin,
   } : null;
   const serviceJsonLd = {
     '@context': 'https://schema.org',
