@@ -6,10 +6,18 @@ import {
   BookingCalendarDeletionError,
   createBookingCalendarMeeting,
   deleteBookingCalendarEvent,
+  calendarProviderFromBookingProvider,
   getConfiguredBookingCalendarProvider,
   listBookingCalendarBusyWindows,
 } from '@/lib/booking/calendar-provider';
 import { sendEmail } from '@/lib/email/send';
+import { sendBookingEmail } from '@/lib/booking/booking-email';
+import { buildBookingIcs } from '@/lib/booking/calendar-invite';
+import {
+  bookingManagementUrls,
+  createBookingManagementToken,
+  verifyBookingManagementToken,
+} from '@/lib/booking/booking-management-token';
 import { caseOpened, citaConfirmed } from '@/lib/email/templates';
 import { onboardingPreparationEmail } from '@/lib/email/onboarding-templates';
 import { ensureOnboardingTask, findOpenOnboardingCase } from '@/lib/admin/onboarding-followup';
@@ -37,6 +45,15 @@ import {
   overlapsBusy,
 } from '@/lib/booking/native-booking';
 
+function escapeEmailHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const schema = z.object({
   hp_url: z.string().optional(),
   name: z.string().trim().min(2).max(100),
@@ -48,6 +65,7 @@ const schema = z.object({
   recaptcha_token: z.string().optional(),
   booking_auth: z.string().max(4096).optional(),
   company_id: z.string().uuid().optional(),
+  manage_token: z.string().max(4096).optional(),
 });
 
 async function authenticatedUser(request: NextRequest) {
@@ -217,22 +235,6 @@ async function runNativeAdministrativeWorkflow(input: {
       idempotencyKey: `native/case-opened/${input.appointmentId}`,
     });
   }
-
-  const adminEmails = await getAdminNotificationEmails();
-  if (adminEmails.length) {
-    await sendEmail({
-      to: adminEmails,
-      eventType: 'onboarding.booking.admin',
-      subject: `Reserva ${serviceLabel} — ${input.name}`,
-      html: `<p>Nueva reserva administrativa registrada en EXPERT.</p><p><strong>Cliente:</strong> ${input.name} (${input.email})</p><p><strong>Servicio:</strong> ${serviceLabel}</p><p><strong>Inicio:</strong> ${input.start.toISOString()}</p><p><strong>Reunión:</strong> ${input.meetingUrl}</p>`,
-      metadata: {
-        appointment_id: input.appointmentId,
-        company_id: identity?.companyId ?? null,
-        booking_provider: input.bookingProvider,
-      },
-      idempotencyKey: `native/admin-booking/${input.appointmentId}`,
-    });
-  }
 }
 
 export async function POST(request: NextRequest) {
@@ -272,18 +274,54 @@ export async function POST(request: NextRequest) {
         : null;
 
     const admin = getSupabaseAdmin();
-    let bookingEmail = input.email.toLowerCase();
-    let privateIdentity: BookingIdentity | null = null;
+    const managementAuthorization = await verifyBookingManagementToken(input.manage_token, service.key);
+    let rescheduledAppointment: {
+      id: string;
+      booking_provider: string | null;
+      provider_booking_id: string | null;
+      google_event_id: string | null;
+      client_id: string | null;
+      company_id: string | null;
+    } | null = null;
+
+    if (managementAuthorization) {
+      const { data: existingAppointment, error: managementError } = await admin
+        .from('appointments')
+        .select('id,email,status,appointment_type,booking_provider,provider_booking_id,google_event_id,client_id,company_id')
+        .eq('id', managementAuthorization.appointmentId)
+        .maybeSingle();
+      if (managementError) throw managementError;
+      if (
+        !existingAppointment ||
+        existingAppointment.email?.toLowerCase() !== managementAuthorization.email ||
+        existingAppointment.appointment_type !== service.key ||
+        existingAppointment.status !== 'confirmed'
+      ) {
+        return NextResponse.json({ error: 'El enlace de cambio ya no corresponde a una cita activa.' }, { status: 409 });
+      }
+      rescheduledAppointment = existingAppointment;
+    }
+
+    let bookingEmail = managementAuthorization?.email ?? input.email.toLowerCase();
+    let privateIdentity: BookingIdentity | null = managementAuthorization && rescheduledAppointment?.client_id
+      ? {
+          clientId: rescheduledAppointment.client_id,
+          companyId: rescheduledAppointment.company_id,
+          source: 'auth_email',
+        }
+      : null;
 
     if (!service.public) {
-      if (!signedAuthorization && !user) {
+      if (!signedAuthorization && !managementAuthorization && !user) {
         return NextResponse.json(
           { error: 'Esta reserva requiere una invitación válida o iniciar sesión.' },
           { status: 401 }
         );
       }
 
-      if (signedAuthorization) {
+      if (managementAuthorization) {
+        bookingEmail = managementAuthorization.email;
+      } else if (signedAuthorization) {
         bookingEmail = signedAuthorization.email;
         if (signedAuthorization.clientId) {
           let signedCompanyId = signedAuthorization.companyId;
@@ -509,6 +547,39 @@ export async function POST(request: NextRequest) {
       throw new Error(`Could not finalize appointment: ${finalizeError.message}`);
     }
 
+    if (rescheduledAppointment) {
+      const oldEventId = rescheduledAppointment.provider_booking_id ?? rescheduledAppointment.google_event_id;
+      const oldProvider = calendarProviderFromBookingProvider(rescheduledAppointment.booking_provider)
+        ?? (rescheduledAppointment.google_event_id ? 'google' : null);
+
+      const { error: rescheduleUpdateError } = await admin
+        .from('appointments')
+        .update({
+          status: 'rescheduled',
+          admin_notes: `Sustituida por la cita ${appointmentId} mediante enlace seguro de cambio.`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', rescheduledAppointment.id)
+        .eq('status', 'confirmed');
+      if (rescheduleUpdateError) throw rescheduleUpdateError;
+
+      try {
+        if (oldEventId && oldProvider) {
+          await deleteBookingCalendarEvent(oldEventId, oldProvider);
+        }
+      } catch (calendarError) {
+        await admin
+          .from('appointments')
+          .update({
+            status: 'confirmed',
+            admin_notes: 'El cambio solicitado no pudo sincronizarse con Calendar; se conserva la cita original.',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', rescheduledAppointment.id);
+        throw calendarError;
+      }
+    }
+
     if (
       (service.key === 'onboarding' || service.key === 'formacion-holded') &&
       meeting.meetingUrl
@@ -545,19 +616,103 @@ export async function POST(request: NextRequest) {
       year: 'numeric',
     }).format(start);
 
-    await sendEmail({
-      to: bookingEmail,
-      eventType: 'cita.confirmed',
-      ...citaConfirmed(input.name, service.label, formattedDate, localTime, meeting.meetingUrl),
-      metadata: {
-        appointment_id: appointmentId,
-        client_id: privateIdentity?.clientId ?? null,
-        company_id: privateIdentity?.companyId ?? null,
-        provider_event_id: meeting.eventId,
-        booking_provider: meeting.bookingProvider,
-      },
-      idempotencyKey: `booking/confirmed/${appointmentId}`,
-    }).catch((error) => console.error('[booking] confirmation email:', error));
+    const managementToken = await createBookingManagementToken({
+      appointmentId: appointmentId!,
+      email: bookingEmail,
+      service: service.key,
+    });
+    const managementLinks = bookingManagementUrls(managementToken, service.key);
+    const clientTemplate = citaConfirmed(
+      input.name,
+      service.label,
+      formattedDate,
+      localTime,
+      meeting.meetingUrl,
+      managementLinks,
+    );
+    const calendarAttachment = buildBookingIcs({
+      appointmentId: appointmentId!,
+      service: service.label,
+      start,
+      end,
+      meetingUrl: meeting.meetingUrl,
+      attendeeEmail: bookingEmail,
+    });
+    let clientEmailSent = false;
+    try {
+      await sendBookingEmail({
+        to: bookingEmail,
+        eventType: 'cita.confirmed',
+        ...clientTemplate,
+        metadata: {
+          appointment_id: appointmentId,
+          client_id: privateIdentity?.clientId ?? null,
+          company_id: privateIdentity?.companyId ?? null,
+          provider_event_id: meeting.eventId,
+          booking_provider: meeting.bookingProvider,
+        },
+        idempotencyKey: `booking/confirmed/${appointmentId}`,
+        attachments: [{
+          filename: 'cita-expert.ics',
+          content: Buffer.from(calendarAttachment, 'utf8').toString('base64'),
+          type: 'text/calendar; charset=utf-8',
+        }],
+      });
+      clientEmailSent = true;
+    } catch (error) {
+      console.error('[booking] confirmation email failed on all transports:', error);
+    }
+
+    const adminEmails = await getAdminNotificationEmails();
+    const safeName = escapeEmailHtml(input.name);
+    const safeEmail = escapeEmailHtml(bookingEmail);
+    const safePhone = escapeEmailHtml(input.phone);
+    const safeService = escapeEmailHtml(service.label);
+    const safeDate = escapeEmailHtml(formattedDate);
+    const safeTime = escapeEmailHtml(localTime);
+    const safeMeetingUrl = meeting.meetingUrl ? escapeEmailHtml(meeting.meetingUrl) : null;
+    const safeNotes = input.notes ? escapeEmailHtml(input.notes) : null;
+    const adminSubject = `Nueva cita: ${service.label} — ${input.name}`;
+    const adminHtml = [
+      '<h2>Nueva cita confirmada en EXPERT</h2>',
+      `<p><strong>Cliente:</strong> ${safeName}</p>`,
+      `<p><strong>Email:</strong> ${safeEmail}</p>`,
+      `<p><strong>Teléfono:</strong> ${safePhone}</p>`,
+      `<p><strong>Servicio:</strong> ${safeService}</p>`,
+      `<p><strong>Fecha:</strong> ${safeDate}</p>`,
+      `<p><strong>Hora:</strong> ${safeTime}</p>`,
+      safeMeetingUrl
+        ? `<p><strong>Google Meet:</strong> <a href="${safeMeetingUrl}">${safeMeetingUrl}</a></p>`
+        : '',
+      safeNotes ? `<p><strong>Comentario:</strong> ${safeNotes}</p>` : '',
+    ].filter(Boolean).join('');
+
+    const adminResults = await Promise.allSettled(
+      adminEmails.map((adminEmail) =>
+        sendBookingEmail({
+          to: adminEmail,
+          eventType: 'booking.confirmed.admin',
+          subject: adminSubject,
+          html: adminHtml,
+          metadata: {
+            appointment_id: appointmentId,
+            client_email: bookingEmail,
+            client_id: privateIdentity?.clientId ?? null,
+            company_id: privateIdentity?.companyId ?? null,
+            provider_event_id: meeting.eventId,
+            booking_provider: meeting.bookingProvider,
+            service_key: service.key,
+          },
+          idempotencyKey: `booking/admin-confirmed/${appointmentId}/${adminEmail.toLowerCase()}`,
+        })
+      )
+    );
+    const adminEmailSent = adminResults.some((result) => result.status === 'fulfilled');
+    for (const result of adminResults) {
+      if (result.status === 'rejected') {
+        console.error('[booking] admin confirmation email failed on all transports:', result.reason);
+      }
+    }
 
     return NextResponse.json({
       ok: true,
@@ -565,6 +720,8 @@ export async function POST(request: NextRequest) {
       start: start.toISOString(),
       end: end.toISOString(),
       meetingUrl: meeting.meetingUrl,
+      emailSent: clientEmailSent,
+      adminEmailSent,
     });
   } catch (error) {
     console.error('[booking]', error);

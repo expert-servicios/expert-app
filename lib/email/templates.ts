@@ -1285,7 +1285,8 @@ export function citaConfirmed(
   service: string,
   confirmedDate: string,
   confirmedTime: string,
-  meetingUrl?: string | null
+  meetingUrl?: string | null,
+  management?: { cancelUrl: string; rescheduleUrl: string } | null
 ) {
   return {
     subject: `Tu cita está confirmada — ${confirmedDate}`,
@@ -1300,7 +1301,16 @@ export function citaConfirmed(
         ...(meetingUrl ? [detail('Enlace de reunión', `<a href="${meetingUrl}" style="color:#c88b25;">${meetingUrl}</a>`)] : [])
       )}
       ${meetingUrl ? btn('Unirme a la reunión', meetingUrl) : ''}
-      ${para('Si necesitas cancelar o reagendar, responde a este email con al menos 24 horas de antelación.')}
+      ${management ? `
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:12px 0 4px;">
+          <tr>
+            <td style="padding-right:6px;width:50%;"><a href="${management.rescheduleUrl}" style="display:block;text-align:center;border:1px solid #c88b25;color:#07111d;font-size:13px;font-weight:bold;padding:12px 16px;text-decoration:none;">Cambiar cita</a></td>
+            <td style="padding-left:6px;width:50%;"><a href="${management.cancelUrl}" style="display:block;text-align:center;border:1px solid #d8cbb5;color:#7f1d1d;font-size:13px;font-weight:bold;padding:12px 16px;text-decoration:none;">Cancelar cita</a></td>
+          </tr>
+        </table>` : ''}
+      ${para(management
+        ? 'También adjuntamos un archivo .ics para guardar la cita en tu calendario.'
+        : 'Si necesitas cancelar o reagendar, responde a este email con al menos 24 horas de antelación.')}
     `)
   };
 }
