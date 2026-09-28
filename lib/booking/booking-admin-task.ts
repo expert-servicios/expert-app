@@ -15,6 +15,7 @@ export async function ensureBookingAdminTask(input: {
   clientId?: string | null;
   companyId?: string | null;
   caseId?: string | null;
+  leadId?: string | null;
 }) {
   const { admin } = input;
   const { data: existing, error: lookupError } = await admin
@@ -38,6 +39,7 @@ export async function ensureBookingAdminTask(input: {
     client_id: input.clientId ?? null,
     company_id: input.companyId ?? null,
     case_id: input.caseId ?? null,
+    lead_id: input.leadId ?? null,
     due_date: input.localDate,
     source: 'system',
     completed_at: null,
