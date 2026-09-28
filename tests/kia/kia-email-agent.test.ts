@@ -113,4 +113,17 @@ describe('KIA guarded email agent', () => {
     expect(sync).toContain('email-unread-fallback');
   });
 
+  it('strips quoted reply history before consequential booking checks', () => {
+    expect(route).toContain('latestReplyText');
+    expect(route).toContain('gmail_quote');
+    expect(route).toContain('<blockquote');
+    expect(route).toContain('latestMessage: latestReply');
+  });
+
+  it('pre-gates booking writes before tool execution and enforces decision confidence', () => {
+    expect(route).toContain('externalActionPreEligible');
+    expect(route).toContain("toolName !== 'create_booking_meeting' || externalActionPreEligible");
+    expect(route).toContain('externalActionMinConfidence: confidenceFloor');
+  });
+
 });
