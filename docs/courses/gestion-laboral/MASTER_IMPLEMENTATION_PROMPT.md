@@ -131,7 +131,7 @@ Mantén preparado el modelo para migrar posteriormente a `stripePriceId` y `/api
 
 - `Solicitar información` debe llevar al formulario específico del curso o reutilizar `AcademyLeadForm` con `programSlug="gestion-laboral-integral"`.
 - Añade como motivo del lead: formación laboral, número aproximado de empleados, sector, herramientas actuales y duda principal.
-- `Reservar reunión informativa` debe utilizar el flujo existente de Cal.com y tener fallback `/cita`.
+- `Reservar reunión informativa` debe utilizar `/cita?tipo=academy-admision` con Google Calendar/Meet.
 - La reunión se comunica como gratuita y sin compromiso solo si el flujo configurado mantiene esas condiciones.
 
 ## Descarga
