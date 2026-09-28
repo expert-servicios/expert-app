@@ -9,6 +9,7 @@ import { notifyAdmins } from '@/lib/integrations/push';
 import { buildLeadAttributionFields } from '@/lib/marketing/server-attribution';
 import { describeContentOrigin, normalizeContentOrigin } from '@/lib/marketing/content-origin';
 import { getCatalogService } from '@/lib/utils/catalog';
+import { createQuoteClaimToken } from '@/lib/quotes/quote-claim-token';
 
 const LEGACY_SERVICE_SLUGS: Record<string, string> = {
   noResidentes: 'no-residentes',
@@ -208,7 +209,8 @@ export async function POST(request: NextRequest) {
     // Emails: client confirmation + admin notification
     const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((e) => e.trim()).filter(Boolean) ?? [];
 
-    const clientTpl = quoteReceivedClient(validated.name, serviceList);
+    const claimToken = createQuoteClaimToken({ quoteId: quote.id, email: normalizedEmail });
+    const clientTpl = quoteReceivedClient(validated.name, serviceList, claimToken);
     await sendEmail({
       to: normalizedEmail,
       eventType: 'quote.received',
@@ -252,33 +254,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    const verifiedEmail = user.email?.trim().toLowerCase() ?? null;
-    if (verifiedEmail) {
-      const admin = getSupabaseAdmin();
-      const { data: candidateLeads, error: leadLookupError } = await admin
-        .from('leads')
-        .select('id')
-        .eq('email', verifiedEmail);
-
-      if (leadLookupError) {
-        console.error('[quotes] pending quote ownership lookup failed:', leadLookupError);
-      } else {
-        const matchingLeadIds = (candidateLeads ?? []).map((lead) => lead.id);
-
-        if (matchingLeadIds.length > 0) {
-          const { error: claimError } = await admin
-            .from('quotes')
-            .update({ client_id: user.id })
-            .in('lead_id', matchingLeadIds)
-            .is('client_id', null)
-            .in('status', ['draft', 'sent', 'accepted']);
-
-          if (claimError) {
-            console.error('[quotes] pending quote ownership claim failed:', claimError);
-          }
-        }
-      }
-    }
+    // Ownership is established only through the capability link sent to the lead email.
+    // A logged-in session alone is not sufficient proof of mailbox possession.
 
     const { data: quotes, error: fetchError } = await supabase
       .from('quotes')
