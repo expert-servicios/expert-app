@@ -16,6 +16,8 @@ import {
   updateBookingCalendarMeeting,
 } from '@/lib/booking/calendar-provider';
 import { formatMadridDate, formatMadridTime, madridLocalToDate } from '@/lib/booking/native-booking';
+import { ensureBookingAdminTask, cancelBookingAdminTask } from '@/lib/booking/booking-admin-task';
+import { resolveBookingIdentityByEmail } from '@/lib/admin/onboarding-booking-identity';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -80,7 +82,7 @@ export async function PATCH(request: NextRequest) {
 
     const { data: current, error: currentError } = await admin
       .from('appointments')
-      .select('id,name,email,service,status,confirmed_date,confirmed_time,meeting_url,admin_notes,google_event_id,appointment_date,appointment_end,booking_provider,provider_booking_id')
+      .select('id,name,email,service,appointment_type,status,confirmed_date,confirmed_time,meeting_url,admin_notes,google_event_id,appointment_date,appointment_end,booking_provider,provider_booking_id,client_id,company_id')
       .eq('id', id)
       .single();
     if (currentError || !current) {
@@ -120,7 +122,7 @@ export async function PATCH(request: NextRequest) {
       .from('appointments')
       .update(updatePayload)
       .eq('id', id)
-      .select('id,name,email,service,confirmed_date,confirmed_time,meeting_url,admin_notes,status,google_event_id,appointment_date,appointment_end,booking_provider,provider_booking_id')
+      .select('id,name,email,service,appointment_type,confirmed_date,confirmed_time,meeting_url,admin_notes,status,google_event_id,appointment_date,appointment_end,booking_provider,provider_booking_id,client_id,company_id')
       .single();
 
     if (error || !appt) {
@@ -388,6 +390,35 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    if (appt.status === 'confirmed' && appt.confirmed_date && appt.confirmed_time) {
+      let clientId = appt.client_id as string | null;
+      let companyId = appt.company_id as string | null;
+      if (!clientId && appt.email) {
+        const identity = await resolveBookingIdentityByEmail(admin, appt.email as string).catch(() => null);
+        clientId = identity?.clientId ?? null;
+        companyId = identity?.companyId ?? null;
+      }
+      await ensureBookingAdminTask({
+        admin,
+        appointmentId: appt.id,
+        serviceKey: (appt.appointment_type as string | null) ?? 'reunion',
+        serviceLabel: (appt.service as string | null) ?? 'Reunión',
+        name: appt.name as string,
+        email: appt.email as string,
+        localDate: appt.confirmed_date as string,
+        localTime: String(appt.confirmed_time).slice(0, 5),
+        meetingUrl: appt.meeting_url as string | null,
+        clientId,
+        companyId,
+      }).catch((taskError) => console.error('[admin/citas] task sync:', taskError));
+    } else if (appt.status === 'cancelled' || appt.status === 'rescheduled') {
+      await cancelBookingAdminTask(
+        admin,
+        appt.id,
+        `Cita actualizada desde Admin: ${appt.status}`,
+      ).catch((taskError) => console.error('[admin/citas] task cancel:', taskError));
+    }
+
     if (send_confirmation && appt.status === 'confirmed' && appt.confirmed_date && appt.confirmed_time) {
       const confirmedDateFormatted = new Date(appt.confirmed_date + 'T12:00:00').toLocaleDateString('es-ES', {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
@@ -424,7 +455,7 @@ export async function DELETE(request: NextRequest) {
 
     const { data: appt, error: fetchError } = await admin
       .from('appointments')
-      .select('google_event_id,booking_provider,provider_booking_id')
+      .select('id,google_event_id,booking_provider,provider_booking_id')
       .eq('id', id)
       .single();
     if (fetchError || !appt) return NextResponse.json({ error: 'Cita no encontrada' }, { status: 404 });
@@ -464,6 +495,12 @@ export async function DELETE(request: NextRequest) {
 
     const { error } = await admin.from('appointments').delete().eq('id', id);
     if (error) return NextResponse.json({ error: 'No se pudo eliminar' }, { status: 500 });
+
+    await cancelBookingAdminTask(
+      admin,
+      id,
+      'Cita eliminada desde Admin.',
+    ).catch((taskError) => console.error('[admin/citas] DELETE task:', taskError));
 
     return NextResponse.json({ ok: true });
   } catch (err) {
