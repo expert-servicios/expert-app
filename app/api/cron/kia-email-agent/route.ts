@@ -93,7 +93,11 @@ function isLikelyHuman(message: GmailMessage) {
 
 function isSafeUnknownProspect(subject: string, text: string) {
   const signal = `${subject} ${text}`.toLowerCase();
-  return /\b(presupuesto|precio|tarifa|asesor[ií]a|gestor[ií]a|consulta|informaci[oó]n|servicio|holded|aut[oó]nomo|empresa|sociedad|fiscal|contable|laboral|reuni[oó]n|cita|demo|migraci[oó]n)\b/i.test(signal);
+  const explicitCommercialRequest =
+    /\b(solicit(?:o|amos)|ped(?:imos|ir)|quer(?:emos|ría|ria)|necesit(?:o|amos)|busc(?:o|amos)|interesad[oa]s?|contratar|cambiar(?:nos)?\s+(?:de\s+)?(?:asesor[ií]a|gestor[ií]a)|presupuesto|precio|tarifa|propuesta|demo|reservar\s+(?:una\s+)?(?:cita|reuni[oó]n))\b/i.test(signal);
+  const expertServiceIntent =
+    /\b(asesor[ií]a|gestor[ií]a|gesti[oó]n\s+fiscal|contabilidad|impuestos|holded|aut[oó]nom[oa]s?|sociedad(?:es)?|\bsl\b|migraci[oó]n\s+(?:a\s+)?holded|cuentas\s+anuales|modelo(?:s)?\s+trimestral)/i.test(signal);
+  return explicitCommercialRequest && expertServiceIntent;
 }
 
 function adminThreadUrl(threadId: string) {
@@ -381,6 +385,7 @@ export async function GET(request: NextRequest) {
         && result.decision.confidence >= confidenceFloor;
 
       let sentNow = false;
+      let duplicateClaim = false;
       let blockReason: string | null = null;
 
       if (canAutoSend) {
@@ -422,6 +427,7 @@ export async function GET(request: NextRequest) {
 
         if (claimError) {
           if (claimError.code === '23505') {
+            duplicateClaim = true;
             blockReason = 'already_claimed';
           } else {
             throw claimError;
@@ -495,6 +501,11 @@ export async function GET(request: NextRequest) {
         else blockReason = 'policy_block';
       }
 
+      if (duplicateClaim) {
+        skipped++;
+        continue;
+      }
+
       const pushTitle = sentNow
         ? (knownContact ? 'KIA respondió por email' : 'KIA atendió un nuevo contacto')
         : 'KIA necesita revisión de correo';
@@ -537,10 +548,17 @@ export async function GET(request: NextRequest) {
 
       evaluated++;
     } catch (error) {
+      const errorCode = error instanceof Error ? error.message.slice(0, 160) : 'unknown_error';
       errors.push({
         thread: createHash('sha256').update(row.thread_id).digest('hex').slice(0, 12),
-        code: error instanceof Error ? error.message.slice(0, 160) : 'unknown_error',
+        code: errorCode,
       });
+      await notifyAdmins({
+        title: 'KIA no pudo procesar un correo',
+        body: `${row.from_email ?? 'Remitente desconocido'} · ${row.subject || 'Sin asunto'} · requiere revisión`.slice(0, 240),
+        url: adminThreadUrl(row.thread_id),
+        tag: `kia-email-error-${createHash('sha256').update(row.thread_id).digest('hex').slice(0, 20)}`,
+      }).catch(() => {});
     }
   }
 
