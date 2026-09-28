@@ -5,6 +5,7 @@ import { DeliverableRow } from '@/components/cases/DeliverableRow';
 import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
 import { CaseDocumentChecklist } from '@/components/cases/CaseDocumentChecklist';
 import { IrnrCaseQuestionnaire } from '@/components/cases/IrnrCaseQuestionnaire';
+import { IrnrCaseQuestionnaire } from '@/components/cases/IrnrCaseQuestionnaire';
 import { KiaGuidanceCard } from '@/components/kia/KiaGuidanceCard';
 import { resolveCaseDetailGuidance } from '@/lib/ai/kia/kia-surface-guidance';
 import { CASE_PROGRESS_STATES, CASE_STATE_LABELS, normalizeCaseStateForProgress } from '@/lib/utils/case-states';
@@ -19,6 +20,7 @@ interface CaseDetail {
   opened_at: string;
   closed_at: string | null;
   docs_checklist: string[] | null;
+  service_id?: string | null;
   locale?: 'es' | 'ru';
   client_action?: string | null;
 }
@@ -340,6 +342,15 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             </div>
           </div>
         </div>
+
+        {caseItem.service_id?.split(',').includes('no-residentes') && (
+          <div className="mt-4">
+            <IrnrCaseQuestionnaire
+              caseId={id}
+              initialComment={notes.find((note) => note.item_key === 'irnr-intake')?.comment ?? null}
+            />
+          </div>
+        )}
 
         {caseItem.service_id?.split(',').includes('no-residentes') && (
           <div className="mt-4">
