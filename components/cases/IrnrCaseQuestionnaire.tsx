@@ -88,13 +88,13 @@ export function IrnrCaseQuestionnaire({
 
       <div className="mt-5 grid gap-4 sm:grid-cols-3">
         <label className="text-sm font-semibold">Ejercicio a declarar
-          <input value={taxYear} onChange={e=>{setTaxYear(e.target.value);setSaved(false);}} className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal" />
+          <input maxLength={4} value={taxYear} onChange={e=>{setTaxYear(e.target.value);setSaved(false);}} className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal" />
         </label>
         <label className="text-sm font-semibold">País de residencia fiscal
-          <input value={residenceCountry} onChange={e=>{setResidenceCountry(e.target.value);setSaved(false);}} className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal" />
+          <input maxLength={100} value={residenceCountry} onChange={e=>{setResidenceCountry(e.target.value);setSaved(false);}} className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal" />
         </label>
         <label className="text-sm font-semibold">N.º fiscal extranjero
-          <input value={taxIdForeign} onChange={e=>{setTaxIdForeign(e.target.value);setSaved(false);}} className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal" />
+          <input maxLength={80} value={taxIdForeign} onChange={e=>{setTaxIdForeign(e.target.value);setSaved(false);}} className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal" />
         </label>
       </div>
 
@@ -103,20 +103,20 @@ export function IrnrCaseQuestionnaire({
           <div key={index} className="rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] p-4">
             <div className="flex items-center justify-between">
               <p className="font-semibold">Inmueble {index+1}</p>
-              {properties.length > 1 && <button type="button" onClick={()=>setProperties(p=>p.filter((_,i)=>i!==index))} className="text-red-600"><Trash2 className="h-4 w-4" /></button>}
+              {properties.length > 1 && <button type="button" onClick={()=>{setProperties(p=>p.filter((_,i)=>i!==index));setSaved(false);}} className="text-red-600"><Trash2 className="h-4 w-4" /></button>}
             </div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <label className="text-xs font-semibold">Dirección
-                <input value={property.address} onChange={e=>update(index,{address:e.target.value})} className="mt-1 w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 font-normal" />
+                <input maxLength={300} value={property.address} onChange={e=>update(index,{address:e.target.value})} className="mt-1 w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 font-normal" />
               </label>
               <label className="text-xs font-semibold">Referencia catastral
-                <input value={property.cadastralReference} onChange={e=>update(index,{cadastralReference:e.target.value})} className="mt-1 w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 font-normal" />
+                <input maxLength={40} value={property.cadastralReference} onChange={e=>update(index,{cadastralReference:e.target.value})} className="mt-1 w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 font-normal" />
               </label>
               <label className="text-xs font-semibold">Fecha de adquisición
                 <input type="date" value={property.acquisitionDate} onChange={e=>update(index,{acquisitionDate:e.target.value})} className="mt-1 w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 font-normal" />
               </label>
               <label className="text-xs font-semibold">Porcentaje de titularidad
-                <input inputMode="decimal" value={property.ownershipPercent} onChange={e=>update(index,{ownershipPercent:e.target.value})} className="mt-1 w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 font-normal" />
+                <input inputMode="decimal" maxLength={10} value={property.ownershipPercent} onChange={e=>update(index,{ownershipPercent:e.target.value})} className="mt-1 w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 font-normal" />
               </label>
               <label className="text-xs font-semibold sm:col-span-2">Uso durante el ejercicio
                 <select value={property.use} onChange={e=>update(index,{use:e.target.value as Property['use']})} className="mt-1 w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 font-normal">
@@ -130,7 +130,7 @@ export function IrnrCaseQuestionnaire({
         ))}
       </div>
 
-      <button type="button" onClick={()=>setProperties(p=>[...p,emptyProperty()])} className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#c88b25]">
+      <button type="button" onClick={()=>{setProperties(p=>[...p,emptyProperty()]);setSaved(false);}} className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#c88b25]">
         <Plus className="h-4 w-4" /> Añadir inmueble
       </button>
 
