@@ -9,9 +9,6 @@ describe('KIA Google meeting operator', () => {
   const executor = source('lib/ai/kia/kia-tool-executor.ts');
   const definitions = source('lib/ai/kia/kia-tool-definitions.ts');
   const registry = source('lib/ai/kia/kia-tool-registry.ts');
-  const bookingRoute = source('app/api/booking/route.ts');
-  const cancelRoute = source('app/api/booking/manage/cancel/route.ts');
-  const notifications = source('lib/booking/booking-admin-notifications.ts');
 
   it('exposes read availability and consequential meeting creation separately', () => {
     expect(definitions).toContain('get_booking_availability');
@@ -31,7 +28,10 @@ describe('KIA Google meeting operator', () => {
     expect(operator).toContain('hasExplicitSlotConfirmation');
     expect(operator).toContain("normalize('NFD')");
     expect(operator).toContain('if (negative) return false');
-    expect(operator).toContain('affirmative && dateMention && timeMention');
+    expect(operator).toContain('exactDateMention');
+    expect(operator).toContain('conflictingDate');
+    expect(operator).toContain('exactTimeMention');
+    expect(operator).toContain('conflictingTime');
     expect(operator).toContain('kia_booking_explicit_confirmation_required');
     expect(operator).toContain("input.confirmationMessage || latestUserText(input.contextMessages)");
   });
@@ -60,12 +60,12 @@ describe('KIA Google meeting operator', () => {
     expect(executor).toContain('El email de la reserva no coincide con el contacto');
   });
 
-  it('creates Meet, Admin task, client confirmation and KIA push', () => {
+  it('creates Meet, Admin task and client confirmation without meeting push', () => {
     expect(operator).toContain('ensureBookingAdminTask({');
     expect(operator).toContain("eventType: 'cita.confirmed'");
     expect(operator).toContain("source: 'kia'");
-    expect(operator).toContain("kind: 'kia_created'");
-    expect(operator).toContain('meetingUrl: meeting.meetingUrl');
+    expect(operator).not.toContain('notifyBookingAdminActivity');
+    expect(operator).toContain('meetingUrl');
     expect(operator).toContain('confirmation email failed; booking retained');
   });
 
@@ -74,10 +74,4 @@ describe('KIA Google meeting operator', () => {
     expect(operator).toContain('Reserva KIA revertida durante compensación por error.');
   });
 
-  it('pushes standard booking lifecycle changes too', () => {
-    expect(bookingRoute).toContain("kind: rescheduledAppointment ? 'rescheduled' : 'created'");
-    expect(cancelRoute).toContain("kind: 'cancelled'");
-    expect(notifications).toContain("kia_created: 'KIA creó una reunión'");
-    expect(notifications).toContain("url: '/admin/citas'");
-  });
 });
