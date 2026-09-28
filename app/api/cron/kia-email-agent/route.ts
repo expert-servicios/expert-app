@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
+import { getAuthorizedBookingEmails } from '@/lib/admin/onboarding-booking-identity';
 import { verifyCronRequest } from '@/lib/security/cron';
 import {
   getOperationalGmailThread,
@@ -91,7 +92,7 @@ async function healthGate(admin: ReturnType<typeof getSupabaseAdmin>) {
   if (!data?.finished_at) return { ok: false, reason: 'no_recent_health' };
   const ageMs = Date.now() - new Date(data.finished_at).getTime();
   if (ageMs > 36 * 60 * 60_000) return { ok: false, reason: 'health_stale' };
-  if (data.status !== 'passed' || Number(data.failed_checks ?? 0) > 0 || Number(data.score ?? 0) < 0.9) {
+  if (data.status !== 'success' || Number(data.failed_checks ?? 0) > 0 || Number(data.score ?? 0) < 0.9) {
     return { ok: false, reason: 'health_not_green' };
   }
   return { ok: true, reason: 'green' };
@@ -101,6 +102,7 @@ async function resolveIdentity(
   admin: ReturnType<typeof getSupabaseAdmin>,
   email: string,
   existingCaseId: string | null,
+  authUsers: Awaited<ReturnType<typeof listAllAuthUsers>>,
 ) {
   let caseId = existingCaseId;
   let clientId: string | null = null;
@@ -108,6 +110,7 @@ async function resolveIdentity(
   let companyId: string | null = null;
   let serviceSlug: string | null = null;
   let ambiguousCase = false;
+  let linkedCaseSenderMismatch = false;
 
   if (caseId) {
     const { data: caseRow } = await admin
@@ -115,30 +118,39 @@ async function resolveIdentity(
       .select('id,client_id,company_id,service_id')
       .eq('id', caseId)
       .maybeSingle();
-    if (caseRow) {
-      clientId = caseRow.client_id;
-      companyId = caseRow.company_id ?? null;
-      serviceSlug = caseRow.service_id ?? null;
+
+    if (caseRow?.client_id) {
+      const authEmail = authUsers.find((user) => user.id === caseRow.client_id)?.email ?? null;
+      const authorized = await getAuthorizedBookingEmails(
+        admin,
+        caseRow.client_id,
+        caseRow.company_id,
+        authEmail,
+      ).catch(() => [] as string[]);
+
+      if (authorized.map(normalizedEmail).includes(email)) {
+        clientId = caseRow.client_id;
+        companyId = caseRow.company_id ?? null;
+        serviceSlug = caseRow.service_id ?? null;
+      } else {
+        linkedCaseSenderMismatch = true;
+        caseId = null;
+      }
     } else {
       caseId = null;
     }
   }
 
   if (!clientId) {
-    const { data: profiles } = await admin
-      .from('profiles')
-      .select('id')
-      .ilike('email', email)
-      .neq('status', 'inactive')
-      .limit(2);
-    if ((profiles ?? []).length === 1) clientId = profiles![0].id;
+    const matchingUsers = authUsers.filter((user) => normalizedEmail(user.email ?? '') === email);
+    if (matchingUsers.length === 1) clientId = matchingUsers[0].id;
   }
 
   if (!clientId) {
     const { data: leads } = await admin
       .from('leads')
       .select('id')
-      .ilike('email', email)
+      .eq('email', email)
       .limit(2);
     if ((leads ?? []).length === 1) leadId = leads![0].id;
   }
@@ -161,7 +173,15 @@ async function resolveIdentity(
     }
   }
 
-  return { clientId, leadId, caseId, companyId, serviceSlug, ambiguousCase };
+  return {
+    clientId,
+    leadId,
+    caseId,
+    companyId,
+    serviceSlug,
+    ambiguousCase,
+    linkedCaseSenderMismatch,
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -178,6 +198,7 @@ export async function GET(request: NextRequest) {
   const minConfidence = Number(process.env.KIA_EMAIL_MIN_CONFIDENCE ?? '0.88');
   const admin = getSupabaseAdmin();
   const health = await healthGate(admin);
+  const authUsers = await listAllAuthUsers();
 
   const { data: inbox, error: inboxError } = await admin
     .from('email_inbox_cache')
@@ -185,7 +206,7 @@ export async function GET(request: NextRequest) {
     .eq('provider', 'gmail')
     .eq('unread', true)
     .order('date', { ascending: false })
-    .limit(20);
+    .limit(500);
 
   if (inboxError) {
     return NextResponse.json({ error: 'email_inbox_unavailable' }, { status: 503 });
@@ -211,9 +232,29 @@ export async function GET(request: NextRequest) {
     const previous = watermark?.value as Record<string, unknown> | null;
 
     try {
+      if (previous?.last_message_at === row.date) {
+        skipped++;
+        continue;
+      }
+
       const gmail = await getOperationalGmailThread(admin, row.thread_id);
       const latest = gmail.messages.at(-1);
-      if (!latest || !isLikelyHuman(latest)) {
+      if (!latest || !latest.unread) {
+        skipped++;
+        continue;
+      }
+      if (!isLikelyHuman(latest)) {
+        await admin.from('system_kv').upsert({
+          key,
+          value: {
+            last_message_id: latest.id,
+            last_message_at: latest.date,
+            evaluated_at: new Date().toISOString(),
+            block_reason: 'non_human',
+            sent: false,
+          },
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'key' });
         skipped++;
         continue;
       }
@@ -228,7 +269,10 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      const identity = await resolveIdentity(admin, normalizedEmail(latest.fromEmail), row.case_id ?? null);
+      const senderEmail = normalizedEmail(latest.fromEmail);
+      const replyRecipient = normalizedEmail(latest.replyTo || latest.fromEmail);
+      const replyToMismatch = replyRecipient !== senderEmail;
+      const identity = await resolveIdentity(admin, senderEmail, row.case_id ?? null, authUsers);
       const recent = gmail.messages.slice(-10).map((message) => ({
         role: normalizedEmail(message.fromEmail) === EXPERT_MAILBOX ? 'assistant' as const : 'user' as const,
         text: messageText(message.body, message.bodyType).slice(0, 4000),
@@ -268,11 +312,13 @@ export async function GET(request: NextRequest) {
       });
 
       const knownContact = Boolean(identity.clientId || identity.leadId);
-      const hasAttachments = latest.attachments.length > 0;
+      const hasAttachments = latest.attachments.some((attachment) => !attachment.inline);
       const canAutoSend = autoSend
         && health.ok
         && knownContact
         && !identity.ambiguousCase
+        && !identity.linkedCaseSenderMismatch
+        && !replyToMismatch
         && !hasAttachments
         && !result.usedFallback
         && !result.decision.requiresManualReview
@@ -298,23 +344,60 @@ export async function GET(request: NextRequest) {
         };
         const contextual = await maybeAppendKiaContextualCta({
           admin,
-          recipients: [latest.fromEmail],
+          recipients: [replyRecipient],
           html: baseHtml,
           metadata,
         });
         const html = appendKiaSignature(contextual.html, contextual.metadata ?? metadata);
         const replySubject = /^re:/i.test(latest.subject) ? latest.subject : `Re: ${latest.subject}`;
-        const authMode = await sendOperationalGmailReply(admin, {
-          threadId: row.thread_id,
-          to: latest.fromEmail,
-          subject: replySubject,
-          body: html,
-          bodyHtml: true,
+        const sendClaimKey = `kia_email_send:${createHash('sha256')
+          .update(`${row.thread_id}:${latest.id}`)
+          .digest('hex')
+          .slice(0, 40)}`;
+        const { error: claimError } = await admin.from('system_kv').insert({
+          key: sendClaimKey,
+          value: {
+            state: 'reserved',
+            thread_hash: key.split(':')[1],
+            message_id: latest.id,
+            reserved_at: new Date().toISOString(),
+          },
+          updated_at: new Date().toISOString(),
         });
 
-        await admin.from('email_events').insert({
+        if (claimError) {
+          if (claimError.code === '23505') {
+            blockReason = 'already_claimed';
+          } else {
+            throw claimError;
+          }
+        } else {
+          let authMode: 'service_account' | 'oauth';
+          try {
+            authMode = await sendOperationalGmailReply(admin, {
+              threadId: row.thread_id,
+              to: replyRecipient,
+              subject: replySubject,
+              body: html,
+              bodyHtml: true,
+            });
+          } catch (sendError) {
+            await admin.from('system_kv').update({
+              value: {
+                state: 'uncertain_failure',
+                thread_hash: key.split(':')[1],
+                message_id: latest.id,
+                failed_at: new Date().toISOString(),
+                error: sendError instanceof Error ? sendError.message.slice(0, 240) : 'unknown_send_error',
+              },
+              updated_at: new Date().toISOString(),
+            }).eq('key', sendClaimKey);
+            throw sendError;
+          }
+
+          const { error: eventError } = await admin.from('email_events').insert({
           event_type: 'kia.email.auto_reply',
-          recipient_email: latest.fromEmail,
+          recipient_email: replyRecipient,
           subject: replySubject,
           html,
           status: 'sent',
@@ -326,14 +409,29 @@ export async function GET(request: NextRequest) {
             inbound_message_id: latest.id,
             thread_id: row.thread_id,
           },
-        });
-        sent++;
-        sentNow = true;
+          });
+          if (eventError) {
+            console.error('[kia-email-agent] email event audit:', eventError);
+          }
+          await admin.from('system_kv').update({
+            value: {
+              state: 'sent',
+              thread_hash: key.split(':')[1],
+              message_id: latest.id,
+              sent_at: new Date().toISOString(),
+            },
+            updated_at: new Date().toISOString(),
+          }).eq('key', sendClaimKey);
+          sent++;
+          sentNow = true;
+        }
       } else {
         if (!autoSend) blockReason = 'auto_send_disabled';
         else if (!health.ok) blockReason = health.reason;
         else if (!knownContact) blockReason = 'unknown_contact';
         else if (identity.ambiguousCase) blockReason = 'ambiguous_case';
+        else if (identity.linkedCaseSenderMismatch) blockReason = 'linked_case_sender_mismatch';
+        else if (replyToMismatch) blockReason = 'reply_to_requires_review';
         else if (hasAttachments) blockReason = 'attachment_requires_review';
         else if (result.usedFallback) blockReason = 'provider_fallback';
         else if (result.decision.requiresManualReview) blockReason = 'manual_review';
