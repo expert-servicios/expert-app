@@ -34,7 +34,7 @@ const includes = [
 ];
 
 const notIncludes = [
-  'Presentación de impuestos',
+  'Presentación de impuestos, salvo modalidad de autónomo vinculado simple',
   'Contabilidad delegada',
   'Subida de facturas por EXPERT',
   'Migración de datos',
@@ -112,6 +112,20 @@ export default function PlanSupervisionPage() {
               </Link>.
             </p>
           </div>
+        </div>
+
+        <div className="mt-10 border border-[#D4A017]/40 bg-white p-6 shadow-[0_8px_20px_rgba(13,27,42,0.06)]">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Modalidad autónomo vinculado</p>
+          <h2 className="mt-2 font-serif text-xl font-bold">49 €/mes + IVA para operativa vinculada simple</h2>
+          <p className="mt-3 text-sm leading-6 text-[#23364D]">
+            Si eres socio/autónomo económicamente dependiente o vinculado a una empresa gestionada por EXPERT,
+            con actividad sencilla y normalmente hasta unas 10 facturas al mes, podemos mantenerte en Plan Supervisión.
+            En esta modalidad se incluyen los modelos fiscales básicos derivados de esa operativa vinculada.
+          </p>
+          <p className="mt-3 text-xs leading-5 text-[#6B7280]">
+            Operaciones internacionales complejas, varias actividades, empleados, volumen superior, regímenes especiales
+            o incidencias fiscales requieren Plan Avanzado o presupuesto personalizado.
+          </p>
         </div>
 
         <div className="mt-14 border-t border-[#D4A017]/25 pt-10">
