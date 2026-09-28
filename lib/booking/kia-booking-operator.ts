@@ -238,6 +238,9 @@ export async function createKiaConfirmedBooking(input: {
       reminderMinutesBefore: service.durationMinutes >= 60 ? [1440, 60] : [1440, 30],
     }, provider);
     providerEventId = meeting.eventId;
+    if (!meeting.meetingUrl) {
+      throw new Error('kia_booking_meet_unavailable');
+    }
 
     const { error: finalizeError } = await admin.from('appointments').update({
       status: 'confirmed',
