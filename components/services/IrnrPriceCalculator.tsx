@@ -9,7 +9,7 @@ type PropertyRow = {
   rented: boolean;
 };
 
-export function IrnrPriceCalculator({ compact = false }: { compact?: boolean }) {
+export function IrnrPriceCalculator({ compact = false, origin = 'service:no-residentes' }: { compact?: boolean; origin?: string }) {
   const [properties, setProperties] = useState<PropertyRow[]>([{ holders: 1, rented: false }]);
 
   const units = useMemo(
@@ -29,7 +29,7 @@ export function IrnrPriceCalculator({ compact = false }: { compact?: boolean }) 
     .map((property, index) => `Inmueble ${index + 1}: ${property.holders} titular(es) no residente(s)${property.rented ? ', alquilado' : ', a disposición/no alquilado'}`)
     .join('; ');
 
-  const requestHref = `/solicitar-presupuesto?servicio=noResidentes&origen=calculadora-irnr&resumen=${encodeURIComponent(
+  const requestHref = `/solicitar-presupuesto?servicio=no-residentes&origen=${encodeURIComponent(origin)}&resumen=${encodeURIComponent(
     `${summary}. Unidades declarativas estimadas: ${units}. Honorarios estimados para renta imputada: ${net} EUR + IVA.`,
   )}`;
 
@@ -115,7 +115,7 @@ export function IrnrPriceCalculator({ compact = false }: { compact?: boolean }) 
           Solicitar este servicio
         </Link>
         <Link
-          href="/cita?tipo=consulta-inicial&origen=calculadora-irnr"
+          href={`/cita?tipo=consulta-inicial&origen=${encodeURIComponent(origin)}`}
           className="inline-flex min-h-11 items-center justify-center border border-[#D4A017]/50 px-5 py-2.5 text-sm font-semibold text-[#0D1B2A]"
         >
           Reunión informativa · 15 min
