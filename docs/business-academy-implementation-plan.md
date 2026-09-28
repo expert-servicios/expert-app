@@ -38,7 +38,7 @@ carpeta y patrón de datos — el curso no encaja limpiamente en ninguno:
 - Reservas ya tienen patrón maduro: `lib/utils/cal.ts` expone
   `getCalOnboardingUrl()`/`getCalFormacionUrl()`/etc. leyendo
   `NEXT_PUBLIC_CAL_*_LINK`. El botón "Reservar entrevista de admisión" debe
-  añadir un quinto slug (`NEXT_PUBLIC_CAL_ACADEMY_LINK`) siguiendo el mismo
+  añadir un quinto slug (`NEXT_PUBLIC_GOOGLE_BOOKING_ACADEMY_URL`) siguiendo el mismo
   helper, no una integración nueva.
 - Kia (`lib/ai/kia/kia-system-prompt.ts`) inyecta conocimiento de dominio por
   regex de contexto (Holded, AEAT, SS, DGT...) — el curso necesita su propio
@@ -149,12 +149,12 @@ Nuevo `app/api/academy/leads/route.ts`, mismo patrón que
 
 ```typescript
 export function getCalAcademyUrl(): string | null {
-  return calUrl(process.env.NEXT_PUBLIC_CAL_ACADEMY_LINK);
+  return calUrl(process.env.NEXT_PUBLIC_GOOGLE_BOOKING_ACADEMY_URL);
 }
 ```
 Botón "Reservar entrevista de admisión" reutiliza `CalButton`/`CalModal`
-existentes, sin componentes nuevos. Añadir `NEXT_PUBLIC_CAL_ACADEMY_LINK` a
-`.env.example` junto a los otros 4 slugs de Cal.com.
+existentes, sin componentes nuevos. Añadir `NEXT_PUBLIC_GOOGLE_BOOKING_ACADEMY_URL` a
+`.env.example` junto a las variables de Google Calendar del resto de tipos de cita.
 
 ## 8. Kia — nuevo bloque de conocimiento
 
@@ -197,8 +197,8 @@ completa es un proyecto aparte, fuera de alcance de este lanzamiento.
   formulario embebido en la ficha + plantillas de email + notificación push a
   admin, siguiendo el patrón de `/api/quotes` al detalle (honeypot, rate
   limit, spam guard, reCAPTCHA, doble email cliente/admin).
-- **Fase C — Reserva de entrevista de admisión:** integración Cal.com
-  (`getCalAcademyUrl`, nueva env var `NEXT_PUBLIC_CAL_ACADEMY_LINK`), botón
+- **Fase C — Reserva de entrevista de admisión:** integración Google Calendar/Meet mediante `/cita`
+  (`getCalAcademyUrl`, nueva env var `NEXT_PUBLIC_GOOGLE_BOOKING_ACADEMY_URL`), botón
   "Reservar entrevista de admisión" en la ficha reutilizando
   `CalButton`/`CalModal` existentes.
 - **Fase C.2 — Descarga de la programación (PDF):** endpoint
