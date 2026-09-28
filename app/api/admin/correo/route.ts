@@ -10,6 +10,7 @@ import type { GmailTokens } from '@/lib/integrations/gmail';
 import { z } from 'zod';
 import { maybeAppendKiaContextualCta } from '@/lib/email/kia-contextual-cta';
 import { appendKiaSignature } from '@/lib/email/kia-signature';
+import { keepEmailKnowledgeLinksInLocale, keepEmailKnowledgeTextLinksInLocale } from '@/lib/email/email-knowledge-locale';
 
 type Provider = 'ms365' | 'gmail';
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
@@ -37,8 +38,9 @@ async function decorateProviderEmail(input: {
   body: string;
   bodyHtml?: boolean;
   recipient: string;
+  subject: string;
   conversationId?: string | null;
-}): Promise<string> {
+}): Promise<{ html: string; metadata: Record<string, unknown> }> {
   let caseId: string | null = null;
   let preferredLanguage: string | null = null;
 
@@ -91,7 +93,13 @@ async function decorateProviderEmail(input: {
     },
   });
 
-  return appendKiaSignature(contextual.html, contextual.metadata);
+  const metadata = contextual.metadata ?? {};
+  const html = keepEmailKnowledgeLinksInLocale({
+    subject: input.subject,
+    html: appendKiaSignature(contextual.html, metadata),
+    metadata,
+  });
+  return { html, metadata };
 }
 
 function getProvider(searchParams: URLSearchParams): Provider {
@@ -333,15 +341,22 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
     const { messageId, comment, conversationId, subject, clientEmail, provider: prov } = parsed.data;
     const recipient = clientEmail ?? '';
-    const decoratedGmailBody = prov === 'gmail' && recipient
+    const decorated = recipient
       ? await decorateProviderEmail({
           admin,
           body: comment,
           bodyHtml: false,
           recipient,
+          subject: subject ?? '',
           conversationId: conversationId ?? messageId,
         })
-      : comment;
+      : null;
+    const decoratedGmailBody = decorated?.html ?? comment;
+    const safeMs365Comment = keepEmailKnowledgeTextLinksInLocale({
+      subject: subject ?? '',
+      text: comment,
+      metadata: decorated?.metadata,
+    });
 
     if (prov === 'gmail') {
       if (hasGmailSA()) {
@@ -379,7 +394,7 @@ export async function POST(request: NextRequest) {
       const ms365Row = await getMs365Tokens(admin);
       if (!ms365Row) return NextResponse.json({ error: 'MS365 no conectado' }, { status: 400 });
       const stored = { access_token: ms365Row.access_token, refresh_token: ms365Row.refresh_token, expires_at: ms365Row.expires_at };
-      const { refreshed } = await sendReply(stored, { messageId, comment });
+      const { refreshed } = await sendReply(stored, { messageId, comment: safeMs365Comment });
       await saveMs365Refresh(admin, refreshed);
     }
     return NextResponse.json({ success: true });
@@ -389,13 +404,15 @@ export async function POST(request: NextRequest) {
     const parsed = composeSchema.safeParse(json);
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
     const { to, subject, body, bodyHtml, provider: prov } = parsed.data;
-    const decoratedBody = await decorateProviderEmail({
+    const decorated = await decorateProviderEmail({
       admin,
       body,
       bodyHtml,
       recipient: to,
+      subject,
       conversationId: null,
     });
+    const decoratedBody = decorated.html;
 
     if (prov === 'ms365') {
       const ms365Row = await getMs365Tokens(admin);
