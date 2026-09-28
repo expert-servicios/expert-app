@@ -74,6 +74,15 @@ export type Service = {
   officialFee?: string;
   servicePriceDetail?: string;
   priceCalculator?: 'irnr' | 'irpf' | 'patrimonio';
+  unitPriceCalculator?: {
+    unitPrice: number;
+    unitLabel: string;
+    unitLabelPlural?: string;
+    minUnits?: number;
+    defaultUnits?: number;
+    maxUnits?: number;
+    note?: string;
+  };
   stripePriceId?: string;
   checkoutLabel?: string;
   checkoutLegal?: string;
@@ -1108,8 +1117,14 @@ export const services: Service[] = [
     shortDescription: 'Obtención del NIF para socios o administradores extranjeros sin residencia en España.',
     description:
       'Tramitamos el Número de Identificación Fiscal (NIF) para socios, administradores o apoderados extranjeros que van a participar en una sociedad española y no disponen de NIE. Necesario para poder constituir la sociedad, firmar ante notario y figurar en el Registro Mercantil.',
-    price: '60 € + IVA / persona',
-    servicePriceDetail: 'Precio por cada socio o administrador que necesite NIF.',
+    price: 'Precio variable',
+    unitPriceCalculator: {
+      unitPrice: 60,
+      unitLabel: 'persona',
+      unitLabelPlural: 'personas',
+      note: 'Una unidad por cada socio o administrador extranjero que necesite NIF.'
+    },
+    servicePriceDetail: '60 € + IVA por cada socio o administrador que necesite NIF.',
     duration: '5–10 días hábiles',
     includes: [
       'Cumplimentación del Modelo 030 / EX-15',
@@ -1743,7 +1758,15 @@ export const services: Service[] = [
       'Migramos la información laboral vigente de cada empleado a Holded, configuramos contrato, jornada, categoría, salario, pagas e IRPF y comprobamos el resultado mediante una nómina de prueba. Incluye informe de incidencias y entrega documentada.',
     metaTitle: 'Migración laboral a Holded desde 50 € por empleado | EXPERT',
     metaDescription: 'Migramos y validamos los datos laborales de tu plantilla en Holded por 50 € + IVA por empleado. Revisión previa, configuración y nómina de prueba.',
-    price: '50 € + IVA / empleado',
+    price: 'Precio variable',
+    unitPriceCalculator: {
+      unitPrice: 50,
+      unitLabel: 'empleado',
+      unitLabelPlural: 'empleados',
+      minUnits: 5,
+      defaultUnits: 5,
+      note: 'Pedido mínimo de 5 empleados. Regularizaciones históricas o incidencias extraordinarias se revisan aparte.'
+    },
     duration: '3–5 días hábiles para hasta 15 empleados',
     includes: [
       'Revisión documental previa',
@@ -1888,7 +1911,15 @@ export const services: Service[] = [
     shortDescription: 'Aprende a gestionar tu contabilidad, facturación y CRM en Holded.',
     description:
       'Como Holded Solution Partner, impartimos formación específica en el uso de Holded: módulos de facturación, contabilidad, inventario, proyectos y CRM. Sesiones de 2 horas adaptadas a tu nivel y caso de uso real. Precio: 180 € por bloque.',
-    price: '180 € + IVA / bloque de 2 h',
+    price: 'Precio variable',
+    unitPriceCalculator: {
+      unitPrice: 180,
+      unitLabel: 'bloque de 2 h',
+      unitLabelPlural: 'bloques de 2 h',
+      minUnits: 1,
+      defaultUnits: 1,
+      note: 'La calculadora estima el número de bloques. Si el alcance requiere preparación especial para un equipo, se revisa antes de confirmar.'
+    },
     duration: '2 horas por bloque',
     includes: [
       'Sesión práctica sobre tu propio entorno Holded',
