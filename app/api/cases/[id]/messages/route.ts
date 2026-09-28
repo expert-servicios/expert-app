@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendWhatsAppMessage, logWhatsAppConversation } from '@/lib/integrations/whatsapp';
-import { notifyAdmins } from '@/lib/integrations/push';
+import { notifyAdminCaseActivity } from '@/lib/admin/case-admin-notifications';
 import { sendEmail } from '@/lib/email/send';
-import { caseNewMessageFromAdvisor, caseNewMessageFromClient } from '@/lib/email/templates';
+import { caseNewMessageFromAdvisor } from '@/lib/email/templates';
 
 const messageSchema = z.object({
   body: z.string().min(1).max(2000),
@@ -111,39 +111,29 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             });
           }
         } else {
-          // Notify admin
-          const adminEmail = process.env.ADMIN_EMAILS ?? 'info@expertconsulting.es';
-          const { data: senderProfile } = await adminSupabase
-            .from('profiles').select('full_name').eq('id', userId).single();
-          const clientName = senderProfile?.full_name ?? 'Cliente';
-          const { data: caseInfo } = await adminSupabase
-            .from('cases').select('service').eq('id', caseId).single();
-          if (caseInfo) {
-            await sendEmail({
-              to: adminEmail,
-              eventType: 'case.message.from_client',
-              ...caseNewMessageFromClient(clientName, caseInfo.service, parseResult.data.body, caseId)
-            });
-          }
+          // EXPERT Admin activity is notified below through the unified
+          // PushApp + Telegram + email fan-out.
         }
       } catch (emailErr) {
         console.error('[messages] email notification failed:', emailErr);
       }
     })();
 
-    // Push notification to admins when client sends a message
+    // Unified Admin activity notification: PushApp + Telegram + email.
     if (senderRole === 'client') {
-      const { data: caseInfo } = await adminSupabase
-        .from('cases').select('service').eq('id', caseId).single();
-      const { data: senderProfile } = await adminSupabase
-        .from('profiles').select('full_name').eq('id', userId).single();
-      const clientName = senderProfile?.full_name ?? 'Cliente';
-      notifyAdmins({
-        title: `💬 ${clientName} ha enviado un mensaje`,
-        body : caseInfo?.service ?? 'Expediente',
-        url  : `/admin/expedientes/${caseId}`,
-        tag  : `case-msg-${caseId}`,
-      }).catch(() => {});
+      const [{ data: caseInfo }, { data: senderProfile }] = await Promise.all([
+        adminSupabase.from('cases').select('service').eq('id', caseId).single(),
+        adminSupabase.from('profiles').select('full_name').eq('id', userId).single(),
+      ]);
+      void notifyAdminCaseActivity({
+        kind: 'client_message',
+        caseId,
+        service: caseInfo?.service ?? 'Expediente',
+        clientName: senderProfile?.full_name ?? 'Cliente',
+        detail: parseResult.data.body.slice(0, 220),
+        eventRef: message.id,
+        occurredAt: message.created_at,
+      });
     }
 
     // Send via WhatsApp if requested (admin only, client must have phone)

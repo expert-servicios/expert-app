@@ -340,7 +340,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
         </div>
 
         {checklist.length > 0 ? (
-          <div className="mt-4">
+          <div id="documentos" className="mt-4">
             <CaseDocumentChecklist
               caseId={id}
               checklist={checklist}
@@ -351,7 +351,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             />
           </div>
         ) : (
-          <div className="mt-4 rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
+          <div id="documentos" className="mt-4 rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
             <p className="text-sm text-[#29384a]">No hay checklist documental definido para este expediente.</p>
           </div>
         )}

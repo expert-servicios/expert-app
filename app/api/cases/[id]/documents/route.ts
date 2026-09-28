@@ -6,7 +6,7 @@ import {
   syncDocumentToMirror,
 } from '@/lib/documents/document-mirror';
 import { notifyTenantAdminDocUploaded } from '@/lib/email/notify-tenant-admins';
-import { notifyAdmins } from '@/lib/integrations/push';
+import { notifyAdminCaseActivity } from '@/lib/admin/case-admin-notifications';
 import {
   buildClientDocumentStoragePath,
   CLIENT_DOCUMENT_MAX_BYTES,
@@ -198,12 +198,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     if (!isAdmin) {
-      notifyAdmins({
-        title: '📄 Nuevo documento de cliente',
-        body: `${file.name} — ${caseData.service ?? 'Expediente'}`,
-        url: `/admin/expedientes/${caseId}`,
-        tag: `doc-upload-${caseId}`,
-      }).catch(() => {});
+      const { data: clientProfile } = await adminSupabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', clientId)
+        .maybeSingle();
+      void notifyAdminCaseActivity({
+        kind: 'document_uploaded',
+        caseId,
+        service: caseData.service ?? 'Expediente',
+        clientName: clientProfile?.full_name ?? null,
+        detail: `Documento recibido: ${file.name}`,
+        eventRef: doc.id,
+        occurredAt: doc.created_at,
+      });
     }
 
     // External file mirror is secondary. Supabase Storage + documents remains

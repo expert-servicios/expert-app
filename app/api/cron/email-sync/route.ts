@@ -4,6 +4,7 @@ import { listGmailMailsSA, hasGmailSA, getGmailUnreadCountSA, listGmailMails } f
 import type { GmailTokens, GmailSummary } from '@/lib/integrations/gmail';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { verifyCronRequest } from '@/lib/security/cron';
+import { notifyAdminCaseActivity } from '@/lib/admin/case-admin-notifications';
 
 // Vercel Cron: operational Gmail inbox sync.
 // Prefers the EXPERT service account when healthy, but falls back to the admin OAuth
@@ -129,9 +130,26 @@ export async function GET(request: NextRequest) {
       if (linkedError) throw linkedError;
 
       const linked = new Map((linkedRows ?? []).map((row) => [row.thread_id, row]));
+      const linkedCaseIds = [...new Set((linkedRows ?? []).map((row) => row.case_id).filter((id): id is string => Boolean(id)))];
+      const { data: linkedCases } = linkedCaseIds.length
+        ? await admin.from('cases')
+            .select('id,service,client_id')
+            .in('id', linkedCaseIds)
+            .is('closed_at', null)
+        : { data: [] as Array<{ id: string; service: string | null; client_id: string | null }> };
+      const clientIds = [...new Set((linkedCases ?? []).map((row) => row.client_id).filter((id): id is string => Boolean(id)))];
+      const { data: linkedClients } = clientIds.length
+        ? await admin.from('profiles').select('id,full_name').in('id', clientIds)
+        : { data: [] as Array<{ id: string; full_name: string | null }> };
+      const caseById = new Map((linkedCases ?? []).map((row) => [row.id, row]));
+      const clientNameById = new Map((linkedClients ?? []).map((row) => [row.id, row.full_name]));
+
       for (const mail of mails) {
         const link = linked.get(mail.conversationId);
         if (!link?.case_id) continue;
+
+        const previousMessageAt = link.last_message_at ? String(link.last_message_at) : null;
+        const isNewLinkedInbound = Boolean(mail.unread && (!previousMessageAt || String(mail.date) > previousMessageAt));
 
         await admin.from('email_inbox_cache').update({ case_id: link.case_id }).eq('thread_id', mail.conversationId);
         await admin.from('email_threads').update({
@@ -141,6 +159,19 @@ export async function GET(request: NextRequest) {
           last_message_at: mail.date,
           unread: mail.unread,
         }).eq('thread_id', mail.conversationId);
+
+        if (isNewLinkedInbound) {
+          const caseInfo = caseById.get(link.case_id);
+          void notifyAdminCaseActivity({
+            kind: 'inbound_email',
+            caseId: link.case_id,
+            service: caseInfo?.service ?? 'Expediente',
+            clientName: caseInfo?.client_id ? clientNameById.get(caseInfo.client_id) ?? mail.from : mail.from,
+            detail: `${mail.subject || 'Correo recibido'} · ${mail.snippet || 'Nuevo mensaje vinculado al expediente'}`.slice(0, 260),
+            eventRef: `${mail.conversationId}:${mail.date}`,
+            occurredAt: String(mail.date),
+          });
+        }
       }
     }
 

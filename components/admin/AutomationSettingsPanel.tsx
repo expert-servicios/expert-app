@@ -16,6 +16,7 @@ const LABELS: Record<string, { title: string; description: string; group: string
   'case.presentado'           : { group: 'Expedientes', title: 'Presentado',                   description: 'Email al cliente cuando el expediente ha sido presentado.' },
   'case.finalizado'           : { group: 'Expedientes', title: 'Finalizado',                   description: 'Email al cliente cuando el expediente queda cerrado y resuelto.' },
   'case.review_request'       : { group: 'Expedientes', title: 'Solicitud de valoración',      description: 'Envía un enlace de reseña al cliente al finalizar el expediente.' },
+  'admin.case_activity'        : { group: 'Administración', title: 'Actividad de expedientes',   description: 'Aviso inmediato por PushApp, Telegram y email cuando un expediente activo recibe una novedad operativa.' },
   'admin.daily_summary'       : { group: 'Administración', title: 'Resumen diario',            description: 'Email de resumen de actividad al administrador cada mañana.' },
 };
 

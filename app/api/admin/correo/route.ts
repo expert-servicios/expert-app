@@ -8,6 +8,8 @@ import {
 } from '@/lib/integrations/gmail';
 import type { GmailTokens } from '@/lib/integrations/gmail';
 import { z } from 'zod';
+import { maybeAppendKiaContextualCta } from '@/lib/email/kia-contextual-cta';
+import { appendKiaSignature } from '@/lib/email/kia-signature';
 
 type Provider = 'ms365' | 'gmail';
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
@@ -21,6 +23,76 @@ type InboxMail = {
   unread: boolean;
   hasAttachment: boolean;
 };
+
+function escapeEmailHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+async function decorateProviderEmail(input: {
+  admin: AdminClient;
+  body: string;
+  bodyHtml?: boolean;
+  recipient: string;
+  conversationId?: string | null;
+}): Promise<string> {
+  let caseId: string | null = null;
+  let preferredLanguage: string | null = null;
+
+  if (input.conversationId) {
+    const { data: thread } = await input.admin
+      .from('email_threads')
+      .select('case_id')
+      .eq('thread_id', input.conversationId)
+      .maybeSingle();
+    caseId = thread?.case_id ?? null;
+  }
+
+  if (caseId) {
+    const { data: caseRow } = await input.admin
+      .from('cases')
+      .select('client_id')
+      .eq('id', caseId)
+      .maybeSingle();
+    if (caseRow?.client_id) {
+      const { data: profile } = await input.admin
+        .from('profiles')
+        .select('preferred_language')
+        .eq('id', caseRow.client_id)
+        .maybeSingle();
+      preferredLanguage = profile?.preferred_language ?? null;
+    }
+  } else {
+    const { data: matchingProfile } = await input.admin
+      .from('profiles')
+      .select('preferred_language')
+      .ilike('email', input.recipient.trim())
+      .eq('role', 'client')
+      .neq('status', 'inactive')
+      .limit(1)
+      .maybeSingle();
+    preferredLanguage = matchingProfile?.preferred_language ?? null;
+  }
+
+  const baseHtml = input.bodyHtml
+    ? input.body
+    : `<div style="font-family:Arial,sans-serif;white-space:pre-wrap;">${escapeEmailHtml(input.body)}</div>`;
+  const contextual = await maybeAppendKiaContextualCta({
+    admin: input.admin,
+    recipients: [input.recipient],
+    html: baseHtml,
+    metadata: {
+      ...(caseId ? { case_id: caseId } : {}),
+      ...(preferredLanguage ? { preferred_language: preferredLanguage } : {}),
+      kia_contextual_cta: true,
+    },
+  });
+
+  return appendKiaSignature(contextual.html, contextual.metadata);
+}
 
 function getProvider(searchParams: URLSearchParams): Provider {
   return searchParams.get('provider') === 'gmail' ? 'gmail' : 'ms365';
@@ -260,15 +332,26 @@ export async function POST(request: NextRequest) {
     const parsed = replySchema.safeParse(json);
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
     const { messageId, comment, conversationId, subject, clientEmail, provider: prov } = parsed.data;
+    const recipient = clientEmail ?? '';
+    const decoratedGmailBody = prov === 'gmail' && recipient
+      ? await decorateProviderEmail({
+          admin,
+          body: comment,
+          bodyHtml: false,
+          recipient,
+          conversationId: conversationId ?? messageId,
+        })
+      : comment;
 
     if (prov === 'gmail') {
       if (hasGmailSA()) {
         try {
           await sendGmailReplySA({
             threadId: conversationId ?? messageId,
-            to: clientEmail ?? '',
+            to: recipient,
             subject: subject ?? '',
-            body: comment,
+            body: decoratedGmailBody,
+            bodyHtml: true,
           });
         } catch (err) {
           console.error('[Gmail SA reply]', err);
@@ -285,9 +368,10 @@ export async function POST(request: NextRequest) {
         };
         const { refreshed } = await sendGmailReply(stored, {
           threadId: conversationId ?? messageId,
-          to: clientEmail ?? '',
+          to: recipient,
           subject: subject ?? '',
-          body: comment,
+          body: decoratedGmailBody,
+          bodyHtml: true,
         });
         await saveGmailRefresh(admin, refreshed);
       }
@@ -305,19 +389,26 @@ export async function POST(request: NextRequest) {
     const parsed = composeSchema.safeParse(json);
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
     const { to, subject, body, bodyHtml, provider: prov } = parsed.data;
+    const decoratedBody = await decorateProviderEmail({
+      admin,
+      body,
+      bodyHtml,
+      recipient: to,
+      conversationId: null,
+    });
 
     if (prov === 'ms365') {
       const ms365Row = await getMs365Tokens(admin);
       if (!ms365Row) return NextResponse.json({ error: 'MS365 no conectado' }, { status: 400 });
       const stored = { access_token: ms365Row.access_token, refresh_token: ms365Row.refresh_token, expires_at: ms365Row.expires_at };
-      const { refreshed } = await sendNewMail(stored, { to, subject, body, bodyHtml });
+      const { refreshed } = await sendNewMail(stored, { to, subject, body: decoratedBody, bodyHtml: true });
       await saveMs365Refresh(admin, refreshed);
       return NextResponse.json({ success: true });
     }
 
     if (hasGmailSA()) {
       try {
-        await sendNewGmailSA({ to, subject, body, bodyHtml });
+        await sendNewGmailSA({ to, subject, body: decoratedBody, bodyHtml: true });
       } catch (err) {
         console.error('[Gmail SA compose]', err);
         return NextResponse.json({ error: 'Error al enviar correo (SA)' }, { status: 500 });
@@ -331,7 +422,7 @@ export async function POST(request: NextRequest) {
         expiry_date: gmailRow.expiry_date,
         email: gmailRow.email,
       };
-      const { refreshed } = await sendNewGmail(stored, { to, subject, body, bodyHtml });
+      const { refreshed } = await sendNewGmail(stored, { to, subject, body: decoratedBody, bodyHtml: true });
       await saveGmailRefresh(admin, refreshed);
     }
     return NextResponse.json({ success: true });

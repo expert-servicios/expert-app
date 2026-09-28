@@ -1377,6 +1377,7 @@ export function citaReminder(
 
 export interface DailySummaryData {
   date             : string;
+  activeCases      : Array<{ id: string; service: string; client: string; status: string; nextAction: string | null; daysPending: number }>;
   casesBlocked     : Array<{ id: string; service: string; client: string; daysPending: number }>;
   casesAwaitingDocs: Array<{ id: string; service: string; client: string; daysPending: number }>;
   quotesOpen       : Array<{ id: string; title: string; client: string; amount: number; daysOpen: number }>;
@@ -1409,6 +1410,17 @@ export function dailyAdminSummary(data: DailySummaryData) {
         </td>
       </tr>`).join('');
 
+  const activeCaseRows = data.activeCases.map((c) => `
+    <tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;font-size:13px;color:#07111d;">${escapeHtml(c.service)}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;font-size:13px;color:#29384a;">${escapeHtml(c.client)}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;font-size:12px;color:#29384a;font-weight:600;">${escapeHtml(c.status.replaceAll('_', ' '))}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;font-size:12px;color:#6b7280;">${c.nextAction ? escapeHtml(c.nextAction.slice(0, 120)) : '—'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;">
+        <a href="${BRAND.appUrl}/admin/expedientes/${c.id}" style="color:#c88b25;font-size:12px;">Ver</a>
+      </td>
+    </tr>`).join('');
+
   const quoteRows = data.quotesOpen.map((q) => `
     <tr>
       <td style="padding:8px 12px;border-bottom:1px solid #f0e9d8;font-size:13px;color:#07111d;">${escapeHtml(q.title)}</td>
@@ -1427,6 +1439,12 @@ export function dailyAdminSummary(data: DailySummaryData) {
     `<table width="100%" cellpadding="0" cellspacing="0" style="border-radius:8px;overflow:hidden;border:1px solid #d8cbb5;margin-bottom:20px;">${rows}</table>`;
 
   const sections: string[] = [];
+
+  sections.push(`
+    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#07111d;">📋 Expedientes activos <span style="color:#8899aa;font-weight:500;">(${data.activeCases.length})</span></p>
+    ${data.activeCases.length
+      ? tableWrapper(activeCaseRows)
+      : para('<strong style="color:#16a34a;">No hay expedientes activos.</strong>')}`);
 
   if (data.casesBlocked.length > 0) {
     sections.push(`
@@ -1455,6 +1473,7 @@ export function dailyAdminSummary(data: DailySummaryData) {
   const kpisHtml = `
     <div style="display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
       ${[
+        { label: 'Expedientes activos', value: data.activeCases.length, color: data.activeCases.length > 0 ? '#c88b25' : '#29384a' },
         { label: 'Leads nuevos 24h', value: data.newLeads24h, color: data.newLeads24h > 0 ? '#c88b25' : '#29384a' },
         { label: 'Mensajes nuevos 24h', value: data.newMessages24h, color: data.newMessages24h > 0 ? '#c88b25' : '#29384a' },
         { label: 'Syncs Holded fallidos', value: data.holdedJobsFailed, color: data.holdedJobsFailed > 0 ? '#dc2626' : '#29384a' },
@@ -1474,7 +1493,7 @@ export function dailyAdminSummary(data: DailySummaryData) {
     html: base('Resumen operativo diario', `
       ${heading(`Resumen operativo · ${data.date}`)}
       ${kpisHtml}
-      ${sections.length > 0 ? sections.join('') : para('<strong style="color:#16a34a;">✅ Todo al día — no hay expedientes ni presupuestos pendientes de atención urgente.</strong>')}
+      ${sections.join('')}
       ${btn('Abrir panel admin', `${BRAND.appUrl}/admin`)}
       ${para('<small style="color:#8899aa;">Este resumen se genera automáticamente cada mañana. Accede al panel para gestionar cada elemento.</small>')}
     `),

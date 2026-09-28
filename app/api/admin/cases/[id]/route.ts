@@ -20,6 +20,7 @@ import {
 } from '@/lib/email/templates';
 import { getTenantForUser } from '@/lib/auth/tenant';
 import { notifyTenantAdminStatusChanged } from '@/lib/email/notify-tenant-admins';
+import { notifyAdminCaseActivity } from '@/lib/admin/case-admin-notifications';
 
 // ── Automation settings helper ──────────────────────────────────────────────
 // Returns enabled automation keys. Missing rows default to enabled for backward compatibility.
@@ -259,7 +260,8 @@ export async function PATCH(
       }
 
       // Update case
-      const updatePayload: Record<string, unknown> = { status: body.status };
+      const changedAt = new Date().toISOString();
+      const updatePayload: Record<string, unknown> = { status: body.status, updated_at: changedAt };
       if (body.priority)    updatePayload.priority    = body.priority;
       if (body.admin_note !== undefined) updatePayload.admin_note  = body.admin_note;
       if (body.next_action !== undefined) updatePayload.next_action = body.next_action;
@@ -341,6 +343,16 @@ export async function PATCH(
             tag:   `case-status-${id}`,
           }).catch(() => {});
         }
+
+        void notifyAdminCaseActivity({
+          kind: 'status_changed',
+          caseId: id,
+          service: current.service ?? 'Expediente',
+          clientName: clientInfo?.name ?? null,
+          detail: `Estado: ${fromStatus} → ${body.status}${body.next_action ? ` · Siguiente acción: ${body.next_action}` : ''}`,
+          eventRef: changedAt,
+          occurredAt: changedAt,
+        });
       }
 
       // Register profitability event (fire-and-forget)
@@ -365,14 +377,15 @@ export async function PATCH(
     }
 
     // Non-status fields update (note, next_action, due_date)
-    const updatePayload: Record<string, unknown> = {};
+    const changedAt = new Date().toISOString();
+    const updatePayload: Record<string, unknown> = { updated_at: changedAt };
     if (body.priority)    updatePayload.priority    = body.priority;
     if (body.admin_note !== undefined) updatePayload.admin_note  = body.admin_note;
     if (body.next_action !== undefined) updatePayload.next_action = body.next_action;
     if (body.due_date !== undefined)   updatePayload.due_date    = body.due_date;
     if (body.assigned_to !== undefined) updatePayload.assigned_to = body.assigned_to;
 
-    if (Object.keys(updatePayload).length === 0) {
+    if (Object.keys(updatePayload).length === 1 && updatePayload.updated_at) {
       return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 });
     }
 
@@ -383,6 +396,24 @@ export async function PATCH(
       .select('service, category, client_id, google_calendar_event_id')
       .single();
     if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });
+
+    const changedFields = [
+      body.next_action !== undefined ? `siguiente acción: ${body.next_action || 'sin definir'}` : null,
+      body.due_date !== undefined ? `vencimiento: ${body.due_date || 'sin fecha'}` : null,
+      body.priority !== undefined ? `prioridad: ${body.priority}` : null,
+      body.assigned_to !== undefined ? 'responsable actualizado' : null,
+      body.admin_note !== undefined ? 'nota interna actualizada' : null,
+    ].filter(Boolean).join(' · ');
+    const changedClient = await getClientInfo(admin, updatedCase.client_id).catch(() => null);
+    void notifyAdminCaseActivity({
+      kind: body.next_action !== undefined ? 'next_action_changed' : 'case_updated',
+      caseId: id,
+      service: updatedCase.service ?? updatedCase.category ?? 'Expediente',
+      clientName: changedClient?.name ?? null,
+      detail: changedFields || 'Datos operativos actualizados',
+      eventRef: changedAt,
+      occurredAt: changedAt,
+    });
 
     // Background: sync due_date to Google Calendar as a reminder
     if (body.due_date && hasCalendarSA() && updatedCase) {

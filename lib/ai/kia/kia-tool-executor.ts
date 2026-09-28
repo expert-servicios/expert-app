@@ -19,6 +19,7 @@ import { resolveKiaCompanyHoldedAccess } from './kia-holded-access';
 import { executeLaborPayrollDiagnostics } from './kia-labor-payroll-diagnostics';
 import { findKiaRelevantServices, getKiaOfficialSources, searchKiaKnowledgeResources } from './kia-knowledge-discovery';
 import { loadKiaClientCommunications } from './kia-client-brief';
+import { missingKiaCaseDocumentRequirements } from './kia-case-document-gaps';
 
 const HOLDED_LABOR_TOOL_NAMES = new Set<KiaHoldedLaborToolName>([
   'get_holded_employees',
@@ -498,17 +499,42 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         const clientId = context.contact?.clientId;
         const caseId = String(args.caseId);
         if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
-        const { data: ownedCase } = await admin.from('cases').select('id').eq('id', caseId).eq('client_id', clientId).maybeSingle();
-        if (!ownedCase) return fail(toolCall.name, 'Expediente no autorizado.');
+        const { data: ownedCase, error: caseError } = await admin.from('cases')
+          .select('id,docs_checklist,received_documents_json').eq('id', caseId).eq('client_id', clientId).maybeSingle();
+        if (caseError || !ownedCase) return fail(toolCall.name, 'Expediente no autorizado.');
         const { data, error } = await admin
           .from('documents')
-          .select('id,original_name,title,doc_type,kind,state,checklist_item_label,created_at,updated_at')
+          .select('id,original_name,title,doc_type,kind,state,checklist_item_key,checklist_item_label,file_path,created_at,updated_at')
           .eq('case_id', caseId)
           .eq('client_id', clientId)
+          .is('replaced_by', null)
           .order('created_at', { ascending: false })
-          .limit(Number(args.limit ?? 20));
+          .limit(1001);
         if (error) return fail(toolCall.name, 'Error consultando documentos.');
-        return ok(toolCall.name, { documents: data ?? [] });
+        if ((data ?? []).length > 1000) return fail(toolCall.name, 'Demasiados documentos para verificar el checklist.');
+        const active = (data ?? []).filter((doc) => doc.state !== 'rechazado');
+        const missingRequirements = missingKiaCaseDocumentRequirements(
+          ownedCase.docs_checklist, active, ownedCase.received_documents_json,
+        );
+        return ok(toolCall.name, {
+          missing_requirements: missingRequirements,
+          checklist_available: Array.isArray(ownedCase.docs_checklist) && ownedCase.docs_checklist.length > 0,
+          documents: active.slice(0, Math.min(Math.max(Number(args.limit ?? 20), 1), 100)).map((doc) => ({
+            id: doc.id,
+            original_name: doc.original_name,
+            title: doc.title,
+            doc_type: doc.doc_type,
+            kind: doc.kind,
+            state: doc.state,
+            checklist_item_label: doc.checklist_item_label,
+            created_at: doc.created_at,
+            updated_at: doc.updated_at,
+            case_url: `/dashboard/expedientes/${caseId}`,
+            download_url: doc.file_path
+              ? `/api/documents/${doc.id}/download?redirect=1`
+              : null,
+          })),
+        });
       }
 
       case 'get_case_timeline': {

@@ -156,7 +156,9 @@ export default async function AdminCaseDetailPage({
         ) : null}
 
         {/* Docs checklist */}
-        <CaseChecklistEditor caseId={id} initialItems={Array.isArray(c.docs_checklist) ? c.docs_checklist : []} />
+        <div id="documentos">
+          <CaseChecklistEditor caseId={id} initialItems={Array.isArray(c.docs_checklist) ? c.docs_checklist : []} />
+        </div>
 
         {c.category !== 'extranjeria-nacionalidad' && (
           <>

@@ -79,6 +79,15 @@ export async function GET(request: NextRequest) {
   const thresholdDate = new Date(now.getTime() - DAYS_PENDING_THRESHOLD * 24 * 60 * 60 * 1000).toISOString();
   const quoteThresholdDate = new Date(now.getTime() - QUOTE_OPEN_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
+  // ── 0. All active cases ────────────────────────────────────────────────────
+  const { data: activeCaseRows } = await admin
+    .from('cases')
+    .select('id, service, client_id, status, state, next_action, updated_at')
+    .is('closed_at', null)
+    .not('status', 'eq', 'finalizado')
+    .order('updated_at', { ascending: false })
+    .limit(100);
+
   // ── 1. Cases blocked ───────────────────────────────────────────────────────
   const { data: blockedCases } = await admin
     .from('cases')
@@ -95,7 +104,7 @@ export async function GET(request: NextRequest) {
     .order('updated_at', { ascending: true });
 
   // ── 3. Resolve client names ────────────────────────────────────────────────
-  const allCases = [...(blockedCases ?? []), ...(awaitingDocsCases ?? [])];
+  const allCases = [...(activeCaseRows ?? []), ...(blockedCases ?? []), ...(awaitingDocsCases ?? [])];
   const clientIds = [...new Set(allCases.map((c) => c.client_id).filter(Boolean))];
 
   const nameMap = new Map<string, string>();
@@ -188,6 +197,14 @@ export async function GET(request: NextRequest) {
   // ── 9. Build and send summary ─────────────────────────────────────────────
   const summaryData: DailySummaryData = {
     date: today,
+    activeCases: (activeCaseRows ?? []).map((c) => ({
+      id: c.id,
+      service: c.service ?? 'Trámite',
+      client: nameMap.get(c.client_id) ?? '—',
+      status: c.status ?? c.state ?? 'sin_estado',
+      nextAction: c.next_action ?? null,
+      daysPending: Math.floor((now.getTime() - new Date(c.updated_at).getTime()) / 86400000),
+    })),
     casesBlocked     : (blockedCases ?? []).map(toCaseRow),
     casesAwaitingDocs: (awaitingDocsCases ?? []).map(toCaseRow),
     quotesOpen,
@@ -210,6 +227,7 @@ export async function GET(request: NextRequest) {
         date: today,
         blockedCount: summaryData.casesBlocked.length,
         awaitingDocsCount: summaryData.casesAwaitingDocs.length,
+        activeCasesCount: summaryData.activeCases.length,
       },
     });
     console.info('[cron/daily-summary] sent to', ADMIN_RECIPIENTS, summaryData);

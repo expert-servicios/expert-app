@@ -247,10 +247,12 @@ export type Urgency = 'overdue' | 'critical' | 'soon' | 'ok';
 
 export function urgencyLevel(deadline: string): Urgency {
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  // Keep date-only comparison compatible with the existing fiscal calendar UI/tests.
-  // Deadlines are stored as ISO dates and are not timestamps.
-  const diff = Math.ceil((new Date(deadline).getTime() - today.getTime()) / 86400000);
+  // ISO deadlines are calendar dates, not UTC instants. Compare civil-day
+  // ordinals so non-UTC server time zones and DST cannot move the boundary.
+  const [year, month, day] = deadline.split('-').map(Number);
+  const todayDay = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  const deadlineDay = Date.UTC(year, month - 1, day);
+  const diff = Math.round((deadlineDay - todayDay) / 86400000);
   if (diff < 0) return 'overdue';
   if (diff <= 7) return 'critical';
   if (diff <= 30) return 'soon';
