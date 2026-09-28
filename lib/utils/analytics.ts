@@ -41,3 +41,16 @@ export function trackAcademyEvent(event: AcademyAnalyticsEvent, props: AcademyAn
   if (typeof window === 'undefined' || typeof window.gtag !== 'function') return;
   window.gtag('event', event, props);
 }
+
+
+export type PublicContentIntent = 'free_consultation' | 'service' | 'meeting_15m' | 'kia_chat' | 'telegram' | 'irnr_quote';
+
+export function trackPublicContentIntent(props: {
+  intent: PublicContentIntent;
+  source_kind: 'docs' | 'blog' | 'service';
+  source_slug: string;
+  service_slug?: string;
+}) {
+  if (typeof window === 'undefined' || typeof window.gtag !== 'function') return;
+  window.gtag('event', 'content_intent_click', props);
+}
