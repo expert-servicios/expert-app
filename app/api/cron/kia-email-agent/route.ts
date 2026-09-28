@@ -27,6 +27,8 @@ const READ_ONLY_TOOLS = [
   'get_official_sources',
   'find_relevant_services',
   'get_service_registry_item',
+  'get_booking_availability',
+  'create_booking_meeting',
 ] as const;
 
 const PUBLIC_PROSPECT_TOOLS = [
@@ -34,6 +36,8 @@ const PUBLIC_PROSPECT_TOOLS = [
   'get_official_sources',
   'find_relevant_services',
   'get_service_registry_item',
+  'get_booking_availability',
+  'create_booking_meeting',
 ] as const;
 
 function stateKey(threadId: string) {
@@ -364,9 +368,9 @@ export async function GET(request: NextRequest) {
         forceToolExecution: true,
         allowedToolNames: [...allowedTools],
         toolAuthorization: {
-          maxRiskTier: 'R1',
-          allowedEffects: ['read'],
-          autonomousOnly: true,
+          maxRiskTier: 'R2',
+          allowedEffects: ['read', 'external_action'],
+          autonomousOnly: false,
         },
       });
 
