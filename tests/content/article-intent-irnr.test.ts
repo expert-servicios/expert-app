@@ -30,25 +30,20 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(blogPage).toContain('sourceKind="blog"');
   });
 
-  it('calculates IRNR quote units using 80 + 30 per additional property-holder unit', () => {
-    expect(calculator).toContain('80 + Math.max(0, standardUnits - 1) * 30');
+  it('calculates every IRNR property-holder unit at the same commercial tariff', () => {
+    expect(calculator).toContain('80 + Math.max(0, declarativeUnits - 1) * 30');
     expect(calculator).toContain('property.holders');
-    expect(calculator).toContain('unidades estándar no alquiladas');
-    expect(calculator).toContain('unidades alquiladas pendientes de revisión');
+    expect(calculator).toContain('El uso del inmueble no cambia esta estimación');
+    expect(calculator).not.toContain('Está alquilado');
+    expect(calculator).not.toContain('Precio pendiente de revisión');
     expect(catalog).toContain('80 € + IVA la primera unidad declarativa');
     expect(catalog).toContain('30 € + IVA cada unidad adicional');
-  });
-
-  it('routes rented property estimates to review instead of treating them as standard imputed income', () => {
-    expect(calculator).toContain('hasRental');
-    expect(calculator).toContain('property.rented ? 0 : Math.max(1, property.holders)');
-    expect(calculator).toContain('Precio pendiente de revisión');
   });
 
   it('stores free questions as attributed leads for demand analysis', () => {
     expect(consultation).toContain("category: 'Consulta gratuita'");
     expect(consultation).toContain("intent: 'free_question'");
-    expect(consultation).toContain('origin: parsed.data.origin');
+    expect(consultation).toContain('origin: contentOrigin');
     expect(consultation).toContain('notifyAdmins');
   });
 
