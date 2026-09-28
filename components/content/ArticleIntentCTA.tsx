@@ -1,7 +1,10 @@
+'use client';
+
 import Link from 'next/link';
 import { CalendarDays, FileQuestion, Send, MessageCircle } from 'lucide-react';
 import { services } from '@/lib/utils/catalog';
 import { IrnrPriceCalculator } from '@/components/services/IrnrPriceCalculator';
+import { trackPublicContentIntent } from '@/lib/utils/analytics';
 
 type Props = {
   sourceKind: 'docs' | 'blog';
@@ -36,6 +39,7 @@ export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs =
       <div className="mt-6 grid gap-3 md:grid-cols-3">
         <Link
           href={consultationHref}
+          onClick={() => trackPublicContentIntent({ intent: 'free_consultation', source_kind: sourceKind, source_slug: sourceSlug, service_slug: primaryServiceSlug ?? undefined })}
           className="flex min-h-28 flex-col justify-between border border-[#D4A017]/30 bg-[#F8F6F1] p-4 transition hover:border-[#D4A017]"
         >
           <FileQuestion className="h-5 w-5 text-[#D4A017]" />
@@ -47,6 +51,7 @@ export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs =
 
         <Link
           href={serviceHref}
+          onClick={() => trackPublicContentIntent({ intent: 'service', source_kind: sourceKind, source_slug: sourceSlug, service_slug: primaryServiceSlug ?? undefined })}
           className="flex min-h-28 flex-col justify-between bg-[#D4A017] p-4 text-[#0D1B2A] transition hover:bg-[#F2C14E]"
         >
           <Send className="h-5 w-5" />
@@ -58,6 +63,7 @@ export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs =
 
         <Link
           href={meetingHref}
+          onClick={() => trackPublicContentIntent({ intent: 'meeting_15m', source_kind: sourceKind, source_slug: sourceSlug, service_slug: primaryServiceSlug ?? undefined })}
           className="flex min-h-28 flex-col justify-between border border-[#0D1B2A]/15 bg-white p-4 transition hover:border-[#D4A017]"
         >
           <CalendarDays className="h-5 w-5 text-[#D4A017]" />
@@ -70,8 +76,8 @@ export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs =
 
       <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-[#52606D]">
         <span>También puedes hablar con KIA:</span>
-        <Link href="/dashboard?kia=open" className="font-semibold text-[#D4A017] hover:underline">Chat</Link>
-        <a href="https://t.me/kia_expert_bot" className="inline-flex items-center gap-1 font-semibold text-[#D4A017] hover:underline">
+        <Link href="/dashboard?kia=open" onClick={() => trackPublicContentIntent({ intent: 'kia_chat', source_kind: sourceKind, source_slug: sourceSlug, service_slug: primaryServiceSlug ?? undefined })} className="font-semibold text-[#D4A017] hover:underline">Chat</Link>
+        <a href="https://t.me/kia_expert_bot" onClick={() => trackPublicContentIntent({ intent: 'telegram', source_kind: sourceKind, source_slug: sourceSlug, service_slug: primaryServiceSlug ?? undefined })} className="inline-flex items-center gap-1 font-semibold text-[#D4A017] hover:underline">
           <MessageCircle className="h-3.5 w-3.5" /> Telegram
         </a>
       </div>
