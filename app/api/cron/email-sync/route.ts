@@ -175,14 +175,18 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Push notification to admins when new unread emails arrive
-    if (unreadCount > prevUnread) {
+    // KIA owns human-email notifications. Keep the coarse unread-count push
+    // only as a safety fallback when the KIA email agent is explicitly disabled.
+    if (
+      process.env.KIA_EMAIL_AGENT_ENABLED?.toLowerCase() !== 'true'
+      && unreadCount > prevUnread
+    ) {
       const newCount = unreadCount - prevUnread;
       notifyAdmins({
         title: `📧 ${newCount} correo${newCount !== 1 ? 's' : ''} nuevo${newCount !== 1 ? 's' : ''}`,
-        body : 'Nuevos mensajes en la bandeja de entrada',
+        body : 'KIA de correo está desactivada. Revisa la bandeja de entrada.',
         url  : '/admin/correo',
-        tag  : 'email-unread',
+        tag  : 'email-unread-fallback',
       }).catch(() => {});
     }
 
