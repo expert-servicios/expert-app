@@ -253,8 +253,6 @@ export async function createKiaConfirmedBooking(input: {
       ].filter(Boolean).join('\n'),
       start: start.toISOString(),
       end: end.toISOString(),
-      localDate,
-      localTime,
       attendeeEmail: input.attendeeEmail.toLowerCase(),
       timezone: BOOKING_TIMEZONE,
       reminderMinutesBefore: service.durationMinutes >= 60 ? [1440, 60] : [1440, 30],
