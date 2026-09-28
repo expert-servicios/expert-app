@@ -12,6 +12,7 @@ type Props = {
   kind: ServicePriceCalculatorKind;
   compact?: boolean;
   origin: string;
+  locale?: 'es' | 'ru';
 };
 
 function money(value: number) {
@@ -50,18 +51,26 @@ function CalculatorShell({
   );
 }
 
-function IrpfPriceCalculator({ compact = false, origin }: Omit<Props, 'kind'>) {
+function IrpfPriceCalculator({ compact = false, origin, locale = 'es' }: Omit<Props, 'kind'>) {
   const [filing, setFiling] = useState<'individual' | 'joint'>('individual');
   const [capitalOrRentals, setCapitalOrRentals] = useState(false);
 
   const net = capitalOrRentals ? 200 : filing === 'joint' ? 150 : 120;
   const total = Math.round(net * 1.21 * 100) / 100;
-  const summary = [
-    'Calculadora IRPF',
-    filing === 'joint' ? 'declaración conjunta' : 'declaración individual',
-    capitalOrRentals ? 'con alquileres/rendimientos de capital' : 'sin bloque adicional de alquileres/capital',
-    `honorarios calculados: ${net} EUR + IVA`,
-  ].join('; ');
+  const isRu = locale === 'ru';
+  const summary = isRu
+    ? [
+        'Калькулятор IRPF',
+        filing === 'joint' ? 'совместная декларация' : 'индивидуальная декларация',
+        capitalOrRentals ? 'с арендой/доходами от капитала' : 'без дополнительного блока аренды/капитала',
+        `расчётная стоимость: ${net} EUR + НДС`,
+      ].join('; ')
+    : [
+        'Calculadora IRPF',
+        filing === 'joint' ? 'declaración conjunta' : 'declaración individual',
+        capitalOrRentals ? 'con alquileres/rendimientos de capital' : 'sin bloque adicional de alquileres/capital',
+        `honorarios calculados: ${net} EUR + IVA`,
+      ].join('; ');
   const requestHref = `/solicitar-presupuesto?servicio=irpf&origen=${encodeURIComponent(origin)}&resumen=${encodeURIComponent(summary)}`;
   const freeQuestionHref = `/consulta-gratuita?servicio=irpf&origen=${encodeURIComponent(origin)}`;
   const { sourceKind, sourceSlug } = sourceFromOrigin(origin);
@@ -69,19 +78,21 @@ function IrpfPriceCalculator({ compact = false, origin }: Omit<Props, 'kind'>) {
   return (
     <CalculatorShell
       compact={compact}
-      title="Calculadora · Declaración de la Renta"
-      description="Calcula los honorarios según el tipo de declaración y si existe el bloque adicional de alquileres o rendimientos de capital."
+      title={isRu ? 'Калькулятор · Декларация о доходах (IRPF)' : 'Calculadora · Declaración de la Renta'}
+      description={isRu
+        ? 'Рассчитайте стоимость по типу декларации и наличию аренды или доходов от капитала.'
+        : 'Calcula los honorarios según el tipo de declaración y si existe el bloque adicional de alquileres o rendimientos de capital.'}
     >
       <div className="mt-5 grid gap-3 sm:grid-cols-2">
         <label className="border border-[#0D1B2A]/10 bg-white p-4 text-sm text-[#23364D]">
-          <span className="block text-xs font-bold uppercase tracking-wide text-[#0D1B2A]">Modalidad</span>
+          <span className="block text-xs font-bold uppercase tracking-wide text-[#0D1B2A]">{isRu ? 'Тип декларации' : 'Modalidad'}</span>
           <select
             value={filing}
             onChange={(event) => setFiling(event.target.value as 'individual' | 'joint')}
             className="mt-2 w-full border border-[#D4A017]/30 bg-white px-3 py-2"
           >
-            <option value="individual">Individual · 120 € + IVA</option>
-            <option value="joint">Conjunta · 150 € + IVA</option>
+            <option value="individual">{isRu ? 'Индивидуальная · 120 € + НДС' : 'Individual · 120 € + IVA'}</option>
+            <option value="joint">{isRu ? 'Совместная · 150 € + НДС' : 'Conjunta · 150 € + IVA'}</option>
           </select>
         </label>
         <label className="flex cursor-pointer items-start gap-3 border border-[#0D1B2A]/10 bg-white p-4 text-sm text-[#23364D]">
@@ -92,18 +103,22 @@ function IrpfPriceCalculator({ compact = false, origin }: Omit<Props, 'kind'>) {
             className="mt-1 h-4 w-4 accent-[#D4A017]"
           />
           <span>
-            <span className="block font-bold text-[#0D1B2A]">Alquileres o rendimientos de capital</span>
+            <span className="block font-bold text-[#0D1B2A]">
+              {isRu ? 'Аренда или доходы от капитала' : 'Alquileres o rendimientos de capital'}
+            </span>
             <span className="mt-1 block text-xs leading-5 text-[#6B7280]">
-              Activa la tarifa de 200 € + IVA para la declaración con este bloque adicional.
+              {isRu
+                ? 'При наличии этого блока применяется тариф 200 € + НДС.'
+                : 'Activa la tarifa de 200 € + IVA para la declaración con este bloque adicional.'}
             </span>
           </span>
         </label>
       </div>
 
       <div className="mt-5 border-t border-[#D4A017]/20 pt-5">
-        <p className="text-xs uppercase tracking-wider text-[#6B7280]">Precio calculado</p>
-        <p className="mt-1 text-2xl font-bold text-[#0D1B2A]">{money(net)} € + IVA</p>
-        <p className="mt-1 text-sm text-[#52606D]">Total con IVA: {money(total)} €</p>
+        <p className="text-xs uppercase tracking-wider text-[#6B7280]">{isRu ? 'Расчётная стоимость' : 'Precio calculado'}</p>
+        <p className="mt-1 text-2xl font-bold text-[#0D1B2A]">{money(net)} € + {isRu ? 'НДС' : 'IVA'}</p>
+        <p className="mt-1 text-sm text-[#52606D]">{isRu ? 'Итого с НДС' : 'Total con IVA'}: {money(total)} €</p>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
@@ -112,14 +127,14 @@ function IrpfPriceCalculator({ compact = false, origin }: Omit<Props, 'kind'>) {
           onClick={() => trackPublicContentIntent({ intent: 'service', source_kind: sourceKind, source_slug: sourceSlug, service_slug: 'irpf' })}
           className="inline-flex min-h-11 items-center justify-center bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] hover:bg-[#F2C14E]"
         >
-          Solicitar con este precio
+          {isRu ? 'Запросить по этой цене' : 'Solicitar con este precio'}
         </Link>
         <Link
           href={freeQuestionHref}
           onClick={() => trackPublicContentIntent({ intent: 'free_consultation', source_kind: sourceKind, source_slug: sourceSlug, service_slug: 'irpf' })}
           className="inline-flex min-h-11 items-center justify-center border border-[#D4A017]/50 px-5 py-2.5 text-sm font-semibold text-[#0D1B2A]"
         >
-          Consulta gratuita
+          {isRu ? 'Бесплатный вопрос' : 'Consulta gratuita'}
         </Link>
       </div>
     </CalculatorShell>
@@ -218,12 +233,12 @@ function PatrimonioPriceCalculator({ compact = false, origin }: Omit<Props, 'kin
   );
 }
 
-export function ServicePriceCalculator({ kind, compact = false, origin }: Props) {
+export function ServicePriceCalculator({ kind, compact = false, origin, locale = 'es' }: Props) {
   if (kind === 'irnr') {
     return <IrnrPriceCalculator compact={compact} origin={origin} />;
   }
   if (kind === 'irpf') {
-    return <IrpfPriceCalculator compact={compact} origin={origin} />;
+    return <IrpfPriceCalculator compact={compact} origin={origin} locale={locale} />;
   }
   return <PatrimonioPriceCalculator compact={compact} origin={origin} />;
 }
