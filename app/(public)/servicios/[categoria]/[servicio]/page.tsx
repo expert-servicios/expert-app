@@ -14,7 +14,7 @@ import { getArticlesForService } from '@/lib/utils/blog';
 import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
 import { ServiceShareActions } from '@/components/services/ServiceShareActions';
 import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
-import { IrnrPriceCalculator } from '@/components/services/IrnrPriceCalculator';
+import { ServicePriceCalculator } from '@/components/services/ServicePriceCalculator';
 import { getCompanionServices } from '@/lib/services/service-merchandising';
 import { getRuServicePath } from '@/lib/services/service-localized-content';
 
@@ -309,7 +309,7 @@ export default async function ServicioDetallePage({
               <p className="mt-4 text-[15px] leading-7 text-[#23364D]">{service.description}</p>
             </div>
 
-            {service.slug === 'no-residentes' && <IrnrPriceCalculator origin={serviceOrigin} />}
+            {service.priceCalculator && <ServicePriceCalculator kind={service.priceCalculator} origin={serviceOrigin} />}
 
             {(service.servicePriceDetail || service.officialFee) && (
               <div className="grid gap-4 md:grid-cols-2">
@@ -663,13 +663,13 @@ export default async function ServicioDetallePage({
                   <CalendarCheck className="h-4 w-4 text-[#D4A017]" />
                   Reunión gratuita 15 min
                 </FreeMeetingButton>
-                <a
-                  href="https://wa.me/34669045528"
+                <Link
+                  href={`/consulta-gratuita?servicio=${encodedServiceSlug}&origen=${encodedServiceOrigin}`}
                   className="flex w-full items-center justify-center gap-2 border border-[#D4A017]/30 px-4 py-2.5 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
                 >
                   <MessageCircle className="h-4 w-4 text-[#D4A017]" />
-                  Preguntar por WhatsApp
-                </a>
+                  Consulta gratuita con KIA
+                </Link>
                 {!service.price && service.checkoutLegal && (
                   <p className="pt-1 text-xs leading-5 text-[#23364D]/50">{service.checkoutLegal}</p>
                 )}
