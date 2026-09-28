@@ -209,6 +209,7 @@ async function recordInboundEmailEvent(input: {
       transport: 'gmail',
       gmail_message_id: input.message.id,
       thread_id: input.message.conversationId,
+      message_date: input.message.date,
       sender_email: normalizedEmail(input.message.fromEmail),
       client_id: input.clientId,
       lead_id: input.leadId,
