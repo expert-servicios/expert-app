@@ -46,7 +46,7 @@ export async function getOperationalGmailThread(
   if (hasGmailSA()) {
     try {
       return {
-        messages: await getGmailThreadSA(threadId),
+        messages: await getGmailThreadSA(threadId, false),
         authMode: 'service_account',
       };
     } catch (error) {
@@ -56,7 +56,7 @@ export async function getOperationalGmailThread(
 
   const tokens = await loadAdminOAuth(admin);
   if (!tokens) throw new Error('operational_gmail_auth_unavailable');
-  const { messages, refreshed } = await getGmailThread(tokens, threadId);
+  const { messages, refreshed } = await getGmailThread(tokens, threadId, false);
   await saveRefresh(admin, refreshed);
   return { messages, authMode: 'oauth' };
 }
