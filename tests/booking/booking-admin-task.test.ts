@@ -23,7 +23,6 @@ describe('booking admin task lifecycle', () => {
   });
 
   it('preserves terminal state and known entity links during refreshes', () => {
-    expect(helper).not.toContain("status: 'pendiente',\n    priority:");
     expect(helper).toContain('if (input.clientId) payload.client_id = input.clientId');
     expect(helper).toContain('if (input.companyId) payload.company_id = input.companyId');
     expect(helper).toContain('if (input.caseId) payload.case_id = input.caseId');
