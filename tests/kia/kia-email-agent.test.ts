@@ -10,12 +10,13 @@ describe('KIA guarded email agent', () => {
   const gmail = source('lib/integrations/gmail.ts');
   const vercel = source('vercel.json');
 
-  it('is fail-closed and requires explicit auto-send', () => {
+  it('is fail-closed and requires explicit auto-send plus a live communication stack', () => {
     expect(route).toContain('KIA_EMAIL_AGENT_ENABLED');
     expect(route).toContain('KIA_EMAIL_AUTO_SEND_ENABLED');
-    expect(route).toContain('health_not_green');
-    expect(route).toContain("data.status !== 'success'");
-    expect(route).toContain('failed_checks');
+    expect(route).toContain('isKiaGatewayConfigured');
+    expect(route).toContain('getKiaProviderOrder');
+    expect(route).toContain("reason: 'no_ai_provider'");
+    expect(route).toContain("reason: 'communication_stack_ready'");
   });
 
   it('only auto-replies to likely humans', () => {
