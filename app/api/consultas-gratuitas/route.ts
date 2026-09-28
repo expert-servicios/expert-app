@@ -10,10 +10,6 @@ import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recip
 import { sendEmail } from '@/lib/email/send';
 import { freeConsultationReceivedAdmin } from '@/lib/email/templates';
 
-function escapeIlikeLiteral(value: string): string {
-  return value.replace(/[\\%_]/g, (character) => `\\${character}`);
-}
-
 const schema = z.object({
   hp_url: z.string().optional(),
   name: z.string().trim().min(2).max(100),
