@@ -175,14 +175,29 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Push notification to admins when new unread emails arrive
-    if (unreadCount > prevUnread) {
+    // KIA owns human-email notifications when it is demonstrably healthy.
+    // If the agent is disabled, stale, or degraded, preserve the coarse unread
+    // alert as a safety net so a customer message cannot become silent.
+    const { data: agentHeartbeat } = await admin
+      .from('system_kv')
+      .select('value,updated_at')
+      .eq('key', 'kia_email_agent_health')
+      .maybeSingle();
+    const heartbeatValue = agentHeartbeat?.value as Record<string, unknown> | null;
+    const heartbeatAgeMs = agentHeartbeat?.updated_at
+      ? Date.now() - new Date(agentHeartbeat.updated_at).getTime()
+      : Number.POSITIVE_INFINITY;
+    const kiaEmailHealthy = heartbeatValue?.enabled === true
+      && heartbeatValue?.status === 'ok'
+      && heartbeatAgeMs <= 20 * 60_000;
+
+    if (!kiaEmailHealthy && unreadCount > prevUnread) {
       const newCount = unreadCount - prevUnread;
       notifyAdmins({
         title: `📧 ${newCount} correo${newCount !== 1 ? 's' : ''} nuevo${newCount !== 1 ? 's' : ''}`,
-        body : 'Nuevos mensajes en la bandeja de entrada',
+        body : 'KIA de correo no está confirmada como saludable. Revisa la bandeja de entrada.',
         url  : '/admin/correo',
-        tag  : 'email-unread',
+        tag  : 'email-unread-fallback',
       }).catch(() => {});
     }
 
