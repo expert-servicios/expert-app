@@ -44,7 +44,7 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain('explicitCommercialRequest');
     expect(route).toContain('expertServiceIntent');
     expect(route).toContain('wasKnownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS');
-    expect(route).toContain('(wasKnownContact || safeUnknownProspect)');
+    expect(route).toContain('(wasKnownContact || (safeUnknownProspect && newLeadAutoSend))');
     expect(route).toContain('KIA_EMAIL_PROSPECT_MIN_CONFIDENCE');
     expect(route).toContain('KIA_EMAIL_NEW_LEAD_AUTO_SEND_ENABLED');
     expect(route).toContain('new_lead_approval_required');
