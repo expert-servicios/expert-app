@@ -27,13 +27,14 @@ type Property = {
 };
 
 type SavedPayload = {
-  version: 3;
-  taxYear: string;
+  version: 4;
+  taxYears: string[];
   properties: Property[];
 };
 
 type LegacyPayload = {
   taxYear?: string;
+  taxYears?: string[];
   residenceCountry?: string;
   taxIdForeign?: string;
   properties?: Array<{
@@ -98,8 +99,8 @@ function normalizeRentalPeriod(value: Partial<RentalPeriod> | null | undefined):
 
 function normalizePayload(raw: string | null | undefined): SavedPayload {
   const fallback: SavedPayload = {
-    version: 3,
-    taxYear: String(new Date().getFullYear() - 1),
+    version: 4,
+    taxYears: [String(new Date().getFullYear() - 1)],
     properties: [emptyProperty()],
   };
   if (!raw) return fallback;
@@ -139,12 +140,15 @@ function normalizePayload(raw: string | null | undefined): SavedPayload {
         })
       : [emptyProperty()];
 
+    const taxYears = Array.isArray(parsed.taxYears)
+      ? parsed.taxYears.filter((year): year is string => typeof year === 'string' && year.trim().length > 0)
+      : typeof parsed.taxYear === 'string' && parsed.taxYear.trim()
+        ? [parsed.taxYear.trim()]
+        : fallback.taxYears;
+
     return {
-      version: 3,
-      taxYear:
-        typeof parsed.taxYear === 'string' && parsed.taxYear
-          ? parsed.taxYear
-          : fallback.taxYear,
+      version: 4,
+      taxYears: taxYears.length > 0 ? taxYears : fallback.taxYears,
       properties,
     };
   } catch {
@@ -161,7 +165,7 @@ export function IrnrCaseQuestionnaire({
 }) {
   const initial = useMemo(() => normalizePayload(initialComment), [initialComment]);
 
-  const [taxYear, setTaxYear] = useState(initial.taxYear);
+  const [taxYears, setTaxYears] = useState<string[]>(initial.taxYears);
   const [properties, setProperties] = useState<Property[]>(initial.properties);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -259,7 +263,7 @@ export function IrnrCaseQuestionnaire({
   async function save() {
     setSaving(true);
     setError('');
-    const payload: SavedPayload = { version: 3, taxYear, properties };
+    const payload: SavedPayload = { version: 4, taxYears, properties };
     const revisionAtStart = revisionRef.current;
 
     try {
@@ -296,14 +300,50 @@ export function IrnrCaseQuestionnaire({
       </p>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        <label className="text-sm font-semibold">Ejercicio a declarar
-          <input
-            maxLength={4}
-            value={taxYear}
-            onChange={(event) => { setTaxYear(event.target.value); markDirty(); }}
-            className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal"
-          />
-        </label>
+        <div>
+          <p className="text-sm font-semibold">Ejercicios a declarar</p>
+          <div className="mt-1 space-y-2">
+            {taxYears.map((year, yearIndex) => (
+              <div key={yearIndex} className="flex gap-2">
+                <input
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={year}
+                  onChange={(event) => {
+                    const value = event.target.value.replace(/\D/g, '').slice(0, 4);
+                    setTaxYears((current) => current.map((item, index) => index === yearIndex ? value : item));
+                    markDirty();
+                  }}
+                  aria-label={`Ejercicio ${yearIndex + 1}`}
+                  className="min-w-0 flex-1 rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal"
+                />
+                {taxYears.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTaxYears((current) => current.filter((_, index) => index !== yearIndex));
+                      markDirty();
+                    }}
+                    className="rounded-lg border border-red-200 px-3 text-red-600"
+                    aria-label={`Eliminar ejercicio ${yearIndex + 1}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setTaxYears((current) => [...current, '']);
+              markDirty();
+            }}
+            className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#c88b25]"
+          >
+            <Plus className="h-3.5 w-3.5" /> Añadir ejercicio
+          </button>
+        </div>
         <div className="rounded-lg bg-[#f8f4eb] p-3">
           <p className="text-[11px] font-bold uppercase text-[#8a6111]">Unidades declarativas</p>
           <p className="mt-1 text-lg font-bold text-[#07111d]">{declarativeUnits}</p>
