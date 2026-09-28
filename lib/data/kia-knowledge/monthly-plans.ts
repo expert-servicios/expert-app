@@ -56,9 +56,10 @@ export const MONTHLY_PLANS_KNOWLEDGE = {
       'Estado de empresa básico',
       'Soporte básico por email, KIA chat o Telegram',
       'Modalidad apta para autónomo vinculado/económicamente dependiente de una empresa del mismo grupo cuando la operativa es simple y normalmente no supera unas 10 facturas al mes',
+      'En la modalidad autónomo vinculado simple se incluyen los modelos fiscales básicos derivados de esa operativa vinculada',
     ],
     excludes: [
-      'Presentación de impuestos',
+      'Presentación de impuestos fuera de la modalidad autónomo vinculado simple',
       'Contabilidad delegada',
       'Subida de facturas por EXPERT',
       'Nóminas/laboral',
