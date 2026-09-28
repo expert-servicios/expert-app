@@ -350,15 +350,6 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           </div>
         )}
 
-        {caseItem.service_id?.split(',').includes('no-residentes') && (
-          <div className="mt-4">
-            <IrnrCaseQuestionnaire
-              caseId={id}
-              initialComment={notes.find((note) => note.item_key === 'irnr-intake')?.comment ?? null}
-            />
-          </div>
-        )}
-
         {checklist.length > 0 ? (
           <div id="documentos" className="mt-4">
             <CaseDocumentChecklist
