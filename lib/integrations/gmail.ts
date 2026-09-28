@@ -378,8 +378,13 @@ function buildRawMime(opts: {
       opts.body,
     ];
     for (const attachment of attachments) {
-      if (/[
-"]/u.test(attachment.filename)) throw new Error('Invalid attachment filename');
+      if (
+        attachment.filename.includes('\r') ||
+        attachment.filename.includes('\n') ||
+        attachment.filename.includes('"')
+      ) {
+        throw new Error('Invalid attachment filename');
+      }
       parts.push(
         `--${boundary}`,
         `Content-Type: ${attachment.type ?? 'application/octet-stream'}; name="${attachment.filename}"`,
