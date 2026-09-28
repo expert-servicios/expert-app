@@ -1,4 +1,4 @@
-# Migración de Cal.com a Google Workspace: Calendar + Meet + Gemini
+# Migración de reservas a Google Workspace: Calendar + Meet + Gemini
 
 Fecha: 2026-09-23  
 Estado: aprobado para implementación progresiva  
@@ -6,7 +6,7 @@ Estado: aprobado para implementación progresiva
 
 ## 1. Objetivo
 
-Eliminar Cal.com como dependencia operativa de EXPERT y reutilizar la licencia existente de Google Workspace Business Standard como infraestructura.
+Eliminar proveedor de reservas anterior como dependencia operativa de EXPERT y reutilizar la licencia existente de Google Workspace Business Standard como infraestructura.
 
 Decisión final de arquitectura (23/09/2026): EXPERT será el sistema de reservas. No dependemos de Google Appointment Schedules porque Google Calendar no expone una API pública para crear/administrar esas páginas. EXPERT consulta disponibilidad y crea la cita directamente mediante la API de Google Calendar.
 
@@ -17,7 +17,7 @@ Decisión final de arquitectura (23/09/2026): EXPERT será el sistema de reserva
 - archivo de notas y documentación en Google Drive;
 - sincronización de citas, expedientes y tareas con EXPERT/KIA.
 
-La migración no debe borrar ni reescribir citas históricas de Cal.com.
+La migración no debe borrar ni reescribir citas históricas de proveedor de reservas anterior.
 
 ## 2. Decisiones de arquitectura
 
@@ -36,17 +36,17 @@ Para la operativa propia:
 
 Google gestiona la experiencia de calendario/reunión, pero no sustituye appointments, cases, internal_tasks, documents, auditoría ni permisos de EXPERT.
 
-### 2.3 Cal.com entra en modo legacy
+### 2.3 proveedor de reservas anterior entra en modo legacy
 
 Durante la transición:
 
-- no se crean nuevas dependencias de Cal.com;
+- no se crean nuevas dependencias de proveedor de reservas anterior;
 - las URLs Google tienen prioridad;
-- el webhook de Cal.com se conserva temporalmente para cancelaciones o cambios de reservas antiguas;
+- el webhook de proveedor de reservas anterior se conserva temporalmente para cancelaciones o cambios de reservas antiguas;
 - cal_uid histórico no se borra;
-- el script global de Cal.com se elimina del sitio público.
+- el script global de proveedor de reservas anterior se elimina del sitio público.
 
-El webhook y las variables legacy se podrán retirar cuando no queden reservas futuras originadas en Cal.com.
+El webhook y las variables legacy se podrán retirar cuando no queden reservas futuras originadas en proveedor de reservas anterior.
 
 ## 3. Modelo de proveedor
 
@@ -67,7 +67,7 @@ En la primera fase se conserva la API histórica getCal*Url() como alias de comp
 
 ## 4. Fases
 
-### Fase 1 — Desacoplar la web de Cal.com
+### Fase 1 — Desacoplar la web de proveedor de reservas anterior
 
 1. Añadir URLs completas de Google Appointment Schedules:
    - reunión general;
@@ -77,7 +77,7 @@ En la primera fase se conserva la API histórica getCal*Url() como alias de comp
    - Academy.
 2. Dar prioridad a Google sobre las variables NEXT_PUBLIC_CAL_*.
 3. Hacer que los botones de reserva abran cualquier proveedor externo.
-4. Eliminar el JavaScript global de Cal.com de app/layout.tsx.
+4. Eliminar el JavaScript global de proveedor de reservas anterior de app/layout.tsx.
 5. Adaptar /cita:
    - Google: abrir página oficial de reserva;
    - Cal legacy: mantener iframe solo como compatibilidad;
@@ -147,14 +147,14 @@ Reglas:
 - no duplicar documentos ya archivados;
 - respetar consentimiento y configuración de Meet.
 
-### Fase 5 — Retirada completa de Cal.com
+### Fase 5 — Retirada completa de proveedor de reservas anterior
 
 Condiciones:
 
 - todas las páginas usan Google;
 - todos los emails usan Google;
 - onboarding/formación/Academy usan Google;
-- no quedan reservas futuras de Cal.com;
+- no quedan reservas futuras de proveedor de reservas anterior;
 - sincronización Google → EXPERT validada;
 - cancelación/reprogramación Google validada.
 
@@ -204,4 +204,4 @@ web EXPERT
 → tasks/summary
 ~~~
 
-La migración se considera terminada cuando el flujo anterior funciona sin intervención de Cal.com y sin pérdida de trazabilidad.
+La migración se considera terminada cuando el flujo anterior funciona sin intervención de proveedor de reservas anterior y sin pérdida de trazabilidad.
