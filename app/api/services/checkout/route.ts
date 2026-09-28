@@ -23,6 +23,7 @@ const checkoutSchema = z.object({
   priceIds                   : z.array(z.string().min(1)).min(1).max(10).optional(),
   companyId                  : z.string().uuid().optional(),
   locale                     : z.enum(['es', 'ru']).optional().default('es'),
+  contentOrigins             : z.array(z.string().trim().min(1).max(300)).max(10).optional(),
   disbursements              : z.array(z.string().min(1)).max(5).optional(),
   disbursementMandateAccepted: z.boolean().optional(),
 }).refine(d => d.priceId ?? d.priceIds, { message: 'priceId or priceIds is required' });
@@ -163,6 +164,7 @@ export async function POST(request: NextRequest) {
       ? `${appUrl}/ru/spasibo/oplata?service=${checkoutServices[0].slug}&session_id={CHECKOUT_SESSION_ID}`
       : `${appUrl}/gracias/pago?source=${checkoutServices.length > 1 ? 'cart' : 'service'}&service=${checkoutServices[0].slug}&session_id={CHECKOUT_SESSION_ID}`;
     const acquisition = readRequestAttribution(request);
+    const contentOrigins = [...new Set(input.contentOrigins ?? [])];
     const checkoutMetadata = {
       ...getServiceCheckoutMetadata(checkoutServices, checkoutDisbursements),
       user_id: user.id,
@@ -170,6 +172,8 @@ export async function POST(request: NextRequest) {
       checkout_locale: locale,
       ...(companyId ? { company_id: companyId } : {}),
       disbursement_mandate_accepted: checkoutDisbursements.length > 0 ? 'true' : 'false',
+      ...(contentOrigins[0] ? { content_origin: contentOrigins[0] } : {}),
+      ...(contentOrigins.length > 0 ? { content_origins: contentOrigins.join('|').slice(0, 500) } : {}),
       ...(acquisition?.source ? { acquisition_source: acquisition.source } : {}),
       ...(acquisition?.utmSource ? { utm_source: acquisition.utmSource } : {}),
       ...(acquisition?.utmMedium ? { utm_medium: acquisition.utmMedium } : {}),
@@ -215,6 +219,7 @@ export async function POST(request: NextRequest) {
         revenue_amount_cents: checkoutMetadata.revenue_amount_cents ?? '0',
         checkout_total_net_cents: checkoutMetadata.checkout_total_net_cents ?? '0',
         disbursement_mandate_accepted: checkoutMetadata.disbursement_mandate_accepted,
+        content_origins: contentOrigins,
         acquisition: acquisition ?? null,
       },
     });
