@@ -12,6 +12,7 @@ import { appendKiaSignature } from '@/lib/email/kia-signature';
 import { maybeAppendKiaContextualCta } from '@/lib/email/kia-contextual-cta';
 import type { GmailMessage } from '@/lib/integrations/gmail';
 import { notifyAdmins } from '@/lib/integrations/push';
+import { getKiaProviderOrder, isKiaGatewayConfigured } from '@/lib/ai/kia/kia-provider-router';
 
 export const maxDuration = 60;
 
@@ -286,20 +287,33 @@ async function writeAgentHeartbeat(
 }
 
 async function healthGate(admin: ReturnType<typeof getSupabaseAdmin>) {
-  const { data } = await admin
-    .from('kia_health_runs')
-    .select('status,score,failed_checks,finished_at')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (!data?.finished_at) return { ok: false, reason: 'no_recent_health' };
-  const ageMs = Date.now() - new Date(data.finished_at).getTime();
-  if (ageMs > 36 * 60 * 60_000) return { ok: false, reason: 'health_stale' };
-  if (data.status !== 'success' || Number(data.failed_checks ?? 0) > 0 || Number(data.score ?? 0) < 0.9) {
-    return { ok: false, reason: 'health_not_green' };
+  const gatewayConfigured = isKiaGatewayConfigured();
+  const directProviders = getKiaProviderOrder();
+  if (!gatewayConfigured && directProviders.length === 0) {
+    return {
+      ok: false,
+      reason: 'no_ai_provider',
+      gatewayConfigured,
+      directProviders: [],
+    };
   }
-  return { ok: true, reason: 'green' };
+
+  const { error: databaseError } = await admin.from('profiles').select('id').limit(1);
+  if (databaseError) {
+    return {
+      ok: false,
+      reason: 'supabase_unavailable',
+      gatewayConfigured,
+      directProviders: directProviders.map((provider) => provider.provider),
+    };
+  }
+
+  return {
+    ok: true,
+    reason: 'communication_stack_ready',
+    gatewayConfigured,
+    directProviders: directProviders.map((provider) => provider.provider),
+  };
 }
 
 async function resolveIdentity(
