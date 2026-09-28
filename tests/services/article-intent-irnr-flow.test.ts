@@ -50,7 +50,7 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(calc).toContain('80 + Math.max(0, units - 1) * 30');
     expect(calc).toContain('Titulares no residentes');
     expect(calc).toContain('Está alquilado');
-    expect(calc).toContain('Unidades declarativas estimadas');
+    expect(calc).toContain('unidades declarativas estimadas');
     expect(calc).toContain("intent: 'irnr_quote'");
     expect(calc).toContain('holderDistribution');
   });
