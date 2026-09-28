@@ -64,6 +64,11 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(consultationApi).toContain("intent: 'free_question'");
     expect(consultationApi).toContain("title: 'Nueva consulta gratuita'");
     expect(consultationApi).toContain("last_acquisition: interaction");
+    expect(consultationApi).toContain(".eq('email', normalizedEmail)");
+    expect(consultationApi).not.toContain(".ilike('email', normalizedEmail)");
+    expect(consultationApi).toContain('contact: {');
+    expect(consultationApi).toContain('email: normalizedEmail');
+    expect(consultationApi).toContain('phone: normalizedPhone');
     expect(consultationApi).toContain("service: parsed.data.service || 'consulta-general'");
     expect(consultationApi).not.toContain("acquisition: {\n              ...(typeof attribution.metadata?.acquisition");
     expect(consultationApi).toContain("url: `/admin/leads?focus=${leadId}`");
@@ -72,10 +77,14 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(adminLeadsApi).toContain("query = query.eq('id', focus)");
     expect(adminLeadsPage).toContain('Ver consulta completa');
     expect(adminLeadsPage).toContain('Última interacción');
+    expect(adminLeadsPage).toContain('Email enviado:');
+    expect(adminLeadsPage).toContain('Teléfono enviado:');
   });
 
   it('preserves content origin when an article reader requests a quote', () => {
     expect(quoteForm).toContain('origin: originFromUrl ?? undefined');
+    expect(quoteForm).toContain("{ id: 'modelo-151', name: 'Modelo 151 / Ley Beckham'");
+    expect(quoteForm).toContain("modelo151: 'modelo-151'");
     expect(quoteApi).toContain("action: 'quote_request'");
     expect(quoteApi).toContain('origin: validated.origin || null');
     expect(quoteApi).toContain('requested_services: serviceSlugs');
@@ -126,6 +135,8 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(documentsApi).toContain("'no-residentes'");
     expect(documentsApi).toContain(".split(',')");
     expect(documentsApi).toContain('personalDocumentScope');
+    expect(documentsApi).toContain('const explicitCompanyId = caseData.company_id ?? null');
+    expect(documentsApi).toContain('const companyId = explicitCompanyId');
   });
 
   it('exposes the completed IRNR intake to the administrative case workflow', () => {
