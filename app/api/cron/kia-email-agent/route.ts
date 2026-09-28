@@ -200,24 +200,40 @@ export async function GET(request: NextRequest) {
   const health = await healthGate(admin);
   const authUsers = await listAllAuthUsers();
 
-  const { data: inbox, error: inboxError } = await admin
-    .from('email_inbox_cache')
-    .select('thread_id,case_id,subject,from_email,date,unread,snippet')
-    .eq('provider', 'gmail')
-    .eq('unread', true)
-    .order('date', { ascending: false })
-    .limit(500);
+  const inbox: Array<{
+    thread_id: string;
+    case_id: string | null;
+    subject: string | null;
+    from_email: string | null;
+    date: string;
+    unread: boolean;
+    snippet: string | null;
+  }> = [];
+  const pageSize = 200;
+  for (let offset = 0; offset < 1000; offset += pageSize) {
+    const { data: page, error: inboxError } = await admin
+      .from('email_inbox_cache')
+      .select('thread_id,case_id,subject,from_email,date,unread,snippet')
+      .eq('provider', 'gmail')
+      .eq('unread', true)
+      .order('date', { ascending: false })
+      .range(offset, offset + pageSize - 1);
 
-  if (inboxError) {
-    return NextResponse.json({ error: 'email_inbox_unavailable' }, { status: 503 });
+    if (inboxError) {
+      return NextResponse.json({ error: 'email_inbox_unavailable' }, { status: 503 });
+    }
+    inbox.push(...((page ?? []) as typeof inbox));
+    if ((page ?? []).length < pageSize) break;
   }
 
   let evaluated = 0;
   let sent = 0;
   let skipped = 0;
+  let liveInspections = 0;
+  const maxLiveInspections = 30;
   const errors: Array<{ thread: string; code: string }> = [];
 
-  for (const row of inbox ?? []) {
+  for (const row of inbox) {
     if (!row.thread_id || !row.date) {
       skipped++;
       continue;
@@ -237,6 +253,8 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
+      if (liveInspections >= maxLiveInspections) break;
+      liveInspections++;
       const gmail = await getOperationalGmailThread(admin, row.thread_id);
       const latest = gmail.messages.at(-1);
       if (!latest || !latest.unread) {
