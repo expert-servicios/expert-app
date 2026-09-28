@@ -567,10 +567,15 @@ export async function POST(request: NextRequest) {
       }
     }
     if (!adminTaskClientId) {
-      const { data: leadMatches, error: leadLookupError } = await admin
+      const escapedLeadEmail = bookingEmail.replace(/[\\%_]/g, '\\      const { data: leadMatches, error: leadLookupError } = await admin
         .from('leads')
         .select('id')
         .ilike('email', bookingEmail)
+        .limit(2);');
+      const { data: leadMatches, error: leadLookupError } = await admin
+        .from('leads')
+        .select('id')
+        .ilike('email', escapedLeadEmail)
         .limit(2);
       if (leadLookupError) {
         console.error('[booking] lead enrichment failed:', leadLookupError);
