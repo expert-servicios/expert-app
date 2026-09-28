@@ -8,6 +8,7 @@ import {
   type GmailMessage,
   type GmailTokens,
 } from '@/lib/integrations/gmail';
+import { keepEmailKnowledgeLinksInLocale, keepEmailKnowledgeTextLinksInLocale } from '@/lib/email/email-knowledge-locale';
 
 type AdminClient = SupabaseClient;
 
@@ -74,14 +75,18 @@ export async function sendOperationalGmailReply(
   // Autonomous writes are deliberately single-transport. A timeout after Gmail
   // accepted a send is ambiguous, so retrying through another credential path
   // could produce a duplicate customer-visible reply.
+  const body = input.bodyHtml
+    ? keepEmailKnowledgeLinksInLocale({ subject: input.subject, html: input.body })
+    : keepEmailKnowledgeTextLinksInLocale({ subject: input.subject, text: input.body });
+  const safeInput = { ...input, body };
   if (hasGmailSA()) {
-    await sendGmailReplySA(input);
+    await sendGmailReplySA(safeInput);
     return 'service_account';
   }
 
   const tokens = await loadAdminOAuth(admin);
   if (!tokens) throw new Error('operational_gmail_auth_unavailable');
-  const { refreshed } = await sendGmailReply(tokens, input);
+  const { refreshed } = await sendGmailReply(tokens, safeInput);
   await saveRefresh(admin, refreshed);
   return 'oauth';
 }
