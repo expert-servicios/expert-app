@@ -382,12 +382,13 @@ async function _sendReply(
 async function _sendNew(
   gmail: AnyGoogle,
   opts: { to: string; subject: string; body: string; bodyHtml?: boolean; from?: string }
-): Promise<void> {
+): Promise<string> {
   const encoded = buildRawMime(opts);
-  await gmail.users.messages.send({
+  const result = await gmail.users.messages.send({
     userId: 'me',
     requestBody: { raw: encoded },
   });
+  return result.data?.id ?? '';
 }
 
 export async function listGmailMailsSA(
@@ -420,7 +421,7 @@ export async function sendGmailReplySA(
 
 export async function sendNewGmailSA(
   opts: { to: string; subject: string; body: string; bodyHtml?: boolean }
-): Promise<void> {
+): Promise<string> {
   const gmail = await getGmailSAClient();
   if (!gmail) throw new Error('Gmail SA not configured');
   return _sendNew(gmail, { ...opts, from: GMAIL_SA_IMPERSONATE_EMAIL });
