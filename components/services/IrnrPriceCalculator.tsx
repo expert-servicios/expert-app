@@ -11,6 +11,7 @@ type PropertyRow = {
 
 export function IrnrPriceCalculator({ compact = false, origin = 'service:no-residentes' }: { compact?: boolean; origin?: string }) {
   const [properties, setProperties] = useState<PropertyRow[]>([{ holders: 1 }]);
+  const [taxYears, setTaxYears] = useState(1);
 
   const declarativeUnits = useMemo(
     () => properties.reduce(
@@ -19,7 +20,8 @@ export function IrnrPriceCalculator({ compact = false, origin = 'service:no-resi
     ),
     [properties],
   );
-  const net = declarativeUnits > 0 ? 80 + Math.max(0, declarativeUnits - 1) * 30 : 0;
+  const netPerYear = declarativeUnits > 0 ? 80 + Math.max(0, declarativeUnits - 1) * 30 : 0;
+  const net = netPerYear * taxYears;
   const vat = Math.round(net * 0.21 * 100) / 100;
   const total = Math.round((net + vat) * 100) / 100;
 
@@ -29,7 +31,8 @@ export function IrnrPriceCalculator({ compact = false, origin = 'service:no-resi
 
   const summary = [
     `Inmuebles: ${properties.length}`,
-    `unidades declarativas: ${declarativeUnits}`,
+    `ejercicios: ${taxYears}`,
+    `unidades declarativas por ejercicio: ${declarativeUnits}`,
     `honorarios estimados: ${net} EUR + IVA`,
   ].join('; ');
 
@@ -54,6 +57,25 @@ export function IrnrPriceCalculator({ compact = false, origin = 'service:no-resi
           </p>
         </div>
       </div>
+
+      <label className="mt-5 block max-w-xs text-xs font-semibold text-[#23364D]">
+        Número de ejercicios a declarar
+        <input
+          type="number"
+          min={1}
+          max={10}
+          inputMode="numeric"
+          value={taxYears}
+          onChange={(event) => {
+            const value = Number.parseInt(event.target.value, 10);
+            setTaxYears(Number.isFinite(value) ? Math.min(10, Math.max(1, value)) : 1);
+          }}
+          className="mt-1 w-full border border-[#D4A017]/30 bg-white px-3 py-2 text-sm"
+        />
+        <span className="mt-1 block font-normal text-[#6B7280]">
+          La tarifa 80/30 se calcula por cada ejercicio.
+        </span>
+      </label>
 
       <div className="mt-5 space-y-3">
         {properties.map((property, index) => (
@@ -103,7 +125,7 @@ export function IrnrPriceCalculator({ compact = false, origin = 'service:no-resi
         <p className="text-xs uppercase tracking-wider text-[#6B7280]">Estimación</p>
         <p className="mt-1 text-2xl font-bold text-[#0D1B2A]">{net.toLocaleString('es-ES', { minimumFractionDigits: 2 })} € + IVA</p>
         <p className="mt-1 text-sm text-[#52606D]">
-          {declarativeUnits} unidad{declarativeUnits !== 1 ? 'es' : ''} declarativa{declarativeUnits !== 1 ? 's' : ''} · total con IVA: {total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €
+          {declarativeUnits} unidad{declarativeUnits !== 1 ? 'es' : ''} por ejercicio × {taxYears} ejercicio{taxYears !== 1 ? 's' : ''} · total con IVA: {total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €
         </p>
       </div>
 
