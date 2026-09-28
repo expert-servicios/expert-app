@@ -58,12 +58,16 @@ export async function POST(request: NextRequest) {
       origin: parsed.data.origin || null,
       service: parsed.data.service || null,
       source_key: sourceKey,
+      contact: {
+        email: normalizedEmail,
+        phone: normalizedPhone,
+      },
     };
 
     const { data: byEmail, error: emailLookupError } = await admin
       .from('leads')
-      .select('id,message,metadata')
-      .ilike('email', normalizedEmail)
+      .select('id,message,metadata,email,phone')
+      .eq('email', normalizedEmail)
       .limit(1)
       .maybeSingle();
     if (emailLookupError) throw emailLookupError;
@@ -72,7 +76,7 @@ export async function POST(request: NextRequest) {
     if (!existingLead && normalizedPhone) {
       const { data: byPhone, error: phoneLookupError } = await admin
         .from('leads')
-        .select('id,message,metadata')
+        .select('id,message,metadata,email,phone')
         .eq('phone', normalizedPhone)
         .limit(1)
         .maybeSingle();
