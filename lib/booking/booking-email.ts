@@ -25,7 +25,7 @@ export async function sendBookingEmail(input: BookingEmailInput): Promise<{
   providerId: string;
 }> {
   const admin = getSupabaseAdmin();
-  let metadata = {
+  let metadata: Record<string, unknown> = {
     ...(input.metadata ?? {}),
     event_type: input.eventType,
     email_subject: input.subject,
