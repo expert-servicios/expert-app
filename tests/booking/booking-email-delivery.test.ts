@@ -16,10 +16,18 @@ describe('booking email delivery', () => {
 
   it('uses Gmail first and Resend only as fallback', () => {
     expect(transport).toContain('sendNewGmailSA');
+    expect(transport).toContain('maybeAppendKiaContextualCta');
     expect(transport).toContain('falling back to Resend');
     expect(transport).toContain('sendEmail({');
     expect(transport).toContain("transport: 'gmail'");
     expect(transport).toContain("transport: 'resend_fallback'");
+    expect(transport).toContain('Gmail audit persistence failed after successful send');
+  });
+
+  it('escapes public booking fields before rendering admin HTML', () => {
+    expect(route).toContain('function escapeEmailHtml');
+    expect(route).toContain('safeNotes = input.notes ? escapeEmailHtml(input.notes)');
+    expect(route).toContain('safeName = escapeEmailHtml(input.name)');
   });
 
   it('notifies both the client and the admin for every confirmed booking', () => {
