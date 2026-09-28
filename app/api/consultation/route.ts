@@ -46,42 +46,106 @@ export async function POST(request: NextRequest) {
 
     const admin = getSupabaseAdmin();
     const attribution = buildLeadAttributionFields(request);
-    const { data: lead, error } = await admin.from('leads').insert({
-      name: data.name,
-      email: data.email.toLowerCase(),
-      phone: data.phone || null,
-      client_type: 'particular',
-      category: 'Consulta gratuita',
+    const normalizedEmail = data.email.toLowerCase();
+    const normalizedPhone = data.phone?.trim() || null;
+    const interaction = {
+      at: new Date().toISOString(),
+      intent: 'free_question',
+      origin: data.origin || null,
       service: data.service || null,
-      country: 'ES',
-      urgency: 'media',
-      message: data.message,
-      state: 'new',
-      source: attribution.source,
-      source_key: `consultation:${crypto.randomUUID()}`,
-      metadata: {
-        ...attribution.metadata,
-        consultation: {
-          origin: data.origin || null,
-          service: data.service || null,
-          intent: 'free_question',
-        },
-      },
-    }).select('id').single();
+      contact: { email: normalizedEmail, phone: normalizedPhone },
+    };
 
-    if (error || !lead?.id) {
-      console.error('[consultation] lead insert:', error);
-      return NextResponse.json({ error: 'No se pudo registrar la consulta.' }, { status: 500 });
+    const { data: byEmail, error: emailLookupError } = await admin
+      .from('leads')
+      .select('id,message,metadata')
+      .eq('email', normalizedEmail)
+      .limit(1)
+      .maybeSingle();
+    if (emailLookupError) throw emailLookupError;
+
+    let existingLead = byEmail;
+    if (!existingLead && normalizedPhone) {
+      const { data: byPhone, error: phoneLookupError } = await admin
+        .from('leads')
+        .select('id,message,metadata')
+        .eq('phone', normalizedPhone)
+        .limit(1)
+        .maybeSingle();
+      if (phoneLookupError) throw phoneLookupError;
+      existingLead = byPhone;
+    }
+
+    let leadId: string;
+    if (existingLead) {
+      const existingMetadata =
+        existingLead.metadata && typeof existingLead.metadata === 'object' && !Array.isArray(existingLead.metadata)
+          ? existingLead.metadata as Record<string, unknown>
+          : {};
+      const previousInteractions = Array.isArray(existingMetadata.inquiries)
+        ? existingMetadata.inquiries.slice(-19)
+        : [];
+      const previousMessage = typeof existingLead.message === 'string' ? existingLead.message.trim() : '';
+      const nextMessage = [
+        previousMessage,
+        `[Consulta gratuita ${new Date().toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })}]\n${data.message}`,
+      ].filter(Boolean).join('\n\n');
+
+      const { error: updateError } = await admin.from('leads').update({
+        name: data.name,
+        email: normalizedEmail,
+        phone: normalizedPhone,
+        category: 'Consulta gratuita',
+        service: data.service || null,
+        message: nextMessage,
+        state: 'new',
+        updated_at: new Date().toISOString(),
+        metadata: {
+          ...existingMetadata,
+          consultation: interaction,
+          last_acquisition: interaction,
+          inquiries: [...previousInteractions, interaction],
+        },
+      }).eq('id', existingLead.id);
+      if (updateError) throw updateError;
+      leadId = existingLead.id;
+    } else {
+      const { data: lead, error } = await admin.from('leads').insert({
+        name: data.name,
+        email: normalizedEmail,
+        phone: normalizedPhone,
+        client_type: 'particular',
+        category: 'Consulta gratuita',
+        service: data.service || null,
+        country: 'ES',
+        urgency: 'media',
+        message: data.message,
+        state: 'new',
+        source: attribution.source,
+        source_key: `consultation:${crypto.randomUUID()}`,
+        metadata: {
+          ...attribution.metadata,
+          consultation: interaction,
+          last_acquisition: interaction,
+          inquiries: [interaction],
+        },
+      }).select('id').single();
+
+      if (error || !lead?.id) {
+        console.error('[consultation] lead insert:', error);
+        return NextResponse.json({ error: 'No se pudo registrar la consulta.' }, { status: 500 });
+      }
+      leadId = lead.id;
     }
 
     await notifyAdmins({
       title: 'Nueva consulta gratuita',
       body: `${data.name} · ${data.service || 'Servicio por identificar'} · ${data.message.slice(0, 140)}`.slice(0, 240),
       url: '/admin/leads',
-      tag: `consultation-${lead.id}`,
+      tag: `consultation-${leadId}`,
     }).catch(() => {});
 
-    return NextResponse.json({ success: true, leadId: lead.id }, { status: 201 });
+    return NextResponse.json({ success: true, leadId }, { status: existingLead ? 200 : 201 });
   } catch (error) {
     console.error('[consultation]', error);
     return NextResponse.json({ error: 'Error interno.' }, { status: 500 });
