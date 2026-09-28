@@ -133,6 +133,12 @@ export default async function DocDetailPage({
             sourceKind="docs"
             sourceSlug={doc.slug}
             relatedServiceSlugs={doc.relatedServiceSlugs}
+            service={relatedServices[0] ? {
+              slug: relatedServices[0].slug,
+              categoria: relatedServices[0].categoria,
+              name: relatedServices[0].name,
+              hasCheckout: Boolean(relatedServices[0].stripePriceId),
+            } : null}
           />
         </article>
 
