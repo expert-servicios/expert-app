@@ -543,10 +543,6 @@ export async function POST(request: NextRequest) {
       const oldProvider = calendarProviderFromBookingProvider(rescheduledAppointment.booking_provider)
         ?? (rescheduledAppointment.google_event_id ? 'google' : null);
 
-      if (oldEventId && oldProvider) {
-        await deleteBookingCalendarEvent(oldEventId, oldProvider);
-      }
-
       const { error: rescheduleUpdateError } = await admin
         .from('appointments')
         .update({
@@ -557,6 +553,22 @@ export async function POST(request: NextRequest) {
         .eq('id', rescheduledAppointment.id)
         .eq('status', 'confirmed');
       if (rescheduleUpdateError) throw rescheduleUpdateError;
+
+      try {
+        if (oldEventId && oldProvider) {
+          await deleteBookingCalendarEvent(oldEventId, oldProvider);
+        }
+      } catch (calendarError) {
+        await admin
+          .from('appointments')
+          .update({
+            status: 'confirmed',
+            admin_notes: 'El cambio solicitado no pudo sincronizarse con Calendar; se conserva la cita original.',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', rescheduledAppointment.id);
+        throw calendarError;
+      }
     }
 
     if (
