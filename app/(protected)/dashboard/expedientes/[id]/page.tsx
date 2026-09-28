@@ -4,6 +4,7 @@ import { AlertCircle, ArrowLeft, CheckCircle2, Clock, Download, FolderOpen, Info
 import { DeliverableRow } from '@/components/cases/DeliverableRow';
 import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
 import { CaseDocumentChecklist } from '@/components/cases/CaseDocumentChecklist';
+import { IrnrCaseQuestionnaire } from '@/components/cases/IrnrCaseQuestionnaire';
 import { KiaGuidanceCard } from '@/components/kia/KiaGuidanceCard';
 import { resolveCaseDetailGuidance } from '@/lib/ai/kia/kia-surface-guidance';
 import { CASE_PROGRESS_STATES, CASE_STATE_LABELS, normalizeCaseStateForProgress } from '@/lib/utils/case-states';
@@ -13,6 +14,7 @@ interface CaseDetail {
   id: string;
   category: string;
   service: string;
+  service_id?: string | null;
   state: string;
   opened_at: string;
   closed_at: string | null;
@@ -338,6 +340,15 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             </div>
           </div>
         </div>
+
+        {caseItem.service_id?.split(',').includes('no-residentes') && (
+          <div className="mt-4">
+            <IrnrCaseQuestionnaire
+              caseId={id}
+              initialComment={notes.find((note) => note.item_key === 'irnr-intake')?.comment ?? null}
+            />
+          </div>
+        )}
 
         {checklist.length > 0 ? (
           <div id="documentos" className="mt-4">
