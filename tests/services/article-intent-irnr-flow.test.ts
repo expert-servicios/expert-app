@@ -10,7 +10,7 @@ describe('article intent CTA and IRNR funnel', () => {
   const docsPage = source('app/(public)/docs/[slug]/page.tsx');
   const blogPage = source('app/(public)/blog/[slug]/page.tsx');
   const consultation = source('components/site/FreeConsultationForm.tsx');
-  const consultationApi = source('app/api/consultation/route.ts');
+  const consultationApi = source('app/api/consultas-gratuitas/route.ts');
   const blueprint = source('lib/services/service-operational-blueprints.ts');
   const casePage = source('app/(protected)/dashboard/expedientes/[id]/page.tsx');
   const questionnaire = source('components/cases/IrnrCaseQuestionnaire.tsx');
@@ -37,7 +37,7 @@ describe('article intent CTA and IRNR funnel', () => {
   });
 
   it('captures free questions as demand leads', () => {
-    expect(consultation).toContain("fetch('/api/consultation'");
+    expect(consultation).toContain("fetch('/api/consultas-gratuitas'");
     expect(consultationApi).toContain("category: 'Consulta gratuita'");
     expect(consultationApi).toContain("intent: 'free_question'");
     expect(consultationApi).toContain("title: 'Nueva consulta gratuita'");
