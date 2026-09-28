@@ -10,6 +10,10 @@ import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recip
 import { sendEmail } from '@/lib/email/send';
 import { freeConsultationReceivedAdmin } from '@/lib/email/templates';
 
+function escapeIlikeLiteral(value: string): string {
+  return value.replace(/[\\%_]/g, (character) => `\\${character}`);
+}
+
 const schema = z.object({
   hp_url: z.string().optional(),
   name: z.string().trim().min(2).max(100),
@@ -73,7 +77,7 @@ export async function POST(request: NextRequest) {
     const { data: byEmail, error: emailLookupError } = await admin
       .from('leads')
       .select('id,message,metadata,email,phone')
-      .eq('email', normalizedEmail)
+      .ilike('email', escapeIlikeLiteral(normalizedEmail))
       .limit(1)
       .maybeSingle();
     if (emailLookupError) throw emailLookupError;
