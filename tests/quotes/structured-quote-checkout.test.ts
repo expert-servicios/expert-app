@@ -60,6 +60,14 @@ describe('structured quote checkout contract', () => {
     expect(stripeWebhookRoute).toContain('Pago duplicado detectado en presupuesto');
   });
 
+  it('hydrates specialized service fulfillment from quote lines or the originating lead', () => {
+    expect(stripeWebhookRoute).toContain('leadBlueprintSlugs');
+    expect(stripeWebhookRoute).toContain('quoteServiceSlugs');
+    expect(stripeWebhookRoute).toContain('ensureServiceOrderFulfillment');
+    expect(stripeWebhookRoute).toContain('service_slugs: quoteServiceSlugs.length > 0');
+    expect(stripeWebhookRoute).toContain('specializedQuoteCaseId');
+  });
+
   it('shows persisted concepts and quantities to the client before payment', () => {
     expect(dashboardQuotePage).toContain('quote.quote_items');
     expect(dashboardQuotePage).toContain('Base imponible');
