@@ -613,16 +613,28 @@ export async function POST(req: NextRequest) {
           }
 
           let leadService: string | null = null;
+          let leadRequestedServices: string[] = [];
           if (quote.lead_id) {
             const { data: lead, error: leadError } = await supabaseAdmin
               .from('leads')
-              .select('service')
+              .select('service,metadata')
               .eq('id', quote.lead_id)
               .maybeSingle();
             if (leadError) {
               throw new Error(`Could not resolve quote lead service ${quoteId}: ${leadError.message}`);
             }
             leadService = lead?.service ?? null;
+            const leadMetadata =
+              lead?.metadata && typeof lead.metadata === 'object' && !Array.isArray(lead.metadata)
+                ? lead.metadata as Record<string, unknown>
+                : {};
+            const conversion =
+              leadMetadata.conversion && typeof leadMetadata.conversion === 'object' && !Array.isArray(leadMetadata.conversion)
+                ? leadMetadata.conversion as Record<string, unknown>
+                : {};
+            leadRequestedServices = Array.isArray(conversion.requested_services)
+              ? conversion.requested_services.filter((value): value is string => typeof value === 'string')
+              : [];
           }
 
           const persistedQuoteServiceSlugs = splitQuoteServiceSlugs([
@@ -630,11 +642,13 @@ export async function POST(req: NextRequest) {
             session.metadata?.service_slug,
             ...(quoteItems ?? []).map((line) => line.service_slug),
           ]);
-          const leadBlueprintSlugs = splitQuoteServiceSlugs([leadService])
-            .filter((slug) => Boolean(getServiceOperationalBlueprint(slug)));
+          const leadServiceSlugs = splitQuoteServiceSlugs([
+            ...leadRequestedServices,
+            leadService,
+          ]);
           const quoteServiceSlugs = persistedQuoteServiceSlugs.length > 0
             ? persistedQuoteServiceSlugs
-            : leadBlueprintSlugs;
+            : leadServiceSlugs;
 
           // ── Idempotency: protect both the Stripe payment and the quote itself ──
           const [{ data: existingOrder }, { data: existingQuoteOrder }] = await Promise.all([
