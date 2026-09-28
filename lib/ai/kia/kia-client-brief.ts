@@ -166,7 +166,8 @@ export async function loadKiaClientCommunications(input: {
     const direction = metadata.direction === 'in' || row.event_type === 'email.inbound' ? 'in' : 'out';
     const threadId = typeof metadata.thread_id === 'string' ? metadata.thread_id : null;
     if (direction === 'in' && threadId) {
-      const timestamp = new Date(row.created_at).getTime();
+      const messageDate = typeof metadata.message_date === 'string' ? metadata.message_date : row.created_at;
+      const timestamp = new Date(messageDate).getTime();
       persistedInboundThreadLatest.set(
         threadId,
         Math.max(persistedInboundThreadLatest.get(threadId) ?? 0, timestamp),
