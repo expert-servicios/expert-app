@@ -9,7 +9,10 @@ export type SegmentKey =
   | 'newsletter';     // newsletter subscribers
 
 export interface Recipient {
-  email: string;
+  channel: 'email' | 'telegram';
+  key: string;
+  email: string | null;
+  telegramChatId: string | null;
   name: string | null;
 }
 
@@ -22,16 +25,41 @@ export const SEGMENT_LABELS: Record<SegmentKey, string> = {
   newsletter:      'Suscriptores newsletter',
 };
 
-export async function getSegmentRecipients(segment: SegmentKey): Promise<Recipient[]> {
+export async function getSegmentRecipients(
+  segment: SegmentKey,
+  audienceSegment?: string | null,
+): Promise<Recipient[]> {
   const admin = getSupabaseAdmin();
 
   if (segment === 'newsletter') {
-    const { data } = await admin
+    let query = admin
       .from('newsletter_subscribers')
-      .select('email, name')
+      .select('channel,email,name,telegram_chat_id,audience_segment')
       .eq('confirmed', true)
       .is('unsubscribed_at', null);
-    return (data ?? []).map((r) => ({ email: r.email, name: r.name ?? null }));
+    if (audienceSegment) query = query.eq('audience_segment', audienceSegment);
+    const { data } = await query;
+    return (data ?? []).flatMap((r) => {
+      if (r.channel === 'telegram' && r.telegram_chat_id) {
+        return [{
+          channel: 'telegram' as const,
+          key: `telegram:${r.telegram_chat_id}`,
+          email: null,
+          telegramChatId: r.telegram_chat_id,
+          name: r.name ?? null,
+        }];
+      }
+      if (r.channel === 'email' && r.email) {
+        return [{
+          channel: 'email' as const,
+          key: `email:${r.email.toLowerCase()}`,
+          email: r.email,
+          telegramChatId: null,
+          name: r.name ?? null,
+        }];
+      }
+      return [];
+    });
   }
 
   if (segment === 'leads') {
@@ -41,7 +69,7 @@ export async function getSegmentRecipients(segment: SegmentKey): Promise<Recipie
       .not('state', 'eq', 'converted')
       .eq('marketing_status', 'consented')
       .not('email', 'is', null);
-    return (data ?? []).map((r) => ({ email: r.email, name: r.name ?? null }));
+    return (data ?? []).map((r) => ({ channel: 'email' as const, key: `email:${r.email.toLowerCase()}`, email: r.email, telegramChatId: null, name: r.name ?? null }));
   }
 
   // Base: profiles with role='client'
@@ -62,7 +90,7 @@ export async function getSegmentRecipients(segment: SegmentKey): Promise<Recipie
   if (segment === 'all_active' || segment === 'all') {
     return (profiles ?? [])
       .filter((p) => p.email)
-      .map((p) => ({ email: p.email!, name: p.full_name ?? null }));
+      .map((p) => ({ channel: 'email' as const, key: `email:${p.email!.toLowerCase()}`, email: p.email!, telegramChatId: null, name: p.full_name ?? null }));
   }
 
   // Resolve auth emails for profiles without email column
@@ -76,10 +104,16 @@ export async function getSegmentRecipients(segment: SegmentKey): Promise<Recipie
     }
   }
 
-  const allRecipients: Recipient[] = (profiles ?? []).map((p) => ({
-    email: p.email ?? emailById.get(p.id) ?? '',
-    name: p.full_name ?? null,
-  })).filter((r) => r.email);
+  const allRecipients: Recipient[] = (profiles ?? []).map((p) => {
+    const email = p.email ?? emailById.get(p.id) ?? '';
+    return {
+      channel: 'email' as const,
+      key: email ? `email:${email.toLowerCase()}` : '',
+      email: email || null,
+      telegramChatId: null,
+      name: p.full_name ?? null,
+    };
+  }).filter((r) => Boolean(r.email));
 
   if (segment === 'subscribers') {
     const { data: subs } = await admin
