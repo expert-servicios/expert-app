@@ -27,6 +27,14 @@ describe('Client 360 communications operations', () => {
     expect(route).toContain("case_id: caseId");
   });
 
+  it('uses persisted inbound email history and suppresses inbox snapshot duplicates', () => {
+    const route = source('app/api/admin/clientes/[id]/communications/route.ts');
+    expect(route).toContain("metadataDirection === 'in'");
+    expect(route).toContain('persistedInboundThreadIds');
+    expect(route).toContain('if (persistedInboundThreadIds.has(row.thread_id)) continue');
+    expect(route).toContain('conversationId: metadataThreadId');
+  });
+
   it('derives entity attribution from the linked case and never guesses by client email', () => {
     const route = source('app/api/admin/clientes/[id]/communications/route.ts');
     expect(route).toContain('caseCompanyById');
