@@ -11,6 +11,7 @@ describe('newsletter audience segmentation and delivery idempotency', () => {
   const segments = source('lib/campaigns/segments.ts');
   const sender = source('app/api/admin/campaigns/[id]/send/route.ts');
   const migration = source('supabase/migrations/20260928145629_newsletter_segments_and_telegram.sql');
+  const repairMigration = source('supabase/migrations/20260928190000_campaign_recipient_key_repair.sql');
 
   it('lets admin select and preview a newsletter audience profile', () => {
     expect(dashboard).toContain('Perfil de newsletter');
@@ -37,6 +38,10 @@ describe('newsletter audience segmentation and delivery idempotency', () => {
     expect(migration).toContain("partition by campaign_id, recipient_key");
     expect(migration).toContain("case when status = 'sent' then 0 else 1 end");
     expect(migration).toContain("'email:' || lower(trim(recipient_email))");
+    expect(repairMigration).toContain('drop index if exists public.campaign_sends_campaign_recipient_key_uidx');
+    expect(repairMigration).toContain("'email:' || lower(trim(recipient_email))");
+    expect(repairMigration).toContain('with ranked_campaign_sends as');
+    expect(repairMigration).toContain('create unique index if not exists campaign_sends_campaign_recipient_key_uidx');
   });
 
   it('reuses a campaign-send row when a failed recipient is retried', () => {
