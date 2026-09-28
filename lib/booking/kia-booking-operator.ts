@@ -368,7 +368,7 @@ export async function createKiaConfirmedBooking(input: {
         'Reserva KIA revertida durante compensación por error.',
       ).catch(() => {});
       if (remoteCleanupSucceeded) {
-        await admin.from('appointments').delete().eq('id', confirmedAppointmentId);
+        await admin.from('appointments').delete().eq('id', appointmentId);
       } else {
         await admin.from('appointments').update({
           status: 'cancelled',
@@ -376,7 +376,7 @@ export async function createKiaConfirmedBooking(input: {
           google_event_id: provider === 'google' ? providerEventId : null,
           admin_notes: 'KIA booking cleanup failed; manual reconciliation required.',
           updated_at: new Date().toISOString(),
-        }).eq('id', confirmedAppointmentId);
+        }).eq('id', appointmentId);
       }
     }
     throw error;
