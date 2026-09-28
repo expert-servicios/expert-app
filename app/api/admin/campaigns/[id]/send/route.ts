@@ -3,6 +3,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { getSegmentRecipients, type SegmentKey } from '@/lib/campaigns/segments';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { sendEmail } from '@/lib/email/send';
+import { escapeTelegramHtml, sendTelegramMessageConfirmed } from '@/lib/integrations/telegram';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -58,17 +59,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const from = process.env.RESEND_FROM_EMAIL ?? 'EXPERT <info@expertconsulting.es>';
 
   // Get recipients for segment
-  const recipients = await getSegmentRecipients(campaign.segment as SegmentKey);
+  const recipients = await getSegmentRecipients(
+    campaign.segment as SegmentKey,
+    campaign.segment === 'newsletter' ? campaign.audience_segment ?? null : null,
+  );
 
   // Exclude already-sent recipients (idempotent)
   const { data: alreadySent } = await admin
     .from('campaign_sends')
-    .select('recipient_email')
+    .select('recipient_key,recipient_email')
     .eq('campaign_id', id)
     .eq('status', 'sent');
 
-  const sentEmails = new Set((alreadySent ?? []).map((r) => r.recipient_email));
-  const toSend = recipients.filter((r) => !sentEmails.has(r.email));
+  const sentRecipientKeys = new Set(
+    (alreadySent ?? []).map((r) => r.recipient_key ?? `email:${String(r.recipient_email).toLowerCase()}`),
+  );
+  const toSend = recipients.filter((r) => !sentRecipientKeys.has(r.key));
 
   let sentCount = alreadySent?.length ?? 0;
   let failedCount = 0;
@@ -78,48 +84,81 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const batch = toSend.slice(i, i + BATCH_SIZE);
 
     for (const recipient of batch) {
-      const footer = buildUnsubscribeFooter(recipient.email, id, appUrl);
-      const html = injectFooter(campaign.body_html, footer);
-
       try {
-        const resendId = await sendEmail({
-          from,
-          to: recipient.email,
-          eventType: 'campaign.send',
-          subject: campaign.subject,
-          html,
-          ...(campaign.body_text ? { text: campaign.body_text } : {}),
-          metadata: {
+        if (recipient.channel === 'telegram') {
+          if (!recipient.telegramChatId) throw new Error('telegram_recipient_missing_chat_id');
+          const telegramText = [
+            `<b>${escapeTelegramHtml(campaign.subject)}</b>`,
+            '',
+            escapeTelegramHtml(
+              String(campaign.body_text ?? campaign.body_html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim())
+                .slice(0, 3600),
+            ),
+            '',
+            'Para dejar de recibir novedades, envía /baja_novedades.',
+          ].join('\n');
+          const messageId = await sendTelegramMessageConfirmed({
+            chatId: recipient.telegramChatId,
+            text: telegramText,
+          });
+          await admin.from('campaign_sends').insert({
             campaign_id: id,
+            recipient_email: `telegram:${recipient.telegramChatId}@telegram.invalid`,
             recipient_name: recipient.name ?? null,
-            source: 'campaign',
-          },
-          idempotencyKey: `campaign/${id}/${recipient.email.toLowerCase()}`,
-        });
+            recipient_channel: 'telegram',
+            recipient_key: recipient.key,
+            status: 'sent',
+            resend_id: `telegram:${messageId}`,
+            error: null,
+            sent_at: new Date().toISOString(),
+          });
+        } else {
+          if (!recipient.email) throw new Error('email_recipient_missing_email');
+          const footer = buildUnsubscribeFooter(recipient.email, id, appUrl);
+          const html = injectFooter(campaign.body_html, footer);
+          const resendId = await sendEmail({
+            from,
+            to: recipient.email,
+            eventType: 'campaign.send',
+            subject: campaign.subject,
+            html,
+            ...(campaign.body_text ? { text: campaign.body_text } : {}),
+            metadata: {
+              campaign_id: id,
+              recipient_name: recipient.name ?? null,
+              source: 'campaign',
+              audience_segment: campaign.audience_segment ?? null,
+            },
+            idempotencyKey: `campaign/${id}/${recipient.email.toLowerCase()}`,
+          });
 
-        await admin.from('campaign_sends').insert({
-          campaign_id: id,
-          recipient_email: recipient.email,
-          recipient_name: recipient.name ?? null,
-          status: 'sent',
-          resend_id: resendId,
-          error: null,
-          sent_at: new Date().toISOString(),
-        });
+          await admin.from('campaign_sends').insert({
+            campaign_id: id,
+            recipient_email: recipient.email,
+            recipient_name: recipient.name ?? null,
+            recipient_channel: 'email',
+            recipient_key: recipient.key,
+            status: 'sent',
+            resend_id: resendId,
+            error: null,
+            sent_at: new Date().toISOString(),
+          });
+        }
 
         sentCount++;
       } catch (err) {
         await admin.from('campaign_sends').insert({
           campaign_id: id,
-          recipient_email: recipient.email,
+          recipient_email: recipient.email ?? `telegram:${recipient.telegramChatId ?? 'unknown'}@telegram.invalid`,
           recipient_name: recipient.name ?? null,
+          recipient_channel: recipient.channel,
+          recipient_key: recipient.key,
           status: 'failed',
           error: String(err),
         });
         failedCount++;
       }
     }
-
     // Rate limit: wait between batches (except last)
     if (i + BATCH_SIZE < toSend.length) await sleep(BATCH_DELAY_MS);
   }
