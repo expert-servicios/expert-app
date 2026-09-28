@@ -1,3 +1,10 @@
+import { PREQUOTE_QUESTIONNAIRE } from '@/lib/data/kia-knowledge/prequote-questionnaire';
+
+const PREQUOTE_QUESTIONS = PREQUOTE_QUESTIONNAIRE.sections
+  .flatMap((section) => section.questions)
+  .map((question, index) => `${index + 1}. ${question}`)
+  .join('\n');
+
 export const KIA_SERVICES_CATALOG_PROMPT = `
 <services_catalog>
 
@@ -94,6 +101,15 @@ FORMACION — direct_checkout:
   formacion-administraciones-publicas | Formacion tramites con administraciones publicas
   formacion-alta-autonomo-sl    | Formacion alta autonomo y constitucion de SL
   formacion-planificacion-fiscal | Formacion planificacion fiscal avanzada
+
+PRESUPUESTO FIRME:
+  Antes de cerrar precio, usa este cuestionario general y omite todo lo que ya conste en CRM, email, empresa o expediente:
+${PREQUOTE_QUESTIONS}
+  Incluye siempre:
+  - Planes: https://expertconsulting.es/planes
+  - Plan recomendado: URL directa del plan
+  - Reunión informativa gratuita 15 min: https://expertconsulting.es/cita?tipo=consulta-inicial
+  No pidas credenciales ni API keys por email/chat/Telegram.
 
 CUANDO NO ESTA CLARO EL SERVICIO:
   Pregunta UNA sola vez con quickReplies (maximo 3 opciones).
