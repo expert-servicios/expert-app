@@ -27,10 +27,8 @@ export function IrnrPriceCalculator({ compact = false, origin = 'service:no-resi
     setProperties((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, ...patch } : row));
   };
 
-  const holderDistribution = properties.map((property) => property.holders).join(',');
   const summary = [
     `Inmuebles: ${properties.length}`,
-    `titulares por inmueble: ${holderDistribution}`,
     `unidades declarativas: ${declarativeUnits}`,
     `honorarios estimados: ${net} EUR + IVA`,
   ].join('; ');
