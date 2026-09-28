@@ -102,7 +102,7 @@ export default function PlanSupervisionPage() {
             <div className="mt-5 border border-[#D4A017]/30 bg-[#D4A017]/5 p-4">
               <p className="text-sm font-bold text-[#0D1B2A]">Caso habitual: autónomo vinculado a una empresa</p>
               <p className="mt-2 text-sm leading-6 text-[#23364D]">
-                Cuando el autónomo trabaja principalmente para una sociedad vinculada del mismo cliente, tiene una operativa sencilla y normalmente no supera unas 10 facturas al mes, este plan puede utilizarse como referencia desde 49 €/mes + IVA. La propuesta final depende de sus obligaciones fiscales y de la complejidad real.
+                Cuando el autónomo trabaja principalmente para una sociedad vinculada del mismo cliente, tiene una operativa sencilla y normalmente no supera unas 10 facturas al mes, aplicamos una modalidad vinculada desde 49 €/mes + IVA. En este supuesto pueden incluirse sus obligaciones fiscales básicas según alcance. Si existe mayor volumen o complejidad, se configura Plan Avanzado o presupuesto personalizado.
               </p>
             </div>
             <p className="mt-5 text-sm leading-6 text-[#23364D]">
