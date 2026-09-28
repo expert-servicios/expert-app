@@ -34,6 +34,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'El enlace no corresponde a esta cita.' }, { status: 403 });
     }
     if (appointment.status === 'cancelled') {
+      await cancelBookingAdminTask(
+        admin,
+        appointment.id,
+        'Reconciliación de una cita ya cancelada.',
+      ).catch((taskError) => console.error('[booking/manage/cancel] retry admin task:', taskError));
       return NextResponse.json({ ok: true, alreadyCancelled: true });
     }
     if (appointment.status !== 'confirmed') {
