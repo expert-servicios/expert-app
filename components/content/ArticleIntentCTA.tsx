@@ -109,12 +109,36 @@ export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs =
         </Link>
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-[#52606D]">
-        <span>También puedes hablar con KIA:</span>
-        <Link href="/dashboard?kia=open" onClick={() => trackPublicContentIntent({ intent: 'kia_chat', source_kind: sourceKind, source_slug: sourceSlug, service_slug: primaryServiceSlug ?? undefined })} className="font-semibold text-[#D4A017] hover:underline">Chat</Link>
-        <a href="https://t.me/kia_expert_bot" onClick={() => trackPublicContentIntent({ intent: 'telegram', source_kind: sourceKind, source_slug: sourceSlug, service_slug: primaryServiceSlug ?? undefined })} className="inline-flex items-center gap-1 font-semibold text-[#D4A017] hover:underline">
-          <MessageCircle className="h-3.5 w-3.5" /> Telegram
-        </a>
+      <div className="mt-6 grid gap-4 border border-[#D4A017]/25 bg-[#0D1B2A] p-5 text-white sm:grid-cols-[64px_1fr_auto] sm:items-center">
+        <img
+          src="/avatars/kia/kia-bienvenida.webp"
+          width={56}
+          height={56}
+          alt="KIA"
+          className="h-14 w-14 rounded-full border border-[#D4A017]/45 object-cover"
+        />
+        <div>
+          <p className="text-sm font-bold">¿Prefieres preguntárselo directamente a KIA?</p>
+          <p className="mt-1 text-xs leading-5 text-white/65">
+            Puede orientarte sobre este contenido, enlazarte con la guía o servicio adecuado y derivar el caso a revisión humana cuando haga falta.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 sm:justify-end">
+          <Link
+            href="/dashboard?kia=open"
+            onClick={() => trackPublicContentIntent({ intent: 'kia_chat', source_kind: sourceKind, source_slug: sourceSlug, service_slug: primaryServiceSlug ?? undefined })}
+            className="inline-flex min-h-10 items-center justify-center bg-[#D4A017] px-4 py-2 text-xs font-bold text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+          >
+            Abrir chat
+          </Link>
+          <a
+            href="https://t.me/kia_expert_bot"
+            onClick={() => trackPublicContentIntent({ intent: 'telegram', source_kind: sourceKind, source_slug: sourceSlug, service_slug: primaryServiceSlug ?? undefined })}
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 border border-white/25 px-4 py-2 text-xs font-bold text-white transition hover:border-[#D4A017] hover:text-[#D4A017]"
+          >
+            <MessageCircle className="h-3.5 w-3.5" /> Telegram
+          </a>
+        </div>
       </div>
     </section>
   );
