@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { CheckCircle2, Plus, Save, Trash2 } from 'lucide-react';
 
 type Property = {
@@ -51,15 +51,22 @@ export function IrnrCaseQuestionnaire({
   const [saving,setSaving] = useState(false);
   const [saved,setSaved] = useState(false);
   const [error,setError] = useState('');
+  const revisionRef = useRef(0);
+
+  function markDirty() {
+    revisionRef.current += 1;
+    setSaved(false);
+  }
 
   function update(index:number, patch:Partial<Property>) {
     setProperties(current => current.map((item,i) => i === index ? { ...item, ...patch } : item));
-    setSaved(false);
+    markDirty();
   }
 
   async function save() {
     setSaving(true); setError('');
     const payload: SavedPayload = { taxYear,residenceCountry,taxIdForeign,properties };
+    const revisionAtStart = revisionRef.current;
     try {
       const res = await fetch(`/api/cases/${caseId}/document-notes`, {
         method:'PATCH',
@@ -72,7 +79,7 @@ export function IrnrCaseQuestionnaire({
       });
       const data = await res.json().catch(()=>({}));
       if (!res.ok) throw new Error(data.error ?? 'No se pudo guardar.');
-      setSaved(true);
+      if (revisionRef.current === revisionAtStart) setSaved(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo guardar.');
     } finally { setSaving(false); }
@@ -88,13 +95,13 @@ export function IrnrCaseQuestionnaire({
 
       <div className="mt-5 grid gap-4 sm:grid-cols-3">
         <label className="text-sm font-semibold">Ejercicio a declarar
-          <input maxLength={4} value={taxYear} onChange={e=>{setTaxYear(e.target.value);setSaved(false);}} className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal" />
+          <input maxLength={4} value={taxYear} onChange={e=>{setTaxYear(e.target.value);markDirty();}} className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal" />
         </label>
         <label className="text-sm font-semibold">País de residencia fiscal
-          <input maxLength={100} value={residenceCountry} onChange={e=>{setResidenceCountry(e.target.value);setSaved(false);}} className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal" />
+          <input maxLength={100} value={residenceCountry} onChange={e=>{setResidenceCountry(e.target.value);markDirty();}} className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal" />
         </label>
         <label className="text-sm font-semibold">N.º fiscal extranjero
-          <input maxLength={80} value={taxIdForeign} onChange={e=>{setTaxIdForeign(e.target.value);setSaved(false);}} className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal" />
+          <input maxLength={80} value={taxIdForeign} onChange={e=>{setTaxIdForeign(e.target.value);markDirty();}} className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal" />
         </label>
       </div>
 
@@ -103,7 +110,7 @@ export function IrnrCaseQuestionnaire({
           <div key={index} className="rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] p-4">
             <div className="flex items-center justify-between">
               <p className="font-semibold">Inmueble {index+1}</p>
-              {properties.length > 1 && <button type="button" onClick={()=>{setProperties(p=>p.filter((_,i)=>i!==index));setSaved(false);}} className="text-red-600"><Trash2 className="h-4 w-4" /></button>}
+              {properties.length > 1 && <button type="button" onClick={()=>{setProperties(p=>p.filter((_,i)=>i!==index));markDirty();}} className="text-red-600"><Trash2 className="h-4 w-4" /></button>}
             </div>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <label className="text-xs font-semibold">Dirección
@@ -130,7 +137,7 @@ export function IrnrCaseQuestionnaire({
         ))}
       </div>
 
-      <button type="button" onClick={()=>{setProperties(p=>[...p,emptyProperty()]);setSaved(false);}} className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#c88b25]">
+      <button type="button" onClick={()=>{setProperties(p=>[...p,emptyProperty()]);markDirty();}} className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#c88b25]">
         <Plus className="h-4 w-4" /> Añadir inmueble
       </button>
 
