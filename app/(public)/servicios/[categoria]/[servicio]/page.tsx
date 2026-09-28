@@ -14,7 +14,6 @@ import { getArticlesForService } from '@/lib/utils/blog';
 import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
 import { ServiceShareActions } from '@/components/services/ServiceShareActions';
 import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
-import { IrnrPriceCalculator } from '@/components/services/IrnrPriceCalculator';
 import { ServicePriceCalculator } from '@/components/services/ServicePriceCalculator';
 import { UnitPriceCalculator } from '@/components/services/UnitPriceCalculator';
 import { getCompanionServices } from '@/lib/services/service-merchandising';
