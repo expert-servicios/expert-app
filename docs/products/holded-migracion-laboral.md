@@ -48,7 +48,7 @@ Servicio puntual de implantación. EXPERT configura y valida en Holded la situac
 
 Mientras no exista un Price ID unitario, la página dirige a:
 
-1. `Pedir revisión previa — 15 min` mediante el flujo de Cal.com existente.
+1. `Pedir revisión previa — 15 min` mediante `/cita` con Google Calendar/Meet.
 2. `Solicitar propuesta` con `servicio=holded-migracion-laboral`.
 3. `Resolver una duda` mediante el formulario de contacto.
 
