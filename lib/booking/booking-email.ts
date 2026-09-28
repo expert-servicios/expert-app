@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
 import { appendKiaSignature } from '@/lib/email/kia-signature';
 import { maybeAppendKiaContextualCta } from '@/lib/email/kia-contextual-cta';
+import { keepEmailKnowledgeLinksInLocale } from '@/lib/email/email-knowledge-locale';
 import { sendNewGmailSA } from '@/lib/integrations/gmail';
 
 export interface BookingEmailAttachment {
@@ -43,7 +44,11 @@ export async function sendBookingEmail(input: BookingEmailInput): Promise<{
 
   let gmailMessageId: string;
   try {
-    const html = appendKiaSignature(contextual.html, metadata);
+    const html = keepEmailKnowledgeLinksInLocale({
+      subject: input.subject,
+      html: appendKiaSignature(contextual.html, metadata),
+      metadata,
+    });
     gmailMessageId = await sendNewGmailSA({
       to: input.to,
       subject: input.subject,
