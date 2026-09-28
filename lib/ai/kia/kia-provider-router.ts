@@ -121,7 +121,10 @@ const providerCooldownUntil = new Map<KiaProviderRouteKey, number>();
 
 function providerCooldownMs(error: string): number {
   if (/HTTP\s+(401|403)\b/i.test(error)) return 5 * 60_000;
-  if (/HTTP\s+429\b/i.test(error)) return 60_000;
+  if (/HTTP\s+402\b|insufficient[_\s-]?quota|quota exceeded|credit(?:s)? exhausted|billing.*limit/i.test(error)) {
+    return 15 * 60_000;
+  }
+  if (/HTTP\s+429\b|rate[_\s-]?limit/i.test(error)) return 60_000;
   if (/HTTP\s+5\d\d\b|timeout|timed out|ECONNRESET|fetch failed/i.test(error)) return 30_000;
   return 0;
 }
