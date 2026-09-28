@@ -149,6 +149,10 @@ export interface GmailMessage {
   bodyType: 'html' | 'text';
   unread: boolean;
   attachments: GmailAttachment[];
+  labelIds?: string[];
+  autoSubmitted?: string | null;
+  precedence?: string | null;
+  listUnsubscribe?: string | null;
 }
 
 function hdr(headers: Array<{ name: string; value: string }>, name: string): string {
@@ -297,6 +301,10 @@ async function _getThread(gmail: AnyGoogle, threadId: string): Promise<GmailMess
       bodyType,
       unread: (msg.labelIds ?? []).includes('UNREAD'),
       attachments: collectAttachmentParts(msg.payload).map(({ attachment }) => attachment),
+      labelIds: msg.labelIds ?? [],
+      autoSubmitted: hdr(headers, 'Auto-Submitted') || null,
+      precedence: hdr(headers, 'Precedence') || null,
+      listUnsubscribe: hdr(headers, 'List-Unsubscribe') || null,
     };
   });
 }
