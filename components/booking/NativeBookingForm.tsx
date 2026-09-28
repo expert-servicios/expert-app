@@ -65,6 +65,8 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [meetingUrl, setMeetingUrl] = useState<string | null>(null);
+  const [dayPage, setDayPage] = useState(0);
+  const [daysPerPage, setDaysPerPage] = useState(1);
 
   async function loadAvailability() {
     setLoadingSlots(true);
@@ -80,6 +82,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
       if (res.status === 401 && redirectToLoginForEntityOnboarding(serviceKey, companyId)) return;
       if (!res.ok) throw new Error(data.error ?? 'No se pudo consultar la agenda.');
       setAvailability(data);
+      setDayPage(0);
       setSelected((current) =>
         current && data.slots?.some((slot) => slot.start === current.start) ? current : null
       );
@@ -95,7 +98,21 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serviceKey]);
 
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 768px)');
+    const sync = () => setDaysPerPage(media.matches ? 3 : 1);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
+
   const groups = useMemo(() => groupByDate(availability?.slots ?? []), [availability?.slots]);
+  const pageCount = Math.max(1, Math.ceil(groups.length / daysPerPage));
+  const safeDayPage = Math.min(dayPage, pageCount - 1);
+  const visibleGroups = groups.slice(
+    safeDayPage * daysPerPage,
+    safeDayPage * daysPerPage + daysPerPage
+  );
 
   function updateField(event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
@@ -165,7 +182,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
             href={meetingUrl}
             target="_blank"
             rel="noreferrer"
-            className="mt-5 inline-flex items-center gap-2 bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A]"
+            className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A] sm:w-auto"
           >
             <Video className="h-4 w-4" />
             Abrir Google Meet
@@ -207,34 +224,60 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
             No hay huecos disponibles en los próximos 14 días. Puedes volver a comprobarlo más tarde.
           </div>
         ) : (
-          <div className="mt-6 max-h-[420px] space-y-5 overflow-y-auto pr-1">
-            {groups.map(([date, slots]) => (
-              <div key={date}>
-                <div className="flex items-center gap-2 text-sm font-bold capitalize text-[#0D1B2A]">
-                  <CalendarDays className="h-4 w-4 text-[#D4A017]" />
-                  {dateLabel(date)}
+          <div className="mt-6">
+            <div className="grid gap-3 md:grid-cols-3">
+              {visibleGroups.map(([date, slots]) => (
+                <div key={date} className="border border-[#D4A017]/20 bg-[#F8F6F1] p-4">
+                  <div className="flex items-center gap-2 text-sm font-bold capitalize text-[#0D1B2A]">
+                    <CalendarDays className="h-4 w-4 text-[#D4A017]" />
+                    {dateLabel(date)}
+                  </div>
+                  <div className="mt-3 grid grid-cols-3 gap-2 md:grid-cols-2 lg:grid-cols-3">
+                    {slots.map((slot) => {
+                      const active = selected?.start === slot.start;
+                      return (
+                        <button
+                          key={slot.start}
+                          type="button"
+                          onClick={() => setSelected(slot)}
+                          className={
+                            active
+                              ? 'min-h-11 border border-[#D4A017] bg-[#D4A017] px-2 py-2 text-sm font-bold text-[#0D1B2A]'
+                              : 'min-h-11 border border-[#D4A017]/30 bg-white px-2 py-2 text-sm font-semibold text-[#23364D] hover:border-[#D4A017]'
+                          }
+                        >
+                          {slot.time}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {slots.map((slot) => {
-                    const active = selected?.start === slot.start;
-                    return (
-                      <button
-                        key={slot.start}
-                        type="button"
-                        onClick={() => setSelected(slot)}
-                        className={
-                          active
-                            ? 'border border-[#D4A017] bg-[#D4A017] px-3 py-2 text-sm font-bold text-[#0D1B2A]'
-                            : 'border border-[#D4A017]/30 bg-white px-3 py-2 text-sm font-semibold text-[#23364D] hover:border-[#D4A017]'
-                        }
-                      >
-                        {slot.time}
-                      </button>
-                    );
-                  })}
-                </div>
+              ))}
+            </div>
+
+            {pageCount > 1 && (
+              <div className="mt-4 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDayPage((current) => Math.max(0, current - 1))}
+                  disabled={safeDayPage === 0}
+                  className="min-h-11 border border-[#D4A017]/30 px-3 py-2 text-xs font-bold text-[#23364D] disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
+                >
+                  Anterior
+                </button>
+                <span className="text-center text-xs font-semibold text-[#52606d]">
+                  {safeDayPage + 1} / {pageCount}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDayPage((current) => Math.min(pageCount - 1, current + 1))}
+                  disabled={safeDayPage >= pageCount - 1}
+                  className="min-h-11 border border-[#D4A017]/30 px-3 py-2 text-xs font-bold text-[#23364D] disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
+                >
+                  Siguiente
+                </button>
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>
