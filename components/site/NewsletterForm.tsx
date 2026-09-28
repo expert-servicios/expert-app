@@ -162,7 +162,7 @@ export function NewsletterForm({ source = 'website', variant = 'dark', layout = 
       </a>
 
       <p className={`text-[11px] leading-4 ${muted}`}>
-        Puedes cambiar de perfil volviendo a suscribirte. En Telegram, el enlace abre KIA y guarda únicamente el canal y el perfil de novedades elegido.
+        Puedes cambiar de perfil volviendo a suscribirte. En Telegram guardamos los datos mínimos necesarios para enviarte las novedades (chat y perfil elegido). Al suscribirte aceptas recibir estas comunicaciones; puedes darte de baja cuando quieras. Consulta la Política de Privacidad en /privacidad.
       </p>
     </div>
   );
