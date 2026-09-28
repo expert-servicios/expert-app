@@ -25,6 +25,20 @@ export const SEGMENT_LABELS: Record<SegmentKey, string> = {
   newsletter:      'Suscriptores newsletter',
 };
 
+function normalizeEmail(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function dedupeRecipients(recipients: Recipient[]): Recipient[] {
+  const seen = new Set<string>();
+  return recipients.filter((recipient) => {
+    const key = recipient.key.trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export async function getSegmentRecipients(
   segment: SegmentKey,
   audienceSegment?: string | null,
@@ -42,24 +56,28 @@ export async function getSegmentRecipients(
     const recipients: Recipient[] = [];
     for (const row of data ?? []) {
       if (row.channel === 'telegram' && row.telegram_chat_id) {
+        const chatId = String(row.telegram_chat_id).trim();
+        if (!chatId) continue;
         recipients.push({
           channel: 'telegram',
-          key: `telegram:${row.telegram_chat_id}`,
+          key: `telegram:${chatId}`,
           email: null,
-          telegramChatId: row.telegram_chat_id,
+          telegramChatId: chatId,
           name: row.name ?? null,
         });
       } else if (row.channel === 'email' && row.email) {
+        const email = normalizeEmail(row.email);
+        if (!email) continue;
         recipients.push({
           channel: 'email',
-          key: `email:${row.email.toLowerCase()}`,
-          email: row.email,
+          key: `email:${email}`,
+          email,
           telegramChatId: null,
           name: row.name ?? null,
         });
       }
     }
-    return recipients;
+    return dedupeRecipients(recipients);
   }
 
   if (segment === 'leads') {
@@ -69,7 +87,10 @@ export async function getSegmentRecipients(
       .not('state', 'eq', 'converted')
       .eq('marketing_status', 'consented')
       .not('email', 'is', null);
-    return (data ?? []).map((r) => ({ channel: 'email' as const, key: `email:${r.email.toLowerCase()}`, email: r.email, telegramChatId: null, name: r.name ?? null }));
+    return dedupeRecipients((data ?? []).map((r) => {
+      const email = normalizeEmail(r.email);
+      return { channel: 'email' as const, key: `email:${email}`, email, telegramChatId: null, name: r.name ?? null };
+    }));
   }
 
   // Base: profiles with role='client'
@@ -88,9 +109,12 @@ export async function getSegmentRecipients(
   );
 
   if (segment === 'all_active' || segment === 'all') {
-    return (profiles ?? [])
+    return dedupeRecipients((profiles ?? [])
       .filter((p) => p.email)
-      .map((p) => ({ channel: 'email' as const, key: `email:${p.email!.toLowerCase()}`, email: p.email!, telegramChatId: null, name: p.full_name ?? null }));
+      .map((p) => {
+        const email = normalizeEmail(p.email!);
+        return { channel: 'email' as const, key: `email:${email}`, email, telegramChatId: null, name: p.full_name ?? null };
+      }));
   }
 
   // Resolve auth emails for profiles without email column
@@ -105,10 +129,11 @@ export async function getSegmentRecipients(
   }
 
   const allRecipients: Recipient[] = (profiles ?? []).map((p) => {
-    const email = p.email ?? emailById.get(p.id) ?? '';
+    const rawEmail = p.email ?? emailById.get(p.id) ?? '';
+    const email = rawEmail ? normalizeEmail(rawEmail) : '';
     return {
       channel: 'email' as const,
-      key: email ? `email:${email.toLowerCase()}` : '',
+      key: email ? `email:${email}` : '',
       email: email || null,
       telegramChatId: null,
       name: p.full_name ?? null,
@@ -121,10 +146,10 @@ export async function getSegmentRecipients(
       .select('client_id')
       .eq('status', 'active');
     const subIds = new Set((subs ?? []).map((s) => s.client_id));
-    return allRecipients.filter((r) => {
+    return dedupeRecipients(allRecipients.filter((r) => {
       const id = Array.from(profileEmails.entries()).find(([, v]) => v.name === r.name)?.[0];
       return id ? subIds.has(id) : false;
-    });
+    }));
   }
 
   if (segment === 'no_subscription') {
@@ -136,12 +161,12 @@ export async function getSegmentRecipients(
     const profilesByEmail = new Map(
       (profiles ?? []).filter((p) => p.email).map((p) => [p.email!, p.id])
     );
-    return allRecipients.filter((r) => {
+    return dedupeRecipients(allRecipients.filter((r) => {
       if (!r.email) return false;
       const id = profilesByEmail.get(r.email);
       return id ? !subIds.has(id) : true;
-    });
+    }));
   }
 
-  return allRecipients;
+  return dedupeRecipients(allRecipients);
 }
