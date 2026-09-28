@@ -14,7 +14,8 @@ const serviceCategories = [
     services: [
       { id: 'irpf', name: 'Declaración de la Renta (IRPF)', description: 'Declaración anual de renta personal' },
       { id: 'modelo-151', name: 'Modelo 151 / Ley Beckham', description: 'Para trabajadores desplazados a España' },
-      { id: 'no-residentes', name: 'Declaración de no residentes', description: 'IRNR y tributación para no residentes' }
+      { id: 'no-residentes', name: 'Declaración de no residentes', description: 'IRNR y tributación para no residentes' },
+      { id: 'impuesto-patrimonio', name: 'Impuesto sobre el Patrimonio', description: 'Modelo 714 y revisión patrimonial por titular' }
     ]
   },
   {
