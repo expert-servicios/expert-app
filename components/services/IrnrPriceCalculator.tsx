@@ -7,49 +7,32 @@ import { trackPublicContentIntent } from '@/lib/utils/analytics';
 
 type PropertyRow = {
   holders: number;
-  rented: boolean;
 };
 
 export function IrnrPriceCalculator({ compact = false, origin = 'service:no-residentes' }: { compact?: boolean; origin?: string }) {
-  const [properties, setProperties] = useState<PropertyRow[]>([{ holders: 1, rented: false }]);
+  const [properties, setProperties] = useState<PropertyRow[]>([{ holders: 1 }]);
 
-  const standardUnits = useMemo(
+  const declarativeUnits = useMemo(
     () => properties.reduce(
-      (total, property) => total + (property.rented ? 0 : Math.max(1, property.holders)),
+      (total, property) => total + Math.max(1, property.holders),
       0,
     ),
     [properties],
   );
-  const rentalUnits = useMemo(
-    () => properties.reduce(
-      (total, property) => total + (property.rented ? Math.max(1, property.holders) : 0),
-      0,
-    ),
-    [properties],
-  );
-  const net = standardUnits > 0 ? 80 + Math.max(0, standardUnits - 1) * 30 : 0;
+  const net = declarativeUnits > 0 ? 80 + Math.max(0, declarativeUnits - 1) * 30 : 0;
   const vat = Math.round(net * 0.21 * 100) / 100;
   const total = Math.round((net + vat) * 100) / 100;
-  const hasRental = rentalUnits > 0;
 
   const updateProperty = (index: number, patch: Partial<PropertyRow>) => {
     setProperties((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, ...patch } : row));
   };
 
-  const rentedIndexes = properties
-    .map((property, index) => property.rented ? index + 1 : null)
-    .filter((value): value is number => value !== null);
   const holderDistribution = properties.map((property) => property.holders).join(',');
   const summary = [
     `Inmuebles: ${properties.length}`,
     `titulares por inmueble: ${holderDistribution}`,
-    `unidades estándar no alquiladas: ${standardUnits}`,
-    rentedIndexes.length
-      ? `unidades alquiladas pendientes de revisión: ${rentalUnits}; inmuebles alquilados: ${rentedIndexes.join(',')}`
-      : 'sin inmuebles alquilados',
-    standardUnits > 0
-      ? `honorarios estimados para renta imputada: ${net} EUR + IVA`
-      : 'honorarios de inmuebles alquilados: pendientes de revisión',
+    `unidades declarativas: ${declarativeUnits}`,
+    `honorarios estimados: ${net} EUR + IVA`,
   ].join('; ');
 
   const requestHref = `/solicitar-presupuesto?servicio=no-residentes&origen=${encodeURIComponent(origin)}&resumen=${encodeURIComponent(summary)}`;
@@ -65,18 +48,21 @@ export function IrnrPriceCalculator({ compact = false, origin = 'service:no-resi
         <div>
           <h3 className="font-serif text-xl font-bold text-[#0D1B2A]">Calculadora IRNR · inmuebles en España</h3>
           <p className="mt-1 text-sm leading-6 text-[#52606D]">
-            Para inmuebles a disposición/no alquilados: 80 € + IVA la primera unidad declarativa y 30 € + IVA cada unidad adicional.
+            80 € + IVA la primera unidad declarativa y 30 € + IVA cada unidad adicional.
             Una unidad es un inmueble por cada titular no residente.
+          </p>
+          <p className="mt-2 text-xs leading-5 text-[#6B7280]">
+            El uso del inmueble no cambia esta estimación. Si estuvo alquilado, pediremos después los periodos, ingresos y documentación necesarios para preparar la declaración.
           </p>
         </div>
       </div>
 
       <div className="mt-5 space-y-3">
         {properties.map((property, index) => (
-          <div key={index} className="grid gap-3 border border-[#0D1B2A]/10 bg-white p-4 sm:grid-cols-[1fr_150px_160px_auto] sm:items-end">
+          <div key={index} className="grid gap-3 border border-[#0D1B2A]/10 bg-white p-4 sm:grid-cols-[1fr_170px_auto] sm:items-end">
             <div>
               <p className="text-sm font-bold text-[#0D1B2A]">Inmueble {index + 1}</p>
-              <p className="mt-1 text-xs text-[#6B7280]">Solo necesitamos estos datos para estimar el precio.</p>
+              <p className="mt-1 text-xs text-[#6B7280]">Para calcular el precio solo necesitamos saber cuántos titulares no residentes tiene.</p>
             </div>
             <label className="text-xs font-semibold text-[#23364D]">
               Titulares no residentes
@@ -87,14 +73,6 @@ export function IrnrPriceCalculator({ compact = false, origin = 'service:no-resi
               >
                 {[1, 2, 3, 4].map((value) => <option key={value} value={value}>{value}</option>)}
               </select>
-            </label>
-            <label className="flex min-h-10 items-center gap-2 text-xs font-semibold text-[#23364D]">
-              <input
-                type="checkbox"
-                checked={property.rented}
-                onChange={(event) => updateProperty(index, { rented: event.target.checked })}
-              />
-              Está alquilado
             </label>
             {properties.length > 1 && (
               <button
@@ -112,7 +90,7 @@ export function IrnrPriceCalculator({ compact = false, origin = 'service:no-resi
 
       <button
         type="button"
-        onClick={() => setProperties((current) => [...current, { holders: 1, rented: false }])}
+        onClick={() => setProperties((current) => [...current, { holders: 1 }])}
         className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-[#D4A017]"
       >
         <Plus className="h-4 w-4" /> Añadir otro inmueble
@@ -120,22 +98,10 @@ export function IrnrPriceCalculator({ compact = false, origin = 'service:no-resi
 
       <div className="mt-5 border-t border-[#D4A017]/20 pt-5">
         <p className="text-xs uppercase tracking-wider text-[#6B7280]">Estimación</p>
-        {standardUnits > 0 ? (
-          <>
-            <p className="mt-1 text-2xl font-bold text-[#0D1B2A]">{net.toLocaleString('es-ES', { minimumFractionDigits: 2 })} € + IVA</p>
-            <p className="mt-1 text-sm text-[#52606D]">
-              {standardUnits} unidad{standardUnits !== 1 ? 'es' : ''} estándar no alquilada{standardUnits !== 1 ? 's' : ''} · total con IVA: {total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €
-            </p>
-          </>
-        ) : (
-          <p className="mt-1 text-xl font-bold text-[#0D1B2A]">Precio pendiente de revisión</p>
-        )}
-        {hasRental && (
-          <p className="mt-3 border border-amber-300 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
-            {rentalUnits} unidad{rentalUnits !== 1 ? 'es' : ''} corresponde{rentalUnits === 1 ? '' : 'n'} a inmueble{rentalUnits !== 1 ? 's' : ''} alquilado{rentalUnits !== 1 ? 's' : ''} y no se incluye{rentalUnits === 1 ? '' : 'n'} en la tarifa estándar.
-            Revisaremos los periodos de alquiler antes de confirmar ese importe.
-          </p>
-        )}
+        <p className="mt-1 text-2xl font-bold text-[#0D1B2A]">{net.toLocaleString('es-ES', { minimumFractionDigits: 2 })} € + IVA</p>
+        <p className="mt-1 text-sm text-[#52606D]">
+          {declarativeUnits} unidad{declarativeUnits !== 1 ? 'es' : ''} declarativa{declarativeUnits !== 1 ? 's' : ''} · total con IVA: {total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €
+        </p>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
