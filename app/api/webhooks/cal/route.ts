@@ -245,6 +245,7 @@ export async function POST(request: NextRequest) {
       const endInstant = new Date(payload.endTime);
       const confirmedDate = formatMadridDate(startInstant);
       const confirmedTime = formatMadridTime(startInstant);
+      const confirmedEndDate = formatMadridDate(endInstant);
       const confirmedEndTime = formatMadridTime(endInstant);
       const { data: appointment, error: rescheduleError } = await admin.from('appointments').update({ appointment_date: payload.startTime, appointment_end: payload.endTime, confirmed_date: confirmedDate, confirmed_time: confirmedTime, status: 'confirmed', meeting_url: payload.videoCallUrl ?? null, updated_at: new Date().toISOString() }).eq('cal_uid', payload.uid).select('id,name,email,service,appointment_type,google_event_id').maybeSingle();
       if (rescheduleError) console.error('[cal/webhook] BOOKING_RESCHEDULED update failed:', rescheduleError.message, 'uid:', payload.uid);
