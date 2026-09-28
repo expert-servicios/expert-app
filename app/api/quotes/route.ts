@@ -148,6 +148,7 @@ export async function POST(request: NextRequest) {
           metadata: {
             ...existingMetadata,
             conversion: quoteRequestInteraction,
+            last_acquisition: quoteRequestInteraction,
             quote_requests: [...previousRequests, quoteRequestInteraction],
           },
         })
@@ -173,6 +174,7 @@ export async function POST(request: NextRequest) {
           metadata: {
             ...attributionFields.metadata,
             conversion: quoteRequestInteraction,
+            last_acquisition: quoteRequestInteraction,
             quote_requests: [quoteRequestInteraction],
           },
         })
