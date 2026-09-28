@@ -467,7 +467,7 @@ export default async function ServicioDetallePage({
                 <div className="mt-6 grid gap-4 md:grid-cols-2">
                   {service.deliveryOptions.map((option) => {
                     const optionHref = option.mode === 'guided'
-                      ? `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&origen=${encodedServiceSlug}&modalidad=guided`
+                      ? `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&origen=${encodedServiceOrigin}&modalidad=guided`
                       : `${budgetHref}&modalidad=full_service`;
                     return (
                       <div key={option.mode} className="border border-[#D4A017]/25 bg-[#F8F6F1] p-5">
