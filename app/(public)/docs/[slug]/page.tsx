@@ -139,6 +139,7 @@ export default async function DocDetailPage({
               name: relatedServices[0].name,
               hasCheckout: Boolean(relatedServices[0].stripePriceId),
               priceCalculator: relatedServices[0].priceCalculator,
+              unitPriceCalculator: relatedServices[0].unitPriceCalculator,
             } : null}
           />
         </article>
