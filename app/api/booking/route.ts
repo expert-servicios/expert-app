@@ -20,6 +20,7 @@ import {
 } from '@/lib/booking/booking-management-token';
 import { caseOpened, citaConfirmed } from '@/lib/email/templates';
 import { ensureBookingAdminTask, cancelBookingAdminTask } from '@/lib/booking/booking-admin-task';
+import { notifyBookingAdminActivity } from '@/lib/booking/booking-admin-notifications';
 import { onboardingPreparationEmail } from '@/lib/email/onboarding-templates';
 import { ensureOnboardingTask, findOpenOnboardingCase } from '@/lib/admin/onboarding-followup';
 import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients';
@@ -807,6 +808,16 @@ export async function POST(request: NextRequest) {
         console.error('[booking] admin confirmation email failed on all transports:', result.reason);
       }
     }
+
+    await notifyBookingAdminActivity({
+      kind: rescheduledAppointment ? 'rescheduled' : 'created',
+      appointmentId: appointmentId!,
+      name: input.name,
+      service: service.label,
+      localDate,
+      localTime,
+      email: bookingEmail,
+    }).catch((pushError) => console.error('[booking] admin push:', pushError));
 
     return NextResponse.json({
       ok: true,
