@@ -9,6 +9,10 @@ describe('booking email delivery', () => {
   const transport = source('lib/booking/booking-email.ts');
   const form = source('components/booking/NativeBookingForm.tsx');
   const gmail = source('lib/integrations/gmail.ts');
+  const manageToken = source('lib/booking/booking-management-token.ts');
+  const cancelRoute = source('app/api/booking/manage/cancel/route.ts');
+  const invite = source('lib/booking/calendar-invite.ts');
+  const template = source('lib/email/templates.ts');
 
   it('uses Gmail first and Resend only as fallback', () => {
     expect(transport).toContain('sendNewGmailSA');
@@ -35,5 +39,34 @@ describe('booking email delivery', () => {
   it('returns the Gmail message id for auditability', () => {
     expect(gmail).toContain('Promise<string>');
     expect(gmail).toContain("return result.data?.id ?? ''");
+  });
+
+  it('attaches a portable ICS calendar file', () => {
+    expect(route).toContain("filename: 'cita-expert.ics'");
+    expect(route).toContain("type: 'text/calendar; charset=utf-8'");
+    expect(invite).toContain('BEGIN:VCALENDAR');
+    expect(invite).toContain('BEGIN:VEVENT');
+    expect(gmail).toContain('multipart/mixed');
+  });
+
+  it('adds signed cancel and reschedule links to client confirmation', () => {
+    expect(route).toContain('createBookingManagementToken');
+    expect(route).toContain('bookingManagementUrls');
+    expect(template).toContain('Cambiar cita');
+    expect(template).toContain('Cancelar cita');
+    expect(manageToken).toContain("purpose: 'booking_manage'");
+  });
+
+  it('cancels safely and restores state if Calendar deletion fails', () => {
+    expect(cancelRoute).toContain("status: 'cancelled'");
+    expect(cancelRoute).toContain("status: 'confirmed'");
+    expect(cancelRoute).toContain('deleteBookingCalendarEvent');
+    expect(cancelRoute).toContain('se restauró la cita');
+  });
+
+  it('keeps the original appointment until a replacement is confirmed', () => {
+    expect(route).toContain("status: 'rescheduled'");
+    expect(route).toContain('se conserva la cita original');
+    expect(route.indexOf("status: 'confirmed'")).toBeLessThan(route.indexOf("status: 'rescheduled'"));
   });
 });
