@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     const { data: byEmail, error: emailLookupError } = await admin
       .from('leads')
       .select('id,message,metadata,email,phone')
-      .ilike('email', escapeIlikeLiteral(normalizedEmail))
+      .eq('email', normalizedEmail)
       .limit(1)
       .maybeSingle();
     if (emailLookupError) throw emailLookupError;
