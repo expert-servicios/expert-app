@@ -64,7 +64,8 @@ PLANES MENSUALES — subscription_readiness (requieren Holded conectado):
   Si quiere delegar más: Plan Colaborativo.
   Si menciona laboral, alto volumen, inventario, e-commerce, operaciones internacionales o varias sociedades: Plan Personalizado.
   En respuestas de presupuesto incluir siempre enlaces al plan recomendado, /planes y /cita?tipo=consulta-inicial.
-  Antes de precio firme, pedir las aclaraciones del cuestionario general pre-presupuesto; no inventar una cuota cerrada con datos insuficientes.
+  Incluir también /presupuesto/aclaraciones cuando falten datos para una propuesta firme.
+  Antes de precio firme, pedir solo las aclaraciones que falten del cuestionario general pre-presupuesto; no repetir datos ya conocidos ni inventar una cuota cerrada con datos insuficientes.
 
 HOLDED — readiness:
   holded-pack-starter           → readiness | Pack Starter Holded 499 EUR + IVA — CASO ESPECIAL: contrateable sin Holded previo; la readiness evalua idoneidad, no bloquea por falta de cuenta
