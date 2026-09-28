@@ -315,7 +315,8 @@ export async function createKiaConfirmedBooking(input: {
       start: start.toISOString(),
       end: end.toISOString(),
       meetingUrl: meeting.meetingUrl,
-      managementUrl: managementLinks.manage,
+      cancelUrl: managementLinks.cancelUrl,
+      rescheduleUrl: managementLinks.rescheduleUrl,
       timezone: BOOKING_TIMEZONE,
     };
   } catch (error) {
