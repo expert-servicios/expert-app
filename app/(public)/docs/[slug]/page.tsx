@@ -4,7 +4,6 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, BookOpen, Clock, FileText, Tag } from 'lucide-react';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
 import { ArticleIntentCTA } from '@/components/content/ArticleIntentCTA';
-import { ArticleIntentCTA } from '@/components/content/ArticleIntentCTA';
 import { categories, services } from '@/lib/utils/catalog';
 import { docs, getDoc, getDocCategory } from '@/lib/utils/docs';
 
@@ -143,11 +142,38 @@ export default async function DocDetailPage({
             <ol className="mt-4 space-y-2">
               {sections.map(({ heading }) => (
                 <li key={heading}>
-                  <Link
-                href="/dashboard?kia=open"
+                  <a href={`#${slugify(heading)}`} className="text-sm leading-5 text-[#23364D] transition hover:text-[#D4A017]">
+                    {heading}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {relatedServices.length > 0 && (
+            <div className="brand-blue-bg p-5 text-[#F8F6F1]">
+              <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">Servicio relacionado</p>
+              <div className="mt-4 space-y-4">
+                {relatedServices.map((service) => {
+                  const serviceCategory = categories.find((item) => item.slug === service.categoria);
+                  return (
+                    <div key={service.slug}>
+                      <Link
+                        href={`/servicios/${service.categoria}/${service.slug}`}
+                        className="font-serif text-lg font-bold leading-tight text-[#F8F6F1] transition hover:text-[#D4A017]"
+                      >
+                        {service.name}
+                      </Link>
+                      <p className="mt-1 text-xs text-[#9CA3AF]">{serviceCategory?.name}</p>
+                    </div>
+                  );
+                })}
+              </div>
+              <Link
+                href={doc.relatedServiceSlugs?.[0] ? `/consulta-gratuita?origen=docs:${encodeURIComponent(doc.slug)}&servicio=${encodeURIComponent(doc.relatedServiceSlugs[0])}` : `/consulta-gratuita?origen=docs:${encodeURIComponent(doc.slug)}`}
                 className="mt-5 inline-flex min-h-11 w-full items-center justify-center bg-[#D4A017] px-4 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
               >
-                Consultar con KIA
+                Consulta gratuita
               </Link>
             </div>
           )}
