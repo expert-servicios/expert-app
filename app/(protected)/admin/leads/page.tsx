@@ -33,6 +33,9 @@ type Lead = {
   phone: string | null;
   source: string | null;
   source_key?: string | null;
+  category: string | null;
+  service: string | null;
+  message: string | null;
   created_at: string;
   lifecycle_stage: string;
   stripe_activity: string;
@@ -118,6 +121,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
   const activity = one(params.activity);
   const marketing = one(params.marketing);
   const locale = one(params.locale);
+  const focus = one(params.focus);
   const page = Math.max(1, Number(one(params.page)) || 1);
 
   const apiQuery = new URLSearchParams({ page: String(page), limit: '50' });
@@ -126,6 +130,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
   if (activity) apiQuery.set('activity', activity);
   if (marketing) apiQuery.set('marketing', marketing);
   if (locale) apiQuery.set('locale', locale);
+  if (focus) apiQuery.set('focus', focus);
 
   const data = await fetchWithCookies<ApiResponse>(`/api/admin/leads?${apiQuery.toString()}`);
   const loadFailed = data === null;
@@ -275,6 +280,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
                 <thead className="bg-[#fbf7ef] text-left text-[11px] uppercase tracking-wide text-[#756b5f]">
                   <tr>
                     <th className="px-4 py-3">Contacto</th>
+                    <th className="px-4 py-3">Consulta</th>
                     <th className="px-4 py-3">Etapa CRM</th>
                     <th className="px-4 py-3">Stripe</th>
                     <th className="px-4 py-3">Marketing</th>
@@ -295,6 +301,24 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
                             {lead.phone && <a href={`tel:${lead.phone}`} className="mt-1 flex items-center gap-1 text-xs text-[#526171] hover:underline"><Phone className="h-3 w-3" />{lead.phone}</a>}
                           </div>
                         </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-[#8a6111]">
+                          {lead.category ?? 'Contacto'}
+                        </p>
+                        {lead.service && <p className="mt-1 text-xs font-semibold text-[#29384a]">{lead.service}</p>}
+                        {lead.message ? (
+                          <details open={focus === lead.id} className="mt-2 max-w-md">
+                            <summary className="cursor-pointer text-xs font-semibold text-[#8a6111] hover:underline">
+                              Ver consulta completa
+                            </summary>
+                            <p className="mt-2 whitespace-pre-wrap rounded-lg border border-[#e4d8c6] bg-[#fffdf8] p-3 text-xs leading-5 text-[#29384a]">
+                              {lead.message}
+                            </p>
+                          </details>
+                        ) : (
+                          <p className="mt-2 text-xs text-[#8b8174]">Sin consulta registrada.</p>
+                        )}
                       </td>
                       <td className="px-4 py-4">
                         <LeadLifecycleSelect leadId={lead.id} currentStage={lead.lifecycle_stage} />
