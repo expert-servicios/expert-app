@@ -175,6 +175,7 @@ export default async function BlogArticlePage({
                 categoria: primaryService.categoria,
                 name: primaryService.name,
                 hasCheckout: Boolean(primaryService.stripePriceId),
+                priceCalculator: primaryService.priceCalculator,
               } : null}
             />
           </article>
