@@ -27,6 +27,7 @@ import {
   getAuthorizedBookingEmails,
   listOpenOnboardingCompanyIds,
   resolveAuthenticatedBookingIdentity,
+  resolveBookingIdentityByEmail,
   type BookingIdentity,
 } from '@/lib/admin/onboarding-booking-identity';
 import { verifyPrivateBookingAuthorization } from '@/lib/booking/private-booking-authorization';
@@ -556,13 +557,11 @@ export async function POST(request: NextRequest) {
     let adminTaskLeadId: string | null = null;
 
     if (!adminTaskClientId) {
-      const { data: profileMatch } = await admin
-        .from('profiles')
-        .select('id')
-        .eq('email', bookingEmail)
-        .limit(1)
-        .maybeSingle();
-      adminTaskClientId = profileMatch?.id ?? null;
+      const resolvedBookingIdentity = await resolveBookingIdentityByEmail(admin, bookingEmail);
+      if (resolvedBookingIdentity) {
+        adminTaskClientId = resolvedBookingIdentity.clientId;
+        adminTaskCompanyId = resolvedBookingIdentity.companyId;
+      }
     }
     if (!adminTaskClientId) {
       const { data: leadMatch } = await admin
@@ -590,12 +589,6 @@ export async function POST(request: NextRequest) {
         .eq('status', 'confirmed');
       if (rescheduleUpdateError) throw rescheduleUpdateError;
 
-      await cancelBookingAdminTask(
-        admin,
-        rescheduledAppointment.id,
-        `Cita sustituida por ${appointmentId}`,
-      );
-
       try {
         if (oldEventId && oldProvider) {
           await deleteBookingCalendarEvent(oldEventId, oldProvider);
@@ -611,6 +604,14 @@ export async function POST(request: NextRequest) {
           .eq('id', rescheduledAppointment.id);
         throw calendarError;
       }
+
+      await cancelBookingAdminTask(
+        admin,
+        rescheduledAppointment.id,
+        `Cita sustituida por ${appointmentId}`,
+      ).catch((taskError) => {
+        console.error('[booking] old meeting task cancellation:', taskError);
+      });
     }
 
     if (
@@ -809,6 +810,11 @@ export async function POST(request: NextRequest) {
       }
     }
     if (appointmentId) {
+      await cancelBookingAdminTask(
+        admin,
+        appointmentId,
+        'Reserva revertida durante compensación por error.',
+      ).catch((taskError) => console.error('[booking] task compensation failed:', taskError));
       try {
         if (remoteCleanupSucceeded) {
           await admin.from('appointments').delete().eq('id', appointmentId);
