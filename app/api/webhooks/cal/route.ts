@@ -1,3 +1,7 @@
+// LEGACY BOOKING COMPATIBILITY ONLY.
+// Retained to process lifecycle events for historical bookings created before
+// the Google Calendar/Meet migration. Never use this route for new bookings.
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
@@ -112,7 +116,7 @@ async function ensureCaseForBooking(admin: ReturnType<typeof getSupabaseAdmin>, 
       state: 'en_proceso',
       status: 'nuevo',
       next_action: slug === 'onboarding' ? 'Verificar Holded y finalizar el alta' : null,
-      admin_note: `Expediente creado automáticamente desde reserva Cal.com (${payload.uid})`,
+      admin_note: `Expediente creado automáticamente desde reserva legacy (${payload.uid})`,
       opened_at: new Date().toISOString(),
     }).select('id').single();
     if (error || !newCase) { console.error('[cal/webhook] ensureCaseForBooking insert:', error?.message); return null; }
