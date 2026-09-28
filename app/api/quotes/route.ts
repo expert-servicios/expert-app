@@ -81,37 +81,101 @@ export async function POST(request: NextRequest) {
     const supabaseAdmin = getSupabaseAdmin();
     const attributionFields = buildLeadAttributionFields(request);
 
-    const { data: lead, error: leadError } = await supabaseAdmin
-      .from('leads')
-      .insert({
-        name: validated.name,
+    const normalizedPhone = validated.phone?.trim() || null;
+    const quoteRequestInteraction = {
+      action: 'quote_request',
+      origin: validated.origin || null,
+      requested_services: serviceSlugs,
+      at: new Date().toISOString(),
+      contact: {
         email: normalizedEmail,
-        phone: validated.phone?.trim() || null,
-        client_type: 'particular',
-        category: 'Presupuesto',
-        service: serviceSlugList,
-        country: 'ES',
-        urgency: 'media',
-        message: descriptionText,
-        state: 'new',
-        source: attributionFields.source,
-        source_key: attributionFields.source_key,
-        metadata: {
-          ...attributionFields.metadata,
-          conversion: {
-            action: 'quote_request',
-            origin: validated.origin || null,
-            requested_services: serviceSlugs,
-            at: new Date().toISOString(),
-          },
-        },
-      })
-      .select('id')
-      .single();
+        phone: normalizedPhone,
+      },
+    };
 
-    if (leadError || !lead?.id) {
-      console.error('Error creating lead:', leadError);
-      return NextResponse.json({ error: 'Error al registrar la solicitud' }, { status: 500 });
+    const { data: leadByEmail, error: leadByEmailError } = await supabaseAdmin
+      .from('leads')
+      .select('id,message,metadata')
+      .eq('email', normalizedEmail)
+      .limit(1)
+      .maybeSingle();
+    if (leadByEmailError) throw leadByEmailError;
+
+    let existingLead = leadByEmail;
+    if (!existingLead && normalizedPhone) {
+      const { data: leadByPhone, error: leadByPhoneError } = await supabaseAdmin
+        .from('leads')
+        .select('id,message,metadata')
+        .eq('phone', normalizedPhone)
+        .limit(1)
+        .maybeSingle();
+      if (leadByPhoneError) throw leadByPhoneError;
+      existingLead = leadByPhone;
+    }
+
+    let leadId: string;
+    if (existingLead) {
+      const existingMetadata =
+        existingLead.metadata && typeof existingLead.metadata === 'object' && !Array.isArray(existingLead.metadata)
+          ? existingLead.metadata as Record<string, unknown>
+          : {};
+      const previousRequests = Array.isArray(existingMetadata.quote_requests)
+        ? existingMetadata.quote_requests.slice(-19)
+        : [];
+      const previousMessage = typeof existingLead.message === 'string' ? existingLead.message.trim() : '';
+      const nextMessage = [
+        previousMessage,
+        `[Solicitud de presupuesto ${new Date().toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })}]\nServicios: ${serviceList}\n${descriptionText}`,
+      ].filter(Boolean).join('\n\n');
+
+      const { error: leadUpdateError } = await supabaseAdmin
+        .from('leads')
+        .update({
+          name: validated.name,
+          category: 'Presupuesto',
+          service: serviceSlugList,
+          message: nextMessage,
+          state: 'new',
+          updated_at: new Date().toISOString(),
+          metadata: {
+            ...existingMetadata,
+            conversion: quoteRequestInteraction,
+            quote_requests: [...previousRequests, quoteRequestInteraction],
+          },
+        })
+        .eq('id', existingLead.id);
+      if (leadUpdateError) throw leadUpdateError;
+      leadId = existingLead.id;
+    } else {
+      const { data: lead, error: leadError } = await supabaseAdmin
+        .from('leads')
+        .insert({
+          name: validated.name,
+          email: normalizedEmail,
+          phone: normalizedPhone,
+          client_type: 'particular',
+          category: 'Presupuesto',
+          service: serviceSlugList,
+          country: 'ES',
+          urgency: 'media',
+          message: descriptionText,
+          state: 'new',
+          source: attributionFields.source,
+          source_key: attributionFields.source_key,
+          metadata: {
+            ...attributionFields.metadata,
+            conversion: quoteRequestInteraction,
+            quote_requests: [quoteRequestInteraction],
+          },
+        })
+        .select('id')
+        .single();
+
+      if (leadError || !lead?.id) {
+        console.error('Error creating lead:', leadError);
+        return NextResponse.json({ error: 'Error al registrar la solicitud' }, { status: 500 });
+      }
+      leadId = lead.id;
     }
 
     const quoteTitle = `Solicitud de presupuesto de ${validated.name}`;
@@ -120,7 +184,7 @@ export async function POST(request: NextRequest) {
     const { data: quote, error: quoteError } = await supabaseAdmin
       .from('quotes')
       .insert({
-        lead_id: lead.id,
+        lead_id: leadId,
         client_id: null,
         title: quoteTitle,
         description: quoteDescription,
@@ -146,7 +210,7 @@ export async function POST(request: NextRequest) {
       to: normalizedEmail,
       eventType: 'quote.received',
       ...clientTpl,
-      metadata: { quote_id: quote.id, lead_id: lead.id }
+      metadata: { quote_id: quote.id, lead_id: leadId }
     });
 
     if (adminEmails.length) {
