@@ -31,16 +31,18 @@ describe('article intent CTA and IRNR funnel', () => {
   });
 
   it('calculates IRNR quote units using 80 + 30 per additional property-holder unit', () => {
-    expect(calculator).toContain('80 + Math.max(0, units - 1) * 30');
+    expect(calculator).toContain('80 + Math.max(0, standardUnits - 1) * 30');
     expect(calculator).toContain('property.holders');
-    expect(calculator).toContain('unidades declarativas estimadas');
+    expect(calculator).toContain('unidades estándar no alquiladas');
+    expect(calculator).toContain('unidades alquiladas pendientes de revisión');
     expect(catalog).toContain('80 € + IVA la primera unidad declarativa');
     expect(catalog).toContain('30 € + IVA cada unidad adicional');
   });
 
   it('routes rented property estimates to review instead of treating them as standard imputed income', () => {
     expect(calculator).toContain('hasRental');
-    expect(calculator).toContain('Los periodos de alquiler requieren revisar el alcance');
+    expect(calculator).toContain('property.rented ? 0 : Math.max(1, property.holders)');
+    expect(calculator).toContain('Precio pendiente de revisión');
   });
 
   it('stores free questions as attributed leads for demand analysis', () => {
