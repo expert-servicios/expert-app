@@ -31,7 +31,7 @@ describe('KIA Google meeting operator', () => {
     expect(operator).toContain('hasExplicitSlotConfirmation');
     expect(operator).toContain('affirmative && dateMention && timeMention');
     expect(operator).toContain('kia_booking_explicit_confirmation_required');
-    expect(operator).toContain('latestUserText(input.contextMessages)');
+    expect(operator).toContain("input.confirmationMessage || latestUserText(input.contextMessages)");
   });
 
   it('rechecks working hours, slot grid and real occupancy before writing', () => {
@@ -54,6 +54,7 @@ describe('KIA Google meeting operator', () => {
 
   it('binds the booking email to the conversation identity', () => {
     expect(executor).toContain('context.contact.email.toLowerCase() !== attendeeEmail');
+    expect(executor).toContain("confirmationMessage: context.latestMessage ?? ''");
     expect(executor).toContain('El email de la reserva no coincide con el contacto');
   });
 
