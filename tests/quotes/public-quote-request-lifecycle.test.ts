@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const route = readFileSync(
-  resolve(process.cwd(), 'app/api/quotes/route.ts'),
-  'utf8',
-);
+const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
+const route = source('app/api/quotes/route.ts');
+const claimRoute = source('app/api/quotes/claim/route.ts');
+const claimToken = source('lib/quotes/quote-claim-token.ts');
+const clientEmail = source('lib/email/templates.ts');
 
 describe('public quote request lifecycle', () => {
   it('normalizes legacy service ids while keeping human-readable quote labels', () => {
@@ -17,13 +18,17 @@ describe('public quote request lifecycle', () => {
     expect(route).toContain('const serviceList = serviceSlugs.map(serviceDisplayName).join');
   });
 
-  it('lets the verified account claim its pending web quote by exact email', () => {
-    expect(route).toContain("const normalizedEmail = validated.email.trim().toLowerCase()");
-    expect(route).toContain("const verifiedEmail = user.email?.trim().toLowerCase()");
-    expect(route).toContain(".eq('email', verifiedEmail)");
-    expect(route).toContain(".update({ client_id: user.id })");
-    expect(route).toContain(".is('client_id', null)");
-    expect(route).toContain(".in('status', ['draft', 'sent', 'accepted'])");
+  it('requires the capability sent to the lead mailbox before claiming a quote', () => {
+    expect(route).toContain('createQuoteClaimToken');
+    expect(route).toContain('quoteReceivedClient(validated.name, serviceList, claimToken)');
+    expect(route).not.toContain("const verifiedEmail = user.email?.trim().toLowerCase()");
+    expect(claimToken).toContain("createHmac('sha256'");
+    expect(claimToken).toContain('timingSafeEqual');
+    expect(claimRoute).toContain('verifyQuoteClaimToken(token)');
+    expect(claimRoute).toContain('userEmail !== claim.email');
+    expect(claimRoute).toContain(".update({ client_id: user.id })");
+    expect(claimRoute).toContain(".is('client_id', null)");
+    expect(clientEmail).toContain('Acceder a mi presupuesto');
   });
 
   it('creates an unpriced public request as draft without premature expiry', () => {
