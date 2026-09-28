@@ -32,6 +32,19 @@ function withLocale<T extends { contains: (column: string, value: Record<string,
   return query.contains('metadata', { acquisition: { locale } });
 }
 
+function latestInteractionFromMetadata(metadata: unknown) {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return null;
+  const value = (metadata as Record<string, unknown>).last_acquisition;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  return {
+    at: typeof record.at === 'string' ? record.at : null,
+    intent: typeof record.intent === 'string' ? record.intent : null,
+    origin: typeof record.origin === 'string' ? record.origin : null,
+    service: typeof record.service === 'string' ? record.service : null,
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const admin = await requireAdminClient(request);
@@ -186,6 +199,7 @@ export async function GET(request: NextRequest) {
       leads: leads.map((lead) => ({
         ...lead,
         attribution: attributionFromMetadata(lead.metadata),
+        latest_interaction: latestInteractionFromMetadata(lead.metadata),
         stripe_summary: summaries.get(lead.id) ?? {
           customer_count: 0,
           active_subscription: false,
