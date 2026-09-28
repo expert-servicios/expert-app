@@ -352,10 +352,18 @@ export function academyCertificationPaidAdmin(name: string, email: string, progr
 }
 
 // ── 3. Quote responded — admin ha fijado importe ─────────────────────────────
-export function quoteResponded(name: string, amount: number, expiresAt: string | null) {
+export function quoteResponded(
+  name: string,
+  amount: number,
+  expiresAt: string | null,
+  claimToken?: string
+) {
   const expiry = expiresAt
     ? new Date(expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
     : 'próximamente';
+  const accessUrl = claimToken
+    ? `${BRAND.appUrl}/api/quotes/claim?token=${encodeURIComponent(claimToken)}`
+    : `${BRAND.appUrl}/dashboard/presupuestos`;
   return {
     subject: 'Tu presupuesto personalizado está listo — EXPERT',
     html: base('Presupuesto listo', `
