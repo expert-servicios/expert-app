@@ -153,7 +153,7 @@ export const services: Service[] = [
       'Presentación telemática',
       'Asesoramiento sobre convenios de doble imposición'
     ],
-    servicePriceDetail: 'Para inmuebles a disposición/no alquilados: 80 € + IVA la primera unidad declarativa (inmueble × titular no residente) y 30 € + IVA cada unidad adicional del mismo ejercicio. Si hay alquiler, venta u otra renta, revisamos el alcance antes de confirmar precio.',
+    servicePriceDetail: 'Para inmuebles en España: 80 € + IVA la primera unidad declarativa (inmueble × titular no residente) y 30 € + IVA cada unidad adicional del mismo ejercicio. El uso del inmueble —a disposición, alquilado o vendido— no cambia esta tarifa por unidad; después recogemos los periodos, ingresos y datos de la operación necesarios para preparar correctamente la declaración.',
     faqs: [
       { q: '¿Cuándo debo presentar el Modelo 210?', a: 'Depende del tipo de renta y de la fecha de devengo. La Orden HAC/623/2026 modificó los plazos y estableció una transición específica para 2026, por lo que revisamos el periodo oficial aplicable antes de presentar.' },
       { q: '¿Necesito representante fiscal?', a: 'No por el mero hecho de ser no residente o tener un inmueble en España. La obligación existe en determinados supuestos previstos por la normativa; revisamos tu caso antes de indicarlo como requisito.' }
