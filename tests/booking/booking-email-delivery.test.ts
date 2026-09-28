@@ -24,9 +24,9 @@ describe('booking email delivery', () => {
     expect(transport).toContain('Gmail audit persistence failed after successful send');
   });
 
-  it('emails the client but uses push instead of duplicate admin email', () => {
+  it('emails the client and creates one Admin task instead of a duplicate admin email', () => {
     expect(route).toContain("eventType: 'cita.confirmed'");
-    expect(route).toContain('notifyBookingAdminActivity({');
+    expect(route).toContain('ensureBookingAdminTask({');
     expect(route).not.toContain("eventType: 'booking.confirmed.admin'");
     expect(route).not.toContain('getAdminNotificationEmails()');
     expect(route).toContain('emailSent: clientEmailSent');
