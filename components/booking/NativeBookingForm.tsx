@@ -134,7 +134,11 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId }: Props)
 
       setMeetingUrl(data.meetingUrl ?? null);
       setStatus('success');
-      setMessage('La cita está confirmada. Te hemos enviado la invitación y la confirmación por email.');
+      setMessage(
+        data.emailSent === false
+          ? 'La cita está confirmada, pero no hemos podido enviar el correo de confirmación. Conserva el enlace de Google Meet que aparece aquí.'
+          : 'La cita está confirmada. Te hemos enviado la invitación y la confirmación por email.'
+      );
     } catch (error) {
       setStatus('error');
       setMessage(error instanceof Error ? error.message : 'No se pudo completar la reserva.');
