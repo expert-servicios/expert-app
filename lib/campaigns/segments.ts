@@ -39,27 +39,27 @@ export async function getSegmentRecipients(
       .is('unsubscribed_at', null);
     if (audienceSegment) query = query.eq('audience_segment', audienceSegment);
     const { data } = await query;
-    return (data ?? []).flatMap((r) => {
-      if (r.channel === 'telegram' && r.telegram_chat_id) {
-        return [{
-          channel: 'telegram' as const,
-          key: `telegram:${r.telegram_chat_id}`,
+    const recipients: Recipient[] = [];
+    for (const row of data ?? []) {
+      if (row.channel === 'telegram' && row.telegram_chat_id) {
+        recipients.push({
+          channel: 'telegram',
+          key: `telegram:${row.telegram_chat_id}`,
           email: null,
-          telegramChatId: r.telegram_chat_id,
-          name: r.name ?? null,
-        }];
-      }
-      if (r.channel === 'email' && r.email) {
-        return [{
-          channel: 'email' as const,
-          key: `email:${r.email.toLowerCase()}`,
-          email: r.email,
+          telegramChatId: row.telegram_chat_id,
+          name: row.name ?? null,
+        });
+      } else if (row.channel === 'email' && row.email) {
+        recipients.push({
+          channel: 'email',
+          key: `email:${row.email.toLowerCase()}`,
+          email: row.email,
           telegramChatId: null,
-          name: r.name ?? null,
-        }];
+          name: row.name ?? null,
+        });
       }
-      return [];
-    });
+    }
+    return recipients;
   }
 
   if (segment === 'leads') {
