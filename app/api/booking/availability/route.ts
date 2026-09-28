@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { listBookingCalendarBusyWindows } from '@/lib/booking/calendar-provider';
 import { verifyPrivateBookingAuthorization } from '@/lib/booking/private-booking-authorization';
+import { verifyBookingManagementToken } from '@/lib/booking/booking-management-token';
 import {
   BOOKING_MAX_DAYS,
   buildBookingSlots,
@@ -27,7 +28,8 @@ export async function GET(request: NextRequest) {
       const signed = service.key === 'onboarding' || service.key === 'formacion-holded'
         ? await verifyPrivateBookingAuthorization(searchParams.get('auth'), service.key)
         : null;
-      if (!signed && !(await hasAuthenticatedUser(request))) {
+      const management = await verifyBookingManagementToken(searchParams.get('manage'), service.key);
+      if (!signed && !management && !(await hasAuthenticatedUser(request))) {
         return NextResponse.json({ error: 'Esta reserva requiere una invitación válida o iniciar sesión.' }, { status: 401 });
       }
     }
