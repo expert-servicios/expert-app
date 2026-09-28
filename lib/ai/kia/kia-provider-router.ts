@@ -121,7 +121,7 @@ const providerCooldownUntil = new Map<KiaProviderRouteKey, number>();
 
 function providerCooldownMs(error: string): number {
   if (/HTTP\s+(401|403)\b/i.test(error)) return 5 * 60_000;
-  if (/HTTP\s+402\b|insufficient[_\s-]?quota|quota exceeded|credit(?:s)? exhausted|billing.*limit/i.test(error)) {
+  if (/HTTP\s+402\b|billing_error|insufficient[_\s-]?quota|quota exceeded|credit(?:s)? exhausted|credit balance is too low|billing.*limit/i.test(error)) {
     return 15 * 60_000;
   }
   if (/HTTP\s+429\b|rate[_\s-]?limit/i.test(error)) return 60_000;
@@ -618,9 +618,13 @@ function parseToolArguments(
 
 function extractApiError(data: unknown, status: number): string {
   if (typeof data === "object" && data && "error" in data) {
-    const error = (data as { error?: { message?: string } }).error;
-    if (typeof error?.message === "string")
-      return `HTTP ${status}: ${error.message}`;
+    const error = (data as { error?: { message?: string; type?: string; code?: string } }).error;
+    const detail = [
+      typeof error?.type === "string" ? error.type : null,
+      typeof error?.code === "string" ? error.code : null,
+      typeof error?.message === "string" ? error.message : null,
+    ].filter(Boolean).join(": ");
+    if (detail) return `HTTP ${status}: ${detail}`;
   }
   return `HTTP ${status}`;
 }
