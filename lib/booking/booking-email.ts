@@ -3,6 +3,12 @@ import { sendEmail } from '@/lib/email/send';
 import { appendKiaSignature } from '@/lib/email/kia-signature';
 import { sendNewGmailSA } from '@/lib/integrations/gmail';
 
+export interface BookingEmailAttachment {
+  filename: string;
+  content: string;
+  type?: string;
+}
+
 export interface BookingEmailInput {
   to: string;
   eventType: string;
@@ -10,6 +16,7 @@ export interface BookingEmailInput {
   html: string;
   metadata?: Record<string, unknown>;
   idempotencyKey: string;
+  attachments?: BookingEmailAttachment[];
 }
 
 export async function sendBookingEmail(input: BookingEmailInput): Promise<{
@@ -32,6 +39,7 @@ export async function sendBookingEmail(input: BookingEmailInput): Promise<{
       subject: input.subject,
       body: html,
       bodyHtml: true,
+      attachments: input.attachments,
     });
 
     const { error: auditError } = await admin.from('email_events').insert({
@@ -68,6 +76,7 @@ export async function sendBookingEmail(input: BookingEmailInput): Promise<{
         transport: 'resend_fallback',
       },
       idempotencyKey: input.idempotencyKey,
+      attachments: input.attachments,
     });
 
     return { transport: 'resend', providerId: resendId };
