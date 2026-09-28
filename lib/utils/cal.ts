@@ -1,11 +1,11 @@
 // Booking utility.
 //
-// Google Calendar Appointment Schedules are the preferred provider.
-// Cal.com variables are retained temporarily as a legacy fallback while
-// historical bookings/webhooks are drained.
+// Google Calendar / Meet is the active booking stack.
+// Historical external-provider records and webhooks are handled separately as
+// legacy compatibility and must never be selected for a new booking.
 //
 // New code should use getBooking*Url(). Existing getCal*Url() exports remain
-// as compatibility aliases until the Cal.com migration is complete.
+// as deprecated compatibility aliases until their callers are renamed.
 
 export type BookingProvider = 'google' | 'cal' | 'external' | 'none';
 
@@ -20,17 +20,6 @@ function absoluteUrl(value: string | undefined): string | null {
   }
 }
 
-function legacyCalUrl(envVar: string | undefined): string | null {
-  const link = envVar?.trim();
-  if (!link) return null;
-
-  // Preserve compatibility if a full Cal.com URL was supplied manually.
-  const direct = absoluteUrl(link);
-  if (direct) return direct;
-
-  return `https://cal.com/${link}`;
-}
-
 function nativeBookingEnabled(): boolean {
   return process.env.NEXT_PUBLIC_NATIVE_BOOKING_ENABLED !== 'false';
 }
@@ -38,15 +27,13 @@ function nativeBookingEnabled(): boolean {
 function bookingUrl(
   nativePath: string,
   googleUrl: string | undefined,
-  legacyCalLink: string | undefined,
   options: { allowExternalGoogleFallback?: boolean } = {}
 ): string | null {
   if (nativeBookingEnabled()) return nativePath;
 
-  const googleFallback =
-    options.allowExternalGoogleFallback === false ? null : absoluteUrl(googleUrl);
-
-  return googleFallback ?? legacyCalUrl(legacyCalLink);
+  return options.allowExternalGoogleFallback === false
+    ? null
+    : absoluteUrl(googleUrl);
 }
 
 export function getBookingProvider(url: string | null | undefined): BookingProvider {
@@ -56,6 +43,8 @@ export function getBookingProvider(url: string | null | undefined): BookingProvi
     if (host === 'calendar.app.google' || host.endsWith('.calendar.app.google') || host === 'calendar.google.com') {
       return 'google';
     }
+    // Historical provider recognition only. No current booking URL generator
+    // returns this provider.
     if (host === 'cal.com' || host.endsWith('.cal.com')) return 'cal';
     return 'external';
   } catch {
@@ -66,16 +55,14 @@ export function getBookingProvider(url: string | null | undefined): BookingProvi
 export function getBookingMeetingUrl(): string | null {
   return bookingUrl(
     '/cita?tipo=consulta-inicial',
-    process.env.NEXT_PUBLIC_GOOGLE_BOOKING_REUNION_URL,
-    process.env.NEXT_PUBLIC_CAL_REUNION_LINK
+    process.env.NEXT_PUBLIC_GOOGLE_BOOKING_REUNION_URL
   );
 }
 
 export function getBookingDemoUrl(): string | null {
   return bookingUrl(
     '/cita?tipo=demo-holded',
-    process.env.NEXT_PUBLIC_GOOGLE_BOOKING_DEMO_URL,
-    process.env.NEXT_PUBLIC_CAL_DEMO_LINK
+    process.env.NEXT_PUBLIC_GOOGLE_BOOKING_DEMO_URL
   );
 }
 
@@ -83,11 +70,9 @@ export function getBookingOnboardingUrl(): string | null {
   return bookingUrl(
     '/cita?tipo=onboarding',
     process.env.NEXT_PUBLIC_GOOGLE_BOOKING_ONBOARDING_URL,
-    process.env.NEXT_PUBLIC_CAL_ONBOARDING_LINK,
     {
-      // External Google Appointment Schedules do not currently write back to
-      // EXPERT appointments. In rollback mode, onboarding must therefore stay
-      // on the legacy Cal flow until external Google ingestion exists.
+      // External Google Appointment Schedules do not write back to EXPERT yet.
+      // Private onboarding therefore fails closed instead of switching provider.
       allowExternalGoogleFallback: false,
     }
   );
@@ -97,10 +82,9 @@ export function getBookingFormacionUrl(): string | null {
   return bookingUrl(
     '/cita?tipo=formacion-holded',
     process.env.NEXT_PUBLIC_GOOGLE_BOOKING_FORMACION_URL,
-    process.env.NEXT_PUBLIC_CAL_FORMACION_LINK,
     {
-      // External Google Appointment Schedules are not ingested into EXPERT yet.
-      // Training rollback must therefore stay on the legacy Cal webhook path.
+      // External Google Appointment Schedules do not write back to EXPERT yet.
+      // Private training therefore fails closed instead of switching provider.
       allowExternalGoogleFallback: false,
     }
   );
@@ -109,8 +93,7 @@ export function getBookingFormacionUrl(): string | null {
 export function getBookingAcademyUrl(): string | null {
   return bookingUrl(
     '/cita?tipo=academy-admision',
-    process.env.NEXT_PUBLIC_GOOGLE_BOOKING_ACADEMY_URL,
-    process.env.NEXT_PUBLIC_CAL_ACADEMY_LINK
+    process.env.NEXT_PUBLIC_GOOGLE_BOOKING_ACADEMY_URL
   );
 }
 
