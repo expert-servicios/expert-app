@@ -14,7 +14,7 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain('KIA_EMAIL_AGENT_ENABLED');
     expect(route).toContain('KIA_EMAIL_AUTO_SEND_ENABLED');
     expect(route).toContain('health_not_green');
-    expect(route).toContain("data.status !== 'passed'");
+    expect(route).toContain("data.status !== 'success'");
     expect(route).toContain('failed_checks');
   });
 
@@ -32,6 +32,8 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain('!result.decision.requiresManualReview');
     expect(route).toContain('!result.usedFallback');
     expect(route).toContain('!identity.ambiguousCase');
+    expect(route).toContain('!identity.linkedCaseSenderMismatch');
+    expect(route).toContain('!replyToMismatch');
     expect(route).toContain('!hasAttachments');
   });
 
@@ -49,8 +51,29 @@ describe('KIA guarded email agent', () => {
     expect(gmail).toContain('markRead = true');
   });
 
+  it('reserves a unique send claim before any Gmail write', () => {
+    expect(route).toContain("kia_email_send:");
+    expect(route).toContain("state: 'reserved'");
+    expect(route).toContain("claimError.code === '23505'");
+    expect(route).toContain("state: 'uncertain_failure'");
+  });
+
+  it('paginates unread cache and checks live unread state', () => {
+    expect(route).toContain('pageSize = 200');
+    expect(route).toContain('.range(offset, offset + pageSize - 1)');
+    expect(route).toContain('!latest.unread');
+    expect(route).toContain('maxLiveInspections = 30');
+  });
+
+  it('honors Reply-To conservatively and ignores inline signature images', () => {
+    expect(gmail).toContain("hdr(headers, 'Reply-To')");
+    expect(route).toContain('latest.replyTo || latest.fromEmail');
+    expect(route).toContain('latest.attachments.some((attachment) => !attachment.inline)');
+  });
+
   it('threads replies and schedules after inbox sync', () => {
     expect(helper).toContain('sendGmailReplySA');
+    expect(helper).toContain('Autonomous writes are deliberately single-transport');
     expect(route).toContain('sendOperationalGmailReply');
     expect(vercel).toContain('/api/cron/kia-email-agent');
     expect(vercel).toContain('2-59/10 * * * *');
