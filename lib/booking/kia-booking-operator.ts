@@ -8,7 +8,10 @@ import {
   listBookingCalendarBusyWindows,
 } from '@/lib/booking/calendar-provider';
 import {
+  BOOKING_CLOSE_HOUR,
   BOOKING_MAX_DAYS,
+  BOOKING_OPEN_HOUR,
+  BOOKING_SLOT_STEP_MINUTES,
   BOOKING_TIMEZONE,
   buildBookingSlots,
   formatMadridDate,
@@ -52,6 +55,12 @@ function validExactSlot(start: Date, durationMinutes: number) {
 
   const localDate = formatMadridDate(start);
   const localTime = formatMadridTime(start);
+  const [hour, minute] = localTime.split(':').map(Number);
+  const minuteOfDay = hour * 60 + minute;
+  if (minute % BOOKING_SLOT_STEP_MINUTES !== 0) return false;
+  if (minuteOfDay < BOOKING_OPEN_HOUR * 60) return false;
+  if (minuteOfDay + durationMinutes > BOOKING_CLOSE_HOUR * 60) return false;
+
   const roundTrip = madridLocalToDate(localDate, localTime);
   if (Math.abs(roundTrip.getTime() - start.getTime()) >= 60_000) return false;
 
