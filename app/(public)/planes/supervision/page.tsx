@@ -27,7 +27,8 @@ const includes = [
   'Revisión básica de bancos/conciliación',
   'Resumen mensual generado por Kia',
   'Estado de empresa básico',
-  'Soporte por email/WhatsApp',
+  'Soporte por email, KIA chat o Telegram',
+  'Modalidad válida para autónomo vinculado/económicamente dependiente de una empresa del mismo cliente cuando la operativa es simple y normalmente no supera unas 10 facturas al mes',
   'Portal Cliente EXPERT',
   'Licencia Holded obligatoria no incluida',
 ];
@@ -59,7 +60,7 @@ export default function PlanSupervisionPage() {
             <span className="mb-2 text-lg text-[#9CA3AF]">€/mes + IVA</span>
           </div>
           <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-[#9CA3AF]">
-            Tú llevas Holded. Kia y EXPERT supervisan lo esencial, detectan alertas y te ayudan a no perder el control mensual.
+            Tú llevas Holded. Kia y EXPERT supervisan lo esencial, detectan alertas y te ayudan a no perder el control mensual. También puede encajar para autónomos vinculados a una empresa con operativa muy simple.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <div className="w-full max-w-xs">
@@ -98,8 +99,14 @@ export default function PlanSupervisionPage() {
                 </li>
               ))}
             </ul>
+            <div className="mt-5 border border-[#D4A017]/30 bg-[#D4A017]/5 p-4">
+              <p className="text-sm font-bold text-[#0D1B2A]">Caso habitual: autónomo vinculado a una empresa</p>
+              <p className="mt-2 text-sm leading-6 text-[#23364D]">
+                Cuando el autónomo trabaja principalmente para una sociedad vinculada del mismo cliente, tiene una operativa sencilla y normalmente no supera unas 10 facturas al mes, este plan puede utilizarse como referencia desde 49 €/mes + IVA. La propuesta final depende de sus obligaciones fiscales y de la complejidad real.
+              </p>
+            </div>
             <p className="mt-5 text-sm leading-6 text-[#23364D]">
-              Si necesitas impuestos trimestrales, revisa el{' '}
+              Si necesitas impuestos trimestrales fuera de este supuesto simplificado, revisa el{' '}
               <Link href="/planes/avanzado" className="font-semibold text-[#D4A017] hover:underline">
                 Plan Avanzado
               </Link>.
