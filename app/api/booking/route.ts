@@ -19,6 +19,7 @@ import {
   verifyBookingManagementToken,
 } from '@/lib/booking/booking-management-token';
 import { caseOpened, citaConfirmed } from '@/lib/email/templates';
+import { ensureBookingAdminTask, cancelBookingAdminTask } from '@/lib/booking/booking-admin-task';
 import { onboardingPreparationEmail } from '@/lib/email/onboarding-templates';
 import { ensureOnboardingTask, findOpenOnboardingCase } from '@/lib/admin/onboarding-followup';
 import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients';
@@ -26,6 +27,7 @@ import {
   getAuthorizedBookingEmails,
   listOpenOnboardingCompanyIds,
   resolveAuthenticatedBookingIdentity,
+  resolveBookingIdentityByEmail,
   type BookingIdentity,
 } from '@/lib/admin/onboarding-booking-identity';
 import { verifyPrivateBookingAuthorization } from '@/lib/booking/private-booking-authorization';
@@ -105,7 +107,7 @@ async function runNativeAdministrativeWorkflow(input: {
   localTime: string;
   meetingUrl: string;
   bookingProvider: 'google_native' | 'ms365_native';
-}) {
+}): Promise<string | null> {
   const { admin, identity } = input;
   const serviceLabel = input.serviceKey === 'onboarding' ? 'Sesión de onboarding' : 'Formación Holded';
   let caseId: string | null = null;
@@ -235,6 +237,8 @@ async function runNativeAdministrativeWorkflow(input: {
       idempotencyKey: `native/case-opened/${input.appointmentId}`,
     });
   }
+
+  return caseId;
 }
 
 export async function POST(request: NextRequest) {
@@ -547,6 +551,28 @@ export async function POST(request: NextRequest) {
       throw new Error(`Could not finalize appointment: ${finalizeError.message}`);
     }
 
+    let adminTaskCaseId: string | null = null;
+    let adminTaskClientId: string | null = privateIdentity?.clientId ?? null;
+    let adminTaskCompanyId: string | null = privateIdentity?.companyId ?? null;
+    let adminTaskLeadId: string | null = null;
+
+    if (!adminTaskClientId) {
+      const resolvedBookingIdentity = await resolveBookingIdentityByEmail(admin, bookingEmail);
+      if (resolvedBookingIdentity) {
+        adminTaskClientId = resolvedBookingIdentity.clientId;
+        adminTaskCompanyId = resolvedBookingIdentity.companyId;
+      }
+    }
+    if (!adminTaskClientId) {
+      const { data: leadMatch } = await admin
+        .from('leads')
+        .select('id')
+        .eq('email', bookingEmail)
+        .limit(1)
+        .maybeSingle();
+      adminTaskLeadId = leadMatch?.id ?? null;
+    }
+
     if (rescheduledAppointment) {
       const oldEventId = rescheduledAppointment.provider_booking_id ?? rescheduledAppointment.google_event_id;
       const oldProvider = calendarProviderFromBookingProvider(rescheduledAppointment.booking_provider)
@@ -578,13 +604,21 @@ export async function POST(request: NextRequest) {
           .eq('id', rescheduledAppointment.id);
         throw calendarError;
       }
+
+      await cancelBookingAdminTask(
+        admin,
+        rescheduledAppointment.id,
+        `Cita sustituida por ${appointmentId}`,
+      ).catch((taskError) => {
+        console.error('[booking] old meeting task cancellation:', taskError);
+      });
     }
 
     if (
       (service.key === 'onboarding' || service.key === 'formacion-holded') &&
       meeting.meetingUrl
     ) {
-      await runNativeAdministrativeWorkflow({
+      adminTaskCaseId = await runNativeAdministrativeWorkflow({
         admin,
         identity: privateIdentity,
         serviceKey: service.key,
@@ -605,8 +639,57 @@ export async function POST(request: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq('id', appointmentId!);
+
+        if (!privateIdentity) return null;
+        if (service.key === 'onboarding') {
+          const existing = await findOpenOnboardingCase(
+            privateIdentity.clientId,
+            privateIdentity.companyId,
+          ).catch(() => null);
+          return existing?.id ?? null;
+        }
+
+        let caseQuery = admin
+          .from('cases')
+          .select('id')
+          .eq('client_id', privateIdentity.clientId)
+          .eq('service', service.label)
+          .neq('state', 'finalizado');
+        caseQuery = privateIdentity.companyId
+          ? caseQuery.eq('company_id', privateIdentity.companyId)
+          : caseQuery.is('company_id', null);
+        const { data: existingCase } = await caseQuery
+          .order('opened_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        return existingCase?.id ?? null;
       });
     }
+
+    await ensureBookingAdminTask({
+      admin,
+      appointmentId: appointmentId!,
+      serviceKey: service.key,
+      serviceLabel: service.label,
+      name: input.name,
+      email: bookingEmail,
+      localDate,
+      localTime,
+      meetingUrl: meeting.meetingUrl,
+      clientId: adminTaskClientId,
+      companyId: adminTaskCompanyId,
+      caseId: adminTaskCaseId,
+      leadId: adminTaskLeadId,
+    }).catch(async (taskError) => {
+      console.error('[booking] admin task:', taskError);
+      await admin
+        .from('appointments')
+        .update({
+          admin_notes: `Admin task creation failed: ${taskError instanceof Error ? taskError.message : String(taskError)}`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', appointmentId!);
+    });
 
     const formattedDate = new Intl.DateTimeFormat('es-ES', {
       timeZone: BOOKING_TIMEZONE,
@@ -750,6 +833,11 @@ export async function POST(request: NextRequest) {
       }
     }
     if (appointmentId) {
+      await cancelBookingAdminTask(
+        admin,
+        appointmentId,
+        'Reserva revertida durante compensación por error.',
+      ).catch((taskError) => console.error('[booking] task compensation failed:', taskError));
       try {
         if (remoteCleanupSucceeded) {
           await admin.from('appointments').delete().eq('id', appointmentId);
