@@ -169,6 +169,7 @@ export async function GET(
 
   for (const row of eventsRes.data ?? []) {
     const metadataCompanyId = metadataString(row.metadata, 'company_id');
+    const metadataDirection = metadataString(row.metadata, 'direction');
     const rawMetadataCaseId = metadataString(row.metadata, 'case_id');
     const metadataCaseId = rawMetadataCaseId && caseCompanyById.has(rawMetadataCaseId) ? rawMetadataCaseId : null;
     const caseCompanyId = metadataCaseId ? caseCompanyById.get(metadataCaseId) ?? null : null;
@@ -176,9 +177,11 @@ export async function GET(
       id: `email-event-${row.id}`,
       date: row.created_at,
       channel: 'email',
-      direction: 'out',
-      title: row.subject ?? row.event_type ?? 'Email enviado',
-      preview: row.event_type ? `Tipo: ${row.event_type}` : 'Email enviado por EXPERT',
+      direction: metadataDirection === 'in' ? 'in' : 'out',
+      title: row.subject ?? row.event_type ?? (metadataDirection === 'in' ? 'Email recibido' : 'Email enviado'),
+      preview: metadataDirection === 'in'
+        ? 'Email recibido por Gmail'
+        : row.event_type ? `Tipo: ${row.event_type}` : 'Email enviado por EXPERT',
       html: row.html ?? null,
       status: row.status ?? null,
       caseId: metadataCaseId,
