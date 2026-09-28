@@ -137,6 +137,7 @@ export async function getSegmentRecipients(
       (profiles ?? []).filter((p) => p.email).map((p) => [p.email!, p.id])
     );
     return allRecipients.filter((r) => {
+      if (!r.email) return false;
       const id = profilesByEmail.get(r.email);
       return id ? !subIds.has(id) : true;
     });
