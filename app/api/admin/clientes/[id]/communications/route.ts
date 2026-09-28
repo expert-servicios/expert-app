@@ -167,9 +167,12 @@ export async function GET(
     items.push(item);
   };
 
+  const persistedInboundThreadIds = new Set<string>();
   for (const row of eventsRes.data ?? []) {
     const metadataCompanyId = metadataString(row.metadata, 'company_id');
     const metadataDirection = metadataString(row.metadata, 'direction');
+    const metadataThreadId = metadataString(row.metadata, 'thread_id');
+    if (metadataDirection === 'in' && metadataThreadId) persistedInboundThreadIds.add(metadataThreadId);
     const rawMetadataCaseId = metadataString(row.metadata, 'case_id');
     const metadataCaseId = rawMetadataCaseId && caseCompanyById.has(rawMetadataCaseId) ? rawMetadataCaseId : null;
     const caseCompanyId = metadataCaseId ? caseCompanyById.get(metadataCaseId) ?? null : null;
@@ -185,6 +188,8 @@ export async function GET(
       html: row.html ?? null,
       status: row.status ?? null,
       caseId: metadataCaseId,
+      provider: metadataDirection === 'in' ? 'gmail' : null,
+      conversationId: metadataThreadId,
       source: 'email_event',
     }, metadataCompanyId ?? caseCompanyId);
   }
