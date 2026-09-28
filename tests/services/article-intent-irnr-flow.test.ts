@@ -16,6 +16,9 @@ describe('article intent CTA and IRNR funnel', () => {
   const servicePage = source('app/(public)/servicios/[categoria]/[servicio]/page.tsx');
   const addToCart = source('components/services/AddToCartButton.tsx');
   const cartContext = source('contexts/CartContext.tsx');
+  const quickProfileGate = source('components/cart/QuickProfileGate.tsx');
+  const cartSidebar = source('components/cart/CartSidebar.tsx');
+  const cartPage = source('app/(public)/carrito/page.tsx');
   const serviceCheckout = source('app/api/services/checkout/route.ts');
   const bookingPage = source('app/(public)/cita/page.tsx');
   const bookingForm = source('components/booking/NativeBookingForm.tsx');
@@ -100,7 +103,12 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(servicePage).toContain('resolvedSearchParams.origen');
     expect(servicePage).toContain('contentOrigin: serviceOrigin');
     expect(addToCart).toContain('contentOrigin: item.contentOrigin?.trim()');
+    expect(cartContext).toContain('collectCartContentOrigins');
     expect(cartContext).toContain('contentOrigins');
+    expect(quickProfileGate).toContain('contentOrigins?: string[]');
+    expect(quickProfileGate).toContain('...(contentOrigins.length > 0 ? { contentOrigins } : {})');
+    expect(cartSidebar).toContain('contentOrigins={contentOrigins}');
+    expect(cartPage).toContain('contentOrigins={contentOrigins}');
     expect(serviceCheckout).toContain('contentOrigins             : z.array');
     expect(serviceCheckout).toContain('content_origins: contentOrigins');
     expect(stripeWebhook).toContain('checkoutContentOriginLabel');
@@ -148,6 +156,10 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(questionnaire).toContain('taxYears: string[]');
     expect(questionnaire).toContain('Añadir ejercicio');
     expect(questionnaire).toContain('rentalPeriods');
+    expect(questionnaire).toContain('soldDuringYear');
+    expect(questionnaire).toContain('saleDate');
+    expect(questionnaire).toContain('El inmueble se vendió durante este ejercicio');
+    expect(questionnaire).not.toContain('<option value="sold">');
     expect(questionnaire).toContain('Importe bruto cobrado');
     expect(questionnaire).toContain('Booking.com, Airbnb');
     expect(questionnaire).toContain('Subir archivo');
@@ -174,6 +186,8 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(adminCasePage).toContain('holder.ownershipPercent');
     expect(adminCasePage).toContain('irnrIntake.taxYears.join');
     expect(adminCasePage).toContain('Periodos de alquiler e ingresos');
+    expect(adminCasePage).toContain('property.soldDuringYear');
+    expect(adminCasePage).toContain('property.saleDate');
     expect(adminCasePage).toContain('period.grossIncome');
   });
 });
