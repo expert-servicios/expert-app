@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
   const admin = getSupabaseAdmin();
   const { data: quote, error: quoteError } = await admin
     .from('quotes')
-    .select('id,client_id,lead_id,status')
+    .select('id,client_id,lead_id,status,claim_email')
     .eq('id', claim.quoteId)
     .maybeSingle();
 
@@ -43,7 +43,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Presupuesto no encontrado.' }, { status: 404 });
   }
 
-  if (quote.lead_id) {
+  const persistedClaimEmail = quote.claim_email?.trim().toLowerCase() ?? '';
+  if (persistedClaimEmail) {
+    if (persistedClaimEmail !== claim.email) {
+      return NextResponse.json({ error: 'El enlace no corresponde a este presupuesto.' }, { status: 403 });
+    }
+  } else if (quote.lead_id) {
+    // Legacy quotes created before claim_email existed keep the previous safety check.
     const { data: lead, error: leadError } = await admin
       .from('leads')
       .select('email')
