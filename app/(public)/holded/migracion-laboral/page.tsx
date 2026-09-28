@@ -16,6 +16,7 @@ import {
 import { HoldedCalButton } from '@/components/holded/HoldedCalButton';
 import { RequestProposalModal } from '@/components/holded/RequestProposalModal';
 import { FaqSection } from '@/components/site/FaqSection';
+import { UnitPriceCalculator } from '@/components/services/UnitPriceCalculator';
 
 const SERVICE_NAME = 'Migración laboral a Holded';
 const UNIT_PRICE = 50;
@@ -211,6 +212,24 @@ export default function MigracionLaboralPage() {
               Pedido mínimo: {MIN_EMPLOYEES} empleados. El presupuesto definitivo se confirma tras revisar el estado de los expedientes.
             </p>
           </div>
+        </div>
+      </section>
+
+      <section className="px-6 pb-4 pt-10">
+        <div className="mx-auto max-w-4xl">
+          <UnitPriceCalculator
+            serviceSlug="holded-migracion-laboral"
+            origin="service:holded-migracion-laboral"
+            config={{
+              unitPrice: UNIT_PRICE,
+              unitLabel: 'empleado',
+              unitLabelPlural: 'empleados',
+              minUnits: MIN_EMPLOYEES,
+              defaultUnits: MIN_EMPLOYEES,
+              maxUnits: 500,
+              note: 'Pedido mínimo de 5 empleados. Regularizaciones históricas o incidencias extraordinarias se revisan aparte.',
+            }}
+          />
         </div>
       </section>
 
