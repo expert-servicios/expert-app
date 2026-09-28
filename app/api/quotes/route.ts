@@ -15,6 +15,7 @@ const quoteRequestSchema = z.object({
   phone: z.string().max(20).optional(),
   services: z.array(z.string().min(1)).min(1),
   description: z.string().max(1000).optional(),
+  origin: z.string().trim().max(240).optional(),
   recaptcha_token: z.string().optional()
 });
 
@@ -78,7 +79,17 @@ export async function POST(request: NextRequest) {
         state: 'new',
         source: attributionFields.source,
         source_key: attributionFields.source_key,
-        metadata: attributionFields.metadata,
+        metadata: {
+          ...attributionFields.metadata,
+          acquisition: {
+            ...(typeof attributionFields.metadata?.acquisition === 'object' && attributionFields.metadata.acquisition
+              ? attributionFields.metadata.acquisition
+              : {}),
+            intent: 'quote_request',
+            origin: validated.origin || null,
+            requested_services: validated.services,
+          },
+        },
       })
       .select('id')
       .single();
