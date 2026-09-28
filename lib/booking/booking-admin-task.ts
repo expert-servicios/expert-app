@@ -3,7 +3,7 @@ import { formatMadridDate, formatMadridTime } from '@/lib/booking/native-booking
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
-export async function ensureBookingAdminTask(input: {
+type BookingTaskInput = {
   admin: AdminClient;
   appointmentId: string;
   serviceKey: string;
@@ -17,64 +17,115 @@ export async function ensureBookingAdminTask(input: {
   companyId?: string | null;
   caseId?: string | null;
   leadId?: string | null;
-}) {
-  const { admin } = input;
-  const { data: existing, error: lookupError } = await admin
-    .from('internal_tasks')
-    .select('id,status')
-    .eq('source', 'system')
-    .contains('metadata', { appointment_id: input.appointmentId })
-    .maybeSingle();
+};
 
-  if (lookupError) throw lookupError;
+function taskMetadata(input: BookingTaskInput) {
+  return {
+    task_kind: 'booking_meeting',
+    appointment_id: input.appointmentId,
+    service_key: input.serviceKey,
+    meeting_time: input.localTime,
+    meeting_url: input.meetingUrl ?? null,
+    booking_email: input.email,
+  };
+}
 
-  const payload = {
+async function refreshExistingBookingTask(
+  input: BookingTaskInput,
+  existing: {
+    id: string;
+    status: string;
+    client_id: string | null;
+    company_id: string | null;
+    case_id: string | null;
+    lead_id: string | null;
+    metadata: unknown;
+  },
+) {
+  const metadata = existing.metadata && typeof existing.metadata === 'object' && !Array.isArray(existing.metadata)
+    ? existing.metadata as Record<string, unknown>
+    : {};
+
+  const payload: Record<string, unknown> = {
     title: `Reunión: ${input.serviceLabel} — ${input.name}`,
     description: [
       `Cita confirmada para ${input.localDate} a las ${input.localTime}.`,
       `Cliente: ${input.name} (${input.email}).`,
       input.meetingUrl ? `Google Meet: ${input.meetingUrl}` : '',
     ].filter(Boolean).join('\n'),
-    status: 'pendiente',
     priority: input.serviceKey === 'onboarding' ? 'alta' : 'media',
-    client_id: input.clientId ?? null,
-    company_id: input.companyId ?? null,
-    case_id: input.caseId ?? null,
-    lead_id: input.leadId ?? null,
     due_date: input.localDate,
-    source: 'system',
-    completed_at: null,
     updated_at: new Date().toISOString(),
     metadata: {
-      task_kind: 'booking_meeting',
-      appointment_id: input.appointmentId,
-      service_key: input.serviceKey,
-      meeting_time: input.localTime,
-      meeting_url: input.meetingUrl ?? null,
-      booking_email: input.email,
+      ...metadata,
+      ...taskMetadata(input),
     },
-  } as const;
+  };
 
-  if (existing?.id) {
-    const { error } = await admin
-      .from('internal_tasks')
-      .update(payload)
-      .eq('id', existing.id);
-    if (error) throw error;
-    return existing.id;
-  }
+  // Refreshes may run with partial context. Never detach a task merely because
+  // the current path cannot reconstruct an optional association.
+  if (input.clientId) payload.client_id = input.clientId;
+  if (input.companyId) payload.company_id = input.companyId;
+  if (input.caseId) payload.case_id = input.caseId;
+  if (input.leadId) payload.lead_id = input.leadId;
 
+  // Status/completed_at are intentionally not overwritten. An admin-completed
+  // or cancelled task must stay terminal during reconciliation.
+  const { error } = await input.admin.from('internal_tasks').update(payload).eq('id', existing.id);
+  if (error) throw error;
+  return existing.id;
+}
+
+export async function ensureBookingAdminTask(input: BookingTaskInput) {
+  const { admin } = input;
+  const { data: existing, error: lookupError } = await admin
+    .from('internal_tasks')
+    .select('id,status,client_id,company_id,case_id,lead_id,metadata')
+    .eq('booking_appointment_id', input.appointmentId)
+    .maybeSingle();
+
+  if (lookupError) throw lookupError;
+  if (existing?.id) return refreshExistingBookingTask(input, existing);
+
+  const now = new Date().toISOString();
   const { data, error } = await admin
     .from('internal_tasks')
     .insert({
-      ...payload,
-      created_at: new Date().toISOString(),
+      title: `Reunión: ${input.serviceLabel} — ${input.name}`,
+      description: [
+        `Cita confirmada para ${input.localDate} a las ${input.localTime}.`,
+        `Cliente: ${input.name} (${input.email}).`,
+        input.meetingUrl ? `Google Meet: ${input.meetingUrl}` : '',
+      ].filter(Boolean).join('\n'),
+      status: 'pendiente',
+      priority: input.serviceKey === 'onboarding' ? 'alta' : 'media',
+      client_id: input.clientId ?? null,
+      company_id: input.companyId ?? null,
+      case_id: input.caseId ?? null,
+      lead_id: input.leadId ?? null,
+      due_date: input.localDate,
+      source: 'system',
+      booking_appointment_id: input.appointmentId,
+      completed_at: null,
+      created_at: now,
+      updated_at: now,
+      metadata: taskMetadata(input),
     })
     .select('id')
     .single();
 
-  if (error || !data) throw error ?? new Error('Could not create booking admin task');
-  return data.id;
+  if (!error && data?.id) return data.id;
+  if (error?.code !== '23505') throw error ?? new Error('Could not create booking admin task');
+
+  // A concurrent booking/reconciliation won the unique-key race. Reload and
+  // refresh that single canonical task rather than creating a duplicate.
+  const { data: raced, error: racedError } = await admin
+    .from('internal_tasks')
+    .select('id,status,client_id,company_id,case_id,lead_id,metadata')
+    .eq('booking_appointment_id', input.appointmentId)
+    .single();
+  if (racedError || !raced) throw racedError ?? new Error('Could not reload booking admin task');
+  return refreshExistingBookingTask(input, raced);
 }
 
 export async function cancelBookingAdminTask(
@@ -85,8 +136,7 @@ export async function cancelBookingAdminTask(
   const { data: tasks, error: lookupError } = await admin
     .from('internal_tasks')
     .select('id,metadata,status')
-    .eq('source', 'system')
-    .contains('metadata', { appointment_id: appointmentId });
+    .eq('booking_appointment_id', appointmentId);
 
   if (lookupError) throw lookupError;
   if (!tasks?.length) return 0;
@@ -116,44 +166,66 @@ export async function cancelBookingAdminTask(
   return tasks.length;
 }
 
+async function loadAppointmentsForReconciliation(admin: AdminClient, from: string, to: string) {
+  const rows: Array<Record<string, any>> = [];
+  const pageSize = 500;
+
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await admin
+      .from('appointments')
+      .select('id,name,email,service,appointment_type,appointment_date,confirmed_date,confirmed_time,meeting_url,status,client_id,company_id')
+      .gte('appointment_date', from)
+      .lte('appointment_date', to)
+      .order('appointment_date', { ascending: true })
+      .order('id', { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
+
+  return rows;
+}
+
+async function loadBookingTasksForReconciliation(admin: AdminClient) {
+  const rows: Array<Record<string, any>> = [];
+  const pageSize = 500;
+
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await admin
+      .from('internal_tasks')
+      .select('id,status,booking_appointment_id,metadata')
+      .eq('source', 'system')
+      .not('booking_appointment_id', 'is', null)
+      .order('created_at', { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
+
+  return rows;
+}
 
 export async function reconcileBookingAdminTasks(admin: AdminClient) {
   const now = new Date();
   const from = new Date(now.getTime() - 30 * 24 * 60 * 60_000).toISOString();
   const to = new Date(now.getTime() + 120 * 24 * 60 * 60_000).toISOString();
 
-  const { data: appointments, error: appointmentError } = await admin
-    .from('appointments')
-    .select('id,name,email,service,appointment_type,appointment_date,confirmed_date,confirmed_time,meeting_url,status,client_id,company_id')
-    .gte('appointment_date', from)
-    .lte('appointment_date', to)
-    .order('appointment_date', { ascending: true })
-    .limit(500);
-  if (appointmentError) throw appointmentError;
+  const appointments = await loadAppointmentsForReconciliation(admin, from, to);
+  const tasks = await loadBookingTasksForReconciliation(admin);
 
-  const appointmentMap = new Map((appointments ?? []).map((appointment) => [appointment.id, appointment]));
-  const { data: tasks, error: taskError } = await admin
-    .from('internal_tasks')
-    .select('id,status,metadata')
-    .eq('source', 'system')
-    .contains('metadata', { task_kind: 'booking_meeting' })
-    .limit(1000);
-  if (taskError) throw taskError;
-
-  const taskByAppointment = new Map<string, { id: string; status: string }>();
-  for (const task of tasks ?? []) {
-    const metadata = task.metadata && typeof task.metadata === 'object' && !Array.isArray(task.metadata)
-      ? task.metadata as Record<string, unknown>
-      : {};
-    const appointmentId = typeof metadata.appointment_id === 'string' ? metadata.appointment_id : null;
-    if (appointmentId) taskByAppointment.set(appointmentId, { id: task.id, status: task.status });
-  }
+  const taskAppointmentIds = tasks
+    .map((task) => typeof task.booking_appointment_id === 'string' ? task.booking_appointment_id : null)
+    .filter((id): id is string => Boolean(id));
 
   let ensured = 0;
   let cancelled = 0;
 
-  for (const appointment of appointments ?? []) {
-    if (appointment.status === 'confirmed') {
+  for (const appointment of appointments) {
+    if (appointment.status === 'confirmed' || appointment.status === 'confirmada') {
       const appointmentStart = appointment.appointment_date
         ? new Date(appointment.appointment_date)
         : null;
@@ -186,7 +258,6 @@ export async function reconcileBookingAdminTasks(admin: AdminClient) {
     }
   }
 
-  const taskAppointmentIds = [...taskByAppointment.keys()];
   const existingTaskAppointmentIds = new Set<string>();
   for (let offset = 0; offset < taskAppointmentIds.length; offset += 100) {
     const batch = taskAppointmentIds.slice(offset, offset + 100);
@@ -208,5 +279,5 @@ export async function reconcileBookingAdminTasks(admin: AdminClient) {
     );
   }
 
-  return { ensured, cancelled, scanned: appointments?.length ?? 0 };
+  return { ensured, cancelled, scanned: appointments.length };
 }
