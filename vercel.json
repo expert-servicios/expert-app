@@ -13,6 +13,10 @@
       "schedule": "*/10 * * * *"
     },
     {
+      "path": "/api/cron/kia-email-agent",
+      "schedule": "2-59/10 * * * *"
+    },
+    {
       "path": "/api/cron/fiscal-reminders",
       "schedule": "0 8 * * *"
     },
