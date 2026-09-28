@@ -81,7 +81,7 @@ describe('KIA guarded email agent', () => {
   });
 
   it('keeps email tools scoped and allows only the guarded booking external action', () => {
-    expect(route).toContain("allowedEffects: ['read', 'draft', 'external_action']");
+    expect(route).toContain("allowedEffects: ['read', 'external_action']");
     expect(route).toContain("maxRiskTier: 'R2'");
     expect(route).toContain('get_case_status');
     expect(route).toContain('search_knowledge_resources');
