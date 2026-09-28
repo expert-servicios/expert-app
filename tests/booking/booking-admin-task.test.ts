@@ -11,7 +11,7 @@ describe('booking admin task lifecycle', () => {
   const adminAppointments = source('app/api/admin/citas/route.ts');
   const calWebhook = source('app/api/webhooks/cal/route.ts');
   const reconciler = source('app/api/cron/booking-task-reconcile/route.ts');
-  const migration = source('supabase/migrations/20260928112000_booking_admin_task_appointment_key.sql');
+  const migration = source('supabase/migrations/20260928101218_booking_admin_task_appointment_key.sql');
   const vercel = source('vercel.json');
 
   it('enforces one canonical system task per appointment in PostgreSQL', () => {
