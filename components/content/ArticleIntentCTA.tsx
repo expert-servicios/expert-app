@@ -16,9 +16,11 @@ export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs =
   const primaryServiceSlug = relatedServiceSlugs[0] ?? null;
   const service = primaryServiceSlug ? services.find((item) => item.slug === primaryServiceSlug) ?? null : null;
   const origin = `${sourceKind}:${sourceSlug}`;
-  const serviceHref = service
+  const serviceHref = service?.stripePriceId
     ? `/servicios/${service.categoria}/${service.slug}`
-    : `/solicitar-presupuesto?origen=${encodeURIComponent(origin)}`;
+    : service
+      ? `/solicitar-presupuesto?servicio=${encodeURIComponent(service.slug)}&origen=${encodeURIComponent(origin)}`
+      : `/solicitar-presupuesto?origen=${encodeURIComponent(origin)}`;
   const consultationHref = `/consulta-gratuita?origen=${encodeURIComponent(origin)}${primaryServiceSlug ? `&servicio=${encodeURIComponent(primaryServiceSlug)}` : ''}`;
   const meetingHref = `/cita?tipo=consulta-inicial&origen=${encodeURIComponent(origin)}`;
 
@@ -32,7 +34,7 @@ export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs =
 
       {primaryServiceSlug === 'no-residentes' && (
         <div className="mt-6">
-          <IrnrPriceCalculator compact />
+          <IrnrPriceCalculator compact origin={origin} />
         </div>
       )}
 
