@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     const spam = checkSpam({
       name: validated.name,
-      email: validated.email,
+      email: validated.email.trim().toLowerCase(),
       message: validated.experience,
     });
     if (spam.isSpam) {
