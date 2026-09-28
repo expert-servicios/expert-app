@@ -37,6 +37,11 @@ describe('booking final UX', () => {
     expect(calendar).toContain('data.nextPageToken');
   });
 
+  it('supports timed calendar events that cross midnight', () => {
+    expect(calendar).toContain('endDate?: string');
+    expect(calendar).toContain('input.endDate ?? input.date');
+  });
+
   it('rebases the stored page when the responsive page count shrinks', () => {
     expect(form).toContain('setDayPage((current) => Math.min(current, pageCount - 1))');
     expect(form).toContain('}, [pageCount]);');
