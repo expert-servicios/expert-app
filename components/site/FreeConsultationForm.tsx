@@ -20,10 +20,10 @@ export function FreeConsultationForm({ origin, service }: { origin?: string | nu
     setError('');
     try {
       const recaptcha_token = await getRecaptchaToken('free_consultation');
-      const response = await fetch('/api/consultas-gratuitas', {
+      const response = await fetch('/api/consultation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, question, service, origin, hp_url: hp, recaptcha_token }),
+        body: JSON.stringify({ name, email, phone, message: question, service, origin, hp_url: hp, recaptcha_token }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
