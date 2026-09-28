@@ -29,7 +29,6 @@ const READ_ONLY_TOOLS = [
   'get_service_registry_item',
   'get_booking_availability',
   'create_booking_meeting',
-  'create_internal_task',
 ] as const;
 
 const PUBLIC_PROSPECT_TOOLS = [
@@ -223,37 +222,31 @@ async function recordInboundEmailEvent(input: {
 async function createEmailRequestTask(input: {
   admin: ReturnType<typeof getSupabaseAdmin>;
   message: GmailMessage;
+  excerpt: string;
   clientId: string | null;
   leadId: string | null;
   caseId: string | null;
   companyId: string | null;
-  toolRequests: Array<{ toolName: string; arguments: Record<string, unknown>; reason: string }>;
+  nextAction: string;
 }) {
-  const request = input.toolRequests.find((item) => item.toolName === 'create_internal_task');
-  if (!request) return null;
+  if (input.nextAction !== 'create_task') return null;
 
-  const title = typeof request.arguments.title === 'string' ? request.arguments.title.trim() : '';
-  if (!title) return null;
   const taskKey = `email-request:${input.message.id}`;
-  const { data: existing } = await input.admin
+  const { data: existing, error: existingError } = await input.admin
     .from('internal_tasks')
     .select('id,title')
     .contains('metadata', { source_key: taskKey })
     .limit(1)
     .maybeSingle();
+  if (existingError) throw existingError;
   if (existing?.id) return { id: existing.id, title: existing.title };
 
-  const priorityRaw = typeof request.arguments.priority === 'string' ? request.arguments.priority : 'media';
-  const priority = ['baja','media','alta','critica'].includes(priorityRaw) ? priorityRaw : 'media';
-  const description = typeof request.arguments.description === 'string'
-    ? request.arguments.description.trim().slice(0, 1500)
-    : request.reason.slice(0, 1500);
-
+  const subject = input.message.subject?.trim() || 'Solicitud por correo';
   const { data, error } = await input.admin.from('internal_tasks').insert({
-    title: title.slice(0, 220),
-    description,
+    title: `Correo: ${subject}`.slice(0, 220),
+    description: input.excerpt.slice(0, 1500),
     status: 'pendiente',
-    priority,
+    priority: 'media',
     case_id: input.caseId,
     client_id: input.clientId,
     lead_id: input.leadId,
@@ -270,7 +263,6 @@ async function createEmailRequestTask(input: {
   if (error) throw error;
   return data;
 }
-
 
 async function writeAgentHeartbeat(
   admin: ReturnType<typeof getSupabaseAdmin>,
@@ -573,7 +565,7 @@ export async function GET(request: NextRequest) {
         allowedToolNames: [...allowedTools],
         toolAuthorization: {
           maxRiskTier: 'R2',
-          allowedEffects: ['read', 'draft', 'external_action'],
+          allowedEffects: ['read', 'external_action'],
           autonomousOnly: false,
         },
         externalActionMinConfidence: confidenceFloor,
@@ -590,11 +582,12 @@ export async function GET(request: NextRequest) {
         ? await createEmailRequestTask({
             admin,
             message: latest,
+            excerpt: latestReply,
             clientId: identity.clientId,
             leadId: identity.leadId,
             caseId: identity.caseId,
             companyId: identity.companyId,
-            toolRequests: result.decision.toolRequests,
+            nextAction: result.decision.nextAction,
           }).catch((taskError) => {
             console.error('[kia-email-agent] request task:', taskError);
             return null;
