@@ -42,8 +42,8 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain('isSafeUnknownProspect');
     expect(route).toContain('explicitCommercialRequest');
     expect(route).toContain('expertServiceIntent');
-    expect(route).toContain('knownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS');
-    expect(route).toContain('(knownContact || safeUnknownProspect)');
+    expect(route).toContain('wasKnownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS');
+    expect(route).toContain('(wasKnownContact || safeUnknownProspect)');
     expect(route).toContain('KIA_EMAIL_PROSPECT_MIN_CONFIDENCE');
   });
 
@@ -53,17 +53,35 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain("status: errors.length === 0 ? 'ok' : 'degraded'");
   });
 
-  it('pushes one actionable outcome per human email', () => {
-    expect(route).toContain('KIA respondió por email');
-    expect(route).toContain('KIA atendió un nuevo contacto');
-    expect(route).toContain('KIA necesita revisión de correo');
-    expect(route).toContain('KIA no pudo procesar un correo');
+  it('pushes a summary for each human inbound and separate task notifications', () => {
+    expect(route).toContain('Correo humano ·');
+    expect(route).toContain('latestReply.slice(0, 150)');
+    expect(route).toContain('KIA creó una tarea');
+    expect(route).not.toContain('KIA respondió por email');
+    expect(route).not.toContain('KIA atendió un nuevo contacto');
     expect(route).toContain('/admin/correo/hilo?provider=gmail&conversationId=');
-    expect(route).toContain('if (duplicateClaim)');
+  });
+
+  it('persists every human inbound and KIA outbound with CRM links', () => {
+    expect(route).toContain("event_type: 'email.inbound'");
+    expect(route).toContain("direction: 'in'");
+    expect(route).toContain("direction: 'out'");
+    expect(route).toContain('client_id: identity.clientId');
+    expect(route).toContain('lead_id: identity.leadId');
+    expect(route).toContain('case_id: identity.caseId');
+    expect(route).toContain('company_id: identity.companyId');
+    expect(route).toContain('ensureEmailLead');
+    expect(route).toContain("source: 'email'");
+  });
+
+  it('does not upgrade a newly-created lead to trusted private context', () => {
+    expect(route).toContain('const wasKnownContact = Boolean(identity.clientId || identity.leadId)');
+    expect(route).toContain('wasKnownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS');
+    expect(route).toContain('confidenceFloor = wasKnownContact ? minConfidence : prospectMinConfidence');
   });
 
   it('keeps email tools scoped and allows only the guarded booking external action', () => {
-    expect(route).toContain("allowedEffects: ['read', 'external_action']");
+    expect(route).toContain("allowedEffects: ['read', 'draft', 'external_action']");
     expect(route).toContain("maxRiskTier: 'R2'");
     expect(route).toContain('get_case_status');
     expect(route).toContain('search_knowledge_resources');
