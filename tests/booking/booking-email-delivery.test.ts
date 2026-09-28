@@ -24,19 +24,12 @@ describe('booking email delivery', () => {
     expect(transport).toContain('Gmail audit persistence failed after successful send');
   });
 
-  it('escapes public booking fields before rendering admin HTML', () => {
-    expect(route).toContain('function escapeEmailHtml');
-    expect(route).toContain('safeNotes = input.notes ? escapeEmailHtml(input.notes)');
-    expect(route).toContain('safeName = escapeEmailHtml(input.name)');
-  });
-
-  it('notifies both the client and the admin for every confirmed booking', () => {
+  it('emails the client but uses push instead of duplicate admin email', () => {
     expect(route).toContain("eventType: 'cita.confirmed'");
-    expect(route).toContain("eventType: 'booking.confirmed.admin'");
-    expect(route).toContain('getAdminNotificationEmails()');
-    expect(route).toContain('adminEmails.map');
+    expect(route).toContain('notifyBookingAdminActivity({');
+    expect(route).not.toContain("eventType: 'booking.confirmed.admin'");
+    expect(route).not.toContain('getAdminNotificationEmails()');
     expect(route).toContain('emailSent: clientEmailSent');
-    expect(route).toContain('adminEmailSent');
   });
 
   it('does not claim email delivery when every transport failed', () => {
