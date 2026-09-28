@@ -15,6 +15,7 @@ import { persistAcademyCertificationPayment, persistAcademyProgramPayment } from
 import { legacyOrderFields, requireCreatedOrderId } from '@/lib/payments/non-academy-order';
 import { ensureServiceOrderFulfillment } from '@/lib/payments/service-order-fulfillment';
 import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
+import { describeContentOrigin } from '@/lib/marketing/content-origin';
 import {
   academyEnrollmentConfirmed,
   academyEnrollmentConfirmedAdmin,
@@ -74,6 +75,18 @@ function splitQuoteServiceSlugs(values: Array<string | null | undefined>): strin
       .map(canonicalQuoteServiceSlug)
       .filter(Boolean),
   )];
+}
+
+function checkoutContentOriginLabel(session: Stripe.Checkout.Session): string | null {
+  const raw = session.metadata?.content_origins ?? session.metadata?.content_origin ?? '';
+  const origins = [...new Set(
+    raw
+      .split('|')
+      .map((value) => value.trim())
+      .filter(Boolean),
+  )];
+  if (origins.length === 0) return null;
+  return origins.map((origin) => describeContentOrigin(origin)).join(' · ');
 }
 
 type SupabaseAdmin = ReturnType<typeof getSupabaseAdmin>;
@@ -866,6 +879,7 @@ export async function POST(req: NextRequest) {
         'Servicio EXPERT';
       const amountEur = Number(session.amount_total ?? 0) / 100;
       const paymentId  = (session.payment_intent as string) ?? session.id;
+      const contentOriginLabel = checkoutContentOriginLabel(session);
       let catalogOrderMetadata: Record<string, unknown> = {
         checkout_session: {
           id             : session.id,
@@ -877,6 +891,8 @@ export async function POST(req: NextRequest) {
         checkout_locale : session.metadata?.checkout_locale ?? null,
         service_slug    : session.metadata?.service_slug ?? null,
         service_slugs   : session.metadata?.service_slugs ?? null,
+        content_origin  : session.metadata?.content_origin ?? null,
+        content_origins : session.metadata?.content_origins ?? null,
       };
 
       // ── Idempotency: create order record for catalog payment ──
@@ -1041,7 +1057,7 @@ export async function POST(req: NextRequest) {
         // ── Notify admins: new catalog/cart payment (email + push) ──
         const adminEmails = getAdminEmails();
         if (adminEmails.length) {
-          const adminTpl = servicePaymentConfirmedAdmin(customerName, customerEmail, amountEur, serviceName);
+          const adminTpl = servicePaymentConfirmedAdmin(customerName, customerEmail, amountEur, serviceName, contentOriginLabel);
           sendEmail({
             to: adminEmails,
             eventType: 'service.payment.confirmed.admin',
@@ -1054,6 +1070,8 @@ export async function POST(req: NextRequest) {
               service_slug: session.metadata?.service_slug ?? session.metadata?.service_slugs ?? null,
               stripe_total_cents: session.amount_total ?? null,
               stripe_tax_cents: session.total_details?.amount_tax ?? null,
+              content_origin: session.metadata?.content_origin ?? null,
+              content_origins: session.metadata?.content_origins ?? null,
             }
           }).catch((err) => {
             console.error('[webhook] admin payment email failed:', err);
@@ -1061,7 +1079,7 @@ export async function POST(req: NextRequest) {
         }
         notifyAdmins({
           title: `💰 Pago recibido — ${customerName}`,
-          body:  `${serviceName.slice(0, 60)} · €${amountEur.toFixed(0)}`,
+          body:  `${serviceName.slice(0, 60)} · €${amountEur.toFixed(0)}${contentOriginLabel ? ` · ${contentOriginLabel}` : ''}`.slice(0, 240),
           url:   catalogCaseId ? `/admin/expedientes/${catalogCaseId}` : '/admin/pagos',
           tag:   `catalog-payment-${session.id}`,
         }).catch(() => {});
