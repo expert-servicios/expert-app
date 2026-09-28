@@ -38,7 +38,6 @@ const PUBLIC_PROSPECT_TOOLS = [
   'get_service_registry_item',
   'get_booking_availability',
   'create_booking_meeting',
-  'create_internal_task',
 ] as const;
 
 function stateKey(threadId: string) {
