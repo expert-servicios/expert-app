@@ -61,7 +61,9 @@ describe('structured quote checkout contract', () => {
   });
 
   it('hydrates specialized service fulfillment from quote lines or the originating lead', () => {
-    expect(stripeWebhookRoute).toContain('leadBlueprintSlugs');
+    expect(stripeWebhookRoute).toContain('leadRequestedServices');
+    expect(stripeWebhookRoute).toContain('conversion.requested_services');
+    expect(stripeWebhookRoute).toContain('leadServiceSlugs');
     expect(stripeWebhookRoute).toContain('quoteServiceSlugs');
     expect(stripeWebhookRoute).toContain('ensureServiceOrderFulfillment');
     expect(stripeWebhookRoute).toContain('service_slugs: quoteServiceSlugs.length > 0');
