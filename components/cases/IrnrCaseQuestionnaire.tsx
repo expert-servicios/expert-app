@@ -21,13 +21,15 @@ type Property = {
   address: string;
   cadastralReference: string;
   acquisitionDate: string;
-  use: 'available' | 'rented' | 'sold';
+  use: 'available' | 'rented';
+  soldDuringYear: boolean;
+  saleDate: string;
   rentalPeriods: RentalPeriod[];
   holders: Holder[];
 };
 
 type SavedPayload = {
-  version: 4;
+  version: 5;
   taxYears: string[];
   properties: Property[];
 };
@@ -43,6 +45,8 @@ type LegacyPayload = {
     acquisitionDate?: string;
     ownershipPercent?: string;
     use?: 'available' | 'rented' | 'sold';
+    soldDuringYear?: boolean;
+    saleDate?: string;
     rentalPeriods?: RentalPeriod[];
     holders?: Holder[];
   }>;
@@ -72,6 +76,8 @@ function emptyProperty(): Property {
     cadastralReference: '',
     acquisitionDate: '',
     use: 'available',
+    soldDuringYear: false,
+    saleDate: '',
     rentalPeriods: [],
     holders: [emptyHolder()],
   };
@@ -99,7 +105,7 @@ function normalizeRentalPeriod(value: Partial<RentalPeriod> | null | undefined):
 
 function normalizePayload(raw: string | null | undefined): SavedPayload {
   const fallback: SavedPayload = {
-    version: 4,
+    version: 5,
     taxYears: [String(new Date().getFullYear() - 1)],
     properties: [emptyProperty()],
   };
@@ -131,7 +137,12 @@ function normalizePayload(raw: string | null | undefined): SavedPayload {
               typeof property?.cadastralReference === 'string' ? property.cadastralReference : '',
             acquisitionDate:
               typeof property?.acquisitionDate === 'string' ? property.acquisitionDate : '',
-            use: property?.use === 'rented' || property?.use === 'sold' ? property.use : 'available',
+            use: property?.use === 'rented' ? 'rented' : 'available',
+            soldDuringYear:
+              typeof property?.soldDuringYear === 'boolean'
+                ? property.soldDuringYear
+                : property?.use === 'sold',
+            saleDate: typeof property?.saleDate === 'string' ? property.saleDate : '',
             rentalPeriods: Array.isArray(property?.rentalPeriods)
               ? property.rentalPeriods.map((period) => normalizeRentalPeriod(period))
               : [],
@@ -147,7 +158,7 @@ function normalizePayload(raw: string | null | undefined): SavedPayload {
         : fallback.taxYears;
 
     return {
-      version: 4,
+      version: 5,
       taxYears: taxYears.length > 0 ? taxYears : fallback.taxYears,
       properties,
     };
@@ -263,7 +274,7 @@ export function IrnrCaseQuestionnaire({
   async function save() {
     setSaving(true);
     setError('');
-    const payload: SavedPayload = { version: 4, taxYears, properties };
+    const payload: SavedPayload = { version: 5, taxYears, properties };
     const revisionAtStart = revisionRef.current;
 
     try {
@@ -396,7 +407,7 @@ export function IrnrCaseQuestionnaire({
                   className="mt-1 w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 font-normal"
                 />
               </label>
-              <label className="text-xs font-semibold">Uso durante el ejercicio
+              <label className="text-xs font-semibold">Uso / alquiler durante el ejercicio
                 <select
                   value={property.use}
                   onChange={(event) => updateProperty(propertyIndex, { use: event.target.value as Property['use'] })}
@@ -404,9 +415,27 @@ export function IrnrCaseQuestionnaire({
                 >
                   <option value="available">A disposición / no alquilado</option>
                   <option value="rented">Alquilado total o parcialmente</option>
-                  <option value="sold">Vendido durante el ejercicio</option>
                 </select>
               </label>
+              <label className="flex items-center gap-2 text-xs font-semibold sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={property.soldDuringYear}
+                  onChange={(event) => updateProperty(propertyIndex, { soldDuringYear: event.target.checked })}
+                  className="h-4 w-4 accent-[#c88b25]"
+                />
+                El inmueble se vendió durante este ejercicio
+              </label>
+              {property.soldDuringYear && (
+                <label className="text-xs font-semibold">Fecha de venta
+                  <input
+                    type="date"
+                    value={property.saleDate}
+                    onChange={(event) => updateProperty(propertyIndex, { saleDate: event.target.value })}
+                    className="mt-1 w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 font-normal"
+                  />
+                </label>
+              )}
             </div>
 
             {property.use === 'rented' && (
