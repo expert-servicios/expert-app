@@ -8,6 +8,9 @@ import { trackPublicContentIntent } from '@/lib/utils/analytics';
 const ServicePriceCalculator = dynamic(
   () => import('@/components/services/ServicePriceCalculator').then((module) => module.ServicePriceCalculator),
 );
+const UnitPriceCalculator = dynamic(
+  () => import('@/components/services/UnitPriceCalculator').then((module) => module.UnitPriceCalculator),
+);
 
 type ResolvedService = {
   slug: string;
@@ -15,6 +18,15 @@ type ResolvedService = {
   name: string;
   hasCheckout: boolean;
   priceCalculator?: 'irnr' | 'irpf' | 'patrimonio';
+  unitPriceCalculator?: {
+    unitPrice: number;
+    unitLabel: string;
+    unitLabelPlural?: string;
+    minUnits?: number;
+    defaultUnits?: number;
+    maxUnits?: number;
+    note?: string;
+  };
 };
 
 type Props = {
@@ -46,6 +58,16 @@ export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs =
       {service?.priceCalculator && (
         <div className="mt-6">
           <ServicePriceCalculator kind={service.priceCalculator} compact origin={origin} />
+        </div>
+      )}
+      {service?.unitPriceCalculator && primaryServiceSlug && (
+        <div className="mt-6">
+          <UnitPriceCalculator
+            config={service.unitPriceCalculator}
+            serviceSlug={primaryServiceSlug}
+            compact
+            origin={origin}
+          />
         </div>
       )}
 
