@@ -10,7 +10,8 @@ const catalog = readFileSync(
 describe('foreign partner NIF quantity flow', () => {
   it('keeps the per-person tariff but disables synthetic direct checkout', () => {
     expect(catalog).toContain("slug: 'nif-socio-extranjero'");
-    expect(catalog).toContain("price: '60 € + IVA / persona'");
+    expect(catalog).toContain("price: 'Precio variable'");
+    expect(catalog).toContain("unitPrice: 60");
     expect(catalog).not.toContain("stripePriceId: 'price_circe_nif_socio_extranjero'");
   });
 
