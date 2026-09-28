@@ -5,8 +5,8 @@ import dynamic from 'next/dynamic';
 import { CalendarDays, FileQuestion, Send, MessageCircle } from 'lucide-react';
 import { trackPublicContentIntent } from '@/lib/utils/analytics';
 
-const IrnrPriceCalculator = dynamic(
-  () => import('@/components/services/IrnrPriceCalculator').then((module) => module.IrnrPriceCalculator),
+const ServicePriceCalculator = dynamic(
+  () => import('@/components/services/ServicePriceCalculator').then((module) => module.ServicePriceCalculator),
 );
 
 type ResolvedService = {
@@ -14,6 +14,7 @@ type ResolvedService = {
   categoria: string;
   name: string;
   hasCheckout: boolean;
+  priceCalculator?: 'irnr' | 'irpf' | 'patrimonio';
 };
 
 type Props = {
@@ -42,9 +43,9 @@ export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs =
         Puedes resolver una duda sin compromiso, solicitar directamente el servicio o hablar 15 minutos con EXPERT antes de decidir.
       </p>
 
-      {primaryServiceSlug === 'no-residentes' && (
+      {service?.priceCalculator && (
         <div className="mt-6">
-          <IrnrPriceCalculator compact origin={origin} />
+          <ServicePriceCalculator kind={service.priceCalculator} compact origin={origin} />
         </div>
       )}
 
