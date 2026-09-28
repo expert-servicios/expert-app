@@ -45,11 +45,15 @@ export async function GET(request: NextRequest) {
     const marketing = url.searchParams.get('marketing');
     const locale = localeFilter(url.searchParams.get('locale'));
     const search = sanitizeSearch(url.searchParams.get('q') ?? '');
+    const focus = url.searchParams.get('focus');
+    if (focus && !UUID_PATTERN.test(focus)) {
+      return NextResponse.json({ error: 'Lead no válido' }, { status: 400 });
+    }
 
     let query = admin
       .from('leads')
       .select(
-        'id,name,email,phone,client_type,category,service,country,state,source,source_key,metadata,created_at,updated_at,lifecycle_stage,stripe_activity,marketing_status,marketing_consent_at,marketing_source,first_stripe_activity_at,last_stripe_activity_at',
+        'id,name,email,phone,client_type,category,service,message,country,state,source,source_key,metadata,created_at,updated_at,lifecycle_stage,stripe_activity,marketing_status,marketing_consent_at,marketing_source,first_stripe_activity_at,last_stripe_activity_at',
         { count: 'exact' },
       )
       .order('last_stripe_activity_at', { ascending: false, nullsFirst: false })
@@ -70,6 +74,9 @@ export async function GET(request: NextRequest) {
     }
     if (search) {
       query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+    }
+    if (focus) {
+      query = query.eq('id', focus);
     }
 
     const ruBase = () => withLocale(admin.from('leads').select('id', { count: 'exact', head: true }), 'ru');
