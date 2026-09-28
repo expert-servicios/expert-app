@@ -33,7 +33,7 @@ describe('article intent CTA and IRNR funnel', () => {
   it('calculates IRNR quote units using 80 + 30 per additional property-holder unit', () => {
     expect(calculator).toContain('80 + Math.max(0, units - 1) * 30');
     expect(calculator).toContain('property.holders');
-    expect(calculator).toContain('Unidades declarativas estimadas');
+    expect(calculator).toContain('unidades declarativas estimadas');
     expect(catalog).toContain('80 € + IVA la primera unidad declarativa');
     expect(catalog).toContain('30 € + IVA cada unidad adicional');
   });
