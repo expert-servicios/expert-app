@@ -416,6 +416,7 @@ export async function GET(request: NextRequest) {
   }
 
   const autoSend = process.env.KIA_EMAIL_AUTO_SEND_ENABLED?.toLowerCase() === 'true';
+  const newLeadAutoSend = process.env.KIA_EMAIL_NEW_LEAD_AUTO_SEND_ENABLED?.toLowerCase() === 'true';
   const minConfidence = Number(process.env.KIA_EMAIL_MIN_CONFIDENCE ?? '0.88');
   const prospectMinConfidence = Math.max(minConfidence, Number(process.env.KIA_EMAIL_PROSPECT_MIN_CONFIDENCE ?? '0.92'));
   const health = await healthGate(admin);
@@ -557,7 +558,7 @@ export async function GET(request: NextRequest) {
       const confidenceFloor = wasKnownContact ? minConfidence : prospectMinConfidence;
       const externalActionPreEligible = autoSend
         && health.ok
-        && (wasKnownContact || safeUnknownProspect)
+        && (wasKnownContact || (safeUnknownProspect && newLeadAutoSend))
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
@@ -633,7 +634,7 @@ export async function GET(request: NextRequest) {
 
       const canAutoSend = autoSend
         && health.ok
-        && (wasKnownContact || safeUnknownProspect)
+        && (wasKnownContact || (safeUnknownProspect && newLeadAutoSend))
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
@@ -750,6 +751,7 @@ export async function GET(request: NextRequest) {
         if (!autoSend) blockReason = 'auto_send_disabled';
         else if (!health.ok) blockReason = health.reason;
         else if (!wasKnownContact && !safeUnknownProspect) blockReason = 'unknown_contact_not_safe_prospect';
+        else if (!wasKnownContact && safeUnknownProspect && !newLeadAutoSend) blockReason = 'new_lead_approval_required';
         else if (identity.ambiguousCase) blockReason = 'ambiguous_case';
         else if (identity.linkedCaseSenderMismatch) blockReason = 'linked_case_sender_mismatch';
         else if (replyToMismatch) blockReason = 'reply_to_requires_review';
