@@ -47,13 +47,41 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from('newsletter_subscribers').upsert(
-      { email, name, source, channel: 'email', audience_segment: audienceSegment, unsubscribed_at: null, updated_at: new Date().toISOString() },
-      { onConflict: 'email' }
-    );
+    const { data: existing, error: lookupError } = await supabase
+      .from('newsletter_subscribers')
+      .select('id,confirmed,unsubscribed_at')
+      .eq('email', email)
+      .eq('channel', 'email')
+      .limit(1)
+      .maybeSingle();
 
-    if (error) {
-      console.error('[newsletter]', error);
+    if (lookupError) {
+      console.error('[newsletter] lookup', lookupError);
+      return NextResponse.json({ error: 'No se pudo comprobar la suscripción.' }, { status: 500 });
+    }
+
+    if (existing?.unsubscribed_at) {
+      return NextResponse.json(
+        { error: 'Esta dirección se dio de baja anteriormente. Para reactivarla necesitamos una nueva confirmación por email.' },
+        { status: 409 },
+      );
+    }
+
+    const payload = {
+      email,
+      name,
+      source,
+      channel: 'email',
+      audience_segment: audienceSegment,
+      updated_at: new Date().toISOString(),
+    };
+
+    const write = existing?.id
+      ? await supabase.from('newsletter_subscribers').update(payload).eq('id', existing.id)
+      : await supabase.from('newsletter_subscribers').insert(payload);
+
+    if (write.error) {
+      console.error('[newsletter]', write.error);
       return NextResponse.json({ error: 'No se pudo registrar el email.' }, { status: 500 });
     }
 
