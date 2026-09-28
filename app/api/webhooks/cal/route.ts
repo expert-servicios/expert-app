@@ -8,6 +8,7 @@ import { deleteCalendarEventSA, hasCalendarSA, upsertCalendarEventSA } from '@/l
 import { ensureOnboardingTask, findOpenOnboardingCase } from '@/lib/admin/onboarding-followup';
 import { resolveBookingIdentityByEmail } from '@/lib/admin/onboarding-booking-identity';
 import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients';
+import { ensureBookingAdminTask, cancelBookingAdminTask } from '@/lib/booking/booking-admin-task';
 
 function verifySignature(body: string, header: string | null): boolean {
   const secret = process.env.CAL_WEBHOOK_SECRET;
@@ -164,6 +165,30 @@ export async function POST(request: NextRequest) {
       let caseContext: { clientId: string; companyId: string | null; caseId: string } | null = null;
       if ((slug === 'onboarding' || slug === 'formacion') && attendee?.email) caseContext = await ensureCaseForBooking(admin, attendee, payload);
 
+      let bookingIdentity = caseContext
+        ? { clientId: caseContext.clientId, companyId: caseContext.companyId }
+        : null;
+      if (!bookingIdentity && attendee?.email) {
+        bookingIdentity = await resolveBookingIdentityByEmail(admin, attendee.email).catch(() => null);
+      }
+
+      if (appointment && attendee?.email) {
+        await ensureBookingAdminTask({
+          admin,
+          appointmentId: appointment.id,
+          serviceKey: slug || 'cal_booking',
+          serviceLabel: payload.eventType?.title ?? payload.title ?? 'Reunión',
+          name: attendee.name || 'Cliente',
+          email: attendee.email,
+          localDate: confirmedDate,
+          localTime: confirmedTime,
+          meetingUrl,
+          clientId: bookingIdentity?.clientId ?? null,
+          companyId: bookingIdentity?.companyId ?? null,
+          caseId: caseContext?.caseId ?? null,
+        }).catch((taskError) => console.error('[cal/webhook] meeting task:', taskError));
+      }
+
       if (slug === 'onboarding' && caseContext) {
         let subscriptionQuery = admin
           .from('subscriptions')
@@ -195,6 +220,13 @@ export async function POST(request: NextRequest) {
       const { error: cancelError } = await admin.from('appointments').update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('cal_uid', payload.uid);
       if (cancelError) console.error('[cal/webhook] BOOKING_CANCELLED update failed:', cancelError.message, 'uid:', payload.uid);
       if (appointment?.google_event_id && hasCalendarSA()) deleteCalendarEventSA(appointment.google_event_id).catch((e) => console.error('[cal/webhook] calendar delete:', e));
+      if (appointment?.id) {
+        await cancelBookingAdminTask(
+          admin,
+          appointment.id,
+          'Cita cancelada desde webhook Cal.com.',
+        ).catch((taskError) => console.error('[cal/webhook] cancel meeting task:', taskError));
+      }
       console.log(JSON.stringify({ webhook: 'cal', event: 'BOOKING_CANCELLED', uid: payload.uid }));
     }
 
@@ -209,6 +241,22 @@ export async function POST(request: NextRequest) {
       }
       const slug = payload.eventType?.slug ?? appointment?.appointment_type ?? '';
       const attendee = payload.attendees?.[0] ?? (appointment?.email ? { name: appointment.name ?? 'Cliente', email: appointment.email, timeZone: 'Europe/Madrid' } : null);
+      if (appointment?.id && attendee?.email) {
+        const identity = await resolveBookingIdentityByEmail(admin, attendee.email).catch(() => null);
+        await ensureBookingAdminTask({
+          admin,
+          appointmentId: appointment.id,
+          serviceKey: slug || 'cal_booking',
+          serviceLabel: appointment.service ?? payload.eventType?.title ?? payload.title ?? 'Reunión',
+          name: attendee.name ?? appointment.name ?? 'Cliente',
+          email: attendee.email,
+          localDate: confirmedDate,
+          localTime: confirmedTime,
+          meetingUrl: payload.videoCallUrl ?? null,
+          clientId: identity?.clientId ?? null,
+          companyId: identity?.companyId ?? null,
+        }).catch((taskError) => console.error('[cal/webhook] reschedule meeting task:', taskError));
+      }
       if (slug === 'onboarding' && attendee) sendOnboardingPreparation(attendee, payload).catch((e) => console.error('[cal/webhook] rescheduled preparation email:', e));
       console.log(JSON.stringify({ webhook: 'cal', event: 'BOOKING_RESCHEDULED', uid: payload.uid }));
     }
