@@ -151,6 +151,7 @@ async function ensureEmailLead(
   if ((matches ?? []).length === 1) return matches![0].id;
   if ((matches ?? []).length > 1) return null;
 
+  const sourceKey = `gmail-email:${createHash('sha256').update(email).digest('hex').slice(0, 40)}`;
   const { data: created, error } = await admin
     .from('leads')
     .insert({
@@ -158,7 +159,7 @@ async function ensureEmailLead(
       email,
       source: 'email',
       message: excerpt.slice(0, 4000),
-      source_key: `gmail:${message.id}`,
+      source_key: sourceKey,
       metadata: {
         origin: 'gmail_inbound',
         gmail_message_id: message.id,
@@ -168,8 +169,17 @@ async function ensureEmailLead(
     })
     .select('id')
     .single();
-  if (error) throw error;
-  return created?.id ?? null;
+  if (!error) return created?.id ?? null;
+  if (error.code !== '23505') throw error;
+
+  const { data: raced, error: racedError } = await admin
+    .from('leads')
+    .select('id')
+    .eq('source', 'email')
+    .eq('source_key', sourceKey)
+    .maybeSingle();
+  if (racedError) throw racedError;
+  return raced?.id ?? null;
 }
 
 async function recordInboundEmailEvent(input: {
@@ -187,7 +197,7 @@ async function recordInboundEmailEvent(input: {
     value: { state: 'reserved', message_id: input.message.id, reserved_at: new Date().toISOString() },
     updated_at: new Date().toISOString(),
   });
-  if (claimError?.code === '23505') return;
+  if (claimError?.code === '23505') return false;
   if (claimError) throw claimError;
 
   const { error } = await input.admin.from('email_events').insert({
@@ -216,6 +226,7 @@ async function recordInboundEmailEvent(input: {
     value: { state: 'stored', message_id: input.message.id, stored_at: new Date().toISOString() },
     updated_at: new Date().toISOString(),
   }).eq('key', claimKey);
+  return true;
 }
 
 async function createEmailRequestTask(input: {
@@ -499,7 +510,7 @@ export async function GET(request: NextRequest) {
         if (leadId) identity = { ...identity, leadId };
       }
 
-      await recordInboundEmailEvent({
+      const firstInboundProcessing = await recordInboundEmailEvent({
         admin,
         message: latest,
         excerpt: latestReply,
@@ -507,15 +518,20 @@ export async function GET(request: NextRequest) {
         leadId: identity.leadId,
         caseId: identity.caseId,
         companyId: identity.companyId,
-      }).catch((auditError) => console.error('[kia-email-agent] inbound audit:', auditError));
+      }).catch((auditError) => {
+        console.error('[kia-email-agent] inbound audit:', auditError);
+        return false;
+      });
 
-      const contactKind = identity.clientId ? 'cliente' : identity.leadId ? 'lead' : 'nuevo contacto';
-      await notifyAdmins({
-        title: `Correo humano · ${contactKind}`,
-        body: `${senderDisplayName(latest)} · ${latest.subject || 'Sin asunto'} · ${latestReply.slice(0, 150)}`.slice(0, 240),
-        url: adminThreadUrl(row.thread_id),
-        tag: `human-email-${createHash('sha256').update(latest.id).digest('hex').slice(0, 20)}`,
-      }).catch(() => {});
+      if (firstInboundProcessing) {
+        const contactKind = identity.clientId ? 'cliente' : identity.leadId ? 'lead' : 'nuevo contacto';
+        await notifyAdmins({
+          title: `Correo humano · ${contactKind}`,
+          body: `${senderDisplayName(latest)} · ${latest.subject || 'Sin asunto'} · ${latestReply.slice(0, 150)}`.slice(0, 240),
+          url: adminThreadUrl(row.thread_id),
+          tag: `human-email-${createHash('sha256').update(latest.id).digest('hex').slice(0, 20)}`,
+        }).catch(() => {});
+      }
 
       const recent = gmail.messages.slice(-10).map((message) => ({
         role: normalizedEmail(message.fromEmail) === EXPERT_MAILBOX ? 'assistant' as const : 'user' as const,
@@ -564,7 +580,7 @@ export async function GET(request: NextRequest) {
         allowedToolNames: [...allowedTools],
         toolAuthorization: {
           maxRiskTier: 'R2',
-          allowedEffects: ['read', 'external_action'],
+          allowedEffects: ['read', 'draft', 'external_action'],
           autonomousOnly: false,
         },
         externalActionMinConfidence: confidenceFloor,
