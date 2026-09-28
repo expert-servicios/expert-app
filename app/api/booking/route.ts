@@ -68,6 +68,7 @@ const schema = z.object({
   booking_auth: z.string().max(4096).optional(),
   company_id: z.string().uuid().optional(),
   manage_token: z.string().max(4096).optional(),
+  origin: z.string().trim().max(240).optional(),
 });
 
 async function authenticatedUser(request: NextRequest) {
@@ -492,6 +493,7 @@ export async function POST(request: NextRequest) {
         appointment_date: start.toISOString(),
         appointment_end: end.toISOString(),
         notes: input.notes ?? null,
+        admin_notes: input.origin ? `Origen CTA/contenido: ${input.origin}` : null,
         status: 'pending_calendar',
         preferred_date: localDate,
         preferred_time: localTime,
@@ -525,6 +527,7 @@ export async function POST(request: NextRequest) {
         `Cliente: ${input.name} (${bookingEmail})`,
         `Teléfono: ${input.phone}`,
         input.notes ? `Notas: ${input.notes}` : '',
+        input.origin ? `Origen CTA/contenido: ${input.origin}` : '',
         appointmentId ? `EXPERT appointment: ${appointmentId}` : '',
       ].filter(Boolean).join('\n'),
       start: start.toISOString(),
@@ -796,6 +799,7 @@ export async function POST(request: NextRequest) {
             provider_event_id: meeting.eventId,
             booking_provider: meeting.bookingProvider,
             service_key: service.key,
+            content_origin: input.origin ?? null,
           },
           idempotencyKey: `booking/admin-confirmed/${appointmentId}/${adminEmail.toLowerCase()}`,
         })
