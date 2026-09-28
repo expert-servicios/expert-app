@@ -7,7 +7,7 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf
 describe('KIA pre-quote commercial rules', () => {
   const plans = source('lib/data/kia-knowledge/monthly-plans.ts');
   const prompt = source('lib/ai/kia/prompts/kia-services-catalog.ts');
-  const questionnaire = source('lib/data/kia-knowledge/pre-quote-questionnaire.ts');
+  const questionnaire = source('lib/data/kia-knowledge/prequote-questionnaire.ts');
   const supervision = source('app/(public)/planes/supervision/page.tsx');
 
   it('supports the linked-autonomo 49 EUR variant', () => {
@@ -24,10 +24,10 @@ describe('KIA pre-quote commercial rules', () => {
   });
 
   it('defines a reusable pre-quote questionnaire without repeating known facts', () => {
-    expect(questionnaire).toContain('Volumen real');
-    expect(questionnaire).toContain('Obligaciones fiscales');
-    expect(questionnaire).toContain('Holded y sistema actual');
-    expect(questionnaire).toContain('Cambio de asesoría / migración');
-    expect(questionnaire).toContain('No repetir preguntas cuya respuesta ya conste');
+    expect(questionnaire).toContain("title: 'Volumen'");
+    expect(questionnaire).toContain("title: 'Fiscalidad y complejidad'");
+    expect(questionnaire).toContain("title: 'Software y Holded'");
+    expect(questionnaire).toContain("title: 'Inicio y transición'");
+    expect(questionnaire).toContain('No repetir preguntas que ya estén contestadas');
   });
 });
