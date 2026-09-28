@@ -11,10 +11,6 @@ import { describeContentOrigin, normalizeContentOrigin } from '@/lib/marketing/c
 import { getCatalogService } from '@/lib/utils/catalog';
 import { createQuoteClaimToken } from '@/lib/quotes/quote-claim-token';
 
-function escapeIlikeLiteral(value: string): string {
-  return value.replace(/[\\%_]/g, (character) => `\\${character}`);
-}
-
 const LEGACY_SERVICE_SLUGS: Record<string, string> = {
   noResidentes: 'no-residentes',
   modelo151: 'modelo-151',
