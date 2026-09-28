@@ -224,7 +224,7 @@ export async function runKiaDecision(input: {
           for (const req of iterativeRequests) {
             input.onProgress?.({ type: 'tool_call', tool: req.toolName, reason: req.reason });
           }
-          const iterResults = await Promise.all(
+          const iterResults: KiaToolResult[] = await Promise.all(
             iterativeRequests.map((req: KiaToolRequest) => {
               const authorized = isKiaToolAuthorized(req.toolName, effectiveToolAuthorization);
               if (!authorized) {
