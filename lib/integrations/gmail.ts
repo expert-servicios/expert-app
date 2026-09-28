@@ -268,18 +268,20 @@ async function _listThreads(
   return mails;
 }
 
-async function _getThread(gmail: AnyGoogle, threadId: string): Promise<GmailMessage[]> {
+async function _getThread(gmail: AnyGoogle, threadId: string, markRead = true): Promise<GmailMessage[]> {
   const threadRes = await gmail.users.threads.get({
     userId: 'me',
     id: threadId,
     format: 'full',
   });
 
-  await gmail.users.threads.modify({
-    userId: 'me',
-    id: threadId,
-    requestBody: { removeLabelIds: ['UNREAD'] },
-  }).catch(() => null);
+  if (markRead) {
+    await gmail.users.threads.modify({
+      userId: 'me',
+      id: threadId,
+      requestBody: { removeLabelIds: ['UNREAD'] },
+    }).catch(() => null);
+  }
 
   const rawMsgs: AnyGoogle[] = threadRes.data.messages ?? [];
   return rawMsgs.map((msg: AnyGoogle) => {
@@ -448,10 +450,10 @@ export async function listGmailMailsSA(
   return _listThreads(gmail, opts);
 }
 
-export async function getGmailThreadSA(threadId: string): Promise<GmailMessage[]> {
+export async function getGmailThreadSA(threadId: string, markRead = true): Promise<GmailMessage[]> {
   const gmail = await getGmailSAClient();
   if (!gmail) throw new Error('Gmail SA not configured');
-  return _getThread(gmail, threadId);
+  return _getThread(gmail, threadId, markRead);
 }
 
 export async function getGmailAttachmentSA(messageId: string, attachmentId: string): Promise<GmailAttachmentData> {
@@ -500,12 +502,13 @@ export async function listGmailMails(
 
 export async function getGmailThread(
   stored: GmailTokens,
-  threadId: string
+  threadId: string,
+  markRead = true
 ): Promise<{ messages: GmailMessage[]; refreshed: GmailTokens | null }> {
   const { client, refreshed } = await ensureFresh(stored);
   const { google } = (await import('googleapis')) as AnyGoogle;
   const gmail = google.gmail({ version: 'v1', auth: client });
-  const messages = await _getThread(gmail, threadId);
+  const messages = await _getThread(gmail, threadId, markRead);
   return { messages, refreshed };
 }
 
