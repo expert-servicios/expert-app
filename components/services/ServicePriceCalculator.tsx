@@ -50,7 +50,7 @@ function CalculatorShell({
   );
 }
 
-function IrpfPriceCalculator({ compact, origin }: Omit<Props, 'kind'>) {
+function IrpfPriceCalculator({ compact = false, origin }: Omit<Props, 'kind'>) {
   const [filing, setFiling] = useState<'individual' | 'joint'>('individual');
   const [capitalOrRentals, setCapitalOrRentals] = useState(false);
 
@@ -126,7 +126,7 @@ function IrpfPriceCalculator({ compact, origin }: Omit<Props, 'kind'>) {
   );
 }
 
-function PatrimonioPriceCalculator({ compact, origin }: Omit<Props, 'kind'>) {
+function PatrimonioPriceCalculator({ compact = false, origin }: Omit<Props, 'kind'>) {
   const [declarations, setDeclarations] = useState(1);
   const [complex, setComplex] = useState(false);
 
