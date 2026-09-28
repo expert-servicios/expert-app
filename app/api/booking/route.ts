@@ -6,11 +6,18 @@ import {
   BookingCalendarDeletionError,
   createBookingCalendarMeeting,
   deleteBookingCalendarEvent,
+  calendarProviderFromBookingProvider,
   getConfiguredBookingCalendarProvider,
   listBookingCalendarBusyWindows,
 } from '@/lib/booking/calendar-provider';
 import { sendEmail } from '@/lib/email/send';
 import { sendBookingEmail } from '@/lib/booking/booking-email';
+import { buildBookingIcs } from '@/lib/booking/calendar-invite';
+import {
+  bookingManagementUrls,
+  createBookingManagementToken,
+  verifyBookingManagementToken,
+} from '@/lib/booking/booking-management-token';
 import { caseOpened, citaConfirmed } from '@/lib/email/templates';
 import { onboardingPreparationEmail } from '@/lib/email/onboarding-templates';
 import { ensureOnboardingTask, findOpenOnboardingCase } from '@/lib/admin/onboarding-followup';
@@ -49,6 +56,7 @@ const schema = z.object({
   recaptcha_token: z.string().optional(),
   booking_auth: z.string().max(4096).optional(),
   company_id: z.string().uuid().optional(),
+  manage_token: z.string().max(4096).optional(),
 });
 
 async function authenticatedUser(request: NextRequest) {
@@ -257,18 +265,54 @@ export async function POST(request: NextRequest) {
         : null;
 
     const admin = getSupabaseAdmin();
-    let bookingEmail = input.email.toLowerCase();
-    let privateIdentity: BookingIdentity | null = null;
+    const managementAuthorization = await verifyBookingManagementToken(input.manage_token, service.key);
+    let rescheduledAppointment: {
+      id: string;
+      booking_provider: string | null;
+      provider_booking_id: string | null;
+      google_event_id: string | null;
+      client_id: string | null;
+      company_id: string | null;
+    } | null = null;
+
+    if (managementAuthorization) {
+      const { data: existingAppointment, error: managementError } = await admin
+        .from('appointments')
+        .select('id,email,status,appointment_type,booking_provider,provider_booking_id,google_event_id,client_id,company_id')
+        .eq('id', managementAuthorization.appointmentId)
+        .maybeSingle();
+      if (managementError) throw managementError;
+      if (
+        !existingAppointment ||
+        existingAppointment.email?.toLowerCase() !== managementAuthorization.email ||
+        existingAppointment.appointment_type !== service.key ||
+        existingAppointment.status !== 'confirmed'
+      ) {
+        return NextResponse.json({ error: 'El enlace de cambio ya no corresponde a una cita activa.' }, { status: 409 });
+      }
+      rescheduledAppointment = existingAppointment;
+    }
+
+    let bookingEmail = managementAuthorization?.email ?? input.email.toLowerCase();
+    let privateIdentity: BookingIdentity | null = managementAuthorization && rescheduledAppointment?.client_id
+      ? {
+          clientId: rescheduledAppointment.client_id,
+          companyId: rescheduledAppointment.company_id,
+          source: 'auth_email',
+        }
+      : null;
 
     if (!service.public) {
-      if (!signedAuthorization && !user) {
+      if (!signedAuthorization && !managementAuthorization && !user) {
         return NextResponse.json(
           { error: 'Esta reserva requiere una invitación válida o iniciar sesión.' },
           { status: 401 }
         );
       }
 
-      if (signedAuthorization) {
+      if (managementAuthorization) {
+        bookingEmail = managementAuthorization.email;
+      } else if (signedAuthorization) {
         bookingEmail = signedAuthorization.email;
         if (signedAuthorization.clientId) {
           let signedCompanyId = signedAuthorization.companyId;
@@ -494,6 +538,27 @@ export async function POST(request: NextRequest) {
       throw new Error(`Could not finalize appointment: ${finalizeError.message}`);
     }
 
+    if (rescheduledAppointment) {
+      const oldEventId = rescheduledAppointment.provider_booking_id ?? rescheduledAppointment.google_event_id;
+      const oldProvider = calendarProviderFromBookingProvider(rescheduledAppointment.booking_provider)
+        ?? (rescheduledAppointment.google_event_id ? 'google' : null);
+
+      if (oldEventId && oldProvider) {
+        await deleteBookingCalendarEvent(oldEventId, oldProvider);
+      }
+
+      const { error: rescheduleUpdateError } = await admin
+        .from('appointments')
+        .update({
+          status: 'rescheduled',
+          admin_notes: `Sustituida por la cita ${appointmentId} mediante enlace seguro de cambio.`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', rescheduledAppointment.id)
+        .eq('status', 'confirmed');
+      if (rescheduleUpdateError) throw rescheduleUpdateError;
+    }
+
     if (
       (service.key === 'onboarding' || service.key === 'formacion-holded') &&
       meeting.meetingUrl
@@ -530,13 +595,28 @@ export async function POST(request: NextRequest) {
       year: 'numeric',
     }).format(start);
 
+    const managementToken = await createBookingManagementToken({
+      appointmentId: appointmentId!,
+      email: bookingEmail,
+      service: service.key,
+    });
+    const managementLinks = bookingManagementUrls(managementToken, service.key);
     const clientTemplate = citaConfirmed(
       input.name,
       service.label,
       formattedDate,
       localTime,
       meeting.meetingUrl,
+      managementLinks,
     );
+    const calendarAttachment = buildBookingIcs({
+      appointmentId: appointmentId!,
+      service: service.label,
+      start,
+      end,
+      meetingUrl: meeting.meetingUrl,
+      attendeeEmail: bookingEmail,
+    });
     let clientEmailSent = false;
     try {
       await sendBookingEmail({
@@ -551,6 +631,11 @@ export async function POST(request: NextRequest) {
           booking_provider: meeting.bookingProvider,
         },
         idempotencyKey: `booking/confirmed/${appointmentId}`,
+        attachments: [{
+          filename: 'cita-expert.ics',
+          content: Buffer.from(calendarAttachment, 'utf8').toString('base64'),
+          type: 'text/calendar; charset=utf-8',
+        }],
       });
       clientEmailSent = true;
     } catch (error) {
