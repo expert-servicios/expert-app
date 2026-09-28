@@ -122,7 +122,7 @@ export function quoteReceivedClient(name: string, services: string) {
 }
 
 // ── 2. Quote received (admin) ────────────────────────────────────────────────
-export function quoteReceivedAdmin(name: string, email: string, services: string, description: string) {
+export function quoteReceivedAdmin(name: string, email: string, services: string, description: string, origin: string) {
   const safeName  = escapeHtml(name);
   const safeEmail = escapeHtml(email);
   return {
@@ -134,9 +134,37 @@ export function quoteReceivedAdmin(name: string, email: string, services: string
         detail('Nombre', safeName),
         detail('Email', `<a href="mailto:${safeEmail}" style="color:#c88b25;">${safeEmail}</a>`),
         detail('Servicios', escapeHtml(services)),
+        detail('Origen', escapeHtml(origin)),
         detail('Descripción', escapeHtml(description) || '—')
       )}
       ${btn('Gestionar en el panel', `${BRAND.appUrl}/admin/presupuestos`)}
+    `)
+  };
+}
+
+export function freeConsultationReceivedAdmin(input: {
+  name: string;
+  email: string;
+  phone?: string | null;
+  service?: string | null;
+  question: string;
+  origin: string;
+  leadId: string;
+}) {
+  const safeEmail = escapeHtml(input.email);
+  return {
+    subject: `Nueva consulta gratuita de ${escapeHtml(input.name)}`,
+    html: base('Nueva consulta gratuita', `
+      ${heading('Nueva consulta gratuita')}
+      ${table(
+        detail('Nombre', escapeHtml(input.name)),
+        detail('Email', `<a href="mailto:${safeEmail}" style="color:#c88b25;">${safeEmail}</a>`),
+        detail('Teléfono', escapeHtml(input.phone ?? '—')),
+        detail('Servicio', escapeHtml(input.service ?? 'Consulta general')),
+        detail('Origen', escapeHtml(input.origin)),
+        detail('Consulta', escapeHtml(input.question))
+      )}
+      ${btn('Ver lead en el panel', `${BRAND.appUrl}/admin/leads?focus=${encodeURIComponent(input.leadId)}`)}
     `)
   };
 }
