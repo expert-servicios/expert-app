@@ -605,7 +605,7 @@ export async function POST(req: NextRequest) {
       if (quoteId) {
         const { data: quote, error: quoteFetchError } = await supabaseAdmin
           .from('quotes')
-          .select('client_id,lead_id,title,docs_checklist,company_id')
+          .select('client_id,lead_id,title,docs_checklist,company_id,service_slugs')
           .eq('id', quoteId)
           .single();
 
@@ -653,6 +653,7 @@ export async function POST(req: NextRequest) {
           const persistedQuoteServiceSlugs = splitQuoteServiceSlugs([
             session.metadata?.service_slugs,
             session.metadata?.service_slug,
+            ...(Array.isArray(quote.service_slugs) ? quote.service_slugs : []),
             ...(quoteItems ?? []).map((line) => line.service_slug),
           ]);
           const leadServiceSlugs = splitQuoteServiceSlugs([
@@ -679,7 +680,61 @@ export async function POST(req: NextRequest) {
           ]);
 
           if (existingOrder) {
-            console.log('[webhook] order already exists for payment', paymentId, '— skipping');
+            // A previous delivery attempt may have inserted the order and then failed
+            // while creating/linking the case. Fulfillment is idempotent, so retry it.
+            await supabaseAdmin
+              .from('quotes')
+              .update({ status: 'paid', stripe_checkout_id: session.id })
+              .eq('id', quoteId);
+
+            let retriedSpecializedCaseId: string | null = null;
+            if (quote.client_id && quoteServiceSlugs.length > 0) {
+              retriedSpecializedCaseId = await ensureServiceOrderFulfillment(supabaseAdmin, {
+                orderId: existingOrder.id,
+                serviceSlug: quoteServiceSlugs[0],
+                serviceSlugs: quoteServiceSlugs,
+                serviceName: quote.title ?? 'Servicio contratado',
+                clientId: quote.client_id,
+                companyId: quote.company_id ?? null,
+                checkoutLocale: 'es',
+              });
+
+              if (retriedSpecializedCaseId) {
+                const { error: quoteCaseLinkError } = await supabaseAdmin
+                  .from('cases')
+                  .update({ quote_id: quoteId })
+                  .eq('id', retriedSpecializedCaseId)
+                  .is('quote_id', null);
+                if (quoteCaseLinkError) {
+                  throw new Error(`Could not link retried quote case ${retriedSpecializedCaseId}: ${quoteCaseLinkError.message}`);
+                }
+              }
+            }
+
+            if (quote.client_id && !retriedSpecializedCaseId) {
+              const { data: existingCase } = await supabaseAdmin
+                .from('cases')
+                .select('id')
+                .eq('quote_id', quoteId)
+                .maybeSingle();
+
+              if (!existingCase) {
+                const { error: fallbackCaseError } = await supabaseAdmin.from('cases').insert({
+                  quote_id: quoteId,
+                  client_id: quote.client_id,
+                  company_id: quote.company_id ?? null,
+                  category: 'presupuesto',
+                  service: quote.title ?? 'servicio',
+                  state: Array.isArray(quote.docs_checklist) && quote.docs_checklist.length > 0 ? 'docs_pendientes' : 'nuevo',
+                  docs_checklist: Array.isArray(quote.docs_checklist) ? quote.docs_checklist : []
+                });
+                if (fallbackCaseError) {
+                  throw new Error(`Could not create fallback case for retried quote ${quoteId}: ${fallbackCaseError.message}`);
+                }
+              }
+            }
+
+            console.log('[webhook] order already exists for payment', paymentId, '— fulfillment retried');
           } else if (existingQuoteOrder) {
             console.error('[webhook] duplicate payment detected for quote', {
               quoteId,
