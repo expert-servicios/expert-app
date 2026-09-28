@@ -207,6 +207,18 @@ export const kiaToolValidators = {
     category: z.string().max(100).optional(),
     limit: z.number().int().min(1).max(3).default(2),
   }).strict(),
+  get_booking_availability: z.object({
+    serviceKey: z.enum(['consulta-inicial', 'demo-holded', 'academy-admision']).default('consulta-inicial'),
+    days: z.number().int().min(1).max(14).default(7),
+  }).strict(),
+  create_booking_meeting: z.object({
+    serviceKey: z.enum(['consulta-inicial', 'demo-holded', 'academy-admision']),
+    startIso: z.string().datetime({ offset: true }),
+    attendeeName: z.string().trim().min(2).max(100),
+    attendeeEmail: z.string().email().max(200),
+    attendeePhone: z.string().trim().max(30).optional(),
+    notes: z.string().trim().max(500).optional(),
+  }).strict(),
 } satisfies Record<string, z.ZodTypeAny>;
 
 type ToolName = keyof typeof kiaToolValidators;
@@ -258,6 +270,8 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   search_knowledge_resources: 'Search EXPERT blog articles and knowledge-base documents. Use to share a relevant guide or article with the user. Returns canonical public links.',
   get_official_sources: 'Return official source links from the canonical EXPERT Regulatory Registry for a service or topic. Use when the user wants to verify information independently.',
   find_relevant_services: 'Find EXPERT services for a concrete unmet need. Use only after answering the question and only when the user explicitly lacks something necessary, asks EXPERT to handle it, or clearly intends to contract. Do not use for mere topic affinity or when the user asks to do it themselves.',
+  get_booking_availability: 'Read real EXPERT availability from the active Google Calendar booking stack for public meeting types. Use before proposing meeting times.',
+  create_booking_meeting: 'Create a public EXPERT meeting only after the user explicitly confirms the exact numeric date and time in their latest message. Backend rechecks availability and confirmation before writing Calendar/Meet.',
 };
 
 export const KIA_TOOL_DEFINITIONS: KiaToolDefinition[] = (Object.keys(kiaToolValidators) as ToolName[]).map((name) => ({
