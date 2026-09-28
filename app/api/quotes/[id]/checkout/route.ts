@@ -106,11 +106,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }, { status: 409 });
     }
 
+    const rawQuoteServiceSlugs: unknown[] = (quoteItems?.length ?? 0) > 0
+      ? quoteItems!.map((line) => line.service_slug)
+      : Array.isArray(quote.service_slugs) ? quote.service_slugs : [];
     const quoteServiceSlugs = [...new Set(
-      ((quoteItems?.length ?? 0) > 0
-        ? quoteItems!.map((line) => line.service_slug)
-        : (quote.service_slugs ?? [])
-      ).filter((slug): slug is string => typeof slug === 'string' && slug.trim().length > 0)
+      rawQuoteServiceSlugs.filter(
+        (slug): slug is string => typeof slug === 'string' && slug.trim().length > 0
+      )
     )];
 
     const session = await stripe.checkout.sessions.create({
