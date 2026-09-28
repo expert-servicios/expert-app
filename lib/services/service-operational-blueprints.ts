@@ -428,11 +428,11 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'ownership_document', label: 'Escritura, nota simple u otro documento que acredite titularidad, porcentaje y fecha de adquisición', required: true },
       { key: 'ibi', label: 'Recibo de IBI o documento con referencia catastral y valor catastral de cada inmueble', required: true },
       { key: 'tax_residence', label: 'Certificado de residencia fiscal del país de residencia', required: false, conditionalWhen: 'Cuando sea necesario acreditar residencia fiscal o aplicar un convenio/beneficio fiscal' },
-      { key: 'rental', label: 'Contrato de alquiler, ingresos y documentación relacionada con el arrendamiento', required: false, conditionalWhen: 'Si el inmueble estuvo alquilado durante algún periodo' },
+      { key: 'rental', label: 'Contrato de alquiler, periodos e ingresos; extractos de Booking.com, Airbnb u otra plataforma cuando existan', required: false, conditionalWhen: 'Si el inmueble estuvo alquilado durante algún periodo' },
       { key: 'sale', label: 'Escritura de venta y documentación de la transmisión', required: false, conditionalWhen: 'Si el inmueble se transmitió durante el ejercicio' },
     ],
     steps: [
-      { key: 'intake', title: 'Cuestionario de inmuebles y titulares', description: 'Recoger ejercicio, inmuebles, titulares, porcentajes, fechas de adquisición y uso durante el periodo.', clientVisible: true },
+      { key: 'intake', title: 'Cuestionario de inmuebles y titulares', description: 'Recoger ejercicio, inmuebles, titulares, porcentajes, fechas de adquisición y uso; si hubo alquiler, periodos, importes brutos y canal o plataforma.', clientVisible: true },
       { key: 'documents', title: 'Documentación de cada inmueble', description: 'Vincular identidad, escritura/nota simple e IBI al inmueble y titular correspondientes.', clientVisible: true },
       { key: 'calculate', title: 'Cálculo IRNR', description: 'Determinar días de titularidad, renta imputada o tratamiento de periodos arrendados y cuota por titular.', clientVisible: true },
       { key: 'review', title: 'Revisión', description: 'Comprobar titularidad, periodo, valor catastral, residencia fiscal y coherencia del cálculo.', clientVisible: true },
@@ -448,7 +448,7 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'close_irnr', title: 'Cerrar y programar siguiente IRNR', description: 'Entregar justificantes y registrar el siguiente periodo cuando proceda.', priority: 'media', phase: 'deliver', dependsOn: ['submit_210'] },
     ],
     kia: {
-      userSummary: 'KIA recoge primero inmuebles y titulares para confirmar alcance y, tras contratación, solicita fechas de adquisición, porcentajes, IBI y documentos de cada inmueble sin repetir información ya aportada.',
+      userSummary: 'KIA recoge primero inmuebles y titulares para confirmar alcance y precio; tras contratación solicita fechas de adquisición, porcentajes, IBI y, si hubo alquiler, periodos e ingresos o extractos de Booking.com/Airbnb sin repetir información ya aportada.',
       adminSummary: 'KIA trata cada inmueble × titular no residente como unidad declarativa y separa automáticamente supuestos alquilados o transmitidos para revisión de alcance.',
       escalationRules: ['Residencia fiscal dudosa', 'Inmueble alquilado o vendido con tratamiento distinto a renta imputada', 'Titularidad o porcentaje incoherente', 'Valor catastral o fecha de adquisición no acreditados'],
     },
