@@ -42,6 +42,12 @@ type Lead = {
   marketing_status: string;
   last_stripe_activity_at: string | null;
   attribution: Attribution | null;
+  latest_interaction: {
+    at: string | null;
+    intent: string | null;
+    origin: string | null;
+    service: string | null;
+  } | null;
   stripe_summary: StripeSummary;
 };
 
@@ -352,6 +358,13 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
                         {lead.attribution?.campaign && <p className="mt-1 text-[11px] text-[#6f665b]">Campaña: {lead.attribution.campaign}</p>}
                         {lead.attribution?.intent && <p className="mt-1 text-[11px] text-[#6f665b]">Intención: {intentLabels[lead.attribution.intent] ?? lead.attribution.intent}</p>}
                         {lead.attribution?.originPath && <p className="mt-1 max-w-64 truncate text-[11px] text-[#8b8174]" title={lead.attribution.originPath}>Ruta: {lead.attribution.originPath}</p>}
+                        {lead.latest_interaction && (
+                          <div className="mt-2 rounded-lg border border-[#eadfce] bg-[#fffdf8] p-2 text-[11px] leading-4 text-[#6f665b]">
+                            <p className="font-semibold text-[#29384a]">Última interacción</p>
+                            {lead.latest_interaction.service && <p>Servicio: {lead.latest_interaction.service}</p>}
+                            {lead.latest_interaction.origin && <p className="break-all">Origen: {lead.latest_interaction.origin}</p>}
+                          </div>
+                        )}
                         <p className="mt-1 text-[11px] text-[#8b8174]">{new Date(lead.created_at).toLocaleDateString('es-ES')}</p>
                       </td>
                     </tr>
