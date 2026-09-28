@@ -216,11 +216,16 @@ export async function runKiaDecision(input: {
           loopIteration < KIA_MAX_TOOL_ITERATIONS &&
           Date.now() - loopStart < KIA_TOOL_LOOP_TIMEOUT_MS
         ) {
-          for (const req of decision.toolRequests) {
+          const iterativeRequests = decision.toolRequests.filter(
+            (req: KiaToolRequest) => getKiaToolPolicy(req.toolName)?.effect !== 'external_action',
+          );
+          if (iterativeRequests.length === 0) break;
+
+          for (const req of iterativeRequests) {
             input.onProgress?.({ type: 'tool_call', tool: req.toolName, reason: req.reason });
           }
           const iterResults = await Promise.all(
-            decision.toolRequests.map((req: KiaToolRequest) => {
+            iterativeRequests.map((req: KiaToolRequest) => {
               const authorized = isKiaToolAuthorized(req.toolName, effectiveToolAuthorization);
               if (!authorized) {
                 return Promise.resolve({
@@ -228,22 +233,6 @@ export async function runKiaDecision(input: {
                   ok: false,
                   error: 'Tool not authorized by KIA registry policy',
                 } satisfies KiaToolResult);
-              }
-
-              const policy = getKiaToolPolicy(req.toolName);
-              if (policy?.effect === 'external_action') {
-                const minConfidence = input.externalActionMinConfidence ?? 0.9;
-                if (
-                  decision.requiresManualReview
-                  || decision.nextAction === 'needs_review'
-                  || decision.confidence < minConfidence
-                ) {
-                  return Promise.resolve({
-                    toolName: req.toolName,
-                    ok: false,
-                    error: 'External action blocked by decision safety gate',
-                  } satisfies KiaToolResult);
-                }
               }
 
               return executeKiaToolCall({ name: req.toolName, arguments: req.arguments }, context);
@@ -255,7 +244,7 @@ export async function runKiaDecision(input: {
           toolResults.push(...iterResults);
 
           messages.push({ role: 'assistant', content: JSON.stringify(decision) });
-          messages.push({ role: 'user', content: buildToolResultsPayload(decision.toolRequests, iterResults) });
+          messages.push({ role: 'user', content: buildToolResultsPayload(iterativeRequests, iterResults) });
 
           const loopProviderResult = await runKiaProviderRequest({
             ...requestBase,
@@ -275,14 +264,19 @@ export async function runKiaDecision(input: {
           loopIteration++;
         }
 
-        if (decision.toolRequests.length > 0) {
+        const remainingNonExternal = decision.toolRequests.filter(
+          (req: KiaToolRequest) => getKiaToolPolicy(req.toolName)?.effect !== 'external_action',
+        );
+        if (remainingNonExternal.length > 0) {
           const reason = loopIteration >= KIA_MAX_TOOL_ITERATIONS
             ? `tool_loop_limit_reached:${KIA_MAX_TOOL_ITERATIONS}`
             : 'tool_loop_timeout';
           decision = {
             ...decision,
             warnings: [...decision.warnings, reason],
-            toolRequests: [],
+            toolRequests: decision.toolRequests.filter(
+              (req: KiaToolRequest) => getKiaToolPolicy(req.toolName)?.effect === 'external_action',
+            ),
           };
         }
       }
@@ -377,6 +371,43 @@ export async function runKiaDecision(input: {
   }
 
   decision = finalizeDecisionPresentation(decision, input.channel, locale);
+
+  if (allowToolExecution && !usedFallback) {
+    const externalRequests = decision.toolRequests.filter(
+      (req: KiaToolRequest) => getKiaToolPolicy(req.toolName)?.effect === 'external_action',
+    );
+    if (externalRequests.length > 0) {
+      const minConfidence = input.externalActionMinConfidence ?? 0.9;
+      const safeForExternalAction =
+        !decision.requiresManualReview
+        && decision.nextAction !== 'needs_review'
+        && decision.confidence >= minConfidence;
+
+      if (safeForExternalAction) {
+        for (const req of externalRequests) {
+          input.onProgress?.({ type: 'tool_call', tool: req.toolName, reason: req.reason });
+          const authorized = isKiaToolAuthorized(req.toolName, effectiveToolAuthorization);
+          const result = authorized
+            ? await executeKiaToolCall({ name: req.toolName, arguments: req.arguments }, context)
+            : {
+                toolName: req.toolName,
+                ok: false,
+                error: 'Tool not authorized by KIA registry policy',
+              } satisfies KiaToolResult;
+          input.onProgress?.({ type: 'tool_result', tool: result.toolName, ok: result.ok });
+          toolResults.push(result);
+        }
+      } else {
+        decision = {
+          ...decision,
+          toolRequests: decision.toolRequests.filter(
+            (req: KiaToolRequest) => getKiaToolPolicy(req.toolName)?.effect !== 'external_action',
+          ),
+          warnings: [...decision.warnings, 'external_action_blocked_by_final_safety_gate'],
+        };
+      }
+    }
+  }
 
   const totalCost = costEstimates.length ? sumCostEstimates(costEstimates) : null;
   const decisionLogId = await saveKiaDecisionLog({
