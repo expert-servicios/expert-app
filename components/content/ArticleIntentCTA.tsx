@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { CalendarDays, FileQuestion, Send, MessageCircle } from 'lucide-react';
 import { trackPublicContentIntent } from '@/lib/utils/analytics';
@@ -110,7 +111,7 @@ export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs =
       </div>
 
       <div className="mt-6 grid gap-4 border border-[#D4A017]/25 bg-[#0D1B2A] p-5 text-white sm:grid-cols-[64px_1fr_auto] sm:items-center">
-        <img
+        <Image
           src="/avatars/kia/kia-bienvenida.webp"
           width={56}
           height={56}
