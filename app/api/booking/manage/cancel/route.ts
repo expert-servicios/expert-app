@@ -6,6 +6,7 @@ import {
   deleteBookingCalendarEvent,
 } from '@/lib/booking/calendar-provider';
 import { cancelBookingAdminTask } from '@/lib/booking/booking-admin-task';
+import { notifyBookingAdminActivity } from '@/lib/booking/booking-admin-notifications';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
     const admin = getSupabaseAdmin();
     const { data: appointment, error } = await admin
       .from('appointments')
-      .select('id,email,status,appointment_type,booking_provider,provider_booking_id,google_event_id')
+      .select('id,name,email,status,appointment_type,service,confirmed_date,confirmed_time,booking_provider,provider_booking_id,google_event_id')
       .eq('id', auth.appointmentId)
       .maybeSingle();
 
@@ -82,6 +83,16 @@ export async function POST(request: NextRequest) {
       appointment.id,
       'Cita cancelada por el cliente desde enlace seguro de gestión.',
     ).catch((taskError) => console.error('[booking/manage/cancel] admin task:', taskError));
+
+    await notifyBookingAdminActivity({
+      kind: 'cancelled',
+      appointmentId: appointment.id,
+      name: appointment.name ?? 'Cliente',
+      service: appointment.service ?? appointment.appointment_type ?? 'Reunión',
+      localDate: appointment.confirmed_date ?? 'Fecha no disponible',
+      localTime: String(appointment.confirmed_time ?? '').slice(0, 5) || 'Hora no disponible',
+      email: appointment.email,
+    }).catch((pushError) => console.error('[booking/manage/cancel] admin push:', pushError));
 
     return NextResponse.json({ ok: true });
   } catch (error) {
