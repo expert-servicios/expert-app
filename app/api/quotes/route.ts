@@ -7,6 +7,7 @@ import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { buildLeadAttributionFields } from '@/lib/marketing/server-attribution';
+import { describeContentOrigin, normalizeContentOrigin } from '@/lib/marketing/content-origin';
 import { getCatalogService } from '@/lib/utils/catalog';
 
 const LEGACY_SERVICE_SLUGS: Record<string, string> = {
@@ -80,11 +81,13 @@ export async function POST(request: NextRequest) {
     const descriptionText = validated.description?.trim() || 'No se proporcionaron detalles adicionales.';
     const supabaseAdmin = getSupabaseAdmin();
     const attributionFields = buildLeadAttributionFields(request);
+    const contentOrigin = normalizeContentOrigin(validated.origin, 'form:solicitar-presupuesto');
+    const contentOriginLabel = describeContentOrigin(contentOrigin);
 
     const normalizedPhone = validated.phone?.trim() || null;
     const quoteRequestInteraction = {
       action: 'quote_request',
-      origin: validated.origin || null,
+      origin: contentOrigin,
       requested_services: serviceSlugs,
       at: new Date().toISOString(),
       contact: {
@@ -214,18 +217,18 @@ export async function POST(request: NextRequest) {
     });
 
     if (adminEmails.length) {
-      const adminTpl = quoteReceivedAdmin(validated.name, normalizedEmail, serviceList, descriptionText);
+      const adminTpl = quoteReceivedAdmin(validated.name, normalizedEmail, serviceList, descriptionText, contentOriginLabel);
       await sendEmail({
         to: adminEmails,
         eventType: 'quote.received.admin',
         ...adminTpl,
-        metadata: { quote_id: quote.id, lead_id: lead.id }
+        metadata: { quote_id: quote.id, lead_id: leadId, content_origin: contentOrigin }
       });
     }
 
     notifyAdmins({
       title: `💼 Nuevo presupuesto: ${validated.name}`,
-      body: serviceList.length > 80 ? serviceList.slice(0, 77) + '…' : serviceList,
+      body: `${serviceList} · ${contentOriginLabel}`.slice(0, 240),
       url: '/admin/presupuestos',
       tag: `quote-${quote.id}`,
     }).catch(() => {});
