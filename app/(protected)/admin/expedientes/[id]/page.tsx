@@ -32,6 +32,56 @@ interface Message {
   profiles: { full_name: string | null } | null;
 }
 
+interface DocumentNote {
+  id: string;
+  item_key: string;
+  item_label: string;
+  comment: string | null;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+type IrnrIntake = {
+  taxYear: string;
+  residenceCountry: string;
+  taxIdForeign: string;
+  properties: Array<{
+    address: string;
+    cadastralReference: string;
+    acquisitionDate: string;
+    ownershipPercent: string;
+    use: 'available' | 'rented' | 'sold';
+  }>;
+};
+
+function parseIrnrIntake(comment: string | null | undefined): IrnrIntake | null {
+  if (!comment) return null;
+  try {
+    const parsed = JSON.parse(comment) as Partial<IrnrIntake>;
+    if (!Array.isArray(parsed.properties)) return null;
+    return {
+      taxYear: typeof parsed.taxYear === 'string' ? parsed.taxYear : '',
+      residenceCountry: typeof parsed.residenceCountry === 'string' ? parsed.residenceCountry : '',
+      taxIdForeign: typeof parsed.taxIdForeign === 'string' ? parsed.taxIdForeign : '',
+      properties: parsed.properties.map((property) => ({
+        address: typeof property?.address === 'string' ? property.address : '',
+        cadastralReference: typeof property?.cadastralReference === 'string' ? property.cadastralReference : '',
+        acquisitionDate: typeof property?.acquisitionDate === 'string' ? property.acquisitionDate : '',
+        ownershipPercent: typeof property?.ownershipPercent === 'string' ? property.ownershipPercent : '',
+        use: property?.use === 'rented' || property?.use === 'sold' ? property.use : 'available',
+      })),
+    };
+  } catch {
+    return null;
+  }
+}
+
+const irnrUseLabels: Record<IrnrIntake['properties'][number]['use'], string> = {
+  available: 'A disposición / no alquilado',
+  rented: 'Alquilado total o parcialmente',
+  sold: 'Vendido durante el ejercicio',
+};
+
 interface CaseDetail {
   id: string;
   category: string;
@@ -64,7 +114,7 @@ export default async function AdminCaseDetailPage({
   const { id } = await params;
 
   const [data, messagesData] = await Promise.all([
-    fetchWithCookies<{ case: CaseDetail; documents: Document[] }>(`/api/admin/cases/${id}`),
+    fetchWithCookies<{ case: CaseDetail; documents: Document[]; documentNotes: DocumentNote[] }>(`/api/admin/cases/${id}`),
     fetchWithCookies<{ messages: Message[] }>(`/api/cases/${id}/messages`)
   ]);
 
@@ -82,6 +132,9 @@ export default async function AdminCaseDetailPage({
   }
 
   const { case: c, documents } = data;
+  const documentNotes = data.documentNotes ?? [];
+  const irnrNote = documentNotes.find((note) => note.item_key === 'irnr-intake') ?? null;
+  const irnrIntake = parseIrnrIntake(irnrNote?.comment);
   const messages = messagesData?.messages ?? [];
   const clientDocs = documents.filter((d) => d.uploaded_by_role !== 'admin');
   const deliverables = documents.filter((d) => d.uploaded_by_role === 'admin');
@@ -129,6 +182,60 @@ export default async function AdminCaseDetailPage({
         />
 
         <CaseWorkflowPanel serviceId={c.service_id} checklistJson={c.checklist_json} />
+
+        {c.service_id?.split(',').includes('no-residentes') && (
+          <section className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">IRNR · datos del cliente</p>
+                <h2 className="mt-1 font-serif text-xl font-bold text-[#07111d]">Cuestionario de inmuebles</h2>
+              </div>
+              {irnrNote?.updated_at && (
+                <p className="text-xs text-[#52606d]">
+                  Actualizado {new Date(irnrNote.updated_at).toLocaleString('es-ES')}
+                </p>
+              )}
+            </div>
+
+            {!irnrIntake ? (
+              <p className="mt-4 rounded-lg border border-dashed border-[#d8cbb5] bg-[#fffdf8] p-4 text-sm text-[#52606d]">
+                El cliente todavía no ha completado el cuestionario IRNR.
+              </p>
+            ) : (
+              <>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg bg-[#f8f4eb] p-3">
+                    <p className="text-[11px] font-bold uppercase text-[#8a6111]">Ejercicio</p>
+                    <p className="mt-1 text-sm font-semibold text-[#07111d]">{irnrIntake.taxYear || '—'}</p>
+                  </div>
+                  <div className="rounded-lg bg-[#f8f4eb] p-3">
+                    <p className="text-[11px] font-bold uppercase text-[#8a6111]">Residencia fiscal</p>
+                    <p className="mt-1 text-sm font-semibold text-[#07111d]">{irnrIntake.residenceCountry || '—'}</p>
+                  </div>
+                  <div className="rounded-lg bg-[#f8f4eb] p-3">
+                    <p className="text-[11px] font-bold uppercase text-[#8a6111]">N.º fiscal extranjero</p>
+                    <p className="mt-1 break-all text-sm font-semibold text-[#07111d]">{irnrIntake.taxIdForeign || '—'}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {irnrIntake.properties.map((property, index) => (
+                    <div key={`${index}-${property.cadastralReference}`} className="rounded-xl border border-[#e4d8c6] bg-[#fffdf8] p-4">
+                      <p className="text-sm font-bold text-[#07111d]">Inmueble {index + 1}</p>
+                      <dl className="mt-3 grid gap-x-4 gap-y-2 text-xs sm:grid-cols-2">
+                        <div><dt className="text-[#7a7064]">Dirección</dt><dd className="font-semibold text-[#29384a]">{property.address || '—'}</dd></div>
+                        <div><dt className="text-[#7a7064]">Referencia catastral</dt><dd className="font-semibold text-[#29384a]">{property.cadastralReference || '—'}</dd></div>
+                        <div><dt className="text-[#7a7064]">Fecha de adquisición</dt><dd className="font-semibold text-[#29384a]">{property.acquisitionDate || '—'}</dd></div>
+                        <div><dt className="text-[#7a7064]">Titularidad</dt><dd className="font-semibold text-[#29384a]">{property.ownershipPercent ? `${property.ownershipPercent} %` : '—'}</dd></div>
+                        <div className="sm:col-span-2"><dt className="text-[#7a7064]">Uso</dt><dd className="font-semibold text-[#29384a]">{irnrUseLabels[property.use]}</dd></div>
+                      </dl>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </section>
+        )}
 
         <Link
           href={`/admin/tareas?caseId=${id}`}
