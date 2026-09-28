@@ -27,7 +27,7 @@ export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs =
   const primaryServiceSlug = service?.slug ?? relatedServiceSlugs[0] ?? null;
   const origin = `${sourceKind}:${sourceSlug}`;
   const serviceHref = service?.hasCheckout
-    ? `/servicios/${service.categoria}/${service.slug}`
+    ? `/servicios/${service.categoria}/${service.slug}?origen=${encodeURIComponent(origin)}`
     : service
       ? `/solicitar-presupuesto?servicio=${encodeURIComponent(service.slug)}&origen=${encodeURIComponent(origin)}`
       : `/solicitar-presupuesto?origen=${encodeURIComponent(origin)}`;
