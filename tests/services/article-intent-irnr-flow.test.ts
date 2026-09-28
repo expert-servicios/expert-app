@@ -13,6 +13,10 @@ describe('article intent CTA and IRNR funnel', () => {
   const consultationApi = source('app/api/consultas-gratuitas/route.ts');
   const quoteForm = source('components/site/SolicitudPresupuestoForm.tsx');
   const quoteApi = source('app/api/quotes/route.ts');
+  const servicePage = source('app/(public)/servicios/[categoria]/[servicio]/page.tsx');
+  const addToCart = source('components/services/AddToCartButton.tsx');
+  const cartContext = source('contexts/CartContext.tsx');
+  const serviceCheckout = source('app/api/services/checkout/route.ts');
   const bookingPage = source('app/(public)/cita/page.tsx');
   const bookingForm = source('components/booking/NativeBookingForm.tsx');
   const bookingApi = source('app/api/booking/route.ts');
@@ -88,6 +92,18 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(quoteApi).toContain('origin: contentOrigin');
     expect(quoteApi).toContain('requested_services: serviceSlugs');
     expect(quoteApi).not.toContain("intent: 'quote_request'");
+  });
+  it('preserves blog/docs origin through a direct service purchase and admin payment notice', () => {
+    expect(cta).toContain('?origen=${encodeURIComponent(origin)}');
+    expect(servicePage).toContain('resolvedSearchParams.origen');
+    expect(servicePage).toContain('contentOrigin: serviceOrigin');
+    expect(addToCart).toContain('contentOrigin: item.contentOrigin?.trim()');
+    expect(cartContext).toContain('contentOrigins');
+    expect(serviceCheckout).toContain('contentOrigins             : z.array');
+    expect(serviceCheckout).toContain('content_origins: contentOrigins');
+    expect(stripeWebhook).toContain('checkoutContentOriginLabel');
+    expect(stripeWebhook).toContain('servicePaymentConfirmedAdmin(customerName, customerEmail, amountEur, serviceName, contentOriginLabel)');
+    expect(stripeWebhook).toContain('contentOriginLabel ?');
   });
 
   it('preserves content origin through a completed 15-minute booking', () => {
