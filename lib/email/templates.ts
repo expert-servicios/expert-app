@@ -107,7 +107,10 @@ export function welcomeEmail(name: string) {
 }
 
 // ── 1. Quote received (client) ───────────────────────────────────────────────
-export function quoteReceivedClient(name: string, services: string) {
+export function quoteReceivedClient(name: string, services: string, claimToken?: string) {
+  const claimUrl = claimToken
+    ? `${BRAND.appUrl}/api/quotes/claim?token=${encodeURIComponent(claimToken)}`
+    : `${BRAND.appUrl}/dashboard/presupuestos`;
   return {
     subject: 'Hemos recibido tu solicitud de presupuesto — EXPERT',
     html: base('Solicitud recibida', `
@@ -115,8 +118,8 @@ export function quoteReceivedClient(name: string, services: string) {
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
       ${para('Hemos recibido tu solicitud de presupuesto y la estamos revisando. Nos pondremos en contacto contigo en un plazo de 24 horas hábiles con una propuesta personalizada.')}
       ${table(detail('Servicios solicitados', escapeHtml(services)))}
-      ${para('Si tienes alguna pregunta urgente, puedes escribirnos directamente.')}
-      ${btn('Ver mi área privada', `${BRAND.appUrl}/dashboard`)}
+      ${para('Este enlace vincula de forma segura el presupuesto con tu cuenta EXPERT. Si todavía no has iniciado sesión, te pediremos acceder con el mismo email que recibió este mensaje.')}
+      ${btn('Acceder a mi presupuesto', claimUrl)}
     `)
   };
 }
