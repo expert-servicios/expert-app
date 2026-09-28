@@ -639,7 +639,30 @@ export async function POST(request: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq('id', appointmentId!);
-        return null;
+
+        if (!privateIdentity) return null;
+        if (service.key === 'onboarding') {
+          const existing = await findOpenOnboardingCase(
+            privateIdentity.clientId,
+            privateIdentity.companyId,
+          ).catch(() => null);
+          return existing?.id ?? null;
+        }
+
+        let caseQuery = admin
+          .from('cases')
+          .select('id')
+          .eq('client_id', privateIdentity.clientId)
+          .eq('service', service.label)
+          .neq('state', 'finalizado');
+        caseQuery = privateIdentity.companyId
+          ? caseQuery.eq('company_id', privateIdentity.companyId)
+          : caseQuery.is('company_id', null);
+        const { data: existingCase } = await caseQuery
+          .order('opened_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        return existingCase?.id ?? null;
       });
     }
 
