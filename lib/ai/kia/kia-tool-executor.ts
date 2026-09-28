@@ -20,6 +20,7 @@ import { executeLaborPayrollDiagnostics } from './kia-labor-payroll-diagnostics'
 import { findKiaRelevantServices, getKiaOfficialSources, searchKiaKnowledgeResources } from './kia-knowledge-discovery';
 import { loadKiaClientCommunications } from './kia-client-brief';
 import { missingKiaCaseDocumentRequirements } from './kia-case-document-gaps';
+import { createKiaConfirmedBooking, getKiaBookingAvailability } from '@/lib/booking/kia-booking-operator';
 
 const HOLDED_LABOR_TOOL_NAMES = new Set<KiaHoldedLaborToolName>([
   'get_holded_employees',
@@ -621,6 +622,33 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
             limit: Number(args.limit ?? 2),
           }),
         });
+
+      case 'get_booking_availability':
+        return ok(toolCall.name, await getKiaBookingAvailability({
+          serviceKey: String(args.serviceKey),
+          days: Number(args.days ?? 7),
+        }));
+
+      case 'create_booking_meeting': {
+        const attendeeEmail = String(args.attendeeEmail).trim().toLowerCase();
+        if (context.contact.email && context.contact.email.toLowerCase() !== attendeeEmail) {
+          return fail(toolCall.name, 'El email de la reserva no coincide con el contacto de la conversación.');
+        }
+        const booking = await createKiaConfirmedBooking({
+          serviceKey: String(args.serviceKey),
+          startIso: String(args.startIso),
+          attendeeName: String(args.attendeeName),
+          attendeeEmail,
+          attendeePhone: typeof args.attendeePhone === 'string' ? args.attendeePhone : context.contact.phone,
+          notes: typeof args.notes === 'string' ? args.notes : null,
+          clientId: context.contact.clientId,
+          companyId: context.company?.id ?? null,
+          leadId: context.contact.leadId,
+          confirmationMessage: context.latestMessage ?? '',
+          contextMessages: context.conversation.recentMessages,
+        });
+        return ok(toolCall.name, booking);
+      }
 
       default:
         return fail(toolCall.name, `Tool not allowed: ${toolCall.name}`);

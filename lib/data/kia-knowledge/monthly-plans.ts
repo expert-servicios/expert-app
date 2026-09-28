@@ -47,17 +47,20 @@ export const MONTHLY_PLANS_KNOWLEDGE = {
     slug: 'plan-supervision',
     price: '49 €/mes + IVA',
     platformLevel: 'Plataforma EXPERT + Kia básico',
-    summary: 'Revisión mensual básica, alertas, soporte y Estado de empresa básico para quien lleva Holded por su cuenta.',
+    summary: 'Revisión mensual básica, alertas, soporte y Estado de empresa básico para quien lleva Holded por su cuenta. También es la referencia para autónomos vinculados a una empresa con operativa muy simple y hasta unas 10 facturas al mes.',
     includes: [
       'Plataforma EXPERT + Kia básico',
       'Revisión mensual básica de Holded',
       'Alertas básicas de errores y anomalías',
       'Resumen mensual generado por Kia',
       'Estado de empresa básico',
-      'Soporte básico por email/WhatsApp',
+      'Soporte básico por email, KIA chat o Telegram',
+      'Modalidad especial para autónomo vinculado/económicamente dependiente de una empresa del mismo cliente cuando la operativa es simple y normalmente no supera unas 10 facturas al mes',
+      'En esa modalidad vinculada, las obligaciones fiscales básicas del autónomo pueden incluirse según alcance aunque el Plan Supervisión general no incluya presentación de impuestos',
+      'En la modalidad autónomo vinculado simple se incluyen los modelos fiscales básicos derivados de esa operativa vinculada',
     ],
     excludes: [
-      'Presentación de impuestos',
+      'Presentación de impuestos fuera de la modalidad autónomo vinculado simple',
       'Contabilidad delegada',
       'Subida de facturas por EXPERT',
       'Nóminas/laboral',
@@ -100,6 +103,7 @@ export const MONTHLY_PLANS_KNOWLEDGE = {
   kiaRules: [
     'Si pregunta "gratis", explicar prueba Holded 14 días, no Plan Gratuito EXPERT.',
     'Si quiere soporte mensual barato, recomendar Plan Supervisión.',
+    'Si es autónomo vinculado/económicamente dependiente de una empresa del mismo cliente, con operativa simple y normalmente <=10 facturas/mes, usar la modalidad vinculada del Plan Supervisión 49 €/mes + IVA como referencia. Puede incluir obligaciones fiscales básicas del autónomo según alcance; si hay complejidad adicional, pasar a Avanzado o presupuesto.',
     'Si quiere impuestos, recomendar Plan Avanzado.',
     'Si quiere delegar más, recomendar Plan Colaborativo.',
     'Si tiene laboral, volumen alto o varias sociedades, recomendar Plan Personalizado.',
@@ -112,5 +116,7 @@ export const MONTHLY_PLANS_KNOWLEDGE = {
     'Si preguntan qué es Plataforma EXPERT: es el área privada donde se centraliza la gestión mensual.',
     'Si el cliente pregunta si puede evitar Plataforma EXPERT: no, es obligatoria para todos los planes mensuales.',
     'La frase clave: "Holded organiza la contabilidad. Plataforma EXPERT y Kia organizan la gestión."',
+    'En respuestas de presupuesto sobre planes mensuales, incluir siempre enlace directo al plan recomendado, enlace a /planes y enlace a reunión informativa de 15 minutos (/cita?tipo=consulta-inicial).',
+    'Antes de dar un presupuesto firme, usar el cuestionario general pre-presupuesto para confirmar volumen, obligaciones, complejidad, software, migración y fecha de inicio.'
   ],
 } as const;

@@ -23,6 +23,11 @@ describe('KIA M0 foundation', () => {
     expect(isKiaToolSafeForAutonomousExecution('get_user_expedientes')).toBe(true);
     expect(isKiaToolSafeForAutonomousExecution('get_holded_invoices')).toBe(true);
     expect(isKiaToolSafeForAutonomousExecution('create_internal_task')).toBe(false);
+    expect(isKiaToolSafeForAutonomousExecution('create_booking_meeting')).toBe(false);
+    expect(getKiaToolPolicy('create_booking_meeting')).toMatchObject({
+      riskTier: 'R2',
+      effect: 'external_action',
+    });
     expect(getKiaToolPolicy('create_internal_task')).toMatchObject({
       effect: 'draft',
       requiresHumanApproval: true,

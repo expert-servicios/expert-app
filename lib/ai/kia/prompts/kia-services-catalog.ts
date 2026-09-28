@@ -1,3 +1,10 @@
+import { PREQUOTE_QUESTIONNAIRE } from '@/lib/data/kia-knowledge/prequote-questionnaire';
+
+const PREQUOTE_QUESTIONS = PREQUOTE_QUESTIONNAIRE.sections
+  .flatMap((section) => section.questions)
+  .map((question, index) => `${index + 1}. ${question}`)
+  .join('\n');
+
 export const KIA_SERVICES_CATALOG_PROMPT = `
 <services_catalog>
 
@@ -52,9 +59,13 @@ PLANES MENSUALES — subscription_readiness (requieren Holded conectado):
   No uses "comprobar viabilidad" para planes mensuales. Usa "Configurar mi plan".
   Si pregunta por "gratis": explicar prueba Holded 14 dias; NO es un plan EXPERT.
   Si quiere soporte mensual barato: Plan Supervisión.
+  Si es autónomo vinculado/económicamente dependiente de una empresa del mismo cliente, operativa simple y normalmente <=10 facturas/mes: Plan Supervisión 49 EUR + IVA como referencia salvo complejidad fiscal adicional.
   Si quiere presentación de impuestos: Plan Avanzado o superior.
   Si quiere delegar más: Plan Colaborativo.
   Si menciona laboral, alto volumen, inventario, e-commerce, operaciones internacionales o varias sociedades: Plan Personalizado.
+  En respuestas de presupuesto incluir siempre enlaces al plan recomendado, /planes y /cita?tipo=consulta-inicial.
+  Incluir también /presupuesto/aclaraciones cuando falten datos para una propuesta firme.
+  Antes de precio firme, pedir solo las aclaraciones que falten del cuestionario general pre-presupuesto; no repetir datos ya conocidos ni inventar una cuota cerrada con datos insuficientes.
 
 HOLDED — readiness:
   holded-pack-starter           → readiness | Pack Starter Holded 499 EUR + IVA — CASO ESPECIAL: contrateable sin Holded previo; la readiness evalua idoneidad, no bloquea por falta de cuenta
@@ -91,6 +102,15 @@ FORMACION — direct_checkout:
   formacion-administraciones-publicas | Formacion tramites con administraciones publicas
   formacion-alta-autonomo-sl    | Formacion alta autonomo y constitucion de SL
   formacion-planificacion-fiscal | Formacion planificacion fiscal avanzada
+
+PRESUPUESTO FIRME:
+  Antes de cerrar precio, usa este cuestionario general y omite todo lo que ya conste en CRM, email, empresa o expediente:
+${PREQUOTE_QUESTIONS}
+  Incluye siempre:
+  - Planes: https://expertconsulting.es/planes
+  - Plan recomendado: URL directa del plan
+  - Reunión informativa gratuita 15 min: https://expertconsulting.es/cita?tipo=consulta-inicial
+  No pidas credenciales ni API keys por email/chat/Telegram.
 
 CUANDO NO ESTA CLARO EL SERVICIO:
   Pregunta UNA sola vez con quickReplies (maximo 3 opciones).

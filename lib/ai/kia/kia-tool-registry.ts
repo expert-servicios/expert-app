@@ -20,7 +20,8 @@ export type KiaToolCapability =
   | 'service_discovery'
   | 'payments'
   | 'subscriptions'
-  | 'case_operations';
+  | 'case_operations'
+  | 'calendar';
 
 export interface KiaToolPolicy {
   name: string;
@@ -84,6 +85,8 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   search_knowledge_resources:          policy('R0', 'read',  'knowledge'),
   get_official_sources:                policy('R0', 'read',  'regulatory'),
   find_relevant_services:              policy('R0', 'read',  'service_discovery'),
+  get_booking_availability:             policy('R0', 'read',  'calendar'),
+  create_booking_meeting:               policy('R2', 'external_action', 'calendar'),
 };
 
 function policy(

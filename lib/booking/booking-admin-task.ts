@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { formatMadridDate, formatMadridTime } from '@/lib/booking/native-booking';
+import { notifyAdmins } from '@/lib/integrations/push';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -119,7 +120,15 @@ export async function ensureBookingAdminTask(input: BookingTaskInput) {
     .select('id')
     .single();
 
-  if (!error && data?.id) return data.id;
+  if (!error && data?.id) {
+    await notifyAdmins({
+      title: 'KIA creó una tarea',
+      body: `Reunión: ${input.serviceLabel} · ${input.name} · ${input.localDate} ${input.localTime}`.slice(0, 240),
+      url: input.caseId ? `/admin/expedientes/${input.caseId}` : '/admin/tareas',
+      tag: `booking-task-${data.id}`,
+    }).catch(() => {});
+    return data.id;
+  }
   if (error?.code !== '23505') throw error ?? new Error('Could not create booking admin task');
 
   // A concurrent booking/reconciliation won the unique-key race. Reload and

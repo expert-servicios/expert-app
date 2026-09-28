@@ -27,6 +27,14 @@ describe('Client 360 communications operations', () => {
     expect(route).toContain("case_id: caseId");
   });
 
+  it('uses persisted inbound email history and suppresses inbox snapshot duplicates', () => {
+    const route = source('app/api/admin/clientes/[id]/communications/route.ts');
+    expect(route).toContain("metadataDirection === 'in'");
+    expect(route).toContain('persistedInboundThreadLatest');
+    expect(route).toContain('if (persistedAt >= new Date(row.date).getTime()) continue');
+    expect(route).toContain('conversationId: metadataThreadId');
+  });
+
   it('derives entity attribution from the linked case and never guesses by client email', () => {
     const route = source('app/api/admin/clientes/[id]/communications/route.ts');
     expect(route).toContain('caseCompanyById');
@@ -51,4 +59,18 @@ describe('Client 360 communications operations', () => {
     expect(nav).toContain("childHref('/comunicaciones')");
     expect(nav).toContain('Comunicaciones');
   });
+  it('renders persisted inbound email events as inbound and avoids cache duplicates', () => {
+    const route = source('app/api/admin/clientes/[id]/communications/route.ts');
+    const brief = source('lib/ai/kia/kia-client-brief.ts');
+    const timeline = source('app/api/admin/clientes/[id]/timeline/route.ts');
+
+    expect(route).toContain("metadataDirection === 'in'");
+    expect(route).toContain("direction: metadataDirection === 'in' ? 'in' : 'out'");
+    expect(route).toContain('persistedInboundThreadLatest');
+    expect(brief).toContain("row.event_type === 'email.inbound'");
+    expect(brief).toContain('persistedInboundThreadLatest');
+    expect(timeline).toContain("e.event_type === 'email.inbound'");
+    expect(timeline).toContain('persistedInboundThreadLatest');
+  });
+
 });

@@ -181,19 +181,38 @@ async function checkProviderConfig(): Promise<KiaHealthCheckResult> {
 }
 
 function checkGatewayPrimaryConfig(): KiaHealthCheckResult {
-  const configured = isKiaGatewayConfigured();
+  const gatewayConfigured = isKiaGatewayConfigured();
+  const directGeminiConfigured = Boolean(
+    process.env.GEMINI_API_KEY?.trim()
+      || process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim(),
+  );
+  const configured = gatewayConfigured || directGeminiConfigured;
+  const provider = gatewayConfigured
+    ? 'vercel-ai-gateway'
+    : directGeminiConfigured
+      ? 'google'
+      : null;
+  const model = gatewayConfigured
+    ? gatewayModelForTask('chat_reply')
+    : directGeminiConfigured
+      ? (process.env.GEMINI_MODEL?.trim() || 'gemini-3.8-flash')
+      : null;
+
   return technicalResult({
     checkId: 'gateway_primary_configured',
-    title: 'AI Gateway / Gemini primario',
+    title: 'Gemini primario para KIA',
     severity: 'critical',
     status: configured ? 'passed' : 'failed',
     actual: {
-      gatewayConfigured: configured,
-      chatModel: configured ? gatewayModelForTask('chat_reply') : null,
+      gatewayConfigured,
+      directGeminiConfigured,
+      chatModel: model,
     },
-    provider: configured ? 'vercel-ai-gateway' : null,
-    model: configured ? gatewayModelForTask('chat_reply') : null,
-    error: configured ? null : 'AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN no disponible: KIA caería solo a providers directos',
+    provider,
+    model,
+    error: configured
+      ? null
+      : 'No hay AI Gateway ni GEMINI_API_KEY/GOOGLE_GENERATIVE_AI_API_KEY configurada para la ruta primaria de KIA.',
   });
 }
 
