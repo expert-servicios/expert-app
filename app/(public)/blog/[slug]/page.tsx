@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Clock, ArrowRight, Tag } from 'lucide-react';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
+import { ArticleIntentCTA } from '@/components/content/ArticleIntentCTA';
 import { blogArticles, getArticle } from '@/lib/utils/blog';
 import { getDocRedirectTarget } from '@/lib/utils/docs';
 
@@ -206,28 +207,11 @@ export default async function BlogArticlePage({
               <Section key={heading} heading={heading} content={content} />
             ))}
 
-            {/* CTA contextual */}
-            <div className="mt-8 border border-[#D4A017]/30 bg-white p-6">
-              <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">¿Te ha sido útil este artículo?</p>
-              <p className="mt-2 text-sm leading-6 text-[#23364D]">
-                {cta.text}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <Link
-                  href={cta.ctaHref}
-                  className="inline-flex items-center gap-2 bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#F2C14E]"
-                >
-                  {cta.ctaLabel}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <a
-                  href="https://wa.me/34669045528"
-                  className="inline-flex items-center gap-2 border border-[#D4A017]/50 px-5 py-2.5 text-sm font-semibold text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
-                >
-                  WhatsApp
-                </a>
-              </div>
-            </div>
+            <ArticleIntentCTA
+              sourceKind="blog"
+              sourceSlug={article.slug}
+              relatedServiceSlugs={article.relatedServiceSlugs}
+            />
           </article>
 
           {/* Sidebar */}
