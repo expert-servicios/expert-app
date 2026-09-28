@@ -28,13 +28,34 @@ describe('KIA guarded email agent', () => {
 
   it('analyses every unread inbox thread but sends only high-confidence safe replies', () => {
     expect(route).toContain(".eq('unread', true)");
-    expect(route).toContain('result.decision.confidence >= minConfidence');
+    expect(route).toContain('result.decision.confidence >= confidenceFloor');
     expect(route).toContain('!result.decision.requiresManualReview');
     expect(route).toContain('!result.usedFallback');
     expect(route).toContain('!identity.ambiguousCase');
     expect(route).toContain('!identity.linkedCaseSenderMismatch');
     expect(route).toContain('!replyToMismatch');
     expect(route).toContain('!hasAttachments');
+  });
+
+  it('can answer safe new prospects using public-only tools', () => {
+    expect(route).toContain('PUBLIC_PROSPECT_TOOLS');
+    expect(route).toContain('isSafeUnknownProspect');
+    expect(route).toContain('knownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS');
+    expect(route).toContain('(knownContact || safeUnknownProspect)');
+    expect(route).toContain('KIA_EMAIL_PROSPECT_MIN_CONFIDENCE');
+  });
+
+  it('writes heartbeat state even when the email agent is disabled', () => {
+    expect(route).toContain("key: 'kia_email_agent_health'");
+    expect(route).toContain("status: 'disabled'");
+    expect(route).toContain("status: errors.length === 0 ? 'ok' : 'degraded'");
+  });
+
+  it('pushes one actionable outcome per human email', () => {
+    expect(route).toContain('KIA respondió por email');
+    expect(route).toContain('KIA atendió un nuevo contacto');
+    expect(route).toContain('KIA necesita revisión de correo');
+    expect(route).toContain('/admin/correo/hilo?provider=gmail&conversationId=');
   });
 
   it('uses only read-only KIA tools for autonomous email analysis', () => {
@@ -78,4 +99,11 @@ describe('KIA guarded email agent', () => {
     expect(vercel).toContain('/api/cron/kia-email-agent');
     expect(vercel).toContain('2-59/10 * * * *');
   });
+  it('keeps coarse unread push only as fallback while KIA email is disabled', () => {
+    const sync = source('app/api/cron/email-sync/route.ts');
+    expect(sync).toContain("process.env.KIA_EMAIL_AGENT_ENABLED?.toLowerCase() !== 'true'");
+    expect(sync).toContain('KIA de correo está desactivada');
+    expect(sync).toContain('email-unread-fallback');
+  });
+
 });
