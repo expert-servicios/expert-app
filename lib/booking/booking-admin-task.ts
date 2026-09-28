@@ -166,8 +166,30 @@ export async function cancelBookingAdminTask(
   return tasks.length;
 }
 
+type ReconcileAppointment = {
+  id: string;
+  name: string;
+  email: string;
+  service: string | null;
+  appointment_type: string | null;
+  appointment_date: string | null;
+  confirmed_date: string | null;
+  confirmed_time: string | null;
+  meeting_url: string | null;
+  status: string | null;
+  client_id: string | null;
+  company_id: string | null;
+};
+
+type ReconcileTask = {
+  id: string;
+  status: string;
+  booking_appointment_id: string | null;
+  metadata: unknown;
+};
+
 async function loadAppointmentsForReconciliation(admin: AdminClient, from: string, to: string) {
-  const rows: Array<Record<string, any>> = [];
+  const rows: ReconcileAppointment[] = [];
   const pageSize = 500;
 
   for (let offset = 0; ; offset += pageSize) {
@@ -189,7 +211,7 @@ async function loadAppointmentsForReconciliation(admin: AdminClient, from: strin
 }
 
 async function loadBookingTasksForReconciliation(admin: AdminClient) {
-  const rows: Array<Record<string, any>> = [];
+  const rows: ReconcileTask[] = [];
   const pageSize = 500;
 
   for (let offset = 0; ; offset += pageSize) {
