@@ -17,6 +17,7 @@ import {
 import type { KiaToolResult } from './kia-tool-definitions';
 import { executeKiaToolCall } from './kia-tool-executor';
 import {
+  getKiaToolPolicy,
   isKiaToolAuthorized,
   resolveKiaToolDefinitions,
   type KiaToolAuthorizationContext,
@@ -69,6 +70,7 @@ export async function runKiaDecision(input: {
   toolAuthorization?: Pick<KiaToolAuthorizationContext, 'maxRiskTier' | 'allowedEffects' | 'autonomousOnly'>;
   mediaUrl?: string;
   mediaType?: string;
+  externalActionMinConfidence?: number;
   onProgress?: KiaProgressCallback;
 }): Promise<KiaDecisionResult> {
   const context = await buildKiaContext({ ...input.contextInput, channel: input.channel, latestMessage: input.message });
@@ -227,6 +229,23 @@ export async function runKiaDecision(input: {
                   error: 'Tool not authorized by KIA registry policy',
                 } satisfies KiaToolResult);
               }
+
+              const policy = getKiaToolPolicy(req.toolName);
+              if (policy?.effect === 'external_action') {
+                const minConfidence = input.externalActionMinConfidence ?? 0.9;
+                if (
+                  decision.requiresManualReview
+                  || decision.nextAction === 'needs_review'
+                  || decision.confidence < minConfidence
+                ) {
+                  return Promise.resolve({
+                    toolName: req.toolName,
+                    ok: false,
+                    error: 'External action blocked by decision safety gate',
+                  } satisfies KiaToolResult);
+                }
+              }
+
               return executeKiaToolCall({ name: req.toolName, arguments: req.arguments }, context);
             }),
           );
