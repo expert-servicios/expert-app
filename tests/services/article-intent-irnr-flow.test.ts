@@ -58,7 +58,9 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(calc).toContain('El uso del inmueble no cambia esta estimación');
     expect(calc).not.toContain('Está alquilado');
     expect(calc).toContain("intent: 'irnr_quote'");
-    expect(calc).toContain('holderDistribution');
+    expect(calc).not.toContain('titulares por inmueble:');
+    expect(calc).toContain('`Inmuebles: ${properties.length}`');
+    expect(calc).toContain('`unidades declarativas: ${declarativeUnits}`');
   });
 
   it('captures free questions as demand leads', () => {
