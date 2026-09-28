@@ -43,10 +43,6 @@ export async function POST(request: NextRequest) {
     const provider = calendarProviderFromBookingProvider(appointment.booking_provider)
       ?? (appointment.google_event_id ? 'google' : null);
 
-    if (eventId && provider) {
-      await deleteBookingCalendarEvent(eventId, provider);
-    }
-
     const { error: updateError } = await admin
       .from('appointments')
       .update({
@@ -58,6 +54,23 @@ export async function POST(request: NextRequest) {
       .eq('status', 'confirmed');
 
     if (updateError) throw updateError;
+
+    try {
+      if (eventId && provider) {
+        await deleteBookingCalendarEvent(eventId, provider);
+      }
+    } catch (calendarError) {
+      await admin
+        .from('appointments')
+        .update({
+          status: 'confirmed',
+          admin_notes: 'La cancelación solicitada por el cliente no pudo sincronizarse con Calendar; se restauró la cita.',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', appointment.id);
+      throw calendarError;
+    }
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[booking/manage/cancel]', error);
