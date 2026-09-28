@@ -7,6 +7,20 @@ import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { buildLeadAttributionFields } from '@/lib/marketing/server-attribution';
+import { getCatalogService } from '@/lib/utils/catalog';
+
+const LEGACY_SERVICE_SLUGS: Record<string, string> = {
+  noResidentes: 'no-residentes',
+  modelo151: 'modelo-151',
+};
+
+function canonicalServiceSlug(slug: string): string {
+  return LEGACY_SERVICE_SLUGS[slug] ?? slug;
+}
+
+function serviceDisplayName(slug: string): string {
+  return getCatalogService(slug)?.name ?? slug.replace(/-/g, ' ');
+}
 
 const quoteRequestSchema = z.object({
   hp_url: z.string().optional(),
@@ -59,7 +73,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const serviceList = validated.services.join(', ');
+    const serviceSlugs = validated.services.map(canonicalServiceSlug);
+    const serviceSlugList = serviceSlugs.join(', ');
+    const serviceList = serviceSlugs.map(serviceDisplayName).join(', ');
     const descriptionText = validated.description?.trim() || 'No se proporcionaron detalles adicionales.';
     const supabaseAdmin = getSupabaseAdmin();
     const attributionFields = buildLeadAttributionFields(request);
@@ -72,7 +88,7 @@ export async function POST(request: NextRequest) {
         phone: validated.phone?.trim() || null,
         client_type: 'particular',
         category: 'Presupuesto',
-        service: serviceList,
+        service: serviceSlugList,
         country: 'ES',
         urgency: 'media',
         message: descriptionText,
@@ -87,7 +103,7 @@ export async function POST(request: NextRequest) {
               : {}),
             intent: 'quote_request',
             origin: validated.origin || null,
-            requested_services: validated.services,
+            requested_services: serviceSlugs,
           },
         },
       })
