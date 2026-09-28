@@ -188,14 +188,21 @@ export async function GET(
   }
 
   // ── Persisted email history ─────────────────────────────────────────────────
-  const persistedInboundThreadIds = new Set<string>();
+  const persistedInboundThreadLatest = new Map<string, number>();
   for (const e of emailEventsRes?.data ?? []) {
     const metadata = e.metadata && typeof e.metadata === 'object'
       ? e.metadata as Record<string, unknown>
       : {};
     const inbound = metadata.direction === 'in' || e.event_type === 'email.inbound';
     const threadId = typeof metadata.thread_id === 'string' ? metadata.thread_id : null;
-    if (inbound && threadId) persistedInboundThreadIds.add(threadId);
+    if (inbound && threadId) {
+      const messageDate = typeof metadata.message_date === 'string' ? metadata.message_date : e.created_at;
+      const timestamp = new Date(messageDate).getTime();
+      persistedInboundThreadLatest.set(
+        threadId,
+        Math.max(persistedInboundThreadLatest.get(threadId) ?? 0, timestamp),
+      );
+    }
     events.push({
       id: `email-event-${e.id}`,
       date: e.created_at,
@@ -212,7 +219,8 @@ export async function GET(
   // Cache is a fallback until KIA materializes the individual inbound message.
   const inboxThreadIds = new Set<string>();
   for (const e of inboxRes?.data ?? []) {
-    if (persistedInboundThreadIds.has(String(e.thread_id))) continue;
+    const persistedAt = persistedInboundThreadLatest.get(String(e.thread_id)) ?? 0;
+    if (persistedAt >= new Date(e.date).getTime()) continue;
     inboxThreadIds.add(String(e.thread_id));
     const sender = e.from_name || e.from_email || 'Cliente';
     events.push({
