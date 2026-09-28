@@ -1,0 +1,350 @@
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import {
+  BookingCalendarCreationError,
+  BookingCalendarDeletionError,
+  createBookingCalendarMeeting,
+  deleteBookingCalendarEvent,
+  getConfiguredBookingCalendarProvider,
+  listBookingCalendarBusyWindows,
+} from '@/lib/booking/calendar-provider';
+import {
+  BOOKING_MAX_DAYS,
+  BOOKING_TIMEZONE,
+  buildBookingSlots,
+  formatMadridDate,
+  formatMadridTime,
+  getBookingService,
+  isMadridWeekday,
+  madridLocalToDate,
+  overlapsBusy,
+  type BookingServiceKey,
+  type BusyRange,
+} from '@/lib/booking/native-booking';
+import { ensureBookingAdminTask } from '@/lib/booking/booking-admin-task';
+import { createBookingManagementToken, bookingManagementUrls } from '@/lib/booking/booking-management-token';
+import { buildBookingIcs } from '@/lib/booking/calendar-invite';
+import { sendBookingEmail } from '@/lib/booking/booking-email';
+import { citaConfirmed } from '@/lib/email/templates';
+import { notifyBookingAdminActivity } from '@/lib/booking/booking-admin-notifications';
+
+type AdminClient = ReturnType<typeof getSupabaseAdmin>;
+
+const KIA_PUBLIC_BOOKING_SERVICES = new Set<BookingServiceKey>([
+  'consulta-inicial',
+  'demo-holded',
+  'academy-admision',
+]);
+
+function assertPublicService(serviceKey: string) {
+  const service = getBookingService(serviceKey);
+  if (!service || !service.public || !KIA_PUBLIC_BOOKING_SERVICES.has(service.key)) {
+    throw new Error('kia_booking_service_not_allowed');
+  }
+  return service;
+}
+
+function validExactSlot(start: Date, durationMinutes: number) {
+  if (!Number.isFinite(start.getTime())) return false;
+  if (!isMadridWeekday(start)) return false;
+  const now = Date.now();
+  if (start.getTime() < now + 30 * 60_000) return false;
+  if (start.getTime() > now + BOOKING_MAX_DAYS * 24 * 60 * 60_000) return false;
+
+  const localDate = formatMadridDate(start);
+  const localTime = formatMadridTime(start);
+  const roundTrip = madridLocalToDate(localDate, localTime);
+  if (Math.abs(roundTrip.getTime() - start.getTime()) >= 60_000) return false;
+
+  const serviceEnd = new Date(start.getTime() + durationMinutes * 60_000);
+  return formatMadridDate(serviceEnd) === localDate;
+}
+
+function latestUserText(contextMessages: Array<{ role: string; text: string }>) {
+  return [...contextMessages].reverse().find((message) => message.role === 'user')?.text ?? '';
+}
+
+function hasExplicitSlotConfirmation(message: string, start: Date) {
+  const normalized = message.toLowerCase().replace(/\s+/g, ' ').trim();
+  const localDate = formatMadridDate(start);
+  const localTime = formatMadridTime(start);
+  const [year, month, day] = localDate.split('-');
+  const [hour, minute] = localTime.split(':');
+
+  const affirmative = /\b(confirmo|confirmamos|confirmado|sí|si|vale|perfecto|de acuerdo|adelante|reserva|reservar|me va bien|nos va bien)\b/i.test(normalized);
+  const dateMention = [
+    localDate,
+    `${day}/${month}/${year}`,
+    `${day}/${month}`,
+    `${day}-${month}-${year}`,
+    `${day}-${month}`,
+  ].some((value) => normalized.includes(value.toLowerCase()));
+  const timeMention = [
+    localTime,
+    `${Number(hour)}:${minute}`,
+    `${Number(hour)}h`,
+    `${Number(hour)} h`,
+  ].some((value) => normalized.includes(value.toLowerCase()));
+
+  return affirmative && dateMention && timeMention;
+}
+
+async function currentBusy(admin: AdminClient, start: Date, end: Date): Promise<BusyRange[]> {
+  const calendarBusy = await listBookingCalendarBusyWindows(
+    start.toISOString(),
+    end.toISOString(),
+    getConfiguredBookingCalendarProvider(),
+  );
+  const { data, error } = await admin
+    .from('appointments')
+    .select('appointment_date,appointment_end,status,created_at')
+    .in('status', ['pending_calendar', 'confirmed'])
+    .not('appointment_end', 'is', null)
+    .lt('appointment_date', end.toISOString())
+    .gt('appointment_end', start.toISOString());
+  if (error) throw error;
+
+  const pendingCutoff = Date.now() - 10 * 60_000;
+  const dbBusy = (data ?? [])
+    .filter((row) => row.status !== 'pending_calendar' || new Date(row.created_at as string).getTime() >= pendingCutoff)
+    .filter((row) => Boolean(row.appointment_date && row.appointment_end))
+    .map((row) => ({
+      start: new Date(row.appointment_date as string),
+      end: new Date(row.appointment_end as string),
+    }));
+
+  return [
+    ...calendarBusy.map((window) => ({ start: new Date(window.start), end: new Date(window.end) })),
+    ...dbBusy,
+  ].filter((window) => Number.isFinite(window.start.getTime()) && Number.isFinite(window.end.getTime()));
+}
+
+export async function getKiaBookingAvailability(input: {
+  serviceKey: string;
+  days: number;
+}) {
+  const service = assertPublicService(input.serviceKey);
+  const admin = getSupabaseAdmin();
+  const days = Math.max(1, Math.min(Math.trunc(input.days), 14));
+  const now = new Date();
+  const rangeEnd = new Date(now.getTime() + (days + 1) * 24 * 60 * 60_000);
+  const busy = await currentBusy(admin, now, rangeEnd);
+  const slots = buildBookingSlots({
+    from: now,
+    days,
+    durationMinutes: service.durationMinutes,
+    busy,
+    now,
+  }).slice(0, 12);
+
+  return {
+    service: service.key,
+    serviceLabel: service.label,
+    timezone: BOOKING_TIMEZONE,
+    slots: slots.map((slot) => ({
+      start: slot.start,
+      end: slot.end,
+      label: slot.label,
+      confirmationInstruction: `Para reservar, confirma por escrito la fecha ${slot.date} y la hora ${slot.time}.`,
+    })),
+  };
+}
+
+export async function createKiaConfirmedBooking(input: {
+  serviceKey: string;
+  startIso: string;
+  attendeeName: string;
+  attendeeEmail: string;
+  attendeePhone?: string | null;
+  notes?: string | null;
+  clientId?: string | null;
+  companyId?: string | null;
+  leadId?: string | null;
+  contextMessages: Array<{ role: string; text: string }>;
+}) {
+  const service = assertPublicService(input.serviceKey);
+  const start = new Date(input.startIso);
+  if (!validExactSlot(start, service.durationMinutes)) {
+    throw new Error('kia_booking_invalid_slot');
+  }
+  if (!hasExplicitSlotConfirmation(latestUserText(input.contextMessages), start)) {
+    throw new Error('kia_booking_explicit_confirmation_required');
+  }
+
+  const admin = getSupabaseAdmin();
+  const end = new Date(start.getTime() + service.durationMinutes * 60_000);
+  const busy = await currentBusy(admin, start, end);
+  if (overlapsBusy(start, end, busy)) throw new Error('kia_booking_slot_no_longer_available');
+
+  const staleCutoff = new Date(Date.now() - 10 * 60_000).toISOString();
+  await admin.from('appointments').delete().eq('status', 'pending_calendar').lt('created_at', staleCutoff);
+
+  const localDate = formatMadridDate(start);
+  const localTime = formatMadridTime(start);
+  const provider = getConfiguredBookingCalendarProvider();
+  let appointmentId: string | null = null;
+  let providerEventId: string | null = null;
+
+  try {
+    const { data: appointment, error: insertError } = await admin
+      .from('appointments')
+      .insert({
+        name: input.attendeeName,
+        email: input.attendeeEmail.toLowerCase(),
+        phone: input.attendeePhone?.trim() || 'No facilitado',
+        appointment_type: service.key,
+        appointment_date: start.toISOString(),
+        appointment_end: end.toISOString(),
+        notes: input.notes ?? 'Reserva creada por KIA tras confirmación explícita del cliente.',
+        status: 'pending_calendar',
+        preferred_date: localDate,
+        preferred_time: localTime,
+        confirmed_date: localDate,
+        confirmed_time: localTime,
+        service: service.label,
+        client_id: input.clientId ?? null,
+        company_id: input.companyId ?? null,
+        booking_provider: provider === 'ms365' ? 'ms365_native' : 'google_native',
+      })
+      .select('id')
+      .single();
+    if (insertError || !appointment?.id) {
+      if (insertError?.code === '23P01') throw new Error('kia_booking_slot_no_longer_available');
+      throw insertError ?? new Error('kia_booking_insert_failed');
+    }
+    appointmentId = appointment.id;
+
+    const meeting = await createBookingCalendarMeeting({
+      summary: `${service.label} — ${input.attendeeName}`,
+      description: [
+        'Reserva creada por KIA desde EXPERT.',
+        `Cliente: ${input.attendeeName} (${input.attendeeEmail})`,
+        appointmentId ? `EXPERT appointment: ${appointmentId}` : '',
+      ].filter(Boolean).join('\n'),
+      start: start.toISOString(),
+      end: end.toISOString(),
+      attendeeEmail: input.attendeeEmail.toLowerCase(),
+      timezone: BOOKING_TIMEZONE,
+      reminderMinutesBefore: service.durationMinutes >= 60 ? [1440, 60] : [1440, 30],
+    }, provider);
+    providerEventId = meeting.eventId;
+
+    const { error: finalizeError } = await admin.from('appointments').update({
+      status: 'confirmed',
+      google_event_id: meeting.provider === 'google' ? meeting.eventId : null,
+      booking_provider: meeting.bookingProvider,
+      provider_booking_id: meeting.eventId,
+      meeting_url: meeting.meetingUrl,
+      updated_at: new Date().toISOString(),
+    }).eq('id', appointmentId);
+    if (finalizeError) throw finalizeError;
+
+    await ensureBookingAdminTask({
+      admin,
+      appointmentId,
+      serviceKey: service.key,
+      serviceLabel: service.label,
+      name: input.attendeeName,
+      email: input.attendeeEmail.toLowerCase(),
+      localDate,
+      localTime,
+      meetingUrl: meeting.meetingUrl,
+      clientId: input.clientId ?? null,
+      companyId: input.companyId ?? null,
+      leadId: input.leadId ?? null,
+    });
+
+    const managementToken = await createBookingManagementToken({
+      appointmentId,
+      email: input.attendeeEmail.toLowerCase(),
+      service: service.key,
+    });
+    const managementLinks = bookingManagementUrls(managementToken, service.key);
+    const formattedDate = new Intl.DateTimeFormat('es-ES', {
+      timeZone: BOOKING_TIMEZONE,
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(start);
+    const template = citaConfirmed(
+      input.attendeeName,
+      service.label,
+      formattedDate,
+      localTime,
+      meeting.meetingUrl,
+      managementLinks,
+    );
+    const ics = buildBookingIcs({
+      appointmentId,
+      service: service.label,
+      start,
+      end,
+      meetingUrl: meeting.meetingUrl,
+      attendeeEmail: input.attendeeEmail.toLowerCase(),
+    });
+    await sendBookingEmail({
+      to: input.attendeeEmail.toLowerCase(),
+      eventType: 'cita.confirmed',
+      ...template,
+      metadata: {
+        appointment_id: appointmentId,
+        booking_provider: meeting.bookingProvider,
+        source: 'kia',
+      },
+      idempotencyKey: `kia/booking/confirmed/${appointmentId}`,
+      attachments: [{
+        filename: 'cita-expert.ics',
+        content: Buffer.from(ics, 'utf8').toString('base64'),
+        type: 'text/calendar; charset=utf-8',
+      }],
+    });
+
+    await notifyBookingAdminActivity({
+      kind: 'kia_created',
+      appointmentId,
+      name: input.attendeeName,
+      service: service.label,
+      localDate,
+      localTime,
+      email: input.attendeeEmail.toLowerCase(),
+    }).catch(() => {});
+
+    return {
+      appointmentId,
+      service: service.label,
+      start: start.toISOString(),
+      end: end.toISOString(),
+      meetingUrl: meeting.meetingUrl,
+      managementUrl: managementLinks.manage,
+      timezone: BOOKING_TIMEZONE,
+    };
+  } catch (error) {
+    if (!providerEventId && error instanceof BookingCalendarCreationError) {
+      providerEventId = error.eventId;
+    }
+    let remoteCleanupSucceeded = true;
+    if (providerEventId) {
+      try {
+        await deleteBookingCalendarEvent(providerEventId, provider);
+      } catch (cleanupError) {
+        if (!(cleanupError instanceof BookingCalendarDeletionError && cleanupError.remoteDeleted)) {
+          remoteCleanupSucceeded = false;
+        }
+      }
+    }
+    if (appointmentId) {
+      if (remoteCleanupSucceeded) {
+        await admin.from('appointments').delete().eq('id', appointmentId);
+      } else {
+        await admin.from('appointments').update({
+          status: 'cancelled',
+          provider_booking_id: providerEventId,
+          google_event_id: provider === 'google' ? providerEventId : null,
+          admin_notes: 'KIA booking cleanup failed; manual reconciliation required.',
+          updated_at: new Date().toISOString(),
+        }).eq('id', appointmentId);
+      }
+    }
+    throw error;
+  }
+}
