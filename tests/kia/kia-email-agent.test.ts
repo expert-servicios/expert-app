@@ -40,6 +40,8 @@ describe('KIA guarded email agent', () => {
   it('can answer safe new prospects using public-only tools', () => {
     expect(route).toContain('PUBLIC_PROSPECT_TOOLS');
     expect(route).toContain('isSafeUnknownProspect');
+    expect(route).toContain('explicitCommercialRequest');
+    expect(route).toContain('expertServiceIntent');
     expect(route).toContain('knownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS');
     expect(route).toContain('(knownContact || safeUnknownProspect)');
     expect(route).toContain('KIA_EMAIL_PROSPECT_MIN_CONFIDENCE');
@@ -55,7 +57,9 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain('KIA respondió por email');
     expect(route).toContain('KIA atendió un nuevo contacto');
     expect(route).toContain('KIA necesita revisión de correo');
+    expect(route).toContain('KIA no pudo procesar un correo');
     expect(route).toContain('/admin/correo/hilo?provider=gmail&conversationId=');
+    expect(route).toContain('if (duplicateClaim)');
   });
 
   it('uses only read-only KIA tools for autonomous email analysis', () => {
@@ -99,10 +103,12 @@ describe('KIA guarded email agent', () => {
     expect(vercel).toContain('/api/cron/kia-email-agent');
     expect(vercel).toContain('2-59/10 * * * *');
   });
-  it('keeps coarse unread push only as fallback while KIA email is disabled', () => {
+  it('keeps coarse unread push while KIA email is disabled, stale or degraded', () => {
     const sync = source('app/api/cron/email-sync/route.ts');
-    expect(sync).toContain("process.env.KIA_EMAIL_AGENT_ENABLED?.toLowerCase() !== 'true'");
-    expect(sync).toContain('KIA de correo está desactivada');
+    expect(sync).toContain("eq('key', 'kia_email_agent_health')");
+    expect(sync).toContain("heartbeatValue?.status === 'ok'");
+    expect(sync).toContain('heartbeatAgeMs <= 20 * 60_000');
+    expect(sync).toContain('KIA de correo no está confirmada como saludable');
     expect(sync).toContain('email-unread-fallback');
   });
 
