@@ -76,7 +76,7 @@ describe('native booking public flow', () => {
     expect(route).toContain('runNativeAdministrativeWorkflow');
     expect(route).toContain('ensureOnboardingTask');
     expect(route).toContain('onboardingPreparationEmail');
-    expect(route).toContain('getAdminNotificationEmails');
+    expect(route).toContain('notifyBookingAdminActivity');
     expect(route).toContain('identity: BookingIdentity | null');
     expect(route).toContain('Onboarding booking requires a resolved EXPERT client identity');
     expect(route).toContain("company_id: identity?.companyId ?? null");
