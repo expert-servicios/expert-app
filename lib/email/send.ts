@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { BRAND } from './templates';
 import { maybeAppendKiaContextualCta } from './kia-contextual-cta';
 import { appendKiaSignature } from './kia-signature';
+import { keepEmailKnowledgeLinksInLocale } from './email-knowledge-locale';
 import {
   calculateRussianNationalityAmounts,
   isNationalityPayment,
@@ -249,6 +250,7 @@ export async function sendEmail({
   });
   html = appendKiaSignature(contextual.html, contextual.metadata);
   metadata = contextual.metadata;
+  html = keepEmailKnowledgeLinksInLocale({ subject, html, metadata });
 
   const effectiveIdempotencyKey = preliminaryIdempotencyKey;
 
