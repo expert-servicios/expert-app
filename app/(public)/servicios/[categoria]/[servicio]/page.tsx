@@ -15,6 +15,7 @@ import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
 import { ServiceShareActions } from '@/components/services/ServiceShareActions';
 import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
 import { ServicePriceCalculator } from '@/components/services/ServicePriceCalculator';
+import { UnitPriceCalculator } from '@/components/services/UnitPriceCalculator';
 import { getCompanionServices } from '@/lib/services/service-merchandising';
 import { getRuServicePath } from '@/lib/services/service-localized-content';
 
@@ -310,6 +311,13 @@ export default async function ServicioDetallePage({
             </div>
 
             {service.priceCalculator && <ServicePriceCalculator kind={service.priceCalculator} origin={serviceOrigin} />}
+            {service.unitPriceCalculator && (
+              <UnitPriceCalculator
+                config={service.unitPriceCalculator}
+                serviceSlug={service.slug}
+                origin={serviceOrigin}
+              />
+            )}
 
             {(service.servicePriceDetail || service.officialFee) && (
               <div className="grid gap-4 md:grid-cols-2">
