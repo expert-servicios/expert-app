@@ -167,12 +167,19 @@ export async function GET(
     items.push(item);
   };
 
-  const persistedInboundThreadIds = new Set<string>();
+  const persistedInboundThreadLatest = new Map<string, number>();
   for (const row of eventsRes.data ?? []) {
     const metadataCompanyId = metadataString(row.metadata, 'company_id');
     const metadataDirection = metadataString(row.metadata, 'direction');
     const metadataThreadId = metadataString(row.metadata, 'thread_id');
-    if (metadataDirection === 'in' && metadataThreadId) persistedInboundThreadIds.add(metadataThreadId);
+    if (metadataDirection === 'in' && metadataThreadId) {
+      const messageDate = metadataString(row.metadata, 'message_date') ?? row.created_at;
+      const timestamp = new Date(messageDate).getTime();
+      persistedInboundThreadLatest.set(
+        metadataThreadId,
+        Math.max(persistedInboundThreadLatest.get(metadataThreadId) ?? 0, timestamp),
+      );
+    }
     const rawMetadataCaseId = metadataString(row.metadata, 'case_id');
     const metadataCaseId = rawMetadataCaseId && caseCompanyById.has(rawMetadataCaseId) ? rawMetadataCaseId : null;
     const caseCompanyId = metadataCaseId ? caseCompanyById.get(metadataCaseId) ?? null : null;
@@ -196,7 +203,8 @@ export async function GET(
 
   const inboxThreadIds = new Set<string>();
   for (const row of inboxRes.data ?? []) {
-    if (persistedInboundThreadIds.has(row.thread_id)) continue;
+    const persistedAt = persistedInboundThreadLatest.get(row.thread_id) ?? 0;
+    if (persistedAt >= new Date(row.date).getTime()) continue;
     inboxThreadIds.add(row.thread_id);
     const effectiveCaseId = threadCaseById.has(row.thread_id)
       ? threadCaseById.get(row.thread_id) ?? null
