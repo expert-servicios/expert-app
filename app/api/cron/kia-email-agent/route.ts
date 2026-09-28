@@ -61,6 +61,25 @@ function messageText(body: string, bodyType: 'html' | 'text') {
     .slice(0, 12000);
 }
 
+function latestReplyText(body: string, bodyType: 'html' | 'text') {
+  if (bodyType === 'html') {
+    const unquotedHtml = body
+      .replace(/<blockquote[\s\S]*?<\/blockquote>/gi, ' ')
+      .replace(/<div[^>]*class=["'][^"']*gmail_quote[^"']*["'][^>]*>[\s\S]*?<\/div>/gi, ' ');
+    return messageText(unquotedHtml, 'html').slice(0, 4000);
+  }
+
+  const lines = body.split(/\r?\n/);
+  const kept: string[] = [];
+  for (const line of lines) {
+    if (/^\s*>/.test(line)) continue;
+    if (/^\s*(?:On .+ wrote:|El .+ escribi[oó]:|De:\s|From:\s|Enviado:\s|Sent:\s)/i.test(line)) break;
+    if (/^\s*-{2,}\s*(?:Original Message|Mensaje original)\s*-{2,}/i.test(line)) break;
+    kept.push(line);
+  }
+  return kept.join('\n').trim().slice(0, 4000);
+}
+
 function htmlEscape(value: string) {
   return value
     .replace(/&/g, '&amp;')
@@ -323,7 +342,8 @@ export async function GET(request: NextRequest) {
       }
 
       const text = messageText(latest.body, latest.bodyType);
-      if (!text) {
+      const latestReply = latestReplyText(latest.body, latest.bodyType);
+      if (!text || !latestReply) {
         skipped++;
         continue;
       }
@@ -339,13 +359,25 @@ export async function GET(request: NextRequest) {
       }));
 
       const knownContact = Boolean(identity.clientId || identity.leadId);
-      const safeUnknownProspect = !knownContact && !row.case_id && isSafeUnknownProspect(latest.subject, text);
-      const allowedTools = knownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS;
+      const safeUnknownProspect = !knownContact && !row.case_id && isSafeUnknownProspect(latest.subject, latestReply);
+      const hasAttachments = latest.attachments.some((attachment) => !attachment.inline);
+      const confidenceFloor = knownContact ? minConfidence : prospectMinConfidence;
+      const externalActionPreEligible = autoSend
+        && health.ok
+        && (knownContact || safeUnknownProspect)
+        && !identity.ambiguousCase
+        && !identity.linkedCaseSenderMismatch
+        && !replyToMismatch
+        && !hasAttachments;
+      const baseAllowedTools = knownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS;
+      const allowedTools = baseAllowedTools.filter(
+        (toolName) => toolName !== 'create_booking_meeting' || externalActionPreEligible,
+      );
 
       const result = await runKiaDecision({
         taskType: 'chat_reply',
         channel: 'email',
-        message: text,
+        message: latestReply,
         locale: /[А-Яа-яЁё]/.test(text) ? 'ru' : 'es',
         contextInput: {
           channel: 'email',
@@ -355,13 +387,13 @@ export async function GET(request: NextRequest) {
           companyId: identity.companyId ?? undefined,
           serviceSlug: identity.serviceSlug ?? undefined,
           email: latest.fromEmail,
-          latestMessage: text,
+          latestMessage: latestReply,
           syntheticRecentMessages: recent,
           originEmail: {
             ref: latest.id,
             eventType: 'email.inbound',
             subject: latest.subject,
-            excerpt: text.slice(0, 1500),
+            excerpt: latestReply.slice(0, 1500),
           },
         },
         allowTools: true,
@@ -372,10 +404,8 @@ export async function GET(request: NextRequest) {
           allowedEffects: ['read', 'external_action'],
           autonomousOnly: false,
         },
+        externalActionMinConfidence: confidenceFloor,
       });
-
-      const hasAttachments = latest.attachments.some((attachment) => !attachment.inline);
-      const confidenceFloor = knownContact ? minConfidence : prospectMinConfidence;
       const canAutoSend = autoSend
         && health.ok
         && (knownContact || safeUnknownProspect)
