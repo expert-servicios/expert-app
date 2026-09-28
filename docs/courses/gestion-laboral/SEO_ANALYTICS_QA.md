@@ -44,7 +44,7 @@ Instrumentar los eventos definidos en `STRIPE_AND_CONVERSION.md`. Validar que no
 
 - [ ] CTA Stripe exacto.
 - [ ] Formulario asociado al slug correcto.
-- [ ] Reserva abre Cal.com o `/cita`.
+- [ ] Reserva abre `/cita` y la confirmación incluye Google Meet.
 - [ ] PDF se descarga y abre.
 - [ ] El PDF no contiene datos de clientes ni trabajadores.
 - [ ] Las rutas `/docs/laboral` cargan.
