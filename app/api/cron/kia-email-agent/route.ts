@@ -11,6 +11,7 @@ import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
 import { appendKiaSignature } from '@/lib/email/kia-signature';
 import { maybeAppendKiaContextualCta } from '@/lib/email/kia-contextual-cta';
 import type { GmailMessage } from '@/lib/integrations/gmail';
+import { notifyAdmins } from '@/lib/integrations/push';
 
 export const maxDuration = 60;
 
@@ -24,6 +25,15 @@ const READ_ONLY_TOOLS = [
   'get_service_operational_blueprint',
   'search_knowledge_resources',
   'get_official_sources',
+  'find_relevant_services',
+  'get_service_registry_item',
+] as const;
+
+const PUBLIC_PROSPECT_TOOLS = [
+  'search_knowledge_resources',
+  'get_official_sources',
+  'find_relevant_services',
+  'get_service_registry_item',
 ] as const;
 
 function stateKey(threadId: string) {
@@ -79,6 +89,26 @@ function isLikelyHuman(message: GmailMessage) {
   const labels = new Set(message.labelIds ?? []);
   if (labels.has('CATEGORY_PROMOTIONS') || labels.has('CATEGORY_SOCIAL') || labels.has('CATEGORY_FORUMS')) return false;
   return true;
+}
+
+function isSafeUnknownProspect(subject: string, text: string) {
+  const signal = `${subject} ${text}`.toLowerCase();
+  return /\b(presupuesto|precio|tarifa|asesor[ií]a|gestor[ií]a|consulta|informaci[oó]n|servicio|holded|aut[oó]nomo|empresa|sociedad|fiscal|contable|laboral|reuni[oó]n|cita|demo|migraci[oó]n)\b/i.test(signal);
+}
+
+function adminThreadUrl(threadId: string) {
+  return `/admin/correo/hilo?provider=gmail&conversationId=${encodeURIComponent(threadId)}`;
+}
+
+async function writeAgentHeartbeat(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  value: Record<string, unknown>,
+) {
+  await admin.from('system_kv').upsert({
+    key: 'kia_email_agent_health',
+    value: { ...value, checked_at: new Date().toISOString() },
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'key' });
 }
 
 async function healthGate(admin: ReturnType<typeof getSupabaseAdmin>) {
@@ -190,13 +220,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: cronAuth.error }, { status: cronAuth.status });
   }
 
-  if (process.env.KIA_EMAIL_AGENT_ENABLED?.toLowerCase() !== 'true') {
+  const admin = getSupabaseAdmin();
+  const enabled = process.env.KIA_EMAIL_AGENT_ENABLED?.toLowerCase() === 'true';
+  if (!enabled) {
+    await writeAgentHeartbeat(admin, { enabled: false, auto_send: false, status: 'disabled' }).catch(() => {});
     return NextResponse.json({ skipped: true, reason: 'KIA_EMAIL_AGENT_ENABLED is not true' });
   }
 
   const autoSend = process.env.KIA_EMAIL_AUTO_SEND_ENABLED?.toLowerCase() === 'true';
   const minConfidence = Number(process.env.KIA_EMAIL_MIN_CONFIDENCE ?? '0.88');
-  const admin = getSupabaseAdmin();
+  const prospectMinConfidence = Math.max(minConfidence, Number(process.env.KIA_EMAIL_PROSPECT_MIN_CONFIDENCE ?? '0.92'));
   const health = await healthGate(admin);
   const authUsers = await listAllAuthUsers();
 
@@ -297,6 +330,10 @@ export async function GET(request: NextRequest) {
         createdAt: message.date,
       }));
 
+      const knownContact = Boolean(identity.clientId || identity.leadId);
+      const safeUnknownProspect = !knownContact && !row.case_id && isSafeUnknownProspect(latest.subject, text);
+      const allowedTools = knownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS;
+
       const result = await runKiaDecision({
         taskType: 'chat_reply',
         channel: 'email',
@@ -321,7 +358,7 @@ export async function GET(request: NextRequest) {
         },
         allowTools: true,
         forceToolExecution: true,
-        allowedToolNames: [...READ_ONLY_TOOLS],
+        allowedToolNames: [...allowedTools],
         toolAuthorization: {
           maxRiskTier: 'R1',
           allowedEffects: ['read'],
@@ -329,11 +366,11 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      const knownContact = Boolean(identity.clientId || identity.leadId);
       const hasAttachments = latest.attachments.some((attachment) => !attachment.inline);
+      const confidenceFloor = knownContact ? minConfidence : prospectMinConfidence;
       const canAutoSend = autoSend
         && health.ok
-        && knownContact
+        && (knownContact || safeUnknownProspect)
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
@@ -341,7 +378,7 @@ export async function GET(request: NextRequest) {
         && !result.usedFallback
         && !result.decision.requiresManualReview
         && result.decision.nextAction !== 'needs_review'
-        && result.decision.confidence >= minConfidence;
+        && result.decision.confidence >= confidenceFloor;
 
       let sentNow = false;
       let blockReason: string | null = null;
@@ -446,7 +483,7 @@ export async function GET(request: NextRequest) {
       } else {
         if (!autoSend) blockReason = 'auto_send_disabled';
         else if (!health.ok) blockReason = health.reason;
-        else if (!knownContact) blockReason = 'unknown_contact';
+        else if (!knownContact && !safeUnknownProspect) blockReason = 'unknown_contact_not_safe_prospect';
         else if (identity.ambiguousCase) blockReason = 'ambiguous_case';
         else if (identity.linkedCaseSenderMismatch) blockReason = 'linked_case_sender_mismatch';
         else if (replyToMismatch) blockReason = 'reply_to_requires_review';
@@ -454,9 +491,22 @@ export async function GET(request: NextRequest) {
         else if (result.usedFallback) blockReason = 'provider_fallback';
         else if (result.decision.requiresManualReview) blockReason = 'manual_review';
         else if (result.decision.nextAction === 'needs_review') blockReason = 'needs_review';
-        else if (result.decision.confidence < minConfidence) blockReason = 'low_confidence';
+        else if (result.decision.confidence < confidenceFloor) blockReason = 'low_confidence';
         else blockReason = 'policy_block';
       }
+
+      const pushTitle = sentNow
+        ? (knownContact ? 'KIA respondió por email' : 'KIA atendió un nuevo contacto')
+        : 'KIA necesita revisión de correo';
+      const pushBody = sentNow
+        ? `${latest.fromEmail} · ${latest.subject || 'Sin asunto'}`
+        : `${latest.fromEmail} · ${latest.subject || 'Sin asunto'} · ${blockReason ?? 'revisión'}`;
+      await notifyAdmins({
+        title: pushTitle,
+        body: pushBody.slice(0, 240),
+        url: adminThreadUrl(row.thread_id),
+        tag: `kia-email-${createHash('sha256').update(latest.id).digest('hex').slice(0, 20)}`,
+      }).catch(() => {});
 
       await admin.from('system_kv').upsert({
         key,
@@ -493,6 +543,17 @@ export async function GET(request: NextRequest) {
       });
     }
   }
+
+  await writeAgentHeartbeat(admin, {
+    enabled: true,
+    auto_send: autoSend,
+    status: errors.length === 0 ? 'ok' : 'degraded',
+    health_gate: health,
+    evaluated,
+    sent,
+    skipped,
+    errors_count: errors.length,
+  }).catch(() => {});
 
   return NextResponse.json({
     ok: errors.length === 0,
