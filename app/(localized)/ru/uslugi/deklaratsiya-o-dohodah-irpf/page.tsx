@@ -15,8 +15,8 @@ const INDEXABLE = isLocalePubliclyEnabled('ru')
 
 const service = (() => {
   const canonical = getCatalogService(SERVICE_SLUG);
-  if (!canonical?.stripePriceId || !canonical.price) {
-    throw new Error('Canonical irpf service is not configured for checkout.');
+  if (!canonical?.price) {
+    throw new Error('Canonical irpf service is not configured.');
   }
   return {
     ...canonical,
@@ -28,21 +28,25 @@ const service = (() => {
 const DURATION_RU = '3–5 рабочих дней';
 
 const OFFER_PRICE =
-  service.price.match(/[0-9]+(?:[.,][0-9]+)?/)?.[0]?.replace(',', '.') ?? service.price;
+  service.price.match(/[0-9]+(?:[.,][0-9]+)?/)?.[0]?.replace(',', '.') ?? null;
+const DISPLAY_PRICE_RU =
+  service.price === 'Precio variable' ? 'Цена рассчитывается по параметрам декларации' : service.price;
 
-const CART_ITEM = {
-  priceId: service.stripePriceId!,
-  name: service.name,
-  displayPrice: service.price!,
-  slug: service.slug,
-  category: service.categoria,
-  locale: 'ru' as const,
-};
+const CART_ITEM = service.stripePriceId
+  ? {
+      priceId: service.stripePriceId,
+      name: service.name,
+      displayPrice: service.price!,
+      slug: service.slug,
+      category: service.categoria,
+      locale: 'ru' as const,
+    }
+  : null;
 
 export const metadata: Metadata = {
   title: 'Декларация о доходах (IRPF) в Испании | EXPERT',
   description:
-    `Подготовка и подача декларации о доходах (IRPF): проверка налоговой ситуации, вычеты и электронная подача в AEAT. ${service.price}.`,
+    `Подготовка и подача декларации о доходах (IRPF): проверка налоговой ситуации, вычеты и электронная подача в AEAT. ${DISPLAY_PRICE_RU}.`,
   alternates: {
     canonical: RU_URL,
     languages: {
@@ -105,13 +109,15 @@ export default function RuIrpfPage() {
       name: 'España',
     },
     url: RU_URL,
-    offers: {
-      '@type': 'Offer',
-      price: OFFER_PRICE,
-      priceCurrency: 'EUR',
-      availability: 'https://schema.org/InStock',
-      url: RU_URL,
-    },
+    offers: OFFER_PRICE
+      ? {
+          '@type': 'Offer',
+          price: OFFER_PRICE,
+          priceCurrency: 'EUR',
+          availability: 'https://schema.org/InStock',
+          url: RU_URL,
+        }
+      : undefined,
   };
 
   const faqJsonLd = {
@@ -152,7 +158,7 @@ export default function RuIrpfPage() {
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             <div className="border border-white/12 bg-white/5 p-5">
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4A017]">Услуга</p>
-              <p className="mt-2 text-2xl font-bold text-white">{service.price}</p>
+              <p className="mt-2 text-2xl font-bold text-white">{DISPLAY_PRICE_RU}</p>
             </div>
             <div className="border border-white/12 bg-white/5 p-5">
               <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4A017] flex items-center gap-1.5">
@@ -163,11 +169,20 @@ export default function RuIrpfPage() {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <AddToCartButton
-              item={CART_ITEM}
-              label={`Оформить — ${service.price}`}
-              className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60"
-            />
+            {CART_ITEM ? (
+              <AddToCartButton
+                item={CART_ITEM}
+                label={`Оформить — ${DISPLAY_PRICE_RU}`}
+                className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60"
+              />
+            ) : (
+              <Link
+                href="/solicitar-presupuesto?servicio=irpf&origen=service%3Airpf"
+                className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]"
+              >
+                Рассчитать стоимость
+              </Link>
+            )}
             <Link
               href="/solicitar-presupuesto?servicio=irpf&tipo=caso-complejo"
               className="inline-flex min-h-12 items-center justify-center border border-[#D4A017] px-8 py-3 text-sm font-semibold text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
@@ -209,21 +224,30 @@ export default function RuIrpfPage() {
           <div className="overflow-hidden border border-[#D4A017]/30 bg-white">
             <div className="border-b border-[#D4A017]/20 bg-[#D4A017]/8 px-6 py-4">
               <p className="text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">Стоимость</p>
-              <p className="mt-1 text-2xl font-bold">{service.price}</p>
+              <p className="mt-1 text-2xl font-bold">{DISPLAY_PRICE_RU}</p>
               <p className="mt-2 text-xs leading-5 text-[#23364D]/65">Срок: {DURATION_RU}.</p>
             </div>
             <div className="space-y-3 px-6 py-5">
-              <AddToCartButton
-                item={CART_ITEM}
-                label="Добавить в корзину"
-                className="inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[#D4A017] px-4 py-2.5 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
-              />
-              <a
-                href="https://wa.me/34669045528"
+              {CART_ITEM ? (
+                <AddToCartButton
+                  item={CART_ITEM}
+                  label="Добавить в корзину"
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[#D4A017] px-4 py-2.5 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
+                />
+              ) : (
+                <Link
+                  href="/solicitar-presupuesto?servicio=irpf&origen=service%3Airpf"
+                  className="inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[#D4A017] px-4 py-2.5 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]"
+                >
+                  Рассчитать стоимость
+                </Link>
+              )}
+              <Link
+                href="/consulta-gratuita?servicio=irpf&origen=service%3Airpf"
                 className="block w-full border border-[#D4A017]/30 px-4 py-2.5 text-center text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
               >
-                Задать вопрос в WhatsApp
-              </a>
+                Бесплатный вопрос
+              </Link>
             </div>
           </div>
         </aside>
