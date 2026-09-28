@@ -12,7 +12,7 @@ https://buy.stripe.com/6oU00kftqgMs9jU5gJ8EM0i
 | --- | --- | --- |
 | Compra | Inscribirme y pagar | Stripe Payment Link |
 | Interés o dudas | Solicitar información | `#solicitar-info` y formulario específico |
-| Entrevista | Reservar reunión informativa | Cal.com; fallback `/cita` |
+| Entrevista | Reservar reunión informativa | `/cita` + Google Calendar/Meet |
 | Evidencia | Descargar programa | PDF corporativo |
 | Formación | Explorar manuales | `/docs/laboral` |
 
@@ -80,7 +80,7 @@ No solicitar NIF, CCC, NAF, salarios ni credenciales en el formulario comercial.
 | `course_view` | Carga de la landing. |
 | `course_payment_click` | Clic en Stripe. |
 | `course_contact_click` | Desplazamiento o clic al formulario. |
-| `course_meeting_click` | Apertura de Cal.com o fallback. |
+| `course_meeting_click` | Apertura del flujo nativo de reserva. |
 | `course_program_download` | Clic en el PDF. |
 | `course_lead_submit` | Envío aceptado por servidor. |
 | `course_checkout_success` | Confirmación por webhook. |
