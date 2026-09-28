@@ -14,6 +14,7 @@ import { getArticlesForService } from '@/lib/utils/blog';
 import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
 import { ServiceShareActions } from '@/components/services/ServiceShareActions';
 import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
+import { IrnrPriceCalculator } from '@/components/services/IrnrPriceCalculator';
 import { ServicePriceCalculator } from '@/components/services/ServicePriceCalculator';
 import { UnitPriceCalculator } from '@/components/services/UnitPriceCalculator';
 import { getCompanionServices } from '@/lib/services/service-merchandising';
@@ -309,6 +310,8 @@ export default async function ServicioDetallePage({
               <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">¿En qué consiste?</h2>
               <p className="mt-4 text-[15px] leading-7 text-[#23364D]">{service.description}</p>
             </div>
+
+            {servicio === 'no-residentes' && <IrnrPriceCalculator />}
 
             {service.priceCalculator && <ServicePriceCalculator kind={service.priceCalculator} origin={serviceOrigin} />}
             {service.unitPriceCalculator && (
