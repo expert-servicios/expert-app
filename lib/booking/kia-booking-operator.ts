@@ -28,7 +28,6 @@ import { createBookingManagementToken, bookingManagementUrls } from '@/lib/booki
 import { buildBookingIcs } from '@/lib/booking/calendar-invite';
 import { sendBookingEmail } from '@/lib/booking/booking-email';
 import { citaConfirmed } from '@/lib/email/templates';
-import { notifyBookingAdminActivity } from '@/lib/booking/booking-admin-notifications';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -88,21 +87,21 @@ function hasExplicitSlotConfirmation(message: string, start: Date) {
   if (negative) return false;
 
   const affirmative = /(?:^|[\s,.;:!?])(confirmo|confirmamos|confirmado|si|vale|perfecto|de acuerdo|adelante|reserva(?:r)?|me va bien|nos va bien)(?:$|[\s,.;:!?])/i.test(normalized);
-  const dateMention = [
+  const fullDateTokens = [
     localDate,
     `${day}/${month}/${year}`,
-    `${day}/${month}`,
     `${day}-${month}-${year}`,
-    `${day}-${month}`,
-  ].some((value) => normalized.includes(value.toLowerCase()));
-  const timeMention = [
-    localTime,
-    `${Number(hour)}:${minute}`,
-    `${Number(hour)}h`,
-    `${Number(hour)} h`,
-  ].some((value) => normalized.includes(value.toLowerCase()));
+  ];
+  const explicitYearDates = normalized.match(/\b\d{1,2}[\/-]\d{1,2}[\/-]\d{4}\b/g) ?? [];
+  if (explicitYearDates.length > 0 && !explicitYearDates.some((value) => fullDateTokens.includes(value))) return false;
 
-  return affirmative && dateMention && timeMention;
+  const datePattern = new RegExp(
+    `(?:^|[^0-9])(?:${localDate.replace(/-/g, '\\-')}|${day}\\/${month}(?:\\/${year})?|${day}-${month}(?:-${year})?)(?:$|[^0-9])`,
+  );
+  const timePattern = new RegExp(
+    `(?:^|[^0-9])(?:${localTime}|${Number(hour)}:${minute}|${Number(hour)}\\s*h)(?:$|[^0-9])`,
+  );
+  return affirmative && datePattern.test(normalized) && timePattern.test(normalized);
 }
 
 async function currentBusy(admin: AdminClient, start: Date, end: Date): Promise<BusyRange[]> {
@@ -242,6 +241,8 @@ export async function createKiaConfirmedBooking(input: {
       ].filter(Boolean).join('\n'),
       start: start.toISOString(),
       end: end.toISOString(),
+      localDate,
+      localTime,
       attendeeEmail: input.attendeeEmail.toLowerCase(),
       timezone: BOOKING_TIMEZONE,
       reminderMinutesBefore: service.durationMinutes >= 60 ? [1440, 60] : [1440, 30],
@@ -326,16 +327,6 @@ export async function createKiaConfirmedBooking(input: {
     } catch (emailError) {
       console.error('[kia-booking] confirmation email failed; booking retained:', emailError);
     }
-
-    await notifyBookingAdminActivity({
-      kind: 'kia_created',
-      appointmentId: confirmedAppointmentId,
-      name: input.attendeeName,
-      service: service.label,
-      localDate,
-      localTime,
-      email: input.attendeeEmail.toLowerCase(),
-    }).catch(() => {});
 
     return {
       appointmentId: confirmedAppointmentId,
