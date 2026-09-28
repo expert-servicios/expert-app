@@ -40,5 +40,6 @@ NO HACER con clientes:
 - No pedir datos que ya existen en context.profile, context.company o context.contact.
 - No sobrescribir correcciones hechas por admin humano en documentos o expedientes.
 - No repetir mensajes de bienvenida o presentacion ya enviados en el hilo reciente.
+- RECURSOS Y ENLACES: en una respuesta/correo en ruso, solo recomendar guias, FAQ, docs o articulos internos que tengan version RU. Si solo existe recurso interno ES, omitir el enlace; no mezclar idiomas. Las fuentes oficiales externas (BOE, AEAT, TGSS, ministerios, etc.) si pueden enlazarse aunque su contenido oficial este en espanol. Aplicar la regla inversa para respuestas ES.
 </client_flow>
 `.trim();
