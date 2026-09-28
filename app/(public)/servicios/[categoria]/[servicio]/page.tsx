@@ -17,6 +17,7 @@ import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
 import { ServiceShareActions } from '@/components/services/ServiceShareActions';
 import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
 import { IrnrPriceCalculator } from '@/components/services/IrnrPriceCalculator';
+import { IrnrPriceCalculator } from '@/components/services/IrnrPriceCalculator';
 import { getCompanionServices } from '@/lib/services/service-merchandising';
 import { getRuServicePath } from '@/lib/services/service-localized-content';
 
@@ -306,6 +307,10 @@ export default async function ServicioDetallePage({
             </div>
 
             {servicio === 'no-residentes' && <IrnrPriceCalculator />}
+
+            {service.slug === 'no-residentes' && (
+              <IrnrPriceCalculator />
+            )}
 
             {(service.servicePriceDetail || service.officialFee) && (
               <div className="grid gap-4 md:grid-cols-2">
