@@ -59,15 +59,24 @@ export async function GET(request: NextRequest) {
   }
 
   if (!quote.client_id) {
-    const { error: claimError } = await admin
+    if (!['draft', 'sent', 'accepted'].includes(quote.status)) {
+      return NextResponse.json(
+        { error: 'Este presupuesto ya no admite vinculación desde este enlace.' },
+        { status: 409 },
+      );
+    }
+
+    const { data: claimedQuote, error: claimError } = await admin
       .from('quotes')
       .update({ client_id: user.id })
       .eq('id', quote.id)
       .is('client_id', null)
-      .in('status', ['draft', 'sent', 'accepted']);
-    if (claimError) {
+      .in('status', ['draft', 'sent', 'accepted'])
+      .select('id')
+      .maybeSingle();
+    if (claimError || !claimedQuote) {
       console.error('[quote claim] ownership update:', claimError);
-      return NextResponse.json({ error: 'No se pudo vincular el presupuesto.' }, { status: 500 });
+      return NextResponse.json({ error: 'No se pudo vincular el presupuesto.' }, { status: 409 });
     }
   }
 
