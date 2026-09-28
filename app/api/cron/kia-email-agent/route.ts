@@ -29,6 +29,7 @@ const READ_ONLY_TOOLS = [
   'get_service_registry_item',
   'get_booking_availability',
   'create_booking_meeting',
+  'create_internal_task',
 ] as const;
 
 const PUBLIC_PROSPECT_TOOLS = [
@@ -38,6 +39,7 @@ const PUBLIC_PROSPECT_TOOLS = [
   'get_service_registry_item',
   'get_booking_availability',
   'create_booking_meeting',
+  'create_internal_task',
 ] as const;
 
 function stateKey(threadId: string) {
@@ -126,6 +128,149 @@ function isSafeUnknownProspect(subject: string, text: string) {
 function adminThreadUrl(threadId: string) {
   return `/admin/correo/hilo?provider=gmail&conversationId=${encodeURIComponent(threadId)}`;
 }
+
+function senderDisplayName(message: GmailMessage) {
+  const raw = message.from.trim();
+  const bracket = raw.match(/^(.+?)\s*<[^>]+>$/);
+  const value = (bracket?.[1] ?? raw).replace(/^["']|["']$/g, '').trim();
+  return value && value.toLowerCase() !== message.fromEmail.toLowerCase()
+    ? value.slice(0, 120)
+    : message.fromEmail.split('@')[0].slice(0, 120);
+}
+
+async function ensureEmailLead(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  message: GmailMessage,
+  excerpt: string,
+) {
+  const email = normalizedEmail(message.fromEmail);
+  const { data: matches, error: lookupError } = await admin
+    .from('leads')
+    .select('id')
+    .eq('email', email)
+    .limit(2);
+  if (lookupError) throw lookupError;
+  if ((matches ?? []).length === 1) return matches![0].id;
+  if ((matches ?? []).length > 1) return null;
+
+  const { data: created, error } = await admin
+    .from('leads')
+    .insert({
+      name: senderDisplayName(message),
+      email,
+      source: 'email',
+      message: excerpt.slice(0, 4000),
+      source_key: `gmail:${message.id}`,
+      metadata: {
+        origin: 'gmail_inbound',
+        gmail_message_id: message.id,
+        gmail_thread_id: message.conversationId,
+        first_subject: message.subject,
+      },
+    })
+    .select('id')
+    .single();
+  if (error) throw error;
+  return created?.id ?? null;
+}
+
+async function recordInboundEmailEvent(input: {
+  admin: ReturnType<typeof getSupabaseAdmin>;
+  message: GmailMessage;
+  excerpt: string;
+  clientId: string | null;
+  leadId: string | null;
+  caseId: string | null;
+  companyId: string | null;
+}) {
+  const claimKey = `kia_email_inbound:${createHash('sha256').update(input.message.id).digest('hex').slice(0, 40)}`;
+  const { error: claimError } = await input.admin.from('system_kv').insert({
+    key: claimKey,
+    value: { state: 'reserved', message_id: input.message.id, reserved_at: new Date().toISOString() },
+    updated_at: new Date().toISOString(),
+  });
+  if (claimError?.code === '23505') return;
+  if (claimError) throw claimError;
+
+  const { error } = await input.admin.from('email_events').insert({
+    event_type: 'email.inbound',
+    recipient_email: normalizedEmail(input.message.fromEmail),
+    subject: input.message.subject || '(sin asunto)',
+    html: replyHtml(input.excerpt),
+    status: 'received',
+    metadata: {
+      direction: 'in',
+      transport: 'gmail',
+      gmail_message_id: input.message.id,
+      thread_id: input.message.conversationId,
+      sender_email: normalizedEmail(input.message.fromEmail),
+      client_id: input.clientId,
+      lead_id: input.leadId,
+      case_id: input.caseId,
+      company_id: input.companyId,
+    },
+  });
+  if (error) {
+    await input.admin.from('system_kv').delete().eq('key', claimKey);
+    throw error;
+  }
+  await input.admin.from('system_kv').update({
+    value: { state: 'stored', message_id: input.message.id, stored_at: new Date().toISOString() },
+    updated_at: new Date().toISOString(),
+  }).eq('key', claimKey);
+}
+
+async function createEmailRequestTask(input: {
+  admin: ReturnType<typeof getSupabaseAdmin>;
+  message: GmailMessage;
+  clientId: string | null;
+  leadId: string | null;
+  caseId: string | null;
+  companyId: string | null;
+  toolRequests: Array<{ toolName: string; arguments: Record<string, unknown>; reason: string }>;
+}) {
+  const request = input.toolRequests.find((item) => item.toolName === 'create_internal_task');
+  if (!request) return null;
+
+  const title = typeof request.arguments.title === 'string' ? request.arguments.title.trim() : '';
+  if (!title) return null;
+  const taskKey = `email-request:${input.message.id}`;
+  const { data: existing } = await input.admin
+    .from('internal_tasks')
+    .select('id,title')
+    .contains('metadata', { source_key: taskKey })
+    .limit(1)
+    .maybeSingle();
+  if (existing?.id) return { id: existing.id, title: existing.title };
+
+  const priorityRaw = typeof request.arguments.priority === 'string' ? request.arguments.priority : 'media';
+  const priority = ['baja','media','alta','critica'].includes(priorityRaw) ? priorityRaw : 'media';
+  const description = typeof request.arguments.description === 'string'
+    ? request.arguments.description.trim().slice(0, 1500)
+    : request.reason.slice(0, 1500);
+
+  const { data, error } = await input.admin.from('internal_tasks').insert({
+    title: title.slice(0, 220),
+    description,
+    status: 'pendiente',
+    priority,
+    case_id: input.caseId,
+    client_id: input.clientId,
+    lead_id: input.leadId,
+    company_id: input.companyId,
+    source: 'kia',
+    metadata: {
+      task_kind: 'email_request',
+      source_key: taskKey,
+      gmail_message_id: input.message.id,
+      gmail_thread_id: input.message.conversationId,
+      sender_email: normalizedEmail(input.message.fromEmail),
+    },
+  }).select('id,title').single();
+  if (error) throw error;
+  return data;
+}
+
 
 async function writeAgentHeartbeat(
   admin: ReturnType<typeof getSupabaseAdmin>,
@@ -351,7 +496,35 @@ export async function GET(request: NextRequest) {
       const senderEmail = normalizedEmail(latest.fromEmail);
       const replyRecipient = normalizedEmail(latest.replyTo || latest.fromEmail);
       const replyToMismatch = replyRecipient !== senderEmail;
-      const identity = await resolveIdentity(admin, senderEmail, row.case_id ?? null, authUsers);
+      let identity = await resolveIdentity(admin, senderEmail, row.case_id ?? null, authUsers);
+      const safeUnknownProspect = !identity.clientId && !identity.leadId && !row.case_id
+        && isSafeUnknownProspect(latest.subject, latestReply);
+      if (safeUnknownProspect) {
+        const leadId = await ensureEmailLead(admin, latest, latestReply).catch((leadError) => {
+          console.error('[kia-email-agent] lead creation:', leadError);
+          return null;
+        });
+        if (leadId) identity = { ...identity, leadId };
+      }
+
+      await recordInboundEmailEvent({
+        admin,
+        message: latest,
+        excerpt: latestReply,
+        clientId: identity.clientId,
+        leadId: identity.leadId,
+        caseId: identity.caseId,
+        companyId: identity.companyId,
+      }).catch((auditError) => console.error('[kia-email-agent] inbound audit:', auditError));
+
+      const contactKind = identity.clientId ? 'cliente' : identity.leadId ? 'lead' : 'nuevo contacto';
+      await notifyAdmins({
+        title: `Correo humano · ${contactKind}`,
+        body: `${senderDisplayName(latest)} · ${latest.subject || 'Sin asunto'} · ${latestReply.slice(0, 150)}`.slice(0, 240),
+        url: adminThreadUrl(row.thread_id),
+        tag: `human-email-${createHash('sha256').update(latest.id).digest('hex').slice(0, 20)}`,
+      }).catch(() => {});
+
       const recent = gmail.messages.slice(-10).map((message) => ({
         role: normalizedEmail(message.fromEmail) === EXPERT_MAILBOX ? 'assistant' as const : 'user' as const,
         text: messageText(message.body, message.bodyType).slice(0, 4000),
@@ -359,7 +532,6 @@ export async function GET(request: NextRequest) {
       }));
 
       const knownContact = Boolean(identity.clientId || identity.leadId);
-      const safeUnknownProspect = !knownContact && !row.case_id && isSafeUnknownProspect(latest.subject, latestReply);
       const hasAttachments = latest.attachments.some((attachment) => !attachment.inline);
       const confidenceFloor = knownContact ? minConfidence : prospectMinConfidence;
       const externalActionPreEligible = autoSend
@@ -401,11 +573,42 @@ export async function GET(request: NextRequest) {
         allowedToolNames: [...allowedTools],
         toolAuthorization: {
           maxRiskTier: 'R2',
-          allowedEffects: ['read', 'external_action'],
+          allowedEffects: ['read', 'draft', 'external_action'],
           autonomousOnly: false,
         },
         externalActionMinConfidence: confidenceFloor,
       });
+      const taskEligible = (identity.clientId || identity.leadId)
+        && !identity.ambiguousCase
+        && !identity.linkedCaseSenderMismatch
+        && !replyToMismatch
+        && !result.usedFallback
+        && !result.decision.requiresManualReview
+        && result.decision.nextAction !== 'needs_review'
+        && result.decision.confidence >= confidenceFloor;
+      const createdTask = taskEligible
+        ? await createEmailRequestTask({
+            admin,
+            message: latest,
+            clientId: identity.clientId,
+            leadId: identity.leadId,
+            caseId: identity.caseId,
+            companyId: identity.companyId,
+            toolRequests: result.decision.toolRequests,
+          }).catch((taskError) => {
+            console.error('[kia-email-agent] request task:', taskError);
+            return null;
+          })
+        : null;
+      if (createdTask) {
+        await notifyAdmins({
+          title: 'KIA creó una tarea',
+          body: `${createdTask.title} · ${senderDisplayName(latest)}`.slice(0, 240),
+          url: identity.caseId ? `/admin/expedientes/${identity.caseId}` : '/admin/tareas',
+          tag: `kia-email-task-${createdTask.id}`,
+        }).catch(() => {});
+      }
+
       const canAutoSend = autoSend
         && health.ok
         && (knownContact || safeUnknownProspect)
@@ -503,6 +706,7 @@ export async function GET(request: NextRequest) {
             decision_log_id: result.decisionLogId ?? null,
             inbound_message_id: latest.id,
             thread_id: row.thread_id,
+            direction: 'out',
           },
           });
           if (eventError) {
@@ -540,19 +744,6 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
-      const pushTitle = sentNow
-        ? (knownContact ? 'KIA respondió por email' : 'KIA atendió un nuevo contacto')
-        : 'KIA necesita revisión de correo';
-      const pushBody = sentNow
-        ? `${latest.fromEmail} · ${latest.subject || 'Sin asunto'}`
-        : `${latest.fromEmail} · ${latest.subject || 'Sin asunto'} · ${blockReason ?? 'revisión'}`;
-      await notifyAdmins({
-        title: pushTitle,
-        body: pushBody.slice(0, 240),
-        url: adminThreadUrl(row.thread_id),
-        tag: `kia-email-${createHash('sha256').update(latest.id).digest('hex').slice(0, 20)}`,
-      }).catch(() => {});
-
       await admin.from('system_kv').upsert({
         key,
         value: {
@@ -587,12 +778,6 @@ export async function GET(request: NextRequest) {
         thread: createHash('sha256').update(row.thread_id).digest('hex').slice(0, 12),
         code: errorCode,
       });
-      await notifyAdmins({
-        title: 'KIA no pudo procesar un correo',
-        body: `${row.from_email ?? 'Remitente desconocido'} · ${row.subject || 'Sin asunto'} · requiere revisión`.slice(0, 240),
-        url: adminThreadUrl(row.thread_id),
-        tag: `kia-email-error-${createHash('sha256').update(row.thread_id).digest('hex').slice(0, 20)}`,
-      }).catch(() => {});
     }
   }
 
