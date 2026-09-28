@@ -115,7 +115,7 @@ export function SolicitudPresupuestoForm() {
       const res = await fetch('/api/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, services: selectedServices, description, hp_url: hp, recaptcha_token })
+        body: JSON.stringify({ name, email, phone, services: selectedServices, description, origin: originFromUrl ?? undefined, hp_url: hp, recaptcha_token })
       });
       if (res.ok) {
         setSubmitted(true);
