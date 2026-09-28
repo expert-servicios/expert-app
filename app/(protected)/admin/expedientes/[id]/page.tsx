@@ -56,7 +56,7 @@ type IrnrRentalPeriod = {
 };
 
 type IrnrIntake = {
-  taxYear: string;
+  taxYears: string[];
   properties: Array<{
     address: string;
     cadastralReference: string;
@@ -72,6 +72,7 @@ function parseIrnrIntake(comment: string | null | undefined): IrnrIntake | null 
   try {
     const parsed = JSON.parse(comment) as {
       taxYear?: unknown;
+      taxYears?: unknown;
       residenceCountry?: unknown;
       taxIdForeign?: unknown;
       properties?: unknown;
@@ -82,8 +83,14 @@ function parseIrnrIntake(comment: string | null | undefined): IrnrIntake | null 
       typeof parsed.residenceCountry === 'string' ? parsed.residenceCountry : '';
     const legacyTaxId = typeof parsed.taxIdForeign === 'string' ? parsed.taxIdForeign : '';
 
+    const taxYears = Array.isArray(parsed.taxYears)
+      ? parsed.taxYears.filter((year): year is string => typeof year === 'string' && year.trim().length > 0)
+      : typeof parsed.taxYear === 'string' && parsed.taxYear.trim()
+        ? [parsed.taxYear.trim()]
+        : [];
+
     return {
-      taxYear: typeof parsed.taxYear === 'string' ? parsed.taxYear : '',
+      taxYears,
       properties: parsed.properties.map((rawProperty) => {
         const property =
           rawProperty && typeof rawProperty === 'object'
@@ -272,8 +279,8 @@ export default async function AdminCaseDetailPage({
               <>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-lg bg-[#f8f4eb] p-3">
-                    <p className="text-[11px] font-bold uppercase text-[#8a6111]">Ejercicio</p>
-                    <p className="mt-1 text-sm font-semibold text-[#07111d]">{irnrIntake.taxYear || '—'}</p>
+                    <p className="text-[11px] font-bold uppercase text-[#8a6111]">Ejercicios</p>
+                    <p className="mt-1 text-sm font-semibold text-[#07111d]">{irnrIntake.taxYears.join(', ') || '—'}</p>
                   </div>
                   <div className="rounded-lg bg-[#f8f4eb] p-3">
                     <p className="text-[11px] font-bold uppercase text-[#8a6111]">Unidades declarativas</p>
