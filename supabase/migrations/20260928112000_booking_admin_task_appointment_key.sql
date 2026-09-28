@@ -2,7 +2,7 @@
 -- Nullable so unrelated internal tasks remain unaffected.
 
 alter table public.internal_tasks
-  add column if not exists booking_appointment_id uuid references public.appointments(id) on delete set null;
+  add column if not exists booking_appointment_id uuid;
 
 create unique index if not exists internal_tasks_booking_appointment_id_uidx
   on public.internal_tasks (booking_appointment_id)
