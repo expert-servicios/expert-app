@@ -644,6 +644,7 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
           clientId: context.contact.clientId,
           companyId: context.company?.id ?? null,
           leadId: context.contact.leadId,
+          confirmationMessage: context.latestMessage ?? '',
           contextMessages: context.conversation.recentMessages,
         });
         return ok(toolCall.name, booking);
