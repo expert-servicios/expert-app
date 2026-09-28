@@ -191,6 +191,7 @@ export async function GET(
 
   const inboxThreadIds = new Set<string>();
   for (const row of inboxRes.data ?? []) {
+    if (persistedInboundThreadIds.has(row.thread_id)) continue;
     inboxThreadIds.add(row.thread_id);
     const effectiveCaseId = threadCaseById.has(row.thread_id)
       ? threadCaseById.get(row.thread_id) ?? null
