@@ -48,6 +48,13 @@ type IrnrHolder = {
   ownershipPercent: string;
 };
 
+type IrnrRentalPeriod = {
+  startDate: string;
+  endDate: string;
+  grossIncome: string;
+  platform: string;
+};
+
 type IrnrIntake = {
   taxYear: string;
   properties: Array<{
@@ -55,6 +62,7 @@ type IrnrIntake = {
     cadastralReference: string;
     acquisitionDate: string;
     use: 'available' | 'rented' | 'sold';
+    rentalPeriods: IrnrRentalPeriod[];
     holders: IrnrHolder[];
   }>;
 };
@@ -112,6 +120,20 @@ function parseIrnrIntake(comment: string | null | undefined): IrnrIntake | null 
           acquisitionDate:
             typeof property.acquisitionDate === 'string' ? property.acquisitionDate : '',
           use: property.use === 'rented' || property.use === 'sold' ? property.use : 'available',
+          rentalPeriods: Array.isArray(property.rentalPeriods)
+            ? property.rentalPeriods.map((rawPeriod) => {
+                const period =
+                  rawPeriod && typeof rawPeriod === 'object'
+                    ? rawPeriod as Record<string, unknown>
+                    : {};
+                return {
+                  startDate: typeof period.startDate === 'string' ? period.startDate : '',
+                  endDate: typeof period.endDate === 'string' ? period.endDate : '',
+                  grossIncome: typeof period.grossIncome === 'string' ? period.grossIncome : '',
+                  platform: typeof period.platform === 'string' ? period.platform : '',
+                };
+              })
+            : [],
           holders,
         };
       }),
@@ -271,6 +293,29 @@ export default async function AdminCaseDetailPage({
                         <div><dt className="text-[#7a7064]">Fecha de adquisición</dt><dd className="font-semibold text-[#29384a]">{property.acquisitionDate || '—'}</dd></div>
                         <div><dt className="text-[#7a7064]">Uso</dt><dd className="font-semibold text-[#29384a]">{irnrUseLabels[property.use]}</dd></div>
                       </dl>
+
+                      {property.use === 'rented' && (
+                        <div className="mt-4 border-t border-[#eadfce] pt-3">
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-[#8a6111]">Periodos de alquiler e ingresos</p>
+                          {property.rentalPeriods.length === 0 ? (
+                            <p className="mt-2 text-xs text-[#7a7064]">Sin desglose registrado; revisar documentos aportados por el cliente.</p>
+                          ) : (
+                            <div className="mt-2 grid gap-2">
+                              {property.rentalPeriods.map((period, periodIndex) => (
+                                <div key={periodIndex} className="rounded-lg bg-[#f8f4eb] p-3 text-xs">
+                                  <p className="font-bold text-[#07111d]">Periodo {periodIndex + 1}</p>
+                                  <dl className="mt-2 grid gap-x-4 gap-y-1 sm:grid-cols-4">
+                                    <div><dt className="text-[#7a7064]">Desde</dt><dd className="font-semibold text-[#29384a]">{period.startDate || '—'}</dd></div>
+                                    <div><dt className="text-[#7a7064]">Hasta</dt><dd className="font-semibold text-[#29384a]">{period.endDate || '—'}</dd></div>
+                                    <div><dt className="text-[#7a7064]">Bruto cobrado</dt><dd className="font-semibold text-[#29384a]">{period.grossIncome ? `${period.grossIncome} €` : '—'}</dd></div>
+                                    <div><dt className="text-[#7a7064]">Canal</dt><dd className="font-semibold text-[#29384a]">{period.platform || '—'}</dd></div>
+                                  </dl>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       <div className="mt-4 border-t border-[#eadfce] pt-3">
                         <p className="text-[11px] font-bold uppercase tracking-wide text-[#8a6111]">Titulares no residentes</p>
