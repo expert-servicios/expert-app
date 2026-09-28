@@ -36,7 +36,7 @@ describe('booking admin task lifecycle', () => {
 
   it('links meeting tasks to EXPERT identities only when unambiguous', () => {
     expect(route).toContain('resolveBookingIdentityByEmail(admin, bookingEmail).catch');
-    expect(route).toContain("bookingEmail.replace(/[\\\\%_]/g, '\\\\    expect(route).toContain("bookingEmail.replace(/[\\\\%_]/g, '\\\\    expect(route).toContain(".ilike('email', bookingEmail)");')");')");
+    expect(route).toContain("char === '%' || char === '_' || char === '\\\\'");
     expect(route).toContain(".ilike('email', escapedLeadEmail)");
     expect(route).toContain('.limit(2)');
     expect(route).toContain("(leadMatches ?? []).length === 1");
