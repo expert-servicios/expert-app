@@ -25,6 +25,7 @@ describe('article intent CTA and IRNR funnel', () => {
   const adminCasePage = source('app/(protected)/admin/expedientes/[id]/page.tsx');
   const documentNotesApi = source('app/api/cases/[id]/document-notes/route.ts');
   const documentsApi = source('app/api/cases/[id]/documents/route.ts');
+  const stripeWebhook = source('app/api/stripe/webhook/route.ts');
 
   it('offers three clear intents below articles', () => {
     expect(cta).toContain('Tengo una consulta');
@@ -48,10 +49,11 @@ describe('article intent CTA and IRNR funnel', () => {
   });
 
   it('calculates IRNR pricing by property-holder unit', () => {
-    expect(calc).toContain('80 + Math.max(0, units - 1) * 30');
+    expect(calc).toContain('80 + Math.max(0, standardUnits - 1) * 30');
     expect(calc).toContain('Titulares no residentes');
     expect(calc).toContain('Está alquilado');
-    expect(calc).toContain('unidades declarativas estimadas');
+    expect(calc).toContain('unidades estándar no alquiladas');
+    expect(calc).toContain('unidades alquiladas pendientes de revisión');
     expect(calc).toContain("intent: 'irnr_quote'");
     expect(calc).toContain('holderDistribution');
   });
@@ -97,14 +99,27 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(blueprint).toContain("title: 'Presentar Modelo 210'");
   });
 
+  it('preserves IRNR service identity through quote payment into specialized fulfillment', () => {
+    expect(stripeWebhook).toContain('leadBlueprintSlugs');
+    expect(stripeWebhook).toContain('getServiceOperationalBlueprint');
+    expect(stripeWebhook).toContain('quoteServiceSlugs');
+    expect(stripeWebhook).toContain('ensureServiceOrderFulfillment');
+    expect(stripeWebhook).toContain('specializedQuoteCaseId');
+    expect(stripeWebhook).toContain('.update({ quote_id: quoteId })');
+  });
+
   it('shows a property questionnaire inside the IRNR case', () => {
     expect(casePage).toContain('IrnrCaseQuestionnaire');
     expect(casePage).toContain("service_id?.split(',').includes('no-residentes')");
-    expect(questionnaire).toContain("itemKey:'irnr-intake'");
+    expect(questionnaire).toContain("itemKey: 'irnr-intake'");
     expect(questionnaire).toContain('Fecha de adquisición');
     expect(questionnaire).toContain('Porcentaje de titularidad');
-    expect(questionnaire).toContain("setProperties(p=>[...p,emptyProperty()]);markDirty()");
-    expect(questionnaire).toContain("setProperties(p=>p.filter((_,i)=>i!==index));markDirty()");
+    expect(questionnaire).toContain('holders: Holder[]');
+    expect(questionnaire).toContain('addHolder');
+    expect(questionnaire).toContain('removeHolder');
+    expect(questionnaire).toContain('foreignTaxId');
+    expect(questionnaire).toContain('legacyResidenceCountry');
+    expect(questionnaire).toContain('legacyTaxId');
     expect(questionnaire).toContain('revisionAtStart');
     expect(questionnaire).toContain('revisionRef.current === revisionAtStart');
     expect(documentNotesApi).toContain("comment: z.string().max(20000)");
@@ -117,8 +132,10 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(adminCaseApi).toContain("from('case_document_notes')");
     expect(adminCaseApi).toContain('documentNotes: notesResult.data ?? []');
     expect(adminCasePage).toContain("note.item_key === 'irnr-intake'");
-    expect(adminCasePage).toContain('Cuestionario de inmuebles');
+    expect(adminCasePage).toContain('Cuestionario de inmuebles y titulares');
     expect(adminCasePage).toContain('Referencia catastral');
-    expect(adminCasePage).toContain('N.º fiscal extranjero');
+    expect(adminCasePage).toContain('Titulares no residentes');
+    expect(adminCasePage).toContain('holder.foreignTaxId');
+    expect(adminCasePage).toContain('holder.ownershipPercent');
   });
 });
