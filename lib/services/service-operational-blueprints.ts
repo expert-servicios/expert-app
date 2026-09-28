@@ -420,7 +420,7 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'properties_count', label: 'Número de inmuebles en España identificado', required: true, clientCheckable: true },
       { key: 'ownership', label: 'Titularidad y porcentaje de participación de cada no residente por inmueble', required: true, clientCheckable: true },
       { key: 'acquisition_date', label: 'Fecha de adquisición de cada inmueble para determinar el periodo de titularidad sujeto a imputación', required: true, clientCheckable: true },
-      { key: 'property_use', label: 'Uso de cada inmueble identificado: a disposición/no alquilado, alquilado o vendido durante el ejercicio', required: true, clientCheckable: true },
+      { key: 'property_use', label: 'Uso de cada inmueble identificado: periodos a disposición o alquilados y, de forma independiente, si hubo venta durante el ejercicio', required: true, clientCheckable: true },
       { key: 'tax_year', label: 'Ejercicio o ejercicios a declarar identificados', required: true, clientCheckable: true },
     ],
     documents: [
@@ -432,7 +432,7 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'sale', label: 'Escritura de venta y documentación de la transmisión', required: false, conditionalWhen: 'Si el inmueble se transmitió durante el ejercicio' },
     ],
     steps: [
-      { key: 'intake', title: 'Cuestionario de inmuebles y titulares', description: 'Recoger ejercicio, inmuebles, titulares, porcentajes, fechas de adquisición y uso; si hubo alquiler, periodos, importes brutos y canal o plataforma.', clientVisible: true },
+      { key: 'intake', title: 'Cuestionario de inmuebles y titulares', description: 'Recoger ejercicio, inmuebles, titulares, porcentajes, fechas de adquisición y uso; si hubo alquiler, periodos, importes brutos y canal o plataforma; si hubo venta, registrar también la fecha y solicitar la documentación de transmisión.', clientVisible: true },
       { key: 'documents', title: 'Documentación de cada inmueble', description: 'Vincular identidad, escritura/nota simple e IBI al inmueble y titular correspondientes.', clientVisible: true },
       { key: 'calculate', title: 'Cálculo IRNR', description: 'Determinar días de titularidad, renta imputada o tratamiento de periodos arrendados y cuota por titular.', clientVisible: true },
       { key: 'review', title: 'Revisión', description: 'Comprobar titularidad, periodo, valor catastral, residencia fiscal y coherencia del cálculo.', clientVisible: true },
@@ -440,7 +440,7 @@ const blueprints: ServiceOperationalBlueprint[] = [
       { key: 'deliver', title: 'Entrega y calendario siguiente', description: 'Archivar justificantes y dejar preparado el siguiente ejercicio cuando proceda.', clientVisible: true },
     ],
     tasks: [
-      { key: 'review_intake', title: 'Revisar cuestionario IRNR', description: 'Confirmar número de inmuebles, titulares, porcentajes, fechas de adquisición, uso y ejercicios.', priority: 'media', phase: 'intake', dueBusinessDays: 1 },
+      { key: 'review_intake', title: 'Revisar cuestionario IRNR', description: 'Confirmar número de inmuebles, titulares, porcentajes, fechas de adquisición, periodos de uso/alquiler, posibles ventas y ejercicios.', priority: 'media', phase: 'intake', dueBusinessDays: 1 },
       { key: 'review_documents', title: 'Revisar documentación IRNR', description: 'Comprobar identidad, titularidad, fechas, IBI y referencia catastral; pedir solo faltantes reales.', priority: 'media', phase: 'documents', dependsOn: ['review_intake'] },
       { key: 'calculate_210', title: 'Preparar cálculo Modelo 210', description: 'Calcular por inmueble y titular no residente, separando periodos a disposición de periodos arrendados o transmitidos.', priority: 'media', phase: 'calculate', dependsOn: ['review_documents'], blocksSubmission: true },
       { key: 'professional_review', title: 'Revisar Modelo 210 antes de presentar', description: 'Validar cálculo y obligación antes de presentación.', priority: 'alta', phase: 'review', dependsOn: ['calculate_210'], blocksSubmission: true, humanApprovalRequired: true },
