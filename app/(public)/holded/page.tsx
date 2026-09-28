@@ -413,7 +413,7 @@ export default async function HoldedPage() {
               </Link>
             </div>
 
-            {/* CTA 3 — Demo Cal.com */}
+            {/* CTA 3 — Demo con Google Calendar/Meet */}
             <div className="flex flex-col border border-[#D4A017] bg-[#0D1B2A] p-7 text-[#F8F6F1]">
               <div className="flex h-12 w-12 items-center justify-center bg-[#D4A017]/15 text-[#D4A017]">
                 <Calendar className="h-6 w-6" />

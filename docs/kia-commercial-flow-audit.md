@@ -61,7 +61,7 @@ welcome → ask_name → ask_email → main_menu → service_area → service �
 | Login obligatorio antes de pago | No cobrar visitantes anonimos; enlazar pago a perfil |
 | No crear Stripe Checkout desde frontend sin backend | Seguridad: validacion en servidor |
 | Stripe cobra, Holded factura | Stripe no es sistema fiscal; Holded genera facturas legales |
-| Kia es el unico widget flotante | Eliminar Cal.com flotante (completado 2026-05-22) |
+| Kia es el unico widget flotante | Eliminar el widget flotante del proveedor de reservas anterior (completado 2026-05-22) |
 | No enviar pago automatico tras viabilidad | Siempre pedir confirmacion del usuario |
 | No pedir justificantes al inicio | Primero datos, luego documentacion |
 | Llamada 15 min solo preventa | No es asesoria completa |
@@ -159,7 +159,7 @@ WABA → Kia precal_cta → btn_pay_now
 </div>
 ```
 
-Cal.com no se elimina del producto — solo desaparece el boton flotante. Los enlaces de reunion de Cal.com pueden seguir apareciendo en emails transaccionales o en el dashboard de cliente cuando sea necesario solicitar una llamada de soporte.
+El proveedor de reservas anterior queda únicamente como compatibilidad técnica histórica. No debe aparecer en nuevos emails, dashboard, KIA ni CTAs; las nuevas reuniones usan `/cita` y Google Calendar/Meet.
 
 ---
 

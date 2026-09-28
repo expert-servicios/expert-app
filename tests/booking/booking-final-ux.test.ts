@@ -30,8 +30,20 @@ describe('booking final UX', () => {
     expect(route).toContain("filename: 'cita-expert.ics'");
   });
 
-  it('supports extra calendars as busy-only sources', () => {
+  it('supports extra calendars as busy-only sources across all result pages', () => {
     expect(calendar).toContain('BOOKING_GOOGLE_BUSY_CALENDAR_IDS');
     expect(calendar).toContain("new Set(['primary', ...configured])");
+    expect(calendar).toContain('pageToken');
+    expect(calendar).toContain('data.nextPageToken');
+  });
+
+  it('supports timed calendar events that cross midnight', () => {
+    expect(calendar).toContain('endDate?: string');
+    expect(calendar).toContain('input.endDate ?? input.date');
+  });
+
+  it('rebases the stored page when the responsive page count shrinks', () => {
+    expect(form).toContain('setDayPage((current) => Math.min(current, pageCount - 1))');
+    expect(form).toContain('}, [pageCount]);');
   });
 });

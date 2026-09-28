@@ -410,6 +410,7 @@ export async function PATCH(request: NextRequest) {
         meetingUrl: appt.meeting_url as string | null,
         clientId,
         companyId,
+        reopenCancelled: current.status === 'cancelled' && appt.status === 'confirmed',
       }).catch((taskError) => console.error('[admin/citas] task sync:', taskError));
     } else if (appt.status === 'cancelled' || appt.status === 'rescheduled') {
       await cancelBookingAdminTask(

@@ -4,7 +4,7 @@
 
 ## Flujo canónico
 
-`Cuenta → perfil + entidad → Checkout Stripe → suscripción activa → correo de activación → reserva Cal.com → correo de preparación Holded → conexión Holded → reunión onboarding → cierre manual Admin → bienvenida Espacio de Cliente Responsable EXPERT → valoración`
+`Cuenta → perfil + entidad → Checkout Stripe → suscripción activa → correo de activación → reserva `/cita` → Google Calendar + Meet → correo de preparación Holded → conexión Holded → reunión onboarding → cierre manual Admin → bienvenida Espacio de Cliente Responsable EXPERT → valoración`
 
 ## Cliente
 
@@ -35,7 +35,7 @@
 
 - Todos los emails automáticos EXPERT se registran en `email_events`.
 - Los nuevos emails guardan también el HTML renderizado para que Comunicaciones 360 pueda mostrar el contenido completo.
-- Los emails incluyen metadata operacional (suscripción, entidad, caso, UID Cal.com o fase de onboarding cuando corresponde).
+- Los emails incluyen metadata operacional (suscripción, entidad, caso, identificador de reserva o fase de onboarding cuando corresponde).
 
 ## Facturas y pagos
 
@@ -44,7 +44,7 @@
 - Se muestran estado, total, saldo pendiente, fecha y enlaces Stripe/PDF cuando existen.
 - La consulta es solo lectura: no inserta, corrige ni sincroniza históricos financieros.
 
-## Cal.com
+## Reservas y compatibilidad legacy
 
 Webhook esperado:
 
@@ -56,7 +56,7 @@ Eventos:
 - `BOOKING_CANCELLED`
 - `BOOKING_RESCHEDULED`
 
-La firma debe usar el mismo `CAL_WEBHOOK_SECRET` configurado en producción. Si Cal.com no entrega correctamente el webhook, la cita puede existir en Google Calendar pero no en `appointments`, y el cierre del onboarding permanecerá bloqueado hasta corregir la integración o realizar un backfill controlado.
+El flujo activo usa `/cita` y Google Calendar/Meet. El webhook del proveedor anterior se conserva únicamente para reservas históricas; si un evento histórico no se sincroniza con `appointments`, debe reconciliarse de forma controlada.
 
 ## Reseñas
 

@@ -81,7 +81,7 @@ Cuando un dato pueda compartirse como estructura o constante, debe compartirse. 
 - Para casos variables, usar solicitud/revisión y cotización admin personalizada.
 - Mantener tono profesional, concreto y orientado a decisión.
 - Mantener enlaces a fuentes oficiales, blog y base de conocimientos cuando existan.
-- Usar Cal.com para reuniones. No usar naming anterior en páginas nuevas.
+- Usar `/cita` con Google Calendar/Meet para reuniones.
 - Respetar la arquitectura de **marca blanca**: no exponer en páginas, metadatos, KIA, emails, campañas, FAQ ni piezas sociales el nombre del mayorista, intermediario o proveedor operativo que EXPERT utilice internamente. Solo se identifica al prestador/issuer final cuando sea necesario para explicar el producto al cliente (por ejemplo, Camerfirma en certificados Camerfirma).
 - No inventar testimonios, estrellas ni contadores. Las valoraciones públicas proceden exclusivamente del flujo real de cierre de expediente y moderación.
 
@@ -412,7 +412,7 @@ No debe prometer:
 - resolución de dudas complejas;
 - preparación documental.
 
-La herramienta oficial de reservas es Cal.com.
+La herramienta oficial de reservas es el flujo nativo `/cita` conectado a Google Calendar/Meet.
 
 ## Regla sobre CTAs y landings específicas
 
@@ -580,7 +580,7 @@ const selfGuidedHref = `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&
 - [ ] Se ha añadido `notIncluded` y `reviewBeforeHiring` si el trámite tiene riesgos.
 - [ ] Hay CTA de caso complejo.
 - [ ] Hay CTA de formación one to one.
-- [ ] Hay CTA de reunión gratuita con Cal.com.
+- [ ] Hay CTA de reunión gratuita con `/cita` y Google Calendar/Meet.
 - [ ] El formulario de presupuesto conserva `servicio`, `tipo`, `origen` y `modalidad` cuando correspondan.
 - [ ] Hay fuentes oficiales cuando procede.
 - [ ] Hay al menos 3 artículos de blog relacionados.

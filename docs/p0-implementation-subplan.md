@@ -192,8 +192,8 @@ Implementacion propuesta:
 
 - Anadir `HOLDED_API_KEY=` a `.env.example`.
 - Anadir variables opcionales:
-  - `NEXT_PUBLIC_CAL_ONBOARDING_LINK=`
-  - `NEXT_PUBLIC_CAL_FORMACION_LINK=`
+  - `NEXT_PUBLIC_GOOGLE_BOOKING_ONBOARDING_URL=`
+  - `NEXT_PUBLIC_GOOGLE_BOOKING_FORMACION_URL=`
 - Actualizar README:
   - Holded como sincronizacion financiera externa.
   - P0 como prioridad actual.

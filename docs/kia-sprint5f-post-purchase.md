@@ -82,7 +82,7 @@ No se añade una llamada LLM, tool ni endpoint.
 - sin cambios de producción;
 - sin cambios Stripe;
 - sin cambios de estado de suscripción;
-- sin cambios de citas/Cal.com;
+- sin cambios de citas ni de la compatibilidad legacy de reservas;
 - sin cambios de permisos, secretos ni conexión Holded;
 - sin acciones automáticas;
 - sin inferencias desde texto libre.

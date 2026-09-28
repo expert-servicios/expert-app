@@ -557,20 +557,31 @@ export async function POST(request: NextRequest) {
     let adminTaskLeadId: string | null = null;
 
     if (!adminTaskClientId) {
-      const resolvedBookingIdentity = await resolveBookingIdentityByEmail(admin, bookingEmail);
+      const resolvedBookingIdentity = await resolveBookingIdentityByEmail(admin, bookingEmail).catch((identityError) => {
+        console.error('[booking] identity enrichment failed:', identityError);
+        return null;
+      });
       if (resolvedBookingIdentity) {
         adminTaskClientId = resolvedBookingIdentity.clientId;
         adminTaskCompanyId = resolvedBookingIdentity.companyId;
       }
     }
     if (!adminTaskClientId) {
-      const { data: leadMatch } = await admin
+      const escapedLeadEmail = [...bookingEmail]
+        .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\\\${char}` : char))
+        .join('');
+      const { data: leadMatches, error: leadLookupError } = await admin
         .from('leads')
         .select('id')
-        .eq('email', bookingEmail)
-        .limit(1)
-        .maybeSingle();
-      adminTaskLeadId = leadMatch?.id ?? null;
+        .ilike('email', escapedLeadEmail)
+        .limit(2);
+      if (leadLookupError) {
+        console.error('[booking] lead enrichment failed:', leadLookupError);
+      } else if ((leadMatches ?? []).length === 1) {
+        adminTaskLeadId = leadMatches![0].id;
+      } else if ((leadMatches ?? []).length > 1) {
+        console.warn('[booking] lead enrichment ambiguous:', bookingEmail);
+      }
     }
 
     if (rescheduledAppointment) {

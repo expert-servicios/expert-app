@@ -146,6 +146,7 @@ export interface CalendarEventInput {
   // Optional fields for timed events (e.g. citas)
   startTime?: string;        // HH:MM (24h), makes it a timed event instead of all-day
   endTime?: string;          // HH:MM (24h), defaults to startTime + 60 min
+  endDate?: string;           // YYYY-MM-DD when a timed event crosses midnight
   timezone?: string;         // IANA tz, defaults to 'Europe/Madrid'
   reminderDaysBefore?: number[];
   reminderMinutesBefore?: number[]; // Used for timed events instead of day-based
@@ -162,7 +163,7 @@ function buildEventResource(input: CalendarEventInput) {
     const startDt = `${input.date}T${input.startTime}:00`;
     let endDt: string;
     if (input.endTime) {
-      endDt = `${input.date}T${input.endTime}:00`;
+      endDt = `${input.endDate ?? input.date}T${input.endTime}:00`;
     } else {
       // default +60 min
       const [h, m] = input.startTime.split(':').map(Number);
@@ -279,17 +280,25 @@ export async function listCalendarBusyWindowsSA(
   const windows = await Promise.all(
     bookingBusyCalendarIds().map(async (calendarId) => {
       try {
-        const { data } = await cal.events.list({
-          calendarId,
-          timeMin,
-          timeMax,
-          singleEvents: true,
-          orderBy: 'startTime',
-          showDeleted: false,
-          maxResults: 2500,
-        });
+        const items: BusyEvent[] = [];
+        let pageToken: string | undefined;
 
-        return ((data.items ?? []) as BusyEvent[])
+        do {
+          const { data } = await cal.events.list({
+            calendarId,
+            timeMin,
+            timeMax,
+            singleEvents: true,
+            orderBy: 'startTime',
+            showDeleted: false,
+            maxResults: 2500,
+            pageToken,
+          });
+          items.push(...((data.items ?? []) as BusyEvent[]));
+          pageToken = data.nextPageToken ?? undefined;
+        } while (pageToken);
+
+        return items
           .filter((event) => event.status !== 'cancelled' && event.transparency !== 'transparent')
           .map((event) => ({
             start: event.start?.dateTime ?? event.start?.date ?? '',

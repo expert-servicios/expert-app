@@ -109,6 +109,11 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
   const groups = useMemo(() => groupByDate(availability?.slots ?? []), [availability?.slots]);
   const pageCount = Math.max(1, Math.ceil(groups.length / daysPerPage));
   const safeDayPage = Math.min(dayPage, pageCount - 1);
+
+  useEffect(() => {
+    setDayPage((current) => Math.min(current, pageCount - 1));
+  }, [pageCount]);
+
   const visibleGroups = groups.slice(
     safeDayPage * daysPerPage,
     safeDayPage * daysPerPage + daysPerPage

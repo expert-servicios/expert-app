@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
 
-describe('Cal.com webhook signature compatibility', () => {
+describe('legacy booking webhook signature compatibility', () => {
   const route = source('app/api/webhooks/cal/route.ts');
 
   it('accepts the current raw HMAC digest and the legacy sha256= prefixed form', () => {
