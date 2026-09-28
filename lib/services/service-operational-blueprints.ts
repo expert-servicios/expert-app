@@ -787,7 +787,7 @@ for (const blueprint of blueprints) {
   for (const alias of blueprint.aliases ?? []) bySlug.set(alias, blueprint);
 }
 
-export const BATCH1_OPERATIONAL_BLUEPRINTS = blueprints;
+export const BATCH1_OPERATIONAL_BLUEPRINTS = blueprints.filter((blueprint) => blueprint.slug !== 'no-residentes');
 
 export function getServiceOperationalBlueprint(slug: string): ServiceOperationalBlueprint | null {
   return bySlug.get(slug) ?? null;
