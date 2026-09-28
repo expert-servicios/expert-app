@@ -49,7 +49,7 @@ describe('booking admin task lifecycle', () => {
     expect(helper).toContain("task_kind: 'booking_meeting'");
   });
 
-  it('keeps Admin edits and Cal.com fallback synchronized', () => {
+  it('keeps Admin edits and legacy historical webhook synchronized', () => {
     expect(adminAppointments).toContain('ensureBookingAdminTask({');
     expect(adminAppointments).toContain('cancelBookingAdminTask(');
     expect(calWebhook).toContain('ensureBookingAdminTask({');
