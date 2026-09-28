@@ -160,13 +160,18 @@ export async function GET(
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
-    const [caseResult, docsResult] = await Promise.all([
+    const [caseResult, docsResult, notesResult] = await Promise.all([
       admin
         .from('cases')
         .select('id,category,service,service_id,state,status,priority,next_action,due_date,order_id,opened_at,closed_at,client_id,admin_note,docs_checklist,checklist_json,assigned_to')
         .eq('id', id)
         .single(),
-      admin.from('documents').select('id,original_name,state,created_at,file_path,uploaded_by_role').eq('case_id', id).order('created_at', { ascending: false })
+      admin.from('documents').select('id,original_name,state,created_at,file_path,uploaded_by_role').eq('case_id', id).order('created_at', { ascending: false }),
+      admin
+        .from('case_document_notes')
+        .select('id,item_key,item_label,comment,updated_at,updated_by')
+        .eq('case_id', id)
+        .order('updated_at', { ascending: false }),
     ]);
 
     if (caseResult.error || !caseResult.data) {
@@ -210,7 +215,8 @@ export async function GET(
         },
         assignee: assigneeProfile.data ?? null,
       },
-      documents: docs
+      documents: docs,
+      documentNotes: notesResult.data ?? [],
     });
   } catch (err) {
     console.error('[admin/cases/[id] GET]', err);

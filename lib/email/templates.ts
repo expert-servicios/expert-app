@@ -107,7 +107,10 @@ export function welcomeEmail(name: string) {
 }
 
 // ── 1. Quote received (client) ───────────────────────────────────────────────
-export function quoteReceivedClient(name: string, services: string) {
+export function quoteReceivedClient(name: string, services: string, claimToken?: string) {
+  const claimUrl = claimToken
+    ? `${BRAND.appUrl}/api/quotes/claim?token=${encodeURIComponent(claimToken)}`
+    : `${BRAND.appUrl}/dashboard/presupuestos`;
   return {
     subject: 'Hemos recibido tu solicitud de presupuesto — EXPERT',
     html: base('Solicitud recibida', `
@@ -115,28 +118,56 @@ export function quoteReceivedClient(name: string, services: string) {
       ${para(`Hola <strong>${escapeHtml(name)}</strong>,`)}
       ${para('Hemos recibido tu solicitud de presupuesto y la estamos revisando. Nos pondremos en contacto contigo en un plazo de 24 horas hábiles con una propuesta personalizada.')}
       ${table(detail('Servicios solicitados', escapeHtml(services)))}
-      ${para('Si tienes alguna pregunta urgente, puedes escribirnos directamente.')}
-      ${btn('Ver mi área privada', `${BRAND.appUrl}/dashboard`)}
+      ${para('Este enlace vincula de forma segura el presupuesto con tu cuenta EXPERT. Si todavía no has iniciado sesión, te pediremos acceder con el mismo email que recibió este mensaje.')}
+      ${btn('Acceder a mi presupuesto', claimUrl)}
     `)
   };
 }
 
 // ── 2. Quote received (admin) ────────────────────────────────────────────────
-export function quoteReceivedAdmin(name: string, email: string, services: string, description: string) {
+export function quoteReceivedAdmin(name: string, email: string, services: string, description: string, origin: string) {
   const safeName  = escapeHtml(name);
   const safeEmail = escapeHtml(email);
   return {
     subject: `Nueva solicitud de presupuesto de ${safeName}`,
     html: base('Nueva solicitud', `
       ${heading('Nueva solicitud de presupuesto')}
-      ${para('Se ha recibida una nueva solicitud desde el sitio web.')}
+      ${para('Se ha recibido una nueva solicitud desde el sitio web.')}
       ${table(
         detail('Nombre', safeName),
         detail('Email', `<a href="mailto:${safeEmail}" style="color:#c88b25;">${safeEmail}</a>`),
         detail('Servicios', escapeHtml(services)),
+        detail('Origen', escapeHtml(origin)),
         detail('Descripción', escapeHtml(description) || '—')
       )}
       ${btn('Gestionar en el panel', `${BRAND.appUrl}/admin/presupuestos`)}
+    `)
+  };
+}
+
+export function freeConsultationReceivedAdmin(input: {
+  name: string;
+  email: string;
+  phone?: string | null;
+  service?: string | null;
+  question: string;
+  origin: string;
+  leadId: string;
+}) {
+  const safeEmail = escapeHtml(input.email);
+  return {
+    subject: `Nueva consulta gratuita de ${escapeHtml(input.name)}`,
+    html: base('Nueva consulta gratuita', `
+      ${heading('Nueva consulta gratuita')}
+      ${table(
+        detail('Nombre', escapeHtml(input.name)),
+        detail('Email', `<a href="mailto:${safeEmail}" style="color:#c88b25;">${safeEmail}</a>`),
+        detail('Teléfono', escapeHtml(input.phone ?? '—')),
+        detail('Servicio', escapeHtml(input.service ?? 'Consulta general')),
+        detail('Origen', escapeHtml(input.origin)),
+        detail('Consulta', escapeHtml(input.question))
+      )}
+      ${btn('Ver lead en el panel', `${BRAND.appUrl}/admin/leads?focus=${encodeURIComponent(input.leadId)}`)}
     `)
   };
 }
@@ -321,10 +352,18 @@ export function academyCertificationPaidAdmin(name: string, email: string, progr
 }
 
 // ── 3. Quote responded — admin ha fijado importe ─────────────────────────────
-export function quoteResponded(name: string, amount: number, expiresAt: string | null) {
+export function quoteResponded(
+  name: string,
+  amount: number,
+  expiresAt: string | null,
+  claimToken?: string
+) {
   const expiry = expiresAt
     ? new Date(expiresAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
     : 'próximamente';
+  const accessUrl = claimToken
+    ? `${BRAND.appUrl}/api/quotes/claim?token=${encodeURIComponent(claimToken)}`
+    : `${BRAND.appUrl}/dashboard/presupuestos`;
   return {
     subject: 'Tu presupuesto personalizado está listo — EXPERT',
     html: base('Presupuesto listo', `
@@ -336,7 +375,7 @@ export function quoteResponded(name: string, amount: number, expiresAt: string |
         detail('Válido hasta', expiry)
       )}
       ${para('<em>Si tienes alguna duda sobre la propuesta, responde a este email y lo aclaramos.</em>')}
-      ${btn('Revisar y pagar', `${BRAND.appUrl}/dashboard/presupuestos`)}
+      ${btn('Revisar y pagar', accessUrl)}
     `)
   };
 }
@@ -395,7 +434,13 @@ export function servicePaymentConfirmed(name: string, amount: number, service: s
   };
 }
 
-export function servicePaymentConfirmedAdmin(name: string, email: string, amount: number, service: string) {
+export function servicePaymentConfirmedAdmin(
+  name: string,
+  email: string,
+  amount: number,
+  service: string,
+  origin?: string | null,
+) {
   const safeName = escapeHtml(name);
   return {
     subject: `Nuevo pago — ${safeName} (€${amount.toFixed(2)})`,
@@ -404,7 +449,8 @@ export function servicePaymentConfirmedAdmin(name: string, email: string, amount
       ${para(`<strong>${safeName}</strong> (${escapeHtml(email)}) ha completado un pago en la web.`)}
       ${table(
         detail('Servicio', escapeHtml(service)),
-        detail('Importe', `€${amount.toFixed(2)}`)
+        detail('Importe', `€${amount.toFixed(2)}`),
+        origin ? detail('Origen', escapeHtml(origin)) : ''
       )}
       ${btn('Ver en el panel', `${BRAND.appUrl}/admin/pagos`)}
     `)

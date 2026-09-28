@@ -42,14 +42,15 @@ export function appendKiaSignature(html: string, metadata?: Record<string, unkno
         <td valign="top" style="font-family:Arial,sans-serif;color:#07111d;">
           <div style="font-size:15px;font-weight:700;line-height:1.35;">KIA · EXPERT</div>
           <div style="margin-top:4px;font-size:13px;line-height:1.55;color:#465567;">${intro}</div>
-          <table data-kia-contact-cta="true" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:12px;border-collapse:collapse;">
+          <div style="margin-top:12px;font-size:12px;font-weight:700;color:#07111d;">${ctaLabel}</div>
+          <table data-kia-contact-cta="true" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:8px;border-collapse:collapse;">
             <tr>
-              <td valign="middle" style="padding:0 8px 7px 0;font-size:12px;font-weight:700;color:#07111d;white-space:nowrap;">${ctaLabel}</td>
-              <td valign="middle" style="padding:0 0 7px 0;font-size:12px;white-space:nowrap;">
-                <a href="${chatHref}" style="color:#07111d;text-decoration:none;font-weight:700;">${chatLabel}</a>
-                <span style="color:#b8a98f;padding:0 7px;">·</span>
-                <a href="${telegramHref}" style="color:#07111d;text-decoration:none;font-weight:700;white-space:nowrap;">
-                  <img src="${telegramIcon}" width="16" height="16" alt="Telegram" style="display:inline-block;width:16px;height:16px;vertical-align:-3px;margin-right:4px;border:0;">${telegramLabel}
+              <td valign="middle" style="padding:0 8px 8px 0;">
+                <a href="${chatHref}" style="display:inline-block;min-width:92px;padding:9px 14px;background:#07111d;color:#ffffff;text-decoration:none;font-size:12px;font-weight:700;text-align:center;border-radius:6px;">${chatLabel}</a>
+              </td>
+              <td valign="middle" style="padding:0 0 8px 0;">
+                <a href="${telegramHref}" style="display:inline-block;min-width:112px;padding:9px 14px;border:1px solid #c88b25;color:#07111d;text-decoration:none;font-size:12px;font-weight:700;text-align:center;border-radius:6px;white-space:nowrap;">
+                  <img src="${telegramIcon}" width="16" height="16" alt="" style="display:inline-block;width:16px;height:16px;vertical-align:-3px;margin-right:5px;border:0;">${telegramLabel}
                 </a>
               </td>
             </tr>

@@ -73,6 +73,16 @@ export type Service = {
   duration?: string;
   officialFee?: string;
   servicePriceDetail?: string;
+  priceCalculator?: 'irnr' | 'irpf' | 'patrimonio';
+  unitPriceCalculator?: {
+    unitPrice: number;
+    unitLabel: string;
+    unitLabelPlural?: string;
+    minUnits?: number;
+    defaultUnits?: number;
+    maxUnits?: number;
+    note?: string;
+  };
   stripePriceId?: string;
   checkoutLabel?: string;
   checkoutLegal?: string;
@@ -99,8 +109,9 @@ export const services: Service[] = [
     shortDescription: 'Preparación y presentación del IRPF con revisión fiscal completa.',
     description:
       'Gestionamos tu declaración de la renta de principio a fin: revisamos tu situación fiscal, identificamos deducciones aplicables, preparamos el borrador, lo validamos contigo y lo presentamos ante la AEAT. Servicio para residentes, trabajadores por cuenta ajena, autónomos y propietarios de inmuebles.',
-    price: '150 € + IVA',
-    stripePriceId: 'price_1TXMmGLeYwwgvux4wIhcfhEF',
+    price: 'Precio variable',
+    priceCalculator: 'irpf',
+    servicePriceDetail: 'Calculadora: 120 € + IVA declaración individual; 150 € + IVA declaración conjunta; 200 € + IVA cuando incluye alquileres o rendimientos de capital. Los supuestos que requieran una revisión adicional se derivan a presupuesto antes de contratar.',
     duration: '3–5 días hábiles',
     includes: [
       'Revisión completa de datos fiscales',
@@ -144,7 +155,8 @@ export const services: Service[] = [
     shortDescription: 'Declaraciones fiscales para personas no residentes con bienes o rentas en España.',
     description:
       'Si tienes inmuebles, inversiones o percibes rentas de fuente española sin ser residente fiscal, debes presentar el Impuesto sobre la Renta de No Residentes (IRNR). Gestionamos los modelos 210, 211 y 213 adaptados a tu situación.',
-    price: 'Desde 80 € + IVA / modelo',
+    price: 'Precio variable',
+    priceCalculator: 'irnr',
     duration: '3–5 días hábiles',
     includes: [
       'Análisis de tu situación como no residente',
@@ -153,9 +165,43 @@ export const services: Service[] = [
       'Presentación telemática',
       'Asesoramiento sobre convenios de doble imposición'
     ],
+    servicePriceDetail: 'Para inmuebles en España: 80 € + IVA la primera unidad declarativa (inmueble × titular no residente) y 30 € + IVA cada unidad adicional del mismo ejercicio. El uso del inmueble —a disposición, alquilado o vendido— no cambia esta tarifa por unidad; después recogemos los periodos, ingresos y datos de la operación necesarios para preparar correctamente la declaración.',
     faqs: [
       { q: '¿Cuándo debo presentar el Modelo 210?', a: 'Depende del tipo de renta y de la fecha de devengo. La Orden HAC/623/2026 modificó los plazos y estableció una transición específica para 2026, por lo que revisamos el periodo oficial aplicable antes de presentar.' },
       { q: '¿Necesito representante fiscal?', a: 'No por el mero hecho de ser no residente o tener un inmueble en España. La obligación existe en determinados supuestos previstos por la normativa; revisamos tu caso antes de indicarlo como requisito.' }
+    ]
+  },
+  {
+    slug: 'impuesto-patrimonio',
+    categoria: 'declaraciones-impuestos',
+    name: 'Impuesto sobre el Patrimonio',
+    shortDescription: 'Revisión de obligación y presentación del Modelo 714 con cálculo por titular.',
+    description:
+      'Revisamos si existe obligación de declarar el Impuesto sobre el Patrimonio, clasificamos y valoramos los bienes y derechos y preparamos el Modelo 714. La calculadora aplica la tarifa estándar por titular y deriva a revisión previa los patrimonios con elementos que requieren una valoración especial.',
+    metaTitle: 'Impuesto sobre el Patrimonio 2026 · Modelo 714 | EXPERT',
+    metaDescription: 'Calcula el precio de tu declaración de Patrimonio, revisa si estás obligado y solicita online la preparación y presentación del Modelo 714.',
+    price: 'Precio variable',
+    priceCalculator: 'patrimonio',
+    servicePriceDetail: '250 € + IVA por declaración estándar y titular. Si existen sociedades no cotizadas, usufructo o nuda propiedad, bienes en el extranjero u otras valoraciones especiales, revisamos el caso antes de cerrar el precio.',
+    duration: '5–10 días hábiles',
+    includes: [
+      'Revisión de la obligación de declarar',
+      'Clasificación y revisión de bienes y derechos',
+      'Aplicación del mínimo exento y normativa autonómica correspondiente',
+      'Preparación y presentación del Modelo 714',
+      'Justificante de presentación'
+    ],
+    requiredDocs: [
+      'DNI/NIE y residencia fiscal',
+      'Información de inmuebles y valores catastrales',
+      'Saldos bancarios y cartera de valores',
+      'Participaciones societarias, seguros y otros derechos cuando proceda',
+      'Deudas deducibles y documentación de valoración cuando sea necesaria'
+    ],
+    faqs: [
+      { q: '¿El precio es fijo?', a: 'No. La ficha incorpora una calculadora por número de declaraciones estándar. Si la composición del patrimonio requiere una valoración especial, el precio se revisa antes de contratar.' },
+      { q: '¿Cuándo se presenta?', a: 'El plazo coincide con la campaña anual de Renta y Patrimonio. Para Patrimonio 2025 fue del 8 de abril al 30 de junio de 2026, con domiciliación hasta el 25 de junio cuando resultaba a ingresar.' },
+      { q: '¿El mínimo exento es igual en toda España?', a: 'No. Puede variar por comunidad autónoma y debe revisarse el ejercicio y la normativa territorial aplicable antes de concluir si existe obligación.' }
     ]
   },
   {
@@ -1071,8 +1117,14 @@ export const services: Service[] = [
     shortDescription: 'Obtención del NIF para socios o administradores extranjeros sin residencia en España.',
     description:
       'Tramitamos el Número de Identificación Fiscal (NIF) para socios, administradores o apoderados extranjeros que van a participar en una sociedad española y no disponen de NIE. Necesario para poder constituir la sociedad, firmar ante notario y figurar en el Registro Mercantil.',
-    price: '60 € + IVA / persona',
-    servicePriceDetail: 'Precio por cada socio o administrador que necesite NIF.',
+    price: 'Precio variable',
+    unitPriceCalculator: {
+      unitPrice: 60,
+      unitLabel: 'persona',
+      unitLabelPlural: 'personas',
+      note: 'Una unidad por cada socio o administrador extranjero que necesite NIF.'
+    },
+    servicePriceDetail: '60 € + IVA por cada socio o administrador que necesite NIF.',
     duration: '5–10 días hábiles',
     includes: [
       'Cumplimentación del Modelo 030 / EX-15',
@@ -1706,7 +1758,15 @@ export const services: Service[] = [
       'Migramos la información laboral vigente de cada empleado a Holded, configuramos contrato, jornada, categoría, salario, pagas e IRPF y comprobamos el resultado mediante una nómina de prueba. Incluye informe de incidencias y entrega documentada.',
     metaTitle: 'Migración laboral a Holded desde 50 € por empleado | EXPERT',
     metaDescription: 'Migramos y validamos los datos laborales de tu plantilla en Holded por 50 € + IVA por empleado. Revisión previa, configuración y nómina de prueba.',
-    price: '50 € + IVA / empleado',
+    price: 'Precio variable',
+    unitPriceCalculator: {
+      unitPrice: 50,
+      unitLabel: 'empleado',
+      unitLabelPlural: 'empleados',
+      minUnits: 5,
+      defaultUnits: 5,
+      note: 'Pedido mínimo de 5 empleados. Regularizaciones históricas o incidencias extraordinarias se revisan aparte.'
+    },
     duration: '3–5 días hábiles para hasta 15 empleados',
     includes: [
       'Revisión documental previa',
@@ -1851,7 +1911,15 @@ export const services: Service[] = [
     shortDescription: 'Aprende a gestionar tu contabilidad, facturación y CRM en Holded.',
     description:
       'Como Holded Solution Partner, impartimos formación específica en el uso de Holded: módulos de facturación, contabilidad, inventario, proyectos y CRM. Sesiones de 2 horas adaptadas a tu nivel y caso de uso real. Precio: 180 € por bloque.',
-    price: '180 € + IVA / bloque de 2 h',
+    price: 'Precio variable',
+    unitPriceCalculator: {
+      unitPrice: 180,
+      unitLabel: 'bloque de 2 h',
+      unitLabelPlural: 'bloques de 2 h',
+      minUnits: 1,
+      defaultUnits: 1,
+      note: 'La calculadora estima el número de bloques. Si el alcance requiere preparación especial para un equipo, se revisa antes de confirmar.'
+    },
     duration: '2 horas por bloque',
     includes: [
       'Sesión práctica sobre tu propio entorno Holded',

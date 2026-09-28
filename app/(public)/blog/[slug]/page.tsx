@@ -1,10 +1,12 @@
 import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, Clock, ArrowRight, Tag } from 'lucide-react';
+import { ArrowLeft, Clock, Tag } from 'lucide-react';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
+import { ArticleIntentCTA } from '@/components/content/ArticleIntentCTA';
 import { blogArticles, getArticle } from '@/lib/utils/blog';
 import { getDocRedirectTarget } from '@/lib/utils/docs';
+import { services } from '@/lib/utils/catalog';
 
 export function generateStaticParams() {
   return blogArticles.map((a) => ({ slug: a.slug }));
@@ -55,50 +57,6 @@ export async function generateMetadata({
   };
 }
 
-const categoryCta: Record<string, { text: string; ctaLabel: string; ctaHref: string }> = {
-  Fiscalidad: {
-    text: 'En EXPERT revisamos situaciones fiscales como esta a diario. Reserva una cita gratuita y te decimos exactamente qué necesitas.',
-    ctaLabel: 'Reservar cita gratuita',
-    ctaHref: '/cita?tipo=consulta-inicial',
-  },
-  Extranjería: {
-    text: 'Preparamos y acompañamos expedientes de extranjería y nacionalidad cada semana. Reserva una cita gratuita para revisar tu caso.',
-    ctaLabel: 'Reservar cita gratuita',
-    ctaHref: '/cita?tipo=consulta-inicial',
-  },
-  Empresas: {
-    text: '¿Quieres que Kia y nuestro equipo lleven la gestión de tu empresa? Descubre qué plan encaja contigo.',
-    ctaLabel: 'Ver planes',
-    ctaHref: '/planes',
-  },
-  Holded: {
-    text: '¿Quieres que Kia vigile tu contabilidad en Holded y nuestro equipo la revise? Descubre cómo funcionan los planes.',
-    ctaLabel: 'Ver planes',
-    ctaHref: '/planes',
-  },
-  Trámites: {
-    text: 'En EXPERT gestionamos este tipo de trámites a diario. Cuéntanos tu situación y te orientamos sin compromiso.',
-    ctaLabel: 'Solicitar presupuesto',
-    ctaHref: '/solicitar-presupuesto',
-  },
-  'Protección de datos': {
-    text: '¿Tienes dudas sobre RGPD, web, proveedores o una brecha? Reserva una primera consulta gratuita de 15 minutos para situar el caso.',
-    ctaLabel: 'Consulta gratuita · 15 min',
-    ctaHref: '/cita?tipo=consulta-inicial',
-  },
-  Formación: {
-    text: '¿Quieres que tu equipo entienda los números, no solo los introduzca? Descubre los programas de EXPERT Business Academy.',
-    ctaLabel: 'Ver programas de formación',
-    ctaHref: '/academy',
-  },
-};
-
-const defaultCta = {
-  text: 'En EXPERT gestionamos este tipo de casos a diario. Cuéntanos tu situación y te orientamos sin compromiso.',
-  ctaLabel: 'Solicitar presupuesto',
-  ctaHref: '/solicitar-presupuesto',
-};
-
 export default async function BlogArticlePage({
   params
 }: {
@@ -112,7 +70,9 @@ export default async function BlogArticlePage({
   if (!article) return notFound();
 
   const related = blogArticles.filter((a) => a.slug !== slug && a.category === article.category).slice(0, 2);
-  const cta = categoryCta[article.category] ?? defaultCta;
+  const primaryService = article.relatedServiceSlugs?.[0]
+    ? services.find((service) => service.slug === article.relatedServiceSlugs?.[0]) ?? null
+    : null;
   const canonicalUrl = `https://expertconsulting.es/blog/${article.slug}`;
 
   // Parse "13 may 2026" → "2026-05-13"
@@ -206,28 +166,19 @@ export default async function BlogArticlePage({
               <Section key={heading} heading={heading} content={content} />
             ))}
 
-            {/* CTA contextual */}
-            <div className="mt-8 border border-[#D4A017]/30 bg-white p-6">
-              <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">¿Te ha sido útil este artículo?</p>
-              <p className="mt-2 text-sm leading-6 text-[#23364D]">
-                {cta.text}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <Link
-                  href={cta.ctaHref}
-                  className="inline-flex items-center gap-2 bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#F2C14E]"
-                >
-                  {cta.ctaLabel}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-                <a
-                  href="https://wa.me/34669045528"
-                  className="inline-flex items-center gap-2 border border-[#D4A017]/50 px-5 py-2.5 text-sm font-semibold text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
-                >
-                  WhatsApp
-                </a>
-              </div>
-            </div>
+            <ArticleIntentCTA
+              sourceKind="blog"
+              sourceSlug={article.slug}
+              relatedServiceSlugs={article.relatedServiceSlugs}
+              service={primaryService ? {
+                slug: primaryService.slug,
+                categoria: primaryService.categoria,
+                name: primaryService.name,
+                hasCheckout: Boolean(primaryService.stripePriceId),
+                priceCalculator: primaryService.priceCalculator,
+                unitPriceCalculator: primaryService.unitPriceCalculator,
+              } : null}
+            />
           </article>
 
           {/* Sidebar */}

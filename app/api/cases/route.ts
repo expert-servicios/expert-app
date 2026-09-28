@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     const { data: cases, error: fetchError } = await supabase
       .from('cases')
-      .select('id,category,service,state,status,opened_at,closed_at,quote_id,docs_checklist,checklist_json')
+      .select('id,category,service,service_id,state,status,opened_at,closed_at,quote_id,docs_checklist,checklist_json')
       .order('opened_at', { ascending: false });
 
     if (fetchError) {

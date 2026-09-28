@@ -33,6 +33,8 @@ import {
 import { verifyPrivateBookingAuthorization } from '@/lib/booking/private-booking-authorization';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkRateLimit, checkSpam, getClientIp, releaseRateLimit } from '@/lib/utils/spam-guard';
+import { notifyAdmins } from '@/lib/integrations/push';
+import { describeContentOrigin, normalizeContentOrigin } from '@/lib/marketing/content-origin';
 import {
   BOOKING_CLOSE_HOUR,
   BOOKING_MAX_DAYS,
@@ -68,6 +70,7 @@ const schema = z.object({
   booking_auth: z.string().max(4096).optional(),
   company_id: z.string().uuid().optional(),
   manage_token: z.string().max(4096).optional(),
+  origin: z.string().trim().max(240).optional(),
 });
 
 async function authenticatedUser(request: NextRequest) {
@@ -270,6 +273,8 @@ export async function POST(request: NextRequest) {
     if (!service) {
       return NextResponse.json({ error: 'Tipo de cita no válido.' }, { status: 400 });
     }
+    const contentOrigin = normalizeContentOrigin(input.origin, 'form:cita');
+    const contentOriginLabel = describeContentOrigin(contentOrigin);
 
     const user = await authenticatedUser(request);
     const signedAuthorization =
@@ -492,6 +497,7 @@ export async function POST(request: NextRequest) {
         appointment_date: start.toISOString(),
         appointment_end: end.toISOString(),
         notes: input.notes ?? null,
+        admin_notes: `Origen CTA/contenido: ${contentOrigin}`,
         status: 'pending_calendar',
         preferred_date: localDate,
         preferred_time: localTime,
@@ -525,6 +531,7 @@ export async function POST(request: NextRequest) {
         `Cliente: ${input.name} (${bookingEmail})`,
         `Teléfono: ${input.phone}`,
         input.notes ? `Notas: ${input.notes}` : '',
+        `Origen CTA/contenido: ${contentOrigin}`,
         appointmentId ? `EXPERT appointment: ${appointmentId}` : '',
       ].filter(Boolean).join('\n'),
       start: start.toISOString(),
@@ -766,6 +773,7 @@ export async function POST(request: NextRequest) {
     const safeTime = escapeEmailHtml(localTime);
     const safeMeetingUrl = meeting.meetingUrl ? escapeEmailHtml(meeting.meetingUrl) : null;
     const safeNotes = input.notes ? escapeEmailHtml(input.notes) : null;
+    const safeOrigin = escapeEmailHtml(contentOriginLabel);
     const adminSubject = `Nueva cita: ${service.label} — ${input.name}`;
     const adminHtml = [
       '<h2>Nueva cita confirmada en EXPERT</h2>',
@@ -775,6 +783,7 @@ export async function POST(request: NextRequest) {
       `<p><strong>Servicio:</strong> ${safeService}</p>`,
       `<p><strong>Fecha:</strong> ${safeDate}</p>`,
       `<p><strong>Hora:</strong> ${safeTime}</p>`,
+      `<p><strong>Origen:</strong> ${safeOrigin}</p>`,
       safeMeetingUrl
         ? `<p><strong>Google Meet:</strong> <a href="${safeMeetingUrl}">${safeMeetingUrl}</a></p>`
         : '',
@@ -796,6 +805,7 @@ export async function POST(request: NextRequest) {
             provider_event_id: meeting.eventId,
             booking_provider: meeting.bookingProvider,
             service_key: service.key,
+            content_origin: contentOrigin,
           },
           idempotencyKey: `booking/admin-confirmed/${appointmentId}/${adminEmail.toLowerCase()}`,
         })
@@ -807,6 +817,13 @@ export async function POST(request: NextRequest) {
         console.error('[booking] admin confirmation email failed on all transports:', result.reason);
       }
     }
+
+    notifyAdmins({
+      title: `Nueva cita: ${service.label}`,
+      body: `${input.name} · ${formattedDate} ${localTime} · ${contentOriginLabel}`.slice(0, 240),
+      url: '/admin/citas',
+      tag: `booking-${appointmentId}`,
+    }).catch(() => {});
 
     return NextResponse.json({
       ok: true,

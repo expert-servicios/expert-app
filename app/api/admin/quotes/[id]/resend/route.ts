@@ -4,6 +4,7 @@ import { sendEmail } from '@/lib/email/send';
 import { quoteWithPaymentLink } from '@/lib/email/templates';
 import { getRandomFunFact } from '@/lib/utils/fun-facts';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
+import { createQuoteClaimToken } from '@/lib/quotes/quote-claim-token';
 
 async function requireAdmin(request: NextRequest): Promise<string | null> {
   const supabase = createServerSupabaseClient(request);
@@ -27,7 +28,7 @@ export async function POST(
 
     const { data: quote, error } = await admin
       .from('quotes')
-      .select('id,title,description,amount_eur,expires_at,client_id,lead_id,status,company_id')
+      .select('id,title,description,amount_eur,expires_at,client_id,lead_id,status,company_id,claim_email')
       .eq('id', id)
       .single();
 
@@ -53,6 +54,10 @@ export async function POST(
       recipientName = profile?.full_name ?? recipientEmail?.split('@')[0] ?? 'Cliente';
     }
 
+    if (!recipientEmail && quote.claim_email) {
+      recipientEmail = quote.claim_email;
+    }
+
     if (!recipientEmail && quote.lead_id) {
       const { data: lead } = await admin.from('leads').select('email,name').eq('id', quote.lead_id).single();
       recipientEmail = lead?.email ?? null;
@@ -63,9 +68,23 @@ export async function POST(
       return NextResponse.json({ error: 'No se encontró email de destino para este presupuesto' }, { status: 422 });
     }
 
+    recipientEmail = recipientEmail.trim().toLowerCase();
+    if (!quote.client_id && !quote.claim_email) {
+      await admin
+        .from('quotes')
+        .update({ claim_email: recipientEmail })
+        .eq('id', quote.id)
+        .is('claim_email', null);
+    }
+
     const appUrl = getPublicAppUrl();
     const expiresAt = quote.expires_at ?? new Date(Date.now() + 14 * 86_400_000).toISOString();
-    const paymentUrl = `${appUrl}/dashboard/presupuestos`;
+    const claimToken = quote.client_id
+      ? null
+      : createQuoteClaimToken({ quoteId: quote.id, email: recipientEmail });
+    const paymentUrl = claimToken
+      ? `${appUrl}/api/quotes/claim?token=${encodeURIComponent(claimToken)}`
+      : `${appUrl}/dashboard/presupuestos`;
 
     const funFact = getRandomFunFact();
     const tpl = quoteWithPaymentLink(recipientName, Number(quote.amount_eur), quote.title, paymentUrl, expiresAt, funFact);

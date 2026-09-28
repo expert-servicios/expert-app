@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { X, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
-import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartDisbursements, resolveCartLocale, useCart } from '@/contexts/CartContext';
+import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartContentOrigins, collectCartDisbursements, resolveCartLocale, useCart } from '@/contexts/CartContext';
 import { QuickProfileGate } from '@/components/cart/QuickProfileGate';
 import { CompanyCheckoutGate } from '@/components/cart/CompanyCheckoutGate';
 import { getPublicServicePath } from '@/lib/i18n/service-routes';
@@ -56,6 +56,7 @@ export function CartSidebar() {
   const [disbursementMandateAccepted, setDisbursementMandateAccepted] = useState(false);
   const hasDisbursements = cartContainsDisbursements(items);
   const disbursements = collectCartDisbursements(items);
+  const contentOrigins = collectCartContentOrigins(items);
   const locale = items.length === 0 && pathname.startsWith('/ru/') ? 'ru' : resolveCartLocale(items);
   const t = COPY[locale];
   const loginNextPath = locale === 'ru' ? '/carrito?lang=ru' : '/carrito';
@@ -231,6 +232,7 @@ export function CartSidebar() {
             ) : needsProfile ? (
               <QuickProfileGate
                 priceIds={items.map(i => i.priceId)}
+                contentOrigins={contentOrigins}
                 disbursements={disbursements}
                 disbursementMandateAccepted={disbursementMandateAccepted}
                 locale={locale}

@@ -19,12 +19,14 @@ describe('case document workflow security', () => {
     expect(migration).toContain('revoke all on table public.case_document_notes from public, anon');
   });
 
-  it('allows null company attribution only for the explicit personal nationality service', () => {
+  it('allows null company attribution only for explicit personal services', () => {
     expect(documentsRoute).toContain(
-      "const PERSONAL_DOCUMENT_SERVICE_IDS = new Set(['nacionalidad-espanola-menor-nacido-en-espana'])",
+      "const PERSONAL_DOCUMENT_SERVICE_IDS = new Set(['nacionalidad-espanola-menor-nacido-en-espana', 'no-residentes'])",
     );
     expect(documentsRoute).toContain('const personalDocumentScope = Boolean(');
-    expect(documentsRoute).toMatch(/const companyId = personalDocumentScope\s*\?\s*null/);
+    expect(documentsRoute).toContain('const explicitCompanyId = caseData.company_id ?? null');
+    expect(documentsRoute).toContain('const companyId = explicitCompanyId');
+    expect(documentsRoute).toContain('personalDocumentScope');
     expect(documentsRoute).toContain("code: 'case_company_required'");
   });
 

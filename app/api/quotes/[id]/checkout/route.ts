@@ -19,7 +19,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const supabaseAdmin = getSupabaseAdmin();
     const { data: quote, error: quoteError } = await supabaseAdmin
       .from('quotes')
-      .select('amount_eur,title,description,status,client_id,company_id,expires_at,stripe_checkout_id')
+      .select('amount_eur,title,description,status,client_id,company_id,expires_at,stripe_checkout_id,service_slugs')
       .eq('id', id)
       .single();
 
@@ -106,6 +106,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       }, { status: 409 });
     }
 
+    const rawQuoteServiceSlugs: unknown[] = (quoteItems?.length ?? 0) > 0
+      ? quoteItems!.map((line) => line.service_slug)
+      : Array.isArray(quote.service_slugs) ? quote.service_slugs : [];
+    const quoteServiceSlugs = [...new Set(
+      rawQuoteServiceSlugs.filter(
+        (slug): slug is string => typeof slug === 'string' && slug.trim().length > 0
+      )
+    )];
+
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       client_reference_id: id,
@@ -113,9 +122,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         quote_id: id,
         product_type: 'presupuesto',
         ...(quote.company_id ? { company_id: quote.company_id } : {}),
-        ...((quoteItems?.length ?? 0) > 0 ? {
-          structured_quote: 'true',
-          service_slugs: quoteItems!.map((line) => line.service_slug).join(',').slice(0, 499),
+        ...((quoteItems?.length ?? 0) > 0 ? { structured_quote: 'true' } : {}),
+        ...(quoteServiceSlugs.length > 0 ? {
+          service_slugs: quoteServiceSlugs.join(',').slice(0, 499),
         } : {}),
       },
       automatic_tax: { enabled: true },

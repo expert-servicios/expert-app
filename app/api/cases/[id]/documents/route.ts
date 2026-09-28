@@ -13,7 +13,7 @@ import {
   validateClientDocumentFile,
 } from '@/lib/security/uploads';
 
-const PERSONAL_DOCUMENT_SERVICE_IDS = new Set(['nacionalidad-espanola-menor-nacido-en-espana']);
+const PERSONAL_DOCUMENT_SERVICE_IDS = new Set(['nacionalidad-espanola-menor-nacido-en-espana', 'no-residentes']);
 
 function cleanText(value: FormDataEntryValue | null, max = 2000): string | null {
   if (typeof value !== 'string') return null;
@@ -98,11 +98,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const clientId = caseData.client_id;
     const personalDocumentScope = Boolean(
-      caseData.service_id && PERSONAL_DOCUMENT_SERVICE_IDS.has(caseData.service_id),
+      String(caseData.service_id ?? '')
+        .split(',')
+        .map((serviceId: string) => serviceId.trim())
+        .filter(Boolean)
+        .some((serviceId: string) => PERSONAL_DOCUMENT_SERVICE_IDS.has(serviceId)),
     );
-    const companyId = personalDocumentScope
-      ? null
-      : await resolveDocumentCompany(adminSupabase, clientId, caseData.company_id ?? null);
+    const explicitCompanyId = caseData.company_id ?? null;
+    const companyId = explicitCompanyId
+      ?? (personalDocumentScope
+        ? null
+        : await resolveDocumentCompany(adminSupabase, clientId, null));
 
     if (!personalDocumentScope && !companyId) {
       return NextResponse.json({

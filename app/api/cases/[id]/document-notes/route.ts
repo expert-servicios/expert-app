@@ -5,7 +5,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 const noteSchema = z.object({
   itemKey: z.string().min(1).max(160),
   itemLabel: z.string().min(1).max(500),
-  comment: z.string().max(2000).optional().default(''),
+  comment: z.string().max(20000).optional().default(''),
 });
 
 async function resolveCaseAccess(caseId: string, userId: string) {

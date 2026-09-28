@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingBag, Trash2, ArrowRight, ArrowLeft, Plus } from 'lucide-react';
-import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartDisbursements, resolveCartLocale, useCart } from '@/contexts/CartContext';
+import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartContentOrigins, collectCartDisbursements, resolveCartLocale, useCart } from '@/contexts/CartContext';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { QuickProfileGate } from '@/components/cart/QuickProfileGate';
 import { CompanyCheckoutGate } from '@/components/cart/CompanyCheckoutGate';
@@ -109,6 +109,7 @@ function CarritoContent() {
   const [disbursementMandateAccepted, setDisbursementMandateAccepted] = useState(false);
   const hasDisbursements = cartContainsDisbursements(items);
   const disbursements = collectCartDisbursements(items);
+  const contentOrigins = collectCartContentOrigins(items);
 
   const goToCheckoutUrl = (url: string) => {
     clearCart();
@@ -325,6 +326,7 @@ function CarritoContent() {
                 ) : needsProfile ? (
                   <QuickProfileGate
                     priceIds={items.map(i => i.priceId)}
+                    contentOrigins={contentOrigins}
                     locale={locale}
                     loginNextPath={cartPath}
                     disbursements={disbursements}

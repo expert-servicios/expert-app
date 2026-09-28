@@ -13,8 +13,9 @@ const serviceCategories = [
     title: 'Fiscalidad',
     services: [
       { id: 'irpf', name: 'Declaración de la Renta (IRPF)', description: 'Declaración anual de renta personal' },
-      { id: 'modelo151', name: 'Modelo 151 / Ley Beckham', description: 'Para trabajadores desplazados a España' },
-      { id: 'noResidentes', name: 'Declaración de no residentes', description: 'IRNR y tributación para no residentes' }
+      { id: 'modelo-151', name: 'Modelo 151 / Ley Beckham', description: 'Para trabajadores desplazados a España' },
+      { id: 'no-residentes', name: 'Declaración de no residentes', description: 'IRNR y tributación para no residentes' },
+      { id: 'impuesto-patrimonio', name: 'Impuesto sobre el Patrimonio', description: 'Modelo 714 y revisión patrimonial por titular' }
     ]
   },
   {
@@ -33,7 +34,16 @@ const serviceCategories = [
     services: [
       { id: 'alta-autonomos', name: 'Alta como autónomo', description: 'Constitución y registro como trabajador autónomo' },
       { id: 'constitucion', name: 'Constitución de empresa', description: 'Creación de SL, SA u otras formas societarias' },
-      { id: 'contabilidad', name: 'Asesoría contable y fiscal', description: 'Contabilidad, impuestos y gestión empresarial' }
+      { id: 'contabilidad', name: 'Asesoría contable y fiscal', description: 'Contabilidad, impuestos y gestión empresarial' },
+      { id: 'nif-socio-extranjero', name: 'NIF para socio extranjero', description: 'Precio por cada socio o administrador extranjero' }
+    ]
+  },
+  {
+    id: 'holded',
+    title: 'Holded',
+    services: [
+      { id: 'holded-migracion-laboral', name: 'Migración laboral a Holded', description: 'Migración y validación por empleado' },
+      { id: 'formacion-holded', name: 'Formación Holded', description: 'Formación práctica en Holded' }
     ]
   },
   {
@@ -52,12 +62,23 @@ const serviceCategories = [
   }
 ];
 
+const LEGACY_SERVICE_IDS: Record<string, string> = {
+  noResidentes: 'no-residentes',
+  modelo151: 'modelo-151',
+};
+
+function normalizeServiceId(serviceId: string | null): string | null {
+  if (!serviceId) return null;
+  return LEGACY_SERVICE_IDS[serviceId] ?? serviceId;
+}
+
 function getServiceName(serviceId: string): string {
+  const normalized = normalizeServiceId(serviceId) ?? serviceId;
   for (const category of serviceCategories) {
-    const service = category.services.find((item) => item.id === serviceId);
+    const service = category.services.find((item) => item.id === normalized);
     if (service) return service.name;
   }
-  return serviceId.replace(/-/g, ' ');
+  return normalized.replace(/-/g, ' ');
 }
 
 function buildContextNote(params: {
@@ -77,7 +98,7 @@ function buildContextNote(params: {
 
 export function SolicitudPresupuestoForm() {
   const searchParams = useSearchParams();
-  const serviceFromUrl = searchParams.get('servicio');
+  const serviceFromUrl = normalizeServiceId(searchParams.get('servicio'));
   const originFromUrl = searchParams.get('origen');
   const typeFromUrl = searchParams.get('tipo');
   const modeFromUrl = searchParams.get('modalidad');
@@ -115,7 +136,7 @@ export function SolicitudPresupuestoForm() {
       const res = await fetch('/api/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, services: selectedServices, description, hp_url: hp, recaptcha_token })
+        body: JSON.stringify({ name, email, phone, services: selectedServices, description, origin: originFromUrl ?? undefined, hp_url: hp, recaptcha_token })
       });
       if (res.ok) {
         setSubmitted(true);

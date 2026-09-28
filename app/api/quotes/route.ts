@@ -7,6 +7,22 @@ import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { buildLeadAttributionFields } from '@/lib/marketing/server-attribution';
+import { describeContentOrigin, normalizeContentOrigin } from '@/lib/marketing/content-origin';
+import { getCatalogService } from '@/lib/utils/catalog';
+import { createQuoteClaimToken } from '@/lib/quotes/quote-claim-token';
+
+const LEGACY_SERVICE_SLUGS: Record<string, string> = {
+  noResidentes: 'no-residentes',
+  modelo151: 'modelo-151',
+};
+
+function canonicalServiceSlug(slug: string): string {
+  return LEGACY_SERVICE_SLUGS[slug] ?? slug;
+}
+
+function serviceDisplayName(slug: string): string {
+  return getCatalogService(slug)?.name ?? slug.replace(/-/g, ' ');
+}
 
 const quoteRequestSchema = z.object({
   hp_url: z.string().optional(),
@@ -15,6 +31,7 @@ const quoteRequestSchema = z.object({
   phone: z.string().max(20).optional(),
   services: z.array(z.string().min(1)).min(1),
   description: z.string().max(1000).optional(),
+  origin: z.string().trim().max(240).optional(),
   recaptcha_token: z.string().optional()
 });
 
@@ -32,10 +49,11 @@ export async function POST(request: NextRequest) {
     }
 
     const validated = quoteRequestSchema.parse(requestBody);
+    const normalizedEmail = validated.email.trim().toLowerCase();
 
     const spam = checkSpam({
       name: validated.name,
-      email: validated.email,
+      email: normalizedEmail,
       message: validated.description
     });
     if (spam.isSpam) {
@@ -58,34 +76,112 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const serviceList = validated.services.join(', ');
+    const serviceSlugs = [...new Set(validated.services.map(canonicalServiceSlug))];
+    const serviceSlugList = serviceSlugs.join(', ');
+    const serviceList = serviceSlugs.map(serviceDisplayName).join(', ');
     const descriptionText = validated.description?.trim() || 'No se proporcionaron detalles adicionales.';
     const supabaseAdmin = getSupabaseAdmin();
     const attributionFields = buildLeadAttributionFields(request);
+    const contentOrigin = normalizeContentOrigin(validated.origin, 'form:solicitar-presupuesto');
+    const contentOriginLabel = describeContentOrigin(contentOrigin);
 
-    const { data: lead, error: leadError } = await supabaseAdmin
+    const normalizedPhone = validated.phone?.trim() || null;
+    const quoteRequestInteraction = {
+      action: 'quote_request',
+      origin: contentOrigin,
+      requested_services: serviceSlugs,
+      at: new Date().toISOString(),
+      contact: {
+        email: normalizedEmail,
+        phone: normalizedPhone,
+      },
+    };
+
+    const { data: leadByEmail, error: leadByEmailError } = await supabaseAdmin
       .from('leads')
-      .insert({
-        name: validated.name,
-        email: validated.email,
-        phone: validated.phone?.trim() || null,
-        client_type: 'particular',
-        category: 'Presupuesto',
-        service: serviceList,
-        country: 'ES',
-        urgency: 'media',
-        message: descriptionText,
-        state: 'new',
-        source: attributionFields.source,
-        source_key: attributionFields.source_key,
-        metadata: attributionFields.metadata,
-      })
-      .select('id')
-      .single();
+      .select('id,message,metadata')
+      .eq('email', normalizedEmail)
+      .limit(1)
+      .maybeSingle();
+    if (leadByEmailError) throw leadByEmailError;
 
-    if (leadError || !lead?.id) {
-      console.error('Error creating lead:', leadError);
-      return NextResponse.json({ error: 'Error al registrar la solicitud' }, { status: 500 });
+    let existingLead = leadByEmail;
+    if (!existingLead && normalizedPhone) {
+      const { data: leadByPhone, error: leadByPhoneError } = await supabaseAdmin
+        .from('leads')
+        .select('id,message,metadata')
+        .eq('phone', normalizedPhone)
+        .limit(1)
+        .maybeSingle();
+      if (leadByPhoneError) throw leadByPhoneError;
+      existingLead = leadByPhone;
+    }
+
+    let leadId: string;
+    if (existingLead) {
+      const existingMetadata =
+        existingLead.metadata && typeof existingLead.metadata === 'object' && !Array.isArray(existingLead.metadata)
+          ? existingLead.metadata as Record<string, unknown>
+          : {};
+      const previousRequests = Array.isArray(existingMetadata.quote_requests)
+        ? existingMetadata.quote_requests.slice(-19)
+        : [];
+      const previousMessage = typeof existingLead.message === 'string' ? existingLead.message.trim() : '';
+      const nextMessage = [
+        previousMessage,
+        `[Solicitud de presupuesto ${new Date().toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })}]\nServicios: ${serviceList}\n${descriptionText}`,
+      ].filter(Boolean).join('\n\n');
+
+      const { error: leadUpdateError } = await supabaseAdmin
+        .from('leads')
+        .update({
+          name: validated.name,
+          category: 'Presupuesto',
+          service: serviceSlugList,
+          message: nextMessage,
+          state: 'new',
+          updated_at: new Date().toISOString(),
+          metadata: {
+            ...existingMetadata,
+            conversion: quoteRequestInteraction,
+            last_acquisition: quoteRequestInteraction,
+            quote_requests: [...previousRequests, quoteRequestInteraction],
+          },
+        })
+        .eq('id', existingLead.id);
+      if (leadUpdateError) throw leadUpdateError;
+      leadId = existingLead.id;
+    } else {
+      const { data: lead, error: leadError } = await supabaseAdmin
+        .from('leads')
+        .insert({
+          name: validated.name,
+          email: normalizedEmail,
+          phone: normalizedPhone,
+          client_type: 'particular',
+          category: 'Presupuesto',
+          service: serviceSlugList,
+          country: 'ES',
+          urgency: 'media',
+          message: descriptionText,
+          state: 'new',
+          source: attributionFields.source,
+          source_key: attributionFields.source_key,
+          metadata: {
+            ...attributionFields.metadata,
+            conversion: quoteRequestInteraction,
+            last_acquisition: quoteRequestInteraction,
+            quote_requests: [quoteRequestInteraction],
+          },
+        })
+        .select('id')
+        .single();
+
+      if (leadError || !lead?.id) {
+        console.error('Error creating lead:', leadError);
+        return NextResponse.json({ error: 'Error al registrar la solicitud' }, { status: 500 });
+      }
+      leadId = lead.id;
     }
 
     const quoteTitle = `Solicitud de presupuesto de ${validated.name}`;
@@ -94,7 +190,7 @@ export async function POST(request: NextRequest) {
     const { data: quote, error: quoteError } = await supabaseAdmin
       .from('quotes')
       .insert({
-        lead_id: lead.id,
+        lead_id: leadId,
         client_id: null,
         title: quoteTitle,
         description: quoteDescription,
@@ -102,7 +198,9 @@ export async function POST(request: NextRequest) {
         status: 'draft',
         stripe_checkout_id: null,
         expires_at: null,
-        created_by: adminId
+        created_by: adminId,
+        service_slugs: serviceSlugs,
+        claim_email: normalizedEmail
       })
       .select('id')
       .single();
@@ -115,27 +213,28 @@ export async function POST(request: NextRequest) {
     // Emails: client confirmation + admin notification
     const adminEmails = process.env.ADMIN_EMAILS?.split(',').map((e) => e.trim()).filter(Boolean) ?? [];
 
-    const clientTpl = quoteReceivedClient(validated.name, serviceList);
+    const claimToken = createQuoteClaimToken({ quoteId: quote.id, email: normalizedEmail });
+    const clientTpl = quoteReceivedClient(validated.name, serviceList, claimToken);
     await sendEmail({
-      to: validated.email,
+      to: normalizedEmail,
       eventType: 'quote.received',
       ...clientTpl,
-      metadata: { quote_id: quote.id, lead_id: lead.id }
+      metadata: { quote_id: quote.id, lead_id: leadId }
     });
 
     if (adminEmails.length) {
-      const adminTpl = quoteReceivedAdmin(validated.name, validated.email, serviceList, descriptionText);
+      const adminTpl = quoteReceivedAdmin(validated.name, normalizedEmail, serviceList, descriptionText, contentOriginLabel);
       await sendEmail({
         to: adminEmails,
         eventType: 'quote.received.admin',
         ...adminTpl,
-        metadata: { quote_id: quote.id, lead_id: lead.id }
+        metadata: { quote_id: quote.id, lead_id: leadId, content_origin: contentOrigin }
       });
     }
 
     notifyAdmins({
       title: `💼 Nuevo presupuesto: ${validated.name}`,
-      body: serviceList.length > 80 ? serviceList.slice(0, 77) + '…' : serviceList,
+      body: `${serviceList} · ${contentOriginLabel}`.slice(0, 240),
       url: '/admin/presupuestos',
       tag: `quote-${quote.id}`,
     }).catch(() => {});
@@ -158,6 +257,9 @@ export async function GET(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
+
+    // Ownership is established only through the capability link sent to the lead email.
+    // A logged-in session alone is not sufficient proof of mailbox possession.
 
     const { data: quotes, error: fetchError } = await supabase
       .from('quotes')

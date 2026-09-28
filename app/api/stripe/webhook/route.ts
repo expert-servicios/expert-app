@@ -14,6 +14,8 @@ import {
 import { persistAcademyCertificationPayment, persistAcademyProgramPayment } from '@/lib/payments/academy-fulfillment';
 import { legacyOrderFields, requireCreatedOrderId } from '@/lib/payments/non-academy-order';
 import { ensureServiceOrderFulfillment } from '@/lib/payments/service-order-fulfillment';
+import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
+import { describeContentOrigin } from '@/lib/marketing/content-origin';
 import {
   academyEnrollmentConfirmed,
   academyEnrollmentConfirmedAdmin,
@@ -55,6 +57,36 @@ function getAdminEmails(): string[] {
     .split(',')
     .map((e) => e.trim())
     .filter(Boolean);
+}
+
+const LEGACY_QUOTE_SERVICE_SLUGS: Record<string, string> = {
+  noResidentes: 'no-residentes',
+};
+
+function canonicalQuoteServiceSlug(value: string): string {
+  const trimmed = value.trim();
+  return LEGACY_QUOTE_SERVICE_SLUGS[trimmed] ?? trimmed;
+}
+
+function splitQuoteServiceSlugs(values: Array<string | null | undefined>): string[] {
+  return [...new Set(
+    values
+      .flatMap((value) => String(value ?? '').split(','))
+      .map(canonicalQuoteServiceSlug)
+      .filter(Boolean),
+  )];
+}
+
+function checkoutContentOriginLabel(session: Stripe.Checkout.Session): string | null {
+  const raw = session.metadata?.content_origins ?? session.metadata?.content_origin ?? '';
+  const origins = [...new Set(
+    raw
+      .split('|')
+      .map((value) => value.trim())
+      .filter(Boolean),
+  )];
+  if (origins.length === 0) return null;
+  return origins.map((origin) => describeContentOrigin(origin)).join(' · ');
 }
 
 type SupabaseAdmin = ReturnType<typeof getSupabaseAdmin>;
@@ -573,7 +605,7 @@ export async function POST(req: NextRequest) {
       if (quoteId) {
         const { data: quote, error: quoteFetchError } = await supabaseAdmin
           .from('quotes')
-          .select('client_id,lead_id,title,docs_checklist,company_id')
+          .select('client_id,lead_id,title,docs_checklist,company_id,service_slugs')
           .eq('id', quoteId)
           .single();
 
@@ -583,6 +615,54 @@ export async function POST(req: NextRequest) {
           const amountEur = Number(session.amount_total ?? 0) / 100;
           const paymentId = (session.payment_intent as string) ?? session.id;
           const currency = session.currency?.toUpperCase() ?? 'EUR';
+
+          const { data: quoteItems, error: quoteItemsError } = await supabaseAdmin
+            .from('quote_items')
+            .select('service_slug')
+            .eq('quote_id', quoteId)
+            .order('position', { ascending: true });
+          if (quoteItemsError) {
+            throw new Error(`Could not resolve quote service lines ${quoteId}: ${quoteItemsError.message}`);
+          }
+
+          let leadService: string | null = null;
+          let leadRequestedServices: string[] = [];
+          if (quote.lead_id) {
+            const { data: lead, error: leadError } = await supabaseAdmin
+              .from('leads')
+              .select('service,metadata')
+              .eq('id', quote.lead_id)
+              .maybeSingle();
+            if (leadError) {
+              throw new Error(`Could not resolve quote lead service ${quoteId}: ${leadError.message}`);
+            }
+            leadService = lead?.service ?? null;
+            const leadMetadata =
+              lead?.metadata && typeof lead.metadata === 'object' && !Array.isArray(lead.metadata)
+                ? lead.metadata as Record<string, unknown>
+                : {};
+            const conversion =
+              leadMetadata.conversion && typeof leadMetadata.conversion === 'object' && !Array.isArray(leadMetadata.conversion)
+                ? leadMetadata.conversion as Record<string, unknown>
+                : {};
+            leadRequestedServices = Array.isArray(conversion.requested_services)
+              ? conversion.requested_services.filter((value): value is string => typeof value === 'string')
+              : [];
+          }
+
+          const persistedQuoteServiceSlugs = splitQuoteServiceSlugs([
+            session.metadata?.service_slugs,
+            session.metadata?.service_slug,
+            ...(Array.isArray(quote.service_slugs) ? quote.service_slugs : []),
+            ...(quoteItems ?? []).map((line) => line.service_slug),
+          ]);
+          const leadServiceSlugs = splitQuoteServiceSlugs([
+            ...leadRequestedServices,
+            leadService,
+          ]);
+          const quoteServiceSlugs = persistedQuoteServiceSlugs.length > 0
+            ? persistedQuoteServiceSlugs
+            : leadServiceSlugs;
 
           // ── Idempotency: protect both the Stripe payment and the quote itself ──
           const [{ data: existingOrder }, { data: existingQuoteOrder }] = await Promise.all([
@@ -600,7 +680,61 @@ export async function POST(req: NextRequest) {
           ]);
 
           if (existingOrder) {
-            console.log('[webhook] order already exists for payment', paymentId, '— skipping');
+            // A previous delivery attempt may have inserted the order and then failed
+            // while creating/linking the case. Fulfillment is idempotent, so retry it.
+            await supabaseAdmin
+              .from('quotes')
+              .update({ status: 'paid', stripe_checkout_id: session.id })
+              .eq('id', quoteId);
+
+            let retriedSpecializedCaseId: string | null = null;
+            if (quote.client_id && quoteServiceSlugs.length > 0) {
+              retriedSpecializedCaseId = await ensureServiceOrderFulfillment(supabaseAdmin, {
+                orderId: existingOrder.id,
+                serviceSlug: quoteServiceSlugs[0],
+                serviceSlugs: quoteServiceSlugs,
+                serviceName: quote.title ?? 'Servicio contratado',
+                clientId: quote.client_id,
+                companyId: quote.company_id ?? null,
+                checkoutLocale: 'es',
+              });
+
+              if (retriedSpecializedCaseId) {
+                const { error: quoteCaseLinkError } = await supabaseAdmin
+                  .from('cases')
+                  .update({ quote_id: quoteId })
+                  .eq('id', retriedSpecializedCaseId)
+                  .is('quote_id', null);
+                if (quoteCaseLinkError) {
+                  throw new Error(`Could not link retried quote case ${retriedSpecializedCaseId}: ${quoteCaseLinkError.message}`);
+                }
+              }
+            }
+
+            if (quote.client_id && !retriedSpecializedCaseId) {
+              const { data: existingCase } = await supabaseAdmin
+                .from('cases')
+                .select('id')
+                .eq('quote_id', quoteId)
+                .maybeSingle();
+
+              if (!existingCase) {
+                const { error: fallbackCaseError } = await supabaseAdmin.from('cases').insert({
+                  quote_id: quoteId,
+                  client_id: quote.client_id,
+                  company_id: quote.company_id ?? null,
+                  category: 'presupuesto',
+                  service: quote.title ?? 'servicio',
+                  state: Array.isArray(quote.docs_checklist) && quote.docs_checklist.length > 0 ? 'docs_pendientes' : 'nuevo',
+                  docs_checklist: Array.isArray(quote.docs_checklist) ? quote.docs_checklist : []
+                });
+                if (fallbackCaseError) {
+                  throw new Error(`Could not create fallback case for retried quote ${quoteId}: ${fallbackCaseError.message}`);
+                }
+              }
+            }
+
+            console.log('[webhook] order already exists for payment', paymentId, '— fulfillment retried');
           } else if (existingQuoteOrder) {
             console.error('[webhook] duplicate payment detected for quote', {
               quoteId,
@@ -637,7 +771,8 @@ export async function POST(req: NextRequest) {
                 id: session.id,
                 payment_intent: session.payment_intent,
                 customer_email: session.customer_email
-              }
+              },
+              service_slugs: quoteServiceSlugs,
             };
 
             const { data: newOrder, error: orderError } = await supabaseAdmin.from('orders').insert({
@@ -650,12 +785,37 @@ export async function POST(req: NextRequest) {
               ...legacyOrderFields(amountEur, quote.title),
               currency,
               status: 'paid',
+              service_slugs: quoteServiceSlugs.length > 0 ? quoteServiceSlugs.join(',') : null,
               metadata: orderMetadata
             }).select('id').single();
 
             const newOrderId = requireCreatedOrderId('quote', orderError, newOrder?.id);
 
-            if (quote.client_id) {
+            let specializedQuoteCaseId: string | null = null;
+            if (quote.client_id && quoteServiceSlugs.length > 0) {
+              specializedQuoteCaseId = await ensureServiceOrderFulfillment(supabaseAdmin, {
+                orderId: newOrderId,
+                serviceSlug: quoteServiceSlugs[0],
+                serviceSlugs: quoteServiceSlugs,
+                serviceName: quote.title ?? 'Servicio contratado',
+                clientId: quote.client_id,
+                companyId: quote.company_id ?? null,
+                checkoutLocale: 'es',
+              });
+
+              if (specializedQuoteCaseId) {
+                const { error: quoteCaseLinkError } = await supabaseAdmin
+                  .from('cases')
+                  .update({ quote_id: quoteId })
+                  .eq('id', specializedQuoteCaseId)
+                  .is('quote_id', null);
+                if (quoteCaseLinkError) {
+                  throw new Error(`Could not link fulfilled quote case ${specializedQuoteCaseId}: ${quoteCaseLinkError.message}`);
+                }
+              }
+            }
+
+            if (quote.client_id && !specializedQuoteCaseId) {
               const { data: existingCase } = await supabaseAdmin
                 .from('cases')
                 .select('id')
@@ -666,6 +826,7 @@ export async function POST(req: NextRequest) {
                 await supabaseAdmin.from('cases').insert({
                   quote_id: quoteId,
                   client_id: quote.client_id,
+                  company_id: quote.company_id ?? null,
                   category: 'presupuesto',
                   service: quote.title ?? 'servicio',
                   state: Array.isArray(quote.docs_checklist) && quote.docs_checklist.length > 0 ? 'docs_pendientes' : 'nuevo',
@@ -773,6 +934,7 @@ export async function POST(req: NextRequest) {
         'Servicio EXPERT';
       const amountEur = Number(session.amount_total ?? 0) / 100;
       const paymentId  = (session.payment_intent as string) ?? session.id;
+      const contentOriginLabel = checkoutContentOriginLabel(session);
       let catalogOrderMetadata: Record<string, unknown> = {
         checkout_session: {
           id             : session.id,
@@ -784,6 +946,8 @@ export async function POST(req: NextRequest) {
         checkout_locale : session.metadata?.checkout_locale ?? null,
         service_slug    : session.metadata?.service_slug ?? null,
         service_slugs   : session.metadata?.service_slugs ?? null,
+        content_origin  : session.metadata?.content_origin ?? null,
+        content_origins : session.metadata?.content_origins ?? null,
       };
 
       // ── Idempotency: create order record for catalog payment ──
@@ -948,7 +1112,7 @@ export async function POST(req: NextRequest) {
         // ── Notify admins: new catalog/cart payment (email + push) ──
         const adminEmails = getAdminEmails();
         if (adminEmails.length) {
-          const adminTpl = servicePaymentConfirmedAdmin(customerName, customerEmail, amountEur, serviceName);
+          const adminTpl = servicePaymentConfirmedAdmin(customerName, customerEmail, amountEur, serviceName, contentOriginLabel);
           sendEmail({
             to: adminEmails,
             eventType: 'service.payment.confirmed.admin',
@@ -961,6 +1125,8 @@ export async function POST(req: NextRequest) {
               service_slug: session.metadata?.service_slug ?? session.metadata?.service_slugs ?? null,
               stripe_total_cents: session.amount_total ?? null,
               stripe_tax_cents: session.total_details?.amount_tax ?? null,
+              content_origin: session.metadata?.content_origin ?? null,
+              content_origins: session.metadata?.content_origins ?? null,
             }
           }).catch((err) => {
             console.error('[webhook] admin payment email failed:', err);
@@ -968,7 +1134,7 @@ export async function POST(req: NextRequest) {
         }
         notifyAdmins({
           title: `💰 Pago recibido — ${customerName}`,
-          body:  `${serviceName.slice(0, 60)} · €${amountEur.toFixed(0)}`,
+          body:  `${serviceName.slice(0, 60)} · €${amountEur.toFixed(0)}${contentOriginLabel ? ` · ${contentOriginLabel}` : ''}`.slice(0, 240),
           url:   catalogCaseId ? `/admin/expedientes/${catalogCaseId}` : '/admin/pagos',
           tag:   `catalog-payment-${session.id}`,
         }).catch(() => {});

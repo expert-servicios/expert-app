@@ -32,6 +32,8 @@ describe('Universal KIA email signature', () => {
     expect(signature).toContain('https://telegram.org/img/t_logo.png');
     expect(signature).toContain('kia_chat_href');
     expect(signature).toContain('kia_telegram_href');
+    expect(signature).toContain('min-width:92px');
+    expect(signature).toContain('min-width:112px');
   });
 
   it('keeps the KIA signature idempotent', () => {

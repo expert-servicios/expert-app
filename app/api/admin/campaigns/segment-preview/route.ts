@@ -16,10 +16,27 @@ export async function GET(request: NextRequest) {
   const segment = searchParams.get('segment') as SegmentKey | null;
   if (!segment) return NextResponse.json({ error: 'segment requerido' }, { status: 400 });
 
+  const audienceSegment = searchParams.get('audience_segment');
+  const allowedAudienceSegments = new Set([
+    'particular_residente',
+    'particular_no_residente',
+    'autonomo',
+    'empresa',
+  ]);
+  if (audienceSegment && !allowedAudienceSegments.has(audienceSegment)) {
+    return NextResponse.json({ error: 'audience_segment no válido' }, { status: 400 });
+  }
+
   try {
-    const recipients = await getSegmentRecipients(segment);
-    // Return first 5 emails as sample (for preview)
-    const sample = recipients.slice(0, 5).map((r) => r.email);
+    const recipients = await getSegmentRecipients(
+      segment,
+      segment === 'newsletter' ? audienceSegment : null,
+    );
+    const sample = recipients.slice(0, 5).map((recipient) =>
+      recipient.channel === 'telegram'
+        ? `Telegram: ${recipient.telegramChatId ?? 'sin id'}`
+        : recipient.email ?? 'sin email',
+    );
     return NextResponse.json({ count: recipients.length, sample });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

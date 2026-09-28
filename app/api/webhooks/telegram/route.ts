@@ -45,6 +45,20 @@ import {
 
 const SECRET_HEADER = 'x-telegram-bot-api-secret-token';
 
+const NEWS_SEGMENTS = new Set([
+  'particular_residente',
+  'particular_no_residente',
+  'autonomo',
+  'empresa',
+]);
+
+const NEWS_SEGMENT_LABELS: Record<string, string> = {
+  particular_residente: 'Particular residente fiscal',
+  particular_no_residente: 'Particular no residente',
+  autonomo: 'Autónomo',
+  empresa: 'Empresa',
+};
+
 export async function POST(request: NextRequest) {
   if (!isTelegramWebhookAuthorized(request.headers.get(SECRET_HEADER))) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
@@ -101,6 +115,82 @@ async function handleTelegramUpdate(request: NextRequest) {
 
   const startPayload = command === '/start' ? parts[1]?.trim() ?? '' : '';
   const deepLinkCode = startPayload.startsWith('link_') ? startPayload.slice(5) : null;
+  const newsSegment = startPayload.startsWith('news_') ? startPayload.slice(5) : null;
+
+  if (newsSegment && NEWS_SEGMENTS.has(newsSegment)) {
+    const now = new Date().toISOString();
+    const { data: existing, error: existingError } = await admin
+      .from('newsletter_subscribers')
+      .select('id')
+      .eq('telegram_chat_id', inbound.chatId)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error('[Telegram newsletter] lookup failed:', existingError.message);
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'No he podido guardar la suscripción ahora mismo. Puedes volver a abrir el enlace de suscripción.',
+      });
+      return NextResponse.json({ ok: true, newsletter: false, reason: 'newsletter_lookup_failed' });
+    }
+
+    const payload = {
+      channel: 'telegram',
+      audience_segment: newsSegment,
+      telegram_chat_id: inbound.chatId,
+      telegram_username: inbound.username ?? null,
+      telegram_subscribed_at: now,
+      source: 'telegram:kia',
+      confirmed: true,
+      unsubscribed_at: null,
+      updated_at: now,
+    };
+
+    const write = existing?.id
+      ? await admin.from('newsletter_subscribers').update(payload).eq('id', existing.id)
+      : await admin.from('newsletter_subscribers').insert(payload);
+
+    if (write.error) {
+      console.error('[Telegram newsletter] write failed:', write.error.message);
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'No he podido guardar la suscripción ahora mismo. Puedes volver a abrir el enlace de suscripción.',
+      });
+      return NextResponse.json({ ok: true, newsletter: false, reason: 'newsletter_write_failed' });
+    }
+
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: [
+        '<b>Novedades EXPERT activadas</b>',
+        `Perfil: ${escapeTelegramHtml(NEWS_SEGMENT_LABELS[newsSegment] ?? newsSegment)}.`,
+        'KIA te enviará solo cambios, fechas y guías relevantes para este perfil.',
+        'Para cambiar de perfil, usa otro enlace de suscripción. Para darte de baja, envía /baja_novedades.',
+      ].join('\n'),
+    });
+    return NextResponse.json({ ok: true, newsletter: true, audienceSegment: newsSegment });
+  }
+
+  if (command === '/baja_novedades') {
+    const { error: unsubscribeError } = await admin
+      .from('newsletter_subscribers')
+      .update({ unsubscribed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq('telegram_chat_id', inbound.chatId)
+      .eq('channel', 'telegram');
+
+    if (unsubscribeError) {
+      console.error('[Telegram newsletter] unsubscribe failed:', unsubscribeError.message);
+      await sendTelegramMessage({ chatId: inbound.chatId, text: 'No he podido tramitar la baja. Inténtalo de nuevo.' });
+      return NextResponse.json({ ok: true, newsletter: false, reason: 'newsletter_unsubscribe_failed' });
+    }
+
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: 'Suscripción a novedades desactivada. Puedes volver a activarla en cualquier momento desde EXPERT.',
+    });
+    return NextResponse.json({ ok: true, newsletter: false, unsubscribed: true });
+  }
 
   if (deepLinkCode) {
     try {
@@ -185,6 +275,7 @@ async function handleTelegramUpdate(request: NextRequest) {
         'Canal Telegram conectado en modo seguro.',
         '/status — comprobar conexión, identidad y tools',
         '/link CÓDIGO — vincular este Telegram con una sesión EXPERT autenticada',
+        '/baja_novedades — dejar de recibir alertas y novedades',
         '/servicio SLUG — ver requisitos, documentos y pasos del servicio',
         ...(adminChat ? ['/lote1 — ver estado operativo del lote 1', '/legal status|cambios|valor|revisar — Regulatory Pulse'] : []),
         identity

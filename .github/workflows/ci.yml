@@ -40,6 +40,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Production build
+        run: npm run build
+
       - name: Supabase migration baseline check
         run: npm run check:supabase-migrations
 

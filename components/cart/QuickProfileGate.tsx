@@ -7,6 +7,7 @@ import type { CartLocale } from '@/contexts/CartContext';
 interface Props {
   priceIds: string[];
   disbursements?: string[];
+  contentOrigins?: string[];
   disbursementMandateAccepted?: boolean;
   locale?: CartLocale;
   loginNextPath?: string;
@@ -52,6 +53,7 @@ const COPY = {
 export function QuickProfileGate({
   priceIds,
   disbursements = [],
+  contentOrigins = [],
   disbursementMandateAccepted = false,
   locale = 'es',
   loginNextPath = '/carrito',
@@ -115,6 +117,7 @@ export function QuickProfileGate({
         body: JSON.stringify({
           priceIds,
           locale,
+          ...(contentOrigins.length > 0 ? { contentOrigins } : {}),
           ...(companyId ? { companyId } : {}),
           ...(hasDisbursements
             ? { disbursements, disbursementMandateAccepted }

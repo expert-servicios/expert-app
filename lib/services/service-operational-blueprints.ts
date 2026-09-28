@@ -407,6 +407,53 @@ const certificatesCommonSteps: ServiceCaseStep[] = [
 
 const blueprints: ServiceOperationalBlueprint[] = [
   {
+    slug: 'no-residentes',
+    canonicalName: 'IRNR — No Residentes · inmuebles en España',
+    category: 'declaraciones-impuestos',
+    aliases: ['noResidentes'],
+    initialState: 'pendiente_documentacion',
+    initialStatus: 'nuevo',
+    initialPriority: 'media',
+    initialNextAction: 'Confirmar inmuebles, titulares no residentes y documentación de cada inmueble',
+    requirements: [
+      { key: 'tax_nonresident', label: 'Residencia fiscal fuera de España confirmada para cada titular que declarará IRNR', required: true, clientCheckable: true },
+      { key: 'properties_count', label: 'Número de inmuebles en España identificado', required: true, clientCheckable: true },
+      { key: 'ownership', label: 'Titularidad y porcentaje de participación de cada no residente por inmueble', required: true, clientCheckable: true },
+      { key: 'acquisition_date', label: 'Fecha de adquisición de cada inmueble para determinar el periodo de titularidad sujeto a imputación', required: true, clientCheckable: true },
+      { key: 'property_use', label: 'Uso de cada inmueble identificado: periodos a disposición o alquilados y, de forma independiente, si hubo venta durante el ejercicio', required: true, clientCheckable: true },
+      { key: 'tax_year', label: 'Ejercicio o ejercicios a declarar identificados', required: true, clientCheckable: true },
+    ],
+    documents: [
+      { key: 'identity', label: 'NIE/NIF y pasaporte o documento de identidad de cada titular no residente', required: true },
+      { key: 'ownership_document', label: 'Escritura, nota simple u otro documento que acredite titularidad, porcentaje y fecha de adquisición', required: true },
+      { key: 'ibi', label: 'Recibo de IBI o documento con referencia catastral y valor catastral de cada inmueble', required: true },
+      { key: 'tax_residence', label: 'Certificado de residencia fiscal del país de residencia', required: false, conditionalWhen: 'Cuando sea necesario acreditar residencia fiscal o aplicar un convenio/beneficio fiscal' },
+      { key: 'rental', label: 'Contrato de alquiler, periodos e ingresos; extractos de Booking.com, Airbnb u otra plataforma cuando existan', required: false, conditionalWhen: 'Si el inmueble estuvo alquilado durante algún periodo' },
+      { key: 'sale', label: 'Escritura de venta y documentación de la transmisión', required: false, conditionalWhen: 'Si el inmueble se transmitió durante el ejercicio' },
+    ],
+    steps: [
+      { key: 'intake', title: 'Cuestionario de inmuebles y titulares', description: 'Recoger ejercicio, inmuebles, titulares, porcentajes, fechas de adquisición y uso; si hubo alquiler, periodos, importes brutos y canal o plataforma; si hubo venta, registrar también la fecha y solicitar la documentación de transmisión.', clientVisible: true },
+      { key: 'documents', title: 'Documentación de cada inmueble', description: 'Vincular identidad, escritura/nota simple e IBI al inmueble y titular correspondientes.', clientVisible: true },
+      { key: 'calculate', title: 'Cálculo IRNR', description: 'Determinar días de titularidad, renta imputada o tratamiento de periodos arrendados y cuota por titular.', clientVisible: true },
+      { key: 'review', title: 'Revisión', description: 'Comprobar titularidad, periodo, valor catastral, residencia fiscal y coherencia del cálculo.', clientVisible: true },
+      { key: 'submit', title: 'Presentación Modelo 210', description: 'Presentar la declaración correspondiente a cada unidad declarativa después de revisión profesional.', clientVisible: true, humanApprovalRequired: true },
+      { key: 'deliver', title: 'Entrega y calendario siguiente', description: 'Archivar justificantes y dejar preparado el siguiente ejercicio cuando proceda.', clientVisible: true },
+    ],
+    tasks: [
+      { key: 'review_intake', title: 'Revisar cuestionario IRNR', description: 'Confirmar número de inmuebles, titulares, porcentajes, fechas de adquisición, periodos de uso/alquiler, posibles ventas y ejercicios.', priority: 'media', phase: 'intake', dueBusinessDays: 1 },
+      { key: 'review_documents', title: 'Revisar documentación IRNR', description: 'Comprobar identidad, titularidad, fechas, IBI y referencia catastral; pedir solo faltantes reales.', priority: 'media', phase: 'documents', dependsOn: ['review_intake'] },
+      { key: 'calculate_210', title: 'Preparar cálculo Modelo 210', description: 'Calcular por inmueble y titular no residente, separando periodos a disposición de periodos arrendados o transmitidos.', priority: 'media', phase: 'calculate', dependsOn: ['review_documents'], blocksSubmission: true },
+      { key: 'professional_review', title: 'Revisar Modelo 210 antes de presentar', description: 'Validar cálculo y obligación antes de presentación.', priority: 'alta', phase: 'review', dependsOn: ['calculate_210'], blocksSubmission: true, humanApprovalRequired: true },
+      { key: 'submit_210', title: 'Presentar Modelo 210', description: 'Presentar solo tras revisión profesional y archivar justificante.', priority: 'alta', phase: 'submit', dependsOn: ['professional_review'], humanApprovalRequired: true },
+      { key: 'close_irnr', title: 'Cerrar y programar siguiente IRNR', description: 'Entregar justificantes y registrar el siguiente periodo cuando proceda.', priority: 'media', phase: 'deliver', dependsOn: ['submit_210'] },
+    ],
+    kia: {
+      userSummary: 'KIA recoge primero inmuebles y titulares para confirmar alcance y precio; tras contratación solicita fechas de adquisición, porcentajes, IBI y, si hubo alquiler, periodos e ingresos o extractos de Booking.com/Airbnb sin repetir información ya aportada.',
+      adminSummary: 'KIA trata cada inmueble × titular no residente como unidad declarativa y separa automáticamente supuestos alquilados o transmitidos para revisión de alcance.',
+      escalationRules: ['Residencia fiscal dudosa', 'Inmueble alquilado o vendido con tratamiento distinto a renta imputada', 'Titularidad o porcentaje incoherente', 'Valor catastral o fecha de adquisición no acreditados'],
+    },
+  },
+  {
     slug: 'certificado-digital-persona-fisica',
     canonicalName: 'Certificado Digital Persona Física',
     category: 'certificado-digital',
@@ -740,7 +787,7 @@ for (const blueprint of blueprints) {
   for (const alias of blueprint.aliases ?? []) bySlug.set(alias, blueprint);
 }
 
-export const BATCH1_OPERATIONAL_BLUEPRINTS = blueprints;
+export const BATCH1_OPERATIONAL_BLUEPRINTS = blueprints.filter((blueprint) => blueprint.slug !== 'no-residentes');
 
 export function getServiceOperationalBlueprint(slug: string): ServiceOperationalBlueprint | null {
   return bySlug.get(slug) ?? null;

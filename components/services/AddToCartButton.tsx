@@ -43,6 +43,7 @@ export function AddToCartButton({ item, label = DEFAULT_LABEL, inCartLabel, clas
   const cartItem = {
     ...withMandatoryDisbursements(item),
     locale: item.locale ?? (isRussianPage ? 'ru' as const : 'es' as const),
+    contentOrigin: item.contentOrigin?.trim() || `service:${item.slug}`,
   };
   const inCart = items.some(i => i.priceId === cartItem.priceId);
   const isNacionalidadMenor = cartItem.slug === NACIONALIDAD_MENOR_SLUG;

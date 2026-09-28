@@ -9,7 +9,10 @@ export type SegmentKey =
   | 'newsletter';     // newsletter subscribers
 
 export interface Recipient {
-  email: string;
+  channel: 'email' | 'telegram';
+  key: string;
+  email: string | null;
+  telegramChatId: string | null;
   name: string | null;
 }
 
@@ -22,16 +25,59 @@ export const SEGMENT_LABELS: Record<SegmentKey, string> = {
   newsletter:      'Suscriptores newsletter',
 };
 
-export async function getSegmentRecipients(segment: SegmentKey): Promise<Recipient[]> {
+function normalizeEmail(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function dedupeRecipients(recipients: Recipient[]): Recipient[] {
+  const seen = new Set<string>();
+  return recipients.filter((recipient) => {
+    const key = recipient.key.trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+export async function getSegmentRecipients(
+  segment: SegmentKey,
+  audienceSegment?: string | null,
+): Promise<Recipient[]> {
   const admin = getSupabaseAdmin();
 
   if (segment === 'newsletter') {
-    const { data } = await admin
+    let query = admin
       .from('newsletter_subscribers')
-      .select('email, name')
+      .select('channel,email,name,telegram_chat_id,audience_segment')
       .eq('confirmed', true)
       .is('unsubscribed_at', null);
-    return (data ?? []).map((r) => ({ email: r.email, name: r.name ?? null }));
+    if (audienceSegment) query = query.eq('audience_segment', audienceSegment);
+    const { data } = await query;
+    const recipients: Recipient[] = [];
+    for (const row of data ?? []) {
+      if (row.channel === 'telegram' && row.telegram_chat_id) {
+        const chatId = String(row.telegram_chat_id).trim();
+        if (!chatId) continue;
+        recipients.push({
+          channel: 'telegram',
+          key: `telegram:${chatId}`,
+          email: null,
+          telegramChatId: chatId,
+          name: row.name ?? null,
+        });
+      } else if (row.channel === 'email' && row.email) {
+        const email = normalizeEmail(row.email);
+        if (!email) continue;
+        recipients.push({
+          channel: 'email',
+          key: `email:${email}`,
+          email,
+          telegramChatId: null,
+          name: row.name ?? null,
+        });
+      }
+    }
+    return dedupeRecipients(recipients);
   }
 
   if (segment === 'leads') {
@@ -41,7 +87,10 @@ export async function getSegmentRecipients(segment: SegmentKey): Promise<Recipie
       .not('state', 'eq', 'converted')
       .eq('marketing_status', 'consented')
       .not('email', 'is', null);
-    return (data ?? []).map((r) => ({ email: r.email, name: r.name ?? null }));
+    return dedupeRecipients((data ?? []).map((r) => {
+      const email = normalizeEmail(r.email);
+      return { channel: 'email' as const, key: `email:${email}`, email, telegramChatId: null, name: r.name ?? null };
+    }));
   }
 
   // Base: profiles with role='client'
@@ -60,9 +109,12 @@ export async function getSegmentRecipients(segment: SegmentKey): Promise<Recipie
   );
 
   if (segment === 'all_active' || segment === 'all') {
-    return (profiles ?? [])
+    return dedupeRecipients((profiles ?? [])
       .filter((p) => p.email)
-      .map((p) => ({ email: p.email!, name: p.full_name ?? null }));
+      .map((p) => {
+        const email = normalizeEmail(p.email!);
+        return { channel: 'email' as const, key: `email:${email}`, email, telegramChatId: null, name: p.full_name ?? null };
+      }));
   }
 
   // Resolve auth emails for profiles without email column
@@ -76,10 +128,17 @@ export async function getSegmentRecipients(segment: SegmentKey): Promise<Recipie
     }
   }
 
-  const allRecipients: Recipient[] = (profiles ?? []).map((p) => ({
-    email: p.email ?? emailById.get(p.id) ?? '',
-    name: p.full_name ?? null,
-  })).filter((r) => r.email);
+  const allRecipients: Recipient[] = (profiles ?? []).map((p) => {
+    const rawEmail = p.email ?? emailById.get(p.id) ?? '';
+    const email = rawEmail ? normalizeEmail(rawEmail) : '';
+    return {
+      channel: 'email' as const,
+      key: email ? `email:${email}` : '',
+      email: email || null,
+      telegramChatId: null,
+      name: p.full_name ?? null,
+    };
+  }).filter((r) => Boolean(r.email));
 
   if (segment === 'subscribers') {
     const { data: subs } = await admin
@@ -87,10 +146,10 @@ export async function getSegmentRecipients(segment: SegmentKey): Promise<Recipie
       .select('client_id')
       .eq('status', 'active');
     const subIds = new Set((subs ?? []).map((s) => s.client_id));
-    return allRecipients.filter((r) => {
+    return dedupeRecipients(allRecipients.filter((r) => {
       const id = Array.from(profileEmails.entries()).find(([, v]) => v.name === r.name)?.[0];
       return id ? subIds.has(id) : false;
-    });
+    }));
   }
 
   if (segment === 'no_subscription') {
@@ -102,11 +161,12 @@ export async function getSegmentRecipients(segment: SegmentKey): Promise<Recipie
     const profilesByEmail = new Map(
       (profiles ?? []).filter((p) => p.email).map((p) => [p.email!, p.id])
     );
-    return allRecipients.filter((r) => {
+    return dedupeRecipients(allRecipients.filter((r) => {
+      if (!r.email) return false;
       const id = profilesByEmail.get(r.email);
       return id ? !subIds.has(id) : true;
-    });
+    }));
   }
 
-  return allRecipients;
+  return dedupeRecipients(allRecipients);
 }

@@ -4,6 +4,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { getStripeClient } from '@/lib/integrations/stripe';
 import { sendEmail } from '@/lib/email/send';
 import { quoteResponded, quoteAcceptedAdmin } from '@/lib/email/templates';
+import { createQuoteClaimToken } from '@/lib/quotes/quote-claim-token';
 
 const quoteUpdateSchema = z
   .object({
@@ -49,7 +50,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     // Fetch current quote state before update (for email triggers and immutable structured totals)
     const { data: currentQuote } = await adminSupabase
       .from('quotes')
-      .select('status,amount_eur,lead_id,client_id,expires_at,stripe_checkout_id')
+      .select('status,amount_eur,lead_id,client_id,expires_at,stripe_checkout_id,claim_email')
       .eq('id', paramsData.id)
       .single();
 
@@ -121,7 +122,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       .from('quotes')
       .update(updates)
       .eq('id', paramsData.id)
-      .select('id,title,amount_eur,status,expires_at,client_id,lead_id')
+      .select('id,title,amount_eur,status,expires_at,client_id,lead_id,claim_email')
       .single();
 
     if (updateError || !updatedQuote) {
@@ -140,10 +141,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         .eq('id', updatedQuote.lead_id)
         .single();
 
-      if (lead?.email) {
-        const tpl = quoteResponded(lead.name ?? 'Cliente', newAmount, updatedQuote.expires_at);
+      const recipientEmail = (updatedQuote.claim_email ?? lead?.email)?.trim().toLowerCase() ?? '';
+      if (recipientEmail) {
+        if (!updatedQuote.claim_email) {
+          await adminSupabase
+            .from('quotes')
+            .update({ claim_email: recipientEmail })
+            .eq('id', paramsData.id)
+            .is('claim_email', null);
+        }
+        const claimToken = updatedQuote.client_id
+          ? undefined
+          : createQuoteClaimToken({ quoteId: paramsData.id, email: recipientEmail });
+        const tpl = quoteResponded(lead?.name ?? 'Cliente', newAmount, updatedQuote.expires_at, claimToken);
         await sendEmail({
-          to: lead.email,
+          to: recipientEmail,
           eventType: 'quote.responded',
           ...tpl,
           metadata: { quote_id: paramsData.id }

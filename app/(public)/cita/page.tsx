@@ -35,13 +35,14 @@ const HOW_IT_WORKS = [
 export default async function CitaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipo?: string; auth?: string; companyId?: string; manage?: string }>;
+  searchParams: Promise<{ tipo?: string; auth?: string; companyId?: string; manage?: string; origen?: string }>;
 }) {
   const params = await searchParams;
   const serviceKey = params.tipo?.trim() || 'consulta-inicial';
   const bookingAuth = params.auth?.trim() || null;
   const companyId = params.companyId?.trim() || null;
   const manageToken = params.manage?.trim() || null;
+  const origin = params.origen?.trim() || null;
 
   return (
     <main className="min-h-screen bg-[#F8F6F1] text-[#0D1B2A]">
@@ -67,6 +68,7 @@ export default async function CitaPage({
             bookingAuth={bookingAuth}
             companyId={companyId}
             manageToken={manageToken}
+            origin={origin}
           />
 
           <div className="hidden space-y-4 lg:block">

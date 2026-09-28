@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await ctx.admin
     .from('campaigns')
-    .select('id,title,status,subject,segment,recipient_count,sent_count,failed_count,sent_at,created_at')
+    .select('id,title,status,subject,segment,audience_segment,recipient_count,sent_count,failed_count,sent_at,created_at')
     .order('created_at', { ascending: false })
     .limit(50);
 
@@ -32,6 +32,7 @@ const createSchema = z.object({
   body_html: z.string().min(1),
   body_text: z.string().optional(),
   segment:  z.enum(['all_active','subscribers','no_subscription','leads','all','newsletter']),
+  audience_segment: z.enum(['particular_residente','particular_no_residente','autonomo','empresa']).nullable().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -43,7 +44,10 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message }, { status: 400 });
 
   // Pre-count recipients for this segment
-  const recipients = await getSegmentRecipients(parsed.data.segment as SegmentKey);
+  const recipients = await getSegmentRecipients(
+    parsed.data.segment as SegmentKey,
+    parsed.data.segment === 'newsletter' ? parsed.data.audience_segment ?? null : null,
+  );
 
   const { data, error } = await ctx.admin
     .from('campaigns')
