@@ -6,6 +6,7 @@ import { NewsletterForm } from '@/components/site/NewsletterForm';
 import { ArticleIntentCTA } from '@/components/content/ArticleIntentCTA';
 import { blogArticles, getArticle } from '@/lib/utils/blog';
 import { getDocRedirectTarget } from '@/lib/utils/docs';
+import { services } from '@/lib/utils/catalog';
 
 export function generateStaticParams() {
   return blogArticles.map((a) => ({ slug: a.slug }));
@@ -69,6 +70,9 @@ export default async function BlogArticlePage({
   if (!article) return notFound();
 
   const related = blogArticles.filter((a) => a.slug !== slug && a.category === article.category).slice(0, 2);
+  const primaryService = article.relatedServiceSlugs?.[0]
+    ? services.find((service) => service.slug === article.relatedServiceSlugs?.[0]) ?? null
+    : null;
   const canonicalUrl = `https://expertconsulting.es/blog/${article.slug}`;
 
   // Parse "13 may 2026" → "2026-05-13"
@@ -166,6 +170,12 @@ export default async function BlogArticlePage({
               sourceKind="blog"
               sourceSlug={article.slug}
               relatedServiceSlugs={article.relatedServiceSlugs}
+              service={primaryService ? {
+                slug: primaryService.slug,
+                categoria: primaryService.categoria,
+                name: primaryService.name,
+                hasCheckout: Boolean(primaryService.stripePriceId),
+              } : null}
             />
           </article>
 
