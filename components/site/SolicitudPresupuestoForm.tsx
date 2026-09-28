@@ -52,12 +52,23 @@ const serviceCategories = [
   }
 ];
 
+const LEGACY_SERVICE_IDS: Record<string, string> = {
+  noResidentes: 'no-residentes',
+  modelo151: 'modelo-151',
+};
+
+function normalizeServiceId(serviceId: string | null): string | null {
+  if (!serviceId) return null;
+  return LEGACY_SERVICE_IDS[serviceId] ?? serviceId;
+}
+
 function getServiceName(serviceId: string): string {
+  const normalized = normalizeServiceId(serviceId) ?? serviceId;
   for (const category of serviceCategories) {
-    const service = category.services.find((item) => item.id === serviceId);
+    const service = category.services.find((item) => item.id === normalized);
     if (service) return service.name;
   }
-  return serviceId.replace(/-/g, ' ');
+  return normalized.replace(/-/g, ' ');
 }
 
 function buildContextNote(params: {
@@ -77,7 +88,7 @@ function buildContextNote(params: {
 
 export function SolicitudPresupuestoForm() {
   const searchParams = useSearchParams();
-  const serviceFromUrl = searchParams.get('servicio');
+  const serviceFromUrl = normalizeServiceId(searchParams.get('servicio'));
   const originFromUrl = searchParams.get('origen');
   const typeFromUrl = searchParams.get('tipo');
   const modeFromUrl = searchParams.get('modalidad');
