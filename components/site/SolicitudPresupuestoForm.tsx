@@ -34,7 +34,16 @@ const serviceCategories = [
     services: [
       { id: 'alta-autonomos', name: 'Alta como autónomo', description: 'Constitución y registro como trabajador autónomo' },
       { id: 'constitucion', name: 'Constitución de empresa', description: 'Creación de SL, SA u otras formas societarias' },
-      { id: 'contabilidad', name: 'Asesoría contable y fiscal', description: 'Contabilidad, impuestos y gestión empresarial' }
+      { id: 'contabilidad', name: 'Asesoría contable y fiscal', description: 'Contabilidad, impuestos y gestión empresarial' },
+      { id: 'nif-socio-extranjero', name: 'NIF para socio extranjero', description: 'Precio por cada socio o administrador extranjero' }
+    ]
+  },
+  {
+    id: 'holded',
+    title: 'Holded',
+    services: [
+      { id: 'holded-migracion-laboral', name: 'Migración laboral a Holded', description: 'Migración y validación por empleado' },
+      { id: 'formacion-holded', name: 'Formación Holded', description: 'Formación práctica en Holded' }
     ]
   },
   {
