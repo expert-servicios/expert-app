@@ -59,6 +59,7 @@ const CLIENT_ID = 'aaaaaaaa-0000-0000-0000-eeeeeeeeeeee';
 
 function makeContext(clientId: string | null = CLIENT_ID): KiaContext {
   return {
+    latestMessage: null,
     contact: {
       status: 'client',
       name: 'Test User',
