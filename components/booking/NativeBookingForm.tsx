@@ -28,6 +28,7 @@ interface Props {
   bookingAuth?: string | null;
   companyId?: string | null;
   manageToken?: string | null;
+  origin?: string | null;
 }
 
 function groupByDate(slots: Slot[]) {
@@ -56,7 +57,7 @@ function dateLabel(date: string) {
   }).format(parsed);
 }
 
-export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageToken }: Props) {
+export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageToken, origin }: Props) {
   const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
   const [availabilityError, setAvailabilityError] = useState('');
   const [loadingSlots, setLoadingSlots] = useState(true);
@@ -147,6 +148,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
           booking_auth: bookingAuth ?? undefined,
           company_id: companyId ?? undefined,
           manage_token: manageToken ?? undefined,
+          origin: origin ?? undefined,
         }),
       });
       const data = await res.json();
