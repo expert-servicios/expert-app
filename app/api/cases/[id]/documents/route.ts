@@ -104,9 +104,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .filter(Boolean)
         .some((serviceId: string) => PERSONAL_DOCUMENT_SERVICE_IDS.has(serviceId)),
     );
-    const companyId = personalDocumentScope
-      ? null
-      : await resolveDocumentCompany(adminSupabase, clientId, caseData.company_id ?? null);
+    const explicitCompanyId = caseData.company_id ?? null;
+    const companyId = explicitCompanyId
+      ?? (personalDocumentScope
+        ? null
+        : await resolveDocumentCompany(adminSupabase, clientId, null));
 
     if (!personalDocumentScope && !companyId) {
       return NextResponse.json({
