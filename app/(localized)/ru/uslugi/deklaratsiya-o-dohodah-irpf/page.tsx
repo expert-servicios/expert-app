@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Check, Clock } from 'lucide-react';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
+import { ServicePriceCalculator } from '@/components/services/ServicePriceCalculator';
 import { getCatalogService } from '@/lib/utils/catalog';
 import { isLocalePubliclyEnabled } from '@/lib/i18n/feature-flags';
 import { getLocalizedServicePresentation } from '@/lib/services/service-localized-content';
@@ -176,12 +177,12 @@ export default function RuIrpfPage() {
                 className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:cursor-not-allowed disabled:opacity-60"
               />
             ) : (
-              <Link
-                href="/solicitar-presupuesto?servicio=irpf&origen=service%3Airpf"
+              <a
+                href="#calculadora-irpf"
                 className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-8 py-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]"
               >
                 Рассчитать стоимость
-              </Link>
+              </a>
             )}
             <Link
               href="/solicitar-presupuesto?servicio=irpf&tipo=caso-complejo"
@@ -195,6 +196,12 @@ export default function RuIrpfPage() {
 
       <section className="mx-auto grid max-w-5xl gap-10 px-6 py-12 md:py-16 lg:grid-cols-[1fr_320px] lg:items-start">
         <div className="space-y-10">
+          {!CART_ITEM && (
+            <section id="calculadora-irpf" className="scroll-mt-24">
+              <ServicePriceCalculator kind="irpf" origin="service:irpf" locale="ru" />
+            </section>
+          )}
+
           <div>
             <h2 className="font-serif text-2xl font-bold">Что входит в услугу</h2>
             <ul className="mt-5 space-y-3">
@@ -235,12 +242,12 @@ export default function RuIrpfPage() {
                   className="inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[#D4A017] px-4 py-2.5 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E] disabled:opacity-60"
                 />
               ) : (
-                <Link
-                  href="/solicitar-presupuesto?servicio=irpf&origen=service%3Airpf"
+                <a
+                  href="#calculadora-irpf"
                   className="inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[#D4A017] px-4 py-2.5 text-sm font-bold text-[#0D1B2A] shadow-md shadow-[#D4A017]/20 transition hover:bg-[#F2C14E]"
                 >
                   Рассчитать стоимость
-                </Link>
+                </a>
               )}
               <Link
                 href="/consulta-gratuita?servicio=irpf&origen=service%3Airpf"
