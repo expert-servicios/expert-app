@@ -10,6 +10,7 @@ import {
   listBookingCalendarBusyWindows,
 } from '@/lib/booking/calendar-provider';
 import { sendEmail } from '@/lib/email/send';
+import { sendBookingEmail } from '@/lib/booking/booking-email';
 import { caseOpened, citaConfirmed } from '@/lib/email/templates';
 import { onboardingPreparationEmail } from '@/lib/email/onboarding-templates';
 import { ensureOnboardingTask, findOpenOnboardingCase } from '@/lib/admin/onboarding-followup';
@@ -215,22 +216,6 @@ async function runNativeAdministrativeWorkflow(input: {
         appointment_id: input.appointmentId,
       },
       idempotencyKey: `native/case-opened/${input.appointmentId}`,
-    });
-  }
-
-  const adminEmails = await getAdminNotificationEmails();
-  if (adminEmails.length) {
-    await sendEmail({
-      to: adminEmails,
-      eventType: 'onboarding.booking.admin',
-      subject: `Reserva ${serviceLabel} — ${input.name}`,
-      html: `<p>Nueva reserva administrativa registrada en EXPERT.</p><p><strong>Cliente:</strong> ${input.name} (${input.email})</p><p><strong>Servicio:</strong> ${serviceLabel}</p><p><strong>Inicio:</strong> ${input.start.toISOString()}</p><p><strong>Reunión:</strong> ${input.meetingUrl}</p>`,
-      metadata: {
-        appointment_id: input.appointmentId,
-        company_id: identity?.companyId ?? null,
-        booking_provider: input.bookingProvider,
-      },
-      idempotencyKey: `native/admin-booking/${input.appointmentId}`,
     });
   }
 }
@@ -545,19 +530,75 @@ export async function POST(request: NextRequest) {
       year: 'numeric',
     }).format(start);
 
-    await sendEmail({
-      to: bookingEmail,
-      eventType: 'cita.confirmed',
-      ...citaConfirmed(input.name, service.label, formattedDate, localTime, meeting.meetingUrl),
-      metadata: {
-        appointment_id: appointmentId,
-        client_id: privateIdentity?.clientId ?? null,
-        company_id: privateIdentity?.companyId ?? null,
-        provider_event_id: meeting.eventId,
-        booking_provider: meeting.bookingProvider,
-      },
-      idempotencyKey: `booking/confirmed/${appointmentId}`,
-    }).catch((error) => console.error('[booking] confirmation email:', error));
+    const clientTemplate = citaConfirmed(
+      input.name,
+      service.label,
+      formattedDate,
+      localTime,
+      meeting.meetingUrl,
+    );
+    let clientEmailSent = false;
+    try {
+      await sendBookingEmail({
+        to: bookingEmail,
+        eventType: 'cita.confirmed',
+        ...clientTemplate,
+        metadata: {
+          appointment_id: appointmentId,
+          client_id: privateIdentity?.clientId ?? null,
+          company_id: privateIdentity?.companyId ?? null,
+          provider_event_id: meeting.eventId,
+          booking_provider: meeting.bookingProvider,
+        },
+        idempotencyKey: `booking/confirmed/${appointmentId}`,
+      });
+      clientEmailSent = true;
+    } catch (error) {
+      console.error('[booking] confirmation email failed on all transports:', error);
+    }
+
+    const adminEmails = await getAdminNotificationEmails();
+    const adminSubject = `Nueva cita: ${service.label} — ${input.name}`;
+    const adminHtml = [
+      '<h2>Nueva cita confirmada en EXPERT</h2>',
+      `<p><strong>Cliente:</strong> ${input.name}</p>`,
+      `<p><strong>Email:</strong> ${bookingEmail}</p>`,
+      `<p><strong>Teléfono:</strong> ${input.phone}</p>`,
+      `<p><strong>Servicio:</strong> ${service.label}</p>`,
+      `<p><strong>Fecha:</strong> ${formattedDate}</p>`,
+      `<p><strong>Hora:</strong> ${localTime}</p>`,
+      meeting.meetingUrl
+        ? `<p><strong>Google Meet:</strong> <a href="${meeting.meetingUrl}">${meeting.meetingUrl}</a></p>`
+        : '',
+      input.notes ? `<p><strong>Comentario:</strong> ${input.notes}</p>` : '',
+    ].filter(Boolean).join('');
+
+    const adminResults = await Promise.allSettled(
+      adminEmails.map((adminEmail) =>
+        sendBookingEmail({
+          to: adminEmail,
+          eventType: 'booking.confirmed.admin',
+          subject: adminSubject,
+          html: adminHtml,
+          metadata: {
+            appointment_id: appointmentId,
+            client_email: bookingEmail,
+            client_id: privateIdentity?.clientId ?? null,
+            company_id: privateIdentity?.companyId ?? null,
+            provider_event_id: meeting.eventId,
+            booking_provider: meeting.bookingProvider,
+            service_key: service.key,
+          },
+          idempotencyKey: `booking/admin-confirmed/${appointmentId}/${adminEmail.toLowerCase()}`,
+        })
+      )
+    );
+    const adminEmailSent = adminResults.some((result) => result.status === 'fulfilled');
+    for (const result of adminResults) {
+      if (result.status === 'rejected') {
+        console.error('[booking] admin confirmation email failed on all transports:', result.reason);
+      }
+    }
 
     return NextResponse.json({
       ok: true,
@@ -565,6 +606,8 @@ export async function POST(request: NextRequest) {
       start: start.toISOString(),
       end: end.toISOString(),
       meetingUrl: meeting.meetingUrl,
+      emailSent: clientEmailSent,
+      adminEmailSent,
     });
   } catch (error) {
     console.error('[booking]', error);
