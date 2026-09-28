@@ -153,6 +153,7 @@ export interface GmailMessage {
   autoSubmitted?: string | null;
   precedence?: string | null;
   listUnsubscribe?: string | null;
+  replyTo?: string | null;
 }
 
 function hdr(headers: Array<{ name: string; value: string }>, name: string): string {
@@ -307,6 +308,7 @@ async function _getThread(gmail: AnyGoogle, threadId: string, markRead = true): 
       autoSubmitted: hdr(headers, 'Auto-Submitted') || null,
       precedence: hdr(headers, 'Precedence') || null,
       listUnsubscribe: hdr(headers, 'List-Unsubscribe') || null,
+      replyTo: hdr(headers, 'Reply-To') ? parseAddr(hdr(headers, 'Reply-To')).email : null,
     };
   });
 }
