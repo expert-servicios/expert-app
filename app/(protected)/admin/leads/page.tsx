@@ -47,6 +47,8 @@ type Lead = {
     intent: string | null;
     origin: string | null;
     service: string | null;
+    email: string | null;
+    phone: string | null;
   } | null;
   stripe_summary: StripeSummary;
 };
@@ -362,6 +364,8 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
                           <div className="mt-2 rounded-lg border border-[#eadfce] bg-[#fffdf8] p-2 text-[11px] leading-4 text-[#6f665b]">
                             <p className="font-semibold text-[#29384a]">Última interacción</p>
                             {lead.latest_interaction.service && <p>Servicio: {lead.latest_interaction.service}</p>}
+                            {lead.latest_interaction.email && <p className="break-all">Email enviado: {lead.latest_interaction.email}</p>}
+                            {lead.latest_interaction.phone && <p>Teléfono enviado: {lead.latest_interaction.phone}</p>}
                             {lead.latest_interaction.origin && <p className="break-all">Origen: {lead.latest_interaction.origin}</p>}
                           </div>
                         )}
