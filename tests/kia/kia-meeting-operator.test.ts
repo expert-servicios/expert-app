@@ -27,8 +27,10 @@ describe('KIA Google meeting operator', () => {
     expect(operator).toContain('kia_booking_service_not_allowed');
   });
 
-  it('requires explicit confirmation with exact date and time', () => {
+  it('requires explicit non-negated confirmation with exact date and time', () => {
     expect(operator).toContain('hasExplicitSlotConfirmation');
+    expect(operator).toContain("normalize('NFD')");
+    expect(operator).toContain('if (negative) return false');
     expect(operator).toContain('affirmative && dateMention && timeMention');
     expect(operator).toContain('kia_booking_explicit_confirmation_required');
     expect(operator).toContain("input.confirmationMessage || latestUserText(input.contextMessages)");
@@ -64,6 +66,12 @@ describe('KIA Google meeting operator', () => {
     expect(operator).toContain("source: 'kia'");
     expect(operator).toContain("kind: 'kia_created'");
     expect(operator).toContain('meetingUrl: meeting.meetingUrl');
+    expect(operator).toContain('confirmation email failed; booking retained');
+  });
+
+  it('cancels the Admin task if booking compensation is needed', () => {
+    expect(operator).toContain('cancelBookingAdminTask(');
+    expect(operator).toContain('Reserva KIA revertida durante compensación por error.');
   });
 
   it('pushes standard booking lifecycle changes too', () => {
