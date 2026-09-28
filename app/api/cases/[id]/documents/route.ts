@@ -98,10 +98,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const clientId = caseData.client_id;
     const personalDocumentScope = Boolean(
-      caseData.service_id
-        ?.split(',')
-        .map((serviceId) => serviceId.trim())
-        .some((serviceId) => PERSONAL_DOCUMENT_SERVICE_IDS.has(serviceId)),
+      String(caseData.service_id ?? '')
+        .split(',')
+        .map((serviceId: string) => serviceId.trim())
+        .filter(Boolean)
+        .some((serviceId: string) => PERSONAL_DOCUMENT_SERVICE_IDS.has(serviceId)),
     );
     const companyId = personalDocumentScope
       ? null
