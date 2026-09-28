@@ -41,7 +41,7 @@ Rama de trabajo: `claude/sharp-wozniak-1ohax6`.
 - [x] **daily-summary sin try/catch en sendEmail()** — fallo derribaba todo el cron
       sin log. Fix aplicado: envuelto en try/catch, devuelve siempre 200 con
       `emailSent`/`emailError` en el JSON. `app/api/cron/daily-summary/route.ts`
-- [x] **iframe Cal.com sin sandbox** — riesgo XSS/clickjacking de tercero. Fix
+- [x] **iframe proveedor de reservas anterior sin sandbox** — riesgo XSS/clickjacking de tercero. Fix
       aplicado: `sandbox="allow-scripts allow-same-origin allow-forms allow-popups
       allow-popups-to-escape-sandbox"`. `app/(public)/cita/page.tsx:74-82`
 - [x] **Kia sin rate limiting ni control de coste** — gasto ilimitado por usuario.
@@ -138,7 +138,7 @@ sitemap).
 
 Repaso completo pedido antes de escalar tráfico: dashboard cliente, catálogo de
 servicios, checkout (único + suscripción mensual), migración a Holded,
-reuniones (Cal.com), formularios restantes, flujos de email cliente-admin.
+reuniones (proveedor de reservas anterior), formularios restantes, flujos de email cliente-admin.
 Se corrió el test suite completo (`npm run test`, 83/83 verde) antes y después.
 
 ### Corregido
@@ -160,12 +160,12 @@ Se corrió el test suite completo (`npm run test`, 83/83 verde) antes y después
       en vez de 499€/899€/1199€. Corregido para igualar el catálogo — evita un
       cobro incorrecto si esta ruta se conecta a un botón en el futuro.
       `app/api/holded/checkout/route.ts`
-- [x] **Webhook de Cal.com sin manejo de errores** — todo el cuerpo del `POST` podía
+- [x] **Webhook de proveedor de reservas anterior sin manejo de errores** — todo el cuerpo del `POST` podía
       lanzar sin capturar; un fallo de Supabase dejaba al cliente creyendo que su
-      cita estaba confirmada (Cal.com sí la muestra) mientras el equipo nunca la
+      cita estaba confirmada (proveedor de reservas anterior sí la muestra) mientras el equipo nunca la
       veía en `appointments`. Fix: try/catch envolvente + logging por evento y
       por operación de DB, siempre devuelve 200 para evitar reintentos duplicados
-      de Cal.com. `app/api/webhooks/cal/route.ts`
+      de proveedor de reservas anterior. `app/api/webhooks/cal/route.ts`
 - [x] **`listUsers()` sin paginar en auto-creación de expediente por reserva** — con
       más de ~50-1000 usuarios, clientes reales dejaban de generar expediente
       automático al reservar onboarding/formación, sin error visible. Fix: usa
@@ -210,7 +210,7 @@ Se corrió el test suite completo (`npm run test`, 83/83 verde) antes y después
   guard y reCAPTCHA en orden correcto, sin gaps.
 - Flujo de reseñas (`/gracias/opinion` + `/api/reviews/submit`) — token
   validado por regex y expiración, envío duplicado bloqueado.
-- Configuración de Cal.com (`lib/utils/cal.ts`) — 4 URLs derivadas
+- Configuración de proveedor de reservas anterior (`lib/utils/cal.ts`) — 4 URLs derivadas
   consistentemente de env vars, slugs coinciden en todos los puntos de uso.
 - Checkout de suscripciones (`SubscriptionCheckoutButton`, `/api/subscriptions/
   checkout`) y portal de cliente (`CustomerPortalButton`) — bloqueos claros con
