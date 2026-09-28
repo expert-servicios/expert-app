@@ -16,6 +16,7 @@ import { getCalMeetingUrl } from '@/lib/utils/cal';
 import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
 import { ServiceShareActions } from '@/components/services/ServiceShareActions';
 import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
+import { IrnrPriceCalculator } from '@/components/services/IrnrPriceCalculator';
 import { getCompanionServices } from '@/lib/services/service-merchandising';
 import { getRuServicePath } from '@/lib/services/service-localized-content';
 
@@ -303,6 +304,8 @@ export default async function ServicioDetallePage({
               <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">¿En qué consiste?</h2>
               <p className="mt-4 text-[15px] leading-7 text-[#23364D]">{service.description}</p>
             </div>
+
+            {servicio === 'no-residentes' && <IrnrPriceCalculator />}
 
             {(service.servicePriceDetail || service.officialFee) && (
               <div className="grid gap-4 md:grid-cols-2">
