@@ -311,7 +311,6 @@ export default async function ServicioDetallePage({
               <p className="mt-4 text-[15px] leading-7 text-[#23364D]">{service.description}</p>
             </div>
 
-            {servicio === 'no-residentes' && <IrnrPriceCalculator />}
 
             {service.priceCalculator && <ServicePriceCalculator kind={service.priceCalculator} origin={serviceOrigin} />}
             {service.unitPriceCalculator && (
