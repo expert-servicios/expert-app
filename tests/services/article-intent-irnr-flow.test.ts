@@ -19,6 +19,8 @@ describe('article intent CTA and IRNR funnel', () => {
   const blueprint = source('lib/services/service-operational-blueprints.ts');
   const casePage = source('app/(protected)/dashboard/expedientes/[id]/page.tsx');
   const questionnaire = source('components/cases/IrnrCaseQuestionnaire.tsx');
+  const adminLeadsApi = source('app/api/admin/leads/route.ts');
+  const adminLeadsPage = source('app/(protected)/admin/leads/page.tsx');
 
   it('offers three clear intents below articles', () => {
     expect(cta).toContain('Tengo una consulta');
@@ -27,6 +29,13 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(cta).toContain('/consulta-gratuita');
     expect(cta).toContain('/cita?tipo=consulta-inicial');
     expect(cta).toContain('https://t.me/kia_expert_bot');
+  });
+
+  it('keeps the SEO CTA bundle lean', () => {
+    expect(cta).not.toContain("import { services } from '@/lib/utils/catalog'");
+    expect(cta).toContain("dynamic(");
+    expect(blogPage).toContain('hasCheckout: Boolean(primaryService.stripePriceId)');
+    expect(docsPage).toContain('hasCheckout: Boolean(relatedServices[0].stripePriceId)');
   });
 
   it('removes WhatsApp from article CTAs', () => {
@@ -39,6 +48,8 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(calc).toContain('Titulares no residentes');
     expect(calc).toContain('Está alquilado');
     expect(calc).toContain('Unidades declarativas estimadas');
+    expect(calc).toContain("intent: 'irnr_quote'");
+    expect(calc).toContain('holderDistribution');
   });
 
   it('captures free questions as demand leads', () => {
@@ -46,6 +57,11 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(consultationApi).toContain("category: 'Consulta gratuita'");
     expect(consultationApi).toContain("intent: 'free_question'");
     expect(consultationApi).toContain("title: 'Nueva consulta gratuita'");
+    expect(consultationApi).toContain("last_acquisition: interaction");
+    expect(consultationApi).toContain("url: `/admin/leads?focus=${leadId}`");
+    expect(adminLeadsApi).toContain("message,country,state");
+    expect(adminLeadsApi).toContain("query = query.eq('id', focus)");
+    expect(adminLeadsPage).toContain('Ver consulta completa');
   });
 
   it('preserves content origin when an article reader requests a quote', () => {
