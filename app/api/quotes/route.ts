@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     const spam = checkSpam({
       name: validated.name,
-      email: validated.email,
+      email: normalizedEmail,
       message: validated.description
     });
     if (spam.isSpam) {
@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const normalizedEmail = validated.email.trim().toLowerCase();
     const serviceSlugs = validated.services.map(canonicalServiceSlug);
     const serviceSlugList = serviceSlugs.join(', ');
     const serviceList = serviceSlugs.map(serviceDisplayName).join(', ');
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
       .from('leads')
       .insert({
         name: validated.name,
-        email: validated.email,
+        email: normalizedEmail,
         phone: validated.phone?.trim() || null,
         client_type: 'particular',
         category: 'Presupuesto',
@@ -142,14 +143,14 @@ export async function POST(request: NextRequest) {
 
     const clientTpl = quoteReceivedClient(validated.name, serviceList);
     await sendEmail({
-      to: validated.email,
+      to: normalizedEmail,
       eventType: 'quote.received',
       ...clientTpl,
       metadata: { quote_id: quote.id, lead_id: lead.id }
     });
 
     if (adminEmails.length) {
-      const adminTpl = quoteReceivedAdmin(validated.name, validated.email, serviceList, descriptionText);
+      const adminTpl = quoteReceivedAdmin(validated.name, normalizedEmail, serviceList, descriptionText);
       await sendEmail({
         to: adminEmails,
         eventType: 'quote.received.admin',
@@ -182,6 +183,36 @@ export async function GET(request: NextRequest) {
 
     if (authError || !user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+
+    const verifiedEmail = user.email?.trim().toLowerCase() ?? null;
+    if (verifiedEmail) {
+      const admin = getSupabaseAdmin();
+      const { data: candidateLeads, error: leadLookupError } = await admin
+        .from('leads')
+        .select('id,email')
+        .is('email', null, { negate: true });
+
+      if (leadLookupError) {
+        console.error('[quotes] pending quote ownership lookup failed:', leadLookupError);
+      } else {
+        const matchingLeadIds = (candidateLeads ?? [])
+          .filter((lead) => typeof lead.email === 'string' && lead.email.trim().toLowerCase() === verifiedEmail)
+          .map((lead) => lead.id);
+
+        if (matchingLeadIds.length > 0) {
+          const { error: claimError } = await admin
+            .from('quotes')
+            .update({ client_id: user.id })
+            .in('lead_id', matchingLeadIds)
+            .is('client_id', null)
+            .in('status', ['draft', 'sent', 'accepted']);
+
+          if (claimError) {
+            console.error('[quotes] pending quote ownership claim failed:', claimError);
+          }
+        }
+      }
     }
 
     const { data: quotes, error: fetchError } = await supabase
