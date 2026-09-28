@@ -55,7 +55,8 @@ export const MONTHLY_PLANS_KNOWLEDGE = {
       'Resumen mensual generado por Kia',
       'Estado de empresa básico',
       'Soporte básico por email, KIA chat o Telegram',
-      'Modalidad apta para autónomo vinculado/económicamente dependiente de una empresa del mismo grupo cuando la operativa es simple y normalmente no supera unas 10 facturas al mes',
+      'Modalidad especial para autónomo vinculado/económicamente dependiente de una empresa del mismo cliente cuando la operativa es simple y normalmente no supera unas 10 facturas al mes',
+      'En esa modalidad vinculada, las obligaciones fiscales básicas del autónomo pueden incluirse según alcance aunque el Plan Supervisión general no incluya presentación de impuestos',
       'En la modalidad autónomo vinculado simple se incluyen los modelos fiscales básicos derivados de esa operativa vinculada',
     ],
     excludes: [
@@ -102,7 +103,7 @@ export const MONTHLY_PLANS_KNOWLEDGE = {
   kiaRules: [
     'Si pregunta "gratis", explicar prueba Holded 14 días, no Plan Gratuito EXPERT.',
     'Si quiere soporte mensual barato, recomendar Plan Supervisión.',
-    'Si es autónomo vinculado/económicamente dependiente de una empresa del mismo cliente, con operativa simple y normalmente <=10 facturas/mes, usar Plan Supervisión 49 €/mes + IVA como referencia salvo complejidad fiscal adicional.',
+    'Si es autónomo vinculado/económicamente dependiente de una empresa del mismo cliente, con operativa simple y normalmente <=10 facturas/mes, usar la modalidad vinculada del Plan Supervisión 49 €/mes + IVA como referencia. Puede incluir obligaciones fiscales básicas del autónomo según alcance; si hay complejidad adicional, pasar a Avanzado o presupuesto.'
     'Si quiere impuestos, recomendar Plan Avanzado.',
     'Si quiere delegar más, recomendar Plan Colaborativo.',
     'Si tiene laboral, volumen alto o varias sociedades, recomendar Plan Personalizado.',
