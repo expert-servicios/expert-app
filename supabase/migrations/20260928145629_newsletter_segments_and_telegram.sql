@@ -67,9 +67,39 @@ alter table public.campaign_sends
   add column if not exists recipient_channel text not null default 'email',
   add column if not exists recipient_key text;
 
+-- Canonicalize legacy email recipients to the same key format used by
+-- current campaign dispatch. This makes historical and future idempotency
+-- comparable and avoids case/whitespace duplicates.
 update public.campaign_sends
-set recipient_key = recipient_email
-where recipient_key is null;
+set recipient_key = 'email:' || lower(trim(recipient_email)),
+    recipient_channel = 'email'
+where recipient_key is null
+   or (
+     recipient_channel = 'email'
+     and recipient_key not like 'email:%'
+   );
+
+-- Historical lead campaigns could contain more than one row for the same
+-- normalized recipient (for example, two consented lead records sharing an
+-- email address). Keep one deterministic row per campaign/recipient before
+-- adding the unique index. Prefer a successful send when one exists.
+with ranked_campaign_sends as (
+  select
+    id,
+    row_number() over (
+      partition by campaign_id, recipient_key
+      order by
+        case when status = 'sent' then 0 else 1 end,
+        sent_at asc nulls last,
+        created_at asc,
+        id asc
+    ) as duplicate_rank
+  from public.campaign_sends
+)
+delete from public.campaign_sends cs
+using ranked_campaign_sends ranked
+where cs.id = ranked.id
+  and ranked.duplicate_rank > 1;
 
 alter table public.campaign_sends
   alter column recipient_key set not null,
