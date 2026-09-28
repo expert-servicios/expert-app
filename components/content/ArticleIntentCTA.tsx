@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { CalendarDays, FileQuestion, Send, MessageCircle } from 'lucide-react';
-import { getServiceBySlug } from '@/lib/utils/catalog';
+import { services } from '@/lib/utils/catalog';
 import { IrnrPriceCalculator } from '@/components/services/IrnrPriceCalculator';
 
 type Props = {
@@ -11,7 +11,7 @@ type Props = {
 
 export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs = [] }: Props) {
   const primaryServiceSlug = relatedServiceSlugs[0] ?? null;
-  const service = primaryServiceSlug ? getServiceBySlug(primaryServiceSlug) : null;
+  const service = primaryServiceSlug ? services.find((item) => item.slug === primaryServiceSlug) ?? null : null;
   const origin = `${sourceKind}:${sourceSlug}`;
   const serviceHref = service
     ? `/servicios/${service.categoria}/${service.slug}`
