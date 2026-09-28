@@ -367,7 +367,7 @@ export function quoteResponded(name: string, amount: number, expiresAt: string |
         detail('Válido hasta', expiry)
       )}
       ${para('<em>Si tienes alguna duda sobre la propuesta, responde a este email y lo aclaramos.</em>')}
-      ${btn('Revisar y pagar', `${BRAND.appUrl}/dashboard/presupuestos`)}
+      ${btn('Revisar y pagar', accessUrl)}
     `)
   };
 }
