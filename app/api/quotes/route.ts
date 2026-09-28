@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
     }
 
     const validated = quoteRequestSchema.parse(requestBody);
+    const normalizedEmail = validated.email.trim().toLowerCase();
 
     const spam = checkSpam({
       name: validated.name,
@@ -73,7 +74,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const normalizedEmail = validated.email.trim().toLowerCase();
     const serviceSlugs = validated.services.map(canonicalServiceSlug);
     const serviceSlugList = serviceSlugs.join(', ');
     const serviceList = serviceSlugs.map(serviceDisplayName).join(', ');
