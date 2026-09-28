@@ -16,6 +16,8 @@ describe('public quote request lifecycle', () => {
     expect(route).toContain('getCatalogService(slug)?.name');
     expect(route).toContain('service: serviceSlugList');
     expect(route).toContain('const serviceList = serviceSlugs.map(serviceDisplayName).join');
+    expect(route).toContain('service_slugs: serviceSlugs');
+    expect(route).toContain('claim_email: normalizedEmail');
   });
 
   it('requires the capability sent to the lead mailbox before claiming a quote', () => {
@@ -26,6 +28,8 @@ describe('public quote request lifecycle', () => {
     expect(claimToken).toContain('timingSafeEqual');
     expect(claimRoute).toContain('verifyQuoteClaimToken(token)');
     expect(claimRoute).toContain('userEmail !== claim.email');
+    expect(claimRoute).toContain("quote.claim_email?.trim().toLowerCase()");
+    expect(claimRoute).toContain('persistedClaimEmail !== claim.email');
     expect(claimRoute).toContain(".update({ client_id: user.id })");
     expect(claimRoute).toContain(".is('client_id', null)");
     expect(clientEmail).toContain('Acceder a mi presupuesto');
