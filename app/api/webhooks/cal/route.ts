@@ -9,6 +9,7 @@ import { ensureOnboardingTask, findOpenOnboardingCase } from '@/lib/admin/onboar
 import { resolveBookingIdentityByEmail } from '@/lib/admin/onboarding-booking-identity';
 import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients';
 import { ensureBookingAdminTask, cancelBookingAdminTask } from '@/lib/booking/booking-admin-task';
+import { formatMadridDate, formatMadridTime } from '@/lib/booking/native-booking';
 
 function verifySignature(body: string, header: string | null): boolean {
   const secret = process.env.CAL_WEBHOOK_SECRET;
@@ -152,8 +153,11 @@ export async function POST(request: NextRequest) {
       const attendee = payload.attendees?.[0];
       const slug = payload.eventType?.slug ?? '';
       const meetingUrl = payload.videoCallUrl ?? null;
-      const confirmedDate = payload.startTime.slice(0, 10);
-      const confirmedTime = payload.startTime.slice(11, 16);
+      const startInstant = new Date(payload.startTime);
+      const endInstant = new Date(payload.endTime);
+      const confirmedDate = formatMadridDate(startInstant);
+      const confirmedTime = formatMadridTime(startInstant);
+      const confirmedEndTime = formatMadridTime(endInstant);
       const phone = responseString(payload, ['phone', 'telefono', 'teléfono', 'mobile']);
 
       const { data: appointment, error: upsertError } = await admin.from('appointments').upsert({
@@ -202,7 +206,7 @@ export async function POST(request: NextRequest) {
       }
 
       if ((slug === 'onboarding' || slug === 'formacion') && appointment && hasCalendarSA()) {
-        const eventId = await upsertCalendarEventSA({ summary: `${slug === 'onboarding' ? 'Onboarding' : 'Formación'} — ${attendee?.name ?? 'Cliente'}`, description: `Cliente: ${attendee?.name ?? ''} (${attendee?.email ?? ''})\nServicio: ${payload.eventType?.title ?? payload.title}${meetingUrl ? `\nReunión: ${meetingUrl}` : ''}`, date: confirmedDate, startTime: confirmedTime, endTime: payload.endTime.slice(11, 16), reminderMinutesBefore: [1440, 60] }, appointment.google_event_id ?? undefined);
+        const eventId = await upsertCalendarEventSA({ summary: `${slug === 'onboarding' ? 'Onboarding' : 'Formación'} — ${attendee?.name ?? 'Cliente'}`, description: `Cliente: ${attendee?.name ?? ''} (${attendee?.email ?? ''})\nServicio: ${payload.eventType?.title ?? payload.title}${meetingUrl ? `\nReunión: ${meetingUrl}` : ''}`, date: confirmedDate, startTime: confirmedTime, endTime: confirmedEndTime, reminderMinutesBefore: [1440, 60] }, appointment.google_event_id ?? undefined);
         if (eventId) await admin.from('appointments').update({ google_event_id: eventId }).eq('id', appointment.id);
       }
 
@@ -231,12 +235,15 @@ export async function POST(request: NextRequest) {
     }
 
     if (triggerEvent === 'BOOKING_RESCHEDULED') {
-      const confirmedDate = payload.startTime.slice(0, 10);
-      const confirmedTime = payload.startTime.slice(11, 16);
+      const startInstant = new Date(payload.startTime);
+      const endInstant = new Date(payload.endTime);
+      const confirmedDate = formatMadridDate(startInstant);
+      const confirmedTime = formatMadridTime(startInstant);
+      const confirmedEndTime = formatMadridTime(endInstant);
       const { data: appointment, error: rescheduleError } = await admin.from('appointments').update({ appointment_date: payload.startTime, appointment_end: payload.endTime, confirmed_date: confirmedDate, confirmed_time: confirmedTime, status: 'confirmed', meeting_url: payload.videoCallUrl ?? null, updated_at: new Date().toISOString() }).eq('cal_uid', payload.uid).select('id,name,email,service,appointment_type,google_event_id').maybeSingle();
       if (rescheduleError) console.error('[cal/webhook] BOOKING_RESCHEDULED update failed:', rescheduleError.message, 'uid:', payload.uid);
       if (appointment?.google_event_id && hasCalendarSA()) {
-        const eventId = await upsertCalendarEventSA({ summary: `Onboarding / cita — ${appointment.name}`, description: `Cliente: ${appointment.name} (${appointment.email})\nServicio: ${appointment.service ?? ''}${payload.videoCallUrl ? `\nReunión: ${payload.videoCallUrl}` : ''}`, date: confirmedDate, startTime: confirmedTime, endTime: payload.endTime.slice(11, 16), reminderMinutesBefore: [1440, 60] }, appointment.google_event_id);
+        const eventId = await upsertCalendarEventSA({ summary: `Onboarding / cita — ${appointment.name}`, description: `Cliente: ${appointment.name} (${appointment.email})\nServicio: ${appointment.service ?? ''}${payload.videoCallUrl ? `\nReunión: ${payload.videoCallUrl}` : ''}`, date: confirmedDate, startTime: confirmedTime, endTime: confirmedEndTime, reminderMinutesBefore: [1440, 60] }, appointment.google_event_id);
         if (eventId) await admin.from('appointments').update({ google_event_id: eventId }).eq('id', appointment.id);
       }
       const slug = payload.eventType?.slug ?? appointment?.appointment_type ?? '';
