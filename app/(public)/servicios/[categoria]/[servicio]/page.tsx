@@ -6,13 +6,11 @@ import type { ReactNode } from 'react';
 import { AlertCircle, BookOpen, CalendarCheck, Check, CheckCircle2, Clock, FileText, GraduationCap, ListChecks, MessageCircle, Newspaper, ShieldCheck } from 'lucide-react';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { ViabilityButton } from '@/components/services/ViabilityButton';
-import { CalButton } from '@/components/site/CalButton';
 import { categories, getCategory, getServicesByCategory, getService } from '@/lib/utils/catalog';
 import { getViabilityCheck, hasSpecificViabilityCheck } from '@/lib/data/viability-checks';
 import type { CategorySlug } from '@/lib/utils/catalog';
 import { getDocsForService } from '@/lib/utils/docs';
 import { getArticlesForService } from '@/lib/utils/blog';
-import { getCalMeetingUrl } from '@/lib/utils/cal';
 import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
 import { ServiceShareActions } from '@/components/services/ServiceShareActions';
 import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
@@ -22,13 +20,11 @@ import { getRuServicePath } from '@/lib/services/service-localized-content';
 
 export const revalidate = 300;
 
-const CAL_REUNION_URL = getCalMeetingUrl();
-
-function FreeMeetingButton({ className, children }: { className: string; children: ReactNode }) {
+function FreeMeetingButton({ className, children, origin }: { className: string; children: ReactNode; origin: string }) {
   return (
-    <CalButton url={CAL_REUNION_URL} fallbackHref="/cita?tipo=consulta-inicial" className={className}>
+    <Link href={`/cita?tipo=consulta-inicial&origen=${encodeURIComponent(origin)}`} className={className}>
       {children}
-    </CalButton>
+    </Link>
   );
 }
 
@@ -125,9 +121,11 @@ export default async function ServicioDetallePage({
   const relatedArticles = getArticlesForService(service.slug);
   const canonicalUrl = `https://expertconsulting.es/servicios/${categoria}/${servicio}`;
   const encodedServiceSlug = encodeURIComponent(service.slug);
-  const budgetHref = `/solicitar-presupuesto?servicio=${encodedServiceSlug}`;
+  const serviceOrigin = `service:${service.slug}`;
+  const encodedServiceOrigin = encodeURIComponent(serviceOrigin);
+  const budgetHref = `/solicitar-presupuesto?servicio=${encodedServiceSlug}&origen=${encodedServiceOrigin}`;
   const complexBudgetHref = `${budgetHref}&tipo=caso-complejo`;
-  const selfGuidedHref = `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&origen=${encodedServiceSlug}`;
+  const selfGuidedHref = `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&origen=${encodedServiceOrigin}`;
   const offerPrice = service.stripePriceId
     ? service.price?.match(/(\d+[.,]\d{2}|\d+)/)?.[1]?.replace(',', '.')
     : undefined;
@@ -245,7 +243,7 @@ export default async function ServicioDetallePage({
                 Hazlo por tu cuenta
               </Link>
             )}
-            <FreeMeetingButton className="inline-flex min-h-12 items-center justify-center border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-white/50 hover:text-white">
+            <FreeMeetingButton origin={serviceOrigin} className="inline-flex min-h-12 items-center justify-center border border-white/20 px-8 py-3 text-sm font-semibold text-white/80 transition hover:border-white/50 hover:text-white">
               Reunión gratuita 15 min
             </FreeMeetingButton>
           </div>
@@ -305,7 +303,7 @@ export default async function ServicioDetallePage({
               <p className="mt-4 text-[15px] leading-7 text-[#23364D]">{service.description}</p>
             </div>
 
-            {service.slug === 'no-residentes' && <IrnrPriceCalculator />}
+            {service.slug === 'no-residentes' && <IrnrPriceCalculator origin={serviceOrigin} />}
 
             {(service.servicePriceDetail || service.officialFee) && (
               <div className="grid gap-4 md:grid-cols-2">
@@ -544,7 +542,7 @@ export default async function ServicioDetallePage({
                   <CalendarCheck className="h-6 w-6 text-[#D4A017]" />
                   <h3 className="mt-4 font-bold">Reunión gratuita</h3>
                   <p className="mt-2 text-sm leading-6 text-white/60">Primera reunión informativa de 15 minutos para ubicar el caso antes de decidir la vía.</p>
-                  <FreeMeetingButton className="mt-4 inline-flex min-h-11 items-center justify-center border border-white/25 px-5 py-2.5 text-sm font-bold text-white/85 hover:border-white/60 hover:text-white">
+                  <FreeMeetingButton origin={serviceOrigin} className="mt-4 inline-flex min-h-11 items-center justify-center border border-white/25 px-5 py-2.5 text-sm font-bold text-white/85 hover:border-white/60 hover:text-white">
                     Reservar 15 minutos
                   </FreeMeetingButton>
                 </div>
@@ -593,7 +591,7 @@ export default async function ServicioDetallePage({
                   <Link href={selfGuidedHref} className="inline-flex min-h-11 items-center justify-center border border-[#0D1B2A] px-8 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#0D1B2A] hover:text-white">
                     Hazlo por tu cuenta
                   </Link>
-                  <FreeMeetingButton className="inline-flex min-h-11 items-center justify-center border border-[#0D1B2A] px-8 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#0D1B2A] hover:text-white">
+                  <FreeMeetingButton origin={serviceOrigin} className="inline-flex min-h-11 items-center justify-center border border-[#0D1B2A] px-8 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#0D1B2A] hover:text-white">
                     Reunión gratuita 15 min
                   </FreeMeetingButton>
                 </div>
@@ -655,7 +653,7 @@ export default async function ServicioDetallePage({
                 >
                   Hazlo por tu cuenta
                 </Link>
-                <FreeMeetingButton className="flex w-full items-center justify-center gap-2 border border-[#D4A017]/30 px-4 py-2.5 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5">
+                <FreeMeetingButton origin={serviceOrigin} className="flex w-full items-center justify-center gap-2 border border-[#D4A017]/30 px-4 py-2.5 text-sm font-semibold text-[#23364D] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5">
                   <CalendarCheck className="h-4 w-4 text-[#D4A017]" />
                   Reunión gratuita 15 min
                 </FreeMeetingButton>
