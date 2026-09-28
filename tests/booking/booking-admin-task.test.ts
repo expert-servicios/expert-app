@@ -21,7 +21,7 @@ describe('booking admin task lifecycle', () => {
   });
 
   it('links meeting tasks to EXPERT identities when available', () => {
-    expect(route).toContain(".from('profiles')");
+    expect(route).toContain('resolveBookingIdentityByEmail(admin, bookingEmail)');
     expect(route).toContain(".from('leads')");
     expect(helper).toContain('client_id: input.clientId ?? null');
     expect(helper).toContain('lead_id: input.leadId ?? null');
