@@ -21,6 +21,9 @@ describe('article intent CTA and IRNR funnel', () => {
   const questionnaire = source('components/cases/IrnrCaseQuestionnaire.tsx');
   const adminLeadsApi = source('app/api/admin/leads/route.ts');
   const adminLeadsPage = source('app/(protected)/admin/leads/page.tsx');
+  const adminCaseApi = source('app/api/admin/cases/[id]/route.ts');
+  const adminCasePage = source('app/(protected)/admin/expedientes/[id]/page.tsx');
+  const documentNotesApi = source('app/api/cases/[id]/document-notes/route.ts');
 
   it('offers three clear intents below articles', () => {
     expect(cta).toContain('Tengo una consulta');
@@ -92,5 +95,17 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(questionnaire).toContain("itemKey:'irnr-intake'");
     expect(questionnaire).toContain('Fecha de adquisición');
     expect(questionnaire).toContain('Porcentaje de titularidad');
+    expect(questionnaire).toContain("setProperties(p=>[...p,emptyProperty()]);setSaved(false)");
+    expect(questionnaire).toContain("setProperties(p=>p.filter((_,i)=>i!==index));setSaved(false)");
+    expect(documentNotesApi).toContain("comment: z.string().max(20000)");
+  });
+
+  it('exposes the completed IRNR intake to the administrative case workflow', () => {
+    expect(adminCaseApi).toContain("from('case_document_notes')");
+    expect(adminCaseApi).toContain('documentNotes: notesResult.data ?? []');
+    expect(adminCasePage).toContain("note.item_key === 'irnr-intake'");
+    expect(adminCasePage).toContain('Cuestionario de inmuebles');
+    expect(adminCasePage).toContain('Referencia catastral');
+    expect(adminCasePage).toContain('N.º fiscal extranjero');
   });
 });
