@@ -13,7 +13,7 @@ import {
   validateClientDocumentFile,
 } from '@/lib/security/uploads';
 
-const PERSONAL_DOCUMENT_SERVICE_IDS = new Set(['nacionalidad-espanola-menor-nacido-en-espana']);
+const PERSONAL_DOCUMENT_SERVICE_IDS = new Set(['nacionalidad-espanola-menor-nacido-en-espana', 'no-residentes']);
 
 function cleanText(value: FormDataEntryValue | null, max = 2000): string | null {
   if (typeof value !== 'string') return null;
@@ -98,7 +98,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const clientId = caseData.client_id;
     const personalDocumentScope = Boolean(
-      caseData.service_id && PERSONAL_DOCUMENT_SERVICE_IDS.has(caseData.service_id),
+      caseData.service_id
+        ?.split(',')
+        .map((serviceId) => serviceId.trim())
+        .some((serviceId) => PERSONAL_DOCUMENT_SERVICE_IDS.has(serviceId)),
     );
     const companyId = personalDocumentScope
       ? null
