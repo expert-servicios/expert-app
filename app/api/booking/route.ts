@@ -638,6 +638,7 @@ export async function POST(request: NextRequest) {
             updated_at: new Date().toISOString(),
           })
           .eq('id', appointmentId!);
+        return null;
       });
     }
 
