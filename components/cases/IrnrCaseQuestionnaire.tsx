@@ -10,16 +10,24 @@ type Holder = {
   ownershipPercent: string;
 };
 
+type RentalPeriod = {
+  startDate: string;
+  endDate: string;
+  grossIncome: string;
+  platform: string;
+};
+
 type Property = {
   address: string;
   cadastralReference: string;
   acquisitionDate: string;
   use: 'available' | 'rented' | 'sold';
+  rentalPeriods: RentalPeriod[];
   holders: Holder[];
 };
 
 type SavedPayload = {
-  version: 2;
+  version: 3;
   taxYear: string;
   properties: Property[];
 };
@@ -34,6 +42,7 @@ type LegacyPayload = {
     acquisitionDate?: string;
     ownershipPercent?: string;
     use?: 'available' | 'rented' | 'sold';
+    rentalPeriods?: RentalPeriod[];
     holders?: Holder[];
   }>;
 };
@@ -47,12 +56,22 @@ function emptyHolder(): Holder {
   };
 }
 
+function emptyRentalPeriod(): RentalPeriod {
+  return {
+    startDate: '',
+    endDate: '',
+    grossIncome: '',
+    platform: '',
+  };
+}
+
 function emptyProperty(): Property {
   return {
     address: '',
     cadastralReference: '',
     acquisitionDate: '',
     use: 'available',
+    rentalPeriods: [],
     holders: [emptyHolder()],
   };
 }
@@ -68,9 +87,18 @@ function normalizeHolder(value: Partial<Holder> | null | undefined): Holder {
   };
 }
 
+function normalizeRentalPeriod(value: Partial<RentalPeriod> | null | undefined): RentalPeriod {
+  return {
+    startDate: typeof value?.startDate === 'string' ? value.startDate : '',
+    endDate: typeof value?.endDate === 'string' ? value.endDate : '',
+    grossIncome: typeof value?.grossIncome === 'string' ? value.grossIncome : '',
+    platform: typeof value?.platform === 'string' ? value.platform : '',
+  };
+}
+
 function normalizePayload(raw: string | null | undefined): SavedPayload {
   const fallback: SavedPayload = {
-    version: 2,
+    version: 3,
     taxYear: String(new Date().getFullYear() - 1),
     properties: [emptyProperty()],
   };
@@ -103,13 +131,16 @@ function normalizePayload(raw: string | null | undefined): SavedPayload {
             acquisitionDate:
               typeof property?.acquisitionDate === 'string' ? property.acquisitionDate : '',
             use: property?.use === 'rented' || property?.use === 'sold' ? property.use : 'available',
+            rentalPeriods: Array.isArray(property?.rentalPeriods)
+              ? property.rentalPeriods.map((period) => normalizeRentalPeriod(period))
+              : [],
             holders,
           } satisfies Property;
         })
       : [emptyProperty()];
 
     return {
-      version: 2,
+      version: 3,
       taxYear:
         typeof parsed.taxYear === 'string' && parsed.taxYear
           ? parsed.taxYear
@@ -164,6 +195,43 @@ export function IrnrCaseQuestionnaire({
     markDirty();
   }
 
+  function updateRentalPeriod(propertyIndex: number, periodIndex: number, patch: Partial<RentalPeriod>) {
+    setProperties((current) =>
+      current.map((property, itemIndex) => {
+        if (itemIndex !== propertyIndex) return property;
+        return {
+          ...property,
+          rentalPeriods: property.rentalPeriods.map((period, currentPeriodIndex) =>
+            currentPeriodIndex === periodIndex ? { ...period, ...patch } : period
+          ),
+        };
+      })
+    );
+    markDirty();
+  }
+
+  function addRentalPeriod(propertyIndex: number) {
+    setProperties((current) =>
+      current.map((property, itemIndex) =>
+        itemIndex === propertyIndex
+          ? { ...property, rentalPeriods: [...property.rentalPeriods, emptyRentalPeriod()] }
+          : property
+      )
+    );
+    markDirty();
+  }
+
+  function removeRentalPeriod(propertyIndex: number, periodIndex: number) {
+    setProperties((current) =>
+      current.map((property, itemIndex) =>
+        itemIndex === propertyIndex
+          ? { ...property, rentalPeriods: property.rentalPeriods.filter((_, index) => index !== periodIndex) }
+          : property
+      )
+    );
+    markDirty();
+  }
+
   function addHolder(propertyIndex: number) {
     setProperties((current) =>
       current.map((property, itemIndex) =>
@@ -191,7 +259,7 @@ export function IrnrCaseQuestionnaire({
   async function save() {
     setSaving(true);
     setError('');
-    const payload: SavedPayload = { version: 2, taxYear, properties };
+    const payload: SavedPayload = { version: 3, taxYear, properties };
     const revisionAtStart = revisionRef.current;
 
     try {
@@ -300,6 +368,92 @@ export function IrnrCaseQuestionnaire({
                 </select>
               </label>
             </div>
+
+            {property.use === 'rented' && (
+              <div className="mt-4 border-t border-[#d8cbb5] pt-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-[#8a6111]">Periodos de alquiler e ingresos</p>
+                    <p className="mt-1 text-xs leading-5 text-[#52606d]">
+                      Indica los periodos e importes brutos cobrados. Si gestionas las reservas en Booking.com, Airbnb u otra plataforma,
+                      también puedes subir después su extracto o informe en la documentación del expediente.
+                    </p>
+                  </div>
+                  <a href="#documentos" className="shrink-0 text-xs font-bold text-[#c88b25] hover:underline">
+                    Subir archivo
+                  </a>
+                </div>
+
+                {property.rentalPeriods.length === 0 ? (
+                  <p className="mt-3 rounded-lg border border-dashed border-[#d8cbb5] bg-white p-3 text-xs text-[#52606d]">
+                    Aún no hay periodos añadidos. Puedes registrarlos aquí o aportar un desglose de la plataforma.
+                  </p>
+                ) : (
+                  <div className="mt-3 space-y-3">
+                    {property.rentalPeriods.map((period, periodIndex) => (
+                      <div key={periodIndex} className="rounded-lg border border-[#e4d8c6] bg-white p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-bold text-[#07111d]">Periodo {periodIndex + 1}</p>
+                          <button
+                            type="button"
+                            onClick={() => removeRentalPeriod(propertyIndex, periodIndex)}
+                            className="text-red-600"
+                            aria-label={`Eliminar periodo de alquiler ${periodIndex + 1}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <label className="text-xs font-semibold">Fecha de inicio
+                            <input
+                              type="date"
+                              value={period.startDate}
+                              onChange={(event) => updateRentalPeriod(propertyIndex, periodIndex, { startDate: event.target.value })}
+                              className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal"
+                            />
+                          </label>
+                          <label className="text-xs font-semibold">Fecha de fin
+                            <input
+                              type="date"
+                              value={period.endDate}
+                              onChange={(event) => updateRentalPeriod(propertyIndex, periodIndex, { endDate: event.target.value })}
+                              className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal"
+                            />
+                          </label>
+                          <label className="text-xs font-semibold">Importe bruto cobrado
+                            <input
+                              inputMode="decimal"
+                              maxLength={20}
+                              value={period.grossIncome}
+                              onChange={(event) => updateRentalPeriod(propertyIndex, periodIndex, { grossIncome: event.target.value })}
+                              placeholder="0,00"
+                              className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal"
+                            />
+                          </label>
+                          <label className="text-xs font-semibold">Canal o plataforma
+                            <input
+                              maxLength={120}
+                              value={period.platform}
+                              onChange={(event) => updateRentalPeriod(propertyIndex, periodIndex, { platform: event.target.value })}
+                              placeholder="Booking.com, Airbnb, alquiler directo…"
+                              className="mt-1 w-full rounded-lg border border-[#d8cbb5] px-3 py-2 font-normal"
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => addRentalPeriod(propertyIndex)}
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-[#c88b25]"
+                >
+                  <Plus className="h-3.5 w-3.5" /> Añadir periodo de alquiler
+                </button>
+              </div>
+            )}
 
             <div className="mt-4 border-t border-[#d8cbb5] pt-4">
               <div className="flex items-center justify-between gap-3">
