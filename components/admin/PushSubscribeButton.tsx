@@ -107,7 +107,7 @@ export function PushSubscribeButton() {
       type="button"
       onClick={subscribe}
       disabled={working}
-      title="Activar notificaciones push de WhatsApp"
+      title="Activar notificaciones push de EXPERT y KIA"
       className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-white/50 transition hover:bg-white/8 hover:text-white/80"
     >
       {working ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <BellOff className="h-3.5 w-3.5" />}
