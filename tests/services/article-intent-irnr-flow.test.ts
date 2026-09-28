@@ -13,6 +13,9 @@ describe('article intent CTA and IRNR funnel', () => {
   const consultationApi = source('app/api/consultas-gratuitas/route.ts');
   const quoteForm = source('components/site/SolicitudPresupuestoForm.tsx');
   const quoteApi = source('app/api/quotes/route.ts');
+  const bookingPage = source('app/(public)/cita/page.tsx');
+  const bookingForm = source('components/booking/NativeBookingForm.tsx');
+  const bookingApi = source('app/api/booking/route.ts');
   const blueprint = source('lib/services/service-operational-blueprints.ts');
   const casePage = source('app/(protected)/dashboard/expedientes/[id]/page.tsx');
   const questionnaire = source('components/cases/IrnrCaseQuestionnaire.tsx');
@@ -50,6 +53,13 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(quoteApi).toContain("intent: 'quote_request'");
     expect(quoteApi).toContain('origin: validated.origin || null');
     expect(quoteApi).toContain('requested_services: validated.services');
+  });
+
+  it('preserves content origin through a completed 15-minute booking', () => {
+    expect(bookingPage).toContain('origin={origin}');
+    expect(bookingForm).toContain('origin: origin ?? undefined');
+    expect(bookingApi).toContain('Origen CTA/contenido:');
+    expect(bookingApi).toContain('content_origin: input.origin ?? null');
   });
 
   it('creates a post-contract IRNR workflow', () => {
