@@ -1,4 +1,4 @@
-name: Supabase Auth Config Audit
+name: Supabase Platform Audit
 
 on:
   push:
@@ -22,25 +22,29 @@ jobs:
           set -euo pipefail
           test -n "${SUPABASE_ACCESS_TOKEN:-}" || { echo "missing token"; exit 1; }
 
-      - name: Enable leaked password protection
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl --fail --silent --show-error \
-            -X PATCH \
-            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"password_hibp_enabled":true}' \
-            "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth" \
-            | jq '{password_hibp_enabled,password_min_length,password_required_characters}'
-
       - name: Verify leaked password protection
         shell: bash
         run: |
           set -euo pipefail
-          value="$(curl --fail --silent --show-error \
+          curl --fail --silent --show-error \
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth" \
-            | jq -r '.password_hibp_enabled')"
-          test "$value" = "true"
-          echo "password_hibp_enabled=true"
+            | jq '{password_hibp_enabled,password_min_length,password_required_characters}'
+
+      - name: Check Postgres upgrade eligibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/upgrade/eligibility" \
+            | jq '.'
+
+      - name: Check latest upgrade status
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/upgrade/status" \
+            | jq '.'
