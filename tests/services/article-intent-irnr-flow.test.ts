@@ -24,6 +24,7 @@ describe('article intent CTA and IRNR funnel', () => {
   const adminCaseApi = source('app/api/admin/cases/[id]/route.ts');
   const adminCasePage = source('app/(protected)/admin/expedientes/[id]/page.tsx');
   const documentNotesApi = source('app/api/cases/[id]/document-notes/route.ts');
+  const documentsApi = source('app/api/cases/[id]/documents/route.ts');
 
   it('offers three clear intents below articles', () => {
     expect(cta).toContain('Tengo una consulta');
@@ -61,17 +62,22 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(consultationApi).toContain("intent: 'free_question'");
     expect(consultationApi).toContain("title: 'Nueva consulta gratuita'");
     expect(consultationApi).toContain("last_acquisition: interaction");
+    expect(consultationApi).toContain("service: parsed.data.service || 'consulta-general'");
+    expect(consultationApi).not.toContain("acquisition: {\n              ...(typeof attribution.metadata?.acquisition");
     expect(consultationApi).toContain("url: `/admin/leads?focus=${leadId}`");
     expect(adminLeadsApi).toContain("message,country,state");
+    expect(adminLeadsApi).toContain("latest_interaction: latestInteractionFromMetadata");
     expect(adminLeadsApi).toContain("query = query.eq('id', focus)");
     expect(adminLeadsPage).toContain('Ver consulta completa');
+    expect(adminLeadsPage).toContain('Última interacción');
   });
 
   it('preserves content origin when an article reader requests a quote', () => {
     expect(quoteForm).toContain('origin: originFromUrl ?? undefined');
-    expect(quoteApi).toContain("intent: 'quote_request'");
+    expect(quoteApi).toContain("action: 'quote_request'");
     expect(quoteApi).toContain('origin: validated.origin || null');
-    expect(quoteApi).toContain('requested_services: validated.services');
+    expect(quoteApi).toContain('requested_services: serviceSlugs');
+    expect(quoteApi).not.toContain("intent: 'quote_request'");
   });
 
   it('preserves content origin through a completed 15-minute booking', () => {
@@ -79,6 +85,8 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(bookingForm).toContain('origin: origin ?? undefined');
     expect(bookingApi).toContain('Origen CTA/contenido:');
     expect(bookingApi).toContain('content_origin: input.origin ?? null');
+    expect(consultation).toContain('href={meetingHref}');
+    expect(consultation).toContain("encodeURIComponent(origin)");
   });
 
   it('creates a post-contract IRNR workflow', () => {
@@ -95,9 +103,14 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(questionnaire).toContain("itemKey:'irnr-intake'");
     expect(questionnaire).toContain('Fecha de adquisición');
     expect(questionnaire).toContain('Porcentaje de titularidad');
-    expect(questionnaire).toContain("setProperties(p=>[...p,emptyProperty()]);setSaved(false)");
-    expect(questionnaire).toContain("setProperties(p=>p.filter((_,i)=>i!==index));setSaved(false)");
+    expect(questionnaire).toContain("setProperties(p=>[...p,emptyProperty()]);markDirty()");
+    expect(questionnaire).toContain("setProperties(p=>p.filter((_,i)=>i!==index));markDirty()");
+    expect(questionnaire).toContain('revisionAtStart');
+    expect(questionnaire).toContain('revisionRef.current === revisionAtStart');
     expect(documentNotesApi).toContain("comment: z.string().max(20000)");
+    expect(documentsApi).toContain("'no-residentes'");
+    expect(documentsApi).toContain(".split(',')");
+    expect(documentsApi).toContain('personalDocumentScope');
   });
 
   it('exposes the completed IRNR intake to the administrative case workflow', () => {
