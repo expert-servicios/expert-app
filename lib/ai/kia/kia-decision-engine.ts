@@ -243,6 +243,32 @@ export async function runKiaDecision(input: {
           }
           toolResults.push(...iterResults);
 
+          const completedBooking = iterResults.find(
+            (result) => result.toolName === 'create_booking_meeting' && result.ok && result.result,
+          );
+          if (completedBooking?.result) {
+            const booking = completedBooking.result;
+            const service = typeof booking.service === 'string' ? booking.service : 'reunión';
+            const localDate = typeof booking.localDate === 'string' ? booking.localDate : '';
+            const localTime = typeof booking.localTime === 'string' ? booking.localTime : '';
+            const meetingUrl = typeof booking.meetingUrl === 'string' ? booking.meetingUrl : '';
+            decision = {
+              ...decision,
+              userMessage: locale === 'ru'
+                ? `Встреча подтверждена: ${service}, ${localDate} в ${localTime}. Ссылка Google Meet: ${meetingUrl}`
+                : `Reunión confirmada: ${service}, ${localDate} a las ${localTime}. Google Meet: ${meetingUrl}`,
+              nextAction: 'reply_only',
+              toolRequests: [],
+              confidence: Math.max(decision.confidence, 0.99),
+              requiresMeeting: false,
+              requiresManualReview: false,
+              decisionSummary: 'Reserva creada y confirmada por backend tras confirmación explícita.',
+              rulesApplied: [...decision.rulesApplied, 'external_action_terminal_after_success'],
+            };
+            loopIteration++;
+            break;
+          }
+
           messages.push({ role: 'assistant', content: JSON.stringify(decision) });
           messages.push({ role: 'user', content: buildToolResultsPayload(iterativeRequests, iterResults) });
 
