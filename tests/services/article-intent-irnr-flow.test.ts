@@ -11,6 +11,8 @@ describe('article intent CTA and IRNR funnel', () => {
   const blogPage = source('app/(public)/blog/[slug]/page.tsx');
   const consultation = source('components/site/FreeConsultationForm.tsx');
   const consultationApi = source('app/api/consultas-gratuitas/route.ts');
+  const quoteForm = source('components/site/SolicitudPresupuestoForm.tsx');
+  const quoteApi = source('app/api/quotes/route.ts');
   const blueprint = source('lib/services/service-operational-blueprints.ts');
   const casePage = source('app/(protected)/dashboard/expedientes/[id]/page.tsx');
   const questionnaire = source('components/cases/IrnrCaseQuestionnaire.tsx');
@@ -41,6 +43,13 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(consultationApi).toContain("category: 'Consulta gratuita'");
     expect(consultationApi).toContain("intent: 'free_question'");
     expect(consultationApi).toContain("title: 'Nueva consulta gratuita'");
+  });
+
+  it('preserves content origin when an article reader requests a quote', () => {
+    expect(quoteForm).toContain('origin: originFromUrl ?? undefined');
+    expect(quoteApi).toContain("intent: 'quote_request'");
+    expect(quoteApi).toContain('origin: validated.origin || null');
+    expect(quoteApi).toContain('requested_services: validated.services');
   });
 
   it('creates a post-contract IRNR workflow', () => {
