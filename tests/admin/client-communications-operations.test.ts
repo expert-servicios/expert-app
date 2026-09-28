@@ -51,4 +51,18 @@ describe('Client 360 communications operations', () => {
     expect(nav).toContain("childHref('/comunicaciones')");
     expect(nav).toContain('Comunicaciones');
   });
+  it('renders persisted inbound email events as inbound and avoids cache duplicates', () => {
+    const route = source('app/api/admin/clientes/[id]/communications/route.ts');
+    const brief = source('lib/ai/kia/kia-client-brief.ts');
+    const timeline = source('app/api/admin/clientes/[id]/timeline/route.ts');
+
+    expect(route).toContain("row.event_type === 'email.inbound'");
+    expect(route).toContain("direction === 'in'");
+    expect(route).toContain('persistedInboundThreadIds');
+    expect(brief).toContain("row.event_type === 'email.inbound'");
+    expect(brief).toContain('persistedInboundThreadIds');
+    expect(timeline).toContain("e.event_type === 'email.inbound'");
+    expect(timeline).toContain('persistedInboundThreadIds');
+  });
+
 });
