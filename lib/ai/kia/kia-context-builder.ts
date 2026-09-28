@@ -30,6 +30,7 @@ export interface KiaContextInput {
 }
 
 export interface KiaContext {
+  latestMessage: string | null;
   contact: {
     status: 'lead' | 'client' | 'unknown';
     name: string | null;
@@ -165,6 +166,7 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
   const latestConversationMessage = input.latestMessage ?? conversation[conversation.length - 1]?.text;
 
   return {
+    latestMessage: input.latestMessage ?? null,
     contact: {
       status: contact?.status ?? (clientId ? 'client' : leadId ? 'lead' : 'unknown'),
       name: contact?.name ?? profile?.name ?? null,
