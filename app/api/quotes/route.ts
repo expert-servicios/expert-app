@@ -190,15 +190,13 @@ export async function GET(request: NextRequest) {
       const admin = getSupabaseAdmin();
       const { data: candidateLeads, error: leadLookupError } = await admin
         .from('leads')
-        .select('id,email')
-        .is('email', null, { negate: true });
+        .select('id')
+        .eq('email', verifiedEmail);
 
       if (leadLookupError) {
         console.error('[quotes] pending quote ownership lookup failed:', leadLookupError);
       } else {
-        const matchingLeadIds = (candidateLeads ?? [])
-          .filter((lead) => typeof lead.email === 'string' && lead.email.trim().toLowerCase() === verifiedEmail)
-          .map((lead) => lead.id);
+        const matchingLeadIds = (candidateLeads ?? []).map((lead) => lead.id);
 
         if (matchingLeadIds.length > 0) {
           const { error: claimError } = await admin
