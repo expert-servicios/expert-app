@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { Calculator } from 'lucide-react';
 import { IrnrPriceCalculator } from '@/components/services/IrnrPriceCalculator';
@@ -34,7 +34,7 @@ function CalculatorShell({
   compact: boolean;
   title: string;
   description: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div className={compact ? 'border border-[#D4A017]/25 bg-[#F8F6F1] p-5' : 'border border-[#D4A017]/25 bg-white p-6'}>
