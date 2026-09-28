@@ -146,7 +146,10 @@ async function ensureEmailLead(
   const { data: matches, error: lookupError } = await admin
     .from('leads')
     .select('id')
+    .ilike('email', email.replace(/[\\%_]/g, '\\.from('leads')
+    .select('id')
     .eq('email', email)
+    .limit(2);'))
     .limit(2);
   if (lookupError) throw lookupError;
   if ((matches ?? []).length === 1) return matches![0].id;
@@ -192,22 +195,16 @@ async function recordInboundEmailEvent(input: {
   caseId: string | null;
   companyId: string | null;
 }) {
-  const claimKey = `kia_email_inbound:${createHash('sha256').update(input.message.id).digest('hex').slice(0, 40)}`;
-  const { error: claimError } = await input.admin.from('system_kv').insert({
-    key: claimKey,
-    value: { state: 'reserved', message_id: input.message.id, reserved_at: new Date().toISOString() },
-    updated_at: new Date().toISOString(),
-  });
-  if (claimError?.code === '23505') return false;
-  if (claimError) throw claimError;
-
+  const sourceKey = `gmail-inbound:${input.message.id}`;
   const { error } = await input.admin.from('email_events').insert({
+    source_key: sourceKey,
     event_type: 'email.inbound',
     recipient_email: normalizedEmail(input.message.fromEmail),
     subject: input.message.subject || '(sin asunto)',
     html: replyHtml(input.excerpt),
     status: 'delivered',
     metadata: {
+      source_key: sourceKey,
       direction: 'in',
       transport: 'gmail',
       gmail_message_id: input.message.id,
@@ -219,15 +216,9 @@ async function recordInboundEmailEvent(input: {
       company_id: input.companyId,
     },
   });
-  if (error) {
-    await input.admin.from('system_kv').delete().eq('key', claimKey);
-    throw error;
-  }
-  await input.admin.from('system_kv').update({
-    value: { state: 'stored', message_id: input.message.id, stored_at: new Date().toISOString() },
-    updated_at: new Date().toISOString(),
-  }).eq('key', claimKey);
-  return true;
+  if (!error) return true;
+  if (error.code === '23505') return false;
+  throw error;
 }
 
 async function createEmailRequestTask(input: {
@@ -243,17 +234,9 @@ async function createEmailRequestTask(input: {
   if (input.nextAction !== 'create_task') return null;
 
   const taskKey = `email-request:${input.message.id}`;
-  const { data: existing, error: existingError } = await input.admin
-    .from('internal_tasks')
-    .select('id,title')
-    .contains('metadata', { source_key: taskKey })
-    .limit(1)
-    .maybeSingle();
-  if (existingError) throw existingError;
-  if (existing?.id) return { id: existing.id, title: existing.title };
-
   const subject = input.message.subject?.trim() || 'Solicitud por correo';
   const { data, error } = await input.admin.from('internal_tasks').insert({
+    source_key: taskKey,
     title: `Correo: ${subject}`.slice(0, 220),
     description: input.excerpt.slice(0, 1500),
     status: 'pendiente',
@@ -271,8 +254,17 @@ async function createEmailRequestTask(input: {
       sender_email: normalizedEmail(input.message.fromEmail),
     },
   }).select('id,title').single();
-  if (error) throw error;
-  return data;
+
+  if (!error) return data;
+  if (error.code !== '23505') throw error;
+
+  const { data: existing, error: existingError } = await input.admin
+    .from('internal_tasks')
+    .select('id,title')
+    .eq('source_key', taskKey)
+    .maybeSingle();
+  if (existingError) throw existingError;
+  return existing;
 }
 
 async function writeAgentHeartbeat(
