@@ -66,13 +66,18 @@ export function IrnrPriceCalculator({ compact = false, origin = 'service:no-resi
             </div>
             <label className="text-xs font-semibold text-[#23364D]">
               Titulares no residentes
-              <select
+              <input
+                type="number"
+                min={1}
+                max={99}
+                inputMode="numeric"
                 value={property.holders}
-                onChange={(event) => updateProperty(index, { holders: Number(event.target.value) })}
+                onChange={(event) => {
+                  const value = Number.parseInt(event.target.value, 10);
+                  updateProperty(index, { holders: Number.isFinite(value) ? Math.min(99, Math.max(1, value)) : 1 });
+                }}
                 className="mt-1 w-full border border-[#D4A017]/30 bg-white px-3 py-2 text-sm"
-              >
-                {[1, 2, 3, 4].map((value) => <option key={value} value={value}>{value}</option>)}
-              </select>
+              />
             </label>
             {properties.length > 1 && (
               <button
