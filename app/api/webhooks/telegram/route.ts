@@ -31,6 +31,8 @@ import {
   detectKiaCaseQuickAction,
 } from '@/lib/ai/kia/kia-case-quick-actions';
 import { executeKiaToolCall } from '@/lib/ai/kia/kia-tool-executor';
+import { resolveKiaQuickActionCase } from '@/lib/ai/kia/kia-quick-action-case';
+import { recordKiaVisibleReply } from '@/lib/ai/kia/kia-visible-decision-log';
 import { persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import {
   escapeTelegramHtml,
@@ -456,14 +458,12 @@ async function handleTelegramUpdate(request: NextRequest) {
     });
 
     const caseQuickAction = detectKiaCaseQuickAction(message);
-    const quickActionCase = caseContext?.caseId
-      ? result.context.cases.find((caseItem) => caseItem.id === caseContext.caseId) ?? result.context.cases[0] ?? null
-      : result.context.cases.length === 1
-        ? result.context.cases[0]
-        : null;
+    const quickActionCase = caseQuickAction
+      ? await resolveKiaQuickActionCase({ admin, context: result.context, caseId: caseContext?.caseId, companyId })
+      : null;
     let caseQuickActionPresentation: ReturnType<typeof buildKiaCaseQuickActionPresentation> | null = null;
 
-    if (caseQuickAction && quickActionCase) {
+    if (caseQuickAction && quickActionCase && !result.decision.requiresManualReview && result.decision.nextAction !== 'needs_review') {
       let documentToolResult = null;
       const needsDocuments = caseQuickAction === 'documents' || caseQuickAction === 'next_step';
       if (needsDocuments && telegramToolsEnabled && telegramPolicy.toolNames.includes('get_case_documents')) {
@@ -520,7 +520,7 @@ async function handleTelegramUpdate(request: NextRequest) {
       .slice(0, 8);
     const reply = caseQuickActionPresentation?.reply ?? result.userMessage;
     const operationalQuickReplies = (result.decision.quickReplies ?? []).map((item) => item.title);
-    const proactiveSuggestions = caseQuickAction
+    const proactiveSuggestions = caseQuickActionPresentation && caseQuickAction
       ? buildKiaCaseQuickActionSuggestions(caseQuickAction, responseLocale)
       : buildKiaProactiveSuggestions({
           locale: responseLocale,
@@ -536,6 +536,10 @@ async function handleTelegramUpdate(request: NextRequest) {
       quickReplies: [...operationalQuickReplies, ...proactiveSuggestions],
       artifacts,
     });
+    if (reply !== result.decision.userMessage && result.decisionLogId) {
+      await recordKiaVisibleReply({ admin, decisionLogId: result.decisionLogId,
+        clientId: identity.profileId, decision: result.decision, reply: presentation.text });
+    }
 
     const storedConversationId = contextEnabled ? await persistKiaConversationTurn({ admin, profileId: identity.profileId,
       tenantId: identity.tenantId, companyId, caseId: caseContext?.caseId, serviceSlug: caseContext?.serviceSlug,

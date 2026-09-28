@@ -8,7 +8,8 @@ describe('KIA multichannel feedback learning guard', () => {
   it('returns a decision log id from the decision logger and engine', () => {
     expect(source('lib/ai/kia/kia-decision-log.ts')).toContain("select('id').single()");
     expect(source('lib/ai/kia/kia-decision-engine.ts')).toContain('decisionLogId');
-    expect(source('app/api/ai/kia/route.ts')).toContain('decisionLogId: result.decisionLogId ?? null');
+    expect(source('app/api/ai/kia/route.ts')).toContain('decisionLogId,');
+    expect(source('app/api/ai/kia/route.ts')).toContain('recordKiaVisibleReply');
   });
 
   it('keeps client feedback out of few-shot learning until approved', () => {

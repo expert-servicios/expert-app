@@ -51,6 +51,8 @@ import {
   detectKiaCaseQuickAction,
 } from '@/lib/ai/kia/kia-case-quick-actions';
 import { executeKiaToolCall } from '@/lib/ai/kia/kia-tool-executor';
+import { resolveKiaQuickActionCase } from '@/lib/ai/kia/kia-quick-action-case';
+import { recordKiaVisibleReply } from '@/lib/ai/kia/kia-visible-decision-log';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -414,17 +416,16 @@ export async function POST(request: NextRequest) {
     existingToolResults: result.toolResults,
   });
   const caseQuickAction = detectKiaCaseQuickAction(message);
-  const quickActionCase = contextualCaseId
-    ? result.context.cases.find((caseItem) => caseItem.id === contextualCaseId) ?? result.context.cases[0] ?? null
-    : result.context.cases.length === 1
-      ? result.context.cases[0]
-      : null;
+  const quickActionCase = caseQuickAction
+    ? await resolveKiaQuickActionCase({ admin, context: result.context, caseId: contextualCaseId, companyId: companyScope })
+    : null;
   let caseQuickActionPresentation: ReturnType<typeof buildKiaCaseQuickActionPresentation> | null = null;
 
-  if (caseQuickAction && quickActionCase) {
+  if (caseQuickAction && quickActionCase && !result.decision.requiresManualReview && result.decision.nextAction !== 'needs_review') {
     let documentToolResult = null;
     const needsDocuments = caseQuickAction === 'documents' || caseQuickAction === 'next_step';
-    if (needsDocuments && dashboardPolicy.toolNames.includes('get_case_documents')) {
+    if (needsDocuments && process.env.KIA_COPILOT_TOOLS_ENABLED?.toLowerCase() !== 'false'
+      && dashboardPolicy.toolNames.includes('get_case_documents')) {
       documentToolResult = await executeKiaToolCall({
         name: 'get_case_documents',
         arguments: { caseId: quickActionCase.id, limit: 20 },
@@ -475,6 +476,10 @@ export async function POST(request: NextRequest) {
     caseQuickActionPresentation?.reply ?? result.userMessage,
     fiscalSignal,
   );
+  const decisionLogId = reply !== result.decision.userMessage
+    ? await recordKiaVisibleReply({ admin, decisionLogId: result.decisionLogId,
+      clientId: staffPreview?.clientId ?? user.id, decision: result.decision, reply })
+    : result.decisionLogId ?? null;
 
   try {
     if (contextualPersistenceEnabled) {
@@ -536,7 +541,7 @@ export async function POST(request: NextRequest) {
   }
 
   const quickReplies = (result.decision.quickReplies ?? []).map((replyItem) => replyItem.title);
-  const proactiveSuggestions = caseQuickAction
+  const proactiveSuggestions = caseQuickActionPresentation && caseQuickAction
     ? buildKiaCaseQuickActionSuggestions(caseQuickAction, responseLocale)
     : buildKiaProactiveSuggestions({
         locale: responseLocale,
@@ -556,7 +561,7 @@ export async function POST(request: NextRequest) {
     nextAction : result.decision.nextAction,
     avatarState,
     artifacts,
-    decisionLogId: result.decisionLogId ?? null,
+    decisionLogId,
   });
   if (effectiveSessionId) response.headers.set('x-kia-session-id', effectiveSessionId);
   return response;

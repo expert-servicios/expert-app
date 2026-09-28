@@ -52,6 +52,9 @@ describe('KIA contextual case quick actions', () => {
     expect(detectKiaCaseQuickAction('Проверить статус')).toBe('status');
     expect(detectKiaCaseQuickAction('Открыть дело')).toBe('open_case');
     expect(detectKiaCaseQuickAction('Проверка специалистом')).toBe('human_review');
+    expect(detectKiaCaseQuickAction('¿Qué documentos necesito para constituir otra empresa?')).toBeNull();
+    expect(detectKiaCaseQuickAction('¿Cuál es el siguiente paso para otra solicitud?')).toBeNull();
+    expect(detectKiaCaseQuickAction('Мне нужны документы для другой фирмы')).toBeNull();
   });
 
   it('uses the canonical next action instead of repeating generic case status', () => {
@@ -61,13 +64,13 @@ describe('KIA contextual case quick actions', () => {
       caseItem,
       documentToolResult: documentsResult,
     });
-    expect(presentation.reply).toContain(caseItem.nextAction);
-    expect(presentation.artifacts).toEqual(expect.arrayContaining([
-      expect.objectContaining({ url: '/api/documents/current/download?redirect=1' }),
+    expect(presentation?.reply).toContain(caseItem.nextAction);
+    expect(presentation?.artifacts).toEqual(expect.arrayContaining([
       expect.objectContaining({ url: `/dashboard/expedientes/${caseItem.id}` }),
       expect.objectContaining({ url: '/cita?tipo=consulta-inicial' }),
     ]));
-    expect(JSON.stringify(presentation.artifacts)).not.toContain('obsolete');
+    expect(JSON.stringify(presentation?.artifacts)).not.toContain('obsolete');
+    expect(JSON.stringify(presentation?.artifacts)).not.toContain('/api/documents/current/');
   });
 
   it('falls back to the expediente when the current document has no downloadable file', () => {
@@ -75,6 +78,8 @@ describe('KIA contextual case quick actions', () => {
       toolName: 'get_case_documents',
       ok: true,
       result: {
+        checklist_available: true,
+        missing_requirements: ['Página 5 firmada por ambos progenitores'],
         documents: [{
           id: 'current-no-file',
           title: 'Página 5 pendiente de corregir',
@@ -90,9 +95,10 @@ describe('KIA contextual case quick actions', () => {
       caseItem,
       documentToolResult: noFileResult,
     });
-    expect(presentation.artifacts[0]).toMatchObject({
+    expect(presentation?.reply).toContain('Página 5 firmada por ambos progenitores');
+    expect(presentation?.artifacts[0]).toMatchObject({
       type: 'link',
-      url: `/dashboard/expedientes/${caseItem.id}`,
+      url: `/dashboard/expedientes/${caseItem.id}#documentos`,
     });
   });
 
@@ -101,6 +107,8 @@ describe('KIA contextual case quick actions', () => {
       toolName: 'get_case_documents',
       ok: true,
       result: {
+        checklist_available: true,
+        missing_requirements: [],
         documents: [{
           id: 'current-no-file',
           title: 'Página 5 pendiente',
@@ -117,9 +125,22 @@ describe('KIA contextual case quick actions', () => {
       documentToolResult: noFileResult,
       staffPreview: true,
     });
-    expect(presentation.artifacts[0]).toMatchObject({
-      url: `/admin/expedientes/${caseItem.id}`,
+    expect(presentation?.artifacts[0]).toMatchObject({
+      url: `/admin/expedientes/${caseItem.id}#documentos`,
     });
+  });
+
+  it('does not turn a failed or absent checklist lookup into a missing-document claim', () => {
+    for (const documentToolResult of [undefined, { toolName: 'get_case_documents', ok: false }]) {
+      expect(buildKiaCaseQuickActionPresentation({
+        action: 'documents', locale: 'es', caseItem, documentToolResult,
+      })).toBeNull();
+    }
+  });
+
+  it('suppresses an untranslated Spanish next action in a Russian reply', () => {
+    const presentation = buildKiaCaseQuickActionPresentation({ action: 'next_step', locale: 'ru', caseItem });
+    expect(presentation?.reply).not.toContain('Firmar de nuevo');
   });
 
   it('offers different next actions after each case action', () => {
@@ -158,7 +179,8 @@ describe('KIA quick-action integration contracts', () => {
     const executor = source('lib/ai/kia/kia-tool-executor.ts');
     expect(executor).toContain("download?redirect=1");
     expect(executor).toContain('case_url:');
-    expect(executor).not.toContain('download_url: doc.file_path');
+    expect(executor).not.toContain('download_url: doc.file_path,');
+    expect(executor).toContain(".is('replaced_by', null)");
   });
 
   it('keeps document redirect authenticated and ownership checked', () => {
