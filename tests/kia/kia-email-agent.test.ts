@@ -62,12 +62,13 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain('if (duplicateClaim)');
   });
 
-  it('uses only read-only KIA tools for autonomous email analysis', () => {
-    expect(route).toContain("allowedEffects: ['read']");
-    expect(route).toContain("maxRiskTier: 'R1'");
+  it('keeps email tools scoped and allows only the guarded booking external action', () => {
+    expect(route).toContain("allowedEffects: ['read', 'external_action']");
+    expect(route).toContain("maxRiskTier: 'R2'");
     expect(route).toContain('get_case_status');
     expect(route).toContain('search_knowledge_resources');
-    expect(route).toContain('get_official_sources');
+    expect(route).toContain('get_booking_availability');
+    expect(route).toContain('create_booking_meeting');
   });
 
   it('keeps operational inspection unread until a human or policy changes it', () => {
