@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { formatMadridDate, formatMadridTime } from '@/lib/booking/native-booking';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -153,15 +154,13 @@ export async function reconcileBookingAdminTasks(admin: AdminClient) {
 
   for (const appointment of appointments ?? []) {
     if (appointment.status === 'confirmed') {
+      const appointmentStart = appointment.appointment_date
+        ? new Date(appointment.appointment_date)
+        : null;
       const localDate = appointment.confirmed_date
-        ?? (appointment.appointment_date ? appointment.appointment_date.slice(0, 10) : null);
+        ?? (appointmentStart ? formatMadridDate(appointmentStart) : null);
       const localTime = appointment.confirmed_time
-        ?? (appointment.appointment_date ? new Intl.DateTimeFormat('es-ES', {
-          timeZone: 'Europe/Madrid',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-        }).format(new Date(appointment.appointment_date)) : null);
+        ?? (appointmentStart ? formatMadridTime(appointmentStart) : null);
       if (!localDate || !localTime) continue;
 
       await ensureBookingAdminTask({
@@ -187,8 +186,21 @@ export async function reconcileBookingAdminTasks(admin: AdminClient) {
     }
   }
 
-  for (const [appointmentId] of taskByAppointment) {
-    if (appointmentMap.has(appointmentId)) continue;
+  const taskAppointmentIds = [...taskByAppointment.keys()];
+  const existingTaskAppointmentIds = new Set<string>();
+  for (let offset = 0; offset < taskAppointmentIds.length; offset += 100) {
+    const batch = taskAppointmentIds.slice(offset, offset + 100);
+    if (!batch.length) continue;
+    const { data: existingRows, error: existingError } = await admin
+      .from('appointments')
+      .select('id')
+      .in('id', batch);
+    if (existingError) throw existingError;
+    for (const row of existingRows ?? []) existingTaskAppointmentIds.add(row.id);
+  }
+
+  for (const appointmentId of taskAppointmentIds) {
+    if (existingTaskAppointmentIds.has(appointmentId)) continue;
     cancelled += await cancelBookingAdminTask(
       admin,
       appointmentId,
