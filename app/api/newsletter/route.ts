@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { checkRateLimit, checkSpam, getClientIp } from '@/lib/utils/spam-guard';
+import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SEGMENTS = new Set(['particular_residente','particular_no_residente','autonomo','empresa']);
@@ -29,6 +30,14 @@ export async function POST(request: NextRequest) {
 
     if (!SEGMENTS.has(audienceSegment)) {
       return NextResponse.json({ error: 'Selecciona el tipo de novedades que quieres recibir.' }, { status: 400 });
+    }
+
+    const recaptcha = await verifyRecaptchaToken({
+      token: String(body.recaptcha_token ?? ''),
+      action: 'newsletter',
+    });
+    if (!recaptcha.ok) {
+      return NextResponse.json({ error: 'Verificación anti-spam fallida. Inténtalo de nuevo.' }, { status: 400 });
     }
 
     // Block disposable/temp email domains
