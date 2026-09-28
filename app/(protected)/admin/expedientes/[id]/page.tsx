@@ -61,7 +61,9 @@ type IrnrIntake = {
     address: string;
     cadastralReference: string;
     acquisitionDate: string;
-    use: 'available' | 'rented' | 'sold';
+    use: 'available' | 'rented';
+    soldDuringYear: boolean;
+    saleDate: string;
     rentalPeriods: IrnrRentalPeriod[];
     holders: IrnrHolder[];
   }>;
@@ -126,7 +128,12 @@ function parseIrnrIntake(comment: string | null | undefined): IrnrIntake | null 
             typeof property.cadastralReference === 'string' ? property.cadastralReference : '',
           acquisitionDate:
             typeof property.acquisitionDate === 'string' ? property.acquisitionDate : '',
-          use: property.use === 'rented' || property.use === 'sold' ? property.use : 'available',
+          use: property.use === 'rented' ? 'rented' : 'available',
+          soldDuringYear:
+            typeof property.soldDuringYear === 'boolean'
+              ? property.soldDuringYear
+              : property.use === 'sold',
+          saleDate: typeof property.saleDate === 'string' ? property.saleDate : '',
           rentalPeriods: Array.isArray(property.rentalPeriods)
             ? property.rentalPeriods.map((rawPeriod) => {
                 const period =
@@ -153,7 +160,6 @@ function parseIrnrIntake(comment: string | null | undefined): IrnrIntake | null 
 const irnrUseLabels: Record<IrnrIntake['properties'][number]['use'], string> = {
   available: 'A disposición / no alquilado',
   rented: 'Alquilado total o parcialmente',
-  sold: 'Vendido durante el ejercicio',
 };
 
 interface CaseDetail {
@@ -298,7 +304,11 @@ export default async function AdminCaseDetailPage({
                         <div><dt className="text-[#7a7064]">Dirección</dt><dd className="font-semibold text-[#29384a]">{property.address || '—'}</dd></div>
                         <div><dt className="text-[#7a7064]">Referencia catastral</dt><dd className="font-semibold text-[#29384a]">{property.cadastralReference || '—'}</dd></div>
                         <div><dt className="text-[#7a7064]">Fecha de adquisición</dt><dd className="font-semibold text-[#29384a]">{property.acquisitionDate || '—'}</dd></div>
-                        <div><dt className="text-[#7a7064]">Uso</dt><dd className="font-semibold text-[#29384a]">{irnrUseLabels[property.use]}</dd></div>
+                        <div><dt className="text-[#7a7064]">Uso / alquiler</dt><dd className="font-semibold text-[#29384a]">{irnrUseLabels[property.use]}</dd></div>
+                        <div><dt className="text-[#7a7064]">Vendido en el ejercicio</dt><dd className="font-semibold text-[#29384a]">{property.soldDuringYear ? 'Sí' : 'No'}</dd></div>
+                        {property.soldDuringYear && (
+                          <div><dt className="text-[#7a7064]">Fecha de venta</dt><dd className="font-semibold text-[#29384a]">{property.saleDate || '—'}</dd></div>
+                        )}
                       </dl>
 
                       {property.use === 'rented' && (
