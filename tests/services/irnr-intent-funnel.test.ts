@@ -16,7 +16,7 @@ describe('IRNR organic-intent funnel', () => {
   const catalog = source('lib/utils/catalog.ts');
 
   it('calculates IRNR price by declarative units', () => {
-    expect(calculator).toContain('80 + Math.max(0, units - 1) * 30');
+    expect(calculator).toContain('80 + Math.max(0, declarativeUnits - 1) * 30');
     expect(calculator).toContain('Una unidad es un inmueble por cada titular no residente');
     expect(calculator).toContain('Solicitar este servicio');
     expect(calculator).toContain('/cita?tipo=consulta-inicial');
