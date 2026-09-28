@@ -5,6 +5,7 @@ import {
   calendarProviderFromBookingProvider,
   deleteBookingCalendarEvent,
 } from '@/lib/booking/calendar-provider';
+import { cancelBookingAdminTask } from '@/lib/booking/booking-admin-task';
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,6 +71,12 @@ export async function POST(request: NextRequest) {
         .eq('id', appointment.id);
       throw calendarError;
     }
+
+    await cancelBookingAdminTask(
+      admin,
+      appointment.id,
+      'Cita cancelada por el cliente desde enlace seguro de gestión.',
+    ).catch((taskError) => console.error('[booking/manage/cancel] admin task:', taskError));
 
     return NextResponse.json({ ok: true });
   } catch (error) {
