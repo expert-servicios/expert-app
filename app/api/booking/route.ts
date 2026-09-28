@@ -567,11 +567,9 @@ export async function POST(request: NextRequest) {
       }
     }
     if (!adminTaskClientId) {
-      const escapedLeadEmail = bookingEmail.replace(/[\\%_]/g, '\\      const escapedLeadEmail = bookingEmail.replace(/[\\%_]/g, '\\      const { data: leadMatches, error: leadLookupError } = await admin
-        .from('leads')
-        .select('id')
-        .ilike('email', bookingEmail)
-        .limit(2);');');
+      const escapedLeadEmail = [...bookingEmail]
+        .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\\\${char}` : char))
+        .join('');
       const { data: leadMatches, error: leadLookupError } = await admin
         .from('leads')
         .select('id')
