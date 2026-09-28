@@ -37,11 +37,17 @@ function latestInteractionFromMetadata(metadata: unknown) {
   const value = (metadata as Record<string, unknown>).last_acquisition;
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const record = value as Record<string, unknown>;
+  const contact =
+    record.contact && typeof record.contact === 'object' && !Array.isArray(record.contact)
+      ? record.contact as Record<string, unknown>
+      : {};
   return {
     at: typeof record.at === 'string' ? record.at : null,
     intent: typeof record.intent === 'string' ? record.intent : null,
     origin: typeof record.origin === 'string' ? record.origin : null,
     service: typeof record.service === 'string' ? record.service : null,
+    email: typeof contact.email === 'string' ? contact.email : null,
+    phone: typeof contact.phone === 'string' ? contact.phone : null,
   };
 }
 
