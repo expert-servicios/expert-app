@@ -63,8 +63,8 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(consultationApi).toContain("intent: 'free_question'");
     expect(consultationApi).toContain("title: 'Nueva consulta gratuita'");
     expect(consultationApi).toContain("last_acquisition: interaction");
-    expect(consultationApi).toContain(".eq('email', normalizedEmail)");
-    expect(consultationApi).not.toContain(".ilike('email', normalizedEmail)");
+    expect(consultationApi).toContain(".ilike('email', escapeIlikeLiteral(normalizedEmail))");
+    expect(consultationApi).toContain('function escapeIlikeLiteral');
     expect(consultationApi).toContain('contact: {');
     expect(consultationApi).toContain('email: normalizedEmail');
     expect(consultationApi).toContain('phone: normalizedPhone');
@@ -108,7 +108,8 @@ describe('article intent CTA and IRNR funnel', () => {
   });
 
   it('preserves IRNR service identity through quote payment into specialized fulfillment', () => {
-    expect(stripeWebhook).toContain('leadBlueprintSlugs');
+    expect(stripeWebhook).toContain('leadRequestedServices');
+    expect(stripeWebhook).toContain('leadServiceSlugs');
     expect(stripeWebhook).toContain('getServiceOperationalBlueprint');
     expect(stripeWebhook).toContain('quoteServiceSlugs');
     expect(stripeWebhook).toContain('ensureServiceOrderFulfillment');
@@ -126,6 +127,8 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(questionnaire).toContain('addHolder');
     expect(questionnaire).toContain('removeHolder');
     expect(questionnaire).toContain('foreignTaxId');
+    expect(questionnaire).toContain('taxYears: string[]');
+    expect(questionnaire).toContain('Añadir ejercicio');
     expect(questionnaire).toContain('rentalPeriods');
     expect(questionnaire).toContain('Importe bruto cobrado');
     expect(questionnaire).toContain('Booking.com, Airbnb');
@@ -151,6 +154,7 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(adminCasePage).toContain('Titulares no residentes');
     expect(adminCasePage).toContain('holder.foreignTaxId');
     expect(adminCasePage).toContain('holder.ownershipPercent');
+    expect(adminCasePage).toContain('irnrIntake.taxYears.join');
     expect(adminCasePage).toContain('Periodos de alquiler e ingresos');
     expect(adminCasePage).toContain('period.grossIncome');
   });
