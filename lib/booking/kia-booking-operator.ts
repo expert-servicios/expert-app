@@ -87,21 +87,33 @@ function hasExplicitSlotConfirmation(message: string, start: Date) {
   if (negative) return false;
 
   const affirmative = /(?:^|[\s,.;:!?])(confirmo|confirmamos|confirmado|si|vale|perfecto|de acuerdo|adelante|reserva(?:r)?|me va bien|nos va bien)(?:$|[\s,.;:!?])/i.test(normalized);
-  const fullDateTokens = [
-    localDate,
-    `${day}/${month}/${year}`,
-    `${day}-${month}-${year}`,
-  ];
-  const explicitYearDates = normalized.match(/\b\d{1,2}[\/-]\d{1,2}[\/-]\d{4}\b/g) ?? [];
-  if (explicitYearDates.length > 0 && !explicitYearDates.some((value) => fullDateTokens.includes(value))) return false;
 
-  const datePattern = new RegExp(
-    `(?:^|[^0-9])(?:${localDate.replace(/-/g, '\\-')}|${day}\\/${month}(?:\\/${year})?|${day}-${month}(?:-${year})?)(?:$|[^0-9])`,
+  const explicitDates = Array.from(
+    normalized.matchAll(/(?:^|\D)(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{2,4}))?(?=\D|$)/g),
+  ).map((match) => ({
+    day: Number(match[1]),
+    month: Number(match[2]),
+    year: match[3] ? Number(match[3].length === 2 ? `20${match[3]}` : match[3]) : null,
+  }));
+  const exactDateMention = explicitDates.some((value) =>
+    value.day === Number(day)
+    && value.month === Number(month)
+    && (value.year === null || value.year === Number(year)),
   );
-  const timePattern = new RegExp(
-    `(?:^|[^0-9])(?:${localTime}|${Number(hour)}:${minute}|${Number(hour)}\\s*h)(?:$|[^0-9])`,
+  const conflictingDate = explicitDates.some((value) =>
+    value.day === Number(day)
+    && value.month === Number(month)
+    && value.year !== null
+    && value.year !== Number(year),
   );
-  return affirmative && datePattern.test(normalized) && timePattern.test(normalized);
+
+  const explicitTimes = Array.from(
+    normalized.matchAll(/(?:^|\D)(\d{1,2}):(\d{2})\s*(?:h)?(?=\D|$)/g),
+  ).map((match) => `${String(Number(match[1])).padStart(2, '0')}:${match[2]}`);
+  const exactTimeMention = explicitTimes.includes(localTime);
+  const conflictingTime = explicitTimes.some((value) => value !== localTime);
+
+  return affirmative && exactDateMention && !conflictingDate && exactTimeMention && !conflictingTime;
 }
 
 async function currentBusy(admin: AdminClient, start: Date, end: Date): Promise<BusyRange[]> {
