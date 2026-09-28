@@ -17,6 +17,7 @@ type BookingTaskInput = {
   companyId?: string | null;
   caseId?: string | null;
   leadId?: string | null;
+  reopenCancelled?: boolean;
 };
 
 function taskMetadata(input: BookingTaskInput) {
@@ -69,8 +70,12 @@ async function refreshExistingBookingTask(
   if (input.caseId) payload.case_id = input.caseId;
   if (input.leadId) payload.lead_id = input.leadId;
 
-  // Status/completed_at are intentionally not overwritten. An admin-completed
-  // or cancelled task must stay terminal during reconciliation.
+  // Reconciliation preserves terminal states. Explicit reconfirmation may
+  // reopen a previously cancelled task, but never an admin-completed one.
+  if (input.reopenCancelled && existing.status === 'cancelada') {
+    payload.status = 'pendiente';
+    payload.completed_at = null;
+  }
   const { error } = await input.admin.from('internal_tasks').update(payload).eq('id', existing.id);
   if (error) throw error;
   return existing.id;
@@ -221,6 +226,7 @@ async function loadBookingTasksForReconciliation(admin: AdminClient) {
       .eq('source', 'system')
       .not('booking_appointment_id', 'is', null)
       .order('created_at', { ascending: true })
+      .order('id', { ascending: true })
       .range(offset, offset + pageSize - 1);
     if (error) throw error;
     const page = data ?? [];
