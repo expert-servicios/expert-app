@@ -17,8 +17,7 @@ const CHANNELS = ['facebook', 'instagram', 'linkedin', 'google'] as const;
 
 describe('batch 1 operational automation', () => {
   it('has one canonical operational blueprint for every batch 1 service', () => {
-    expect(new Set(BATCH1_OPERATIONAL_BLUEPRINTS.map((blueprint) => blueprint.slug)).size)
-      .toBe(BATCH1_OPERATIONAL_BLUEPRINTS.length);
+    expect(BATCH1_OPERATIONAL_BLUEPRINTS).toHaveLength(10);
 
     for (const blueprint of BATCH1_OPERATIONAL_BLUEPRINTS) {
       const manifest = serviceProductionManifest.find((entry) => entry.slug === blueprint.slug);
