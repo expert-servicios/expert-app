@@ -14,6 +14,7 @@ import {
 import { persistAcademyCertificationPayment, persistAcademyProgramPayment } from '@/lib/payments/academy-fulfillment';
 import { legacyOrderFields, requireCreatedOrderId } from '@/lib/payments/non-academy-order';
 import { ensureServiceOrderFulfillment } from '@/lib/payments/service-order-fulfillment';
+import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
 import {
   academyEnrollmentConfirmed,
   academyEnrollmentConfirmedAdmin,
@@ -55,6 +56,24 @@ function getAdminEmails(): string[] {
     .split(',')
     .map((e) => e.trim())
     .filter(Boolean);
+}
+
+const LEGACY_QUOTE_SERVICE_SLUGS: Record<string, string> = {
+  noResidentes: 'no-residentes',
+};
+
+function canonicalQuoteServiceSlug(value: string): string {
+  const trimmed = value.trim();
+  return LEGACY_QUOTE_SERVICE_SLUGS[trimmed] ?? trimmed;
+}
+
+function splitQuoteServiceSlugs(values: Array<string | null | undefined>): string[] {
+  return [...new Set(
+    values
+      .flatMap((value) => String(value ?? '').split(','))
+      .map(canonicalQuoteServiceSlug)
+      .filter(Boolean),
+  )];
 }
 
 type SupabaseAdmin = ReturnType<typeof getSupabaseAdmin>;
@@ -584,6 +603,39 @@ export async function POST(req: NextRequest) {
           const paymentId = (session.payment_intent as string) ?? session.id;
           const currency = session.currency?.toUpperCase() ?? 'EUR';
 
+          const { data: quoteItems, error: quoteItemsError } = await supabaseAdmin
+            .from('quote_items')
+            .select('service_slug')
+            .eq('quote_id', quoteId)
+            .order('position', { ascending: true });
+          if (quoteItemsError) {
+            throw new Error(`Could not resolve quote service lines ${quoteId}: ${quoteItemsError.message}`);
+          }
+
+          let leadService: string | null = null;
+          if (quote.lead_id) {
+            const { data: lead, error: leadError } = await supabaseAdmin
+              .from('leads')
+              .select('service')
+              .eq('id', quote.lead_id)
+              .maybeSingle();
+            if (leadError) {
+              throw new Error(`Could not resolve quote lead service ${quoteId}: ${leadError.message}`);
+            }
+            leadService = lead?.service ?? null;
+          }
+
+          const persistedQuoteServiceSlugs = splitQuoteServiceSlugs([
+            session.metadata?.service_slugs,
+            session.metadata?.service_slug,
+            ...(quoteItems ?? []).map((line) => line.service_slug),
+          ]);
+          const leadBlueprintSlugs = splitQuoteServiceSlugs([leadService])
+            .filter((slug) => Boolean(getServiceOperationalBlueprint(slug)));
+          const quoteServiceSlugs = persistedQuoteServiceSlugs.length > 0
+            ? persistedQuoteServiceSlugs
+            : leadBlueprintSlugs;
+
           // ── Idempotency: protect both the Stripe payment and the quote itself ──
           const [{ data: existingOrder }, { data: existingQuoteOrder }] = await Promise.all([
             supabaseAdmin
@@ -637,7 +689,8 @@ export async function POST(req: NextRequest) {
                 id: session.id,
                 payment_intent: session.payment_intent,
                 customer_email: session.customer_email
-              }
+              },
+              service_slugs: quoteServiceSlugs,
             };
 
             const { data: newOrder, error: orderError } = await supabaseAdmin.from('orders').insert({
@@ -650,12 +703,37 @@ export async function POST(req: NextRequest) {
               ...legacyOrderFields(amountEur, quote.title),
               currency,
               status: 'paid',
+              service_slugs: quoteServiceSlugs.length > 0 ? quoteServiceSlugs.join(',') : null,
               metadata: orderMetadata
             }).select('id').single();
 
             const newOrderId = requireCreatedOrderId('quote', orderError, newOrder?.id);
 
-            if (quote.client_id) {
+            let specializedQuoteCaseId: string | null = null;
+            if (quote.client_id && quoteServiceSlugs.length > 0) {
+              specializedQuoteCaseId = await ensureServiceOrderFulfillment(supabaseAdmin, {
+                orderId: newOrderId,
+                serviceSlug: quoteServiceSlugs[0],
+                serviceSlugs: quoteServiceSlugs,
+                serviceName: quote.title ?? 'Servicio contratado',
+                clientId: quote.client_id,
+                companyId: quote.company_id ?? null,
+                checkoutLocale: 'es',
+              });
+
+              if (specializedQuoteCaseId) {
+                const { error: quoteCaseLinkError } = await supabaseAdmin
+                  .from('cases')
+                  .update({ quote_id: quoteId })
+                  .eq('id', specializedQuoteCaseId)
+                  .is('quote_id', null);
+                if (quoteCaseLinkError) {
+                  throw new Error(`Could not link fulfilled quote case ${specializedQuoteCaseId}: ${quoteCaseLinkError.message}`);
+                }
+              }
+            }
+
+            if (quote.client_id && !specializedQuoteCaseId) {
               const { data: existingCase } = await supabaseAdmin
                 .from('cases')
                 .select('id')
@@ -666,6 +744,7 @@ export async function POST(req: NextRequest) {
                 await supabaseAdmin.from('cases').insert({
                   quote_id: quoteId,
                   client_id: quote.client_id,
+                  company_id: quote.company_id ?? null,
                   category: 'presupuesto',
                   service: quote.title ?? 'servicio',
                   state: Array.isArray(quote.docs_checklist) && quote.docs_checklist.length > 0 ? 'docs_pendientes' : 'nuevo',
