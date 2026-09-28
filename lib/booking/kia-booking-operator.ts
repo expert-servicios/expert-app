@@ -246,7 +246,8 @@ export async function createKiaConfirmedBooking(input: {
       reminderMinutesBefore: service.durationMinutes >= 60 ? [1440, 60] : [1440, 30],
     }, provider);
     providerEventId = meeting.eventId;
-    if (!meeting.meetingUrl) {
+    const meetingUrl = meetingUrl;
+    if (!meetingUrl) {
       throw new Error('kia_booking_meet_unavailable');
     }
 
@@ -255,7 +256,7 @@ export async function createKiaConfirmedBooking(input: {
       google_event_id: meeting.provider === 'google' ? meeting.eventId : null,
       booking_provider: meeting.bookingProvider,
       provider_booking_id: meeting.eventId,
-      meeting_url: meeting.meetingUrl,
+      meeting_url: meetingUrl,
       updated_at: new Date().toISOString(),
     }).eq('id', appointmentId);
     if (finalizeError) throw finalizeError;
@@ -269,7 +270,7 @@ export async function createKiaConfirmedBooking(input: {
       email: input.attendeeEmail.toLowerCase(),
       localDate,
       localTime,
-      meetingUrl: meeting.meetingUrl,
+      meetingUrl: meetingUrl,
       clientId: input.clientId ?? null,
       companyId: input.companyId ?? null,
       leadId: input.leadId ?? null,
@@ -293,7 +294,7 @@ export async function createKiaConfirmedBooking(input: {
       service.label,
       formattedDate,
       localTime,
-      meeting.meetingUrl,
+      meetingUrl,
       managementLinks,
     );
     const ics = buildBookingIcs({
@@ -301,7 +302,7 @@ export async function createKiaConfirmedBooking(input: {
       service: service.label,
       start,
       end,
-      meetingUrl: meeting.meetingUrl,
+      meetingUrl: meetingUrl,
       attendeeEmail: input.attendeeEmail.toLowerCase(),
     });
     try {
@@ -340,7 +341,7 @@ export async function createKiaConfirmedBooking(input: {
       service: service.label,
       start: start.toISOString(),
       end: end.toISOString(),
-      meetingUrl: meeting.meetingUrl,
+      meetingUrl: meetingUrl,
       cancelUrl: managementLinks.cancelUrl,
       rescheduleUrl: managementLinks.rescheduleUrl,
       timezone: BOOKING_TIMEZONE,
