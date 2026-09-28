@@ -1,22 +1,32 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { CalendarDays, FileQuestion, Send, MessageCircle } from 'lucide-react';
-import { services } from '@/lib/utils/catalog';
-import { IrnrPriceCalculator } from '@/components/services/IrnrPriceCalculator';
 import { trackPublicContentIntent } from '@/lib/utils/analytics';
+
+const IrnrPriceCalculator = dynamic(
+  () => import('@/components/services/IrnrPriceCalculator').then((module) => module.IrnrPriceCalculator),
+);
+
+type ResolvedService = {
+  slug: string;
+  categoria: string;
+  name: string;
+  hasCheckout: boolean;
+};
 
 type Props = {
   sourceKind: 'docs' | 'blog';
   sourceSlug: string;
   relatedServiceSlugs?: string[];
+  service?: ResolvedService | null;
 };
 
-export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs = [] }: Props) {
-  const primaryServiceSlug = relatedServiceSlugs[0] ?? null;
-  const service = primaryServiceSlug ? services.find((item) => item.slug === primaryServiceSlug) ?? null : null;
+export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs = [], service = null }: Props) {
+  const primaryServiceSlug = service?.slug ?? relatedServiceSlugs[0] ?? null;
   const origin = `${sourceKind}:${sourceSlug}`;
-  const serviceHref = service?.stripePriceId
+  const serviceHref = service?.hasCheckout
     ? `/servicios/${service.categoria}/${service.slug}`
     : service
       ? `/solicitar-presupuesto?servicio=${encodeURIComponent(service.slug)}&origen=${encodeURIComponent(origin)}`
