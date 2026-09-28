@@ -144,9 +144,9 @@ Orden obligatorio:
 
 ### Paso 1 — Agendar reunión de onboarding
 
-El usuario reserva en el enlace Cal.com configurado por `getCalOnboardingUrl()`.
+El usuario reserva en `/cita?tipo=onboarding`; EXPERT crea la cita en Google Calendar y añade Google Meet.
 
-El webhook de Cal.com reconoce el slug `onboarding`, persiste la cita en `appointments` y puede crear el expediente operacional asociado.
+El flujo nativo de reservas persiste la cita en `appointments` y ejecuta el workflow operacional de onboarding. El webhook del proveedor anterior se conserva solo para eventos históricos.
 
 Se considera reservado cuando existe para el email autenticado una cita no cancelada cuyo servicio corresponde al onboarding.
 
@@ -227,7 +227,7 @@ Código:
 | entidad | `companies` + `profile_companies` |
 | checkout | Stripe + `checkout_sessions` |
 | suscripción | Stripe + `subscriptions` |
-| cita onboarding | Cal.com + `appointments` |
+| cita onboarding | `/cita` + Google Calendar/Meet + `appointments` |
 | Holded directo | `client_integrations` + secreto cifrado |
 | Holded autorizado | `holded_mcp_connections` / `holded_mcp_events` |
 | onboarding cerrado | `subscriptions.post_purchase_onboarding_at` |
