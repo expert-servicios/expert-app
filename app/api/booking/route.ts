@@ -23,7 +23,6 @@ import { ensureBookingAdminTask, cancelBookingAdminTask } from '@/lib/booking/bo
 import { notifyBookingAdminActivity } from '@/lib/booking/booking-admin-notifications';
 import { onboardingPreparationEmail } from '@/lib/email/onboarding-templates';
 import { ensureOnboardingTask, findOpenOnboardingCase } from '@/lib/admin/onboarding-followup';
-import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients';
 import {
   getAuthorizedBookingEmails,
   listOpenOnboardingCompanyIds,
@@ -47,15 +46,6 @@ import {
   madridLocalToDate,
   overlapsBusy,
 } from '@/lib/booking/native-booking';
-
-function escapeEmailHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 const schema = z.object({
   hp_url: z.string().optional(),
@@ -758,57 +748,6 @@ export async function POST(request: NextRequest) {
       console.error('[booking] confirmation email failed on all transports:', error);
     }
 
-    const adminEmails = await getAdminNotificationEmails();
-    const safeName = escapeEmailHtml(input.name);
-    const safeEmail = escapeEmailHtml(bookingEmail);
-    const safePhone = escapeEmailHtml(input.phone);
-    const safeService = escapeEmailHtml(service.label);
-    const safeDate = escapeEmailHtml(formattedDate);
-    const safeTime = escapeEmailHtml(localTime);
-    const safeMeetingUrl = meeting.meetingUrl ? escapeEmailHtml(meeting.meetingUrl) : null;
-    const safeNotes = input.notes ? escapeEmailHtml(input.notes) : null;
-    const adminSubject = `Nueva cita: ${service.label} — ${input.name}`;
-    const adminHtml = [
-      '<h2>Nueva cita confirmada en EXPERT</h2>',
-      `<p><strong>Cliente:</strong> ${safeName}</p>`,
-      `<p><strong>Email:</strong> ${safeEmail}</p>`,
-      `<p><strong>Teléfono:</strong> ${safePhone}</p>`,
-      `<p><strong>Servicio:</strong> ${safeService}</p>`,
-      `<p><strong>Fecha:</strong> ${safeDate}</p>`,
-      `<p><strong>Hora:</strong> ${safeTime}</p>`,
-      safeMeetingUrl
-        ? `<p><strong>Google Meet:</strong> <a href="${safeMeetingUrl}">${safeMeetingUrl}</a></p>`
-        : '',
-      safeNotes ? `<p><strong>Comentario:</strong> ${safeNotes}</p>` : '',
-    ].filter(Boolean).join('');
-
-    const adminResults = await Promise.allSettled(
-      adminEmails.map((adminEmail) =>
-        sendBookingEmail({
-          to: adminEmail,
-          eventType: 'booking.confirmed.admin',
-          subject: adminSubject,
-          html: adminHtml,
-          metadata: {
-            appointment_id: appointmentId,
-            client_email: bookingEmail,
-            client_id: privateIdentity?.clientId ?? null,
-            company_id: privateIdentity?.companyId ?? null,
-            provider_event_id: meeting.eventId,
-            booking_provider: meeting.bookingProvider,
-            service_key: service.key,
-          },
-          idempotencyKey: `booking/admin-confirmed/${appointmentId}/${adminEmail.toLowerCase()}`,
-        })
-      )
-    );
-    const adminEmailSent = adminResults.some((result) => result.status === 'fulfilled');
-    for (const result of adminResults) {
-      if (result.status === 'rejected') {
-        console.error('[booking] admin confirmation email failed on all transports:', result.reason);
-      }
-    }
-
     await notifyBookingAdminActivity({
       kind: rescheduledAppointment ? 'rescheduled' : 'created',
       appointmentId: appointmentId!,
@@ -826,7 +765,6 @@ export async function POST(request: NextRequest) {
       end: end.toISOString(),
       meetingUrl: meeting.meetingUrl,
       emailSent: clientEmailSent,
-      adminEmailSent,
     });
   } catch (error) {
     console.error('[booking]', error);
