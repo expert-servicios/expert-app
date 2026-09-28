@@ -61,13 +61,22 @@ function parseFixedUnitAmount(price?: string): number | null {
 function catalogItemForServiceSlug(slug: string): QuoteLineCatalogItem | null {
   const service = services.find((item) => item.slug === slug);
   if (!service) return null;
-  const quoteOnly = Object.prototype.hasOwnProperty.call(QUANTITY_RULES, slug);
+  const calculator = service.unitPriceCalculator;
+  const quoteOnly = Object.prototype.hasOwnProperty.call(QUANTITY_RULES, slug) || Boolean(calculator);
   if (!service.stripePriceId && !quoteOnly) return null;
 
-  const unitAmountCents = parseFixedUnitAmount(service.price);
+  const unitAmountCents = calculator
+    ? Math.round(calculator.unitPrice * 100)
+    : parseFixedUnitAmount(service.price);
   if (!unitAmountCents) return null;
 
-  const rule = QUANTITY_RULES[slug] ?? { min: 1, max: 1, label: 'unidad' };
+  const rule = QUANTITY_RULES[slug] ?? (calculator
+    ? {
+        min: calculator.minUnits ?? 1,
+        max: calculator.maxUnits ?? 500,
+        label: calculator.unitLabelPlural ?? calculator.unitLabel,
+      }
+    : { min: 1, max: 1, label: 'unidad' });
 
   return {
     slug: service.slug,
