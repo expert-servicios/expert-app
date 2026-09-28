@@ -17,7 +17,6 @@ import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
 import { ServiceShareActions } from '@/components/services/ServiceShareActions';
 import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
 import { IrnrPriceCalculator } from '@/components/services/IrnrPriceCalculator';
-import { IrnrPriceCalculator } from '@/components/services/IrnrPriceCalculator';
 import { getCompanionServices } from '@/lib/services/service-merchandising';
 import { getRuServicePath } from '@/lib/services/service-localized-content';
 
