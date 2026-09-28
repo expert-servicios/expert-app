@@ -5,6 +5,10 @@ import { notifyAdmins } from '@/lib/integrations/push';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 import { buildLeadAttributionFields } from '@/lib/marketing/server-attribution';
+import { describeContentOrigin, normalizeContentOrigin } from '@/lib/marketing/content-origin';
+import { getAdminNotificationEmails } from '@/lib/admin/admin-notification-recipients';
+import { sendEmail } from '@/lib/email/send';
+import { freeConsultationReceivedAdmin } from '@/lib/email/templates';
 
 const schema = z.object({
   hp_url: z.string().optional(),
@@ -52,10 +56,12 @@ export async function POST(request: NextRequest) {
     const sourceKey = `free-consultation:${crypto.randomUUID()}`;
     const normalizedEmail = parsed.data.email.toLowerCase();
     const normalizedPhone = parsed.data.phone?.trim() || null;
+    const contentOrigin = normalizeContentOrigin(parsed.data.origin, 'form:consulta-gratuita');
+    const contentOriginLabel = describeContentOrigin(contentOrigin);
     const interaction = {
       at: new Date().toISOString(),
       intent: 'free_question',
-      origin: parsed.data.origin || null,
+      origin: contentOrigin,
       service: parsed.data.service || null,
       source_key: sourceKey,
       contact: {
@@ -154,9 +160,30 @@ export async function POST(request: NextRequest) {
       created = true;
     }
 
+    const adminEmails = await getAdminNotificationEmails();
+    if (adminEmails.length > 0) {
+      const adminTpl = freeConsultationReceivedAdmin({
+        name: parsed.data.name,
+        email: normalizedEmail,
+        phone: normalizedPhone,
+        service: parsed.data.service || null,
+        question: parsed.data.question,
+        origin: contentOriginLabel,
+        leadId,
+      });
+      await sendEmail({
+        to: adminEmails,
+        eventType: 'free_consultation.received.admin',
+        ...adminTpl,
+        metadata: { lead_id: leadId, content_origin: contentOrigin },
+      }).catch((emailError) => {
+        console.error('[free consultation] admin email:', emailError);
+      });
+    }
+
     await notifyAdmins({
       title: 'Nueva consulta gratuita',
-      body: `${parsed.data.name} · ${parsed.data.service || 'Consulta general'} · ${parsed.data.question.slice(0, 140)}`.slice(0, 240),
+      body: `${parsed.data.name} · ${parsed.data.service || 'Consulta general'} · ${contentOriginLabel}`.slice(0, 240),
       url: `/admin/leads?focus=${leadId}`,
       tag: sourceKey,
     }).catch(() => {});
