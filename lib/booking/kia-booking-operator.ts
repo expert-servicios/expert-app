@@ -230,14 +230,15 @@ export async function createKiaConfirmedBooking(input: {
       if (insertError?.code === '23P01') throw new Error('kia_booking_slot_no_longer_available');
       throw insertError ?? new Error('kia_booking_insert_failed');
     }
-    appointmentId = appointment.id;
+    const confirmedAppointmentId = appointment.id;
+    appointmentId = confirmedAppointmentId;
 
     const meeting = await createBookingCalendarMeeting({
       summary: `${service.label} — ${input.attendeeName}`,
       description: [
         'Reserva creada por KIA desde EXPERT.',
         `Cliente: ${input.attendeeName} (${input.attendeeEmail})`,
-        appointmentId ? `EXPERT appointment: ${appointmentId}` : '',
+        `EXPERT appointment: ${confirmedAppointmentId}`,
       ].filter(Boolean).join('\n'),
       start: start.toISOString(),
       end: end.toISOString(),
@@ -258,12 +259,12 @@ export async function createKiaConfirmedBooking(input: {
       provider_booking_id: meeting.eventId,
       meeting_url: meetingUrl,
       updated_at: new Date().toISOString(),
-    }).eq('id', appointmentId);
+    }).eq('id', confirmedAppointmentId);
     if (finalizeError) throw finalizeError;
 
     await ensureBookingAdminTask({
       admin,
-      appointmentId,
+      appointmentId: confirmedAppointmentId,
       serviceKey: service.key,
       serviceLabel: service.label,
       name: input.attendeeName,
@@ -277,7 +278,7 @@ export async function createKiaConfirmedBooking(input: {
     });
 
     const managementToken = await createBookingManagementToken({
-      appointmentId,
+      appointmentId: confirmedAppointmentId,
       email: input.attendeeEmail.toLowerCase(),
       service: service.key,
     });
@@ -298,7 +299,7 @@ export async function createKiaConfirmedBooking(input: {
       managementLinks,
     );
     const ics = buildBookingIcs({
-      appointmentId,
+      appointmentId: confirmedAppointmentId,
       service: service.label,
       start,
       end,
@@ -311,11 +312,11 @@ export async function createKiaConfirmedBooking(input: {
         eventType: 'cita.confirmed',
         ...template,
         metadata: {
-          appointment_id: appointmentId,
+          appointment_id: confirmedAppointmentId,
           booking_provider: meeting.bookingProvider,
           source: 'kia',
         },
-        idempotencyKey: `kia/booking/confirmed/${appointmentId}`,
+        idempotencyKey: `kia/booking/confirmed/${confirmedAppointmentId}`,
         attachments: [{
           filename: 'cita-expert.ics',
           content: Buffer.from(ics, 'utf8').toString('base64'),
@@ -328,7 +329,7 @@ export async function createKiaConfirmedBooking(input: {
 
     await notifyBookingAdminActivity({
       kind: 'kia_created',
-      appointmentId,
+      appointmentId: confirmedAppointmentId,
       name: input.attendeeName,
       service: service.label,
       localDate,
@@ -337,7 +338,7 @@ export async function createKiaConfirmedBooking(input: {
     }).catch(() => {});
 
     return {
-      appointmentId,
+      appointmentId: confirmedAppointmentId,
       service: service.label,
       start: start.toISOString(),
       end: end.toISOString(),
@@ -367,7 +368,7 @@ export async function createKiaConfirmedBooking(input: {
         'Reserva KIA revertida durante compensación por error.',
       ).catch(() => {});
       if (remoteCleanupSucceeded) {
-        await admin.from('appointments').delete().eq('id', appointmentId);
+        await admin.from('appointments').delete().eq('id', confirmedAppointmentId);
       } else {
         await admin.from('appointments').update({
           status: 'cancelled',
@@ -375,7 +376,7 @@ export async function createKiaConfirmedBooking(input: {
           google_event_id: provider === 'google' ? providerEventId : null,
           admin_notes: 'KIA booking cleanup failed; manual reconciliation required.',
           updated_at: new Date().toISOString(),
-        }).eq('id', appointmentId);
+        }).eq('id', confirmedAppointmentId);
       }
     }
     throw error;
