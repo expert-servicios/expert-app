@@ -19,7 +19,10 @@ describe('booking admin task lifecycle', () => {
     expect(helper).toContain(".eq('booking_appointment_id', input.appointmentId)");
     expect(helper).toContain('booking_appointment_id: input.appointmentId');
     expect(helper).toContain("error?.code !== '23505'");
-    expect(migration).toContain('unique index if not exists internal_tasks_booking_appointment_id_uidx');
+    expect(migration).toContain('Duplicate booking meeting tasks detected');
+    expect(migration.indexOf('Duplicate booking meeting tasks detected')).toBeLessThan(
+      migration.indexOf('unique index if not exists internal_tasks_booking_appointment_id_uidx')
+    );
   });
 
   it('preserves terminal state and known entity links during refreshes', () => {
@@ -27,12 +30,14 @@ describe('booking admin task lifecycle', () => {
     expect(helper).toContain('if (input.companyId) payload.company_id = input.companyId');
     expect(helper).toContain('if (input.caseId) payload.case_id = input.caseId');
     expect(helper).toContain('if (input.leadId) payload.lead_id = input.leadId');
-    expect(helper).toContain('Status/completed_at are intentionally not overwritten');
+    expect(helper).toContain("if (input.reopenCancelled && existing.status === 'cancelada')");
+    expect(adminAppointments).toContain("reopenCancelled: current.status === 'cancelled' && appt.status === 'confirmed'");
   });
 
   it('links meeting tasks to EXPERT identities only when unambiguous', () => {
     expect(route).toContain('resolveBookingIdentityByEmail(admin, bookingEmail).catch');
-    expect(route).toContain(".ilike('email', bookingEmail)");
+    expect(route).toContain("bookingEmail.replace(/[\\\\%_]/g, '\\\\    expect(route).toContain(".ilike('email', bookingEmail)");')");
+    expect(route).toContain(".ilike('email', escapedLeadEmail)");
     expect(route).toContain('.limit(2)');
     expect(route).toContain("(leadMatches ?? []).length === 1");
     expect(route).toContain('lead enrichment ambiguous');
@@ -56,14 +61,17 @@ describe('booking admin task lifecycle', () => {
     expect(calWebhook).toContain('cancelBookingAdminTask(');
   });
 
-  it('normalizes Cal.com task timestamps to Europe/Madrid', () => {
+  it('normalizes legacy task timestamps to Europe/Madrid', () => {
     expect(calWebhook).toContain('formatMadridDate(startInstant)');
     expect(calWebhook).toContain('formatMadridTime(startInstant)');
+    expect(calWebhook).toContain('formatMadridDate(endInstant)');
     expect(calWebhook).toContain('formatMadridTime(endInstant)');
   });
 
   it('reconciles all pages and legacy confirmed appointments durably', () => {
     expect(helper).toContain('reconcileBookingAdminTasks');
+    expect(helper).toContain(".order('created_at', { ascending: true })");
+    expect(helper).toContain(".order('id', { ascending: true })");
     expect(helper).toContain('.range(offset, offset + pageSize - 1)');
     expect(helper).toContain("appointment.status === 'confirmed' || appointment.status === 'confirmada'");
     expect(reconciler).toContain('reconcileBookingAdminTasks');
