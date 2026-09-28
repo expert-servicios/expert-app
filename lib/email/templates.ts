@@ -426,7 +426,13 @@ export function servicePaymentConfirmed(name: string, amount: number, service: s
   };
 }
 
-export function servicePaymentConfirmedAdmin(name: string, email: string, amount: number, service: string) {
+export function servicePaymentConfirmedAdmin(
+  name: string,
+  email: string,
+  amount: number,
+  service: string,
+  origin?: string | null,
+) {
   const safeName = escapeHtml(name);
   return {
     subject: `Nuevo pago — ${safeName} (€${amount.toFixed(2)})`,
@@ -435,7 +441,8 @@ export function servicePaymentConfirmedAdmin(name: string, email: string, amount
       ${para(`<strong>${safeName}</strong> (${escapeHtml(email)}) ha completado un pago en la web.`)}
       ${table(
         detail('Servicio', escapeHtml(service)),
-        detail('Importe', `€${amount.toFixed(2)}`)
+        detail('Importe', `€${amount.toFixed(2)}`),
+        origin ? detail('Origen', escapeHtml(origin)) : ''
       )}
       ${btn('Ver en el panel', `${BRAND.appUrl}/admin/pagos`)}
     `)
