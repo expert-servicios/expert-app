@@ -24,7 +24,9 @@ describe('case document workflow security', () => {
       "const PERSONAL_DOCUMENT_SERVICE_IDS = new Set(['nacionalidad-espanola-menor-nacido-en-espana', 'no-residentes'])",
     );
     expect(documentsRoute).toContain('const personalDocumentScope = Boolean(');
-    expect(documentsRoute).toMatch(/const companyId = personalDocumentScope\s*\?\s*null/);
+    expect(documentsRoute).toContain('const explicitCompanyId = caseData.company_id ?? null');
+    expect(documentsRoute).toContain('const companyId = explicitCompanyId');
+    expect(documentsRoute).toContain('personalDocumentScope');
     expect(documentsRoute).toContain("code: 'case_company_required'");
   });
 
