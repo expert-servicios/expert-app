@@ -38,13 +38,17 @@ export function resolveCartLocale(items: CartItem[]): CartLocale {
   return items.length > 0 && items.every(item => item.locale === 'ru') ? 'ru' : 'es';
 }
 
-export function buildCartCheckoutPayload(items: CartItem[], disbursementMandateAccepted = false, companyId?: string) {
-  const disbursements = collectCartDisbursements(items);
-  const contentOrigins = [...new Set(
+export function collectCartContentOrigins(items: CartItem[]) {
+  return [...new Set(
     items
       .map((item) => item.contentOrigin?.trim())
       .filter((value): value is string => Boolean(value))
   )];
+}
+
+export function buildCartCheckoutPayload(items: CartItem[], disbursementMandateAccepted = false, companyId?: string) {
+  const disbursements = collectCartDisbursements(items);
+  const contentOrigins = collectCartContentOrigins(items);
 
   return {
     priceIds: items.map(i => i.priceId),
