@@ -40,7 +40,7 @@ describe('structured quote checkout contract', () => {
     expect(clientCheckoutRoute).toContain('unit_amount: Number(line.unit_amount_cents)');
     expect(clientCheckoutRoute).toContain('quantity: Number(line.quantity)');
     expect(clientCheckoutRoute).toContain('stripe.checkout.sessions.create');
-    expect(clientCheckoutRoute).toContain('quote.service_slugs ?? []');
+    expect(clientCheckoutRoute).toContain('Array.isArray(quote.service_slugs) ? quote.service_slugs : []');
     expect(clientCheckoutRoute).toContain('service_slugs: quoteServiceSlugs.join');
   });
 
