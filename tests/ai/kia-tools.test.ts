@@ -20,6 +20,7 @@ vi.mock('@/lib/integrations/supabase', () => ({
 
 vi.mock('@/lib/utils/app-url', () => ({
   absoluteAppUrl: (p: string) => `https://app.test${p}`,
+  getPublicAppUrl: () => 'https://app.test',
 }));
 
 vi.mock('@/lib/integrations/kia-contact-resolver', () => ({
