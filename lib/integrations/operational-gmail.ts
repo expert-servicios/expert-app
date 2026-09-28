@@ -71,13 +71,12 @@ export async function sendOperationalGmailReply(
     bodyHtml?: boolean;
   },
 ): Promise<'service_account' | 'oauth'> {
+  // Autonomous writes are deliberately single-transport. A timeout after Gmail
+  // accepted a send is ambiguous, so retrying through another credential path
+  // could produce a duplicate customer-visible reply.
   if (hasGmailSA()) {
-    try {
-      await sendGmailReplySA(input);
-      return 'service_account';
-    } catch (error) {
-      console.warn('[operational-gmail] service account reply unavailable, trying admin OAuth', error);
-    }
+    await sendGmailReplySA(input);
+    return 'service_account';
   }
 
   const tokens = await loadAdminOAuth(admin);
