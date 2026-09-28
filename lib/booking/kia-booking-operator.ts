@@ -23,7 +23,7 @@ import {
   type BookingServiceKey,
   type BusyRange,
 } from '@/lib/booking/native-booking';
-import { ensureBookingAdminTask } from '@/lib/booking/booking-admin-task';
+import { ensureBookingAdminTask, cancelBookingAdminTask } from '@/lib/booking/booking-admin-task';
 import { createBookingManagementToken, bookingManagementUrls } from '@/lib/booking/booking-management-token';
 import { buildBookingIcs } from '@/lib/booking/calendar-invite';
 import { sendBookingEmail } from '@/lib/booking/booking-email';
@@ -73,13 +73,21 @@ function latestUserText(contextMessages: Array<{ role: string; text: string }>) 
 }
 
 function hasExplicitSlotConfirmation(message: string, start: Date) {
-  const normalized = message.toLowerCase().replace(/\s+/g, ' ').trim();
+  const normalized = message
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
   const localDate = formatMadridDate(start);
   const localTime = formatMadridTime(start);
   const [year, month, day] = localDate.split('-');
   const [hour, minute] = localTime.split(':');
 
-  const affirmative = /\b(confirmo|confirmamos|confirmado|sí|si|vale|perfecto|de acuerdo|adelante|reserva|reservar|me va bien|nos va bien)\b/i.test(normalized);
+  const negative = /(?:^|[\s,.;:!?])(no\s+(?:quiero|queremos|reserves?|reservar|confirmo|confirmamos|me\s+va\s+bien|nos\s+va\s+bien)|mejor\s+no|cancel(?:a|ar|emos|en)|anul(?:a|ar|emos|en)|no\s+puedo|no\s+podemos)(?:$|[\s,.;:!?])/i.test(normalized);
+  if (negative) return false;
+
+  const affirmative = /(?:^|[\s,.;:!?])(confirmo|confirmamos|confirmado|si|vale|perfecto|de acuerdo|adelante|reserva(?:r)?|me va bien|nos va bien)(?:$|[\s,.;:!?])/i.test(normalized);
   const dateMention = [
     localDate,
     `${day}/${month}/${year}`,
@@ -296,22 +304,26 @@ export async function createKiaConfirmedBooking(input: {
       meetingUrl: meeting.meetingUrl,
       attendeeEmail: input.attendeeEmail.toLowerCase(),
     });
-    await sendBookingEmail({
-      to: input.attendeeEmail.toLowerCase(),
-      eventType: 'cita.confirmed',
-      ...template,
-      metadata: {
-        appointment_id: appointmentId,
-        booking_provider: meeting.bookingProvider,
-        source: 'kia',
-      },
-      idempotencyKey: `kia/booking/confirmed/${appointmentId}`,
-      attachments: [{
-        filename: 'cita-expert.ics',
-        content: Buffer.from(ics, 'utf8').toString('base64'),
-        type: 'text/calendar; charset=utf-8',
-      }],
-    });
+    try {
+      await sendBookingEmail({
+        to: input.attendeeEmail.toLowerCase(),
+        eventType: 'cita.confirmed',
+        ...template,
+        metadata: {
+          appointment_id: appointmentId,
+          booking_provider: meeting.bookingProvider,
+          source: 'kia',
+        },
+        idempotencyKey: `kia/booking/confirmed/${appointmentId}`,
+        attachments: [{
+          filename: 'cita-expert.ics',
+          content: Buffer.from(ics, 'utf8').toString('base64'),
+          type: 'text/calendar; charset=utf-8',
+        }],
+      });
+    } catch (emailError) {
+      console.error('[kia-booking] confirmation email failed; booking retained:', emailError);
+    }
 
     await notifyBookingAdminActivity({
       kind: 'kia_created',
@@ -348,6 +360,11 @@ export async function createKiaConfirmedBooking(input: {
       }
     }
     if (appointmentId) {
+      await cancelBookingAdminTask(
+        admin,
+        appointmentId,
+        'Reserva KIA revertida durante compensación por error.',
+      ).catch(() => {});
       if (remoteCleanupSucceeded) {
         await admin.from('appointments').delete().eq('id', appointmentId);
       } else {
