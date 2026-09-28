@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Calculator, Plus, Trash2 } from 'lucide-react';
+import { trackPublicContentIntent } from '@/lib/utils/analytics';
 
 type PropertyRow = {
   holders: number;
@@ -25,13 +26,23 @@ export function IrnrPriceCalculator({ compact = false, origin = 'service:no-resi
     setProperties((current) => current.map((row, rowIndex) => rowIndex === index ? { ...row, ...patch } : row));
   };
 
-  const summary = properties
-    .map((property, index) => `Inmueble ${index + 1}: ${property.holders} titular(es) no residente(s)${property.rented ? ', alquilado' : ', a disposición/no alquilado'}`)
-    .join('; ');
+  const rentedIndexes = properties
+    .map((property, index) => property.rented ? index + 1 : null)
+    .filter((value): value is number => value !== null);
+  const holderDistribution = properties.map((property) => property.holders).join(',');
+  const summary = [
+    `Inmuebles: ${properties.length}`,
+    `titulares por inmueble: ${holderDistribution}`,
+    `unidades declarativas estimadas: ${units}`,
+    rentedIndexes.length ? `inmuebles alquilados: ${rentedIndexes.join(',')}` : 'sin inmuebles alquilados',
+    `honorarios estimados para renta imputada: ${net} EUR + IVA`,
+  ].join('; ');
 
-  const requestHref = `/solicitar-presupuesto?servicio=no-residentes&origen=${encodeURIComponent(origin)}&resumen=${encodeURIComponent(
-    `${summary}. Unidades declarativas estimadas: ${units}. Honorarios estimados para renta imputada: ${net} EUR + IVA.`,
-  )}`;
+  const requestHref = `/solicitar-presupuesto?servicio=no-residentes&origen=${encodeURIComponent(origin)}&resumen=${encodeURIComponent(summary)}`;
+  const [originKind, ...originSlugParts] = origin.split(':');
+  const sourceKind: 'docs' | 'blog' | 'service' =
+    originKind === 'docs' || originKind === 'blog' ? originKind : 'service';
+  const sourceSlug = originSlugParts.join(':') || 'no-residentes';
 
   return (
     <div className={compact ? 'border border-[#D4A017]/25 bg-[#F8F6F1] p-5' : 'border border-[#D4A017]/25 bg-white p-6'}>
@@ -110,12 +121,14 @@ export function IrnrPriceCalculator({ compact = false, origin = 'service:no-resi
       <div className="mt-5 flex flex-wrap gap-3">
         <Link
           href={requestHref}
+          onClick={() => trackPublicContentIntent({ intent: 'irnr_quote', source_kind: sourceKind, source_slug: sourceSlug, service_slug: 'no-residentes' })}
           className="inline-flex min-h-11 items-center justify-center bg-[#D4A017] px-5 py-2.5 text-sm font-bold text-[#0D1B2A] hover:bg-[#F2C14E]"
         >
           Solicitar este servicio
         </Link>
         <Link
           href={`/cita?tipo=consulta-inicial&origen=${encodeURIComponent(origin)}`}
+          onClick={() => trackPublicContentIntent({ intent: 'meeting_15m', source_kind: sourceKind, source_slug: sourceSlug, service_slug: 'no-residentes' })}
           className="inline-flex min-h-11 items-center justify-center border border-[#D4A017]/50 px-5 py-2.5 text-sm font-semibold text-[#0D1B2A]"
         >
           Reunión informativa · 15 min
