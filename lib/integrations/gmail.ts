@@ -330,6 +330,12 @@ async function _getAttachment(
   };
 }
 
+export interface GmailOutgoingAttachment {
+  filename: string;
+  content: string;
+  type?: string;
+}
+
 function buildRawMime(opts: {
   from?: string;
   to: string;
@@ -339,23 +345,53 @@ function buildRawMime(opts: {
   threadId?: string;
   inReplyTo?: string;
   references?: string;
+  attachments?: GmailOutgoingAttachment[];
 }): string {
   for (const value of [opts.from, opts.to, opts.subject, opts.inReplyTo, opts.references]) {
     if (value && /[\r\n]/.test(value)) throw new Error('Invalid MIME header');
   }
   const fromLine = opts.from ? `From: ${opts.from}\r\n` : '';
-  const contentType = opts.bodyHtml
-    ? 'Content-Type: text/html; charset=utf-8'
-    : 'Content-Type: text/plain; charset=utf-8';
-  const raw = [
+  const bodyContentType = opts.bodyHtml
+    ? 'text/html; charset=utf-8'
+    : 'text/plain; charset=utf-8';
+  const attachments = opts.attachments ?? [];
+  const headers = [
     `${fromLine}To: ${opts.to}`,
     `Subject: ${opts.subject}`,
     ...(opts.inReplyTo ? [`In-Reply-To: ${opts.inReplyTo}`, `References: ${opts.references}`] : []),
-    contentType,
     'MIME-Version: 1.0',
-    '',
-    opts.body,
-  ].join('\r\n');
+  ];
+
+  let raw: string;
+  if (!attachments.length) {
+    raw = [...headers, `Content-Type: ${bodyContentType}`, '', opts.body].join('\r\n');
+  } else {
+    const boundary = `expert-${crypto.randomUUID()}`;
+    const parts = [
+      ...headers,
+      `Content-Type: multipart/mixed; boundary="${boundary}"`,
+      '',
+      `--${boundary}`,
+      `Content-Type: ${bodyContentType}`,
+      'Content-Transfer-Encoding: 8bit',
+      '',
+      opts.body,
+    ];
+    for (const attachment of attachments) {
+      if (/[
+"]/u.test(attachment.filename)) throw new Error('Invalid attachment filename');
+      parts.push(
+        `--${boundary}`,
+        `Content-Type: ${attachment.type ?? 'application/octet-stream'}; name="${attachment.filename}"`,
+        `Content-Disposition: attachment; filename="${attachment.filename}"`,
+        'Content-Transfer-Encoding: base64',
+        '',
+        attachment.content,
+      );
+    }
+    parts.push(`--${boundary}--`, '');
+    raw = parts.join('\r\n');
+  }
   return Buffer.from(raw)
     .toString('base64')
     .replace(/\+/g, '-')
@@ -381,7 +417,7 @@ async function _sendReply(
 
 async function _sendNew(
   gmail: AnyGoogle,
-  opts: { to: string; subject: string; body: string; bodyHtml?: boolean; from?: string }
+  opts: { to: string; subject: string; body: string; bodyHtml?: boolean; from?: string; attachments?: GmailOutgoingAttachment[] }
 ): Promise<string> {
   const encoded = buildRawMime(opts);
   const result = await gmail.users.messages.send({
@@ -420,7 +456,7 @@ export async function sendGmailReplySA(
 }
 
 export async function sendNewGmailSA(
-  opts: { to: string; subject: string; body: string; bodyHtml?: boolean }
+  opts: { to: string; subject: string; body: string; bodyHtml?: boolean; attachments?: GmailOutgoingAttachment[] }
 ): Promise<string> {
   const gmail = await getGmailSAClient();
   if (!gmail) throw new Error('Gmail SA not configured');
