@@ -168,6 +168,7 @@ export async function createKiaConfirmedBooking(input: {
   clientId?: string | null;
   companyId?: string | null;
   leadId?: string | null;
+  confirmationMessage: string;
   contextMessages: Array<{ role: string; text: string }>;
 }) {
   const service = assertPublicService(input.serviceKey);
@@ -175,7 +176,8 @@ export async function createKiaConfirmedBooking(input: {
   if (!validExactSlot(start, service.durationMinutes)) {
     throw new Error('kia_booking_invalid_slot');
   }
-  if (!hasExplicitSlotConfirmation(latestUserText(input.contextMessages), start)) {
+  const confirmationMessage = input.confirmationMessage || latestUserText(input.contextMessages);
+  if (!hasExplicitSlotConfirmation(confirmationMessage, start)) {
     throw new Error('kia_booking_explicit_confirmation_required');
   }
 
