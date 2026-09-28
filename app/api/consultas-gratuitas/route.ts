@@ -102,6 +102,8 @@ export async function POST(request: NextRequest) {
         .from('leads')
         .update({
           name: parsed.data.name,
+          category: 'Consulta gratuita',
+          service: parsed.data.service || 'consulta-general',
           message: nextMessage,
           state: 'new',
           updated_at: new Date().toISOString(),
@@ -133,14 +135,7 @@ export async function POST(request: NextRequest) {
           source_key: sourceKey,
           metadata: {
             ...attribution.metadata,
-            acquisition: {
-              ...(typeof attribution.metadata?.acquisition === 'object' && attribution.metadata.acquisition
-                ? attribution.metadata.acquisition
-                : {}),
-              intent: 'free_question',
-              origin: parsed.data.origin || null,
-              service: parsed.data.service || null,
-            },
+            last_acquisition: interaction,
             inquiries: [interaction],
           },
         })
