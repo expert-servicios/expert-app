@@ -101,7 +101,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             chatId: recipient.telegramChatId,
             text: telegramText,
           });
-          await admin.from('campaign_sends').insert({
+          await admin.from('campaign_sends').upsert({
             campaign_id: id,
             recipient_email: `telegram:${recipient.telegramChatId}@telegram.invalid`,
             recipient_name: recipient.name ?? null,
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             resend_id: `telegram:${messageId}`,
             error: null,
             sent_at: new Date().toISOString(),
-          });
+          }, { onConflict: 'campaign_id,recipient_key' });
         } else {
           if (!recipient.email) throw new Error('email_recipient_missing_email');
           const footer = buildUnsubscribeFooter(recipient.email, id, appUrl);
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             idempotencyKey: `campaign/${id}/${recipient.email.toLowerCase()}`,
           });
 
-          await admin.from('campaign_sends').insert({
+          await admin.from('campaign_sends').upsert({
             campaign_id: id,
             recipient_email: recipient.email,
             recipient_name: recipient.name ?? null,
@@ -142,12 +142,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             resend_id: resendId,
             error: null,
             sent_at: new Date().toISOString(),
-          });
+          }, { onConflict: 'campaign_id,recipient_key' });
         }
 
         sentCount++;
       } catch (err) {
-        await admin.from('campaign_sends').insert({
+        await admin.from('campaign_sends').upsert({
           campaign_id: id,
           recipient_email: recipient.email ?? `telegram:${recipient.telegramChatId ?? 'unknown'}@telegram.invalid`,
           recipient_name: recipient.name ?? null,
@@ -155,7 +155,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           recipient_key: recipient.key,
           status: 'failed',
           error: String(err),
-        });
+          sent_at: null,
+        }, { onConflict: 'campaign_id,recipient_key' });
         failedCount++;
       }
     }
