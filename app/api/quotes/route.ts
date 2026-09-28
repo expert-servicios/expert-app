@@ -97,13 +97,11 @@ export async function POST(request: NextRequest) {
         source_key: attributionFields.source_key,
         metadata: {
           ...attributionFields.metadata,
-          acquisition: {
-            ...(typeof attributionFields.metadata?.acquisition === 'object' && attributionFields.metadata.acquisition
-              ? attributionFields.metadata.acquisition
-              : {}),
-            intent: 'quote_request',
+          conversion: {
+            action: 'quote_request',
             origin: validated.origin || null,
             requested_services: serviceSlugs,
+            at: new Date().toISOString(),
           },
         },
       })
