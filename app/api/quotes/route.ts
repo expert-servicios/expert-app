@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     const { data: leadByEmail, error: leadByEmailError } = await supabaseAdmin
       .from('leads')
       .select('id,message,metadata')
-      .ilike('email', escapeIlikeLiteral(normalizedEmail))
+      .eq('email', normalizedEmail)
       .limit(1)
       .maybeSingle();
     if (leadByEmailError) throw leadByEmailError;
