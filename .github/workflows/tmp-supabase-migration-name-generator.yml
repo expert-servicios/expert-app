@@ -1,0 +1,31 @@
+name: Temporary Supabase Migration Name Generator
+
+on:
+  push:
+    branches:
+      - feat/kia-google-meeting-operator
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+
+      - name: Generate migration filenames
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/migration-name"
+          cd "$RUNNER_TEMP/migration-name"
+          supabase init >/dev/null
+          supabase migration new email_source_keys_forward_only
+          sleep 1
+          supabase migration new drop_pgjwt_before_pg17
+          find supabase/migrations -maxdepth 1 -type f -printf '%f\n' | sort
