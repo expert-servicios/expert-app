@@ -87,6 +87,8 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain('search_knowledge_resources');
     expect(route).toContain('get_booking_availability');
     expect(route).toContain('create_booking_meeting');
+    expect(route).toContain("if (input.nextAction !== 'create_task') return null");
+    expect(route).toContain("task_kind: 'email_request'");
   });
 
   it('keeps operational inspection unread until a human or policy changes it', () => {
