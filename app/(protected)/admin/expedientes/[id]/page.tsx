@@ -41,35 +41,80 @@ interface DocumentNote {
   updated_by: string | null;
 }
 
+type IrnrHolder = {
+  fullName: string;
+  residenceCountry: string;
+  foreignTaxId: string;
+  ownershipPercent: string;
+};
+
 type IrnrIntake = {
   taxYear: string;
-  residenceCountry: string;
-  taxIdForeign: string;
   properties: Array<{
     address: string;
     cadastralReference: string;
     acquisitionDate: string;
-    ownershipPercent: string;
     use: 'available' | 'rented' | 'sold';
+    holders: IrnrHolder[];
   }>;
 };
 
 function parseIrnrIntake(comment: string | null | undefined): IrnrIntake | null {
   if (!comment) return null;
   try {
-    const parsed = JSON.parse(comment) as Partial<IrnrIntake>;
+    const parsed = JSON.parse(comment) as {
+      taxYear?: unknown;
+      residenceCountry?: unknown;
+      taxIdForeign?: unknown;
+      properties?: unknown;
+    };
     if (!Array.isArray(parsed.properties)) return null;
+
+    const legacyResidenceCountry =
+      typeof parsed.residenceCountry === 'string' ? parsed.residenceCountry : '';
+    const legacyTaxId = typeof parsed.taxIdForeign === 'string' ? parsed.taxIdForeign : '';
+
     return {
       taxYear: typeof parsed.taxYear === 'string' ? parsed.taxYear : '',
-      residenceCountry: typeof parsed.residenceCountry === 'string' ? parsed.residenceCountry : '',
-      taxIdForeign: typeof parsed.taxIdForeign === 'string' ? parsed.taxIdForeign : '',
-      properties: parsed.properties.map((property) => ({
-        address: typeof property?.address === 'string' ? property.address : '',
-        cadastralReference: typeof property?.cadastralReference === 'string' ? property.cadastralReference : '',
-        acquisitionDate: typeof property?.acquisitionDate === 'string' ? property.acquisitionDate : '',
-        ownershipPercent: typeof property?.ownershipPercent === 'string' ? property.ownershipPercent : '',
-        use: property?.use === 'rented' || property?.use === 'sold' ? property.use : 'available',
-      })),
+      properties: parsed.properties.map((rawProperty) => {
+        const property =
+          rawProperty && typeof rawProperty === 'object'
+            ? rawProperty as Record<string, unknown>
+            : {};
+        const rawHolders = Array.isArray(property.holders) ? property.holders : [];
+        const holders = rawHolders.length > 0
+          ? rawHolders.map((rawHolder) => {
+              const holder =
+                rawHolder && typeof rawHolder === 'object'
+                  ? rawHolder as Record<string, unknown>
+                  : {};
+              return {
+                fullName: typeof holder.fullName === 'string' ? holder.fullName : '',
+                residenceCountry:
+                  typeof holder.residenceCountry === 'string' ? holder.residenceCountry : '',
+                foreignTaxId: typeof holder.foreignTaxId === 'string' ? holder.foreignTaxId : '',
+                ownershipPercent:
+                  typeof holder.ownershipPercent === 'string' ? holder.ownershipPercent : '',
+              };
+            })
+          : [{
+              fullName: '',
+              residenceCountry: legacyResidenceCountry,
+              foreignTaxId: legacyTaxId,
+              ownershipPercent:
+                typeof property.ownershipPercent === 'string' ? property.ownershipPercent : '',
+            }];
+
+        return {
+          address: typeof property.address === 'string' ? property.address : '',
+          cadastralReference:
+            typeof property.cadastralReference === 'string' ? property.cadastralReference : '',
+          acquisitionDate:
+            typeof property.acquisitionDate === 'string' ? property.acquisitionDate : '',
+          use: property.use === 'rented' || property.use === 'sold' ? property.use : 'available',
+          holders,
+        };
+      }),
     };
   } catch {
     return null;
@@ -188,7 +233,7 @@ export default async function AdminCaseDetailPage({
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">IRNR · datos del cliente</p>
-                <h2 className="mt-1 font-serif text-xl font-bold text-[#07111d]">Cuestionario de inmuebles</h2>
+                <h2 className="mt-1 font-serif text-xl font-bold text-[#07111d]">Cuestionario de inmuebles y titulares</h2>
               </div>
               {irnrNote?.updated_at && (
                 <p className="text-xs text-[#52606d]">
@@ -203,18 +248,16 @@ export default async function AdminCaseDetailPage({
               </p>
             ) : (
               <>
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-lg bg-[#f8f4eb] p-3">
                     <p className="text-[11px] font-bold uppercase text-[#8a6111]">Ejercicio</p>
                     <p className="mt-1 text-sm font-semibold text-[#07111d]">{irnrIntake.taxYear || '—'}</p>
                   </div>
                   <div className="rounded-lg bg-[#f8f4eb] p-3">
-                    <p className="text-[11px] font-bold uppercase text-[#8a6111]">Residencia fiscal</p>
-                    <p className="mt-1 text-sm font-semibold text-[#07111d]">{irnrIntake.residenceCountry || '—'}</p>
-                  </div>
-                  <div className="rounded-lg bg-[#f8f4eb] p-3">
-                    <p className="text-[11px] font-bold uppercase text-[#8a6111]">N.º fiscal extranjero</p>
-                    <p className="mt-1 break-all text-sm font-semibold text-[#07111d]">{irnrIntake.taxIdForeign || '—'}</p>
+                    <p className="text-[11px] font-bold uppercase text-[#8a6111]">Unidades declarativas</p>
+                    <p className="mt-1 text-sm font-semibold text-[#07111d]">
+                      {irnrIntake.properties.reduce((total, property) => total + Math.max(1, property.holders.length), 0)}
+                    </p>
                   </div>
                 </div>
 
@@ -226,9 +269,24 @@ export default async function AdminCaseDetailPage({
                         <div><dt className="text-[#7a7064]">Dirección</dt><dd className="font-semibold text-[#29384a]">{property.address || '—'}</dd></div>
                         <div><dt className="text-[#7a7064]">Referencia catastral</dt><dd className="font-semibold text-[#29384a]">{property.cadastralReference || '—'}</dd></div>
                         <div><dt className="text-[#7a7064]">Fecha de adquisición</dt><dd className="font-semibold text-[#29384a]">{property.acquisitionDate || '—'}</dd></div>
-                        <div><dt className="text-[#7a7064]">Titularidad</dt><dd className="font-semibold text-[#29384a]">{property.ownershipPercent ? `${property.ownershipPercent} %` : '—'}</dd></div>
-                        <div className="sm:col-span-2"><dt className="text-[#7a7064]">Uso</dt><dd className="font-semibold text-[#29384a]">{irnrUseLabels[property.use]}</dd></div>
+                        <div><dt className="text-[#7a7064]">Uso</dt><dd className="font-semibold text-[#29384a]">{irnrUseLabels[property.use]}</dd></div>
                       </dl>
+
+                      <div className="mt-4 border-t border-[#eadfce] pt-3">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-[#8a6111]">Titulares no residentes</p>
+                        <div className="mt-2 grid gap-2">
+                          {property.holders.map((holder, holderIndex) => (
+                            <div key={holderIndex} className="rounded-lg bg-[#f8f4eb] p-3 text-xs">
+                              <p className="font-bold text-[#07111d]">Titular {holderIndex + 1}{holder.fullName ? ` · ${holder.fullName}` : ''}</p>
+                              <dl className="mt-2 grid gap-x-4 gap-y-1 sm:grid-cols-3">
+                                <div><dt className="text-[#7a7064]">Residencia fiscal</dt><dd className="font-semibold text-[#29384a]">{holder.residenceCountry || '—'}</dd></div>
+                                <div><dt className="text-[#7a7064]">N.º fiscal extranjero</dt><dd className="break-all font-semibold text-[#29384a]">{holder.foreignTaxId || '—'}</dd></div>
+                                <div><dt className="text-[#7a7064]">Titularidad</dt><dd className="font-semibold text-[#29384a]">{holder.ownershipPercent ? `${holder.ownershipPercent} %` : '—'}</dd></div>
+                              </dl>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
