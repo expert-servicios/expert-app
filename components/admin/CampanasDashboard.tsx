@@ -9,6 +9,7 @@ import {
 import { julyEmailCampaignDrafts, julyMetricoolLinks } from '@/lib/marketing/july-2026';
 
 type SegmentKey = 'all_active' | 'subscribers' | 'no_subscription' | 'leads' | 'all' | 'newsletter';
+type AudienceSegment = 'particular_residente' | 'particular_no_residente' | 'autonomo' | 'empresa';
 type CampaignStatus = 'draft' | 'sending' | 'sent' | 'archived';
 type Tone = 'profesional' | 'cercano' | 'urgente' | 'informativo';
 
@@ -18,6 +19,7 @@ interface Campaign {
   status: CampaignStatus;
   subject: string;
   segment: SegmentKey;
+  audience_segment: AudienceSegment | null;
   recipient_count: number | null;
   sent_count: number;
   failed_count: number;
@@ -48,6 +50,13 @@ const SEGMENT_LABELS: Record<SegmentKey, string> = {
   leads:           'Leads no convertidos',
   all:             'Todos (activos + inactivos)',
   newsletter:      'Newsletter',
+};
+
+const AUDIENCE_SEGMENT_LABELS: Record<AudienceSegment, string> = {
+  particular_residente: 'Particular residente',
+  particular_no_residente: 'Particular no residente',
+  autonomo: 'Autónomo',
+  empresa: 'Empresa',
 };
 
 const TONE_LABELS: Record<Tone, string> = {
@@ -300,6 +309,7 @@ function CampaignEditor({
   const [subject, setSubject]   = useState(initial?.subject ?? '');
   const [bodyHtml, setBodyHtml] = useState('');
   const [segment, setSegment]   = useState<SegmentKey>(initial?.segment ?? 'all_active');
+  const [audienceSegment, setAudienceSegment] = useState<AudienceSegment | ''>(initial?.audience_segment ?? '');
   const [topic, setTopic]       = useState('');
   const [tone, setTone]         = useState<Tone>('cercano');
   const [extraCtx, setExtraCtx] = useState('');
@@ -311,10 +321,12 @@ function CampaignEditor({
   const [countLoading, setCountLoading] = useState(false);
   const [error, setError]       = useState<string | null>(null);
 
-  const loadSegmentCount = useCallback(async (seg: SegmentKey) => {
+  const loadSegmentCount = useCallback(async (seg: SegmentKey, audience: AudienceSegment | '') => {
     setCountLoading(true);
     try {
-      const res = await fetch(`/api/admin/campaigns/segment-preview?segment=${seg}`);
+      const params = new URLSearchParams({ segment: seg });
+      if (seg === 'newsletter' && audience) params.set('audience_segment', audience);
+      const res = await fetch(`/api/admin/campaigns/segment-preview?${params.toString()}`);
       if (res.ok) {
         const d = await res.json();
         setRecipientCount(d.count);
@@ -323,7 +335,7 @@ function CampaignEditor({
     } finally { setCountLoading(false); }
   }, []);
 
-  useEffect(() => { loadSegmentCount(segment); }, [segment, loadSegmentCount]); // eslint-disable-line react-hooks/set-state-in-effect
+  useEffect(() => { loadSegmentCount(segment, audienceSegment); }, [segment, audienceSegment, loadSegmentCount]); // eslint-disable-line react-hooks/set-state-in-effect
 
   const handleKiaDraft = async () => {
     if (!topic) { setError('Escribe el tema de la campaña primero.'); return; }
@@ -332,7 +344,14 @@ function CampaignEditor({
       const res = await fetch('/api/admin/campaigns/kia-draft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topic, audience: SEGMENT_LABELS[segment], tone, extraContext: extraCtx }),
+        body: JSON.stringify({
+          topic,
+          audience: segment === 'newsletter' && audienceSegment
+            ? `${SEGMENT_LABELS[segment]} · ${AUDIENCE_SEGMENT_LABELS[audienceSegment]}`
+            : SEGMENT_LABELS[segment],
+          tone,
+          extraContext: extraCtx,
+        }),
       });
       if (res.ok) {
         const d = await res.json();
@@ -352,7 +371,13 @@ function CampaignEditor({
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, subject, body_html: bodyHtml, segment }),
+        body: JSON.stringify({
+          title,
+          subject,
+          body_html: bodyHtml,
+          segment,
+          audience_segment: segment === 'newsletter' ? audienceSegment || null : null,
+        }),
       });
       if (!res.ok) { const d = await res.json(); setError(d.error ?? 'Error'); return; }
       onSaved();
@@ -397,6 +422,24 @@ function CampaignEditor({
                 {countLoading ? '...' : (recipientCount ?? '?')}
               </div>
             </div>
+            {segment === 'newsletter' && (
+              <div className="mt-3">
+                <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">Perfil de newsletter</label>
+                <select
+                  value={audienceSegment}
+                  onChange={(event) => setAudienceSegment(event.target.value as AudienceSegment | '')}
+                  className="w-full rounded-xl border border-[#d8cbb5] px-4 py-2.5 text-sm outline-none focus:border-[#c88b25]"
+                >
+                  <option value="">Todos los perfiles</option>
+                  {Object.entries(AUDIENCE_SEGMENT_LABELS).map(([key, label]) => (
+                    <option key={key} value={key}>{label}</option>
+                  ))}
+                </select>
+                <p className="mt-1.5 text-[10px] text-[#9ca3af]">
+                  La previsualización y el recuento se recalculan con este perfil antes de guardar.
+                </p>
+              </div>
+            )}
             {previewSample.length > 0 && (
               <p className="mt-1.5 text-[10px] text-[#9ca3af]">Ej: {previewSample.join(', ')}</p>
             )}
@@ -525,7 +568,10 @@ function SendConfirmModal({
             <p className="font-semibold text-[#07111d]">¿Enviar campaña?</p>
             <p className="mt-1 text-sm text-[#29384a]">
               <strong>&quot;{campaign.title}&quot;</strong> se enviará a{' '}
-              <strong>{campaign.recipient_count ?? '?'} destinatarios</strong> ({SEGMENT_LABELS[campaign.segment]}).
+              <strong>{campaign.recipient_count ?? '?'} destinatarios</strong> ({SEGMENT_LABELS[campaign.segment]}
+              {campaign.segment === 'newsletter' && campaign.audience_segment
+                ? ` · ${AUDIENCE_SEGMENT_LABELS[campaign.audience_segment]}`
+                : ''}).
             </p>
             <p className="mt-2 text-xs text-[#9ca3af]">Esta acción no se puede deshacer.</p>
             {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
