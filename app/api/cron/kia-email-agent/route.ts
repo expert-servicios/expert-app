@@ -588,7 +588,7 @@ export async function GET(request: NextRequest) {
         allowedToolNames: [...allowedTools],
         toolAuthorization: {
           maxRiskTier: 'R2',
-          allowedEffects: ['read', 'draft', 'external_action'],
+          allowedEffects: ['read', 'external_action'],
           autonomousOnly: false,
         },
         externalActionMinConfidence: confidenceFloor,
