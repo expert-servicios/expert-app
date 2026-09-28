@@ -497,9 +497,10 @@ export async function GET(request: NextRequest) {
       const replyRecipient = normalizedEmail(latest.replyTo || latest.fromEmail);
       const replyToMismatch = replyRecipient !== senderEmail;
       let identity = await resolveIdentity(admin, senderEmail, row.case_id ?? null, authUsers);
-      const safeUnknownProspect = !identity.clientId && !identity.leadId && !row.case_id
+      const wasKnownContact = Boolean(identity.clientId || identity.leadId);
+      const safeUnknownProspect = !wasKnownContact && !row.case_id
         && isSafeUnknownProspect(latest.subject, latestReply);
-      if (safeUnknownProspect) {
+      if (!wasKnownContact && !row.case_id) {
         const leadId = await ensureEmailLead(admin, latest, latestReply).catch((leadError) => {
           console.error('[kia-email-agent] lead creation:', leadError);
           return null;
@@ -531,17 +532,16 @@ export async function GET(request: NextRequest) {
         createdAt: message.date,
       }));
 
-      const knownContact = Boolean(identity.clientId || identity.leadId);
       const hasAttachments = latest.attachments.some((attachment) => !attachment.inline);
-      const confidenceFloor = knownContact ? minConfidence : prospectMinConfidence;
+      const confidenceFloor = wasKnownContact ? minConfidence : prospectMinConfidence;
       const externalActionPreEligible = autoSend
         && health.ok
-        && (knownContact || safeUnknownProspect)
+        && (wasKnownContact || safeUnknownProspect)
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
         && !hasAttachments;
-      const baseAllowedTools = knownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS;
+      const baseAllowedTools = wasKnownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS;
       const allowedTools = baseAllowedTools.filter(
         (toolName) => toolName !== 'create_booking_meeting' || externalActionPreEligible,
       );
@@ -611,7 +611,7 @@ export async function GET(request: NextRequest) {
 
       const canAutoSend = autoSend
         && health.ok
-        && (knownContact || safeUnknownProspect)
+        && (wasKnownContact || safeUnknownProspect)
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
@@ -727,7 +727,7 @@ export async function GET(request: NextRequest) {
       } else {
         if (!autoSend) blockReason = 'auto_send_disabled';
         else if (!health.ok) blockReason = health.reason;
-        else if (!knownContact && !safeUnknownProspect) blockReason = 'unknown_contact_not_safe_prospect';
+        else if (!wasKnownContact && !safeUnknownProspect) blockReason = 'unknown_contact_not_safe_prospect';
         else if (identity.ambiguousCase) blockReason = 'ambiguous_case';
         else if (identity.linkedCaseSenderMismatch) blockReason = 'linked_case_sender_mismatch';
         else if (replyToMismatch) blockReason = 'reply_to_requires_review';
