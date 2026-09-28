@@ -13,7 +13,7 @@ const serviceCategories = [
     title: 'Fiscalidad',
     services: [
       { id: 'irpf', name: 'Declaración de la Renta (IRPF)', description: 'Declaración anual de renta personal' },
-      { id: 'modelo151', name: 'Modelo 151 / Ley Beckham', description: 'Para trabajadores desplazados a España' },
+      { id: 'modelo-151', name: 'Modelo 151 / Ley Beckham', description: 'Para trabajadores desplazados a España' },
       { id: 'no-residentes', name: 'Declaración de no residentes', description: 'IRNR y tributación para no residentes' }
     ]
   },
