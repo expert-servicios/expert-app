@@ -206,7 +206,7 @@ async function recordInboundEmailEvent(input: {
     recipient_email: normalizedEmail(input.message.fromEmail),
     subject: input.message.subject || '(sin asunto)',
     html: replyHtml(input.excerpt),
-    status: 'received',
+    status: 'delivered',
     metadata: {
       direction: 'in',
       transport: 'gmail',
