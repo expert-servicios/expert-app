@@ -146,7 +146,7 @@ export async function resolveAuthenticatedBookingIdentity(
 }
 
 /**
- * Resolve a Cal.com attendee to a customer and, when it can be proven
+ * Resolve a legacy booking attendee to a customer and, when it can be proven
  * unambiguously, to the fiscal entity that owns the booking.
  *
  * Rules:
