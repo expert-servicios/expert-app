@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, BookOpen, Clock, FileText, Tag } from 'lucide-react';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
 import { ArticleIntentCTA } from '@/components/content/ArticleIntentCTA';
+import { ArticleIntentCTA } from '@/components/content/ArticleIntentCTA';
 import { categories, services } from '@/lib/utils/catalog';
 import { docs, getDoc, getDocCategory } from '@/lib/utils/docs';
 
