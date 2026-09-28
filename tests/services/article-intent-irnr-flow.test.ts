@@ -48,12 +48,11 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(blogPage).not.toContain('wa.me');
   });
 
-  it('calculates IRNR pricing by property-holder unit', () => {
-    expect(calc).toContain('80 + Math.max(0, standardUnits - 1) * 30');
+  it('calculates IRNR pricing by property-holder unit without changing price for rentals', () => {
+    expect(calc).toContain('80 + Math.max(0, declarativeUnits - 1) * 30');
     expect(calc).toContain('Titulares no residentes');
-    expect(calc).toContain('Está alquilado');
-    expect(calc).toContain('unidades estándar no alquiladas');
-    expect(calc).toContain('unidades alquiladas pendientes de revisión');
+    expect(calc).toContain('El uso del inmueble no cambia esta estimación');
+    expect(calc).not.toContain('Está alquilado');
     expect(calc).toContain("intent: 'irnr_quote'");
     expect(calc).toContain('holderDistribution');
   });
@@ -86,7 +85,7 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(quoteForm).toContain("{ id: 'modelo-151', name: 'Modelo 151 / Ley Beckham'");
     expect(quoteForm).toContain("modelo151: 'modelo-151'");
     expect(quoteApi).toContain("action: 'quote_request'");
-    expect(quoteApi).toContain('origin: validated.origin || null');
+    expect(quoteApi).toContain('origin: contentOrigin');
     expect(quoteApi).toContain('requested_services: serviceSlugs');
     expect(quoteApi).not.toContain("intent: 'quote_request'");
   });
@@ -95,7 +94,7 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(bookingPage).toContain('origin={origin}');
     expect(bookingForm).toContain('origin: origin ?? undefined');
     expect(bookingApi).toContain('Origen CTA/contenido:');
-    expect(bookingApi).toContain('content_origin: input.origin ?? null');
+    expect(bookingApi).toContain('content_origin: contentOrigin');
     expect(consultation).toContain('href={meetingHref}');
     expect(consultation).toContain("encodeURIComponent(origin)");
   });
@@ -127,6 +126,10 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(questionnaire).toContain('addHolder');
     expect(questionnaire).toContain('removeHolder');
     expect(questionnaire).toContain('foreignTaxId');
+    expect(questionnaire).toContain('rentalPeriods');
+    expect(questionnaire).toContain('Importe bruto cobrado');
+    expect(questionnaire).toContain('Booking.com, Airbnb');
+    expect(questionnaire).toContain('Subir archivo');
     expect(questionnaire).toContain('legacyResidenceCountry');
     expect(questionnaire).toContain('legacyTaxId');
     expect(questionnaire).toContain('revisionAtStart');
@@ -148,5 +151,7 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(adminCasePage).toContain('Titulares no residentes');
     expect(adminCasePage).toContain('holder.foreignTaxId');
     expect(adminCasePage).toContain('holder.ownershipPercent');
+    expect(adminCasePage).toContain('Periodos de alquiler e ingresos');
+    expect(adminCasePage).toContain('period.grossIncome');
   });
 });
