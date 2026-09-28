@@ -103,6 +103,46 @@ function normalizedEmail(email: string) {
 
 function isLikelyHuman(message: GmailMessage) {
   const email = normalizedEmail(message.fromEmail);
+  const local = email.split('@')[0] ?? '';
+  if (!email || email === EXPERT_MAILBOX) return false;
+  if (/@expertconsulting\.es$/i.test(email)) return false;
+  if (/^(no-?reply|do-?not-?reply|notifications?|mailer-daemon|postmaster|bounce|alerts?)\b/i.test(local)) return false;
+  if (message.autoSubmitted && message.autoSubmitted.toLowerCase() !== 'no') return false;
+  if (message.precedence && /^(bulk|list|junk)$/i.test(message.precedence.trim())) return false;
+  if (message.listUnsubscribe) return false;
+  const labels = new Set(message.labelIds ?? []);
+  if (labels.has('CATEGORY_PROMOTIONS') || labels.has('CATEGORY_SOCIAL') || labels.has('CATEGORY_FORUMS')) return false;
+  return true;
+}
+
+function isSafeUnknownProspect(subject: string, text: string) {
+  const signal = `${subject} ${text}`.toLowerCase();
+  const explicitCommercialRequest =
+    /\b(solicit(?:o|amos)|ped(?:imos|ir)|quer(?:emos|ría|ria)|necesit(?:o|amos)|busc(?:o|amos)|interesad[oa]s?|contratar|cambiar(?:nos)?\s+(?:de\s+)?(?:asesor[ií]a|gestor[ií]a)|presupuesto|precio|tarifa|propuesta|demo|reservar\s+(?:una\s+)?(?:cita|reuni[oó]n))\b/i.test(signal);
+  const expertServiceIntent =
+    /\b(asesor[ií]a|gestor[ií]a|gesti[oó]n\s+fiscal|contabilidad|impuestos|holded|aut[oó]nom[oa]s?|sociedad(?:es)?|\bsl\b|migraci[oó]n\s+(?:a\s+)?holded|cuentas\s+anuales|modelo(?:s)?\s+trimestral)/i.test(signal);
+  return explicitCommercialRequest && expertServiceIntent;
+}
+
+function adminThreadUrl(threadId: string) {
+  return `/admin/correo/hilo?provider=gmail&conversationId=${encodeURIComponent(threadId)}`;
+}
+
+function senderDisplayName(message: GmailMessage) {
+  const raw = message.from.trim();
+  const bracket = raw.match(/^(.+?)\s*<[^>]+>$/);
+  const value = (bracket?.[1] ?? raw).replace(/^["']|["']$/g, '').trim();
+  return value && value.toLowerCase() !== message.fromEmail.toLowerCase()
+    ? value.slice(0, 120)
+    : message.fromEmail.split('@')[0].slice(0, 120);
+}
+
+async function ensureEmailLead(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  message: GmailMessage,
+  excerpt: string,
+) {
+  const email = normalizedEmail(message.fromEmail);
   const escapedEmail = [...email]
     .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\\\${char}` : char))
     .join('');
