@@ -14,11 +14,11 @@ describe('Admin appointments funnel context', () => {
     expect(route).toContain("'booking_appointment_id,lead_id,client_id,company_id,metadata'");
     expect(route).toContain('tasksByAppointment.get(appointment.id)');
     expect(route).toContain('task?.lead_id');
-    expect(route).toContain('const rawClientId = identityConflict ? null : (appointment.client_id ?? task?.client_id ?? null)');
+    expect(route).toContain('const rawClientId = sourceIdentityConflict ? null : (appointment.client_id ?? task?.client_id ?? null)');
     expect(route).toContain('const verifiedClientId = rawClientId && activeClientIds.has(rawClientId) ? rawClientId : null');
-    expect(route).toContain('if (!lead && !verifiedClientId && !identityConflict && !invalidClientIdentity)');
-    expect(route).toContain('client_id: identityConflict ? null : verifiedClientId');
-    expect(route).toContain('company_id: identityConflict ? null : (appointment.company_id ?? task?.company_id ?? null)');
+    expect(route).toContain('if (!lead && !sourceIdentityConflict && !invalidClientIdentity && !ambiguousClientMatch)');
+    expect(route).toContain('client_id: identityConflict ? null : resolvedClientId');
+    expect(route).toContain('company_id: identityConflict ? null : rawCompanyId');
   });
 
   it('batches legacy lead candidates and fails closed when identifiers are ambiguous', () => {
@@ -45,10 +45,10 @@ describe('Admin appointments funnel context', () => {
   });
 
   it('fails closed when legacy lead identity diverges from the active client email', () => {
-    expect(route).toContain('loadActiveClientIndex(admin, clientLookupCandidates)');
+    expect(route).toContain('resolveActiveClientIdsByEmails');
     expect(route).toContain("activeClientIndex.get(normalizeEmail(appointment.email))");
     expect(route).toContain('ambiguousClientMatch');
-    expect(route).toContain('inferredLeadClientConflict');
+    expect(route).toContain('leadClientConflict');
     expect(route).toContain('leadEmail !== appointmentEmail');
     expect(route).toContain('identityConflict = sourceIdentityConflict');
     expect(route).toContain('ambiguous_client_match: ambiguousClientMatch');
