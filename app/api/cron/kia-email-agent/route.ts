@@ -21,6 +21,7 @@ const READ_ONLY_TOOLS = [
   'get_case_status',
   'get_case_tasks',
   'get_case_documents',
+  'get_case_signature_status',
   'get_case_timeline',
   'get_client_communications',
   'get_service_operational_blueprint',
