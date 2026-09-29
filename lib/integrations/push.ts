@@ -77,7 +77,7 @@ export async function notifyAdmins(payload: PushPayload): Promise<void> {
         checked_at: new Date().toISOString(),
       },
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'key' }).catch(() => {});
+    }, { onConflict: 'key' });
     return;
   }
 
@@ -100,7 +100,7 @@ export async function notifyAdmins(payload: PushPayload): Promise<void> {
       checked_at: new Date().toISOString(),
     },
     updated_at: new Date().toISOString(),
-  }, { onConflict: 'key' }).catch(() => {});
+  }, { onConflict: 'key' });
 }
 
 function escapeHtml(text: string): string {
