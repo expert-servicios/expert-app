@@ -18,11 +18,13 @@ describe('Admin push reliability', () => {
   it('records admin push delivery health without storing subscription secrets', () => {
     expect(push).toContain("key: 'admin_push_health'");
     expect(push).toContain("reason: 'missing_vapid'");
-    expect(push).toContain("status: delivery.delivered > 0 ? 'ok'");
+    expect(push).toContain("reason: delivery.lookupError ? 'subscription_lookup_failed' : null");
+    expect(push).toContain("delivery.errors === 0 && delivery.delivered === delivery.attempted");
     expect(push).toContain('attempted: delivery.attempted');
     expect(push).toContain('delivered: delivery.delivered');
     expect(push).toContain('dead: delivery.dead');
     expect(push).toContain('errors: delivery.errors');
+    expect(push).toContain('lookupError: true');
     expect(push).not.toContain('p256dh: delivery');
     expect(push).not.toContain('auth: delivery');
   });
