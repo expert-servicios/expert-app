@@ -154,7 +154,9 @@ export async function GET(request: NextRequest) {
     const enriched = await Promise.all(appointments.map(async (appointment) => {
       const task = tasksByAppointment.get(appointment.id) ?? null;
       let lead = task?.lead_id ? (leadsById.get(task.lead_id) ?? null) : null;
-      let relationshipSource: 'task' | 'appointment' | 'matched' | 'none' = task ? 'task' : 'appointment';
+      let relationshipSource: 'task' | 'appointment' | 'matched' | 'none' = task
+        ? 'task'
+        : (appointment.client_id || appointment.company_id ? 'appointment' : 'none');
       let ambiguousLeadMatch = false;
 
       if (!lead) {
