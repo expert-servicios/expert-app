@@ -83,12 +83,9 @@ async function ensurePublicBookingLead(input: {
 }): Promise<string | null> {
   const normalizedEmail = input.email.trim().toLowerCase();
   const normalizedPhone = input.phone.trim();
-  const escapedEmail = normalizedEmail.replace(/[\\%_]/g, '\\async function authenticatedUser(request: NextRequest) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user } } = await supabase.auth.getUser();
-  return user ?? null;
-}
-');
+  const escapedEmail = [...normalizedEmail]
+    .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\\\${char}` : char))
+    .join('');
   const interaction = {
     at: new Date().toISOString(),
     action: 'booking_created',
