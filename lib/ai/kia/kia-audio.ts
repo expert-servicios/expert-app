@@ -53,7 +53,8 @@ export async function synthesizeKiaSpeech(input: {
   const text = input.text.trim().slice(0, 4000);
   if (!text) throw new Error('empty_speech_text');
   const model = process.env.OPENAI_TTS_MODEL?.trim() || 'gpt-4o-mini-tts';
-  const voice = process.env.OPENAI_TTS_VOICE?.trim() || 'alloy';
+  const voice = process.env.OPENAI_TTS_VOICE?.trim();
+  if (!voice) throw new Error('openai_tts_not_configured');
 
   const response = await fetch(SPEECH_URL, {
     method: 'POST',
