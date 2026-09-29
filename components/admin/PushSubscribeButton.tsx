@@ -56,11 +56,16 @@ export function PushSubscribeButton() {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC) as unknown as ArrayBuffer,
       });
       const json = sub.toJSON();
-      await fetch('/api/push/subscribe', {
+      const persist = await fetch('/api/push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
       });
+      if (!persist.ok) {
+        await sub.unsubscribe().catch(() => false);
+        setState('unsubscribed');
+        throw new Error('push_subscription_persistence_failed');
+      }
       setState('subscribed');
     } catch (err) {
       console.error('[push] subscribe error', err);
