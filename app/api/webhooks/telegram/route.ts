@@ -33,7 +33,7 @@ import {
 import { executeKiaToolCall } from '@/lib/ai/kia/kia-tool-executor';
 import { resolveKiaQuickActionCase } from '@/lib/ai/kia/kia-quick-action-case';
 import { recordKiaVisibleReply } from '@/lib/ai/kia/kia-visible-decision-log';
-import { persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
+import { loadKiaConversation, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import { resolveTelegramContentOrigin } from '@/lib/marketing/telegram-content-origin-server';
 import {
   escapeTelegramHtml,
@@ -270,6 +270,8 @@ async function handleTelegramUpdate(request: NextRequest) {
   const contextEnabled = process.env.KIA_CONTEXTUAL_CONVERSATIONS_ENABLED?.toLowerCase() === 'true';
   const opensContext = contextEnabled && Boolean(telegramContextPayload(inbound.text));
 
+  let attributionConversationId: string | null = null;
+
   if (contentOrigin && identity && contextEnabled) {
     const now = new Date().toISOString();
     const conversationQuery = admin
@@ -288,6 +290,7 @@ async function handleTelegramUpdate(request: NextRequest) {
     if (conversationError) {
       console.error('[Telegram attribution] conversation lookup failed:', conversationError.message);
     } else if (conversation?.id) {
+      attributionConversationId = conversation.id;
       const metadata = conversation.metadata && typeof conversation.metadata === 'object' && !Array.isArray(conversation.metadata)
         ? conversation.metadata as Record<string, unknown>
         : {};
@@ -307,7 +310,7 @@ async function handleTelegramUpdate(request: NextRequest) {
         console.error('[Telegram attribution] persistence failed:', attributionError.message);
       }
     } else {
-      const { error: createAttributionError } = await admin
+      const { data: createdConversation, error: createAttributionError } = await admin
         .from('kia_conversations')
         .insert({
           tenant_id: identity.tenantId,
@@ -321,9 +324,13 @@ async function handleTelegramUpdate(request: NextRequest) {
             last_content_origin_at: now,
           },
           last_message_at: now,
-        });
+        })
+        .select('id')
+        .single();
       if (createAttributionError) {
         console.error('[Telegram attribution] conversation creation failed:', createAttributionError.message);
+      } else {
+        attributionConversationId = createdConversation.id;
       }
     }
   }
@@ -390,10 +397,30 @@ async function handleTelegramUpdate(request: NextRequest) {
   }
 
   let caseContext: Awaited<ReturnType<typeof loadTelegramCaseContext>> = null;
+  let genericTelegramConversationId = attributionConversationId;
   if (contextEnabled) {
     try {
       caseContext = await loadTelegramCaseContext({ admin, profileId: identity.profileId,
         tenantId: identity.tenantId, chatId: inbound.chatId, text: inbound.text });
+
+      if (!caseContext && !genericTelegramConversationId) {
+        const genericQuery = admin
+          .from('kia_conversations')
+          .select('id')
+          .eq('profile_id', identity.profileId)
+          .eq('channel', 'telegram')
+          .eq('status', 'active')
+          .is('case_id', null)
+          .contains('metadata', { telegram_chat_id: inbound.chatId })
+          .order('updated_at', { ascending: false })
+          .limit(1);
+        const scopedGenericQuery = identity.tenantId
+          ? genericQuery.eq('tenant_id', identity.tenantId)
+          : genericQuery.is('tenant_id', null);
+        const { data: genericConversation, error: genericConversationError } = await scopedGenericQuery.maybeSingle();
+        if (genericConversationError) throw genericConversationError;
+        genericTelegramConversationId = genericConversation?.id ?? null;
+      }
     } catch {
       await sendTelegramMessage({ chatId: inbound.chatId, text: kiaFriendlyError('invalid_case_context', 'es') });
       return NextResponse.json({ ok: true, ignored: true, reason: 'invalid_case_context' });
@@ -696,7 +723,7 @@ async function handleTelegramUpdate(request: NextRequest) {
 
     const storedConversationId = contextEnabled ? await persistKiaConversationTurn({ admin, profileId: identity.profileId,
       tenantId: identity.tenantId, companyId, caseId: caseContext?.caseId, serviceSlug: caseContext?.serviceSlug,
-      conversationId: caseContext?.stored?.conversation.id, channel: 'telegram', originType: 'telegram',
+      conversationId: caseContext?.stored?.conversation.id ?? genericTelegramConversationId ?? undefined, channel: 'telegram', originType: 'telegram',
       userMessage: message, assistantMessage: reply, intent: result.decision.intent,
       metadata: { telegram_chat_id: inbound.chatId, telegram_update_id: inbound.updateId, delivery_state: 'prepared' } }) : null;
 
