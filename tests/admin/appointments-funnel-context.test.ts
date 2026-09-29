@@ -13,6 +13,8 @@ describe('Admin appointments funnel context', () => {
     expect(route).toContain("'booking_appointment_id,lead_id,client_id,company_id,metadata'");
     expect(route).toContain('tasksByAppointment.get(appointment.id)');
     expect(route).toContain('task?.lead_id');
+    expect(route).toContain('const canonicalClientId = appointment.client_id ?? task?.client_id ?? null');
+    expect(route).toContain('if (!lead && !canonicalClientId)');
     expect(route).toContain('appointment.client_id ?? task?.client_id ?? null');
     expect(route).toContain('appointment.company_id ?? task?.company_id ?? null');
   });
