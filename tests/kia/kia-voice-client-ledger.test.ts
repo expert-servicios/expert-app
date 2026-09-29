@@ -26,6 +26,7 @@ describe('KIA voice and durable client registry', () => {
     expect(transcribe).toContain('supabase.auth.getUser()');
     expect(transcribe).toContain("status: 413");
     expect(speech).toContain('supabase.auth.getUser()');
+    expect(audio).toContain("throw new Error('openai_tts_not_configured')");
     expect(widget).not.toContain('OPENAI_API_KEY');
   });
 
@@ -45,6 +46,7 @@ describe('KIA voice and durable client registry', () => {
     expect(telegramRoute).toContain('transcribeKiaAudio');
     expect(telegramRoute).toContain('effectiveText');
     expect(widget).not.toContain('TELEGRAM_BOT_TOKEN');
+    expect(telegramRoute).toContain("reason: 'unsupported_media'");
   });
 
   it('creates a service-role-only append-only-style registry surface', () => {
@@ -60,7 +62,7 @@ describe('KIA voice and durable client registry', () => {
   it('preserves lead-to-client continuity and fails closed on exact identity conflict', () => {
     expect(ledger).toContain("throw new Error('client_registry_identity_conflict')");
     expect(ledger).toContain("if (clientId && !subject.client_id) patch.client_id = clientId");
-    expect(ledger).toContain("if (clientId) patch.lifecycle_stage = 'client'");
+    expect(ledger).toContain("if (clientId && subject.lifecycle_stage !== 'client') patch.lifecycle_stage = 'client'");
     expect(ledger).toContain("error.code === '23505'");
   });
 
@@ -80,6 +82,9 @@ describe('KIA voice and durable client registry', () => {
     expect(conversationStore).toContain("eventType: input.channel === 'telegram' ? 'telegram.inbound' : 'chat.user'");
     expect(conversationStore).toContain("eventType: input.channel === 'telegram' ? 'telegram.outbound' : 'chat.kia'");
     expect(ledger).toContain('summary?.slice(0, 1200)');
+    expect(ledger).toContain(".eq('from_email', email)");
+    expect(ledger).toContain(".eq('recipient_email', email)");
+    expect(ledger).not.toContain(".ilike('from_email', email)");
   });
 
   it('tells KIA to use the registry for continuity and live tools for exact state', () => {
