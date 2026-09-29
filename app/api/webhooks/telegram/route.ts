@@ -281,24 +281,33 @@ async function handleTelegramUpdate(request: NextRequest) {
     if (attributionProfileError) {
       console.error('[Telegram attribution] profile lookup failed:', attributionProfileError.message);
     }
-    const attributionCompanyId = attributionProfile?.active_company_id ?? null;
+    const attributionCompanyId = attributionProfileError ? undefined : (attributionProfile?.active_company_id ?? null);
     const now = new Date().toISOString();
-    const conversationQuery = admin
-      .from('kia_conversations')
-      .select('id,metadata')
-      .eq('profile_id', identity.profileId)
-      .eq('channel', 'telegram')
-      .eq('status', 'active')
-      .contains('metadata', { telegram_chat_id: inbound.chatId })
-      .order('last_message_at', { ascending: false })
-      .limit(1);
-    const tenantScopedConversationQuery = identity.tenantId
-      ? conversationQuery.eq('tenant_id', identity.tenantId)
-      : conversationQuery.is('tenant_id', null);
-    const companyScopedConversationQuery = attributionCompanyId
-      ? tenantScopedConversationQuery.eq('company_id', attributionCompanyId)
-      : tenantScopedConversationQuery.is('company_id', null);
-    const { data: conversation, error: conversationError } = await companyScopedConversationQuery.maybeSingle();
+    const conversationQuery = attributionCompanyId === undefined
+      ? null
+      : admin
+          .from('kia_conversations')
+          .select('id,metadata')
+          .eq('profile_id', identity.profileId)
+          .eq('channel', 'telegram')
+          .eq('status', 'active')
+          .is('case_id', null)
+          .contains('metadata', { telegram_chat_id: inbound.chatId })
+          .order('last_message_at', { ascending: false })
+          .limit(1);
+    const tenantScopedConversationQuery = conversationQuery
+      ? (identity.tenantId
+          ? conversationQuery.eq('tenant_id', identity.tenantId)
+          : conversationQuery.is('tenant_id', null))
+      : null;
+    const companyScopedConversationQuery = tenantScopedConversationQuery
+      ? (attributionCompanyId
+          ? tenantScopedConversationQuery.eq('company_id', attributionCompanyId)
+          : tenantScopedConversationQuery.is('company_id', null))
+      : null;
+    const { data: conversation, error: conversationError } = companyScopedConversationQuery
+      ? await companyScopedConversationQuery.maybeSingle()
+      : { data: null, error: null };
     if (conversationError) {
       console.error('[Telegram attribution] conversation lookup failed:', conversationError.message);
     } else if (conversation?.id) {
@@ -321,7 +330,7 @@ async function handleTelegramUpdate(request: NextRequest) {
       if (attributionError) {
         console.error('[Telegram attribution] persistence failed:', attributionError.message);
       }
-    } else {
+    } else if (attributionCompanyId !== undefined) {
       const { data: createdConversation, error: createAttributionError } = await admin
         .from('kia_conversations')
         .insert({
