@@ -39,9 +39,21 @@ export function CookieConsent() {
   }, []);
 
   const save = (value: ConsentValue) => {
+    const wasAccepted = consent?.value === 'accepted';
     const next = { value, decidedAt: Date.now() } satisfies StoredConsent;
     window.localStorage.setItem(CONSENT_KEY, JSON.stringify(next));
+
+    if (value === 'rejected') {
+      for (const cookie of document.cookie.split(';')) {
+        const name = cookie.split('=')[0]?.trim();
+        if (name && (name === '_ga' || name.startsWith('_ga_') || name === '_gid' || name.startsWith('_gac_'))) {
+          document.cookie = `${name}=; Max-Age=0; path=/; SameSite=Lax`;
+        }
+      }
+    }
+
     setConsent(next);
+    if (wasAccepted && value === 'rejected') window.location.reload();
   };
 
   const showBanner = consent === null;
