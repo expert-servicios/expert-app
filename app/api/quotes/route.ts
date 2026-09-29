@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
         .insert({
           name: validated.name,
           email: normalizedEmail,
-          phone: normalizedPhone,
+          phone: ambiguousIdentity ? null : normalizedPhone,
           client_type: 'particular',
           category: 'Presupuesto',
           service: serviceSlugList,
@@ -179,10 +179,13 @@ export async function POST(request: NextRequest) {
           message: descriptionText,
           state: 'new',
           source: attributionFields.source,
-          source_key: attributionFields.source_key,
+          source_key: ambiguousIdentity ? `quote-review:${crypto.randomUUID()}` : attributionFields.source_key,
           metadata: {
             ...attributionFields.metadata,
-            ...(ambiguousIdentity ? { identity_match_status: 'needs_review' } : {}),
+            ...(ambiguousIdentity ? {
+              identity_match_status: 'needs_review',
+              submitted_contact: { email: normalizedEmail, phone: normalizedPhone },
+            } : {}),
             conversion: quoteRequestInteraction,
             last_acquisition: quoteRequestInteraction,
             quote_requests: [quoteRequestInteraction],
