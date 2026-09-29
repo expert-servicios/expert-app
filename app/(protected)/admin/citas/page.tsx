@@ -30,6 +30,8 @@ interface Appointment {
   crm_context: {
     relationship_source: 'task' | 'appointment' | 'matched' | 'none';
     ambiguous_lead_match: boolean;
+    identity_conflict: boolean;
+    invalid_client_identity: boolean;
     source: string | null;
     source_key: string | null;
     origin: string | null;
@@ -93,6 +95,11 @@ function AdminCitasPageInner() {
     setCreatingCase(true);
     setCaseError(null);
     try {
+      if (expedienteTarget.crm_context?.identity_conflict || expedienteTarget.crm_context?.invalid_client_identity) {
+        setCaseError('La identidad de esta cita requiere revisión antes de crear un expediente.');
+        return;
+      }
+
       let clientId = expedienteTarget.client_id;
 
       if (!clientId) {
@@ -313,7 +320,9 @@ function AdminCitasPageInner() {
                             Origen: {appt.crm_context.origin_label}
                           </span>
                         )}
-                        {appt.crm_context?.ambiguous_lead_match && (
+                        {(appt.crm_context?.ambiguous_lead_match
+                          || appt.crm_context?.identity_conflict
+                          || appt.crm_context?.invalid_client_identity) && (
                           <span className="rounded-full border border-red-200 bg-red-50 px-2 py-1 font-semibold text-red-700">
                             Identidad CRM por revisar
                           </span>
