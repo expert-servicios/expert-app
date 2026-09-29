@@ -70,6 +70,14 @@ function normalizePhone(value: string | null | undefined) {
   return (value ?? '').trim();
 }
 
+function chunkValues<T>(values: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let offset = 0; offset < values.length; offset += size) {
+    chunks.push(values.slice(offset, offset + size));
+  }
+  return chunks;
+}
+
 function indexLead(
   index: LegacyLeadIndex,
   lead: AppointmentLeadContext & { email?: string | null; phone?: string | null },
@@ -102,7 +110,7 @@ async function loadLegacyLeadIndex(
     for (let offset = 0; offset < emails.length; offset += 40) {
       const batch = emails.slice(offset, offset + 40);
       const filter = batch
-        .map((email) => `email.ilike.${email.replace(/[%,()\\]/g, (char) => `\\${char}`)}`)
+        .map((email) => `email.ilike.${email.replace(/[%_(),\\]/g, (char) => `\\${char}`)}`)
         .join(',');
       const { data, error } = await admin
         .from('leads')
@@ -179,11 +187,11 @@ export async function GET(request: NextRequest) {
       metadata: unknown;
     }>();
 
-    if (appointmentIds.length > 0) {
+    for (const appointmentIdBatch of chunkValues(appointmentIds, 100)) {
       const { data: tasks, error: taskError } = await admin
         .from('internal_tasks')
         .select('booking_appointment_id,lead_id,client_id,company_id,metadata')
-        .in('booking_appointment_id', appointmentIds);
+        .in('booking_appointment_id', appointmentIdBatch);
       if (taskError) throw taskError;
       for (const task of tasks ?? []) {
         if (task.booking_appointment_id) tasksByAppointment.set(task.booking_appointment_id, task);
@@ -195,11 +203,11 @@ export async function GET(request: NextRequest) {
     )] as string[];
     const leadsById = new Map<string, AppointmentLeadContext>();
 
-    if (taskLeadIds.length > 0) {
+    for (const leadIdBatch of chunkValues(taskLeadIds, 100)) {
       const { data: taskLeads, error: taskLeadError } = await admin
         .from('leads')
         .select('id,source,source_key,metadata')
-        .in('id', taskLeadIds);
+        .in('id', leadIdBatch);
       if (taskLeadError) throw taskLeadError;
       for (const lead of taskLeads ?? []) leadsById.set(lead.id, lead as AppointmentLeadContext);
     }
@@ -220,11 +228,11 @@ export async function GET(request: NextRequest) {
     )] as string[];
 
     const activeClientIds = new Set<string>();
-    if (candidateClientIds.length > 0) {
+    for (const clientIdBatch of chunkValues(candidateClientIds, 100)) {
       const { data: profiles, error: profileError } = await admin
         .from('profiles')
         .select('id')
-        .in('id', candidateClientIds)
+        .in('id', clientIdBatch)
         .eq('role', 'client')
         .eq('status', 'active');
       if (profileError) throw profileError;
