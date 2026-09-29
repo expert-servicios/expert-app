@@ -19,14 +19,9 @@ export async function notifyKiaAdminEscalation(input: {
     `Necesita de ti: ${input.interventionNeeded}`,
   ].join(' · ').slice(0, 420);
 
-  await Promise.all([
-    notifyAdmins({
-      title: input.priority === 'critical' ? `URGENTE · ${input.title}` : input.title,
-      body,
-      url: absoluteUrl,
-      tag: `kia-escalation-${createHash('sha256').update(input.eventRef).digest('hex').slice(0, 20)}`,
-    }),
-    sendEmailOnce({
+  // Email is the durable mandatory escalation channel. Only after Resend
+  // accepts/idempotently confirms the email do we fan out best-effort push/Telegram.
+  await sendEmailOnce({
       to: 'soy@kseniailicheva.com',
       from: 'KIA Alertas <noreply@expertconsulting.es>',
       eventType: 'kia.admin_escalation',
@@ -51,8 +46,14 @@ export async function notifyKiaAdminEscalation(input: {
         admin_escalation: true,
       },
       idempotencyKey: `kia-admin-escalation/${createHash('sha256').update(input.eventRef).digest('hex')}`.slice(0, 256),
-    }),
-  ]);
+    });
+
+  await notifyAdmins({
+    title: input.priority === 'critical' ? `URGENTE · ${input.title}` : input.title,
+    body,
+    url: absoluteUrl,
+    tag: `kia-escalation-${createHash('sha256').update(input.eventRef).digest('hex').slice(0, 20)}`,
+  });
 }
 
 function escapeHtml(value: string) {
