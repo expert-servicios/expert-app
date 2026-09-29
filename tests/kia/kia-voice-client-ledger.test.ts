@@ -12,6 +12,7 @@ describe('KIA voice and durable client registry', () => {
   const telegram = source('lib/integrations/telegram.ts');
   const telegramRoute = source('app/api/webhooks/telegram/route.ts');
   const ledger = source('lib/ai/kia/kia-client-ledger.ts');
+  const conversationStore = source('lib/ai/kia/kia-conversation-store.ts');
   const context = source('lib/ai/kia/kia-context-builder.ts');
   const prompt = source('lib/ai/kia/kia-system-prompt.ts');
   const cron = source('app/api/cron/kia-client-ledger/route.ts');
@@ -76,14 +77,14 @@ describe('KIA voice and durable client registry', () => {
     expect(ledger).toContain("eventType: 'email.outbound'");
     expect(ledger).toContain("eventType: 'invoice.issued'");
     expect(ledger).toContain("eventType: 'appointment.booked'");
-    expect(ledger).toContain("eventType: 'chat.user'");
-    expect(ledger).toContain("eventType: 'telegram.inbound'");
+    expect(conversationStore).toContain("eventType: input.channel === 'telegram' ? 'telegram.inbound' : 'chat.user'");
+    expect(conversationStore).toContain("eventType: input.channel === 'telegram' ? 'telegram.outbound' : 'chat.kia'");
     expect(ledger).toContain('summary?.slice(0, 1200)');
   });
 
   it('tells KIA to use the registry for continuity and live tools for exact state', () => {
     expect(prompt).toContain('HOJA REGISTRAL');
     expect(prompt).toContain('fuente viva');
-    expect(prompt).toContain('tools canónicas');
+    expect(prompt).toContain('tool canónica correspondiente');
   });
 });
