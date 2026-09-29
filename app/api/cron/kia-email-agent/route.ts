@@ -144,6 +144,74 @@ function adminThreadUrl(threadId: string) {
   return `/admin/correo/hilo?provider=gmail&conversationId=${encodeURIComponent(threadId)}`;
 }
 
+type EscalationClaimState = 'claimed' | 'completed' | 'inflight';
+
+function escalationClaimKey(eventRef: string) {
+  return `kia_email_escalation:${createHash('sha256').update(eventRef).digest('hex').slice(0, 40)}`;
+}
+
+async function reserveEscalationClaim(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  eventRef: string,
+): Promise<{ state: EscalationClaimState; key: string }> {
+  const claimKey = escalationClaimKey(eventRef);
+  const now = new Date();
+  const { error } = await admin.from('system_kv').insert({
+    key: claimKey,
+    value: { state: 'reserved', event_ref: eventRef, reserved_at: now.toISOString() },
+    updated_at: now.toISOString(),
+  });
+  if (!error) return { state: 'claimed', key: claimKey };
+  if (error.code !== '23505') throw error;
+
+  const { data: existing, error: lookupError } = await admin
+    .from('system_kv')
+    .select('value')
+    .eq('key', claimKey)
+    .maybeSingle();
+  if (lookupError) throw lookupError;
+  const value = existing?.value as Record<string, unknown> | null;
+  if (value?.state === 'sent') return { state: 'completed', key: claimKey };
+
+  const reservedAt = typeof value?.reserved_at === 'string' ? Date.parse(value.reserved_at) : Number.NaN;
+  if (Number.isFinite(reservedAt) && now.getTime() - reservedAt < 15 * 60_000) {
+    return { state: 'inflight', key: claimKey };
+  }
+
+  const { error: deleteError } = await admin.from('system_kv').delete().eq('key', claimKey);
+  if (deleteError) throw deleteError;
+  const { error: retryError } = await admin.from('system_kv').insert({
+    key: claimKey,
+    value: { state: 'reserved', event_ref: eventRef, reserved_at: now.toISOString(), retry: true },
+    updated_at: now.toISOString(),
+  });
+  if (retryError) {
+    if (retryError.code === '23505') return { state: 'inflight', key: claimKey };
+    throw retryError;
+  }
+  return { state: 'claimed', key: claimKey };
+}
+
+async function completeEscalationClaim(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  claimKey: string,
+  eventRef: string,
+) {
+  const { error } = await admin.from('system_kv').update({
+    value: { state: 'sent', event_ref: eventRef, sent_at: new Date().toISOString() },
+    updated_at: new Date().toISOString(),
+  }).eq('key', claimKey);
+  if (error) throw error;
+}
+
+async function releaseEscalationClaim(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  claimKey: string,
+) {
+  const { error } = await admin.from('system_kv').delete().eq('key', claimKey);
+  if (error) console.error('[kia-email-agent] escalation claim release failed:', error.message);
+}
+
 function senderDisplayName(message: GmailMessage) {
   const raw = message.from.trim();
   const bracket = raw.match(/^(.+?)\s*<[^>]+>$/);
@@ -529,15 +597,31 @@ export async function GET(request: NextRequest) {
 
       if (envelope.kind !== 'human') {
         if (envelope.requiresAttention) {
-          await notifyKiaAdminEscalation({
-            title: latest.subject || 'Correo operativo importante',
-            summary: `${senderDisplayName(latest)} · ${latest.subject || 'Sin asunto'}`,
-            actionTaken: `clasificado como ${envelope.kind}, prioridad ${envelope.priority}, y etiquetado ${envelope.gmailLabel}`,
-            interventionNeeded: 'revisar el aviso y decidir la actuación correspondiente',
-            url: adminThreadUrl(row.thread_id),
-            eventRef: `gmail:${latest.id}:operational-escalation`,
-            priority: envelope.priority === 'critical' ? 'critical' : 'high',
-          }).catch((notifyError) => console.error('[kia-email-agent] operational escalation:', notifyError));
+          const eventRef = `gmail:${latest.id}:operational-escalation`;
+          const claim = await reserveEscalationClaim(admin, eventRef);
+          if (claim.state === 'inflight') {
+            skipped++;
+            continue;
+          }
+          if (claim.state === 'claimed') {
+            try {
+              await notifyKiaAdminEscalation({
+                title: latest.subject || 'Correo operativo importante',
+                summary: `${senderDisplayName(latest)} · ${latest.subject || 'Sin asunto'}`,
+                actionTaken: `clasificado como ${envelope.kind}, prioridad ${envelope.priority}, y etiquetado ${envelope.gmailLabel}`,
+                interventionNeeded: 'revisar el aviso y decidir la actuación correspondiente',
+                url: adminThreadUrl(row.thread_id),
+                eventRef,
+                priority: envelope.priority === 'critical' ? 'critical' : 'high',
+              });
+              await completeEscalationClaim(admin, claim.key, eventRef);
+            } catch (notifyError) {
+              await releaseEscalationClaim(admin, claim.key);
+              console.error('[kia-email-agent] operational escalation:', notifyError);
+              errors.push({ thread: row.thread_id, code: 'operational_escalation_failed' });
+              continue;
+            }
+          }
         }
 
         await admin.from('system_kv').upsert({
@@ -623,6 +707,7 @@ export async function GET(request: NextRequest) {
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
+        && envelope.recipientPurpose !== 'noreply'
         && !hasAttachments;
       const baseAllowedTools = wasKnownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS;
       const allowedTools = baseAllowedTools.filter(
@@ -699,6 +784,7 @@ export async function GET(request: NextRequest) {
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
+        && envelope.recipientPurpose !== 'noreply'
         && !hasAttachments
         && !result.usedFallback
         && !result.decision.requiresManualReview
@@ -817,6 +903,7 @@ export async function GET(request: NextRequest) {
         else if (identity.ambiguousCase) blockReason = 'ambiguous_case';
         else if (identity.linkedCaseSenderMismatch) blockReason = 'linked_case_sender_mismatch';
         else if (replyToMismatch) blockReason = 'reply_to_requires_review';
+        else if (envelope.recipientPurpose === 'noreply') blockReason = 'noreply_recipient';
         else if (hasAttachments) blockReason = 'attachment_requires_review';
         else if (result.usedFallback) blockReason = 'provider_fallback';
         else if (result.decision.requiresManualReview) blockReason = 'manual_review';
