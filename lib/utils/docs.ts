@@ -31,6 +31,26 @@ export const docCategories: { slug: DocCategorySlug; name: string }[] = [
 
 export const docs: KnowledgeDoc[] = [
   {
+    slug: 'firma-google-esignature',
+    category: 'tramites',
+    title: 'Cómo usar Google eSignature con EXPERT',
+    excerpt: 'Guía visual para solicitar firmas desde Google Drive, seguir el estado y descargar el PDF final desde el expediente y KIA.',
+    tags: ['Google eSignature', 'Google Drive', 'firma electrónica', 'KIA', 'documentos', 'auditoría'],
+    updatedAt: '29 sep 2026',
+    readTime: '8 min',
+    seoTitle: 'Google eSignature con EXPERT | Guía visual paso a paso',
+    seoDescription: 'Cómo preparar, enviar y seguir una firma con Google eSignature y cómo KIA ofrece después el documento firmado.',
+    body: `
+## Guía visual
+
+Esta guía dispone de una página visual específica en esta misma URL con ejemplos de Drive, campos de firma, seguimiento y descarga desde KIA.
+
+## Regla jurídica
+
+Google eSignature se utiliza cuando una firma electrónica simple con trazabilidad es suficiente. Si una norma o sede exige certificado electrónico reconocido, se utiliza AutoFirma, certificado digital o el mecanismo específicamente admitido.
+    `
+  },
+  {
     slug: 'firmar-solicitud-nacionalidad-menor-progenitores',
     category: 'extranjeria-nacionalidad',
     title: 'Cómo firmar la solicitud de nacionalidad de un menor',
