@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Mail, MapPin, MessageCircle, Calendar } from 'lucide-react';
 import { CalButton } from '@/components/site/CalButton';
 import { getCalMeetingUrl } from '@/lib/utils/cal';
+import { CookieSettingsButton } from '@/components/privacy/CookieConsent';
 
 const CAL_REUNION_URL = getCalMeetingUrl();
 
@@ -199,6 +200,7 @@ export function Footer() {
           <Link href="/privacidad" className="transition hover:text-[#D4A017]">Privacidad</Link>
           <Link href="/terminos" className="transition hover:text-[#D4A017]">Términos</Link>
           <Link href="/cookies" className="transition hover:text-[#D4A017]">Cookies</Link>
+          <CookieSettingsButton />
           <Link href="/condiciones" className="transition hover:text-[#D4A017]">Condiciones</Link>
         </div>
       </div>
