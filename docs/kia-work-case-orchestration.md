@@ -26,6 +26,7 @@ Revisión de código sobre `f6023d36` (24/09/2026). «Existe código» no implic
 | Telegram | `app/api/webhooks/telegram/route.ts`, `lib/ai/kia/kia-telegram-linking.ts` | Conservar identidad vinculada y política por canal; no presumir completado el recorrido contextual. |
 | Personalidad y contenido | `lib/ai/kia/prompts/kia-core-policy.ts`, PR #428, merge `38b5da8c` | Contexto real antes de afirmar que existe expediente; recursos pertinentes, sin spam editorial. |
 | Documentos y proveedores | `6542a642`, `5a72f396` | Supabase es canónico; Drive/OneDrive/SharePoint son copias. Conexión y activación se comprueban por separado. |
+| Firma documental | `get_case_signature_status`, `docs/kia-google-esignature.md` | KIA consulta evidencia real, ofrece descarga segura y escala el envío Google eSignature mientras la API no permita iniciarlo automáticamente. |
 | Calendario e identidad cliente/entidad | `fca0cfa7`, `baa083c1`, `7f27fbb2`, `f6023d36` | Reutilizar proveedores y ámbito personal/empresa, sin exigir una empresa ficticia. |
 
 Se revisaron las decisiones recientes de las conversaciones «Mejorar respuesta de KIA» y «Capas Google Microsoft en EXPERT». Los PR abiertos no se consideran publicados. La documentación contextual del 22/09 conserva una checklist histórica con piezas que ya tienen código; esta matriz actualiza únicamente lo verificado, no certifica todo el rollout.
@@ -156,3 +157,13 @@ Métricas: retraso evento→estado visible; tareas bloqueadas y motivo; conflict
 ## 10. Resultado esperado del piloto
 
 Ksenia ordena una tarea una vez. Work registra el resultado por el adaptador, EXPERT verifica y actualiza su estado, KIA explica al cliente el siguiente paso con su identidad y enlace contextual. Las acciones que requieran control humano quedan listas para ese control; después se documentan automáticamente. La finalización técnica de una ejecución nunca se confunde con el resultado administrativo.
+
+
+### Firma documental
+
+La política de firma de EXPERT distingue:
+- Google eSignature para firma electrónica simple/trazable cuando jurídicamente sea suficiente;
+- AutoFirma/certificado reconocido cuando el requisito jurídico lo exija;
+- DocuSign como histórico/alternativa, no como dependencia obligatoria.
+
+KIA nunca marca una firma como completada por la mera existencia de un archivo. Debe consultar `get_case_signature_status` y basarse en tarea/evidencia persistida y documento final. El envío Google eSignature sigue siendo una acción humana hasta disponer de API soportada.
