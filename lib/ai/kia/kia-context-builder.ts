@@ -8,6 +8,7 @@ import { resolveEffectiveCaseStatus } from '@/lib/cases/case-status';
 import { retrieveKiaMemories, type KiaMemory } from './kia-memory-retriever';
 import { loadKiaMemoryV2Context, mergeKiaMemoryContexts } from './kia-memory-v2-context';
 import { loadKiaClientBrief, type KiaClientBrief, type KiaOriginEmailContext } from './kia-client-brief';
+import { reconcileClientRegistry, type KiaClientLedgerContext } from './kia-client-ledger';
 
 export interface KiaContextInput {
   channel: 'waba' | 'telegram' | 'admin' | 'email' | 'dashboard' | 'document';
@@ -86,6 +87,7 @@ export interface KiaContext {
   };
   memories: KiaMemory[];
   clientBrief?: KiaClientBrief | null;
+  clientLedger?: KiaClientLedgerContext | null;
 }
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
@@ -113,7 +115,9 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
   const shouldLoadMemories = Boolean(openAiKey && input.latestMessage && (phone || clientId || leadId));
   const memoryV2ReadEnabled = process.env.KIA_MEMORY_V2_READ_ENABLED?.toLowerCase() === 'true';
 
-  const [profile, company, service, documents, conversation, selectedMessage, accounting, legacyMemories, clientBrief] = await Promise.all([
+  const ledgerEnabled = process.env.KIA_CLIENT_LEDGER_ENABLED?.trim().toLowerCase() === 'true';
+
+  const [profile, company, service, documents, conversation, selectedMessage, accounting, legacyMemories, clientBrief, clientLedger] = await Promise.all([
     loadProfile(admin, clientId, contact),
     loadCompany(admin, clientId, resolvedCompanyId),
     loadService(input.serviceSlug),
@@ -131,6 +135,17 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
       companyId: resolvedCompanyId,
       originEmail: input.originEmail ?? null,
     }).catch(() => null),
+    ledgerEnabled
+      ? reconcileClientRegistry(admin, {
+          clientId,
+          leadId,
+          email: contact?.email ?? input.email ?? null,
+          phone,
+        }).catch((error) => {
+          console.error('[KIA client ledger] context load failed', error);
+          return null;
+        })
+      : Promise.resolve(null),
   ]);
 
   let memories = legacyMemories;
@@ -201,6 +216,7 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
     },
     memories,
     clientBrief,
+    clientLedger,
   };
 }
 
