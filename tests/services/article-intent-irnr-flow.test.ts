@@ -149,6 +149,8 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(bookingApi).toContain("lead_booking_attribution_concurrency_retry_exhausted");
     expect(bookingApi).toContain(".eq('updated_at', snapshot.updated_at)");
     expect(bookingApi.indexOf('if (rescheduledAppointment)')).toBeLessThan(bookingApi.indexOf('ensurePublicBookingLead({'));
+    expect(bookingApi.indexOf('createBookingManagementToken({')).toBeLessThan(bookingApi.indexOf('ensurePublicBookingLead({'));
+    expect(bookingApi.indexOf('buildBookingIcs({')).toBeLessThan(bookingApi.indexOf('ensurePublicBookingLead({'));
     expect(consultation).toContain('href={meetingHref}');
     expect(consultation).toContain("encodeURIComponent(origin)");
   });
