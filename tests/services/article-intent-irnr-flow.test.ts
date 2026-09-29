@@ -47,6 +47,8 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(telegramWebhook).toContain('attributionConversationId');
     expect(telegramWebhook).toContain('genericTelegramConversationId');
     expect(telegramWebhook).toContain("company_id: attributionCompanyId");
+    expect(telegramWebhook).toContain(".is('case_id', null)");
+    expect(telegramWebhook).toContain("attributionCompanyId === undefined");
     expect(telegramWebhook).toContain("conversationId: caseContext?.stored?.conversation.id ?? genericTelegramConversationId ?? undefined");
   });
 
@@ -106,6 +108,8 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(quoteApi).toContain('origin: contentOrigin');
     expect(quoteApi).toContain('requested_services: serviceSlugs');
     expect(quoteApi).toContain(".ilike('email', escapedEmail)");
+    expect(quoteApi).toContain('.limit(2)');
+    expect(quoteApi).toContain("identity_match_status: 'needs_review'");
     expect(quoteApi).not.toContain(".eq('email', normalizedEmail)");
     expect(quoteApi).not.toContain("intent: 'quote_request'");
   });
