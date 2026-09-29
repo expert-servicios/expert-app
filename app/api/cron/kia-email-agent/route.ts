@@ -422,13 +422,13 @@ export async function GET(request: NextRequest) {
   }
 
   const admin = getSupabaseAdmin();
-  const [enabled, autoSend, newLeadAutoSend, agentSetting] = await Promise.all([
-    automationEnabled(admin, 'kia.email_agent', 'KIA_EMAIL_AGENT_ENABLED'),
+  const [agentSetting, autoSend, newLeadAutoSend] = await Promise.all([
+    admin.from('automation_settings').select('enabled,updated_at').eq('key', 'kia.email_agent').maybeSingle(),
     automationEnabled(admin, 'kia.email_auto_send', 'KIA_EMAIL_AUTO_SEND_ENABLED'),
     automationEnabled(admin, 'kia.email_new_lead_auto_send', 'KIA_EMAIL_NEW_LEAD_AUTO_SEND_ENABLED'),
-    admin.from('automation_settings').select('updated_at').eq('key', 'kia.email_agent').maybeSingle(),
   ]);
-  const enabledSince = agentSetting.data?.updated_at ?? null;
+  const enabled = agentSetting.data?.enabled === true;
+  const enabledSince = enabled ? agentSetting.data?.updated_at ?? null : null;
   if (!enabled) {
     await writeAgentHeartbeat(admin, {
       enabled: false,
@@ -454,14 +454,11 @@ export async function GET(request: NextRequest) {
   }> = [];
   const pageSize = 200;
   for (let offset = 0; offset < 1000; offset += pageSize) {
-    let inboxQuery = admin
+    const { data: page, error: inboxError } = await admin
       .from('email_inbox_cache')
       .select('thread_id,case_id,subject,from_email,date,unread,snippet')
       .eq('provider', 'gmail')
-      .eq('unread', true);
-    if (enabledSince) inboxQuery = inboxQuery.gte('date', enabledSince);
-
-    const { data: page, error: inboxError } = await inboxQuery
+      .eq('unread', true)
       .order('date', { ascending: false })
       .range(offset, offset + pageSize - 1);
 
@@ -504,6 +501,10 @@ export async function GET(request: NextRequest) {
       const gmail = await getOperationalGmailThread(admin, row.thread_id);
       const latest = gmail.messages.at(-1);
       if (!latest || !latest.unread) {
+        skipped++;
+        continue;
+      }
+      if (!enabledSince || new Date(latest.date).getTime() < new Date(enabledSince).getTime()) {
         skipped++;
         continue;
       }
