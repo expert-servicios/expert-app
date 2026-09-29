@@ -556,6 +556,19 @@ export async function GET(request: NextRequest) {
         continue;
       }
       if (previous?.last_message_id === latest.id) {
+        if (previous?.last_message_at !== latest.date) {
+          await admin.from('system_kv').upsert({
+            key,
+            value: {
+              ...previous,
+              last_message_id: latest.id,
+              last_message_at: latest.date,
+              watermark_version: 2,
+              evaluated_at: new Date().toISOString(),
+            },
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'key' });
+        }
         skipped++;
         continue;
       }
@@ -846,7 +859,7 @@ export async function GET(request: NextRequest) {
           eventRef: `gmail:${latest.id}:human-escalation`,
           priority: 'high',
         }).catch((notifyError) => console.error('[kia-email-agent] human escalation:', notifyError));
-      } else if (firstInboundProcessing && priority === 'high') {
+      } else if (firstInboundProcessing && priority === 'high' && !createdTask) {
         await notifyAdmins({
           title: sentNow ? 'KIA atendió una novedad importante' : 'KIA detectó una novedad importante',
           body: [
