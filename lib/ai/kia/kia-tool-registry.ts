@@ -53,10 +53,10 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   run_viability_check:                policy('R1', 'read',  'client_data'),
   run_readiness_check:                policy('R1', 'read',  'client_data'),
   get_holded_connection_status:       policy('R0', 'read',  'holded_read'),
-  create_next_best_action:            policy('R1', 'draft', 'internal_operations', true),
+  create_next_best_action:            policy('R1', 'draft', 'internal_operations', true, ['admin']),
   classify_document:                  policy('R1', 'read',  'documents'),
   get_case_status:                    policy('R0', 'read',  'case_management'),
-  create_internal_task:               policy('R1', 'draft', 'internal_operations', true),
+  create_internal_task:               policy('R1', 'draft', 'internal_operations', true, ['admin']),
   generate_checkout_gate_link:        policy('R1', 'read',  'checkout'),
   generate_profile_link:              policy('R0', 'read',  'navigation'),
   generate_holded_connection_link:    policy('R0', 'read',  'navigation'),
@@ -81,6 +81,7 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_case_tasks:                     policy('R0', 'read',  'case_operations'),
   get_case_documents:                 policy('R0', 'read',  'documents'),
   get_case_signature_status:          policy('R0', 'read',  'documents'),
+  request_signature_approval:         policy('R1', 'draft', 'documents', true),
   get_case_timeline:                  policy('R0', 'read',  'case_operations'),
   get_client_communications:          policy('R0', 'read',  'client_data'),
   search_knowledge_resources:          policy('R0', 'read',  'knowledge'),
@@ -95,13 +96,14 @@ function policy(
   effect: KiaToolEffect,
   capability: KiaToolCapability,
   requiresHumanApproval = false,
+  allowedChannels: KiaChannel[] = ['waba', 'telegram', 'admin', 'email', 'dashboard', 'document'],
 ): Omit<KiaToolPolicy, 'name' | 'description'> {
   return {
     riskTier,
     effect,
     capability,
     requiresHumanApproval,
-    allowedChannels: ['waba', 'telegram', 'admin', 'email', 'dashboard', 'document'],
+    allowedChannels,
   };
 }
 
