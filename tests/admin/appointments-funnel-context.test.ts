@@ -34,6 +34,26 @@ describe('Admin appointments funnel context', () => {
     expect(route).toContain('ambiguous_lead_match: ambiguousLeadMatch');
   });
 
+  it('validates client-company membership before exposing canonical appointment identity', () => {
+    expect(route).toContain('loadClientCompanyMemberships(admin, candidateClientIds)');
+    expect(route).toContain(".from('profile_companies')");
+    expect(route).toContain(".select('profile_id,company_id')");
+    expect(route).toContain('clientCompanyMemberships.has(`${resolvedClientId}:${rawCompanyId}`)');
+    expect(route).toContain('clientCompanyConflict');
+    expect(route).toContain('client_id: identityConflict ? null : resolvedClientId');
+    expect(route).toContain('company_id: identityConflict ? null : rawCompanyId');
+  });
+
+  it('fails closed when legacy lead identity diverges from the active client email', () => {
+    expect(route).toContain('loadActiveClientIndex(admin, clientLookupCandidates)');
+    expect(route).toContain("activeClientIndex.get(normalizeEmail(appointment.email))");
+    expect(route).toContain('ambiguousClientMatch');
+    expect(route).toContain('inferredLeadClientConflict');
+    expect(route).toContain('leadEmail !== appointmentEmail');
+    expect(route).toContain('identityConflict = sourceIdentityConflict');
+    expect(route).toContain('ambiguous_client_match: ambiguousClientMatch');
+  });
+
   it('surfaces origin and latest interaction without persisting inferred links', () => {
     expect(route).toContain('latestLeadInteraction(lead.metadata)');
     expect(route).toContain('taskContentOrigin(task?.metadata)');
