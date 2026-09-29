@@ -26,6 +26,20 @@ const URGENT_SIGNAL = /\b(?:acción requerida|accion requerida|action required|r
 const CRITICAL_OFFICIAL_SIGNAL = /\b(?:requerimiento|subsanaci[oó]n|caducidad|caduca|plazo|notificaci[oó]n electr[oó]nica|comparecencia|sanci[oó]n|embargo)\b/i;
 const TECHNICAL_SIGNAL = /\b(?:build|deploy|deployment|commit|pull request|github|vercel|ci|workflow|cron|webhook|api|release)\b/i;
 
+function normalizedSignalBody(body: string): string {
+  return body
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;|&#160;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 8000);
+}
+
 function emailDomain(email: string) {
   const normalized = email.trim().toLowerCase();
   const at = normalized.lastIndexOf('@');
@@ -48,7 +62,8 @@ export function classifyInboundEnvelope(message: GmailMessage): KiaInboxClassifi
   const domain = emailDomain(sender);
   const local = sender.split('@')[0] ?? '';
   const labels = new Set(message.labelIds ?? []);
-  const signal = `${message.subject} ${message.body.slice(0, 1600)}`;
+  const signal = `${message.subject} ${normalizedSignalBody(message.body)}`;
+  const hasActionableAttachment = (message.attachments ?? []).some((attachment) => !attachment.inline);
   const reasons: string[] = [];
   const recipientPurpose = inboxRecipientPurpose(message.to);
 
@@ -68,10 +83,11 @@ export function classifyInboundEnvelope(message: GmailMessage): KiaInboxClassifi
   const urgentSignal = URGENT_SIGNAL.test(signal);
   const criticalOfficial = knownOfficial && CRITICAL_OFFICIAL_SIGNAL.test(signal);
 
-  if (knownOfficial && (criticalOfficial || urgentSignal)) {
+  if (knownOfficial && (criticalOfficial || urgentSignal || hasActionableAttachment)) {
     reasons.push('official_sender');
     if (criticalOfficial) reasons.push('deadline_or_formal_notice');
-    else reasons.push('action_signal');
+    else if (urgentSignal) reasons.push('action_signal');
+    if (hasActionableAttachment) reasons.push('official_attachment_requires_review');
     return {
       kind: 'official',
       priority: criticalOfficial ? 'critical' : 'high',
@@ -123,7 +139,7 @@ export function classifyInboundEnvelope(message: GmailMessage): KiaInboxClassifi
       kind: 'official',
       priority: critical ? 'critical' : URGENT_SIGNAL.test(signal) ? 'high' : 'normal',
       gmailLabel: critical ? '00 KIA/URGENTE' : '04 KIA/Administración',
-      requiresAttention: critical || URGENT_SIGNAL.test(signal),
+      requiresAttention: critical || URGENT_SIGNAL.test(signal) || hasActionableAttachment,
       recipientPurpose,
       reasons,
     };
