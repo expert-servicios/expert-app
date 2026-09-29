@@ -78,6 +78,12 @@ describe('booking admin task lifecycle', () => {
     expect(vercel).toContain('/api/cron/booking-task-reconcile');
   });
 
+  it('preserves booking acquisition origin for Admin operations', () => {
+    expect(route).toContain('contentOrigin,');
+    expect(helper).toContain('content_origin: input.contentOrigin');
+    expect(helper).toContain('input.contentOrigin ? `Origen: ${input.contentOrigin}.` :');
+  });
+
   it('compensates meeting tasks when the booking rolls back', () => {
     expect(route).toContain('Reserva revertida durante compensación por error.');
   });
