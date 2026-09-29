@@ -22,7 +22,7 @@ Identidades funcionales previstas:
 - `facturacion@expertconsulting.es` — facturación y cobros.
 - `noreply@expertconsulting.es` — alertas y mensajes transaccionales que no deben recibir respuesta.
 
-Estas direcciones deben crearse como aliases/send-as válidos en Google Workspace antes de usarlas en producción. La aplicación ya soporta seleccionar la identidad funcional según el destinatario original. Gmail rechazará o reescribirá un remitente que no esté autorizado por Workspace.
+Estas direcciones deben crearse como aliases/send-as válidos en Google Workspace antes de usarlas en producción. La aplicación ya soporta seleccionar la identidad funcional según el destinatario original. Gmail rechazará o reescribirá un remitente que no esté autorizado por Workspace. Por seguridad, `KIA_EMAIL_SEND_AS_ALIASES_ENABLED` permanece desactivado hasta verificar los aliases; mientras tanto todas las respuestas salen desde `info@expertconsulting.es`.
 
 ## Clasificación
 
@@ -159,7 +159,8 @@ Los switches faltantes se muestran desactivados. Al activarlos, el estado devuel
 - [ ] correo de escalado a `soy@kseniailicheva.com` operativo.
 - [ ] prueba controlada de correo humano seguro.
 - [ ] prueba controlada de caso bloqueado/revisión.
-- [ ] aliases de Workspace creados y verificados antes de activar send-as funcional.
+- [ ] aliases de Workspace creados y verificados.
+- [ ] `KIA_EMAIL_SEND_AS_ALIASES_ENABLED=true` solo después de verificar send-as.
 
 ## Rollback
 
