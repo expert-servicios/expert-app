@@ -273,6 +273,15 @@ async function handleTelegramUpdate(request: NextRequest) {
   let attributionConversationId: string | null = null;
 
   if (contentOrigin && identity && contextEnabled) {
+    const { data: attributionProfile, error: attributionProfileError } = await admin
+      .from('profiles')
+      .select('active_company_id')
+      .eq('id', identity.profileId)
+      .maybeSingle();
+    if (attributionProfileError) {
+      console.error('[Telegram attribution] profile lookup failed:', attributionProfileError.message);
+    }
+    const attributionCompanyId = attributionProfile?.active_company_id ?? null;
     const now = new Date().toISOString();
     const conversationQuery = admin
       .from('kia_conversations')
@@ -283,10 +292,13 @@ async function handleTelegramUpdate(request: NextRequest) {
       .contains('metadata', { telegram_chat_id: inbound.chatId })
       .order('last_message_at', { ascending: false })
       .limit(1);
-    const scopedConversationQuery = identity.tenantId
+    const tenantScopedConversationQuery = identity.tenantId
       ? conversationQuery.eq('tenant_id', identity.tenantId)
       : conversationQuery.is('tenant_id', null);
-    const { data: conversation, error: conversationError } = await scopedConversationQuery.maybeSingle();
+    const companyScopedConversationQuery = attributionCompanyId
+      ? tenantScopedConversationQuery.eq('company_id', attributionCompanyId)
+      : tenantScopedConversationQuery.is('company_id', null);
+    const { data: conversation, error: conversationError } = await companyScopedConversationQuery.maybeSingle();
     if (conversationError) {
       console.error('[Telegram attribution] conversation lookup failed:', conversationError.message);
     } else if (conversation?.id) {
@@ -316,6 +328,7 @@ async function handleTelegramUpdate(request: NextRequest) {
           tenant_id: identity.tenantId,
           profile_id: identity.profileId,
           channel: 'telegram',
+          company_id: attributionCompanyId,
           status: 'active',
           origin_type: 'telegram',
           metadata: {
@@ -414,10 +427,13 @@ async function handleTelegramUpdate(request: NextRequest) {
           .contains('metadata', { telegram_chat_id: inbound.chatId })
           .order('updated_at', { ascending: false })
           .limit(1);
-        const scopedGenericQuery = identity.tenantId
+        const tenantScopedGenericQuery = identity.tenantId
           ? genericQuery.eq('tenant_id', identity.tenantId)
           : genericQuery.is('tenant_id', null);
-        const { data: genericConversation, error: genericConversationError } = await scopedGenericQuery.maybeSingle();
+        const companyScopedGenericQuery = profile?.active_company_id
+          ? tenantScopedGenericQuery.eq('company_id', profile.active_company_id)
+          : tenantScopedGenericQuery.is('company_id', null);
+        const { data: genericConversation, error: genericConversationError } = await companyScopedGenericQuery.maybeSingle();
         if (genericConversationError) throw genericConversationError;
         genericTelegramConversationId = genericConversation?.id ?? null;
       }
