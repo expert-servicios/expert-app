@@ -100,24 +100,34 @@ export async function POST(request: NextRequest) {
     const escapedEmail = [...normalizedEmail]
         .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\${char}` : char))
         .join('');
-    const { data: leadByEmail, error: leadByEmailError } = await supabaseAdmin
+    const { data: emailMatches, error: leadByEmailError } = await supabaseAdmin
       .from('leads')
       .select('id,message,metadata')
       .ilike('email', escapedEmail)
-      .limit(1)
-      .maybeSingle();
+      .limit(2);
     if (leadByEmailError) throw leadByEmailError;
 
-    let existingLead = leadByEmail;
-    if (!existingLead && normalizedPhone) {
-      const { data: leadByPhone, error: leadByPhoneError } = await supabaseAdmin
-        .from('leads')
-        .select('id,message,metadata')
-        .eq('phone', normalizedPhone)
-        .limit(1)
-        .maybeSingle();
-      if (leadByPhoneError) throw leadByPhoneError;
-      existingLead = leadByPhone;
+    const { data: phoneMatches, error: leadByPhoneError } = normalizedPhone
+      ? await supabaseAdmin
+          .from('leads')
+          .select('id,message,metadata')
+          .eq('phone', normalizedPhone)
+          .limit(2)
+      : { data: [], error: null };
+    if (leadByPhoneError) throw leadByPhoneError;
+
+    const uniqueEmailMatch = (emailMatches ?? []).length === 1 ? emailMatches![0] : null;
+    const uniquePhoneMatch = (phoneMatches ?? []).length === 1 ? phoneMatches![0] : null;
+    const identifiersConflict = Boolean(
+      uniqueEmailMatch && uniquePhoneMatch && uniqueEmailMatch.id !== uniquePhoneMatch.id
+    );
+    const ambiguousIdentity = identifiersConflict
+      || (emailMatches ?? []).length > 1
+      || (phoneMatches ?? []).length > 1;
+    const existingLead = ambiguousIdentity ? null : (uniqueEmailMatch ?? uniquePhoneMatch);
+
+    if (ambiguousIdentity) {
+      console.warn('[quotes] ambiguous lead identity; preserving request as separate lead');
     }
 
     let leadId: string;
@@ -172,6 +182,7 @@ export async function POST(request: NextRequest) {
           source_key: attributionFields.source_key,
           metadata: {
             ...attributionFields.metadata,
+            ...(ambiguousIdentity ? { identity_match_status: 'needs_review' } : {}),
             conversion: quoteRequestInteraction,
             last_acquisition: quoteRequestInteraction,
             quote_requests: [quoteRequestInteraction],
