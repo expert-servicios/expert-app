@@ -13,10 +13,11 @@ describe('Admin appointments funnel context', () => {
     expect(route).toContain("'booking_appointment_id,lead_id,client_id,company_id,metadata'");
     expect(route).toContain('tasksByAppointment.get(appointment.id)');
     expect(route).toContain('task?.lead_id');
-    expect(route).toContain('const canonicalClientId = appointment.client_id ?? task?.client_id ?? null');
-    expect(route).toContain('if (!lead && !canonicalClientId)');
-    expect(route).toContain('appointment.client_id ?? task?.client_id ?? null');
-    expect(route).toContain('appointment.company_id ?? task?.company_id ?? null');
+    expect(route).toContain('const rawClientId = identityConflict ? null : (appointment.client_id ?? task?.client_id ?? null)');
+    expect(route).toContain('const verifiedClientId = rawClientId && activeClientIds.has(rawClientId) ? rawClientId : null');
+    expect(route).toContain('if (!lead && !verifiedClientId && !identityConflict && !invalidClientIdentity)');
+    expect(route).toContain('client_id: identityConflict ? null : verifiedClientId');
+    expect(route).toContain('company_id: identityConflict ? null : (appointment.company_id ?? task?.company_id ?? null)');
   });
 
   it('batches legacy lead candidates and fails closed when identifiers are ambiguous', () => {
@@ -51,6 +52,8 @@ describe('Admin appointments funnel context', () => {
     expect(page).toContain('let clientId = expedienteTarget.client_id');
     expect(page).toContain('identity_conflict');
     expect(page).toContain('invalid_client_identity');
+    expect(page).toContain("setCaseError('La identidad de esta cita requiere revisión antes de crear un expediente.')");
+    expect(page.indexOf('identity_conflict')).toBeLessThan(page.indexOf('let clientId = expedienteTarget.client_id'));
     expect(page).toContain('if (!clientId) {');
     expect(page).toContain('/api/admin/clients-quick?q=');
     expect(page).toContain('client_id: clientId');
