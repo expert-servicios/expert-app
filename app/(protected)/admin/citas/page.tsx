@@ -106,7 +106,11 @@ function AdminCitasPageInner() {
     setCreatingCase(true);
     setCaseError(null);
     try {
-      if (expedienteTarget.crm_context?.identity_conflict || expedienteTarget.crm_context?.invalid_client_identity) {
+      if (
+        expedienteTarget.crm_context?.identity_conflict
+        || expedienteTarget.crm_context?.invalid_client_identity
+        || expedienteTarget.crm_context?.ambiguous_lead_match
+      ) {
         setCaseError('La identidad de esta cita requiere revisión antes de crear un expediente.');
         return;
       }
