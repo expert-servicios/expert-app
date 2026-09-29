@@ -70,12 +70,9 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    const escapedEmail = normalizedEmail.replace(/[\\%_]/g, '\\    const { data: byEmail, error: emailLookupError } = await admin
-      .from('leads')
-      .select('id,message,metadata,email,phone')
-      .eq('email', normalizedEmail)
-      .limit(1)
-      .maybeSingle();');
+    const escapedEmail = [...normalizedEmail]
+        .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\\\${char}` : char))
+        .join('');
     const { data: byEmail, error: emailLookupError } = await admin
       .from('leads')
       .select('id,message,metadata,email,phone')
