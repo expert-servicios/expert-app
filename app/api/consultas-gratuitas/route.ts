@@ -70,10 +70,16 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    const { data: byEmail, error: emailLookupError } = await admin
+    const escapedEmail = normalizedEmail.replace(/[\\%_]/g, '\\    const { data: byEmail, error: emailLookupError } = await admin
       .from('leads')
       .select('id,message,metadata,email,phone')
       .eq('email', normalizedEmail)
+      .limit(1)
+      .maybeSingle();');
+    const { data: byEmail, error: emailLookupError } = await admin
+      .from('leads')
+      .select('id,message,metadata,email,phone')
+      .ilike('email', escapedEmail)
       .limit(1)
       .maybeSingle();
     if (emailLookupError) throw emailLookupError;
