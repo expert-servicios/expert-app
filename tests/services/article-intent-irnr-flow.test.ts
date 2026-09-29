@@ -41,8 +41,8 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(cta).toContain('/consulta-gratuita');
     expect(cta).toContain('/cita?tipo=consulta-inicial');
     expect(cta).toContain('https://t.me/kia_expert_bot');
-    expect(cta).toContain("src_${sourceKind === 'blog' ? 'b' : 'd'}_${sourceSlug}");
-    expect(cta).toContain('telegramPayload.length <= 64');
+    expect(cta).toContain('buildTelegramContentPayload(sourceKind, sourceSlug)');
+    expect(cta).toContain('?start=${telegramPayload}');
   });
 
   it('keeps the SEO CTA bundle lean', () => {
@@ -131,6 +131,9 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(bookingApi).toContain("action: 'booking_created'");
     expect(bookingApi).toContain("source_key: `booking:${input.appointmentId}`");
     expect(bookingApi).toContain('Lead attribution must never roll back a confirmed Calendar appointment');
+    expect(bookingApi).toContain('return appendBookingInteraction(existing)');
+    expect(bookingApi).toContain("source_key !== interaction.source_key");
+    expect(bookingApi.indexOf('if (rescheduledAppointment)')).toBeLessThan(bookingApi.indexOf('ensurePublicBookingLead({'));
     expect(consultation).toContain('href={meetingHref}');
     expect(consultation).toContain("encodeURIComponent(origin)");
   });
