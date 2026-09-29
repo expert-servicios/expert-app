@@ -7,6 +7,7 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf
 describe('Admin appointments funnel context', () => {
   const route = source('app/api/admin/citas/route.ts');
   const page = source('app/(protected)/admin/citas/page.tsx');
+  const casesRoute = source('app/api/admin/cases/route.ts');
 
   it('uses the canonical booking task before legacy contact matching', () => {
     expect(route).toContain(".from('internal_tasks')");
@@ -24,6 +25,10 @@ describe('Admin appointments funnel context', () => {
     expect(route).toContain('loadLegacyLeadIndex(admin, legacyCandidates)');
     expect(route).toContain(".or(filter)");
     expect(route).toContain(".in('phone', batch)");
+    expect(route).toContain('chunkValues(appointmentIds, 100)');
+    expect(route).toContain('chunkValues(taskLeadIds, 100)');
+    expect(route).toContain('chunkValues(candidateClientIds, 100)');
+    expect(route).toContain("email.replace(/[%_(),\\\\]/g");
     expect(route).toContain('return { lead: null, ambiguous: true }');
     expect(route).toContain('emailMatch.id !== phoneMatch.id');
     expect(route).toContain('ambiguous_lead_match: ambiguousLeadMatch');
@@ -44,8 +49,10 @@ describe('Admin appointments funnel context', () => {
     expect(page).toContain('Origen: {appt.crm_context.origin_label}');
     expect(page).toContain('Última interacción');
     expect(page).toContain('Identidad CRM por revisar');
-    expect(page).toContain('Google Calendar · Meet');
-    expect(page).toContain('Microsoft 365 · Teams');
+    expect(page).toContain("meetingUrl.includes('meet.google.com')");
+    expect(page).toContain("meetingUrl.includes('teams.microsoft.com')");
+    expect(page).toContain("meetingUrl.includes('zoom.us')");
+    expect(page).toContain("if (!meetingUrl) return provider === 'google_native'");
   });
 
   it('uses canonical client_id before the legacy email search when creating a case', () => {
@@ -57,5 +64,11 @@ describe('Admin appointments funnel context', () => {
     expect(page).toContain('if (!clientId) {');
     expect(page).toContain('/api/admin/clients-quick?q=');
     expect(page).toContain('client_id: clientId');
+    expect(page).toContain('company_id: expedienteTarget.company_id');
+    expect(casesRoute).toContain('company_id: z.string().uuid().nullable().optional()');
+    expect(casesRoute).toContain(".from('profile_companies')");
+    expect(casesRoute).toContain(".eq('profile_id', client_id)");
+    expect(casesRoute).toContain(".eq('company_id', company_id)");
+    expect(casesRoute).toContain('company_id: company_id ?? null');
   });
 });
