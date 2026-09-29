@@ -896,8 +896,9 @@ Pendiente de merge al redactar este documento:
 
 - una reunión pública de visitante nuevo crea/reutiliza lead;
 - matching de email en consulta gratuita/presupuesto pasa a case-insensitive;
-- Telegram conserva origen de blog/docs mediante deep link seguro;
-- Telegram solo persiste ese origen cuando ya existe identidad vinculada y conversación autorizada;
+- Telegram conserva origen de blog/docs mediante un fingerprint corto determinista compatible con el límite de deep links;
+- el servidor resuelve el fingerprint contra el catálogo canónico y falla cerrado si no hay una única coincidencia;
+- si la identidad Telegram ya está vinculada, el origen se persiste incluso en el primer `/start`, creando el sobre de conversación si aún no existía;
 - no se crea identidad ni lead a partir de un username/chat anónimo.
 
 ---
@@ -912,7 +913,9 @@ Regla prevista:
 - si existe ambigüedad -> no autoasignar;
 - si no existe ninguno -> crear lead para la reserva pública.
 
-La creación de lead ocurre después de confirmar la cita.
+La creación o actualización del lead ocurre después de confirmar la cita y, en reprogramaciones, después de haber completado correctamente la sustitución de la cita anterior.
+
+Cada interacción usa `booking:<appointmentId>` y se actualiza de forma idempotente: un retry no duplica el mismo booking dentro de la metadata del lead. Las carreras por email/teléfono releen el lead canónico y aplican también la interacción de la cita que perdió la carrera.
 
 Un fallo CRM **no puede revertir una reunión ya creada correctamente**.
 
