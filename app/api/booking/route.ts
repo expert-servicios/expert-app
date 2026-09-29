@@ -84,7 +84,7 @@ async function ensurePublicBookingLead(input: {
   const normalizedEmail = input.email.trim().toLowerCase();
   const normalizedPhone = input.phone.trim();
   const escapedEmail = [...normalizedEmail]
-    .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\\\${char}` : char))
+    .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\${char}` : char))
     .join('');
   const interaction = {
     at: new Date().toISOString(),
@@ -101,57 +101,80 @@ async function ensurePublicBookingLead(input: {
 
   const { data: emailMatches, error: emailLookupError } = await input.admin
     .from('leads')
-    .select('id,metadata')
+    .select('id,metadata,updated_at')
     .ilike('email', escapedEmail)
     .limit(2);
   if (emailLookupError) throw emailLookupError;
 
-  let existing = (emailMatches ?? []).length === 1 ? emailMatches![0] : null;
-  if ((emailMatches ?? []).length > 1) {
-    console.warn('[booking] lead lookup ambiguous by email:', normalizedEmail);
+  const { data: phoneMatches, error: phoneLookupError } = normalizedPhone
+    ? await input.admin
+        .from('leads')
+        .select('id,metadata,updated_at')
+        .eq('phone', normalizedPhone)
+        .limit(2)
+    : { data: [], error: null };
+  if (phoneLookupError) throw phoneLookupError;
+
+  if ((emailMatches ?? []).length > 1 || (phoneMatches ?? []).length > 1) {
+    console.warn('[booking] lead lookup ambiguous by contact identifiers');
     return null;
   }
 
-  if (!existing && normalizedPhone) {
-    const { data: phoneMatches, error: phoneLookupError } = await input.admin
-      .from('leads')
-      .select('id,metadata')
-      .eq('phone', normalizedPhone)
-      .limit(2);
-    if (phoneLookupError) throw phoneLookupError;
-    if ((phoneMatches ?? []).length > 1) {
-      console.warn('[booking] lead lookup ambiguous by phone');
-      return null;
+  const emailMatch = (emailMatches ?? [])[0] ?? null;
+  const phoneMatch = (phoneMatches ?? [])[0] ?? null;
+  if (emailMatch && phoneMatch && emailMatch.id !== phoneMatch.id) {
+    console.warn('[booking] lead lookup conflict between email and phone');
+    return null;
+  }
+  const existing = emailMatch ?? phoneMatch;
+
+  async function appendBookingInteraction(leadId: string): Promise<string | null> {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const { data: snapshot, error: snapshotError } = await input.admin
+        .from('leads')
+        .select('id,metadata,updated_at')
+        .eq('id', leadId)
+        .maybeSingle();
+      if (snapshotError) throw snapshotError;
+      if (!snapshot) return null;
+
+      const metadata = snapshot.metadata && typeof snapshot.metadata === 'object' && !Array.isArray(snapshot.metadata)
+        ? snapshot.metadata as Record<string, unknown>
+        : {};
+      const previousBookings = Array.isArray(metadata.bookings)
+        ? metadata.bookings.filter((item) => {
+            if (!item || typeof item !== 'object' || Array.isArray(item)) return true;
+            return (item as Record<string, unknown>).source_key !== interaction.source_key;
+          }).slice(-19)
+        : [];
+      const nextUpdatedAt = new Date().toISOString();
+
+      let updateQuery = input.admin
+        .from('leads')
+        .update({
+          updated_at: nextUpdatedAt,
+          metadata: {
+            ...metadata,
+            last_acquisition: interaction,
+            bookings: [...previousBookings, interaction],
+          },
+        })
+        .eq('id', leadId);
+      updateQuery = snapshot.updated_at
+        ? updateQuery.eq('updated_at', snapshot.updated_at)
+        : updateQuery.is('updated_at', null);
+
+      const { data: updated, error: updateError } = await updateQuery
+        .select('id')
+        .maybeSingle();
+      if (updateError) throw updateError;
+      if (updated?.id) return updated.id;
     }
-    existing = (phoneMatches ?? [])[0] ?? null;
+
+    throw new Error('lead_booking_attribution_concurrency_retry_exhausted');
   }
 
-  async function appendBookingInteraction(lead: { id: string; metadata: unknown }) {
-    const metadata = lead.metadata && typeof lead.metadata === 'object' && !Array.isArray(lead.metadata)
-      ? lead.metadata as Record<string, unknown>
-      : {};
-    const previousBookings = Array.isArray(metadata.bookings)
-      ? metadata.bookings.filter((item) => {
-          if (!item || typeof item !== 'object' || Array.isArray(item)) return true;
-          return (item as Record<string, unknown>).source_key !== interaction.source_key;
-        }).slice(-19)
-      : [];
-    const { error: updateError } = await input.admin
-      .from('leads')
-      .update({
-        updated_at: new Date().toISOString(),
-        metadata: {
-          ...metadata,
-          last_acquisition: interaction,
-          bookings: [...previousBookings, interaction],
-        },
-      })
-      .eq('id', lead.id);
-    if (updateError) throw updateError;
-    return lead.id;
-  }
-
-  if (existing) return appendBookingInteraction(existing);
+  if (existing) return appendBookingInteraction(existing.id);
 
   const attribution = buildLeadAttributionFields(input.request, { fallbackSource: 'website' });
   const { data: created, error: insertError } = await input.admin
@@ -186,24 +209,28 @@ async function ensurePublicBookingLead(input: {
   if (insertError?.code === '23505') {
     const { data: emailRaced, error: emailRaceError } = await input.admin
       .from('leads')
-      .select('id,metadata')
+      .select('id')
       .ilike('email', escapedEmail)
       .limit(2);
     if (emailRaceError) throw emailRaceError;
-    if ((emailRaced ?? []).length === 1) return appendBookingInteraction(emailRaced![0]);
 
-    if (normalizedPhone) {
-      const { data: phoneRaced, error: phoneRaceError } = await input.admin
-        .from('leads')
-        .select('id,metadata')
-        .eq('phone', normalizedPhone)
-        .limit(2);
-      if (phoneRaceError) throw phoneRaceError;
-      if ((phoneRaced ?? []).length === 1) return appendBookingInteraction(phoneRaced![0]);
+    const { data: phoneRaced, error: phoneRaceError } = normalizedPhone
+      ? await input.admin.from('leads').select('id').eq('phone', normalizedPhone).limit(2)
+      : { data: [], error: null };
+    if (phoneRaceError) throw phoneRaceError;
+
+    if ((emailRaced ?? []).length > 1 || (phoneRaced ?? []).length > 1) {
+      console.warn('[booking] lead race remained ambiguous');
+      return null;
     }
-
-    console.warn('[booking] lead race remained ambiguous');
-    return null;
+    const racedByEmail = (emailRaced ?? [])[0] ?? null;
+    const racedByPhone = (phoneRaced ?? [])[0] ?? null;
+    if (racedByEmail && racedByPhone && racedByEmail.id !== racedByPhone.id) {
+      console.warn('[booking] lead race resolved to conflicting contacts');
+      return null;
+    }
+    const raced = racedByEmail ?? racedByPhone;
+    return raced ? appendBookingInteraction(raced.id) : null;
   }
 
   throw insertError ?? new Error('Could not create public booking lead');
