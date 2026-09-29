@@ -127,6 +127,14 @@ export default function GoogleEsignatureGuidePage() {
           </p>
         </section>
 
+        <section className="mt-10 border border-[#D4A017]/25 bg-white p-6">
+          <h2 className="font-serif text-2xl font-bold">Fuentes y ayuda oficial</h2>
+          <ul className="mt-4 space-y-2 text-sm text-[#23364D]">
+            <li><a className="font-semibold text-[#D4A017] underline" href="https://support.google.com/drive/answer/12315692?hl=es" target="_blank" rel="noreferrer">Google Drive: enviar solicitudes de firma y firmar documentos</a></li>
+            <li><a className="font-semibold text-[#D4A017] underline" href="https://support.google.com/docs/answer/16704506" target="_blank" rel="noreferrer">Google Workspace: disponibilidad y acceso a eSignature</a></li>
+          </ul>
+        </section>
+
         <div className="mt-10 flex flex-wrap gap-3">
           <Link href="/docs/conectar-google-workspace-expert" className="border border-[#D4A017] px-4 py-3 text-sm font-bold">Conectar Google Workspace</Link>
           <Link href="/docs" className="bg-[#D4A017] px-4 py-3 text-sm font-bold">Volver a la base de conocimientos</Link>
