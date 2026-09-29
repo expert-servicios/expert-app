@@ -47,6 +47,12 @@ export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs =
       : `/solicitar-presupuesto?origen=${encodeURIComponent(origin)}`;
   const consultationHref = `/consulta-gratuita?origen=${encodeURIComponent(origin)}${primaryServiceSlug ? `&servicio=${encodeURIComponent(primaryServiceSlug)}` : ''}`;
   const meetingHref = `/cita?tipo=consulta-inicial&origen=${encodeURIComponent(origin)}`;
+  const telegramPayload = /^[A-Za-z0-9_-]+$/.test(sourceSlug)
+    ? `src_${sourceKind === 'blog' ? 'b' : 'd'}_${sourceSlug}`
+    : '';
+  const telegramHref = telegramPayload && telegramPayload.length <= 64
+    ? `https://t.me/kia_expert_bot?start=${telegramPayload}`
+    : 'https://t.me/kia_expert_bot';
 
   return (
     <section className="mt-10 border border-[#D4A017]/30 bg-white p-6 md:p-8">
@@ -133,7 +139,7 @@ export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs =
             Abrir chat
           </Link>
           <a
-            href="https://t.me/kia_expert_bot"
+            href={telegramHref}
             onClick={() => trackPublicContentIntent({ intent: 'telegram', source_kind: sourceKind, source_slug: sourceSlug, service_slug: primaryServiceSlug ?? undefined })}
             className="inline-flex min-h-10 items-center justify-center gap-1.5 border border-white/25 px-4 py-2 text-xs font-bold text-white transition hover:border-[#D4A017] hover:text-[#D4A017]"
           >
