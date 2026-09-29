@@ -688,6 +688,7 @@ export async function POST(request: NextRequest) {
       companyId: adminTaskCompanyId,
       caseId: adminTaskCaseId,
       leadId: adminTaskLeadId,
+      contentOrigin,
     }).catch(async (taskError) => {
       console.error('[booking] admin task:', taskError);
       await admin
