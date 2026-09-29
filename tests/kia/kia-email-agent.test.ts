@@ -112,6 +112,9 @@ describe('KIA guarded email agent', () => {
   });
 
   it('paginates unread cache and checks live unread state', () => {
+    expect(route).toContain("eq('key', 'kia.email_agent')");
+    expect(route).toContain('const enabledSince = agentSetting.data?.updated_at ?? null');
+    expect(route).toContain("inboxQuery = inboxQuery.gte('date', enabledSince)");
     expect(route).toContain('pageSize = 200');
     expect(route).toContain('.range(offset, offset + pageSize - 1)');
     expect(route).toContain('!latest.unread');
