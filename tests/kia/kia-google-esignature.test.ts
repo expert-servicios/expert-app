@@ -18,6 +18,8 @@ describe('KIA Google eSignature workflow', () => {
     expect(registry).toContain("get_case_signature_status:          policy('R0', 'read',  'documents')");
     expect(executor).toContain("case 'get_case_signature_status'");
     expect(executor).toContain("google_esignature_request_api: 'manual_only'");
+    expect(executor).toContain('evidenceDocumentIds.has(doc.id)');
+    expect(executor).not.toContain('/firmad|signed|firma|mandato/.test(haystack)');
   });
 
   it('keeps signed-document download behind the existing EXPERT authorization route', () => {
@@ -28,6 +30,7 @@ describe('KIA Google eSignature workflow', () => {
   it('never claims Google eSignature was sent without persisted evidence', () => {
     expect(prompt).toContain('No afirmes "solicitud de firma enviada" salvo que exista evidencia persistida del envío');
     expect(prompt).toContain('requiere intervención humana');
+    expect(prompt).toContain('prepara create_internal_task/create_next_best_action');
     expect(runbook).toContain('KIA NO puede afirmar que la solicitud fue enviada');
   });
 
