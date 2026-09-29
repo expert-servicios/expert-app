@@ -34,12 +34,13 @@ describe('Lead email history', () => {
     expect(route).toContain('openTasks');
   });
 
-  it('treats persisted inbound email_events as inbound and suppresses inbox duplicates', () => {
+  it('treats persisted inbound email_events as inbound and suppresses only stale inbox duplicates', () => {
     expect(clientCommunications).toContain("metadataDirection === 'in'");
-    expect(clientCommunications).toContain('persistedInboundThreadIds');
-    expect(clientCommunications).toContain('if (persistedInboundThreadIds.has(row.thread_id)) continue');
+    expect(clientCommunications).toContain('persistedInboundThreadLatest');
+    expect(clientCommunications).toContain('if (persistedAt >= new Date(row.date).getTime()) continue');
     expect(clientTimeline).toContain("metadata.direction === 'in' || e.event_type === 'email.inbound'");
-    expect(clientTimeline).toContain('persistedInboundThreadIds');
+    expect(clientTimeline).toContain('persistedInboundThreadLatest');
+    expect(clientTimeline).toContain('if (persistedAt >= new Date(e.date).getTime()) continue');
   });
 
   it('pushes the inbound summary and task creation, not the automatic KIA reply', () => {
