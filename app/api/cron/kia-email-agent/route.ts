@@ -105,6 +105,9 @@ function normalizedEmail(email: string) {
 }
 
 function replyFromForPurpose(purpose: ReturnType<typeof classifyInboundEnvelope>['recipientPurpose']): string {
+  const aliasesEnabled = process.env.KIA_EMAIL_SEND_AS_ALIASES_ENABLED?.trim().toLowerCase() === 'true';
+  if (!aliasesEnabled) return 'KIA · EXPERT <info@expertconsulting.es>';
+
   switch (purpose) {
     case 'kia': return 'KIA · EXPERT <kia@expertconsulting.es>';
     case 'documents': return 'KIA · Documentación <documentos@expertconsulting.es>';
