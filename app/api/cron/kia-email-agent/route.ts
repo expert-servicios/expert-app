@@ -864,7 +864,6 @@ export async function GET(request: NextRequest) {
           title: sentNow ? 'KIA atendió una novedad importante' : 'KIA detectó una novedad importante',
           body: [
             senderDisplayName(latest),
-            createdTask ? `creó tarea: ${createdTask.title}` : null,
             sentNow ? 'respondió automáticamente' : null,
             latest.subject || 'Sin asunto',
           ].filter(Boolean).join(' · ').slice(0, 240),
