@@ -84,12 +84,36 @@ export async function notifyAdmins(payload: PushPayload): Promise<void> {
     return;
   }
 
-  const { data: profiles } = await admin
+  const { data: profiles, error: profileLookupError } = await admin
     .from('profiles')
     .select('id')
     .in('role', ['admin', 'owner']);
 
-  if (!profiles?.length) return;
+  if (profileLookupError) {
+    await admin.from('system_kv').upsert({
+      key: 'admin_push_health',
+      value: {
+        status: 'degraded',
+        reason: 'admin_profile_lookup_failed',
+        checked_at: new Date().toISOString(),
+      },
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'key' });
+    return;
+  }
+
+  if (!profiles?.length) {
+    await admin.from('system_kv').upsert({
+      key: 'admin_push_health',
+      value: {
+        status: 'degraded',
+        reason: 'no_admin_profiles',
+        checked_at: new Date().toISOString(),
+      },
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'key' });
+    return;
+  }
 
   const delivery = await sendToSubscriptions(admin, profiles.map((p) => p.id as string), payload);
   await admin.from('system_kv').upsert({
