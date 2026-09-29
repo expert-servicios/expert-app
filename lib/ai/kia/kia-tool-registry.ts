@@ -2,7 +2,7 @@ import type { KiaChannel } from './kia-output-schema';
 import { KIA_TOOL_DEFINITIONS, type KiaToolDefinition } from './kia-tool-definitions';
 
 export type KiaToolRiskTier = 'R0' | 'R1' | 'R2' | 'R3' | 'R4' | 'R5';
-export type KiaToolEffect = 'read' | 'draft' | 'write' | 'external_action';
+export type KiaToolEffect = 'read' | 'approval_request' | 'draft' | 'write' | 'external_action';
 export type KiaToolCapability =
   | 'identity'
   | 'client_data'
@@ -81,7 +81,7 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_case_tasks:                     policy('R0', 'read',  'case_operations'),
   get_case_documents:                 policy('R0', 'read',  'documents'),
   get_case_signature_status:          policy('R0', 'read',  'documents'),
-  request_signature_approval:         policy('R1', 'draft', 'documents', true),
+  request_signature_approval:         policy('R1', 'approval_request', 'documents'),
   get_case_timeline:                  policy('R0', 'read',  'case_operations'),
   get_client_communications:          policy('R0', 'read',  'client_data'),
   search_knowledge_resources:          policy('R0', 'read',  'knowledge'),
@@ -128,7 +128,7 @@ export function getKiaToolsForCapability(capability: KiaToolCapability): string[
 export function isKiaToolSafeForAutonomousExecution(name: string): boolean {
   const tool = getKiaToolPolicy(name);
   if (!tool) return false;
-  return tool.effect === 'read'
+  return (tool.effect === 'read' || tool.effect === 'approval_request')
     && (tool.riskTier === 'R0' || tool.riskTier === 'R1')
     && !tool.requiresHumanApproval;
 }
