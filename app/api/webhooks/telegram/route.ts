@@ -280,13 +280,11 @@ async function handleTelegramUpdate(request: NextRequest) {
       .eq('status', 'active')
       .contains('metadata', { telegram_chat_id: inbound.chatId })
       .order('last_message_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const { data: conversation, error: conversationError } = await (
-      identity.tenantId
-        ? conversationQuery.eq('tenant_id', identity.tenantId)
-        : conversationQuery.is('tenant_id', null)
-    );
+      .limit(1);
+    const scopedConversationQuery = identity.tenantId
+      ? conversationQuery.eq('tenant_id', identity.tenantId)
+      : conversationQuery.is('tenant_id', null);
+    const { data: conversation, error: conversationError } = await scopedConversationQuery.maybeSingle();
     if (conversationError) {
       console.error('[Telegram attribution] conversation lookup failed:', conversationError.message);
     } else if (conversation?.id) {
