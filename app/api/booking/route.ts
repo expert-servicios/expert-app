@@ -772,6 +772,37 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const formattedDate = new Intl.DateTimeFormat('es-ES', {
+      timeZone: BOOKING_TIMEZONE,
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(start);
+
+    const managementToken = await createBookingManagementToken({
+      appointmentId: appointmentId!,
+      email: bookingEmail,
+      service: service.key,
+    });
+    const managementLinks = bookingManagementUrls(managementToken, service.key);
+    const clientTemplate = citaConfirmed(
+      input.name,
+      service.label,
+      formattedDate,
+      localTime,
+      meeting.meetingUrl,
+      managementLinks,
+    );
+    const calendarAttachment = buildBookingIcs({
+      appointmentId: appointmentId!,
+      service: service.label,
+      start,
+      end,
+      meetingUrl: meeting.meetingUrl,
+      attendeeEmail: bookingEmail,
+    });
+
     if (!adminTaskClientId && service.public && appointmentId) {
       adminTaskLeadId = await ensurePublicBookingLead({
         admin,
@@ -867,36 +898,6 @@ export async function POST(request: NextRequest) {
         .eq('id', appointmentId!);
     });
 
-    const formattedDate = new Intl.DateTimeFormat('es-ES', {
-      timeZone: BOOKING_TIMEZONE,
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }).format(start);
-
-    const managementToken = await createBookingManagementToken({
-      appointmentId: appointmentId!,
-      email: bookingEmail,
-      service: service.key,
-    });
-    const managementLinks = bookingManagementUrls(managementToken, service.key);
-    const clientTemplate = citaConfirmed(
-      input.name,
-      service.label,
-      formattedDate,
-      localTime,
-      meeting.meetingUrl,
-      managementLinks,
-    );
-    const calendarAttachment = buildBookingIcs({
-      appointmentId: appointmentId!,
-      service: service.label,
-      start,
-      end,
-      meetingUrl: meeting.meetingUrl,
-      attendeeEmail: bookingEmail,
-    });
     let clientEmailSent = false;
     try {
       await sendBookingEmail({
