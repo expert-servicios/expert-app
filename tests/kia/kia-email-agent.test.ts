@@ -16,7 +16,7 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain("'kia.email_auto_send'");
     expect(route).toContain("'kia.email_new_lead_auto_send'");
     expect(route).toContain("select('enabled,updated_at').eq('key', 'kia.email_agent')");
-    expect(route).toContain('KIA_EMAIL_AUTO_SEND_ENABLED');
+    expect(route).toContain('return data?.enabled === true');
     expect(route).toContain('isKiaGatewayConfigured');
     expect(route).toContain('getKiaProviderOrder');
     expect(route).toContain("reason: 'no_ai_provider'");
@@ -50,7 +50,7 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain('wasKnownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS');
     expect(route).toContain('(wasKnownContact || (safeUnknownProspect && newLeadAutoSend))');
     expect(route).toContain('KIA_EMAIL_PROSPECT_MIN_CONFIDENCE');
-    expect(route).toContain('KIA_EMAIL_NEW_LEAD_AUTO_SEND_ENABLED');
+    expect(route).toContain("'kia.email_new_lead_auto_send'");
     expect(route).toContain('new_lead_approval_required');
   });
 
