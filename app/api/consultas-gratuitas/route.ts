@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
         .insert({
           name: parsed.data.name,
           email: normalizedEmail,
-          phone: normalizedPhone,
+          phone: ambiguousIdentity ? null : normalizedPhone,
           client_type: 'particular',
           category: 'Consulta gratuita',
           service: parsed.data.service || 'consulta-general',
@@ -158,7 +158,10 @@ export async function POST(request: NextRequest) {
           source_key: sourceKey,
           metadata: {
             ...attribution.metadata,
-            ...(ambiguousIdentity ? { identity_match_status: 'needs_review' } : {}),
+            ...(ambiguousIdentity ? {
+              identity_match_status: 'needs_review',
+              submitted_contact: { email: normalizedEmail, phone: normalizedPhone },
+            } : {}),
             last_acquisition: interaction,
             inquiries: [interaction],
           },
