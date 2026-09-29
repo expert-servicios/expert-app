@@ -92,7 +92,7 @@ function AdminCitasPageInner() {
         const searchRes = await fetch(`/api/admin/clients-quick?q=${encodeURIComponent(expedienteTarget.email)}`);
         const searchData = await searchRes.json();
         const client = (searchData.clients ?? []).find(
-          (item: { email: string }) => item.email.toLowerCase() === expedienteTarget.email.toLowerCase()
+          (item: { id: string; email: string }) => item.email.toLowerCase() === expedienteTarget.email.toLowerCase()
         );
         clientId = client?.id ?? null;
       }
