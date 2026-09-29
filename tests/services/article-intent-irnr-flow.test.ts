@@ -110,6 +110,9 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(quoteApi).toContain(".ilike('email', escapedEmail)");
     expect(quoteApi).toContain('.limit(2)');
     expect(quoteApi).toContain("identity_match_status: 'needs_review'");
+    expect(quoteApi).toContain('phone: ambiguousIdentity ? null : normalizedPhone');
+    expect(quoteApi).toContain('quote-review:${crypto.randomUUID()}');
+    expect(quoteApi).toContain('submitted_contact: { email: normalizedEmail, phone: normalizedPhone }');
     expect(quoteApi).not.toContain(".eq('email', normalizedEmail)");
     expect(quoteApi).not.toContain("intent: 'quote_request'");
   });
