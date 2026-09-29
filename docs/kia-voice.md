@@ -55,7 +55,7 @@ Web Speech / síntesis local puede variar entre navegador, idioma y plataforma. 
 ## Modelos
 
 La implementación debe permitir configuración por entorno:
-- transcripción: `OPENAI_TRANSCRIBE_MODEL` (default recomendado actual: `gpt-transcribe`);
+- transcripción: `OPENAI_TRANSCRIBE_MODEL` (default recomendado actual: `gpt-4o-mini-transcribe`);
 - voz: `OPENAI_TTS_MODEL` (default recomendado actual: `gpt-4o-mini-tts`);
 - voz concreta: `OPENAI_TTS_VOICE` obligatoria para activar salida TTS.
 
