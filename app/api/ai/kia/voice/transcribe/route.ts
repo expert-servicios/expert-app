@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/integrations/supabase';
 import { KIA_MAX_AUDIO_BYTES, transcribeKiaAudio } from '@/lib/ai/kia/kia-audio';
+import { checkKiaMessageRateLimit, reserveKiaAudioDailyQuota } from '@/lib/ai/kia/kia-rate-limit';
 
 export const maxDuration = 60;
 
@@ -8,6 +9,18 @@ export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
+  if (!checkKiaMessageRateLimit(`audio:transcription:${user.id}`)) {
+    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+  }
+  if (!(await reserveKiaAudioDailyQuota(user.id, 'transcription'))) {
+    return NextResponse.json({ error: 'audio_quota_reached' }, { status: 429 });
+  }
+
+  const contentLength = Number(request.headers.get('content-length') ?? '0');
+  if (contentLength > KIA_MAX_AUDIO_BYTES + 1024 * 1024) {
+    return NextResponse.json({ error: 'audio_too_large' }, { status: 413 });
+  }
 
   const form = await request.formData().catch(() => null);
   const audio = form?.get('audio');
