@@ -17,7 +17,7 @@ import {
 } from '@/lib/booking/calendar-provider';
 import { formatMadridDate, formatMadridTime, madridLocalToDate } from '@/lib/booking/native-booking';
 import { ensureBookingAdminTask, cancelBookingAdminTask } from '@/lib/booking/booking-admin-task';
-import { resolveBookingIdentityByEmail } from '@/lib/admin/onboarding-booking-identity';
+import { resolveActiveClientIdsByEmails, resolveBookingIdentityByEmail } from '@/lib/admin/onboarding-booking-identity';
 import { attributionFromMetadata } from '@/lib/marketing/server-attribution';
 import { describeContentOrigin } from '@/lib/marketing/content-origin';
 
@@ -161,38 +161,6 @@ function resolveLegacyAppointmentLead(
   return { lead: emailMatch ?? phoneMatch, ambiguous: false };
 }
 
-async function loadActiveClientIndex(
-  admin: ReturnType<typeof getSupabaseAdmin>,
-  appointments: Array<{ email: string }>,
-): Promise<ActiveClientIndex> {
-  const index: ActiveClientIndex = new Map();
-  const emails = [...new Set(appointments.map((row) => normalizeEmail(row.email)).filter(Boolean))];
-
-  for (let offset = 0; offset < emails.length; offset += 40) {
-    const batch = emails.slice(offset, offset + 40);
-    const filter = batch
-      .map((email) => `email.ilike.${email.replace(/[%_(),\\\\]/g, (char) => `\\\\${char}`)}`)
-      .join(',');
-    const { data, error } = await admin
-      .from('profiles')
-      .select('id,email')
-      .eq('role', 'client')
-      .eq('status', 'active')
-      .or(filter);
-    if (error) throw error;
-
-    for (const profile of data ?? []) {
-      const email = normalizeEmail(profile.email);
-      if (!email) continue;
-      const rows = index.get(email) ?? [];
-      rows.push(profile.id);
-      index.set(email, rows);
-    }
-  }
-
-  return index;
-}
-
 async function loadClientCompanyMemberships(
   admin: ReturnType<typeof getSupabaseAdmin>,
   clientIds: string[],
@@ -278,7 +246,10 @@ export async function GET(request: NextRequest) {
       const task = tasksByAppointment.get(appointment.id) ?? null;
       return !appointment.client_id && !task?.client_id;
     });
-    const activeClientIndex = await loadActiveClientIndex(admin, clientLookupCandidates);
+    const activeClientIndex = await resolveActiveClientIdsByEmails(
+      admin,
+      appointments.map((appointment) => appointment.email)
+    );
     const fallbackClientIds = clientLookupCandidates.flatMap(
       (appointment) => activeClientIndex.get(normalizeEmail(appointment.email)) ?? []
     );
@@ -348,14 +319,20 @@ export async function GET(request: NextRequest) {
         if (lead) relationshipSource = 'matched';
       }
 
-      const appointmentEmail = normalizeEmail(appointment.email);
       const leadEmail = normalizeEmail(lead?.email);
-      const inferredLeadClientConflict = Boolean(
-        fallbackClientId
+      const resolvedClientMatches = resolvedClientId
+        ? (activeClientIndex.get(normalizeEmail(appointment.email)) ?? [])
+        : [];
+      const resolvedClientMatchesAppointmentEmail = resolvedClientId
+        ? resolvedClientMatches.includes(resolvedClientId)
+        : false;
+      const leadClientConflict = Boolean(
+        resolvedClientId
         && lead
+        && leadEmail
         && (
-          (relationshipSource === 'matched' && leadEmail !== appointmentEmail)
-          || (relationshipSource === 'task' && leadEmail && leadEmail !== appointmentEmail)
+          !resolvedClientMatchesAppointmentEmail
+          || leadEmail !== normalizeEmail(appointment.email)
         )
       );
       const clientCompanyConflict = Boolean(
@@ -365,7 +342,7 @@ export async function GET(request: NextRequest) {
       );
       const identityConflict = sourceIdentityConflict
         || ambiguousClientMatch
-        || inferredLeadClientConflict
+        || leadClientConflict
         || clientCompanyConflict;
 
       if (identityConflict) {
