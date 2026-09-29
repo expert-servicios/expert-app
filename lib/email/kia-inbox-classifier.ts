@@ -63,6 +63,37 @@ export function classifyInboundEnvelope(message: GmailMessage): KiaInboxClassifi
     };
   }
 
+  const knownOfficial = OFFICIAL_DOMAIN.test(domain);
+  const knownProvider = PROVIDER_DOMAIN.test(domain);
+  const urgentSignal = URGENT_SIGNAL.test(signal);
+  const criticalOfficial = knownOfficial && CRITICAL_OFFICIAL_SIGNAL.test(signal);
+
+  if (knownOfficial && (criticalOfficial || urgentSignal)) {
+    reasons.push('official_sender');
+    if (criticalOfficial) reasons.push('deadline_or_formal_notice');
+    else reasons.push('action_signal');
+    return {
+      kind: 'official',
+      priority: criticalOfficial ? 'critical' : 'high',
+      gmailLabel: criticalOfficial ? '00 KIA/URGENTE' : '04 KIA/Administración',
+      requiresAttention: true,
+      recipientPurpose,
+      reasons,
+    };
+  }
+
+  if (knownProvider && urgentSignal) {
+    reasons.push('known_provider', 'action_signal');
+    return {
+      kind: 'provider',
+      priority: 'high',
+      gmailLabel: '00 KIA/URGENTE',
+      requiresAttention: true,
+      recipientPurpose,
+      reasons,
+    };
+  }
+
   const marketing =
     Boolean(message.listUnsubscribe)
     || /^(bulk|list|junk)$/i.test(message.precedence?.trim() ?? '')
@@ -84,7 +115,7 @@ export function classifyInboundEnvelope(message: GmailMessage): KiaInboxClassifi
   const noReply = /^(?:no-?reply|do-?not-?reply|notifications?|mailer-daemon|postmaster|bounce|alerts?)\b/i.test(local)
     || Boolean(message.autoSubmitted && message.autoSubmitted.toLowerCase() !== 'no');
 
-  if (OFFICIAL_DOMAIN.test(domain)) {
+  if (knownOfficial) {
     const critical = CRITICAL_OFFICIAL_SIGNAL.test(signal);
     reasons.push('official_sender');
     if (critical) reasons.push('deadline_or_formal_notice');
@@ -98,12 +129,12 @@ export function classifyInboundEnvelope(message: GmailMessage): KiaInboxClassifi
     };
   }
 
-  if (PROVIDER_DOMAIN.test(domain) || noReply) {
+  if (knownProvider || noReply) {
     const urgent = URGENT_SIGNAL.test(signal);
-    reasons.push(PROVIDER_DOMAIN.test(domain) ? 'known_provider' : 'automated_sender');
+    reasons.push(knownProvider ? 'known_provider' : 'automated_sender');
     if (urgent) reasons.push('action_signal');
     return {
-      kind: PROVIDER_DOMAIN.test(domain) ? 'provider' : 'system',
+      kind: knownProvider ? 'provider' : 'system',
       priority: urgent ? 'high' : 'normal',
       gmailLabel: urgent ? '00 KIA/URGENTE' : TECHNICAL_SIGNAL.test(signal) ? '90 Tecnología/GitHub' : '03 Finanzas/Proveedores',
       requiresAttention: urgent,
