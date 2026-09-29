@@ -105,6 +105,19 @@ describe('KIA guarded email agent', () => {
     expect(gmail).toContain('markRead = true');
   });
 
+  it('reserves critical escalation before fan-out and retries failed delivery', () => {
+    expect(route).toContain('reserveEscalationClaim');
+    expect(route).toContain("state: 'reserved'");
+    expect(route).toContain('completeEscalationClaim');
+    expect(route).toContain('releaseEscalationClaim');
+    expect(route).toContain("'operational_escalation_failed'");
+  });
+
+  it('never auto-replies to the noreply recipient identity', () => {
+    expect(route).toContain("envelope.recipientPurpose !== 'noreply'");
+    expect(route).toContain("blockReason = 'noreply_recipient'");
+  });
+
   it('reserves a unique send claim before any Gmail write', () => {
     expect(route).toContain("kia_email_send:");
     expect(route).toContain("state: 'reserved'");
