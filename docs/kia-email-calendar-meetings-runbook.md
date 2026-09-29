@@ -659,10 +659,11 @@ Controles operativos:
 Variables complementarias:
 
 ```env
-KIA_EMAIL_AUTO_SEND_ENABLED=false
 KIA_EMAIL_SEND_AS_ALIASES_ENABLED=false
 KIA_EMAIL_MIN_CONFIDENCE=0.88
 ```
+
+Los antiguos flags de activación/autoenvío no habilitan el agente. La fuente de verdad son las filas persistidas de `automation_settings`.
 
 `KIA_EMAIL_SEND_AS_ALIASES_ENABLED` no se activa hasta que Google Workspace haya creado y verificado los aliases. Mientras tanto la salida permanece en `info@expertconsulting.es`.
 
