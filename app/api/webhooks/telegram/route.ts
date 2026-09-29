@@ -116,6 +116,10 @@ async function handleTelegramUpdate(request: NextRequest) {
   const startPayload = command === '/start' ? parts[1]?.trim() ?? '' : '';
   const deepLinkCode = startPayload.startsWith('link_') ? startPayload.slice(5) : null;
   const newsSegment = startPayload.startsWith('news_') ? startPayload.slice(5) : null;
+  const sourceMatch = /^src_(b|d)_([A-Za-z0-9_-]+)$/.exec(startPayload);
+  const contentOrigin = sourceMatch
+    ? `${sourceMatch[1] === 'b' ? 'blog' : 'docs'}:${sourceMatch[2]}`
+    : null;
 
   if (newsSegment && NEWS_SEGMENTS.has(newsSegment)) {
     const now = new Date().toISOString();
@@ -267,12 +271,54 @@ async function handleTelegramUpdate(request: NextRequest) {
 
   const contextEnabled = process.env.KIA_CONTEXTUAL_CONVERSATIONS_ENABLED?.toLowerCase() === 'true';
   const opensContext = contextEnabled && Boolean(telegramContextPayload(inbound.text));
+
+  if (contentOrigin && identity && contextEnabled) {
+    const conversationQuery = admin
+      .from('kia_conversations')
+      .select('id,metadata')
+      .eq('profile_id', identity.profileId)
+      .eq('channel', 'telegram')
+      .eq('status', 'active')
+      .contains('metadata', { telegram_chat_id: inbound.chatId })
+      .order('last_message_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const { data: conversation, error: conversationError } = await (
+      identity.tenantId
+        ? conversationQuery.eq('tenant_id', identity.tenantId)
+        : conversationQuery.is('tenant_id', null)
+    );
+    if (conversationError) {
+      console.error('[Telegram attribution] conversation lookup failed:', conversationError.message);
+    } else if (conversation?.id) {
+      const metadata = conversation.metadata && typeof conversation.metadata === 'object' && !Array.isArray(conversation.metadata)
+        ? conversation.metadata as Record<string, unknown>
+        : {};
+      const { error: attributionError } = await admin
+        .from('kia_conversations')
+        .update({
+          metadata: {
+            ...metadata,
+            last_content_origin: contentOrigin,
+            last_content_origin_at: new Date().toISOString(),
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', conversation.id)
+        .eq('profile_id', identity.profileId);
+      if (attributionError) {
+        console.error('[Telegram attribution] persistence failed:', attributionError.message);
+      }
+    }
+  }
+
   if ((command === '/start' && !opensContext) || command === '/help') {
     await sendTelegramMessage({
       chatId: inbound.chatId,
       text: [
         '<b>KIA · EXPERT</b>',
         'Canal Telegram conectado en modo seguro.',
+        ...(contentOrigin ? [`Origen de acceso: ${escapeTelegramHtml(contentOrigin)}`] : []),
         '/status — comprobar conexión, identidad y tools',
         '/link CÓDIGO — vincular este Telegram con una sesión EXPERT autenticada',
         '/baja_novedades — dejar de recibir alertas y novedades',
@@ -283,7 +329,7 @@ async function handleTelegramUpdate(request: NextRequest) {
           : 'Identidad EXPERT aún no vinculada o no verificada. KIA permanece bloqueada.',
       ].join('\n'),
     });
-    return NextResponse.json({ ok: true, identityLinked: Boolean(identity) });
+    return NextResponse.json({ ok: true, identityLinked: Boolean(identity), contentOrigin });
   }
 
   if (command === '/status') {
