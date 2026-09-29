@@ -334,7 +334,7 @@ function nationalityMinorTasks(): ServiceTaskTemplate[] {
       phase: 'representation_mandate',
       dependsOn: ['prepare_representation_mandate'],
       blocksSubmission: true,
-      skipAllowed: true,
+      skipAllowed: false,
     },
     {
       key: 'pre_submission_validation',
