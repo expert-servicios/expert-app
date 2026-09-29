@@ -97,12 +97,9 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    const escapedEmail = normalizedEmail.replace(/[\\%_]/g, '\\    const { data: leadByEmail, error: leadByEmailError } = await supabaseAdmin
-      .from('leads')
-      .select('id,message,metadata')
-      .eq('email', normalizedEmail)
-      .limit(1)
-      .maybeSingle();');
+    const escapedEmail = [...normalizedEmail]
+        .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\\\${char}` : char))
+        .join('');
     const { data: leadByEmail, error: leadByEmailError } = await supabaseAdmin
       .from('leads')
       .select('id,message,metadata')
