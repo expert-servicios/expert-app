@@ -37,10 +37,10 @@ describe('booking admin task lifecycle', () => {
   it('links meeting tasks to EXPERT identities only when unambiguous', () => {
     expect(route).toContain('resolveBookingIdentityByEmail(admin, bookingEmail).catch');
     expect(route).toContain("char === '%' || char === '_' || char === '\\\\'");
-    expect(route).toContain(".ilike('email', escapedLeadEmail)");
+    expect(route).toContain(".ilike('email', escapedEmail)");
     expect(route).toContain('.limit(2)');
-    expect(route).toContain("(leadMatches ?? []).length === 1");
-    expect(route).toContain('lead enrichment ambiguous');
+    expect(route).toContain('lead lookup conflict between email and phone');
+    expect(route).toContain('lead lookup ambiguous by contact identifiers');
   });
 
   it('cancels the old task on reschedule and cancellation and retries idempotently', () => {
