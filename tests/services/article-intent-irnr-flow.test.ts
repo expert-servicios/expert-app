@@ -41,6 +41,8 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(cta).toContain('/consulta-gratuita');
     expect(cta).toContain('/cita?tipo=consulta-inicial');
     expect(cta).toContain('https://t.me/kia_expert_bot');
+    expect(cta).toContain("src_${sourceKind === 'blog' ? 'b' : 'd'}_${sourceSlug}");
+    expect(cta).toContain('telegramPayload.length <= 64');
   });
 
   it('keeps the SEO CTA bundle lean', () => {
@@ -73,8 +75,9 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(consultationApi).toContain("intent: 'free_question'");
     expect(consultationApi).toContain("title: 'Nueva consulta gratuita'");
     expect(consultationApi).toContain("last_acquisition: interaction");
-    expect(consultationApi).toContain(".eq('email', normalizedEmail)");
-    expect(consultationApi).not.toContain('escapeIlikeLiteral');
+    expect(consultationApi).toContain(".ilike('email', escapedEmail)");
+    expect(consultationApi).toContain("normalizedEmail.replace(/[\\\\%_]/g");
+    expect(consultationApi).not.toContain(".eq('email', normalizedEmail)");
     expect(consultationApi).toContain('contact: {');
     expect(consultationApi).toContain('email: normalizedEmail');
     expect(consultationApi).toContain('phone: normalizedPhone');
@@ -97,6 +100,8 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(quoteApi).toContain("action: 'quote_request'");
     expect(quoteApi).toContain('origin: contentOrigin');
     expect(quoteApi).toContain('requested_services: serviceSlugs');
+    expect(quoteApi).toContain(".ilike('email', escapedEmail)");
+    expect(quoteApi).not.toContain(".eq('email', normalizedEmail)");
     expect(quoteApi).not.toContain("intent: 'quote_request'");
   });
   it('preserves blog/docs origin through a direct service purchase and admin payment notice', () => {
@@ -122,6 +127,10 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(bookingForm).toContain('origin: origin ?? undefined');
     expect(bookingApi).toContain('Origen CTA/contenido:');
     expect(bookingApi).toContain('contentOrigin,');
+    expect(bookingApi).toContain('ensurePublicBookingLead');
+    expect(bookingApi).toContain("action: 'booking_created'");
+    expect(bookingApi).toContain("source_key: `booking:${input.appointmentId}`");
+    expect(bookingApi).toContain('Lead attribution must never roll back a confirmed Calendar appointment');
     expect(consultation).toContain('href={meetingHref}');
     expect(consultation).toContain("encodeURIComponent(origin)");
   });
