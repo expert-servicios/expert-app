@@ -26,6 +26,8 @@ type IdentityInput = {
   leadId?: string | null;
   email?: string | null;
   phone?: string | null;
+  companyId?: string | null;
+  caseId?: string | null;
 };
 
 function normalizeEmail(value: string | null | undefined): string | null {
@@ -41,6 +43,15 @@ function normalizePhone(value: string | null | undefined): string | null {
   return digits.length >= 7 ? `${plus}${digits}` : null;
 }
 
+type RegistrySubjectRow = {
+  id: string;
+  lifecycle_stage: string;
+  lead_id: string | null;
+  client_id: string | null;
+  email_normalized: string | null;
+  phone_normalized: string | null;
+};
+
 export async function resolveClientRegistrySubject(
   admin: AdminClient,
   input: IdentityInput,
@@ -52,22 +63,24 @@ export async function resolveClientRegistrySubject(
 
   if (!clientId && !leadId && !email && !phone) return null;
 
-  const exact: Array<{ id: string; lifecycle_stage: string; lead_id: string | null; client_id: string | null }> = [];
+  const exact: RegistrySubjectRow[] = [];
   if (clientId) {
-    const { data } = await admin.from('client_registry_subjects')
-      .select('id,lifecycle_stage,lead_id,client_id')
+    const { data, error } = await admin.from('client_registry_subjects')
+      .select('id,lifecycle_stage,lead_id,client_id,email_normalized,phone_normalized')
       .eq('client_id', clientId)
       .is('merged_into_subject_id', null)
       .maybeSingle();
-    if (data) exact.push(data);
+    if (error) throw error;
+    if (data) exact.push(data as RegistrySubjectRow);
   }
   if (leadId) {
-    const { data } = await admin.from('client_registry_subjects')
-      .select('id,lifecycle_stage,lead_id,client_id')
+    const { data, error } = await admin.from('client_registry_subjects')
+      .select('id,lifecycle_stage,lead_id,client_id,email_normalized,phone_normalized')
       .eq('lead_id', leadId)
       .is('merged_into_subject_id', null)
       .maybeSingle();
-    if (data) exact.push(data);
+    if (error) throw error;
+    if (data) exact.push(data as RegistrySubjectRow);
   }
 
   const exactIds = [...new Set(exact.map((row) => row.id))];
@@ -75,24 +88,32 @@ export async function resolveClientRegistrySubject(
 
   let subject = exact[0] ?? null;
 
-  if (!subject && email) {
-    const { data } = await admin.from('client_registry_subjects')
-      .select('id,lifecycle_stage,lead_id,client_id')
-      .eq('email_normalized', email)
-      .is('merged_into_subject_id', null)
-      .order('updated_at', { ascending: false })
-      .limit(2);
-    if ((data ?? []).length === 1) subject = data![0];
-  }
+  // Contact data is not an identity merge key for bound leads/clients.
+  // It is used only to reuse an unbound prospect subject.
+  if (!subject && !clientId && !leadId) {
+    const candidateIds = new Set<string>();
+    const candidates: RegistrySubjectRow[] = [];
 
-  if (!subject && phone) {
-    const { data } = await admin.from('client_registry_subjects')
-      .select('id,lifecycle_stage,lead_id,client_id')
-      .eq('phone_normalized', phone)
-      .is('merged_into_subject_id', null)
-      .order('updated_at', { ascending: false })
-      .limit(2);
-    if ((data ?? []).length === 1) subject = data![0];
+    for (const [column, value] of [['email_normalized', email], ['phone_normalized', phone]] as const) {
+      if (!value) continue;
+      const { data, error } = await admin.from('client_registry_subjects')
+        .select('id,lifecycle_stage,lead_id,client_id,email_normalized,phone_normalized')
+        .eq(column, value)
+        .is('lead_id', null)
+        .is('client_id', null)
+        .is('merged_into_subject_id', null)
+        .limit(2);
+      if (error) throw error;
+      for (const row of (data ?? []) as RegistrySubjectRow[]) {
+        candidateIds.add(row.id);
+        candidates.push(row);
+      }
+    }
+
+    if (candidateIds.size > 1) throw new Error('client_registry_identity_conflict');
+    if (candidateIds.size === 1) {
+      subject = candidates.find((row) => candidateIds.has(row.id)) ?? null;
+    }
   }
 
   const lifecycleStage = clientId ? 'client' : leadId ? 'lead' : 'prospect';
@@ -108,14 +129,23 @@ export async function resolveClientRegistrySubject(
     return { id: data.id, lifecycleStage: data.lifecycle_stage };
   }
 
-  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (clientId && subject.client_id && subject.client_id !== clientId) {
+    throw new Error('client_registry_identity_conflict');
+  }
+  if (leadId && subject.lead_id && subject.lead_id !== leadId) {
+    throw new Error('client_registry_identity_conflict');
+  }
+
+  const patch: Record<string, unknown> = {};
   if (leadId && !subject.lead_id) patch.lead_id = leadId;
   if (clientId && !subject.client_id) patch.client_id = clientId;
-  if (email) patch.email_normalized = email;
-  if (phone) patch.phone_normalized = phone;
-  if (clientId) patch.lifecycle_stage = 'client';
+  if (email !== null && email !== subject.email_normalized) patch.email_normalized = email;
+  if (phone !== null && phone !== subject.phone_normalized) patch.phone_normalized = phone;
+  if (clientId && subject.lifecycle_stage !== 'client') patch.lifecycle_stage = 'client';
+  if (!clientId && leadId && subject.lifecycle_stage !== 'lead') patch.lifecycle_stage = 'lead';
 
-  if (Object.keys(patch).length > 1) {
+  if (Object.keys(patch).length > 0) {
+    patch.updated_at = new Date().toISOString();
     const { error } = await admin.from('client_registry_subjects').update(patch).eq('id', subject.id);
     if (error) {
       if (error.code === '23505') throw new Error('client_registry_identity_conflict');
@@ -123,7 +153,10 @@ export async function resolveClientRegistrySubject(
     }
   }
 
-  return { id: subject.id, lifecycleStage: clientId ? 'client' : subject.lifecycle_stage };
+  return {
+    id: subject.id,
+    lifecycleStage: clientId ? 'client' : leadId ? 'lead' : subject.lifecycle_stage,
+  };
 }
 
 async function appendEvent(
@@ -193,25 +226,44 @@ export async function loadClientRegistryContext(
   const subject = await resolveClientRegistrySubject(admin, input);
   if (!subject) return null;
 
-  const [{ data: snapshot }, { data: events }] = await Promise.all([
-    admin.from('client_registry_snapshots')
-      .select('as_of,lifecycle_stage,summary_text')
-      .eq('subject_id', subject.id)
-      .maybeSingle(),
-    admin.from('client_registry_events')
-      .select('event_type,occurred_at,title,summary,channel,direction,case_id,company_id,importance,source_ref')
-      .eq('subject_id', subject.id)
-      .order('occurred_at', { ascending: false })
-      .limit(24),
-  ]);
+  const snapshotPromise = admin.from('client_registry_snapshots')
+    .select('as_of')
+    .eq('subject_id', subject.id)
+    .maybeSingle();
 
-  const rows = events ?? [];
+  let eventsQuery = admin.from('client_registry_events')
+    .select('event_type,occurred_at,title,summary,channel,direction,case_id,company_id,importance,source_ref')
+    .eq('subject_id', subject.id);
+
+  if (input.companyId) {
+    eventsQuery = eventsQuery.or(`company_id.is.null,company_id.eq.${input.companyId}`);
+  } else {
+    eventsQuery = eventsQuery.is('company_id', null);
+  }
+  if (input.caseId) {
+    eventsQuery = eventsQuery.or(`case_id.is.null,case_id.eq.${input.caseId}`);
+  }
+
+  const [snapshotResult, eventsResult] = await Promise.all([
+    snapshotPromise,
+    eventsQuery.order('occurred_at', { ascending: false }).limit(40),
+  ]);
+  if (snapshotResult.error) throw snapshotResult.error;
+  if (eventsResult.error) throw eventsResult.error;
+
+  const rows = eventsResult.data ?? [];
+  const important = rows.filter((row) => Number(row.importance ?? 0) >= 2).slice(0, 10);
+  const summaryText = important
+    .map((row) => `${row.occurred_at.slice(0, 10)} · ${row.title ?? row.event_type}${row.summary ? ` · ${row.summary}` : ''}`)
+    .join('\n')
+    .slice(0, 7000);
+
   return {
     subjectId: subject.id,
-    lifecycleStage: snapshot?.lifecycle_stage ?? subject.lifecycleStage,
-    summaryText: snapshot?.summary_text ?? '',
-    asOf: snapshot?.as_of ?? new Date(0).toISOString(),
-    recentEvents: rows.map((row) => ({
+    lifecycleStage: subject.lifecycleStage,
+    summaryText,
+    asOf: snapshotResult.data?.as_of ?? new Date(0).toISOString(),
+    recentEvents: rows.slice(0, 24).map((row) => ({
       eventType: row.event_type,
       occurredAt: row.occurred_at,
       title: row.title,
