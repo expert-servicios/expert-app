@@ -76,7 +76,7 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(consultationApi).toContain("title: 'Nueva consulta gratuita'");
     expect(consultationApi).toContain("last_acquisition: interaction");
     expect(consultationApi).toContain(".ilike('email', escapedEmail)");
-    expect(consultationApi).toContain("normalizedEmail.replace(/[\\\\%_]/g");
+    expect(consultationApi).toContain("char === '%' || char === '_' || char === '\\\\'");
     expect(consultationApi).not.toContain(".eq('email', normalizedEmail)");
     expect(consultationApi).toContain('contact: {');
     expect(consultationApi).toContain('email: normalizedEmail');
