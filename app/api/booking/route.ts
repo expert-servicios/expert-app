@@ -126,11 +126,16 @@ async function ensurePublicBookingLead(input: {
     existing = (phoneMatches ?? [])[0] ?? null;
   }
 
-  if (existing) {
-    const metadata = existing.metadata && typeof existing.metadata === 'object' && !Array.isArray(existing.metadata)
-      ? existing.metadata as Record<string, unknown>
+  async function appendBookingInteraction(lead: { id: string; metadata: unknown }) {
+    const metadata = lead.metadata && typeof lead.metadata === 'object' && !Array.isArray(lead.metadata)
+      ? lead.metadata as Record<string, unknown>
       : {};
-    const previousBookings = Array.isArray(metadata.bookings) ? metadata.bookings.slice(-19) : [];
+    const previousBookings = Array.isArray(metadata.bookings)
+      ? metadata.bookings.filter((item) => {
+          if (!item || typeof item !== 'object' || Array.isArray(item)) return true;
+          return (item as Record<string, unknown>).source_key !== interaction.source_key;
+        }).slice(-19)
+      : [];
     const { error: updateError } = await input.admin
       .from('leads')
       .update({
@@ -141,10 +146,12 @@ async function ensurePublicBookingLead(input: {
           bookings: [...previousBookings, interaction],
         },
       })
-      .eq('id', existing.id);
+      .eq('id', lead.id);
     if (updateError) throw updateError;
-    return existing.id;
+    return lead.id;
   }
+
+  if (existing) return appendBookingInteraction(existing);
 
   const attribution = buildLeadAttributionFields(input.request, { fallbackSource: 'website' });
   const { data: created, error: insertError } = await input.admin
@@ -177,13 +184,26 @@ async function ensurePublicBookingLead(input: {
   // Lead attribution must never roll back a confirmed Calendar appointment.
   // If another request won a uniqueness race, re-read the canonical lead.
   if (insertError?.code === '23505') {
-    const { data: raced } = await input.admin
+    const { data: emailRaced, error: emailRaceError } = await input.admin
       .from('leads')
-      .select('id')
+      .select('id,metadata')
       .ilike('email', escapedEmail)
-      .limit(1)
-      .maybeSingle();
-    return raced?.id ?? null;
+      .limit(2);
+    if (emailRaceError) throw emailRaceError;
+    if ((emailRaced ?? []).length === 1) return appendBookingInteraction(emailRaced![0]);
+
+    if (normalizedPhone) {
+      const { data: phoneRaced, error: phoneRaceError } = await input.admin
+        .from('leads')
+        .select('id,metadata')
+        .eq('phone', normalizedPhone)
+        .limit(2);
+      if (phoneRaceError) throw phoneRaceError;
+      if ((phoneRaced ?? []).length === 1) return appendBookingInteraction(phoneRaced![0]);
+    }
+
+    console.warn('[booking] lead race remained ambiguous');
+    return null;
   }
 
   throw insertError ?? new Error('Could not create public booking lead');
@@ -684,39 +704,6 @@ export async function POST(request: NextRequest) {
         adminTaskCompanyId = resolvedBookingIdentity.companyId;
       }
     }
-    if (!adminTaskClientId) {
-      const escapedLeadEmail = [...bookingEmail]
-        .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\\\${char}` : char))
-        .join('');
-      const { data: leadMatches, error: leadLookupError } = await admin
-        .from('leads')
-        .select('id')
-        .ilike('email', escapedLeadEmail)
-        .limit(2);
-      if (leadLookupError) {
-        console.error('[booking] lead enrichment failed:', leadLookupError);
-      } else if ((leadMatches ?? []).length === 1) {
-        adminTaskLeadId = leadMatches![0].id;
-      } else if ((leadMatches ?? []).length > 1) {
-        console.warn('[booking] lead enrichment ambiguous:', bookingEmail);
-      } else if (service.public && appointmentId) {
-        adminTaskLeadId = await ensurePublicBookingLead({
-          admin,
-          request,
-          appointmentId,
-          name: input.name,
-          email: bookingEmail,
-          phone: input.phone,
-          serviceLabel: service.label,
-          notes: input.notes,
-          contentOrigin,
-        }).catch((leadError) => {
-          console.error('[booking] public lead attribution failed:', leadError);
-          return null;
-        });
-      }
-    }
-
     if (rescheduledAppointment) {
       const oldEventId = rescheduledAppointment.provider_booking_id ?? rescheduledAppointment.google_event_id;
       const oldProvider = calendarProviderFromBookingProvider(rescheduledAppointment.booking_provider)
@@ -755,6 +742,23 @@ export async function POST(request: NextRequest) {
         `Cita sustituida por ${appointmentId}`,
       ).catch((taskError) => {
         console.error('[booking] old meeting task cancellation:', taskError);
+      });
+    }
+
+    if (!adminTaskClientId && service.public && appointmentId) {
+      adminTaskLeadId = await ensurePublicBookingLead({
+        admin,
+        request,
+        appointmentId,
+        name: input.name,
+        email: bookingEmail,
+        phone: input.phone,
+        serviceLabel: service.label,
+        notes: input.notes,
+        contentOrigin,
+      }).catch((leadError) => {
+        console.error('[booking] public lead attribution failed:', leadError);
+        return null;
       });
     }
 
