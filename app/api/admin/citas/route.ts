@@ -57,43 +57,96 @@ function taskContentOrigin(metadata: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
-async function resolveLegacyAppointmentLead(
+type LegacyLeadIndex = {
+  byEmail: Map<string, AppointmentLeadContext[]>;
+  byPhone: Map<string, AppointmentLeadContext[]>;
+};
+
+function normalizeEmail(value: string | null | undefined) {
+  return (value ?? '').trim().toLowerCase();
+}
+
+function normalizePhone(value: string | null | undefined) {
+  return (value ?? '').trim();
+}
+
+function indexLead(
+  index: LegacyLeadIndex,
+  lead: AppointmentLeadContext & { email?: string | null; phone?: string | null },
+) {
+  const email = normalizeEmail(lead.email);
+  if (email) {
+    const rows = index.byEmail.get(email) ?? [];
+    rows.push(lead);
+    index.byEmail.set(email, rows);
+  }
+  const phone = normalizePhone(lead.phone);
+  if (phone) {
+    const rows = index.byPhone.get(phone) ?? [];
+    rows.push(lead);
+    index.byPhone.set(phone, rows);
+  }
+}
+
+async function loadLegacyLeadIndex(
   admin: ReturnType<typeof getSupabaseAdmin>,
-  appointment: { email: string; phone: string | null },
-): Promise<{ lead: AppointmentLeadContext | null; ambiguous: boolean }> {
-  const normalizedEmail = appointment.email.trim().toLowerCase();
-  const normalizedPhone = appointment.phone?.trim() ?? '';
-  const escapedEmail = [...normalizedEmail]
-    .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\${char}` : char))
-    .join('');
+  appointments: Array<{ email: string; phone: string | null }>,
+): Promise<LegacyLeadIndex> {
+  const index: LegacyLeadIndex = { byEmail: new Map(), byPhone: new Map() };
+  const emails = [...new Set(appointments.map((row) => normalizeEmail(row.email)).filter(Boolean))];
+  const phones = [...new Set(appointments.map((row) => normalizePhone(row.phone)).filter(Boolean))];
 
-  const { data: emailMatches, error: emailError } = await admin
-    .from('leads')
-    .select('id,source,source_key,metadata')
-    .ilike('email', escapedEmail)
-    .limit(2);
-  if (emailError) throw emailError;
+  const rows = new Map<string, AppointmentLeadContext & { email?: string | null; phone?: string | null }>();
 
-  const { data: phoneMatches, error: phoneError } = normalizedPhone
-    ? await admin
+  if (emails.length > 0) {
+    for (let offset = 0; offset < emails.length; offset += 40) {
+      const batch = emails.slice(offset, offset + 40);
+      const filter = batch
+        .map((email) => `email.ilike.${email.replace(/[%,()\\]/g, (char) => `\\${char}`)}`)
+        .join(',');
+      const { data, error } = await admin
         .from('leads')
-        .select('id,source,source_key,metadata')
-        .eq('phone', normalizedPhone)
-        .limit(2)
-    : { data: [], error: null };
-  if (phoneError) throw phoneError;
+        .select('id,email,phone,source,source_key,metadata')
+        .or(filter);
+      if (error) throw error;
+      for (const lead of data ?? []) rows.set(lead.id, lead as AppointmentLeadContext & { email?: string | null; phone?: string | null });
+    }
+  }
 
-  if ((emailMatches ?? []).length > 1 || (phoneMatches ?? []).length > 1) {
+  if (phones.length > 0) {
+    for (let offset = 0; offset < phones.length; offset += 100) {
+      const batch = phones.slice(offset, offset + 100);
+      const { data, error } = await admin
+        .from('leads')
+        .select('id,email,phone,source,source_key,metadata')
+        .in('phone', batch);
+      if (error) throw error;
+      for (const lead of data ?? []) rows.set(lead.id, lead as AppointmentLeadContext & { email?: string | null; phone?: string | null });
+    }
+  }
+
+  for (const lead of rows.values()) indexLead(index, lead);
+  return index;
+}
+
+function resolveLegacyAppointmentLead(
+  index: LegacyLeadIndex,
+  appointment: { email: string; phone: string | null },
+): { lead: AppointmentLeadContext | null; ambiguous: boolean } {
+  const emailMatches = index.byEmail.get(normalizeEmail(appointment.email)) ?? [];
+  const phoneMatches = index.byPhone.get(normalizePhone(appointment.phone)) ?? [];
+
+  if (emailMatches.length > 1 || phoneMatches.length > 1) {
     return { lead: null, ambiguous: true };
   }
 
-  const emailMatch = (emailMatches ?? [])[0] ?? null;
-  const phoneMatch = (phoneMatches ?? [])[0] ?? null;
+  const emailMatch = emailMatches[0] ?? null;
+  const phoneMatch = phoneMatches[0] ?? null;
   if (emailMatch && phoneMatch && emailMatch.id !== phoneMatch.id) {
     return { lead: null, ambiguous: true };
   }
 
-  return { lead: (emailMatch ?? phoneMatch) as AppointmentLeadContext | null, ambiguous: false };
+  return { lead: emailMatch ?? phoneMatch, ambiguous: false };
 }
 
 export async function GET(request: NextRequest) {
@@ -151,17 +204,60 @@ export async function GET(request: NextRequest) {
       for (const lead of taskLeads ?? []) leadsById.set(lead.id, lead as AppointmentLeadContext);
     }
 
-    const enriched = await Promise.all(appointments.map(async (appointment) => {
+    const legacyCandidates = appointments.filter((appointment) => {
       const task = tasksByAppointment.get(appointment.id) ?? null;
-      let lead = task?.lead_id ? (leadsById.get(task.lead_id) ?? null) : null;
-      let relationshipSource: 'task' | 'appointment' | 'matched' | 'none' = task
-        ? 'task'
-        : (appointment.client_id || appointment.company_id ? 'appointment' : 'none');
+      return !task?.lead_id
+        && !appointment.client_id
+        && !task?.client_id;
+    });
+    const legacyLeadIndex = await loadLegacyLeadIndex(admin, legacyCandidates);
+
+    const candidateClientIds = [...new Set(
+      appointments.flatMap((appointment) => {
+        const task = tasksByAppointment.get(appointment.id) ?? null;
+        return [appointment.client_id, task?.client_id].filter(Boolean);
+      })
+    )] as string[];
+
+    const activeClientIds = new Set<string>();
+    if (candidateClientIds.length > 0) {
+      const { data: profiles, error: profileError } = await admin
+        .from('profiles')
+        .select('id')
+        .in('id', candidateClientIds)
+        .eq('role', 'client')
+        .eq('status', 'active');
+      if (profileError) throw profileError;
+      for (const profile of profiles ?? []) activeClientIds.add(profile.id);
+    }
+
+    const enriched = appointments.map((appointment) => {
+      const task = tasksByAppointment.get(appointment.id) ?? null;
+
+      const clientConflict = Boolean(
+        appointment.client_id && task?.client_id && appointment.client_id !== task.client_id
+      );
+      const companyConflict = Boolean(
+        appointment.company_id && task?.company_id && appointment.company_id !== task.company_id
+      );
+      const identityConflict = clientConflict || companyConflict;
+
+      let lead = identityConflict
+        ? null
+        : (task?.lead_id ? (leadsById.get(task.lead_id) ?? null) : null);
+      let relationshipSource: 'task' | 'appointment' | 'matched' | 'none' = identityConflict
+        ? 'none'
+        : task
+          ? 'task'
+          : (appointment.client_id || appointment.company_id ? 'appointment' : 'none');
       let ambiguousLeadMatch = false;
 
-      const canonicalClientId = appointment.client_id ?? task?.client_id ?? null;
-      if (!lead && !canonicalClientId) {
-        const resolved = await resolveLegacyAppointmentLead(admin, {
+      const rawClientId = identityConflict ? null : (appointment.client_id ?? task?.client_id ?? null);
+      const verifiedClientId = rawClientId && activeClientIds.has(rawClientId) ? rawClientId : null;
+      const invalidClientIdentity = Boolean(rawClientId && !verifiedClientId);
+
+      if (!lead && !verifiedClientId && !identityConflict && !invalidClientIdentity) {
+        const resolved = resolveLegacyAppointmentLead(legacyLeadIndex, {
           email: appointment.email,
           phone: appointment.phone,
         });
@@ -172,25 +268,37 @@ export async function GET(request: NextRequest) {
 
       const latestInteraction = lead ? latestLeadInteraction(lead.metadata) : null;
       const acquisition = lead ? attributionFromMetadata(lead.metadata) : null;
-      const rawOrigin = latestInteraction?.origin ?? taskContentOrigin(task?.metadata) ?? null;
+      const taskOrigin = taskContentOrigin(task?.metadata);
+      const acquisitionOrigin = acquisition?.originPath?.trim() || null;
+      const sourceFallback = lead?.source_key?.trim() || lead?.source?.trim() || null;
+      const rawOrigin = latestInteraction?.origin ?? taskOrigin ?? acquisitionOrigin ?? sourceFallback;
+      const originLabel = latestInteraction?.origin || taskOrigin
+        ? describeContentOrigin(rawOrigin)
+        : acquisitionOrigin
+          ? `Web · ${acquisitionOrigin}`
+          : sourceFallback
+            ? `Origen · ${sourceFallback}`
+            : null;
 
       return {
         ...appointment,
-        lead_id: lead?.id ?? task?.lead_id ?? null,
-        client_id: appointment.client_id ?? task?.client_id ?? null,
-        company_id: appointment.company_id ?? task?.company_id ?? null,
+        lead_id: identityConflict ? null : (lead?.id ?? task?.lead_id ?? null),
+        client_id: identityConflict ? null : verifiedClientId,
+        company_id: identityConflict ? null : (appointment.company_id ?? task?.company_id ?? null),
         crm_context: {
           relationship_source: relationshipSource,
           ambiguous_lead_match: ambiguousLeadMatch,
+          identity_conflict: identityConflict,
+          invalid_client_identity: invalidClientIdentity,
           source: lead?.source ?? null,
           source_key: lead?.source_key ?? null,
           acquisition,
           origin: rawOrigin,
-          origin_label: rawOrigin ? describeContentOrigin(rawOrigin) : null,
+          origin_label: originLabel,
           latest_interaction: latestInteraction,
         },
       };
-    }));
+    });
 
     return NextResponse.json({ appointments: enriched });
   } catch (err) {
