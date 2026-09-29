@@ -21,6 +21,7 @@ interface Appointment {
   confirmed_date: string | null;
   confirmed_time: string | null;
   meeting_url: string | null;
+  booking_provider: string | null;
   admin_notes: string | null;
   created_at: string;
   lead_id: string | null;
@@ -55,6 +56,12 @@ function formatDate(dateStr: string | null) {
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-ES', {
     weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
   });
+}
+
+function meetingProviderLabel(provider: string | null, meetingUrl: string | null) {
+  if (provider === 'google_native' || meetingUrl?.includes('meet.google.com')) return 'Google Calendar · Meet';
+  if (provider === 'ms365_native' || meetingUrl?.includes('teams.microsoft.com')) return 'Microsoft 365 · Teams';
+  return meetingUrl ? 'Reunión online' : null;
 }
 
 function AdminCitasPageInner() {
@@ -333,7 +340,10 @@ function AdminCitasPageInner() {
                       {appt.status === 'confirmed' && appt.confirmed_date && (
                         <p className="mt-2 text-xs font-semibold text-green-700">
                           ✓ Confirmada: {formatDate(appt.confirmed_date)} · {appt.confirmed_time}
-                          {appt.meeting_url && <> · <a href={appt.meeting_url} target="_blank" rel="noopener noreferrer" className="underline">Enlace reunión</a></>}
+                          {meetingProviderLabel(appt.booking_provider, appt.meeting_url) && (
+                            <> · {meetingProviderLabel(appt.booking_provider, appt.meeting_url)}</>
+                          )}
+                          {appt.meeting_url && <> · <a href={appt.meeting_url} target="_blank" rel="noopener noreferrer" className="underline">Abrir reunión</a></>}
                         </p>
                       )}
                     </div>
