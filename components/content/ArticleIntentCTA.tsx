@@ -5,6 +5,7 @@ import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { CalendarDays, FileQuestion, Send, MessageCircle } from 'lucide-react';
 import { trackPublicContentIntent } from '@/lib/utils/analytics';
+import { buildTelegramContentPayload } from '@/lib/marketing/telegram-content-origin';
 
 const ServicePriceCalculator = dynamic(
   () => import('@/components/services/ServicePriceCalculator').then((module) => module.ServicePriceCalculator),
@@ -47,12 +48,8 @@ export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs =
       : `/solicitar-presupuesto?origen=${encodeURIComponent(origin)}`;
   const consultationHref = `/consulta-gratuita?origen=${encodeURIComponent(origin)}${primaryServiceSlug ? `&servicio=${encodeURIComponent(primaryServiceSlug)}` : ''}`;
   const meetingHref = `/cita?tipo=consulta-inicial&origen=${encodeURIComponent(origin)}`;
-  const telegramPayload = /^[A-Za-z0-9_-]+$/.test(sourceSlug)
-    ? `src_${sourceKind === 'blog' ? 'b' : 'd'}_${sourceSlug}`
-    : '';
-  const telegramHref = telegramPayload && telegramPayload.length <= 64
-    ? `https://t.me/kia_expert_bot?start=${telegramPayload}`
-    : 'https://t.me/kia_expert_bot';
+  const telegramPayload = buildTelegramContentPayload(sourceKind, sourceSlug);
+  const telegramHref = `https://t.me/kia_expert_bot?start=${telegramPayload}`;
 
   return (
     <section className="mt-10 border border-[#D4A017]/30 bg-white p-6 md:p-8">
