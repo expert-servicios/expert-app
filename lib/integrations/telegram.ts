@@ -119,7 +119,7 @@ export function parseTelegramInboundMessage(payload: unknown): TelegramInboundMe
       : null,
     username: typeof message.from?.username === 'string' ? message.from.username : null,
     text,
-    media,
+    ...(media ? { media } : {}),
   };
 }
 
