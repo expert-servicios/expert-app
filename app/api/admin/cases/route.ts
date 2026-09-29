@@ -81,6 +81,7 @@ export async function GET(request: NextRequest) {
 
 const createCaseSchema = z.object({
   client_id: z.string().uuid(),
+  company_id: z.string().uuid().nullable().optional(),
   service: z.string().min(1).max(200),
   category: z.string().min(1).max(100),
 });
@@ -94,11 +95,35 @@ export async function POST(request: NextRequest) {
     const parsed = createCaseSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
 
-    const { client_id, service, category } = parsed.data;
+    const { client_id, company_id, service, category } = parsed.data;
+
+    if (company_id) {
+      const { data: membership, error: membershipError } = await admin
+        .from('profile_companies')
+        .select('company_id')
+        .eq('profile_id', client_id)
+        .eq('company_id', company_id)
+        .maybeSingle();
+
+      if (membershipError) {
+        console.error('[admin/cases POST] company membership:', membershipError);
+        return NextResponse.json({ error: 'No se pudo validar la empresa del cliente' }, { status: 500 });
+      }
+      if (!membership) {
+        return NextResponse.json({ error: 'La empresa no pertenece al cliente indicado' }, { status: 400 });
+      }
+    }
 
     const { data: newCase, error } = await admin
       .from('cases')
-      .insert({ client_id, service, category, status: 'nuevo', opened_at: new Date().toISOString() })
+      .insert({
+        client_id,
+        company_id: company_id ?? null,
+        service,
+        category,
+        status: 'nuevo',
+        opened_at: new Date().toISOString()
+      })
       .select('id,service,state,status,category')
       .single();
 

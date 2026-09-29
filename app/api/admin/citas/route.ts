@@ -17,7 +17,9 @@ import {
 } from '@/lib/booking/calendar-provider';
 import { formatMadridDate, formatMadridTime, madridLocalToDate } from '@/lib/booking/native-booking';
 import { ensureBookingAdminTask, cancelBookingAdminTask } from '@/lib/booking/booking-admin-task';
-import { resolveBookingIdentityByEmail } from '@/lib/admin/onboarding-booking-identity';
+import { resolveActiveClientIdsByEmails, resolveBookingIdentityByEmail } from '@/lib/admin/onboarding-booking-identity';
+import { attributionFromMetadata } from '@/lib/marketing/server-attribution';
+import { describeContentOrigin } from '@/lib/marketing/content-origin';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -26,6 +28,155 @@ async function requireAdmin(request: NextRequest) {
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
   return (profile?.role === 'admin' || profile?.role === 'owner') ? admin : null;
+}
+
+type AppointmentLeadContext = {
+  id: string;
+  email?: string | null;
+  phone?: string | null;
+  source: string | null;
+  source_key: string | null;
+  metadata: unknown;
+};
+
+type ActiveClientIndex = Map<string, string[]>;
+
+function latestLeadInteraction(metadata: unknown) {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return null;
+  const value = (metadata as Record<string, unknown>).last_acquisition;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  return {
+    at: typeof record.at === 'string' ? record.at : null,
+    intent: typeof record.intent === 'string' ? record.intent : null,
+    action: typeof record.action === 'string' ? record.action : null,
+    origin: typeof record.origin === 'string' ? record.origin : null,
+    service: typeof record.service === 'string' ? record.service : null,
+  };
+}
+
+function taskContentOrigin(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return null;
+  const value = (metadata as Record<string, unknown>).content_origin;
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+type LegacyLeadIndex = {
+  byEmail: Map<string, AppointmentLeadContext[]>;
+  byPhone: Map<string, AppointmentLeadContext[]>;
+};
+
+function normalizeEmail(value: string | null | undefined) {
+  return (value ?? '').trim().toLowerCase();
+}
+
+function normalizePhone(value: string | null | undefined) {
+  return (value ?? '').trim();
+}
+
+function chunkValues<T>(values: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let offset = 0; offset < values.length; offset += size) {
+    chunks.push(values.slice(offset, offset + size));
+  }
+  return chunks;
+}
+
+function indexLead(
+  index: LegacyLeadIndex,
+  lead: AppointmentLeadContext & { email?: string | null; phone?: string | null },
+) {
+  const email = normalizeEmail(lead.email);
+  if (email) {
+    const rows = index.byEmail.get(email) ?? [];
+    rows.push(lead);
+    index.byEmail.set(email, rows);
+  }
+  const phone = normalizePhone(lead.phone);
+  if (phone) {
+    const rows = index.byPhone.get(phone) ?? [];
+    rows.push(lead);
+    index.byPhone.set(phone, rows);
+  }
+}
+
+async function loadLegacyLeadIndex(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  appointments: Array<{ email: string; phone: string | null }>,
+): Promise<LegacyLeadIndex> {
+  const index: LegacyLeadIndex = { byEmail: new Map(), byPhone: new Map() };
+  const emails = [...new Set(appointments.map((row) => normalizeEmail(row.email)).filter(Boolean))];
+  const phones = [...new Set(appointments.map((row) => normalizePhone(row.phone)).filter(Boolean))];
+
+  const rows = new Map<string, AppointmentLeadContext & { email?: string | null; phone?: string | null }>();
+
+  if (emails.length > 0) {
+    for (let offset = 0; offset < emails.length; offset += 40) {
+      const batch = emails.slice(offset, offset + 40);
+      const filter = batch
+        .map((email) => `email.ilike.${email.replace(/[%_(),\\]/g, (char) => `\\${char}`)}`)
+        .join(',');
+      const { data, error } = await admin
+        .from('leads')
+        .select('id,email,phone,source,source_key,metadata')
+        .or(filter);
+      if (error) throw error;
+      for (const lead of data ?? []) rows.set(lead.id, lead as AppointmentLeadContext & { email?: string | null; phone?: string | null });
+    }
+  }
+
+  if (phones.length > 0) {
+    for (let offset = 0; offset < phones.length; offset += 100) {
+      const batch = phones.slice(offset, offset + 100);
+      const { data, error } = await admin
+        .from('leads')
+        .select('id,email,phone,source,source_key,metadata')
+        .in('phone', batch);
+      if (error) throw error;
+      for (const lead of data ?? []) rows.set(lead.id, lead as AppointmentLeadContext & { email?: string | null; phone?: string | null });
+    }
+  }
+
+  for (const lead of rows.values()) indexLead(index, lead);
+  return index;
+}
+
+function resolveLegacyAppointmentLead(
+  index: LegacyLeadIndex,
+  appointment: { email: string; phone: string | null },
+): { lead: AppointmentLeadContext | null; ambiguous: boolean } {
+  const emailMatches = index.byEmail.get(normalizeEmail(appointment.email)) ?? [];
+  const phoneMatches = index.byPhone.get(normalizePhone(appointment.phone)) ?? [];
+
+  if (emailMatches.length > 1 || phoneMatches.length > 1) {
+    return { lead: null, ambiguous: true };
+  }
+
+  const emailMatch = emailMatches[0] ?? null;
+  const phoneMatch = phoneMatches[0] ?? null;
+  if (emailMatch && phoneMatch && emailMatch.id !== phoneMatch.id) {
+    return { lead: null, ambiguous: true };
+  }
+
+  return { lead: emailMatch ?? phoneMatch, ambiguous: false };
+}
+
+async function loadClientCompanyMemberships(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  clientIds: string[],
+): Promise<Set<string>> {
+  const memberships = new Set<string>();
+  for (const clientIdBatch of chunkValues([...new Set(clientIds)], 100)) {
+    const { data, error } = await admin
+      .from('profile_companies')
+      .select('profile_id,company_id')
+      .in('profile_id', clientIdBatch);
+    if (error) throw error;
+    for (const row of data ?? []) {
+      memberships.add(`${row.profile_id}:${row.company_id}`);
+    }
+  }
+  return memberships;
 }
 
 export async function GET(request: NextRequest) {
@@ -38,7 +189,7 @@ export async function GET(request: NextRequest) {
 
     let query = admin
       .from('appointments')
-      .select('id,name,email,phone,service,appointment_type,appointment_date,appointment_end,booking_provider,provider_booking_id,preferred_date,preferred_time,notes,status,confirmed_date,confirmed_time,meeting_url,admin_notes,google_event_id,created_at')
+      .select('id,name,email,phone,service,appointment_type,appointment_date,appointment_end,booking_provider,provider_booking_id,preferred_date,preferred_time,notes,status,confirmed_date,confirmed_time,meeting_url,admin_notes,google_event_id,created_at,client_id,company_id')
       .order('created_at', { ascending: false });
 
     if (status && status !== 'all') query = query.eq('status', status);
@@ -49,7 +200,192 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Error al obtener citas' }, { status: 500 });
     }
 
-    return NextResponse.json({ appointments: data ?? [] });
+    const appointments = data ?? [];
+    const appointmentIds = appointments.map((appointment) => appointment.id);
+    const tasksByAppointment = new Map<string, {
+      lead_id: string | null;
+      client_id: string | null;
+      company_id: string | null;
+      metadata: unknown;
+    }>();
+
+    for (const appointmentIdBatch of chunkValues(appointmentIds, 100)) {
+      const { data: tasks, error: taskError } = await admin
+        .from('internal_tasks')
+        .select('booking_appointment_id,lead_id,client_id,company_id,metadata')
+        .in('booking_appointment_id', appointmentIdBatch);
+      if (taskError) throw taskError;
+      for (const task of tasks ?? []) {
+        if (task.booking_appointment_id) tasksByAppointment.set(task.booking_appointment_id, task);
+      }
+    }
+
+    const taskLeadIds = [...new Set(
+      [...tasksByAppointment.values()].map((task) => task.lead_id).filter(Boolean)
+    )] as string[];
+    const leadsById = new Map<string, AppointmentLeadContext>();
+
+    for (const leadIdBatch of chunkValues(taskLeadIds, 100)) {
+      const { data: taskLeads, error: taskLeadError } = await admin
+        .from('leads')
+        .select('id,email,phone,source,source_key,metadata')
+        .in('id', leadIdBatch);
+      if (taskLeadError) throw taskLeadError;
+      for (const lead of taskLeads ?? []) leadsById.set(lead.id, lead as AppointmentLeadContext);
+    }
+
+    const legacyCandidates = appointments.filter((appointment) => {
+      const task = tasksByAppointment.get(appointment.id) ?? null;
+      return !task?.lead_id
+        && !appointment.client_id
+        && !task?.client_id;
+    });
+    const legacyLeadIndex = await loadLegacyLeadIndex(admin, legacyCandidates);
+
+    const clientLookupCandidates = appointments.filter((appointment) => {
+      const task = tasksByAppointment.get(appointment.id) ?? null;
+      return !appointment.client_id && !task?.client_id;
+    });
+    const activeClientIndex = await resolveActiveClientIdsByEmails(
+      admin,
+      appointments.map((appointment) => appointment.email)
+    );
+    const fallbackClientIds = clientLookupCandidates.flatMap(
+      (appointment) => activeClientIndex.get(normalizeEmail(appointment.email)) ?? []
+    );
+
+    const candidateClientIds = [...new Set(
+      appointments.flatMap((appointment) => {
+        const task = tasksByAppointment.get(appointment.id) ?? null;
+        return [appointment.client_id, task?.client_id].filter(Boolean);
+      }).concat(fallbackClientIds)
+    )] as string[];
+
+    const activeClientIds = new Set<string>();
+    for (const clientIdBatch of chunkValues(candidateClientIds, 100)) {
+      const { data: profiles, error: profileError } = await admin
+        .from('profiles')
+        .select('id')
+        .in('id', clientIdBatch)
+        .eq('role', 'client')
+        .eq('status', 'active');
+      if (profileError) throw profileError;
+      for (const profile of profiles ?? []) activeClientIds.add(profile.id);
+    }
+
+    const clientCompanyMemberships = await loadClientCompanyMemberships(admin, candidateClientIds);
+
+    const enriched = appointments.map((appointment) => {
+      const task = tasksByAppointment.get(appointment.id) ?? null;
+
+      const clientConflict = Boolean(
+        appointment.client_id && task?.client_id && appointment.client_id !== task.client_id
+      );
+      const companyConflict = Boolean(
+        appointment.company_id && task?.company_id && appointment.company_id !== task.company_id
+      );
+      const sourceIdentityConflict = clientConflict || companyConflict;
+
+      let lead = sourceIdentityConflict
+        ? null
+        : (task?.lead_id ? (leadsById.get(task.lead_id) ?? null) : null);
+      let relationshipSource: 'task' | 'appointment' | 'matched' | 'none' = sourceIdentityConflict
+        ? 'none'
+        : task
+          ? 'task'
+          : (appointment.client_id || appointment.company_id ? 'appointment' : 'none');
+      let ambiguousLeadMatch = false;
+
+      const rawClientId = sourceIdentityConflict ? null : (appointment.client_id ?? task?.client_id ?? null);
+      const verifiedClientId = rawClientId && activeClientIds.has(rawClientId) ? rawClientId : null;
+      const invalidClientIdentity = Boolean(rawClientId && !verifiedClientId);
+      const fallbackClientMatches = !rawClientId && !sourceIdentityConflict
+        ? (activeClientIndex.get(normalizeEmail(appointment.email)) ?? [])
+        : [];
+      const ambiguousClientMatch = fallbackClientMatches.length > 1;
+      const fallbackClientId = fallbackClientMatches.length === 1 ? fallbackClientMatches[0] : null;
+      const resolvedClientId = verifiedClientId ?? fallbackClientId;
+      const rawCompanyId = sourceIdentityConflict
+        ? null
+        : (appointment.company_id ?? task?.company_id ?? null);
+
+      if (!lead && !sourceIdentityConflict && !invalidClientIdentity && !ambiguousClientMatch) {
+        const resolved = resolveLegacyAppointmentLead(legacyLeadIndex, {
+          email: appointment.email,
+          phone: appointment.phone,
+        });
+        lead = resolved.lead;
+        ambiguousLeadMatch = resolved.ambiguous;
+        if (lead) relationshipSource = 'matched';
+      }
+
+      const leadEmail = normalizeEmail(lead?.email);
+      const resolvedClientMatches = resolvedClientId
+        ? (activeClientIndex.get(normalizeEmail(appointment.email)) ?? [])
+        : [];
+      const resolvedClientMatchesAppointmentEmail = resolvedClientId
+        ? resolvedClientMatches.includes(resolvedClientId)
+        : false;
+      const leadClientConflict = Boolean(
+        resolvedClientId
+        && lead
+        && leadEmail
+        && (
+          !resolvedClientMatchesAppointmentEmail
+          || leadEmail !== normalizeEmail(appointment.email)
+        )
+      );
+      const clientCompanyConflict = Boolean(
+        resolvedClientId
+        && rawCompanyId
+        && !clientCompanyMemberships.has(`${resolvedClientId}:${rawCompanyId}`)
+      );
+      const identityConflict = sourceIdentityConflict
+        || ambiguousClientMatch
+        || leadClientConflict
+        || clientCompanyConflict;
+
+      if (identityConflict) {
+        lead = null;
+        relationshipSource = 'none';
+      }
+
+      const latestInteraction = lead ? latestLeadInteraction(lead.metadata) : null;
+      const acquisition = lead ? attributionFromMetadata(lead.metadata) : null;
+      const taskOrigin = taskContentOrigin(task?.metadata);
+      const acquisitionOrigin = acquisition?.originPath?.trim() || null;
+      const sourceFallback = lead?.source_key?.trim() || lead?.source?.trim() || null;
+      const rawOrigin = latestInteraction?.origin ?? taskOrigin ?? acquisitionOrigin ?? sourceFallback;
+      const originLabel = latestInteraction?.origin || taskOrigin
+        ? describeContentOrigin(rawOrigin)
+        : acquisitionOrigin
+          ? `Web · ${acquisitionOrigin}`
+          : sourceFallback
+            ? `Origen · ${sourceFallback}`
+            : null;
+
+      return {
+        ...appointment,
+        lead_id: identityConflict ? null : (lead?.id ?? task?.lead_id ?? null),
+        client_id: identityConflict ? null : resolvedClientId,
+        company_id: identityConflict ? null : rawCompanyId,
+        crm_context: {
+          relationship_source: relationshipSource,
+          ambiguous_lead_match: ambiguousLeadMatch,
+          ambiguous_client_match: ambiguousClientMatch,
+          identity_conflict: identityConflict,
+          invalid_client_identity: invalidClientIdentity,
+          source: lead?.source ?? null,
+          source_key: lead?.source_key ?? null,
+          acquisition,
+          origin: rawOrigin,
+          origin_label: originLabel,
+          latest_interaction: latestInteraction,
+        },
+      };
+    });
+
+    return NextResponse.json({ appointments: enriched });
   } catch (err) {
     console.error('[admin/citas]', err);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });

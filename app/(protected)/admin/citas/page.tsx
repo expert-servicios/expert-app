@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Calendar, Check, ChevronDown, Link2, MessageSquare,
-  Phone, Mail, RefreshCw, Trash2, X, FolderOpen, Loader2
+  Phone, Mail, RefreshCw, Trash2, X, FolderOpen, Loader2, UserRound, Route
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -21,8 +21,29 @@ interface Appointment {
   confirmed_date: string | null;
   confirmed_time: string | null;
   meeting_url: string | null;
+  booking_provider: string | null;
   admin_notes: string | null;
   created_at: string;
+  lead_id: string | null;
+  client_id: string | null;
+  company_id: string | null;
+  crm_context: {
+    relationship_source: 'task' | 'appointment' | 'matched' | 'none';
+    ambiguous_lead_match: boolean;
+    identity_conflict: boolean;
+    invalid_client_identity: boolean;
+    source: string | null;
+    source_key: string | null;
+    origin: string | null;
+    origin_label: string | null;
+    latest_interaction: {
+      at: string | null;
+      intent: string | null;
+      action: string | null;
+      origin: string | null;
+      service: string | null;
+    } | null;
+  };
 }
 
 const STATUS_CONFIG: Record<string, { label: string; cls: string }> = {
@@ -37,6 +58,23 @@ function formatDate(dateStr: string | null) {
   return new Date(dateStr + 'T12:00:00').toLocaleDateString('es-ES', {
     weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
   });
+}
+
+function meetingProviderLabel(provider: string | null, meetingUrl: string | null) {
+  if (!meetingUrl) return provider === 'google_native'
+    ? 'Google Calendar'
+    : provider === 'ms365_native'
+      ? 'Microsoft 365'
+      : null;
+
+  if (meetingUrl.includes('meet.google.com')) return 'Google Calendar · Meet';
+  if (meetingUrl.includes('teams.microsoft.com')) return 'Microsoft 365 · Teams';
+  if (meetingUrl.includes('zoom.us')) return 'Zoom';
+  return provider === 'google_native'
+    ? 'Google Calendar · reunión externa'
+    : provider === 'ms365_native'
+      ? 'Microsoft 365 · reunión externa'
+      : 'Reunión online';
 }
 
 function AdminCitasPageInner() {
@@ -68,22 +106,37 @@ function AdminCitasPageInner() {
     setCreatingCase(true);
     setCaseError(null);
     try {
-      // 1. Find client by email
-      const searchRes = await fetch(`/api/admin/clients-quick?q=${encodeURIComponent(expedienteTarget.email)}`);
-      const searchData = await searchRes.json();
-      const client = (searchData.clients ?? []).find(
-        (c: { email: string }) => c.email.toLowerCase() === expedienteTarget.email.toLowerCase()
-      );
-      if (!client) {
-        setCaseError('No se encontró un cliente registrado con ese email. Asegúrate de que el cliente está creado en el panel.');
+      if (
+        expedienteTarget.crm_context?.identity_conflict
+        || expedienteTarget.crm_context?.invalid_client_identity
+        || expedienteTarget.crm_context?.ambiguous_lead_match
+      ) {
+        setCaseError('La identidad de esta cita requiere revisión antes de crear un expediente.');
         return;
       }
-      // 2. Create case
+
+      let clientId = expedienteTarget.client_id;
+
+      if (!clientId) {
+        const searchRes = await fetch(`/api/admin/clients-quick?q=${encodeURIComponent(expedienteTarget.email)}`);
+        const searchData = await searchRes.json();
+        const client = (searchData.clients ?? []).find(
+          (item: { id: string; email: string }) => item.email.toLowerCase() === expedienteTarget.email.toLowerCase()
+        );
+        clientId = client?.id ?? null;
+      }
+
+      if (!clientId) {
+        setCaseError('Esta cita todavía no está vinculada a un cliente EXPERT. Revisa la identidad antes de crear el expediente.');
+        return;
+      }
+
       const caseRes = await fetch('/api/admin/cases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          client_id: client.id,
+          client_id: clientId,
+          company_id: expedienteTarget.company_id,
           service: expedienteService || expedienteTarget.service,
           category: expedienteCategory,
         }),
@@ -257,6 +310,52 @@ function AdminCitasPageInner() {
                           <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {appt.phone}</span>
                         )}
                       </div>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                        {appt.client_id && (
+                          <Link
+                            href={`/admin/clientes/${appt.client_id}`}
+                            className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 font-semibold text-slate-700 hover:border-[#c88b25]"
+                          >
+                            <UserRound className="h-3 w-3" /> Cliente
+                          </Link>
+                        )}
+                        {appt.lead_id && (
+                          <Link
+                            href={`/admin/leads?focus=${appt.lead_id}`}
+                            className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-1 font-semibold text-amber-800 hover:border-[#c88b25]"
+                          >
+                            <Route className="h-3 w-3" /> Lead
+                          </Link>
+                        )}
+                        {appt.crm_context?.origin_label && (
+                          <span
+                            className="max-w-full truncate rounded-full border border-[#e4d8c6] bg-[#fffdf8] px-2 py-1 text-[#6f665b]"
+                            title={appt.crm_context.origin ?? appt.crm_context.origin_label}
+                          >
+                            Origen: {appt.crm_context.origin_label}
+                          </span>
+                        )}
+                        {(appt.crm_context?.ambiguous_lead_match
+                          || appt.crm_context?.identity_conflict
+                          || appt.crm_context?.invalid_client_identity) && (
+                          <span className="rounded-full border border-red-200 bg-red-50 px-2 py-1 font-semibold text-red-700">
+                            Identidad CRM por revisar
+                          </span>
+                        )}
+                      </div>
+
+                      {appt.crm_context?.latest_interaction && (
+                        <div className="mt-2 rounded-lg border border-[#eadfce] bg-[#fffdf8] px-3 py-2 text-[11px] leading-4 text-[#6f665b]">
+                          <p className="font-semibold text-[#29384a]">Última interacción</p>
+                          {appt.crm_context.latest_interaction.action && <p>Acción: {appt.crm_context.latest_interaction.action}</p>}
+                          {appt.crm_context.latest_interaction.intent && <p>Intención: {appt.crm_context.latest_interaction.intent}</p>}
+                          {appt.crm_context.latest_interaction.service && <p>Servicio: {appt.crm_context.latest_interaction.service}</p>}
+                          {appt.crm_context.latest_interaction.at && (
+                            <p>{new Date(appt.crm_context.latest_interaction.at).toLocaleString('es-ES')}</p>
+                          )}
+                        </div>
+                      )}
                       {appt.notes && (
                         <p className="mt-2 flex items-start gap-1 text-xs text-[#29384a]">
                           <MessageSquare className="mt-0.5 h-3 w-3 shrink-0" />
@@ -266,7 +365,10 @@ function AdminCitasPageInner() {
                       {appt.status === 'confirmed' && appt.confirmed_date && (
                         <p className="mt-2 text-xs font-semibold text-green-700">
                           ✓ Confirmada: {formatDate(appt.confirmed_date)} · {appt.confirmed_time}
-                          {appt.meeting_url && <> · <a href={appt.meeting_url} target="_blank" rel="noopener noreferrer" className="underline">Enlace reunión</a></>}
+                          {meetingProviderLabel(appt.booking_provider, appt.meeting_url) && (
+                            <> · {meetingProviderLabel(appt.booking_provider, appt.meeting_url)}</>
+                          )}
+                          {appt.meeting_url && <> · <a href={appt.meeting_url} target="_blank" rel="noopener noreferrer" className="underline">Abrir reunión</a></>}
                         </p>
                       )}
                     </div>

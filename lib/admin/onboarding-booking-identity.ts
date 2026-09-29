@@ -156,6 +156,47 @@ export async function resolveAuthenticatedBookingIdentity(
  *   one active/trialing subscription owner;
  * - never infer from domains, names or fuzzy matches.
  */
+export async function resolveActiveClientIdsByEmails(
+  admin: AdminClient,
+  emails: string[],
+): Promise<Map<string, string[]>> {
+  const normalizedEmails = new Set(emails.map(normalizeEmail).filter(Boolean));
+  const result = new Map<string, string[]>();
+  if (normalizedEmails.size === 0) return result;
+
+  const authUsers = await listAllAuthUsers();
+  const authEmailById = new Map(
+    authUsers
+      .map((user) => [user.id, normalizeEmail(user.email)] as const)
+      .filter(([, email]) => Boolean(email))
+  );
+  const candidateIds = authUsers
+    .filter((user) => normalizedEmails.has(normalizeEmail(user.email)))
+    .map((user) => user.id);
+  if (candidateIds.length === 0) return result;
+
+  for (let offset = 0; offset < candidateIds.length; offset += 100) {
+    const batch = candidateIds.slice(offset, offset + 100);
+    const { data: profiles, error } = await admin
+      .from('profiles')
+      .select('id')
+      .in('id', batch)
+      .eq('role', 'client')
+      .eq('status', 'active');
+    if (error) throw error;
+
+    for (const profile of profiles ?? []) {
+      const email = authEmailById.get(profile.id);
+      if (!email) continue;
+      const ids = result.get(email) ?? [];
+      ids.push(profile.id);
+      result.set(email, ids);
+    }
+  }
+
+  return result;
+}
+
 export async function resolveBookingIdentityByEmail(
   admin: AdminClient,
   email: string,
