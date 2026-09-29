@@ -20,6 +20,7 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(cta).toContain('Reunión informativa · 15 min');
     expect(cta).toContain('/dashboard?kia=open');
     expect(cta).toContain('https://t.me/kia_expert_bot');
+    expect(cta).toContain('?start=${telegramPayload}');
     expect(cta).not.toContain('wa.me');
   });
 
