@@ -42,6 +42,9 @@ describe('KIA production resilience', () => {
     expect(router).toContain('markProviderFailure');
     expect(router).toContain('HTTP\\s+(401|403)');
     expect(router).toContain('HTTP\\s+429');
+    expect(router).toContain('HTTP\\s+402');
+    expect(router).toContain('insufficient[_\\s-]?quota');
+    expect(router).toContain('credit(?:s)? exhausted');
   });
 
   it('uses the unified KIA signature for preview email instead of an inline CTA', () => {

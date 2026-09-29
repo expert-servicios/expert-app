@@ -21,7 +21,8 @@ describe('booking final UX', () => {
     expect(form).toContain('Abrir Google Meet');
     expect(template).toContain('Unirme a la reunión');
     expect(template).toContain('Enlace de reunión');
-    expect(route).toContain('<strong>Google Meet:</strong>');
+    expect(route).toContain('const clientTemplate = citaConfirmed(');
+    expect(route).toContain('meeting.meetingUrl,');
   });
 
   it('includes calendar management and ICS affordances', () => {

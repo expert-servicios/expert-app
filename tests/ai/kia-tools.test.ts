@@ -20,6 +20,7 @@ vi.mock('@/lib/integrations/supabase', () => ({
 
 vi.mock('@/lib/utils/app-url', () => ({
   absoluteAppUrl: (p: string) => `https://app.test${p}`,
+  getPublicAppUrl: () => 'https://app.test',
 }));
 
 vi.mock('@/lib/integrations/kia-contact-resolver', () => ({
@@ -59,6 +60,7 @@ const CLIENT_ID = 'aaaaaaaa-0000-0000-0000-eeeeeeeeeeee';
 
 function makeContext(clientId: string | null = CLIENT_ID): KiaContext {
   return {
+    latestMessage: null,
     contact: {
       status: 'client',
       name: 'Test User',

@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const admin = getSupabaseAdmin();
     const { data: appointment, error } = await admin
       .from('appointments')
-      .select('id,email,status,appointment_type,booking_provider,provider_booking_id,google_event_id')
+      .select('id,name,email,status,appointment_type,service,confirmed_date,confirmed_time,booking_provider,provider_booking_id,google_event_id')
       .eq('id', auth.appointmentId)
       .maybeSingle();
 

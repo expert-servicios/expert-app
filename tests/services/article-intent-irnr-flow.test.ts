@@ -121,7 +121,7 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(bookingPage).toContain('origin={origin}');
     expect(bookingForm).toContain('origin: origin ?? undefined');
     expect(bookingApi).toContain('Origen CTA/contenido:');
-    expect(bookingApi).toContain('content_origin: contentOrigin');
+    expect(bookingApi).toContain('contentOrigin,');
     expect(consultation).toContain('href={meetingHref}');
     expect(consultation).toContain("encodeURIComponent(origin)");
   });

@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { formatMadridDate, formatMadridTime } from '@/lib/booking/native-booking';
+import { notifyAdmins } from '@/lib/integrations/push';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -17,6 +18,7 @@ type BookingTaskInput = {
   companyId?: string | null;
   caseId?: string | null;
   leadId?: string | null;
+  contentOrigin?: string | null;
   reopenCancelled?: boolean;
 };
 
@@ -28,6 +30,7 @@ function taskMetadata(input: BookingTaskInput) {
     meeting_time: input.localTime,
     meeting_url: input.meetingUrl ?? null,
     booking_email: input.email,
+    ...(input.contentOrigin ? { content_origin: input.contentOrigin } : {}),
   };
 }
 
@@ -52,6 +55,7 @@ async function refreshExistingBookingTask(
     description: [
       `Cita confirmada para ${input.localDate} a las ${input.localTime}.`,
       `Cliente: ${input.name} (${input.email}).`,
+      input.contentOrigin ? `Origen: ${input.contentOrigin}.` : '',
       input.meetingUrl ? `Google Meet: ${input.meetingUrl}` : '',
     ].filter(Boolean).join('\n'),
     priority: input.serviceKey === 'onboarding' ? 'alta' : 'media',
@@ -100,6 +104,7 @@ export async function ensureBookingAdminTask(input: BookingTaskInput) {
       description: [
         `Cita confirmada para ${input.localDate} a las ${input.localTime}.`,
         `Cliente: ${input.name} (${input.email}).`,
+        input.contentOrigin ? `Origen: ${input.contentOrigin}.` : '',
         input.meetingUrl ? `Google Meet: ${input.meetingUrl}` : '',
       ].filter(Boolean).join('\n'),
       status: 'pendiente',
@@ -119,7 +124,15 @@ export async function ensureBookingAdminTask(input: BookingTaskInput) {
     .select('id')
     .single();
 
-  if (!error && data?.id) return data.id;
+  if (!error && data?.id) {
+    await notifyAdmins({
+      title: 'KIA creó una tarea',
+      body: `Reunión: ${input.serviceLabel} · ${input.name} · ${input.localDate} ${input.localTime}${input.contentOrigin ? ` · ${input.contentOrigin}` : ''}`.slice(0, 240),
+      url: input.caseId ? `/admin/expedientes/${input.caseId}` : '/admin/tareas',
+      tag: `booking-task-${data.id}`,
+    }).catch(() => {});
+    return data.id;
+  }
   if (error?.code !== '23505') throw error ?? new Error('Could not create booking admin task');
 
   // A concurrent booking/reconciliation won the unique-key race. Reload and

@@ -27,13 +27,14 @@ const includes = [
   'Revisión básica de bancos/conciliación',
   'Resumen mensual generado por Kia',
   'Estado de empresa básico',
-  'Soporte por email/WhatsApp',
+  'Soporte por email, KIA chat o Telegram',
+  'Modalidad válida para autónomo vinculado/económicamente dependiente de una empresa del mismo cliente cuando la operativa es simple y normalmente no supera unas 10 facturas al mes',
   'Portal Cliente EXPERT',
   'Licencia Holded obligatoria no incluida',
 ];
 
 const notIncludes = [
-  'Presentación de impuestos',
+  'Presentación de impuestos, salvo modalidad de autónomo vinculado simple',
   'Contabilidad delegada',
   'Subida de facturas por EXPERT',
   'Migración de datos',
@@ -59,7 +60,7 @@ export default function PlanSupervisionPage() {
             <span className="mb-2 text-lg text-[#9CA3AF]">€/mes + IVA</span>
           </div>
           <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-[#9CA3AF]">
-            Tú llevas Holded. Kia y EXPERT supervisan lo esencial, detectan alertas y te ayudan a no perder el control mensual.
+            Tú llevas Holded. Kia y EXPERT supervisan lo esencial, detectan alertas y te ayudan a no perder el control mensual. También puede encajar para autónomos vinculados a una empresa con operativa muy simple.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-4">
             <div className="w-full max-w-xs">
@@ -98,13 +99,33 @@ export default function PlanSupervisionPage() {
                 </li>
               ))}
             </ul>
+            <div className="mt-5 border border-[#D4A017]/30 bg-[#D4A017]/5 p-4">
+              <p className="text-sm font-bold text-[#0D1B2A]">Caso habitual: autónomo vinculado a una empresa</p>
+              <p className="mt-2 text-sm leading-6 text-[#23364D]">
+                Cuando el autónomo trabaja principalmente para una sociedad vinculada del mismo cliente, tiene una operativa sencilla y normalmente no supera unas 10 facturas al mes, aplicamos una modalidad vinculada desde 49 €/mes + IVA. En este supuesto pueden incluirse sus obligaciones fiscales básicas según alcance. Si existe mayor volumen o complejidad, se configura Plan Avanzado o presupuesto personalizado.
+              </p>
+            </div>
             <p className="mt-5 text-sm leading-6 text-[#23364D]">
-              Si necesitas impuestos trimestrales, revisa el{' '}
+              Si necesitas impuestos trimestrales fuera de este supuesto simplificado, revisa el{' '}
               <Link href="/planes/avanzado" className="font-semibold text-[#D4A017] hover:underline">
                 Plan Avanzado
               </Link>.
             </p>
           </div>
+        </div>
+
+        <div className="mt-10 border border-[#D4A017]/40 bg-white p-6 shadow-[0_8px_20px_rgba(13,27,42,0.06)]">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Modalidad autónomo vinculado</p>
+          <h2 className="mt-2 font-serif text-xl font-bold">49 €/mes + IVA para operativa vinculada simple</h2>
+          <p className="mt-3 text-sm leading-6 text-[#23364D]">
+            Si eres socio/autónomo económicamente dependiente o vinculado a una empresa gestionada por EXPERT,
+            con actividad sencilla y normalmente hasta unas 10 facturas al mes, podemos mantenerte en Plan Supervisión.
+            En esta modalidad se incluyen los modelos fiscales básicos derivados de esa operativa vinculada.
+          </p>
+          <p className="mt-3 text-xs leading-5 text-[#6B7280]">
+            Operaciones internacionales complejas, varias actividades, empleados, volumen superior, regímenes especiales
+            o incidencias fiscales requieren Plan Avanzado o presupuesto personalizado.
+          </p>
         </div>
 
         <div className="mt-14 border-t border-[#D4A017]/25 pt-10">
