@@ -97,10 +97,16 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    const { data: leadByEmail, error: leadByEmailError } = await supabaseAdmin
+    const escapedEmail = normalizedEmail.replace(/[\\%_]/g, '\\    const { data: leadByEmail, error: leadByEmailError } = await supabaseAdmin
       .from('leads')
       .select('id,message,metadata')
       .eq('email', normalizedEmail)
+      .limit(1)
+      .maybeSingle();');
+    const { data: leadByEmail, error: leadByEmailError } = await supabaseAdmin
+      .from('leads')
+      .select('id,message,metadata')
+      .ilike('email', escapedEmail)
       .limit(1)
       .maybeSingle();
     if (leadByEmailError) throw leadByEmailError;
