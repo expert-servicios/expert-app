@@ -130,6 +130,7 @@ describe('KIA guarded email agent', () => {
 
   it('routes replies through the configured functional identity', () => {
     expect(route).toContain('replyFromForPurpose');
+    expect(route).toContain('KIA_EMAIL_SEND_AS_ALIASES_ENABLED');
     expect(route).toContain('kia@expertconsulting.es');
     expect(route).toContain('documentos@expertconsulting.es');
     expect(route).toContain('citas@expertconsulting.es');
