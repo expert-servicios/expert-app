@@ -26,13 +26,16 @@ async function sendToSubscriptions(
   admin: ReturnType<typeof getSupabaseAdmin>,
   userIds: string[],
   payload: PushPayload,
-): Promise<{ attempted: number; delivered: number; dead: number; errors: number }> {
-  const { data: subs } = await admin
+): Promise<{ attempted: number; delivered: number; dead: number; errors: number; lookupError: boolean }> {
+  const { data: subs, error: lookupError } = await admin
     .from('push_subscriptions')
     .select('endpoint,p256dh,auth,user_id')
     .in('user_id', userIds);
 
-  if (!subs?.length) return { attempted: 0, delivered: 0, dead: 0, errors: 0 };
+  if (lookupError) {
+    return { attempted: 0, delivered: 0, dead: 0, errors: 1, lookupError: true };
+  }
+  if (!subs?.length) return { attempted: 0, delivered: 0, dead: 0, errors: 0, lookupError: false };
 
   const dead: string[] = [];
   let delivered = 0;
@@ -58,7 +61,7 @@ async function sendToSubscriptions(
     await admin.from('push_subscriptions').delete().in('endpoint', dead);
   }
 
-  return { attempted: subs.length, delivered, dead: dead.length, errors };
+  return { attempted: subs.length, delivered, dead: dead.length, errors, lookupError: false };
 }
 
 // Send push to all admin + owner users
@@ -92,7 +95,14 @@ export async function notifyAdmins(payload: PushPayload): Promise<void> {
   await admin.from('system_kv').upsert({
     key: 'admin_push_health',
     value: {
-      status: delivery.delivered > 0 ? 'ok' : delivery.attempted === 0 ? 'no_subscription' : 'degraded',
+      status: delivery.lookupError
+        ? 'degraded'
+        : delivery.attempted === 0
+          ? 'no_subscription'
+          : delivery.errors === 0 && delivery.delivered === delivery.attempted
+            ? 'ok'
+            : 'degraded',
+      reason: delivery.lookupError ? 'subscription_lookup_failed' : null,
       attempted: delivery.attempted,
       delivered: delivery.delivered,
       dead: delivery.dead,
