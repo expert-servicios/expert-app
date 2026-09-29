@@ -8,7 +8,7 @@ import { resolveEffectiveCaseStatus } from '@/lib/cases/case-status';
 import { retrieveKiaMemories, type KiaMemory } from './kia-memory-retriever';
 import { loadKiaMemoryV2Context, mergeKiaMemoryContexts } from './kia-memory-v2-context';
 import { loadKiaClientBrief, type KiaClientBrief, type KiaOriginEmailContext } from './kia-client-brief';
-import { reconcileClientRegistry, type KiaClientLedgerContext } from './kia-client-ledger';
+import { loadClientRegistryContext, type KiaClientLedgerContext } from './kia-client-ledger';
 
 export interface KiaContextInput {
   channel: 'waba' | 'telegram' | 'admin' | 'email' | 'dashboard' | 'document';
@@ -136,7 +136,7 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
       originEmail: input.originEmail ?? null,
     }).catch(() => null),
     ledgerEnabled
-      ? reconcileClientRegistry(admin, {
+      ? loadClientRegistryContext(admin, {
           clientId,
           leadId,
           email: contact?.email ?? input.email ?? null,
