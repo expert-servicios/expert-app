@@ -530,7 +530,7 @@ export async function reconcileClientRegistry(
     jobs.push((async () => {
       const { data } = await admin.from('email_inbox_cache')
         .select('thread_id,subject,snippet,date,case_id')
-        .ilike('from_email', email)
+        .eq('from_email', email)
         .order('date', { ascending: false })
         .limit(100);
       for (const row of data ?? []) {
@@ -557,7 +557,7 @@ export async function reconcileClientRegistry(
     jobs.push((async () => {
       const { data } = await admin.from('email_events')
         .select('id,event_type,subject,status,created_at,metadata')
-        .ilike('recipient_email', email)
+        .eq('recipient_email', email)
         .order('created_at', { ascending: false })
         .limit(100);
       for (const row of data ?? []) {
