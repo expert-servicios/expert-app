@@ -61,9 +61,20 @@ function formatDate(dateStr: string | null) {
 }
 
 function meetingProviderLabel(provider: string | null, meetingUrl: string | null) {
-  if (provider === 'google_native' || meetingUrl?.includes('meet.google.com')) return 'Google Calendar · Meet';
-  if (provider === 'ms365_native' || meetingUrl?.includes('teams.microsoft.com')) return 'Microsoft 365 · Teams';
-  return meetingUrl ? 'Reunión online' : null;
+  if (!meetingUrl) return provider === 'google_native'
+    ? 'Google Calendar'
+    : provider === 'ms365_native'
+      ? 'Microsoft 365'
+      : null;
+
+  if (meetingUrl.includes('meet.google.com')) return 'Google Calendar · Meet';
+  if (meetingUrl.includes('teams.microsoft.com')) return 'Microsoft 365 · Teams';
+  if (meetingUrl.includes('zoom.us')) return 'Zoom';
+  return provider === 'google_native'
+    ? 'Google Calendar · reunión externa'
+    : provider === 'ms365_native'
+      ? 'Microsoft 365 · reunión externa'
+      : 'Reunión online';
 }
 
 function AdminCitasPageInner() {
@@ -121,6 +132,7 @@ function AdminCitasPageInner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           client_id: clientId,
+          company_id: expedienteTarget.company_id,
           service: expedienteService || expedienteTarget.service,
           category: expedienteCategory,
         }),
