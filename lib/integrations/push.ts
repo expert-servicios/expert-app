@@ -26,15 +26,17 @@ async function sendToSubscriptions(
   admin: ReturnType<typeof getSupabaseAdmin>,
   userIds: string[],
   payload: PushPayload,
-): Promise<void> {
+): Promise<{ attempted: number; delivered: number; dead: number; errors: number }> {
   const { data: subs } = await admin
     .from('push_subscriptions')
     .select('endpoint,p256dh,auth,user_id')
     .in('user_id', userIds);
 
-  if (!subs?.length) return;
+  if (!subs?.length) return { attempted: 0, delivered: 0, dead: 0, errors: 0 };
 
   const dead: string[] = [];
+  let delivered = 0;
+  let errors = 0;
 
   await Promise.allSettled(
     subs.map(async (sub) => {
@@ -43,7 +45,9 @@ async function sendToSubscriptions(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
           JSON.stringify(payload),
         );
+        delivered++;
       } catch (err: unknown) {
+        errors++;
         const status = (err as { statusCode?: number }).statusCode;
         if (status === 404 || status === 410) dead.push(sub.endpoint);
       }
@@ -53,6 +57,8 @@ async function sendToSubscriptions(
   if (dead.length) {
     await admin.from('push_subscriptions').delete().in('endpoint', dead);
   }
+
+  return { attempted: subs.length, delivered, dead: dead.length, errors };
 }
 
 // Send push to all admin + owner users
@@ -61,8 +67,19 @@ export async function notifyAdmins(payload: PushPayload): Promise<void> {
   const telegramText = `<b>${escapeHtml(payload.title)}</b>\n${escapeHtml(payload.body)}${link ? `\n${link}` : ''}`;
   notifyAdminsTelegram(telegramText).catch(() => {});
 
-  if (!ensureVapid()) return;
   const admin = getSupabaseAdmin();
+  if (!ensureVapid()) {
+    await admin.from('system_kv').upsert({
+      key: 'admin_push_health',
+      value: {
+        status: 'misconfigured',
+        reason: 'missing_vapid',
+        checked_at: new Date().toISOString(),
+      },
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'key' }).catch(() => {});
+    return;
+  }
 
   const { data: profiles } = await admin
     .from('profiles')
@@ -71,7 +88,19 @@ export async function notifyAdmins(payload: PushPayload): Promise<void> {
 
   if (!profiles?.length) return;
 
-  await sendToSubscriptions(admin, profiles.map((p) => p.id as string), payload);
+  const delivery = await sendToSubscriptions(admin, profiles.map((p) => p.id as string), payload);
+  await admin.from('system_kv').upsert({
+    key: 'admin_push_health',
+    value: {
+      status: delivery.delivered > 0 ? 'ok' : delivery.attempted === 0 ? 'no_subscription' : 'degraded',
+      attempted: delivery.attempted,
+      delivered: delivery.delivered,
+      dead: delivery.dead,
+      errors: delivery.errors,
+      checked_at: new Date().toISOString(),
+    },
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'key' }).catch(() => {});
 }
 
 function escapeHtml(text: string): string {
