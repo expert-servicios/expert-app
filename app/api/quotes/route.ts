@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     };
 
     const escapedEmail = [...normalizedEmail]
-        .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\\\${char}` : char))
+        .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\${char}` : char))
         .join('');
     const { data: leadByEmail, error: leadByEmailError } = await supabaseAdmin
       .from('leads')
