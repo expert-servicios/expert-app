@@ -18,6 +18,8 @@ import {
 import { formatMadridDate, formatMadridTime, madridLocalToDate } from '@/lib/booking/native-booking';
 import { ensureBookingAdminTask, cancelBookingAdminTask } from '@/lib/booking/booking-admin-task';
 import { resolveBookingIdentityByEmail } from '@/lib/admin/onboarding-booking-identity';
+import { attributionFromMetadata } from '@/lib/marketing/server-attribution';
+import { describeContentOrigin } from '@/lib/marketing/content-origin';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -26,6 +28,72 @@ async function requireAdmin(request: NextRequest) {
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
   return (profile?.role === 'admin' || profile?.role === 'owner') ? admin : null;
+}
+
+type AppointmentLeadContext = {
+  id: string;
+  source: string | null;
+  source_key: string | null;
+  metadata: unknown;
+};
+
+function latestLeadInteraction(metadata: unknown) {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return null;
+  const value = (metadata as Record<string, unknown>).last_acquisition;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  return {
+    at: typeof record.at === 'string' ? record.at : null,
+    intent: typeof record.intent === 'string' ? record.intent : null,
+    action: typeof record.action === 'string' ? record.action : null,
+    origin: typeof record.origin === 'string' ? record.origin : null,
+    service: typeof record.service === 'string' ? record.service : null,
+  };
+}
+
+function taskContentOrigin(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return null;
+  const value = (metadata as Record<string, unknown>).content_origin;
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+async function resolveLegacyAppointmentLead(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  appointment: { email: string; phone: string | null },
+): Promise<{ lead: AppointmentLeadContext | null; ambiguous: boolean }> {
+  const normalizedEmail = appointment.email.trim().toLowerCase();
+  const normalizedPhone = appointment.phone?.trim() ?? '';
+  const escapedEmail = [...normalizedEmail]
+    .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\${char}` : char))
+    .join('');
+
+  const { data: emailMatches, error: emailError } = await admin
+    .from('leads')
+    .select('id,source,source_key,metadata')
+    .ilike('email', escapedEmail)
+    .limit(2);
+  if (emailError) throw emailError;
+
+  const { data: phoneMatches, error: phoneError } = normalizedPhone
+    ? await admin
+        .from('leads')
+        .select('id,source,source_key,metadata')
+        .eq('phone', normalizedPhone)
+        .limit(2)
+    : { data: [], error: null };
+  if (phoneError) throw phoneError;
+
+  if ((emailMatches ?? []).length > 1 || (phoneMatches ?? []).length > 1) {
+    return { lead: null, ambiguous: true };
+  }
+
+  const emailMatch = (emailMatches ?? [])[0] ?? null;
+  const phoneMatch = (phoneMatches ?? [])[0] ?? null;
+  if (emailMatch && phoneMatch && emailMatch.id !== phoneMatch.id) {
+    return { lead: null, ambiguous: true };
+  }
+
+  return { lead: (emailMatch ?? phoneMatch) as AppointmentLeadContext | null, ambiguous: false };
 }
 
 export async function GET(request: NextRequest) {
@@ -38,7 +106,7 @@ export async function GET(request: NextRequest) {
 
     let query = admin
       .from('appointments')
-      .select('id,name,email,phone,service,appointment_type,appointment_date,appointment_end,booking_provider,provider_booking_id,preferred_date,preferred_time,notes,status,confirmed_date,confirmed_time,meeting_url,admin_notes,google_event_id,created_at')
+      .select('id,name,email,phone,service,appointment_type,appointment_date,appointment_end,booking_provider,provider_booking_id,preferred_date,preferred_time,notes,status,confirmed_date,confirmed_time,meeting_url,admin_notes,google_event_id,created_at,client_id,company_id')
       .order('created_at', { ascending: false });
 
     if (status && status !== 'all') query = query.eq('status', status);
@@ -49,7 +117,79 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Error al obtener citas' }, { status: 500 });
     }
 
-    return NextResponse.json({ appointments: data ?? [] });
+    const appointments = data ?? [];
+    const appointmentIds = appointments.map((appointment) => appointment.id);
+    const tasksByAppointment = new Map<string, {
+      lead_id: string | null;
+      client_id: string | null;
+      company_id: string | null;
+      metadata: unknown;
+    }>();
+
+    if (appointmentIds.length > 0) {
+      const { data: tasks, error: taskError } = await admin
+        .from('internal_tasks')
+        .select('booking_appointment_id,lead_id,client_id,company_id,metadata')
+        .in('booking_appointment_id', appointmentIds);
+      if (taskError) throw taskError;
+      for (const task of tasks ?? []) {
+        if (task.booking_appointment_id) tasksByAppointment.set(task.booking_appointment_id, task);
+      }
+    }
+
+    const taskLeadIds = [...new Set(
+      [...tasksByAppointment.values()].map((task) => task.lead_id).filter(Boolean)
+    )] as string[];
+    const leadsById = new Map<string, AppointmentLeadContext>();
+
+    if (taskLeadIds.length > 0) {
+      const { data: taskLeads, error: taskLeadError } = await admin
+        .from('leads')
+        .select('id,source,source_key,metadata')
+        .in('id', taskLeadIds);
+      if (taskLeadError) throw taskLeadError;
+      for (const lead of taskLeads ?? []) leadsById.set(lead.id, lead as AppointmentLeadContext);
+    }
+
+    const enriched = await Promise.all(appointments.map(async (appointment) => {
+      const task = tasksByAppointment.get(appointment.id) ?? null;
+      let lead = task?.lead_id ? (leadsById.get(task.lead_id) ?? null) : null;
+      let relationshipSource: 'task' | 'appointment' | 'matched' | 'none' = task ? 'task' : 'appointment';
+      let ambiguousLeadMatch = false;
+
+      if (!lead) {
+        const resolved = await resolveLegacyAppointmentLead(admin, {
+          email: appointment.email,
+          phone: appointment.phone,
+        });
+        lead = resolved.lead;
+        ambiguousLeadMatch = resolved.ambiguous;
+        if (lead) relationshipSource = 'matched';
+      }
+
+      const latestInteraction = lead ? latestLeadInteraction(lead.metadata) : null;
+      const acquisition = lead ? attributionFromMetadata(lead.metadata) : null;
+      const rawOrigin = latestInteraction?.origin ?? taskContentOrigin(task?.metadata) ?? null;
+
+      return {
+        ...appointment,
+        lead_id: lead?.id ?? task?.lead_id ?? null,
+        client_id: appointment.client_id ?? task?.client_id ?? null,
+        company_id: appointment.company_id ?? task?.company_id ?? null,
+        crm_context: {
+          relationship_source: relationshipSource,
+          ambiguous_lead_match: ambiguousLeadMatch,
+          source: lead?.source ?? null,
+          source_key: lead?.source_key ?? null,
+          acquisition,
+          origin: rawOrigin,
+          origin_label: rawOrigin ? describeContentOrigin(rawOrigin) : null,
+          latest_interaction: latestInteraction,
+        },
+      };
+    }));
+
+    return NextResponse.json({ appointments: enriched });
   } catch (err) {
     console.error('[admin/citas]', err);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
