@@ -83,6 +83,14 @@ export function AutomationSettingsPanel() {
         body   : JSON.stringify({ key, enabled: !current }),
       });
       if (!res.ok) throw new Error();
+      const json = await res.json();
+      const saved = json.setting as Setting;
+      setSettings((prev) => {
+        const exists = prev.some((setting) => setting.key === key);
+        return exists
+          ? prev.map((setting) => setting.key === key ? saved : setting)
+          : [...prev, saved];
+      });
       setFeedback({ key, ok: true });
     } catch {
       // Revert on error
