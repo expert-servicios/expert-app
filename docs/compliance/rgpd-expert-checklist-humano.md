@@ -1,6 +1,6 @@
 # Checklist humano RGPD — EXPERT ESTUDIOS PROFESIONALES, SLU
 
-Fecha: 24/09/2026
+Fecha: 29/09/2026
 
 Este checklist contiene únicamente tareas que requieren decisión, validación, firma o ejecución humana. KIA puede preparar borradores y evidencias, pero no debe marcar estas tareas como cerradas por sí sola.
 
@@ -32,13 +32,17 @@ Este checklist contiene únicamente tareas que requieren decisión, validación,
 - [ ] Archivar evidencia/versiones de DPAs y subencargados.
 
 ## C. Hallazgos P1 de documentación pública
-- [ ] Corregir Supabase: eu-west-2 / Londres; la web dice actualmente Frankfurt.
-- [ ] Revisar y corregir la lista pública de proveedores para que coincida con integraciones reales.
-- [ ] Corregir el texto de conservación de datos que usa una referencia genérica de 5 años.
-- [ ] Revisar cómo se describe el rol de Stripe.
-- [ ] Añadir Calendar/Meet/notas automáticas.
-- [ ] Revisar transferencias internacionales proveedor por proveedor.
-- [ ] Actualizar fecha de la Política de Privacidad tras la revisión.
+- [x] Corregir Supabase: producción eu-west-2 / Londres.
+- [x] Revisar y corregir la lista pública de proveedores para reflejar integraciones reales.
+- [x] Sustituir el plazo genérico de conservación por matriz dependiente de finalidad/norma.
+- [x] Revisar cómo se describe Stripe dentro de pagos y prevención de fraude.
+- [x] Añadir Gmail, Calendar, Drive, Meet/notas y Microsoft 365.
+- [ ] Archivar y revisar transferencias internacionales proveedor por proveedor.
+- [x] Actualizar fecha y contenido de la Política de Privacidad.
+- [x] Añadir transparencia de KIA/IA y revisión humana.
+- [x] Añadir Google eSignature y diferencia con certificado reconocido.
+- [x] Retirar referencia a la antigua plataforma ODR europea.
+- [x] Alinear la política de cookies con la carga técnica real de analítica.
 
 ## D. Accesos y seguridad
 - [ ] Revisar usuarios con acceso a Supabase, Google, Microsoft, Holded, Stripe, Vercel, GitHub y demás sistemas.
@@ -99,3 +103,14 @@ Este checklist contiene únicamente tareas que requieren decisión, validación,
 - [ ] Confirmar carpeta de evidencias.
 - [ ] Establecer revisión anual.
 - [ ] Establecer revisión extraordinaria ante nuevas integraciones, IA, servicios o categorías de datos.
+
+
+## K. Cierre técnico 29/09/2026
+- [x] GTM/GA4/Metricool condicionados a consentimiento previo.
+- [x] Aceptar/Rechazar al mismo nivel y configuración reabrible.
+- [x] Política de privacidad actualizada a arquitectura real.
+- [x] Términos y contratación actualizados para KIA/IA/firma.
+- [x] Guía visual Google eSignature añadida a la base de conocimientos.
+- [x] RAT workspace ampliado con IA, integraciones y firma.
+- [ ] Validar en navegador limpio tras despliegue.
+- [ ] Completar y firmar pendientes humanos A–J.
