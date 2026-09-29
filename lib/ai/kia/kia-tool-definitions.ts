@@ -181,6 +181,9 @@ export const kiaToolValidators = {
     caseId: z.string().uuid(),
     limit: z.number().int().min(1).max(50).default(20),
   }).strict(),
+  get_case_signature_status: z.object({
+    caseId: z.string().uuid(),
+  }).strict(),
   get_case_timeline: z.object({
     caseId: z.string().uuid(),
     limit: z.number().int().min(1).max(50).default(25),
@@ -265,6 +268,7 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_user_subscriptions: 'List active/recent EXPERT subscriptions for the authenticated user or active company. Read-only.',
   get_case_tasks: 'List operational tasks for one case owned by the authenticated user.',
   get_case_documents: 'List documents for one case owned by the authenticated user.',
+  get_case_signature_status: 'Return signature-related tasks and signed/downloadable documents for one owned case. Read-only. Use before saying that a document is pending signature, already signed, or available to download.',
   get_case_timeline: 'Return a compact operational timeline for one case from case updates, tasks, documents and email events.',
   get_client_communications: 'Search the authenticated client communication history across sent/received email, KIA conversations and linked WhatsApp. Use when recent context is insufficient or the user refers to an older message.',
   search_knowledge_resources: 'Search EXPERT blog articles and knowledge-base documents. Use to share a relevant guide or article with the user. Returns canonical public links.',
