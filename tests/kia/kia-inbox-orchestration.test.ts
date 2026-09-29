@@ -25,7 +25,9 @@ describe('KIA inbox orchestration', () => {
     expect(classifier).toContain('CRITICAL_OFFICIAL_SIGNAL');
     expect(classifier).toContain("'critical'");
     expect(classifier).toContain("'00 KIA/URGENTE'");
-    expect(classifier).toContain('requiresAttention: critical || URGENT_SIGNAL.test(signal)');
+    expect(classifier).toContain('normalizedSignalBody');
+    expect(classifier).toContain('hasActionableAttachment');
+    expect(classifier).toContain("official_attachment_requires_review");
   });
 
   it('keeps noreply as a functional purpose and supports operational aliases', () => {
@@ -44,7 +46,8 @@ describe('KIA inbox orchestration', () => {
   });
 
   it('escalates to push, Telegram fanout and Ksenia email only for intervention', () => {
-    expect(escalation).toContain('notifyAdmins({');
+    expect(escalation).toContain('await sendEmailOnce({');
+    expect(escalation).toContain('await notifyAdmins({');
     expect(escalation).toContain("to: 'soy@kseniailicheva.com'");
     expect(escalation).toContain('KIA necesita tu intervención');
     expect(escalation).toContain("from: 'KIA Alertas <noreply@expertconsulting.es>'");
