@@ -32,10 +32,14 @@ async function requireAdmin(request: NextRequest) {
 
 type AppointmentLeadContext = {
   id: string;
+  email?: string | null;
+  phone?: string | null;
   source: string | null;
   source_key: string | null;
   metadata: unknown;
 };
+
+type ActiveClientIndex = Map<string, string[]>;
 
 function latestLeadInteraction(metadata: unknown) {
   if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return null;
@@ -157,6 +161,56 @@ function resolveLegacyAppointmentLead(
   return { lead: emailMatch ?? phoneMatch, ambiguous: false };
 }
 
+async function loadActiveClientIndex(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  appointments: Array<{ email: string }>,
+): Promise<ActiveClientIndex> {
+  const index: ActiveClientIndex = new Map();
+  const emails = [...new Set(appointments.map((row) => normalizeEmail(row.email)).filter(Boolean))];
+
+  for (let offset = 0; offset < emails.length; offset += 40) {
+    const batch = emails.slice(offset, offset + 40);
+    const filter = batch
+      .map((email) => `email.ilike.${email.replace(/[%_(),\\\\]/g, (char) => `\\\\${char}`)}`)
+      .join(',');
+    const { data, error } = await admin
+      .from('profiles')
+      .select('id,email')
+      .eq('role', 'client')
+      .eq('status', 'active')
+      .or(filter);
+    if (error) throw error;
+
+    for (const profile of data ?? []) {
+      const email = normalizeEmail(profile.email);
+      if (!email) continue;
+      const rows = index.get(email) ?? [];
+      rows.push(profile.id);
+      index.set(email, rows);
+    }
+  }
+
+  return index;
+}
+
+async function loadClientCompanyMemberships(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  clientIds: string[],
+): Promise<Set<string>> {
+  const memberships = new Set<string>();
+  for (const clientIdBatch of chunkValues([...new Set(clientIds)], 100)) {
+    const { data, error } = await admin
+      .from('profile_companies')
+      .select('profile_id,company_id')
+      .in('profile_id', clientIdBatch);
+    if (error) throw error;
+    for (const row of data ?? []) {
+      memberships.add(`${row.profile_id}:${row.company_id}`);
+    }
+  }
+  return memberships;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const admin = await requireAdmin(request);
@@ -206,7 +260,7 @@ export async function GET(request: NextRequest) {
     for (const leadIdBatch of chunkValues(taskLeadIds, 100)) {
       const { data: taskLeads, error: taskLeadError } = await admin
         .from('leads')
-        .select('id,source,source_key,metadata')
+        .select('id,email,phone,source,source_key,metadata')
         .in('id', leadIdBatch);
       if (taskLeadError) throw taskLeadError;
       for (const lead of taskLeads ?? []) leadsById.set(lead.id, lead as AppointmentLeadContext);
@@ -220,11 +274,20 @@ export async function GET(request: NextRequest) {
     });
     const legacyLeadIndex = await loadLegacyLeadIndex(admin, legacyCandidates);
 
+    const clientLookupCandidates = appointments.filter((appointment) => {
+      const task = tasksByAppointment.get(appointment.id) ?? null;
+      return !appointment.client_id && !task?.client_id;
+    });
+    const activeClientIndex = await loadActiveClientIndex(admin, clientLookupCandidates);
+    const fallbackClientIds = clientLookupCandidates.flatMap(
+      (appointment) => activeClientIndex.get(normalizeEmail(appointment.email)) ?? []
+    );
+
     const candidateClientIds = [...new Set(
       appointments.flatMap((appointment) => {
         const task = tasksByAppointment.get(appointment.id) ?? null;
         return [appointment.client_id, task?.client_id].filter(Boolean);
-      })
+      }).concat(fallbackClientIds)
     )] as string[];
 
     const activeClientIds = new Set<string>();
@@ -239,6 +302,8 @@ export async function GET(request: NextRequest) {
       for (const profile of profiles ?? []) activeClientIds.add(profile.id);
     }
 
+    const clientCompanyMemberships = await loadClientCompanyMemberships(admin, candidateClientIds);
+
     const enriched = appointments.map((appointment) => {
       const task = tasksByAppointment.get(appointment.id) ?? null;
 
@@ -248,23 +313,32 @@ export async function GET(request: NextRequest) {
       const companyConflict = Boolean(
         appointment.company_id && task?.company_id && appointment.company_id !== task.company_id
       );
-      const identityConflict = clientConflict || companyConflict;
+      const sourceIdentityConflict = clientConflict || companyConflict;
 
-      let lead = identityConflict
+      let lead = sourceIdentityConflict
         ? null
         : (task?.lead_id ? (leadsById.get(task.lead_id) ?? null) : null);
-      let relationshipSource: 'task' | 'appointment' | 'matched' | 'none' = identityConflict
+      let relationshipSource: 'task' | 'appointment' | 'matched' | 'none' = sourceIdentityConflict
         ? 'none'
         : task
           ? 'task'
           : (appointment.client_id || appointment.company_id ? 'appointment' : 'none');
       let ambiguousLeadMatch = false;
 
-      const rawClientId = identityConflict ? null : (appointment.client_id ?? task?.client_id ?? null);
+      const rawClientId = sourceIdentityConflict ? null : (appointment.client_id ?? task?.client_id ?? null);
       const verifiedClientId = rawClientId && activeClientIds.has(rawClientId) ? rawClientId : null;
       const invalidClientIdentity = Boolean(rawClientId && !verifiedClientId);
+      const fallbackClientMatches = !rawClientId && !sourceIdentityConflict
+        ? (activeClientIndex.get(normalizeEmail(appointment.email)) ?? [])
+        : [];
+      const ambiguousClientMatch = fallbackClientMatches.length > 1;
+      const fallbackClientId = fallbackClientMatches.length === 1 ? fallbackClientMatches[0] : null;
+      const resolvedClientId = verifiedClientId ?? fallbackClientId;
+      const rawCompanyId = sourceIdentityConflict
+        ? null
+        : (appointment.company_id ?? task?.company_id ?? null);
 
-      if (!lead && !verifiedClientId && !identityConflict && !invalidClientIdentity) {
+      if (!lead && !sourceIdentityConflict && !invalidClientIdentity && !ambiguousClientMatch) {
         const resolved = resolveLegacyAppointmentLead(legacyLeadIndex, {
           email: appointment.email,
           phone: appointment.phone,
@@ -272,6 +346,31 @@ export async function GET(request: NextRequest) {
         lead = resolved.lead;
         ambiguousLeadMatch = resolved.ambiguous;
         if (lead) relationshipSource = 'matched';
+      }
+
+      const appointmentEmail = normalizeEmail(appointment.email);
+      const leadEmail = normalizeEmail(lead?.email);
+      const inferredLeadClientConflict = Boolean(
+        fallbackClientId
+        && lead
+        && (
+          (relationshipSource === 'matched' && leadEmail !== appointmentEmail)
+          || (relationshipSource === 'task' && leadEmail && leadEmail !== appointmentEmail)
+        )
+      );
+      const clientCompanyConflict = Boolean(
+        resolvedClientId
+        && rawCompanyId
+        && !clientCompanyMemberships.has(`${resolvedClientId}:${rawCompanyId}`)
+      );
+      const identityConflict = sourceIdentityConflict
+        || ambiguousClientMatch
+        || inferredLeadClientConflict
+        || clientCompanyConflict;
+
+      if (identityConflict) {
+        lead = null;
+        relationshipSource = 'none';
       }
 
       const latestInteraction = lead ? latestLeadInteraction(lead.metadata) : null;
@@ -291,11 +390,12 @@ export async function GET(request: NextRequest) {
       return {
         ...appointment,
         lead_id: identityConflict ? null : (lead?.id ?? task?.lead_id ?? null),
-        client_id: identityConflict ? null : verifiedClientId,
-        company_id: identityConflict ? null : (appointment.company_id ?? task?.company_id ?? null),
+        client_id: identityConflict ? null : resolvedClientId,
+        company_id: identityConflict ? null : rawCompanyId,
         crm_context: {
           relationship_source: relationshipSource,
           ambiguous_lead_match: ambiguousLeadMatch,
+          ambiguous_client_match: ambiguousClientMatch,
           identity_conflict: identityConflict,
           invalid_client_identity: invalidClientIdentity,
           source: lead?.source ?? null,
