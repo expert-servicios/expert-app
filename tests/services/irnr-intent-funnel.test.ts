@@ -28,6 +28,7 @@ describe('IRNR organic-intent funnel', () => {
     expect(cta).toContain('Reunión informativa · 15 min');
     expect(cta).toContain('/consulta-gratuita?origen=');
     expect(cta).toContain('https://t.me/kia_expert_bot');
+    expect(cta).toContain('telegramPayload.length <= 64');
     expect(docs).toContain('<ArticleIntentCTA');
     expect(blog).toContain('<ArticleIntentCTA');
     expect(docs).not.toContain('wa.me/34669045528');
