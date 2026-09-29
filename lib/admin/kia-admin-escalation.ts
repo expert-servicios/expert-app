@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { sendEmailOnce } from '@/lib/email/send';
+import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 export async function notifyKiaAdminEscalation(input: {
   title: string;
@@ -11,6 +12,7 @@ export async function notifyKiaAdminEscalation(input: {
   eventRef: string;
   priority: 'high' | 'critical';
 }) {
+  const absoluteUrl = absoluteAppUrl(input.url);
   const body = [
     input.summary,
     `KIA: ${input.actionTaken}`,
@@ -21,7 +23,7 @@ export async function notifyKiaAdminEscalation(input: {
     notifyAdmins({
       title: input.priority === 'critical' ? `URGENTE · ${input.title}` : input.title,
       body,
-      url: input.url,
+      url: absoluteUrl,
       tag: `kia-escalation-${createHash('sha256').update(input.eventRef).digest('hex').slice(0, 20)}`,
     }),
     sendEmailOnce({
@@ -38,7 +40,7 @@ export async function notifyKiaAdminEscalation(input: {
           <p><strong>Resumen:</strong> ${escapeHtml(input.summary)}</p>
           <p><strong>Qué ha hecho KIA:</strong> ${escapeHtml(input.actionTaken)}</p>
           <p><strong>Qué necesita de ti:</strong> ${escapeHtml(input.interventionNeeded)}</p>
-          <p><a href="${input.url}" style="display:inline-block;background:#07111d;color:#fff;text-decoration:none;padding:10px 14px;border-radius:8px">Abrir en EXPERT</a></p>
+          <p><a href="${absoluteUrl}" style="display:inline-block;background:#07111d;color:#fff;text-decoration:none;padding:10px 14px;border-radius:8px">Abrir en EXPERT</a></p>
         </div>
       `,
       metadata: {
