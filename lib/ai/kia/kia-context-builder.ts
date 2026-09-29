@@ -141,6 +141,8 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
           leadId,
           email: contact?.email ?? input.email ?? null,
           phone,
+          companyId: resolvedCompanyId,
+          caseId: input.caseId ?? null,
         }).catch((error) => {
           console.error('[KIA client ledger] context load failed', error);
           return null;
