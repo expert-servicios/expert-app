@@ -94,14 +94,13 @@ export default function TerminosPage() {
 
           <Section title="5. Precios y facturación">
             <p>
-              Los precios indicados en el Sitio están expresados en euros (€) e incluyen el IVA aplicable salvo que se indique
-              expresamente lo contrario. EXPERT se reserva el derecho de modificar los precios en cualquier momento, siendo de
-              aplicación los vigentes en el momento de la contratación.
+              Los precios se expresan en euros (€). Salvo indicación expresa de precio final con impuestos incluidos, las tarifas
+              profesionales se muestran sin IVA y el checkout o presupuesto confirma el impuesto aplicable antes del pago.
+              Los servicios con complejidad variable pueden mostrar un precio “desde”, una calculadora o un presupuesto previo.
             </p>
             <p>
-              Los servicios de suscripción (planes mensuales) se facturan de forma recurrente según el plan contratado. El
-              cliente puede cancelar su suscripción en cualquier momento a través de su panel de cliente, con efecto al final del
-              período de facturación en curso.
+              El catálogo público está orientado principalmente a servicios puntuales. Si existe una relación recurrente
+              formalizada por acuerdo específico, su facturación, duración y cancelación se regirán por ese acuerdo.
             </p>
           </Section>
 
