@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
@@ -551,66 +552,183 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
           .maybeSingle();
         if (caseError || !ownedCase) return fail(toolCall.name, 'Expediente no autorizado.');
 
-        const [tasksRes, docsRes] = await Promise.all([
-          admin
+        const signatureTasks: Array<{
+          id: string;
+          title: string;
+          status: string;
+          priority: string | null;
+          description: string | null;
+          metadata: Record<string, unknown> | null;
+          created_at: string;
+          updated_at: string | null;
+          completed_at: string | null;
+        }> = [];
+        const pageSize = 500;
+        for (let offset = 0; ; offset += pageSize) {
+          const { data: page, error } = await admin
             .from('internal_tasks')
             .select('id,title,status,priority,description,metadata,created_at,updated_at,completed_at')
             .eq('case_id', caseId)
             .eq('client_id', clientId)
             .order('created_at', { ascending: false })
-            .limit(200),
-          admin
-            .from('documents')
-            .select('id,original_name,title,state,file_path,drive_file_id,created_at,updated_at,replaced_by')
-            .eq('case_id', caseId)
-            .eq('client_id', clientId)
-            .is('replaced_by', null)
-            .order('created_at', { ascending: false })
-            .limit(200),
-        ]);
-        if (tasksRes.error || docsRes.error) return fail(toolCall.name, 'Error consultando firmas del expediente.');
+            .range(offset, offset + pageSize - 1);
+          if (error) return fail(toolCall.name, 'Error consultando firmas del expediente.');
 
-        const signatureTasks = (tasksRes.data ?? []).filter((task) => {
-          const haystack = [
-            task.title,
-            task.description,
-            JSON.stringify(task.metadata ?? {}),
-          ].join(' ').toLowerCase();
-          return /firma|firmar|signature|signing|docusign|esignature|mandato/.test(haystack);
-        });
+          for (const task of page ?? []) {
+            const metadata = (task.metadata ?? {}) as Record<string, unknown>;
+            const metadataSignature =
+              metadata.task_kind === 'signature_request_approval'
+              || typeof metadata.signature_provider === 'string'
+              || typeof metadata.signature_status === 'string';
+            const text = [task.title, task.description].filter(Boolean).join(' ');
+            const textSignature = /(?:^|[\s:;,.()\-])(firma|firmar|firma electrónica|signature|signing|docusign|esignature|mandato)(?:$|[\s:;,.()\-])/i.test(text);
+            if (metadataSignature || textSignature) signatureTasks.push({
+              ...task,
+              metadata: task.metadata as Record<string, unknown> | null,
+            });
+          }
+          if ((page ?? []).length < pageSize) break;
+        }
 
-        const docs = (docsRes.data ?? []).filter((doc) => doc.state !== 'rechazado');
-        const evidenceDocumentIds = new Set<string>();
+        const finalDocumentIds = new Set<string>();
         for (const task of signatureTasks) {
-          const metadata = (task.metadata ?? {}) as Record<string, unknown>;
-          for (const [key, value] of Object.entries(metadata)) {
-            if (/document_id$/i.test(key) && typeof value === 'string' && value) {
-              evidenceDocumentIds.add(value);
-            }
+          const metadata = task.metadata ?? {};
+          if (
+            metadata.signature_status === 'completed'
+            && typeof metadata.signature_final_document_id === 'string'
+            && metadata.signature_final_document_id
+          ) {
+            finalDocumentIds.add(metadata.signature_final_document_id);
           }
         }
-        const signedDocs = docs.filter((doc) => evidenceDocumentIds.has(doc.id));
+
+        const { data: finalDocs, error: docsError } = finalDocumentIds.size
+          ? await admin
+              .from('documents')
+              .select('id,original_name,title,state,file_path,drive_file_id,created_at,updated_at,replaced_by')
+              .eq('case_id', caseId)
+              .eq('client_id', clientId)
+              .in('id', [...finalDocumentIds])
+              .is('replaced_by', null)
+          : { data: [], error: null };
+        if (docsError) return fail(toolCall.name, 'Error consultando documentos firmados.');
 
         return ok(toolCall.name, {
-          signature_tasks: signatureTasks.map((task) => ({
-            id: task.id,
-            title: task.title,
-            status: task.status,
-            priority: task.priority,
-            completed_at: task.completed_at,
-            signature_status: (task.metadata as Record<string, unknown> | null)?.signature_status ?? null,
-            signature_provider: (task.metadata as Record<string, unknown> | null)?.signature_provider ?? null,
-          })),
-          signed_documents: signedDocs.map((doc) => ({
+          signature_tasks: signatureTasks.map((task) => {
+            const metadata = task.metadata ?? {};
+            const signers = Array.isArray(metadata.signers) ? metadata.signers : [];
+            return {
+              id: task.id,
+              title: task.title,
+              status: task.status,
+              priority: task.priority,
+              completed_at: task.completed_at,
+              signature_status: metadata.signature_status ?? null,
+              signature_provider: metadata.signature_provider ?? null,
+              signature_level: metadata.signature_level ?? null,
+              signers: signers.slice(0, 10).map((raw) => {
+                const signer = raw && typeof raw === 'object' ? raw as Record<string, unknown> : {};
+                const email = typeof signer.email === 'string' ? signer.email : '';
+                return {
+                  name: typeof signer.name === 'string' ? signer.name : null,
+                  email_hint: maskEmail(email),
+                  status: typeof signer.status === 'string' ? signer.status : 'pending',
+                };
+              }),
+            };
+          }),
+          signed_documents: (finalDocs ?? []).map((doc) => ({
             id: doc.id,
             name: doc.original_name ?? doc.title,
             state: doc.state,
             storage: doc.drive_file_id ? 'drive_mirror' : doc.file_path ? 'supabase' : 'metadata_only',
-            download_url: doc.file_path ? `/api/documents/${doc.id}/download?redirect=1` : null,
-            case_url: `/dashboard/expedientes/${caseId}#documentos`,
+            download_url: doc.file_path ? absoluteAppUrl(`/api/documents/${doc.id}/download?redirect=1`) : null,
+            case_url: absoluteAppUrl(`/dashboard/expedientes/${caseId}#documentos`),
           })),
           google_esignature_request_api: 'manual_only',
-          google_esignature_note: 'KIA may prepare and track the signing step, but requesting Google eSignature must be initiated by a human in Drive until a supported API is available.',
+          google_esignature_note: 'KIA can prepare an internal approval task. A human must launch Google eSignature in Drive; only persisted requested/completed evidence may be reported as sent/signed.',
+        });
+      }
+
+      case 'request_signature_approval': {
+        const clientId = context.contact?.clientId;
+        const caseId = String(args.caseId);
+        const documentId = String(args.documentId);
+        if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+
+        const [{ data: ownedCase }, { data: document }] = await Promise.all([
+          admin.from('cases').select('id,company_id').eq('id', caseId).eq('client_id', clientId).maybeSingle(),
+          admin.from('documents')
+            .select('id,original_name,title,replaced_by')
+            .eq('id', documentId)
+            .eq('case_id', caseId)
+            .eq('client_id', clientId)
+            .is('replaced_by', null)
+            .maybeSingle(),
+        ]);
+        if (!ownedCase) return fail(toolCall.name, 'Expediente no autorizado.');
+        if (!document) return fail(toolCall.name, 'Documento no autorizado o sustituido.');
+
+        const signers = (args.signers as Array<{ name: string; email: string }>).map((signer) => ({
+          name: signer.name.trim(),
+          email: signer.email.trim().toLowerCase(),
+          status: 'pending',
+        }));
+        const signatureLevel = String(args.signatureLevel ?? 'simple');
+        const signerKey = signers.map((s) => s.email).sort().join(',');
+        const sourceKey = `signature-approval:${createHash('sha256')
+          .update(`${caseId}:${documentId}:${signatureLevel}:${signerKey}`)
+          .digest('hex')
+          .slice(0, 40)}`;
+        const now = new Date().toISOString();
+        const payload = {
+          source_key: sourceKey,
+          title: `Aprobar solicitud de firma · ${document.original_name ?? document.title ?? 'Documento'}`.slice(0, 220),
+          description: typeof args.reason === 'string' ? args.reason : 'KIA preparó una solicitud de firma pendiente de lanzamiento humano.',
+          status: 'pendiente',
+          priority: 'alta',
+          case_id: caseId,
+          client_id: clientId,
+          company_id: ownedCase.company_id,
+          source: 'kia',
+          created_at: now,
+          updated_at: now,
+          metadata: {
+            task_kind: 'signature_request_approval',
+            signature_provider: signatureLevel === 'recognized_certificate' ? 'recognized_certificate' : 'google_esignature',
+            signature_level: signatureLevel,
+            signature_status: 'prepared',
+            signature_source_document_id: documentId,
+            signature_final_document_id: null,
+            signers,
+            human_approval_required: true,
+          },
+        };
+
+        const { data: created, error } = await admin.from('internal_tasks').insert(payload).select('id,title').single();
+        if (!error && created) {
+          return ok(toolCall.name, {
+            status: 'prepared_for_human_approval',
+            task_id: created.id,
+            title: created.title,
+            signature_status: 'prepared',
+            external_request_sent: false,
+          });
+        }
+        if (error?.code !== '23505') return fail(toolCall.name, 'No se pudo preparar la solicitud de firma.');
+
+        const { data: existing } = await admin
+          .from('internal_tasks')
+          .select('id,title,status,metadata')
+          .eq('source_key', sourceKey)
+          .maybeSingle();
+        if (!existing) return fail(toolCall.name, 'No se pudo recuperar la solicitud de firma existente.');
+        return ok(toolCall.name, {
+          status: 'already_prepared',
+          task_id: existing.id,
+          title: existing.title,
+          signature_status: (existing.metadata as Record<string, unknown> | null)?.signature_status ?? 'prepared',
+          external_request_sent: false,
         });
       }
 
@@ -732,6 +850,14 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
   } catch (error) {
     return fail(toolCall.name, safeErrorMessage(error));
   }
+}
+
+function maskEmail(email: string): string | null {
+  const normalized = email.trim().toLowerCase();
+  const [local, domain] = normalized.split('@');
+  if (!local || !domain) return null;
+  const visible = local.slice(0, 1);
+  return `${visible}${'*'.repeat(Math.max(2, Math.min(local.length - 1, 5)))}@${domain}`;
 }
 
 function loginUrl(nextPath: string): string {
