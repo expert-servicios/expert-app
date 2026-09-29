@@ -15,7 +15,7 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain("'kia.email_agent'");
     expect(route).toContain("'kia.email_auto_send'");
     expect(route).toContain("'kia.email_new_lead_auto_send'");
-    expect(route).toContain('KIA_EMAIL_AGENT_ENABLED');
+    expect(route).toContain("select('enabled,updated_at').eq('key', 'kia.email_agent')");
     expect(route).toContain('KIA_EMAIL_AUTO_SEND_ENABLED');
     expect(route).toContain('isKiaGatewayConfigured');
     expect(route).toContain('getKiaProviderOrder');
