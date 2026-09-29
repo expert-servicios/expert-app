@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient } from '@/lib/integrations/supabase';
 import { synthesizeKiaSpeech } from '@/lib/ai/kia/kia-audio';
+import { checkKiaMessageRateLimit, reserveKiaAudioDailyQuota } from '@/lib/ai/kia/kia-rate-limit';
 
 export const maxDuration = 60;
 
@@ -14,6 +15,13 @@ export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return new Response('unauthorized', { status: 401 });
+
+  if (!checkKiaMessageRateLimit(`audio:speech:${user.id}`)) {
+    return new Response('rate_limited', { status: 429 });
+  }
+  if (!(await reserveKiaAudioDailyQuota(user.id, 'speech'))) {
+    return new Response('audio_quota_reached', { status: 429 });
+  }
 
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return new Response('invalid_request', { status: 400 });
