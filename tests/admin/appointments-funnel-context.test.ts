@@ -19,10 +19,10 @@ describe('Admin appointments funnel context', () => {
     expect(route).toContain('appointment.company_id ?? task?.company_id ?? null');
   });
 
-  it('fails closed when legacy lead identifiers are ambiguous or conflicting', () => {
-    expect(route).toContain(".ilike('email', escapedEmail)");
-    expect(route).toContain(".eq('phone', normalizedPhone)");
-    expect(route).toContain('.limit(2)');
+  it('batches legacy lead candidates and fails closed when identifiers are ambiguous', () => {
+    expect(route).toContain('loadLegacyLeadIndex(admin, legacyCandidates)');
+    expect(route).toContain(".or(filter)");
+    expect(route).toContain(".in('phone', batch)");
     expect(route).toContain('return { lead: null, ambiguous: true }');
     expect(route).toContain('emailMatch.id !== phoneMatch.id');
     expect(route).toContain('ambiguous_lead_match: ambiguousLeadMatch');
@@ -31,7 +31,8 @@ describe('Admin appointments funnel context', () => {
   it('surfaces origin and latest interaction without persisting inferred links', () => {
     expect(route).toContain('latestLeadInteraction(lead.metadata)');
     expect(route).toContain('taskContentOrigin(task?.metadata)');
-    expect(route).toContain('describeContentOrigin(rawOrigin)');
+    expect(route).toContain('acquisition?.originPath');
+    expect(route).toContain('sourceFallback');
     expect(route).toContain("relationship_source: relationshipSource");
     expect(route).not.toContain("appointments').update({ lead_id");
   });
@@ -48,6 +49,8 @@ describe('Admin appointments funnel context', () => {
 
   it('uses canonical client_id before the legacy email search when creating a case', () => {
     expect(page).toContain('let clientId = expedienteTarget.client_id');
+    expect(page).toContain('identity_conflict');
+    expect(page).toContain('invalid_client_identity');
     expect(page).toContain('if (!clientId) {');
     expect(page).toContain('/api/admin/clients-quick?q=');
     expect(page).toContain('client_id: clientId');
