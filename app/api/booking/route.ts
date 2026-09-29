@@ -34,6 +34,7 @@ import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkRateLimit, checkSpam, getClientIp, releaseRateLimit } from '@/lib/utils/spam-guard';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { describeContentOrigin, normalizeContentOrigin } from '@/lib/marketing/content-origin';
+import { buildLeadAttributionFields } from '@/lib/marketing/server-attribution';
 import {
   BOOKING_CLOSE_HOUR,
   BOOKING_MAX_DAYS,
@@ -68,6 +69,173 @@ async function authenticatedUser(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   return user ?? null;
 }
+
+async function ensurePublicBookingLead(input: {
+  admin: ReturnType<typeof getSupabaseAdmin>;
+  request: NextRequest;
+  appointmentId: string;
+  name: string;
+  email: string;
+  phone: string;
+  serviceLabel: string;
+  notes?: string | null;
+  contentOrigin: string;
+}): Promise<string | null> {
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const normalizedPhone = input.phone.trim();
+  const escapedEmail = [...normalizedEmail]
+    .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\${char}` : char))
+    .join('');
+  const interaction = {
+    at: new Date().toISOString(),
+    action: 'booking_created',
+    appointment_id: input.appointmentId,
+    origin: input.contentOrigin,
+    service: input.serviceLabel,
+    source_key: `booking:${input.appointmentId}`,
+    contact: {
+      email: normalizedEmail,
+      phone: normalizedPhone || null,
+    },
+  };
+
+  const { data: emailMatches, error: emailLookupError } = await input.admin
+    .from('leads')
+    .select('id,metadata,updated_at')
+    .ilike('email', escapedEmail)
+    .limit(2);
+  if (emailLookupError) throw emailLookupError;
+
+  const { data: phoneMatches, error: phoneLookupError } = normalizedPhone
+    ? await input.admin
+        .from('leads')
+        .select('id,metadata,updated_at')
+        .eq('phone', normalizedPhone)
+        .limit(2)
+    : { data: [], error: null };
+  if (phoneLookupError) throw phoneLookupError;
+
+  if ((emailMatches ?? []).length > 1 || (phoneMatches ?? []).length > 1) {
+    console.warn('[booking] lead lookup ambiguous by contact identifiers');
+    return null;
+  }
+
+  const emailMatch = (emailMatches ?? [])[0] ?? null;
+  const phoneMatch = (phoneMatches ?? [])[0] ?? null;
+  if (emailMatch && phoneMatch && emailMatch.id !== phoneMatch.id) {
+    console.warn('[booking] lead lookup conflict between email and phone');
+    return null;
+  }
+  const existing = emailMatch ?? phoneMatch;
+
+  async function appendBookingInteraction(leadId: string): Promise<string | null> {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const { data: snapshot, error: snapshotError } = await input.admin
+        .from('leads')
+        .select('id,metadata,updated_at')
+        .eq('id', leadId)
+        .maybeSingle();
+      if (snapshotError) throw snapshotError;
+      if (!snapshot) return null;
+
+      const metadata = snapshot.metadata && typeof snapshot.metadata === 'object' && !Array.isArray(snapshot.metadata)
+        ? snapshot.metadata as Record<string, unknown>
+        : {};
+      const previousBookings = Array.isArray(metadata.bookings)
+        ? metadata.bookings.filter((item) => {
+            if (!item || typeof item !== 'object' || Array.isArray(item)) return true;
+            return (item as Record<string, unknown>).source_key !== interaction.source_key;
+          }).slice(-19)
+        : [];
+      const nextUpdatedAt = new Date().toISOString();
+
+      let updateQuery = input.admin
+        .from('leads')
+        .update({
+          updated_at: nextUpdatedAt,
+          metadata: {
+            ...metadata,
+            last_acquisition: interaction,
+            bookings: [...previousBookings, interaction],
+          },
+        })
+        .eq('id', leadId);
+      updateQuery = snapshot.updated_at
+        ? updateQuery.eq('updated_at', snapshot.updated_at)
+        : updateQuery.is('updated_at', null);
+
+      const { data: updated, error: updateError } = await updateQuery
+        .select('id')
+        .maybeSingle();
+      if (updateError) throw updateError;
+      if (updated?.id) return updated.id;
+    }
+
+    throw new Error('lead_booking_attribution_concurrency_retry_exhausted');
+  }
+
+  if (existing) return appendBookingInteraction(existing.id);
+
+  const attribution = buildLeadAttributionFields(input.request, { fallbackSource: 'website' });
+  const { data: created, error: insertError } = await input.admin
+    .from('leads')
+    .insert({
+      name: input.name,
+      email: normalizedEmail,
+      phone: normalizedPhone || null,
+      client_type: 'particular',
+      category: 'Reunión informativa',
+      service: input.serviceLabel,
+      country: 'ES',
+      urgency: 'media',
+      message: input.notes?.trim() || 'Reserva de reunión informativa desde la web.',
+      state: 'new',
+      lifecycle_stage: 'lead',
+      source: attribution.source,
+      source_key: `booking:${input.appointmentId}`,
+      metadata: {
+        ...attribution.metadata,
+        last_acquisition: interaction,
+        bookings: [interaction],
+      },
+    })
+    .select('id')
+    .single();
+
+  if (!insertError && created?.id) return created.id;
+
+  // Lead attribution must never roll back a confirmed Calendar appointment.
+  // If another request won a uniqueness race, re-read the canonical lead.
+  if (insertError?.code === '23505') {
+    const { data: emailRaced, error: emailRaceError } = await input.admin
+      .from('leads')
+      .select('id')
+      .ilike('email', escapedEmail)
+      .limit(2);
+    if (emailRaceError) throw emailRaceError;
+
+    const { data: phoneRaced, error: phoneRaceError } = normalizedPhone
+      ? await input.admin.from('leads').select('id').eq('phone', normalizedPhone).limit(2)
+      : { data: [], error: null };
+    if (phoneRaceError) throw phoneRaceError;
+
+    if ((emailRaced ?? []).length > 1 || (phoneRaced ?? []).length > 1) {
+      console.warn('[booking] lead race remained ambiguous');
+      return null;
+    }
+    const racedByEmail = (emailRaced ?? [])[0] ?? null;
+    const racedByPhone = (phoneRaced ?? [])[0] ?? null;
+    if (racedByEmail && racedByPhone && racedByEmail.id !== racedByPhone.id) {
+      console.warn('[booking] lead race resolved to conflicting contacts');
+      return null;
+    }
+    const raced = racedByEmail ?? racedByPhone;
+    return raced ? appendBookingInteraction(raced.id) : null;
+  }
+
+  throw insertError ?? new Error('Could not create public booking lead');
+}
+
 
 function isValidServiceSlot(start: Date, durationMinutes: number): boolean {
   if (!Number.isFinite(start.getTime())) return false;
@@ -563,24 +731,6 @@ export async function POST(request: NextRequest) {
         adminTaskCompanyId = resolvedBookingIdentity.companyId;
       }
     }
-    if (!adminTaskClientId) {
-      const escapedLeadEmail = [...bookingEmail]
-        .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\\\${char}` : char))
-        .join('');
-      const { data: leadMatches, error: leadLookupError } = await admin
-        .from('leads')
-        .select('id')
-        .ilike('email', escapedLeadEmail)
-        .limit(2);
-      if (leadLookupError) {
-        console.error('[booking] lead enrichment failed:', leadLookupError);
-      } else if ((leadMatches ?? []).length === 1) {
-        adminTaskLeadId = leadMatches![0].id;
-      } else if ((leadMatches ?? []).length > 1) {
-        console.warn('[booking] lead enrichment ambiguous:', bookingEmail);
-      }
-    }
-
     if (rescheduledAppointment) {
       const oldEventId = rescheduledAppointment.provider_booking_id ?? rescheduledAppointment.google_event_id;
       const oldProvider = calendarProviderFromBookingProvider(rescheduledAppointment.booking_provider)
@@ -619,6 +769,54 @@ export async function POST(request: NextRequest) {
         `Cita sustituida por ${appointmentId}`,
       ).catch((taskError) => {
         console.error('[booking] old meeting task cancellation:', taskError);
+      });
+    }
+
+    const formattedDate = new Intl.DateTimeFormat('es-ES', {
+      timeZone: BOOKING_TIMEZONE,
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(start);
+
+    const managementToken = await createBookingManagementToken({
+      appointmentId: appointmentId!,
+      email: bookingEmail,
+      service: service.key,
+    });
+    const managementLinks = bookingManagementUrls(managementToken, service.key);
+    const clientTemplate = citaConfirmed(
+      input.name,
+      service.label,
+      formattedDate,
+      localTime,
+      meeting.meetingUrl,
+      managementLinks,
+    );
+    const calendarAttachment = buildBookingIcs({
+      appointmentId: appointmentId!,
+      service: service.label,
+      start,
+      end,
+      meetingUrl: meeting.meetingUrl,
+      attendeeEmail: bookingEmail,
+    });
+
+    if (!adminTaskClientId && service.public && appointmentId) {
+      adminTaskLeadId = await ensurePublicBookingLead({
+        admin,
+        request,
+        appointmentId,
+        name: input.name,
+        email: bookingEmail,
+        phone: input.phone,
+        serviceLabel: service.label,
+        notes: input.notes,
+        contentOrigin,
+      }).catch((leadError) => {
+        console.error('[booking] public lead attribution failed:', leadError);
+        return null;
       });
     }
 
@@ -700,36 +898,6 @@ export async function POST(request: NextRequest) {
         .eq('id', appointmentId!);
     });
 
-    const formattedDate = new Intl.DateTimeFormat('es-ES', {
-      timeZone: BOOKING_TIMEZONE,
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    }).format(start);
-
-    const managementToken = await createBookingManagementToken({
-      appointmentId: appointmentId!,
-      email: bookingEmail,
-      service: service.key,
-    });
-    const managementLinks = bookingManagementUrls(managementToken, service.key);
-    const clientTemplate = citaConfirmed(
-      input.name,
-      service.label,
-      formattedDate,
-      localTime,
-      meeting.meetingUrl,
-      managementLinks,
-    );
-    const calendarAttachment = buildBookingIcs({
-      appointmentId: appointmentId!,
-      service: service.label,
-      start,
-      end,
-      meetingUrl: meeting.meetingUrl,
-      attendeeEmail: bookingEmail,
-    });
     let clientEmailSent = false;
     try {
       await sendBookingEmail({

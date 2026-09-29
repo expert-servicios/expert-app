@@ -70,24 +70,37 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    const { data: byEmail, error: emailLookupError } = await admin
+    const escapedEmail = [...normalizedEmail]
+        .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\${char}` : char))
+        .join('');
+    const { data: emailMatches, error: emailLookupError } = await admin
       .from('leads')
       .select('id,message,metadata,email,phone')
-      .eq('email', normalizedEmail)
-      .limit(1)
-      .maybeSingle();
+      .ilike('email', escapedEmail)
+      .limit(2);
     if (emailLookupError) throw emailLookupError;
 
-    let existingLead = byEmail;
-    if (!existingLead && normalizedPhone) {
-      const { data: byPhone, error: phoneLookupError } = await admin
-        .from('leads')
-        .select('id,message,metadata,email,phone')
-        .eq('phone', normalizedPhone)
-        .limit(1)
-        .maybeSingle();
-      if (phoneLookupError) throw phoneLookupError;
-      existingLead = byPhone;
+    const { data: phoneMatches, error: phoneLookupError } = normalizedPhone
+      ? await admin
+          .from('leads')
+          .select('id,message,metadata,email,phone')
+          .eq('phone', normalizedPhone)
+          .limit(2)
+      : { data: [], error: null };
+    if (phoneLookupError) throw phoneLookupError;
+
+    const uniqueEmailMatch = (emailMatches ?? []).length === 1 ? emailMatches![0] : null;
+    const uniquePhoneMatch = (phoneMatches ?? []).length === 1 ? phoneMatches![0] : null;
+    const identifiersConflict = Boolean(
+      uniqueEmailMatch && uniquePhoneMatch && uniqueEmailMatch.id !== uniquePhoneMatch.id
+    );
+    const ambiguousIdentity = identifiersConflict
+      || (emailMatches ?? []).length > 1
+      || (phoneMatches ?? []).length > 1;
+    const existingLead = ambiguousIdentity ? null : (uniqueEmailMatch ?? uniquePhoneMatch);
+
+    if (ambiguousIdentity) {
+      console.warn('[free consultation] ambiguous lead identity; preserving request as separate lead');
     }
 
     let leadId: string;
@@ -132,7 +145,7 @@ export async function POST(request: NextRequest) {
         .insert({
           name: parsed.data.name,
           email: normalizedEmail,
-          phone: normalizedPhone,
+          phone: ambiguousIdentity ? null : normalizedPhone,
           client_type: 'particular',
           category: 'Consulta gratuita',
           service: parsed.data.service || 'consulta-general',
@@ -145,6 +158,10 @@ export async function POST(request: NextRequest) {
           source_key: sourceKey,
           metadata: {
             ...attribution.metadata,
+            ...(ambiguousIdentity ? {
+              identity_match_status: 'needs_review',
+              submitted_contact: { email: normalizedEmail, phone: normalizedPhone },
+            } : {}),
             last_acquisition: interaction,
             inquiries: [interaction],
           },

@@ -4,6 +4,8 @@ Fecha: 24/09/2026. Estado: **implementación inicial del conector preparada para
 
 Este documento describe el diseño completo; no acredita por sí mismo que cada capacidad esté implementada o activa. La guía operativa distingue lo entregado de lo pendiente. Extiende [Conversaciones contextuales](kia-contextual-conversations-roadmap.md) y [Operador interno](kia-internal-operator.md).
 
+Para correo operativo, Gmail, calendario, Google Meet/Microsoft 365, reservas, tareas Admin, compensaciones e idempotencia, la referencia canónica es [Runbook de correo, calendario y reuniones de KIA](kia-email-calendar-meetings-runbook.md).
+
 ## 1. Objetivo y responsabilidad
 
 KIA será la asistente IA de EXPERT encargada de coordinar la tramitación. Ksenia podrá ordenar desde Work «KIA, responde este correo», «ejecuta esta tarea» o «prepara la presentación». KIA identificará el expediente autorizado, consultará su estado, ejecutará dentro del permiso recibido, registrará evidencia y actualizará tareas y siguiente paso sin exigir que Ksenia duplique el trabajo en Admin.
