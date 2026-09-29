@@ -11,7 +11,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import { X, Send, Loader2, ChevronDown, ExternalLink, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { X, Send, Loader2, ChevronDown, ExternalLink, ThumbsUp, ThumbsDown, Mic, Square, Volume2 } from 'lucide-react';
 import { KiaAvatar } from '@/components/kia/KiaAvatar';
 import type { KiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 import type { KiaCopilotArtifact } from '@/lib/ai/kia/kia-copilot-artifacts';
@@ -399,6 +399,9 @@ export default function KiaCopilotWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [telegramLinking, setTelegramLinking] = useState(false);
+  const [voiceRecording, setVoiceRecording] = useState(false);
+  const [voiceTranscribing, setVoiceTranscribing] = useState(false);
+  const [voiceSpeakingId, setVoiceSpeakingId] = useState<string | null>(null);
   const [animatedMessageIds, setAnimatedMessageIds] = useState<Set<string>>(() => new Set());
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -406,6 +409,11 @@ export default function KiaCopilotWidget() {
   const { messages, loading, contextLoading, send, rate, reset, appendAssistantMessage, staffPreview, uiLocale } = useKiaChat(pathname, contextToken);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const voiceChunksRef = useRef<BlobPart[]>([]);
+  const voiceTimeoutRef = useRef<number | null>(null);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   const lastAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
   const currentKiaState: KiaAvatarState = loading || contextLoading
@@ -463,6 +471,127 @@ export default function KiaCopilotWidget() {
     if (!text) return;
     setInput('');
     send(text);
+  }
+
+  async function transcribeRecordedAudio(blob: Blob) {
+    if (!blob.size) return;
+    setVoiceTranscribing(true);
+    try {
+      const form = new FormData();
+      const extension = blob.type.includes('ogg') ? 'ogg' : blob.type.includes('mp4') ? 'm4a' : 'webm';
+      form.set('audio', new File([blob], `kia-voice.${extension}`, { type: blob.type || 'audio/webm' }));
+      const response = await fetch('/api/ai/kia/voice/transcribe', { method: 'POST', body: form });
+      const data = await response.json().catch(() => ({})) as { transcript?: string; error?: string };
+      if (!response.ok || !data.transcript?.trim()) throw new Error(data.error ?? 'transcription_failed');
+      setInput(data.transcript.trim());
+      window.setTimeout(() => inputRef.current?.focus(), 0);
+    } catch {
+      appendAssistantMessage(
+        uiLocale === 'ru'
+          ? 'Не удалось расшифровать голосовое сообщение. Можно повторить запись или написать текстом.'
+          : 'No he podido transcribir la nota de voz. Puedes repetirla o escribir el mensaje.',
+        'aviso',
+      );
+    } finally {
+      setVoiceTranscribing(false);
+    }
+  }
+
+  function stopVoiceRecording() {
+    if (voiceTimeoutRef.current) {
+      window.clearTimeout(voiceTimeoutRef.current);
+      voiceTimeoutRef.current = null;
+    }
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+  }
+
+  async function handleVoiceToggle() {
+    if (voiceRecording) {
+      stopVoiceRecording();
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      appendAssistantMessage(
+        uiLocale === 'ru' ? 'Этот браузер не поддерживает запись голоса.' : 'Este navegador no permite grabar voz.',
+        'aviso',
+      );
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      const preferredTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+      const mimeType = preferredTypes.find((type) => MediaRecorder.isTypeSupported(type));
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      voiceChunksRef.current = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data.size) voiceChunksRef.current.push(event.data);
+      };
+      recorder.onstop = () => {
+        const blob = new Blob(voiceChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        voiceChunksRef.current = [];
+        mediaRecorderRef.current = null;
+        mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+        setVoiceRecording(false);
+        void transcribeRecordedAudio(blob);
+      };
+      recorder.start(500);
+      mediaRecorderRef.current = recorder;
+      setVoiceRecording(true);
+      voiceTimeoutRef.current = window.setTimeout(stopVoiceRecording, 90_000);
+    } catch {
+      setVoiceRecording(false);
+      appendAssistantMessage(
+        uiLocale === 'ru'
+          ? 'Нет доступа к микрофону. Разрешите его в браузере или напишите сообщение.'
+          : 'No tengo acceso al micrófono. Autorízalo en el navegador o escribe el mensaje.',
+        'aviso',
+      );
+    }
+  }
+
+  async function handleSpeak(messageId: string, text: string) {
+    if (voiceSpeakingId === messageId) {
+      audioPlayerRef.current?.pause();
+      audioPlayerRef.current = null;
+      setVoiceSpeakingId(null);
+      return;
+    }
+
+    audioPlayerRef.current?.pause();
+    setVoiceSpeakingId(messageId);
+    try {
+      const response = await fetch('/api/ai/kia/voice/speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, locale: uiLocale }),
+      });
+      if (!response.ok) throw new Error('speech_unavailable');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioPlayerRef.current = audio;
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        audioPlayerRef.current = null;
+        setVoiceSpeakingId(null);
+      };
+      audio.onerror = () => {
+        URL.revokeObjectURL(url);
+        audioPlayerRef.current = null;
+        setVoiceSpeakingId(null);
+      };
+      await audio.play();
+    } catch {
+      setVoiceSpeakingId(null);
+      appendAssistantMessage(
+        uiLocale === 'ru' ? 'Сейчас голосовой ответ недоступен.' : 'Ahora mismo no puedo reproducir la respuesta por voz.',
+        'aviso',
+      );
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -604,6 +733,22 @@ export default function KiaCopilotWidget() {
                 {msg.role === 'assistant' && msg.artifacts?.length ? (
                   <KiaMessageArtifacts artifacts={msg.artifacts} />
                 ) : null}
+                {msg.role === 'assistant' ? (
+                  <div className="mt-1.5 flex items-center gap-1 text-[#7a6e5f]">
+                    <button
+                      type="button"
+                      onClick={() => void handleSpeak(msg.id, msg.text)}
+                      aria-label={voiceSpeakingId === msg.id
+                        ? (uiLocale === 'ru' ? 'Остановить голос' : 'Detener voz')
+                        : (uiLocale === 'ru' ? 'Прослушать ответ' : 'Escuchar respuesta')}
+                      className="rounded-md p-1 transition-colors hover:bg-[#f5f1eb]"
+                    >
+                      {voiceSpeakingId === msg.id
+                        ? <Square size={12} aria-hidden="true" />
+                        : <Volume2 size={12} aria-hidden="true" />}
+                    </button>
+                  </div>
+                ) : null}
                 {msg.role === 'assistant' && msg.decisionLogId && !staffPreview ? (
                   <div className="mt-1.5 flex items-center gap-1 text-[#7a6e5f]">
                     <button
@@ -687,6 +832,24 @@ export default function KiaCopilotWidget() {
           className="flex items-end gap-2 px-3 py-3"
           style={{ borderTop: '1px solid #e8e0d4' }}
         >
+          <button
+            type="button"
+            onClick={() => void handleVoiceToggle()}
+            disabled={loading || contextLoading || voiceTranscribing}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:opacity-40 ${voiceRecording ? 'border-red-300 bg-red-50 text-red-700' : 'border-[#e8e0d4] bg-white text-[#0D1B2A]'}`}
+            aria-label={voiceRecording
+              ? (uiLocale === 'ru' ? 'Остановить запись' : 'Detener grabación')
+              : (uiLocale === 'ru' ? 'Записать голосовое сообщение' : 'Grabar nota de voz')}
+            title={voiceTranscribing
+              ? (uiLocale === 'ru' ? 'Расшифровываю…' : 'Transcribiendo…')
+              : undefined}
+          >
+            {voiceTranscribing
+              ? <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+              : voiceRecording
+                ? <Square size={14} aria-hidden="true" />
+                : <Mic size={15} aria-hidden="true" />}
+          </button>
           <textarea
             ref={inputRef}
             value={input}
