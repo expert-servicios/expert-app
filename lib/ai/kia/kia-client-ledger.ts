@@ -86,7 +86,7 @@ export async function resolveClientRegistrySubject(
   const exactIds = [...new Set(exact.map((row) => row.id))];
   if (exactIds.length > 1) throw new Error('client_registry_identity_conflict');
 
-  let subject = exact[0] ?? null;
+  let subject: RegistrySubjectRow | null = exact[0] ?? null;
 
   // Contact data is not an identity merge key for bound leads/clients.
   // It is used only to reuse an unbound prospect subject.
