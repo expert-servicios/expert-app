@@ -34,6 +34,7 @@ import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkRateLimit, checkSpam, getClientIp, releaseRateLimit } from '@/lib/utils/spam-guard';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { describeContentOrigin, normalizeContentOrigin } from '@/lib/marketing/content-origin';
+import { buildLeadAttributionFields } from '@/lib/marketing/server-attribution';
 import {
   BOOKING_CLOSE_HOUR,
   BOOKING_MAX_DAYS,
@@ -68,6 +69,129 @@ async function authenticatedUser(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   return user ?? null;
 }
+
+async function ensurePublicBookingLead(input: {
+  admin: ReturnType<typeof getSupabaseAdmin>;
+  request: NextRequest;
+  appointmentId: string;
+  name: string;
+  email: string;
+  phone: string;
+  serviceLabel: string;
+  notes?: string | null;
+  contentOrigin: string;
+}): Promise<string | null> {
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const normalizedPhone = input.phone.trim();
+  const escapedEmail = normalizedEmail.replace(/[\\%_]/g, '\\async function authenticatedUser(request: NextRequest) {
+  const supabase = createServerSupabaseClient(request);
+  const { data: { user } } = await supabase.auth.getUser();
+  return user ?? null;
+}
+');
+  const interaction = {
+    at: new Date().toISOString(),
+    action: 'booking_created',
+    appointment_id: input.appointmentId,
+    origin: input.contentOrigin,
+    service: input.serviceLabel,
+    source_key: `booking:${input.appointmentId}`,
+    contact: {
+      email: normalizedEmail,
+      phone: normalizedPhone || null,
+    },
+  };
+
+  const { data: emailMatches, error: emailLookupError } = await input.admin
+    .from('leads')
+    .select('id,metadata')
+    .ilike('email', escapedEmail)
+    .limit(2);
+  if (emailLookupError) throw emailLookupError;
+
+  let existing = (emailMatches ?? []).length === 1 ? emailMatches![0] : null;
+  if ((emailMatches ?? []).length > 1) {
+    console.warn('[booking] lead lookup ambiguous by email:', normalizedEmail);
+    return null;
+  }
+
+  if (!existing && normalizedPhone) {
+    const { data: phoneMatches, error: phoneLookupError } = await input.admin
+      .from('leads')
+      .select('id,metadata')
+      .eq('phone', normalizedPhone)
+      .limit(2);
+    if (phoneLookupError) throw phoneLookupError;
+    if ((phoneMatches ?? []).length > 1) {
+      console.warn('[booking] lead lookup ambiguous by phone');
+      return null;
+    }
+    existing = (phoneMatches ?? [])[0] ?? null;
+  }
+
+  if (existing) {
+    const metadata = existing.metadata && typeof existing.metadata === 'object' && !Array.isArray(existing.metadata)
+      ? existing.metadata as Record<string, unknown>
+      : {};
+    const previousBookings = Array.isArray(metadata.bookings) ? metadata.bookings.slice(-19) : [];
+    const { error: updateError } = await input.admin
+      .from('leads')
+      .update({
+        updated_at: new Date().toISOString(),
+        metadata: {
+          ...metadata,
+          last_acquisition: interaction,
+          bookings: [...previousBookings, interaction],
+        },
+      })
+      .eq('id', existing.id);
+    if (updateError) throw updateError;
+    return existing.id;
+  }
+
+  const attribution = buildLeadAttributionFields(input.request, { fallbackSource: 'website' });
+  const { data: created, error: insertError } = await input.admin
+    .from('leads')
+    .insert({
+      name: input.name,
+      email: normalizedEmail,
+      phone: normalizedPhone || null,
+      client_type: 'particular',
+      category: 'Reunión informativa',
+      service: input.serviceLabel,
+      country: 'ES',
+      urgency: 'media',
+      message: input.notes?.trim() || 'Reserva de reunión informativa desde la web.',
+      state: 'new',
+      lifecycle_stage: 'lead',
+      source: attribution.source,
+      source_key: `booking:${input.appointmentId}`,
+      metadata: {
+        ...attribution.metadata,
+        last_acquisition: interaction,
+        bookings: [interaction],
+      },
+    })
+    .select('id')
+    .single();
+
+  if (!insertError && created?.id) return created.id;
+
+  // Lead attribution must never roll back a confirmed Calendar appointment.
+  // If another request won a uniqueness race, re-read the canonical lead.
+  if (insertError?.code === '23505') {
+    const { data: raced } = await input.admin
+      .from('leads')
+      .select('id')
+      .ilike('email', escapedEmail)
+      .limit(1)
+      .maybeSingle();
+    return raced?.id ?? null;
+  }
+
+  throw insertError ?? new Error('Could not create public booking lead');
+}
+
 
 function isValidServiceSlot(start: Date, durationMinutes: number): boolean {
   if (!Number.isFinite(start.getTime())) return false;
@@ -578,6 +702,21 @@ export async function POST(request: NextRequest) {
         adminTaskLeadId = leadMatches![0].id;
       } else if ((leadMatches ?? []).length > 1) {
         console.warn('[booking] lead enrichment ambiguous:', bookingEmail);
+      } else if (service.public && appointmentId) {
+        adminTaskLeadId = await ensurePublicBookingLead({
+          admin,
+          request,
+          appointmentId,
+          name: input.name,
+          email: bookingEmail,
+          phone: input.phone,
+          serviceLabel: service.label,
+          notes: input.notes,
+          contentOrigin,
+        }).catch((leadError) => {
+          console.error('[booking] public lead attribution failed:', leadError);
+          return null;
+        });
       }
     }
 
