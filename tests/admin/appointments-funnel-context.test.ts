@@ -59,6 +59,7 @@ describe('Admin appointments funnel context', () => {
     expect(page).toContain('let clientId = expedienteTarget.client_id');
     expect(page).toContain('identity_conflict');
     expect(page).toContain('invalid_client_identity');
+    expect(page).toContain('ambiguous_lead_match');
     expect(page).toContain("setCaseError('La identidad de esta cita requiere revisión antes de crear un expediente.')");
     expect(page.indexOf('identity_conflict')).toBeLessThan(page.indexOf('let clientId = expedienteTarget.client_id'));
     expect(page).toContain('if (!clientId) {');
