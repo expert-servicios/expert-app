@@ -18,19 +18,23 @@ describe('KIA Google eSignature workflow', () => {
     expect(registry).toContain("get_case_signature_status:          policy('R0', 'read',  'documents')");
     expect(executor).toContain("case 'get_case_signature_status'");
     expect(executor).toContain("google_esignature_request_api: 'manual_only'");
-    expect(executor).toContain('evidenceDocumentIds.has(doc.id)');
-    expect(executor).not.toContain('/firmad|signed|firma|mandato/.test(haystack)');
+    expect(executor).toContain("metadata.signature_status === 'completed'");
+    expect(executor).toContain('metadata.signature_final_document_id');
   });
 
   it('keeps signed-document download behind the existing EXPERT authorization route', () => {
-    expect(executor).toContain('/api/documents/${doc.id}/download?redirect=1');
+    expect(executor).toContain('absoluteAppUrl(`' + '/api/documents/${doc.id}/download?redirect=1' + '`)');
     expect(executor).not.toContain('drive.google.com/file/d/${doc.drive_file_id}');
   });
 
   it('never claims Google eSignature was sent without persisted evidence', () => {
     expect(prompt).toContain('No afirmes "solicitud de firma enviada" salvo que exista evidencia persistida del envío');
     expect(prompt).toContain('requiere intervención humana');
-    expect(prompt).toContain('prepara create_internal_task/create_next_best_action');
+    expect(prompt).toContain('usa request_signature_approval');
+    expect(defs).toContain('request_signature_approval');
+    expect(registry).toContain("request_signature_approval:         policy('R1', 'approval_request', 'documents')");
+    expect(executor).toContain("status: 'prepared_for_human_approval'");
+    expect(executor).toContain('external_request_sent: false');
     expect(runbook).toContain('KIA NO puede afirmar que la solicitud fue enviada');
   });
 
@@ -40,13 +44,23 @@ describe('KIA Google eSignature workflow', () => {
     expect(runbook).toContain('AutoFirma');
   });
 
-  it('lets the email agent read signature state', () => {
+  it('lets the email agent read signature state and prepare a human approval task only', () => {
     expect(email).toContain("'get_case_signature_status'");
+    expect(email).toContain("'request_signature_approval'");
+    expect(email).toContain("'approval_request'");
+  });
+
+  it('paginates signature tasks and exposes privacy-safe signer progress', () => {
+    expect(executor).toContain('.range(offset, offset + pageSize - 1)');
+    expect(executor).toContain('email_hint: maskEmail(email)');
+    expect(executor).toContain("status: typeof signer.status === 'string' ? signer.status : 'pending'");
+    expect(executor).toContain("metadata.task_kind === 'signature_request_approval'");
   });
 
   it('keeps the legacy task key while making evidence provider-neutral', () => {
     expect(blueprint).toContain("key: 'archive_docusign_completion_certificate'");
     expect(blueprint).toContain('Legacy task key retained for compatibility');
     expect(blueprint).toContain('Para Google eSignature, conservar el PDF final con su página de auditoría');
+    expect(blueprint).toContain('skipAllowed: false');
   });
 });
