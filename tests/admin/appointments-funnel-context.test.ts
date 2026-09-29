@@ -42,6 +42,8 @@ describe('Admin appointments funnel context', () => {
     expect(page).toContain('Origen: {appt.crm_context.origin_label}');
     expect(page).toContain('Última interacción');
     expect(page).toContain('Identidad CRM por revisar');
+    expect(page).toContain('Google Calendar · Meet');
+    expect(page).toContain('Microsoft 365 · Teams');
   });
 
   it('uses canonical client_id before the legacy email search when creating a case', () => {
