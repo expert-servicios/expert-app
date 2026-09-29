@@ -133,7 +133,7 @@ export function AutomationSettingsPanel() {
               {groupKeys.map((key) => {
                 const meta    = LABELS[key];
                 const setting = byKey[key];
-                const enabled = setting?.enabled ?? true;
+                const enabled = setting?.enabled ?? !key.startsWith('kia.email_');
                 const isBusy  = busy === key;
                 const fb      = feedback?.key === key ? feedback : null;
 
