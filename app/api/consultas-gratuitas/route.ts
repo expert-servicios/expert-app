@@ -73,24 +73,34 @@ export async function POST(request: NextRequest) {
     const escapedEmail = [...normalizedEmail]
         .map((char) => (char === '%' || char === '_' || char === '\\' ? `\\${char}` : char))
         .join('');
-    const { data: byEmail, error: emailLookupError } = await admin
+    const { data: emailMatches, error: emailLookupError } = await admin
       .from('leads')
       .select('id,message,metadata,email,phone')
       .ilike('email', escapedEmail)
-      .limit(1)
-      .maybeSingle();
+      .limit(2);
     if (emailLookupError) throw emailLookupError;
 
-    let existingLead = byEmail;
-    if (!existingLead && normalizedPhone) {
-      const { data: byPhone, error: phoneLookupError } = await admin
-        .from('leads')
-        .select('id,message,metadata,email,phone')
-        .eq('phone', normalizedPhone)
-        .limit(1)
-        .maybeSingle();
-      if (phoneLookupError) throw phoneLookupError;
-      existingLead = byPhone;
+    const { data: phoneMatches, error: phoneLookupError } = normalizedPhone
+      ? await admin
+          .from('leads')
+          .select('id,message,metadata,email,phone')
+          .eq('phone', normalizedPhone)
+          .limit(2)
+      : { data: [], error: null };
+    if (phoneLookupError) throw phoneLookupError;
+
+    const uniqueEmailMatch = (emailMatches ?? []).length === 1 ? emailMatches![0] : null;
+    const uniquePhoneMatch = (phoneMatches ?? []).length === 1 ? phoneMatches![0] : null;
+    const identifiersConflict = Boolean(
+      uniqueEmailMatch && uniquePhoneMatch && uniqueEmailMatch.id !== uniquePhoneMatch.id
+    );
+    const ambiguousIdentity = identifiersConflict
+      || (emailMatches ?? []).length > 1
+      || (phoneMatches ?? []).length > 1;
+    const existingLead = ambiguousIdentity ? null : (uniqueEmailMatch ?? uniquePhoneMatch);
+
+    if (ambiguousIdentity) {
+      console.warn('[free consultation] ambiguous lead identity; preserving request as separate lead');
     }
 
     let leadId: string;
@@ -148,6 +158,7 @@ export async function POST(request: NextRequest) {
           source_key: sourceKey,
           metadata: {
             ...attribution.metadata,
+            ...(ambiguousIdentity ? { identity_match_status: 'needs_review' } : {}),
             last_acquisition: interaction,
             inquiries: [interaction],
           },
