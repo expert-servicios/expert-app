@@ -409,6 +409,17 @@ async function handleTelegramUpdate(request: NextRequest) {
   }
 
   let effectiveText = inbound.text;
+  if (inbound.media && inbound.media.kind !== 'voice' && inbound.media.kind !== 'audio') {
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: inbound.text
+        ? 'He recibido el adjunto y el texto. Por ahora KIA solo procesa texto y audio; usaré únicamente el texto del mensaje.'
+        : 'Por ahora KIA en Telegram solo procesa texto y notas de voz. Para documentos o imágenes, súbelos desde tu expediente en EXPERT.',
+    });
+    if (!inbound.text) {
+      return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'unsupported_media' });
+    }
+  }
   if (inbound.media?.kind === 'voice' || inbound.media?.kind === 'audio') {
     if (process.env.KIA_TELEGRAM_VOICE_ENABLED?.trim().toLowerCase() !== 'true') {
       await sendTelegramMessage({
