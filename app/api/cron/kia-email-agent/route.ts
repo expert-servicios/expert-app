@@ -268,6 +268,26 @@ async function createEmailRequestTask(input: {
   return existing;
 }
 
+async function automationEnabled(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  key: string,
+  envName: string,
+): Promise<boolean> {
+  const { data, error } = await admin
+    .from('automation_settings')
+    .select('enabled')
+    .eq('key', key)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[kia-email-agent] automation setting lookup failed:', key, error.message);
+    return false;
+  }
+
+  if (data) return data.enabled === true;
+  return process.env[envName]?.trim().toLowerCase() === 'true';
+}
+
 async function writeAgentHeartbeat(
   admin: ReturnType<typeof getSupabaseAdmin>,
   value: Record<string, unknown>,
@@ -402,14 +422,20 @@ export async function GET(request: NextRequest) {
   }
 
   const admin = getSupabaseAdmin();
-  const enabled = process.env.KIA_EMAIL_AGENT_ENABLED?.toLowerCase() === 'true';
+  const [enabled, autoSend, newLeadAutoSend] = await Promise.all([
+    automationEnabled(admin, 'kia.email_agent', 'KIA_EMAIL_AGENT_ENABLED'),
+    automationEnabled(admin, 'kia.email_auto_send', 'KIA_EMAIL_AUTO_SEND_ENABLED'),
+    automationEnabled(admin, 'kia.email_new_lead_auto_send', 'KIA_EMAIL_NEW_LEAD_AUTO_SEND_ENABLED'),
+  ]);
   if (!enabled) {
-    await writeAgentHeartbeat(admin, { enabled: false, auto_send: false, status: 'disabled' }).catch(() => {});
-    return NextResponse.json({ skipped: true, reason: 'KIA_EMAIL_AGENT_ENABLED is not true' });
+    await writeAgentHeartbeat(admin, {
+      enabled: false,
+      auto_send: false,
+      new_lead_auto_send: false,
+      status: 'disabled',
+    }).catch(() => {});
+    return NextResponse.json({ skipped: true, reason: 'kia.email_agent is disabled' });
   }
-
-  const autoSend = process.env.KIA_EMAIL_AUTO_SEND_ENABLED?.toLowerCase() === 'true';
-  const newLeadAutoSend = process.env.KIA_EMAIL_NEW_LEAD_AUTO_SEND_ENABLED?.toLowerCase() === 'true';
   const minConfidence = Number(process.env.KIA_EMAIL_MIN_CONFIDENCE ?? '0.88');
   const prospectMinConfidence = Math.max(minConfidence, Number(process.env.KIA_EMAIL_PROSPECT_MIN_CONFIDENCE ?? '0.92'));
   const health = await healthGate(admin);
@@ -801,6 +827,7 @@ export async function GET(request: NextRequest) {
   await writeAgentHeartbeat(admin, {
     enabled: true,
     auto_send: autoSend,
+    new_lead_auto_send: newLeadAutoSend,
     status: errors.length === 0 ? 'ok' : 'degraded',
     health_gate: health,
     evaluated,
