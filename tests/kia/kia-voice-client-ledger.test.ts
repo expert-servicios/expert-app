@@ -15,8 +15,8 @@ describe('KIA voice and durable client registry', () => {
   const context = source('lib/ai/kia/kia-context-builder.ts');
   const prompt = source('lib/ai/kia/kia-system-prompt.ts');
   const cron = source('app/api/cron/kia-client-ledger/route.ts');
-  const migration = source('supabase/migrations/20260929181000_kia_client_registry_ledger.sql');
-  const deny = source('supabase/migrations/20260929182500_kia_client_registry_explicit_deny.sql');
+  const migration = source('supabase/migrations/20260929160818_kia_client_registry_ledger.sql');
+  const deny = source('supabase/migrations/20260929162529_kia_client_registry_explicit_deny.sql');
 
   it('keeps audio credentials server-side and enforces auth/size/type gates', () => {
     expect(audio).toContain('process.env.OPENAI_API_KEY');
