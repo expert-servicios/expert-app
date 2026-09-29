@@ -260,7 +260,9 @@ async function _listThreads(
       from: fromName || fromEmail,
       fromEmail,
       snippet: threadRes.data.snippet ?? '',
-      date: dateRaw ? new Date(dateRaw).toISOString() : new Date().toISOString(),
+      date: last.internalDate
+        ? new Date(Number(last.internalDate)).toISOString()
+        : dateRaw ? new Date(dateRaw).toISOString() : new Date().toISOString(),
       unread,
       hasAttachment,
     });
@@ -299,7 +301,9 @@ async function _getThread(gmail: AnyGoogle, threadId: string, markRead = true): 
       from: fromName || fromEmail,
       fromEmail,
       to: hdr(headers, 'To'),
-      date: dateRaw ? new Date(dateRaw).toISOString() : new Date().toISOString(),
+      date: msg.internalDate
+        ? new Date(Number(msg.internalDate)).toISOString()
+        : dateRaw ? new Date(dateRaw).toISOString() : new Date().toISOString(),
       body,
       bodyType,
       unread: (msg.labelIds ?? []).includes('UNREAD'),
