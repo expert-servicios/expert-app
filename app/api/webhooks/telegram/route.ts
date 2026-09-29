@@ -34,6 +34,7 @@ import { executeKiaToolCall } from '@/lib/ai/kia/kia-tool-executor';
 import { resolveKiaQuickActionCase } from '@/lib/ai/kia/kia-quick-action-case';
 import { recordKiaVisibleReply } from '@/lib/ai/kia/kia-visible-decision-log';
 import { persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
+import { resolveTelegramContentOrigin } from '@/lib/marketing/telegram-content-origin-server';
 import {
   escapeTelegramHtml,
   isConfiguredTelegramAdminChat,
@@ -116,10 +117,7 @@ async function handleTelegramUpdate(request: NextRequest) {
   const startPayload = command === '/start' ? parts[1]?.trim() ?? '' : '';
   const deepLinkCode = startPayload.startsWith('link_') ? startPayload.slice(5) : null;
   const newsSegment = startPayload.startsWith('news_') ? startPayload.slice(5) : null;
-  const sourceMatch = /^src_(b|d)_([A-Za-z0-9_-]+)$/.exec(startPayload);
-  const contentOrigin = sourceMatch
-    ? `${sourceMatch[1] === 'b' ? 'blog' : 'docs'}:${sourceMatch[2]}`
-    : null;
+  const contentOrigin = resolveTelegramContentOrigin(startPayload);
 
   if (newsSegment && NEWS_SEGMENTS.has(newsSegment)) {
     const now = new Date().toISOString();
@@ -273,6 +271,7 @@ async function handleTelegramUpdate(request: NextRequest) {
   const opensContext = contextEnabled && Boolean(telegramContextPayload(inbound.text));
 
   if (contentOrigin && identity && contextEnabled) {
+    const now = new Date().toISOString();
     const conversationQuery = admin
       .from('kia_conversations')
       .select('id,metadata')
@@ -300,14 +299,33 @@ async function handleTelegramUpdate(request: NextRequest) {
           metadata: {
             ...metadata,
             last_content_origin: contentOrigin,
-            last_content_origin_at: new Date().toISOString(),
+            last_content_origin_at: now,
           },
-          updated_at: new Date().toISOString(),
+          updated_at: now,
         })
         .eq('id', conversation.id)
         .eq('profile_id', identity.profileId);
       if (attributionError) {
         console.error('[Telegram attribution] persistence failed:', attributionError.message);
+      }
+    } else {
+      const { error: createAttributionError } = await admin
+        .from('kia_conversations')
+        .insert({
+          tenant_id: identity.tenantId,
+          profile_id: identity.profileId,
+          channel: 'telegram',
+          status: 'active',
+          origin_type: 'telegram',
+          metadata: {
+            telegram_chat_id: inbound.chatId,
+            last_content_origin: contentOrigin,
+            last_content_origin_at: now,
+          },
+          last_message_at: now,
+        });
+      if (createAttributionError) {
+        console.error('[Telegram attribution] conversation creation failed:', createAttributionError.message);
       }
     }
   }
