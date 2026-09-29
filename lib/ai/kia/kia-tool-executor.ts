@@ -538,6 +538,75 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         });
       }
 
+      case 'get_case_signature_status': {
+        const clientId = context.contact?.clientId;
+        const caseId = String(args.caseId);
+        if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+
+        const { data: ownedCase, error: caseError } = await admin
+          .from('cases')
+          .select('id')
+          .eq('id', caseId)
+          .eq('client_id', clientId)
+          .maybeSingle();
+        if (caseError || !ownedCase) return fail(toolCall.name, 'Expediente no autorizado.');
+
+        const [tasksRes, docsRes] = await Promise.all([
+          admin
+            .from('internal_tasks')
+            .select('id,title,status,priority,description,metadata,created_at,updated_at,completed_at')
+            .eq('case_id', caseId)
+            .eq('client_id', clientId)
+            .order('created_at', { ascending: false })
+            .limit(200),
+          admin
+            .from('documents')
+            .select('id,original_name,title,state,file_path,drive_file_id,created_at,updated_at,replaced_by')
+            .eq('case_id', caseId)
+            .eq('client_id', clientId)
+            .is('replaced_by', null)
+            .order('created_at', { ascending: false })
+            .limit(200),
+        ]);
+        if (tasksRes.error || docsRes.error) return fail(toolCall.name, 'Error consultando firmas del expediente.');
+
+        const signatureTasks = (tasksRes.data ?? []).filter((task) => {
+          const haystack = [
+            task.title,
+            task.description,
+            JSON.stringify(task.metadata ?? {}),
+          ].join(' ').toLowerCase();
+          return /firma|firmar|signature|signing|docusign|esignature|mandato/.test(haystack);
+        });
+
+        const docs = (docsRes.data ?? []).filter((doc) => doc.state !== 'rechazado');
+        const signedDocs = docs.filter((doc) => {
+          const haystack = [doc.original_name, doc.title].filter(Boolean).join(' ').toLowerCase();
+          return /firmad|signed|firma|mandato/.test(haystack);
+        });
+
+        return ok(toolCall.name, {
+          signature_tasks: signatureTasks.map((task) => ({
+            id: task.id,
+            title: task.title,
+            status: task.status,
+            priority: task.priority,
+            completed_at: task.completed_at,
+            metadata: task.metadata,
+          })),
+          signed_documents: signedDocs.map((doc) => ({
+            id: doc.id,
+            name: doc.original_name ?? doc.title,
+            state: doc.state,
+            storage: doc.drive_file_id ? 'drive_mirror' : doc.file_path ? 'supabase' : 'metadata_only',
+            download_url: doc.file_path ? `/api/documents/${doc.id}/download?redirect=1` : null,
+            case_url: `/dashboard/expedientes/${caseId}#documentos`,
+          })),
+          google_esignature_request_api: 'manual_only',
+          google_esignature_note: 'KIA may prepare and track the signing step, but requesting Google eSignature must be initiated by a human in Drive until a supported API is available.',
+        });
+      }
+
       case 'get_case_timeline': {
         const clientId = context.contact?.clientId;
         const caseId = String(args.caseId);
