@@ -26,8 +26,23 @@ export function PushSubscribeButton() {
     if (Notification.permission === 'denied') { setState('denied'); return; }
 
     navigator.serviceWorker.ready.then((reg) => {
-      reg.pushManager.getSubscription().then((sub) => {
-        setState(sub ? 'subscribed' : 'unsubscribed');
+      reg.pushManager.getSubscription().then(async (sub) => {
+        if (!sub) {
+          setState('unsubscribed');
+          return;
+        }
+
+        // Re-register an existing browser subscription on every admin load.
+        // Browser subscriptions can outlive server records or rotate keys while
+        // the UI would otherwise keep showing a misleading "active" state.
+        const json = sub.toJSON();
+        const res = await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
+        }).catch(() => null);
+
+        setState(res?.ok ? 'subscribed' : 'unsubscribed');
       });
     });
   }, []);
