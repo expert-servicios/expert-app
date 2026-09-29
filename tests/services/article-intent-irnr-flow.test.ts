@@ -43,6 +43,11 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(cta).toContain('https://t.me/kia_expert_bot');
     expect(cta).toContain('buildTelegramContentPayload(sourceKind, sourceSlug)');
     expect(cta).toContain('?start=${telegramPayload}');
+    const telegramWebhook = source('app/api/webhooks/telegram/route.ts');
+    expect(telegramWebhook).toContain('attributionConversationId');
+    expect(telegramWebhook).toContain('genericTelegramConversationId');
+    expect(telegramWebhook).toContain("company_id: attributionCompanyId");
+    expect(telegramWebhook).toContain("conversationId: caseContext?.stored?.conversation.id ?? genericTelegramConversationId ?? undefined");
   });
 
   it('keeps the SEO CTA bundle lean', () => {
@@ -131,8 +136,11 @@ describe('article intent CTA and IRNR funnel', () => {
     expect(bookingApi).toContain("action: 'booking_created'");
     expect(bookingApi).toContain("source_key: `booking:${input.appointmentId}`");
     expect(bookingApi).toContain('Lead attribution must never roll back a confirmed Calendar appointment');
-    expect(bookingApi).toContain('return appendBookingInteraction(existing)');
+    expect(bookingApi).toContain('return appendBookingInteraction(existing.id)');
     expect(bookingApi).toContain("source_key !== interaction.source_key");
+    expect(bookingApi).toContain("lead lookup conflict between email and phone");
+    expect(bookingApi).toContain("lead_booking_attribution_concurrency_retry_exhausted");
+    expect(bookingApi).toContain(".eq('updated_at', snapshot.updated_at)");
     expect(bookingApi.indexOf('if (rescheduledAppointment)')).toBeLessThan(bookingApi.indexOf('ensurePublicBookingLead({'));
     expect(consultation).toContain('href={meetingHref}');
     expect(consultation).toContain("encodeURIComponent(origin)");
