@@ -1,0 +1,496 @@
+import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
+
+type AdminClient = ReturnType<typeof getSupabaseAdmin>;
+
+export interface KiaClientLedgerContext {
+  subjectId: string;
+  lifecycleStage: string;
+  summaryText: string;
+  asOf: string;
+  recentEvents: Array<{
+    eventType: string;
+    occurredAt: string;
+    title: string | null;
+    summary: string | null;
+    channel: string | null;
+    direction: string | null;
+    caseId: string | null;
+    companyId: string | null;
+    importance: number;
+    sourceRef: string | null;
+  }>;
+}
+
+type IdentityInput = {
+  clientId?: string | null;
+  leadId?: string | null;
+  email?: string | null;
+  phone?: string | null;
+};
+
+function normalizeEmail(value: string | null | undefined): string | null {
+  const email = value?.trim().toLowerCase() ?? '';
+  return email.includes('@') ? email : null;
+}
+
+function normalizePhone(value: string | null | undefined): string | null {
+  const raw = value?.trim() ?? '';
+  if (!raw) return null;
+  const plus = raw.startsWith('+') ? '+' : '';
+  const digits = raw.replace(/\D/g, '');
+  return digits.length >= 7 ? `${plus}${digits}` : null;
+}
+
+export async function resolveClientRegistrySubject(
+  admin: AdminClient,
+  input: IdentityInput,
+): Promise<{ id: string; lifecycleStage: string } | null> {
+  const clientId = input.clientId ?? null;
+  const leadId = input.leadId ?? null;
+  const email = normalizeEmail(input.email);
+  const phone = normalizePhone(input.phone);
+
+  if (!clientId && !leadId && !email && !phone) return null;
+
+  const exact: Array<{ id: string; lifecycle_stage: string; lead_id: string | null; client_id: string | null }> = [];
+  if (clientId) {
+    const { data } = await admin.from('client_registry_subjects')
+      .select('id,lifecycle_stage,lead_id,client_id')
+      .eq('client_id', clientId)
+      .is('merged_into_subject_id', null)
+      .maybeSingle();
+    if (data) exact.push(data);
+  }
+  if (leadId) {
+    const { data } = await admin.from('client_registry_subjects')
+      .select('id,lifecycle_stage,lead_id,client_id')
+      .eq('lead_id', leadId)
+      .is('merged_into_subject_id', null)
+      .maybeSingle();
+    if (data) exact.push(data);
+  }
+
+  const exactIds = [...new Set(exact.map((row) => row.id))];
+  if (exactIds.length > 1) throw new Error('client_registry_identity_conflict');
+
+  let subject = exact[0] ?? null;
+
+  if (!subject && email) {
+    const { data } = await admin.from('client_registry_subjects')
+      .select('id,lifecycle_stage,lead_id,client_id')
+      .eq('email_normalized', email)
+      .is('merged_into_subject_id', null)
+      .order('updated_at', { ascending: false })
+      .limit(2);
+    if ((data ?? []).length === 1) subject = data![0];
+  }
+
+  if (!subject && phone) {
+    const { data } = await admin.from('client_registry_subjects')
+      .select('id,lifecycle_stage,lead_id,client_id')
+      .eq('phone_normalized', phone)
+      .is('merged_into_subject_id', null)
+      .order('updated_at', { ascending: false })
+      .limit(2);
+    if ((data ?? []).length === 1) subject = data![0];
+  }
+
+  const lifecycleStage = clientId ? 'client' : leadId ? 'lead' : 'prospect';
+  if (!subject) {
+    const { data, error } = await admin.from('client_registry_subjects').insert({
+      lead_id: leadId,
+      client_id: clientId,
+      email_normalized: email,
+      phone_normalized: phone,
+      lifecycle_stage: lifecycleStage,
+    }).select('id,lifecycle_stage').single();
+    if (error) throw error;
+    return { id: data.id, lifecycleStage: data.lifecycle_stage };
+  }
+
+  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  if (leadId && !subject.lead_id) patch.lead_id = leadId;
+  if (clientId && !subject.client_id) patch.client_id = clientId;
+  if (email) patch.email_normalized = email;
+  if (phone) patch.phone_normalized = phone;
+  if (clientId) patch.lifecycle_stage = 'client';
+
+  if (Object.keys(patch).length > 1) {
+    const { error } = await admin.from('client_registry_subjects').update(patch).eq('id', subject.id);
+    if (error) {
+      if (error.code === '23505') throw new Error('client_registry_identity_conflict');
+      throw error;
+    }
+  }
+
+  return { id: subject.id, lifecycleStage: clientId ? 'client' : subject.lifecycle_stage };
+}
+
+async function appendEvent(
+  admin: AdminClient,
+  input: {
+    subjectId: string;
+    eventType: string;
+    occurredAt: string;
+    sourceKey: string;
+    title?: string | null;
+    summary?: string | null;
+    sourceTable?: string | null;
+    sourceId?: string | null;
+    sourceRef?: string | null;
+    channel?: string | null;
+    direction?: 'in' | 'out' | 'internal' | null;
+    leadId?: string | null;
+    clientId?: string | null;
+    companyId?: string | null;
+    caseId?: string | null;
+    importance?: number;
+    metadata?: Record<string, unknown>;
+  },
+) {
+  const { error } = await admin.from('client_registry_events').insert({
+    subject_id: input.subjectId,
+    event_type: input.eventType,
+    occurred_at: input.occurredAt,
+    source_key: input.sourceKey,
+    title: input.title ?? null,
+    summary: input.summary?.slice(0, 1200) ?? null,
+    source_table: input.sourceTable ?? null,
+    source_id: input.sourceId ?? null,
+    source_ref: input.sourceRef ?? null,
+    channel: input.channel ?? null,
+    direction: input.direction ?? null,
+    lead_id: input.leadId ?? null,
+    client_id: input.clientId ?? null,
+    company_id: input.companyId ?? null,
+    case_id: input.caseId ?? null,
+    importance: Math.max(0, Math.min(5, input.importance ?? 1)),
+    metadata: input.metadata ?? {},
+  });
+  if (error && error.code !== '23505') throw error;
+}
+
+export async function recordClientRegistryEvent(
+  admin: AdminClient,
+  identity: IdentityInput,
+  event: Omit<Parameters<typeof appendEvent>[1], 'subjectId' | 'leadId' | 'clientId'>,
+) {
+  const subject = await resolveClientRegistrySubject(admin, identity);
+  if (!subject) return null;
+  await appendEvent(admin, {
+    ...event,
+    subjectId: subject.id,
+    leadId: identity.leadId ?? null,
+    clientId: identity.clientId ?? null,
+  });
+  return subject.id;
+}
+
+export async function reconcileClientRegistry(
+  admin: AdminClient,
+  input: IdentityInput,
+): Promise<KiaClientLedgerContext | null> {
+  const subject = await resolveClientRegistrySubject(admin, input);
+  if (!subject) return null;
+
+  const clientId = input.clientId ?? null;
+  const leadId = input.leadId ?? null;
+  const email = normalizeEmail(input.email);
+
+  const jobs: Array<Promise<unknown>> = [];
+
+  if (leadId) {
+    jobs.push((async () => {
+      const { data } = await admin.from('leads')
+        .select('id,name,email,service,state,source,created_at,updated_at,lifecycle_stage')
+        .eq('id', leadId).maybeSingle();
+      if (!data) return;
+      await appendEvent(admin, {
+        subjectId: subject.id,
+        eventType: 'lead.created',
+        occurredAt: data.created_at,
+        sourceKey: `lead:${data.id}:created`,
+        title: data.name ? `Lead: ${data.name}` : 'Lead creado',
+        summary: [data.service, data.source].filter(Boolean).join(' · '),
+        sourceTable: 'leads',
+        sourceId: data.id,
+        leadId,
+        importance: 2,
+        metadata: { state: data.state, lifecycle_stage: data.lifecycle_stage },
+      });
+    })());
+  }
+
+  if (clientId) {
+    jobs.push((async () => {
+      const { data } = await admin.from('cases')
+        .select('id,service,service_id,status,state,company_id,opened_at,closed_at,updated_at,next_action')
+        .eq('client_id', clientId)
+        .order('updated_at', { ascending: false })
+        .limit(100);
+      for (const row of data ?? []) {
+        await appendEvent(admin, {
+          subjectId: subject.id,
+          eventType: row.closed_at ? 'case.closed' : 'case.opened',
+          occurredAt: row.opened_at ?? row.updated_at,
+          sourceKey: `case:${row.id}:${row.closed_at ? 'closed' : 'opened'}`,
+          title: row.service ?? row.service_id ?? 'Expediente',
+          summary: [row.status, row.next_action].filter(Boolean).join(' · '),
+          sourceTable: 'cases',
+          sourceId: row.id,
+          clientId,
+          companyId: row.company_id,
+          caseId: row.id,
+          importance: row.closed_at ? 2 : 3,
+          metadata: { status: row.status, state: row.state },
+        });
+      }
+    })());
+
+    jobs.push((async () => {
+      const { data } = await admin.from('documents')
+        .select('id,original_name,title,state,case_id,company_id,created_at,replaced_by')
+        .eq('client_id', clientId)
+        .is('replaced_by', null)
+        .order('created_at', { ascending: false })
+        .limit(200);
+      for (const row of data ?? []) {
+        await appendEvent(admin, {
+          subjectId: subject.id,
+          eventType: 'document.received',
+          occurredAt: row.created_at,
+          sourceKey: `document:${row.id}:received`,
+          title: row.original_name ?? row.title ?? 'Documento recibido',
+          summary: row.state ?? null,
+          sourceTable: 'documents',
+          sourceId: row.id,
+          clientId,
+          companyId: row.company_id,
+          caseId: row.case_id,
+          importance: 2,
+          metadata: { state: row.state },
+        });
+      }
+    })());
+
+    jobs.push((async () => {
+      const { data } = await admin.from('appointments')
+        .select('id,appointment_type,appointment_date,status,meeting_url,company_id,created_at')
+        .eq('client_id', clientId)
+        .order('appointment_date', { ascending: false })
+        .limit(100);
+      for (const row of data ?? []) {
+        await appendEvent(admin, {
+          subjectId: subject.id,
+          eventType: 'appointment.booked',
+          occurredAt: row.created_at,
+          sourceKey: `appointment:${row.id}:booked`,
+          title: row.appointment_type ?? 'Reunión',
+          summary: row.status,
+          sourceTable: 'appointments',
+          sourceId: row.id,
+          sourceRef: row.meeting_url,
+          channel: 'meeting',
+          clientId,
+          companyId: row.company_id,
+          importance: 2,
+          metadata: { appointment_date: row.appointment_date },
+        });
+      }
+    })());
+
+    jobs.push((async () => {
+      const { data } = await admin.from('quotes')
+        .select('id,title,status,amount_eur,created_at,company_id')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      for (const row of data ?? []) {
+        await appendEvent(admin, {
+          subjectId: subject.id,
+          eventType: 'quote.created',
+          occurredAt: row.created_at,
+          sourceKey: `quote:${row.id}:created`,
+          title: row.title ?? 'Presupuesto',
+          summary: row.status,
+          sourceTable: 'quotes',
+          sourceId: row.id,
+          clientId,
+          companyId: row.company_id,
+          importance: 2,
+          metadata: { amount_eur: row.amount_eur, status: row.status },
+        });
+      }
+    })());
+
+    jobs.push((async () => {
+      const { data } = await admin.from('orders')
+        .select('id,status,amount_eur,pack_name,created_at,company_id,case_id')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      for (const row of data ?? []) {
+        await appendEvent(admin, {
+          subjectId: subject.id,
+          eventType: 'order.created',
+          occurredAt: row.created_at,
+          sourceKey: `order:${row.id}:created`,
+          title: row.pack_name ?? 'Pedido',
+          summary: row.status,
+          sourceTable: 'orders',
+          sourceId: row.id,
+          clientId,
+          companyId: row.company_id,
+          caseId: row.case_id,
+          importance: 3,
+          metadata: { amount_eur: row.amount_eur, status: row.status },
+        });
+      }
+    })());
+  }
+
+  if (email) {
+    jobs.push((async () => {
+      const { data } = await admin.from('email_inbox_cache')
+        .select('thread_id,subject,snippet,date,case_id')
+        .ilike('from_email', email)
+        .order('date', { ascending: false })
+        .limit(100);
+      for (const row of data ?? []) {
+        await appendEvent(admin, {
+          subjectId: subject.id,
+          eventType: 'email.inbound',
+          occurredAt: row.date,
+          sourceKey: `email-in:${row.thread_id}:${row.date}`,
+          title: row.subject,
+          summary: row.snippet,
+          sourceTable: 'email_inbox_cache',
+          sourceId: row.thread_id,
+          sourceRef: `gmail-thread:${row.thread_id}`,
+          channel: 'email',
+          direction: 'in',
+          clientId,
+          leadId,
+          caseId: row.case_id,
+          importance: 2,
+        });
+      }
+    })());
+
+    jobs.push((async () => {
+      const { data } = await admin.from('email_events')
+        .select('id,event_type,subject,status,created_at,metadata')
+        .ilike('recipient_email', email)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      for (const row of data ?? []) {
+        const metadata = row.metadata && typeof row.metadata === 'object'
+          ? row.metadata as Record<string, unknown>
+          : {};
+        await appendEvent(admin, {
+          subjectId: subject.id,
+          eventType: 'email.outbound',
+          occurredAt: row.created_at,
+          sourceKey: `email-out:${row.id}`,
+          title: row.subject ?? row.event_type,
+          summary: row.status,
+          sourceTable: 'email_events',
+          sourceId: String(row.id),
+          sourceRef: typeof metadata.email_event_ref === 'string' ? metadata.email_event_ref : null,
+          channel: 'email',
+          direction: 'out',
+          clientId,
+          leadId,
+          caseId: typeof metadata.case_id === 'string' ? metadata.case_id : null,
+          importance: 1,
+        });
+      }
+    })());
+  }
+
+  await Promise.allSettled(jobs);
+  return refreshClientRegistrySnapshot(admin, subject.id, subject.lifecycleStage);
+}
+
+async function refreshClientRegistrySnapshot(
+  admin: AdminClient,
+  subjectId: string,
+  lifecycleStage: string,
+): Promise<KiaClientLedgerContext> {
+  const { data: events, error } = await admin.from('client_registry_events')
+    .select('event_type,occurred_at,title,summary,channel,direction,case_id,company_id,importance,source_ref')
+    .eq('subject_id', subjectId)
+    .order('occurred_at', { ascending: false })
+    .limit(80);
+  if (error) throw error;
+
+  const rows = events ?? [];
+  const recent = rows.slice(0, 24);
+  const important = rows.filter((row) => Number(row.importance ?? 0) >= 2).slice(0, 10);
+  const summaryText = important
+    .map((row) => `${row.occurred_at.slice(0, 10)} · ${row.title ?? row.event_type}${row.summary ? ` · ${row.summary}` : ''}`)
+    .join('\n')
+    .slice(0, 7000);
+  const now = new Date().toISOString();
+
+  const snapshot = {
+    recent_event_types: recent.map((row) => row.event_type),
+    active_case_ids: [...new Set(recent.map((row) => row.case_id).filter(Boolean))],
+    company_ids: [...new Set(recent.map((row) => row.company_id).filter(Boolean))],
+    last_contact_at: recent.find((row) => row.channel === 'email' || row.channel === 'meeting')?.occurred_at ?? null,
+    important_events: important.map((row) => ({
+      event_type: row.event_type,
+      occurred_at: row.occurred_at,
+      title: row.title,
+      summary: row.summary,
+      source_ref: row.source_ref,
+    })),
+  };
+
+  const { data: current } = await admin.from('client_registry_snapshots')
+    .select('version')
+    .eq('subject_id', subjectId)
+    .maybeSingle();
+
+  const { error: snapshotError } = await admin.from('client_registry_snapshots').upsert({
+    subject_id: subjectId,
+    as_of: now,
+    version: Number(current?.version ?? 0) + 1,
+    lifecycle_stage: lifecycleStage,
+    summary_text: summaryText,
+    snapshot,
+    source_event_count: rows.length,
+    updated_at: now,
+  }, { onConflict: 'subject_id' });
+  if (snapshotError) throw snapshotError;
+
+  return {
+    subjectId,
+    lifecycleStage,
+    summaryText,
+    asOf: now,
+    recentEvents: recent.map((row) => ({
+      eventType: row.event_type,
+      occurredAt: row.occurred_at,
+      title: row.title,
+      summary: row.summary,
+      channel: row.channel,
+      direction: row.direction,
+      caseId: row.case_id,
+      companyId: row.company_id,
+      importance: Number(row.importance ?? 0),
+      sourceRef: row.source_ref,
+    })),
+  };
+}
+
+export function formatClientRegistryForPrompt(ledger: KiaClientLedgerContext | null | undefined): string {
+  if (!ledger) return '';
+  return [
+    '<client_registry>',
+    `Estado registral: ${ledger.lifecycleStage}. Actualizado: ${ledger.asOf}.`,
+    'Cronología resumida verificable (usa tools canónicas para datos vivos exactos):',
+    ledger.summaryText || 'Sin eventos relevantes registrados todavía.',
+    '</client_registry>',
+  ].join('\n');
+}
