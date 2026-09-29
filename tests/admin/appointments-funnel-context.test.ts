@@ -49,7 +49,7 @@ describe('Admin appointments funnel context', () => {
     expect(route).toContain("activeClientIndex.get(normalizeEmail(appointment.email))");
     expect(route).toContain('ambiguousClientMatch');
     expect(route).toContain('leadClientConflict');
-    expect(route).toContain('leadEmail !== appointmentEmail');
+    expect(route).toContain('leadEmail !== normalizeEmail(appointment.email)');
     expect(route).toContain('identityConflict = sourceIdentityConflict');
     expect(route).toContain('ambiguous_client_match: ambiguousClientMatch');
   });
