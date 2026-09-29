@@ -7,6 +7,7 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf
 describe('Admin push reliability', () => {
   const button = source('components/admin/PushSubscribeButton.tsx');
   const push = source('lib/integrations/push.ts');
+  const subscribe = source('app/api/push/subscribe/route.ts');
 
   it('re-registers an existing browser subscription with the server on admin load', () => {
     expect(button).toContain('reg.pushManager.getSubscription()');
@@ -25,8 +26,16 @@ describe('Admin push reliability', () => {
     expect(push).toContain('dead: delivery.dead');
     expect(push).toContain('errors: delivery.errors');
     expect(push).toContain('lookupError: true');
+    expect(push).toContain("reason: 'admin_profile_lookup_failed'");
+    expect(push).toContain("reason: 'no_admin_profiles'");
     expect(push).not.toContain('p256dh: delivery');
     expect(push).not.toContain('auth: delivery');
+  });
+
+  it('fails the subscription API when persistence fails', () => {
+    expect(subscribe).toContain('persistError');
+    expect(subscribe).toContain("status: 503");
+    expect(subscribe).toContain('deleteError');
   });
 
   it('removes expired browser endpoints after 404/410 responses', () => {
