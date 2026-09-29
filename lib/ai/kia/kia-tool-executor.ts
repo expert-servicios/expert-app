@@ -580,10 +580,16 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         });
 
         const docs = (docsRes.data ?? []).filter((doc) => doc.state !== 'rechazado');
-        const signedDocs = docs.filter((doc) => {
-          const haystack = [doc.original_name, doc.title].filter(Boolean).join(' ').toLowerCase();
-          return /firmad|signed|firma|mandato/.test(haystack);
-        });
+        const evidenceDocumentIds = new Set<string>();
+        for (const task of signatureTasks) {
+          const metadata = (task.metadata ?? {}) as Record<string, unknown>;
+          for (const [key, value] of Object.entries(metadata)) {
+            if (/document_id$/i.test(key) && typeof value === 'string' && value) {
+              evidenceDocumentIds.add(value);
+            }
+          }
+        }
+        const signedDocs = docs.filter((doc) => evidenceDocumentIds.has(doc.id));
 
         return ok(toolCall.name, {
           signature_tasks: signatureTasks.map((task) => ({
@@ -592,7 +598,8 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
             status: task.status,
             priority: task.priority,
             completed_at: task.completed_at,
-            metadata: task.metadata,
+            signature_status: (task.metadata as Record<string, unknown> | null)?.signature_status ?? null,
+            signature_provider: (task.metadata as Record<string, unknown> | null)?.signature_provider ?? null,
           })),
           signed_documents: signedDocs.map((doc) => ({
             id: doc.id,
