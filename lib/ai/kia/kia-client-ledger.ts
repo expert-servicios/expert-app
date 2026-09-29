@@ -293,9 +293,10 @@ export async function reconcileClientRegistry(
 
   if (leadId) {
     jobs.push((async () => {
-      const { data } = await admin.from('leads')
+      const { data, error } = await admin.from('leads')
         .select('id,name,email,service,state,source,created_at,updated_at,lifecycle_stage')
         .eq('id', leadId).maybeSingle();
+      if (error) throw error;
       if (!data) return;
       await appendEvent(admin, {
         subjectId: subject.id,
@@ -313,39 +314,88 @@ export async function reconcileClientRegistry(
     })());
   }
 
+  if (leadId) {
+    jobs.push((async () => {
+      const { data, error } = await admin.from('quotes')
+        .select('id,title,status,amount_eur,created_at,company_id,client_id')
+        .eq('lead_id', leadId)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      for (const row of data ?? []) {
+        await appendEvent(admin, {
+          subjectId: subject.id,
+          eventType: 'quote.created',
+          occurredAt: row.created_at,
+          sourceKey: `quote:${row.id}:created`,
+          title: row.title ?? 'Presupuesto',
+          summary: row.status,
+          sourceTable: 'quotes',
+          sourceId: row.id,
+          leadId,
+          clientId: row.client_id ?? clientId,
+          companyId: row.company_id,
+          importance: 2,
+          metadata: { amount_eur: row.amount_eur, status: row.status },
+        });
+      }
+    })());
+  }
+
   if (clientId) {
     jobs.push((async () => {
-      const { data } = await admin.from('cases')
+      const { data, error } = await admin.from('cases')
         .select('id,service,service_id,status,state,company_id,opened_at,closed_at,updated_at,next_action')
         .eq('client_id', clientId)
         .order('updated_at', { ascending: false })
         .limit(100);
+      if (error) throw error;
       for (const row of data ?? []) {
-        await appendEvent(admin, {
-          subjectId: subject.id,
-          eventType: row.closed_at ? 'case.closed' : 'case.opened',
-          occurredAt: row.opened_at ?? row.updated_at,
-          sourceKey: `case:${row.id}:${row.closed_at ? 'closed' : 'opened'}`,
-          title: row.service ?? row.service_id ?? 'Expediente',
-          summary: [row.status, row.next_action].filter(Boolean).join(' · '),
-          sourceTable: 'cases',
-          sourceId: row.id,
-          clientId,
-          companyId: row.company_id,
-          caseId: row.id,
-          importance: row.closed_at ? 2 : 3,
-          metadata: { status: row.status, state: row.state },
-        });
+        if (row.opened_at) {
+          await appendEvent(admin, {
+            subjectId: subject.id,
+            eventType: 'case.opened',
+            occurredAt: row.opened_at,
+            sourceKey: `case:${row.id}:opened`,
+            title: row.service ?? row.service_id ?? 'Expediente',
+            summary: [row.status, row.next_action].filter(Boolean).join(' · '),
+            sourceTable: 'cases',
+            sourceId: row.id,
+            clientId,
+            companyId: row.company_id,
+            caseId: row.id,
+            importance: 3,
+            metadata: { status: row.status, state: row.state },
+          });
+        }
+        if (row.updated_at && row.updated_at !== row.opened_at) {
+          await appendEvent(admin, {
+            subjectId: subject.id,
+            eventType: row.closed_at ? 'case.closed' : 'case.status_changed',
+            occurredAt: row.closed_at ?? row.updated_at,
+            sourceKey: `case:${row.id}:${row.closed_at ? 'closed' : 'status'}:${row.closed_at ?? row.updated_at}`,
+            title: row.service ?? row.service_id ?? 'Expediente',
+            summary: [row.status, row.next_action].filter(Boolean).join(' · '),
+            sourceTable: 'cases',
+            sourceId: row.id,
+            clientId,
+            companyId: row.company_id,
+            caseId: row.id,
+            importance: row.closed_at ? 2 : 3,
+            metadata: { status: row.status, state: row.state },
+          });
+        }
       }
     })());
 
     jobs.push((async () => {
-      const { data } = await admin.from('documents')
+      const { data, error } = await admin.from('documents')
         .select('id,original_name,title,state,case_id,company_id,created_at,replaced_by')
         .eq('client_id', clientId)
         .is('replaced_by', null)
         .order('created_at', { ascending: false })
         .limit(200);
+      if (error) throw error;
       for (const row of data ?? []) {
         await appendEvent(admin, {
           subjectId: subject.id,
@@ -366,11 +416,12 @@ export async function reconcileClientRegistry(
     })());
 
     jobs.push((async () => {
-      const { data } = await admin.from('appointments')
+      const { data, error } = await admin.from('appointments')
         .select('id,appointment_type,appointment_date,status,meeting_url,company_id,created_at')
         .eq('client_id', clientId)
         .order('appointment_date', { ascending: false })
         .limit(100);
+      if (error) throw error;
       for (const row of data ?? []) {
         await appendEvent(admin, {
           subjectId: subject.id,
@@ -392,11 +443,12 @@ export async function reconcileClientRegistry(
     })());
 
     jobs.push((async () => {
-      const { data } = await admin.from('quotes')
-        .select('id,title,status,amount_eur,created_at,company_id')
+      const { data, error } = await admin.from('quotes')
+        .select('id,title,status,amount_eur,created_at,company_id,lead_id')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false })
         .limit(100);
+      if (error) throw error;
       for (const row of data ?? []) {
         await appendEvent(admin, {
           subjectId: subject.id,
@@ -416,11 +468,12 @@ export async function reconcileClientRegistry(
     })());
 
     jobs.push((async () => {
-      const { data } = await admin.from('orders')
+      const { data, error } = await admin.from('orders')
         .select('id,status,amount_eur,pack_name,created_at,company_id,case_id')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false })
         .limit(100);
+      if (error) throw error;
       for (const row of data ?? []) {
         await appendEvent(admin, {
           subjectId: subject.id,
@@ -444,11 +497,12 @@ export async function reconcileClientRegistry(
 
   if (clientId) {
     jobs.push((async () => {
-      const { data } = await admin.from('internal_tasks')
+      const { data, error } = await admin.from('internal_tasks')
         .select('id,title,status,priority,due_date,case_id,company_id,created_at,completed_at')
         .eq('client_id', clientId)
         .order('created_at', { ascending: false })
         .limit(150);
+      if (error) throw error;
       for (const row of data ?? []) {
         await appendEvent(admin, {
           subjectId: subject.id,
@@ -469,11 +523,12 @@ export async function reconcileClientRegistry(
     })());
 
     jobs.push((async () => {
-      const { data } = await admin.from('client_portal_invoices')
+      const { data, error } = await admin.from('client_portal_invoices')
         .select('id,invoice_number,amount,currency,status,issue_date,created_at')
         .eq('user_id', clientId)
         .order('created_at', { ascending: false })
         .limit(100);
+      if (error) throw error;
       for (const row of data ?? []) {
         await appendEvent(admin, {
           subjectId: subject.id,
@@ -492,12 +547,13 @@ export async function reconcileClientRegistry(
     })());
 
     jobs.push((async () => {
-      const { data } = await admin.from('kia_conversation_messages')
+      const { data, error } = await admin.from('kia_conversation_messages')
         .select('id,conversation_id,channel,role,body,created_at,metadata')
         .eq('profile_id', clientId)
         .in('role', ['user','assistant'])
         .order('created_at', { ascending: false })
         .limit(200);
+      if (error) throw error;
       for (const row of data ?? []) {
         const metadata = row.metadata && typeof row.metadata === 'object'
           ? row.metadata as Record<string, unknown>
@@ -528,11 +584,12 @@ export async function reconcileClientRegistry(
 
   if (email) {
     jobs.push((async () => {
-      const { data } = await admin.from('email_inbox_cache')
+      const { data, error } = await admin.from('email_inbox_cache')
         .select('thread_id,subject,snippet,date,case_id')
         .eq('from_email', email)
         .order('date', { ascending: false })
         .limit(100);
+      if (error) throw error;
       for (const row of data ?? []) {
         await appendEvent(admin, {
           subjectId: subject.id,
@@ -555,11 +612,12 @@ export async function reconcileClientRegistry(
     })());
 
     jobs.push((async () => {
-      const { data } = await admin.from('email_events')
+      const { data, error } = await admin.from('email_events')
         .select('id,event_type,subject,status,created_at,metadata')
         .eq('recipient_email', email)
         .order('created_at', { ascending: false })
         .limit(100);
+      if (error) throw error;
       for (const row of data ?? []) {
         const metadata = row.metadata && typeof row.metadata === 'object'
           ? row.metadata as Record<string, unknown>
@@ -585,7 +643,12 @@ export async function reconcileClientRegistry(
     })());
   }
 
-  await Promise.allSettled(jobs);
+  const settled = await Promise.allSettled(jobs);
+  const rejected = settled.filter((result): result is PromiseRejectedResult => result.status === 'rejected');
+  if (rejected.length) {
+    const first = rejected[0]?.reason;
+    throw first instanceof Error ? first : new Error('client_registry_reconciliation_partial_failure');
+  }
   return refreshClientRegistrySnapshot(admin, subject.id, subject.lifecycleStage);
 }
 
