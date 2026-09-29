@@ -1041,13 +1041,20 @@ NEXT_PUBLIC_GOOGLE_BOOKING_ACADEMY_URL=
 
 ### KIA email
 
+La activación se controla exclusivamente mediante filas persistidas en `automation_settings`:
+
+- `kia.email_agent`
+- `kia.email_auto_send`
+- `kia.email_new_lead_auto_send`
+
+Variables complementarias:
+
 ```env
-KIA_EMAIL_AGENT_ENABLED=false
-KIA_EMAIL_AUTO_SEND_ENABLED=false
+KIA_EMAIL_SEND_AS_ALIASES_ENABLED=false
 KIA_EMAIL_MIN_CONFIDENCE=0.88
 ```
 
-Existen además flags/umbrales para nuevos prospectos.
+Los antiguos flags `KIA_EMAIL_AGENT_ENABLED` y `KIA_EMAIL_AUTO_SEND_ENABLED` no habilitan producción.
 
 ### IA
 
@@ -1228,9 +1235,10 @@ Cubre:
 
 Comprobar:
 
-1. `KIA_EMAIL_AGENT_ENABLED`;
-2. `KIA_EMAIL_AUTO_SEND_ENABLED`;
-3. heartbeat en `system_kv`;
+1. fila `kia.email_agent` en `automation_settings`;
+2. fila `kia.email_auto_send` en `automation_settings`;
+3. fila `kia.email_new_lead_auto_send` si aplica a prospectos;
+4. heartbeat en `system_kv`;
 4. proveedor IA;
 5. Gmail conectado;
 6. unread real;
