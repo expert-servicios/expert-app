@@ -4,6 +4,7 @@ import { getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase'
 import { getAuthorizedBookingEmails } from '@/lib/admin/onboarding-booking-identity';
 import { verifyCronRequest } from '@/lib/security/cron';
 import {
+  applyOperationalGmailLabel,
   getOperationalGmailThread,
   sendOperationalGmailReply,
 } from '@/lib/integrations/operational-gmail';
@@ -13,6 +14,8 @@ import { maybeAppendKiaContextualCta } from '@/lib/email/kia-contextual-cta';
 import type { GmailMessage } from '@/lib/integrations/gmail';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { getKiaProviderOrder, isKiaGatewayConfigured } from '@/lib/ai/kia/kia-provider-router';
+import { classifyInboundEnvelope, humanPriority } from '@/lib/email/kia-inbox-classifier';
+import { notifyKiaAdminEscalation } from '@/lib/admin/kia-admin-escalation';
 
 export const maxDuration = 60;
 
@@ -99,6 +102,16 @@ function replyHtml(text: string) {
 
 function normalizedEmail(email: string) {
   return email.trim().toLowerCase();
+}
+
+function replyFromForPurpose(purpose: ReturnType<typeof classifyInboundEnvelope>['recipientPurpose']): string {
+  switch (purpose) {
+    case 'kia': return 'KIA · EXPERT <kia@expertconsulting.es>';
+    case 'documents': return 'KIA · Documentación <documentos@expertconsulting.es>';
+    case 'appointments': return 'KIA · Citas <citas@expertconsulting.es>';
+    case 'billing': return 'KIA · Facturación <facturacion@expertconsulting.es>';
+    default: return 'KIA · EXPERT <info@expertconsulting.es>';
+  }
 }
 
 function isLikelyHuman(message: GmailMessage) {
@@ -507,13 +520,31 @@ export async function GET(request: NextRequest) {
         skipped++;
         continue;
       }
-      if (!isLikelyHuman(latest)) {
+      const envelope = classifyInboundEnvelope(latest);
+      await applyOperationalGmailLabel(admin, latest.id, envelope.gmailLabel).catch((labelError) => {
+        console.error('[kia-email-agent] gmail label:', labelError);
+      });
+
+      if (envelope.kind !== 'human') {
+        if (envelope.requiresAttention) {
+          await notifyKiaAdminEscalation({
+            title: latest.subject || 'Correo operativo importante',
+            summary: `${senderDisplayName(latest)} · ${latest.subject || 'Sin asunto'}`,
+            actionTaken: `clasificado como ${envelope.kind}, prioridad ${envelope.priority}, y etiquetado ${envelope.gmailLabel}`,
+            interventionNeeded: 'revisar el aviso y decidir la actuación correspondiente',
+            url: adminThreadUrl(row.thread_id),
+            eventRef: `gmail:${latest.id}:operational-escalation`,
+            priority: envelope.priority === 'critical' ? 'critical' : 'high',
+          }).catch((notifyError) => console.error('[kia-email-agent] operational escalation:', notifyError));
+        }
+
         await admin.from('system_kv').upsert({
           key,
           value: {
             last_message_id: latest.id,
             last_message_at: latest.date,
             evaluated_at: new Date().toISOString(),
+            classification: envelope,
             block_reason: 'non_human',
             sent: false,
           },
@@ -562,15 +593,6 @@ export async function GET(request: NextRequest) {
         return false;
       });
 
-      if (firstInboundProcessing) {
-        const contactKind = identity.clientId ? 'cliente' : identity.leadId ? 'lead' : 'nuevo contacto';
-        await notifyAdmins({
-          title: `Correo humano · ${contactKind}`,
-          body: `${senderDisplayName(latest)} · ${latest.subject || 'Sin asunto'} · ${latestReply.slice(0, 150)}`.slice(0, 240),
-          url: adminThreadUrl(row.thread_id),
-          tag: `human-email-${createHash('sha256').update(latest.id).digest('hex').slice(0, 20)}`,
-        }).catch(() => {});
-      }
 
       const recent = gmail.messages.slice(-10).map((message) => ({
         role: normalizedEmail(message.fromEmail) === EXPERT_MAILBOX ? 'assistant' as const : 'user' as const,
@@ -725,6 +747,7 @@ export async function GET(request: NextRequest) {
               subject: replySubject,
               body: html,
               bodyHtml: true,
+              from: replyFromForPurpose(envelope.recipientPurpose),
             });
           } catch (sendError) {
             await admin.from('system_kv').update({
@@ -792,6 +815,49 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
+      const priority = humanPriority({
+        knownClient: Boolean(identity.clientId),
+        knownLead: Boolean(identity.leadId),
+        safeProspect: safeUnknownProspect,
+        requiresManualReview: result.decision.requiresManualReview,
+        nextAction: result.decision.nextAction,
+        blockReason,
+        createdTask: Boolean(createdTask),
+        sent: sentNow,
+      });
+      const interventionRequired = result.decision.requiresManualReview
+        || result.decision.nextAction === 'needs_review'
+        || ['ambiguous_case', 'linked_case_sender_mismatch', 'reply_to_requires_review', 'attachment_requires_review', 'provider_fallback']
+          .includes(blockReason ?? '');
+
+      if (firstInboundProcessing && interventionRequired) {
+        await notifyKiaAdminEscalation({
+          title: latest.subject || 'Correo de cliente',
+          summary: `${senderDisplayName(latest)} · ${identity.clientId ? 'cliente' : identity.leadId ? 'lead' : 'nuevo contacto'}`,
+          actionTaken: createdTask
+            ? `analizó el correo y creó la tarea “${createdTask.title}”`
+            : 'analizó el correo, vinculó el contexto disponible y preparó una respuesta sin enviarla',
+          interventionNeeded: blockReason
+            ? `resolver bloqueo: ${blockReason}`
+            : 'revisar y aprobar la actuación propuesta',
+          url: adminThreadUrl(row.thread_id),
+          eventRef: `gmail:${latest.id}:human-escalation`,
+          priority: 'high',
+        }).catch((notifyError) => console.error('[kia-email-agent] human escalation:', notifyError));
+      } else if (firstInboundProcessing && priority === 'high') {
+        await notifyAdmins({
+          title: sentNow ? 'KIA atendió una novedad importante' : 'KIA detectó una novedad importante',
+          body: [
+            senderDisplayName(latest),
+            createdTask ? `creó tarea: ${createdTask.title}` : null,
+            sentNow ? 'respondió automáticamente' : null,
+            latest.subject || 'Sin asunto',
+          ].filter(Boolean).join(' · ').slice(0, 240),
+          url: adminThreadUrl(row.thread_id),
+          tag: `kia-important-${createHash('sha256').update(latest.id).digest('hex').slice(0, 20)}`,
+        }).catch(() => {});
+      }
+
       await admin.from('system_kv').upsert({
         key,
         value: {
@@ -815,6 +881,8 @@ export async function GET(request: NextRequest) {
           decision_log_id: result.decisionLogId ?? null,
           block_reason: blockReason,
           sent: sentNow,
+          inbox_classification: envelope,
+          priority,
         },
         updated_at: new Date().toISOString(),
       }, { onConflict: 'key' });
