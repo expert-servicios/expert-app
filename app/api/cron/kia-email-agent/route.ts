@@ -287,7 +287,6 @@ async function createEmailRequestTask(input: {
 async function automationEnabled(
   admin: ReturnType<typeof getSupabaseAdmin>,
   key: string,
-  envName: string,
 ): Promise<boolean> {
   const { data, error } = await admin
     .from('automation_settings')
@@ -300,8 +299,7 @@ async function automationEnabled(
     return false;
   }
 
-  if (data) return data.enabled === true;
-  return process.env[envName]?.trim().toLowerCase() === 'true';
+  return data?.enabled === true;
 }
 
 async function writeAgentHeartbeat(
@@ -440,8 +438,8 @@ export async function GET(request: NextRequest) {
   const admin = getSupabaseAdmin();
   const [agentSetting, autoSend, newLeadAutoSend] = await Promise.all([
     admin.from('automation_settings').select('enabled,updated_at').eq('key', 'kia.email_agent').maybeSingle(),
-    automationEnabled(admin, 'kia.email_auto_send', 'KIA_EMAIL_AUTO_SEND_ENABLED'),
-    automationEnabled(admin, 'kia.email_new_lead_auto_send', 'KIA_EMAIL_NEW_LEAD_AUTO_SEND_ENABLED'),
+    automationEnabled(admin, 'kia.email_auto_send'),
+    automationEnabled(admin, 'kia.email_new_lead_auto_send'),
   ]);
   const enabled = agentSetting.data?.enabled === true;
   const enabledSince = enabled ? agentSetting.data?.updated_at ?? null : null;
