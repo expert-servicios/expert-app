@@ -159,7 +159,8 @@ export async function GET(request: NextRequest) {
         : (appointment.client_id || appointment.company_id ? 'appointment' : 'none');
       let ambiguousLeadMatch = false;
 
-      if (!lead) {
+      const canonicalClientId = appointment.client_id ?? task?.client_id ?? null;
+      if (!lead && !canonicalClientId) {
         const resolved = await resolveLegacyAppointmentLead(admin, {
           email: appointment.email,
           phone: appointment.phone,
