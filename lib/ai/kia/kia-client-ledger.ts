@@ -186,6 +186,46 @@ export async function recordClientRegistryEvent(
   return subject.id;
 }
 
+export async function loadClientRegistryContext(
+  admin: AdminClient,
+  input: IdentityInput,
+): Promise<KiaClientLedgerContext | null> {
+  const subject = await resolveClientRegistrySubject(admin, input);
+  if (!subject) return null;
+
+  const [{ data: snapshot }, { data: events }] = await Promise.all([
+    admin.from('client_registry_snapshots')
+      .select('as_of,lifecycle_stage,summary_text')
+      .eq('subject_id', subject.id)
+      .maybeSingle(),
+    admin.from('client_registry_events')
+      .select('event_type,occurred_at,title,summary,channel,direction,case_id,company_id,importance,source_ref')
+      .eq('subject_id', subject.id)
+      .order('occurred_at', { ascending: false })
+      .limit(24),
+  ]);
+
+  const rows = events ?? [];
+  return {
+    subjectId: subject.id,
+    lifecycleStage: snapshot?.lifecycle_stage ?? subject.lifecycleStage,
+    summaryText: snapshot?.summary_text ?? '',
+    asOf: snapshot?.as_of ?? new Date(0).toISOString(),
+    recentEvents: rows.map((row) => ({
+      eventType: row.event_type,
+      occurredAt: row.occurred_at,
+      title: row.title,
+      summary: row.summary,
+      channel: row.channel,
+      direction: row.direction,
+      caseId: row.case_id,
+      companyId: row.company_id,
+      importance: Number(row.importance ?? 0),
+      sourceRef: row.source_ref,
+    })),
+  };
+}
+
 export async function reconcileClientRegistry(
   admin: AdminClient,
   input: IdentityInput,
@@ -344,6 +384,91 @@ export async function reconcileClientRegistry(
           caseId: row.case_id,
           importance: 3,
           metadata: { amount_eur: row.amount_eur, status: row.status },
+        });
+      }
+    })());
+  }
+
+
+  if (clientId) {
+    jobs.push((async () => {
+      const { data } = await admin.from('internal_tasks')
+        .select('id,title,status,priority,due_date,case_id,company_id,created_at,completed_at')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(150);
+      for (const row of data ?? []) {
+        await appendEvent(admin, {
+          subjectId: subject.id,
+          eventType: row.completed_at ? 'task.completed' : 'task.created',
+          occurredAt: row.completed_at ?? row.created_at,
+          sourceKey: `task:${row.id}:${row.completed_at ? 'completed' : 'created'}`,
+          title: row.title,
+          summary: row.status,
+          sourceTable: 'internal_tasks',
+          sourceId: row.id,
+          clientId,
+          companyId: row.company_id,
+          caseId: row.case_id,
+          importance: row.priority === 'alta' || row.priority === 'urgent' ? 3 : 1,
+          metadata: { due_date: row.due_date, status: row.status },
+        });
+      }
+    })());
+
+    jobs.push((async () => {
+      const { data } = await admin.from('client_portal_invoices')
+        .select('id,invoice_number,amount,currency,status,issue_date,created_at')
+        .eq('user_id', clientId)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      for (const row of data ?? []) {
+        await appendEvent(admin, {
+          subjectId: subject.id,
+          eventType: 'invoice.issued',
+          occurredAt: row.created_at,
+          sourceKey: `client-invoice:${row.id}:issued`,
+          title: row.invoice_number ? `Factura ${row.invoice_number}` : 'Factura',
+          summary: row.status,
+          sourceTable: 'client_portal_invoices',
+          sourceId: row.id,
+          clientId,
+          importance: 2,
+          metadata: { amount: row.amount, currency: row.currency, issue_date: row.issue_date, status: row.status },
+        });
+      }
+    })());
+
+    jobs.push((async () => {
+      const { data } = await admin.from('kia_conversation_messages')
+        .select('id,conversation_id,channel,role,body,created_at,metadata')
+        .eq('profile_id', clientId)
+        .in('role', ['user','assistant'])
+        .order('created_at', { ascending: false })
+        .limit(200);
+      for (const row of data ?? []) {
+        const metadata = row.metadata && typeof row.metadata === 'object'
+          ? row.metadata as Record<string, unknown>
+          : {};
+        const inbound = row.role === 'user';
+        const eventType = row.channel === 'telegram'
+          ? (inbound ? 'telegram.inbound' : 'telegram.outbound')
+          : (inbound ? 'chat.user' : 'chat.kia');
+        await appendEvent(admin, {
+          subjectId: subject.id,
+          eventType,
+          occurredAt: row.created_at,
+          sourceKey: `kia-message:${row.id}`,
+          title: row.channel === 'telegram' ? 'Telegram KIA' : 'Chat KIA',
+          summary: String(row.body ?? '').slice(0, 600),
+          sourceTable: 'kia_conversation_messages',
+          sourceId: row.id,
+          sourceRef: `kia-conversation:${row.conversation_id}`,
+          channel: row.channel,
+          direction: inbound ? 'in' : 'out',
+          clientId,
+          caseId: typeof metadata.case_id === 'string' ? metadata.case_id : null,
+          importance: 1,
         });
       }
     })());
