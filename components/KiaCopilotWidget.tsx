@@ -414,6 +414,22 @@ export default function KiaCopilotWidget() {
   const voiceChunksRef = useRef<BlobPart[]>([]);
   const voiceTimeoutRef = useRef<number | null>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+  const speechAbortRef = useRef<AbortController | null>(null);
+  const discardRecordingRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (voiceTimeoutRef.current) window.clearTimeout(voiceTimeoutRef.current);
+      discardRecordingRef.current = true;
+      voiceChunksRef.current = [];
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== 'inactive') recorder.stop();
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      speechAbortRef.current?.abort();
+      audioPlayerRef.current?.pause();
+      audioPlayerRef.current = null;
+    };
+  }, []);
 
   const lastAssistantMessage = [...messages].reverse().find((message) => message.role === 'assistant');
   const currentKiaState: KiaAvatarState = loading || contextLoading
@@ -462,7 +478,39 @@ export default function KiaCopilotWidget() {
     setOpen(true);
   }
 
+  function cleanupVoiceRecording({ discard = false }: { discard?: boolean } = {}) {
+    if (voiceTimeoutRef.current) {
+      window.clearTimeout(voiceTimeoutRef.current);
+      voiceTimeoutRef.current = null;
+    }
+    if (discard) {
+      discardRecordingRef.current = true;
+      voiceChunksRef.current = [];
+    }
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+    if (!recorder || recorder.state === 'inactive') {
+      mediaRecorderRef.current = null;
+      setVoiceRecording(false);
+    }
+  }
+
+  function stopSpeechPlayback() {
+    speechAbortRef.current?.abort();
+    speechAbortRef.current = null;
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current.src = '';
+      audioPlayerRef.current = null;
+    }
+    setVoiceSpeakingId(null);
+  }
+
   function handleClose() {
+    cleanupVoiceRecording({ discard: true });
+    stopSpeechPlayback();
     setOpen(false);
   }
 
@@ -498,12 +546,7 @@ export default function KiaCopilotWidget() {
   }
 
   function stopVoiceRecording() {
-    if (voiceTimeoutRef.current) {
-      window.clearTimeout(voiceTimeoutRef.current);
-      voiceTimeoutRef.current = null;
-    }
-    const recorder = mediaRecorderRef.current;
-    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    cleanupVoiceRecording();
   }
 
   async function handleVoiceToggle() {
@@ -530,19 +573,22 @@ export default function KiaCopilotWidget() {
         if (event.data.size) voiceChunksRef.current.push(event.data);
       };
       recorder.onstop = () => {
+        const shouldDiscard = discardRecordingRef.current;
+        discardRecordingRef.current = false;
         const blob = new Blob(voiceChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
         voiceChunksRef.current = [];
         mediaRecorderRef.current = null;
         mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
         mediaStreamRef.current = null;
         setVoiceRecording(false);
-        void transcribeRecordedAudio(blob);
+        if (!shouldDiscard) void transcribeRecordedAudio(blob);
       };
       recorder.start(500);
       mediaRecorderRef.current = recorder;
       setVoiceRecording(true);
       voiceTimeoutRef.current = window.setTimeout(stopVoiceRecording, 90_000);
     } catch {
+      cleanupVoiceRecording({ discard: true });
       setVoiceRecording(false);
       appendAssistantMessage(
         uiLocale === 'ru'
@@ -555,38 +601,47 @@ export default function KiaCopilotWidget() {
 
   async function handleSpeak(messageId: string, text: string) {
     if (voiceSpeakingId === messageId) {
-      audioPlayerRef.current?.pause();
-      audioPlayerRef.current = null;
-      setVoiceSpeakingId(null);
+      stopSpeechPlayback();
       return;
     }
 
-    audioPlayerRef.current?.pause();
+    stopSpeechPlayback();
+    const controller = new AbortController();
+    speechAbortRef.current = controller;
     setVoiceSpeakingId(messageId);
     try {
       const response = await fetch('/api/ai/kia/voice/speech', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, locale: uiLocale }),
+        signal: controller.signal,
       });
       if (!response.ok) throw new Error('speech_unavailable');
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
+      if (speechAbortRef.current !== controller) {
+        URL.revokeObjectURL(url);
+        return;
+      }
       audioPlayerRef.current = audio;
       audio.onended = () => {
         URL.revokeObjectURL(url);
-        audioPlayerRef.current = null;
-        setVoiceSpeakingId(null);
+        if (audioPlayerRef.current === audio) audioPlayerRef.current = null;
+        if (speechAbortRef.current === controller) speechAbortRef.current = null;
+        setVoiceSpeakingId((current) => current === messageId ? null : current);
       };
       audio.onerror = () => {
         URL.revokeObjectURL(url);
-        audioPlayerRef.current = null;
-        setVoiceSpeakingId(null);
+        if (audioPlayerRef.current === audio) audioPlayerRef.current = null;
+        if (speechAbortRef.current === controller) speechAbortRef.current = null;
+        setVoiceSpeakingId((current) => current === messageId ? null : current);
       };
       await audio.play();
-    } catch {
-      setVoiceSpeakingId(null);
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      if (speechAbortRef.current === controller) speechAbortRef.current = null;
+      setVoiceSpeakingId((current) => current === messageId ? null : current);
       appendAssistantMessage(
         uiLocale === 'ru' ? 'Сейчас голосовой ответ недоступен.' : 'Ahora mismo no puedo reproducir la respuesta por voz.',
         'aviso',
