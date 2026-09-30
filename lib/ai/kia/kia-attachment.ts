@@ -54,6 +54,7 @@ export async function analyzeKiaAttachment(file: File): Promise<{
   const mimeType = file.type.split(';')[0]?.trim().toLowerCase();
   const model = process.env.GEMINI_ATTACHMENT_MODEL?.trim()
     || 'gemini-3.8-flash';
+  const freeFallbackModel = 'gemini-3.5-flash';
 
   const prompt = [
     'Analiza este archivo aportado por un usuario a KIA, asistente de una gestoria espanola.',
@@ -81,24 +82,38 @@ export async function analyzeKiaAttachment(file: File): Promise<{
     ];
   }
 
-  const response = await fetch(GEMINI_INTERACTIONS_URL, {
-    method: 'POST',
-    headers: {
-      'x-goog-api-key': geminiApiKey(),
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({ model, input }),
-    signal: AbortSignal.timeout(45_000),
-  });
+  const runGemini = async (selectedModel: string) => {
+    const response = await fetch(GEMINI_INTERACTIONS_URL, {
+      method: 'POST',
+      headers: {
+        'x-goog-api-key': geminiApiKey(),
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ model: selectedModel, input }),
+      signal: AbortSignal.timeout(45_000),
+    });
+    const body = await response.json().catch(() => null);
+    return { response, body, selectedModel };
+  };
 
-  const body = await response.json().catch(() => null);
+  let attempt = await runGemini(model);
+  if (!attempt.response.ok && attempt.response.status === 402 && model !== freeFallbackModel) {
+    console.warn('[KIA attachment] paid-tier model unavailable; retrying free-tier model', {
+      fromModel: model,
+      toModel: freeFallbackModel,
+      mimeType,
+    });
+    attempt = await runGemini(freeFallbackModel);
+  }
+
+  const { response, body, selectedModel } = attempt;
   if (!response.ok) {
     const googleError = body && typeof body === 'object'
       ? (body as { error?: { status?: unknown; message?: unknown; code?: unknown } }).error
       : undefined;
     console.error('[KIA attachment] Gemini request failed', {
       status: response.status,
-      model,
+      model: selectedModel,
       mimeType,
       googleStatus: typeof googleError?.status === 'string' ? googleError.status : null,
       googleCode: typeof googleError?.code === 'number' ? googleError.code : null,
@@ -119,5 +134,5 @@ export async function analyzeKiaAttachment(file: File): Promise<{
     throw new Error('empty_attachment_analysis');
   }
 
-  return { text, model, mimeType };
+  return { text, model: selectedModel, mimeType };
 }
