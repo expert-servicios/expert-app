@@ -9,6 +9,11 @@ export type PublicKiaQuickReply = {
 };
 
 const MAX_SERVICE_REPLIES = 8;
+const PUBLIC_CATEGORY_SLUGS = new Set<string>(categories.map((category) => category.slug));
+
+function isPublicService(service: Service): service is Service & { categoria: PublicCategorySlug } {
+  return PUBLIC_CATEGORY_SLUGS.has(service.categoria);
+}
 
 function normalize(value: string): string {
   return value
@@ -82,7 +87,7 @@ export function findSelectedCategory(message: string) {
 
 export function findSelectedService(message: string): Service | undefined {
   const normalized = normalize(message);
-  return services.find((service) => {
+  return services.filter(isPublicService).find((service) => {
     const name = normalize(service.name);
     return normalized === name
       || normalized === `servicio ${name}`
@@ -95,6 +100,7 @@ export function getServiceQuickRepliesForCategory(
   limit = MAX_SERVICE_REPLIES,
 ): PublicKiaQuickReply[] {
   const matching = services
+    .filter(isPublicService)
     .filter((service) => service.categoria === slug)
     .slice(0, Math.max(1, limit));
 
@@ -106,7 +112,7 @@ export function getServiceQuickRepliesForCategory(
     message: service.name,
   }));
 
-  if (category && services.filter((service) => service.categoria === slug).length > matching.length) {
+  if (category && services.filter(isPublicService).filter((service) => service.categoria === slug).length > matching.length) {
     replies.push({
       label: `Ver todos en ${category.name}`,
       action: 'link',
@@ -137,6 +143,7 @@ export function findServicesMentioned(text: string, limit = 4): Service[] {
   const normalizedText = ` ${normalize(text)} `;
 
   return services
+    .filter(isPublicService)
     .filter((service) => {
       const normalizedName = normalize(service.name);
       if (normalizedName.length < 4) return false;
@@ -171,7 +178,7 @@ export function isCommercialMessage(message: string): boolean {
 
   if (categories.some((category) => normalized.includes(normalize(category.name)))) return true;
 
-  return services.some((service) => {
+  return services.filter(isPublicService).some((service) => {
     const name = normalize(service.name);
     return name.length >= 5 && normalized.includes(name);
   });
@@ -181,6 +188,7 @@ export function buildCompactCatalogPrompt(): string {
   return categories
     .map((category) => {
       const names = services
+        .filter(isPublicService)
         .filter((service) => service.categoria === category.slug)
         .map((service) => service.name);
       return `${category.name}: ${names.join('; ')}`;
@@ -198,4 +206,12 @@ export function categoryResponse(slug: PublicCategorySlug): string {
 export function serviceResponse(service: Service): string {
   const price = service.price ? ` Precio orientativo: ${service.price}.` : '';
   return `${service.name}: ${service.shortDescription}${price} Puedes abrir la ficha para ver requisitos, documentación, plazo y forma de contratación.`;
+}
+
+export function isCategoryNavigationMessage(message: string): boolean {
+  return normalize(message) === 'ver categorias de servicios';
+}
+
+export function isOtherCaseMessage(message: string): boolean {
+  return normalize(message).startsWith('mi caso es distinto');
 }
