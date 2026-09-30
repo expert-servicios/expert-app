@@ -159,29 +159,28 @@ export async function resolveClientRegistrySubject(
   };
 }
 
-async function appendEvent(
-  admin: AdminClient,
-  input: {
-    subjectId: string;
-    eventType: string;
-    occurredAt: string;
-    sourceKey: string;
-    title?: string | null;
-    summary?: string | null;
-    sourceTable?: string | null;
-    sourceId?: string | null;
-    sourceRef?: string | null;
-    channel?: string | null;
-    direction?: 'in' | 'out' | 'internal' | null;
-    leadId?: string | null;
-    clientId?: string | null;
-    companyId?: string | null;
-    caseId?: string | null;
-    importance?: number;
-    metadata?: Record<string, unknown>;
-  },
-) {
-  const { error } = await admin.from('client_registry_events').insert({
+type RegistryEventInput = {
+  subjectId: string;
+  eventType: string;
+  occurredAt: string;
+  sourceKey: string;
+  title?: string | null;
+  summary?: string | null;
+  sourceTable?: string | null;
+  sourceId?: string | null;
+  sourceRef?: string | null;
+  channel?: string | null;
+  direction?: 'in' | 'out' | 'internal' | null;
+  leadId?: string | null;
+  clientId?: string | null;
+  companyId?: string | null;
+  caseId?: string | null;
+  importance?: number;
+  metadata?: Record<string, unknown>;
+};
+
+function serializeRegistryEvent(input: RegistryEventInput) {
+  return {
     subject_id: input.subjectId,
     event_type: input.eventType,
     occurred_at: input.occurredAt,
@@ -199,8 +198,24 @@ async function appendEvent(
     case_id: input.caseId ?? null,
     importance: Math.max(0, Math.min(5, input.importance ?? 1)),
     metadata: input.metadata ?? {},
-  });
-  if (error && error.code !== '23505') throw error;
+  };
+}
+
+async function appendEvents(admin: AdminClient, inputs: RegistryEventInput[]) {
+  const chunkSize = 200;
+  for (let offset = 0; offset < inputs.length; offset += chunkSize) {
+    const chunk = inputs.slice(offset, offset + chunkSize).map(serializeRegistryEvent);
+    if (!chunk.length) continue;
+    const { error } = await admin.from('client_registry_events').upsert(chunk, {
+      onConflict: 'source_key',
+      ignoreDuplicates: true,
+    });
+    if (error) throw error;
+  }
+}
+
+async function appendEvent(admin: AdminClient, input: RegistryEventInput) {
+  await appendEvents(admin, [input]);
 }
 
 export async function recordClientRegistryEvent(
@@ -285,6 +300,7 @@ export async function reconcileClientRegistry(
   const subject = await resolveClientRegistrySubject(admin, input);
   if (!subject) return null;
 
+  const pendingEvents: RegistryEventInput[] = [];
   const clientId = input.clientId ?? null;
   const leadId = input.leadId ?? null;
   const email = normalizeEmail(input.email);
@@ -298,7 +314,7 @@ export async function reconcileClientRegistry(
         .eq('id', leadId).maybeSingle();
       if (error) throw error;
       if (!data) return;
-      await appendEvent(admin, {
+      pendingEvents.push({
         subjectId: subject.id,
         eventType: 'lead.created',
         occurredAt: data.created_at,
@@ -323,7 +339,7 @@ export async function reconcileClientRegistry(
         .limit(100);
       if (error) throw error;
       for (const row of data ?? []) {
-        await appendEvent(admin, {
+        pendingEvents.push({
           subjectId: subject.id,
           eventType: 'quote.created',
           occurredAt: row.created_at,
@@ -352,7 +368,7 @@ export async function reconcileClientRegistry(
       if (error) throw error;
       for (const row of data ?? []) {
         if (row.opened_at) {
-          await appendEvent(admin, {
+          pendingEvents.push({
             subjectId: subject.id,
             eventType: 'case.opened',
             occurredAt: row.opened_at,
@@ -369,7 +385,7 @@ export async function reconcileClientRegistry(
           });
         }
         if (row.updated_at && row.updated_at !== row.opened_at) {
-          await appendEvent(admin, {
+          pendingEvents.push({
             subjectId: subject.id,
             eventType: row.closed_at ? 'case.closed' : 'case.status_changed',
             occurredAt: row.closed_at ?? row.updated_at,
@@ -397,7 +413,7 @@ export async function reconcileClientRegistry(
         .limit(200);
       if (error) throw error;
       for (const row of data ?? []) {
-        await appendEvent(admin, {
+        pendingEvents.push({
           subjectId: subject.id,
           eventType: 'document.received',
           occurredAt: row.created_at,
@@ -423,7 +439,7 @@ export async function reconcileClientRegistry(
         .limit(100);
       if (error) throw error;
       for (const row of data ?? []) {
-        await appendEvent(admin, {
+        pendingEvents.push({
           subjectId: subject.id,
           eventType: 'appointment.booked',
           occurredAt: row.created_at,
@@ -450,7 +466,7 @@ export async function reconcileClientRegistry(
         .limit(100);
       if (error) throw error;
       for (const row of data ?? []) {
-        await appendEvent(admin, {
+        pendingEvents.push({
           subjectId: subject.id,
           eventType: 'quote.created',
           occurredAt: row.created_at,
@@ -475,7 +491,7 @@ export async function reconcileClientRegistry(
         .limit(100);
       if (error) throw error;
       for (const row of data ?? []) {
-        await appendEvent(admin, {
+        pendingEvents.push({
           subjectId: subject.id,
           eventType: 'order.created',
           occurredAt: row.created_at,
@@ -504,7 +520,7 @@ export async function reconcileClientRegistry(
         .limit(150);
       if (error) throw error;
       for (const row of data ?? []) {
-        await appendEvent(admin, {
+        pendingEvents.push({
           subjectId: subject.id,
           eventType: row.completed_at ? 'task.completed' : 'task.created',
           occurredAt: row.completed_at ?? row.created_at,
@@ -530,7 +546,7 @@ export async function reconcileClientRegistry(
         .limit(100);
       if (error) throw error;
       for (const row of data ?? []) {
-        await appendEvent(admin, {
+        pendingEvents.push({
           subjectId: subject.id,
           eventType: 'invoice.issued',
           occurredAt: row.created_at,
@@ -547,22 +563,47 @@ export async function reconcileClientRegistry(
     })());
 
     jobs.push((async () => {
+      const { data: conversations, error: conversationsError } = await admin.from('kia_conversations')
+        .select('id,company_id,case_id,metadata')
+        .eq('profile_id', clientId)
+        .order('last_message_at', { ascending: false })
+        .limit(120);
+      if (conversationsError) throw conversationsError;
+
+      const allowedConversations = (conversations ?? []).filter((conversation) => {
+        const metadata = conversation.metadata && typeof conversation.metadata === 'object'
+          ? conversation.metadata as Record<string, unknown>
+          : {};
+        return metadata.staff_preview !== true;
+      });
+      const scopeByConversation = new Map(allowedConversations.map((conversation) => [
+        conversation.id,
+        { companyId: conversation.company_id ?? null, caseId: conversation.case_id ?? null },
+      ]));
+      const conversationIds = [...scopeByConversation.keys()];
+      if (!conversationIds.length) return;
+
       const { data, error } = await admin.from('kia_conversation_messages')
         .select('id,conversation_id,channel,role,body,created_at,metadata')
         .eq('profile_id', clientId)
+        .in('conversation_id', conversationIds)
         .in('role', ['user','assistant'])
         .order('created_at', { ascending: false })
         .limit(200);
       if (error) throw error;
+
       for (const row of data ?? []) {
         const metadata = row.metadata && typeof row.metadata === 'object'
           ? row.metadata as Record<string, unknown>
           : {};
+        if (metadata.staff_preview === true) continue;
+        const scope = scopeByConversation.get(row.conversation_id);
+        if (!scope) continue;
         const inbound = row.role === 'user';
         const eventType = row.channel === 'telegram'
           ? (inbound ? 'telegram.inbound' : 'telegram.outbound')
           : (inbound ? 'chat.user' : 'chat.kia');
-        await appendEvent(admin, {
+        pendingEvents.push({
           subjectId: subject.id,
           eventType,
           occurredAt: row.created_at,
@@ -575,7 +616,8 @@ export async function reconcileClientRegistry(
           channel: row.channel,
           direction: inbound ? 'in' : 'out',
           clientId,
-          caseId: typeof metadata.case_id === 'string' ? metadata.case_id : null,
+          companyId: scope.companyId,
+          caseId: scope.caseId ?? (typeof metadata.case_id === 'string' ? metadata.case_id : null),
           importance: 1,
         });
       }
@@ -591,7 +633,7 @@ export async function reconcileClientRegistry(
         .limit(100);
       if (error) throw error;
       for (const row of data ?? []) {
-        await appendEvent(admin, {
+        pendingEvents.push({
           subjectId: subject.id,
           eventType: 'email.inbound',
           occurredAt: row.date,
@@ -622,7 +664,7 @@ export async function reconcileClientRegistry(
         const metadata = row.metadata && typeof row.metadata === 'object'
           ? row.metadata as Record<string, unknown>
           : {};
-        await appendEvent(admin, {
+        pendingEvents.push({
           subjectId: subject.id,
           eventType: 'email.outbound',
           occurredAt: row.created_at,
@@ -649,6 +691,7 @@ export async function reconcileClientRegistry(
     const first = rejected[0]?.reason;
     throw first instanceof Error ? first : new Error('client_registry_reconciliation_partial_failure');
   }
+  await appendEvents(admin, pendingEvents);
   return refreshClientRegistrySnapshot(admin, subject.id, subject.lifecycleStage);
 }
 
@@ -673,9 +716,17 @@ async function refreshClientRegistrySnapshot(
     .slice(0, 7000);
   const now = new Date().toISOString();
 
+  const latestCaseEvent = new Map<string, string>();
+  for (const row of rows) {
+    if (row.case_id && !latestCaseEvent.has(row.case_id)) latestCaseEvent.set(row.case_id, row.event_type);
+  }
+  const activeCaseIds = [...latestCaseEvent.entries()]
+    .filter(([, eventType]) => eventType !== 'case.closed')
+    .map(([caseId]) => caseId);
+
   const snapshot = {
     recent_event_types: recent.map((row) => row.event_type),
-    active_case_ids: [...new Set(recent.map((row) => row.case_id).filter(Boolean))],
+    active_case_ids: activeCaseIds,
     company_ids: [...new Set(recent.map((row) => row.company_id).filter(Boolean))],
     last_contact_at: recent.find((row) => row.channel === 'email' || row.channel === 'meeting')?.occurred_at ?? null,
     important_events: important.map((row) => ({
