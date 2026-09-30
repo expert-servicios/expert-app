@@ -26,7 +26,7 @@ describe('KIA public attachment + mobile composer regression', () => {
 
   it('keeps the mobile composer readable and touch-friendly', () => {
     expect(widget).toContain('placeholder="Escribe…"');
-    expect(widget).toContain('min-h-11');
+    expect(widget).toContain('min-h-16');
     expect(widget).toContain('text-[12px]');
     expect(widget).toContain("rows={attachment ? 3 : 2}");
     expect(widget).toContain('min-h-16');
