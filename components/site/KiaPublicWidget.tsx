@@ -143,7 +143,8 @@ export function KiaPublicWidget() {
       const response = await fetch('/api/ai/kia/telegram-link', { method: 'POST' });
       const data = await response.json().catch(() => ({})) as { deepLink?: string };
       const target = response.ok && data.deepLink ? data.deepLink : TELEGRAM_URL;
-      window.open(target, '_blank', 'noopener,noreferrer');
+      const popup = window.open(target, '_blank', 'noopener,noreferrer');
+      if (!popup) window.location.href = target;
     } finally {
       setTelegramLoading(false);
     }
