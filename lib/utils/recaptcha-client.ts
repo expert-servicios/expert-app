@@ -28,12 +28,21 @@ export async function getRecaptchaToken(action: string): Promise<string> {
   if (!ready || !window.grecaptcha) return '';
 
   try {
-    return await new Promise((resolve) => {
+    return await new Promise<string>((resolve) => {
+      let settled = false;
+      const finish = (value = '') => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        resolve(value);
+      };
+      const timeout = window.setTimeout(() => finish(''), 3_500);
+
       window.grecaptcha?.ready(() => {
         window.grecaptcha
           ?.execute(siteKey, { action })
-          .then(resolve)
-          .catch(() => resolve(''));
+          .then((token) => finish(token))
+          .catch(() => finish(''));
       });
     });
   } catch {
