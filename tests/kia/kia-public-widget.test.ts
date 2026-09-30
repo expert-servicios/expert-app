@@ -39,8 +39,9 @@ describe('KIA public widget', () => {
     expect(route).toContain("autonomousOnly: true");
   });
 
-  it('uses official live search and Gemini Google Search when relevant', () => {
-    expect(route).toContain('includeOfficialSourceContext: true');
+  it('keeps official search available without forcing it before every public reply', () => {
+    expect(route).toContain('includeOfficialSourceContext: false');
+    expect(route).toContain("'get_official_sources'");
     expect(official).toContain("tools: [{ type: 'google_search' }]");
     expect(official).toContain('searchOfficialSourcesWithGemini(query, geminiKey)');
   });
