@@ -61,6 +61,12 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'attachment_analysis_failed';
+    console.error('[KIA public attachment] analysis failed', {
+      reason: message.slice(0, 160),
+      fileName: file.name.slice(0, 160),
+      mimeType: file.type.slice(0, 120),
+      size: file.size,
+    });
     const status = message === 'attachment_type_invalid' || message === 'attachment_size_invalid' ? 400 : 503;
     return NextResponse.json({ error: message }, { status });
   }
