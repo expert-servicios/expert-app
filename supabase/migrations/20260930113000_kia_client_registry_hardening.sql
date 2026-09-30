@@ -10,6 +10,13 @@ alter table public.client_registry_subjects
 revoke all on table public.client_registry_events from service_role;
 grant select, insert on table public.client_registry_events to service_role;
 
+-- Prevent indirect deletion of audit events through a subject cascade.
+alter table public.client_registry_events
+  drop constraint if exists client_registry_events_subject_id_fkey;
+alter table public.client_registry_events
+  add constraint client_registry_events_subject_id_fkey
+  foreign key (subject_id) references public.client_registry_subjects(id) on delete restrict;
+
 -- Persistent reconciliation cursors prevent the cron from repeatedly processing
 -- only the newest profiles/leads and make the initial backfill eventually complete.
 create table if not exists public.client_registry_reconcile_state (
