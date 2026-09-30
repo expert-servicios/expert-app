@@ -526,14 +526,14 @@ export function KiaPublicWidget() {
             className="hidden"
             onChange={(event) => void handleAttachment(event.target.files?.[0])}
           />
-          <div className="flex items-end gap-2">
+          <div className="flex items-end gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={loading || attachmentLoading}
               aria-label="Adjuntar documento"
               title="Adjuntar PDF, imagen, TXT o CSV"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#e8e0d4] bg-white text-[#0D1B2A] transition hover:border-[#D4A017] disabled:opacity-40"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-[#e8e0d4] bg-white text-[#0D1B2A] transition hover:border-[#D4A017] disabled:opacity-40 sm:h-9 sm:w-9"
             >
               {attachmentLoading ? <Loader2 size={15} className="animate-spin" /> : <Paperclip size={15} />}
             </button>
@@ -542,7 +542,7 @@ export function KiaPublicWidget() {
               onClick={() => void handleVoiceToggle()}
               disabled={loading || voiceTranscribing || attachmentLoading}
               aria-label={voiceRecording ? 'Detener grabación' : 'Grabar nota de voz'}
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition disabled:opacity-40 ${voiceRecording ? 'border-red-300 bg-red-50 text-red-700' : 'border-[#e8e0d4] bg-white text-[#0D1B2A] hover:border-[#D4A017]'}`}
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition disabled:opacity-40 sm:h-9 sm:w-9 ${voiceRecording ? 'border-red-300 bg-red-50 text-red-700' : 'border-[#e8e0d4] bg-white text-[#0D1B2A] hover:border-[#D4A017]'}`}
             >
               {voiceTranscribing
                 ? <Loader2 size={15} className="animate-spin" />
@@ -561,17 +561,17 @@ export function KiaPublicWidget() {
               }}
               rows={1}
               maxLength={2000}
-              placeholder="Escribe tu consulta…"
+              placeholder="Escribe…"
               aria-label="Consulta para KIA"
               disabled={loading || voiceTranscribing || attachmentLoading}
-              className="max-h-24 flex-1 resize-none rounded-xl border border-[#e8e0d4] px-3 py-2 text-sm outline-none focus:border-[#D4A017] disabled:bg-[#f8f6f1] disabled:text-[#8a8177]"
+              className="min-h-11 min-w-0 flex-1 resize-none rounded-xl border border-[#e8e0d4] px-3 py-2.5 text-base leading-6 outline-none focus:border-[#D4A017] disabled:bg-[#f8f6f1] disabled:text-[#8a8177] sm:min-h-9 sm:py-2 sm:text-sm sm:leading-5"
             />
             <button
               type="button"
               onClick={() => void sendMessage(input)}
               disabled={loading || !input.trim()}
               aria-label="Enviar a KIA"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0D1B2A] text-white disabled:opacity-40"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0D1B2A] text-white disabled:opacity-40 sm:h-9 sm:w-9"
             >
               {loading ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
             </button>
