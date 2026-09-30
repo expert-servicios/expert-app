@@ -28,6 +28,7 @@ describe('KIA production resilience', () => {
   });
 
   it('has an independent direct three-provider pool when Gateway is unavailable', () => {
+    expect(router).toContain('GOOGLE_API_KEY');
     expect(router).toContain('GEMINI_API_KEY');
     expect(router).toContain('GOOGLE_GENERATIVE_AI_API_KEY');
     expect(router).toContain('google,anthropic,openai');

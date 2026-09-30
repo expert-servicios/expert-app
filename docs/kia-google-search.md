@@ -16,7 +16,7 @@ Variables:
 
 - `OFFICIAL_SEARCH_ENABLED=true`: habilita el bloque de búsqueda oficial.
 - `OFFICIAL_GOOGLE_SEARCH_ENABLED=true`: permite Gemini Google Search.
-- `GEMINI_API_KEY` o `GOOGLE_GENERATIVE_AI_API_KEY`: credencial Gemini.
+- `GOOGLE_API_KEY`, `GEMINI_API_KEY` o `GOOGLE_GENERATIVE_AI_API_KEY`: credencial Gemini. Si existen `GOOGLE_API_KEY` y `GEMINI_API_KEY`, se prioriza `GOOGLE_API_KEY`, alineado con la documentación oficial de Google.
 - `OFFICIAL_GOOGLE_SEARCH_MODEL=gemini-3.8-flash`: modelo de búsqueda.
 - `OFFICIAL_SEARCH_TIMEOUT_MS=12000`: timeout acotado.
 - `OPENAI_API_KEY`: fallback opcional para OpenAI web search.

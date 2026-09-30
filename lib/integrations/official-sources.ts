@@ -350,7 +350,8 @@ Reglas de uso de fuentes:
 }
 
 async function lookupOfficialSources(query: string): Promise<OfficialSourceLookup | null> {
-  const geminiKey = process.env.GEMINI_API_KEY?.trim()
+  const geminiKey = process.env.GOOGLE_API_KEY?.trim()
+    || process.env.GEMINI_API_KEY?.trim()
     || process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
   const openAiKey = process.env.OPENAI_API_KEY?.trim();
 
