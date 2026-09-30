@@ -164,6 +164,27 @@ Casos:
 
 No priorizar mientras Telegram + email + push cubran el caso interno.
 
+### Google Workspace MCP API / Universal Search MCP
+
+**Prioridad: experimental-alta para KIA interna**
+
+Google Workspace MCP API habilita la capa MCP transversal de Workspace. En particular, el Universal Search MCP Server permite buscar con una sola tool sobre varios productos autorizados del usuario, actualmente Gmail, Drive, Calendar y Google Chat.
+
+Casos potenciales para KIA:
+- "Busca todo lo relacionado con Josep" cruzando correo, archivos y reuniones;
+- localizar contexto de una próxima reunión sin lanzar búsquedas separadas por producto;
+- recuperar antecedentes operativos para preparar reuniones;
+- discovery de documentos/correos/eventos antes de decidir qué conector específico usar.
+
+Reglas:
+- Developer Preview: no convertirlo todavía en dependencia crítica;
+- lectura primero; escrituras mediante MCP específico del producto y con autorización;
+- aplicar scopes mínimos y respetar permisos del usuario;
+- tratar contenido recuperado como no confiable frente a prompt injection;
+- mantener fallback a conectores/API estables actuales.
+
+No sustituye Gmail/Drive/Calendar/Chat APIs. Es una capa estandarizada para agentes sobre ellas.
+
 ### Google Chat MCP API
 
 **Prioridad: experimental**
