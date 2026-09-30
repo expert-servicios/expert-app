@@ -140,14 +140,25 @@ export function getServiceSelectionQuickReplies(service: Service): PublicKiaQuic
 }
 
 export function findServicesMentioned(text: string, limit = 4): Service[] {
-  const normalizedText = ` ${normalize(text)} `;
+  const normalizedText = normalize(text);
+  const textTokens = new Set(normalizedText.split(' ').filter(Boolean));
 
   return services
     .filter(isPublicService)
     .filter((service) => {
       const normalizedName = normalize(service.name);
       if (normalizedName.length < 4) return false;
-      return normalizedText.includes(` ${normalizedName} `);
+      if (` ${normalizedText} `.includes(` ${normalizedName} `)) return true;
+
+      const serviceTokens = normalizedName
+        .split(' ')
+        .filter((token) => token.length >= 3 && !['para', 'con', 'del', 'los', 'las'].includes(token));
+
+      if (serviceTokens.length === 1) {
+        return serviceTokens[0].length >= 4 && textTokens.has(serviceTokens[0]);
+      }
+
+      return serviceTokens.length >= 2 && serviceTokens.every((token) => textTokens.has(token));
     })
     .slice(0, limit);
 }
