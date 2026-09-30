@@ -18,6 +18,7 @@ describe('KIA voice and durable client registry', () => {
   const cron = source('app/api/cron/kia-client-ledger/route.ts');
   const migration = source('supabase/migrations/20260929160818_kia_client_registry_ledger.sql');
   const deny = source('supabase/migrations/20260929162529_kia_client_registry_explicit_deny.sql');
+  const hardening = source('supabase/migrations/20260930113000_kia_client_registry_hardening.sql');
 
   it('keeps audio credentials server-side and enforces auth/size/type gates', () => {
     expect(audio).toContain('process.env.OPENAI_API_KEY');
@@ -57,6 +58,9 @@ describe('KIA voice and durable client registry', () => {
     expect(migration).toContain('revoke all on table public.client_registry_events from anon, authenticated');
     expect(deny).toContain('using (false)');
     expect(deny).toContain('with check (false)');
+    expect(hardening).toContain('revoke all on table public.client_registry_events from service_role');
+    expect(hardening).toContain('grant select, insert on table public.client_registry_events to service_role');
+    expect(hardening).toContain('client_registry_reconcile_state');
   });
 
   it('preserves lead-to-client continuity and fails closed on exact identity conflict', () => {
@@ -71,6 +75,9 @@ describe('KIA voice and durable client registry', () => {
     expect(context).not.toContain('reconcileClientRegistry(admin');
     expect(cron).toContain('reconcileClientRegistry');
     expect(cron).toContain("verifyCronRequest(request.headers, 'cron/kia-client-ledger')");
+    expect(cron).toContain('client_registry_reconcile_state');
+    expect(cron).toContain("order('id', { ascending: true })");
+    expect(cron).toContain('KIA_CLIENT_LEDGER_CONCURRENCY');
   });
 
   it('records verified source references instead of copying full artifacts', () => {
@@ -85,6 +92,10 @@ describe('KIA voice and durable client registry', () => {
     expect(ledger).toContain(".eq('from_email', email)");
     expect(ledger).toContain(".eq('recipient_email', email)");
     expect(ledger).not.toContain(".ilike('from_email', email)");
+    expect(ledger).toContain("ignoreDuplicates: true");
+    expect(ledger).toContain('pendingEvents: RegistryEventInput[]');
+    expect(ledger).toContain("metadata.staff_preview === true");
+    expect(ledger).toContain('companyId: scope.companyId');
   });
 
   it('tells KIA to use the registry for continuity and live tools for exact state', () => {
