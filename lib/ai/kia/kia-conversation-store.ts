@@ -132,7 +132,8 @@ export async function persistKiaConversationTurn(input: {
     .select('id,role,created_at');
   if (messageError) throw messageError;
 
-  if (process.env.KIA_CLIENT_LEDGER_ENABLED?.trim().toLowerCase() === 'true') {
+  const staffPreview = input.metadata?.staff_preview === true;
+  if (process.env.KIA_CLIENT_LEDGER_ENABLED?.trim().toLowerCase() === 'true' && !staffPreview) {
     const byRole = new Map((storedMessages ?? []).map((row) => [row.role, row]));
     const userRow = byRole.get('user');
     const assistantRow = byRole.get('assistant');
