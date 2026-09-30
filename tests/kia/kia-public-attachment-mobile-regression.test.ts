@@ -44,18 +44,17 @@ describe('KIA public attachment + mobile composer regression', () => {
     expect(attachment).toContain('attempt.response.status === 402');
   });
 
-  it('pins public chat language to the typed message and avoids eager official searches', () => {
+  it('pins public chat language to the typed message and uses plain text', () => {
     expect(publicRoute).toContain("detectKiaMessageLocale(parsed.data.message) ?? 'es'");
-    expect(publicRoute).toContain('locale: publicLocale');
-    expect(publicRoute).toContain('latestMessage: parsed.data.message');
-    expect(publicRoute).toContain('includeOfficialSourceContext: false');
-    expect(publicRoute).toContain('const allowPublicTools = !parsed.data.attachment');
-    expect(publicRoute).toContain('public_web_chat_recovery');
+    expect(publicRoute).toContain('runKiaProviderRequest');
+    expect(publicRoute).toContain('NO devuelvas JSON');
+    expect(publicRoute).not.toContain('runKiaDecision');
   });
 
-  it('makes KIA thinking state visually explicit', () => {
+  it('shows only the KIA thinking avatar without secondary loading animation', () => {
     expect(widget).toContain('state={loading ? "pensando" : "ayuda"}');
-    expect(widget).toContain('size="lg" priority animateOnChange');
-    expect(widget).toContain('ring-2 ring-[#D4A017]/35');
+    expect(widget).toContain('KIA está pensando…');
+    expect(widget).not.toContain('animate-bounce [animation-delay:-0.3s]');
+    expect(widget).not.toContain('ring-2 ring-[#D4A017]/35');
   });
 });
