@@ -183,7 +183,8 @@ async function checkProviderConfig(): Promise<KiaHealthCheckResult> {
 function checkGatewayPrimaryConfig(): KiaHealthCheckResult {
   const gatewayConfigured = isKiaGatewayConfigured();
   const directGeminiConfigured = Boolean(
-    process.env.GEMINI_API_KEY?.trim()
+    process.env.GOOGLE_API_KEY?.trim()
+      || process.env.GEMINI_API_KEY?.trim()
       || process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim(),
   );
   const configured = gatewayConfigured || directGeminiConfigured;
@@ -212,7 +213,7 @@ function checkGatewayPrimaryConfig(): KiaHealthCheckResult {
     model,
     error: configured
       ? null
-      : 'No hay AI Gateway ni GEMINI_API_KEY/GOOGLE_GENERATIVE_AI_API_KEY configurada para la ruta primaria de KIA.',
+      : 'No hay AI Gateway ni GOOGLE_API_KEY/GEMINI_API_KEY/GOOGLE_GENERATIVE_AI_API_KEY configurada para la ruta primaria de KIA.',
   });
 }
 
