@@ -154,7 +154,8 @@ export function getKiaProviderOrder(): ProviderConfig[] {
     model: provider.model,
   }));
 
-  const geminiKey = process.env.GEMINI_API_KEY?.trim()
+  const geminiKey = process.env.GOOGLE_API_KEY?.trim()
+    || process.env.GEMINI_API_KEY?.trim()
     || process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
   if (geminiKey) {
     providers.push({
