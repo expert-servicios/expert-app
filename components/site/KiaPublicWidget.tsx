@@ -26,9 +26,17 @@ type PublicAttachment = {
   analysis: string;
 };
 
+type PublicKiaQuickReply = {
+  label: string;
+  action: 'message' | 'link';
+  kind: 'category' | 'service' | 'meeting' | 'navigation' | 'other';
+  message?: string;
+  href?: string;
+};
+
 type PublicKiaResponse = {
   reply?: string;
-  quickReplies?: string[];
+  quickReplies?: PublicKiaQuickReply[];
   intent?: string;
   nextAction?: string;
   requiresMeeting?: boolean;
@@ -96,11 +104,10 @@ export function KiaPublicWidget() {
       text: 'Soy KIA, asistente de EXPERT. Puedo orientarte sobre fiscalidad, extranjería, empresa, laboral y trámites, buscar fuentes oficiales y enseñarte el siguiente paso.',
     },
   ]);
-  const [quickReplies, setQuickReplies] = useState<string[]>([
-    'Tengo una consulta fiscal',
-    'Necesito hacer un trámite',
-    'Quiero saber qué servicio necesito',
-    'Pedir reunión informativa',
+  const [quickReplies, setQuickReplies] = useState<PublicKiaQuickReply[]>([
+    { label: 'Ver servicios', action: 'message', kind: 'navigation', message: 'Ver categorías de servicios' },
+    { label: 'Pedir reunión informativa', action: 'link', kind: 'meeting', href: '/cita?tipo=consulta-inicial' },
+    { label: 'Mi caso es distinto', action: 'message', kind: 'other', message: 'Mi caso es distinto y necesito explicarlo' },
   ]);
   const [artifacts, setArtifacts] = useState<LinkArtifact[]>([]);
   const [actionCta, setActionCta] = useState<{ href: string; label: string } | null>(null);
@@ -141,7 +148,7 @@ export function KiaPublicWidget() {
     [messages],
   );
 
-  const sendMessage = useCallback(async (message: string) => {
+  const sendMessage = useCallback(async (message: string, displayText?: string) => {
     const clean = message.trim();
     if (!clean || loading) return;
 
@@ -151,7 +158,7 @@ export function KiaPublicWidget() {
     setQuickReplies([]);
     setArtifacts([]);
     setActionCta(null);
-    setMessages((current) => [...current, { id: crypto.randomUUID(), role: 'user', text: clean }]);
+    setMessages((current) => [...current, { id: crypto.randomUUID(), role: 'user', text: displayText?.trim() || clean }]);
 
     const timers: number[] = [];
     const controller = new AbortController();
@@ -185,7 +192,7 @@ export function KiaPublicWidget() {
         || 'Ahora mismo no he podido completar la respuesta. Puedes intentarlo de nuevo o abrir KIA en Telegram.';
 
       setMessages((current) => [...current, { id: crypto.randomUUID(), role: 'assistant', text: reply }]);
-      setQuickReplies(Array.from(new Set([...(data.quickReplies ?? []), 'Pedir reunión informativa'])).slice(0, 4));
+      setQuickReplies((data.quickReplies ?? []).slice(0, 12));
       setArtifacts((data.artifacts ?? []).filter((artifact) => artifact.type === 'link').slice(0, 4));
       setActionCta(commercialCta(data));
       setAttachment(null);
@@ -423,18 +430,20 @@ export function KiaPublicWidget() {
             <div className="flex flex-wrap gap-1.5">
               {quickReplies.map((reply) => (
                 <button
-                  key={reply}
+                  key={`${reply.kind}:${reply.label}:${reply.href ?? reply.message ?? ''}`}
                   type="button"
                   onClick={() => {
-                    if (reply === 'Pedir reunión informativa') {
-                      window.location.href = '/cita?tipo=consulta-inicial';
+                    if (reply.action === 'link' && reply.href) {
+                      window.location.href = reply.href;
                       return;
                     }
-                    void sendMessage(reply);
+                    if (reply.action === 'message' && reply.message) {
+                      void sendMessage(reply.message, reply.label);
+                    }
                   }}
                   className="rounded-full border border-[#D4A017]/35 bg-white px-3 py-1.5 text-xs font-medium text-[#0D1B2A] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
                 >
-                  {reply}
+                  {reply.label}
                 </button>
               ))}
             </div>
