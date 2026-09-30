@@ -35,11 +35,13 @@ import { resolveKiaQuickActionCase } from '@/lib/ai/kia/kia-quick-action-case';
 import { recordKiaVisibleReply } from '@/lib/ai/kia/kia-visible-decision-log';
 import { persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import { resolveTelegramContentOrigin } from '@/lib/marketing/telegram-content-origin-server';
+import { transcribeKiaAudio } from '@/lib/ai/kia/kia-audio';
 import {
   escapeTelegramHtml,
   isConfiguredTelegramAdminChat,
   isTelegramWebhookAuthorized,
   parseTelegramInboundMessage,
+  downloadTelegramMedia,
   sendTelegramMessageConfirmed as sendTelegramMessage,
   sendTelegramPhotoConfirmed,
 } from '@/lib/integrations/telegram';
@@ -406,6 +408,40 @@ async function handleTelegramUpdate(request: NextRequest) {
     return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'daily_cost_cap_reached' });
   }
 
+  let effectiveText = inbound.text;
+  if (inbound.media && inbound.media.kind !== 'voice' && inbound.media.kind !== 'audio') {
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: inbound.text
+        ? 'He recibido el adjunto y el texto. Por ahora KIA solo procesa texto y audio; usaré únicamente el texto del mensaje.'
+        : 'Por ahora KIA en Telegram solo procesa texto y notas de voz. Para documentos o imágenes, súbelos desde tu expediente en EXPERT.',
+    });
+    if (!inbound.text) {
+      return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'unsupported_media' });
+    }
+  }
+  if (inbound.media?.kind === 'voice' || inbound.media?.kind === 'audio') {
+    if (process.env.KIA_TELEGRAM_VOICE_ENABLED?.trim().toLowerCase() !== 'true') {
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'Las notas de voz de KIA todavía no están activadas en este canal. Puedes escribir el mismo mensaje mientras se completa el despliegue.',
+      });
+      return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'telegram_voice_disabled' });
+    }
+    try {
+      const file = await downloadTelegramMedia(inbound.media);
+      const transcript = await transcribeKiaAudio(file);
+      effectiveText = [inbound.text, transcript.text].filter(Boolean).join('\n').trim();
+    } catch (err) {
+      console.error('[Telegram KIA] voice transcription failed:', safeErrorMessage(err));
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'No he podido transcribir esta nota de voz. Puedes volver a enviarla o escribir el mensaje.',
+      });
+      return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'voice_transcription_failed' });
+    }
+  }
+
   const { data: profile, error: profileError } = await admin
     .from('profiles')
     .select('active_company_id,preferred_language')
@@ -423,7 +459,7 @@ async function handleTelegramUpdate(request: NextRequest) {
   if (contextEnabled) {
     try {
       caseContext = await loadTelegramCaseContext({ admin, profileId: identity.profileId,
-        tenantId: identity.tenantId, chatId: inbound.chatId, text: inbound.text });
+        tenantId: identity.tenantId, chatId: inbound.chatId, text: effectiveText });
 
       if (!caseContext && !genericTelegramConversationId) {
         const genericQuery = admin
@@ -453,7 +489,7 @@ async function handleTelegramUpdate(request: NextRequest) {
   }
   const companyId = caseContext ? caseContext.companyId : profile?.active_company_id ?? null;
   const profileLocale = profile?.preferred_language === 'ru' ? 'ru' : 'es';
-  const responseLocale = resolveKiaLocale({ latestMessage: inbound.text, preferredLanguage: profileLocale });
+  const responseLocale = resolveKiaLocale({ latestMessage: effectiveText, preferredLanguage: profileLocale });
   let actor;
   try {
     actor = await resolveKiaActorCapabilities({
@@ -641,7 +677,7 @@ async function handleTelegramUpdate(request: NextRequest) {
   try {
     const message = opensContext
       ? (responseLocale === 'ru' ? 'Покажи текущий статус моего дела и следующий шаг.' : 'Muéstrame el estado de mi expediente y el siguiente paso.')
-      : inbound.text;
+      : effectiveText;
     const result = await runPolicyEnforcedKiaDecision('telegram_verified', actor, {
       taskType: 'chat_reply',
       channel: 'telegram',
