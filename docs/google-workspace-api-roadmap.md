@@ -69,13 +69,20 @@ Sheets no será la fuente de verdad financiera de EXPERT; debe usarse como inter
 Casos de uso:
 - evento de finalización de Meet;
 - evento de creación de transcript;
-- evento de smart notes disponible;
 - grabación disponible;
+- cambios de conferencia/participantes que permiten iniciar la fase post-reunión;
+- Smart Notes no expone un evento propio: KIA debe descubrir el documento/notas a partir de un evento soportado de Meet y/o mediante Drive/Calendar con reintentos acotados;
 - cambios, comentarios, aprobaciones y permisos en Drive;
 - lanzar automáticamente el pipeline post-reunión de KIA.
 
 Flujo objetivo:
 Workspace Events -> Pub/Sub -> webhook/Cloud Run/Vercel -> KIA -> hoja registral -> tareas/admin -> Docs/Slides.
+
+Operación obligatoria:
+- registrar expiration/expireTime de cada suscripción;
+- renovar o recrear suscripciones antes de que expiren;
+- procesar lifecycle events y errores de entrega;
+- alertar si una suscripción queda inactiva para evitar que el pipeline se detenga silenciosamente.
 
 ### Cloud Pub/Sub API
 
@@ -101,7 +108,10 @@ Casos de uso:
 - mejorar UX de expedientes y formularios.
 
 Ventaja:
-reduce subida manual y mantiene una selección explícita/autorizada de archivos.
+reduce subida manual y mantiene una selección explícita de archivos.
+
+Regla de autorización:
+si Picker se usa como frontera de consentimiento por archivo, la feature debe usar `drive.file` y una configuración Picker coherente. No reutilizar el token amplio `drive.readonly` actual como si Picker limitara por sí solo el acceso al archivo seleccionado.
 
 ---
 
@@ -153,6 +163,27 @@ Casos:
 - notificaciones de expedientes o reuniones.
 
 No priorizar mientras Telegram + email + push cubran el caso interno.
+
+### Google Chat MCP API
+
+**Prioridad: experimental**
+
+No es la misma API que Google Chat API. Es el servidor MCP remoto oficial de Google Chat y actualmente está en Developer Preview.
+
+Casos potenciales:
+- permitir que KIA, actuando como cliente MCP autorizado, busque conversaciones y mensajes de Google Chat;
+- listar membresías;
+- marcar mensajes leídos/no leídos;
+- enviar mensajes mediante tools MCP sin construir wrappers REST específicos por acción.
+
+Dependencias:
+- requiere Google Chat API habilitada;
+- requiere también `chatmcp.googleapis.com`;
+- para operaciones de escritura debe existir/configurarse la app de Chat correspondiente;
+- mantener revisión humana y controles anti prompt-injection antes de conceder tools de escritura.
+
+Decisión:
+habilitada/documentada para experimentación, pero no integrar todavía en el núcleo productivo de KIA mientras permanezca en Developer Preview.
 
 ### Drive Labels API
 
@@ -308,7 +339,9 @@ Reglas obligatorias:
 - no guardar access tokens en cliente;
 - cifrar refresh tokens y secretos;
 - registrar actor, recurso, acción y timestamp en hoja registral;
-- evitar duplicar documentos en Supabase si basta referencia segura a Drive;
+- mantener `public.documents` + almacenamiento privado EXPERT como registro canónico de documentos del expediente;
+- tratar Drive como copia operativa, fuente externa o espejo salvo migración arquitectónica explícita;
+- las referencias Drive pueden complementar el registro canónico, pero no sustituirlo silenciosamente;
 - toda automatización de escritura importante debe tener idempotency key.
 
 ---
@@ -348,6 +381,7 @@ Objetivo: productividad interna, directorio y compliance Workspace.
 - Tasks API.
 - Forms API.
 - Chat API.
+- Chat MCP API (experimental / Developer Preview).
 
 Solo cuando exista un flujo concreto que no cubran las herramientas actuales.
 
