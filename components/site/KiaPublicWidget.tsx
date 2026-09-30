@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ExternalLink, Loader2, MessageCircle, Send, X } from 'lucide-react';
+import { ExternalLink, FileText, Loader2, MessageCircle, Mic, Paperclip, Send, Square, X } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 import { KiaAvatar } from '@/components/kia/KiaAvatar';
 import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
@@ -18,6 +18,12 @@ type LinkArtifact = {
   title: string;
   url: string;
   cta: string;
+};
+
+type PublicAttachment = {
+  fileName: string;
+  mimeType: string;
+  analysis: string;
 };
 
 type PublicKiaResponse = {
@@ -78,6 +84,10 @@ export function KiaPublicWidget() {
   const [loading, setLoading] = useState(false);
   const [thinkingStage, setThinkingStage] = useState<ThinkingStage>('verifying');
   const [telegramLoading, setTelegramLoading] = useState(false);
+  const [voiceRecording, setVoiceRecording] = useState(false);
+  const [voiceTranscribing, setVoiceTranscribing] = useState(false);
+  const [attachmentLoading, setAttachmentLoading] = useState(false);
+  const [attachment, setAttachment] = useState<PublicAttachment | null>(null);
   const [loggedIn, setLoggedIn] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -94,6 +104,12 @@ export function KiaPublicWidget() {
   const [artifacts, setArtifacts] = useState<LinkArtifact[]>([]);
   const [actionCta, setActionCta] = useState<{ href: string; label: string } | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const voiceChunksRef = useRef<BlobPart[]>([]);
+  const voiceTimeoutRef = useRef<number | null>(null);
+  const discardRecordingRef = useRef(false);
 
   useEffect(() => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -107,6 +123,17 @@ export function KiaPublicWidget() {
     if (!open) return;
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading, open]);
+
+  useEffect(() => {
+    return () => {
+      if (voiceTimeoutRef.current) window.clearTimeout(voiceTimeoutRef.current);
+      discardRecordingRef.current = true;
+      voiceChunksRef.current = [];
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== 'inactive') recorder.stop();
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
 
   const history = useMemo(
     () => messages.filter((message) => message.id !== 'welcome').slice(-6).map(({ role, text }) => ({ role, text })),
@@ -148,6 +175,7 @@ export function KiaPublicWidget() {
           message: clean,
           currentPage: window.location.pathname,
           history,
+          attachment: attachment ?? undefined,
           recaptchaToken,
         }),
       });
@@ -159,6 +187,7 @@ export function KiaPublicWidget() {
       setQuickReplies((data.quickReplies ?? []).slice(0, 4));
       setArtifacts((data.artifacts ?? []).filter((artifact) => artifact.type === 'link').slice(0, 4));
       setActionCta(commercialCta(data));
+      setAttachment(null);
     } catch (error) {
       const reason = error instanceof Error ? error.message : '';
       const text = reason === 'recaptcha_unavailable'
@@ -178,6 +207,149 @@ export function KiaPublicWidget() {
       setLoading(false);
     }
   }, [history, loading]);
+
+  const transcribeRecordedAudio = useCallback(async (blob: Blob) => {
+    if (!blob.size) return;
+    setVoiceTranscribing(true);
+    try {
+      const recaptchaToken = await getRecaptchaToken('kia_public_voice');
+      if (!recaptchaToken) throw new Error('verification_failed');
+
+      const form = new FormData();
+      const extension = blob.type.includes('ogg') ? 'ogg' : blob.type.includes('mp4') ? 'm4a' : 'webm';
+      form.set('audio', new File([blob], `kia-voice.${extension}`, { type: blob.type || 'audio/webm' }));
+      form.set('recaptchaToken', recaptchaToken);
+
+      const response = await fetch('/api/ai/kia/public/voice', { method: 'POST', body: form });
+      const data = await response.json().catch(() => ({})) as { transcript?: string; error?: string };
+      if (!response.ok || !data.transcript?.trim()) throw new Error(data.error ?? 'transcription_failed');
+
+      setInput((current) => current.trim()
+        ? `${current.trim()} ${data.transcript!.trim()}`
+        : data.transcript!.trim());
+    } catch {
+      setMessages((current) => [...current, {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        text: 'No he podido transcribir la nota de voz. Puedes escribirla o intentarlo de nuevo.',
+      }]);
+    } finally {
+      setVoiceTranscribing(false);
+    }
+  }, []);
+
+  const cleanupVoiceRecording = useCallback(({ discard = false }: { discard?: boolean } = {}) => {
+    if (voiceTimeoutRef.current) {
+      window.clearTimeout(voiceTimeoutRef.current);
+      voiceTimeoutRef.current = null;
+    }
+    if (discard) {
+      discardRecordingRef.current = true;
+      voiceChunksRef.current = [];
+    }
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+    mediaStreamRef.current = null;
+    if (!recorder || recorder.state === 'inactive') {
+      mediaRecorderRef.current = null;
+      setVoiceRecording(false);
+    }
+  }, []);
+
+  const handleVoiceToggle = useCallback(async () => {
+    if (voiceRecording) {
+      cleanupVoiceRecording();
+      return;
+    }
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      setMessages((current) => [...current, {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        text: 'Este navegador no permite grabar voz.',
+      }]);
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaStreamRef.current = stream;
+      const preferredTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+      const mimeType = preferredTypes.find((type) => MediaRecorder.isTypeSupported(type));
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      voiceChunksRef.current = [];
+      recorder.ondataavailable = (event) => {
+        if (event.data.size) voiceChunksRef.current.push(event.data);
+      };
+      recorder.onstop = () => {
+        const shouldDiscard = discardRecordingRef.current;
+        discardRecordingRef.current = false;
+        const blob = new Blob(voiceChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        voiceChunksRef.current = [];
+        mediaRecorderRef.current = null;
+        mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+        mediaStreamRef.current = null;
+        setVoiceRecording(false);
+        if (!shouldDiscard) void transcribeRecordedAudio(blob);
+      };
+      recorder.start(500);
+      mediaRecorderRef.current = recorder;
+      setVoiceRecording(true);
+      voiceTimeoutRef.current = window.setTimeout(() => cleanupVoiceRecording(), 90_000);
+    } catch {
+      cleanupVoiceRecording({ discard: true });
+      setMessages((current) => [...current, {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        text: 'No tengo acceso al micrófono. Autorízalo en el navegador o escribe el mensaje.',
+      }]);
+    }
+  }, [cleanupVoiceRecording, transcribeRecordedAudio, voiceRecording]);
+
+  const handleAttachment = useCallback(async (file: File | undefined) => {
+    if (!file) return;
+    setAttachmentLoading(true);
+    try {
+      const recaptchaToken = await getRecaptchaToken('kia_public_attachment');
+      if (!recaptchaToken) throw new Error('verification_failed');
+
+      const form = new FormData();
+      form.set('file', file);
+      form.set('recaptchaToken', recaptchaToken);
+
+      const response = await fetch('/api/ai/kia/public/attachment', { method: 'POST', body: form });
+      const data = await response.json().catch(() => ({})) as {
+        fileName?: string;
+        mimeType?: string;
+        analysis?: string;
+        error?: string;
+      };
+      if (!response.ok || !data.analysis || !data.fileName || !data.mimeType) {
+        throw new Error(data.error ?? 'attachment_failed');
+      }
+      setAttachment({
+        fileName: data.fileName,
+        mimeType: data.mimeType,
+        analysis: data.analysis,
+      });
+      if (!input.trim()) setInput('Analiza este documento y dime qué significa y qué debería hacer.');
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : '';
+      const text = reason.includes('attachment_type_invalid')
+        ? 'Este tipo de archivo todavía no está admitido aquí. Puedes usar PDF, JPG/PNG/WEBP, TXT o CSV.'
+        : reason.includes('attachment_size')
+          ? 'El archivo es demasiado grande. El límite actual del chat público es 8 MB.'
+          : 'No he podido analizar el archivo. Puedes intentarlo de nuevo o subirlo desde tu área EXPERT.';
+      setMessages((current) => [...current, {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        text,
+      }]);
+    } finally {
+      setAttachmentLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }, [input]);
 
   const openTelegram = useCallback(async () => {
     if (telegramLoading) return;
@@ -330,7 +502,54 @@ export function KiaPublicWidget() {
         </div>
 
         <div className="border-t border-[#e8e0d4] bg-white p-3">
+          {attachment ? (
+            <div className="mb-2 flex items-center gap-2 rounded-xl border border-[#D4A017]/30 bg-[#D4A017]/5 px-3 py-2">
+              <FileText size={15} className="shrink-0 text-[#A47B0B]" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold text-[#0D1B2A]">{attachment.fileName}</p>
+                <p className="text-[10px] text-[#7a6e5f]">Analizado temporalmente · no guardado en EXPERT</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAttachment(null)}
+                aria-label="Quitar adjunto"
+                className="rounded-md p-1 text-[#7a6e5f] hover:bg-white"
+              >
+                <X size={13} />
+              </button>
+            </div>
+          ) : null}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.txt,.csv,image/png,image/jpeg,image/webp"
+            className="hidden"
+            onChange={(event) => void handleAttachment(event.target.files?.[0])}
+          />
           <div className="flex items-end gap-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={loading || attachmentLoading}
+              aria-label="Adjuntar documento"
+              title="Adjuntar PDF, imagen, TXT o CSV"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#e8e0d4] bg-white text-[#0D1B2A] transition hover:border-[#D4A017] disabled:opacity-40"
+            >
+              {attachmentLoading ? <Loader2 size={15} className="animate-spin" /> : <Paperclip size={15} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleVoiceToggle()}
+              disabled={loading || voiceTranscribing || attachmentLoading}
+              aria-label={voiceRecording ? 'Detener grabación' : 'Grabar nota de voz'}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition disabled:opacity-40 ${voiceRecording ? 'border-red-300 bg-red-50 text-red-700' : 'border-[#e8e0d4] bg-white text-[#0D1B2A] hover:border-[#D4A017]'}`}
+            >
+              {voiceTranscribing
+                ? <Loader2 size={15} className="animate-spin" />
+                : voiceRecording
+                  ? <Square size={14} />
+                  : <Mic size={15} />}
+            </button>
             <textarea
               value={input}
               onChange={(event) => setInput(event.target.value)}
@@ -344,7 +563,7 @@ export function KiaPublicWidget() {
               maxLength={2000}
               placeholder="Escribe tu consulta…"
               aria-label="Consulta para KIA"
-              disabled={loading}
+              disabled={loading || voiceTranscribing || attachmentLoading}
               className="max-h-24 flex-1 resize-none rounded-xl border border-[#e8e0d4] px-3 py-2 text-sm outline-none focus:border-[#D4A017] disabled:bg-[#f8f6f1] disabled:text-[#8a8177]"
             />
             <button
