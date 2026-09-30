@@ -12,6 +12,7 @@ const TTL_SECONDS = 90 * 24 * 60 * 60;
 
 function secret(): Uint8Array {
   const value =
+    process.env.BOOKING_MANAGEMENT_SECRET ??
     process.env.OAUTH_STATE_SECRET ??
     process.env.INTERNAL_API_SECRET ??
     process.env.HOLDED_MCP_SESSION_SECRET;
