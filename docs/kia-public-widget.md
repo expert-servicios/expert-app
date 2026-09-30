@@ -101,3 +101,41 @@ Telegram mantiene sus propias reglas de identidad: el chat privado con datos de 
 - `app/(public)/layout.tsx`
 - `lib/integrations/official-sources.ts`
 - `tests/kia/kia-public-widget.test.ts`
+
+
+## Voz pública
+
+El widget público ofrece micrófono con grabación local mediante MediaRecorder.
+
+Cadena de transcripción:
+
+1. Gemini 3.5 Transcribe mediante Interactions API.
+2. OpenAI transcription como fallback si está configurado.
+
+Protecciones:
+- reCAPTCHA específico `kia_public_voice`;
+- rate limit por IP;
+- tamaño máximo del audio;
+- timeout de proveedor;
+- el audio no se persiste.
+
+## Adjuntos públicos
+
+El clip permite análisis temporal de:
+- PDF;
+- JPG/JPEG;
+- PNG;
+- WEBP;
+- TXT;
+- CSV.
+
+Límite inicial: 8 MB.
+
+El archivo:
+- se procesa en memoria;
+- se envía a Gemini como contenido no confiable;
+- no se incorpora a `public.documents`;
+- no se guarda en Supabase Storage ni Drive;
+- solo el resumen temporal se pasa a KIA para contestar la consulta.
+
+Si el visitante necesita que el documento forme parte del expediente, debe identificarse y subirlo desde el área EXPERT. El almacenamiento canónico del expediente sigue siendo EXPERT.
