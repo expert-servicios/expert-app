@@ -1,6 +1,6 @@
 # KIA — hoja registral del cliente (Client Ledger)
 
-Fecha de diseño: 29/09/2026.
+Fecha de diseño: 29/09/2026. Última actualización: 30/09/2026.
 
 ## Decisión
 
@@ -151,15 +151,27 @@ Fuentes reconciliadas:
 
 Un cron de reconciliación cubre eventos omitidos sin bloquear transacciones de negocio.
 
+### Reconciliación operativa
+
+- cursor persistente separado para `profiles` y `leads`;
+- orden determinista por UUID para completar el backfill en ciclos sucesivos;
+- concurrencia limitada por `KIA_CLIENT_LEDGER_CONCURRENCY` (1–8);
+- eventos preparados en memoria y escritos en lotes idempotentes (`source_key` + `ignoreDuplicates`);
+- errores parciales abortan el snapshot: nunca se marca como actualizado un ledger incompleto;
+- al terminar un recorrido, el cursor vuelve a `null` y comienza un nuevo ciclo para incorporar altas posteriores.
+
 ## Seguridad
 
 Las tablas del ledger:
 - RLS habilitado;
 - sin acceso directo `anon`/`authenticated`;
 - service-role/server only;
+- `client_registry_events` es append-only para el backend normal: `service_role` solo tiene `SELECT` e `INSERT`;
+- los subjects pueden conservarse como identidad huérfana si se elimina el lead/perfil canónico, evitando que una FK `SET NULL` bloquee la baja;
 - vistas/endpoint Admin explícitos para lectura;
 - KIA cliente solo recibe el fragmento autorizado de su propio subject;
-- no mezclar companies/cases fuera de alcance.
+- el contexto filtrado respeta `company_id` y `case_id`;
+- conversaciones `staff_preview` no se incorporan al ledger del administrador.
 
 ## Retención
 
@@ -169,14 +181,15 @@ Los eventos pueden quedar pseudonimizados/eliminados cuando proceda legalmente, 
 
 ## Criterio de listo
 
-- [ ] subject se crea desde lead;
-- [ ] lead→cliente conserva subject;
-- [ ] eventos idempotentes;
-- [ ] snapshot determinista;
-- [ ] KIA carga snapshot antes de responder;
-- [ ] referencias a fuentes, no duplicación masiva;
-- [ ] reconciliación periódica;
-- [ ] RLS/revokes;
-- [ ] Security Advisor;
-- [ ] pruebas de aislamiento de clientes/empresas;
+- [x] subject se crea desde lead/cliente/prospect con conflicto de identidad fail-closed;
+- [x] lead→cliente puede conservar subject mediante identidad explícita;
+- [x] eventos idempotentes y escritura reconciliada por lotes;
+- [x] snapshot determinista con errores parciales fail-closed;
+- [x] KIA carga contexto registral antes de responder cuando `KIA_CLIENT_LEDGER_ENABLED=true`;
+- [x] referencias a fuentes, no duplicación masiva;
+- [x] reconciliación periódica con cursor persistente;
+- [x] RLS/revokes + ledger append-only para `service_role`;
+- [x] Security Advisor ejecutado después del DDL inicial;
+- [x] aislamiento de company/case y exclusión de staff preview cubiertos por regresión;
+- [ ] backfill de producción activado y observado con `KIA_CLIENT_LEDGER_ENABLED=true`;
 - [ ] admin timeline visible en Company 360/cliente.
