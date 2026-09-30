@@ -28,6 +28,31 @@ describe('KIA health provider and retired WABA alignment', () => {
     expect(provider?.model).toBe('google/gemini-3.6-flash');
   });
 
+  it('accepts GOOGLE_API_KEY as the preferred direct Gemini credential', async () => {
+    vi.stubEnv('AI_GATEWAY_API_KEY', '');
+    vi.stubEnv('VERCEL_OIDC_TOKEN', '');
+    vi.stubEnv('GOOGLE_API_KEY', 'test-google');
+    vi.stubEnv('GEMINI_API_KEY', '');
+    vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', '');
+    vi.stubEnv('GEMINI_MODEL', 'gemini-3.8-flash');
+    vi.stubEnv('ANTHROPIC_API_KEY', '');
+    vi.stubEnv('OPENAI_API_KEY', '');
+    vi.stubEnv('WABA_PAUSED', 'true');
+    vi.stubEnv('STRIPE_SECRET_KEY', 'test');
+    vi.stubEnv('STRIPE_WEBHOOK_SECRET', 'test');
+    vi.stubEnv('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', 'test');
+    vi.stubEnv('SECRET_ENCRYPTION_KEY', 'test');
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ status: { indicator: 'none' } }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    })));
+
+    const checks = await runKiaTechnicalChecks();
+    const primary = checks.find((check) => check.checkId === 'gateway_primary_configured');
+    expect(primary?.status).toBe('passed');
+    expect(primary?.provider).toBe('google');
+  });
+
   it('accepts direct Gemini as a healthy primary route without AI Gateway', async () => {
     vi.stubEnv('AI_GATEWAY_API_KEY', '');
     vi.stubEnv('VERCEL_OIDC_TOKEN', '');
