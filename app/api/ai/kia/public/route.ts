@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       reply: result.userMessage,
-      quickReplies: result.decision.quickReplies?.map((item) => item.label).filter(Boolean) ?? [],
+      quickReplies: result.decision.quickReplies?.map((item) => item.title).filter(Boolean) ?? [],
       intent: result.decision.intent,
       nextAction: result.decision.nextAction,
       requiresMeeting: result.decision.requiresMeeting,
