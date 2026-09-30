@@ -350,7 +350,18 @@ Reglas de uso de fuentes:
 }
 
 async function lookupOfficialSources(query: string): Promise<OfficialSourceLookup | null> {
+  const geminiKey = process.env.GEMINI_API_KEY?.trim()
+    || process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
   const openAiKey = process.env.OPENAI_API_KEY?.trim();
+
+  if (geminiKey && process.env.OFFICIAL_GOOGLE_SEARCH_ENABLED?.toLowerCase() !== 'false') {
+    try {
+      const live = await searchOfficialSourcesWithGemini(query, geminiKey);
+      if (live && (live.summary || live.sources.length > 0)) return live;
+    } catch (error) {
+      console.error('[Official sources] Gemini Google Search failed:', error instanceof Error ? error.message : 'Unknown error');
+    }
+  }
 
   if (openAiKey) {
     try {
@@ -370,6 +381,67 @@ async function lookupOfficialSources(query: string): Promise<OfficialSourceLooku
       'No se ha podido obtener contenido actualizado mediante busqueda en vivo. Usa estos portales oficiales como punto de partida y evita afirmar que el dato esta verificado hoy.',
     sources: fallback,
   };
+}
+
+async function searchOfficialSourcesWithGemini(query: string, apiKey: string): Promise<OfficialSourceLookup | null> {
+  const data = await callGeminiOfficialSearch(query, apiKey);
+  const summary = extractGeminiResponseText(data);
+  const citations = extractGeminiCitations(data);
+  const officialSources = citations.filter((source) => isAllowedOfficialUrl(source.url));
+
+  // Fail closed on source quality: if Gemini cited any non-official source, do not
+  // reuse the synthesized summary because it may mix unsupported material.
+  if (officialSources.length === 0 || officialSources.length !== citations.length) return null;
+
+  return {
+    mode: 'live',
+    summary: summary || 'Busqueda oficial realizada con Google Search, pero no se obtuvo un resumen textual claro.',
+    sources: officialSources,
+  };
+}
+
+async function callGeminiOfficialSearch(query: string, apiKey: string): Promise<unknown> {
+  const controller = new AbortController();
+  const timeoutMs = Math.min(
+    Math.max(Number(process.env.OFFICIAL_SEARCH_TIMEOUT_MS ?? 12_000), 4_000),
+    20_000,
+  );
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const allowedDomains = OFFICIAL_DOMAINS.join(', ');
+
+  try {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'x-goog-api-key': apiKey,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: process.env.OFFICIAL_GOOGLE_SEARCH_MODEL?.trim()
+          || process.env.GEMINI_MODEL?.trim()
+          || 'gemini-3.8-flash',
+        input: [
+          'Actua como buscador documental para una gestoria espanola.',
+          'Usa Google Search solo para localizar informacion vigente y verificable.',
+          'Busca y responde EXCLUSIVAMENTE con fuentes de organismos oficiales incluidos en esta lista de dominios:',
+          allowedDomains,
+          'No uses prensa, blogs, foros, agregadores ni webs comerciales.',
+          'Resume en espanol con prudencia y no des asesoramiento personalizado.',
+          'Si no encuentras fuentes oficiales suficientes, indicalo claramente.',
+          '',
+          `Consulta: ${query}`,
+        ].join('\n'),
+        tools: [{ type: 'google_search' }],
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(extractApiError(data, response.status));
+    return data;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function searchOfficialSourcesWithOpenAi(query: string, apiKey: string): Promise<OfficialSourceLookup | null> {
@@ -457,6 +529,49 @@ function getFallbackSources(query: string): OfficialSource[] {
   const selected = matches.length > 0 ? matches : FALLBACK_SOURCES.slice(0, 4);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return selected.slice(0, 5).map(({ keywords: _keywords, ...source }) => source);
+}
+
+function extractGeminiResponseText(data: unknown): string {
+  if (!isRecord(data) || !Array.isArray(data.steps)) return '';
+
+  const parts: string[] = [];
+  for (const step of data.steps) {
+    if (!isRecord(step) || step.type !== 'model_output' || !Array.isArray(step.content)) continue;
+    for (const content of step.content) {
+      if (isRecord(content) && content.type === 'text' && typeof content.text === 'string') {
+        parts.push(content.text.trim());
+      }
+    }
+  }
+  return parts.filter(Boolean).join('\n').trim();
+}
+
+function extractGeminiCitations(data: unknown): OfficialSource[] {
+  if (!isRecord(data) || !Array.isArray(data.steps)) return [];
+
+  const citations: OfficialSource[] = [];
+  for (const step of data.steps) {
+    if (!isRecord(step) || step.type !== 'model_output' || !Array.isArray(step.content)) continue;
+    for (const content of step.content) {
+      if (!isRecord(content) || !Array.isArray(content.annotations)) continue;
+      for (const annotation of content.annotations) {
+        if (!isRecord(annotation) || annotation.type !== 'url_citation') continue;
+        const url = typeof annotation.url === 'string'
+          ? annotation.url
+          : typeof annotation.uri === 'string'
+            ? annotation.uri
+            : '';
+        if (!url) continue;
+        citations.push({
+          title: typeof annotation.title === 'string' && annotation.title
+            ? annotation.title
+            : getHostLabel(url),
+          url,
+        });
+      }
+    }
+  }
+  return dedupeSources(citations);
 }
 
 function extractResponseText(data: unknown): string {
