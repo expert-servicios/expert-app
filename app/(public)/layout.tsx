@@ -3,7 +3,7 @@ import Script from 'next/script';
 import { Header } from '@/components/site/header';
 import { Footer } from '@/components/site/footer';
 import { InstallPwaPrompt } from '@/components/InstallPwaPrompt';
-import { WhatsAppChatWidget } from '@/components/site/WhatsAppChatWidget';
+import { KiaPublicWidget } from '@/components/site/KiaPublicWidget';
 import { CalBadge } from '@/components/site/CalBadge';
 import { CartProvider } from '@/contexts/CartContext';
 import { CartSidebar } from '@/components/cart/CartSidebar';
@@ -34,7 +34,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       <Footer />
       <InstallPwaPrompt variant="banner" />
       <div className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] right-4 z-[70] flex flex-col items-center gap-3 sm:bottom-5 sm:right-5">
-        <WhatsAppChatWidget />
+        <KiaPublicWidget />
       </div>
       <div className="fixed bottom-5 left-5 z-[70] hidden sm:block">
         <CalBadge />
