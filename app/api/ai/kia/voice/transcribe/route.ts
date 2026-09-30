@@ -17,7 +17,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'audio_quota_reached' }, { status: 429 });
   }
 
-  const contentLength = Number(request.headers.get('content-length') ?? '0');
+  const rawContentLength = request.headers.get('content-length');
+  const contentLength = rawContentLength ? Number(rawContentLength) : Number.NaN;
+  if (!Number.isFinite(contentLength) || contentLength <= 0) {
+    return NextResponse.json({ error: 'content_length_required' }, { status: 411 });
+  }
   if (contentLength > KIA_MAX_AUDIO_BYTES + 1024 * 1024) {
     return NextResponse.json({ error: 'audio_too_large' }, { status: 413 });
   }
