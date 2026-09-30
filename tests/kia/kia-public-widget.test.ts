@@ -16,11 +16,13 @@ describe('KIA public widget', () => {
     expect(layout).not.toContain('WhatsAppChatWidget');
   });
 
-  it('offers web chat and Telegram from one launcher', () => {
+  it('offers web chat, Telegram and an informational meeting without dashboard noise', () => {
     expect(widget).toContain("fetch('/api/ai/kia/public'");
     expect(widget).toContain("https://t.me/kia_expert_bot");
     expect(widget).toContain("fetch('/api/ai/kia/telegram-link'");
-    expect(widget).toContain('Abrir KIA con mis expedientes y datos');
+    expect(widget).toContain('Pedir reunión informativa');
+    expect(widget).toContain('/cita?tipo=consulta-inicial');
+    expect(widget).not.toContain('Abrir KIA con mis expedientes y datos');
   });
 
   it('protects anonymous chat with recaptcha, spam and rate limiting', () => {
@@ -30,20 +32,12 @@ describe('KIA public widget', () => {
     expect(route).toContain("action: 'kia_public_chat'");
   });
 
-  it('keeps anonymous tools read-only and public-safe', () => {
-    expect(route).toContain("'search_knowledge_resources'");
-    expect(route).toContain("'get_official_sources'");
-    expect(route).toContain("'find_relevant_services'");
-    expect(route).toContain("maxRiskTier: 'R0'");
-    expect(route).toContain("allowedEffects: ['read']");
-    expect(route).toContain("autonomousOnly: true");
-  });
-
-  it('keeps official search available without forcing it before every public reply', () => {
-    expect(route).toContain('includeOfficialSourceContext: false');
-    expect(route).toContain("'get_official_sources'");
+  it('uses a plain-text public response contract instead of KiaDecision JSON', () => {
+    expect(route).toContain('runKiaProviderRequest');
+    expect(route).toContain('NO devuelvas JSON');
+    expect(route).not.toContain('runKiaDecision');
+    expect(route).not.toContain('responseSchema:');
     expect(official).toContain("tools: [{ type: 'google_search' }]");
-    expect(official).toContain('searchOfficialSourcesWithGemini(query, geminiKey)');
   });
 
   it('maps commercial actions without forcing checkout for anonymous visitors', () => {

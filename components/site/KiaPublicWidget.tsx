@@ -100,6 +100,7 @@ export function KiaPublicWidget() {
     'Tengo una consulta fiscal',
     'Necesito hacer un trámite',
     'Quiero saber qué servicio necesito',
+    'Pedir reunión informativa',
   ]);
   const [artifacts, setArtifacts] = useState<LinkArtifact[]>([]);
   const [actionCta, setActionCta] = useState<{ href: string; label: string } | null>(null);
@@ -184,7 +185,7 @@ export function KiaPublicWidget() {
         || 'Ahora mismo no he podido completar la respuesta. Puedes intentarlo de nuevo o abrir KIA en Telegram.';
 
       setMessages((current) => [...current, { id: crypto.randomUUID(), role: 'assistant', text: reply }]);
-      setQuickReplies((data.quickReplies ?? []).slice(0, 4));
+      setQuickReplies(Array.from(new Set([...(data.quickReplies ?? []), 'Pedir reunión informativa'])).slice(0, 4));
       setArtifacts((data.artifacts ?? []).filter((artifact) => artifact.type === 'link').slice(0, 4));
       setActionCta(commercialCta(data));
       setAttachment(null);
@@ -410,37 +411,10 @@ export function KiaPublicWidget() {
           ))}
 
           {loading ? (
-            <div
-              role="status"
-              aria-live="polite"
-              className="overflow-hidden rounded-2xl border border-[#D4A017]/25 bg-[linear-gradient(135deg,#fbfaf7_0%,#f5f1eb_100%)] shadow-sm"
-            >
-              <div className="flex items-start gap-3 px-3.5 py-3">
-                <div className="relative mt-0.5">
-                  <KiaAvatar state="pensando" size="lg" priority animateOnChange className="ring-2 ring-[#D4A017]/35 shadow-sm" />
-                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#f5f1eb] bg-[#D4A017] animate-pulse" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A47B0B]">
-                      {THINKING_COPY[thinkingStage].eyebrow}
-                    </p>
-                    <span className="flex items-center gap-1" aria-hidden="true">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#D4A017] animate-bounce [animation-delay:-0.3s]" />
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#D4A017] animate-bounce [animation-delay:-0.15s]" />
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#D4A017] animate-bounce" />
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm font-semibold leading-5 text-[#0D1B2A]">
-                    KIA está pensando
-                  </p>
-                  <p className="mt-0.5 text-xs leading-5 text-[#6f6559]">
-                    {THINKING_COPY[thinkingStage].detail}
-                  </p>
-                </div>
-              </div>
-              <div className="h-0.5 overflow-hidden bg-[#D4A017]/10">
-                <div className="h-full w-1/2 bg-[#D4A017]/70 animate-pulse" />
+            <div role="status" aria-live="polite" className="flex justify-start">
+              <div className="flex items-center gap-2 rounded-2xl bg-[#f5f1eb] px-3 py-2.5">
+                <KiaAvatar state="pensando" size="lg" priority animateOnChange />
+                <span className="text-xs font-medium text-[#6f6559]">KIA está pensando…</span>
               </div>
             </div>
           ) : null}
@@ -451,7 +425,13 @@ export function KiaPublicWidget() {
                 <button
                   key={reply}
                   type="button"
-                  onClick={() => void sendMessage(reply)}
+                  onClick={() => {
+                    if (reply === 'Pedir reunión informativa') {
+                      window.location.href = '/cita?tipo=consulta-inicial';
+                      return;
+                    }
+                    void sendMessage(reply);
+                  }}
                   className="rounded-full border border-[#D4A017]/35 bg-white px-3 py-1.5 text-xs font-medium text-[#0D1B2A] transition hover:border-[#D4A017] hover:bg-[#D4A017]/5"
                 >
                   {reply}
@@ -486,18 +466,11 @@ export function KiaPublicWidget() {
             </Link>
           ) : null}
 
-          {loggedIn ? (
-            <Link
-              href="/dashboard?kia=open"
-              className="block text-center text-xs font-medium text-[#5f5549] underline-offset-4 hover:underline"
-            >
-              Abrir KIA con mis expedientes y datos
-            </Link>
-          ) : (
+          {!loggedIn ? (
             <p className="text-center text-[11px] leading-relaxed text-[#7a6e5f]">
               Para consultar expedientes, documentos o datos personales tendrás que identificarte.
             </p>
-          )}
+          ) : null}
           <div ref={endRef} />
         </div>
 
@@ -573,7 +546,7 @@ export function KiaPublicWidget() {
               aria-label="Enviar a KIA"
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0D1B2A] text-white disabled:opacity-40 sm:h-9 sm:w-9"
             >
-              {loading ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+              <Send size={15} />
             </button>
           </div>
 
