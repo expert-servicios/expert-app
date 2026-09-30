@@ -717,8 +717,11 @@ async function refreshClientRegistrySnapshot(
   const now = new Date().toISOString();
 
   const latestCaseEvent = new Map<string, string>();
+  const caseLifecycleEvents = new Set(['case.opened', 'case.status_changed', 'case.closed']);
   for (const row of rows) {
-    if (row.case_id && !latestCaseEvent.has(row.case_id)) latestCaseEvent.set(row.case_id, row.event_type);
+    if (row.case_id && caseLifecycleEvents.has(row.event_type) && !latestCaseEvent.has(row.case_id)) {
+      latestCaseEvent.set(row.case_id, row.event_type);
+    }
   }
   const activeCaseIds = [...latestCaseEvent.entries()]
     .filter(([, eventType]) => eventType !== 'case.closed')
