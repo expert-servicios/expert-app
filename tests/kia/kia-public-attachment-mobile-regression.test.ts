@@ -9,6 +9,7 @@ describe('KIA public attachment + mobile composer regression', () => {
   const route = read('app/api/ai/kia/public/attachment/route.ts');
   const widget = read('components/site/KiaPublicWidget.tsx');
   const providerRouter = read('lib/ai/kia/kia-provider-router.ts');
+  const publicRoute = read('app/api/ai/kia/public/route.ts');
 
   it('pins a dedicated attachment model instead of inheriting GEMINI_MODEL', () => {
     expect(attachment).toContain("GEMINI_ATTACHMENT_MODEL");
@@ -25,10 +26,11 @@ describe('KIA public attachment + mobile composer regression', () => {
 
   it('keeps the mobile composer readable and touch-friendly', () => {
     expect(widget).toContain('placeholder="Escribe…"');
-    expect(widget).toContain('min-h-11');
-    expect(widget).toContain('text-sm');
-    expect(widget).toContain("rows={attachment ? 2 : 1}");
-    expect(widget).toContain('max-h-24');
+    expect(widget).toContain('min-h-16');
+    expect(widget).toContain('text-[12px]');
+    expect(widget).toContain("rows={attachment ? 3 : 2}");
+    expect(widget).toContain('min-h-16');
+    expect(widget).toContain('max-h-28');
     expect(widget).toContain('h-11 w-11');
     expect(widget).toContain('sm:h-9 sm:w-9');
   });
@@ -40,5 +42,20 @@ describe('KIA public attachment + mobile composer regression', () => {
     expect(providerRouter).toContain('HTTP\\s+402');
     expect(attachment).toContain('freeFallbackModel');
     expect(attachment).toContain('attempt.response.status === 402');
+  });
+
+  it('pins public chat language to the typed message and avoids eager official searches', () => {
+    expect(publicRoute).toContain("detectKiaMessageLocale(parsed.data.message) ?? 'es'");
+    expect(publicRoute).toContain('locale: publicLocale');
+    expect(publicRoute).toContain('latestMessage: parsed.data.message');
+    expect(publicRoute).toContain('includeOfficialSourceContext: false');
+    expect(publicRoute).toContain('const allowPublicTools = !parsed.data.attachment');
+    expect(publicRoute).toContain('public_web_chat_recovery');
+  });
+
+  it('makes KIA thinking state visually explicit', () => {
+    expect(widget).toContain('state={loading ? "pensando" : "ayuda"}');
+    expect(widget).toContain('size="lg" priority animateOnChange');
+    expect(widget).toContain('ring-2 ring-[#D4A017]/35');
   });
 });

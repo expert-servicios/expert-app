@@ -380,7 +380,7 @@ export function KiaPublicWidget() {
       >
         <div className="flex items-center justify-between bg-[#0D1B2A] px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <KiaAvatar state="ayuda" size="sm" priority animateOnChange />
+            <KiaAvatar state={loading ? "pensando" : "ayuda"} size="sm" priority animateOnChange />
             <div>
               <p className="text-sm font-semibold text-white">KIA · EXPERT</p>
               <p className="text-xs text-white/60">Chat web · fuentes oficiales · Telegram</p>
@@ -417,7 +417,7 @@ export function KiaPublicWidget() {
             >
               <div className="flex items-start gap-3 px-3.5 py-3">
                 <div className="relative mt-0.5">
-                  <KiaAvatar state="pensando" size="md" animateOnChange />
+                  <KiaAvatar state="pensando" size="lg" priority animateOnChange className="ring-2 ring-[#D4A017]/35 shadow-sm" />
                   <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#f5f1eb] bg-[#D4A017] animate-pulse" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -559,12 +559,12 @@ export function KiaPublicWidget() {
                   void sendMessage(input);
                 }
               }}
-              rows={attachment ? 2 : 1}
+              rows={attachment ? 3 : 2}
               maxLength={2000}
               placeholder="Escribe…"
               aria-label="Consulta para KIA"
               disabled={loading || voiceTranscribing || attachmentLoading}
-              className="max-h-24 min-h-11 min-w-0 flex-1 resize-none overflow-y-auto rounded-xl border border-[#e8e0d4] px-3 py-2.5 text-sm leading-5 outline-none focus:border-[#D4A017] disabled:bg-[#f8f6f1] disabled:text-[#8a8177] sm:min-h-9 sm:py-2"
+              className="max-h-28 min-h-16 min-w-0 flex-1 resize-none overflow-y-auto rounded-xl border border-[#e8e0d4] px-3 py-2.5 text-[12px] leading-4 outline-none focus:border-[#D4A017] disabled:bg-[#f8f6f1] disabled:text-[#8a8177] sm:min-h-10 sm:text-sm sm:leading-5 sm:py-2"
             />
             <button
               type="button"

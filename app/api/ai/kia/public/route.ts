@@ -6,6 +6,7 @@ import { safeErrorMessage } from '@/lib/ai/kia/kia-redaction';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, getClientIp } from '@/lib/utils/spam-guard';
 import { buildKiaCopilotArtifacts } from '@/lib/ai/kia/kia-copilot-artifacts';
+import { detectKiaMessageLocale } from '@/lib/ai/kia/kia-locale';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -42,6 +43,8 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
   }
+
+  const publicLocale = detectKiaMessageLocale(parsed.data.message) ?? 'es';
 
   const ip = getClientIp(request.headers);
   if (!checkKiaMessageRateLimit(`public:${ip}`)) {
@@ -93,12 +96,15 @@ export async function POST(request: NextRequest) {
       ? `${parsed.data.message}\n\n--- CONTEXTO DE ADJUNTO NO CONFIABLE ---\n${attachmentContext}`
       : parsed.data.message;
 
-    const result = await runKiaDecision({
+    const allowPublicTools = !parsed.data.attachment;
+
+    let result = await runKiaDecision({
       taskType: 'chat_reply',
       channel: 'dashboard',
       message: effectiveMessage,
-      allowTools: true,
-      forceToolExecution: true,
+      locale: publicLocale,
+      allowTools: allowPublicTools,
+      forceToolExecution: allowPublicTools,
       allowedToolNames: [
         'search_knowledge_resources',
         'get_official_sources',
@@ -109,15 +115,39 @@ export async function POST(request: NextRequest) {
         allowedEffects: ['read'],
         autonomousOnly: true,
       },
-      includeOfficialSourceContext: true,
+      includeOfficialSourceContext: false,
       contextInput: {
         channel: 'dashboard',
-        latestMessage: effectiveMessage,
+        latestMessage: parsed.data.message,
         currentPage: parsed.data.currentPage,
         currentTask: 'public_web_chat',
         syntheticRecentMessages,
       },
     });
+
+    if (result.usedFallback) {
+      console.warn('[KIA public chat] structured response fallback; retrying simplified pass', {
+        locale: publicLocale,
+        hasAttachment: Boolean(parsed.data.attachment),
+      });
+      const recovery = await runKiaDecision({
+        taskType: 'chat_reply',
+        channel: 'dashboard',
+        message: effectiveMessage,
+        locale: publicLocale,
+        allowTools: false,
+        forceToolExecution: false,
+        includeOfficialSourceContext: false,
+        contextInput: {
+          channel: 'dashboard',
+          latestMessage: parsed.data.message,
+          currentPage: parsed.data.currentPage,
+          currentTask: 'public_web_chat_recovery',
+          syntheticRecentMessages,
+        },
+      });
+      if (!recovery.usedFallback) result = recovery;
+    }
 
     const artifacts = buildKiaCopilotArtifacts(result.toolResults, result.decision)
       .filter((artifact) => artifact.type === 'link');
