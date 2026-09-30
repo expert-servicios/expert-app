@@ -206,7 +206,7 @@ export function KiaPublicWidget() {
       timers.forEach((timer) => clearTimeout(timer));
       setLoading(false);
     }
-  }, [history, loading]);
+  }, [attachment, history, loading]);
 
   const transcribeRecordedAudio = useCallback(async (blob: Blob) => {
     if (!blob.size) return;
@@ -332,7 +332,7 @@ export function KiaPublicWidget() {
         mimeType: data.mimeType,
         analysis: data.analysis,
       });
-      if (!input.trim()) setInput('Analiza este documento y dime qué significa y qué debería hacer.');
+      if (!input.trim()) setInput('Analiza este documento y dime qué debo hacer.');
     } catch (error) {
       const reason = error instanceof Error ? error.message : '';
       const text = reason.includes('attachment_type_invalid')
@@ -559,12 +559,12 @@ export function KiaPublicWidget() {
                   void sendMessage(input);
                 }
               }}
-              rows={1}
+              rows={attachment ? 2 : 1}
               maxLength={2000}
               placeholder="Escribe…"
               aria-label="Consulta para KIA"
               disabled={loading || voiceTranscribing || attachmentLoading}
-              className="min-h-11 min-w-0 flex-1 resize-none rounded-xl border border-[#e8e0d4] px-3 py-2.5 text-base leading-6 outline-none focus:border-[#D4A017] disabled:bg-[#f8f6f1] disabled:text-[#8a8177] sm:min-h-9 sm:py-2 sm:text-sm sm:leading-5"
+              className="max-h-24 min-h-11 min-w-0 flex-1 resize-none overflow-y-auto rounded-xl border border-[#e8e0d4] px-3 py-2.5 text-sm leading-5 outline-none focus:border-[#D4A017] disabled:bg-[#f8f6f1] disabled:text-[#8a8177] sm:min-h-9 sm:py-2"
             />
             <button
               type="button"

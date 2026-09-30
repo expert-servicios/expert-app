@@ -8,6 +8,7 @@ describe('KIA public attachment + mobile composer regression', () => {
   const attachment = read('lib/ai/kia/kia-attachment.ts');
   const route = read('app/api/ai/kia/public/attachment/route.ts');
   const widget = read('components/site/KiaPublicWidget.tsx');
+  const providerRouter = read('lib/ai/kia/kia-provider-router.ts');
 
   it('pins a dedicated attachment model instead of inheriting GEMINI_MODEL', () => {
     expect(attachment).toContain("GEMINI_ATTACHMENT_MODEL");
@@ -25,9 +26,19 @@ describe('KIA public attachment + mobile composer regression', () => {
   it('keeps the mobile composer readable and touch-friendly', () => {
     expect(widget).toContain('placeholder="Escribe…"');
     expect(widget).toContain('min-h-11');
-    expect(widget).toContain('text-base');
-    expect(widget).toContain('leading-6');
+    expect(widget).toContain('text-sm');
+    expect(widget).toContain("rows={attachment ? 2 : 1}");
+    expect(widget).toContain('max-h-24');
     expect(widget).toContain('h-11 w-11');
     expect(widget).toContain('sm:h-9 sm:w-9');
+  });
+
+  it('keeps the analyzed attachment in the chat request and retries Gemini billing failures safely', () => {
+    expect(widget).toContain('}, [attachment, history, loading]);');
+    expect(widget).toContain('attachment: attachment ?? undefined');
+    expect(providerRouter).toContain('GEMINI_DIRECT_FREE_FALLBACK_MODEL');
+    expect(providerRouter).toContain('HTTP\\s+402');
+    expect(attachment).toContain('freeFallbackModel');
+    expect(attachment).toContain('attempt.response.status === 402');
   });
 });
