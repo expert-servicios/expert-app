@@ -53,7 +53,6 @@ export async function analyzeKiaAttachment(file: File): Promise<{
   validateKiaAttachment(file);
   const mimeType = file.type.split(';')[0]?.trim().toLowerCase();
   const model = process.env.GEMINI_ATTACHMENT_MODEL?.trim()
-    || process.env.GEMINI_MODEL?.trim()
     || 'gemini-3.8-flash';
 
   const prompt = [
@@ -93,10 +92,32 @@ export async function analyzeKiaAttachment(file: File): Promise<{
   });
 
   const body = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(`gemini_attachment_failed_${response.status}`);
+  if (!response.ok) {
+    const googleError = body && typeof body === 'object'
+      ? (body as { error?: { status?: unknown; message?: unknown; code?: unknown } }).error
+      : undefined;
+    console.error('[KIA attachment] Gemini request failed', {
+      status: response.status,
+      model,
+      mimeType,
+      googleStatus: typeof googleError?.status === 'string' ? googleError.status : null,
+      googleCode: typeof googleError?.code === 'number' ? googleError.code : null,
+      googleMessage: typeof googleError?.message === 'string'
+        ? googleError.message.slice(0, 500)
+        : null,
+    });
+    throw new Error(`gemini_attachment_failed_${response.status}`);
+  }
 
   const text = extractInteractionText(body).slice(0, 8_000);
-  if (!text) throw new Error('empty_attachment_analysis');
+  if (!text) {
+    console.error('[KIA attachment] Gemini returned no text', {
+      model,
+      mimeType,
+      hasSteps: Boolean(body && typeof body === 'object' && Array.isArray((body as Record<string, unknown>).steps)),
+    });
+    throw new Error('empty_attachment_analysis');
+  }
 
   return { text, model, mimeType };
 }
