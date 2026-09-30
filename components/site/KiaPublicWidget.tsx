@@ -32,6 +32,29 @@ type PublicKiaResponse = {
 };
 
 const TELEGRAM_URL = 'https://t.me/kia_expert_bot';
+const PUBLIC_CHAT_TIMEOUT_MS = 45_000;
+const REGULATORY_QUERY_RE = /\b(aeat|hacienda|impuesto|iva|irpf|renta|modelo\s*\d+|seguridad social|tgss|inss|reta|aut[oó]nom|extranjer[ií]a|nacionalidad|dgt|tr[aá]fico|registro|boe|normativa|ley|plazo|requisito|verifactu)\b/i;
+
+type ThinkingStage = 'verifying' | 'searching' | 'composing' | 'slow';
+
+const THINKING_COPY: Record<ThinkingStage, { eyebrow: string; detail: string }> = {
+  verifying: {
+    eyebrow: 'Conexión segura',
+    detail: 'Estoy verificando la sesión antes de consultar.',
+  },
+  searching: {
+    eyebrow: 'Consultando',
+    detail: 'Estoy revisando contexto, guías y fuentes oficiales cuando procede.',
+  },
+  composing: {
+    eyebrow: 'Contrastando',
+    detail: 'Estoy ordenando la información para darte una respuesta clara.',
+  },
+  slow: {
+    eyebrow: 'Sigo trabajando',
+    detail: 'Las consultas con fuentes oficiales pueden tardar un poco más.',
+  },
+};
 
 function commercialCta(data: PublicKiaResponse): { href: string; label: string } | null {
   if (data.nextAction === 'send_login_link' || data.nextAction === 'send_profile_link') {
@@ -53,6 +76,7 @@ export function KiaPublicWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [thinkingStage, setThinkingStage] = useState<ThinkingStage>('verifying');
   const [telegramLoading, setTelegramLoading] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -95,15 +119,30 @@ export function KiaPublicWidget() {
 
     setInput('');
     setLoading(true);
+    setThinkingStage('verifying');
     setQuickReplies([]);
     setArtifacts([]);
     setActionCta(null);
     setMessages((current) => [...current, { id: crypto.randomUUID(), role: 'user', text: clean }]);
 
+    const timers: number[] = [];
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), PUBLIC_CHAT_TIMEOUT_MS);
+
     try {
       const recaptchaToken = await getRecaptchaToken('kia_public_chat');
+      if (!recaptchaToken) {
+        throw new Error('recaptcha_unavailable');
+      }
+
+      setThinkingStage('searching');
+      const isRegulatory = REGULATORY_QUERY_RE.test(clean);
+      timers.push(window.setTimeout(() => setThinkingStage('composing'), isRegulatory ? 5_500 : 3_500));
+      timers.push(window.setTimeout(() => setThinkingStage('slow'), isRegulatory ? 12_000 : 9_000));
+
       const response = await fetch('/api/ai/kia/public', {
         method: 'POST',
+        signal: controller.signal,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: clean,
@@ -120,13 +159,22 @@ export function KiaPublicWidget() {
       setQuickReplies((data.quickReplies ?? []).slice(0, 4));
       setArtifacts((data.artifacts ?? []).filter((artifact) => artifact.type === 'link').slice(0, 4));
       setActionCta(commercialCta(data));
-    } catch {
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : '';
+      const text = reason === 'recaptcha_unavailable'
+        ? 'No he podido completar la verificación segura del chat. Recarga la página o abre KIA en Telegram.'
+        : error instanceof DOMException && error.name === 'AbortError'
+          ? 'La respuesta está tardando demasiado. Puedes intentarlo de nuevo o continuar ahora mismo en Telegram.'
+          : 'Ahora mismo no puedo conectar con el motor de KIA. Puedes abrir KIA en Telegram o volver a intentarlo en unos minutos.';
+
       setMessages((current) => [...current, {
         id: crypto.randomUUID(),
         role: 'assistant',
-        text: 'Ahora mismo no puedo conectar con el motor de KIA. Puedes abrir KIA en Telegram o volver a intentarlo en unos minutos.',
+        text,
       }]);
     } finally {
+      clearTimeout(timeout);
+      timers.forEach((timer) => clearTimeout(timer));
       setLoading(false);
     }
   }, [history, loading]);
@@ -190,10 +238,38 @@ export function KiaPublicWidget() {
           ))}
 
           {loading ? (
-            <div className="flex items-center gap-2 text-sm text-[#7a6e5f]">
-              <KiaAvatar state="pensando" size="xs" animateOnChange />
-              <Loader2 size={14} className="animate-spin" />
-              <span>Consultando…</span>
+            <div
+              role="status"
+              aria-live="polite"
+              className="overflow-hidden rounded-2xl border border-[#D4A017]/25 bg-[linear-gradient(135deg,#fbfaf7_0%,#f5f1eb_100%)] shadow-sm"
+            >
+              <div className="flex items-start gap-3 px-3.5 py-3">
+                <div className="relative mt-0.5">
+                  <KiaAvatar state="pensando" size="md" animateOnChange />
+                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#f5f1eb] bg-[#D4A017] animate-pulse" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#A47B0B]">
+                      {THINKING_COPY[thinkingStage].eyebrow}
+                    </p>
+                    <span className="flex items-center gap-1" aria-hidden="true">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#D4A017] animate-bounce [animation-delay:-0.3s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#D4A017] animate-bounce [animation-delay:-0.15s]" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#D4A017] animate-bounce" />
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm font-semibold leading-5 text-[#0D1B2A]">
+                    KIA está pensando
+                  </p>
+                  <p className="mt-0.5 text-xs leading-5 text-[#6f6559]">
+                    {THINKING_COPY[thinkingStage].detail}
+                  </p>
+                </div>
+              </div>
+              <div className="h-0.5 overflow-hidden bg-[#D4A017]/10">
+                <div className="h-full w-1/2 bg-[#D4A017]/70 animate-pulse" />
+              </div>
             </div>
           ) : null}
 
@@ -268,7 +344,8 @@ export function KiaPublicWidget() {
               maxLength={2000}
               placeholder="Escribe tu consulta…"
               aria-label="Consulta para KIA"
-              className="max-h-24 flex-1 resize-none rounded-xl border border-[#e8e0d4] px-3 py-2 text-sm outline-none focus:border-[#D4A017]"
+              disabled={loading}
+              className="max-h-24 flex-1 resize-none rounded-xl border border-[#e8e0d4] px-3 py-2 text-sm outline-none focus:border-[#D4A017] disabled:bg-[#f8f6f1] disabled:text-[#8a8177]"
             />
             <button
               type="button"
