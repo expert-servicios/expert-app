@@ -1,6 +1,6 @@
 # KIA — voz y audio
 
-Fecha de diseño: 29/09/2026.
+Fecha de diseño: 29/09/2026. Última actualización: 30/09/2026.
 
 ## Objetivo
 
@@ -64,6 +64,9 @@ No exponer `OPENAI_API_KEY` al navegador.
 ## Seguridad y privacidad
 
 - Audio máximo configurable; fase 1 limita tamaño y duración práctica.
+- El endpoint web exige `Content-Length` válido y rechaza cuerpos sobredimensionados antes de materializar el multipart.
+- Rate limit corto por usuario + cuota diaria durable por transcripción/TTS antes de invocar OpenAI.
+- `OPENAI_TTS_VOICE` es obligatoria: sin voz configurada, TTS falla cerrado.
 - No almacenar audio bruto por defecto.
 - Persistir solo:
   - transcript final;
@@ -107,13 +110,17 @@ No guardar el audio bruto por defecto.
 
 ## Criterio de listo
 
-- [ ] micrófono funciona en móvil y desktop;
-- [ ] audio nunca contiene API key en cliente;
-- [ ] transcripción pasa por endpoint autenticado;
-- [ ] transcript usa el mismo `/api/ai/kia`;
-- [ ] TTS es opcional y fail-closed si no hay voz configurada;
-- [ ] no se guarda audio bruto;
-- [ ] logs no incluyen base64/audio;
-- [ ] Telegram voice note usa el mismo transcriptor;
-- [ ] tests de tamaño/MIME/auth;
-- [ ] Vercel app + ksenia-expert verdes.
+- [x] micrófono implementado con limpieza al cerrar/desmontar/error;
+- [x] audio nunca contiene API key en cliente;
+- [x] transcripción pasa por endpoint autenticado;
+- [x] transcript se deja en preview y luego usa el mismo `/api/ai/kia`;
+- [x] TTS es opcional y fail-closed si no hay voz configurada;
+- [x] peticiones TTS anteriores se cancelan para evitar voces solapadas;
+- [x] no se guarda audio bruto;
+- [x] logs no incluyen base64/audio;
+- [x] Telegram voice/audio usa el mismo transcriptor detrás de `KIA_TELEGRAM_VOICE_ENABLED`;
+- [x] documentos/fotos Telegram no soportados se rechazan o se procesa solo su caption;
+- [x] tests de auth/tamaño/tipo/cuotas/regresiones estructurales;
+- [ ] activar y validar voz web en producción con usuario real;
+- [ ] activar y validar Telegram voice en producción;
+- [ ] validación manual final móvil + desktop tras merge.
