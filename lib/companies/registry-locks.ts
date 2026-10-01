@@ -15,12 +15,31 @@ export const OFFICIAL_REGISTRY_SOURCES = new Set([
   'boe_borme',
 ]);
 
+const SNAPSHOT_KEYS: Record<RegistryIdentityField, string> = {
+  razon_social: 'name',
+  cif_nif: 'taxId',
+  direccion: 'registeredAddress',
+  ciudad: 'city',
+  provincia: 'province',
+  codigo_postal: 'postalCode',
+  pais: 'country',
+};
+
 export function isOfficialRegistrySource(source: string | null | undefined): boolean {
   return OFFICIAL_REGISTRY_SOURCES.has(String(source ?? '').trim());
 }
 
-export function lockedRegistryFields(source: string | null | undefined): RegistryIdentityField[] {
-  return isOfficialRegistrySource(source) ? [...REGISTRY_IDENTITY_FIELDS] : [];
+export function lockedRegistryFields(
+  source: string | null | undefined,
+  snapshot?: Record<string, unknown> | null,
+): RegistryIdentityField[] {
+  if (!isOfficialRegistrySource(source)) return [];
+  if (!snapshot) return [...REGISTRY_IDENTITY_FIELDS];
+
+  return REGISTRY_IDENTITY_FIELDS.filter((field) => {
+    const value = snapshot[SNAPSHOT_KEYS[field]];
+    return typeof value === 'string' && value.trim().length > 0;
+  });
 }
 
 export function blockedRegistryUpdates(
