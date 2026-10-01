@@ -13,11 +13,12 @@ describe('subscription checkout flow', () => {
   const postPurchase = source('app/(protected)/dashboard/post-compra/page.tsx');
   const publicPlans = source('app/(public)/planes/page.tsx');
 
-  it('adds standard plan CTAs to the shared cart for multi-plan checkout', () => {
-    expect(cards).toContain("itemType: 'subscription' as const");
-    expect(cards).toContain('addItem(cartItem)');
-    expect(cards).toContain("'Añadir plan a la cesta'");
-    expect(cards).not.toContain("fetch('/api/subscriptions/checkout'");
+  it('formalizes one subscription directly for the selected fiscal entity', () => {
+    expect(cards).toContain("fetch('/api/subscriptions/checkout'");
+    expect(cards).toContain('JSON.stringify({ priceId, companyId })');
+    expect(cards).toContain('Formalizar suscripción');
+    expect(cards).not.toContain('addItem(cartItem)');
+    expect(cards).not.toContain("itemType: 'subscription'");
     expect(cards).not.toContain('ReadinessModal');
     expect(cards).not.toContain('getReadinessCheck');
   });
