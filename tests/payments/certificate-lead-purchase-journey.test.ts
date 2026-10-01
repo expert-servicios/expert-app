@@ -44,7 +44,8 @@ describe('certificate lead purchase journey', () => {
     expect(gate).toContain('Completar datos fiscales');
     expect(gate).toContain('disabled={!selected || loading || missingBilling.length > 0}');
 
-    expect(edit).toContain('<Input required value={form.cif_nif}');
+    expect(edit).toContain("value={form.cif_nif}");
+    expect(edit).toContain("disabled={locked.has('cif_nif')}");
     expect(edit).toContain('<Input required value={form.direccion}');
     expect(edit).toContain('<Input required value={form.ciudad}');
     expect(edit).toContain('<Input required maxLength={5} value={form.codigo_postal}');
