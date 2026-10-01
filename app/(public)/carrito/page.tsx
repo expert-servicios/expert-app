@@ -349,7 +349,13 @@ function CarritoContent() {
                   />
                 ) : needsProfile ? (
                   <QuickProfileGate
-                    priceIds={items.map(i => i.priceId)}
+                    priceIds={items.flatMap(i => Array.from({ length: Math.max(1, i.quantity ?? 1) }, () => i.priceId))}
+                    items={items.map(i => ({
+                      priceId: i.priceId,
+                      quantity: Math.max(1, i.quantity ?? 1),
+                      itemType: i.itemType ?? 'service',
+                      ...(i.billingInterval ? { billingInterval: i.billingInterval } : {}),
+                    }))}
                     contentOrigins={contentOrigins}
                     locale={locale}
                     loginNextPath={cartPath}
