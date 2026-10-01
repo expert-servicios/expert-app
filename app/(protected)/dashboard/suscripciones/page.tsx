@@ -126,8 +126,19 @@ export default async function SubscriptionsPage({ searchParams }: PageProps) {
               </div>
             </div>
           ) : (
-            <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              Selecciona o crea una entidad fiscal antes de contratar una suscripción.
+            <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+              <p>Antes de contratar, crea la entidad fiscal que será titular del plan.</p>
+              <Link
+                href={`/dashboard/onboarding?next=${encodeURIComponent(
+                  `/dashboard/suscripciones?${new URLSearchParams({
+                    ...(initialPlan ? { plan: initialPlan } : {}),
+                    ...(initialBilling === 'anual' ? { billing: 'anual' } : {}),
+                  }).toString()}`
+                )}`}
+                className="mt-3 inline-flex min-h-10 items-center rounded-lg bg-amber-900 px-4 py-2 text-xs font-bold text-white"
+              >
+                Completar perfil y entidad fiscal
+              </Link>
             </div>
           )}
 
