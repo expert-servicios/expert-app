@@ -351,11 +351,18 @@ async function callAnthropic(
   }
 
   const rawText = textParts.join("\n").trim();
+  const parsedJson = parseMaybeJson(rawText);
+  if (request.responseSchema && !parsedJson && toolCalls.length === 0) {
+    throw new Error("anthropic returned a non-JSON response for a structured request");
+  }
+  if (!rawText && toolCalls.length === 0) {
+    throw new Error("anthropic returned an empty response");
+  }
   return {
     provider: "anthropic",
     model: request.modelOverride ?? provider.model,
     rawText,
-    parsedJson: parseMaybeJson(rawText),
+    parsedJson,
     toolCalls,
     usage: data?.usage,
   };
