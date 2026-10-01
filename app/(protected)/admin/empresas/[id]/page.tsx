@@ -20,6 +20,7 @@ import {
   Unlink,
   UserPlus,
   Users,
+  MessageCircle,
 } from 'lucide-react';
 
 type Person = {
@@ -244,6 +245,9 @@ export default function Company360Page() {
             <div className="flex flex-wrap gap-2">
               <Link href={`/admin/empresas/${id}/integraciones`} className="inline-flex items-center gap-1.5 rounded-xl bg-[#07111d] px-4 py-2 text-xs font-bold text-white">
                 <Plug className="h-3.5 w-3.5" /> {holded ? 'Gestionar Holded' : 'Conectar Holded'}
+              </Link>
+              <Link href={`/admin/kia?companyId=${id}`} className="inline-flex items-center gap-1.5 rounded-xl border border-[#d8cbb5] bg-white px-4 py-2 text-xs font-bold text-[#29384a]">
+                <MessageCircle className="h-3.5 w-3.5" /> Trabajar con KIA
               </Link>
               {company.stripe_customer_id && (
                 <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#d8cbb5] bg-white px-4 py-2 text-xs font-bold text-[#29384a]">
