@@ -222,6 +222,7 @@ export default async function SubscriptionsPage({ searchParams }: PageProps) {
                 planAvanzadoAnnualId={process.env.STRIPE_PLAN_ANNUAL_99 ?? ''}
                 planColaborativoAnnualId={process.env.STRIPE_PLAN_ANNUAL_199 ?? ''}
                 initialBilling={initialBilling}
+                companyId={company.id}
               />
             </div>
           ) : null}
