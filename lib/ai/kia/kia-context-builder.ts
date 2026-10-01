@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { isStaffRole } from '@/lib/auth/roles';
 import { intersectHoldedReadPermissions, normalizeDetectedHoldedPermissions, type HoldedPermissions } from '@/lib/integrations/holded/holded-permissions';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { getService } from '@/lib/services/service-registry';
@@ -28,6 +29,7 @@ export interface KiaContextInput {
   currentTask?: string;
   pageData?: Record<string, unknown>;
   originEmail?: KiaOriginEmailContext | null;
+  allowStaffCompanyScope?: boolean;
 }
 
 export interface KiaContext {
@@ -106,9 +108,9 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
       throw new Error('case_context_scope_mismatch');
     }
     resolvedCompanyId = scopedCase.company_id
-      ? await resolveAuthorizedCompanyId(admin, scopedCase.company_id, clientId) : null;
+      ? await resolveAuthorizedCompanyId(admin, scopedCase.company_id, clientId, input.allowStaffCompanyScope === true) : null;
   } else {
-    resolvedCompanyId = await resolveAuthorizedCompanyId(admin, input.companyId, clientId);
+    resolvedCompanyId = await resolveAuthorizedCompanyId(admin, input.companyId, clientId, input.allowStaffCompanyScope === true);
   }
 
   const openAiKey = (typeof process !== 'undefined' ? process.env.OPENAI_API_KEY : undefined)?.trim() ?? '';
@@ -258,8 +260,20 @@ async function resolveAuthorizedCompanyId(
   admin: AdminClient,
   requestedCompanyId: string | undefined,
   clientId: string | null,
+  allowStaffCompanyScope = false,
 ): Promise<string | null> {
   if (!clientId) return requestedCompanyId ?? null;
+
+  if (requestedCompanyId && allowStaffCompanyScope) {
+    const [{ data: profile }, { data: company }] = await Promise.all([
+      admin.from('profiles').select('role,status').eq('id', clientId).maybeSingle(),
+      admin.from('companies').select('id').eq('id', requestedCompanyId).maybeSingle(),
+    ]);
+    if (profile && profile.status !== 'inactive' && isStaffRole(profile.role) && company?.id) {
+      return requestedCompanyId;
+    }
+    return null;
+  }
 
   const companyId = requestedCompanyId ?? await loadActiveCompanyId(admin, clientId);
   if (!companyId) return null;
