@@ -42,6 +42,7 @@ type InvitationContext = {
     forma_juridica: string | null;
     direccion: string | null;
     ciudad: string | null;
+    provincia: string | null;
     codigo_postal: string | null;
     pais: string | null;
   }>;
@@ -84,6 +85,7 @@ function SubscriptionActivationContent() {
   const [context, setContext] = useState<InvitationContext | null>(null);
   const [profile, setProfile] = useState({ fullName: '', phone: '' });
   const [company, setCompany] = useState<CompanyForm>(EMPTY_COMPANY);
+  const [entitySelection, setEntitySelection] = useState('');
   const [sourceMeta, setSourceMeta] = useState<SuggestionSourceMeta | undefined>();
   const [suggestionId, setSuggestionId] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
@@ -113,6 +115,7 @@ function SubscriptionActivationContent() {
           : null;
 
         if (assignedCompany) {
+          setEntitySelection(assignedCompany.id);
           setCompany({
             razon_social: assignedCompany.razon_social ?? '',
             nombre_comercial: '',
@@ -120,7 +123,7 @@ function SubscriptionActivationContent() {
             forma_juridica: (assignedCompany.forma_juridica as CompanyForm['forma_juridica']) ?? (data.invitation.entityType === 'autonomo' ? 'autonomo' : 'sl'),
             direccion: assignedCompany.direccion ?? '',
             ciudad: assignedCompany.ciudad ?? '',
-            provincia: '',
+            provincia: assignedCompany.provincia ?? '',
             codigo_postal: assignedCompany.codigo_postal ?? '',
             pais: assignedCompany.pais ?? 'ES',
             telefono: data.profile.phone ?? '',
@@ -128,6 +131,7 @@ function SubscriptionActivationContent() {
             web: '',
           });
         } else {
+          setEntitySelection(data.companies.length > 0 ? '' : 'new');
           setCompany((current) => ({
             ...current,
             razon_social: data.invitation.recipientName,
@@ -155,6 +159,41 @@ function SubscriptionActivationContent() {
     return fields;
   }, [sourceMeta]);
 
+  function chooseEntity(value: string) {
+    setEntitySelection(value);
+    setSourceMeta(undefined);
+    setSuggestionId(undefined);
+
+    if (!context) return;
+    if (value === 'new') {
+      setCompany({
+        ...EMPTY_COMPANY,
+        razon_social: context.invitation.recipientName,
+        forma_juridica: context.invitation.entityType === 'autonomo' ? 'autonomo' : 'sl',
+        telefono: profile.phone,
+        email: context.invitation.email,
+      });
+      return;
+    }
+
+    const existing = context.companies.find((item) => item.id === value);
+    if (!existing) return;
+    setCompany({
+      razon_social: existing.razon_social ?? '',
+      nombre_comercial: '',
+      cif_nif: existing.cif_nif ?? '',
+      forma_juridica: (existing.forma_juridica as CompanyForm['forma_juridica']) ?? (context.invitation.entityType === 'autonomo' ? 'autonomo' : 'sl'),
+      direccion: existing.direccion ?? '',
+      ciudad: existing.ciudad ?? '',
+      provincia: existing.provincia ?? '',
+      codigo_postal: existing.codigo_postal ?? '',
+      pais: existing.pais ?? 'ES',
+      telefono: profile.phone,
+      email: context.invitation.email,
+      web: '',
+    });
+  }
+
   function applySuggestion(data: SuggestionFormFill, nextSuggestionId?: string, meta?: SuggestionSourceMeta) {
     setCompany((current) => ({
       ...current,
@@ -180,6 +219,9 @@ function SubscriptionActivationContent() {
       if (!profile.fullName.trim() || !profile.phone.trim()) {
         throw new Error('Completa nombre y teléfono antes de continuar.');
       }
+      if (!context.quote.companyId && context.companies.length > 0 && !entitySelection) {
+        throw new Error('Selecciona una entidad existente o indica que quieres dar de alta un nuevo titular.');
+      }
       if (
         !company.razon_social.trim()
         || !company.cif_nif.trim()
@@ -201,7 +243,8 @@ function SubscriptionActivationContent() {
       const profileData = await profileResponse.json().catch(() => ({})) as { error?: string };
       if (!profileResponse.ok) throw new Error(profileData.error ?? 'No se pudo guardar el perfil.');
 
-      let companyId = context.quote.companyId;
+      let companyId = context.quote.companyId
+        ?? (entitySelection && entitySelection !== 'new' ? entitySelection : null);
       if (!companyId) {
         const createResponse = await fetch('/api/companies', {
           method: 'POST',
@@ -234,6 +277,7 @@ function SubscriptionActivationContent() {
           throw new Error(created.error ?? 'No se pudo crear la entidad fiscal.');
         }
         companyId = created.company.id;
+        setEntitySelection(created.company.id);
       }
 
       const checkoutResponse = await fetch('/api/subscriptions/checkout', {
@@ -277,6 +321,7 @@ function SubscriptionActivationContent() {
 
   const isCompany = context.invitation.entityType === 'empresa';
   const assignedCompany = Boolean(context.quote.companyId);
+  const usingExistingCompany = assignedCompany || Boolean(entitySelection && entitySelection !== 'new');
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
@@ -317,7 +362,28 @@ function SubscriptionActivationContent() {
               El cuestionario Company 360 completo podrá terminarse después. Estos datos son los mínimos para contrato, factura y suscripción.
             </p>
 
-            {isCompany && !assignedCompany && (
+            {!assignedCompany && context.companies.length > 0 && (
+              <div className="mt-4 rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] p-4">
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold text-[#29384a]">¿Este titular ya está en EXPERT?</span>
+                  <select
+                    value={entitySelection}
+                    onChange={(event) => chooseEntity(event.target.value)}
+                    className="min-h-11 w-full rounded-lg border border-[#d8cbb5] bg-white px-3 text-sm text-[#07111d] outline-none"
+                  >
+                    <option value="">Selecciona una entidad o crea una nueva</option>
+                    {context.companies.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.razon_social || 'Entidad sin nombre'}{item.cif_nif ? ` · ${item.cif_nif}` : ''}
+                      </option>
+                    ))}
+                    <option value="new">Dar de alta un nuevo titular fiscal</option>
+                  </select>
+                </label>
+              </div>
+            )}
+
+            {isCompany && !assignedCompany && (entitySelection === 'new' || context.companies.length === 0) && (
               <div className="mt-4 rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] p-4">
                 <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#07111d]">
                   <Search className="h-4 w-4 text-[#D4A017]" />
@@ -335,15 +401,15 @@ function SubscriptionActivationContent() {
             )}
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <Field label={isCompany ? 'Razón social *' : 'Nombre fiscal *'} value={company.razon_social} disabled={locked.has('razon_social') || assignedCompany} onChange={(value) => setCompany((current) => ({ ...current, razon_social: value }))} />
-              <Field label="NIF / CIF *" value={company.cif_nif} disabled={locked.has('cif_nif') || assignedCompany} onChange={(value) => setCompany((current) => ({ ...current, cif_nif: value }))} />
+              <Field label={isCompany ? 'Razón social *' : 'Nombre fiscal *'} value={company.razon_social} disabled={locked.has('razon_social') || usingExistingCompany} onChange={(value) => setCompany((current) => ({ ...current, razon_social: value }))} />
+              <Field label="NIF / CIF *" value={company.cif_nif} disabled={locked.has('cif_nif') || usingExistingCompany} onChange={(value) => setCompany((current) => ({ ...current, cif_nif: value }))} />
 
               {isCompany ? (
                 <label className="block">
                   <span className="mb-1 block text-xs font-semibold text-[#29384a]">Forma jurídica *</span>
                   <select
                     value={company.forma_juridica}
-                    disabled={assignedCompany}
+                    disabled={usingExistingCompany}
                     onChange={(event) => setCompany((current) => ({ ...current, forma_juridica: event.target.value as CompanyForm['forma_juridica'] }))}
                     className="min-h-11 w-full rounded-lg border border-[#d8cbb5] bg-[#f8f4eb] px-3 text-sm text-[#07111d] outline-none disabled:bg-slate-100"
                   >
@@ -360,10 +426,10 @@ function SubscriptionActivationContent() {
                 <Field label="Forma jurídica" value="Autónomo / empresario individual" disabled onChange={() => {}} />
               )}
 
-              <Field label="Dirección fiscal *" value={company.direccion} disabled={locked.has('direccion') || assignedCompany} onChange={(value) => setCompany((current) => ({ ...current, direccion: value }))} />
-              <Field label="Ciudad *" value={company.ciudad} disabled={locked.has('ciudad') || assignedCompany} onChange={(value) => setCompany((current) => ({ ...current, ciudad: value }))} />
-              <Field label="Provincia" value={company.provincia} disabled={locked.has('provincia') || assignedCompany} onChange={(value) => setCompany((current) => ({ ...current, provincia: value }))} />
-              <Field label="Código postal *" value={company.codigo_postal} disabled={locked.has('codigo_postal') || assignedCompany} onChange={(value) => setCompany((current) => ({ ...current, codigo_postal: value }))} />
+              <Field label="Dirección fiscal *" value={company.direccion} disabled={locked.has('direccion') || usingExistingCompany} onChange={(value) => setCompany((current) => ({ ...current, direccion: value }))} />
+              <Field label="Ciudad *" value={company.ciudad} disabled={locked.has('ciudad') || usingExistingCompany} onChange={(value) => setCompany((current) => ({ ...current, ciudad: value }))} />
+              <Field label="Provincia" value={company.provincia} disabled={locked.has('provincia') || usingExistingCompany} onChange={(value) => setCompany((current) => ({ ...current, provincia: value }))} />
+              <Field label="Código postal *" value={company.codigo_postal} disabled={locked.has('codigo_postal') || usingExistingCompany} onChange={(value) => setCompany((current) => ({ ...current, codigo_postal: value }))} />
             </div>
           </section>
 
