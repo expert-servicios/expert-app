@@ -42,7 +42,7 @@ describe('entity-scoped subscriptions and Company 360 registry locks', () => {
     expect(locks).toContain("'registradores_opendata'");
     expect(clientApi).toContain("code: 'registry_fields_locked'");
     expect(adminApi).toContain("code: 'registry_fields_locked'");
-    expect(associateApi).toContain('lockedRegistryFields(normalizedPayload.source)');
+    expect(associateApi).toContain('lockedRegistryFields(normalizedPayload.source, normalizedPayload)');
     expect(associateApi).toContain('registry_snapshot');
   });
 
