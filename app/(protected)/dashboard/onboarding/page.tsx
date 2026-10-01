@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight, Building2, CheckCircle2, User,
   Loader2, ChevronRight, ChevronLeft,
@@ -230,8 +230,15 @@ function DoneStep({ onGo, loading, companySkipped }: { onGo: () => void; loading
   );
 }
 
+function safeNextPath(value: string | null): string {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return '/dashboard';
+  return value;
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = safeNextPath(searchParams.get('next'));
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -344,7 +351,7 @@ export default function OnboardingPage() {
         setError(data.error ?? 'No se pudo finalizar la configuración. Inténtalo de nuevo.');
         return;
       }
-      router.push('/dashboard');
+      router.push(next);
     } catch {
       setError('Error de conexión al finalizar la configuración.');
     } finally {
@@ -425,7 +432,7 @@ export default function OnboardingPage() {
           <div className="mt-4 text-center">
             <button
               type="button"
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push(next)}
               className="text-xs text-[#29384a]/40 transition hover:text-[#29384a]/70"
             >
               Completar más tarde →
