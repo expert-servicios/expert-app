@@ -18,6 +18,10 @@ interface Company {
   email: string | null;
   web: string | null;
   role: string;
+  registry_source: string | null;
+  registry_source_url: string | null;
+  registry_verified_at: string | null;
+  registry_locked_fields: string[];
 }
 
 const FORMA_LABELS: Record<string, string> = {
