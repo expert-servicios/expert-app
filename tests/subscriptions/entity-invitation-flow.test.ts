@@ -12,6 +12,7 @@ describe('entity-scoped subscription invitations', () => {
   const checkout = source('app/api/subscriptions/checkout/route.ts');
   const adminGenerator = source('components/admin/SubscriptionInvitationGenerator.tsx');
   const adminOnboarding = source('app/(protected)/admin/onboarding/page.tsx');
+  const invitationPlans = source('lib/subscriptions/invitation-plans.ts');
 
   it('creates a claimable quote without requiring an existing auth user or company', () => {
     expect(adminInvite).toContain("client_id: null");
@@ -19,6 +20,9 @@ describe('entity-scoped subscription invitations', () => {
     expect(adminInvite).toContain('createQuoteClaimToken');
     expect(adminInvite).toContain("source: 'subscription_invitation'");
     expect(adminInvite).not.toContain('listAllAuthUsers');
+    expect(adminInvite).toContain("billing: z.enum(['monthly', 'annual'])");
+    expect(adminInvite).toContain(".from('quote_items').insert");
+    expect(adminInvite).toContain('stripe_price_id: plan.priceId');
   });
 
   it('routes claimed plan quotes into the subscription activation form', () => {
@@ -42,6 +46,9 @@ describe('entity-scoped subscription invitations', () => {
     expect(activationPage).toContain('quoteId: context.quote.id');
     expect(activationPage).toContain('CompanyDataLookup');
     expect(activationPage).toContain('El cuestionario Company 360 completo podrá terminarse después');
+    expect(activationPage).toContain('Selecciona una entidad o crea una nueva');
+    expect(activationPage).toContain('Dar de alta un nuevo titular fiscal');
+    expect(activationPage).toContain('setEntitySelection(created.company.id)');
   });
 
   it('exposes a reusable Admin generator without auto-emailing the link', () => {
@@ -49,6 +56,10 @@ describe('entity-scoped subscription invitations', () => {
     expect(adminGenerator).toContain('Generar enlace EXPERT');
     expect(adminGenerator).toContain('No envía correo automáticamente');
     expect(adminOnboarding).toContain('<SubscriptionInvitationGenerator />');
+    expect(adminGenerator).toContain('Anual · 2 meses gratis');
+    expect(adminGenerator).toContain('billing,');
+    expect(adminOnboarding).toContain("useState<'servicio' | 'formacion'>('servicio')");
+    expect(adminOnboarding).not.toContain("useState<'plan' | 'servicio' | 'formacion'>");
   });
 
   it('binds the accepted quote to the exact entity and checkout session', () => {
@@ -58,5 +69,17 @@ describe('entity-scoped subscription invitations', () => {
     expect(checkout).toContain("stripe_checkout_id: session.id");
     expect(checkout).toContain("status: 'accepted'");
     expect(checkout).toContain("quote_id: quoteId");
+    expect(checkout).toContain(".from('quote_items')");
+    expect(checkout).toContain('getSubscriptionInvitePlanByPriceId');
+  });
+
+  it('supports monthly and annual invitations with a server-side price mapping', () => {
+    expect(invitationPlans).toContain("export type SubscriptionInviteBilling = 'monthly' | 'annual'");
+    expect(invitationPlans).toContain('STRIPE_PLAN_ANNUAL_49');
+    expect(invitationPlans).toContain('STRIPE_PLAN_ANNUAL_99');
+    expect(invitationPlans).toContain('STRIPE_PLAN_ANNUAL_199');
+    expect(invitationPlans).toContain('getSubscriptionInvitePlanByPriceId');
+    expect(activationApi).toContain('billing: plan.billing');
+    expect(activationPage).toContain("context.plan.billing === 'annual'");
   });
 });
