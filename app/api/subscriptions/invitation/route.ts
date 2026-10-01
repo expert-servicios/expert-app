@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { getSubscriptionInvitePlanByServiceSlug } from '@/lib/subscriptions/invitation-plans';
+import {
+  getSubscriptionInvitePlanByPriceId,
+  getSubscriptionInvitePlanByServiceSlug,
+} from '@/lib/subscriptions/invitation-plans';
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,11 +35,26 @@ export async function GET(request: NextRequest) {
     const planService = Array.isArray(quote.service_slugs)
       ? quote.service_slugs.find((slug) => typeof slug === 'string' && slug.startsWith('plan-'))
       : null;
-    const plan = getSubscriptionInvitePlanByServiceSlug(planService);
-    if (!plan || !plan.priceId) {
+    const { data: quoteItem, error: quoteItemError } = await admin
+      .from('quote_items')
+      .select('service_slug,stripe_price_id,unit_amount_cents,metadata')
+      .eq('quote_id', quote.id)
+      .eq('position', 0)
+      .maybeSingle();
+    if (quoteItemError) {
+      return NextResponse.json({ error: 'No se pudo verificar la modalidad contractual del plan.' }, { status: 500 });
+    }
+
+    const plan = quoteItem?.stripe_price_id
+      ? getSubscriptionInvitePlanByPriceId(quoteItem.stripe_price_id)
+      : getSubscriptionInvitePlanByServiceSlug(planService, 'monthly');
+    if (!plan || !plan.priceId || plan.serviceSlug !== planService) {
       return NextResponse.json({ error: 'El plan de este presupuesto no está disponible.' }, { status: 409 });
     }
-    if (Number(quote.amount_eur) !== plan.amountEur) {
+    if (
+      Number(quote.amount_eur) !== plan.amountEur
+      || (quoteItem && Number(quoteItem.unit_amount_cents) !== Math.round(plan.amountEur * 100))
+    ) {
       return NextResponse.json({ error: 'El importe del presupuesto no coincide con la tarifa vigente.' }, { status: 409 });
     }
 
@@ -78,6 +96,8 @@ export async function GET(request: NextRequest) {
       plan: {
         slug: plan.slug,
         name: plan.name,
+        billing: plan.billing,
+        interval: plan.interval,
         amountEur: plan.amountEur,
         priceId: plan.priceId,
         planPath: plan.planPath,
