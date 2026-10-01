@@ -14,6 +14,8 @@ describe('entity-scoped subscription invitations', () => {
   const adminOnboarding = source('app/(protected)/admin/onboarding/page.tsx');
   const invitationPlans = source('lib/subscriptions/invitation-plans.ts');
   const readiness = source('lib/data/service-readiness-checks.ts');
+  const subscriptionsPage = source('app/(protected)/dashboard/suscripciones/page.tsx');
+  const planCards = source('components/subscriptions/SubscriptionPlanCards.tsx');
 
   it('creates a claimable quote without requiring an existing auth user or company', () => {
     expect(adminInvite).toContain("client_id: null");
@@ -88,5 +90,19 @@ describe('entity-scoped subscription invitations', () => {
     expect(readiness).toContain("label: 'Sí, que los presente EXPERT', nextAction: 'continue_checkout'");
     expect(readiness).toContain("label: 'No',       nextAction: 'continue_checkout'");
     expect(readiness).not.toContain("label: 'También impuestos',   nextAction: 'recommend_plan_avanzado'");
+  });
+
+  it('keeps direct plan links contextual after login', () => {
+    expect(subscriptionsPage).toContain("params.plan as 'supervision' | 'avanzado' | 'colaborativo'");
+    expect(subscriptionsPage).toContain('initialPlan={initialPlan}');
+    expect(planCards).toContain('initialPlan');
+    expect(planCards).toContain('Hemos abierto el plan solicitado');
+    expect(planCards).toContain('titular fiscal correcto');
+  });
+
+  it('keeps Holded demo duration internal while hiding it from the booking UI', () => {
+    const bookingForm = source('components/booking/NativeBookingForm.tsx');
+    expect(bookingForm).toContain("serviceKey !== 'demo-holded'");
+    expect(bookingForm).toContain('availability.service.durationMinutes');
   });
 });
