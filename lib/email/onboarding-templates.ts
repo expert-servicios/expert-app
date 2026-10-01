@@ -103,3 +103,24 @@ export function includedEntityOnboardingInvitationEmail(input: {
     `),
   };
 }
+
+export function monthlySubscriptionMeetingInvitationEmail(input: {
+  name: string;
+  companyName: string;
+  durationMinutes: 30 | 60;
+  bookingUrl: string;
+  monthLabel: string;
+}) {
+  return {
+    subject: `Reserva tu revisión mensual de ${input.monthLabel} — EXPERT`,
+    html: shell('Revisión mensual incluida', `
+      <h1 style="margin:0 0 18px;font-family:Georgia,serif;font-size:24px;color:#07111d">Revisión mensual incluida en tu plan</h1>
+      <p>Hola <strong>${escapeHtml(input.name)}</strong>,</p>
+      <p>Ya puedes reservar la revisión mensual de <strong>${escapeHtml(input.companyName)}</strong> correspondiente a <strong>${escapeHtml(input.monthLabel)}</strong>.</p>
+      <p>Esta sesión está incluida en tu suscripción EXPERT y tiene una duración de <strong>${input.durationMinutes} minutos</strong>.</p>
+      <p>La utilizaremos para revisar el cierre del mes, incidencias contables o fiscales, documentación pendiente y los siguientes pasos de la entidad.</p>
+      ${button(`Reservar revisión de ${input.durationMinutes} min`, input.bookingUrl)}
+      <p style="margin-top:22px">La reserva genera automáticamente Google Calendar, Google Meet y la tarea de seguimiento correspondiente en EXPERT.</p>
+    `),
+  };
+}
