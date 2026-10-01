@@ -55,6 +55,7 @@ describe('KIA production resilience', () => {
     expect(router).toContain('body.reasoning_effort = reasoningEffort');
     expect(router).toContain('body.temperature = request.temperature ?? 0.2');
     expect(router).toContain('normalizeGeminiJsonSchema(request.responseSchema)');
+    expect(router).toContain('? normalizeGeminiJsonSchema(tool.input_schema)');
     expect(router).toContain('key === "const" || key === "maxLength" || key === "minLength"');
     expect(router).toContain('normalized.enum = [normalizeGeminiJsonSchema(source.const)]');
   });
