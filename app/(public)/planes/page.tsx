@@ -291,7 +291,7 @@ export default async function PlanesPage({ searchParams }: Props) {
                 Solicitar prueba Holded 14 días
               </Link>
               <Link href="/cita?tipo=demo-holded" className="inline-flex min-h-11 items-center justify-center gap-2 border border-[#D4A017]/50 px-5 py-3 text-xs font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017]/10">
-                Reservar demo Holded gratuita 60 min
+                Reservar demo Holded gratuita
               </Link>
               <Link href="/holded/pack-starter" className="inline-flex min-h-11 items-center justify-center gap-2 border border-[#0D1B2A]/20 px-5 py-3 text-xs font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:border-[#D4A017]">
                 Ver Pack Starter
