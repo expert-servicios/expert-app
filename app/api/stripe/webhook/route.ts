@@ -31,7 +31,6 @@ import {
   paymentConfirmed,
   servicePaymentConfirmed,
   servicePaymentConfirmedAdmin,
-  subscriptionCreated,
   subscriptionActivatedOnboarding,
   subscriptionOnboardingAdmin,
   subscriptionPaymentFailed
