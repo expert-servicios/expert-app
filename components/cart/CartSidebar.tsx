@@ -61,8 +61,8 @@ export function CartSidebar() {
   const t = COPY[locale];
   const loginNextPath = locale === 'ru' ? '/carrito?lang=ru' : '/carrito';
 
-  const itemHref = (item: { category: string; slug: string; locale?: 'es' | 'ru' }) =>
-    getPublicServicePath(item, item.locale ?? locale);
+  const itemHref = (item: { category: string; slug: string; locale?: 'es' | 'ru'; href?: string }) =>
+    item.href ?? getPublicServicePath(item, item.locale ?? locale);
 
   const goToCheckoutUrl = (url: string) => {
     clearCart();
