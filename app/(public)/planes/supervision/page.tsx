@@ -23,6 +23,7 @@ export const metadata: Metadata = {
 const includes = [
   'Revisión mensual básica de Holded',
   'Preparación y presentación de impuestos periódicos básicos si corresponde',
+  'Autónomos: reunión mensual de 30 min incluida',
   'Alertas de errores y anomalías',
   'Revisión de facturas y categorías principales',
   'Revisión básica de bancos/conciliación',
@@ -38,7 +39,7 @@ const notIncludes = [
   'Subida de facturas por EXPERT',
   'Migración de datos',
   'Nóminas/laboral',
-  'Reuniones periódicas',
+  'Reuniones adicionales fuera de la sesión mensual incluida para autónomos',
   'Revisión fiscal avanzada',
 ];
 
