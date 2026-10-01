@@ -50,6 +50,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Accede con el email que recibió esta propuesta.' }, { status: 403 });
     }
 
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('full_name,phone')
+      .eq('id', user.id)
+      .maybeSingle();
+
     const { data: memberships, error: membershipsError } = await admin
       .from('profile_companies')
       .select('company_id,role,company:companies(id,razon_social,cif_nif,forma_juridica,direccion,ciudad,codigo_postal,pais)')
@@ -80,6 +86,10 @@ export async function GET(request: NextRequest) {
         recipientName: lead?.name ?? '',
         entityType: lead?.client_type === 'autonomo' ? 'autonomo' : 'empresa',
         email: userEmail,
+      },
+      profile: {
+        fullName: profile?.full_name ?? '',
+        phone: profile?.phone ?? '',
       },
       companies: (memberships ?? []).map((membership) => {
         const raw = membership.company;
