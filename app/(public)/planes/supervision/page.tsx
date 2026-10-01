@@ -8,7 +8,7 @@ import { PlanComparison } from '@/components/planes/PlanComparison';
 export const metadata: Metadata = {
   title: 'Plan Supervisión — 49 €/mes + IVA | EXPERT',
   description:
-    'Plan Supervisión para autónomos y pequeñas empresas que llevan Holded y quieren revisión mensual, alertas Kia y soporte básico. No incluye presentación de impuestos.',
+    'Plan Supervisión para autónomos y pequeñas empresas que llevan Holded y quieren revisión mensual, alertas Kia, soporte básico y presentación de impuestos periódicos básicos según alcance.',
   alternates: { canonical: 'https://expertconsulting.es/planes/supervision' },
   openGraph: {
     type: 'website',
@@ -22,6 +22,7 @@ export const metadata: Metadata = {
 
 const includes = [
   'Revisión mensual básica de Holded',
+  'Preparación y presentación de impuestos periódicos básicos si corresponde',
   'Alertas de errores y anomalías',
   'Revisión de facturas y categorías principales',
   'Revisión básica de bancos/conciliación',
@@ -34,7 +35,6 @@ const includes = [
 ];
 
 const notIncludes = [
-  'Presentación de impuestos, salvo modalidad de autónomo vinculado simple',
   'Contabilidad delegada',
   'Subida de facturas por EXPERT',
   'Migración de datos',
@@ -106,7 +106,7 @@ export default function PlanSupervisionPage() {
               </p>
             </div>
             <p className="mt-5 text-sm leading-6 text-[#23364D]">
-              Si necesitas impuestos trimestrales fuera de este supuesto simplificado, revisa el{' '}
+              Si tu operativa tiene mayor complejidad fiscal, revisa el{' '}
               <Link href="/planes/avanzado" className="font-semibold text-[#D4A017] hover:underline">
                 Plan Avanzado
               </Link>.
@@ -120,7 +120,7 @@ export default function PlanSupervisionPage() {
           <p className="mt-3 text-sm leading-6 text-[#23364D]">
             Si eres socio/autónomo económicamente dependiente o vinculado a una empresa gestionada por EXPERT,
             con actividad sencilla y normalmente hasta unas 10 facturas al mes, podemos mantenerte en Plan Supervisión.
-            En esta modalidad se incluyen los modelos fiscales básicos derivados de esa operativa vinculada.
+            En este plan se incluyen los modelos fiscales periódicos básicos derivados de una contabilidad correctamente mantenida en Holded. Las regularizaciones, regímenes especiales y casos complejos requieren Plan Avanzado o presupuesto personalizado.
           </p>
           <p className="mt-3 text-xs leading-5 text-[#6B7280]">
             Operaciones internacionales complejas, varias actividades, empleados, volumen superior, regímenes especiales
@@ -134,7 +134,7 @@ export default function PlanSupervisionPage() {
             {[
               { n: '01', title: 'Te registras', text: 'Creas tu cuenta en el portal EXPERT y seleccionas el Plan Supervisión.' },
               { n: '02', title: 'Conectas Holded', text: 'Nos das acceso a tu cuenta de Holded para la supervisión mensual.' },
-              { n: '03', title: 'Supervisamos contigo', text: 'Kia y tu asesora revisan cada mes, detectan errores y te avisan de lo que requiere tu atención — la gestión y la presentación de impuestos siguen siendo tuyas.' }
+              { n: '03', title: 'Supervisamos y presentamos', text: 'Kia y tu asesora revisan cada mes, detectan errores y, cuando corresponde, EXPERT prepara y presenta los impuestos periódicos básicos incluidos.' }
             ].map(({ n, title, text }) => (
               <div key={n} className="border border-[#D4A017]/25 bg-white p-6 shadow-[0_8px_20px_rgba(13,27,42,0.07)]">
                 <span className="font-serif text-3xl font-bold text-[#D4A017]">{n}</span>
