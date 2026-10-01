@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { X, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
-import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartContentOrigins, collectCartDisbursements, resolveCartLocale, useCart } from '@/contexts/CartContext';
+import { X, ShoppingBag, Trash2, ArrowRight, Minus, Plus } from 'lucide-react';
+import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartContentOrigins, collectCartDisbursements, getCartCheckoutEndpoint, resolveCartLocale, useCart } from '@/contexts/CartContext';
 import { QuickProfileGate } from '@/components/cart/QuickProfileGate';
 import { CompanyCheckoutGate } from '@/components/cart/CompanyCheckoutGate';
 import { getPublicServicePath } from '@/lib/i18n/service-routes';
@@ -48,7 +48,7 @@ const COPY = {
 
 export function CartSidebar() {
   const pathname = usePathname();
-  const { items, removeItem, clearCart, isOpen, close } = useCart();
+  const { items, removeItem, setQuantity, clearCart, isOpen, close } = useCart();
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState<string | null>(null);
   const [needsProfile, setNeedsProfile] = useState(false);
@@ -80,7 +80,7 @@ export function CartSidebar() {
     setNeedsProfile(false);
     if (!companyId) setNeedsCompany(false);
     try {
-      const res  = await fetch('/api/services/checkout', {
+      const res  = await fetch(getCartCheckoutEndpoint(items), {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body   : JSON.stringify(buildCartCheckoutPayload(items, disbursementMandateAccepted, companyId)),
@@ -180,6 +180,28 @@ export function CartSidebar() {
                         {item.name}
                       </Link>
                       <p className="mt-1 text-sm font-bold text-[#D4A017]">{item.displayPrice}</p>
+                      {item.itemType === 'subscription' && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(item.priceId, Math.max(1, (item.quantity ?? 1) - 1))}
+                            className="rounded-md border border-[#D4A017]/30 bg-white p-1 text-[#0D1B2A] disabled:opacity-40"
+                            disabled={(item.quantity ?? 1) <= 1}
+                            aria-label={`Reducir unidades de ${item.name}`}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </button>
+                          <span className="min-w-6 text-center text-xs font-bold text-[#0D1B2A]">{item.quantity ?? 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(item.priceId, Math.min(20, (item.quantity ?? 1) + 1))}
+                            className="rounded-md border border-[#D4A017]/30 bg-white p-1 text-[#0D1B2A]"
+                            aria-label={`Aumentar unidades de ${item.name}`}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
                       {item.disbursementNotice && (
                         <p className="mt-2 rounded-lg border border-[#D4A017]/25 bg-white px-3 py-2 text-[11px] leading-5 text-[#23364D]/70">
                           {item.disbursementNotice}
@@ -231,7 +253,13 @@ export function CartSidebar() {
               />
             ) : needsProfile ? (
               <QuickProfileGate
-                priceIds={items.map(i => i.priceId)}
+                priceIds={items.flatMap(i => Array.from({ length: Math.max(1, i.quantity ?? 1) }, () => i.priceId))}
+                items={items.map(i => ({
+                  priceId: i.priceId,
+                  quantity: Math.max(1, i.quantity ?? 1),
+                  itemType: i.itemType ?? 'service',
+                  ...(i.billingInterval ? { billingInterval: i.billingInterval } : {}),
+                }))}
                 contentOrigins={contentOrigins}
                 disbursements={disbursements}
                 disbursementMandateAccepted={disbursementMandateAccepted}
