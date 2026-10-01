@@ -114,6 +114,10 @@ describe('entity-scoped subscription invitations', () => {
     expect(subscriptionsPage).toContain('Completar perfil y entidad fiscal');
     expect(subscriptionsPage).toContain('/dashboard/onboarding?next=');
     expect(accountOnboarding).toContain("const next = safeNextPath(searchParams.get('next'))");
+    expect(accountOnboarding).toContain("companyRequired = next.startsWith('/dashboard/suscripciones')");
+    expect(accountOnboarding).toContain('required={companyRequired}');
+    expect(accountOnboarding).toContain('Dirección fiscal *');
+    expect(accountOnboarding).toContain('codigo_postal: companyData.codigo_postal.trim()');
     expect(accountOnboarding).toContain('router.push(next)');
   });
 });
