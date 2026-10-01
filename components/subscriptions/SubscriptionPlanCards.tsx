@@ -90,6 +90,7 @@ function PlanCard({ plan, billing }: { plan: PlanData; billing: BillingMode }) {
     quantity: 1,
     billingInterval: isAnnual ? 'year' as const : 'month' as const,
     contentOrigin: `plans:${plan.slug}`,
+    href: `/planes/${plan.slug}`,
   };
   const inCartQuantity = items.find((item) => item.priceId === priceId)?.quantity ?? 0;
 
