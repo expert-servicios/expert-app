@@ -579,7 +579,7 @@ async function callOpenAiCompatible(
   }> = [{ role: "system", content: request.systemPrompt }, ...request.messages];
 
   const isGemini38 =
-    providerName === "google" && /^gemini-3\\.8(?:-|$)/i.test(provider.model);
+    providerName === "google" && /^gemini-3\.8(?:-|$)/i.test(provider.model);
   const body: Record<string, unknown> = {
     model: provider.model,
     max_tokens: request.maxTokens ?? 900,
