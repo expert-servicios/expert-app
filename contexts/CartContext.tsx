@@ -17,6 +17,7 @@ export interface CartItem {
   itemType?    : 'service' | 'subscription';
   quantity?    : number;
   billingInterval?: 'month' | 'year';
+  href?        : string;
 }
 
 interface CartContextValue {
