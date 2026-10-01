@@ -13,6 +13,7 @@ describe('entity-scoped subscription invitations', () => {
   const adminGenerator = source('components/admin/SubscriptionInvitationGenerator.tsx');
   const adminOnboarding = source('app/(protected)/admin/onboarding/page.tsx');
   const invitationPlans = source('lib/subscriptions/invitation-plans.ts');
+  const readiness = source('lib/data/service-readiness-checks.ts');
 
   it('creates a claimable quote without requiring an existing auth user or company', () => {
     expect(adminInvite).toContain("client_id: null");
@@ -81,5 +82,11 @@ describe('entity-scoped subscription invitations', () => {
     expect(invitationPlans).toContain('getSubscriptionInvitePlanByPriceId');
     expect(activationApi).toContain('billing: plan.billing');
     expect(activationPage).toContain("context.plan.billing === 'annual'");
+  });
+
+  it('does not block Plan Supervisión checkout for Holded setup or included basic tax filing', () => {
+    expect(readiness).toContain("label: 'Sí, que los presente EXPERT', nextAction: 'continue_checkout'");
+    expect(readiness).toContain("label: 'No',       nextAction: 'continue_checkout'");
+    expect(readiness).not.toContain("label: 'También impuestos',   nextAction: 'recommend_plan_avanzado'");
   });
 });
