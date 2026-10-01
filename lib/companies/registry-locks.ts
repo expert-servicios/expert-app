@@ -1,7 +1,6 @@
 export const REGISTRY_IDENTITY_FIELDS = [
   'razon_social',
   'cif_nif',
-  'forma_juridica',
   'direccion',
   'ciudad',
   'provincia',
