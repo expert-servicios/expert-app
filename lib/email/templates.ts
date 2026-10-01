@@ -624,6 +624,35 @@ export function subscriptionPaymentFailed(name: string, planName: string) {
   };
 }
 
+export function adminTaskReminder(input: {
+  date: string;
+  tasks: Array<{
+    title: string;
+    client: string;
+    dueDate: string | null;
+    priority: string | null;
+    caseId: string | null;
+  }>;
+}) {
+  const rows = input.tasks.map((task) => detail(
+    escapeHtml(task.title),
+    [
+      escapeHtml(task.client),
+      task.dueDate ? `vence ${escapeHtml(task.dueDate)}` : 'sin fecha',
+      task.priority ? `prioridad ${escapeHtml(task.priority)}` : '',
+    ].filter(Boolean).join(' · ')
+  ));
+  return {
+    subject: `Tareas EXPERT pendientes — ${escapeHtml(input.date)}`,
+    html: base('Tareas pendientes', `
+      ${heading('Tareas que requieren tu atención')}
+      ${para(`Hay <strong>${input.tasks.length}</strong> tarea(s) vencida(s) o con vencimiento hoy.`)}
+      ${table(...rows)}
+      ${btn('Abrir tareas en EXPERT', `${BRAND.appUrl}/admin/tareas`)}
+    `)
+  };
+}
+
 // ── 11. Contact form — admin notification ─────────────────────────────────────
 export function contactMessage(nombre: string, email: string, asunto: string, mensaje: string, telefono?: string) {
   const safeNombre = escapeHtml(nombre);
