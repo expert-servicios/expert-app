@@ -88,7 +88,7 @@ En la primera fase se conserva la API histórica getCal*Url() como alias de comp
 EXPERT implementa directamente:
 
 - Consulta inicial: 15 min;
-- Demo Holded: 30 min;
+- Demo Holded: bloque interno de 60 min; la duración no se muestra al cliente;
 - Onboarding: 60 min;
 - Formación Holded: 120 min;
 - Entrevista Academy: duración configurable.
