@@ -51,6 +51,19 @@ describe('Admin 360 unified directory and delegated client workspace', () => {
     expect(route).not.toContain(".from('profile_companies')");
     expect(panel).toContain('aunque no tenga usuario vinculado');
     expect(panel).toContain('Datos laborales:');
+    expect(panel).toContain('Probando…');
+    expect(panel).toContain('role="status"');
+  });
+
+  it('exposes a dedicated company-scoped KIA Copilot workspace in Admin', () => {
+    const sidebar = source('components/admin/AdminSidebar.tsx');
+    const workspace = source('app/(protected)/admin/kia/AdminKiaCopilotWorkspace.tsx');
+
+    expect(sidebar).toContain('{ label: "KIA Copiloto", href: "/admin/kia" }');
+    expect(workspace).toContain("companyId,");
+    expect(workspace).toContain("currentPage: '/admin/kia'");
+    expect(workspace).toContain('Contexto cambiado. La conversación anterior no se reutiliza');
+    expect(workspace).toContain('Solo lectura');
   });
 
   it('extends global search to people and companies', () => {
