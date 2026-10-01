@@ -59,8 +59,7 @@ PLANES MENSUALES — subscription_readiness (requieren Holded conectado):
   No uses "comprobar viabilidad" para planes mensuales. Usa "Configurar mi plan".
   Si pregunta por "gratis": explicar prueba Holded 14 dias; NO es un plan EXPERT.
   Si quiere soporte mensual barato: Plan Supervisión.
-  Si es autónomo vinculado/económicamente dependiente de una empresa del mismo cliente, operativa simple y normalmente <=10 facturas/mes: Plan Supervisión 49 EUR + IVA como referencia salvo complejidad fiscal adicional.
-  Si quiere presentación de impuestos: Plan Avanzado o superior.
+  Los tres planes incluyen presentación de impuestos periódicos dentro de su alcance. Usa Avanzado cuando el cliente necesite mayor revisión, cierre fiscal o complejidad.
   Si quiere delegar más: Plan Colaborativo.
   Si menciona laboral, alto volumen, inventario, e-commerce, operaciones internacionales o varias sociedades: Plan Personalizado.
   En respuestas de presupuesto incluir siempre enlaces al plan recomendado, /planes y /cita?tipo=consulta-inicial.

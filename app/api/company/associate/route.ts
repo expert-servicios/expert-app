@@ -21,6 +21,7 @@ import {
   getSupabaseAdmin,
 }                                    from '@/lib/integrations/supabase';
 import { validateSpanishTaxIdFormat } from '@/lib/integrations/company-data-resolver';
+import { isOfficialRegistrySource, lockedRegistryFields } from '@/lib/companies/registry-locks';
 
 // ── Request schema ────────────────────────────────────────────────────────────
 
@@ -121,21 +122,39 @@ export async function POST(request: NextRequest) {
     normalizedTaxId = validation.normalized ?? taxIdRaw;
   }
 
-  const razonSocial = overrides?.razon_social ?? normalizedPayload.name;
+  const officialRegistry = isOfficialRegistrySource(normalizedPayload.source);
+  const razonSocial = officialRegistry
+    ? normalizedPayload.name
+    : overrides?.razon_social ?? normalizedPayload.name;
 
   const companyRow = {
     razon_social    : razonSocial,
     nombre_comercial: overrides?.nombre_comercial ?? null,
     cif_nif         : normalizedTaxId ?? null,
     forma_juridica  : overrides?.forma_juridica ?? 'otra',
-    direccion       : overrides?.direccion ?? normalizedPayload.registeredAddress ?? null,
-    ciudad          : overrides?.ciudad    ?? normalizedPayload.city              ?? null,
-    provincia       : overrides?.provincia ?? normalizedPayload.province          ?? null,
-    codigo_postal   : overrides?.codigo_postal ?? normalizedPayload.postalCode    ?? null,
-    pais            : overrides?.pais      ?? normalizedPayload.country           ?? 'ES',
+    direccion       : officialRegistry
+      ? normalizedPayload.registeredAddress ?? null
+      : overrides?.direccion ?? normalizedPayload.registeredAddress ?? null,
+    ciudad          : officialRegistry
+      ? normalizedPayload.city ?? null
+      : overrides?.ciudad ?? normalizedPayload.city ?? null,
+    provincia       : officialRegistry
+      ? normalizedPayload.province ?? null
+      : overrides?.provincia ?? normalizedPayload.province ?? null,
+    codigo_postal   : officialRegistry
+      ? normalizedPayload.postalCode ?? null
+      : overrides?.codigo_postal ?? normalizedPayload.postalCode ?? null,
+    pais            : officialRegistry
+      ? normalizedPayload.country ?? 'ES'
+      : overrides?.pais ?? normalizedPayload.country ?? 'ES',
     telefono        : overrides?.telefono  ?? null,
     email           : overrides?.email     ?? null,
     web             : overrides?.web       ?? null,
+    registry_source: officialRegistry ? normalizedPayload.source : null,
+    registry_source_url: officialRegistry ? normalizedPayload.sourceUrl ?? null : null,
+    registry_verified_at: officialRegistry ? new Date().toISOString() : null,
+    registry_locked_fields: officialRegistry ? lockedRegistryFields(normalizedPayload.source, normalizedPayload) : [],
+    registry_snapshot: officialRegistry ? normalizedPayload : {},
   };
 
   // ── Two-step duplicate check ────────────────────────────────────────────────

@@ -49,7 +49,7 @@ describe('subscription post-payment operational automation', () => {
 
   it('keeps recurring subscriptions and one-time services in separate checkouts', () => {
     const cartCheckout = source('app/api/subscriptions/cart-checkout/route.ts');
-    expect(cartCheckout).toContain('mixed_recurring_one_time_not_enabled');
-    expect(cartCheckout).toContain("item.itemType !== 'subscription'");
+    expect(cartCheckout).toContain("code: 'subscription_cart_disabled'");
+    expect(cartCheckout).toContain('status: 410');
   });
 });

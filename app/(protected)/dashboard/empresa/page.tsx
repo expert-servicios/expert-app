@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft, Building2, Check, Plus, Pencil } from 'lucide-react';
 import { CompanyEditForm } from './CompanyEditForm';
+import { Company360Questionnaire } from '@/components/company/Company360Questionnaire';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 interface Company {
@@ -18,6 +19,10 @@ interface Company {
   email: string | null;
   web: string | null;
   role: string;
+  registry_source: string | null;
+  registry_source_url: string | null;
+  registry_verified_at: string | null;
+  registry_locked_fields: string[];
 }
 
 const FORMA_LABELS: Record<string, string> = {
@@ -138,6 +143,12 @@ export default async function EmpresaPage({
               </div>
             </div>
             <CompanyEditForm company={editingCompany} returnPath={safeNext} />
+          </div>
+        )}
+
+        {editingCompany && (
+          <div className="mt-6">
+            <Company360Questionnaire companyId={editingCompany.id} />
           </div>
         )}
       </div>

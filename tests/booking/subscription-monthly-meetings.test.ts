@@ -26,10 +26,10 @@ describe('subscription monthly meeting entitlements', () => {
     expect(route).toContain("code: 'monthly_meeting_already_booked'");
   });
 
-  it('derives Advanced plan entitlements by beneficiary entity type', () => {
-    expect(entitlements).toContain("includes('avanzado')");
-    expect(entitlements).toContain("durationMinutes: autonomo ? 30 : 60");
-    expect(entitlements).toContain('quarterlyTaxFiling: true');
+  it('derives monthly meeting entitlement by plan and entity type', () => {
+    expect(entitlements).toContain("if (plan.includes('avanzado')) return autonomo ? 30 : 60");
+    expect(entitlements).toContain("plan.includes('supervisión')");
+    expect(entitlements).toContain("&& autonomo) return 30");
     expect(entitlements).toContain("feature_key', 'included_entity'");
   });
 
@@ -40,14 +40,18 @@ describe('subscription monthly meeting entitlements', () => {
     expect(planner).toContain("task_kind: 'subscription_monthly_review'");
   });
 
-  it('adds quarterly close review without hardcoding tax filing deadlines', () => {
+  it('adds quarterly tax tasks for every fixed tax plan independently of meetings', () => {
+    expect(entitlements).toContain('listActiveSubscriptionTaxEntitlements');
+    expect(entitlements).toContain("plan.includes('colaborativo')");
+    expect(planner).toContain('listActiveSubscriptionTaxEntitlements');
     expect(planner).toContain('[3, 6, 9, 12].includes(month)');
     expect(planner).toContain('obligaciones fiscales del calendario');
   });
 
-  it('publishes Advanced onboarding and meeting inclusions', () => {
+  it('publishes Advanced and Supervision meeting inclusions', () => {
     expect(plans).toContain('Onboarding inicial de 60 min incluido');
     expect(plans).toContain('Reunión mensual: 60 min por sociedad / 30 min por autónomo');
+    expect(plans).toContain('Autónomos: reunión mensual de 30 min incluida');
     expect(plans).toContain('Impuestos trimestrales básicos si aplica');
   });
 });

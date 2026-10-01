@@ -10,11 +10,12 @@ describe('KIA pre-quote commercial rules', () => {
   const questionnaire = source('lib/data/kia-knowledge/prequote-questionnaire.ts');
   const supervision = source('app/(public)/planes/supervision/page.tsx');
 
-  it('supports the linked-autonomo 49 EUR variant', () => {
-    expect(plans).toContain('autónomo vinculado/económicamente dependiente');
+  it('keeps one canonical Supervision plan with periodic basic tax filing', () => {
     expect(plans).toContain('49 €/mes + IVA');
-    expect(plans).toContain('obligaciones fiscales básicas');
-    expect(supervision).toContain('normalmente no supera unas 10 facturas al mes');
+    expect(plans).toContain('presentación de impuestos periódicos básicos');
+    expect(plans).not.toContain('modalidad vinculada');
+    expect(supervision).toContain('Preparación y presentación de impuestos periódicos básicos');
+    expect(supervision).not.toContain('operativa vinculada simple');
   });
 
   it('requires plans, questionnaire and 15-minute meeting links in quote replies', () => {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check } from 'lucide-react';
+import { Check, LockKeyhole, ExternalLink } from 'lucide-react';
 
 const FORMA_OPTIONS = [
   { value: 'autonomo', label: 'Autónomo/a' },
@@ -38,6 +38,10 @@ interface Company {
   telefono: string | null;
   email: string | null;
   web: string | null;
+  registry_source: string | null;
+  registry_source_url: string | null;
+  registry_verified_at: string | null;
+  registry_locked_fields: string[];
 }
 
 export function CompanyEditForm({ company, returnPath }: { company: Company; returnPath?: string }) {
@@ -45,6 +49,9 @@ export function CompanyEditForm({ company, returnPath }: { company: Company; ret
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const locked = new Set(company.registry_locked_fields ?? []);
+  const officialRegistry = locked.size > 0;
+
   const [form, setForm] = useState({
     razon_social:     company.razon_social,
     nombre_comercial: company.nombre_comercial ?? '',
@@ -74,7 +81,9 @@ export function CompanyEditForm({ company, returnPath }: { company: Company; ret
       const res = await fetch(`/api/companies/${company.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify(
+          Object.fromEntries(Object.entries(form).filter(([field]) => !locked.has(field)))
+        )
       });
       const data = await res.json();
 
@@ -97,6 +106,25 @@ export function CompanyEditForm({ company, returnPath }: { company: Company; ret
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {officialRegistry && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+          <div className="flex items-start gap-2">
+            <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              <p className="font-semibold">Datos registrales oficiales — solo lectura</p>
+              <p className="mt-1 text-xs leading-5">
+                Los campos marcados proceden de {company.registry_source === 'registradores_opendata' ? 'Registradores' : 'BOE / BORME'}.
+                Si necesitas modificar un dato registral, el cambio debe tramitarse jurídicamente y actualizarse en el Registro correspondiente.
+              </p>
+              {company.registry_source_url ? (
+                <a href={company.registry_source_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:underline">
+                  <ExternalLink className="h-3 w-3" /> Ver fuente oficial
+                </a>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
@@ -105,21 +133,22 @@ export function CompanyEditForm({ company, returnPath }: { company: Company; ret
         <legend className="mb-3 text-xs font-bold uppercase tracking-widest text-[#c88b25]">Identificación</legend>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Label text="Razón social *" />
-            <Input required value={form.razon_social} onChange={(e) => set('razon_social', e.target.value)} placeholder="Mi Empresa SL" />
+            <Label text={locked.has('razon_social') ? 'Razón social * · Registro oficial' : 'Razón social *'} />
+            <Input required disabled={locked.has('razon_social')} value={form.razon_social} onChange={(e) => set('razon_social', e.target.value)} placeholder="Mi Empresa SL" />
           </div>
           <div>
             <Label text="Nombre comercial" />
             <Input value={form.nombre_comercial} onChange={(e) => set('nombre_comercial', e.target.value)} placeholder="Nombre de marca" />
           </div>
           <div>
-            <Label text="CIF / NIF *" />
-            <Input required value={form.cif_nif} onChange={(e) => set('cif_nif', e.target.value)} placeholder="B12345678" />
+            <Label text={locked.has('cif_nif') ? 'CIF / NIF * · Registro oficial' : 'CIF / NIF *'} />
+            <Input required disabled={locked.has('cif_nif')} value={form.cif_nif} onChange={(e) => set('cif_nif', e.target.value)} placeholder="B12345678" />
           </div>
           <div className="sm:col-span-2">
             <Label text="Forma jurídica *" />
             <select
               required
+              disabled={locked.has('forma_juridica')}
               value={form.forma_juridica}
               onChange={(e) => set('forma_juridica', e.target.value)}
               className="min-h-11 w-full rounded-lg border border-[#d8cbb5] bg-[#f8f4eb] px-3 text-sm text-[#07111d] outline-none transition focus:border-[#d7a33a] focus:ring-2 focus:ring-[#d7a33a]/20"
@@ -134,16 +163,17 @@ export function CompanyEditForm({ company, returnPath }: { company: Company; ret
         <legend className="mb-3 text-xs font-bold uppercase tracking-widest text-[#c88b25]">Dirección fiscal</legend>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Label text="Dirección *" />
-            <Input required value={form.direccion} onChange={(e) => set('direccion', e.target.value)} placeholder="Calle Mayor, 10" />
+            <Label text={locked.has('direccion') ? 'Dirección * · Registro oficial' : 'Dirección *'} />
+            <Input required disabled={locked.has('direccion')} value={form.direccion} onChange={(e) => set('direccion', e.target.value)} placeholder="Calle Mayor, 10" />
           </div>
           <div>
-            <Label text="Ciudad *" />
-            <Input required value={form.ciudad} onChange={(e) => set('ciudad', e.target.value)} placeholder="Alicante" />
+            <Label text={locked.has('ciudad') ? 'Ciudad * · Registro oficial' : 'Ciudad *'} />
+            <Input required disabled={locked.has('ciudad')} value={form.ciudad} onChange={(e) => set('ciudad', e.target.value)} placeholder="Alicante" />
           </div>
           <div>
             <Label text="Provincia" />
             <select
+              disabled={locked.has('provincia')}
               value={form.provincia}
               onChange={(e) => set('provincia', e.target.value)}
               className="min-h-11 w-full rounded-lg border border-[#d8cbb5] bg-[#f8f4eb] px-3 text-sm text-[#07111d] outline-none transition focus:border-[#d7a33a] focus:ring-2 focus:ring-[#d7a33a]/20"
@@ -153,12 +183,12 @@ export function CompanyEditForm({ company, returnPath }: { company: Company; ret
             </select>
           </div>
           <div>
-            <Label text="Código postal *" />
-            <Input required maxLength={5} value={form.codigo_postal} onChange={(e) => set('codigo_postal', e.target.value)} placeholder="03001" />
+            <Label text={locked.has('codigo_postal') ? 'Código postal * · Registro oficial' : 'Código postal *'} />
+            <Input required disabled={locked.has('codigo_postal')} maxLength={5} value={form.codigo_postal} onChange={(e) => set('codigo_postal', e.target.value)} placeholder="03001" />
           </div>
           <div>
-            <Label text="País (código ISO) *" />
-            <Input required maxLength={2} value={form.pais} onChange={(e) => set('pais', e.target.value.toUpperCase().slice(0, 2))} placeholder="ES" />
+            <Label text={locked.has('pais') ? 'País (código ISO) * · Registro oficial' : 'País (código ISO) *'} />
+            <Input required disabled={locked.has('pais')} maxLength={2} value={form.pais} onChange={(e) => set('pais', e.target.value.toUpperCase().slice(0, 2))} placeholder="ES" />
           </div>
         </div>
       </fieldset>
@@ -208,7 +238,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className="min-h-11 w-full rounded-lg border border-[#d8cbb5] bg-[#f8f4eb] px-3 text-sm text-[#07111d] outline-none transition placeholder:text-[#9ca3af] focus:border-[#d7a33a] focus:ring-2 focus:ring-[#d7a33a]/20"
+      className="min-h-11 w-full rounded-lg border border-[#d8cbb5] bg-[#f8f4eb] px-3 text-sm text-[#07111d] outline-none transition placeholder:text-[#9ca3af] focus:border-[#d7a33a] focus:ring-2 focus:ring-[#d7a33a]/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
     />
   );
 }

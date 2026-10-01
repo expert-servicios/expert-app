@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { z } from 'zod';
+import { blockedRegistryUpdates } from '@/lib/companies/registry-locks';
 
 const LEGAL_FORMS = ['autonomo', 'sl', 'sa', 'slne', 'cb', 'cooperativa', 'fundacion', 'otra'] as const;
 
@@ -35,6 +36,22 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const parsed = patchSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }, { status: 400 });
+    }
+
+    const { data: currentCompany, error: lockLookupError } = await admin
+      .from('companies')
+      .select('registry_locked_fields')
+      .eq('id', id)
+      .maybeSingle();
+    if (lockLookupError) return NextResponse.json({ error: lockLookupError.message }, { status: 500 });
+
+    const blocked = blockedRegistryUpdates(currentCompany?.registry_locked_fields, parsed.data);
+    if (blocked.length > 0) {
+      return NextResponse.json({
+        error: 'Los datos registrales oficiales son de solo lectura. Para modificarlos debe tramitarse el cambio societario/registral correspondiente.',
+        code: 'registry_fields_locked',
+        fields: blocked,
+      }, { status: 409 });
     }
 
     const update: Record<string, unknown> = { updated_at: new Date().toISOString() };

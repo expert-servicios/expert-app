@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Building2, Check } from 'lucide-react';
-import CompanyDataLookup, { type SuggestionFormFill } from '@/components/dashboard/company/CompanyDataLookup';
+import CompanyDataLookup, { type SuggestionFormFill, type SuggestionSourceMeta } from '@/components/dashboard/company/CompanyDataLookup';
 
 const FORMA_OPTIONS = [
   { value: 'autonomo', label: 'Autónomo/a' },
@@ -37,6 +37,8 @@ export default function NuevaEmpresaPage() {
   const [error,         setError]         = useState('');
   const [showLookup,    setShowLookup]    = useState(false);
   const [appliedSugId,  setAppliedSugId]  = useState<string | undefined>();
+  const [sourceMeta,     setSourceMeta]     = useState<SuggestionSourceMeta | undefined>();
+  const registryLocked = Boolean(sourceMeta?.officialRegistry);
   const [form, setForm] = useState({
     razon_social     : '',
     nombre_comercial : '',
@@ -56,7 +58,7 @@ export default function NuevaEmpresaPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
 
   /** Called by CompanyDataLookup when user clicks "Usar datos" */
-  const handleFill = (data: SuggestionFormFill, suggestionId?: string) => {
+  const handleFill = (data: SuggestionFormFill, suggestionId?: string, meta?: SuggestionSourceMeta) => {
     setForm((prev) => ({
       ...prev,
       razon_social  : data.razon_social   ?? prev.razon_social,
@@ -68,6 +70,7 @@ export default function NuevaEmpresaPage() {
       pais          : data.pais           ?? prev.pais,
     }));
     setAppliedSugId(suggestionId);
+    setSourceMeta(meta);
     setShowLookup(false); // collapse panel after fill
   };
 
@@ -80,7 +83,15 @@ export default function NuevaEmpresaPage() {
       const res = await fetch('/api/companies', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({ ...form, _appliedSuggestionId: appliedSugId }),
+        body   : JSON.stringify({
+          ...form,
+          _appliedSuggestionId: appliedSugId,
+          _registrySource: sourceMeta?.source,
+          _registrySourceUrl: sourceMeta?.sourceUrl,
+          _registryRetrievedAt: sourceMeta?.retrievedAt,
+          _registryOfficial: sourceMeta?.officialRegistry ?? false,
+          _registrySnapshot: sourceMeta?.snapshot,
+        }),
       });
       const data = await res.json();
 
@@ -137,6 +148,12 @@ export default function NuevaEmpresaPage() {
             )}
           </div>
 
+          {registryLocked && (
+            <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-5 text-blue-800">
+              Los datos de identidad y domicilio recuperados de la fuente registral oficial son de solo lectura. Si detectas que el Registro no refleja la situación actual, EXPERT puede tramitar el cambio registral como un servicio independiente.
+            </div>
+          )}
+
           {error && (
             <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
@@ -154,6 +171,7 @@ export default function NuevaEmpresaPage() {
                   <Label text="Razón social *" />
                   <Input
                     required
+                    disabled={registryLocked}
                     placeholder="Mi Empresa SL"
                     value={form.razon_social}
                     onChange={(e) => set('razon_social', e.target.value)}
@@ -170,6 +188,7 @@ export default function NuevaEmpresaPage() {
                 <div>
                   <Label text="CIF / NIF" />
                   <Input
+                    disabled={registryLocked}
                     placeholder="B12345678"
                     value={form.cif_nif}
                     onChange={(e) => set('cif_nif', e.target.value)}
@@ -200,6 +219,7 @@ export default function NuevaEmpresaPage() {
                 <div className="sm:col-span-2">
                   <Label text="Dirección" />
                   <Input
+                    disabled={registryLocked}
                     placeholder="Calle Mayor, 10, 2ºA"
                     value={form.direccion}
                     onChange={(e) => set('direccion', e.target.value)}
@@ -208,6 +228,7 @@ export default function NuevaEmpresaPage() {
                 <div>
                   <Label text="Ciudad" />
                   <Input
+                    disabled={registryLocked}
                     placeholder="Alicante"
                     value={form.ciudad}
                     onChange={(e) => set('ciudad', e.target.value)}
@@ -216,6 +237,7 @@ export default function NuevaEmpresaPage() {
                 <div>
                   <Label text="Provincia" />
                   <select
+                    disabled={registryLocked}
                     value={form.provincia}
                     onChange={(e) => set('provincia', e.target.value)}
                     className="min-h-11 w-full rounded-lg border border-[#d8cbb5] bg-[#f8f4eb] px-3 text-sm text-[#07111d] outline-none transition focus:border-[#d7a33a] focus:ring-2 focus:ring-[#d7a33a]/20"
@@ -227,6 +249,7 @@ export default function NuevaEmpresaPage() {
                 <div>
                   <Label text="Código postal" />
                   <Input
+                    disabled={registryLocked}
                     placeholder="03001"
                     maxLength={5}
                     value={form.codigo_postal}
@@ -236,6 +259,7 @@ export default function NuevaEmpresaPage() {
                 <div>
                   <Label text="País" />
                   <Input
+                    disabled={registryLocked}
                     value={form.pais}
                     onChange={(e) => set('pais', e.target.value.toUpperCase().slice(0, 2))}
                     placeholder="ES"
@@ -308,7 +332,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className="min-h-11 w-full rounded-lg border border-[#d8cbb5] bg-[#f8f4eb] px-3 text-sm text-[#07111d] outline-none transition placeholder:text-[#9ca3af] focus:border-[#d7a33a] focus:ring-2 focus:ring-[#d7a33a]/20"
+      className="min-h-11 w-full rounded-lg border border-[#d8cbb5] bg-[#f8f4eb] px-3 text-sm text-[#07111d] outline-none transition placeholder:text-[#9ca3af] focus:border-[#d7a33a] focus:ring-2 focus:ring-[#d7a33a]/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
     />
   );
 }
