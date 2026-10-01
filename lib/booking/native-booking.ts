@@ -35,8 +35,8 @@ export function getBookingServices(): Record<BookingServiceKey, BookingServiceDe
     },
     'demo-holded': {
       key: 'demo-holded',
-      label: 'Demo Holded',
-      durationMinutes: 30,
+      label: 'Demo Holded gratuita',
+      durationMinutes: 60,
       public: true,
     },
     onboarding: {
