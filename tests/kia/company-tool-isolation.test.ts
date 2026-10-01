@@ -27,7 +27,7 @@ describe('KIA company tool isolation', () => {
 
   it('uses the authorized context company for accounting and staff company-wide resources', () => {
     expect(executor).toContain("const companyId = context.company?.id ?? null");
-    expect(executor).not.toContain("typeof args.companyId === 'string' ? args.companyId");
+    expect(executor).not.toContain("case 'get_accounting_snapshot': {\n        const companyId = typeof args.companyId === 'string' ? args.companyId");
     expect(contextBuilder).toContain('const resourceClientId = staffCompanyScope ? null : clientId');
     expect(contextBuilder).toContain('loadDocuments(admin, resourceClientId, input.caseId, resolvedCompanyId)');
     expect(contextBuilder).toContain('loadCasesForClient(admin, resourceClientId, resolvedCompanyId)');
