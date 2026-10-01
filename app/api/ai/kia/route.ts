@@ -9,6 +9,7 @@
 import { after, NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { isStaffRole } from '@/lib/auth/roles';
 import {
   getEnabledKiaPolicyFeatureFlags,
   resolveKiaActorCapabilities,
@@ -108,7 +109,7 @@ export async function POST(request: NextRequest) {
   const admin = getSupabaseAdmin();
   const { data: profile, error: profileError } = await admin
     .from('profiles')
-    .select('tenant_id, active_company_id, preferred_language')
+    .select('tenant_id, active_company_id, preferred_language, role, status')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -175,31 +176,49 @@ export async function POST(request: NextRequest) {
     ? profileLocale
     : resolveKiaLocale({ latestMessage: message, preferredLanguage: profileLocale });
 
+  const staffCompanyScope = Boolean(companyId && profile && isStaffRole(profile.role) && profile.status !== 'inactive');
+
   if (resolvedCompanyId && !staffPreview) {
-    const { data: membership, error: membershipError } = await admin
-      .from('profile_companies')
-      .select('company_id')
-      .eq('profile_id', user.id)
-      .eq('company_id', resolvedCompanyId)
-      .maybeSingle();
+    if (staffCompanyScope) {
+      const { data: companyRow, error: companyError } = await admin
+        .from('companies')
+        .select('id')
+        .eq('id', resolvedCompanyId)
+        .maybeSingle();
 
-    if (membershipError) {
-      console.error('[KiaCopilot] company membership lookup failed:', membershipError.message);
-      return NextResponse.json({ error: 'company_membership_check_failed', reply: kiaFriendlyError('company_membership_check_failed', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 500 });
-    }
+      if (companyError) {
+        console.error('[KiaCopilot] staff company lookup failed:', companyError.message);
+        return NextResponse.json({ error: 'company_membership_check_failed', reply: kiaFriendlyError('company_membership_check_failed', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 500 });
+      }
+      if (!companyRow) {
+        return NextResponse.json({ error: 'company_forbidden', reply: kiaFriendlyError('company_forbidden', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 403 });
+      }
+    } else {
+      const { data: membership, error: membershipError } = await admin
+        .from('profile_companies')
+        .select('company_id')
+        .eq('profile_id', user.id)
+        .eq('company_id', resolvedCompanyId)
+        .maybeSingle();
 
-    if (!membership) {
-      return NextResponse.json(
-        {
-          error: companyId ? 'company_forbidden' : 'active_company_invalid',
-          reply: companyId
-            ? kiaFriendlyError('company_forbidden', responseLocale)
-            : kiaFriendlyError('active_company_invalid', responseLocale),
-          avatarState: 'aviso',
-          artifacts: [],
-        },
-        { status: companyId ? 403 : 409 },
-      );
+      if (membershipError) {
+        console.error('[KiaCopilot] company membership lookup failed:', membershipError.message);
+        return NextResponse.json({ error: 'company_membership_check_failed', reply: kiaFriendlyError('company_membership_check_failed', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 500 });
+      }
+
+      if (!membership) {
+        return NextResponse.json(
+          {
+            error: companyId ? 'company_forbidden' : 'active_company_invalid',
+            reply: companyId
+              ? kiaFriendlyError('company_forbidden', responseLocale)
+              : kiaFriendlyError('active_company_invalid', responseLocale),
+            avatarState: 'aviso',
+            artifacts: [],
+          },
+          { status: companyId ? 403 : 409 },
+        );
+      }
     }
   }
 
@@ -329,6 +348,7 @@ export async function POST(request: NextRequest) {
         latestMessage: message,
         syntheticRecentMessages,
         originEmail: contextualOriginEmail,
+        allowStaffCompanyScope: staffCompanyScope,
       },
     });
   } catch (err) {
