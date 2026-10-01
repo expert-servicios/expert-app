@@ -19,6 +19,10 @@ interface CompanyStep {
   razon_social: string;
   cif_nif: string;
   forma_juridica: 'autonomo' | 'sl' | 'sa' | 'otra';
+  direccion: string;
+  ciudad: string;
+  codigo_postal: string;
+  pais: string;
 }
 
 type Step = 'profile' | 'company' | 'done';
@@ -185,9 +189,7 @@ function CompanyStepForm({ value, onChange }: {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">
-          NIF / CIF <span className="font-normal text-[#29384a]/50">(opcional)</span>
-        </label>
+        <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">NIF / CIF *</label>
         <input
           type="text"
           value={value.cif_nif}
@@ -195,6 +197,40 @@ function CompanyStepForm({ value, onChange }: {
           placeholder="B12345678 / 12345678Z"
           className="w-full rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-2.5 font-mono text-sm text-[#07111d] placeholder-[#29384a]/35 focus:border-[#d7a33a] focus:outline-none focus:ring-1 focus:ring-[#d7a33a]"
         />
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">Dirección fiscal *</label>
+        <input
+          type="text"
+          value={value.direccion}
+          onChange={(e) => onChange({ ...value, direccion: e.target.value })}
+          placeholder="Calle, número, piso"
+          className="w-full rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-2.5 text-sm text-[#07111d] placeholder-[#29384a]/35 focus:border-[#d7a33a] focus:outline-none focus:ring-1 focus:ring-[#d7a33a]"
+        />
+      </div>
+
+      <div className="grid grid-cols-[1fr_110px] gap-3">
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">Ciudad *</label>
+          <input
+            type="text"
+            value={value.ciudad}
+            onChange={(e) => onChange({ ...value, ciudad: e.target.value })}
+            placeholder="Barcelona"
+            className="w-full rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-2.5 text-sm text-[#07111d] placeholder-[#29384a]/35 focus:border-[#d7a33a] focus:outline-none focus:ring-1 focus:ring-[#d7a33a]"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">CP *</label>
+          <input
+            type="text"
+            value={value.codigo_postal}
+            onChange={(e) => onChange({ ...value, codigo_postal: e.target.value })}
+            placeholder="08001"
+            className="w-full rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-2.5 text-sm text-[#07111d] placeholder-[#29384a]/35 focus:border-[#d7a33a] focus:outline-none focus:ring-1 focus:ring-[#d7a33a]"
+          />
+        </div>
       </div>
     </div>
   );
@@ -249,6 +285,10 @@ export default function OnboardingPage() {
     razon_social: '',
     cif_nif: '',
     forma_juridica: 'sl',
+    direccion: '',
+    ciudad: '',
+    codigo_postal: '',
+    pais: 'ES',
   });
 
   const step = STEPS[currentStep] ?? 'profile';
@@ -299,6 +339,14 @@ export default function OnboardingPage() {
       setError('La razón social es obligatoria.');
       return false;
     }
+    if (!companyData.cif_nif.trim()) {
+      setError('El NIF/CIF es obligatorio para contratar una suscripción.');
+      return false;
+    }
+    if (!companyData.direccion.trim() || !companyData.ciudad.trim() || !companyData.codigo_postal.trim()) {
+      setError('Completa la dirección fiscal, ciudad y código postal.');
+      return false;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -307,8 +355,12 @@ export default function OnboardingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           razon_social: companyData.razon_social.trim(),
-          cif_nif: companyData.cif_nif.trim() || undefined,
+          cif_nif: companyData.cif_nif.trim(),
           forma_juridica: companyData.forma_juridica,
+          direccion: companyData.direccion.trim(),
+          ciudad: companyData.ciudad.trim(),
+          codigo_postal: companyData.codigo_postal.trim(),
+          pais: companyData.pais,
         }),
       });
       if (!res.ok) {
