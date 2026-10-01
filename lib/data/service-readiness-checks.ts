@@ -390,19 +390,19 @@ const HOLDED_MODULO_FORMACION: ReadinessCheck = {
 const PLAN_SUPERVISION: ReadinessCheck = {
   slug       : 'plan-supervision',
   title      : 'Plan Supervisión — Verifica que encaja contigo',
-  description: 'El Plan Supervisión es para quienes llevan Holded por su cuenta y quieren revisión mensual profesional, alertas y soporte básico.',
+  description: 'El Plan Supervisión es para quienes llevan o van a llevar Holded por su cuenta y quieren revisión mensual profesional, alertas, presentación de impuestos periódicos básicos dentro del alcance y soporte.',
   ctaLabel   : 'Configurar plan',
   questions  : [
     {
       id   : 'holded_account_status',
       text : '¿Ya tienes cuenta Holded activa?',
-      hint : 'Todos los planes mensuales requieren Holded. La licencia no está incluida.',
+      hint : 'Todos los planes trabajan con Holded, pero puedes formalizar primero el alta. La conexión se completa durante el onboarding y la licencia no está incluida.',
       type : 'single',
       options: [
         { id: 'si',       label: 'Sí',       nextAction: 'continue_checkout' },
-        { id: 'no',       label: 'No',       nextAction: 'holded_trial', blocking: true,
-          description: 'Empieza con la prueba Holded 14 días o Pack Starter antes del plan mensual' },
-        { id: 'no_lo_se', label: 'No lo sé', nextAction: 'holded_trial', blocking: true },
+        { id: 'no',       label: 'No',       nextAction: 'continue_checkout',
+          description: 'Podrás conectar Holded o solicitar la prueba durante el onboarding.' },
+        { id: 'no_lo_se', label: 'No lo sé', nextAction: 'continue_checkout' },
         { id: 'otro',     label: 'Otro',     nextAction: 'book_call' },
       ],
     },
@@ -424,18 +424,18 @@ const PLAN_SUPERVISION: ReadinessCheck = {
       type : 'single',
       options: [
         { id: 'si',              label: 'Sí',              nextAction: 'continue_checkout' },
-        { id: 'no_se_como',      label: 'No sé cómo',      nextAction: 'api_tutorial', blocking: true },
-        { id: 'necesito_tutorial', label: 'Necesito tutorial', nextAction: 'api_tutorial', blocking: true },
+        { id: 'no_se_como',      label: 'No sé cómo',      nextAction: 'continue_checkout' },
+        { id: 'necesito_tutorial', label: 'Necesito tutorial', nextAction: 'continue_checkout' },
         { id: 'otro',            label: 'Otro',            nextAction: 'book_call' },
       ],
     },
     {
       id   : 'tax_scope',
-      text : '¿Quieres solo revisión o también presentación de impuestos?',
+      text : '¿Quieres que EXPERT presente también tus impuestos periódicos básicos cuando corresponda al alcance del plan?',
       type : 'single',
       options: [
-        { id: 'solo_revision',     label: 'Solo revisión',       nextAction: 'continue_checkout' },
-        { id: 'tambien_impuestos', label: 'También impuestos',   nextAction: 'recommend_plan_avanzado', blocking: true },
+        { id: 'solo_revision',     label: 'Prefiero presentarlos yo', nextAction: 'continue_checkout' },
+        { id: 'tambien_impuestos', label: 'Sí, que los presente EXPERT', nextAction: 'continue_checkout' },
         { id: 'no_lo_se',          label: 'No lo sé',            nextAction: 'book_call' },
         { id: 'otro',              label: 'Otro',                nextAction: 'book_call' },
       ],

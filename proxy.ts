@@ -45,9 +45,16 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Redirect authenticated users away from auth pages
+  // Redirect authenticated users away from auth pages while preserving a safe
+  // internal destination supplied by commercial/onboarding links.
   if (user && isAuthPath) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    const requestedNext = request.nextUrl.searchParams.get('next')?.trim() ?? '';
+    const safeNext = requestedNext.startsWith('/')
+      && !requestedNext.startsWith('//')
+      && !requestedNext.includes('\\')
+      ? requestedNext
+      : '/dashboard';
+    return NextResponse.redirect(new URL(safeNext, request.url));
   }
 
   // Protect /dashboard and /admin — admin role check is in app/(protected)/admin/layout.tsx

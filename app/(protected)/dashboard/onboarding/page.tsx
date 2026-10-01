@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight, Building2, CheckCircle2, User,
   Loader2, ChevronRight, ChevronLeft,
@@ -19,6 +19,10 @@ interface CompanyStep {
   razon_social: string;
   cif_nif: string;
   forma_juridica: 'autonomo' | 'sl' | 'sa' | 'otra';
+  direccion: string;
+  ciudad: string;
+  codigo_postal: string;
+  pais: string;
 }
 
 type Step = 'profile' | 'company' | 'done';
@@ -101,9 +105,10 @@ function ProfileStepForm({ value, onChange }: {
   );
 }
 
-function CompanyStepForm({ value, onChange }: {
+function CompanyStepForm({ value, onChange, required = false }: {
   value: CompanyStep;
   onChange: (v: CompanyStep) => void;
+  required?: boolean;
 }) {
   if (value.skip) {
     return (
@@ -144,13 +149,15 @@ function CompanyStepForm({ value, onChange }: {
             <p className="text-xs text-[#29384a]/60">Datos básicos de tu sociedad o actividad</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => onChange({ ...value, skip: true })}
-          className="text-xs text-[#29384a]/50 transition hover:text-[#29384a]"
-        >
-          Omitir
-        </button>
+        {!required && (
+          <button
+            type="button"
+            onClick={() => onChange({ ...value, skip: true })}
+            className="text-xs text-[#29384a]/50 transition hover:text-[#29384a]"
+          >
+            Omitir
+          </button>
+        )}
       </div>
 
       <div>
@@ -185,9 +192,7 @@ function CompanyStepForm({ value, onChange }: {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">
-          NIF / CIF <span className="font-normal text-[#29384a]/50">(opcional)</span>
-        </label>
+        <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">NIF / CIF *</label>
         <input
           type="text"
           value={value.cif_nif}
@@ -195,6 +200,40 @@ function CompanyStepForm({ value, onChange }: {
           placeholder="B12345678 / 12345678Z"
           className="w-full rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-2.5 font-mono text-sm text-[#07111d] placeholder-[#29384a]/35 focus:border-[#d7a33a] focus:outline-none focus:ring-1 focus:ring-[#d7a33a]"
         />
+      </div>
+
+      <div>
+        <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">Dirección fiscal *</label>
+        <input
+          type="text"
+          value={value.direccion}
+          onChange={(e) => onChange({ ...value, direccion: e.target.value })}
+          placeholder="Calle, número, piso"
+          className="w-full rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-2.5 text-sm text-[#07111d] placeholder-[#29384a]/35 focus:border-[#d7a33a] focus:outline-none focus:ring-1 focus:ring-[#d7a33a]"
+        />
+      </div>
+
+      <div className="grid grid-cols-[1fr_110px] gap-3">
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">Ciudad *</label>
+          <input
+            type="text"
+            value={value.ciudad}
+            onChange={(e) => onChange({ ...value, ciudad: e.target.value })}
+            placeholder="Barcelona"
+            className="w-full rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-2.5 text-sm text-[#07111d] placeholder-[#29384a]/35 focus:border-[#d7a33a] focus:outline-none focus:ring-1 focus:ring-[#d7a33a]"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-semibold text-[#29384a]">CP *</label>
+          <input
+            type="text"
+            value={value.codigo_postal}
+            onChange={(e) => onChange({ ...value, codigo_postal: e.target.value })}
+            placeholder="08001"
+            className="w-full rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-2.5 text-sm text-[#07111d] placeholder-[#29384a]/35 focus:border-[#d7a33a] focus:outline-none focus:ring-1 focus:ring-[#d7a33a]"
+          />
+        </div>
       </div>
     </div>
   );
@@ -230,8 +269,16 @@ function DoneStep({ onGo, loading, companySkipped }: { onGo: () => void; loading
   );
 }
 
+function safeNextPath(value: string | null): string {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return '/dashboard';
+  return value;
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = safeNextPath(searchParams.get('next'));
+  const companyRequired = next.startsWith('/dashboard/suscripciones');
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -242,6 +289,10 @@ export default function OnboardingPage() {
     razon_social: '',
     cif_nif: '',
     forma_juridica: 'sl',
+    direccion: '',
+    ciudad: '',
+    codigo_postal: '',
+    pais: 'ES',
   });
 
   const step = STEPS[currentStep] ?? 'profile';
@@ -287,9 +338,23 @@ export default function OnboardingPage() {
   }
 
   async function saveCompany(): Promise<boolean> {
-    if (companyData.skip) return true;
+    if (companyData.skip) {
+      if (companyRequired) {
+        setError('Para contratar una suscripción necesitas crear primero la entidad fiscal titular.');
+        return false;
+      }
+      return true;
+    }
     if (!companyData.razon_social.trim()) {
       setError('La razón social es obligatoria.');
+      return false;
+    }
+    if (!companyData.cif_nif.trim()) {
+      setError('El NIF/CIF es obligatorio para contratar una suscripción.');
+      return false;
+    }
+    if (!companyData.direccion.trim() || !companyData.ciudad.trim() || !companyData.codigo_postal.trim()) {
+      setError('Completa la dirección fiscal, ciudad y código postal.');
       return false;
     }
     setLoading(true);
@@ -300,8 +365,12 @@ export default function OnboardingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           razon_social: companyData.razon_social.trim(),
-          cif_nif: companyData.cif_nif.trim() || undefined,
+          cif_nif: companyData.cif_nif.trim(),
           forma_juridica: companyData.forma_juridica,
+          direccion: companyData.direccion.trim(),
+          ciudad: companyData.ciudad.trim(),
+          codigo_postal: companyData.codigo_postal.trim(),
+          pais: companyData.pais,
         }),
       });
       if (!res.ok) {
@@ -344,7 +413,7 @@ export default function OnboardingPage() {
         setError(data.error ?? 'No se pudo finalizar la configuración. Inténtalo de nuevo.');
         return;
       }
-      router.push('/dashboard');
+      router.push(next);
     } catch {
       setError('Error de conexión al finalizar la configuración.');
     } finally {
@@ -399,7 +468,7 @@ export default function OnboardingPage() {
 
           {step === 'company' && (
             <>
-              <CompanyStepForm value={companyData} onChange={setCompanyData} />
+              <CompanyStepForm value={companyData} onChange={setCompanyData} required={companyRequired} />
               <div className="mt-6 flex items-center justify-between">
                 <button type="button" onClick={handleBack} className="flex items-center gap-1 text-sm text-[#29384a]/60 transition hover:text-[#29384a]">
                   <ChevronLeft className="h-4 w-4" /> Atrás
@@ -425,7 +494,7 @@ export default function OnboardingPage() {
           <div className="mt-4 text-center">
             <button
               type="button"
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push(next)}
               className="text-xs text-[#29384a]/40 transition hover:text-[#29384a]/70"
             >
               Completar más tarde →

@@ -13,6 +13,11 @@ describe('entity-scoped subscription invitations', () => {
   const adminGenerator = source('components/admin/SubscriptionInvitationGenerator.tsx');
   const adminOnboarding = source('app/(protected)/admin/onboarding/page.tsx');
   const invitationPlans = source('lib/subscriptions/invitation-plans.ts');
+  const readiness = source('lib/data/service-readiness-checks.ts');
+  const subscriptionsPage = source('app/(protected)/dashboard/suscripciones/page.tsx');
+  const planCards = source('components/subscriptions/SubscriptionPlanCards.tsx');
+  const accountOnboarding = source('app/(protected)/dashboard/onboarding/page.tsx');
+  const proxy = source('proxy.ts');
 
   it('creates a claimable quote without requiring an existing auth user or company', () => {
     expect(adminInvite).toContain("client_id: null");
@@ -81,5 +86,38 @@ describe('entity-scoped subscription invitations', () => {
     expect(invitationPlans).toContain('getSubscriptionInvitePlanByPriceId');
     expect(activationApi).toContain('billing: plan.billing');
     expect(activationPage).toContain("context.plan.billing === 'annual'");
+  });
+
+  it('does not block Plan Supervisión checkout for Holded setup or included basic tax filing', () => {
+    expect(readiness).toContain("label: 'Sí, que los presente EXPERT', nextAction: 'continue_checkout'");
+    expect(readiness).toContain("label: 'No',       nextAction: 'continue_checkout'");
+    expect(readiness).not.toContain("label: 'También impuestos',   nextAction: 'recommend_plan_avanzado'");
+  });
+
+  it('keeps direct plan links contextual after login', () => {
+    expect(subscriptionsPage).toContain("params.plan as 'supervision' | 'avanzado' | 'colaborativo'");
+    expect(subscriptionsPage).toContain('initialPlan={initialPlan}');
+    expect(planCards).toContain('initialPlan');
+    expect(planCards).toContain('Hemos abierto el plan solicitado');
+    expect(planCards).toContain('titular fiscal correcto');
+  });
+
+  it('keeps Holded demo duration internal while hiding it from the booking UI', () => {
+    const bookingForm = source('components/booking/NativeBookingForm.tsx');
+    expect(bookingForm).toContain("serviceKey !== 'demo-holded'");
+    expect(bookingForm).toContain('availability.service.durationMinutes');
+  });
+
+  it('preserves requested subscription context through login and first-time onboarding', () => {
+    expect(proxy).toContain("request.nextUrl.searchParams.get('next')");
+    expect(proxy).toContain('new URL(safeNext, request.url)');
+    expect(subscriptionsPage).toContain('Completar perfil y entidad fiscal');
+    expect(subscriptionsPage).toContain('/dashboard/onboarding?next=');
+    expect(accountOnboarding).toContain("const next = safeNextPath(searchParams.get('next'))");
+    expect(accountOnboarding).toContain("companyRequired = next.startsWith('/dashboard/suscripciones')");
+    expect(accountOnboarding).toContain('required={companyRequired}');
+    expect(accountOnboarding).toContain('Dirección fiscal *');
+    expect(accountOnboarding).toContain('codigo_postal: companyData.codigo_postal.trim()');
+    expect(accountOnboarding).toContain('router.push(next)');
   });
 });
