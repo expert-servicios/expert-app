@@ -1,12 +1,12 @@
 # EXPERT · Runbook de correo, calendario y reuniones de KIA
 
-Fecha de actualización: **29/09/2026**
+Fecha de actualización: **01/10/2026**
 
 Estado de referencia:
 
-- **PR #511 fusionada en `main`**: operador KIA de correo humano y reuniones, Gmail, Calendar/Meet, tareas Admin, trazabilidad CRM y guardas de seguridad.
-- **PR #518 en cierre**: activación administrable fail-closed del agente de correo y recuperación/telemetría de PushApp.
-- **PR #519 en revisión**: clasificación completa de inbox, aliases funcionales fail-closed y escalado selectivo Push/Telegram/email.
+- Operador KIA de correo y reuniones con Gmail, Calendar/Meet, tareas Admin, trazabilidad CRM y guardas de seguridad.
+- Activación administrable fail-closed del agente de correo y recuperación/telemetría de PushApp.
+- Clasificación completa de inbox, aliases funcionales fail-closed y escalado selectivo Push/Telegram/email.
 - Este documento describe el comportamiento operativo global. La referencia detallada de inbox, aliases, alertas y checklist de producción es [KIA — operación de correo, clasificación y alertas](kia-email-operations.md).
 - La existencia de código no implica activación: los switches, credenciales y health checks deben validarse en producción.
 
