@@ -5,7 +5,11 @@ import { sendEmailOnce } from '@/lib/email/send';
 import { monthlySubscriptionMeetingInvitationEmail } from '@/lib/email/onboarding-templates';
 import { createPrivateBookingAuthorization, withPrivateBookingAuthorization } from '@/lib/booking/private-booking-authorization';
 import { getBookingMonthlyAutonomoUrl, getBookingMonthlyCompanyUrl } from '@/lib/utils/cal';
-import { listActiveSubscriptionMeetingEntitlements, monthlyMeetingServiceKey } from '@/lib/subscriptions/meeting-entitlements';
+import {
+  listActiveSubscriptionMeetingEntitlements,
+  listActiveSubscriptionTaxEntitlements,
+  monthlyMeetingServiceKey,
+} from '@/lib/subscriptions/meeting-entitlements';
 import { notifyAdmins } from '@/lib/integrations/push';
 
 export const maxDuration = 60;
@@ -47,7 +51,10 @@ export async function GET(request: NextRequest) {
   }
 
   const admin = getSupabaseAdmin();
-  const entitlements = await listActiveSubscriptionMeetingEntitlements(admin);
+  const [entitlements, taxEntitlements] = await Promise.all([
+    listActiveSubscriptionMeetingEntitlements(admin),
+    listActiveSubscriptionTaxEntitlements(admin),
+  ]);
   const key = monthKey(year, month);
   const dueDate = endOfMonthDate(year, month);
   const label = monthLabel(year, month);
@@ -184,8 +191,12 @@ export async function GET(request: NextRequest) {
       tag: `monthly-review-${task.id}`,
     }).catch(() => {});
 
-    if (entitlement.quarterlyTaxFiling && [3, 6, 9, 12].includes(month)) {
-      const quarter = Math.ceil(month / 3);
+  }
+
+  let quarterTasks = 0;
+  if ([3, 6, 9, 12].includes(month)) {
+    const quarter = Math.ceil(month / 3);
+    for (const entitlement of taxEntitlements) {
       const taxSourceKey = `quarter-close:${year}-Q${quarter}:${entitlement.subscriptionId}:${entitlement.companyId}`;
       const { error: quarterTaskError } = await admin
         .from('internal_tasks')
@@ -195,7 +206,7 @@ export async function GET(request: NextRequest) {
             `Preparar el cierre del trimestre Q${quarter} de ${year}.`,
             'Revisar contabilidad y documentación pendiente.',
             'Validar las obligaciones y fechas exactas contra el calendario fiscal de EXPERT antes de presentar impuestos.',
-            'Preparar y presentar los modelos que correspondan al alcance del Plan Avanzado.',
+            `Preparar y presentar los modelos que correspondan al alcance de ${entitlement.planName}.`,
           ].join('\n'),
           status: 'pendiente',
           priority: 'alta',
@@ -208,16 +219,30 @@ export async function GET(request: NextRequest) {
             task_kind: 'subscription_quarter_close',
             subscription_id: entitlement.subscriptionId,
             company_id: entitlement.companyId,
+            plan_name: entitlement.planName,
             quarter,
             year,
             requires_fiscal_calendar_validation: true,
           },
         });
-      if (quarterTaskError && quarterTaskError.code !== '23505') {
+
+      if (!quarterTaskError) {
+        quarterTasks++;
+      } else if (quarterTaskError.code !== '23505') {
         errors.push(`${entitlement.companyId}: quarter task ${quarterTaskError.message}`);
       }
     }
   }
 
-  return NextResponse.json({ ok: errors.length === 0, month: key, entitlements: entitlements.length, created, emailed, existing, errors });
+  return NextResponse.json({
+    ok: errors.length === 0,
+    month: key,
+    meetingEntitlements: entitlements.length,
+    taxEntitlements: taxEntitlements.length,
+    created,
+    emailed,
+    existing,
+    quarterTasks,
+    errors,
+  });
 }
