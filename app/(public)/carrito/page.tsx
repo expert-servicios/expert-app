@@ -212,7 +212,7 @@ function CarritoContent() {
                   >
                     <div className="min-w-0 flex-1">
                       <Link
-                        href={getPublicServicePath(item, item.locale ?? locale)}
+                        href={item.href ?? getPublicServicePath(item, item.locale ?? locale)}
                         className="font-semibold text-[#0D1B2A] transition hover:text-[#D4A017]"
                       >
                         {item.name}
