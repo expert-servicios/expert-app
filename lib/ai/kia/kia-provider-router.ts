@@ -487,6 +487,9 @@ async function callGateway(
     : [];
 
   const parsedJson = parseMaybeJson(rawText);
+  if (request.responseSchema && !parsedJson && toolCalls.length === 0) {
+    throw new Error("AI Gateway returned a non-JSON response for a structured request");
+  }
   if (!rawText && !parsedJson && toolCalls.length === 0) {
     throw new Error("AI Gateway returned an empty response");
   }
@@ -616,6 +619,10 @@ async function callOpenAiCompatible(
         )
     : [];
 
+  const parsedJson = parseMaybeJson(rawText);
+  if (request.responseSchema && !parsedJson && toolCalls.length === 0) {
+    throw new Error(`${providerName} returned a non-JSON response for a structured request`);
+  }
   if (!rawText && toolCalls.length === 0) {
     throw new Error(`${providerName} returned an empty response`);
   }
@@ -624,7 +631,7 @@ async function callOpenAiCompatible(
     provider: providerName,
     model: typeof data?.model === "string" ? data.model : provider.model,
     rawText,
-    parsedJson: parseMaybeJson(rawText),
+    parsedJson,
     toolCalls,
     usage: data?.usage,
   };
