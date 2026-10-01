@@ -144,7 +144,7 @@ async function runCanaryCheck(check: KiaHealthCheck): Promise<KiaHealthCheckResu
       latencyMs,
       tokensInput: usage.tokensInput,
       tokensOutput: usage.tokensOutput,
-      costEstimate: estimateCost(decision.providerResult?.provider, usage.tokensInput, usage.tokensOutput),
+      costEstimate: estimateCost(decision.providerResult?.model ?? 'unknown', usage.tokensInput, usage.tokensOutput).estimatedCostUsd,
     });
 
     const maxLatencyMs = Number(process.env.KIA_HEALTH_MAX_LATENCY_MS ?? '10000');
