@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, ShoppingBag, FileText, Gift } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
+import { CheckCircle2, CreditCard, FileText, Gift } from 'lucide-react';
 
 type BillingMode = 'mensual' | 'anual';
 
@@ -29,11 +28,13 @@ interface Props {
   planAvanzadoAnnualId      : string;
   planColaborativoAnnualId  : string;
   initialBilling            : BillingMode;
+  companyId                 : string;
 }
 
 const FEATURES_SUPERVISION = [
   'Plataforma EXPERT + Kia básico',
   'Revisión mensual básica de Holded',
+  'Preparación y presentación de impuestos periódicos básicos si corresponde',
   'Alertas básicas de errores y anomalías',
   'Revisión de facturas y categorías principales',
   'Resumen mensual generado por Kia',
@@ -60,7 +61,7 @@ const FEATURES_COLABORATIVO = [
   'Plataforma EXPERT + Kia avanzado',
   'Tú subes facturas o las organizas en Holded',
   'EXPERT revisa y valida mensualmente',
-  'Preparación fiscal según alcance',
+  'Preparación y presentación de impuestos periódicos según alcance',
   'Informe mensual',
   'Alertas Kia de anomalías',
   'Estado de empresa completo',
@@ -77,28 +78,29 @@ const FEATURES_PERSONALIZADO = [
   'Precio ajustado a tu volumen real',
 ];
 
-function PlanCard({ plan, billing }: { plan: PlanData; billing: BillingMode }) {
-  const { addItem, items } = useCart();
+function PlanCard({ plan, billing, companyId }: { plan: PlanData; billing: BillingMode; companyId: string }) {
   const priceId = billing === 'anual' ? plan.annualPriceId : plan.monthlyPriceId;
   const isAnnual = billing === 'anual';
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const cartItem = {
-    priceId,
-    name: plan.name,
-    displayPrice: isAnnual ? plan.annualTotal : plan.monthlyPrice,
-    slug: `plan-${plan.slug}`,
-    category: 'planes',
-    itemType: 'subscription' as const,
-    quantity: 1,
-    billingInterval: isAnnual ? 'year' as const : 'month' as const,
-    contentOrigin: `plans:${plan.slug}`,
-    href: `/planes/${plan.slug}`,
-  };
-  const inCartQuantity = items.find((item) => item.priceId === priceId)?.quantity ?? 0;
-
-  function handleCta() {
-    if (plan.isQuote || !priceId) return;
-    addItem(cartItem);
+  async function handleCta() {
+    if (plan.isQuote || !priceId || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/subscriptions/checkout', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ priceId, companyId }),
+      });
+      const data = await response.json().catch(() => ({})) as { url?: string; error?: string };
+      if (!response.ok || !data.url) throw new Error(data.error ?? 'No se pudo iniciar la contratación.');
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo iniciar la contratación.');
+      setLoading(false);
+    }
   }
 
   return (
@@ -129,16 +131,16 @@ function PlanCard({ plan, billing }: { plan: PlanData; billing: BillingMode }) {
       )}
 
       <ul className="mt-4 flex-1 space-y-2">
-        {plan.features.map((f) => (
-          <li key={f} className={`flex items-start gap-2 text-xs ${
-            f.includes('obligatoria')
+        {plan.features.map((feature) => (
+          <li key={feature} className={`flex items-start gap-2 text-xs ${
+            feature.includes('obligatoria')
               ? 'font-semibold text-[#c88b25]'
-              : f.includes('Plataforma EXPERT')
-              ? 'font-bold text-[#07111d]'
-              : 'text-[#29384a]'
+              : feature.includes('Plataforma EXPERT')
+                ? 'font-bold text-[#07111d]'
+                : 'text-[#29384a]'
           }`}>
             <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#c88b25]" />
-            {f}
+            {feature}
           </li>
         ))}
       </ul>
@@ -153,27 +155,30 @@ function PlanCard({ plan, billing }: { plan: PlanData; billing: BillingMode }) {
             Solicitar presupuesto
           </Link>
         ) : (
-          <button
-            type="button"
-            onClick={handleCta}
-            disabled={!priceId}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#c88b25] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#061321] transition hover:bg-[#b57a1e] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <ShoppingBag className="h-4 w-4" />
-            {inCartQuantity > 0
-              ? `Añadir otra unidad (${inCartQuantity})`
-              : isAnnual ? 'Añadir anual a la cesta' : 'Añadir plan a la cesta'}
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={handleCta}
+              disabled={!priceId || loading}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#c88b25] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#061321] transition hover:bg-[#b57a1e] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <CreditCard className="h-4 w-4" />
+              {loading ? 'Preparando alta…' : isAnnual ? 'Formalizar plan anual' : 'Formalizar suscripción'}
+            </button>
+            {error ? <p className="mt-2 text-center text-xs text-red-700">{error}</p> : null}
+          </>
         )}
 
         {!plan.isQuote && (
-          <Link
-            href="/holded"
-            className="mt-2 block text-center text-[10px] text-[#29384a] transition hover:text-[#c88b25]"
-          >
-            <Gift className="mr-1 inline-block h-3 w-3" />
-            ¿Sin Holded? Prueba gratis 14 días
-          </Link>
+          <div className="mt-3 space-y-1 text-center text-[10px]">
+            <Link href={`/planes/${plan.slug}`} className="block font-semibold text-[#29384a] transition hover:text-[#c88b25]">
+              Ver qué incluye y qué no incluye
+            </Link>
+            <Link href="/cita?tipo=demo-holded" className="block text-[#c88b25] transition hover:underline">
+              <Gift className="mr-1 inline-block h-3 w-3" />
+              Reservar demo Holded gratuita de 60 min
+            </Link>
+          </div>
         )}
       </div>
     </div>
@@ -188,6 +193,7 @@ export function SubscriptionPlanCards({
   planAvanzadoAnnualId,
   planColaborativoAnnualId,
   initialBilling,
+  companyId,
 }: Props) {
   const [billing, setBilling] = useState<BillingMode>(initialBilling);
 
@@ -256,7 +262,7 @@ export function SubscriptionPlanCards({
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {plans.map((plan) => (
-          <PlanCard key={plan.slug} plan={plan} billing={billing} />
+          <PlanCard key={plan.slug} plan={plan} billing={billing} companyId={companyId} />
         ))}
       </div>
     </>
