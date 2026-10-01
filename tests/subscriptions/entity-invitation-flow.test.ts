@@ -16,6 +16,8 @@ describe('entity-scoped subscription invitations', () => {
   const readiness = source('lib/data/service-readiness-checks.ts');
   const subscriptionsPage = source('app/(protected)/dashboard/suscripciones/page.tsx');
   const planCards = source('components/subscriptions/SubscriptionPlanCards.tsx');
+  const accountOnboarding = source('app/(protected)/dashboard/onboarding/page.tsx');
+  const proxy = source('proxy.ts');
 
   it('creates a claimable quote without requiring an existing auth user or company', () => {
     expect(adminInvite).toContain("client_id: null");
@@ -104,5 +106,14 @@ describe('entity-scoped subscription invitations', () => {
     const bookingForm = source('components/booking/NativeBookingForm.tsx');
     expect(bookingForm).toContain("serviceKey !== 'demo-holded'");
     expect(bookingForm).toContain('availability.service.durationMinutes');
+  });
+
+  it('preserves requested subscription context through login and first-time onboarding', () => {
+    expect(proxy).toContain("request.nextUrl.searchParams.get('next')");
+    expect(proxy).toContain('new URL(safeNext, request.url)');
+    expect(subscriptionsPage).toContain('Completar perfil y entidad fiscal');
+    expect(subscriptionsPage).toContain('/dashboard/onboarding?next=');
+    expect(accountOnboarding).toContain("const next = safeNextPath(searchParams.get('next'))");
+    expect(accountOnboarding).toContain('router.push(next)');
   });
 });
