@@ -46,7 +46,8 @@ describe('certificate lead purchase journey', () => {
 
     expect(edit).toContain("value={form.cif_nif}");
     expect(edit).toContain("disabled={locked.has('cif_nif')}");
-    expect(edit).toContain('<Input required value={form.direccion}');
+    expect(edit).toContain("value={form.direccion}");
+    expect(edit).toContain("disabled={locked.has('direccion')}");
     expect(edit).toContain('<Input required value={form.ciudad}');
     expect(edit).toContain('<Input required maxLength={5} value={form.codigo_postal}');
     expect(edit).toContain('router.push(returnPath)');
