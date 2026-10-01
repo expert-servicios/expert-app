@@ -1,14 +1,16 @@
 # Flujo de alta de cliente con suscripción EXPERT
 
-Última revisión: 4 de septiembre de 2026.
+Última revisión: 1 de octubre de 2026.
 
 ## Objetivo
 
 Este documento define el flujo canónico de alta de un cliente que contrata una suscripción mensual o anual de EXPERT. Debe existir un único orden funcional en frontend, API, Stripe, webhooks, onboarding y dashboard.
 
-Flujo canónico:
+Flujo canónico para una nueva alta por suscripción:
 
-`Cuenta EXPERT → perfil → entidad/facturación → Stripe Checkout → suscripción activa → contrato aceptado + instrucciones → tarea Admin → reunión de onboarding → conexión Holded → cierre de onboarding → dashboard operativo`
+`Invitación EXPERT por titular → acceso con el email destinatario → cuenta EXPERT → seleccionar o crear entidad fiscal → Stripe Checkout → suscripción activa → contrato aceptado + instrucciones → tarea Admin → reunión de onboarding → conexión Holded → cierre de onboarding → dashboard operativo`
+
+Si el usuario ya tiene cuenta y entidades en EXPERT, la invitación debe permitir reutilizar la entidad correcta; no se crea una entidad duplicada.
 
 Regla comercial permanente:
 
@@ -90,21 +92,32 @@ URLs canónicas:
 - éxito: `/dashboard/post-compra?origin=subscription`;
 - cancelación: `/dashboard/suscripciones`.
 
-### Checkout generado desde Admin
+### Alta canónica iniciada desde Admin
 
-`POST /api/admin/subscriptions/send-link`
+Para nuevas altas o cuando todavía no está resuelto el titular fiscal, Admin debe usar:
 
-Debe aplicar los mismos requisitos de perfil, facturación y entidad, sin exigir Holded antes del pago.
+`POST /api/admin/subscriptions/invitations`
 
-**Precaución operativa:** este endpoint actualmente genera el checkout y además envía la invitación por email. No debe utilizarse como simple herramienta de prueba si después se pretende enviar el mismo enlace manualmente desde Outlook, porque podría generar comunicaciones duplicadas.
+Este endpoint no crea previamente usuario, entidad ni Checkout Stripe. Genera un presupuesto reclamable ligado al email destinatario y conserva la modalidad contractual mensual/anual en `quote_items` con su `stripe_price_id`.
 
-La arquitectura objetivo debe separar claramente:
+El cliente:
 
-- **generar y persistir checkout**;
-- **verificar checkout**;
-- **enviar comunicación**.
+1. accede con el mismo email que recibió la invitación;
+2. reclama el presupuesto firmado;
+3. selecciona una entidad existente o crea una nueva;
+4. completa solo los datos mínimos necesarios;
+5. ve la modalidad, importe y alcance del plan;
+6. continúa al Checkout Stripe validado contra el presupuesto.
 
-Hasta que exista esa separación, el equipo debe elegir un solo camino por operación: o envío automático desde Admin, o generación/verificación por una vía que no envíe email y posterior respuesta manual.
+Regla: **un titular fiscal = un contrato = una suscripción = una factura**.
+
+La modalidad anual equivale a 10 mensualidades (2 meses gratis) y debe quedar congelada antes del checkout; no se permite transformar una invitación mensual en anual, ni viceversa, desde el navegador.
+
+### Generador directo para clientes ya existentes
+
+`POST /api/admin/subscriptions/send-link` se mantiene como herramienta operativa para clientes y entidades ya existentes. No es el camino canónico para dar de alta un titular nuevo.
+
+Debe aplicar los mismos requisitos de perfil, facturación y entidad, sin exigir Holded antes del pago. Si se utiliza, se debe mantener la regla de canal único para no duplicar comunicaciones.
 
 ## 3. Stripe y persistencia de la suscripción
 
@@ -307,6 +320,9 @@ Detener automatismos y realizar revisión manual. No fusionar ni corregir histó
 ## 9. Checklist E2E previo a producción
 
 - [ ] onboarding inicial no contiene Holded como requisito previo;
+- [ ] invitación Admin nueva no crea usuario, entidad ni Stripe Checkout antes de la aceptación;
+- [ ] invitación permite elegir entidad existente o crear una nueva sin duplicar CIF/NIF;
+- [ ] modalidad mensual/anual queda congelada en quote_items + stripe_price_id;
 - [ ] checkout cliente requiere perfil + facturación + entidad + membership;
 - [ ] checkout admin aplica los mismos requisitos;
 - [ ] checkout no exige cuenta/login de Stripe al cliente;
