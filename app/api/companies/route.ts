@@ -81,8 +81,21 @@ export async function POST(request: NextRequest) {
 
     const admin = getSupabaseAdmin();
     const d = parse.data;
-    const normalizedTaxId = d.cif_nif?.trim().toUpperCase() || null;
     const registryOfficial = Boolean(d._registryOfficial && d._registrySource);
+    const snapshot = d._registrySnapshot ?? {};
+    const officialValue = (key: string) =>
+      registryOfficial && typeof snapshot[key] === 'string' && String(snapshot[key]).trim()
+        ? String(snapshot[key]).trim()
+        : null;
+
+    const canonicalRazonSocial = officialValue('name') ?? d.razon_social;
+    const canonicalTaxId = officialValue('taxId') ?? d.cif_nif ?? null;
+    const canonicalAddress = officialValue('registeredAddress') ?? d.direccion ?? null;
+    const canonicalCity = officialValue('city') ?? d.ciudad ?? null;
+    const canonicalProvince = officialValue('province') ?? d.provincia ?? null;
+    const canonicalPostalCode = officialValue('postalCode') ?? d.codigo_postal ?? null;
+    const canonicalCountry = officialValue('country') ?? d.pais ?? 'ES';
+    const normalizedTaxId = canonicalTaxId?.trim().toUpperCase() || null;
     const registryLocks = registryOfficial ? lockedRegistryFields(d._registrySource) : [];
 
     if (normalizedTaxId) {
@@ -122,21 +135,21 @@ export async function POST(request: NextRequest) {
       .from('companies')
       .insert({
         user_id: user.id,
-        name: d.razon_social,
-        company_name: d.razon_social,
-        razon_social: d.razon_social,
+        name: canonicalRazonSocial,
+        company_name: canonicalRazonSocial,
+        razon_social: canonicalRazonSocial,
         nombre_comercial: d.nombre_comercial,
         cif_nif: normalizedTaxId,
         vat_id: normalizedTaxId,
         forma_juridica: d.forma_juridica,
-        direccion: d.direccion,
-        address: d.direccion,
-        ciudad: d.ciudad,
-        city: d.ciudad,
-        provincia: d.provincia,
-        codigo_postal: d.codigo_postal,
-        pais: d.pais ?? 'ES',
-        country: d.pais ?? 'ES',
+        direccion: canonicalAddress,
+        address: canonicalAddress,
+        ciudad: canonicalCity,
+        city: canonicalCity,
+        provincia: canonicalProvince,
+        codigo_postal: canonicalPostalCode,
+        pais: canonicalCountry,
+        country: canonicalCountry,
         telefono: d.telefono,
         phone: d.telefono,
         email: d.email,
