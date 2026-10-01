@@ -146,6 +146,7 @@ describe('canonical KIA widget artifact integration', () => {
   const companySwitcher = source('components/dashboard/CompanySwitcher.tsx');
   const protectedLayout = source('app/(protected)/layout.tsx');
   const dashboardLayout = source('app/(protected)/dashboard/layout.tsx');
+  const adminRightPanel = source('components/admin/AdminRightPanel.tsx');
 
   it('derives artifacts from authorized results plus safe canonical knowledge and the final validated decision', () => {
     expect(api).toContain('const artifactToolResults = automaticKnowledgeResult');
@@ -189,5 +190,15 @@ describe('canonical KIA widget artifact integration', () => {
   it('renders only the canonical KIA widget across protected dashboard routes', () => {
     expect(protectedLayout).toContain('<KiaCopilotWidget />');
     expect(dashboardLayout).not.toContain('KiaCopilotPanel');
+  });
+
+  it('uses the canonical KIA chat inside the Admin right panel without a second floating Admin widget', () => {
+    expect(adminRightPanel).toContain("<KiaCopilotWidget embedded />");
+    expect(adminRightPanel).toContain("type PanelTab = 'kia' | 'notificaciones'");
+    expect(adminRightPanel).not.toContain("CorreoInbox");
+    expect(adminRightPanel).toContain('href="/admin/correo"');
+    expect(widget).toContain("pathname.startsWith('/admin') && !embedded");
+    expect(widget).toContain("const panelVisible = embedded || open");
+    expect(adminRightPanel).toContain("mounted.size > 0");
   });
 });
