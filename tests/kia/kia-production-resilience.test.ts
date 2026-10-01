@@ -50,6 +50,8 @@ describe('KIA production resilience', () => {
 
   it('uses a Gemini 3.8 compatible request shape for direct provider calls', () => {
     expect(router).toContain('const isGemini38');
+    expect(router).toContain('/^gemini-3\\.8(?:-|$)/i.test(provider.model)');
+    expect(router).not.toContain('/^gemini-3\\\\.8(?:-|$)/i.test(provider.model)');
     expect(router).toContain('body.reasoning_effort = reasoningEffort');
     expect(router).toContain('body.temperature = request.temperature ?? 0.2');
     expect(router).toContain('normalizeGeminiJsonSchema(request.responseSchema)');
