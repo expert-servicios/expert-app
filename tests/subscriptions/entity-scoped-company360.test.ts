@@ -35,12 +35,15 @@ describe('entity-scoped subscriptions and Company 360 registry locks', () => {
     const migration = source('supabase/migrations/20261001183500_company_registry_locks_and_intake.sql');
     const clientApi = source('app/api/companies/[id]/route.ts');
     const adminApi = source('app/api/admin/companies/[id]/route.ts');
+    const associateApi = source('app/api/company/associate/route.ts');
     const locks = source('lib/companies/registry-locks.ts');
     expect(migration).toContain('registry_locked_fields');
     expect(migration).toContain('registry_snapshot');
     expect(locks).toContain("'registradores_opendata'");
     expect(clientApi).toContain("code: 'registry_fields_locked'");
     expect(adminApi).toContain("code: 'registry_fields_locked'");
+    expect(associateApi).toContain('lockedRegistryFields(normalizedPayload.source)');
+    expect(associateApi).toContain('registry_snapshot');
   });
 
   it('keeps Company 360 intake as autosaved partial operational data', () => {
