@@ -8,7 +8,6 @@ export const PREQUOTE_QUESTIONNAIRE = {
     'Si el usuario prefiere hablar, ofrecer siempre reunión informativa gratuita de 15 minutos: /cita?tipo=consulta-inicial.',
     'En planes mensuales, incluir siempre /planes y el enlace directo al plan recomendado.',
     'No pedir credenciales, contraseñas ni API keys por email, chat o Telegram.',
-    'Para autónomo vinculado/económicamente dependiente de una empresa del mismo cliente, con operativa simple y normalmente <=10 facturas/mes, usar la modalidad vinculada del Plan Supervisión 49 €/mes + IVA como referencia. Puede incluir obligaciones fiscales básicas según alcance.',
     'Para una sociedad sencilla que necesita impuestos, usar Plan Avanzado 99 €/mes + IVA como referencia cuando el alcance encaje.',
   ],
   sections: [
