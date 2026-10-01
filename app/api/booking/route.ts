@@ -436,7 +436,10 @@ export async function POST(request: NextRequest) {
 
     const user = await authenticatedUser(request);
     const signedAuthorization =
-      !service.public && (service.key === 'onboarding' || service.key === 'formacion-holded')
+      !service.public && (service.key === 'onboarding'
+        || service.key === 'formacion-holded'
+        || service.key === 'seguimiento-mensual-empresa'
+        || service.key === 'seguimiento-mensual-autonomo')
         ? await verifyPrivateBookingAuthorization(input.booking_auth, service.key)
         : null;
 
