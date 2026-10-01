@@ -105,9 +105,10 @@ function ProfileStepForm({ value, onChange }: {
   );
 }
 
-function CompanyStepForm({ value, onChange }: {
+function CompanyStepForm({ value, onChange, required = false }: {
   value: CompanyStep;
   onChange: (v: CompanyStep) => void;
+  required?: boolean;
 }) {
   if (value.skip) {
     return (
@@ -148,13 +149,15 @@ function CompanyStepForm({ value, onChange }: {
             <p className="text-xs text-[#29384a]/60">Datos básicos de tu sociedad o actividad</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => onChange({ ...value, skip: true })}
-          className="text-xs text-[#29384a]/50 transition hover:text-[#29384a]"
-        >
-          Omitir
-        </button>
+        {!required && (
+          <button
+            type="button"
+            onClick={() => onChange({ ...value, skip: true })}
+            className="text-xs text-[#29384a]/50 transition hover:text-[#29384a]"
+          >
+            Omitir
+          </button>
+        )}
       </div>
 
       <div>
@@ -275,6 +278,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = safeNextPath(searchParams.get('next'));
+  const companyRequired = next.startsWith('/dashboard/suscripciones');
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -334,7 +338,13 @@ export default function OnboardingPage() {
   }
 
   async function saveCompany(): Promise<boolean> {
-    if (companyData.skip) return true;
+    if (companyData.skip) {
+      if (companyRequired) {
+        setError('Para contratar una suscripción necesitas crear primero la entidad fiscal titular.');
+        return false;
+      }
+      return true;
+    }
     if (!companyData.razon_social.trim()) {
       setError('La razón social es obligatoria.');
       return false;
@@ -458,7 +468,7 @@ export default function OnboardingPage() {
 
           {step === 'company' && (
             <>
-              <CompanyStepForm value={companyData} onChange={setCompanyData} />
+              <CompanyStepForm value={companyData} onChange={setCompanyData} required={companyRequired} />
               <div className="mt-6 flex items-center justify-between">
                 <button type="button" onClick={handleBack} className="flex items-center gap-1 text-sm text-[#29384a]/60 transition hover:text-[#29384a]">
                   <ChevronLeft className="h-4 w-4" /> Atrás
