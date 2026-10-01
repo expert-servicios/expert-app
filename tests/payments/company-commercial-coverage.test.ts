@@ -40,7 +40,7 @@ describe('company commercial coverage', () => {
     expect(kia).toContain('resolveCompanyCommercialCoverage(admin, clientId, resolvedCompanyId)');
     expect(kia).toContain('hasMonthlyPlan: Boolean(coverage?.covered)');
     expect(kia).toContain('coveragePrimaryCompanyName');
-    expect(kia).toContain('loadDocuments(admin, clientId, input.caseId, resolvedCompanyId)');
-    expect(kia).toContain('loadCasesForClient(admin, clientId, resolvedCompanyId)');
+    expect(kia).toContain('loadDocuments(admin, resourceClientId, input.caseId, resolvedCompanyId)');
+    expect(kia).toContain('loadCasesForClient(admin, resourceClientId, resolvedCompanyId)');
   });
 });
