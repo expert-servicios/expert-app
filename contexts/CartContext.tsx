@@ -75,6 +75,16 @@ export function cartContainsDisbursements(items: CartItem[]) {
   return collectCartDisbursements(items).length > 0;
 }
 
+export function cartContainsSubscriptions(items: CartItem[]) {
+  return items.some(item => item.itemType === 'subscription');
+}
+
+export function getCartCheckoutEndpoint(items: CartItem[]) {
+  return cartContainsSubscriptions(items)
+    ? '/api/subscriptions/cart-checkout'
+    : '/api/services/checkout';
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items,    setItems]    = useState<CartItem[]>([]);
   const [isOpen,   setIsOpen]   = useState(false);
