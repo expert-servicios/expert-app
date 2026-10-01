@@ -153,7 +153,7 @@ export async function POST(request: NextRequest) {
     registry_source: officialRegistry ? normalizedPayload.source : null,
     registry_source_url: officialRegistry ? normalizedPayload.sourceUrl ?? null : null,
     registry_verified_at: officialRegistry ? new Date().toISOString() : null,
-    registry_locked_fields: officialRegistry ? lockedRegistryFields(normalizedPayload.source) : [],
+    registry_locked_fields: officialRegistry ? lockedRegistryFields(normalizedPayload.source, normalizedPayload) : [],
     registry_snapshot: officialRegistry ? normalizedPayload : {},
   };
 
