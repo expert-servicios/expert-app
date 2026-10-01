@@ -11,12 +11,13 @@ describe('KIA guarded email agent', () => {
   const vercel = source('vercel.json');
 
   it('is fail-closed and requires explicit auto-send plus a live communication stack', () => {
-    expect(route).toContain('automationEnabled');
     expect(route).toContain("'kia.email_agent'");
     expect(route).toContain("'kia.email_auto_send'");
     expect(route).toContain("'kia.email_new_lead_auto_send'");
     expect(route).toContain("select('enabled,updated_at').eq('key', 'kia.email_agent')");
-    expect(route).toContain('return data?.enabled === true');
+    expect(route).toContain("select('enabled').eq('key', 'kia.email_auto_send')");
+    expect(route).toContain("select('enabled').eq('key', 'kia.email_new_lead_auto_send')");
+    expect(route).toContain("reason: 'automation_settings_unavailable'");
     expect(route).toContain('isKiaGatewayConfigured');
     expect(route).toContain('getKiaProviderOrder');
     expect(route).toContain("reason: 'no_ai_provider'");
