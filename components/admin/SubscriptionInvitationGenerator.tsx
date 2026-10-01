@@ -5,18 +5,19 @@ import { CheckCircle2, Clipboard, Link2, Loader2 } from 'lucide-react';
 
 type PlanSlug = 'supervision' | 'avanzado' | 'colaborativo';
 type EntityType = 'empresa' | 'autonomo';
+type Billing = 'monthly' | 'annual';
 
 type InvitationResult = {
   activationUrl: string;
   quoteId: string;
   expiresAt: string;
-  plan: { name: string; amountEur: number; planPath: string };
+  plan: { name: string; billing: Billing; interval: 'month' | 'year'; amountEur: number; planPath: string };
 };
 
-const PLANS: Array<{ slug: PlanSlug; label: string; amount: number }> = [
-  { slug: 'supervision', label: 'Plan Supervisión', amount: 49 },
-  { slug: 'avanzado', label: 'Plan Avanzado', amount: 99 },
-  { slug: 'colaborativo', label: 'Plan Colaborativo', amount: 199 },
+const PLANS: Array<{ slug: PlanSlug; label: string; monthly: number; annual: number }> = [
+  { slug: 'supervision', label: 'Plan Supervisión', monthly: 49, annual: 490 },
+  { slug: 'avanzado', label: 'Plan Avanzado', monthly: 99, annual: 990 },
+  { slug: 'colaborativo', label: 'Plan Colaborativo', monthly: 199, annual: 1990 },
 ];
 
 export function SubscriptionInvitationGenerator() {
@@ -25,6 +26,7 @@ export function SubscriptionInvitationGenerator() {
   const [entityType, setEntityType] = useState<EntityType>('empresa');
   const [proposedEntityName, setProposedEntityName] = useState('');
   const [planSlug, setPlanSlug] = useState<PlanSlug>('avanzado');
+  const [billing, setBilling] = useState<Billing>('monthly');
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
@@ -45,6 +47,7 @@ export function SubscriptionInvitationGenerator() {
           recipientName: recipientName.trim(),
           entityType,
           planSlug,
+          billing,
           proposedEntityName: proposedEntityName.trim() || undefined,
           expiresInDays: 14,
         }),
@@ -102,8 +105,16 @@ export function SubscriptionInvitationGenerator() {
         <Field label="Plan *">
           <select value={planSlug} onChange={(e) => setPlanSlug(e.target.value as PlanSlug)} className={inputCls}>
             {PLANS.map((plan) => (
-              <option key={plan.slug} value={plan.slug}>{plan.label} — {plan.amount} €/mes + IVA</option>
+              <option key={plan.slug} value={plan.slug}>
+                {plan.label} — {billing === 'annual' ? `${plan.annual} €/año` : `${plan.monthly} €/mes`} + IVA
+              </option>
             ))}
+          </select>
+        </Field>
+        <Field label="Facturación *">
+          <select value={billing} onChange={(e) => setBilling(e.target.value as Billing)} className={inputCls}>
+            <option value="monthly">Mensual</option>
+            <option value="annual">Anual · 2 meses gratis</option>
           </select>
         </Field>
         <div className="sm:col-span-2">
@@ -134,7 +145,7 @@ export function SubscriptionInvitationGenerator() {
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-700" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-green-900">
-                {result.plan.name} · {result.plan.amountEur} € + IVA/mes
+                {result.plan.name} · {result.plan.amountEur} € + IVA/{result.plan.billing === 'annual' ? 'año' : 'mes'}
               </p>
               <p className="mt-1 text-xs text-green-800">
                 Enlace válido hasta {new Date(result.expiresAt).toLocaleDateString('es-ES')}.
