@@ -183,6 +183,40 @@ export async function GET(request: NextRequest) {
       url: '/admin/tareas',
       tag: `monthly-review-${task.id}`,
     }).catch(() => {});
+
+    if (entitlement.quarterlyTaxFiling && [3, 6, 9, 12].includes(month)) {
+      const quarter = Math.ceil(month / 3);
+      const taxSourceKey = `quarter-close:${year}-Q${quarter}:${entitlement.subscriptionId}:${entitlement.companyId}`;
+      const { error: quarterTaskError } = await admin
+        .from('internal_tasks')
+        .insert({
+          title: `Cierre fiscal Q${quarter} — ${entitlement.companyName}`,
+          description: [
+            `Preparar el cierre del trimestre Q${quarter} de ${year}.`,
+            'Revisar contabilidad y documentación pendiente.',
+            'Validar las obligaciones y fechas exactas contra el calendario fiscal de EXPERT antes de presentar impuestos.',
+            'Preparar y presentar los modelos que correspondan al alcance del Plan Avanzado.',
+          ].join('\n'),
+          status: 'pendiente',
+          priority: 'alta',
+          client_id: entitlement.clientId,
+          company_id: entitlement.companyId,
+          due_date: dueDate,
+          source: 'system',
+          source_key: taxSourceKey,
+          metadata: {
+            task_kind: 'subscription_quarter_close',
+            subscription_id: entitlement.subscriptionId,
+            company_id: entitlement.companyId,
+            quarter,
+            year,
+            requires_fiscal_calendar_validation: true,
+          },
+        });
+      if (quarterTaskError && quarterTaskError.code !== '23505') {
+        errors.push(`${entitlement.companyId}: quarter task ${quarterTaskError.message}`);
+      }
+    }
   }
 
   return NextResponse.json({ ok: errors.length === 0, month: key, entitlements: entitlements.length, created, emailed, existing, errors });
