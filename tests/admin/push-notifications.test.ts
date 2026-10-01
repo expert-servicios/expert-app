@@ -27,7 +27,7 @@ describe('Admin push reliability', () => {
     expect(push).toContain('dead: delivery.dead');
     expect(push).toContain('errors: delivery.errors');
     expect(push).toContain('lookupError: true');
-    expect(push).toContain('cleanupError: true');
+    expect(push).toContain('cleanupError = true');
     expect(push).toContain('persistAdminPushHealth');
     expect(push).toContain("reason: 'admin_profile_lookup_failed'");
     expect(push).toContain("reason: 'no_admin_profiles'");
