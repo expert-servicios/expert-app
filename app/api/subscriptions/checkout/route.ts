@@ -5,7 +5,10 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { isCompanyBillingReady, missingCompanyBillingFields } from '@/lib/companies/billing-readiness';
 import { resolveCompanyCommercialCoverage } from '@/lib/subscriptions/company-commercial-coverage';
-import { getSubscriptionInvitePlanByServiceSlug } from '@/lib/subscriptions/invitation-plans';
+import {
+  getSubscriptionInvitePlanByPriceId,
+  getSubscriptionInvitePlanByServiceSlug,
+} from '@/lib/subscriptions/invitation-plans';
 import {
   claimSubscriptionCheckout,
   expireSubscriptionCheckoutClaim,
@@ -104,11 +107,33 @@ export async function POST(request: NextRequest) {
       const planService = Array.isArray(quote.service_slugs)
         ? quote.service_slugs.find((slug) => typeof slug === 'string' && slug.startsWith('plan-'))
         : null;
-      const invitePlan = getSubscriptionInvitePlanByServiceSlug(planService);
-      if (!invitePlan || invitePlan.priceId !== priceId || invitePlan.amountEur !== configuredPlan.amountEur) {
-        return NextResponse.json({ error: 'El plan no coincide con el presupuesto aceptado.' }, { status: 409 });
+      const { data: quoteItem, error: quoteItemError } = await admin
+        .from('quote_items')
+        .select('service_slug,stripe_price_id,unit_amount_cents')
+        .eq('quote_id', quote.id)
+        .eq('position', 0)
+        .maybeSingle();
+      if (quoteItemError) {
+        return NextResponse.json({ error: 'No se pudo verificar la modalidad contractual del plan.' }, { status: 500 });
       }
-      if (Number(quote.amount_eur) !== configuredPlan.amountEur) {
+
+      const invitePlan = quoteItem?.stripe_price_id
+        ? getSubscriptionInvitePlanByPriceId(quoteItem.stripe_price_id)
+        : getSubscriptionInvitePlanByServiceSlug(planService, 'monthly');
+      if (
+        !invitePlan
+        || invitePlan.serviceSlug !== planService
+        || invitePlan.priceId !== priceId
+        || invitePlan.amountEur !== configuredPlan.amountEur
+        || invitePlan.interval !== configuredPlan.interval
+        || (quoteItem && quoteItem.stripe_price_id !== priceId)
+      ) {
+        return NextResponse.json({ error: 'El plan o la modalidad no coinciden con el presupuesto aceptado.' }, { status: 409 });
+      }
+      if (
+        Number(quote.amount_eur) !== configuredPlan.amountEur
+        || (quoteItem && Number(quoteItem.unit_amount_cents) !== Math.round(configuredPlan.amountEur * 100))
+      ) {
         return NextResponse.json({ error: 'El importe del presupuesto no coincide con el plan.' }, { status: 409 });
       }
 
