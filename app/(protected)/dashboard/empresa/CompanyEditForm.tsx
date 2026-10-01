@@ -81,7 +81,9 @@ export function CompanyEditForm({ company, returnPath }: { company: Company; ret
       const res = await fetch(`/api/companies/${company.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+        body: JSON.stringify(
+          Object.fromEntries(Object.entries(form).filter(([field]) => !locked.has(field)))
+        )
       });
       const data = await res.json();
 
