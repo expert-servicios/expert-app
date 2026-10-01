@@ -45,6 +45,10 @@
       "schedule": "30 8 * * *"
     },
     {
+      "path": "/api/cron/subscription-monthly-meetings",
+      "schedule": "40 8 * * *"
+    },
+    {
       "path": "/api/cron/tenant-weekly-digest",
       "schedule": "0 7 * * 1"
     }

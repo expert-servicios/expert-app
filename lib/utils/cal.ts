@@ -90,6 +90,22 @@ export function getBookingFormacionUrl(): string | null {
   );
 }
 
+export function getBookingMonthlyCompanyUrl(): string | null {
+  return bookingUrl(
+    '/cita?tipo=seguimiento-mensual-empresa',
+    undefined,
+    { allowExternalGoogleFallback: false }
+  );
+}
+
+export function getBookingMonthlyAutonomoUrl(): string | null {
+  return bookingUrl(
+    '/cita?tipo=seguimiento-mensual-autonomo',
+    undefined,
+    { allowExternalGoogleFallback: false }
+  );
+}
+
 export function getBookingAcademyUrl(): string | null {
   return bookingUrl(
     '/cita?tipo=academy-admision',

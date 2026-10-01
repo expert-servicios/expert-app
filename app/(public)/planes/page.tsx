@@ -100,7 +100,9 @@ const plans: Plan[] = [
     involvement: 'Alta implicación',
     features: [
       'Plataforma EXPERT + Kia fiscal',
+      'Onboarding inicial de 60 min incluido al activar el plan',
       'Revisión mensual de Holded',
+      'Reunión mensual incluida: 60 min por sociedad / 30 min por autónomo',
       'Preparación y presentación de impuestos trimestrales básicos si aplica',
       'Revisión de cierre trimestral',
       'Calendario fiscal',

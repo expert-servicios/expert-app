@@ -3,7 +3,10 @@ import { getPublicAppUrl } from '@/lib/utils/app-url';
 import type { BookingServiceKey } from '@/lib/booking/native-booking';
 
 export type PrivateBookingAuthorization = {
-  service: Extract<BookingServiceKey, 'onboarding' | 'formacion-holded'>;
+  service: Extract<
+    BookingServiceKey,
+    'onboarding' | 'formacion-holded' | 'seguimiento-mensual-empresa' | 'seguimiento-mensual-autonomo'
+  >;
   email: string;
   clientId: string | null;
   companyId: string | null;

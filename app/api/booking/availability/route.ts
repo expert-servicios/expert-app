@@ -25,7 +25,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (!service.public) {
-      const signed = service.key === 'onboarding' || service.key === 'formacion-holded'
+      const signed = service.key === 'onboarding'
+        || service.key === 'formacion-holded'
+        || service.key === 'seguimiento-mensual-empresa'
+        || service.key === 'seguimiento-mensual-autonomo'
         ? await verifyPrivateBookingAuthorization(searchParams.get('auth'), service.key)
         : null;
       const management = await verifyBookingManagementToken(searchParams.get('manage'), service.key);

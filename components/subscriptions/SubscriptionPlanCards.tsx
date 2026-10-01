@@ -44,7 +44,9 @@ const FEATURES_SUPERVISION = [
 
 const FEATURES_AVANZADO = [
   'Plataforma EXPERT + Kia fiscal',
+  'Onboarding inicial de 60 min incluido',
   'Revisión mensual de Holded',
+  'Reunión mensual: 60 min por sociedad / 30 min por autónomo',
   'Impuestos trimestrales básicos si aplica',
   'Revisión de cierre trimestral',
   'Calendario fiscal y alertas Kia',
