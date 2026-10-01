@@ -3,9 +3,12 @@ import Stripe from 'stripe';
 import { getStripeClient } from '@/lib/integrations/stripe';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { notifyAdmins } from '@/lib/integrations/push';
+import { notifyAdminsTelegram } from '@/lib/integrations/telegram';
 import { sendEmail } from '@/lib/email/send';
 import { syncOrderToHolded, syncSubscriptionToHolded } from '@/lib/integrations/holded';
 import { computeProfileReadiness } from '@/lib/utils/profile-readiness';
+import { generateContractHtml, contractToBuffer } from '@/lib/utils/contract';
+import { ensureOnboardingTask, findOpenOnboardingCase } from '@/lib/admin/onboarding-followup';
 import { getCalOnboardingUrl, getCalFormacionUrl } from '@/lib/utils/cal';
 import {
   createPrivateBookingAuthorization,
@@ -28,7 +31,8 @@ import {
   paymentConfirmed,
   servicePaymentConfirmed,
   servicePaymentConfirmedAdmin,
-  subscriptionCreated,
+  subscriptionActivatedOnboarding,
+  subscriptionOnboardingAdmin,
   subscriptionPaymentFailed
 } from '@/lib/email/templates';
 
@@ -212,6 +216,14 @@ async function upsertSubscriptionFromStripe(
     ? new Date(firstItem.current_period_end * 1000).toISOString()
     : null;
   const planName = getPlanName(priceId, sub.metadata?.plan_name);
+  const stripeItems = sub.items.data.map((item) => ({
+    subscription_item_id: item.id,
+    price_id: item.price.id,
+    quantity: item.quantity ?? 1,
+    unit_amount: item.price.unit_amount ?? null,
+    currency: item.price.currency,
+    interval: item.price.recurring?.interval ?? null,
+  }));
 
   await linkStripeCustomer(supabaseAdmin, clientId, customerId, companyId);
 
@@ -226,6 +238,14 @@ async function upsertSubscriptionFromStripe(
       status,
       current_period_start: periodStart,
       current_period_end: periodEnd,
+      metadata: {
+        stripe_items: stripeItems,
+        stripe_subscription_metadata: sub.metadata ?? {},
+        recurring_total_cents: stripeItems.reduce(
+          (sum, item) => sum + ((item.unit_amount ?? 0) * item.quantity),
+          0,
+        ),
+      },
       updated_at: new Date().toISOString()
     },
     { onConflict: 'stripe_subscription_id' }
@@ -301,6 +321,83 @@ async function startHoldedJob(
     .then(() => null, () => null);
 }
 
+async function ensureSubscriptionOnboardingCase(
+  supabaseAdmin: SupabaseAdmin,
+  input: { clientId: string; companyId: string | null; planName: string; subscriptionId: string },
+): Promise<string | null> {
+  const existing = await findOpenOnboardingCase(input.clientId, input.companyId).catch(() => null);
+  if (existing?.id) {
+    await supabaseAdmin.from('cases').update({
+      next_action: 'Reservar reunión de onboarding',
+      updated_at: new Date().toISOString(),
+    }).eq('id', existing.id);
+    return existing.id;
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from('cases')
+    .insert({
+      client_id: input.clientId,
+      company_id: input.companyId,
+      category: 'onboarding',
+      service: 'Alta de usuario',
+      state: 'en_proceso',
+      status: 'nuevo',
+      priority: 'alta',
+      next_action: 'Reservar reunión de onboarding',
+      admin_note: `Expediente creado automáticamente tras activar la suscripción ${input.subscriptionId} (${input.planName}).`,
+    })
+    .select('id')
+    .single();
+
+  if (error || !data?.id) {
+    console.error('[webhook] could not create subscription onboarding case:', error);
+    return null;
+  }
+  return data.id;
+}
+
+async function getSubscriptionContractParty(
+  supabaseAdmin: SupabaseAdmin,
+  clientId: string,
+  companyId: string | null,
+  fallbackName: string,
+  email: string,
+) {
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('full_name,company,tax_id,address,city')
+    .eq('id', clientId)
+    .maybeSingle();
+
+  let company: {
+    razon_social?: string | null;
+    cif_nif?: string | null;
+    direccion?: string | null;
+    ciudad?: string | null;
+  } | null = null;
+
+  if (companyId) {
+    const { data } = await supabaseAdmin
+      .from('companies')
+      .select('razon_social,cif_nif,direccion,ciudad')
+      .eq('id', companyId)
+      .maybeSingle();
+    company = data ?? null;
+  }
+
+  const clientName = profile?.full_name ?? fallbackName;
+  const clientCompany = company?.razon_social ?? profile?.company ?? null;
+  const clientTaxId = company?.cif_nif ?? profile?.tax_id ?? null;
+  const clientAddress = company?.ciudad
+    ? `${company.direccion ?? ''}, ${company.ciudad}`.trim().replace(/^,\s*/, '')
+    : company?.direccion ?? (profile?.city
+      ? `${profile.address ?? ''}, ${profile.city}`.trim().replace(/^,\s*/, '')
+      : profile?.address ?? null);
+
+  return { clientName, clientEmail: email, clientCompany, clientTaxId, clientAddress };
+}
+
 async function handleSubscriptionActivation(
   supabaseAdmin: SupabaseAdmin,
   sub: Stripe.Subscription,
@@ -309,41 +406,144 @@ async function handleSubscriptionActivation(
   const clientInfo = await getClientEmail(subscriptionRecord.clientId);
   if (!clientInfo) return;
 
-  const tpl = subscriptionCreated(clientInfo.name, subscriptionRecord.planName, subscriptionRecord.periodEnd);
+  const recurringAmount = sub.items.data.reduce(
+    (sum, item) => sum + ((item.price.unit_amount ?? 0) * (item.quantity ?? 1)),
+    0,
+  ) / 100;
+  const billingInterval = sub.items.data[0]?.price.recurring?.interval === 'year' ? 'year' : 'month';
+
+  const onboardingCaseId = await ensureSubscriptionOnboardingCase(supabaseAdmin, {
+    clientId: subscriptionRecord.clientId,
+    companyId: subscriptionRecord.companyId,
+    planName: subscriptionRecord.planName,
+    subscriptionId: sub.id,
+  });
+
+  const onboardingTaskId = await ensureOnboardingTask({
+    clientId: subscriptionRecord.clientId,
+    companyId: subscriptionRecord.companyId,
+    caseId: onboardingCaseId,
+    dueDate: new Date().toISOString().slice(0, 10),
+    priority: 'alta',
+    description: 'Suscripción activa. Comprobar que el cliente reserva onboarding; después verificar conexión Holded, coordinación del traspaso si procede y cierre del alta.',
+  }).catch((error) => {
+    console.error('[webhook] onboarding task creation failed:', error);
+    return null;
+  });
+
+  const onboardingBaseUrl = getCalOnboardingUrl() ?? '';
+  let onboardingUrl = onboardingBaseUrl;
+  if (onboardingBaseUrl) {
+    try {
+      const token = await createPrivateBookingAuthorization({
+        service: 'onboarding',
+        email: clientInfo.email,
+        clientId: subscriptionRecord.clientId,
+        companyId: subscriptionRecord.companyId,
+        source: 'stripe',
+        sourceRef: sub.id,
+      });
+      onboardingUrl = withPrivateBookingAuthorization(onboardingBaseUrl, token);
+    } catch (error) {
+      console.error('[webhook] subscription onboarding authorization failed:', error);
+    }
+  }
+
+  const party = await getSubscriptionContractParty(
+    supabaseAdmin,
+    subscriptionRecord.clientId,
+    subscriptionRecord.companyId,
+    clientInfo.name,
+    clientInfo.email,
+  );
+  const contractDate = new Date().toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Europe/Madrid',
+  });
+  const contractHtml = generateContractHtml({
+    ...party,
+    serviceTitle: subscriptionRecord.planName,
+    serviceDescription: 'Suscripción EXPERT para gestión fiscal, contable y administrativa continua según el alcance del plan contratado.',
+    amountEur: recurringAmount,
+    amountIncludesTax: false,
+    contractDate,
+    contractType: 'subscription',
+    planName: subscriptionRecord.planName,
+    billingInterval,
+    reference: `SUB-${sub.id}`,
+  });
+
+  const tpl = subscriptionActivatedOnboarding({
+    name: clientInfo.name,
+    planName: subscriptionRecord.planName,
+    periodEnd: subscriptionRecord.periodEnd,
+    onboardingUrl,
+  });
   await sendEmail({
     to: clientInfo.email,
-    eventType: 'subscription.created',
+    eventType: 'subscription.activated_onboarding',
     ...tpl,
-    metadata: { subscription_id: sub.id, plan: subscriptionRecord.planName, company_id: subscriptionRecord.companyId },
+    metadata: {
+      subscription_id: sub.id,
+      plan: subscriptionRecord.planName,
+      company_id: subscriptionRecord.companyId,
+      onboarding_case_id: onboardingCaseId,
+      onboarding_task_id: onboardingTaskId,
+    },
+    attachments: [{
+      filename: `Contrato_Suscripcion_${subscriptionRecord.planName.replace(/\s+/g, '_')}.html`,
+      content: contractToBuffer(contractHtml),
+      type: 'text/html',
+    }],
     idempotencyKey: `stripe/subscription-activation/client/${sub.id}`,
   });
 
-  notifyAdmins({
-    title: `⚡ Nueva suscripción — ${clientInfo.name}`,
-    body: subscriptionRecord.planName,
-    url: '/admin/suscripciones',
+  await notifyAdmins({
+    title: `Nueva suscripción — ${clientInfo.name}`,
+    body: `${subscriptionRecord.planName} · onboarding pendiente`.slice(0, 240),
+    url: onboardingCaseId ? `/admin/expedientes/${onboardingCaseId}` : '/admin/tareas',
     tag: `sub-${sub.id}`,
   }).catch(() => {});
 
-  const monthlyAmount = sub.items.data[0]?.price.unit_amount
-    ? sub.items.data[0].price.unit_amount / 100
-    : 0;
+  await notifyAdminsTelegram(
+    [
+      '<b>Nueva suscripción activa</b>',
+      `Cliente: ${clientInfo.name}`,
+      `Plan: ${subscriptionRecord.planName}`,
+      `Cuota: ${recurringAmount.toFixed(2)} EUR + IVA`,
+      'Siguiente acción: comprobar reserva de onboarding y completar el alta.',
+    ].join('\n'),
+  ).catch(() => {});
 
   const adminEmails = getAdminEmails();
   if (adminEmails.length) {
-    const adminTpl = servicePaymentConfirmedAdmin(clientInfo.name, clientInfo.email, monthlyAmount, subscriptionRecord.planName);
+    const adminTpl = subscriptionOnboardingAdmin({
+      name: clientInfo.name,
+      email: clientInfo.email,
+      planName: subscriptionRecord.planName,
+      amount: recurringAmount,
+      caseId: onboardingCaseId,
+    });
     await sendEmail({
       to: adminEmails,
-      eventType: 'subscription.created.admin',
+      eventType: 'subscription.activated_onboarding.admin',
       ...adminTpl,
-      metadata: { subscription_id: sub.id, plan: subscriptionRecord.planName, company_id: subscriptionRecord.companyId },
+      metadata: {
+        subscription_id: sub.id,
+        plan: subscriptionRecord.planName,
+        company_id: subscriptionRecord.companyId,
+        onboarding_case_id: onboardingCaseId,
+        onboarding_task_id: onboardingTaskId,
+      },
       idempotencyKey: `stripe/subscription-activation/admin/${sub.id}`,
     });
   }
 
   const subJobId = await enqueueHoldedSync(supabaseAdmin, 'sync_subscription_holded', {
     clientName: clientInfo.name, clientEmail: clientInfo.email,
-    planName: subscriptionRecord.planName, amountEur: monthlyAmount,
+    planName: subscriptionRecord.planName, amountEur: recurringAmount,
     subscriptionId: sub.id, companyId: subscriptionRecord.companyId,
     localEntity: 'stripe_subscriptions',
   });
@@ -352,21 +552,33 @@ async function handleSubscriptionActivation(
     clientName: clientInfo.name,
     clientEmail: clientInfo.email,
     planName: subscriptionRecord.planName,
-    amountEur: monthlyAmount,
+    amountEur: recurringAmount,
     subscriptionId: sub.id,
     localEntity: 'stripe_subscriptions'
   }).then((result) => {
     void resolveHoldedJob(supabaseAdmin, subJobId, result.error ? 'failed' : 'success', result.error);
     if (result.invoiceId) {
-      supabaseAdmin.from('subscriptions').update({
-        metadata: {
-          holded: {
-            contact_id: result.contactId,
-            invoice_id: result.invoiceId,
-            sync_event_id: result.syncEventId
+      void (async () => {
+        const { data: currentSubscription } = await supabaseAdmin
+          .from('subscriptions')
+          .select('metadata')
+          .eq('stripe_subscription_id', sub.id)
+          .maybeSingle();
+        const currentMetadata =
+          currentSubscription?.metadata && typeof currentSubscription.metadata === 'object'
+            ? currentSubscription.metadata as Record<string, unknown>
+            : {};
+        await supabaseAdmin.from('subscriptions').update({
+          metadata: {
+            ...currentMetadata,
+            holded: {
+              contact_id: result.contactId,
+              invoice_id: result.invoiceId,
+              sync_event_id: result.syncEventId
+            }
           }
-        }
-      }).eq('stripe_subscription_id', sub.id).then(() => {});
+        }).eq('stripe_subscription_id', sub.id);
+      })();
     }
   }).catch((err) => {
     console.error('[webhook] holded sync (subscription) failed:', err);

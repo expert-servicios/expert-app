@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { sendEmail } from '@/lib/email/send';
-import { citaReminder, dailyAdminSummary, type DailySummaryData } from '@/lib/email/templates';
+import { adminTaskReminder, citaReminder, dailyAdminSummary, type DailySummaryData } from '@/lib/email/templates';
+import { notifyAdminsTelegram } from '@/lib/integrations/telegram';
+import { notifyAdmins } from '@/lib/integrations/push';
 import { verifyCronRequest } from '@/lib/security/cron';
 
 // Vercel Cron: runs daily at 08:30 UTC (30 min after fiscal-reminders)
@@ -35,6 +37,12 @@ export async function GET(request: NextRequest) {
 
   const admin  = getSupabaseAdmin();
   const now    = new Date();
+  const madridDate = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now);
 
   // Auto-expire quotes that have passed their expires_at (idempotent cleanup)
   await admin
@@ -194,7 +202,79 @@ export async function GET(request: NextRequest) {
     .select('id', { count: 'exact', head: true })
     .eq('status', 'failed');
 
-  // ── 9. Build and send summary ─────────────────────────────────────────────
+  // ── 9. Admin tasks due today or overdue ──────────────────────────────────
+  const { data: dueTasks, error: dueTasksError } = await admin
+    .from('internal_tasks')
+    .select('id,title,priority,due_date,client_id,case_id,company_id,status')
+    .in('status', ['pendiente', 'en_progreso'])
+    .not('due_date', 'is', null)
+    .lte('due_date', madridDate)
+    .order('due_date', { ascending: true })
+    .order('priority', { ascending: false })
+    .limit(100);
+
+  if (dueTasksError) {
+    console.error('[daily-summary] due task lookup failed:', dueTasksError.message);
+  }
+
+  const dueTaskClientIds = [...new Set((dueTasks ?? []).map((task) => task.client_id).filter(Boolean))];
+  if (dueTaskClientIds.length > 0) {
+    const { data: taskProfiles } = await admin
+      .from('profiles')
+      .select('id,full_name')
+      .in('id', dueTaskClientIds);
+    for (const profile of taskProfiles ?? []) {
+      nameMap.set(profile.id, profile.full_name ?? profile.id.slice(0, 8));
+    }
+  }
+
+  const dueTaskRows = (dueTasks ?? []).map((task) => ({
+    title: task.title ?? 'Tarea pendiente',
+    client: task.client_id ? (nameMap.get(task.client_id) ?? '—') : '—',
+    dueDate: task.due_date ?? null,
+    priority: task.priority ?? null,
+    caseId: task.case_id ?? null,
+  }));
+
+  if (dueTaskRows.length > 0) {
+    const taskTemplate = adminTaskReminder({ date: today, tasks: dueTaskRows });
+    try {
+      await sendEmail({
+        to: ADMIN_RECIPIENTS,
+        eventType: 'admin.task_reminder',
+        ...taskTemplate,
+        metadata: {
+          date: madridDate,
+          task_count: dueTaskRows.length,
+          overdue_count: dueTaskRows.filter((task) => task.dueDate && task.dueDate < madridDate).length,
+        },
+        idempotencyKey: `admin/task-reminder/${madridDate}`,
+      });
+    } catch (error) {
+      console.error('[daily-summary] admin task reminder email failed:', error);
+    }
+
+    const telegramLines = dueTaskRows.slice(0, 15).map((task) =>
+      `• ${task.title} — ${task.client} — ${task.dueDate ?? 'sin fecha'}`
+    );
+    await notifyAdminsTelegram([
+      `<b>Tareas EXPERT pendientes: ${dueTaskRows.length}</b>`,
+      ...telegramLines,
+      dueTaskRows.length > 15 ? `… y ${dueTaskRows.length - 15} más en el panel.` : '',
+    ].filter(Boolean).join('\n')).catch((error) => {
+      console.error('[daily-summary] Telegram task reminder failed:', error);
+    });
+
+    await notifyAdmins({
+      title: `Tareas pendientes: ${dueTaskRows.length}`,
+      body: dueTaskRows.slice(0, 3).map((task) => task.title).join(' · ').slice(0, 240),
+      url: '/admin/tareas',
+      tag: `daily-task-reminder-${madridDate}`,
+    }).catch(() => {});
+  }
+
+  // ── 10. Build and send summary ────────────────────────────────────────────
+
   const summaryData: DailySummaryData = {
     date: today,
     activeCases: (activeCaseRows ?? []).map((c) => ({

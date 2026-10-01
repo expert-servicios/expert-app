@@ -34,12 +34,12 @@ export function newSubscriptionCheckoutOwnerToken() {
 
 export async function claimSubscriptionCheckout(
   admin: SupabaseClient,
-  input: { userId: string; companyId: string; priceId: string; ownerToken: string },
+  input: { userId: string; companyId: string; priceId?: string; intentKey?: string; ownerToken: string },
 ): Promise<SubscriptionCheckoutClaim> {
   const { data, error } = await admin.rpc('claim_subscription_checkout', {
     p_user_id: input.userId,
     p_company_id: input.companyId,
-    p_intent_key: subscriptionCheckoutIntentKey(input.priceId),
+    p_intent_key: input.intentKey ?? subscriptionCheckoutIntentKey(input.priceId ?? ''),
     p_owner_token: input.ownerToken,
     p_lease_seconds: 120,
   });

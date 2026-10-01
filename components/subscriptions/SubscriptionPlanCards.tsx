@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, Zap, FileText, Gift } from 'lucide-react';
+import { CheckCircle2, ShoppingBag, FileText, Gift } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
 
 type BillingMode = 'mensual' | 'anual';
 
@@ -28,35 +29,6 @@ interface Props {
   planAvanzadoAnnualId      : string;
   planColaborativoAnnualId  : string;
   initialBilling            : BillingMode;
-}
-
-async function goToCheckout(priceId: string): Promise<void> {
-  if (!priceId) throw new Error('Este plan no tiene un precio de Stripe configurado.');
-
-  const res = await fetch('/api/subscriptions/checkout', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ priceId }),
-  });
-
-  const data = await res.json() as { url?: string; code?: string; error?: string };
-
-  if (res.status === 409) {
-    const redirectByCode: Record<string, string> = {
-      profile_required: '/dashboard/perfil',
-      billing_required: '/dashboard/perfil?section=billing',
-      company_required: '/dashboard/perfil?section=entities',
-      holded_required: '/dashboard/integraciones/holded',
-    };
-    window.location.href = redirectByCode[data.code ?? ''] ?? '/dashboard/perfil';
-    return;
-  }
-
-  if (!res.ok || !data.url) {
-    throw new Error(data.error ?? 'No se pudo iniciar el pago.');
-  }
-
-  window.location.href = data.url;
 }
 
 const FEATURES_SUPERVISION = [
@@ -104,21 +76,27 @@ const FEATURES_PERSONALIZADO = [
 ];
 
 function PlanCard({ plan, billing }: { plan: PlanData; billing: BillingMode }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { addItem, items } = useCart();
   const priceId = billing === 'anual' ? plan.annualPriceId : plan.monthlyPriceId;
   const isAnnual = billing === 'anual';
 
-  async function handleCta() {
-    if (plan.isQuote || loading) return;
-    setLoading(true);
-    setError(null);
-    try {
-      await goToCheckout(priceId);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo iniciar el pago.');
-      setLoading(false);
-    }
+  const cartItem = {
+    priceId,
+    name: plan.name,
+    displayPrice: isAnnual ? plan.annualTotal : plan.monthlyPrice,
+    slug: `plan-${plan.slug}`,
+    category: 'planes',
+    itemType: 'subscription' as const,
+    quantity: 1,
+    billingInterval: isAnnual ? 'year' as const : 'month' as const,
+    contentOrigin: `plans:${plan.slug}`,
+    href: `/planes/${plan.slug}`,
+  };
+  const inCartQuantity = items.find((item) => item.priceId === priceId)?.quantity ?? 0;
+
+  function handleCta() {
+    if (plan.isQuote || !priceId) return;
+    addItem(cartItem);
   }
 
   return (
@@ -176,15 +154,15 @@ function PlanCard({ plan, billing }: { plan: PlanData; billing: BillingMode }) {
           <button
             type="button"
             onClick={handleCta}
-            disabled={loading || !priceId}
+            disabled={!priceId}
             className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#c88b25] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#061321] transition hover:bg-[#b57a1e] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <Zap className="h-4 w-4" />
-            {loading ? 'Abriendo pago…' : isAnnual ? 'Contratar anual' : 'Contratar plan'}
+            <ShoppingBag className="h-4 w-4" />
+            {inCartQuantity > 0
+              ? `Añadir otra unidad (${inCartQuantity})`
+              : isAnnual ? 'Añadir anual a la cesta' : 'Añadir plan a la cesta'}
           </button>
         )}
-
-        {error ? <p className="mt-2 text-center text-xs text-red-600">{error}</p> : null}
 
         {!plan.isQuote && (
           <Link

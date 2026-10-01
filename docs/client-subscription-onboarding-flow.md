@@ -8,7 +8,13 @@ Este documento define el flujo canónico de alta de un cliente que contrata una 
 
 Flujo canónico:
 
-`Cuenta EXPERT → perfil → entidad/facturación → Stripe Checkout → suscripción activa → reunión de onboarding → conexión Holded → cierre de onboarding → dashboard operativo`
+`Cuenta EXPERT → perfil → entidad/facturación → Stripe Checkout → suscripción activa → contrato aceptado + instrucciones → tarea Admin → reunión de onboarding → conexión Holded → cierre de onboarding → dashboard operativo`
+
+Regla comercial permanente:
+
+- las **suscripciones recurrentes** se formalizan en un checkout de suscripción;
+- los **servicios puntuales** (por ejemplo, una migración a Holded) se formalizan en un checkout/pedido separado;
+- nunca se mezclan líneas recurrentes y pagos únicos en la misma contratación, aunque pertenezcan al mismo cliente.
 
 Holded **no es un requisito previo al pago**. La conexión contable se realiza después de que Stripe confirme una suscripción activa o `trialing`.
 
@@ -135,6 +141,29 @@ Código principal:
 - `app/api/stripe/webhook/route.ts`
 - `app/(protected)/dashboard/post-compra/page.tsx`
 - `components/dashboard/PostCompraWaiting.tsx`
+
+## 3.1 Automatización inmediata tras activar la suscripción
+
+Cuando Stripe confirma una suscripción en estado `active` o `trialing`, EXPERT debe ejecutar de forma idempotente:
+
+1. crear o reutilizar el expediente de onboarding de la entidad contratante;
+2. crear o actualizar la tarea interna `Completar alta tras suscripción`;
+3. generar una copia estable del contrato aceptado con el pago;
+4. enviar al cliente el contrato, una explicación breve de cómo se trabajará desde EXPERT y un enlace privado para reservar onboarding;
+5. notificar a Admin por email, push y Telegram;
+6. conservar el contexto exacto de cliente, entidad, plan, suscripción, expediente y tarea.
+
+El contrato posterior al pago es la copia operativa aceptada. Si hubo documentación contractual previa al checkout, el postpago no debe generar condiciones económicas distintas.
+
+### Seguimiento de Admin
+
+El cron diario de operaciones revisa `internal_tasks` y, cuando existan tareas vencidas o con vencimiento en el día:
+
+- envía un recordatorio específico por email;
+- envía resumen por Telegram al chat Admin;
+- genera aviso push con enlace a `/admin/tareas`.
+
+Los recordatorios continúan mientras la tarea siga en `pendiente` o `en_progreso`.
 
 ## 4. Onboarding poscompra
 

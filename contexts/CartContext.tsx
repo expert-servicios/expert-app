@@ -14,12 +14,17 @@ export interface CartItem {
   disbursements?: string[];
   disbursementNotice?: string;
   contentOrigin?: string;
+  itemType?    : 'service' | 'subscription';
+  quantity?    : number;
+  billingInterval?: 'month' | 'year';
+  href?        : string;
 }
 
 interface CartContextValue {
   items    : CartItem[];
   addItem  : (item: CartItem) => void;
   removeItem: (priceId: string) => void;
+  setQuantity: (priceId: string, quantity: number) => void;
   clearCart: () => void;
   isOpen   : boolean;
   open     : () => void;
@@ -50,8 +55,18 @@ export function buildCartCheckoutPayload(items: CartItem[], disbursementMandateA
   const disbursements = collectCartDisbursements(items);
   const contentOrigins = collectCartContentOrigins(items);
 
+  const hasSubscriptions = cartContainsSubscriptions(items);
+
   return {
-    priceIds: items.map(i => i.priceId),
+    priceIds: items.flatMap(i => Array.from({ length: Math.max(1, i.quantity ?? 1) }, () => i.priceId)),
+    ...(hasSubscriptions ? {
+      items: items.map(i => ({
+        priceId: i.priceId,
+        quantity: Math.max(1, i.quantity ?? 1),
+        itemType: i.itemType ?? 'service',
+        ...(i.billingInterval ? { billingInterval: i.billingInterval } : {}),
+      })),
+    } : {}),
     locale: resolveCartLocale(items),
     ...(contentOrigins.length > 0 ? { contentOrigins } : {}),
     ...(companyId ? { companyId } : {}),
@@ -63,6 +78,16 @@ export function buildCartCheckoutPayload(items: CartItem[], disbursementMandateA
 
 export function cartContainsDisbursements(items: CartItem[]) {
   return collectCartDisbursements(items).length > 0;
+}
+
+export function cartContainsSubscriptions(items: CartItem[]) {
+  return items.some(item => item.itemType === 'subscription');
+}
+
+export function getCartCheckoutEndpoint(items: CartItem[]) {
+  return cartContainsSubscriptions(items)
+    ? '/api/subscriptions/cart-checkout'
+    : '/api/services/checkout';
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
@@ -85,12 +110,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, hydrated]);
 
   const addItem = useCallback((item: CartItem) => {
-    setItems(prev => prev.some(i => i.priceId === item.priceId) ? prev : [...prev, item]);
+    setItems(prev => {
+      const index = prev.findIndex(i => i.priceId === item.priceId);
+      if (index < 0) return [...prev, { ...item, quantity: Math.max(1, item.quantity ?? 1) }];
+      if ((item.itemType ?? prev[index].itemType ?? 'service') !== 'subscription') return prev;
+      return prev.map((current, currentIndex) =>
+        currentIndex === index
+          ? { ...current, quantity: Math.min(20, Math.max(1, current.quantity ?? 1) + Math.max(1, item.quantity ?? 1)) }
+          : current
+      );
+    });
     setIsOpen(true);
   }, []);
 
   const removeItem = useCallback((priceId: string) => {
     setItems(prev => prev.filter(i => i.priceId !== priceId));
+  }, []);
+
+  const setQuantity = useCallback((priceId: string, quantity: number) => {
+    if (quantity <= 0) {
+      setItems(prev => prev.filter(i => i.priceId !== priceId));
+      return;
+    }
+    setItems(prev => prev.map(item =>
+      item.priceId === priceId
+        ? { ...item, quantity: Math.min(20, Math.max(1, quantity)) }
+        : item
+    ));
   }, []);
 
   const clearCart = useCallback(() => setItems([]), []);
@@ -99,7 +145,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const toggle    = useCallback(() => setIsOpen(v => !v), []);
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, clearCart, isOpen, open, close, toggle }}>
+    <CartContext.Provider value={{ items, addItem, removeItem, setQuantity, clearCart, isOpen, open, close, toggle }}>
       {children}
     </CartContext.Provider>
   );

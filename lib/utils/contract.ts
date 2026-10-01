@@ -11,6 +11,8 @@ export interface ContractData {
   contractDate: string;
   contractType: 'service' | 'subscription';
   planName?: string | null;
+  billingInterval?: 'month' | 'year';
+  reference?: string | null;
 }
 
 const EXPERT = {
@@ -30,7 +32,10 @@ function fmt(n: number) {
 
 export function generateContractHtml(d: ContractData): string {
   const isSubscription = d.contractType === 'subscription';
-  const title = isSubscription ? 'Contrato de Prestación de Servicios — Suscripción Mensual' : 'Contrato de Prestación de Servicios';
+  const billingInterval = d.billingInterval ?? 'month';
+  const subscriptionLabel = billingInterval === 'year' ? 'Suscripción Anual' : 'Suscripción Mensual';
+  const title = isSubscription ? `Contrato de Prestación de Servicios — ${subscriptionLabel}` : 'Contrato de Prestación de Servicios';
+  const contractReference = d.reference?.trim() || Date.now().toString(36).toUpperCase();
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -61,7 +66,7 @@ export function generateContractHtml(d: ContractData): string {
 <div style="text-align:center; margin-bottom: 24px;">
   <span class="badge">EXPERT ESTUDIOS PROFESIONALES</span><br/>
   <h1>${title}</h1>
-  <p class="subtitle">Fecha: ${d.contractDate} &nbsp;|&nbsp; Referencia: ${Date.now().toString(36).toUpperCase()}</p>
+  <p class="subtitle">Fecha: ${d.contractDate} &nbsp;|&nbsp; Referencia: ${contractReference}</p>
 </div>
 
 <h2>1. Partes del contrato</h2>
@@ -89,12 +94,12 @@ export function generateContractHtml(d: ContractData): string {
 <table>
   <tr><td>Servicio contratado</td><td><strong>${d.serviceTitle}</strong></td></tr>
   <tr><td>Descripción</td><td>${d.serviceDescription}</td></tr>
-  ${isSubscription ? `<tr><td>Modalidad</td><td>Suscripción mensual renovable — ${d.planName ?? ''}</td></tr>` : '<tr><td>Modalidad</td><td>Servicio puntual (pago único)</td></tr>'}
+  ${isSubscription ? `<tr><td>Modalidad</td><td>${billingInterval === 'year' ? 'Suscripción anual renovable' : 'Suscripción mensual renovable'} — ${d.planName ?? ''}</td></tr>` : '<tr><td>Modalidad</td><td>Servicio puntual (pago único)</td></tr>'}
 </table>
 
 <h2>3. Precio y forma de pago</h2>
-<div class="amount">${fmt(d.amountEur)} € ${isSubscription ? '/mes' : ''} ${d.amountIncludesTax === false ? '(base imponible; IVA no incluido)' : '(IVA incluido si aplica)'}</div>
-<p>El pago se realiza de forma segura a través de la plataforma <strong>Stripe</strong> (Stripe, Inc. — PCI-DSS Level 1 certificado). ${EXPERT.name} no almacena datos de tarjetas bancarias. ${isSubscription ? 'La suscripción se renueva automáticamente cada mes hasta su cancelación expresa.' : 'Este es un pago único no recurrente.'}</p>
+<div class="amount">${fmt(d.amountEur)} € ${isSubscription ? (billingInterval === 'year' ? '/año' : '/mes') : ''} ${d.amountIncludesTax === false ? '(base imponible; IVA no incluido)' : '(IVA incluido si aplica)'}</div>
+<p>El pago se realiza de forma segura a través de la plataforma <strong>Stripe</strong> (Stripe, Inc. — PCI-DSS Level 1 certificado). ${EXPERT.name} no almacena datos de tarjetas bancarias. ${isSubscription ? `La suscripción se renueva automáticamente cada ${billingInterval === 'year' ? 'año' : 'mes'} hasta su cancelación expresa.` : 'Este es un pago único no recurrente.'}</p>
 
 <h2>4. Obligaciones del prestador</h2>
 <p>${EXPERT.name} se compromete a:</p>
