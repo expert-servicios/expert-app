@@ -35,6 +35,7 @@ const FEATURES_SUPERVISION = [
   'Plataforma EXPERT + Kia básico',
   'Revisión mensual básica de Holded',
   'Preparación y presentación de impuestos periódicos básicos si corresponde',
+  'Autónomos: reunión mensual de 30 min incluida',
   'Alertas básicas de errores y anomalías',
   'Revisión de facturas y categorías principales',
   'Resumen mensual generado por Kia',
