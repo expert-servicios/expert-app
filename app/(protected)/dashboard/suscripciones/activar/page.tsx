@@ -22,6 +22,8 @@ type InvitationContext = {
   plan: {
     slug: string;
     name: string;
+    billing: 'monthly' | 'annual';
+    interval: 'month' | 'year';
     amountEur: number;
     priceId: string;
     planPath: string;
@@ -332,8 +334,12 @@ function SubscriptionActivationContent() {
           Un titular fiscal, un contrato y una factura. Antes del pago confirmaremos únicamente los datos necesarios para identificar al contratante.
         </p>
 
-        <div className="mt-6 grid gap-3 rounded-2xl bg-[#f8f4eb] p-5 sm:grid-cols-3">
-          <Summary label="Cuota" value={`${context.plan.amountEur} € + IVA / mes`} />
+        <div className="mt-6 grid gap-3 rounded-2xl bg-[#f8f4eb] p-5 sm:grid-cols-2 lg:grid-cols-4">
+          <Summary
+            label="Cuota"
+            value={`${context.plan.amountEur} € + IVA / ${context.plan.billing === 'annual' ? 'año' : 'mes'}`}
+          />
+          <Summary label="Modalidad" value={context.plan.billing === 'annual' ? 'Anual · 2 meses gratis' : 'Mensual'} />
           <Summary label="Titular" value={context.invitation.entityType === 'autonomo' ? 'Autónomo' : 'Empresa'} />
           <Summary label="Email" value={context.invitation.email} />
         </div>
