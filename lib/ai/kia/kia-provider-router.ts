@@ -4,6 +4,7 @@ import type { KiaTaskType } from "./kia-output-schema";
 import type { KiaToolCall, KiaToolDefinition } from "./kia-tool-definitions";
 import { extractJsonObject } from "./kia-output-schema";
 import { redactJson, safeErrorMessage } from "./kia-redaction";
+import { getKiaAiBudgetGuard } from "./kia-ai-budget";
 
 export type KiaAiProvider = "anthropic" | "openai" | "google";
 export type KiaEffort = "low" | "medium" | "high" | "xhigh";
@@ -201,11 +202,21 @@ export function defaultEffortForTask(taskType: KiaTaskType): KiaEffort {
 export async function runKiaProviderRequest(
   request: KiaProviderRequest,
 ): Promise<KiaProviderResult> {
+  const budgetGuard = await getKiaAiBudgetGuard();
+  if (budgetGuard.mode === 'exhausted') {
+    return {
+      provider: 'google',
+      model: 'budget-exhausted',
+      error: 'KIA AI monthly budget exhausted',
+    };
+  }
+
   const gatewayToken = getKiaGatewayToken();
   let lastError = "";
   let lastFailedProvider: ProviderConfig | null = null;
+  const allowGateway = budgetGuard.mode === 'normal' && budgetGuard.blockedProviders.length === 0;
 
-  if (gatewayToken && !providerCoolingDown("gateway")) {
+  if (allowGateway && gatewayToken && !providerCoolingDown("gateway")) {
     try {
       const result = await callGateway(gatewayToken, request);
       clearProviderFailure("gateway");
@@ -225,12 +236,25 @@ export async function runKiaProviderRequest(
     }
   }
 
-  const providers = getKiaProviderOrder();
+  let providers = getKiaProviderOrder()
+    .filter((provider) => !budgetGuard.blockedProviders.includes(provider.provider));
+
+  if (budgetGuard.mode !== 'normal') {
+    const economicalPriority: Record<KiaAiProvider, number> = { google: 0, openai: 1, anthropic: 2 };
+    providers = providers.sort((a, b) => economicalPriority[a.provider] - economicalPriority[b.provider]);
+  }
+  if (budgetGuard.mode === 'restricted' || budgetGuard.mode === 'protected') {
+    providers = providers.filter((provider) => provider.provider !== 'anthropic');
+  }
+  if (budgetGuard.mode === 'reserve') {
+    providers = providers.filter((provider) => provider.provider !== 'anthropic').slice(0, 1);
+  }
+
   if (providers.length === 0) {
     return {
       provider: "openai",
       model: gatewayToken ? gatewayModelForTask(request.taskType) : "none",
-      error: lastError || "No AI provider configured",
+      error: lastError || (budgetGuard.blockedProviders.length ? "All AI providers are over budget" : "No AI provider configured"),
     };
   }
   for (const provider of providers) {
