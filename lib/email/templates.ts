@@ -549,6 +549,67 @@ export function subscriptionCreated(name: string, planName: string, periodEnd: s
   };
 }
 
+export function subscriptionActivatedOnboarding(input: {
+  name: string;
+  planName: string;
+  periodEnd: string | null;
+  onboardingUrl: string;
+}) {
+  const renewal = input.periodEnd
+    ? new Date(input.periodEnd).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+    : 'próximamente';
+  const safePlan = escapeHtml(input.planName);
+  return {
+    subject: `Tu suscripción ${safePlan} está activa — siguientes pasos`,
+    html: base('Suscripción activa', `
+      ${heading('Tu suscripción EXPERT ya está activa')}
+      ${para(`Hola <strong>${escapeHtml(input.name)}</strong>,`)}
+      ${para(`Hemos confirmado el pago y activado <strong>${safePlan}</strong>. Adjuntamos el contrato de prestación de servicios aceptado con el pago.`)}
+      ${table(
+        detail('Plan activo', safePlan),
+        detail('Próxima renovación', renewal)
+      )}
+      ${para('A partir de aquí trabajaremos desde EXPERT como centro operativo: documentación, seguimiento, avisos y comunicaciones quedarán vinculados a tu cuenta y a la entidad contratante.')}
+      ${stepsBlock([
+        'Reserva la reunión de onboarding desde el enlace protegido de este correo.',
+        'Antes de la reunión, revisaremos contigo la situación fiscal y contable y el alcance del servicio.',
+        'Después conectaremos Holded y coordinaremos, si procede, el traspaso desde la asesoría anterior.',
+        'EXPERT mantendrá visibles las siguientes acciones y los pendientes desde tu área privada.'
+      ])}
+      ${input.onboardingUrl
+        ? btn('Reservar reunión de onboarding', input.onboardingUrl)
+        : btn('Ir a mi área privada', `${BRAND.appUrl}/dashboard/post-compra?origin=subscription`)}
+      ${para('<small style="color:#8899aa;">La licencia de Holded y los servicios puntuales o migraciones que se contraten aparte no forman parte de esta cuota salvo que se indique expresamente.</small>')}
+    `)
+  };
+}
+
+export function subscriptionOnboardingAdmin(input: {
+  name: string;
+  email: string;
+  planName: string;
+  amount: number;
+  caseId?: string | null;
+}) {
+  const safeName = escapeHtml(input.name);
+  const target = input.caseId
+    ? `${BRAND.appUrl}/admin/expedientes/${encodeURIComponent(input.caseId)}`
+    : `${BRAND.appUrl}/admin/tareas`;
+  return {
+    subject: `Nueva suscripción activa — ${safeName}`,
+    html: base('Nueva suscripción activa', `
+      ${heading('Nueva suscripción activa')}
+      ${para(`<strong>${safeName}</strong> (${escapeHtml(input.email)}) ha completado la contratación.`)}
+      ${table(
+        detail('Plan', escapeHtml(input.planName)),
+        detail('Cuota recurrente', `€${input.amount.toFixed(2)} + impuestos aplicables`)
+      )}
+      ${para('EXPERT ha generado el seguimiento de onboarding. Revisa las tareas pendientes y acompaña el alta hasta que la reunión, la conexión de Holded y el cierre operativo estén completados.')}
+      ${btn('Abrir seguimiento', target)}
+    `)
+  };
+}
+
 // ── 10. Subscription payment failed ──────────────────────────────────────────
 export function subscriptionPaymentFailed(name: string, planName: string) {
   return {
