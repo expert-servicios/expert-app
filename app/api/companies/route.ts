@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     const canonicalPostalCode = officialValue('postalCode') ?? d.codigo_postal ?? null;
     const canonicalCountry = officialValue('country') ?? d.pais ?? 'ES';
     const normalizedTaxId = canonicalTaxId?.trim().toUpperCase() || null;
-    const registryLocks = registryOfficial ? lockedRegistryFields(d._registrySource) : [];
+    const registryLocks = registryOfficial ? lockedRegistryFields(d._registrySource, snapshot) : [];
 
     if (normalizedTaxId) {
       const { data: ownedRows, error: ownedError } = await admin
