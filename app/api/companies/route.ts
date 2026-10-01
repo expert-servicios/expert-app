@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { lockedRegistryFields } from '@/lib/companies/registry-locks';
 
 const FORMA_JURIDICA = ['autonomo','sl','sa','slne','cb','cooperativa','fundacion','otra'] as const;
 
@@ -16,7 +17,13 @@ const companySchema = z.object({
   pais: z.string().length(2).default('ES'),
   telefono: z.string().max(25).optional().nullable(),
   email: z.string().email().optional().nullable().or(z.literal('')).transform(v => v || null),
-  web: z.string().max(200).optional().nullable()
+  web: z.string().max(200).optional().nullable(),
+  _appliedSuggestionId: z.string().uuid().optional(),
+  _registrySource: z.string().max(80).optional(),
+  _registrySourceUrl: z.string().url().optional(),
+  _registryRetrievedAt: z.string().datetime().optional(),
+  _registryOfficial: z.boolean().optional(),
+  _registrySnapshot: z.record(z.string(), z.unknown()).optional()
 });
 
 type CompanyMembershipRow = {
@@ -75,6 +82,8 @@ export async function POST(request: NextRequest) {
     const admin = getSupabaseAdmin();
     const d = parse.data;
     const normalizedTaxId = d.cif_nif?.trim().toUpperCase() || null;
+    const registryOfficial = Boolean(d._registryOfficial && d._registrySource);
+    const registryLocks = registryOfficial ? lockedRegistryFields(d._registrySource) : [];
 
     if (normalizedTaxId) {
       const { data: ownedRows, error: ownedError } = await admin
@@ -133,6 +142,11 @@ export async function POST(request: NextRequest) {
         email: d.email,
         web: d.web,
         status: 'active',
+        registry_source: registryOfficial ? d._registrySource ?? null : null,
+        registry_source_url: registryOfficial ? d._registrySourceUrl ?? null : null,
+        registry_verified_at: registryOfficial ? d._registryRetrievedAt ?? new Date().toISOString() : null,
+        registry_locked_fields: registryLocks,
+        registry_snapshot: registryOfficial ? d._registrySnapshot ?? {} : {},
       })
       .select('*')
       .single();
@@ -164,6 +178,15 @@ export async function POST(request: NextRequest) {
       await admin.from('profile_companies').delete().eq('profile_id', user.id).eq('company_id', company.id);
       await admin.from('companies').delete().eq('id', company.id);
       return NextResponse.json({ error: 'No se pudo activar la nueva entidad; no se ha conservado el alta parcial.' }, { status: 500 });
+    }
+
+    if (d._appliedSuggestionId) {
+      await admin
+        .from('company_data_suggestions')
+        .update({ selected_by_user: true, selected_at: new Date().toISOString() })
+        .eq('id', d._appliedSuggestionId)
+        .eq('profile_id', user.id)
+        .then(() => null, () => null);
     }
 
     return NextResponse.json({ company }, { status: 201 });
