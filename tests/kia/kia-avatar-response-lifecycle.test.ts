@@ -9,9 +9,9 @@ describe('KIA response-scoped motion lifecycle', () => {
   const motionDoc = source('docs/kia-avatar-response-sprint4.md');
 
   it('keeps the panel subtree mounted so reopening cannot remount historical avatars', () => {
-    expect(widget).toContain("${open ? 'flex' : 'hidden'} flex-col");
-    expect(widget).toContain('aria-hidden={!open}');
-    expect(widget).not.toContain('{open && (');
+    expect(widget).toContain("${panelVisible ? 'flex' : 'hidden'} flex-col");
+    expect(widget).toContain('aria-hidden={!panelVisible}');
+    expect(widget).not.toContain('{panelVisible && (');
   });
 
   it('enables one-shot motion only after the newest assistant response is visible', () => {
