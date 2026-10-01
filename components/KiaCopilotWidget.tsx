@@ -405,7 +405,7 @@ function KiaMessageArtifacts({ artifacts }: { artifacts: KiaCopilotArtifact[] })
   );
 }
 
-export default function KiaCopilotWidget() {
+export default function KiaCopilotWidget({ embedded = false }: { embedded?: boolean }) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [telegramLinking, setTelegramLinking] = useState(false);
@@ -415,6 +415,7 @@ export default function KiaCopilotWidget() {
   const [animatedMessageIds, setAnimatedMessageIds] = useState<Set<string>>(() => new Set());
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const panelVisible = embedded || open;
   const [contextToken] = useState<string | undefined>(() => searchParams.get('ctx') ?? undefined);
   const adminCompanyId = /^\/admin\/empresas\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?:\/|$)/i.exec(pathname)?.[1];
   const { messages, loading, contextLoading, send, rate, reset, appendAssistantMessage, staffPreview, uiLocale } = useKiaChat(pathname, contextToken, adminCompanyId);
@@ -448,17 +449,17 @@ export default function KiaCopilotWidget() {
     : (lastAssistantMessage?.avatarState ?? 'bienvenida');
 
   useEffect(() => {
-    if (open) {
+    if (panelVisible) {
       // Keep the latest row visible before enabling any response-scoped one-shot.
       // `auto` is deliberate: the animation begins on the next frame, after the
       // scroll position is already settled, so a short 320–560 ms motion is not
       // consumed off-screen during a smooth scroll.
       messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
     }
-  }, [messages, loading, open]);
+  }, [messages, loading, panelVisible]);
 
   useEffect(() => {
-    if (!open || !lastAssistantMessage || animatedMessageIds.has(lastAssistantMessage.id)) return;
+    if (!panelVisible || !lastAssistantMessage || animatedMessageIds.has(lastAssistantMessage.id)) return;
 
     const messageId = lastAssistantMessage.id;
     const frame = window.requestAnimationFrame(() => {
@@ -471,7 +472,7 @@ export default function KiaCopilotWidget() {
     });
 
     return () => window.cancelAnimationFrame(frame);
-  }, [animatedMessageIds, lastAssistantMessage, open]);
+  }, [animatedMessageIds, lastAssistantMessage, panelVisible]);
 
   useEffect(() => {
     if (searchParams.get('kia') === 'open') {
@@ -480,10 +481,10 @@ export default function KiaCopilotWidget() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (open) {
+    if (panelVisible) {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [open]);
+  }, [panelVisible]);
 
   function handleOpen() {
     setOpen(true);
@@ -692,6 +693,8 @@ export default function KiaCopilotWidget() {
     }
   }
 
+  if (pathname.startsWith('/admin') && !embedded) return null;
+
   return (
     <>
       <div
@@ -699,18 +702,20 @@ export default function KiaCopilotWidget() {
         role="dialog"
         aria-label="KIA copiloto"
         aria-modal="false"
-        aria-hidden={!open}
-        className={`fixed inset-x-2 top-[max(10px,env(safe-area-inset-top))] bottom-[calc(76px+env(safe-area-inset-bottom))] z-[200] sm:inset-x-auto sm:top-auto sm:bottom-[132px] sm:right-4 sm:h-[min(560px,calc(100vh-148px))] sm:w-[380px] lg:bottom-20 ${open ? 'flex' : 'hidden'} flex-col`}
+        aria-hidden={!panelVisible}
+        className={embedded
+          ? 'flex h-full min-h-0 flex-col bg-white'
+          : `fixed inset-x-2 top-[max(10px,env(safe-area-inset-top))] bottom-[calc(76px+env(safe-area-inset-bottom))] z-[200] sm:inset-x-auto sm:top-auto sm:bottom-[132px] sm:right-4 sm:h-[min(560px,calc(100vh-148px))] sm:w-[380px] lg:bottom-20 ${panelVisible ? 'flex' : 'hidden'} flex-col`}
         style={{
           background    : '#fff',
-          borderRadius  : '16px',
-          boxShadow     : '0 8px 32px rgba(13,27,42,0.18)',
-          border        : '1px solid #e8e0d4',
+          borderRadius  : embedded ? '0' : '16px',
+          boxShadow     : embedded ? 'none' : '0 8px 32px rgba(13,27,42,0.18)',
+          border        : embedded ? 'none' : '1px solid #e8e0d4',
         }}
       >
         <div
           className="flex items-center justify-between px-4 py-3"
-          style={{ background: '#0D1B2A', borderRadius: '16px 16px 0 0' }}
+          style={{ background: '#0D1B2A', borderRadius: embedded ? '0' : '16px 16px 0 0' }}
         >
           <div className="flex items-center gap-2">
             <KiaAvatar state={currentKiaState} size="sm" priority animateOnChange />
@@ -742,7 +747,7 @@ export default function KiaCopilotWidget() {
             </button>
             <button
               onClick={handleClose}
-              className="rounded-lg p-1 text-white transition-colors hover:bg-white/10"
+              className={`${embedded ? 'hidden' : ''} rounded-lg p-1 text-white transition-colors hover:bg-white/10`}
               aria-label="Cerrar KIA copiloto"
             >
               <X size={16} aria-hidden="true" />
@@ -944,6 +949,7 @@ export default function KiaCopilotWidget() {
         </div>
       </div>
 
+{!embedded ? (
       <button
         onClick={open ? handleClose : handleOpen}
         aria-label={open ? 'Cerrar KIA' : 'Abrir KIA copiloto'}
@@ -964,6 +970,7 @@ export default function KiaCopilotWidget() {
           <KiaAvatar state={currentKiaState} size="lg" animateOnChange />
         )}
       </button>
+      ) : null}
     </>
   );
 }
