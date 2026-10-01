@@ -177,7 +177,7 @@ function PlanCard({ plan, billing, companyId }: { plan: PlanData; billing: Billi
             </Link>
             <Link href="/cita?tipo=demo-holded" className="block text-[#c88b25] transition hover:underline">
               <Gift className="mr-1 inline-block h-3 w-3" />
-              Reservar demo Holded gratuita de 60 min
+              Reservar demo Holded gratuita
             </Link>
           </div>
         )}
