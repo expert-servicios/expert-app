@@ -147,7 +147,7 @@ function welcomeMessage(returning = false): ChatMessage {
   };
 }
 
-function useKiaChat(pathname: string, contextToken?: string) {
+function useKiaChat(pathname: string, contextToken?: string, companyId?: string) {
   const [messages, setMessages] = useState<ChatMessage[]>(() => contextToken ? [] : [welcomeMessage()]);
   const [contextSummary, setContextSummary] = useState<KiaContextSummary | null>(null);
   const [contextLoading, setContextLoading] = useState(Boolean(contextToken));
@@ -193,6 +193,10 @@ function useKiaChat(pathname: string, contextToken?: string) {
   }, [contextToken]);
 
   useEffect(() => {
+    setSessionId(undefined);
+  }, [companyId]);
+
+  useEffect(() => {
     const handleCompanyChanged = () => {
       setContextSummary(null);
       setContextLoading(false);
@@ -234,6 +238,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
           sessionId,
           currentPage: pathname,
           contextToken,
+          companyId,
           history,
         }),
       });
@@ -269,7 +274,7 @@ function useKiaChat(pathname: string, contextToken?: string) {
     } finally {
       setLoading(false);
     }
-  }, [contextLoading, contextSummary, contextToken, loading, messages, pathname, sessionId, uiLocale]);
+  }, [companyId, contextLoading, contextSummary, contextToken, loading, messages, pathname, sessionId, uiLocale]);
 
   const rate = useCallback(async (messageId: string, rating: 'positive' | 'negative') => {
     const target = messages.find((message) => message.id === messageId);
@@ -406,7 +411,8 @@ export default function KiaCopilotWidget() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [contextToken] = useState<string | undefined>(() => searchParams.get('ctx') ?? undefined);
-  const { messages, loading, contextLoading, send, rate, reset, appendAssistantMessage, staffPreview, uiLocale } = useKiaChat(pathname, contextToken);
+  const adminCompanyId = /^\/admin\/empresas\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?:\/|$)/i.exec(pathname)?.[1];
+  const { messages, loading, contextLoading, send, rate, reset, appendAssistantMessage, staffPreview, uiLocale } = useKiaChat(pathname, contextToken, adminCompanyId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
