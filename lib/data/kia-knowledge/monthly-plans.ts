@@ -87,6 +87,7 @@ export const MONTHLY_PLANS_KNOWLEDGE = {
     includes: [
       'Plataforma EXPERT + Kia avanzado',
       'Revisión y validación mensual por EXPERT',
+      'Preparación y presentación de impuestos periódicos según alcance',
       'Informes mensuales',
       'Alertas Kia de anomalías',
       'Estado de empresa completo',
