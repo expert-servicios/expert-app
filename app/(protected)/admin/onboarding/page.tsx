@@ -7,6 +7,7 @@ import {
   Loader2, Mail, User, UserPlus
 } from 'lucide-react';
 import { ADMIN_CATALOG, type CatalogItem } from '@/lib/utils/admin-catalog';
+import { SubscriptionInvitationGenerator } from '@/components/admin/SubscriptionInvitationGenerator';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -98,13 +99,13 @@ function CatalogPicker({
   selected: CatalogItem | null;
   onSelect: (item: CatalogItem) => void;
 }) {
-  const [tab, setTab] = useState<'plan' | 'servicio' | 'formacion'>('plan');
+  const [tab, setTab] = useState<'servicio' | 'formacion'>('servicio');
   const items = ADMIN_CATALOG.filter((i) => i.category === tab);
 
   return (
     <div>
       <div className="flex gap-1 border-b border-[#d8cbb5]">
-        {(['plan', 'servicio', 'formacion'] as const).map((t) => (
+        {(['servicio', 'formacion'] as const).map((t) => (
           <button
             key={t}
             type="button"
@@ -115,7 +116,7 @@ function CatalogPicker({
                 : 'text-[#8a9aab] hover:text-[#07111d]'
             }`}
           >
-            {t === 'plan' ? 'Planes' : t === 'formacion' ? 'Formación' : 'Servicios'}
+            {t === 'formacion' ? 'Formación' : 'Servicios'}
           </button>
         ))}
       </div>
@@ -450,6 +451,15 @@ export default function AdminOnboardingPage() {
       </div>
 
       <div className="mx-auto max-w-3xl px-6 py-8">
+        {step === 0 && (
+          <div className="mb-6 space-y-3">
+            <SubscriptionInvitationGenerator />
+            <p className="px-1 text-xs leading-5 text-[#52606d]">
+              Los planes recurrentes se formalizan únicamente desde el bloque anterior. El asistente inferior queda reservado a servicios puntuales y formación para evitar crear usuarios, entidades o checkouts duplicados antes de la aceptación del cliente.
+            </p>
+          </div>
+        )}
+
         {error && (
           <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}

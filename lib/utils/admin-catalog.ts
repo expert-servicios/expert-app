@@ -17,7 +17,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
     id: 'plan-supervision',
     label: 'Plan Supervisión',
     category: 'plan',
-    description: 'Revisión mensual básica de Holded, alertas Kia y soporte básico',
+    description: 'Supervisión mensual de Holded, alertas KIA, soporte y presentación de impuestos periódicos básicos dentro del alcance del plan',
     suggestedPrice: 49,
     mode: 'subscription',
     stripePriceEnvKey: 'STRIPE_PLAN_MONTHLY_49'
@@ -26,7 +26,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
     id: 'plan-avanzado',
     label: 'Plan Avanzado',
     category: 'plan',
-    description: 'Revisión mensual, cierre trimestral e impuestos básicos según alcance',
+    description: 'Revisión mensual, cierre trimestral, soporte y presentación de impuestos periódicos incluidos según el alcance del plan',
     suggestedPrice: 99,
     mode: 'subscription',
     stripePriceEnvKey: 'STRIPE_PLAN_MONTHLY_99'
@@ -35,7 +35,7 @@ export const ADMIN_CATALOG: CatalogItem[] = [
     id: 'plan-colaborativo',
     label: 'Plan Colaborativo',
     category: 'plan',
-    description: 'Revisión mensual colaborativa, informes y soporte prioritario',
+    description: 'Gestión colaborativa, informes, soporte prioritario y presentación de impuestos periódicos incluidos según el alcance del plan',
     suggestedPrice: 199,
     mode: 'subscription',
     stripePriceEnvKey: 'STRIPE_PLAN_MONTHLY_199'

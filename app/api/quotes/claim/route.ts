@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
   const admin = getSupabaseAdmin();
   const { data: quote, error: quoteError } = await admin
     .from('quotes')
-    .select('id,client_id,lead_id,status,claim_email')
+    .select('id,client_id,lead_id,status,claim_email,service_slugs')
     .eq('id', claim.quoteId)
     .maybeSingle();
 
@@ -84,6 +84,16 @@ export async function GET(request: NextRequest) {
       console.error('[quote claim] ownership update:', claimError);
       return NextResponse.json({ error: 'No se pudo vincular el presupuesto.' }, { status: 409 });
     }
+  }
+
+  const planService = Array.isArray(quote.service_slugs)
+    ? quote.service_slugs.find((slug) => typeof slug === 'string' && slug.startsWith('plan-'))
+    : null;
+
+  if (planService) {
+    const activationUrl = new URL('/dashboard/suscripciones/activar', request.url);
+    activationUrl.searchParams.set('quote', quote.id);
+    return NextResponse.redirect(activationUrl);
   }
 
   return NextResponse.redirect(new URL('/dashboard/presupuestos?claimed=1', request.url));

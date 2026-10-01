@@ -49,13 +49,13 @@ EMPRESAS Y AUTONOMOS (categoria: empresas-autonomos):
   cuentas-anuales               → direct_checkout | Deposito de cuentas anuales
   apoderamientos-mercantiles    → direct_checkout | Apoderamientos y poderes notariales
 
-PLANES MENSUALES — subscription_readiness (requieren Holded conectado):
-  plan-supervision              → subscription_readiness | Plan Supervisión 49 EUR + IVA (revisión mensual, alertas, sin impuestos)
+PLANES MENSUALES — subscription_readiness (Holded se conecta durante el onboarding; no bloquea el pago):
+  plan-supervision              → subscription_readiness | Plan Supervisión 49 EUR + IVA (revisión mensual, alertas y presentación de impuestos periódicos básicos)
   plan-avanzado                 → subscription_readiness | Plan Avanzado 99 EUR + IVA (revisión + impuestos básicos según alcance)
   plan-colaborativo             → subscription_readiness | Plan Colaborativo 199 EUR + IVA (más intervención, informes, soporte 24 h)
   plan-personalizado            → quote | Plan personalizado (presupuesto a medida; sin checkout directo)
   plan-presupuesto-personalizado → quote | Alias público de Plan personalizado (presupuesto a medida; sin checkout directo)
-  Si context.company.holdedConnected = false: nextAction=send_holded_connect_link antes de run_readiness.
+  Si context.company.holdedConnected = false: no bloquees la contratación; tras activar la suscripción, el onboarding guía la conexión de Holded.
   No uses "comprobar viabilidad" para planes mensuales. Usa "Configurar mi plan".
   Si pregunta por "gratis": explicar prueba Holded 14 dias; NO es un plan EXPERT.
   Si quiere soporte mensual barato: Plan Supervisión.

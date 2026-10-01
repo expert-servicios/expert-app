@@ -3712,13 +3712,13 @@ Sí. Si el módulo laboral está activo, las retenciones de nómina se integran 
 
 Migrar a Holded ordena el sistema, pero no sustituye la supervisión continua. Sin un plan de seguimiento, es fácil volver al mismo punto de partida: facturas sin clasificar, conciliaciones pendientes y un cierre trimestral que vuelve a ser una carrera contrarreloj.
 
-Los tres planes mensuales de EXPERT — Supervisión, Avanzado y Colaborativo — cubren distintos niveles de implicación, desde revisión básica hasta preparación y presentación de impuestos. Los tres requieren tener Holded conectado; la licencia de Holded se contrata aparte.
+Los tres planes de EXPERT — Supervisión, Avanzado y Colaborativo — cubren distintos niveles de revisión e intervención y están disponibles con facturación mensual o anual. Los tres incluyen la preparación y presentación de impuestos periódicos dentro del alcance de cada plan. La licencia de Holded se contrata aparte y su conexión se completa durante el onboarding, después de formalizar la suscripción.
 
 ## Comparativa rápida
 
 | Plan | Precio/mes | Implicación | Presentación de impuestos |
 |---|---|---|---|
-| Supervisión | 49 € | Tú llevas la contabilidad en Holded, EXPERT supervisa | No incluida |
+| Supervisión | 49 € | Tú llevas la contabilidad en Holded, EXPERT supervisa | Periódicos básicos incluidos según alcance |
 | Avanzado | 99 € | Tú introduces la información, EXPERT revisa y presenta lo trimestral básico | Trimestrales básicos incluidos |
 | Colaborativo | 199 € | Tú organizas o subes facturas, EXPERT revisa, valida y presenta según alcance | Según alcance acordado |
 
@@ -3731,16 +3731,17 @@ Pensado para autónomos y pequeñas empresas que ya llevan su propia contabilida
 - Alertas básicas de errores y anomalías.
 - Revisión de facturas y categorías principales.
 - Revisión básica de conciliación bancaria.
-- Resumen mensual generado por Kia.
-- Soporte por email y WhatsApp.
+- Resumen mensual generado por KIA.
+- Preparación y presentación de impuestos periódicos básicos, cuando corresponda al alcance contratado.
+- Soporte desde la plataforma EXPERT y KIA.
 
-**No incluye:** presentación de impuestos, contabilidad delegada, subida de facturas por parte de EXPERT, migración de datos ni nóminas.
+**No incluye:** contabilidad delegada, subida de facturas por parte de EXPERT, migración de datos, nóminas ni regularizaciones o fiscalidad de especial complejidad fuera del alcance básico.
 
 Es la entrada recomendada si ya dominas Holded y solo necesitas una supervisión profesional periódica que detecte errores antes de que lleguen al cierre.
 
 ## Plan Avanzado — 99 €/mes
 
-Para autónomos y pymes que quieren revisión profesional más activa, además de la preparación y presentación de impuestos trimestrales básicos.
+Para autónomos y pymes que quieren una revisión profesional más activa, cierre trimestral más completo y mayor intervención de EXPERT, manteniendo incluida la preparación y presentación de impuestos periódicos dentro de su alcance.
 
 **Incluye:**
 - Revisión mensual de Holded.
@@ -3752,7 +3753,7 @@ Para autónomos y pymes que quieren revisión profesional más activa, además d
 
 **No incluye por defecto:** nóminas/laboral, gestión más delegada, alto volumen de facturas o inventario/e-commerce complejo.
 
-Es el salto natural si en Supervisión detectas que necesitas que EXPERT prepare y presente directamente los modelos trimestrales.
+Es el salto natural si en Supervisión detectas que necesitas más revisión de cierre, mayor intervención profesional o un seguimiento fiscal más completo.
 
 ## Plan Colaborativo — 199 €/mes
 
@@ -3768,20 +3769,20 @@ El más completo de los tres, pensado para negocios que quieren mayor intervenci
 
 ## Cómo elegir entre los tres
 
-- Si ya controlas Holded y solo quieres una alerta cuando algo falla: **Supervisión**.
-- Si quieres que EXPERT presente directamente lo trimestral básico: **Avanzado**.
+- Si ya controlas Holded y quieres supervisión, alertas y presentación de impuestos periódicos básicos dentro del alcance: **Supervisión**.
+- Si quieres una revisión de cierre más activa y mayor intervención profesional: **Avanzado**.
 - Si prefieres delegar la validación mensual completa y tener soporte prioritario: **Colaborativo**.
 
 Ninguno de los tres planes garantiza un resultado fiscal concreto: el alcance y la complejidad de cada caso se revisan antes de confirmar el plan, especialmente si hay nóminas, varias sociedades o un volumen alto de facturación.
 
 ## ¿Vienes de una migración a Holded?
 
-Si acabas de migrar o estás a punto de hacerlo, lo habitual es empezar con [Plan Supervisión](https://expertconsulting.es/planes/supervision) si llevas tú la contabilidad, o con [Plan Avanzado](https://expertconsulting.es/planes/avanzado) si quieres que EXPERT presente ya los modelos trimestrales. Puedes ver el detalle completo y cambiar de plan más adelante en la [página de planes](https://expertconsulting.es/planes).
+Si acabas de migrar o estás a punto de hacerlo, lo habitual es empezar con [Plan Supervisión](https://expertconsulting.es/planes/supervision) si llevas tú la contabilidad y necesitas supervisión profesional, o con [Plan Avanzado](https://expertconsulting.es/planes/avanzado) si quieres más revisión de cierre e intervención. Puedes ver el detalle completo y cambiar de plan más adelante en la [página de planes](https://expertconsulting.es/planes).
 
 ## Preguntas frecuentes
 
 **¿La licencia de Holded está incluida en el precio del plan?**
-No. Holded se contrata aparte; los planes mensuales requieren tener Holded conectado desde el Panel Cliente.
+No. Holded se contrata aparte. Puedes formalizar primero la suscripción EXPERT y completar la conexión de Holded durante el onboarding desde el Panel Cliente.
 
 **¿Puedo empezar en Supervisión y subir de plan más adelante?**
 Sí, puedes cambiar de plan con preaviso si tu necesidad de gestión cambia.
