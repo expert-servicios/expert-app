@@ -89,6 +89,16 @@ describe('KIA Holded labor tools', () => {
     expect(engine).not.toMatch(/\.(create|update|delete|post|put)\w*\(/i);
   });
 
+  it('requires capability-specific permissions for general Holded reads', () => {
+    const executor = source('lib/ai/kia/kia-tool-executor.ts');
+    expect(executor).toContain("toolCall.name === 'get_holded_contacts'");
+    expect(executor).toContain("? 'contacts'");
+    expect(executor).toContain("? 'bankAccounts'");
+    expect(executor).toContain("? 'purchaseInvoices'");
+    expect(executor).toContain(": 'salesInvoices'");
+    expect(executor).toContain('resolveKiaCompanyHoldedAccess(admin, context, requiredPermission)');
+  });
+
   it('removes client fallback from existing KIA Holded data tools', () => {
     const executor = source('lib/ai/kia/kia-tool-executor.ts');
     expect(executor).toContain('resolveKiaCompanyHoldedAccess(admin, context)');

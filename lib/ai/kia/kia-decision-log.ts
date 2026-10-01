@@ -33,6 +33,7 @@ export async function saveKiaDecisionLog(input: {
       lead_id: input.context.contact.leadId,
       case_id: null,
       company_id: input.context.company?.id ?? null,
+      service_slug: input.context.service?.slug ?? null,
       input_hash: input.rawInput ? stableHash(input.rawInput) : null,
       output_json: redactJson(input.decision),
       decision_summary: input.decision.decisionSummary,

@@ -3,6 +3,7 @@ import { runKiaDecision } from '../kia-decision-engine';
 import type { KiaContextInput } from '../kia-context-builder';
 import { redactJson, redactSensitiveText, safeErrorMessage } from '../kia-redaction';
 import type { KiaTaskType } from '../kia-output-schema';
+import { estimateCost as estimateModelCost } from '../kia-cost-tracker';
 import { KIA_HEALTH_CANARY_TESTS } from './kia-canary-tests';
 import { runKiaBusinessChecks, runKiaTechnicalChecks } from './kia-health-checks';
 import { anomaliesFromHealthResult, gradeKiaHealthCheck } from './kia-health-grader';
@@ -144,7 +145,7 @@ async function runCanaryCheck(check: KiaHealthCheck): Promise<KiaHealthCheckResu
       latencyMs,
       tokensInput: usage.tokensInput,
       tokensOutput: usage.tokensOutput,
-      costEstimate: estimateCost(decision.providerResult?.provider, usage.tokensInput, usage.tokensOutput),
+      costEstimate: estimateModelCost(decision.providerResult?.model ?? 'unknown', usage.tokensInput ?? 0, usage.tokensOutput ?? 0).estimatedCostUsd,
     });
 
     const maxLatencyMs = Number(process.env.KIA_HEALTH_MAX_LATENCY_MS ?? '10000');
@@ -213,19 +214,6 @@ function extractUsage(usage: unknown): { tokensInput: number | null; tokensOutpu
 
 function numberOrNull(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-function estimateCost(provider: string | undefined, inputTokens: number | null, outputTokens: number | null): number | null {
-  if (inputTokens === null && outputTokens === null) return null;
-  const inTokens = inputTokens ?? 0;
-  const outTokens = outputTokens ?? 0;
-  if (provider === 'anthropic') return roundCost((inTokens * 0.0000008) + (outTokens * 0.000004));
-  if (provider === 'openai') return roundCost((inTokens * 0.0000004) + (outTokens * 0.0000016));
-  return null;
-}
-
-function roundCost(value: number): number {
-  return Math.round(value * 1_000_000) / 1_000_000;
 }
 
 async function saveHealthRun(run: KiaHealthRunResult, createdBy: string | null): Promise<string | undefined> {

@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { gatewayModelForTask, getKiaProviderOrder, isKiaGatewayConfigured } from '../kia-provider-router';
 import type { KiaHealthCheckResult } from './kia-health-types';
+import { estimateCost, extractTokenUsageFromProviderResult } from '../kia-cost-tracker';
 
 export async function runKiaTechnicalChecks(): Promise<KiaHealthCheckResult[]> {
   const checks: KiaHealthCheckResult[] = [];
@@ -10,6 +11,9 @@ export async function runKiaTechnicalChecks(): Promise<KiaHealthCheckResult[]> {
   checks.push(checkThreeProviderFailoverPool());
   checks.push(await checkAnthropicStatus());
   checks.push(await checkOpenAiStatus());
+  checks.push(await checkGeminiCredential());
+  checks.push(await checkAnthropicCredential());
+  checks.push(await checkOpenAiCredential());
   checks.push(checkWabaConfig());
   checks.push(checkEnvPresence('stripe_config_present', 'technical', 'critical', 'Stripe config presente', [
     'STRIPE_SECRET_KEY',
@@ -130,6 +134,196 @@ async function checkOpenAiStatus(): Promise<KiaHealthCheckResult> {
     });
   }
   return checkStatusEndpoint('openai_status', 'OpenAI status público', 'https://status.openai.com/api/v2/status.json');
+}
+
+async function checkGeminiCredential(): Promise<KiaHealthCheckResult> {
+  const apiKey = process.env.GOOGLE_API_KEY?.trim()
+    || process.env.GEMINI_API_KEY?.trim()
+    || process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
+  if (!apiKey) {
+    return technicalResult({
+      checkId: 'gemini_credential_smoke',
+      title: 'Gemini credencial/modelo operativo',
+      severity: 'critical',
+      status: 'failed',
+      error: 'Gemini API key missing',
+    });
+  }
+  const model = process.env.KIA_HEALTH_GEMINI_MODEL?.trim()
+    || process.env.GEMINI_MODEL?.trim()
+    || 'gemini-3.8-flash';
+  return checkOpenAiCompatibleCredential({
+    checkId: 'gemini_credential_smoke',
+    title: 'Gemini credencial/modelo operativo',
+    provider: 'google',
+    model,
+    endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+    apiKey,
+  });
+}
+
+async function checkOpenAiCredential(): Promise<KiaHealthCheckResult> {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) {
+    return technicalResult({
+      checkId: 'openai_credential_smoke',
+      title: 'OpenAI credencial/modelo operativo',
+      severity: 'critical',
+      status: 'failed',
+      error: 'OPENAI_API_KEY missing',
+    });
+  }
+  const model = process.env.KIA_HEALTH_OPENAI_MODEL?.trim()
+    || process.env.OPENAI_MODEL?.trim()
+    || 'gpt-4.1-mini';
+  return checkOpenAiCompatibleCredential({
+    checkId: 'openai_credential_smoke',
+    title: 'OpenAI credencial/modelo operativo',
+    provider: 'openai',
+    model,
+    endpoint: 'https://api.openai.com/v1/chat/completions',
+    apiKey,
+  });
+}
+
+async function checkAnthropicCredential(): Promise<KiaHealthCheckResult> {
+  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+  if (!apiKey) {
+    return technicalResult({
+      checkId: 'anthropic_credential_smoke',
+      title: 'Anthropic credencial/modelo operativo',
+      severity: 'critical',
+      status: 'failed',
+      error: 'ANTHROPIC_API_KEY missing',
+    });
+  }
+
+  const model = process.env.KIA_HEALTH_ANTHROPIC_MODEL?.trim() || 'claude-haiku-4-5-20251001';
+  const started = Date.now();
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 4,
+        temperature: 0,
+        messages: [{ role: 'user', content: 'Reply only OK' }],
+      }),
+      signal: AbortSignal.timeout(8_000),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = typeof data?.error?.message === 'string' ? data.error.message : `HTTP ${response.status}`;
+      return technicalResult({
+        checkId: 'anthropic_credential_smoke',
+        title: 'Anthropic credencial/modelo operativo',
+        severity: 'critical',
+        status: 'failed',
+        latencyMs: Date.now() - started,
+        provider: 'anthropic',
+        model,
+        error: message,
+      });
+    }
+    const usage = extractTokenUsageFromProviderResult({ usage: data?.usage });
+    const cost = estimateCost(model, usage.tokensIn, usage.tokensOut);
+    return technicalResult({
+      checkId: 'anthropic_credential_smoke',
+      title: 'Anthropic credencial/modelo operativo',
+      severity: 'critical',
+      status: 'passed',
+      latencyMs: Date.now() - started,
+      provider: 'anthropic',
+      model,
+      tokensInput: usage.tokensIn,
+      tokensOutput: usage.tokensOut,
+      costEstimate: cost.estimatedCostUsd,
+      actual: { httpStatus: response.status, pricingKnown: cost.pricingKnown },
+    });
+  } catch (error) {
+    return technicalResult({
+      checkId: 'anthropic_credential_smoke',
+      title: 'Anthropic credencial/modelo operativo',
+      severity: 'critical',
+      status: 'failed',
+      latencyMs: Date.now() - started,
+      provider: 'anthropic',
+      model,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+async function checkOpenAiCompatibleCredential(input: {
+  checkId: string;
+  title: string;
+  provider: 'google' | 'openai';
+  model: string;
+  endpoint: string;
+  apiKey: string;
+}): Promise<KiaHealthCheckResult> {
+  const started = Date.now();
+  try {
+    const response = await fetch(input.endpoint, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${input.apiKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: input.model,
+        max_tokens: 4,
+        temperature: 0,
+        messages: [{ role: 'user', content: 'Reply only OK' }],
+      }),
+      signal: AbortSignal.timeout(8_000),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = typeof data?.error?.message === 'string' ? data.error.message : `HTTP ${response.status}`;
+      return technicalResult({
+        checkId: input.checkId,
+        title: input.title,
+        severity: 'critical',
+        status: 'failed',
+        latencyMs: Date.now() - started,
+        provider: input.provider,
+        model: input.model,
+        error: message,
+      });
+    }
+    const usage = extractTokenUsageFromProviderResult({ usage: data?.usage });
+    const cost = estimateCost(input.model, usage.tokensIn, usage.tokensOut);
+    return technicalResult({
+      checkId: input.checkId,
+      title: input.title,
+      severity: 'critical',
+      status: 'passed',
+      latencyMs: Date.now() - started,
+      provider: input.provider,
+      model: input.model,
+      tokensInput: usage.tokensIn,
+      tokensOutput: usage.tokensOut,
+      costEstimate: cost.estimatedCostUsd,
+      actual: { httpStatus: response.status, pricingKnown: cost.pricingKnown },
+    });
+  } catch (error) {
+    return technicalResult({
+      checkId: input.checkId,
+      title: input.title,
+      severity: 'critical',
+      status: 'failed',
+      latencyMs: Date.now() - started,
+      provider: input.provider,
+      model: input.model,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 async function checkStatusEndpoint(checkId: string, title: string, url: string): Promise<KiaHealthCheckResult> {
@@ -344,6 +538,9 @@ function technicalResult(params: {
   provider?: string | null;
   model?: string | null;
   error?: string | null;
+  tokensInput?: number | null;
+  tokensOutput?: number | null;
+  costEstimate?: number | null;
 }): KiaHealthCheckResult {
   return {
     checkId: params.checkId,
@@ -355,6 +552,9 @@ function technicalResult(params: {
     provider: params.provider,
     model: params.model,
     latencyMs: params.latencyMs,
+    tokensInput: params.tokensInput,
+    tokensOutput: params.tokensOutput,
+    costEstimate: params.costEstimate,
     error: params.error ?? null,
   };
 }

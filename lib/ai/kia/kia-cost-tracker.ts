@@ -1,17 +1,23 @@
-// Model pricing (USD per 1M tokens) — approximate, update when pricing changes.
-// GPT-5.6 prices verified against OpenAI public pricing on 2026-09-15.
-// Claude Sonnet 5 / Haiku 4.5 prices verified against Anthropic docs on 2026-09-15.
+// Model pricing (USD per 1M tokens).
+// Verified 2026-10-01 against official OpenAI, Anthropic and Google pricing.
+// Keep this table conservative and explicit: an unknown model must be visible
+// in telemetry instead of silently inheriting a cheaper price.
 const MODEL_PRICING: Record<string, { inputPer1M: number; outputPer1M: number }> = {
-  'claude-sonnet-5':           { inputPer1M: 2.00,  outputPer1M: 10.00 },
-  'claude-sonnet-4-6':         { inputPer1M: 3.00,  outputPer1M: 15.00 },
-  'claude-haiku-4-5-20251001': { inputPer1M: 1.00,  outputPer1M: 5.00  },
-  'claude-haiku-4-5':          { inputPer1M: 1.00,  outputPer1M: 5.00  },
-  'claude-opus-4-8':           { inputPer1M: 15.00, outputPer1M: 75.00 },
-  'gpt-5.6-sol':               { inputPer1M: 5.00,  outputPer1M: 30.00 },
-  'gpt-5.6-terra':             { inputPer1M: 2.50,  outputPer1M: 15.00 },
-  'gpt-5.6-luna':              { inputPer1M: 1.00,  outputPer1M: 6.00  },
-  'gpt-4o':                    { inputPer1M: 5.00,  outputPer1M: 15.00 },
-  'text-embedding-3-small':    { inputPer1M: 0.02,  outputPer1M: 0     },
+  'claude-sonnet-5':            { inputPer1M: 2.00,  outputPer1M: 10.00 },
+  'claude-sonnet-4-6':          { inputPer1M: 3.00,  outputPer1M: 15.00 },
+  'claude-haiku-4-5-20251001':  { inputPer1M: 1.00,  outputPer1M: 5.00  },
+  'claude-haiku-4-5':           { inputPer1M: 1.00,  outputPer1M: 5.00  },
+  'claude-opus-4-8':            { inputPer1M: 5.00,  outputPer1M: 25.00 },
+  'gpt-5.6-sol':                { inputPer1M: 4.00,  outputPer1M: 20.00 },
+  'gpt-5.6-terra':              { inputPer1M: 2.00,  outputPer1M: 12.00 },
+  'gpt-5.6-luna':               { inputPer1M: 0.20,  outputPer1M: 1.20  },
+  'gpt-4.1-mini':               { inputPer1M: 0.40,  outputPer1M: 1.60  },
+  'gpt-4o':                     { inputPer1M: 5.00,  outputPer1M: 15.00 },
+  'gemini-3.8-flash':           { inputPer1M: 0.75,  outputPer1M: 3.75  },
+  'gemini-3.6-flash':           { inputPer1M: 0.75,  outputPer1M: 3.75  },
+  'gemini-3.5-flash':           { inputPer1M: 1.50,  outputPer1M: 9.00  },
+  'gemini-2.5-flash':           { inputPer1M: 0.30,  outputPer1M: 2.50  },
+  'text-embedding-3-small':     { inputPer1M: 0.02,  outputPer1M: 0     },
 };
 
 export interface KiaTokenUsage {
@@ -22,23 +28,30 @@ export interface KiaTokenUsage {
 export interface KiaCostEstimate extends KiaTokenUsage {
   estimatedCostUsd: number;
   model: string;
+  pricingKnown: boolean;
+}
+
+function normalizeModelName(model: string): string {
+  return model.trim().replace(/^(?:openai|anthropic|google)\//, '');
 }
 
 export function estimateCost(model: string, tokensIn: number, tokensOut: number): KiaCostEstimate {
-  const pricing = MODEL_PRICING[model];
+  const normalizedModel = normalizeModelName(model);
+  const pricing = MODEL_PRICING[normalizedModel];
   const estimatedCostUsd = pricing
     ? (tokensIn * pricing.inputPer1M + tokensOut * pricing.outputPer1M) / 1_000_000
     : 0;
-  return { model, tokensIn, tokensOut, estimatedCostUsd };
+  return { model, tokensIn, tokensOut, estimatedCostUsd, pricingKnown: Boolean(pricing) };
 }
 
 export function sumCostEstimates(estimates: KiaCostEstimate[]): KiaCostEstimate {
-  if (!estimates.length) return { model: 'unknown', tokensIn: 0, tokensOut: 0, estimatedCostUsd: 0 };
+  if (!estimates.length) return { model: 'unknown', tokensIn: 0, tokensOut: 0, estimatedCostUsd: 0, pricingKnown: false };
   return {
     model: estimates.map((e) => e.model).join('+'),
     tokensIn: estimates.reduce((s, e) => s + e.tokensIn, 0),
     tokensOut: estimates.reduce((s, e) => s + e.tokensOut, 0),
     estimatedCostUsd: estimates.reduce((s, e) => s + e.estimatedCostUsd, 0),
+    pricingKnown: estimates.every((e) => e.pricingKnown),
   };
 }
 

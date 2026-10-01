@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { isStaffRole } from '@/lib/auth/roles';
 import { intersectHoldedReadPermissions, normalizeDetectedHoldedPermissions, type HoldedPermissions } from '@/lib/integrations/holded/holded-permissions';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { getService } from '@/lib/services/service-registry';
@@ -28,6 +29,7 @@ export interface KiaContextInput {
   currentTask?: string;
   pageData?: Record<string, unknown>;
   originEmail?: KiaOriginEmailContext | null;
+  allowStaffCompanyScope?: boolean;
 }
 
 export interface KiaContext {
@@ -106,10 +108,13 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
       throw new Error('case_context_scope_mismatch');
     }
     resolvedCompanyId = scopedCase.company_id
-      ? await resolveAuthorizedCompanyId(admin, scopedCase.company_id, clientId) : null;
+      ? await resolveAuthorizedCompanyId(admin, scopedCase.company_id, clientId, input.allowStaffCompanyScope === true) : null;
   } else {
-    resolvedCompanyId = await resolveAuthorizedCompanyId(admin, input.companyId, clientId);
+    resolvedCompanyId = await resolveAuthorizedCompanyId(admin, input.companyId, clientId, input.allowStaffCompanyScope === true);
   }
+
+  const staffCompanyScope = input.allowStaffCompanyScope === true && Boolean(resolvedCompanyId);
+  const resourceClientId = staffCompanyScope ? null : clientId;
 
   const openAiKey = (typeof process !== 'undefined' ? process.env.OPENAI_API_KEY : undefined)?.trim() ?? '';
   const shouldLoadMemories = Boolean(openAiKey && input.latestMessage && (phone || clientId || leadId));
@@ -121,7 +126,7 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
     loadProfile(admin, clientId, contact),
     loadCompany(admin, clientId, resolvedCompanyId),
     loadService(input.serviceSlug),
-    loadDocuments(admin, clientId, input.caseId, resolvedCompanyId),
+    loadDocuments(admin, resourceClientId, input.caseId, resolvedCompanyId),
     loadConversation(admin, phone),
     loadSelectedMessage(admin, input.selectedMessageId),
     loadAccounting(admin, resolvedCompanyId),
@@ -174,7 +179,7 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
     nextAction: null,
   }));
   const directCases = (resolvedCompanyId || !phone)
-    ? await loadCasesForClient(admin, clientId, resolvedCompanyId)
+    ? await loadCasesForClient(admin, resourceClientId, resolvedCompanyId)
     : [];
   const cases = resolvedCompanyId
     ? directCases
@@ -258,8 +263,20 @@ async function resolveAuthorizedCompanyId(
   admin: AdminClient,
   requestedCompanyId: string | undefined,
   clientId: string | null,
+  allowStaffCompanyScope = false,
 ): Promise<string | null> {
   if (!clientId) return requestedCompanyId ?? null;
+
+  if (requestedCompanyId && allowStaffCompanyScope) {
+    const [{ data: profile }, { data: company }] = await Promise.all([
+      admin.from('profiles').select('role,status').eq('id', clientId).maybeSingle(),
+      admin.from('companies').select('id').eq('id', requestedCompanyId).maybeSingle(),
+    ]);
+    if (profile && profile.status !== 'inactive' && isStaffRole(profile.role) && company?.id) {
+      return requestedCompanyId;
+    }
+    return null;
+  }
 
   const companyId = requestedCompanyId ?? await loadActiveCompanyId(admin, clientId);
   if (!companyId) return null;
@@ -363,7 +380,7 @@ async function loadDocuments(
   caseId: string | undefined,
   companyId: string | null,
 ): Promise<KiaContext['documents']> {
-  if (!clientId && !caseId) return { pendingCount: 0, recent: [] };
+  if (!clientId && !caseId && !companyId) return { pendingCount: 0, recent: [] };
   let query = admin.from('documents').select('id, original_name, state, created_at').order('created_at', { ascending: false }).limit(5);
   if (caseId) query = query.eq('case_id', caseId);
   if (clientId) query = query.eq('client_id', clientId);
@@ -444,12 +461,12 @@ async function loadCasesForClient(
   clientId: string | null,
   companyId: string | null,
 ): Promise<KiaContext['cases']> {
-  if (!clientId) return [];
+  if (!clientId && !companyId) return [];
   let query = admin
     .from('cases')
     .select('id, service, service_id, state, status, next_action, opened_at, closed_at')
-    .eq('client_id', clientId)
     .is('closed_at', null);
+  if (clientId) query = query.eq('client_id', clientId);
   if (companyId) query = query.eq('company_id', companyId);
   const { data } = await query
     .order('opened_at', { ascending: false })

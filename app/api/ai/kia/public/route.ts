@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { runKiaProviderRequest } from '@/lib/ai/kia/kia-provider-router';
 import { checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
 import { safeErrorMessage } from '@/lib/ai/kia/kia-redaction';
+import { recordKiaProviderUsage } from '@/lib/ai/kia/kia-usage-log';
 import { detectKiaMessageLocale, type KiaLocale } from '@/lib/ai/kia/kia-locale';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, getClientIp } from '@/lib/utils/spam-guard';
@@ -228,6 +229,18 @@ export async function POST(request: NextRequest) {
     }
 
     const meetingRequested = MEETING_REQUEST_RE.test(parsed.data.message);
+
+    await recordKiaProviderUsage({
+      providerResult,
+      taskType: 'chat_reply',
+      channel: 'public_web',
+      contactStatus: 'unknown',
+      rawInput: {
+        message: parsed.data.message,
+        currentPage: parsed.data.currentPage ?? null,
+        hasAttachment: Boolean(parsed.data.attachment),
+      },
+    });
 
     console.info('[KIA public chat] plain response', {
       provider: providerResult.provider,

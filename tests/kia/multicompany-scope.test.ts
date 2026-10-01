@@ -7,11 +7,14 @@ function source(path: string): string {
 }
 
 describe('KIA multi-company scope', () => {
-  it('authorizes an explicit company against profile_companies before using admin context', () => {
+  it('keeps client company scope membership-bound and allows explicit staff Company 360 scope', () => {
     const route = source('app/api/ai/kia/route.ts');
     expect(route).toContain(".from('profile_companies')");
     expect(route).toContain(".eq('profile_id', user.id)");
     expect(route).toContain(".eq('company_id', resolvedCompanyId)");
+    expect(route).toContain("const staffCompanyScope = Boolean(companyId && profile && isStaffRole(profile.role)");
+    expect(route).toContain(".from('companies')");
+    expect(route).toContain("allowStaffCompanyScope: staffCompanyScope");
     expect(route).toContain("error: companyId ? 'company_forbidden' : 'active_company_invalid'");
   });
 
@@ -25,19 +28,20 @@ describe('KIA multi-company scope', () => {
 
   it('reuses one authorized company for coverage, company and accounting context', () => {
     const context = source('lib/ai/kia/kia-context-builder.ts');
-    expect(context).toContain('resolveAuthorizedCompanyId(admin, input.companyId, clientId)');
+    expect(context).toContain('resolveAuthorizedCompanyId(admin, input.companyId, clientId, input.allowStaffCompanyScope === true)');
     expect(context).toContain(".from('profile_companies')");
     expect(context).toContain(".eq('profile_id', clientId)");
     expect(context).toContain(".eq('company_id', companyId)");
     expect(context).toContain('loadCompany(admin, clientId, resolvedCompanyId)');
     expect(context).toContain('resolveCompanyCommercialCoverage(admin, clientId, resolvedCompanyId)');
     expect(context).toContain('loadAccounting(admin, resolvedCompanyId)');
+    expect(context).toContain("isStaffRole(profile.role)");
   });
 
   it('scopes documents and cases to the authorized company when one is active', () => {
     const context = source('lib/ai/kia/kia-context-builder.ts');
-    expect(context).toContain('loadDocuments(admin, clientId, input.caseId, resolvedCompanyId)');
-    expect(context).toContain('loadCasesForClient(admin, clientId, resolvedCompanyId)');
+    expect(context).toContain('loadDocuments(admin, resourceClientId, input.caseId, resolvedCompanyId)');
+    expect(context).toContain('loadCasesForClient(admin, resourceClientId, resolvedCompanyId)');
     expect(context).toContain("if (companyId) query = query.eq('company_id', companyId)");
   });
 });

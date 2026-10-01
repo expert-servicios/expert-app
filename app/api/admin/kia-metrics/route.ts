@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { getKiaVisualGuidanceTelemetry } from '@/lib/ai/kia-auditor/kia-visual-auditor';
+import { getKiaAiBudgetSnapshot } from '@/lib/ai/kia/kia-ai-budget';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
   const sinceIso = since.toISOString();
 
   try {
-    const [logsResult, feedbackResult, memoriesResult, allLogsCount, allSessionsCount, recentSessionsCount, healthRunsCount] = await Promise.all([
+    const [logsResult, feedbackResult, memoriesResult, allLogsCount, allSessionsCount, recentSessionsCount, healthRunsCount, aiBudget] = await Promise.all([
       admin
         .from('kia_decision_logs')
         .select('id, task_type, channel, contact_status, confidence, requires_manual_review, estimated_cost_usd, tokens_in, tokens_out, loop_iterations, model, created_at')
@@ -50,6 +51,7 @@ export async function GET(request: NextRequest) {
         .from('kia_health_runs')
         .select('id', { count: 'exact', head: true })
         .gte('created_at', sinceIso),
+      getKiaAiBudgetSnapshot().catch(() => null),
     ]);
 
     const logs = logsResult.data ?? [];
@@ -124,6 +126,7 @@ export async function GET(request: NextRequest) {
       taskTypes,
       models,
       visualGuidance,
+      aiBudget,
       sourceStatus: {
         decisionLogs: logsResult.error ? 'error' : 'ok',
         feedback: feedbackResult.error ? 'error' : 'ok',
@@ -131,6 +134,7 @@ export async function GET(request: NextRequest) {
         sessions: recentSessionsCount.error ? 'error' : 'ok',
         healthRuns: healthRunsCount.error ? 'error' : 'ok',
         visualGuidance: visualGuidance.auditor.status === 'passed' ? 'ok' : 'error',
+        aiBudget: aiBudget ? 'ok' : 'unavailable',
       },
     });
   } catch (err) {

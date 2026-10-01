@@ -67,7 +67,7 @@ describe('KIA baseline vs Responses shadow', () => {
       provider: 'openai',
       model: 'gpt-5.6-terra',
       usage: { prompt_tokens: 1_000_000, completion_tokens: 1_000_000 },
-    })).toBe(17.5);
+    })).toBe(14);
   });
 
   it('normalizes cost for Responses usage', () => {
@@ -75,6 +75,6 @@ describe('KIA baseline vs Responses shadow', () => {
       provider: 'openai',
       model: 'gpt-5.6-luna',
       usage: { input_tokens: 500_000, output_tokens: 500_000 },
-    })).toBe(3.5);
+    })).toBe(0.7);
   });
 });
