@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, CheckCircle2, Loader2, Phone, User } from 'lucide-react';
-import type { CartLocale } from '@/contexts/CartContext';
+import { getCartCheckoutEndpoint, type CartItem, type CartLocale } from '@/contexts/CartContext';
 
 interface Props {
   priceIds: string[];
+  items?: Array<Pick<CartItem, 'priceId' | 'quantity' | 'itemType' | 'billingInterval'>>;
   disbursements?: string[];
   contentOrigins?: string[];
   disbursementMandateAccepted?: boolean;
@@ -52,6 +53,7 @@ const COPY = {
 
 export function QuickProfileGate({
   priceIds,
+  items = [],
   disbursements = [],
   contentOrigins = [],
   disbursementMandateAccepted = false,
@@ -111,11 +113,31 @@ export function QuickProfileGate({
       const saveData = await saveRes.json() as { error?: string };
       if (!saveRes.ok) throw new Error(locale === 'ru' ? t.saveError : (saveData.error ?? t.saveError));
 
-      const checkoutRes = await fetch('/api/services/checkout', {
+      const checkoutItems: CartItem[] = items.length > 0
+        ? items.map(item => ({
+            priceId: item.priceId,
+            name: '',
+            displayPrice: '',
+            slug: '',
+            category: '',
+            quantity: item.quantity,
+            itemType: item.itemType,
+            billingInterval: item.billingInterval,
+          }))
+        : priceIds.map(priceId => ({
+            priceId,
+            name: '',
+            displayPrice: '',
+            slug: '',
+            category: '',
+            itemType: 'service' as const,
+          }));
+      const checkoutRes = await fetch(getCartCheckoutEndpoint(checkoutItems), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           priceIds,
+          ...(items.length > 0 ? { items } : {}),
           locale,
           ...(contentOrigins.length > 0 ? { contentOrigins } : {}),
           ...(companyId ? { companyId } : {}),
