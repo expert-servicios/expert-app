@@ -542,6 +542,31 @@ async function callOpenAi(
   return callOpenAiCompatible(provider, request, "https://api.openai.com/v1/chat/completions", "openai");
 }
 
+function geminiOpenAiReasoningEffort(
+  effort?: KiaEffort,
+): "low" | "medium" | "high" | undefined {
+  if (!effort) return undefined;
+  if (effort === "xhigh") return "high";
+  return effort;
+}
+
+function normalizeGeminiJsonSchema(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(normalizeGeminiJsonSchema);
+  if (typeof value !== "object" || value === null) return value;
+
+  const source = value as Record<string, unknown>;
+  const normalized: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(source)) {
+    if (key === "const" || key === "maxLength" || key === "minLength") continue;
+    normalized[key] = normalizeGeminiJsonSchema(child);
+  }
+
+  if ("const" in source && !("enum" in source)) {
+    normalized.enum = [normalizeGeminiJsonSchema(source.const)];
+  }
+  return normalized;
+}
+
 async function callOpenAiCompatible(
   provider: ProviderConfig,
   request: KiaProviderRequest,
@@ -553,12 +578,20 @@ async function callOpenAiCompatible(
     content: string;
   }> = [{ role: "system", content: request.systemPrompt }, ...request.messages];
 
+  const isGemini38 =
+    providerName === "google" && /^gemini-3\\.8(?:-|$)/i.test(provider.model);
   const body: Record<string, unknown> = {
     model: provider.model,
     max_tokens: request.maxTokens ?? 900,
-    temperature: request.temperature ?? 0.2,
     messages,
   };
+
+  if (isGemini38) {
+    const reasoningEffort = geminiOpenAiReasoningEffort(request.effort);
+    if (reasoningEffort) body.reasoning_effort = reasoningEffort;
+  } else {
+    body.temperature = request.temperature ?? 0.2;
+  }
 
   if (request.responseSchema) {
     body.response_format = {
@@ -566,7 +599,9 @@ async function callOpenAiCompatible(
       json_schema: {
         name: "kia_decision",
         strict: true,
-        schema: request.responseSchema,
+        schema: providerName === "google"
+          ? normalizeGeminiJsonSchema(request.responseSchema)
+          : request.responseSchema,
       },
     };
   }
