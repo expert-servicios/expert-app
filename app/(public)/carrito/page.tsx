@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingBag, Trash2, ArrowRight, ArrowLeft, Plus } from 'lucide-react';
-import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartContentOrigins, collectCartDisbursements, resolveCartLocale, useCart } from '@/contexts/CartContext';
+import { buildCartCheckoutPayload, cartContainsDisbursements, collectCartContentOrigins, collectCartDisbursements, getCartCheckoutEndpoint, resolveCartLocale, useCart } from '@/contexts/CartContext';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { QuickProfileGate } from '@/components/cart/QuickProfileGate';
 import { CompanyCheckoutGate } from '@/components/cart/CompanyCheckoutGate';
@@ -95,7 +95,7 @@ const COPY = {
 
 function CarritoContent() {
   const searchParams = useSearchParams();
-  const { items, removeItem, clearCart } = useCart();
+  const { items, removeItem, setQuantity, clearCart } = useCart();
   const locale = searchParams.get('lang') === 'ru' || resolveCartLocale(items) === 'ru' ? 'ru' : 'es';
   const t = COPY[locale];
   const cartPath = locale === 'ru' ? '/carrito?lang=ru' : '/carrito';
@@ -127,7 +127,7 @@ function CarritoContent() {
     setNeedsProfile(false);
     if (!companyId) setNeedsCompany(false);
     try {
-      const res  = await fetch('/api/services/checkout', {
+      const res  = await fetch(getCartCheckoutEndpoint(items), {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body   : JSON.stringify(buildCartCheckoutPayload(items, disbursementMandateAccepted, companyId)),
@@ -218,6 +218,28 @@ function CarritoContent() {
                         {item.name}
                       </Link>
                       <p className="mt-1 text-sm font-bold text-[#D4A017]">{item.displayPrice}</p>
+                      {item.itemType === 'subscription' && (
+                        <div className="mt-2 flex items-center gap-2 text-xs text-[#23364D]">
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(item.priceId, Math.max(1, (item.quantity ?? 1) - 1))}
+                            disabled={(item.quantity ?? 1) <= 1}
+                            className="h-7 w-7 rounded-md border border-[#D4A017]/30 bg-[#F8F6F1] font-bold disabled:opacity-40"
+                            aria-label={`Reducir unidades de ${item.name}`}
+                          >
+                            −
+                          </button>
+                          <span className="min-w-8 text-center font-bold">{item.quantity ?? 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(item.priceId, Math.min(20, (item.quantity ?? 1) + 1))}
+                            className="h-7 w-7 rounded-md border border-[#D4A017]/30 bg-[#F8F6F1] font-bold"
+                            aria-label={`Aumentar unidades de ${item.name}`}
+                          >
+                            +
+                          </button>
+                        </div>
+                      )}
                       {item.disbursementNotice && (
                         <p className="mt-2 rounded-lg border border-[#D4A017]/25 bg-[#F8F6F1] px-3 py-2 text-xs leading-5 text-[#23364D]/70">
                           {item.disbursementNotice}
@@ -284,7 +306,9 @@ function CarritoContent() {
                 <div className="space-y-2 text-sm text-[#23364D]">
                   {items.map(item => (
                     <div key={item.priceId} className="flex items-start justify-between gap-2">
-                      <span className="min-w-0 leading-snug">{item.name}</span>
+                      <span className="min-w-0 leading-snug">
+                        {item.name}{item.itemType === 'subscription' && (item.quantity ?? 1) > 1 ? ` × ${item.quantity}` : ''}
+                      </span>
                       <span className="shrink-0 font-semibold text-[#0D1B2A]">{item.displayPrice}</span>
                     </div>
                   ))}
