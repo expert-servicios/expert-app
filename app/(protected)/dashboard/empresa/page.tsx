@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft, Building2, Check, Plus, Pencil } from 'lucide-react';
 import { CompanyEditForm } from './CompanyEditForm';
+import { Company360Questionnaire } from '@/components/company/Company360Questionnaire';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 interface Company {
@@ -142,6 +143,12 @@ export default async function EmpresaPage({
               </div>
             </div>
             <CompanyEditForm company={editingCompany} returnPath={safeNext} />
+          </div>
+        )}
+
+        {editingCompany && (
+          <div className="mt-6">
+            <Company360Questionnaire companyId={editingCompany.id} />
           </div>
         )}
       </div>
