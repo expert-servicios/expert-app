@@ -193,7 +193,12 @@ function useKiaChat(pathname: string, contextToken?: string, companyId?: string)
   }, [contextToken]);
 
   useEffect(() => {
+    setContextSummary(null);
+    setContextLoading(false);
+    setMessages([welcomeMessage(true)]);
+    setStaffPreview(false);
     setSessionId(undefined);
+    setLoading(false);
   }, [companyId]);
 
   useEffect(() => {
