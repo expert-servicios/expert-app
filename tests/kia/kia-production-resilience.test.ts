@@ -22,6 +22,12 @@ describe('KIA production resilience', () => {
     expect(router).toContain('models: gatewayFallbackModelsForTask(request.taskType)');
   });
 
+  it('fails over when a structured provider returns prose instead of JSON', () => {
+    expect(router).toContain('AI Gateway returned a non-JSON response for a structured request');
+    expect(router).toContain('${providerName} returned a non-JSON response for a structured request');
+    expect(router).toContain('request.responseSchema && !parsedJson && toolCalls.length === 0');
+  });
+
   it('keeps direct providers as fallback only', () => {
     expect(router).toContain('getKiaProviderOrder()');
     expect(router).toContain('provider: "vercel-ai-gateway"');
