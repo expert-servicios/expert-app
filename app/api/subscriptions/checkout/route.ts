@@ -5,6 +5,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { isCompanyBillingReady, missingCompanyBillingFields } from '@/lib/companies/billing-readiness';
 import { resolveCompanyCommercialCoverage } from '@/lib/subscriptions/company-commercial-coverage';
+import { getSubscriptionInvitePlanByServiceSlug } from '@/lib/subscriptions/invitation-plans';
 import {
   claimSubscriptionCheckout,
   expireSubscriptionCheckoutClaim,
@@ -15,7 +16,8 @@ import {
 
 const bodySchema = z.object({
   priceId: z.string().min(1),
-  companyId: z.string().uuid().optional()
+  companyId: z.string().uuid().optional(),
+  quoteId: z.string().uuid().optional(),
 });
 
 type BillingInterval = 'month' | 'year';
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'priceId requerido y companyId debe ser UUID si se indica' }, { status: 400 });
     }
 
-    const { priceId, companyId: requestedCompanyId } = parseResult.data;
+    const { priceId, companyId: requestedCompanyId, quoteId } = parseResult.data;
     if (!VALID_PLAN_IDS.includes(priceId)) {
       return NextResponse.json({ error: 'Plan no valido' }, { status: 400 });
     }
@@ -63,6 +65,56 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = getSupabaseAdmin();
+
+    let invitationQuote: {
+      id: string;
+      status: string;
+      company_id: string | null;
+      claim_email: string | null;
+      expires_at: string | null;
+      amount_eur: number | string;
+      service_slugs: string[] | null;
+    } | null = null;
+
+    if (quoteId) {
+      const { data: quote, error: quoteError } = await admin
+        .from('quotes')
+        .select('id,client_id,status,company_id,claim_email,expires_at,amount_eur,service_slugs')
+        .eq('id', quoteId)
+        .maybeSingle();
+
+      if (quoteError || !quote) {
+        return NextResponse.json({ error: 'Presupuesto de suscripción no encontrado.' }, { status: 404 });
+      }
+      if (quote.client_id !== user.id) {
+        return NextResponse.json({ error: 'Este presupuesto no pertenece a tu cuenta.' }, { status: 403 });
+      }
+      if (!['sent', 'accepted'].includes(quote.status)) {
+        return NextResponse.json({ error: 'Este presupuesto ya no admite contratación.' }, { status: 409 });
+      }
+      if (quote.expires_at && new Date(quote.expires_at).getTime() < Date.now()) {
+        return NextResponse.json({ error: 'Este presupuesto ha caducado.' }, { status: 410 });
+      }
+      const userEmail = user.email?.trim().toLowerCase() ?? '';
+      const claimEmail = quote.claim_email?.trim().toLowerCase() ?? '';
+      if (claimEmail && claimEmail !== userEmail) {
+        return NextResponse.json({ error: 'Accede con el email que recibió esta propuesta.' }, { status: 403 });
+      }
+
+      const planService = Array.isArray(quote.service_slugs)
+        ? quote.service_slugs.find((slug) => typeof slug === 'string' && slug.startsWith('plan-'))
+        : null;
+      const invitePlan = getSubscriptionInvitePlanByServiceSlug(planService);
+      if (!invitePlan || invitePlan.priceId !== priceId || invitePlan.amountEur !== configuredPlan.amountEur) {
+        return NextResponse.json({ error: 'El plan no coincide con el presupuesto aceptado.' }, { status: 409 });
+      }
+      if (Number(quote.amount_eur) !== configuredPlan.amountEur) {
+        return NextResponse.json({ error: 'El importe del presupuesto no coincide con el plan.' }, { status: 409 });
+      }
+
+      invitationQuote = quote;
+    }
+
     const { data: profile, error: profileError } = await admin
       .from('profiles')
       .select('profile_completed,active_company_id')
@@ -86,6 +138,13 @@ export async function POST(request: NextRequest) {
         { error: 'Selecciona o crea la entidad fiscal que va a contratar el plan.', code: 'company_required' },
         { status: 409 }
       );
+    }
+
+    if (invitationQuote?.company_id && invitationQuote.company_id !== companyId) {
+      return NextResponse.json({
+        error: 'Este presupuesto ya está vinculado a otra entidad fiscal.',
+        code: 'quote_company_conflict',
+      }, { status: 409 });
     }
 
     const { data: membership, error: membershipError } = await admin
@@ -244,7 +303,8 @@ export async function POST(request: NextRequest) {
       company_id: companyId,
       plan_name: configuredPlan.name,
       billing: configuredPlan.interval,
-      product_type: 'suscripcion'
+      product_type: 'suscripcion',
+      ...(quoteId ? { quote_id: quoteId } : {}),
     };
 
     let session;
@@ -308,6 +368,7 @@ export async function POST(request: NextRequest) {
         amount_eur: configuredPlan.amountEur,
         automatic_tax: true,
         tax_behavior: 'exclusive',
+        ...(quoteId ? { quote_id: quoteId } : {}),
       }
     });
 
@@ -340,6 +401,57 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json({ error: 'No se pudo registrar de forma segura la sesión de contratación' }, { status: 500 });
+    }
+
+    if (quoteId) {
+      const { data: linkedQuote, error: quoteLinkError } = await admin
+        .from('quotes')
+        .update({
+          company_id: companyId,
+          status: 'accepted',
+          stripe_checkout_id: session.id,
+        })
+        .eq('id', quoteId)
+        .eq('client_id', user.id)
+        .in('status', ['sent', 'accepted'])
+        .select('id')
+        .maybeSingle();
+
+      if (quoteLinkError || !linkedQuote) {
+        console.error('[subscriptions/checkout] failed to bind invitation quote:', quoteLinkError);
+        let stripeExpired = false;
+        try {
+          await stripe.checkout.sessions.expire(session.id);
+          stripeExpired = true;
+        } catch (expireError) {
+          console.error('[subscriptions/checkout] failed to expire session after quote bind error:', expireError);
+        }
+
+        if (stripeExpired) {
+          await admin
+            .from('checkout_sessions')
+            .update({ status: 'expired' })
+            .eq('stripe_session_id', session.id)
+            .in('status', ['open', 'pending']);
+
+          await expireSubscriptionCheckoutClaim(admin, {
+            claimId: claim.claimId,
+            ownerToken,
+            error: 'quote_binding_failed',
+          }).catch(() => {});
+        } else {
+          await flagSubscriptionCheckoutClaimReview(admin, {
+            claimId: claim.claimId,
+            ownerToken,
+            error: 'quote_binding_failed_and_session_expire_failed',
+          }).catch(() => {});
+        }
+
+        return NextResponse.json({
+          error: 'No se pudo vincular de forma segura el pago al presupuesto.',
+          code: stripeExpired ? 'quote_binding_retry' : 'checkout_manual_review',
+        }, { status: 500 });
+      }
     }
 
     try {
@@ -388,7 +500,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ url: session.url, sessionId: session.id, companyId });
+    return NextResponse.json({ url: session.url, sessionId: session.id, companyId, quoteId: quoteId ?? null });
   } catch (error) {
     console.error('Subscription checkout error:', error);
     return NextResponse.json({ error: 'Error al crear la sesion de pago' }, { status: 500 });
