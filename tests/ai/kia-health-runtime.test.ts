@@ -22,6 +22,18 @@ describe('Kia health runtime safeguards', () => {
     expect(engine).toContain('input.persistDecisionLog === false ? null : await saveKiaDecisionLog');
   });
 
+  it('keeps daily health cheap and validates all three paid credentials', () => {
+    const route = read('app/api/cron/kia-health/route.ts');
+    const checks = read('lib/ai/kia/health/kia-health-checks.ts');
+
+    expect(route).toContain('export const maxDuration = 180');
+    expect(route).toContain("new Date().getUTCDay() === 0");
+    expect(route).toContain('includeCanary');
+    expect(checks).toContain('checkGeminiCredential');
+    expect(checks).toContain('checkAnthropicCredential');
+    expect(checks).toContain('checkOpenAiCredential');
+  });
+
   it('runs canaries with bounded concurrency instead of serial execution', () => {
     const runner = read('lib/ai/kia/health/kia-health-runner.ts');
 
