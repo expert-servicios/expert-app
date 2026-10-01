@@ -39,6 +39,7 @@ export function AdminKiaCopilotWorkspace() {
   const [input, setInput] = useState('');
   const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [sending, setSending] = useState(false);
+  const [sessionId, setSessionId] = useState<string | undefined>();
   const [error, setError] = useState('');
   const [messages, setMessages] = useState<Message[]>([{
     id: 'welcome',
@@ -77,6 +78,7 @@ export function AdminKiaCopilotWorkspace() {
 
   function changeCompany(nextId: string) {
     setCompanyId(nextId);
+    setSessionId(undefined);
     setMessages([{
       id: crypto.randomUUID(),
       role: 'assistant',
@@ -102,6 +104,7 @@ export function AdminKiaCopilotWorkspace() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message,
+          sessionId,
           companyId,
           currentPage: '/admin/kia',
           currentTask: 'admin_company_copilot',
@@ -110,6 +113,8 @@ export function AdminKiaCopilotWorkspace() {
         }),
       });
       const json = await response.json() as KiaResponse;
+      const returnedSessionId = response.headers.get('x-kia-session-id');
+      if (returnedSessionId) setSessionId(returnedSessionId);
       const reply = json.reply?.trim() || (response.ok ? 'No he recibido contenido útil. Vuelve a formular la consulta.' : 'No he podido completar esta consulta.');
       const suggestions = [...(json.quickReplies ?? []), ...(json.proactiveSuggestions ?? [])].slice(0, 5);
       setMessages((current) => [...current, {
