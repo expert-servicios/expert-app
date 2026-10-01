@@ -85,6 +85,9 @@ interface PageProps {
 export default async function SubscriptionsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const initialBilling: 'mensual' | 'anual' = params.billing === 'anual' ? 'anual' : 'mensual';
+  const initialPlan = ['supervision', 'avanzado', 'colaborativo'].includes(params.plan ?? '')
+    ? params.plan as 'supervision' | 'avanzado' | 'colaborativo'
+    : null;
 
   const [{ subscriptions, company, coverage }, invoices] = await Promise.all([getSubscriptions(), getInvoices()]);
   const activeSubscriptions = subscriptions.filter((s) => s.status === 'active' || s.status === 'trialing');
@@ -222,6 +225,7 @@ export default async function SubscriptionsPage({ searchParams }: PageProps) {
                 planAvanzadoAnnualId={process.env.STRIPE_PLAN_ANNUAL_99 ?? ''}
                 planColaborativoAnnualId={process.env.STRIPE_PLAN_ANNUAL_199 ?? ''}
                 initialBilling={initialBilling}
+                initialPlan={initialPlan}
                 companyId={company.id}
               />
             </div>
