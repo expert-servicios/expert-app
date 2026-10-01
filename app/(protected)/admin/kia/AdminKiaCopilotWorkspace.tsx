@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Building2, Loader2, RefreshCw, Send, ShieldCheck } from 'lucide-react';
 import { KiaAvatar } from '@/components/kia/KiaAvatar';
 import type { KiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
@@ -31,6 +32,8 @@ type KiaResponse = {
 };
 
 export function AdminKiaCopilotWorkspace() {
+  const searchParams = useSearchParams();
+  const requestedCompanyId = searchParams.get('companyId');
   const [companies, setCompanies] = useState<Company[]>([]);
   const [companyId, setCompanyId] = useState('');
   const [input, setInput] = useState('');
@@ -53,7 +56,7 @@ export function AdminKiaCopilotWorkspace() {
       if (!response.ok) throw new Error(json.error ?? 'No se pudieron cargar las empresas');
       const rows = (json.companies ?? []) as Company[];
       setCompanies(rows);
-      setCompanyId((current) => current || rows[0]?.id || '');
+      setCompanyId((current) => current || (requestedCompanyId && rows.some((item) => item.id === requestedCompanyId) ? requestedCompanyId : '') || rows[0]?.id || '');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error cargando empresas');
     } finally {
@@ -63,7 +66,8 @@ export function AdminKiaCopilotWorkspace() {
 
   useEffect(() => {
     void loadCompanies();
-  }, []);
+    // requestedCompanyId intentionally selects the Company 360 context on entry.
+  }, [requestedCompanyId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const company = useMemo(
     () => companies.find((item) => item.id === companyId) ?? null,
