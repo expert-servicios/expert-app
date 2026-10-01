@@ -780,12 +780,21 @@ export async function POST(request: NextRequest) {
       year: 'numeric',
     }).format(start);
 
-    const managementToken = await createBookingManagementToken({
-      appointmentId: appointmentId!,
-      email: bookingEmail,
-      service: service.key,
-    });
-    const managementLinks = bookingManagementUrls(managementToken, service.key);
+    let managementLinks: { cancelUrl: string; rescheduleUrl: string } | null = null;
+    try {
+      const managementToken = await createBookingManagementToken({
+        appointmentId: appointmentId!,
+        email: bookingEmail,
+        service: service.key,
+      });
+      managementLinks = bookingManagementUrls(managementToken, service.key);
+    } catch (managementError) {
+      console.error(
+        '[booking] management links unavailable; booking remains confirmed:',
+        managementError instanceof Error ? managementError.message : String(managementError),
+      );
+    }
+
     const clientTemplate = citaConfirmed(
       input.name,
       service.label,

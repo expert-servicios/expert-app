@@ -13,6 +13,15 @@ describe('Kia health runtime safeguards', () => {
     expect(engine).toContain("input.includeOfficialSourceContext === false");
   });
 
+  it('does not persist synthetic canary identities into production decision logs', () => {
+    const runner = read('lib/ai/kia/health/kia-health-runner.ts');
+    const engine = read('lib/ai/kia/kia-decision-engine.ts');
+
+    expect(runner).toContain('persistDecisionLog: false');
+    expect(engine).toContain('persistDecisionLog?: boolean');
+    expect(engine).toContain('input.persistDecisionLog === false ? null : await saveKiaDecisionLog');
+  });
+
   it('runs canaries with bounded concurrency instead of serial execution', () => {
     const runner = read('lib/ai/kia/health/kia-health-runner.ts');
 

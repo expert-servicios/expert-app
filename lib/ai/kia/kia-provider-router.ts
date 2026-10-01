@@ -28,6 +28,7 @@ const GATEWAY_DEFAULT_MODEL = "openai/gpt-5.4";
 const GATEWAY_REASONING_MODEL = "openai/gpt-5.6-sol";
 const GEMINI_CHAT_MODEL = "google/gemini-3.6-flash";
 const GEMINI_DIRECT_DEFAULT_MODEL = "gemini-3.8-flash";
+const GEMINI_DIRECT_FREE_FALLBACK_MODEL = "gemini-3.5-flash";
 const GEMINI_REASONING_MODEL = "google/gemini-3.1-pro-preview";
 const GATEWAY_ANTHROPIC_FALLBACK_MODEL = "anthropic/claude-sonnet-5";
 
@@ -154,7 +155,8 @@ export function getKiaProviderOrder(): ProviderConfig[] {
     model: provider.model,
   }));
 
-  const geminiKey = process.env.GEMINI_API_KEY?.trim()
+  const geminiKey = process.env.GOOGLE_API_KEY?.trim()
+    || process.env.GEMINI_API_KEY?.trim()
     || process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
   if (geminiKey) {
     providers.push({
@@ -504,7 +506,33 @@ async function callGoogle(
   provider: ProviderConfig,
   request: KiaProviderRequest,
 ): Promise<KiaProviderResult> {
-  return callOpenAiCompatible(provider, request, GEMINI_OPENAI_COMPAT_URL, "google");
+  try {
+    return await callOpenAiCompatible(provider, request, GEMINI_OPENAI_COMPAT_URL, "google");
+  } catch (error) {
+    const message = safeErrorMessage(error);
+    const shouldRetryFreeTier =
+      provider.model !== GEMINI_DIRECT_FREE_FALLBACK_MODEL
+      && /HTTP\s+402\b|payment required|billing/i.test(message);
+
+    if (!shouldRetryFreeTier) throw error;
+
+    console.warn(
+      "[Kia provider router] Gemini paid-tier model unavailable; retrying free-tier model",
+      redactJson({
+        fromModel: provider.model,
+        toModel: GEMINI_DIRECT_FREE_FALLBACK_MODEL,
+        taskType: request.taskType,
+        error: message,
+      }),
+    );
+
+    return callOpenAiCompatible(
+      { ...provider, model: GEMINI_DIRECT_FREE_FALLBACK_MODEL },
+      request,
+      GEMINI_OPENAI_COMPAT_URL,
+      "google",
+    );
+  }
 }
 
 async function callOpenAi(

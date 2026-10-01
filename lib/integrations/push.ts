@@ -26,16 +26,16 @@ async function sendToSubscriptions(
   admin: ReturnType<typeof getSupabaseAdmin>,
   userIds: string[],
   payload: PushPayload,
-): Promise<{ attempted: number; delivered: number; dead: number; errors: number; lookupError: boolean }> {
+): Promise<{ attempted: number; delivered: number; dead: number; errors: number; lookupError: boolean; cleanupError: boolean }> {
   const { data: subs, error: lookupError } = await admin
     .from('push_subscriptions')
     .select('endpoint,p256dh,auth,user_id')
     .in('user_id', userIds);
 
   if (lookupError) {
-    return { attempted: 0, delivered: 0, dead: 0, errors: 1, lookupError: true };
+    return { attempted: 0, delivered: 0, dead: 0, errors: 1, lookupError: true, cleanupError: false };
   }
-  if (!subs?.length) return { attempted: 0, delivered: 0, dead: 0, errors: 0, lookupError: false };
+  if (!subs?.length) return { attempted: 0, delivered: 0, dead: 0, errors: 0, lookupError: false, cleanupError: false };
 
   const dead: string[] = [];
   let delivered = 0;
@@ -57,11 +57,36 @@ async function sendToSubscriptions(
     })
   );
 
+  let cleanupError = false;
+  let removedDead = 0;
   if (dead.length) {
-    await admin.from('push_subscriptions').delete().in('endpoint', dead);
+    const { error: deleteError } = await admin.from('push_subscriptions').delete().in('endpoint', dead);
+    if (deleteError) {
+      cleanupError = true;
+      errors++;
+      console.error('[push] expired subscription cleanup failed:', deleteError.message);
+    } else {
+      removedDead = dead.length;
+    }
   }
 
-  return { attempted: subs.length, delivered, dead: dead.length, errors, lookupError: false };
+  return { attempted: subs.length, delivered, dead: removedDead, errors, lookupError: false, cleanupError };
+}
+
+async function persistAdminPushHealth(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  value: Record<string, unknown>,
+): Promise<boolean> {
+  const { error } = await admin.from('system_kv').upsert({
+    key: 'admin_push_health',
+    value,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'key' });
+  if (error) {
+    console.error('[push] admin_push_health persistence failed:', error.message);
+    return false;
+  }
+  return true;
 }
 
 // Send push to all admin + owner users
@@ -72,15 +97,11 @@ export async function notifyAdmins(payload: PushPayload): Promise<void> {
 
   const admin = getSupabaseAdmin();
   if (!ensureVapid()) {
-    await admin.from('system_kv').upsert({
-      key: 'admin_push_health',
-      value: {
-        status: 'misconfigured',
-        reason: 'missing_vapid',
-        checked_at: new Date().toISOString(),
-      },
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'key' });
+    await persistAdminPushHealth(admin, {
+      status: 'misconfigured',
+      reason: 'missing_vapid',
+      checked_at: new Date().toISOString(),
+    });
     return;
   }
 
@@ -90,51 +111,43 @@ export async function notifyAdmins(payload: PushPayload): Promise<void> {
     .in('role', ['admin', 'owner']);
 
   if (profileLookupError) {
-    await admin.from('system_kv').upsert({
-      key: 'admin_push_health',
-      value: {
-        status: 'degraded',
-        reason: 'admin_profile_lookup_failed',
-        checked_at: new Date().toISOString(),
-      },
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'key' });
+    await persistAdminPushHealth(admin, {
+      status: 'degraded',
+      reason: 'admin_profile_lookup_failed',
+      checked_at: new Date().toISOString(),
+    });
     return;
   }
 
   if (!profiles?.length) {
-    await admin.from('system_kv').upsert({
-      key: 'admin_push_health',
-      value: {
-        status: 'degraded',
-        reason: 'no_admin_profiles',
-        checked_at: new Date().toISOString(),
-      },
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'key' });
+    await persistAdminPushHealth(admin, {
+      status: 'degraded',
+      reason: 'no_admin_profiles',
+      checked_at: new Date().toISOString(),
+    });
     return;
   }
 
   const delivery = await sendToSubscriptions(admin, profiles.map((p) => p.id as string), payload);
-  await admin.from('system_kv').upsert({
-    key: 'admin_push_health',
-    value: {
-      status: delivery.lookupError
-        ? 'degraded'
-        : delivery.attempted === 0
-          ? 'no_subscription'
-          : delivery.errors === 0 && delivery.delivered === delivery.attempted
-            ? 'ok'
-            : 'degraded',
-      reason: delivery.lookupError ? 'subscription_lookup_failed' : null,
-      attempted: delivery.attempted,
-      delivered: delivery.delivered,
-      dead: delivery.dead,
-      errors: delivery.errors,
-      checked_at: new Date().toISOString(),
-    },
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'key' });
+  await persistAdminPushHealth(admin, {
+    status: delivery.lookupError || delivery.cleanupError
+      ? 'degraded'
+      : delivery.attempted === 0
+        ? 'no_subscription'
+        : delivery.errors === 0 && delivery.delivered === delivery.attempted
+          ? 'ok'
+          : 'degraded',
+    reason: delivery.lookupError
+      ? 'subscription_lookup_failed'
+      : delivery.cleanupError
+        ? 'subscription_cleanup_failed'
+        : null,
+    attempted: delivery.attempted,
+    delivered: delivery.delivered,
+    dead: delivery.dead,
+    errors: delivery.errors,
+    checked_at: new Date().toISOString(),
+  });
 }
 
 function escapeHtml(text: string): string {

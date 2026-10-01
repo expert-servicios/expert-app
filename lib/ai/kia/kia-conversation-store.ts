@@ -1,4 +1,5 @@
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { recordClientRegistryEvent } from './kia-client-ledger';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -104,7 +105,7 @@ export async function persistKiaConversationTurn(input: {
     if (error) throw error;
   }
 
-  const { error: messageError } = await input.admin
+  const { data: storedMessages, error: messageError } = await input.admin
     .from('kia_conversation_messages')
     .insert([
       {
@@ -127,8 +128,56 @@ export async function persistKiaConversationTurn(input: {
         avatar_state: input.avatarState ?? null,
         metadata: input.metadata ?? {},
       },
-    ]);
+    ])
+    .select('id,role,created_at');
   if (messageError) throw messageError;
+
+  const staffPreview = input.metadata?.staff_preview === true;
+  if (process.env.KIA_CLIENT_LEDGER_ENABLED?.trim().toLowerCase() === 'true' && !staffPreview) {
+    const byRole = new Map((storedMessages ?? []).map((row) => [row.role, row]));
+    const userRow = byRole.get('user');
+    const assistantRow = byRole.get('assistant');
+    const base = {
+      clientId: input.profileId,
+    };
+    const common = {
+      companyId: input.companyId ?? null,
+      caseId: input.caseId ?? null,
+      channel: input.channel,
+    };
+    await Promise.allSettled([
+      userRow
+        ? recordClientRegistryEvent(input.admin, base, {
+            eventType: input.channel === 'telegram' ? 'telegram.inbound' : 'chat.user',
+            occurredAt: userRow.created_at,
+            sourceKey: `kia-message:${userRow.id}`,
+            title: input.channel === 'telegram' ? 'Telegram KIA' : 'Chat KIA',
+            summary: input.userMessage.slice(0, 600),
+            sourceTable: 'kia_conversation_messages',
+            sourceId: userRow.id,
+            sourceRef: `kia-conversation:${conversationId}`,
+            direction: 'in',
+            importance: 1,
+            ...common,
+          })
+        : Promise.resolve(null),
+      assistantRow
+        ? recordClientRegistryEvent(input.admin, base, {
+            eventType: input.channel === 'telegram' ? 'telegram.outbound' : 'chat.kia',
+            occurredAt: assistantRow.created_at,
+            sourceKey: `kia-message:${assistantRow.id}`,
+            title: input.channel === 'telegram' ? 'Telegram KIA' : 'Chat KIA',
+            summary: input.assistantMessage.slice(0, 600),
+            sourceTable: 'kia_conversation_messages',
+            sourceId: assistantRow.id,
+            sourceRef: `kia-conversation:${conversationId}`,
+            direction: 'out',
+            importance: 1,
+            ...common,
+          })
+        : Promise.resolve(null),
+    ]);
+  }
 
   return conversationId;
 }

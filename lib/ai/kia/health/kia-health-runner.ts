@@ -132,6 +132,7 @@ async function runCanaryCheck(check: KiaHealthCheck): Promise<KiaHealthCheckResu
       locale: /[А-Яа-яЁё]/.test(check.input.message) ? 'ru' : 'es',
       allowTools: false,
       includeOfficialSourceContext: false,
+      persistDecisionLog: false,
     });
     const latencyMs = Date.now() - started;
     const usage = extractUsage(decision.providerResult?.usage);

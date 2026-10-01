@@ -65,6 +65,7 @@ export async function runKiaDecision(input: {
   locale?: 'es' | 'ru';
   allowTools?: boolean;
   includeOfficialSourceContext?: boolean;
+  persistDecisionLog?: boolean;
   forceToolExecution?: boolean;
   allowedToolNames?: string[];
   toolAuthorization?: Pick<KiaToolAuthorizationContext, 'maxRiskTier' | 'allowedEffects' | 'autonomousOnly'>;
@@ -135,7 +136,7 @@ export async function runKiaDecision(input: {
       input.channel,
       locale,
     );
-    const decisionLogId = await saveKiaDecisionLog({
+    const decisionLogId = input.persistDecisionLog === false ? null : await saveKiaDecisionLog({
       decision: clarifyDecision,
       channel: input.channel,
       context,
@@ -436,7 +437,7 @@ export async function runKiaDecision(input: {
   }
 
   const totalCost = costEstimates.length ? sumCostEstimates(costEstimates) : null;
-  const decisionLogId = await saveKiaDecisionLog({
+  const decisionLogId = input.persistDecisionLog === false ? null : await saveKiaDecisionLog({
     decision,
     channel: input.channel,
     context,
