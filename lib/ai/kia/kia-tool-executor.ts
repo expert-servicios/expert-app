@@ -149,8 +149,8 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         return ok(toolCall.name, context.accounting);
 
       case 'get_accounting_snapshot': {
-        const companyId = typeof args.companyId === 'string' ? args.companyId : context.company?.id ?? null;
-        if (!companyId) return fail(toolCall.name, 'No hay empresa identificada. Proporciona companyId o asegúrate de que hay una empresa en contexto.');
+        const companyId = context.company?.id ?? null;
+        if (!companyId) return fail(toolCall.name, 'No hay una empresa activa y autorizada en el contexto de KIA.');
 
         const periods = args.periods as number;
         const includeAnomalies = args.includeAnomalies as boolean;
@@ -204,7 +204,18 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
       case 'get_holded_invoices':
       case 'get_holded_contacts':
       case 'get_holded_bank_balance': {
-        const access = await resolveKiaCompanyHoldedAccess(admin, context);
+        const docType = toolCall.name === 'get_holded_invoices'
+          ? String(args.docType ?? 'invoice')
+          : null;
+        const requiredPermission =
+          toolCall.name === 'get_holded_contacts'
+            ? 'contacts'
+            : toolCall.name === 'get_holded_bank_balance'
+              ? 'bankAccounts'
+              : docType === 'purchase'
+                ? 'purchaseInvoices'
+                : 'salesInvoices';
+        const access = await resolveKiaCompanyHoldedAccess(admin, context, requiredPermission);
         if (!access.ok) {
           return fail(toolCall.name, `${access.error} Usa generate_holded_connection_link si necesitas vincular Holded.`);
         }
@@ -212,7 +223,6 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         const hdrs = buildHoldedHeaders(auth.apiKey);
 
         if (toolCall.name === 'get_holded_invoices') {
-          const docType = String(args.docType ?? 'invoice');
           const limit = Number(args.limit ?? 10);
           const res = await fetch(`${auth.baseUrl}/documents/${docType}?limit=${limit}`, { headers: hdrs });
           if (!res.ok) return fail(toolCall.name, `Holded devolvió ${res.status}`);
