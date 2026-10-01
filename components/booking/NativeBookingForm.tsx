@@ -209,7 +209,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
               {availability?.service?.label ?? 'Reserva tu cita'}
             </h2>
           </div>
-          {availability?.service && (
+          {availability?.service && serviceKey !== 'demo-holded' && (
             <div className="flex items-center gap-2 text-xs font-semibold text-[#52606d]">
               <Clock className="h-4 w-4 text-[#D4A017]" />
               {availability.service.durationMinutes} min
