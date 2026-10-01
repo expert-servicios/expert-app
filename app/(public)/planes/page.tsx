@@ -67,6 +67,7 @@ const plans: Plan[] = [
     features: [
       'Plataforma EXPERT + Kia básico',
       'Revisión mensual básica de Holded',
+      'Preparación y presentación de impuestos periódicos básicos si corresponde',
       'Alertas básicas de errores y anomalías',
       'Revisión de facturas y categorías principales',
       'Revisión básica de bancos/conciliación',
@@ -76,7 +77,6 @@ const plans: Plan[] = [
       'Licencia Holded obligatoria no incluida',
     ],
     exclusions: [
-      'Presentación de impuestos',
       'Contabilidad delegada',
       'Subida de facturas por EXPERT',
       'Migración de datos',
@@ -160,7 +160,7 @@ const comparisonRows = [
   { label: 'Alertas Kia', supervision: 'Básicas', avanzado: 'Fiscales', colaborativo: 'Anomalías', personalizado: 'Sí' },
   { label: 'Estado de empresa', supervision: 'Básico', avanzado: 'Completo', colaborativo: 'Completo', personalizado: 'A medida' },
   { label: 'Soporte', supervision: 'Básico', avanzado: '48 h', colaborativo: '24 h', personalizado: 'Según alcance' },
-  { label: 'Presentación impuestos', supervision: 'No incluido', avanzado: 'Básicos', colaborativo: 'Según alcance', personalizado: 'Según alcance' },
+  { label: 'Presentación impuestos', supervision: 'Básicos', avanzado: 'Básicos', colaborativo: 'Incluida según alcance', personalizado: 'Según alcance' },
   { label: 'Informe mensual', supervision: 'Resumen Kia', avanzado: 'Cierre trimestral', colaborativo: 'Sí', personalizado: 'A medida' },
   { label: 'Gestión más delegada', supervision: 'No incluido', avanzado: 'No incluido', colaborativo: 'Parcial', personalizado: 'Sí' },
   { label: 'Laboral/nóminas', supervision: 'No incluido', avanzado: 'No incluido', colaborativo: 'Presupuesto', personalizado: 'Sí' },
@@ -172,7 +172,7 @@ const comparisonRows = [
 const faqItems = [
   {
     q: '¿El Plan Supervisión incluye impuestos?',
-    a: 'No. Incluye revisión mensual, alertas y soporte. Si necesitas preparación y presentación de impuestos, elige Plan Avanzado o superior.'
+    a: 'Sí. Si la contabilidad está correctamente registrada en Holded, EXPERT puede preparar y presentar los impuestos periódicos básicos que correspondan al alcance del plan. La complejidad especial, regularizaciones o fiscalidad avanzada requieren un plan superior o presupuesto.'
   },
   {
     q: '¿Puedo empezar por Supervisión y subir después?',
@@ -287,6 +287,9 @@ export default async function PlanesPage({ searchParams }: Props) {
               <Link href="/holded" className="inline-flex min-h-11 items-center justify-center gap-2 bg-[#D4A017] px-5 py-3 text-xs font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]">
                 <Sparkles className="h-4 w-4" />
                 Solicitar prueba Holded 14 días
+              </Link>
+              <Link href="/cita?tipo=demo-holded" className="inline-flex min-h-11 items-center justify-center gap-2 border border-[#D4A017]/50 px-5 py-3 text-xs font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017]/10">
+                Reservar demo Holded gratuita 60 min
               </Link>
               <Link href="/holded/pack-starter" className="inline-flex min-h-11 items-center justify-center gap-2 border border-[#0D1B2A]/20 px-5 py-3 text-xs font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:border-[#D4A017]">
                 Ver Pack Starter
