@@ -69,8 +69,16 @@ export interface SuggestionFormFill {
   pais              ?: string;
 }
 
+export interface SuggestionSourceMeta {
+  source: DataSource;
+  sourceUrl?: string;
+  retrievedAt: string;
+  officialRegistry: boolean;
+  snapshot: CompanySuggestion;
+}
+
 interface Props {
-  onFill   : (data: SuggestionFormFill, suggestionId?: string) => void;
+  onFill   : (data: SuggestionFormFill, suggestionId?: string, meta?: SuggestionSourceMeta) => void;
   className?: string;
 }
 
@@ -272,7 +280,13 @@ export default function CompanyDataLookup({ onFill, className }: Props) {
       codigo_postal : suggestion.postalCode,
       pais          : suggestion.country ?? 'ES',
     };
-    onFill(fill, suggestionId);
+    onFill(fill, suggestionId, {
+      source: suggestion.source,
+      sourceUrl: suggestion.sourceUrl,
+      retrievedAt: suggestion.retrievedAt,
+      officialRegistry: suggestion.source === 'registradores_opendata' || suggestion.source === 'boe_borme',
+      snapshot: suggestion,
+    });
     setUsedId(suggestionId ?? suggestion.taxId ?? suggestion.name ?? '?');
   };
 
@@ -282,8 +296,8 @@ export default function CompanyDataLookup({ onFill, className }: Props) {
         Buscar datos públicos
       </p>
       <p className="mb-3 text-xs text-[#6b7280]">
-        Introduce el nombre o CIF de la empresa para precargar datos de fuentes oficiales.
-        Los datos son orientativos — revísalos antes de guardar.
+        Introduce el nombre o CIF de la empresa para recuperar datos de fuentes públicas y oficiales.
+        Cuando el dato procede de Registradores o BOE/BORME, EXPERT lo conserva como dato registral de solo lectura.
       </p>
 
       {/* Search input */}
@@ -310,7 +324,7 @@ export default function CompanyDataLookup({ onFill, className }: Props) {
       {usedId && (
         <div className="mt-3 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">
           <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-          Datos precargados en el formulario. Revísalos y guarda cuando estés listo.
+          Datos precargados. Los campos procedentes de una fuente registral oficial quedarán bloqueados después de guardar.
         </div>
       )}
 
@@ -352,7 +366,7 @@ export default function CompanyDataLookup({ onFill, className }: Props) {
                 />
               ))}
               <p className="text-[10px] text-[#9ca3af]">
-                Datos sugeridos, no verificados. Confirma antes de guardar.
+                EXPERT conserva la fuente y fecha de consulta. Los datos oficiales de Registradores/BOE-BORME se guardan como solo lectura.
                 Fuente consultada: {new Date(result.meta?.queriedAt ?? '').toLocaleString('es-ES')}.
               </p>
             </div>
