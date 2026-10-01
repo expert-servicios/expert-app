@@ -10,6 +10,8 @@ describe('entity-scoped subscription invitations', () => {
   const activationApi = source('app/api/subscriptions/invitation/route.ts');
   const activationPage = source('app/(protected)/dashboard/suscripciones/activar/page.tsx');
   const checkout = source('app/api/subscriptions/checkout/route.ts');
+  const adminGenerator = source('components/admin/SubscriptionInvitationGenerator.tsx');
+  const adminOnboarding = source('app/(protected)/admin/onboarding/page.tsx');
 
   it('creates a claimable quote without requiring an existing auth user or company', () => {
     expect(adminInvite).toContain("client_id: null");
@@ -40,6 +42,13 @@ describe('entity-scoped subscription invitations', () => {
     expect(activationPage).toContain('quoteId: context.quote.id');
     expect(activationPage).toContain('CompanyDataLookup');
     expect(activationPage).toContain('El cuestionario Company 360 completo podrá terminarse después');
+  });
+
+  it('exposes a reusable Admin generator without auto-emailing the link', () => {
+    expect(adminGenerator).toContain("fetch('/api/admin/subscriptions/invitations'");
+    expect(adminGenerator).toContain('Generar enlace EXPERT');
+    expect(adminGenerator).toContain('No envía correo automáticamente');
+    expect(adminOnboarding).toContain('<SubscriptionInvitationGenerator />');
   });
 
   it('binds the accepted quote to the exact entity and checkout session', () => {
