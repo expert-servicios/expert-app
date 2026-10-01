@@ -55,14 +55,18 @@ export function buildCartCheckoutPayload(items: CartItem[], disbursementMandateA
   const disbursements = collectCartDisbursements(items);
   const contentOrigins = collectCartContentOrigins(items);
 
+  const hasSubscriptions = cartContainsSubscriptions(items);
+
   return {
     priceIds: items.flatMap(i => Array.from({ length: Math.max(1, i.quantity ?? 1) }, () => i.priceId)),
-    items: items.map(i => ({
-      priceId: i.priceId,
-      quantity: Math.max(1, i.quantity ?? 1),
-      itemType: i.itemType ?? 'service',
-      ...(i.billingInterval ? { billingInterval: i.billingInterval } : {}),
-    })),
+    ...(hasSubscriptions ? {
+      items: items.map(i => ({
+        priceId: i.priceId,
+        quantity: Math.max(1, i.quantity ?? 1),
+        itemType: i.itemType ?? 'service',
+        ...(i.billingInterval ? { billingInterval: i.billingInterval } : {}),
+      })),
+    } : {}),
     locale: resolveCartLocale(items),
     ...(contentOrigins.length > 0 ? { contentOrigins } : {}),
     ...(companyId ? { companyId } : {}),
