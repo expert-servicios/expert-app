@@ -1,13 +1,14 @@
 # EXPERT · Runbook de correo, calendario y reuniones de KIA
 
-Fecha de actualización: **29/09/2026**
+Fecha de actualización: **01/10/2026**
 
 Estado de referencia:
 
-- **PR #511 fusionada en `main`**: operador KIA de correo humano y reuniones, Gmail, Calendar/Meet, tareas Admin, trazabilidad CRM y guardas de seguridad.
-- **PR #515 en revisión**: cierre de huecos de atribución del funnel público (lead en reuniones públicas, matching de email case-insensitive y origen seguro de Telegram).
-- Este documento describe el comportamiento implementado en código y distingue expresamente lo que aún está en PR.
-- La activación efectiva en producción depende además de variables de entorno, credenciales y health checks. La existencia de código no implica que un flag esté habilitado.
+- Operador KIA de correo y reuniones con Gmail, Calendar/Meet, tareas Admin, trazabilidad CRM y guardas de seguridad.
+- Activación administrable fail-closed del agente de correo y recuperación/telemetría de PushApp.
+- Clasificación completa de inbox, aliases funcionales fail-closed y escalado selectivo Push/Telegram/email.
+- Este documento describe el comportamiento operativo global. La referencia detallada de inbox, aliases, alertas y checklist de producción es [KIA — operación de correo, clasificación y alertas](kia-email-operations.md).
+- La existencia de código no implica activación: los switches, credenciales y health checks deben validarse en producción.
 
 ---
 
@@ -649,19 +650,24 @@ No se abre acceso privado a expedientes por el simple hecho de escribir un email
 
 ## 18. Respuesta automática: condiciones
 
-Controles autoritativos en **Admin → Automatizaciones** (persistidos en `automation_settings`):
+Controles operativos:
 
-- `kia.email_agent`: habilita el análisis de correo;
-- `kia.email_auto_send`: habilita respuestas automáticas a contactos ya conocidos cuando pasan todas las guardas;
-- `kia.email_new_lead_auto_send`: habilita respuestas automáticas a prospectos nuevos seguros.
+- `kia.email_agent` — análisis de correo. Debe existir como fila persistida en `automation_settings`; sin fila/timestamp válido el agente falla cerrado.
+- `kia.email_auto_send` — autoenvío guardado.
+- `kia.email_new_lead_auto_send` — autoenvío a nuevos contactos seguros.
 
-Los interruptores ausentes se consideran **desactivados**. Las variables legacy `KIA_EMAIL_AGENT_ENABLED` y `KIA_EMAIL_AUTO_SEND_ENABLED` no activan el agente.
-
-El umbral sigue siendo configurable por entorno:
+Variables complementarias:
 
 ```env
+KIA_EMAIL_SEND_AS_ALIASES_ENABLED=false
 KIA_EMAIL_MIN_CONFIDENCE=0.88
 ```
+
+Los antiguos flags de activación/autoenvío no habilitan el agente. La fuente de verdad son las filas persistidas de `automation_settings`.
+
+`KIA_EMAIL_SEND_AS_ALIASES_ENABLED` no se activa hasta que Google Workspace haya creado y verificado los aliases. Mientras tanto la salida permanece en `info@expertconsulting.es`.
+
+La fecha de activación se compara contra `Gmail internalDate`, no contra el encabezado `Date:` aportado por el remitente, para evitar procesar backlog anterior o excluir correo nuevo con fecha RFC incorrecta.
 
 Para enviar automáticamente deben cumplirse, entre otros:
 
@@ -776,30 +782,24 @@ Antes de crear índices únicos, la migración aborta si detecta duplicados exis
 
 ## 23. Notificaciones Admin de correo
 
-Por cada nuevo correo humano procesado por primera vez:
+KIA procesa y clasifica todo el inbox, pero **no interrumpe por cada mensaje**.
 
-```text
-Correo humano · cliente
-Correo humano · lead
-Correo humano · nuevo contacto
-```
+Comportamiento:
 
-El push incluye:
+- marketing, newsletters y sistemas rutinarios: etiqueta y silencia;
+- proveedor/organismo con señal de plazo, riesgo o acción requerida: prioridad alta/crítica;
+- cliente/lead seguro resuelto automáticamente: puede generar push solo si la novedad es importante;
+- caso bloqueado, ambiguo, sensible o `needs_review`: escalado humano.
 
-- remitente;
-- asunto;
-- resumen;
-- enlace directo al hilo Admin.
+Cuando se requiere intervención de Ksenia, el mismo resumen estructurado se envía por:
 
-No se envía un push adicional solo porque KIA haya respondido automáticamente.
+- PushApp;
+- Telegram Admin configurado;
+- `soy@kseniailicheva.com`.
 
-Si KIA crea una tarea derivada del correo, esa tarea sí genera su propio push:
+El aviso explica quién escribió, qué hizo KIA, qué quedó bloqueado y qué necesita de Ksenia, con enlace directo al hilo/expediente.
 
-```text
-KIA creó una tarea
-```
-
-Objetivo: señal alta, sin duplicar notificaciones.
+Las tareas creadas por KIA mantienen su propia trazabilidad, pero el objetivo es **señal alta y mínima duplicación**.
 
 ---
 
@@ -1041,19 +1041,20 @@ NEXT_PUBLIC_GOOGLE_BOOKING_ACADEMY_URL=
 
 ### KIA email
 
-La activación se gestiona únicamente desde **Admin → Automatizaciones**, con las claves persistidas:
+La activación se controla exclusivamente mediante filas persistidas en `automation_settings`:
 
-- `kia.email_agent`;
-- `kia.email_auto_send`;
-- `kia.email_new_lead_auto_send`.
+- `kia.email_agent`
+- `kia.email_auto_send`
+- `kia.email_new_lead_auto_send`
 
-No usar `KIA_EMAIL_AGENT_ENABLED` ni `KIA_EMAIL_AUTO_SEND_ENABLED` como mecanismo de activación.
-
-Umbrales configurables por entorno:
+Variables complementarias:
 
 ```env
+KIA_EMAIL_SEND_AS_ALIASES_ENABLED=false
 KIA_EMAIL_MIN_CONFIDENCE=0.88
 ```
+
+Los antiguos flags `KIA_EMAIL_AGENT_ENABLED` y `KIA_EMAIL_AUTO_SEND_ENABLED` no habilitan producción.
 
 ### IA
 
@@ -1234,9 +1235,10 @@ Cubre:
 
 Comprobar:
 
-1. `kia.email_agent` en **Admin → Automatizaciones**;
-2. `kia.email_auto_send` y, si aplica, `kia.email_new_lead_auto_send`;
-3. heartbeat en `system_kv`;
+1. fila `kia.email_agent` en `automation_settings`;
+2. fila `kia.email_auto_send` en `automation_settings`;
+3. fila `kia.email_new_lead_auto_send` si aplica a prospectos;
+4. heartbeat en `system_kv`;
 4. proveedor IA;
 5. Gmail conectado;
 6. unread real;

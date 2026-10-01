@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
+  applyGmailLabel,
+  applyGmailLabelSA,
   getGmailThread,
   getGmailThreadSA,
   hasGmailSA,
@@ -70,6 +72,7 @@ export async function sendOperationalGmailReply(
     subject: string;
     body: string;
     bodyHtml?: boolean;
+    from?: string;
   },
 ): Promise<'service_account' | 'oauth'> {
   // Autonomous writes are deliberately single-transport. A timeout after Gmail
@@ -87,6 +90,27 @@ export async function sendOperationalGmailReply(
   const tokens = await loadAdminOAuth(admin);
   if (!tokens) throw new Error('operational_gmail_auth_unavailable');
   const { refreshed } = await sendGmailReply(tokens, safeInput);
+  await saveRefresh(admin, refreshed);
+  return 'oauth';
+}
+
+export async function applyOperationalGmailLabel(
+  admin: AdminClient,
+  messageId: string,
+  labelName: string,
+): Promise<'service_account' | 'oauth'> {
+  if (hasGmailSA()) {
+    try {
+      await applyGmailLabelSA(messageId, labelName);
+      return 'service_account';
+    } catch (error) {
+      console.warn('[operational-gmail] service account label unavailable, trying admin OAuth', error);
+    }
+  }
+
+  const tokens = await loadAdminOAuth(admin);
+  if (!tokens) throw new Error('operational_gmail_auth_unavailable');
+  const { refreshed } = await applyGmailLabel(tokens, messageId, labelName);
   await saveRefresh(admin, refreshed);
   return 'oauth';
 }

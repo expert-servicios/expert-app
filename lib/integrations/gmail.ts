@@ -317,6 +317,32 @@ async function _getThread(gmail: AnyGoogle, threadId: string, markRead = true): 
   });
 }
 
+async function _ensureLabel(gmail: AnyGoogle, labelName: string): Promise<string> {
+  const labels = await gmail.users.labels.list({ userId: 'me' });
+  const existing = (labels.data.labels ?? []).find((label: { name?: string; id?: string }) => label.name === labelName);
+  if (existing?.id) return existing.id;
+
+  const created = await gmail.users.labels.create({
+    userId: 'me',
+    requestBody: {
+      name: labelName,
+      labelListVisibility: 'labelShow',
+      messageListVisibility: 'show',
+    },
+  });
+  if (!created.data.id) throw new Error('gmail_label_create_failed');
+  return created.data.id;
+}
+
+async function _applyLabelToMessage(gmail: AnyGoogle, messageId: string, labelName: string): Promise<void> {
+  const labelId = await _ensureLabel(gmail, labelName);
+  await gmail.users.messages.modify({
+    userId: 'me',
+    id: messageId,
+    requestBody: { addLabelIds: [labelId] },
+  });
+}
+
 async function _getAttachment(
   gmail: AnyGoogle,
   messageId: string,
@@ -469,11 +495,17 @@ export async function getGmailAttachmentSA(messageId: string, attachmentId: stri
 }
 
 export async function sendGmailReplySA(
-  opts: { threadId: string; to: string; subject: string; body: string; bodyHtml?: boolean }
+  opts: { threadId: string; to: string; subject: string; body: string; bodyHtml?: boolean; from?: string }
 ): Promise<void> {
   const gmail = await getGmailSAClient();
   if (!gmail) throw new Error('Gmail SA not configured');
-  return _sendReply(gmail, { ...opts, from: GMAIL_SA_IMPERSONATE_EMAIL });
+  return _sendReply(gmail, { ...opts, from: opts.from ?? GMAIL_SA_IMPERSONATE_EMAIL });
+}
+
+export async function applyGmailLabelSA(messageId: string, labelName: string): Promise<void> {
+  const gmail = await getGmailSAClient();
+  if (!gmail) throw new Error('Gmail SA not configured');
+  return _applyLabelToMessage(gmail, messageId, labelName);
 }
 
 export async function sendNewGmailSA(
@@ -532,12 +564,24 @@ export async function getGmailAttachment(
 
 export async function sendGmailReply(
   stored: GmailTokens,
-  opts: { threadId: string; to: string; subject: string; body: string; bodyHtml?: boolean }
+  opts: { threadId: string; to: string; subject: string; body: string; bodyHtml?: boolean; from?: string }
 ): Promise<{ refreshed: GmailTokens | null }> {
   const { client, refreshed } = await ensureFresh(stored);
   const { google } = (await import('googleapis')) as AnyGoogle;
   const gmail = google.gmail({ version: 'v1', auth: client });
   await _sendReply(gmail, opts);
+  return { refreshed };
+}
+
+export async function applyGmailLabel(
+  stored: GmailTokens,
+  messageId: string,
+  labelName: string,
+): Promise<{ refreshed: GmailTokens | null }> {
+  const { client, refreshed } = await ensureFresh(stored);
+  const { google } = (await import('googleapis')) as AnyGoogle;
+  const gmail = google.gmail({ version: 'v1', auth: client });
+  await _applyLabelToMessage(gmail, messageId, labelName);
   return { refreshed };
 }
 

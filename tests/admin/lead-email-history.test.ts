@@ -43,9 +43,11 @@ describe('Lead email history', () => {
     expect(clientTimeline).toContain('if (persistedAt >= new Date(e.date).getTime()) continue');
   });
 
-  it('pushes the inbound summary and task creation, not the automatic KIA reply', () => {
-    expect(agent).toContain('Correo humano ·');
+  it('notifies task creation and only escalates important inbound mail', () => {
     expect(agent).toContain('KIA creó una tarea');
+    expect(agent).toContain('KIA atendió una novedad importante');
+    expect(agent).toContain('notifyKiaAdminEscalation');
+    expect(agent).not.toContain('Correo humano ·');
     expect(agent).not.toContain('KIA respondió por email');
     expect(agent).not.toContain('KIA atendió un nuevo contacto');
   });

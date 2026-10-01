@@ -61,12 +61,13 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain("status: errors.length === 0 ? 'ok' : 'degraded'");
   });
 
-  it('pushes a summary for each human inbound and separate task notifications', () => {
-    expect(route).toContain('Correo humano ·');
-    expect(route).toContain('latestReply.slice(0, 150)');
-    expect(route).toContain('KIA creó una tarea');
-    expect(route).not.toContain('KIA respondió por email');
-    expect(route).not.toContain('KIA atendió un nuevo contacto');
+  it('classifies every inbound but escalates humans only when important or blocked', () => {
+    expect(route).toContain('classifyInboundEnvelope');
+    expect(route).toContain('applyOperationalGmailLabel');
+    expect(route).toContain('notifyKiaAdminEscalation');
+    expect(route).toContain('interventionRequired');
+    expect(route).toContain('KIA atendió una novedad importante');
+    expect(route).not.toContain('Correo humano ·');
     expect(route).toContain('/admin/correo/hilo?provider=gmail&conversationId=');
   });
 
@@ -105,6 +106,19 @@ describe('KIA guarded email agent', () => {
     expect(gmail).toContain('markRead = true');
   });
 
+  it('reserves critical escalation before fan-out and retries failed delivery', () => {
+    expect(route).toContain('reserveEscalationClaim');
+    expect(route).toContain("state: 'reserved'");
+    expect(route).toContain('completeEscalationClaim');
+    expect(route).toContain('releaseEscalationClaim');
+    expect(route).toContain("'operational_escalation_failed'");
+  });
+
+  it('never auto-replies to the noreply recipient identity', () => {
+    expect(route).toContain("envelope.recipientPurpose !== 'noreply'");
+    expect(route).toContain("blockReason = 'noreply_recipient'");
+  });
+
   it('reserves a unique send claim before any Gmail write', () => {
     expect(route).toContain("kia_email_send:");
     expect(route).toContain("state: 'reserved'");
@@ -126,6 +140,16 @@ describe('KIA guarded email agent', () => {
     expect(gmail).toContain("hdr(headers, 'Reply-To')");
     expect(route).toContain('latest.replyTo || latest.fromEmail');
     expect(route).toContain('latest.attachments.some((attachment) => !attachment.inline)');
+  });
+
+  it('routes replies through the configured functional identity', () => {
+    expect(route).toContain('replyFromForPurpose');
+    expect(route).toContain('KIA_EMAIL_SEND_AS_ALIASES_ENABLED');
+    expect(route).toContain('kia@expertconsulting.es');
+    expect(route).toContain('documentos@expertconsulting.es');
+    expect(route).toContain('citas@expertconsulting.es');
+    expect(route).toContain('facturacion@expertconsulting.es');
+    expect(route).toContain('from: replyFromForPurpose(envelope.recipientPurpose)');
   });
 
   it('threads replies and schedules after inbox sync', () => {

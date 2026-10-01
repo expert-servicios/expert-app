@@ -4,6 +4,7 @@ import { getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase'
 import { getAuthorizedBookingEmails } from '@/lib/admin/onboarding-booking-identity';
 import { verifyCronRequest } from '@/lib/security/cron';
 import {
+  applyOperationalGmailLabel,
   getOperationalGmailThread,
   sendOperationalGmailReply,
 } from '@/lib/integrations/operational-gmail';
@@ -13,6 +14,8 @@ import { maybeAppendKiaContextualCta } from '@/lib/email/kia-contextual-cta';
 import type { GmailMessage } from '@/lib/integrations/gmail';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { getKiaProviderOrder, isKiaGatewayConfigured } from '@/lib/ai/kia/kia-provider-router';
+import { classifyInboundEnvelope, humanPriority } from '@/lib/email/kia-inbox-classifier';
+import { notifyKiaAdminEscalation } from '@/lib/admin/kia-admin-escalation';
 
 export const maxDuration = 60;
 
@@ -101,6 +104,19 @@ function normalizedEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
+function replyFromForPurpose(purpose: ReturnType<typeof classifyInboundEnvelope>['recipientPurpose']): string {
+  const aliasesEnabled = process.env.KIA_EMAIL_SEND_AS_ALIASES_ENABLED?.trim().toLowerCase() === 'true';
+  if (!aliasesEnabled) return 'KIA · EXPERT <info@expertconsulting.es>';
+
+  switch (purpose) {
+    case 'kia': return 'KIA · EXPERT <kia@expertconsulting.es>';
+    case 'documents': return 'KIA · Documentación <documentos@expertconsulting.es>';
+    case 'appointments': return 'KIA · Citas <citas@expertconsulting.es>';
+    case 'billing': return 'KIA · Facturación <facturacion@expertconsulting.es>';
+    default: return 'KIA · EXPERT <info@expertconsulting.es>';
+  }
+}
+
 function isLikelyHuman(message: GmailMessage) {
   const email = normalizedEmail(message.fromEmail);
   const local = email.split('@')[0] ?? '';
@@ -126,6 +142,74 @@ function isSafeUnknownProspect(subject: string, text: string) {
 
 function adminThreadUrl(threadId: string) {
   return `/admin/correo/hilo?provider=gmail&conversationId=${encodeURIComponent(threadId)}`;
+}
+
+type EscalationClaimState = 'claimed' | 'completed' | 'inflight';
+
+function escalationClaimKey(eventRef: string) {
+  return `kia_email_escalation:${createHash('sha256').update(eventRef).digest('hex').slice(0, 40)}`;
+}
+
+async function reserveEscalationClaim(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  eventRef: string,
+): Promise<{ state: EscalationClaimState; key: string }> {
+  const claimKey = escalationClaimKey(eventRef);
+  const now = new Date();
+  const { error } = await admin.from('system_kv').insert({
+    key: claimKey,
+    value: { state: 'reserved', event_ref: eventRef, reserved_at: now.toISOString() },
+    updated_at: now.toISOString(),
+  });
+  if (!error) return { state: 'claimed', key: claimKey };
+  if (error.code !== '23505') throw error;
+
+  const { data: existing, error: lookupError } = await admin
+    .from('system_kv')
+    .select('value')
+    .eq('key', claimKey)
+    .maybeSingle();
+  if (lookupError) throw lookupError;
+  const value = existing?.value as Record<string, unknown> | null;
+  if (value?.state === 'sent') return { state: 'completed', key: claimKey };
+
+  const reservedAt = typeof value?.reserved_at === 'string' ? Date.parse(value.reserved_at) : Number.NaN;
+  if (Number.isFinite(reservedAt) && now.getTime() - reservedAt < 15 * 60_000) {
+    return { state: 'inflight', key: claimKey };
+  }
+
+  const { error: deleteError } = await admin.from('system_kv').delete().eq('key', claimKey);
+  if (deleteError) throw deleteError;
+  const { error: retryError } = await admin.from('system_kv').insert({
+    key: claimKey,
+    value: { state: 'reserved', event_ref: eventRef, reserved_at: now.toISOString(), retry: true },
+    updated_at: now.toISOString(),
+  });
+  if (retryError) {
+    if (retryError.code === '23505') return { state: 'inflight', key: claimKey };
+    throw retryError;
+  }
+  return { state: 'claimed', key: claimKey };
+}
+
+async function completeEscalationClaim(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  claimKey: string,
+  eventRef: string,
+) {
+  const { error } = await admin.from('system_kv').update({
+    value: { state: 'sent', event_ref: eventRef, sent_at: new Date().toISOString() },
+    updated_at: new Date().toISOString(),
+  }).eq('key', claimKey);
+  if (error) throw error;
+}
+
+async function releaseEscalationClaim(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  claimKey: string,
+) {
+  const { error } = await admin.from('system_kv').delete().eq('key', claimKey);
+  if (error) console.error('[kia-email-agent] escalation claim release failed:', error.message);
 }
 
 function senderDisplayName(message: GmailMessage) {
@@ -503,13 +587,47 @@ export async function GET(request: NextRequest) {
         skipped++;
         continue;
       }
-      if (!isLikelyHuman(latest)) {
+      const envelope = classifyInboundEnvelope(latest);
+      await applyOperationalGmailLabel(admin, latest.id, envelope.gmailLabel).catch((labelError) => {
+        console.error('[kia-email-agent] gmail label:', labelError);
+      });
+
+      if (envelope.kind !== 'human') {
+        if (envelope.requiresAttention) {
+          const eventRef = `gmail:${latest.id}:operational-escalation`;
+          const claim = await reserveEscalationClaim(admin, eventRef);
+          if (claim.state === 'inflight') {
+            skipped++;
+            continue;
+          }
+          if (claim.state === 'claimed') {
+            try {
+              await notifyKiaAdminEscalation({
+                title: latest.subject || 'Correo operativo importante',
+                summary: `${senderDisplayName(latest)} · ${latest.subject || 'Sin asunto'}`,
+                actionTaken: `clasificado como ${envelope.kind}, prioridad ${envelope.priority}, y etiquetado ${envelope.gmailLabel}`,
+                interventionNeeded: 'revisar el aviso y decidir la actuación correspondiente',
+                url: adminThreadUrl(row.thread_id),
+                eventRef,
+                priority: envelope.priority === 'critical' ? 'critical' : 'high',
+              });
+              await completeEscalationClaim(admin, claim.key, eventRef);
+            } catch (notifyError) {
+              await releaseEscalationClaim(admin, claim.key);
+              console.error('[kia-email-agent] operational escalation:', notifyError);
+              errors.push({ thread: row.thread_id, code: 'operational_escalation_failed' });
+              continue;
+            }
+          }
+        }
+
         await admin.from('system_kv').upsert({
           key,
           value: {
             last_message_id: latest.id,
             last_message_at: latest.date,
             evaluated_at: new Date().toISOString(),
+            classification: envelope,
             block_reason: 'non_human',
             sent: false,
           },
@@ -519,6 +637,19 @@ export async function GET(request: NextRequest) {
         continue;
       }
       if (previous?.last_message_id === latest.id) {
+        if (previous?.last_message_at !== latest.date) {
+          await admin.from('system_kv').upsert({
+            key,
+            value: {
+              ...previous,
+              last_message_id: latest.id,
+              last_message_at: latest.date,
+              watermark_version: 2,
+              evaluated_at: new Date().toISOString(),
+            },
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'key' });
+        }
         skipped++;
         continue;
       }
@@ -558,15 +689,6 @@ export async function GET(request: NextRequest) {
         return false;
       });
 
-      if (firstInboundProcessing) {
-        const contactKind = identity.clientId ? 'cliente' : identity.leadId ? 'lead' : 'nuevo contacto';
-        await notifyAdmins({
-          title: `Correo humano · ${contactKind}`,
-          body: `${senderDisplayName(latest)} · ${latest.subject || 'Sin asunto'} · ${latestReply.slice(0, 150)}`.slice(0, 240),
-          url: adminThreadUrl(row.thread_id),
-          tag: `human-email-${createHash('sha256').update(latest.id).digest('hex').slice(0, 20)}`,
-        }).catch(() => {});
-      }
 
       const recent = gmail.messages.slice(-10).map((message) => ({
         role: normalizedEmail(message.fromEmail) === EXPERT_MAILBOX ? 'assistant' as const : 'user' as const,
@@ -582,6 +704,7 @@ export async function GET(request: NextRequest) {
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
+        && envelope.recipientPurpose !== 'noreply'
         && !hasAttachments;
       const baseAllowedTools = wasKnownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS;
       const allowedTools = baseAllowedTools.filter(
@@ -658,6 +781,7 @@ export async function GET(request: NextRequest) {
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
+        && envelope.recipientPurpose !== 'noreply'
         && !hasAttachments
         && !result.usedFallback
         && !result.decision.requiresManualReview
@@ -721,6 +845,7 @@ export async function GET(request: NextRequest) {
               subject: replySubject,
               body: html,
               bodyHtml: true,
+              from: replyFromForPurpose(envelope.recipientPurpose),
             });
           } catch (sendError) {
             await admin.from('system_kv').update({
@@ -775,6 +900,7 @@ export async function GET(request: NextRequest) {
         else if (identity.ambiguousCase) blockReason = 'ambiguous_case';
         else if (identity.linkedCaseSenderMismatch) blockReason = 'linked_case_sender_mismatch';
         else if (replyToMismatch) blockReason = 'reply_to_requires_review';
+        else if (envelope.recipientPurpose === 'noreply') blockReason = 'noreply_recipient';
         else if (hasAttachments) blockReason = 'attachment_requires_review';
         else if (result.usedFallback) blockReason = 'provider_fallback';
         else if (result.decision.requiresManualReview) blockReason = 'manual_review';
@@ -786,6 +912,48 @@ export async function GET(request: NextRequest) {
       if (duplicateClaim) {
         skipped++;
         continue;
+      }
+
+      const priority = humanPriority({
+        knownClient: Boolean(identity.clientId),
+        knownLead: Boolean(identity.leadId),
+        safeProspect: safeUnknownProspect,
+        requiresManualReview: result.decision.requiresManualReview,
+        nextAction: result.decision.nextAction,
+        blockReason,
+        createdTask: Boolean(createdTask),
+        sent: sentNow,
+      });
+      const interventionRequired = result.decision.requiresManualReview
+        || result.decision.nextAction === 'needs_review'
+        || ['ambiguous_case', 'linked_case_sender_mismatch', 'reply_to_requires_review', 'attachment_requires_review', 'provider_fallback']
+          .includes(blockReason ?? '');
+
+      if (firstInboundProcessing && interventionRequired) {
+        await notifyKiaAdminEscalation({
+          title: latest.subject || 'Correo de cliente',
+          summary: `${senderDisplayName(latest)} · ${identity.clientId ? 'cliente' : identity.leadId ? 'lead' : 'nuevo contacto'}`,
+          actionTaken: createdTask
+            ? `analizó el correo y creó la tarea “${createdTask.title}”`
+            : 'analizó el correo, vinculó el contexto disponible y preparó una respuesta sin enviarla',
+          interventionNeeded: blockReason
+            ? `resolver bloqueo: ${blockReason}`
+            : 'revisar y aprobar la actuación propuesta',
+          url: adminThreadUrl(row.thread_id),
+          eventRef: `gmail:${latest.id}:human-escalation`,
+          priority: 'high',
+        }).catch((notifyError) => console.error('[kia-email-agent] human escalation:', notifyError));
+      } else if (firstInboundProcessing && priority === 'high' && !createdTask) {
+        await notifyAdmins({
+          title: sentNow ? 'KIA atendió una novedad importante' : 'KIA detectó una novedad importante',
+          body: [
+            senderDisplayName(latest),
+            sentNow ? 'respondió automáticamente' : null,
+            latest.subject || 'Sin asunto',
+          ].filter(Boolean).join(' · ').slice(0, 240),
+          url: adminThreadUrl(row.thread_id),
+          tag: `kia-important-${createHash('sha256').update(latest.id).digest('hex').slice(0, 20)}`,
+        }).catch(() => {});
       }
 
       await admin.from('system_kv').upsert({
@@ -811,6 +979,8 @@ export async function GET(request: NextRequest) {
           decision_log_id: result.decisionLogId ?? null,
           block_reason: blockReason,
           sent: sentNow,
+          inbox_classification: envelope,
+          priority,
         },
         updated_at: new Date().toISOString(),
       }, { onConflict: 'key' });
