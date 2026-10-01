@@ -612,7 +612,10 @@ async function callOpenAiCompatible(
       function: {
         name: tool.name,
         description: tool.description,
-        parameters: tool.input_schema,
+        parameters:
+          providerName === "google"
+            ? normalizeGeminiJsonSchema(tool.input_schema)
+            : tool.input_schema,
         ...(providerName === "openai" && tool.strict === true ? { strict: true } : {}),
       },
     }));
