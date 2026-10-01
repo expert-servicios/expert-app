@@ -56,6 +56,7 @@ export const MONTHLY_PLANS_KNOWLEDGE = {
       'Estado de empresa básico',
       'Soporte básico por email, KIA chat o Telegram',
       'Preparación y presentación de impuestos periódicos básicos si corresponde al alcance del plan',
+      'Autónomos: reunión mensual de 30 minutos incluida',
       'Modalidad adecuada para operativa simple con contabilidad correctamente mantenida en Holded',
     ],
     excludes: [
