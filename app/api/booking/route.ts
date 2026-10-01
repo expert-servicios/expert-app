@@ -602,6 +602,38 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const isMonthlySubscriptionMeeting =
+      service.key === 'seguimiento-mensual-empresa' || service.key === 'seguimiento-mensual-autonomo';
+
+    if (isMonthlySubscriptionMeeting && signedAuthorization && privateIdentity?.clientId && privateIdentity.companyId) {
+      const monthMatch = signedAuthorization.sourceRef.match(/^monthly-review:(\d{4})-(\d{2}):/);
+      if (!monthMatch) {
+        return NextResponse.json({ error: 'La invitación mensual no identifica un período válido.' }, { status: 403 });
+      }
+      const year = Number(monthMatch[1]);
+      const month = Number(monthMatch[2]);
+      const rangeStart = new Date(Date.UTC(year, month - 1, 1)).toISOString();
+      const rangeEnd = new Date(Date.UTC(year, month, 1)).toISOString();
+
+      const { data: monthlyAppointments, error: monthlyLookupError } = await admin
+        .from('appointments')
+        .select('id,status')
+        .eq('client_id', privateIdentity.clientId)
+        .eq('company_id', privateIdentity.companyId)
+        .eq('appointment_type', service.key)
+        .in('status', ['pending_calendar', 'confirmed'])
+        .gte('appointment_date', rangeStart)
+        .lt('appointment_date', rangeEnd)
+        .limit(2);
+      if (monthlyLookupError) throw monthlyLookupError;
+      if ((monthlyAppointments ?? []).length > 0) {
+        return NextResponse.json({
+          error: 'La revisión mensual incluida para esta entidad y período ya está reservada.',
+          code: 'monthly_meeting_already_booked',
+        }, { status: 409 });
+      }
+    }
+
     const spam = checkSpam({ name: input.name, email: bookingEmail, message: input.notes });
     if (spam.isSpam) return NextResponse.json({ ok: true });
 
