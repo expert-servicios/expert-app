@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CheckCircle2, CreditCard, Loader2, LockKeyhole, Search } from 'lucide-react';
 import CompanyDataLookup, {
@@ -77,7 +77,7 @@ const EMPTY_COMPANY: CompanyForm = {
   web: '',
 };
 
-export default function SubscriptionActivationPage() {
+function SubscriptionActivationContent() {
   const searchParams = useSearchParams();
   const quoteId = searchParams.get('quote') ?? '';
 
@@ -419,5 +419,18 @@ function Field({
         className="min-h-11 w-full rounded-lg border border-[#d8cbb5] bg-[#f8f4eb] px-3 text-sm text-[#07111d] outline-none transition focus:border-[#d7a33a] disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500"
       />
     </label>
+  );
+}
+
+
+export default function SubscriptionActivationPage() {
+  return (
+    <Suspense fallback={
+      <div className="mx-auto flex min-h-[50vh] max-w-3xl items-center justify-center px-6">
+        <Loader2 className="h-6 w-6 animate-spin text-[#D4A017]" />
+      </div>
+    }>
+      <SubscriptionActivationContent />
+    </Suspense>
   );
 }
