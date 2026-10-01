@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Building2, Check } from 'lucide-react';
-import CompanyDataLookup, { type SuggestionFormFill } from '@/components/dashboard/company/CompanyDataLookup';
+import CompanyDataLookup, { type SuggestionFormFill, type SuggestionSourceMeta } from '@/components/dashboard/company/CompanyDataLookup';
 
 const FORMA_OPTIONS = [
   { value: 'autonomo', label: 'Autónomo/a' },
@@ -37,6 +37,7 @@ export default function NuevaEmpresaPage() {
   const [error,         setError]         = useState('');
   const [showLookup,    setShowLookup]    = useState(false);
   const [appliedSugId,  setAppliedSugId]  = useState<string | undefined>();
+  const [sourceMeta,     setSourceMeta]     = useState<SuggestionSourceMeta | undefined>();
   const [form, setForm] = useState({
     razon_social     : '',
     nombre_comercial : '',
@@ -56,7 +57,7 @@ export default function NuevaEmpresaPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
 
   /** Called by CompanyDataLookup when user clicks "Usar datos" */
-  const handleFill = (data: SuggestionFormFill, suggestionId?: string) => {
+  const handleFill = (data: SuggestionFormFill, suggestionId?: string, meta?: SuggestionSourceMeta) => {
     setForm((prev) => ({
       ...prev,
       razon_social  : data.razon_social   ?? prev.razon_social,
@@ -68,6 +69,7 @@ export default function NuevaEmpresaPage() {
       pais          : data.pais           ?? prev.pais,
     }));
     setAppliedSugId(suggestionId);
+    setSourceMeta(meta);
     setShowLookup(false); // collapse panel after fill
   };
 
@@ -80,7 +82,15 @@ export default function NuevaEmpresaPage() {
       const res = await fetch('/api/companies', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({ ...form, _appliedSuggestionId: appliedSugId }),
+        body   : JSON.stringify({
+          ...form,
+          _appliedSuggestionId: appliedSugId,
+          _registrySource: sourceMeta?.source,
+          _registrySourceUrl: sourceMeta?.sourceUrl,
+          _registryRetrievedAt: sourceMeta?.retrievedAt,
+          _registryOfficial: sourceMeta?.officialRegistry ?? false,
+          _registrySnapshot: sourceMeta?.snapshot,
+        }),
       });
       const data = await res.json();
 
