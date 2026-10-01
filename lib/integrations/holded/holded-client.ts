@@ -160,13 +160,22 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
     ];
 
     const permissions = createEmptyHoldedPermissions();
-    for (const { key: permissionKey, probe } of checks) {
-      try {
-        await probe();
-        permissions[permissionKey] = true;
-      } catch {
-        permissions[permissionKey] = false;
-      }
+    // Start all read probes together. respectRateLimit() still reserves a
+    // 150 ms slot per request, but network latency no longer accumulates
+    // sequentially across every Holded capability check.
+    const probeResults = await Promise.all(
+      checks.map(async ({ key: permissionKey, probe }) => {
+        try {
+          await probe();
+          return [permissionKey, true] as const;
+        } catch {
+          return [permissionKey, false] as const;
+        }
+      }),
+    );
+
+    for (const [permissionKey, allowed] of probeResults) {
+      permissions[permissionKey] = allowed;
     }
 
     // This client has no write probes. Writes are never inferred from a
