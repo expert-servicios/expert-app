@@ -352,24 +352,6 @@ async function createEmailRequestTask(input: {
   return existing;
 }
 
-async function automationEnabled(
-  admin: ReturnType<typeof getSupabaseAdmin>,
-  key: string,
-): Promise<boolean> {
-  const { data, error } = await admin
-    .from('automation_settings')
-    .select('enabled')
-    .eq('key', key)
-    .maybeSingle();
-
-  if (error) {
-    console.error('[kia-email-agent] automation setting lookup failed:', key, error.message);
-    return false;
-  }
-
-  return data?.enabled === true;
-}
-
 async function writeAgentHeartbeat(
   admin: ReturnType<typeof getSupabaseAdmin>,
   value: Record<string, unknown>,
@@ -504,13 +486,28 @@ export async function GET(request: NextRequest) {
   }
 
   const admin = getSupabaseAdmin();
-  const [agentSetting, autoSend, newLeadAutoSend] = await Promise.all([
+  const [agentSetting, autoSendSetting, newLeadAutoSendSetting] = await Promise.all([
     admin.from('automation_settings').select('enabled,updated_at').eq('key', 'kia.email_agent').maybeSingle(),
-    automationEnabled(admin, 'kia.email_auto_send'),
-    automationEnabled(admin, 'kia.email_new_lead_auto_send'),
+    admin.from('automation_settings').select('enabled').eq('key', 'kia.email_auto_send').maybeSingle(),
+    admin.from('automation_settings').select('enabled').eq('key', 'kia.email_new_lead_auto_send').maybeSingle(),
   ]);
+  const settingsError = agentSetting.error ?? autoSendSetting.error ?? newLeadAutoSendSetting.error;
+  if (settingsError) {
+    console.error('[kia-email-agent] automation settings unavailable:', settingsError.message);
+    await writeAgentHeartbeat(admin, {
+      enabled: false,
+      auto_send: false,
+      new_lead_auto_send: false,
+      status: 'degraded',
+      reason: 'automation_settings_unavailable',
+    }).catch(() => {});
+    return NextResponse.json({ error: 'automation_settings_unavailable' }, { status: 503 });
+  }
+
   const enabled = agentSetting.data?.enabled === true;
   const enabledSince = enabled ? agentSetting.data?.updated_at ?? null : null;
+  const autoSend = autoSendSetting.data?.enabled === true;
+  const newLeadAutoSend = newLeadAutoSendSetting.data?.enabled === true;
   if (!enabled) {
     await writeAgentHeartbeat(admin, {
       enabled: false,
