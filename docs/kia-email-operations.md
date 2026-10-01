@@ -24,6 +24,10 @@ Identidades funcionales previstas:
 
 Estas direcciones deben crearse como aliases/send-as válidos en Google Workspace antes de usarlas en producción. La aplicación ya soporta seleccionar la identidad funcional según el destinatario original. Gmail rechazará o reescribirá un remitente que no esté autorizado por Workspace. Por seguridad, `KIA_EMAIL_SEND_AS_ALIASES_ENABLED` permanece desactivado hasta verificar los aliases; mientras tanto todas las respuestas salen desde `info@expertconsulting.es`.
 
+### Permiso Gmail para etiquetas
+
+La clasificación operativa necesita el scope OAuth `gmail.modify` para crear y aplicar etiquetas. Añadir el scope al código **no amplía** un refresh token emitido anteriormente: si la conexión Gmail Admin se autorizó antes de incorporar `gmail.modify`, debe reconectarse/reautorizarse antes de considerar el etiquetado operativo. Una conexión antigua puede seguir leyendo y enviando correo pero fallar al modificar etiquetas.
+
 ## Clasificación
 
 KIA asigna cada mensaje a una de estas clases:
@@ -159,6 +163,7 @@ Los switches faltantes se muestran desactivados. Al activarlos, el estado devuel
 - [ ] correo de escalado a `soy@kseniailicheva.com` operativo.
 - [ ] prueba controlada de correo humano seguro.
 - [ ] prueba controlada de caso bloqueado/revisión.
+- [ ] conexión Gmail Admin reautorizada con `gmail.modify` y prueba de etiqueta superada.
 - [ ] aliases de Workspace creados y verificados.
 - [ ] `KIA_EMAIL_SEND_AS_ALIASES_ENABLED=true` solo después de verificar send-as.
 
