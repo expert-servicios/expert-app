@@ -9,6 +9,8 @@ export type BookingServiceKey =
   | 'demo-holded'
   | 'onboarding'
   | 'formacion-holded'
+  | 'seguimiento-mensual-empresa'
+  | 'seguimiento-mensual-autonomo'
   | 'academy-admision';
 
 export interface BookingServiceDefinition {
@@ -47,6 +49,18 @@ export function getBookingServices(): Record<BookingServiceKey, BookingServiceDe
       key: 'formacion-holded',
       label: 'Formación Holded',
       durationMinutes: 120,
+      public: false,
+    },
+    'seguimiento-mensual-empresa': {
+      key: 'seguimiento-mensual-empresa',
+      label: 'Revisión mensual — empresa',
+      durationMinutes: 60,
+      public: false,
+    },
+    'seguimiento-mensual-autonomo': {
+      key: 'seguimiento-mensual-autonomo',
+      label: 'Revisión mensual — autónomo',
+      durationMinutes: 30,
       public: false,
     },
     'academy-admision': {
