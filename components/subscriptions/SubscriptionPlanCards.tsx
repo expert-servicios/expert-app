@@ -28,6 +28,7 @@ interface Props {
   planAvanzadoAnnualId      : string;
   planColaborativoAnnualId  : string;
   initialBilling            : BillingMode;
+  initialPlan               : 'supervision' | 'avanzado' | 'colaborativo' | null;
   companyId                 : string;
 }
 
@@ -194,6 +195,7 @@ export function SubscriptionPlanCards({
   planAvanzadoAnnualId,
   planColaborativoAnnualId,
   initialBilling,
+  initialPlan,
   companyId,
 }: Props) {
   const [billing, setBilling] = useState<BillingMode>(initialBilling);
@@ -224,6 +226,10 @@ export function SubscriptionPlanCards({
       highlighted: false, features: FEATURES_PERSONALIZADO, isQuote: true,
     },
   ];
+
+  const orderedPlans = initialPlan
+    ? [...plans].sort((a, b) => (a.slug === initialPlan ? -1 : b.slug === initialPlan ? 1 : 0))
+    : plans;
 
   return (
     <>
@@ -261,8 +267,14 @@ export function SubscriptionPlanCards({
         </p>
       )}
 
+      {initialPlan && (
+        <div className="mb-5 rounded-2xl border border-[#d7a33a]/40 bg-[#fff8e8] px-4 py-3 text-sm text-[#6f531d]">
+          Hemos abierto el plan solicitado. Antes de continuar, comprueba arriba que la entidad activa sea el titular fiscal correcto.
+        </div>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {plans.map((plan) => (
+        {orderedPlans.map((plan) => (
           <PlanCard key={plan.slug} plan={plan} billing={billing} companyId={companyId} />
         ))}
       </div>
