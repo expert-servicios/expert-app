@@ -25,6 +25,15 @@ describe('KIA company tool isolation', () => {
     expect(executor.match(/if \(companyId\) query = query\.eq\('company_id', companyId\)/g)?.length).toBeGreaterThanOrEqual(2);
   });
 
+  it('uses the authorized context company for accounting and staff company-wide resources', () => {
+    expect(executor).toContain("const companyId = context.company?.id ?? null");
+    expect(executor).not.toContain("typeof args.companyId === 'string' ? args.companyId");
+    expect(contextBuilder).toContain('const resourceClientId = staffCompanyScope ? null : clientId');
+    expect(contextBuilder).toContain('loadDocuments(admin, resourceClientId, input.caseId, resolvedCompanyId)');
+    expect(contextBuilder).toContain('loadCasesForClient(admin, resourceClientId, resolvedCompanyId)');
+    expect(contextBuilder).toContain("if (!clientId && !companyId) return []");
+  });
+
   it('keeps included-entity coverage authoritative in the canonical KIA path', () => {
     expect(contextBuilder).toContain("coverageSource: coverage?.source ?? 'none'");
     expect(contextBuilder).toContain('coveragePrimaryCompanyName: coverage?.primaryCompanyName ?? null');
