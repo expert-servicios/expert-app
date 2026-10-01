@@ -18,9 +18,12 @@ const LABELS: Record<string, { title: string; description: string; group: string
   'case.review_request'       : { group: 'Expedientes', title: 'Solicitud de valoración',      description: 'Envía un enlace de reseña al cliente al finalizar el expediente.' },
   'admin.case_activity'        : { group: 'Administración', title: 'Actividad de expedientes',   description: 'Aviso inmediato por PushApp, Telegram y email cuando un expediente activo recibe una novedad operativa.' },
   'admin.daily_summary'       : { group: 'Administración', title: 'Resumen diario',            description: 'Email de resumen de actividad al administrador cada mañana.' },
+  'kia.email_agent'           : { group: 'KIA · Correo', title: 'Analizar correos humanos',    description: 'KIA analiza los correos humanos entrantes y registra contexto, tareas y trazabilidad.' },
+  'kia.email_auto_send'       : { group: 'KIA · Correo', title: 'Responder automáticamente',   description: 'Permite respuestas automáticas solo cuando la identidad, el contexto y la confianza cumplen la política de seguridad.' },
+  'kia.email_new_lead_auto_send': { group: 'KIA · Correo', title: 'Responder a nuevos contactos seguros', description: 'Permite respuesta automática a nuevos prospectos solo si la solicitud comercial es clara y de alta confianza.' },
 };
 
-const GROUPS = ['Expedientes', 'Administración'];
+const GROUPS = ['Expedientes', 'Administración', 'KIA · Correo'];
 
 function Toggle({ enabled, busy, onChange, label }: { enabled: boolean; busy: boolean; onChange: () => void; label: string }) {
   return (
@@ -80,6 +83,14 @@ export function AutomationSettingsPanel() {
         body   : JSON.stringify({ key, enabled: !current }),
       });
       if (!res.ok) throw new Error();
+      const json = await res.json();
+      const saved = json.setting as Setting;
+      setSettings((prev) => {
+        const exists = prev.some((setting) => setting.key === key);
+        return exists
+          ? prev.map((setting) => setting.key === key ? saved : setting)
+          : [...prev, saved];
+      });
       setFeedback({ key, ok: true });
     } catch {
       // Revert on error
@@ -130,7 +141,7 @@ export function AutomationSettingsPanel() {
               {groupKeys.map((key) => {
                 const meta    = LABELS[key];
                 const setting = byKey[key];
-                const enabled = setting?.enabled ?? true;
+                const enabled = setting?.enabled ?? !key.startsWith('kia.email_');
                 const isBusy  = busy === key;
                 const fb      = feedback?.key === key ? feedback : null;
 

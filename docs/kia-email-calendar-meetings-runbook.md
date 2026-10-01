@@ -649,15 +649,19 @@ No se abre acceso privado a expedientes por el simple hecho de escribir un email
 
 ## 18. Respuesta automática: condiciones
 
-Flags:
+Controles autoritativos en **Admin → Automatizaciones** (persistidos en `automation_settings`):
+
+- `kia.email_agent`: habilita el análisis de correo;
+- `kia.email_auto_send`: habilita respuestas automáticas a contactos ya conocidos cuando pasan todas las guardas;
+- `kia.email_new_lead_auto_send`: habilita respuestas automáticas a prospectos nuevos seguros.
+
+Los interruptores ausentes se consideran **desactivados**. Las variables legacy `KIA_EMAIL_AGENT_ENABLED` y `KIA_EMAIL_AUTO_SEND_ENABLED` no activan el agente.
+
+El umbral sigue siendo configurable por entorno:
 
 ```env
-KIA_EMAIL_AGENT_ENABLED=false
-KIA_EMAIL_AUTO_SEND_ENABLED=false
 KIA_EMAIL_MIN_CONFIDENCE=0.88
 ```
-
-Además existen controles específicos para prospectos nuevos.
 
 Para enviar automáticamente deben cumplirse, entre otros:
 
@@ -1037,13 +1041,19 @@ NEXT_PUBLIC_GOOGLE_BOOKING_ACADEMY_URL=
 
 ### KIA email
 
+La activación se gestiona únicamente desde **Admin → Automatizaciones**, con las claves persistidas:
+
+- `kia.email_agent`;
+- `kia.email_auto_send`;
+- `kia.email_new_lead_auto_send`.
+
+No usar `KIA_EMAIL_AGENT_ENABLED` ni `KIA_EMAIL_AUTO_SEND_ENABLED` como mecanismo de activación.
+
+Umbrales configurables por entorno:
+
 ```env
-KIA_EMAIL_AGENT_ENABLED=false
-KIA_EMAIL_AUTO_SEND_ENABLED=false
 KIA_EMAIL_MIN_CONFIDENCE=0.88
 ```
-
-Existen además flags/umbrales para nuevos prospectos.
 
 ### IA
 
@@ -1224,8 +1234,8 @@ Cubre:
 
 Comprobar:
 
-1. `KIA_EMAIL_AGENT_ENABLED`;
-2. `KIA_EMAIL_AUTO_SEND_ENABLED`;
+1. `kia.email_agent` en **Admin → Automatizaciones**;
+2. `kia.email_auto_send` y, si aplica, `kia.email_new_lead_auto_send`;
 3. heartbeat en `system_kv`;
 4. proveedor IA;
 5. Gmail conectado;

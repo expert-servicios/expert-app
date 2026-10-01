@@ -26,12 +26,17 @@ export async function POST(request: NextRequest) {
     const { endpoint, keys } = parsed.data;
     const admin = getSupabaseAdmin();
 
-    await admin.from('push_subscriptions').upsert({
+    const { error: persistError } = await admin.from('push_subscriptions').upsert({
       user_id:  user.id,
       endpoint,
       p256dh:   keys.p256dh,
       auth:     keys.auth,
     }, { onConflict: 'endpoint' });
+
+    if (persistError) {
+      console.error('[push/subscribe POST] persistence failed:', persistError.message);
+      return NextResponse.json({ error: 'No se pudo guardar la suscripción' }, { status: 503 });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
@@ -50,7 +55,16 @@ export async function DELETE(request: NextRequest) {
     if (!endpoint) return NextResponse.json({ error: 'endpoint requerido' }, { status: 400 });
 
     const admin = getSupabaseAdmin();
-    await admin.from('push_subscriptions').delete().eq('endpoint', endpoint).eq('user_id', user.id);
+    const { error: deleteError } = await admin
+      .from('push_subscriptions')
+      .delete()
+      .eq('endpoint', endpoint)
+      .eq('user_id', user.id);
+
+    if (deleteError) {
+      console.error('[push/subscribe DELETE] persistence failed:', deleteError.message);
+      return NextResponse.json({ error: 'No se pudo eliminar la suscripción' }, { status: 503 });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

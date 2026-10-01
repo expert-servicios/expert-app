@@ -402,14 +402,37 @@ export async function GET(request: NextRequest) {
   }
 
   const admin = getSupabaseAdmin();
-  const enabled = process.env.KIA_EMAIL_AGENT_ENABLED?.toLowerCase() === 'true';
-  if (!enabled) {
-    await writeAgentHeartbeat(admin, { enabled: false, auto_send: false, status: 'disabled' }).catch(() => {});
-    return NextResponse.json({ skipped: true, reason: 'KIA_EMAIL_AGENT_ENABLED is not true' });
+  const [agentSetting, autoSendSetting, newLeadAutoSendSetting] = await Promise.all([
+    admin.from('automation_settings').select('enabled,updated_at').eq('key', 'kia.email_agent').maybeSingle(),
+    admin.from('automation_settings').select('enabled').eq('key', 'kia.email_auto_send').maybeSingle(),
+    admin.from('automation_settings').select('enabled').eq('key', 'kia.email_new_lead_auto_send').maybeSingle(),
+  ]);
+  const settingsError = agentSetting.error ?? autoSendSetting.error ?? newLeadAutoSendSetting.error;
+  if (settingsError) {
+    console.error('[kia-email-agent] automation settings unavailable:', settingsError.message);
+    await writeAgentHeartbeat(admin, {
+      enabled: false,
+      auto_send: false,
+      new_lead_auto_send: false,
+      status: 'degraded',
+      reason: 'automation_settings_unavailable',
+    }).catch(() => {});
+    return NextResponse.json({ error: 'automation_settings_unavailable' }, { status: 503 });
   }
 
-  const autoSend = process.env.KIA_EMAIL_AUTO_SEND_ENABLED?.toLowerCase() === 'true';
-  const newLeadAutoSend = process.env.KIA_EMAIL_NEW_LEAD_AUTO_SEND_ENABLED?.toLowerCase() === 'true';
+  const enabled = agentSetting.data?.enabled === true;
+  const enabledSince = enabled ? agentSetting.data?.updated_at ?? null : null;
+  const autoSend = autoSendSetting.data?.enabled === true;
+  const newLeadAutoSend = newLeadAutoSendSetting.data?.enabled === true;
+  if (!enabled) {
+    await writeAgentHeartbeat(admin, {
+      enabled: false,
+      auto_send: false,
+      new_lead_auto_send: false,
+      status: 'disabled',
+    }).catch(() => {});
+    return NextResponse.json({ skipped: true, reason: 'kia.email_agent is disabled' });
+  }
   const minConfidence = Number(process.env.KIA_EMAIL_MIN_CONFIDENCE ?? '0.88');
   const prospectMinConfidence = Math.max(minConfidence, Number(process.env.KIA_EMAIL_PROSPECT_MIN_CONFIDENCE ?? '0.92'));
   const health = await healthGate(admin);
@@ -473,6 +496,10 @@ export async function GET(request: NextRequest) {
       const gmail = await getOperationalGmailThread(admin, row.thread_id);
       const latest = gmail.messages.at(-1);
       if (!latest || !latest.unread) {
+        skipped++;
+        continue;
+      }
+      if (!enabledSince || new Date(latest.date).getTime() < new Date(enabledSince).getTime()) {
         skipped++;
         continue;
       }
@@ -800,7 +827,9 @@ export async function GET(request: NextRequest) {
 
   await writeAgentHeartbeat(admin, {
     enabled: true,
+    enabled_since: enabledSince,
     auto_send: autoSend,
+    new_lead_auto_send: newLeadAutoSend,
     status: errors.length === 0 ? 'ok' : 'degraded',
     health_gate: health,
     evaluated,

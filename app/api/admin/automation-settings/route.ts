@@ -43,6 +43,19 @@ export async function PATCH(request: NextRequest) {
 
   const { key, enabled } = parsed.data;
 
+  const { data: existing, error: lookupError } = await admin
+    .from('automation_settings')
+    .select('key, enabled, updated_at')
+    .eq('key', key)
+    .maybeSingle();
+  if (lookupError) return NextResponse.json({ error: lookupError.message }, { status: 500 });
+
+  // updated_at is the activation transition timestamp for fail-closed automations.
+  // Repeating the same PATCH must not move the backlog cutoff forward.
+  if (existing && existing.enabled === enabled) {
+    return NextResponse.json({ setting: existing, unchanged: true });
+  }
+
   const { data, error } = await admin
     .from('automation_settings')
     .upsert({ key, enabled, updated_at: new Date().toISOString() }, { onConflict: 'key' })
@@ -50,5 +63,5 @@ export async function PATCH(request: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ setting: data });
+  return NextResponse.json({ setting: data, unchanged: false });
 }
