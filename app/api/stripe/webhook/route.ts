@@ -212,6 +212,14 @@ async function upsertSubscriptionFromStripe(
     ? new Date(firstItem.current_period_end * 1000).toISOString()
     : null;
   const planName = getPlanName(priceId, sub.metadata?.plan_name);
+  const stripeItems = sub.items.data.map((item) => ({
+    subscription_item_id: item.id,
+    price_id: item.price.id,
+    quantity: item.quantity ?? 1,
+    unit_amount: item.price.unit_amount ?? null,
+    currency: item.price.currency,
+    interval: item.price.recurring?.interval ?? null,
+  }));
 
   await linkStripeCustomer(supabaseAdmin, clientId, customerId, companyId);
 
@@ -226,6 +234,14 @@ async function upsertSubscriptionFromStripe(
       status,
       current_period_start: periodStart,
       current_period_end: periodEnd,
+      metadata: {
+        stripe_items: stripeItems,
+        stripe_subscription_metadata: sub.metadata ?? {},
+        recurring_total_cents: stripeItems.reduce(
+          (sum, item) => sum + ((item.unit_amount ?? 0) * item.quantity),
+          0,
+        ),
+      },
       updated_at: new Date().toISOString()
     },
     { onConflict: 'stripe_subscription_id' }
@@ -325,9 +341,10 @@ async function handleSubscriptionActivation(
     tag: `sub-${sub.id}`,
   }).catch(() => {});
 
-  const monthlyAmount = sub.items.data[0]?.price.unit_amount
-    ? sub.items.data[0].price.unit_amount / 100
-    : 0;
+  const monthlyAmount = sub.items.data.reduce(
+    (sum, item) => sum + ((item.price.unit_amount ?? 0) * (item.quantity ?? 1)),
+    0,
+  ) / 100;
 
   const adminEmails = getAdminEmails();
   if (adminEmails.length) {
@@ -358,15 +375,27 @@ async function handleSubscriptionActivation(
   }).then((result) => {
     void resolveHoldedJob(supabaseAdmin, subJobId, result.error ? 'failed' : 'success', result.error);
     if (result.invoiceId) {
-      supabaseAdmin.from('subscriptions').update({
-        metadata: {
-          holded: {
-            contact_id: result.contactId,
-            invoice_id: result.invoiceId,
-            sync_event_id: result.syncEventId
+      void (async () => {
+        const { data: currentSubscription } = await supabaseAdmin
+          .from('subscriptions')
+          .select('metadata')
+          .eq('stripe_subscription_id', sub.id)
+          .maybeSingle();
+        const currentMetadata =
+          currentSubscription?.metadata && typeof currentSubscription.metadata === 'object'
+            ? currentSubscription.metadata as Record<string, unknown>
+            : {};
+        await supabaseAdmin.from('subscriptions').update({
+          metadata: {
+            ...currentMetadata,
+            holded: {
+              contact_id: result.contactId,
+              invoice_id: result.invoiceId,
+              sync_event_id: result.syncEventId
+            }
           }
-        }
-      }).eq('stripe_subscription_id', sub.id).then(() => {});
+        }).eq('stripe_subscription_id', sub.id);
+      })();
     }
   }).catch((err) => {
     console.error('[webhook] holded sync (subscription) failed:', err);
