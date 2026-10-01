@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 
     const { data: memberships, error: membershipsError } = await admin
       .from('profile_companies')
-      .select('company_id,role,company:companies(id,razon_social,cif_nif,forma_juridica,direccion,ciudad,codigo_postal,pais)')
+      .select('company_id,role,company:companies(id,razon_social,cif_nif,forma_juridica,direccion,ciudad,provincia,codigo_postal,pais)')
       .eq('profile_id', user.id);
 
     if (membershipsError) {
