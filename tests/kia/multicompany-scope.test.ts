@@ -40,8 +40,8 @@ describe('KIA multi-company scope', () => {
 
   it('scopes documents and cases to the authorized company when one is active', () => {
     const context = source('lib/ai/kia/kia-context-builder.ts');
-    expect(context).toContain('loadDocuments(admin, clientId, input.caseId, resolvedCompanyId)');
-    expect(context).toContain('loadCasesForClient(admin, clientId, resolvedCompanyId)');
+    expect(context).toContain('loadDocuments(admin, resourceClientId, input.caseId, resolvedCompanyId)');
+    expect(context).toContain('loadCasesForClient(admin, resourceClientId, resolvedCompanyId)');
     expect(context).toContain("if (companyId) query = query.eq('company_id', companyId)");
   });
 });
