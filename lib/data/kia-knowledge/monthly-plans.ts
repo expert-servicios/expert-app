@@ -101,7 +101,6 @@ export const MONTHLY_PLANS_KNOWLEDGE = {
   kiaRules: [
     'Si pregunta "gratis", explicar prueba Holded 14 días, no Plan Gratuito EXPERT.',
     'Si quiere soporte mensual barato, recomendar Plan Supervisión.',
-    'Si es autónomo vinculado/económicamente dependiente de una empresa del mismo cliente, con operativa simple y normalmente <=10 facturas/mes, usar la modalidad vinculada del Plan Supervisión 49 €/mes + IVA como referencia. Puede incluir obligaciones fiscales básicas del autónomo según alcance; si hay complejidad adicional, pasar a Avanzado o presupuesto.',
     'Los tres planes incluyen presentación de impuestos periódicos dentro de su alcance; recomendar Avanzado cuando la complejidad fiscal, el cierre o el nivel de revisión sean mayores.',
     'Si quiere delegar más, recomendar Plan Colaborativo.',
     'Si tiene laboral, volumen alto o varias sociedades, recomendar Plan Personalizado.',
