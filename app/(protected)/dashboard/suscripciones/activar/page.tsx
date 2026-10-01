@@ -349,7 +349,7 @@ function SubscriptionActivationContent() {
             Ver qué incluye y qué no incluye
           </Link>
           <Link href="/cita?tipo=demo-holded" className="font-semibold text-[#c88b25] hover:underline">
-            Reservar demo Holded gratuita de 60 min
+            Reservar demo Holded gratuita
           </Link>
         </div>
 
