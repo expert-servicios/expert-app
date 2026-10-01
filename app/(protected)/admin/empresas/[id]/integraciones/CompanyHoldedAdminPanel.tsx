@@ -35,6 +35,7 @@ export function CompanyHoldedAdminPanel({ companyId }: { companyId: string }) {
   const [laborConsent, setLaborConsent] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -59,6 +60,7 @@ export function CompanyHoldedAdminPanel({ companyId }: { companyId: string }) {
 
   async function action(payload: Record<string, unknown>) {
     setBusy(true);
+    setBusyAction(typeof payload.action === 'string' ? payload.action : null);
     setError('');
     setNotice('');
     try {
@@ -87,6 +89,7 @@ export function CompanyHoldedAdminPanel({ companyId }: { companyId: string }) {
       setError(err instanceof Error ? err.message : 'Error de conexión');
     } finally {
       setBusy(false);
+      setBusyAction(null);
     }
   }
 
@@ -139,8 +142,10 @@ export function CompanyHoldedAdminPanel({ companyId }: { companyId: string }) {
               </div>
             </div>
             <div className="flex gap-2">
-              <button type="button" disabled={busy} onClick={() => void action({ action: 'test_stored' })} className="inline-flex items-center gap-1.5 rounded-xl border border-green-300 bg-white px-3 py-2 text-xs font-bold text-green-900">
-                <ShieldCheck className="h-3.5 w-3.5" /> Probar conexión
+              <button type="button" disabled={busy} onClick={() => void action({ action: 'test_stored' })} className="inline-flex items-center gap-1.5 rounded-xl border border-green-300 bg-white px-3 py-2 text-xs font-bold text-green-900 disabled:opacity-60" aria-live="polite">
+                {busyAction === 'test_stored'
+                  ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Probando…</>
+                  : <><ShieldCheck className="h-3.5 w-3.5" /> Probar conexión</>}
               </button>
               <button
                 type="button"
@@ -157,6 +162,7 @@ export function CompanyHoldedAdminPanel({ companyId }: { companyId: string }) {
             </div>
           </div>
 
+          {notice && <p role="status" className="mt-4 rounded-xl border border-green-200 bg-white px-4 py-3 text-sm font-semibold text-green-800">{notice}</p>}
           {integration.last_error && <p className="mt-4 rounded-xl bg-white px-4 py-3 text-sm text-red-700">Último error: {integration.last_error}</p>}
 
           <div className="mt-4">
