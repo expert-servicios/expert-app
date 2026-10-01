@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { blockedRegistryUpdates } from '@/lib/companies/registry-locks';
 
 const FORMA_JURIDICA = ['autonomo','sl','sa','slne','cb','cooperativa','fundacion','otra'] as const;
 
@@ -54,6 +55,22 @@ export async function PATCH(
 
     if (membership?.role !== 'owner' && adminProfile?.role !== 'admin') {
       return NextResponse.json({ error: 'Sin permisos' }, { status: 403 });
+    }
+
+    const { data: currentCompany, error: lockLookupError } = await admin
+      .from('companies')
+      .select('registry_locked_fields')
+      .eq('id', id)
+      .maybeSingle();
+    if (lockLookupError) return NextResponse.json({ error: 'No se pudo validar el origen registral' }, { status: 500 });
+
+    const blocked = blockedRegistryUpdates(currentCompany?.registry_locked_fields, parse.data);
+    if (blocked.length > 0) {
+      return NextResponse.json({
+        error: 'Estos datos proceden de una fuente registral oficial y no se pueden editar desde EXPERT.',
+        code: 'registry_fields_locked',
+        fields: blocked,
+      }, { status: 409 });
     }
 
     const { data: company, error } = await admin
