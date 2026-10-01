@@ -7,6 +7,7 @@ import {
   Loader2, Mail, User, UserPlus
 } from 'lucide-react';
 import { ADMIN_CATALOG, type CatalogItem } from '@/lib/utils/admin-catalog';
+import { SubscriptionInvitationGenerator } from '@/components/admin/SubscriptionInvitationGenerator';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -450,6 +451,12 @@ export default function AdminOnboardingPage() {
       </div>
 
       <div className="mx-auto max-w-3xl px-6 py-8">
+        {step === 0 && (
+          <div className="mb-6">
+            <SubscriptionInvitationGenerator />
+          </div>
+        )}
+
         {error && (
           <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
