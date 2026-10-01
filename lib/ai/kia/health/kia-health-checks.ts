@@ -4,29 +4,49 @@ import type { KiaHealthCheckResult } from './kia-health-types';
 import { estimateCost, extractTokenUsageFromProviderResult } from '../kia-cost-tracker';
 
 export async function runKiaTechnicalChecks(): Promise<KiaHealthCheckResult[]> {
-  const checks: KiaHealthCheckResult[] = [];
-  checks.push(await checkSupabase());
-  checks.push(await checkProviderConfig());
-  checks.push(checkGatewayPrimaryConfig());
-  checks.push(checkThreeProviderFailoverPool());
-  checks.push(await checkAnthropicStatus());
-  checks.push(await checkOpenAiStatus());
-  checks.push(await checkGeminiCredential());
-  checks.push(await checkAnthropicCredential());
-  checks.push(await checkOpenAiCredential());
-  checks.push(checkWabaConfig());
-  checks.push(checkEnvPresence('stripe_config_present', 'technical', 'critical', 'Stripe config presente', [
-    'STRIPE_SECRET_KEY',
-    'STRIPE_WEBHOOK_SECRET',
-    'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
-  ]));
-  checks.push(checkEnvPresence('secret_encryption_configured', 'security', 'critical', 'Cifrado de secretos configurado', [
-    'SECRET_ENCRYPTION_KEY',
-  ]));
-  checks.push(checkDecisionLogsFlag());
-  checks.push(checkFeatureFlagCoherence());
-  checks.push(await checkHoldedMcpBridge());
-  return checks;
+  const [
+    supabase,
+    providerConfig,
+    anthropicStatus,
+    openAiStatus,
+    geminiCredential,
+    anthropicCredential,
+    openAiCredential,
+    holdedMcpBridge,
+  ] = await Promise.all([
+    checkSupabase(),
+    checkProviderConfig(),
+    checkAnthropicStatus(),
+    checkOpenAiStatus(),
+    checkGeminiCredential(),
+    checkAnthropicCredential(),
+    checkOpenAiCredential(),
+    checkHoldedMcpBridge(),
+  ]);
+
+  return [
+    supabase,
+    providerConfig,
+    checkGatewayPrimaryConfig(),
+    checkThreeProviderFailoverPool(),
+    anthropicStatus,
+    openAiStatus,
+    geminiCredential,
+    anthropicCredential,
+    openAiCredential,
+    checkWabaConfig(),
+    checkEnvPresence('stripe_config_present', 'technical', 'critical', 'Stripe config presente', [
+      'STRIPE_SECRET_KEY',
+      'STRIPE_WEBHOOK_SECRET',
+      'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
+    ]),
+    checkEnvPresence('secret_encryption_configured', 'security', 'critical', 'Cifrado de secretos configurado', [
+      'SECRET_ENCRYPTION_KEY',
+    ]),
+    checkDecisionLogsFlag(),
+    checkFeatureFlagCoherence(),
+    holdedMcpBridge,
+  ];
 }
 
 export async function runKiaBusinessChecks(): Promise<KiaHealthCheckResult[]> {
@@ -278,7 +298,9 @@ async function checkOpenAiCompatibleCredential(input: {
       body: JSON.stringify({
         model: input.model,
         max_tokens: 4,
-        temperature: 0,
+        ...(input.provider === 'google' && /^gemini-3\.8(?:-|$)/i.test(input.model)
+          ? { reasoning_effort: 'low' }
+          : { temperature: 0 }),
         messages: [{ role: 'user', content: 'Reply only OK' }],
       }),
       signal: AbortSignal.timeout(8_000),
@@ -329,7 +351,10 @@ async function checkOpenAiCompatibleCredential(input: {
 async function checkStatusEndpoint(checkId: string, title: string, url: string): Promise<KiaHealthCheckResult> {
   const started = Date.now();
   try {
-    const response = await fetch(url, { cache: 'no-store' });
+    const response = await fetch(url, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(5_000),
+    });
     const data = await response.json().catch(() => ({}));
     const indicator = typeof data?.status?.indicator === 'string' ? data.status.indicator : 'unknown';
     const ok = response.ok && ['none', 'minor', 'unknown'].includes(indicator);
