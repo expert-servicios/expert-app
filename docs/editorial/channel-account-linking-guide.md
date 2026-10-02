@@ -36,6 +36,8 @@ No pegues tokens, app secrets ni refresh tokens en GitHub, documentos públicos,
 
 ## Estado actual en EXPERT
 
+**Actualización 02/10/2026:** la configuración Meta ya pasa la prueba read-only del Marketing Hub. Las credenciales están cargadas en Vercel y la versión Graph API está configurada. El siguiente gate no es de credenciales: es poblar el catálogo C2 y validar activos/canales antes de cualquier escritura.
+
 Ya existe:
 
 - cliente Meta Graph API server-side;
@@ -142,9 +144,9 @@ Mantener `META_MARKETING_ENABLED=false` hasta completar la prueba read-only y lo
 
 Admin > Marketing Hub:
 
-1. Debe aparecer configuración completa.
-2. Ejecutar “Probar Meta”.
-3. Confirmar que el catálogo/activo responde.
+1. Configuración completa: **confirmada 02/10/2026**.
+2. “Probar Meta”: **prueba read-only correcta 02/10/2026**.
+3. Catálogo/activo responde: **confirmado**.
 4. No activar publicación automática todavía.
 5. Cuando añadamos publishing:
    - crear post de prueba en estado no público o entorno controlado cuando la API lo permita;
@@ -456,16 +458,17 @@ No activar el cron de escritura hasta que cada adaptador haya pasado pruebas.
 
 # 8. ORDEN RECOMENDADO DE CONEXIÓN
 
-1. Meta read-only — verificar lo ya configurado.
-2. Facebook orgánico.
-3. Instagram orgánico.
-4. Meta Ads.
-5. LinkedIn perfil personal.
-6. LinkedIn Page.
-7. LinkedIn Ads.
-8. Google Ads.
-9. Publisher Cron.
-10. Métricas y atribución.
+1. Meta read-only — **completado 02/10/2026**.
+2. Poblar catálogo C2 y proyectar únicamente servicios realmente ready.
+3. Facebook orgánico.
+4. Instagram orgánico.
+5. Meta Ads.
+6. LinkedIn perfil personal.
+7. LinkedIn Page.
+8. LinkedIn Ads.
+9. Google Ads.
+10. Publisher Cron.
+11. Métricas y atribución.
 
 Motivo: empezar por canales con infraestructura ya avanzada y por publicación orgánica de bajo riesgo.
 
@@ -483,8 +486,8 @@ Motivo: empezar por canales con infraestructura ya avanzada y por publicación o
 - [ ] Confirmar Dataset/Pixel.
 - [ ] Confirmar System User.
 - [ ] Revisar permisos y activos asignados.
-- [ ] Introducir/revisar variables en Vercel.
-- [ ] Probar Marketing Hub.
+- [x] Introducir/revisar variables en Vercel.
+- [x] Probar Marketing Hub.
 
 ## Google Ads
 
