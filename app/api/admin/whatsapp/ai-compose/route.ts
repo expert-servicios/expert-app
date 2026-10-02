@@ -188,6 +188,9 @@ export async function POST(request: NextRequest) {
         `Facturación lista: ${contactCtx.billingReady ? 'sí' : 'no'}`,
         `Último estado lead: ${contactCtx.lastLeadStatus ?? 'no aplica'}`,
         `Servicio lead/seleccionado: ${contactCtx.lastSelectedService ?? serviceId ?? 'no aplica'}`,
+        `Proyecto vinculado: ${contactCtx.projectName ?? 'no consta'}`,
+        `Resumen verificado del proyecto: ${contactCtx.projectSummary ?? 'pendiente de fuente verificable'}`,
+        `Web del proyecto: ${contactCtx.projectWebsiteUrl ?? 'no consta'}`,
         `Expedientes:\n${caseList || 'Ninguno'}`,
         `Obligaciones fiscales:\n${obList || 'Ninguna'}`,
       ].join('\n');
