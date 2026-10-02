@@ -22,7 +22,7 @@ export default function TerminosPage() {
         <div className="mx-auto max-w-4xl">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Legal</p>
           <h1 className="mt-3 font-serif text-3xl font-bold md:text-4xl">Términos y Condiciones</h1>
-          <p className="mt-3 text-sm text-[#9CA3AF]">Última actualización: 8 de mayo de 2026</p>
+          <p className="mt-3 text-sm text-[#9CA3AF]">Última actualización: 29 de septiembre de 2026</p>
         </div>
       </div>
 
@@ -94,14 +94,13 @@ export default function TerminosPage() {
 
           <Section title="5. Precios y facturación">
             <p>
-              Los precios indicados en el Sitio están expresados en euros (€) e incluyen el IVA aplicable salvo que se indique
-              expresamente lo contrario. EXPERT se reserva el derecho de modificar los precios en cualquier momento, siendo de
-              aplicación los vigentes en el momento de la contratación.
+              Los precios se expresan en euros (€). Salvo indicación expresa de precio final con impuestos incluidos, las tarifas
+              profesionales se muestran sin IVA y el checkout o presupuesto confirma el impuesto aplicable antes del pago.
+              Los servicios con complejidad variable pueden mostrar un precio “desde”, una calculadora o un presupuesto previo.
             </p>
             <p>
-              Los servicios de suscripción (planes mensuales) se facturan de forma recurrente según el plan contratado. El
-              cliente puede cancelar su suscripción en cualquier momento a través de su panel de cliente, con efecto al final del
-              período de facturación en curso.
+              El catálogo público está orientado principalmente a servicios puntuales. Si existe una relación recurrente
+              formalizada por acuerdo específico, su facturación, duración y cancelación se regirán por ese acuerdo.
             </p>
           </Section>
 
@@ -169,17 +168,36 @@ export default function TerminosPage() {
             </p>
           </Section>
 
-          <Section title="11. Protección de datos">
+          <Section title="11. Protección de datos, KIA e inteligencia artificial">
             <p>
-              El tratamiento de los datos personales recogidos a través del Sitio se rige por nuestra{' '}
-              <Link href="/privacidad" className="text-[#D4A017] hover:text-[#F2C14E]">
-                Política de Privacidad
-              </Link>
-              , disponible en el Sitio, conforme al Reglamento (UE) 2016/679 (RGPD) y la Ley Orgánica 3/2018 (LOPDGDD).
+              El tratamiento de datos personales se rige por nuestra{' '}
+              <Link href="/privacidad" className="text-[#D4A017] hover:text-[#F2C14E]">Política de Privacidad</Link>,
+              conforme al RGPD, la LOPDGDD y demás normativa aplicable.
+            </p>
+            <p>
+              KIA es una asistente virtual de EXPERT basada en inteligencia artificial. Puede explicar estados, localizar información,
+              preparar borradores, proponer acciones y utilizar herramientas autorizadas. Las acciones sensibles o que requieran criterio
+              profesional mantienen controles, trazabilidad y revisión humana cuando corresponda.
+            </p>
+            <p>
+              El usuario no debe introducir secretos de acceso, contraseñas o credenciales en conversaciones con KIA. Cuando una respuesta
+              automatizada sea insuficiente o el caso requiera valoración profesional, puede solicitar revisión humana.
             </p>
           </Section>
 
-          <Section title="12. Modificación de las condiciones">
+          <Section title="12. Firma electrónica y documentos">
+            <p>
+              EXPERT puede utilizar Google Workspace eSignature u otros proveedores de firma para documentos en los que ese nivel de firma
+              resulte adecuado. Cuando una norma o una sede exija certificado electrónico reconocido, firma cualificada o una herramienta
+              específica, se utilizará el mecanismo jurídicamente procedente, como certificado digital o AutoFirma.
+            </p>
+            <p>
+              La existencia de una firma electrónica no sustituye requisitos materiales de representación, consentimiento o legitimación.
+              EXPERT conserva la evidencia de firma y auditoría que corresponda al proveedor utilizado.
+            </p>
+          </Section>
+
+          <Section title="13. Modificación de las condiciones">
             <p>
               EXPERT se reserva el derecho de modificar estas condiciones en cualquier momento. Las condiciones vigentes serán
               las publicadas en el Sitio en el momento de la contratación. Se notificará a los clientes registrados cualquier
@@ -187,7 +205,7 @@ export default function TerminosPage() {
             </p>
           </Section>
 
-          <Section title="13. Legislación aplicable y jurisdicción">
+          <Section title="14. Legislación aplicable y jurisdicción">
             <p>
               Las presentes condiciones se rigen por la legislación española. Para la resolución de controversias, las partes se
               someten a los Juzgados y Tribunales del domicilio del consumidor, sin perjuicio de la posibilidad de recurrir a
@@ -195,7 +213,7 @@ export default function TerminosPage() {
             </p>
           </Section>
 
-          <Section title="14. Reseñas y valoraciones">
+          <Section title="15. Reseñas y valoraciones">
             <p>
               Las reseñas de clientes se verifican y procesan conforme a nuestra{' '}
               <Link href="/politica-de-resenas" className="text-[#D4A017] hover:text-[#F2C14E]">
@@ -206,7 +224,7 @@ export default function TerminosPage() {
             </p>
           </Section>
 
-          <Section title="15. Contacto">
+          <Section title="16. Contacto">
             <p>Para cualquier consulta relacionada con estos términos, puedes contactar con nosotros en:</p>
             <ul>
               <li>

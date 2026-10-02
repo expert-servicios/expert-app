@@ -1,201 +1,145 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'Política de Privacidad | EXPERT ESTUDIOS PROFESIONALES',
-  description: 'Política de privacidad de EXPERT ESTUDIOS PROFESIONALES, SLU — cómo recogemos, usamos y protegemos tus datos personales.',
-  openGraph: {
-    type: 'website',
-    url: 'https://expertconsulting.es/privacidad',
-    title: 'Política de Privacidad | EXPERT',
-    description: 'Política de privacidad de EXPERT ESTUDIOS PROFESIONALES, SLU.',
-    siteName: 'EXPERT — Asesoría Fiscal y Legal',
-    locale: 'es_ES'
-  }
+  description: 'Información RGPD y LOPDGDD sobre el tratamiento de datos en EXPERT, KIA, integraciones, expedientes y servicios profesionales.',
+  alternates: { canonical: 'https://expertconsulting.es/privacidad' },
 };
 
-const LAST_UPDATED = '8 de mayo de 2026';
+const LAST_UPDATED = '29 de septiembre de 2026';
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section>
+      <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">{title}</h2>
+      <div className="mt-4 space-y-3 text-sm leading-7 text-[#23364D]">{children}</div>
+    </section>
+  );
+}
 
 export default function PrivacidadPage() {
   return (
     <main className="bg-[#F8F6F1] px-6 py-16">
-      <div className="mx-auto max-w-3xl">
-
-        <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D4A017]">Legal</p>
+      <div className="mx-auto max-w-4xl">
+        <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D4A017]">Legal · RGPD</p>
         <h1 className="mt-3 font-serif text-4xl font-bold text-[#0D1B2A]">Política de Privacidad</h1>
         <p className="mt-3 text-sm text-[#23364D]">Última actualización: {LAST_UPDATED}</p>
 
-        <div className="mt-10 space-y-10 text-[#23364D]">
+        <div className="mt-10 space-y-10">
+          <Section title="1. Responsable del tratamiento">
+            <p><strong>EXPERT ESTUDIOS PROFESIONALES, SLU</strong> · CIF B44991776 · C/ Pintor Agrassot, 19, 03110 Mutxamel (Alicante), España.</p>
+            <p>Contacto general y de privacidad: <a className="text-[#D4A017] underline underline-offset-4" href="mailto:info@expertconsulting.es">info@expertconsulting.es</a>.</p>
+            <p>Cuando EXPERT presta un servicio profesional por cuenta de un cliente que actúa como responsable de sus propios datos, EXPERT puede actuar también como encargado del tratamiento respecto de la información tratada siguiendo las instrucciones de ese cliente.</p>
+          </Section>
 
-          {/* 1 */}
-          <section>
-            <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">1. Responsable del tratamiento</h2>
-            <div className="mt-4 space-y-1 text-sm leading-7">
-              <p><strong>Razón social:</strong> EXPERT ESTUDIOS PROFESIONALES, SLU</p>
-              <p><strong>CIF:</strong> B44991776</p>
-              <p><strong>Domicilio:</strong> C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España</p>
-              <p><strong>Correo electrónico:</strong> <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a></p>
-            </div>
-          </section>
+          <Section title="2. Qué datos tratamos">
+            <ul className="list-disc space-y-1 pl-6">
+              <li>Identificación y contacto: nombre, apellidos, NIF/NIE/pasaporte, email, teléfono y domicilio.</li>
+              <li>Datos profesionales, societarios, fiscales, contables, laborales y administrativos necesarios para cada servicio.</li>
+              <li>Documentación de expedientes y archivos que el cliente aporta o autoriza a consultar.</li>
+              <li>Datos de facturación, pedidos, pagos y conciliación; EXPERT no almacena números completos de tarjeta.</li>
+              <li>Comunicaciones por email, formularios, KIA, Telegram u otros canales vinculados cuando el usuario los utiliza.</li>
+              <li>Datos técnicos de seguridad, autenticación, logs, dispositivo y uso de la plataforma.</li>
+              <li>Datos procedentes de integraciones que el usuario conecta de forma expresa, dentro de los permisos concedidos.</li>
+            </ul>
+            <p>En algunos encargos profesionales pueden aparecer categorías especiales de datos o información especialmente sensible. Solo se tratarán cuando resulte necesario para el servicio, exista una base jurídica válida y se apliquen controles de acceso reforzados.</p>
+          </Section>
 
-          {/* 2 */}
-          <section>
-            <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">2. Datos que recogemos y finalidad</h2>
-            <div className="mt-4 space-y-4 text-sm leading-7">
-              <div>
-                <h3 className="font-semibold text-[#0D1B2A]">2.1 Formularios de contacto y solicitud de servicios</h3>
-                <p>Cuando envías un formulario (contacto, solicitud de presupuesto, prueba Holded o formulario B2B) recogemos nombre, dirección de correo electrónico, teléfono y la información que incluyes en el mensaje. Estos datos se usan para responder a tu solicitud, preparar presupuestos y gestionar la prestación del servicio contratado.</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-[#0D1B2A]">2.2 Cuenta de usuario (área privada)</h3>
-                <p>Para acceder al área privada de cliente puedes registrarte con email y contraseña, o mediante <strong>Iniciar sesión con Google</strong> (Google Sign-In / OAuth 2.0). En ambos casos almacenamos tu dirección de correo electrónico y nombre para identificarte y prestarte el servicio.</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-[#0D1B2A]">2.3 Pagos</h3>
-                <p>Los pagos se procesan a través de <strong>Stripe</strong>. No almacenamos datos de tarjeta en nuestros servidores. Stripe actúa como encargado del tratamiento conforme a su propia política de privacidad.</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-[#0D1B2A]">2.4 Analítica web</h3>
-                <p>Utilizamos <strong>Google Tag Manager</strong> y <strong>Google Analytics 4</strong> para analizar el uso del sitio web de forma agregada y mejorar la experiencia de usuario. Estos servicios recopilan datos como tipo de dispositivo, sistema operativo, idioma del navegador, páginas visitadas, duración de la sesión y ubicación geográfica aproximada (nivel de país/región). No se recopilan datos que permitan identificar directamente a una persona.</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-[#0D1B2A]">2.5 Reseñas y moderación asistida por IA</h3>
-                <p>Cuando un cliente envía una valoración al finalizar un servicio, tratamos la puntuación, el comentario opcional y la autorización de publicación para gestionar y, cuando proceda, publicar la reseña. El comentario puede ser analizado por KIA para aplicar nuestra política de moderación. Para esta finalidad, el sistema de moderación recibe únicamente el texto del comentario y no recibe la puntuación, el nombre, el email, el NIF, el importe pagado ni el contenido del expediente.</p>
-                <p className="mt-2">Los casos ambiguos se remiten a revisión humana. Puedes consultar los criterios completos en la <a href="/politica-de-resenas" className="text-[#D4A017] underline underline-offset-4">Política de reseñas y valoraciones</a>.</p>
-              </div>
-            </div>
-          </section>
-
-          {/* 3 — Google específico */}
-          <section className="rounded-2xl border border-[#D4A017]/30 bg-white p-7">
-            <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">3. Uso de datos de Google (Google API Services)</h2>
-            <p className="mt-3 text-xs font-bold uppercase tracking-wide text-[#D4A017]">Sección requerida por la Google API Services User Data Policy</p>
-
-            <div className="mt-5 space-y-5 text-sm leading-7">
-
-              <div>
-                <h3 className="font-semibold text-[#0D1B2A]">3.1 Datos de Google a los que accedemos</h3>
-                <p>Cuando el usuario elige autenticarse mediante <strong>Iniciar sesión con Google</strong>, nuestra aplicación solicita únicamente los siguientes datos a través de la API de Google OAuth 2.0:</p>
-                <ul className="mt-2 list-disc space-y-1 pl-6">
-                  <li><strong>Dirección de correo electrónico</strong> — para identificar la cuenta y comunicarnos contigo.</li>
-                  <li><strong>Nombre completo</strong> — para personalizar la experiencia dentro del área privada.</li>
-                  <li><strong>Foto de perfil</strong> (avatar público de Google) — mostrada opcionalmente en la interfaz del área privada.</li>
-                </ul>
-                <p className="mt-2">No solicitamos acceso a Gmail, Google Drive, Google Calendar, Google Contacts ni a ningún otro servicio de Google más allá de la autenticación básica (<code>openid</code>, <code>email</code>, <code>profile</code>).</p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-[#0D1B2A]">3.2 Cómo usamos los datos de Google</h3>
-                <ul className="mt-2 list-disc space-y-1 pl-6">
-                  <li>El correo electrónico se usa exclusivamente para <strong>autenticar al usuario</strong>, enviar comunicaciones transaccionales relacionadas con el servicio (confirmaciones de pago, actualizaciones de expedientes, notificaciones operativas) y gestionar la relación contractual.</li>
-                  <li>El nombre se usa para <strong>personalizar la interfaz</strong> del área privada y encabezar las comunicaciones por correo.</li>
-                  <li>La foto de perfil se muestra solo en la interfaz del área privada y no se procesa ni comparte de ninguna otra forma.</li>
-                  <li>Los datos de Google <strong>no se utilizan para publicidad, perfiles de comportamiento ni entrenamientos de modelos de inteligencia artificial</strong>.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-[#0D1B2A]">3.3 Almacenamiento de los datos de Google</h3>
-                <p>Los datos obtenidos mediante Google Sign-In se almacenan en <strong>Supabase</strong> (base de datos PostgreSQL alojada en servidores dentro de la Unión Europea). Solo se conservan mientras la cuenta esté activa. El usuario puede solicitar la eliminación de su cuenta y todos sus datos en cualquier momento escribiendo a <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a>.</p>
-              </div>
-
-              <div>
-                <h3 className="font-semibold text-[#0D1B2A]">3.4 Transferencia y compartición de datos de Google</h3>
-                <p>Los datos obtenidos a través de Google Sign-In <strong>no se comparten con terceros</strong> salvo los encargados del tratamiento estrictamente necesarios para prestar el servicio (Supabase para almacenamiento, Resend para envío de emails transaccionales). Ningún encargado tiene autorización para usar estos datos para fines propios.</p>
-                <p className="mt-2">El uso de la información recibida de las APIs de Google cumple con la <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" className="text-[#D4A017] underline underline-offset-4">Google API Services User Data Policy</a>, incluidas las restricciones de uso limitado.</p>
-              </div>
-
-            </div>
-          </section>
-
-          {/* 4 */}
-          <section>
-            <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">4. Base legal del tratamiento</h2>
-            <div className="mt-4 space-y-2 text-sm leading-7">
-              <p><strong>Consentimiento (art. 6.1.a RGPD):</strong> para el envío de comunicaciones comerciales y analítica web (cuando el usuario lo acepta).</p>
-              <p><strong>Ejecución de un contrato (art. 6.1.b RGPD):</strong> para gestionar el servicio contratado, el área privada y los expedientes.</p>
-              <p><strong>Interés legítimo (art. 6.1.f RGPD):</strong> para el análisis agregado del uso del sitio web con fines de mejora.</p>
-            </div>
-          </section>
-
-          {/* 5 */}
-          <section>
-            <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">5. Conservación de los datos</h2>
-            <p className="mt-4 text-sm leading-7">Los datos se conservan durante el tiempo necesario para la finalidad que motivó su recogida y, en todo caso, durante los plazos legalmente exigidos (por ejemplo, 5 años para datos contables según la Ley General Tributaria). Los datos de cuentas inactivas se eliminan previa comunicación al usuario.</p>
-          </section>
-
-          {/* 6 */}
-          <section>
-            <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">6. Encargados del tratamiento (terceros)</h2>
-            <div className="mt-4 overflow-x-auto">
+          <Section title="3. Finalidades y bases jurídicas">
+            <div className="overflow-x-auto">
               <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="bg-[#0D1B2A] text-[#F8F6F1]">
-                    <th className="px-4 py-3 text-left font-semibold">Proveedor</th>
-                    <th className="px-4 py-3 text-left font-semibold">Finalidad</th>
-                    <th className="px-4 py-3 text-left font-semibold">Ubicación</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#d8cbb5]">
-                  {[
-                    ['Supabase', 'Base de datos y autenticación', 'UE (Frankfurt)'],
-                    ['Stripe', 'Procesamiento de pagos', 'EEUU (cláusulas contractuales tipo)'],
-                    ['Resend', 'Envío de emails transaccionales', 'EEUU (cláusulas contractuales tipo)'],
-                    ['Google LLC', 'Autenticación OAuth, analítica web (GA4)', 'EEUU (cláusulas contractuales tipo)'],
-                    ['Holded Technologies', 'Software de facturación y contabilidad', 'UE (España)'],
-                    ['Vercel', 'Alojamiento del sitio web', 'EEUU (cláusulas contractuales tipo)'],
-                    ['OpenAI / Anthropic', 'Funciones de IA de KIA, incluida moderación de comentarios cuando estén configuradas', 'EEUU (garantías de transferencia aplicables)'],
-                  ].map(([p, f, u]) => (
-                    <tr key={p} className="bg-white even:bg-[#F8F6F1]">
-                      <td className="px-4 py-3 font-medium text-[#0D1B2A]">{p}</td>
-                      <td className="px-4 py-3">{f}</td>
-                      <td className="px-4 py-3">{u}</td>
-                    </tr>
-                  ))}
+                <thead><tr className="bg-[#0D1B2A] text-white"><th className="px-4 py-3 text-left">Finalidad</th><th className="px-4 py-3 text-left">Base jurídica principal</th></tr></thead>
+                <tbody className="divide-y divide-[#d8cbb5] bg-white">
+                  <tr><td className="px-4 py-3">Responder consultas, preparar presupuestos y realizar actuaciones precontractuales</td><td className="px-4 py-3">Art. 6.1.b RGPD</td></tr>
+                  <tr><td className="px-4 py-3">Prestar servicios, gestionar expedientes, documentos, citas, firma y comunicaciones</td><td className="px-4 py-3">Art. 6.1.b RGPD y, cuando proceda, 6.1.c</td></tr>
+                  <tr><td className="px-4 py-3">Facturación, contabilidad, prevención del fraude y cumplimiento normativo</td><td className="px-4 py-3">Art. 6.1.c y 6.1.f RGPD</td></tr>
+                  <tr><td className="px-4 py-3">Seguridad, auditoría, prevención de abuso, continuidad y mejora operativa</td><td className="px-4 py-3">Art. 6.1.f RGPD</td></tr>
+                  <tr><td className="px-4 py-3">Comunicaciones comerciales cuando sean legalmente procedentes</td><td className="px-4 py-3">Consentimiento o base legal aplicable, con derecho de oposición/baja</td></tr>
+                  <tr><td className="px-4 py-3">Analítica web opcional</td><td className="px-4 py-3">Consentimiento</td></tr>
                 </tbody>
               </table>
             </div>
-          </section>
+          </Section>
 
-          {/* 7 */}
-          <section>
-            <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">7. Cookies y tecnologías de seguimiento</h2>
-            <div className="mt-4 space-y-2 text-sm leading-7">
-              <p>Este sitio utiliza cookies técnicas necesarias para el funcionamiento del área privada y cookies analíticas de Google Analytics 4 (cargadas a través de Google Tag Manager) para medir el uso del sitio de forma agregada.</p>
-              <p>Las cookies analíticas solo se activan si el usuario acepta su uso. Puedes consultar y gestionar tus preferencias de cookies en cualquier momento desde el banner de cookies del sitio.</p>
+          <Section title="4. KIA e inteligencia artificial">
+            <p><strong>KIA es una asistente virtual basada en inteligencia artificial</strong>. Cuando una persona conversa con KIA, la interfaz y las comunicaciones deben identificarla como asistente virtual de EXPERT.</p>
+            <p>KIA puede resumir información, localizar documentos, explicar estados, preparar borradores, clasificar solicitudes, proponer próximos pasos y ejecutar herramientas autorizadas de bajo riesgo. Las acciones sensibles mantienen controles de permisos, trazabilidad y, cuando corresponde, aprobación humana.</p>
+            <p>EXPERT no utiliza KIA para adoptar por sí sola decisiones con efectos jurídicos o de importancia similar sobre una persona sin la intervención y garantías que exija la normativa. El usuario puede solicitar revisión humana cuando corresponda.</p>
+            <p>Los datos enviados a proveedores de IA se limitan a lo necesario para la función solicitada y se aplican medidas de minimización, redacción y separación de contexto. Los prompts internos, credenciales y secretos no deben exponerse al cliente ni utilizarse como contenido de entrenamiento propio.</p>
+          </Section>
+
+          <Section title="5. Google Workspace, Microsoft 365 y otras integraciones">
+            <p>Cuando el usuario conecta una integración, EXPERT trata únicamente los datos y permisos necesarios para las funciones autorizadas. La conexión es revocable.</p>
+            <h3 className="font-semibold text-[#0D1B2A]">Google Workspace</h3>
+            <p>Según la modalidad autorizada, EXPERT puede acceder a Gmail (lectura, envío y gestión), Google Calendar (lectura y gestión de eventos), Google Drive (lectura o escritura de archivos autorizados), identidad de la cuenta y funcionalidades vinculadas a reuniones/Meet. Cuando una reunión tenga notas, transcripción o resumen automático habilitados, esa información se tratará para documentar la reunión y, cuando proceda, incorporarla al expediente, informando a los participantes según el flujo configurado. Los permisos efectivos son los mostrados por Google en la pantalla de consentimiento.</p>
+            <p>Los documentos que EXPERT sincroniza a Google Drive pueden utilizarse como copia operativa. EXPERT mantiene su propio control de expediente y autorización; un identificador de Drive por sí solo no concede acceso a un cliente.</p>
+            <h3 className="font-semibold text-[#0D1B2A]">Google eSignature</h3>
+            <p>Cuando se utilice Google Workspace eSignature para una firma adecuada al nivel jurídico requerido, se tratarán datos de firmantes, direcciones de correo, documento objeto de firma, eventos y marcas de tiempo del proceso. El PDF final y su evidencia de auditoría pueden archivarse en el expediente.</p>
+            <h3 className="font-semibold text-[#0D1B2A]">Microsoft 365</h3>
+            <p>Cuando se conecte Microsoft 365, EXPERT puede utilizar Outlook, Calendar, OneDrive/SharePoint y otras funciones autorizadas a través de Microsoft Graph, siempre dentro de los permisos concedidos.</p>
+          </Section>
+
+          <Section title="6. Proveedores y destinatarios">
+            <p>EXPERT utiliza proveedores tecnológicos para prestar el servicio. La relación exacta puede variar según las funciones activadas y el expediente.</p>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead><tr className="bg-[#0D1B2A] text-white"><th className="px-4 py-3 text-left">Proveedor/categoría</th><th className="px-4 py-3 text-left">Uso</th></tr></thead>
+                <tbody className="divide-y divide-[#d8cbb5] bg-white">
+                  <tr><td className="px-4 py-3">Supabase</td><td className="px-4 py-3">Base de datos, autenticación y almacenamiento; proyecto de producción en región eu-west-2 (Londres).</td></tr>
+                  <tr><td className="px-4 py-3">Vercel</td><td className="px-4 py-3">Alojamiento y despliegue de la aplicación.</td></tr>
+                  <tr><td className="px-4 py-3">Google Workspace / Google Cloud</td><td className="px-4 py-3">Correo, calendario, Drive, reuniones, firma y servicios conectados cuando se autoricen.</td></tr>
+                  <tr><td className="px-4 py-3">Microsoft 365</td><td className="px-4 py-3">Correo, calendario y archivos cuando el cliente conecta esta opción.</td></tr>
+                  <tr><td className="px-4 py-3">Stripe</td><td className="px-4 py-3">Procesamiento de pagos, prevención del fraude y gestión de cobros.</td></tr>
+                  <tr><td className="px-4 py-3">Resend / infraestructura de correo</td><td className="px-4 py-3">Envío de comunicaciones transaccionales cuando corresponda.</td></tr>
+                  <tr><td className="px-4 py-3">Holded</td><td className="px-4 py-3">Facturación/contabilidad y otras funciones autorizadas para clientes conectados.</td></tr>
+                  <tr><td className="px-4 py-3">OpenAI y otros proveedores de IA configurados</td><td className="px-4 py-3">Funciones de KIA, análisis y asistencia, con minimización y controles por herramienta.</td></tr>
+                </tbody>
+              </table>
             </div>
-          </section>
+            <p>Cuando un proveedor implica transferencias internacionales, EXPERT aplica las garantías disponibles y exigibles, como decisiones de adecuación, el Marco de Privacidad de Datos UE-EE. UU. cuando resulte aplicable o cláusulas contractuales tipo, según el proveedor y el tratamiento.</p>
+          </Section>
 
-          {/* 8 */}
-          <section>
-            <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">8. Tus derechos</h2>
-            <div className="mt-4 space-y-2 text-sm leading-7">
-              <p>De acuerdo con el RGPD (Reglamento UE 2016/679) y la LOPDGDD, puedes ejercitar los siguientes derechos:</p>
-              <ul className="mt-2 list-disc space-y-1 pl-6">
-                <li><strong>Acceso:</strong> conocer qué datos tratamos sobre ti.</li>
-                <li><strong>Rectificación:</strong> corregir datos inexactos o incompletos.</li>
-                <li><strong>Supresión:</strong> solicitar la eliminación de tus datos.</li>
-                <li><strong>Limitación:</strong> restringir el tratamiento en determinadas circunstancias.</li>
-                <li><strong>Portabilidad:</strong> recibir tus datos en un formato estructurado.</li>
-                <li><strong>Oposición:</strong> oponerte al tratamiento basado en interés legítimo.</li>
-                <li><strong>Retirar el consentimiento</strong> en cualquier momento, sin que afecte a la licitud del tratamiento previo.</li>
-              </ul>
-              <p className="mt-2">Para ejercitar cualquiera de estos derechos, escribe a <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a> indicando el derecho que deseas ejercitar y adjuntando una copia de tu DNI o documento identificativo equivalente. Responderemos en el plazo máximo de 30 días.</p>
-              <p>Si consideras que el tratamiento de tus datos no es conforme a la normativa, puedes presentar una reclamación ante la <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer" className="text-[#D4A017] underline underline-offset-4">Agencia Española de Protección de Datos (AEPD)</a>.</p>
+          <Section title="7. Conservación">
+            <p>No utilizamos un único plazo genérico para todos los datos. La conservación depende de la finalidad, el tipo de expediente, las obligaciones legales y la necesidad de atender responsabilidades.</p>
+            <ul className="list-disc space-y-1 pl-6">
+              <li>Expedientes y documentación profesional: durante la relación y los plazos legales/profesionales aplicables.</li>
+              <li>Facturación y registros contables/fiscales: durante los plazos exigidos por la normativa correspondiente.</li>
+              <li>Leads no convertidos: durante el plazo interno aprobado y mientras exista finalidad legítima, con depuración periódica.</li>
+              <li>Consentimientos, bajas y oposición: se conserva evidencia suficiente para acreditar el cumplimiento.</li>
+              <li>Logs de seguridad: durante el plazo proporcional a la finalidad de seguridad y auditoría.</li>
+            </ul>
+          </Section>
+
+          <Section title="8. Derechos de las personas">
+            <p>Puedes solicitar acceso, rectificación, supresión, limitación, portabilidad y oposición; retirar el consentimiento cuando sea la base del tratamiento; y ejercer los derechos vinculados a decisiones automatizadas cuando sean aplicables.</p>
+            <p>La solicitud puede enviarse a <a className="text-[#D4A017] underline underline-offset-4" href="mailto:info@expertconsulting.es">info@expertconsulting.es</a>. EXPERT podrá pedir información adicional únicamente cuando existan dudas razonables sobre la identidad.</p>
+            <p>Responderemos sin dilación indebida y, en todo caso, dentro de <strong>un mes</strong> desde la recepción. Este plazo puede ampliarse otros dos meses cuando sea necesario por complejidad o número de solicitudes, informando de la ampliación y sus motivos dentro del primer mes.</p>
+            <p>También puedes reclamar ante la <a className="text-[#D4A017] underline underline-offset-4" href="https://www.aepd.es" target="_blank" rel="noreferrer">Agencia Española de Protección de Datos (AEPD)</a>.</p>
+          </Section>
+
+          <Section title="9. Cookies y medición">
+            <p>Las tecnologías técnicas necesarias pueden utilizarse sin consentimiento cuando cumplen los requisitos legales. Google Analytics, Google Tag Manager y Metricool se cargan únicamente después de que el usuario acepte la medición opcional.</p>
+            <p>Puedes rechazar la analítica sin perder acceso al sitio y modificar tu elección desde el enlace <strong>Configurar cookies</strong> del pie de página. Consulta la <Link className="text-[#D4A017] underline underline-offset-4" href="/cookies">Política de Cookies</Link>.</p>
+          </Section>
+
+          <Section title="10. Seguridad y confidencialidad">
+            <p>Aplicamos controles de acceso, segregación por usuario/empresa/expediente, autenticación, registros de auditoría, enlaces temporales para documentos y medidas técnicas y organizativas proporcionales al riesgo. Ninguna medida elimina por completo el riesgo, por lo que mantenemos procedimientos de incidencias y revisión.</p>
+          </Section>
+
+          <Section title="11. Cambios y contacto">
+            <p>Esta política se revisa cuando cambian tratamientos, proveedores, integraciones, capacidades de KIA o normativa aplicable. Los cambios relevantes se comunicarán cuando corresponda.</p>
+            <p>Para consultas de privacidad: <a className="text-[#D4A017] underline underline-offset-4" href="mailto:info@expertconsulting.es">info@expertconsulting.es</a>.</p>
+          </Section>
+
+          <div className="border-t border-[#D4A017]/25 pt-8 text-sm">
+            <div className="flex flex-wrap gap-4">
+              <Link href="/cookies" className="font-semibold text-[#D4A017]">Cookies</Link>
+              <Link href="/terminos" className="font-semibold text-[#D4A017]">Términos</Link>
+              <Link href="/condiciones" className="font-semibold text-[#D4A017]">Contratación</Link>
+              <Link href="/aviso-legal" className="font-semibold text-[#D4A017]">Aviso legal</Link>
             </div>
-          </section>
-
-          {/* 9 */}
-          <section>
-            <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">9. Cambios en esta política</h2>
-            <p className="mt-4 text-sm leading-7">Podemos actualizar esta política para reflejar cambios en nuestras prácticas o en la normativa aplicable. Cuando realicemos cambios relevantes, lo notificaremos a los usuarios registrados por correo electrónico. La fecha de última actualización figura al inicio de este documento.</p>
-          </section>
-
-          {/* 10 */}
-          <section>
-            <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">10. Contacto</h2>
-            <p className="mt-4 text-sm leading-7">Para cualquier consulta sobre esta política de privacidad o sobre el tratamiento de tus datos personales, puedes contactar con nosotros en <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a> o en nuestra dirección postal: C/ Pintor Agrassot, 19 — 03110 Mutxamel (Alicante), España.</p>
-          </section>
-
+          </div>
         </div>
       </div>
     </main>

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   }
 };
 
-const LAST_UPDATED = '8 de mayo de 2026';
+const LAST_UPDATED = '29 de septiembre de 2026';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -94,7 +94,7 @@ export default function CondicionesPage() {
               <li>EXPERT inicia la prestación del servicio conforme al alcance acordado.</li>
             </ol>
             <p>
-              El contrato queda perfeccionado en el momento en que EXPERT recibe y confirma el pago. En servicios de suscripción mensual, el contrato se renueva automáticamente cada período hasta que alguna de las partes comunique su resolución con la antelación prevista.
+              El contrato queda perfeccionado cuando el cliente acepta el presupuesto o flujo de contratación y EXPERT confirma el pago o la aceptación según el servicio. Cuando exista excepcionalmente una relación recurrente pactada, su duración, renovación y cancelación se regirán por las condiciones específicas aceptadas por el cliente.
             </p>
           </Section>
 
@@ -103,7 +103,7 @@ export default function CondicionesPage() {
               Los precios publicados en el sitio web están expresados en euros (€) <strong>sin IVA</strong>, salvo que se indique expresamente lo contrario. Sobre los precios indicados se aplicará el <strong>IVA al tipo vigente en cada momento</strong> (actualmente el 21 % para clientes en España peninsular e Islas Baleares, o el tipo reducido o exento según la situación fiscal del cliente).
             </p>
             <p>
-              EXPERT se reserva el derecho de modificar sus tarifas en cualquier momento. Los cambios de precio en servicios de suscripción se comunicarán al cliente con un mínimo de <strong>30 días de antelación</strong> antes de su entrada en vigor.
+              EXPERT puede modificar sus tarifas para futuras contrataciones. El precio aplicable a un encargo ya aceptado será el confirmado en el presupuesto o checkout correspondiente, salvo modificación de alcance aceptada por ambas partes.
             </p>
             <p>
               La factura se emitirá a nombre de la persona o entidad indicada por el cliente en el momento de la contratación. EXPERT no podrá emitir facturas con datos distintos a los proporcionados por el cliente.
@@ -137,12 +137,16 @@ export default function CondicionesPage() {
             </p>
           </Section>
 
-          <Section title="8. Cancelación de suscripciones">
+          <Section title="8. KIA, automatización y firma electrónica">
             <p>
-              Los planes de suscripción mensual (Plan Supervisión, Plan Avanzado y Plan Colaborativo) pueden cancelarse en cualquier momento con un preaviso mínimo de <strong>30 días naturales</strong> comunicado por escrito a <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a> o a través del panel de cliente.
+              EXPERT utiliza KIA como asistente virtual para atención, clasificación, preparación de borradores, seguimiento de expedientes
+              y otras funciones autorizadas. KIA no sustituye el criterio profesional cuando la actuación requiere revisión humana, ni se
+              considerará ejecutada una actuación administrativa, envío o firma hasta que exista evidencia técnica y documental suficiente.
             </p>
             <p>
-              La cancelación surte efecto al final del período de facturación en curso. No se realizan devoluciones por períodos ya facturados y en curso, salvo que la cancelación sea motivada por un incumplimiento imputable a EXPERT.
+              Para la firma de documentos EXPERT puede utilizar Google Workspace eSignature u otros sistemas cuando el nivel de firma sea
+              adecuado. Si el trámite exige certificado electrónico reconocido, AutoFirma u otra forma específica, se aplicará el mecanismo
+              jurídicamente exigible.
             </p>
           </Section>
 
@@ -220,7 +224,7 @@ export default function CondicionesPage() {
               Para disputas entre empresas (B2B), las partes se someten expresamente a la jurisdicción de los Juzgados y Tribunales de Alicante, con renuncia a cualquier otro fuero.
             </p>
             <p>
-              Los consumidores también pueden acceder a la plataforma europea de resolución de litigios en línea (ODR) en <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className="text-[#D4A017] underline underline-offset-4">ec.europa.eu/consumers/odr</a>.
+              Cuando exista una entidad de resolución alternativa de litigios competente para el tipo de servicio y conflicto, el consumidor podrá acudir a los mecanismos extrajudiciales legalmente disponibles. La antigua plataforma europea ODR dejó de estar operativa y no se ofrece como canal de reclamación.
             </p>
           </Section>
 

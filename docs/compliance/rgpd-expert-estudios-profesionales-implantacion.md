@@ -1,8 +1,11 @@
 # Implantación RGPD interna — EXPERT ESTUDIOS PROFESIONALES, SLU
 
-Estado: borrador operativo interno  
-Fecha de revisión: 24/09/2026  
+Estado: implantación técnica avanzada; pendientes validaciones humanas  
+Fecha de revisión: 29/09/2026  
 Responsable de validación: Dirección de EXPERT
+
+Documento de cierre técnico relacionado: `docs/compliance/rgpd-aepd-finalizacion-2026-09-29.md`.
+La parte técnica de cookies, transparencia KIA/IA, políticas públicas e integración de firma está implementada en PR #521. Este documento conserva como pendientes únicamente las decisiones y evidencias que requieren validación humana.
 
 ## 1. Objetivo
 
@@ -87,11 +90,18 @@ Datos: según caso, expediente, mensajes, contexto empresarial y resultados.
 Proveedores: Anthropic/OpenAI según router activo.  
 Acciones: minimización, redacción, control de herramientas, logs, revisión humana y análisis de EIPD cuando proceda.
 
+### RAT-13 — Firma electrónica y evidencias
+Datos: identidad y email de firmantes, documento objeto de firma, manifestaciones, eventos, marcas de tiempo y auditoría.  
+Proveedores: Google Workspace eSignature y otros proveedores cuando se utilicen.  
+Finalidad: formalizar documentos, acreditar consentimiento/aceptación/representación cuando proceda y conservar evidencia.  
+Regla: no utilizar firma electrónica simple cuando el trámite exige certificado electrónico reconocido.  
+Acción humana: validar nivel de firma por tipo de documento y política de conservación.
+
 ### RAT-13 — Seguridad y auditoría
 Datos: logs, IP, accesos, acciones administrativas, errores y trazas.  
 Acción: fijar retención por clase de log y limitar accesos.
 
-### RAT-14 — Personal y colaboradores
+### RAT-15 — Personal y colaboradores
 Datos: identificación, contrato, nómina, SS, formación, jornada, prevención y otros necesarios.  
 Acción: cláusula informativa, confidencialidad, permisos y baja de accesos.
 
@@ -113,9 +123,9 @@ Revisar DPA, subencargados, ubicación, transferencias, retención y finalidad d
 - Google Cloud
 - reCAPTCHA
 
-### Hallazgo P1 — Supabase
+### Hallazgo P1 — Supabase · corregido técnicamente 29/09/2026
 
-Producción está en eu-west-2. Supabase identifica eu-west-2 como London (United Kingdom). La política pública actual indica UE (Frankfurt), por lo que debe corregirse.
+Producción está en eu-west-2 (London, United Kingdom). La política pública ya ha sido corregida para reflejar la región real. Sigue pendiente documentar la garantía concreta de transferencia/adecuación y archivar la evidencia contractual aplicable.
 
 Fuente:
 https://supabase.com/docs/guides/platform/regions
