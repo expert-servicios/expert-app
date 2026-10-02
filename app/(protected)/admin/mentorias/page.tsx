@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import { cookies } from 'next/headers';
-import { ArrowLeft, ArrowRight, BookOpenCheck, FileText, ShieldCheck, UsersRound } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpenCheck, ShieldCheck, UsersRound } from 'lucide-react';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
 import { MentoringWorkspaceClient } from '@/components/admin/MentoringWorkspaceClient';
 
@@ -68,7 +67,6 @@ const publicationLabels: Record<string, string> = {
 };
 
 export default async function AdminMentoriasPage() {
-  await cookies();
   const data = await fetchWithCookies<ApiResponse>('/api/admin/mentoring');
   const engagements = data?.engagements ?? [];
   const sessions = data?.sessions ?? [];
