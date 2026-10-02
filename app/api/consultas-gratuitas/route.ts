@@ -107,7 +107,9 @@ export async function POST(request: NextRequest) {
     }
 
     const isMentoring = parsed.data.service === 'mentorias';
-    const categoryLabel = isMentoring ? 'Mentorías' : 'Consulta gratuita';
+    const categoryByIntent = isMentoring
+      ? { category: 'Mentorías' as const }
+      : { category: 'Consulta gratuita' as const };
     const questionWithContext = parsed.data.organization
       ? `[Proyecto / organización: ${parsed.data.organization}]\n${parsed.data.question}`
       : parsed.data.question;
@@ -134,7 +136,7 @@ export async function POST(request: NextRequest) {
         .from('leads')
         .update({
           name: parsed.data.name,
-          category: categoryLabel,
+          ...categoryByIntent,
           service: parsed.data.service || 'consulta-general',
           message: nextMessage,
           state: 'new',
@@ -156,7 +158,7 @@ export async function POST(request: NextRequest) {
           email: normalizedEmail,
           phone: ambiguousIdentity ? null : normalizedPhone,
           client_type: 'particular',
-          category: categoryLabel,
+          ...categoryByIntent,
           service: parsed.data.service || 'consulta-general',
           country: 'ES',
           urgency: 'media',
