@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import {
   Activity, AlertCircle, ArrowRight, CheckCircle2, CreditCard,
   FileText, FolderOpen, Mail, MessageCircle,
-  TrendingUp, UserCheck, Users, Zap, GraduationCap
+  TrendingUp, UserCheck, Users, Zap, GraduationCap, PenSquare
 } from 'lucide-react';
 import { InstallPwaPrompt } from '@/components/InstallPwaPrompt';
 import { getKiaHealthSummary } from '@/lib/ai/kia/health/kia-health-summary';
@@ -455,13 +455,14 @@ export default async function AdminPage() {
         )}
 
         {/* ── ACCESOS RÁPIDOS ── */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
           {[
             { href: '/admin/expedientes', icon: FolderOpen, label: 'Expedientes' },
             { href: '/admin/presupuestos', icon: FileText, label: 'Presupuestos' },
             { href: '/admin/suscripciones', icon: Zap, label: 'Suscripciones' },
             { href: '/admin/usuarios', icon: Users, label: 'Usuarios' },
             { href: '/admin/mentorias', icon: GraduationCap, label: 'Mentorías' },
+            { href: '/admin/editorial', icon: PenSquare, label: 'Editorial' },
             { href: '/admin/reportes', icon: TrendingUp, label: 'Reportes' }
           ].map(({ href, icon: Icon, label }) => (
             <Link
