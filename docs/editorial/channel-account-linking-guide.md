@@ -179,18 +179,22 @@ En Google Ads:
 3. Guardarlo sin guiones en la variable/configuración interna.
 4. Si utilizas Manager Account (MCC), anota también el Login Customer ID.
 
-## 3.2. Developer Token
+## 3.2. Acceso API del proyecto Google Cloud
 
-El Google Ads API requiere Developer Token.
+Desde el 9 de septiembre de 2026 Google Ads API dejó de utilizar Developer Token como mecanismo de acceso. Los niveles de acceso se asignan al proyecto de Google Cloud que posee las credenciales OAuth o la cuenta de servicio.
 
-1. Entra en Google Ads Manager Account.
-2. Herramientas / API Center.
-3. Solicita o comprueba el Developer Token.
-4. Verifica su nivel de acceso:
-   - test;
-   - basic;
-   - standard, según corresponda.
-5. No guardar el token en el código.
+1. Entra en Google Cloud Console.
+2. Selecciona el proyecto que vas a usar para EXPERT Ads.
+3. Abre Google Ads API > Overview.
+4. Comprueba el nivel de acceso del proyecto:
+   - Test;
+   - Explorer;
+   - Basic;
+   - Standard.
+5. Para operar con una cuenta de producción, solicita al menos el nivel que permita el uso previsto.
+6. Si el proyecto tenía un Developer Token aprobado antes del 09/09/2026, Google pudo migrar automáticamente ese nivel de acceso al proyecto Cloud asociado según su actividad reciente.
+
+No necesitamos crear ni almacenar un nuevo Developer Token.
 
 ## 3.3. Google Cloud
 
@@ -213,7 +217,6 @@ https://expertconsulting.es/api/auth/google-ads/callback
 
 ```env
 GOOGLE_ADS_ENABLED=false
-GOOGLE_ADS_DEVELOPER_TOKEN=
 GOOGLE_ADS_CLIENT_ID=
 GOOGLE_ADS_CLIENT_SECRET=
 GOOGLE_ADS_REFRESH_TOKEN=
@@ -486,8 +489,8 @@ Motivo: empezar por canales con infraestructura ya avanzada y por publicación o
 ## Google Ads
 
 - [ ] Confirmar Customer ID.
-- [ ] Confirmar/crear Manager Account.
-- [ ] Obtener Developer Token.
+- [ ] Confirmar/crear Manager Account si se necesita gestión jerárquica.
+- [ ] Confirmar nivel de acceso Google Ads API del proyecto Cloud.
 - [ ] Habilitar Google Ads API en Cloud.
 - [ ] Crear OAuth Web Client.
 - [ ] Añadir redirect.
