@@ -62,7 +62,8 @@ export async function POST(request: NextRequest) {
     const contentOriginLabel = describeContentOrigin(contentOrigin);
     const interaction = {
       at: new Date().toISOString(),
-      intent: parsed.data.intent || 'free_question',
+      intent: 'free_question',
+      ...(parsed.data.intent ? { intent: parsed.data.intent } : {}),
       origin: contentOrigin,
       service: parsed.data.service || null,
       organization: parsed.data.organization || null,
@@ -209,8 +210,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const notificationBase = { title: 'Nueva consulta gratuita' as const };
     await notifyAdmins({
-      title: isMentoring ? 'Nueva propuesta de mentoría' : 'Nueva consulta gratuita',
+      ...notificationBase,
+      ...(isMentoring ? { title: 'Nueva propuesta de mentoría' as const } : {}),
       body: `${parsed.data.name} · ${parsed.data.service || 'Consulta general'} · ${contentOriginLabel}`.slice(0, 240),
       url: `/admin/leads?focus=${leadId}`,
       tag: sourceKey,
