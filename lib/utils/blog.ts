@@ -1,6 +1,7 @@
 import { getGeneratedBatch1BlogArticles } from '@/lib/services/service-generated-content';
 import { proteccionDatosBlogArticles } from '@/lib/content/proteccion-datos-blog';
 import { fiscal2026BlogArticles } from '@/lib/content/fiscal-2026-blog';
+import { russianResidentBankingBlogArticles } from '@/lib/content/russian-resident-banking-blog';
 
 export type Article = {
   slug: string;
