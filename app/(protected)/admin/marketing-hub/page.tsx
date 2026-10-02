@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, CheckCircle2, RefreshCw, ShieldCheck, TestTube2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, RefreshCw, ShieldCheck, TestTube2, UploadCloud } from 'lucide-react';
 
 type StatusMap = Record<string, number>;
 
@@ -94,6 +94,8 @@ export default function MarketingHubPage() {
   const [loading, setLoading] = useState(true);
   const [testing, setTesting] = useState(false);
   const [testMessage, setTestMessage] = useState<string | null>(null);
+  const [syncingCatalog, setSyncingCatalog] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -127,6 +129,43 @@ export default function MarketingHubPage() {
     }
   }, [data?.liveTestAvailable]);
 
+  const syncCatalog = useCallback(async () => {
+    const confirmed = window.confirm(
+      'Se sincronizarán únicamente los 3 certificados production_ready con el catálogo Meta. No se crearán campañas ni publicaciones. ¿Continuar?',
+    );
+    if (!confirmed) return;
+
+    setSyncingCatalog(true);
+    setSyncMessage(null);
+    try {
+      const response = await fetch('/api/admin/meta/catalog/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'sync_initial_meta_catalog_batch' }),
+      });
+      const payload = await response.json() as {
+        ok?: boolean;
+        succeeded?: number;
+        failed?: number;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        setSyncMessage(payload.error ?? 'Falló la sincronización del catálogo Meta');
+        return;
+      }
+
+      setSyncMessage(
+        payload.ok
+          ? `Sincronización completada: ${payload.succeeded ?? 0} items.`
+          : `Sincronización parcial: ${payload.succeeded ?? 0} correctos · ${payload.failed ?? 0} fallidos.`,
+      );
+      await load();
+    } finally {
+      setSyncingCatalog(false);
+    }
+  }, [load]);
+
   if (loading && !data) return <main className="p-8">Cargando Marketing Hub…</main>;
   if (!data) return <main className="p-8 text-red-700">No se pudo cargar Marketing Hub.</main>;
 
@@ -142,8 +181,8 @@ export default function MarketingHubPage() {
               <h1 className="font-serif text-3xl font-bold text-[#07111d]">EXPERT Marketing Hub</h1>
             </div>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5b6470]">
-              Diagnóstico read-only del catálogo canónico C2, readiness de servicios y preparación para Meta.
-              No publica campañas, no cambia precios y no crea productos.
+              Diagnóstico del catálogo canónico C2 y sincronización manual controlada del lote aprobado para Meta.
+              No publica campañas, no cambia precios y no programa publicaciones orgánicas.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -154,6 +193,20 @@ export default function MarketingHubPage() {
             <button type="button" onClick={() => void testConnection()} disabled={!data.liveTestAvailable || testing}
               className="inline-flex items-center gap-2 rounded-xl bg-[#07111d] px-4 py-2 text-sm font-semibold text-[#d7a33a] disabled:opacity-40">
               <TestTube2 className="h-4 w-4" /> {testing ? 'Probando…' : 'Probar Meta'}
+            </button>
+            <button
+              type="button"
+              onClick={() => void syncCatalog()}
+              disabled={
+                !data.liveTestAvailable
+                || syncingCatalog
+                || (diagnostics.c2.metaItems.bySyncStatus.ready ?? 0) !== 3
+              }
+              className="inline-flex items-center gap-2 rounded-xl bg-[#c88b25] px-4 py-2 text-sm font-bold text-[#07111d] disabled:opacity-40"
+              title="Solo sincroniza los 3 certificados production_ready ya preparados"
+            >
+              <UploadCloud className="h-4 w-4" />
+              {syncingCatalog ? 'Sincronizando…' : 'Sincronizar lote Meta (3)'}
             </button>
           </div>
         </div>
@@ -180,6 +233,11 @@ export default function MarketingHubPage() {
             <p className="mt-2 text-xs text-amber-800">Faltan: {config.missing.join(' · ')}</p>
           ) : null}
           {testMessage ? <p className="mt-3 text-sm font-semibold text-[#07111d]">{testMessage}</p> : null}
+          {syncMessage ? <p className="mt-2 text-sm font-semibold text-[#07111d]">{syncMessage}</p> : null}
+          <p className="mt-3 text-xs text-[#6b7280]">
+            La escritura de catálogo es manual y auditable. Este control solo admite el lote inicial de 3 certificados;
+            no crea campañas, anuncios ni posts.
+          </p>
         </section>
 
         {diagnostics.errors.length > 0 ? (
