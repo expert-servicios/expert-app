@@ -387,10 +387,10 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
               <span>{pagination.total} resultados · página {pagination.page} de {pagination.pages}</span>
               <div className="flex gap-2">
                 {pagination.page > 1 && (
-                  <Link className="rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 font-semibold" href={buildPath({ q, lifecycle, activity, marketing, locale, page: String(pagination.page - 1) })}>Anterior</Link>
+                  <Link className="rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 font-semibold" href={buildPath({ q, lifecycle, activity, marketing, locale, segment, page: String(pagination.page - 1) })}>Anterior</Link>
                 )}
                 {pagination.page < pagination.pages && (
-                  <Link className="rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 font-semibold" href={buildPath({ q, lifecycle, activity, marketing, locale, page: String(pagination.page + 1) })}>Siguiente</Link>
+                  <Link className="rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 font-semibold" href={buildPath({ q, lifecycle, activity, marketing, locale, segment, page: String(pagination.page + 1) })}>Siguiente</Link>
                 )}
               </div>
             </div>
