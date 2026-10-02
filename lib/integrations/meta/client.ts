@@ -6,6 +6,7 @@ type MetaGraphRequest = {
   method?: 'GET' | 'POST' | 'DELETE';
   searchParams?: Record<string, string | number | boolean | undefined>;
   body?: Record<string, unknown>;
+  formBody?: Record<string, string | number | boolean | undefined>;
 };
 
 export class MetaGraphError extends Error {
@@ -21,7 +22,7 @@ export class MetaGraphError extends Error {
   }
 }
 
-export async function metaGraphRequest<T>({ path, method = 'GET', searchParams, body }: MetaGraphRequest): Promise<T> {
+export async function metaGraphRequest<T>({ path, method = 'GET', searchParams, body, formBody }: MetaGraphRequest): Promise<T> {
   const config = requireMetaMarketingConfig();
   const baseUrl = `https://graph.facebook.com/${config.graphApiVersion}`;
   const url = new URL(`${baseUrl}/${path.replace(/^\//, '')}`);
@@ -30,13 +31,25 @@ export async function metaGraphRequest<T>({ path, method = 'GET', searchParams, 
     if (value !== undefined) url.searchParams.set(key, String(value));
   }
 
+  if (body && formBody) {
+    throw new Error('Meta Graph request cannot use body and formBody together');
+  }
+
+  const encodedFormBody = formBody
+    ? new URLSearchParams(
+        Object.entries(formBody)
+          .filter((entry): entry is [string, string | number | boolean] => entry[1] !== undefined)
+          .map(([key, value]) => [key, String(value)]),
+      )
+    : null;
+
   const response = await fetch(url, {
     method,
     headers: {
       Authorization: `Bearer ${config.systemUserAccessToken}`,
-      'Content-Type': 'application/json',
+      'Content-Type': encodedFormBody ? 'application/x-www-form-urlencoded' : 'application/json',
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: encodedFormBody?.toString() ?? (body ? JSON.stringify(body) : undefined),
     cache: 'no-store',
   });
 
