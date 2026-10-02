@@ -18,7 +18,7 @@ export function RuNationalityResourcePage({ resource }: { resource: RuResource }
       <section className="bg-[#0D1B2A] px-6 py-12 text-[#F8F6F1] md:py-16">
         <div className="mx-auto max-w-4xl">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <Link href={isNationalityResource ? DEFAULT_SERVICE_HREF : '/ru/blog'} className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4A017] hover:text-[#F2C14E]">
+            <Link href={isNationalityResource ? DEFAULT_SERVICE_HREF : '/ru'} className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4A017] hover:text-[#F2C14E]">
               {isNationalityResource ? '← Услуга' : '← Блог'}
             </Link>
             <Link href={resource.esPath} className="text-xs font-semibold text-white/55 underline underline-offset-4 hover:text-[#D4A017]">
