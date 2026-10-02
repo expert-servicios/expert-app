@@ -137,16 +137,50 @@ La primera cola editorial se inicia con:
 - 2 servicios production_ready;
 - 2 proyectos MentorDay en revisión por consentimiento.
 
-## Herramientas externas
+## Arquitectura de publicación
 
-Para programación y analítica multicanal, valorar Metricool como capa de publicación/medición.
+EXPERT será la fuente y el orquestador. No se utilizará una capa externa de programación como dependencia principal.
 
-Para producción visual, Canva puede convertir los briefs almacenados en el Editorial Hub en:
+Canales previstos:
 
-- imagen cuadrada;
-- post LinkedIn;
-- carrusel;
-- story;
-- formatos Facebook/Instagram.
+- Meta Graph / Marketing API para Facebook, Instagram y campañas Meta;
+- Google Ads API para campañas, grupos, anuncios y reporting;
+- LinkedIn Posts API para publicaciones orgánicas y patrocinadas;
+- LinkedIn Advertising API para cuentas publicitarias, campañas, creatividades y reporting.
 
-La aprobación editorial debe seguir ocurriendo en EXPERT antes de la publicación automática.
+Regla:
+
+```text
+Editorial Hub → approved → adaptador del canal → API oficial → ID externo → métricas
+```
+
+Las credenciales permanecen server-side y cada escritura externa debe generar un job auditable y un resultado persistido.
+
+## Estado técnico actual
+
+### Meta
+
+EXPERT ya dispone de cliente Graph API server-side y configuración aislada `META_MARKETING_*`.
+
+La implementación actual es deliberadamente read-only/fail-closed: puede comprobar configuración y catálogo, pero no debe crear campañas ni publicar contenido hasta incorporar los jobs de escritura auditables.
+
+### Google Ads
+
+El catálogo y la documentación de EXPERT contemplan Google como canal, pero el repositorio no contiene todavía un cliente `GOOGLE_ADS_*` ni endpoints de escritura.
+
+La integración debe añadirse directamente sobre Google Ads API usando el proyecto Google Cloud con acceso de API, OAuth y la cuenta de Ads correspondiente.
+
+### LinkedIn
+
+Se implementarán dos adaptadores separados:
+
+1. `linkedin-social`: Posts API para publicación orgánica del perfil/página y contenido patrocinado cuando corresponda.
+2. `linkedin-ads`: Advertising API para campañas, presupuestos, targeting, creatividades y reporting.
+
+No se mezclará la publicación orgánica con la gestión de Ads aunque compartan autenticación y algunos permisos.
+
+## Generación visual
+
+Los activos visuales no dependerán de Canva. El `asset_brief` del Editorial Hub será la especificación canónica para generar imágenes/carruseles mediante la capa de generación propia o APIs que se aprueben posteriormente.
+
+La aprobación editorial seguirá ocurriendo en EXPERT antes de cualquier publicación automática.
