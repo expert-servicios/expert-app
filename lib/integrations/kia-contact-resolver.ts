@@ -37,6 +37,11 @@ export interface KiaContactContext {
   }>;
   lastLeadStatus          : string | null;
   lastSelectedService     : string | null;
+  projectName             : string | null;
+  projectSummary          : string | null;
+  projectWebsiteUrl       : string | null;
+  projectLogoUrl          : string | null;
+  projectSummarySource    : string | null;
 }
 
 function normalize(phone: string): string {
@@ -118,17 +123,36 @@ export async function resolveKiaContactContext(
       pendingFiscalObligations: status === 'client' ? (obligations ?? []) as KiaContactContext['pendingFiscalObligations'] : [],
       lastLeadStatus          : null,
       lastSelectedService     : null,
+      projectName             : null,
+      projectSummary          : null,
+      projectWebsiteUrl       : null,
+      projectLogoUrl          : null,
+      projectSummarySource    : null,
     };
   }
 
   // ── 2. No profile → look up lead ─────────────────────────────────────────
   const { data: lead } = await admin
     .from('leads')
-    .select('id, name, email, service, state')
+    .select('id, name, email, service, state, metadata')
     .or(`phone.ilike.%${last9}%`)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  const metadata = lead?.metadata && typeof lead.metadata === 'object' && !Array.isArray(lead.metadata)
+    ? lead.metadata as Record<string, unknown>
+    : {};
+  const projectProfile =
+    metadata.project_profile && typeof metadata.project_profile === 'object' && !Array.isArray(metadata.project_profile)
+      ? metadata.project_profile as Record<string, unknown>
+      : {};
+  const projectName =
+    typeof projectProfile.project_name === 'string'
+      ? projectProfile.project_name
+      : typeof metadata.project === 'string'
+        ? metadata.project
+        : lead?.service ?? null;
 
   return {
     status                  : 'lead',
@@ -145,5 +169,10 @@ export async function resolveKiaContactContext(
     pendingFiscalObligations: [],
     lastLeadStatus          : lead?.state ?? null,
     lastSelectedService     : lead?.service ?? null,
+    projectName,
+    projectSummary          : typeof projectProfile.kia_summary === 'string' ? projectProfile.kia_summary : null,
+    projectWebsiteUrl       : typeof projectProfile.website_url === 'string' ? projectProfile.website_url : null,
+    projectLogoUrl          : typeof projectProfile.logo_url === 'string' ? projectProfile.logo_url : null,
+    projectSummarySource    : typeof projectProfile.source_type === 'string' ? projectProfile.source_type : null,
   };
 }
