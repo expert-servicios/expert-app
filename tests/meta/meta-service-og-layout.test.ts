@@ -8,6 +8,7 @@ describe('service OG layout', () => {
     expect(source).toContain('getLocalizedServicePresentation(service.slug, lang)');
     expect(source).toContain('service.keyPoints?.find');
     expect(source).toContain('right: isHero ? 620 : 570');
+    expect(source).toContain('isHero ? 150 : 110');
     expect(source).not.toContain('const ruCopy');
   });
 });
