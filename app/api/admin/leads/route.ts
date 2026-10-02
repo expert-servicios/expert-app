@@ -32,6 +32,21 @@ function withLocale<T extends { contains: (column: string, value: Record<string,
   return query.contains('metadata', { acquisition: { locale } });
 }
 
+function projectProfileFromMetadata(metadata: unknown) {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return null;
+  const raw = (metadata as Record<string, unknown>).project_profile;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const profile = raw as Record<string, unknown>;
+  return {
+    project_name: typeof profile.project_name === 'string' ? profile.project_name : null,
+    kia_summary: typeof profile.kia_summary === 'string' ? profile.kia_summary : null,
+    website_url: typeof profile.website_url === 'string' ? profile.website_url : null,
+    logo_url: typeof profile.logo_url === 'string' ? profile.logo_url : null,
+    source_type: typeof profile.source_type === 'string' ? profile.source_type : null,
+    verified_at: typeof profile.verified_at === 'string' ? profile.verified_at : null,
+  };
+}
+
 function latestInteractionFromMetadata(metadata: unknown) {
   if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return null;
   const value = (metadata as Record<string, unknown>).last_acquisition;
@@ -210,6 +225,7 @@ export async function GET(request: NextRequest) {
         ...lead,
         attribution: attributionFromMetadata(lead.metadata),
         latest_interaction: latestInteractionFromMetadata(lead.metadata),
+        project_profile: projectProfileFromMetadata(lead.metadata),
         stripe_summary: summaries.get(lead.id) ?? {
           customer_count: 0,
           active_subscription: false,
