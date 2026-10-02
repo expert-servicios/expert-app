@@ -24,6 +24,8 @@ export const russianResidentBankingBlogArticles: Article[] = [
       'Golden Visa',
     ],
     body: `
+## Versión en ruso
+
 [Читать эту статью по-русски](${RU_ARTICLE}).
 
 ## La nacionalidad rusa no es el único dato que debe revisar el banco
