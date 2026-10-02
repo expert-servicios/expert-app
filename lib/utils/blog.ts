@@ -18,6 +18,7 @@ export type Article = {
 export const articles: Article[] = [
   ...getGeneratedBatch1BlogArticles(),
   ...proteccionDatosBlogArticles,
+  ...russianResidentBankingBlogArticles,
   {
     slug: 'apellidos-menor-nacionalidad-espanola-registro-civil',
     category: 'Extranjería',
