@@ -23,6 +23,17 @@ type MetaCatalogItemRow = {
   sync_status: string;
 };
 
+type CatalogServiceIdentityRow = {
+  id: string;
+  slug: string;
+};
+
+type CommercialOfferIdentityRow = {
+  id: string;
+  service_id: string;
+  status: string;
+};
+
 type StripeBindingRow = {
   offer_id: string;
   environment: string;
@@ -135,6 +146,30 @@ export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<
   }
 
   const allowed = new Set<string>(INITIAL_META_CATALOG_RETAILER_IDS);
+
+  const { data: serviceIdentityRows, error: serviceIdentityError } = await admin
+    .from('catalog_services')
+    .select('id,slug')
+    .in('slug', [...INITIAL_META_CATALOG_RETAILER_IDS]);
+  if (serviceIdentityError) {
+    throw new Error(`No se pudo verificar catalog_services: ${serviceIdentityError.message}`);
+  }
+  const serviceIdBySlug = new Map(
+    ((serviceIdentityRows ?? []) as CatalogServiceIdentityRow[]).map((row) => [row.slug, row.id]),
+  );
+
+  const offerIds = staged.map((row) => row.offer_id).filter((id): id is string => Boolean(id));
+  const { data: offerIdentityRows, error: offerIdentityError } = await admin
+    .from('commercial_offers')
+    .select('id,service_id,status')
+    .in('id', offerIds);
+  if (offerIdentityError) {
+    throw new Error(`No se pudo verificar commercial_offers: ${offerIdentityError.message}`);
+  }
+  const offerById = new Map(
+    ((offerIdentityRows ?? []) as CommercialOfferIdentityRow[]).map((row) => [row.id, row]),
+  );
+
   const productionReady = new Set(
     serviceProductionManifest
       .filter((entry) => entry.stage === 'production_ready')
@@ -166,8 +201,20 @@ export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<
     if (!productionReady.has(retailerId)) {
       throw new Error(`Servicio no production_ready: ${retailerId}`);
     }
-    if (!item.offer_id || !matchedOfferIds.has(item.offer_id)) {
-      throw new Error(`Oferta sin binding Stripe live reconciliado: ${retailerId}`);
+
+    const canonicalServiceId = serviceIdBySlug.get(retailerId);
+    if (!canonicalServiceId || canonicalServiceId !== item.service_id) {
+      throw new Error(`meta_catalog_items no coincide con catalog_services: ${retailerId}`);
+    }
+
+    const canonicalOffer = item.offer_id ? offerById.get(item.offer_id) : null;
+    if (
+      !canonicalOffer
+      || canonicalOffer.service_id !== item.service_id
+      || canonicalOffer.status !== 'active'
+      || !matchedOfferIds.has(canonicalOffer.id)
+    ) {
+      throw new Error(`Oferta canónica sin binding Stripe live reconciliado: ${retailerId}`);
     }
     if (!draft?.marketingReady) {
       throw new Error(`Proyección Meta no lista: ${retailerId}`);
