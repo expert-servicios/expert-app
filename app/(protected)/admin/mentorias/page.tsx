@@ -40,10 +40,23 @@ type Publication = {
   summary: string | null;
 };
 
+type Artifact = {
+  id: string;
+  engagement_id: string;
+  artifact_type: string;
+  title: string;
+  external_url: string | null;
+  storage_path: string | null;
+  notes: string | null;
+  public_allowed: boolean;
+  created_at: string;
+};
+
 type ApiResponse = {
   engagements: Engagement[];
   sessions: Session[];
   publications: Publication[];
+  artifacts: Artifact[];
   stats: {
     total: number;
     active: number;
@@ -71,6 +84,7 @@ export default async function AdminMentoriasPage() {
   const engagements = data?.engagements ?? [];
   const sessions = data?.sessions ?? [];
   const publications = data?.publications ?? [];
+  const artifacts = data?.artifacts ?? [];
   const stats = data?.stats ?? { total: 0, active: 0, completed: 0, consent_pending: 0, mentor_tips_contacts: 0 };
 
   return (
@@ -184,6 +198,45 @@ export default async function AdminMentoriasPage() {
               );
             })}
           </div>
+        </section>
+
+        <section className="rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#c88b25]">Archivo de trabajo</p>
+              <h2 className="font-serif text-xl font-bold text-[#07111d]">Recursos y evidencias</h2>
+            </div>
+            <span className="rounded-full bg-[#f8f4eb] px-3 py-1 text-xs font-semibold text-[#526171]">{artifacts.length} recursos</span>
+          </div>
+          {artifacts.length === 0 ? (
+            <p className="mt-4 text-sm text-[#6f665b]">Todavía no hay recursos enlazados.</p>
+          ) : (
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              {artifacts.map((item) => {
+                const engagement = engagements.find((engagement) => engagement.id === item.engagement_id);
+                return (
+                  <div key={item.id} className="rounded-xl border border-[#eee6d9] bg-[#fffdf8] p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-[#8c6a22]">{item.artifact_type}</p>
+                        <p className="mt-1 text-sm font-semibold text-[#07111d]">{item.title}</p>
+                        <p className="mt-1 text-xs text-[#6f665b]">{engagement?.project_name ?? 'Mentoría'}</p>
+                      </div>
+                      <span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${item.public_allowed ? 'bg-green-50 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                        {item.public_allowed ? 'Referencia pública' : 'Interno'}
+                      </span>
+                    </div>
+                    {item.notes && <p className="mt-2 text-xs leading-5 text-[#526171]">{item.notes}</p>}
+                    {item.external_url && (
+                      <a href={item.external_url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex text-xs font-semibold text-[#8a6111] hover:underline">
+                        Abrir recurso →
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         <section className="rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
