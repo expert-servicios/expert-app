@@ -32,3 +32,36 @@ export function nextMonthlyCalendarBillingAnchor(now: Date = new Date()): number
 
   return Math.floor(Date.UTC(year, month, 1, 0, 0, 0) / 1000);
 }
+
+
+export type CalendarMonthBillingWindow = {
+  key: string;
+  start: number;
+  end: number;
+  nextAnchor: number;
+};
+
+export function currentCalendarMonthBillingWindow(now: Date = new Date()): CalendarMonthBillingWindow {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: MONTHLY_CALENDAR_BILLING_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(now);
+
+  const year = Number(parts.find((part) => part.type === 'year')?.value);
+  const month = Number(parts.find((part) => part.type === 'month')?.value);
+
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+    throw new Error('Could not resolve Europe/Madrid calendar month for subscription billing');
+  }
+
+  const start = Math.floor(Date.UTC(year, month - 1, 1, 0, 0, 0) / 1000);
+  const nextAnchor = Math.floor(Date.UTC(year, month, 1, 0, 0, 0) / 1000);
+
+  return {
+    key: `${year}-${String(month).padStart(2, '0')}`,
+    start,
+    end: nextAnchor - 1,
+    nextAnchor,
+  };
+}
