@@ -4,7 +4,7 @@ import { RU_NATIONALITY_RESOURCES, getRuNationalityResource } from '@/lib/i18n/r
 describe('Russian nationality resources', () => {
   it('keeps knowledge guides and blog articles aligned with Spanish resources', () => {
     expect(RU_NATIONALITY_RESOURCES.filter((item) => item.kind === 'docs')).toHaveLength(4);
-    expect(RU_NATIONALITY_RESOURCES.filter((item) => item.kind === 'blog')).toHaveLength(4);
+    expect(RU_NATIONALITY_RESOURCES.filter((item) => item.kind === 'blog')).toHaveLength(5);
     expect(RU_NATIONALITY_RESOURCES.every((item) => item.esPath.startsWith(item.kind === 'docs' ? '/docs/' : '/blog/'))).toBe(true);
   });
 
@@ -15,6 +15,11 @@ describe('Russian nationality resources', () => {
     expect(content).toContain('104,05 €');
     expect(content).toContain('suplido');
     expect(content).toContain('790-026');
+  });
+
+  it('keeps non-nationality Russian articles out of nationality related content', () => {
+    const banking = getRuNationalityResource('blog', 'grazhdane-rossii-vnzh-ispaniya-bankovskie-sankcii-100000');
+    expect(banking?.showInNationalityRelated).toBe(false);
   });
 
   it('returns no resource for an unknown slug', () => {

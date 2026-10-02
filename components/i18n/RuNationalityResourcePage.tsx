@@ -1,16 +1,25 @@
 import Link from 'next/link';
 import type { RuResource } from '@/lib/i18n/ru-nationality-resources';
 
-const SERVICE_HREF = '/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii';
+const DEFAULT_SERVICE_HREF = '/ru/uslugi/grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii';
 
 export function RuNationalityResourcePage({ resource }: { resource: RuResource }) {
+  const isNationalityResource = !resource.cta;
+  const cta = resource.cta ?? {
+    eyebrow: 'Связанная услуга',
+    title: 'Испанское гражданство для ребёнка',
+    description: 'Полное сопровождение: 302,50 € с IVA + обязательная пошлина 790-026 — 104,05 € как suplido.',
+    href: DEFAULT_SERVICE_HREF,
+    label: 'Перейти к услуге',
+  };
+
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
       <section className="bg-[#0D1B2A] px-6 py-12 text-[#F8F6F1] md:py-16">
         <div className="mx-auto max-w-4xl">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <Link href={SERVICE_HREF} className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4A017] hover:text-[#F2C14E]">
-              ← Услуга
+            <Link href={isNationalityResource ? DEFAULT_SERVICE_HREF : '/ru'} className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4A017] hover:text-[#F2C14E]">
+              {isNationalityResource ? '← Услуга' : '← Блог'}
             </Link>
             <Link href={resource.esPath} className="text-xs font-semibold text-white/55 underline underline-offset-4 hover:text-[#D4A017]">
               Español
@@ -67,17 +76,15 @@ export function RuNationalityResourcePage({ resource }: { resource: RuResource }
 
         <aside className="space-y-5 lg:sticky lg:top-6">
           <div className="border border-[#D4A017]/30 bg-white p-6">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">Связанная услуга</p>
-            <h2 className="mt-2 font-serif text-xl font-bold">Испанское гражданство для ребёнка</h2>
-            <p className="mt-3 text-sm leading-6 text-[#23364D]">
-              Полное сопровождение: 302,50 € с IVA + обязательная пошлина 790-026 — 104,05 € как suplido.
-            </p>
-            <Link href={SERVICE_HREF} className="mt-5 inline-flex min-h-11 w-full items-center justify-center bg-[#D4A017] px-4 text-sm font-bold text-[#0D1B2A] hover:bg-[#F2C14E]">
-              Перейти к услуге
+            <p className="text-[10px] font-bold uppercase tracking-widest text-[#D4A017]">{cta.eyebrow}</p>
+            <h2 className="mt-2 font-serif text-xl font-bold">{cta.title}</h2>
+            <p className="mt-3 text-sm leading-6 text-[#23364D]">{cta.description}</p>
+            <Link href={cta.href} className="mt-5 inline-flex min-h-11 w-full items-center justify-center bg-[#D4A017] px-4 text-sm font-bold text-[#0D1B2A] hover:bg-[#F2C14E]">
+              {cta.label}
             </Link>
           </div>
           <div className="border border-[#D4A017]/20 bg-white p-5 text-sm leading-6 text-[#23364D]">
-            Информация носит общий характер. Перед подачей EXPERT проверяет конкретную ситуацию ребёнка и документы семьи.
+            {resource.disclaimer ?? 'Информация носит общий характер. Перед подачей EXPERT проверяет конкретную ситуацию ребёнка и документы семьи.'}
           </div>
         </aside>
       </div>

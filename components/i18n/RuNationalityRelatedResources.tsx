@@ -3,8 +3,9 @@ import { BookOpen, Newspaper } from 'lucide-react';
 import { RU_NATIONALITY_RESOURCES } from '@/lib/i18n/ru-nationality-resources';
 
 export function RuNationalityRelatedResources() {
-  const docs = RU_NATIONALITY_RESOURCES.filter((resource) => resource.kind === 'docs');
-  const blog = RU_NATIONALITY_RESOURCES.filter((resource) => resource.kind === 'blog');
+  const related = RU_NATIONALITY_RESOURCES.filter((resource) => resource.showInNationalityRelated !== false);
+  const docs = related.filter((resource) => resource.kind === 'docs');
+  const blog = related.filter((resource) => resource.kind === 'blog');
 
   return (
     <section className="bg-[#F8F6F1] px-6 pb-16 text-[#0D1B2A]">
