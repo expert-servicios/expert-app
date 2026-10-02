@@ -46,9 +46,12 @@ export async function GET(request: Request) {
   const cardTitle = localized?.socialCardTitle
     ?? canonicalCardPoint?.title
     ?? (lang === 'ru' ? 'Онлайн-услуга EXPERT' : 'Servicio EXPERT');
-  const cardText = localized?.socialCardText
-    ?? canonicalCardPoint?.text
-    ?? (lang === 'ru' ? 'Проверка, подготовка и сопровождение процесса.' : service.shortDescription);
+  const cardText = trimText(
+    localized?.socialCardText
+      ?? canonicalCardPoint?.text
+      ?? (lang === 'ru' ? 'Проверка, подготовка и сопровождение процесса.' : service.shortDescription),
+    isHero ? 150 : 110,
+  );
   const footerText = lang === 'ru' ? 'Онлайн-оформление в Испании' : 'Gestión online desde España';
 
   return new ImageResponse(
