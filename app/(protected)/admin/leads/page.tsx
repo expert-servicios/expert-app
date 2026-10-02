@@ -129,6 +129,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
   const activity = one(params.activity);
   const marketing = one(params.marketing);
   const locale = one(params.locale);
+  const segment = one(params.segment);
   const focus = one(params.focus);
   const page = Math.max(1, Number(one(params.page)) || 1);
 
@@ -138,6 +139,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
   if (activity) apiQuery.set('activity', activity);
   if (marketing) apiQuery.set('marketing', marketing);
   if (locale) apiQuery.set('locale', locale);
+  if (segment) apiQuery.set('segment', segment);
   if (focus) apiQuery.set('focus', focus);
 
   const data = await fetchWithCookies<ApiResponse>(`/api/admin/leads?${apiQuery.toString()}`);
@@ -193,7 +195,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
           </div>
         )}
 
-        <div className="mb-5 grid gap-3 rounded-2xl border border-[#ded2bf] bg-white p-4 lg:grid-cols-[1.4fr_repeat(4,0.8fr)_auto]">
+        <div className="mb-5 grid gap-3 rounded-2xl border border-[#ded2bf] bg-white p-4 lg:grid-cols-[1.4fr_repeat(5,0.8fr)_auto]">
           <form className="contents" action="/admin/leads">
             <label className="relative block">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8a7f71]" />
@@ -225,6 +227,10 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
               <option value="es">ES</option>
               <option value="ru">RU</option>
               <option value="en">EN</option>
+            </select>
+            <select name="segment" defaultValue={segment} className="rounded-xl border border-[#d8cbb5] bg-[#fffdf8] px-3 py-2.5 text-sm">
+              <option value="">Todos los orígenes</option>
+              <option value="mentorday-projects">MentorDay · proyectos 2026</option>
             </select>
             <button className="rounded-xl bg-[#07111d] px-4 py-2.5 text-sm font-bold text-white">Filtrar</button>
           </form>
