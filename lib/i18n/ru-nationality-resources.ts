@@ -9,6 +9,7 @@ export type RuResource = {
   readTime: string;
   cta?: { eyebrow: string; title: string; description: string; href: string; label: string };
   disclaimer?: string;
+  showInNationalityRelated?: boolean;
   sections: Array<{ title: string; paragraphs?: string[]; bullets?: string[]; numbered?: string[]; links?: Array<{ label: string; href: string }> }>;
 };
 
@@ -294,6 +295,7 @@ export const RU_NATIONALITY_RESOURCES: RuResource[] = [
       label: 'Записаться на консультацию'
     },
     disclaimer: 'Материал носит информационный характер. Санкции и AML-проверки оцениваются индивидуально с учётом конкретных лиц, банков, стран и операций.',
+    showInNationalityRelated: false,
     sections: [
       {
         title: 'Российское гражданство — не единственный критерий',
