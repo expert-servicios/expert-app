@@ -22,14 +22,28 @@ describe('KIA M6.1 skill registry', () => {
     expect(selected?.id).toBe('fiscal.viability');
   });
 
-  it('selects accounting readiness skills for Holded reasoning', () => {
+  it('selects technical Holded readiness for Holded reasoning', () => {
     const selected = selectKiaSkill({ taskType: 'readiness_reasoning' });
     expect(selected).toMatchObject({
-      id: 'accounting.readiness',
+      id: 'holded.readiness',
       preferredSubAgentId: 'holded',
       maxRiskTier: 'R1',
     });
     expect(selected?.requiredToolCapabilities).toContain('holded_read');
+  });
+
+  it('selects accounting operations for accounting analysis', () => {
+    const selected = selectKiaSkill({ taskType: 'accounting_anomaly_review' });
+    expect(selected).toMatchObject({
+      id: 'accounting.operations',
+      preferredSubAgentId: 'accounting',
+      maxRiskTier: 'R1',
+    });
+    expect(selected?.requiredToolCapabilities).toEqual(expect.arrayContaining([
+      'client_data',
+      'holded_read',
+      'reporting',
+    ]));
   });
 
   it('selects labor payroll diagnostics by explicit intent', () => {
