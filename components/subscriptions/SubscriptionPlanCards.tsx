@@ -173,6 +173,11 @@ function PlanCard({ plan, billing, companyId }: { plan: PlanData; billing: Billi
 
         {!plan.isQuote && (
           <div className="mt-3 space-y-1 text-center text-[10px]">
+            {!isAnnual && (
+              <p className="text-[#6b7280]">
+                Mes natural completo: el alta cobra el mes en curso íntegro y las siguientes cuotas se cargan el día 1.
+              </p>
+            )}
             <Link href={`/planes/${plan.slug}`} className="block font-semibold text-[#29384a] transition hover:text-[#c88b25]">
               Ver qué incluye y qué no incluye
             </Link>

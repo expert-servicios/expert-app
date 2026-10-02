@@ -123,6 +123,20 @@ Debe aplicar los mismos requisitos de perfil, facturación y entidad, sin exigir
 
 Stripe es la fuente de verdad del estado de pago/suscripción; Supabase mantiene la réplica operacional de EXPERT.
 
+### Política de facturación por mes natural
+
+Para los planes mensuales, la unidad comercial es el **mes natural completo**:
+
+- si el cliente contrata cualquier día del mes, se cobra en el alta la mensualidad completa correspondiente a ese mes, sin prorrateo;
+- ese primer cobro cubre la revisión y operativa del mes natural completo, aunque el alta se formalice a mitad de mes;
+- la siguiente cuota se cobra el día **1 del mes siguiente**;
+- todas las renovaciones posteriores se cargan el día **1**;
+- el día de contratación nunca se convierte en aniversario mensual de facturación;
+- si el alta se formaliza el propio día 1, el cobro inicial corresponde a ese mes y la siguiente renovación se ancla al día 1 del mes siguiente, evitando doble cobro;
+- esta regla aplica a planes mensuales; la modalidad anual conserva su lógica contractual propia.
+
+Implementación Stripe: el Checkout mensual incluye una línea única por el mes natural en curso y una línea recurrente mensual. La suscripción recurrente se ancla al próximo día 1 con `proration_behavior = none`, por lo que Stripe no genera un prorrateo del tramo inicial.
+
 ### Reglas fiscales del Checkout
 
 Los importes publicados por EXPERT se expresan como base imponible cuando se indica “+ IVA”. El checkout debe aplicar la configuración fiscal correspondiente de Stripe y recopilar los datos de facturación necesarios para calcular correctamente el impuesto según el cliente y la operación.
@@ -328,6 +342,8 @@ Detener automatismos y realizar revisión manual. No fusionar ni corregir histó
 - [ ] checkout no exige cuenta/login de Stripe al cliente;
 - [ ] Session Stripe usa `mode: subscription`;
 - [ ] importe, periodicidad, moneda e impuestos coinciden con la oferta comercial;
+- [ ] los planes mensuales cobran íntegro el mes natural de alta, sin prorrateo;
+- [ ] la siguiente cuota mensual queda anclada al día 1 del mes siguiente y las posteriores al día 1;
 - [ ] `success_url` es `/dashboard/post-compra?origin=subscription`;
 - [ ] `cancel_url` vuelve a suscripciones;
 - [ ] la sesión se persiste antes de entregar el enlace como válido;

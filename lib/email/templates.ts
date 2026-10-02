@@ -1005,7 +1005,8 @@ export function subscriptionInvite(
       ${table(
         detail('Plan', escapeHtml(planName)),
         detail('Cuota mensual', `<strong style="font-size:18px;color:#c88b25;">€${amount.toFixed(2)}/mes</strong>`),
-        detail('Renovación', 'Automática cada mes, cancelable en cualquier momento'),
+        detail('Facturación', 'Mes natural completo: el alta cobra íntegramente el mes en curso'),
+        detail('Renovación', 'Automática el día 1 de cada mes, cancelable en cualquier momento'),
         detail('Pago', 'Seguro a través de Stripe (Visa / Mastercard / Amex)')
       )}
       ${btn('Activar mi plan — €' + amount.toFixed(2) + '/mes', stripeUrl)}
@@ -1013,7 +1014,7 @@ export function subscriptionInvite(
         'Haz clic en "Activar mi plan" y completa el pago de forma segura.',
         'Recibirás un email de confirmación con los detalles de tu suscripción.',
         'Accede a tu panel privado para gestionar tu plan, descargar facturas o cancelar cuando quieras.',
-        'Tu gestor te contactará para coordinar la operativa del primer mes.'
+        'Tu gestor te contactará para coordinar la operativa del primer mes completo, incluida la revisión del mes natural en curso.'
       ])}
       ${para('<small style="color:#8899aa;">Puedes cancelar tu suscripción en cualquier momento desde tu panel en <a href="' + BRAND.appUrl + '/dashboard/suscripciones" style="color:#c88b25;">Mi área privada</a>. La cancelación surte efecto al final del período de facturación en curso.</small>')}
       ${funFactBlock(funFact)}

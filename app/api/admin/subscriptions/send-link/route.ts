@@ -7,6 +7,7 @@ import { subscriptionInvite } from '@/lib/email/templates';
 import { getRandomFunFact } from '@/lib/utils/fun-facts';
 import { generateContractHtml, contractToBuffer } from '@/lib/utils/contract';
 import { getPublicAppUrl } from '@/lib/utils/app-url';
+import { MONTHLY_CALENDAR_BILLING_METADATA, nextMonthlyCalendarBillingAnchor } from '@/lib/subscriptions/calendar-month-billing';
 import { isStaffRole } from '@/lib/auth/roles';
 import {
   claimSubscriptionCheckout,
@@ -355,6 +356,7 @@ export async function POST(request: NextRequest) {
       quote_id: quoteId,
       lead_id: leadId,
       onboarding_case_id: onboardingCaseId ?? '',
+      ...MONTHLY_CALENDAR_BILLING_METADATA,
     };
 
     let session;
@@ -368,21 +370,49 @@ export async function POST(request: NextRequest) {
       tax_id_collection: { enabled: true, required: 'if_supported' },
       automatic_tax: { enabled: true },
       ...(stripeCustomerId ? { customer_update: { address: 'auto' as const, name: 'auto' as const } } : {}),
-      line_items: [{
-        quantity: 1,
-        price_data: {
-          currency: 'eur',
-          unit_amount: Math.round(expectedAmountEur * 100),
-          tax_behavior: 'exclusive',
-          recurring: { interval: 'month' },
-          product_data: {
-            name: toStripeAscii(planName),
-            metadata: { configured_price_key: stripePriceEnvKey, configured_price_id: configuredPriceId },
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: 'eur',
+            unit_amount: Math.round(expectedAmountEur * 100),
+            tax_behavior: 'exclusive',
+            recurring: { interval: 'month' },
+            product_data: {
+              name: toStripeAscii(planName),
+              metadata: {
+                configured_price_key: stripePriceEnvKey,
+                configured_price_id: configuredPriceId,
+                ...MONTHLY_CALENDAR_BILLING_METADATA,
+                billing_component: 'recurring',
+              },
+            },
           },
         },
-      }],
+        {
+          quantity: 1,
+          price_data: {
+            currency: 'eur',
+            unit_amount: Math.round(expectedAmountEur * 100),
+            tax_behavior: 'exclusive',
+            product_data: {
+              name: toStripeAscii(`${planName} - mes natural en curso`),
+              metadata: {
+                configured_price_key: stripePriceEnvKey,
+                configured_price_id: configuredPriceId,
+                ...MONTHLY_CALENDAR_BILLING_METADATA,
+                billing_component: 'initial_full_calendar_month',
+              },
+            },
+          },
+        },
+      ],
       metadata,
-      subscription_data: { metadata },
+      subscription_data: {
+        metadata,
+        billing_cycle_anchor: nextMonthlyCalendarBillingAnchor(),
+        proration_behavior: 'none',
+      },
       success_url: `${appUrl}/dashboard/post-compra?origin=subscription`,
       cancel_url: `${appUrl}/dashboard/suscripciones`
     });
@@ -414,6 +444,7 @@ export async function POST(request: NextRequest) {
         created_by_admin: actorId,
         automatic_tax: true,
         tax_behavior: 'exclusive',
+        ...MONTHLY_CALENDAR_BILLING_METADATA,
         email_sent: false,
         quote_id: quoteId,
         lead_id: leadId,
