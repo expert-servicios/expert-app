@@ -44,6 +44,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/holded/conectores/claude/terms`,  changeFrequency: 'yearly', priority: 0.2, lastModified: now },
     { url: `${BASE}/holded/conectores/claude/soporte`, changeFrequency: 'yearly', priority: 0.2, lastModified: now },
     { url: `${BASE}/sobre-mi`,                        changeFrequency: 'monthly', priority: 0.7, lastModified: now },
+    { url: `${BASE}/mentorias`,                         changeFrequency: 'monthly', priority: 0.75, lastModified: now },
     { url: `${BASE}/blog`,                            changeFrequency: 'weekly',  priority: 0.8, lastModified: now },
     { url: `${BASE}/docs`,                            changeFrequency: 'weekly',  priority: 0.85, lastModified: now },
     { url: `${BASE}/contacto`,                        changeFrequency: 'yearly',  priority: 0.6, lastModified: now },
