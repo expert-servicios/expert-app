@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ArrowLeft, BookOpenText, CheckCircle2, Clock3, FilePenLine, ShieldAlert } from 'lucide-react';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 import { EditorialHubClient } from '@/components/admin/EditorialHubClient';
+import { EditorialCalendarClient } from '@/components/admin/EditorialCalendarClient';
 
 type Item = {
   id:string;source_kind:string;source_ref:string|null;source_url:string|null;pillar:string;title:string;status:string;
@@ -11,17 +12,30 @@ type Item = {
   asset_brief:string|null;consent_required:boolean;consent_status:string;scheduled_at:string|null;
 };
 type Payload = { items:Item[]; pillars:string[]; stats:{total:number;draft:number;review:number;approved:number;scheduled:number;published:number;consent_pending:number}};
+type CalendarPayload = {
+  jobs:Array<{id:string;content_item_id:string;provider:string;channel:string;scheduled_at:string;status:string;channel_account_id:string|null;last_error_message:string|null}>;
+  accounts:Array<{id:string;provider:string;channel:string;display_name:string|null;status:string}>;
+  content:Array<{id:string;title:string;pillar:string;status:string;consent_required:boolean;consent_status:string}>;
+};
 
-async function load():Promise<Payload>{
+async function load():Promise<{editorial:Payload;calendar:CalendarPayload}>{
   const cs=await cookies();
   const cookie=cs.getAll().map(c=>`${c.name}=${c.value}`).join('; ');
-  const res=await fetch(absoluteAppUrl('/api/admin/editorial'),{headers:{cookie},cache:'no-store'});
-  if(!res.ok) return {items:[],pillars:[],stats:{total:0,draft:0,review:0,approved:0,scheduled:0,published:0,consent_pending:0}};
-  return res.json();
+  const [editorialRes,calendarRes]=await Promise.all([
+    fetch(absoluteAppUrl('/api/admin/editorial'),{headers:{cookie},cache:'no-store'}),
+    fetch(absoluteAppUrl('/api/admin/editorial/calendar'),{headers:{cookie},cache:'no-store'}),
+  ]);
+  const editorial:Payload=editorialRes.ok
+    ? await editorialRes.json()
+    : {items:[],pillars:[],stats:{total:0,draft:0,review:0,approved:0,scheduled:0,published:0,consent_pending:0}};
+  const calendar:CalendarPayload=calendarRes.ok
+    ? await calendarRes.json()
+    : {jobs:[],accounts:[],content:[]};
+  return {editorial,calendar};
 }
 
 export default async function EditorialPage(){
-  const data=await load();
+  const {editorial:data,calendar}=await load();
   const cards=[
     ['Borradores',data.stats.draft,FilePenLine],
     ['En revisión',data.stats.review,BookOpenText],
@@ -50,6 +64,11 @@ export default async function EditorialPage(){
             </div>
           ))}
         </div>
+        <EditorialCalendarClient
+          items={data.items.map(({id,title,pillar,status,consent_required,consent_status})=>({id,title,pillar,status,consent_required,consent_status}))}
+          initialJobs={calendar.jobs}
+          accounts={calendar.accounts}
+        />
         <EditorialHubClient initialItems={data.items}/>
       </div>
     </main>
