@@ -68,7 +68,16 @@ export async function POST(
     && Number(stripeSub.billing_cycle_anchor) === window.nextAnchor;
 
   const invoices = await stripe.invoices.list({ customer: customerId, limit: 100 });
-  let invoice = invoices.data.find((candidate) => candidate.metadata?.alignment_key === alignmentKey) ?? null;
+  let invoice = invoices.data.find((candidate) => {
+    if (candidate.metadata?.alignment_key === alignmentKey) return true;
+    const sameBillingMonth =
+      candidate.metadata?.billing_policy === MONTHLY_CALENDAR_BILLING_POLICY
+      && candidate.metadata?.billing_month === window.key;
+    const parentSubscription = candidate.parent?.subscription_details?.subscription;
+    const sameSubscription =
+      (typeof parentSubscription === 'string' ? parentSubscription : parentSubscription?.id) === stripeSub.id;
+    return sameBillingMonth && sameSubscription && candidate.status !== 'void';
+  }) ?? null;
 
   if (!alreadyAligned) {
     await stripe.subscriptions.update(
