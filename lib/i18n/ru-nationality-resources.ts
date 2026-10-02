@@ -278,7 +278,7 @@ export const RU_NATIONALITY_RESOURCES: RuResource[] = [
     ]
 }
 ],
-  },,
+  },
   {
     kind: 'blog',
     slug: 'grazhdane-rossii-vnzh-ispaniya-bankovskie-sankcii-100000',
