@@ -99,7 +99,7 @@ export function generateContractHtml(d: ContractData): string {
 
 <h2>3. Precio y forma de pago</h2>
 <div class="amount">${fmt(d.amountEur)} € ${isSubscription ? (billingInterval === 'year' ? '/año' : '/mes') : ''} ${d.amountIncludesTax === false ? '(base imponible; IVA no incluido)' : '(IVA incluido si aplica)'}</div>
-<p>El pago se realiza de forma segura a través de la plataforma <strong>Stripe</strong> (Stripe, Inc. — PCI-DSS Level 1 certificado). ${EXPERT.name} no almacena datos de tarjetas bancarias. ${isSubscription ? `La suscripción se renueva automáticamente cada ${billingInterval === 'year' ? 'año' : 'mes'} hasta su cancelación expresa.` : 'Este es un pago único no recurrente.'}</p>
+<p>El pago se realiza de forma segura a través de la plataforma <strong>Stripe</strong> (Stripe, Inc. — PCI-DSS Level 1 certificado). ${EXPERT.name} no almacena datos de tarjetas bancarias. ${isSubscription ? (billingInterval === 'year' ? 'La suscripción anual se renueva conforme a la modalidad anual contratada hasta su cancelación expresa.' : 'La suscripción mensual se factura por meses naturales completos. En el momento del alta se cobra íntegramente el mes natural en curso, aunque la contratación se formalice una vez iniciado el mes, sin prorrateo. Las renovaciones posteriores se cargan automáticamente el día 1 de cada mes.') : 'Este es un pago único no recurrente.'}</p>
 
 <h2>4. Obligaciones del prestador</h2>
 <p>${EXPERT.name} se compromete a:</p>
@@ -120,7 +120,7 @@ export function generateContractHtml(d: ContractData): string {
 
 ${isSubscription ? `
 <h2>6. Cancelación de la suscripción</h2>
-<p>El cliente puede cancelar su suscripción en cualquier momento desde su panel de cliente en <strong>${EXPERT.web}/dashboard/suscripciones</strong>. La cancelación surte efecto al final del período de facturación en curso. No se realizarán devoluciones por períodos ya facturados salvo en los casos previstos en el derecho de desistimiento.</p>
+<p>El cliente puede cancelar su suscripción en cualquier momento desde su panel de cliente en <strong>${EXPERT.web}/dashboard/suscripciones</strong>. En los planes mensuales, el período de facturación coincide con el mes natural. La cancelación surte efecto al final del mes natural ya facturado. No se realizarán devoluciones por períodos ya facturados salvo en los casos previstos por la normativa aplicable, incluido el derecho de desistimiento cuando corresponda.</p>
 ` : `
 <h2>6. Derecho de desistimiento</h2>
 <p>De conformidad con el Real Decreto Legislativo 1/2007 (TRLGDCU, art. 102), el cliente consumidor dispone de un plazo de <strong>14 días naturales</strong> desde la contratación para ejercer el derecho de desistimiento sin necesidad de justificación. Si el cliente ha solicitado el inicio del servicio antes de que transcurra dicho plazo y el servicio ha sido ejecutado total o parcialmente, perderá el derecho de desistimiento en proporción a la parte ya prestada (art. 107.2 TRLGDCU).</p>
