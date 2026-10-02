@@ -38,6 +38,28 @@ export function MentoringWorkspaceClient({ engagements }: { engagements: Engagem
     router.refresh();
   }
 
+  async function submitArtifact(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setMessage('');
+    const form = new FormData(event.currentTarget);
+    const payload = Object.fromEntries(form.entries());
+    const res = await fetch('/api/admin/mentoring', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ kind: 'artifact', ...payload }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) {
+      setMessage(data.error ?? 'No se pudo guardar el recurso.');
+      return;
+    }
+    event.currentTarget.reset();
+    setMessage('Recurso guardado.');
+    router.refresh();
+  }
+
   async function submitPublication(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
@@ -63,7 +85,7 @@ export function MentoringWorkspaceClient({ engagements }: { engagements: Engagem
   if (engagements.length === 0) return null;
 
   return (
-    <div className="grid gap-5 xl:grid-cols-2">
+    <div className="grid gap-5 xl:grid-cols-3">
       <form onSubmit={submitSession} className="rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2">
           <Save className="h-4 w-4 text-[#c88b25]" />
@@ -90,6 +112,33 @@ export function MentoringWorkspaceClient({ engagements }: { engagements: Engagem
         </button>
       </form>
 
+      <form onSubmit={submitArtifact} className="rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
+        <div className="flex items-center gap-2">
+          <FilePlus2 className="h-4 w-4 text-[#c88b25]" />
+          <h2 className="font-serif text-lg font-bold text-[#07111d]">Guardar recurso</h2>
+        </div>
+        <p className="mt-1 text-xs text-[#6f665b]">Enlaza Trello, Drive, emails, transcripciones, capturas o documentación relacionada.</p>
+        <select name="engagement_id" defaultValue={defaultEngagement} className="mt-4 w-full rounded-xl border border-[#d8cbb5] bg-[#fffdf8] px-3 py-2.5 text-sm">
+          {engagements.map((item) => <option key={item.id} value={item.id}>{item.project_name} · {item.mentee_name}</option>)}
+        </select>
+        <select name="artifact_type" defaultValue="link" className="mt-3 w-full rounded-xl border border-[#d8cbb5] bg-[#fffdf8] px-3 py-2.5 text-sm">
+          <option value="link">Enlace</option>
+          <option value="trello">Trello</option>
+          <option value="document">Documento</option>
+          <option value="email">Correo</option>
+          <option value="transcript">Transcripción</option>
+          <option value="screenshot">Captura</option>
+          <option value="other">Otro</option>
+        </select>
+        <input name="title" required placeholder="Título del recurso" className="mt-3 w-full rounded-xl border border-[#d8cbb5] bg-[#fffdf8] px-3 py-2.5 text-sm" />
+        <input name="external_url" type="url" placeholder="URL (Drive, Trello, web...)" className="mt-3 w-full rounded-xl border border-[#d8cbb5] bg-[#fffdf8] px-3 py-2.5 text-sm" />
+        <input name="storage_path" placeholder="Ruta interna si aplica" className="mt-3 w-full rounded-xl border border-[#d8cbb5] bg-[#fffdf8] px-3 py-2.5 text-sm" />
+        <textarea name="notes" rows={4} placeholder="Notas sobre el recurso" className="mt-3 w-full rounded-xl border border-[#d8cbb5] bg-[#fffdf8] px-3 py-2.5 text-sm" />
+        <button disabled={busy} className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[#d8cbb5] bg-[#fffdf8] px-4 py-2.5 text-sm font-bold text-[#07111d] disabled:opacity-50">
+          <Save className="h-4 w-4" /> Guardar recurso
+        </button>
+      </form>
+
       <form onSubmit={submitPublication} className="rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-[#c88b25]" />
@@ -113,7 +162,7 @@ export function MentoringWorkspaceClient({ engagements }: { engagements: Engagem
         </button>
       </form>
 
-      {message && <p className="xl:col-span-2 rounded-xl border border-[#d8cbb5] bg-white px-4 py-3 text-sm text-[#29384a]">{message}</p>}
+      {message && <p className="xl:col-span-3 rounded-xl border border-[#d8cbb5] bg-white px-4 py-3 text-sm text-[#29384a]">{message}</p>}
     </div>
   );
 }
