@@ -5,6 +5,7 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 import { isCompanyBillingReady, missingCompanyBillingFields } from '@/lib/companies/billing-readiness';
 import { resolveCompanyCommercialCoverage } from '@/lib/subscriptions/company-commercial-coverage';
+import { MONTHLY_CALENDAR_BILLING_METADATA, nextMonthlyCalendarBillingAnchor } from '@/lib/subscriptions/calendar-month-billing';
 import {
   getSubscriptionInvitePlanByPriceId,
   getSubscriptionInvitePlanByServiceSlug,
@@ -323,12 +324,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const isMonthlyCalendarPlan = configuredPlan.interval === 'month';
+    const calendarBillingMetadata = isMonthlyCalendarPlan ? MONTHLY_CALENDAR_BILLING_METADATA : {};
     const entityMetadata = {
       user_id: user.id,
       company_id: companyId,
       plan_name: configuredPlan.name,
       billing: configuredPlan.interval,
       product_type: 'suscripcion',
+      ...calendarBillingMetadata,
       ...(quoteId ? { quote_id: quoteId } : {}),
     };
 
@@ -348,21 +352,49 @@ export async function POST(request: NextRequest) {
           metadata: {
             ...entityMetadata,
             configured_price_id: priceId,
-          }
+          },
+          ...(isMonthlyCalendarPlan ? {
+            billing_cycle_anchor: nextMonthlyCalendarBillingAnchor(),
+            proration_behavior: 'none' as const,
+          } : {}),
         },
-        line_items: [{
-          quantity: 1,
-          price_data: {
-            currency: 'eur',
-            unit_amount: Math.round(configuredPlan.amountEur * 100),
-            tax_behavior: 'exclusive',
-            recurring: { interval: configuredPlan.interval },
-            product_data: {
-              name: toStripeAscii(configuredPlan.name),
-              metadata: { configured_price_id: priceId, billing: configuredPlan.interval },
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency: 'eur',
+              unit_amount: Math.round(configuredPlan.amountEur * 100),
+              tax_behavior: 'exclusive',
+              recurring: { interval: configuredPlan.interval },
+              product_data: {
+                name: toStripeAscii(configuredPlan.name),
+                metadata: {
+                  configured_price_id: priceId,
+                  billing: configuredPlan.interval,
+                  ...calendarBillingMetadata,
+                  billing_component: 'recurring',
+                },
+              },
             },
           },
-        }],
+          ...(isMonthlyCalendarPlan ? [{
+            quantity: 1,
+            price_data: {
+              currency: 'eur',
+              unit_amount: Math.round(configuredPlan.amountEur * 100),
+              tax_behavior: 'exclusive' as const,
+              product_data: {
+                name: toStripeAscii(`${configuredPlan.name} - mes natural en curso`),
+                metadata: {
+                  configured_price_id: priceId,
+                  billing: configuredPlan.interval,
+                  ...MONTHLY_CALENDAR_BILLING_METADATA,
+                  billing_component: 'initial_full_calendar_month',
+                },
+              },
+            },
+          }] : []),
+        ],
         success_url: `${appUrl}/dashboard/post-compra?origin=subscription`,
         cancel_url: `${appUrl}/dashboard/suscripciones`
       });
@@ -393,6 +425,7 @@ export async function POST(request: NextRequest) {
         amount_eur: configuredPlan.amountEur,
         automatic_tax: true,
         tax_behavior: 'exclusive',
+        ...calendarBillingMetadata,
         ...(quoteId ? { quote_id: quoteId } : {}),
       }
     });
