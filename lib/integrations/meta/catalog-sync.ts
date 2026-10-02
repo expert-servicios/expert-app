@@ -198,7 +198,7 @@ export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<
       const response = await metaGraphRequest<{ id?: string }>({
         path: `${config.catalogId}/products`,
         method: 'POST',
-        body: payload,
+        formBody: payload,
       });
 
       if (!response.id) {
