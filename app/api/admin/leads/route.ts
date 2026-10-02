@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
     const activity = url.searchParams.get('activity');
     const marketing = url.searchParams.get('marketing');
     const locale = localeFilter(url.searchParams.get('locale'));
+    const segment = url.searchParams.get('segment');
     const search = sanitizeSearch(url.searchParams.get('q') ?? '');
     const focus = url.searchParams.get('focus');
     if (focus && !UUID_PATTERN.test(focus)) {
@@ -90,6 +91,9 @@ export async function GET(request: NextRequest) {
     }
     if (locale) {
       query = query.contains('metadata', { acquisition: { locale } });
+    }
+    if (segment === 'mentorday-projects') {
+      query = query.contains('metadata', { source_group: 'mentorday', program: 'Mentor Tips / Speed Mentoring' });
     }
     if (search) {
       query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
