@@ -980,6 +980,9 @@ async function generateKiaAiResponse({
       `Dirección habitual lista: ${contactCtx.habitualAddressReady ? 'sí' : 'no'}`,
       `Último estado lead: ${contactCtx.lastLeadStatus ?? 'no aplica'}`,
       `Último servicio seleccionado: ${contactCtx.lastSelectedService ?? session.service_id ?? 'no aplica'}`,
+      `Proyecto vinculado: ${contactCtx.projectName ?? 'no consta'}`,
+      `Resumen verificado del proyecto: ${contactCtx.projectSummary ?? 'pendiente de fuente verificable'}`,
+      `Web del proyecto: ${contactCtx.projectWebsiteUrl ?? 'no consta'}`,
       `Expedientes activos:\n${caseList || 'Ninguno'}`,
       `Obligaciones fiscales pendientes:\n${obList || 'Ninguna'}`,
     ].join('\n');

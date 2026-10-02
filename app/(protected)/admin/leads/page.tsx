@@ -42,6 +42,14 @@ type Lead = {
   marketing_status: string;
   last_stripe_activity_at: string | null;
   attribution: Attribution | null;
+  project_profile: {
+    project_name: string | null;
+    kia_summary: string | null;
+    website_url: string | null;
+    logo_url: string | null;
+    source_type: string | null;
+    verified_at: string | null;
+  } | null;
   latest_interaction: {
     at: string | null;
     intent: string | null;
@@ -129,6 +137,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
   const activity = one(params.activity);
   const marketing = one(params.marketing);
   const locale = one(params.locale);
+  const segment = one(params.segment);
   const focus = one(params.focus);
   const page = Math.max(1, Number(one(params.page)) || 1);
 
@@ -138,6 +147,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
   if (activity) apiQuery.set('activity', activity);
   if (marketing) apiQuery.set('marketing', marketing);
   if (locale) apiQuery.set('locale', locale);
+  if (segment) apiQuery.set('segment', segment);
   if (focus) apiQuery.set('focus', focus);
 
   const data = await fetchWithCookies<ApiResponse>(`/api/admin/leads?${apiQuery.toString()}`);
@@ -193,7 +203,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
           </div>
         )}
 
-        <div className="mb-5 grid gap-3 rounded-2xl border border-[#ded2bf] bg-white p-4 lg:grid-cols-[1.4fr_repeat(4,0.8fr)_auto]">
+        <div className="mb-5 grid gap-3 rounded-2xl border border-[#ded2bf] bg-white p-4 lg:grid-cols-[1.4fr_repeat(5,0.8fr)_auto]">
           <form className="contents" action="/admin/leads">
             <label className="relative block">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8a7f71]" />
@@ -225,6 +235,10 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
               <option value="es">ES</option>
               <option value="ru">RU</option>
               <option value="en">EN</option>
+            </select>
+            <select name="segment" defaultValue={segment} className="rounded-xl border border-[#d8cbb5] bg-[#fffdf8] px-3 py-2.5 text-sm">
+              <option value="">Todos los orígenes</option>
+              <option value="mentorday-projects">MentorDay · proyectos 2026</option>
             </select>
             <button className="rounded-xl bg-[#07111d] px-4 py-2.5 text-sm font-bold text-white">Filtrar</button>
           </form>
@@ -315,6 +329,34 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
                           {lead.category ?? 'Contacto'}
                         </p>
                         {lead.service && <p className="mt-1 text-xs font-semibold text-[#29384a]">{lead.service}</p>}
+                        {lead.project_profile && (
+                          <div className="mt-2 max-w-md rounded-lg border border-[#e4d8c6] bg-[#fffdf8] p-3">
+                            <div className="flex items-start gap-2">
+                              {lead.project_profile.logo_url && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={lead.project_profile.logo_url}
+                                  alt=""
+                                  className="h-8 w-12 shrink-0 object-contain"
+                                />
+                              )}
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-[#8a6111]">Proyecto vinculado</p>
+                                <p className="text-xs font-semibold text-[#29384a]">{lead.project_profile.project_name ?? lead.service ?? 'Proyecto'}</p>
+                              </div>
+                            </div>
+                            {lead.project_profile.kia_summary ? (
+                              <p className="mt-2 text-xs leading-5 text-[#526171]">{lead.project_profile.kia_summary}</p>
+                            ) : (
+                              <p className="mt-2 text-[11px] text-[#8b8174]">Resumen KIA pendiente de una fuente verificable.</p>
+                            )}
+                            {lead.project_profile.website_url && (
+                              <a href={lead.project_profile.website_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex text-[11px] font-semibold text-[#8a6111] hover:underline">
+                                Web del proyecto →
+                              </a>
+                            )}
+                          </div>
+                        )}
                         {lead.message ? (
                           <details open={focus === lead.id} className="mt-2 max-w-md">
                             <summary className="cursor-pointer text-xs font-semibold text-[#8a6111] hover:underline">
@@ -381,10 +423,10 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
               <span>{pagination.total} resultados · página {pagination.page} de {pagination.pages}</span>
               <div className="flex gap-2">
                 {pagination.page > 1 && (
-                  <Link className="rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 font-semibold" href={buildPath({ q, lifecycle, activity, marketing, locale, page: String(pagination.page - 1) })}>Anterior</Link>
+                  <Link className="rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 font-semibold" href={buildPath({ q, lifecycle, activity, marketing, locale, segment, page: String(pagination.page - 1) })}>Anterior</Link>
                 )}
                 {pagination.page < pagination.pages && (
-                  <Link className="rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 font-semibold" href={buildPath({ q, lifecycle, activity, marketing, locale, page: String(pagination.page + 1) })}>Siguiente</Link>
+                  <Link className="rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 font-semibold" href={buildPath({ q, lifecycle, activity, marketing, locale, segment, page: String(pagination.page + 1) })}>Siguiente</Link>
                 )}
               </div>
             </div>
