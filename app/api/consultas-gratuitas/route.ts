@@ -16,6 +16,8 @@ const schema = z.object({
   email: z.string().email().max(200),
   phone: z.string().trim().max(30).optional(),
   service: z.string().trim().max(120).optional(),
+  intent: z.string().trim().max(80).optional(),
+  organization: z.string().trim().max(160).optional(),
   origin: z.string().trim().max(240).optional(),
   question: z.string().trim().min(10).max(3000),
   recaptcha_token: z.string().optional(),
@@ -60,9 +62,10 @@ export async function POST(request: NextRequest) {
     const contentOriginLabel = describeContentOrigin(contentOrigin);
     const interaction = {
       at: new Date().toISOString(),
-      intent: 'free_question',
+      intent: parsed.data.intent || 'free_question',
       origin: contentOrigin,
       service: parsed.data.service || null,
+      organization: parsed.data.organization || null,
       source_key: sourceKey,
       contact: {
         email: normalizedEmail,
@@ -103,6 +106,12 @@ export async function POST(request: NextRequest) {
       console.warn('[free consultation] ambiguous lead identity; preserving request as separate lead');
     }
 
+    const isMentoring = parsed.data.service === 'mentorias';
+    const categoryLabel = isMentoring ? 'Mentorías' : 'Consulta gratuita';
+    const questionWithContext = parsed.data.organization
+      ? `[Proyecto / organización: ${parsed.data.organization}]\n${parsed.data.question}`
+      : parsed.data.question;
+
     let leadId: string;
     let created = false;
 
@@ -118,14 +127,14 @@ export async function POST(request: NextRequest) {
       const interactionHeading = `Consulta gratuita recibida ${new Date().toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })}`;
       const nextMessage = [
         previousMessage,
-        `[${interactionHeading}]\n${parsed.data.question}`,
+        `[${interactionHeading}]\n${questionWithContext}`,
       ].filter(Boolean).join('\n\n');
 
       const { error: updateError } = await admin
         .from('leads')
         .update({
           name: parsed.data.name,
-          category: 'Consulta gratuita',
+          category: categoryLabel,
           service: parsed.data.service || 'consulta-general',
           message: nextMessage,
           state: 'new',
@@ -147,11 +156,11 @@ export async function POST(request: NextRequest) {
           email: normalizedEmail,
           phone: ambiguousIdentity ? null : normalizedPhone,
           client_type: 'particular',
-          category: 'Consulta gratuita',
+          category: categoryLabel,
           service: parsed.data.service || 'consulta-general',
           country: 'ES',
           urgency: 'media',
-          message: parsed.data.question,
+          message: questionWithContext,
           state: 'new',
           lifecycle_stage: 'lead',
           source: attribution.source,
@@ -184,7 +193,7 @@ export async function POST(request: NextRequest) {
         email: normalizedEmail,
         phone: normalizedPhone,
         service: parsed.data.service || null,
-        question: parsed.data.question,
+        question: questionWithContext,
         origin: contentOriginLabel,
         leadId,
       });
@@ -199,7 +208,7 @@ export async function POST(request: NextRequest) {
     }
 
     await notifyAdmins({
-      title: 'Nueva consulta gratuita',
+      title: isMentoring ? 'Nueva propuesta de mentoría' : 'Nueva consulta gratuita',
       body: `${parsed.data.name} · ${parsed.data.service || 'Consulta general'} · ${contentOriginLabel}`.slice(0, 240),
       url: `/admin/leads?focus=${leadId}`,
       tag: sourceKey,
