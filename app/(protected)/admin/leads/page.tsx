@@ -42,6 +42,14 @@ type Lead = {
   marketing_status: string;
   last_stripe_activity_at: string | null;
   attribution: Attribution | null;
+  project_profile: {
+    project_name: string | null;
+    kia_summary: string | null;
+    website_url: string | null;
+    logo_url: string | null;
+    source_type: string | null;
+    verified_at: string | null;
+  } | null;
   latest_interaction: {
     at: string | null;
     intent: string | null;
@@ -321,6 +329,34 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
                           {lead.category ?? 'Contacto'}
                         </p>
                         {lead.service && <p className="mt-1 text-xs font-semibold text-[#29384a]">{lead.service}</p>}
+                        {lead.project_profile && (
+                          <div className="mt-2 max-w-md rounded-lg border border-[#e4d8c6] bg-[#fffdf8] p-3">
+                            <div className="flex items-start gap-2">
+                              {lead.project_profile.logo_url && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={lead.project_profile.logo_url}
+                                  alt=""
+                                  className="h-8 w-12 shrink-0 object-contain"
+                                />
+                              )}
+                              <div className="min-w-0">
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-[#8a6111]">Proyecto vinculado</p>
+                                <p className="text-xs font-semibold text-[#29384a]">{lead.project_profile.project_name ?? lead.service ?? 'Proyecto'}</p>
+                              </div>
+                            </div>
+                            {lead.project_profile.kia_summary ? (
+                              <p className="mt-2 text-xs leading-5 text-[#526171]">{lead.project_profile.kia_summary}</p>
+                            ) : (
+                              <p className="mt-2 text-[11px] text-[#8b8174]">Resumen KIA pendiente de una fuente verificable.</p>
+                            )}
+                            {lead.project_profile.website_url && (
+                              <a href={lead.project_profile.website_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex text-[11px] font-semibold text-[#8a6111] hover:underline">
+                                Web del proyecto →
+                              </a>
+                            )}
+                          </div>
+                        )}
                         {lead.message ? (
                           <details open={focus === lead.id} className="mt-2 max-w-md">
                             <summary className="cursor-pointer text-xs font-semibold text-[#8a6111] hover:underline">
