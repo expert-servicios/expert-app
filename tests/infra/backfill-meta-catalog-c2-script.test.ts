@@ -25,6 +25,21 @@ describe('Meta catalog C2 backfill script', () => {
     expect(script).toContain("status: isPaused ? 'paused' : 'active'");
   });
 
+  it('does not reintroduce retired monthly plans into the canonical catalog', () => {
+    const script = read('scripts/backfill-meta-catalog-c2.ts');
+    expect(script).not.toContain('MONTHLY_PLANS');
+    expect(script).not.toContain('plan-supervision');
+    expect(script).not.toContain('plan-avanzado');
+    expect(script).not.toContain('plan-colaborativo');
+  });
+
+  it('uses the dynamic canonical social image for active services', () => {
+    const script = read('scripts/backfill-meta-catalog-c2.ts');
+    expect(script).toContain('/api/services/og?slug=');
+    expect(script).toContain('variant=square&lang=es');
+    expect(script).not.toContain('generate-service-cards.ts');
+  });
+
   it('keeps the read-only Meta catalog preview API admin-gated and read-only', () => {
     const route = read('app/api/admin/meta/catalog/route.ts');
     expect(route).toContain('requireAdmin');
