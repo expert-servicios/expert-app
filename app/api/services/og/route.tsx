@@ -42,10 +42,16 @@ export async function GET(request: Request) {
     isHero ? 170 : 150,
   );
   const titleSize = serviceTitle.length > 62 ? (isHero ? 58 : 54) : isHero ? 68 : 64;
+  const canonicalCardPoint = service.keyPoints?.find((point) => point.title.trim() && point.text.trim()) ?? null;
   const cardTitle = localized?.socialCardTitle
-    ?? (lang === 'ru' ? 'Онлайн-услуга EXPERT' : 'Expediente preparado con criterio documental');
-  const cardText = localized?.socialCardText
-    ?? (lang === 'ru' ? 'Проверка, подготовка и сопровождение процесса.' : 'Revisión, formularios, presentación y seguimiento inicial.');
+    ?? canonicalCardPoint?.title
+    ?? (lang === 'ru' ? 'Онлайн-услуга EXPERT' : 'Servicio EXPERT');
+  const cardText = trimText(
+    localized?.socialCardText
+      ?? canonicalCardPoint?.text
+      ?? (lang === 'ru' ? 'Проверка, подготовка и сопровождение процесса.' : service.shortDescription),
+    isHero ? 150 : 110,
+  );
   const footerText = lang === 'ru' ? 'Онлайн-оформление в Испании' : 'Gestión online desde España';
 
   return new ImageResponse(
@@ -112,7 +118,7 @@ export async function GET(request: Request) {
             position: 'absolute',
             left: isHero ? 96 : 76,
             top: isHero ? 82 : 82,
-            right: isHero ? 620 : 76,
+            right: isHero ? 620 : 570,
             bottom: isHero ? 76 : 84,
             display: 'flex',
             flexDirection: 'column',
