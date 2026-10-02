@@ -22,7 +22,7 @@ export default function TerminosPage() {
         <div className="mx-auto max-w-4xl">
           <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#D4A017]">Legal</p>
           <h1 className="mt-3 font-serif text-3xl font-bold md:text-4xl">Términos y Condiciones</h1>
-          <p className="mt-3 text-sm text-[#9CA3AF]">Última actualización: 8 de mayo de 2026</p>
+          <p className="mt-3 text-sm text-[#9CA3AF]">Última actualización: 2 de octubre de 2026</p>
         </div>
       </div>
 
@@ -99,9 +99,7 @@ export default function TerminosPage() {
               aplicación los vigentes en el momento de la contratación.
             </p>
             <p>
-              Los servicios de suscripción (planes mensuales) se facturan de forma recurrente según el plan contratado. El
-              cliente puede cancelar su suscripción en cualquier momento a través de su panel de cliente, con efecto al final del
-              período de facturación en curso.
+              Los servicios de suscripción mensual se facturan por <strong>meses naturales completos</strong>. En el alta se cobra íntegramente el mes natural en curso, aunque la contratación se formalice una vez iniciado el mes, sin prorrateo por días. Las cuotas posteriores se cargan automáticamente el <strong>día 1 de cada mes</strong>. El cliente puede cancelar su suscripción en cualquier momento a través de su panel de cliente, con efecto al final del mes natural ya facturado.
             </p>
           </Section>
 

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   }
 };
 
-const LAST_UPDATED = '8 de mayo de 2026';
+const LAST_UPDATED = '2 de octubre de 2026';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -94,7 +94,7 @@ export default function CondicionesPage() {
               <li>EXPERT inicia la prestación del servicio conforme al alcance acordado.</li>
             </ol>
             <p>
-              El contrato queda perfeccionado en el momento en que EXPERT recibe y confirma el pago. En servicios de suscripción mensual, el contrato se renueva automáticamente cada período hasta que alguna de las partes comunique su resolución con la antelación prevista.
+              El contrato queda perfeccionado en el momento en que EXPERT recibe y confirma el pago. En los servicios de suscripción mensual, la unidad de facturación es el <strong>mes natural completo</strong>: en el alta se cobra íntegramente el mes en curso, aunque la contratación se formalice una vez iniciado dicho mes, sin prorrateo. Las renovaciones posteriores se cargan automáticamente el <strong>día 1 de cada mes</strong> hasta que la suscripción se cancele o resuelva conforme a estas Condiciones.
             </p>
           </Section>
 
@@ -107,6 +107,18 @@ export default function CondicionesPage() {
             </p>
             <p>
               La factura se emitirá a nombre de la persona o entidad indicada por el cliente en el momento de la contratación. EXPERT no podrá emitir facturas con datos distintos a los proporcionados por el cliente.
+            </p>
+          </Section>
+
+          <Section title="5 bis. Regla específica de suscripciones mensuales">
+            <p>
+              Los planes mensuales de EXPERT se prestan y facturan por <strong>meses naturales completos</strong>. El precio mensual retribuye la revisión, seguimiento y demás actuaciones incluidas en el plan correspondientes al conjunto del mes natural.
+            </p>
+            <p>
+              Cuando el alta se produzca después del día 1, el cliente abonará igualmente la mensualidad completa del mes en curso, sin prorrateo por días. A partir del mes siguiente, la cuota se cargará el <strong>día 1</strong> de cada mes.
+            </p>
+            <p>
+              Si la contratación se formaliza el propio día 1, ese cobro corresponde al mes natural que comienza y la siguiente renovación tendrá lugar el día 1 del mes siguiente. Esta regla no modifica las condiciones específicas de los planes anuales.
             </p>
           </Section>
 
