@@ -13,8 +13,11 @@ export async function GET(request: NextRequest) {
     const admin = await requireAdminClient(request);
     if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
-    const [{ data: engagements, error: engagementsError }, { data: publications, error: publicationsError }] =
-      await Promise.all([
+    const [
+      { data: engagements, error: engagementsError },
+      { data: publications, error: publicationsError },
+      { data: artifacts, error: artifactsError },
+    ] = await Promise.all([
         admin
           .from('mentoring_engagements')
           .select('id,lead_id,program,project_name,mentee_name,mentee_email,country,engagement_type,status,started_at,ended_at,source_label,current_focus,next_action,publication_status,publication_consent_at,metadata,created_at,updated_at')
@@ -25,10 +28,16 @@ export async function GET(request: NextRequest) {
           .select('id,engagement_id,publication_type,title,slug,status,summary,publication_url,published_at,created_at,updated_at')
           .order('created_at', { ascending: false })
           .limit(100),
+        admin
+          .from('mentoring_artifacts')
+          .select('id,engagement_id,session_id,artifact_type,title,storage_path,external_url,notes,public_allowed,created_at')
+          .order('created_at', { ascending: false })
+          .limit(250),
       ]);
 
     if (engagementsError) throw engagementsError;
     if (publicationsError) throw publicationsError;
+    if (artifactsError) throw artifactsError;
 
     const engagementIds = (engagements ?? []).map((item) => item.id);
     let sessions: Record<string, unknown>[] = [];
@@ -53,6 +62,7 @@ export async function GET(request: NextRequest) {
       engagements: engagements ?? [],
       sessions,
       publications: publications ?? [],
+      artifacts: artifacts ?? [],
       stats: {
         total: engagements?.length ?? 0,
         active: (engagements ?? []).filter((item) => item.status === 'active').length,
@@ -112,6 +122,36 @@ export async function POST(request: NextRequest) {
         .eq('id', engagementId);
 
       return NextResponse.json({ ok: true, session: data });
+    }
+
+    if (body.kind === 'artifact') {
+      const engagementId = clean(body.engagement_id, 80);
+      const title = clean(body.title, 300);
+      if (!engagementId || !title) {
+        return NextResponse.json({ error: 'Mentoría y título requeridos' }, { status: 400 });
+      }
+
+      const artifactType = clean(body.artifact_type, 40) || 'link';
+      const allowedTypes = ['document', 'link', 'trello', 'email', 'transcript', 'screenshot', 'other'];
+      if (!allowedTypes.includes(artifactType)) {
+        return NextResponse.json({ error: 'Tipo de recurso no válido' }, { status: 400 });
+      }
+
+      const { data, error } = await admin
+        .from('mentoring_artifacts')
+        .insert({
+          engagement_id: engagementId,
+          artifact_type: artifactType,
+          title,
+          external_url: clean(body.external_url, 2000) || null,
+          storage_path: clean(body.storage_path, 1000) || null,
+          notes: clean(body.notes),
+          public_allowed: body.public_allowed === true,
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+      return NextResponse.json({ ok: true, artifact: data });
     }
 
     if (body.kind === 'publication') {
