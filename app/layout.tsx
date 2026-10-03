@@ -66,8 +66,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body className={`${inter.variable} ${playfair.variable} font-sans`}>
+        <Script
+          id="document-language"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `document.documentElement.lang=(location.pathname==='/ru'||location.pathname.startsWith('/ru/'))?'ru':'es';`
+          }}
+        />
         {/* GTM noscript fallback — must be first in body */}
         <noscript>
           <iframe
