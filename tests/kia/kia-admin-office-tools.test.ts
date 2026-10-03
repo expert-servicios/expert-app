@@ -60,10 +60,10 @@ describe('KIA Admin Office read layer', () => {
     expect(office).not.toContain('insert(');
   });
 
-  it('allows global Office view only to Admin/Owner', () => {
+  it('reserves Office data access to Admin/Owner', () => {
     const office = source('lib/ai/kia/kia-admin-office-tools.ts');
     expect(office).toContain('context.actor.role === ROLES.ADMIN || context.actor.role === ROLES.OWNER');
-    expect(office).toContain('La vista global Office está reservada a Admin/Owner');
+    expect(office).toContain('La capa Office interna está reservada a roles Admin/Owner');
   });
 
   it('makes the authenticated actor available independently from the target client', () => {
