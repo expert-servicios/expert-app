@@ -135,7 +135,18 @@ function contextualWelcome(context: KiaContextSummary): ChatMessage {
   };
 }
 
-function welcomeMessage(returning = false): ChatMessage {
+function welcomeMessage(returning = false, adminMode = false): ChatMessage {
+  if (adminMode) {
+    return {
+      id: 'welcome',
+      role: 'assistant',
+      text: returning
+        ? 'Sigo contigo. Estoy usando la pantalla actual del Admin como contexto; dime qué quieres revisar o hacer.'
+        : 'Soy KIA, tu copiloto operativo de EXPERT. En Admin trabajo en conversación libre: uso la pantalla actual, la empresa y las herramientas autorizadas para ayudarte a revisar pendientes, detectar problemas y avanzar trabajo.',
+      avatarState: 'bienvenida',
+    };
+  }
+
   return {
     id: 'welcome',
     role: 'assistant',
@@ -147,8 +158,14 @@ function welcomeMessage(returning = false): ChatMessage {
   };
 }
 
-function useKiaChat(pathname: string, contextToken?: string, companyId?: string) {
-  const [messages, setMessages] = useState<ChatMessage[]>(() => contextToken ? [] : [welcomeMessage()]);
+function useKiaChat(
+  pathname: string,
+  contextToken?: string,
+  companyId?: string,
+  adminMode = false,
+  pageData?: Record<string, string | number | boolean>,
+) {
+  const [messages, setMessages] = useState<ChatMessage[]>(() => contextToken ? [] : [welcomeMessage(false, adminMode)]);
   const [contextSummary, setContextSummary] = useState<KiaContextSummary | null>(null);
   const [contextLoading, setContextLoading] = useState(Boolean(contextToken));
   const [loading, setLoading] = useState(false);
@@ -195,17 +212,17 @@ function useKiaChat(pathname: string, contextToken?: string, companyId?: string)
   useEffect(() => {
     setContextSummary(null);
     setContextLoading(false);
-    setMessages([welcomeMessage(true)]);
+    setMessages([welcomeMessage(true, adminMode)]);
     setStaffPreview(false);
     setSessionId(undefined);
     setLoading(false);
-  }, [companyId]);
+  }, [adminMode, companyId]);
 
   useEffect(() => {
     const handleCompanyChanged = () => {
       setContextSummary(null);
       setContextLoading(false);
-      setMessages([welcomeMessage(true)]);
+      setMessages([welcomeMessage(true, adminMode)]);
       setStaffPreview(false);
       setSessionId(undefined);
       setLoading(false);
@@ -213,7 +230,7 @@ function useKiaChat(pathname: string, contextToken?: string, companyId?: string)
 
     window.addEventListener('expert:active-company-changed', handleCompanyChanged);
     return () => window.removeEventListener('expert:active-company-changed', handleCompanyChanged);
-  }, []);
+  }, [adminMode]);
 
   const send = useCallback(async (text: string) => {
     if (!text.trim() || loading || contextLoading) return;
@@ -242,6 +259,8 @@ function useKiaChat(pathname: string, contextToken?: string, companyId?: string)
           message    : text,
           sessionId,
           currentPage: pathname,
+          currentTask: adminMode ? 'admin_operator' : undefined,
+          pageData,
           contextToken,
           companyId,
           history,
@@ -279,7 +298,7 @@ function useKiaChat(pathname: string, contextToken?: string, companyId?: string)
     } finally {
       setLoading(false);
     }
-  }, [companyId, contextLoading, contextSummary, contextToken, loading, messages, pathname, sessionId, uiLocale]);
+  }, [adminMode, companyId, contextLoading, contextSummary, contextToken, loading, messages, pageData, pathname, sessionId, uiLocale]);
 
   const rate = useCallback(async (messageId: string, rating: 'positive' | 'negative') => {
     const target = messages.find((message) => message.id === messageId);
@@ -303,9 +322,9 @@ function useKiaChat(pathname: string, contextToken?: string, companyId?: string)
   }, [messages]);
 
   const reset = useCallback(() => {
-    setMessages(contextSummary ? [contextualWelcome(contextSummary)] : [welcomeMessage(true)]);
+    setMessages(contextSummary ? [contextualWelcome(contextSummary)] : [welcomeMessage(true, adminMode)]);
     setSessionId(undefined);
-  }, [contextSummary]);
+  }, [adminMode, contextSummary]);
 
   const appendAssistantMessage = useCallback((text: string, avatarState: KiaAvatarState = 'ayuda') => {
     setMessages((previous) => [...previous, {
