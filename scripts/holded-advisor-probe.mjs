@@ -1,3 +1,4 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
 const BASE = 'https://api.holded.com';
 const EXPECTED_BRANCH = 'chore/holded-advisor-probe';
 const TARGET = 'diseno global meridiano';
@@ -81,10 +82,13 @@ if (process.env.VERCEL_ENV !== 'preview' || process.env.VERCEL_GIT_COMMIT_REF !=
 
 const token = process.env.HOLDED_ADVISOR_API_TOKEN?.trim();
 if (!token) {
-  console.log('[holded-advisor-probe] ' + JSON.stringify({
+  const result = {
     configured: false,
     message: 'HOLDED_ADVISOR_API_TOKEN missing in Preview environment',
-  }));
+  };
+  console.log('[holded-advisor-probe] ' + JSON.stringify(result));
+  mkdirSync('.next/static', { recursive: true });
+  writeFileSync('.next/static/holded-advisor-probe.json', JSON.stringify(result), 'utf8');
   process.exit(0);
 }
 
@@ -97,10 +101,14 @@ const probes = await Promise.all([
   probe('/api/v2/treasuries?limit=10', token),
 ]);
 
-console.log('[holded-advisor-probe] ' + JSON.stringify({
+const result = {
   configured: true,
   anySuccessfulRead: probes.some((item) => item.ok),
   target: 'Diseño Global Meridiano',
   targetFoundAnywhere: probes.some((item) => item.containsDisenoGlobalMeridiano),
   probes,
-}));
+};
+
+console.log('[holded-advisor-probe] ' + JSON.stringify(result));
+mkdirSync('.next/static', { recursive: true });
+writeFileSync('.next/static/holded-advisor-probe.json', JSON.stringify(result), 'utf8');
