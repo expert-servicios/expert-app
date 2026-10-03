@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 const BASE = 'https://api.holded.com';
+// Redeploy marker: advisor token added to ksenia-expert Preview.
 const EXPECTED_BRANCH = 'chore/holded-advisor-probe';
 const TARGET = 'diseno global meridiano';
 
