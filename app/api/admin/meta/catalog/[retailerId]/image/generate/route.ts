@@ -331,7 +331,6 @@ function buildPremiumCardElement(input: {
                   borderRadius: 20,
                   background: 'rgba(255,253,248,0.94)',
                   border: '1px solid rgba(201,148,26,0.55)',
-                  boxShadow: '0 8px 24px rgba(13,43,89,0.10)',
                 },
                 children: [
                   {
