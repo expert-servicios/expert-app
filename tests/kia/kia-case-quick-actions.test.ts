@@ -160,7 +160,7 @@ describe('KIA quick-action integration contracts', () => {
   it('wires quick actions into the canonical dashboard endpoint', () => {
     const route = source('app/api/ai/kia/route.ts');
     expect(route).toContain('detectKiaCaseQuickAction(message)');
-    expect(route).toContain("dashboardPolicy.toolNames.includes('get_case_documents')");
+    expect(route).toContain("copilotPolicy.toolNames.includes('get_case_documents')");
     expect(route).toContain('buildKiaCaseQuickActionPresentation');
     expect(route).toContain('buildKiaCaseQuickActionSuggestions');
     expect(route).toContain('caseQuickActionPresentation?.reply ?? result.userMessage');
