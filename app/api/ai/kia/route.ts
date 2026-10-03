@@ -177,6 +177,14 @@ export async function POST(request: NextRequest) {
     : resolveKiaLocale({ latestMessage: message, preferredLanguage: profileLocale });
 
   const staffCompanyScope = Boolean(companyId && profile && isStaffRole(profile.role) && profile.status !== 'inactive');
+  const adminCopilotMode = Boolean(
+    !staffPreview
+    && profile
+    && isStaffRole(profile.role)
+    && profile.status !== 'inactive'
+    && currentPage?.startsWith('/admin'),
+  );
+  const copilotPolicyProfile = adminCopilotMode ? 'admin_copilot' as const : 'client_dashboard' as const;
 
   if (resolvedCompanyId && !staffPreview) {
     if (staffCompanyScope) {
@@ -241,9 +249,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'account_inactive', reply: kiaFriendlyError('account_inactive', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 403 });
   }
 
-  const dashboardPolicy = resolveKiaPolicyToolNames('client_dashboard', actor);
-  if (!dashboardPolicy.ok) {
-    console.warn('[KiaCopilot] client dashboard policy denied:', dashboardPolicy.reason);
+  const copilotPolicy = resolveKiaPolicyToolNames(copilotPolicyProfile, actor);
+  if (!copilotPolicy.ok) {
+    console.warn('[KiaCopilot] policy denied:', copilotPolicy.reason);
     return NextResponse.json({ error: 'policy_denied', reply: kiaFriendlyError('policy_denied', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 403 });
   }
 
@@ -328,9 +336,9 @@ export async function POST(request: NextRequest) {
 
   let result;
   try {
-    result = await runPolicyEnforcedKiaDecision('client_dashboard', actor, {
+    result = await runPolicyEnforcedKiaDecision(copilotPolicyProfile, actor, {
       taskType   : 'chat_reply',
-      channel    : 'dashboard',
+      channel    : adminCopilotMode ? 'admin' : 'dashboard',
       message,
       locale     : responseLocale,
       allowTools : true,
@@ -341,7 +349,7 @@ export async function POST(request: NextRequest) {
         clientId    : staffPreview?.clientId ?? user.id,
         companyId   : resolvedCompanyId,
         currentPage : currentPage ?? '/',
-        currentTask : currentTask ?? contextualTask,
+        currentTask : currentTask ?? contextualTask ?? (adminCopilotMode ? 'admin_operator' : undefined),
         pageData    : pageData,
         caseId      : contextualCaseId,
         serviceSlug : contextualServiceSlug,
@@ -366,14 +374,17 @@ export async function POST(request: NextRequest) {
 
   if (!result.usedFallback && result.providerResult) {
     const shadowTaskType = result.decision.taskType;
-    const allowedShadowToolNames = new Set(dashboardPolicy.toolNames);
+    const allowedShadowToolNames = new Set(copilotPolicy.toolNames);
     const shadowTools = KIA_TOOL_DEFINITIONS.filter((tool) => allowedShadowToolNames.has(tool.name));
     const shadowRequest = {
       taskType: shadowTaskType,
       systemPrompt: buildKiaSystemPrompt({
         locale: responseLocale,
-        channel: 'dashboard',
+        channel: adminCopilotMode ? 'admin' : 'dashboard',
         taskType: shadowTaskType,
+        currentPage,
+        currentTask: currentTask ?? contextualTask ?? (adminCopilotMode ? 'admin_operator' : undefined),
+        pageData,
       }),
       responseSchema: KIA_DECISION_JSON_SCHEMA,
       tools: shadowTools,
@@ -445,7 +456,7 @@ export async function POST(request: NextRequest) {
     let documentToolResult = null;
     const needsDocuments = caseQuickAction === 'documents' || caseQuickAction === 'next_step';
     if (needsDocuments && process.env.KIA_COPILOT_TOOLS_ENABLED?.toLowerCase() !== 'false'
-      && dashboardPolicy.toolNames.includes('get_case_documents')) {
+      && copilotPolicy.toolNames.includes('get_case_documents')) {
       documentToolResult = await executeKiaToolCall({
         name: 'get_case_documents',
         arguments: { caseId: quickActionCase.id, limit: 20 },
@@ -560,8 +571,12 @@ export async function POST(request: NextRequest) {
     console.warn('[KiaCopilot] session save failed:', err);
   }
 
-  const quickReplies = (result.decision.quickReplies ?? []).map((replyItem) => replyItem.title);
-  const proactiveSuggestions = caseQuickActionPresentation && caseQuickAction
+  const quickReplies = adminCopilotMode
+    ? []
+    : (result.decision.quickReplies ?? []).map((replyItem) => replyItem.title);
+  const proactiveSuggestions = adminCopilotMode
+    ? []
+    : caseQuickActionPresentation && caseQuickAction
     ? buildKiaCaseQuickActionSuggestions(caseQuickAction, responseLocale)
     : buildKiaProactiveSuggestions({
         locale: responseLocale,
@@ -582,6 +597,7 @@ export async function POST(request: NextRequest) {
     avatarState,
     artifacts,
     decisionLogId,
+    adminCopilotMode,
   });
   if (effectiveSessionId) response.headers.set('x-kia-session-id', effectiveSessionId);
   return response;
