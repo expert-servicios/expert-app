@@ -77,6 +77,12 @@ function sessionCompanyId(data: unknown): string | null {
   return typeof value === 'string' ? value : null;
 }
 
+function sessionClientId(data: unknown): string | null {
+  if (!data || typeof data !== 'object') return null;
+  const value = (data as Record<string, unknown>).client_id;
+  return typeof value === 'string' ? value : null;
+}
+
 
 export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -259,12 +265,13 @@ export async function POST(request: NextRequest) {
   }
 
   const companyScope = resolvedCompanyId ?? null;
+  const effectiveClientId = adminTargetClientId ?? staffPreview?.clientId ?? user.id;
   let actor;
   try {
     actor = await resolveKiaActorCapabilities({
       admin,
       userId: user.id,
-      clientId: adminTargetClientId ?? staffPreview?.clientId ?? user.id,
+      clientId: effectiveClientId,
       companyId: companyScope,
       featureFlags: getEnabledKiaPolicyFeatureFlags(),
     });
@@ -349,7 +356,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'session_scope_check_failed', reply: kiaFriendlyError('session_scope_check_failed', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 500 });
     }
 
-    if (!existingSession || sessionCompanyId(existingSession.data) !== companyScope) {
+    if (
+      !existingSession
+      || sessionCompanyId(existingSession.data) !== companyScope
+      || sessionClientId(existingSession.data) !== effectiveClientId
+    ) {
       effectiveSessionId = undefined;
       effectiveHistory = [];
     }
@@ -372,9 +383,9 @@ export async function POST(request: NextRequest) {
       allowTools : true,
       forceToolExecution: process.env.KIA_COPILOT_TOOLS_ENABLED?.toLowerCase() !== 'false',
       contextInput: {
-        channel     : 'dashboard',
+        channel     : adminCopilotMode ? 'admin' : 'dashboard',
         userId      : user.id,
-        clientId    : adminTargetClientId ?? staffPreview?.clientId ?? user.id,
+        clientId    : effectiveClientId,
         companyId   : resolvedCompanyId,
         currentPage : currentPage ?? '/',
         currentTask : currentTask ?? contextualTask ?? (adminCopilotMode ? 'admin_operator' : undefined),
@@ -537,7 +548,7 @@ export async function POST(request: NextRequest) {
   );
   const decisionLogId = reply !== result.decision.userMessage
     ? await recordKiaVisibleReply({ admin, decisionLogId: result.decisionLogId,
-      clientId: adminTargetClientId ?? staffPreview?.clientId ?? user.id, decision: result.decision, reply })
+      clientId: effectiveClientId, decision: result.decision, reply })
     : result.decisionLogId ?? null;
 
   try {
@@ -551,8 +562,8 @@ export async function POST(request: NextRequest) {
         caseId: contextualCaseId ?? null,
         serviceSlug: contextualServiceSlug ?? null,
         topic: contextualTask ?? currentTask ?? null,
-        originType: contextToken ? 'email' : 'dashboard',
-        channel: 'dashboard',
+        originType: contextToken ? 'email' : (adminCopilotMode ? 'admin' : 'dashboard'),
+        channel: adminCopilotMode ? 'admin' : 'dashboard',
         userMessage: message,
         assistantMessage: reply,
         intent: result.decision.intent,
@@ -573,6 +584,7 @@ export async function POST(request: NextRequest) {
         next_action : result.decision.nextAction,
         avatar_state: avatarState,
         company_id  : companyScope,
+        client_id   : effectiveClientId,
       };
 
       if (effectiveSessionId) {
@@ -585,7 +597,7 @@ export async function POST(request: NextRequest) {
         const { data: createdSession } = await admin
           .from('kia_sessions')
           .insert({
-            channel  : 'dashboard',
+            channel  : adminCopilotMode ? 'admin' : 'dashboard',
             user_id  : user.id,
             phone    : null,
             data     : sessionData,
