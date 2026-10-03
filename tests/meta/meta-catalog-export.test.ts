@@ -23,13 +23,13 @@ describe('buildMetaCatalogDrafts', () => {
   it('marks a fully populated, ready service as marketingReady with no warnings', async () => {
     fromMock.mockImplementation((table: string) => {
       if (table === 'catalog_services') {
-        return { select: () => queryResult([{ id: 's1', slug: 'demo-service', category_key: 'declaraciones-impuestos', status: 'active' }]) };
+        return { select: () => queryResult([{ id: 's1', slug: 'certificado-digital-persona-fisica', category_key: 'certificado-digital', status: 'active' }]) };
       }
       if (table === 'service_contents') {
-        return { select: () => queryResult([{ id: 'c1', service_id: 's1', locale: 'es', name: 'Demo', short_description: 'short', description: 'long', landing_path: '/servicios/declaraciones-impuestos/demo-service', image_url: '/catalog/servicios/demo.png', status: 'active' }]) };
+        return { select: () => queryResult([{ id: 'c1', service_id: 's1', locale: 'es', name: 'Certificado PF', short_description: 'short', description: 'long', landing_path: '/servicios/certificado-digital/certificado-digital-persona-fisica', image_url: '/catalog/servicios/certificado-pf.png', status: 'active' }]) };
       }
       if (table === 'commercial_offers') {
-        return { select: () => queryResult([{ id: 'o1', service_id: 's1', code: 'default', price_mode: 'fixed', amount_cents: 15000, status: 'active' }]) };
+        return { select: () => queryResult([{ id: 'o1', service_id: 's1', code: 'default', price_mode: 'fixed', amount_cents: 15000, vat_treatment: 'plus_vat', status: 'active' }]) };
       }
       if (table === 'service_channel_configs') {
         return { select: () => queryResult([{ service_id: 's1', enabled: true, publish_status: 'ready' }]) };
@@ -44,11 +44,12 @@ describe('buildMetaCatalogDrafts', () => {
     expect(result.readyCount).toBe(1);
     expect(result.blockedCount).toBe(0);
     expect(result.drafts[0]).toMatchObject({
-      retailerId: 'demo-service',
-      name: 'Demo',
-      landingUrl: 'https://expertconsulting.es/servicios/declaraciones-impuestos/demo-service',
-      imageUrl: 'https://expertconsulting.es/catalog/servicios/demo.png',
-      price: { amount: 150, currency: 'EUR', taxIncluded: false },
+      retailerId: 'certificado-digital-persona-fisica',
+      offerId: 'o1',
+      name: 'Certificado PF',
+      landingUrl: 'https://expertconsulting.es/servicios/certificado-digital/certificado-digital-persona-fisica',
+      imageUrl: 'https://expertconsulting.es/catalog/servicios/certificado-pf.png',
+      price: { amount: 181.5, currency: 'EUR', taxIncluded: true, vatTreatment: 'plus_vat' },
       availability: 'in stock',
       marketingReady: true,
       warnings: [],
@@ -138,7 +139,7 @@ describe('buildMetaCatalogDrafts', () => {
         return { select: () => queryResult([{ id: 'c4', service_id: 's4', locale: 'es', name: 'Blocked service', short_description: 'short', description: 'long', landing_path: '/servicios/notaria-propiedades/blocked-service', image_url: null, status: 'active' }]) };
       }
       if (table === 'commercial_offers') {
-        return { select: () => queryResult([{ id: 'o4', service_id: 's4', code: 'default', price_mode: 'from', amount_cents: 5000, status: 'active' }]) };
+        return { select: () => queryResult([{ id: 'o4', service_id: 's4', code: 'default', price_mode: 'from', amount_cents: 5000, vat_treatment: 'vat_included', status: 'active' }]) };
       }
       if (table === 'service_channel_configs') {
         return { select: () => queryResult([]) };
@@ -154,7 +155,7 @@ describe('buildMetaCatalogDrafts', () => {
     expect(result.blockedCount).toBe(1);
     const draft = result.drafts[0];
     expect(draft.marketingReady).toBe(false);
-    expect(draft.price).toEqual({ amount: 50, currency: 'EUR', taxIncluded: false });
+    expect(draft.price).toEqual({ amount: 50, currency: 'EUR', taxIncluded: true, vatTreatment: 'vat_included' });
     expect(draft.warnings).toEqual(expect.arrayContaining(['missing_image', 'meta_channel_not_ready']));
   });
 
