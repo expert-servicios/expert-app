@@ -205,7 +205,6 @@ export async function listHoldedDocuments(
       : await v1.listPurchaseInvoices({ page, dateFrom, dateTo });
     if (docs.length === 0) break;
     items.push(...docs.map(v1DocumentToReadModel));
-    if (docs.length < 100) break;
   }
   return items.slice(0, maxItems);
 }
@@ -223,12 +222,18 @@ export async function listHoldedContacts(
 
   const v1 = gateway.v1;
   if (!v1) throw new HoldedIntegrationError('Holded v1 client is unavailable.');
-  const contacts = await v1.listContacts({ page: 1 });
   const query = params.search?.trim().toLocaleLowerCase('es') ?? '';
-  return contacts
-    .map(v1ContactToReadModel)
-    .filter((contact) => !query || contact.name.toLocaleLowerCase('es').includes(query))
-    .slice(0, maxItems);
+  const matches: HoldedReadContact[] = [];
+  for (let page = 1; page <= 20 && matches.length < maxItems; page++) {
+    const contacts = await v1.listContacts({ page });
+    if (contacts.length === 0) break;
+    matches.push(
+      ...contacts
+        .map(v1ContactToReadModel)
+        .filter((contact) => !query || contact.name.toLocaleLowerCase('es').includes(query)),
+    );
+  }
+  return matches.slice(0, maxItems);
 }
 
 export async function listHoldedBankAccounts(
