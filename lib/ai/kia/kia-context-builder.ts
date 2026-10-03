@@ -17,6 +17,7 @@ export interface KiaContextInput {
   email?: string;
   userId?: string;
   clientId?: string;
+  targetClientId?: string;
   leadId?: string;
   caseId?: string;
   companyId?: string;
@@ -39,6 +40,9 @@ export interface KiaContext {
     role: string | null;
     tenantId: string | null;
     isStaff: boolean;
+  };
+  target?: {
+    clientId: string | null;
   };
   contact: {
     status: 'lead' | 'client' | 'unknown';
@@ -105,6 +109,8 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
   const phone = input.phone ?? null;
   const contact = phone ? await resolveKiaContactContext(admin, phone) : null;
   const clientId = input.clientId ?? contact?.clientId ?? input.userId ?? null;
+  const targetClientId = input.targetClientId
+    ?? (input.channel === 'admin' ? null : clientId);
   const leadId = input.leadId ?? contact?.leadId ?? null;
   const actorProfile = input.userId
     ? await admin.from('profiles').select('role,tenant_id,status').eq('id', input.userId).maybeSingle()
@@ -207,6 +213,9 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
       role: actorRole,
       tenantId: actorTenantId,
       isStaff: actorIsStaff,
+    },
+    target: {
+      clientId: targetClientId,
     },
     contact: {
       status: contact?.status ?? (clientId ? 'client' : leadId ? 'lead' : 'unknown'),
