@@ -116,6 +116,52 @@ export interface HoldedV2SalaryRecord {
   [key: string]: unknown;
 }
 
+
+export interface HoldedV2Invoice extends Record<string, unknown> {
+  id: string;
+  contact_id?: string | null;
+  contact_name?: string | null;
+  date?: string | null;
+  due_date?: string | null;
+  total?: string | number | null;
+  currency?: string | null;
+  status?: string | number | null;
+  payments_total?: string | number | null;
+  payments_pending?: string | number | null;
+}
+
+export interface HoldedV2Contact extends Record<string, unknown> {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  vatnumber?: string | null;
+}
+
+export interface HoldedV2AccountingAccount extends Record<string, unknown> {
+  id: string;
+  name?: string | null;
+  code?: string | null;
+  account_num?: string | null;
+}
+
+export interface HoldedV2TreasuryAccount extends Record<string, unknown> {
+  id: string;
+  name?: string | null;
+  iban?: string | null;
+  balance?: string | number | null;
+  currency?: string | null;
+}
+
+export interface HoldedV2Usage extends Record<string, unknown> {
+  type?: string | null;
+  period?: string | null;
+  usage?: number | null;
+  limit?: number | null;
+  count?: number | null;
+  next_plan?: string | null;
+  next_limit?: number | null;
+}
+
 export interface HoldedV2Client {
   listEmployees(params?: {
     search?: string;
@@ -144,6 +190,11 @@ export interface HoldedV2Client {
   }): Promise<HoldedV2Page<HoldedV2SalaryRecord>>;
   getSalaryRecord(salaryRecordId: string): Promise<HoldedV2SalaryRecord>;
   getSalaryRecordPdf(salaryRecordId: string): Promise<ArrayBuffer>;
+  getUsage(): Promise<HoldedV2Usage>;
+  listInvoices(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Invoice>>;
+  listContacts(params?: { search?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Contact>>;
+  listAccountingAccounts(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2AccountingAccount>>;
+  listTreasuryAccounts(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2TreasuryAccount>>;
 }
 
 function clampPageSize(limit: number | undefined): number {
@@ -323,6 +374,43 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
     async getSalaryRecordPdf(salaryRecordId) {
       const id = safePathSegment(salaryRecordId, 'salaryRecordId');
       return holdedV2FetchPdf(key, `${HOLDED_V2_BASE}/salary-records/${id}/pdf`);
+    },
+
+    async getUsage() {
+      return holdedV2FetchJson<HoldedV2Usage>(key, `${HOLDED_V2_BASE}/usage`);
+    },
+
+    async listInvoices(params = {}) {
+      const url = buildPaginatedUrl('/invoices', {
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2Invoice>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listContacts(params = {}) {
+      const url = buildPaginatedUrl('/contacts', {
+        search: params.search,
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2Contact>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listAccountingAccounts(params = {}) {
+      const url = buildPaginatedUrl('/accounting-accounts', {
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2AccountingAccount>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listTreasuryAccounts(params = {}) {
+      const url = buildPaginatedUrl('/treasury/accounts', {
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2TreasuryAccount>(await holdedV2FetchJson<unknown>(key, url));
     },
   };
 }
