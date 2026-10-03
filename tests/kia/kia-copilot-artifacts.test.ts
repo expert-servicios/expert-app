@@ -193,7 +193,7 @@ describe('canonical KIA widget artifact integration', () => {
   });
 
   it('uses the canonical KIA chat inside the Admin right panel without a second floating Admin widget', () => {
-    expect(adminRightPanel).toContain("<KiaCopilotWidget embedded />");
+    expect(adminRightPanel).toContain("<KiaCopilotWidget embedded active={open && tab === 'kia'} />");
     expect(adminRightPanel).toContain("type PanelTab = 'kia' | 'notificaciones'");
     expect(adminRightPanel).not.toContain("CorreoInbox");
     expect(adminRightPanel).toContain('href="/admin/correo"');
