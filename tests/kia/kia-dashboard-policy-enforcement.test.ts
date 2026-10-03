@@ -7,8 +7,8 @@ const route = readFileSync(resolve(process.cwd(), 'app/api/ai/kia/route.ts'), 'u
 describe('KIA dashboard policy enforcement wiring', () => {
   it('resolves the actor and client dashboard policy before running KIA', () => {
     expect(route).toContain('resolveKiaActorCapabilities({');
-    expect(route).toContain("resolveKiaPolicyToolNames('client_dashboard', actor)");
-    expect(route).toContain("runPolicyEnforcedKiaDecision('client_dashboard', actor");
+    expect(route).toContain("resolveKiaPolicyToolNames(copilotPolicyProfile, actor)");
+    expect(route).toContain("runPolicyEnforcedKiaDecision(copilotPolicyProfile, actor");
   });
 
   it('removes the legacy static dashboard tool allowlist', () => {
@@ -17,7 +17,7 @@ describe('KIA dashboard policy enforcement wiring', () => {
   });
 
   it('keeps shadow on the same policy-resolved tool surface as primary', () => {
-    expect(route).toContain('new Set(dashboardPolicy.toolNames)');
+    expect(route).toContain('new Set(copilotPolicy.toolNames)');
     expect(route).toContain('allowedShadowToolNames.has(tool.name)');
   });
 });
