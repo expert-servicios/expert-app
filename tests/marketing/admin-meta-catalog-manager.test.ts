@@ -40,7 +40,7 @@ describe('Admin Meta Catalog Manager', () => {
   it('keeps the primary edit action visible next to every service name', () => {
     const page = read('app/(protected)/admin/marketing-hub/page.tsx');
 
-    expect(page).toContain('Editar ficha');
+    expect(page).toContain('<Pencil className="h-3 w-3" /> Editar');
     expect(page).toContain('Editar contenido, idiomas e imagen');
     expect(page).toContain('setEditingRetailerId(draft.retailerId)');
   });
