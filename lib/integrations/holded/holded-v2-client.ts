@@ -130,6 +130,19 @@ export interface HoldedV2Invoice extends Record<string, unknown> {
   payments_pending?: string | number | null;
 }
 
+export interface HoldedV2Purchase extends Record<string, unknown> {
+  id: string;
+  contact_id?: string | null;
+  contact_name?: string | null;
+  date?: string | null;
+  due_date?: string | null;
+  total?: string | number | null;
+  currency?: string | null;
+  status?: string | number | null;
+  payments_total?: string | number | null;
+  payments_pending?: string | number | null;
+}
+
 export interface HoldedV2Contact extends Record<string, unknown> {
   id: string;
   name?: string | null;
@@ -150,6 +163,28 @@ export interface HoldedV2TreasuryAccount extends Record<string, unknown> {
   iban?: string | null;
   balance?: string | number | null;
   currency?: string | null;
+}
+
+export interface HoldedV2Tax extends Record<string, unknown> {
+  id?: string;
+  key?: string;
+  name?: string | null;
+  value?: string | number | null;
+}
+
+export interface HoldedV2LedgerEntry extends Record<string, unknown> {
+  id: string;
+  date?: string | null;
+  description?: string | null;
+}
+
+export interface HoldedV2Payment extends Record<string, unknown> {
+  id: string;
+  date?: string | null;
+  amount?: string | number | null;
+  document_id?: string | null;
+  document_type?: string | null;
+  banking_account_id?: string | null;
 }
 
 export interface HoldedV2Usage extends Record<string, unknown> {
@@ -192,9 +227,13 @@ export interface HoldedV2Client {
   getSalaryRecordPdf(salaryRecordId: string): Promise<ArrayBuffer>;
   getUsage(): Promise<HoldedV2Usage>;
   listInvoices(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Invoice>>;
+  listPurchases(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Purchase>>;
   listContacts(params?: { search?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Contact>>;
   listAccountingAccounts(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2AccountingAccount>>;
   listTreasuryAccounts(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2TreasuryAccount>>;
+  listTaxes(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Tax>>;
+  listLedgerEntries(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2LedgerEntry>>;
+  listPayments(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Payment>>;
 }
 
 function clampPageSize(limit: number | undefined): number {
@@ -388,6 +427,14 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
       return normalizePage<HoldedV2Invoice>(await holdedV2FetchJson<unknown>(key, url));
     },
 
+    async listPurchases(params = {}) {
+      const url = buildPaginatedUrl('/purchases', {
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2Purchase>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
     async listContacts(params = {}) {
       const url = buildPaginatedUrl('/contacts', {
         search: params.search,
@@ -411,6 +458,30 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
         cursor: params.cursor,
       });
       return normalizePage<HoldedV2TreasuryAccount>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listTaxes(params = {}) {
+      const url = buildPaginatedUrl('/taxes', {
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2Tax>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listLedgerEntries(params = {}) {
+      const url = buildPaginatedUrl('/ledger-entries', {
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2LedgerEntry>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listPayments(params = {}) {
+      const url = buildPaginatedUrl('/payments', {
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2Payment>(await holdedV2FetchJson<unknown>(key, url));
     },
   };
 }
