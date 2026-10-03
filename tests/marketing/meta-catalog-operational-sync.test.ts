@@ -51,8 +51,10 @@ describe('operational Meta catalog sync', () => {
     const page = read('app/(protected)/admin/marketing-hub/page.tsx');
 
     expect(page).toContain('Preparar cambios');
-    expect(page).toContain('Preparar (');
-    expect(page).toContain('Sincronizar (');
+    expect(page).toContain('Preparar ES (');
+    expect(page).toContain('Sincronizar ES (');
+    expect(page).toContain('Preparar RU');
+    expect(page).toContain('Sincronizar RU');
     expect(page).toContain('window.confirm');
     expect(page).toContain('Bloqueado');
   });
