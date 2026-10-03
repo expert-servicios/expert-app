@@ -81,6 +81,8 @@ type MetaLocaleState = {
   metaItemId: string | null;
   lastSyncedAt: string | null;
   lastErrorCode: string | null;
+  lastPayloadHash: string | null;
+  isStale: boolean;
 } | null;
 
 type MetaCatalogDraft = {
@@ -372,11 +374,7 @@ export default function MarketingHubPage() {
         || status == null
         || (
           status === 'synced'
-          && Boolean(
-            draft.locales.es.updatedAt
-            && draft.meta.es?.lastSyncedAt
-            && new Date(draft.locales.es.updatedAt).getTime() > new Date(draft.meta.es.lastSyncedAt).getTime()
-          )
+          && draft.meta.es?.isStale === true
         );
     })
     .map((draft) => draft.retailerId);
@@ -543,12 +541,7 @@ export default function MarketingHubPage() {
                 </thead>
                 <tbody className="divide-y divide-[#eee6d8]">
                   {filteredDrafts.map((draft) => {
-                    const esStale = Boolean(
-                      draft.meta.es?.syncStatus === 'synced'
-                      && draft.locales.es.updatedAt
-                      && draft.meta.es.lastSyncedAt
-                      && new Date(draft.locales.es.updatedAt).getTime() > new Date(draft.meta.es.lastSyncedAt).getTime(),
-                    );
+                    const esStale = draft.meta.es?.isStale === true;
                     const manifest = manifestBySlug.get(draft.retailerId);
                     const productionReady = manifest?.stage === 'production_ready';
                     const metaStatus = draft.meta.es?.syncStatus ?? null;
