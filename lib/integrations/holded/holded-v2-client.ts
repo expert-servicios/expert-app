@@ -234,7 +234,7 @@ export interface HoldedV2Client {
   listAccountingAccounts(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2AccountingAccount>>;
   listTreasuryAccounts(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2TreasuryAccount>>;
   listTaxes(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Tax>>;
-  listLedgerEntries(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2LedgerEntry>>;
+  listLedgerEntries(params?: { startDate?: string; endDate?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2LedgerEntry>>;
   listPayments(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Payment>>;
 }
 
@@ -471,7 +471,12 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
     },
 
     async listLedgerEntries(params = {}) {
+      const now = new Date();
+      const defaultStart = `${now.getUTCFullYear()}-01-01`;
+      const defaultEnd = now.toISOString().slice(0, 10);
       const url = buildPaginatedUrl('/ledger-entries', {
+        start_date: params.startDate ?? defaultStart,
+        end_date: params.endDate ?? defaultEnd,
         limit: params.limit,
         cursor: params.cursor,
       });
