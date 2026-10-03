@@ -189,3 +189,22 @@ Holded es el ERP / libro operativo.
 EXPERT App es la capa de contexto, control, alertas y workflow.
 
 KIA Accounting es el controller inteligente que detecta lo que falta, propone la siguiente accion y ejecuta solo aquello que la politica permita.
+
+
+## Fase 2 implementada — 03/10/2026
+
+Primera superficie operativa segura:
+
+- `get_accounts_receivable` — R1 read;
+- `get_accounts_payable` — R1 read;
+- `get_overdue_invoices` — R1 read;
+- `get_unreconciled_transactions` — R1 read, resultado derivado y marcado como tal;
+- `draft_payment_reminder` — R1 draft, requiere aprobación;
+- `draft_credit_note` — R2 draft, requiere aprobación.
+
+Se introducen capacidades separadas:
+
+- `accounting_read`;
+- `accounting_write`.
+
+Las herramientas de tipo `accounting_write` quedan excluidas cuando `autonomousOnly=true`. Ninguna herramienta de esta fase ejecuta pagos, envía reclamaciones, crea rectificativas en Holded, borra documentos ni altera asientos.
