@@ -8,6 +8,7 @@ import {
   Eye,
   ImageIcon,
   Languages,
+  Pencil,
   RefreshCw,
   Search,
   Settings2,
@@ -16,6 +17,7 @@ import {
   UploadCloud,
   X,
 } from 'lucide-react';
+import { MetaCatalogContentEditor } from '@/components/admin/MetaCatalogContentEditor';
 
 type StatusMap = Record<string, number>;
 type Panel = 'catalog' | 'readiness' | 'settings';
@@ -70,6 +72,7 @@ type LocaleContent = {
   exists: boolean;
   status: string | null;
   imageUrl: string | null;
+  updatedAt: string | null;
 };
 
 type MetaLocaleState = {
@@ -138,9 +141,12 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
-function MetaStatusBadge({ state, marketingReady }: { state: MetaLocaleState; marketingReady: boolean }) {
+function MetaStatusBadge({ state, marketingReady, stale }: { state: MetaLocaleState; marketingReady: boolean; stale: boolean }) {
   const status = state?.syncStatus;
 
+  if (status === 'synced' && stale) {
+    return <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[11px] font-bold text-amber-900"><AlertTriangle className="h-3.5 w-3.5" /> Cambios pendientes</span>;
+  }
   if (status === 'synced') {
     return <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-[11px] font-bold text-green-800"><CheckCircle2 className="h-3.5 w-3.5" /> Sincronizado</span>;
   }
@@ -204,6 +210,7 @@ export default function MarketingHubPage() {
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<CatalogFilter>('all');
   const [imagePreview, setImagePreview] = useState<{ src: string; alt: string } | null>(null);
+  const [editingRetailerId, setEditingRetailerId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -438,10 +445,19 @@ export default function MarketingHubPage() {
                     <th className="w-28 px-3 py-2">Precio</th>
                     <th className="w-36 px-3 py-2">Meta ES</th>
                     <th className="w-44 px-3 py-2">ID / última sync</th>
+                    <th className="w-20 px-3 py-2">Acción</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#eee6d8]">
-                  {filteredDrafts.map((draft) => (
+                  {filteredDrafts.map((draft) => {
+                    const esStale = Boolean(
+                      draft.meta.es?.syncStatus === 'synced'
+                      && draft.locales.es.updatedAt
+                      && draft.meta.es.lastSyncedAt
+                      && new Date(draft.locales.es.updatedAt).getTime() > new Date(draft.meta.es.lastSyncedAt).getTime(),
+                    );
+
+                    return (
                     <tr key={draft.retailerId} className="hover:bg-[#fcfaf6]">
                       <td className="px-3 py-2">
                         {draft.imageUrl ? (
@@ -482,7 +498,7 @@ export default function MarketingHubPage() {
                         {draft.price ? formatPrice(draft.price.amount, draft.price.currency) : '—'}
                       </td>
                       <td className="px-3 py-2">
-                        <MetaStatusBadge state={draft.meta.es} marketingReady={draft.marketingReady} />
+                        <MetaStatusBadge state={draft.meta.es} marketingReady={draft.marketingReady} stale={esStale} />
                       </td>
                       <td className="px-3 py-2">
                         <p className="truncate font-mono text-[10px] text-[#374151]" title={draft.meta.es?.metaItemId ?? ''}>
@@ -492,8 +508,19 @@ export default function MarketingHubPage() {
                           {formatDate(draft.meta.es?.lastSyncedAt ?? null)}
                         </p>
                       </td>
+                      <td className="px-3 py-2">
+                        <button
+                          type="button"
+                          onClick={() => setEditingRetailerId(draft.retailerId)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-[#d8cbb5] bg-white px-2 py-1.5 text-[11px] font-bold text-[#374151] hover:border-[#c88b25]"
+                          title="Editar ES / RU"
+                        >
+                          <Pencil className="h-3.5 w-3.5" /> Editar
+                        </button>
+                      </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
 
@@ -586,6 +613,12 @@ export default function MarketingHubPage() {
           </div>
         ) : null}
       </div>
+
+      <MetaCatalogContentEditor
+        retailerId={editingRetailerId}
+        onClose={() => setEditingRetailerId(null)}
+        onSaved={load}
+      />
 
       {imagePreview ? (
         <div
