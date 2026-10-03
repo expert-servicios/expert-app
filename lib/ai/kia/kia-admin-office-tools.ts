@@ -27,7 +27,7 @@ function fail(toolName: string, error: string): KiaToolResult {
 }
 
 function canUseGlobalOfficeScope(context: KiaContext): boolean {
-  return context.actor.role === ROLES.ADMIN || context.actor.role === ROLES.OWNER;
+  return context.actor?.role === ROLES.ADMIN || context.actor?.role === ROLES.OWNER;
 }
 
 function hasScopedTarget(context: KiaContext): boolean {
@@ -57,7 +57,7 @@ async function scopedCaseIds(admin: AdminClient, context: KiaContext): Promise<s
 }
 
 function requireOfficeScope(toolName: string, context: KiaContext): KiaToolResult | null {
-  if (!context.actor.isStaff) return fail(toolName, 'La herramienta Office solo está disponible para personal interno.');
+  if (!context.actor?.isStaff) return fail(toolName, 'La herramienta Office solo está disponible para personal interno.');
   if (hasScopedTarget(context) || canUseGlobalOfficeScope(context)) return null;
   return fail(
     toolName,
