@@ -89,7 +89,7 @@ La usuaria puede gestionar todos los activos visuales desde Admin.
 ### Criterio de hecho
 No hace falta intervención de desarrollo para mantener el catálogo Meta.
 
-## Fase 5 — Automatización editorial
+## Fase 5 — Automatización editorial 🚧 en curso
 
 ### Entregables
 - Borrador ES asistido por IA.
@@ -98,6 +98,18 @@ No hace falta intervención de desarrollo para mantener el catálogo Meta.
 - Generación/variantes de creatividades.
 - Checklist automático.
 - Alertas de servicios listos no sincronizados.
+
+### Generación visual premium desde Admin
+
+Estado 03/10/2026: implementación en curso del generador híbrido EXPERT:
+- escena 3D premium mediante modelo de imagen;
+- logo EXPERT real y copy exacto superpuestos server-side;
+- presets según las categorías canónicas de la web;
+- ES/RU;
+- preview sin guardado automático;
+- guardado en Supabase Storage solo como activo generado hasta aprobación;
+- presupuesto OpenAI y telemetría de coste integrados;
+- script determinista anterior conservado únicamente como fallback offline.
 
 ## Fase 6 — Catálogo RU inicial 🚧 en curso
 
