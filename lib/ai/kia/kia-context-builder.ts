@@ -34,7 +34,7 @@ export interface KiaContextInput {
 
 export interface KiaContext {
   latestMessage: string | null;
-  actor: {
+  actor?: {
     userId: string | null;
     role: string | null;
     tenantId: string | null;
