@@ -52,8 +52,8 @@ describe('KIA Admin Office read layer', () => {
     expect(office).toContain("from('appointments')");
     expect(office).toContain("from('internal_tasks')");
     expect(office).toContain('context.company?.id');
-    expect(office).toContain('context.contact.clientId');
-    expect(office).toContain('canUseGlobalOfficeScope(context)');
+    expect(office).toContain('context.target?.clientId');
+    expect(office).toContain('canUseOffice(context)');
     expect(office).not.toContain('sendEmail');
     expect(office).not.toContain('createEvent');
     expect(office).not.toContain('update(');
@@ -62,7 +62,7 @@ describe('KIA Admin Office read layer', () => {
 
   it('reserves Office data access to Admin/Owner', () => {
     const office = source('lib/ai/kia/kia-admin-office-tools.ts');
-    expect(office).toContain('context.actor.role === ROLES.ADMIN || context.actor.role === ROLES.OWNER');
+    expect(office).toContain('context.actor?.role === ROLES.ADMIN || context.actor?.role === ROLES.OWNER');
     expect(office).toContain('La capa Office interna está reservada a roles Admin/Owner');
   });
 
@@ -73,6 +73,42 @@ describe('KIA Admin Office read layer', () => {
     expect(context).toContain('role: actorRole');
     expect(context).toContain('tenantId: actorTenantId');
     expect(context).toContain('isStaff: actorIsStaff');
+    expect(context).toContain('targetClientId');
+    expect(context).toContain("input.channel === 'admin' ? null : clientId");
+  });
+
+  it('uses canonical Spanish operational states and Madrid task dates', () => {
+    const office = source('lib/ai/kia/kia-admin-office-tools.ts');
+    expect(office).toContain('"completada","cancelada"');
+    expect(office).toContain('"cancelled","canceled","cancelada","rescheduled","reprogramada"');
+    expect(office).toContain("['critica', 'urgent']");
+    expect(office).toContain("timeZone: 'Europe/Madrid'");
+  });
+
+  it('includes authorized email fallbacks for unlinked inbox and legacy appointments', () => {
+    const office = source('lib/ai/kia/kia-admin-office-tools.ts');
+    expect(office).toContain('from_email.in.');
+    expect(office).toContain('email.in.');
+    expect(office).toContain("from('profile_companies')");
+  });
+
+  it('returns exact section counts plus truncation metadata', () => {
+    const office = source('lib/ai/kia/kia-admin-office-tools.ts');
+    expect(office).toContain("{ count: 'exact' }");
+    expect(office).toContain('truncated: total > items.length');
+    expect(office).toContain('unreadEmail: email.total');
+    expect(office).toContain('upcomingAppointments: agenda.total');
+    expect(office).toContain('pendingTasks: tasks.total');
+  });
+
+  it('propagates authenticated actor ids from direct Admin compose routes', () => {
+    const compose = source('app/api/admin/whatsapp/ai-compose/route.ts');
+    const stream = source('app/api/admin/whatsapp/ai-compose/stream/route.ts');
+    for (const route of [compose, stream]) {
+      expect(route).toContain('{ admin, actorId: user.id }');
+      expect(route).toContain('userId: actorId');
+      expect(route).toContain('targetClientId: contactCtx.clientId ?? clientId ?? undefined');
+    }
   });
 
   it('teaches Admin Copilot to use the attention queue for operational review', () => {
