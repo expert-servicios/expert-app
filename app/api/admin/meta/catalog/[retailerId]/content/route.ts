@@ -34,6 +34,23 @@ async function requireAdmin(request: NextRequest) {
   return user.id;
 }
 
+const META_ASSET_BUCKET = 'user-files';
+const META_ASSET_PUBLIC_MARKER = '/storage/v1/object/public/user-files/';
+
+function metaAssetStoragePath(publicUrl: string | null | undefined): string | null {
+  if (!publicUrl) return null;
+  try {
+    const url = new URL(publicUrl);
+    const markerIndex = url.pathname.indexOf(META_ASSET_PUBLIC_MARKER);
+    if (markerIndex < 0) return null;
+    const encodedPath = url.pathname.slice(markerIndex + META_ASSET_PUBLIC_MARKER.length);
+    const path = decodeURIComponent(encodedPath);
+    return path.startsWith('meta-catalog/') ? path : null;
+  } catch {
+    return null;
+  }
+}
+
 async function getService(retailerId: string) {
   const admin = getSupabaseAdmin();
   const { data, error } = await admin
@@ -98,6 +115,13 @@ export async function PATCH(
   const admin = getSupabaseAdmin();
   const now = new Date().toISOString();
 
+  const { data: previousContent } = await admin
+    .from('service_contents')
+    .select('image_url')
+    .eq('service_id', service.id)
+    .eq('locale', body.locale)
+    .maybeSingle();
+
   const { data, error } = await admin
     .from('service_contents')
     .upsert({
@@ -120,6 +144,21 @@ export async function PATCH(
 
   if (error) {
     return NextResponse.json({ error: `No se pudo guardar el contenido: ${error.message}` }, { status: 500 });
+  }
+
+  const previousImageUrl = previousContent?.image_url ?? null;
+  if (previousImageUrl && previousImageUrl !== body.imageUrl) {
+    const previousPath = metaAssetStoragePath(previousImageUrl);
+    if (previousPath) {
+      const { count: remainingReferences } = await admin
+        .from('service_contents')
+        .select('id', { count: 'exact', head: true })
+        .eq('image_url', previousImageUrl);
+
+      if ((remainingReferences ?? 0) === 0) {
+        await admin.storage.from(META_ASSET_BUCKET).remove([previousPath]).catch(() => null);
+      }
+    }
   }
 
   return NextResponse.json({
