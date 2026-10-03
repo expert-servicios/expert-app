@@ -172,6 +172,34 @@ export async function POST(request: NextRequest) {
     && profile.status !== 'inactive'
     && currentPage?.startsWith('/admin'),
   );
+  const adminClientPageMatch = adminCopilotMode
+    ? /^\/admin\/clientes\/([0-9a-f-]{36})(?:\/|$)/i.exec(currentPage ?? '')
+    : null;
+  const adminTargetClientId = adminClientPageMatch?.[1] ?? undefined;
+
+  if (adminTargetClientId) {
+    const { data: targetProfile, error: targetProfileError } = await admin
+      .from('profiles')
+      .select('id,status')
+      .eq('id', adminTargetClientId)
+      .maybeSingle();
+    if (targetProfileError || !targetProfile) {
+      return NextResponse.json({ error: 'client_context_invalid', reply: kiaFriendlyError('client_context_invalid', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 404 });
+    }
+  }
+
+  if (adminTargetClientId && companyId) {
+    const { data: targetMembership, error: targetMembershipError } = await admin
+      .from('profile_companies')
+      .select('company_id')
+      .eq('profile_id', adminTargetClientId)
+      .eq('company_id', companyId)
+      .maybeSingle();
+    if (targetMembershipError || !targetMembership) {
+      return NextResponse.json({ error: 'company_forbidden', reply: kiaFriendlyError('company_forbidden', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 403 });
+    }
+  }
+
   const resolvedCompanyId = staffPreview
     ? (staffPreview.companyId ?? undefined)
     : (companyId ?? contextualCompanyId ?? (adminCopilotMode ? undefined : profile?.active_company_id ?? undefined));
@@ -236,7 +264,7 @@ export async function POST(request: NextRequest) {
     actor = await resolveKiaActorCapabilities({
       admin,
       userId: user.id,
-      clientId: staffPreview?.clientId ?? user.id,
+      clientId: adminTargetClientId ?? staffPreview?.clientId ?? user.id,
       companyId: companyScope,
       featureFlags: getEnabledKiaPolicyFeatureFlags(),
     });
@@ -346,7 +374,7 @@ export async function POST(request: NextRequest) {
       contextInput: {
         channel     : 'dashboard',
         userId      : user.id,
-        clientId    : staffPreview?.clientId ?? user.id,
+        clientId    : adminTargetClientId ?? staffPreview?.clientId ?? user.id,
         companyId   : resolvedCompanyId,
         currentPage : currentPage ?? '/',
         currentTask : currentTask ?? contextualTask ?? (adminCopilotMode ? 'admin_operator' : undefined),
@@ -356,7 +384,7 @@ export async function POST(request: NextRequest) {
         latestMessage: message,
         syntheticRecentMessages,
         originEmail: contextualOriginEmail,
-        allowStaffCompanyScope: staffCompanyScope,
+        allowStaffCompanyScope: staffCompanyScope && !adminTargetClientId,
       },
     });
   } catch (err) {
@@ -509,7 +537,7 @@ export async function POST(request: NextRequest) {
   );
   const decisionLogId = reply !== result.decision.userMessage
     ? await recordKiaVisibleReply({ admin, decisionLogId: result.decisionLogId,
-      clientId: staffPreview?.clientId ?? user.id, decision: result.decision, reply })
+      clientId: adminTargetClientId ?? staffPreview?.clientId ?? user.id, decision: result.decision, reply })
     : result.decisionLogId ?? null;
 
   try {
