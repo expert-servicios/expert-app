@@ -52,7 +52,7 @@ export type MetaCatalogDraftResult = {
   blockedCount: number;
 };
 
-function projectConsumerPrice(amountCents: number, vatTreatment: MetaCatalogVatTreatment) {
+export function projectMetaConsumerPrice(amountCents: number, vatTreatment: MetaCatalogVatTreatment) {
   if (vatTreatment === 'plus_vat') {
     return {
       amount: Math.round(amountCents * (1 + GENERAL_VAT_RATE)) / 100,
@@ -164,7 +164,7 @@ function buildDraft(
   if (!channel || !channel.enabled || channel.publish_status !== 'ready') warnings.push('meta_channel_not_ready');
 
   const price = offer.amount_cents != null
-    ? projectConsumerPrice(offer.amount_cents, offer.vat_treatment)
+    ? projectMetaConsumerPrice(offer.amount_cents, offer.vat_treatment)
     : null;
 
   if (offer.amount_cents != null && !price) warnings.push('consumer_price_unavailable');
