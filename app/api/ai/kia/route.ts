@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
       .eq('id', adminTargetClientId)
       .maybeSingle();
     if (targetProfileError || !targetProfile) {
-      return NextResponse.json({ error: 'client_context_invalid', reply: kiaFriendlyError('client_context_invalid', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 404 });
+      return NextResponse.json({ error: 'client_context_invalid', reply: kiaFriendlyError('client_context_invalid', 'es'), avatarState: 'aviso', artifacts: [] }, { status: 404 });
     }
   }
 
@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
       .eq('company_id', companyId)
       .maybeSingle();
     if (targetMembershipError || !targetMembership) {
-      return NextResponse.json({ error: 'company_forbidden', reply: kiaFriendlyError('company_forbidden', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 403 });
+      return NextResponse.json({ error: 'company_forbidden', reply: kiaFriendlyError('company_forbidden', 'es'), avatarState: 'aviso', artifacts: [] }, { status: 403 });
     }
   }
 
