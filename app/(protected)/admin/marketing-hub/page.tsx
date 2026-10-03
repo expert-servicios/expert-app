@@ -452,7 +452,7 @@ export default function MarketingHubPage() {
         filter === 'all'
         || (filter === 'synced' && esStatus === 'synced')
         || (filter === 'ready' && (esStatus === 'ready' || (!esStatus && draft.marketingReady)))
-        || (filter === 'failed' && esStatus === 'failed')
+        || (filter === 'failed' && (esStatus === 'failed' || draft.meta.ru?.syncStatus === 'failed' || draft.meta.ru?.syncStatus === 'manual_review'))
         || (filter === 'missing-ru' && !draft.locales.ru.exists);
 
       return matchesSearch && matchesFilter;
