@@ -182,7 +182,7 @@ function nationalityMinorSteps(): ServiceCaseStep[] {
     {
       key: 'representation_mandate',
       title: 'Representación y mandato',
-      description: 'Confirmar quién firma por el menor, formalizar el mandato de representación de EXPERT cuando proceda y conservar tanto el documento firmado como su certificado de finalización.',
+      description: 'Confirmar quién firma por el menor, formalizar el mandato de representación de EXPERT cuando proceda y conservar el documento firmado junto con su evidencia final de auditoría/finalización del proveedor utilizado.',
       clientVisible: true,
     },
     {
@@ -326,14 +326,15 @@ function nationalityMinorTasks(): ServiceTaskTemplate[] {
       referenceUrls: [{ label: 'Guía EXPERT de firmas', url: NATIONALITY_SIGNATURE_GUIDE }],
     },
     {
+      // Legacy task key retained for compatibility with existing cases.
       key: 'archive_docusign_completion_certificate',
-      title: 'Archivar certificado de finalización del mandato — Nacionalidad menor',
-      description: 'Si el mandato se firmó por DocuSign, archivar tanto el mandato firmado como el certificado oficial de finalización. Una captura o una nota no sustituyen el certificado.',
+      title: 'Archivar evidencia final de firma del mandato — Nacionalidad menor',
+      description: 'Archivar el mandato firmado y la evidencia final del proveedor. Para Google eSignature, conservar el PDF final con su página de auditoría; para DocuSign histórico, conservar el certificado oficial de finalización. Una captura o una nota no sustituyen la evidencia final.',
       priority: 'alta',
       phase: 'representation_mandate',
       dependsOn: ['prepare_representation_mandate'],
       blocksSubmission: true,
-      skipAllowed: true,
+      skipAllowed: false,
     },
     {
       key: 'pre_submission_validation',

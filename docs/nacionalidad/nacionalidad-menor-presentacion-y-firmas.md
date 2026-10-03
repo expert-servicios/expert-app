@@ -8,7 +8,7 @@ Criterio operativo EXPERT para expedientes de nacionalidad española por residen
 - ambos progenitores ejercen la patria potestad;
 - EXPERT/Ksenia ILICHEVA realiza la presentación telemática como representante voluntaria;
 - la familia trabaja a distancia;
-- se utiliza DocuSign para formalizar el mandato de representación.
+- se utiliza Google Workspace eSignature como opción preferente para el mandato cuando el nivel de firma simple con trazabilidad es suficiente; DocuSign queda como evidencia histórica o alternativa operativa.
 
 Este documento separa tres actos jurídicos distintos:
 1. consentimiento/firma de los progenitores en el modelo oficial de solicitud;
@@ -59,7 +59,9 @@ DocuSign solo podría utilizarse para esa función si el envelope estuviera conf
 ## 5. Flujo de firma recomendado por EXPERT
 
 ### A. Mandato de representación
-El mandato a favor de Ksenia ILICHEVA puede gestionarse mediante DocuSign con trazabilidad y certificado de finalización, sujeto a revisión profesional.
+El mandato a favor de Ksenia ILICHEVA puede gestionarse preferentemente mediante Google Workspace eSignature cuando sea suficiente una firma electrónica simple con trazabilidad. El PDF final generado por Google incluye un registro de auditoría y debe archivarse como evidencia.
+
+DocuSign puede seguir utilizándose cuando exista una razón operativa concreta y sus evidencias históricas no deben eliminarse.
 
 ### B. Modelo oficial de solicitud del menor
 Flujo conservador:
@@ -86,7 +88,7 @@ Si uno de los progenitores dispone de un certificado electrónico reconocido com
 
 Para menor de 14 años con ambos progenitores:
 - mandato/poder de representación voluntaria a favor de Ksenia;
-- certificado/evidencia de finalización del mandato;
+- PDF final/evidencia de finalización del mandato (registro de auditoría Google eSignature o certificado del proveedor utilizado);
 - modelo normalizado oficial de solicitud firmado por ambos progenitores;
 - versión del documento con firma electrónica reconocida de Ksenia cuando corresponda;
 - documentos identificativos de ambos progenitores;
@@ -121,7 +123,7 @@ Si aparece un bloqueo documental o técnico, debe registrarse y comunicarse al c
 1. Validar requisitos y patria potestad.
 2. Revisar documentación.
 3. Preparar mandato voluntario.
-4. Validar mandato firmado.
+4. Validar mandato firmado y su evidencia/auditoría.
 5. Pre-rellenar modelo oficial de solicitud.
 6. Obtener firmas manuscritas de ambos progenitores.
 7. Validar formulario firmado.
@@ -253,3 +255,16 @@ Fuentes:
 - Instrucción DGRN de 23/05/2007 sobre apellidos de extranjeros nacionalizados.
 - Art. 200 Reglamento del Registro Civil.
 - Apartado 8 del modelo normalizado aprobado por Resolución de 16/12/2021.
+
+
+## 15. Google Workspace eSignature y EXPERT
+
+Para nuevas solicitudes de firma del mandato, EXPERT prioriza Google Workspace eSignature cuando el nivel jurídico de firma simple con trazabilidad sea suficiente.
+
+Reglas:
+1. KIA puede preparar el paso de firma, identificar firmantes, consultar el estado persistido y ofrecer el PDF final firmado.
+2. El envío efectivo de la solicitud Google eSignature se realiza manualmente desde Drive mientras no exista una acción API soportada en la integración de EXPERT.
+3. KIA no afirmará que una solicitud fue enviada hasta que exista evidencia persistida.
+4. Al completarse, se archiva el PDF final con su página de auditoría.
+5. Si el trámite exige certificado electrónico reconocido, Google eSignature simple no sustituye AutoFirma/certificado reconocido.
+6. La guía operativa general es `docs/kia-google-esignature.md`.

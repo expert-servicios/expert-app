@@ -32,7 +32,7 @@ function clientActor() {
 }
 
 describe('KIA policy-enforced decision', () => {
-  it('exposes only autonomous R0/R1 read tools for client dashboard', () => {
+  it('exposes autonomous reads plus isolated signature approval for client dashboard', () => {
     const resolved = resolveKiaPolicyToolNames('client_dashboard', clientActor());
     expect(resolved.ok).toBe(true);
     if (!resolved.ok) return;
@@ -46,6 +46,7 @@ describe('KIA policy-enforced decision', () => {
       expect(policy?.requiresHumanApproval).toBe(false);
     }
     expect(resolved.toolNames).not.toContain('create_internal_task');
+    expect(resolved.toolNames).toContain('request_signature_approval');
     expect(resolved.toolNames).not.toContain('create_next_best_action');
     expect(resolved.toolNames).not.toContain('create_kia_decision_log');
   });

@@ -180,6 +180,19 @@ export const kiaToolValidators = {
     caseId: z.string().uuid(),
     limit: z.number().int().min(1).max(50).default(20),
   }).strict(),
+  get_case_signature_status: z.object({
+    caseId: z.string().uuid(),
+  }).strict(),
+  request_signature_approval: z.object({
+    caseId: z.string().uuid(),
+    documentId: z.string().uuid(),
+    signatureLevel: z.enum(['simple', 'recognized_certificate']).default('simple'),
+    signers: z.array(z.object({
+      name: z.string().trim().min(1).max(160),
+      email: z.string().email().max(200),
+    }).strict()).min(1).max(10),
+    reason: z.string().trim().min(1).max(800).optional(),
+  }).strict(),
   get_case_timeline: z.object({
     caseId: z.string().uuid(),
     limit: z.number().int().min(1).max(50).default(25),
@@ -264,6 +277,8 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_user_subscriptions: 'List active/recent EXPERT subscriptions for the authenticated user or active company. Read-only.',
   get_case_tasks: 'List operational tasks for one case owned by the authenticated user.',
   get_case_documents: 'List documents for one case owned by the authenticated user.',
+  get_case_signature_status: 'Return persisted signature state, signer progress and final signed/downloadable documents for one owned case. Read-only.',
+  request_signature_approval: 'Prepare one idempotent internal approval task for a signature request. It never sends a signature request externally and never marks a document signed.',
   get_case_timeline: 'Return a compact operational timeline for one case from case updates, tasks, documents and email events.',
   get_client_communications: 'Search the authenticated client communication history across sent/received email, KIA conversations and linked WhatsApp. Use when recent context is insufficient or the user refers to an older message.',
   search_knowledge_resources: 'Search EXPERT blog articles and knowledge-base documents. Use to share a relevant guide or article with the user. Returns canonical public links.',

@@ -35,7 +35,7 @@ describe('KIA policy authorization snapshot', () => {
 
     expect(resolved.authorization.channel).toBe('dashboard');
     expect(resolved.authorization.maxRiskTier).toBe('R1');
-    expect(resolved.authorization.allowedEffects).toEqual(['read']);
+    expect(resolved.authorization.allowedEffects).toEqual(['read', 'approval_request']);
     expect(resolved.authorization.autonomousOnly).toBe(true);
     expect(resolved.authorization.requestedNames).toEqual(resolved.toolNames);
     expect(resolved.toolNames).not.toContain('create_internal_task');

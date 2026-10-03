@@ -2,7 +2,7 @@ import type { KiaChannel } from './kia-output-schema';
 import { KIA_TOOL_DEFINITIONS, type KiaToolDefinition } from './kia-tool-definitions';
 
 export type KiaToolRiskTier = 'R0' | 'R1' | 'R2' | 'R3' | 'R4' | 'R5';
-export type KiaToolEffect = 'read' | 'draft' | 'write' | 'external_action';
+export type KiaToolEffect = 'read' | 'approval_request' | 'draft' | 'write' | 'external_action';
 export type KiaToolCapability =
   | 'identity'
   | 'client_data'
@@ -53,10 +53,10 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   run_viability_check:                policy('R1', 'read',  'client_data'),
   run_readiness_check:                policy('R1', 'read',  'client_data'),
   get_holded_connection_status:       policy('R0', 'read',  'holded_read'),
-  create_next_best_action:            policy('R1', 'draft', 'internal_operations', true),
+  create_next_best_action:            policy('R1', 'draft', 'internal_operations', true, ['admin']),
   classify_document:                  policy('R1', 'read',  'documents'),
   get_case_status:                    policy('R0', 'read',  'case_management'),
-  create_internal_task:               policy('R1', 'draft', 'internal_operations', true),
+  create_internal_task:               policy('R1', 'draft', 'internal_operations', true, ['admin']),
   generate_checkout_gate_link:        policy('R1', 'read',  'checkout'),
   generate_profile_link:              policy('R0', 'read',  'navigation'),
   generate_holded_connection_link:    policy('R0', 'read',  'navigation'),
@@ -80,6 +80,8 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_user_subscriptions:             policy('R0', 'read',  'subscriptions'),
   get_case_tasks:                     policy('R0', 'read',  'case_operations'),
   get_case_documents:                 policy('R0', 'read',  'documents'),
+  get_case_signature_status:          policy('R0', 'read',  'documents'),
+  request_signature_approval:         policy('R1', 'approval_request', 'documents'),
   get_case_timeline:                  policy('R0', 'read',  'case_operations'),
   get_client_communications:          policy('R0', 'read',  'client_data'),
   search_knowledge_resources:          policy('R0', 'read',  'knowledge'),
@@ -94,13 +96,14 @@ function policy(
   effect: KiaToolEffect,
   capability: KiaToolCapability,
   requiresHumanApproval = false,
+  allowedChannels: KiaChannel[] = ['waba', 'telegram', 'admin', 'email', 'dashboard', 'document'],
 ): Omit<KiaToolPolicy, 'name' | 'description'> {
   return {
     riskTier,
     effect,
     capability,
     requiresHumanApproval,
-    allowedChannels: ['waba', 'telegram', 'admin', 'email', 'dashboard', 'document'],
+    allowedChannels,
   };
 }
 
@@ -125,7 +128,7 @@ export function getKiaToolsForCapability(capability: KiaToolCapability): string[
 export function isKiaToolSafeForAutonomousExecution(name: string): boolean {
   const tool = getKiaToolPolicy(name);
   if (!tool) return false;
-  return tool.effect === 'read'
+  return (tool.effect === 'read' || tool.effect === 'approval_request')
     && (tool.riskTier === 'R0' || tool.riskTier === 'R1')
     && !tool.requiresHumanApproval;
 }

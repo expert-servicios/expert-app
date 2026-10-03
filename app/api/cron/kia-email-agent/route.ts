@@ -24,6 +24,8 @@ const READ_ONLY_TOOLS = [
   'get_case_status',
   'get_case_tasks',
   'get_case_documents',
+  'get_case_signature_status',
+  'request_signature_approval',
   'get_case_timeline',
   'get_client_communications',
   'get_service_operational_blueprint',
@@ -738,7 +740,7 @@ export async function GET(request: NextRequest) {
         allowedToolNames: [...allowedTools],
         toolAuthorization: {
           maxRiskTier: 'R2',
-          allowedEffects: ['read', 'external_action'],
+          allowedEffects: ['read', 'approval_request', 'external_action'],
           autonomousOnly: false,
         },
         externalActionMinConfidence: confidenceFloor,

@@ -14,12 +14,12 @@ describe('KIA verified Telegram channel', () => {
     expect(KIA_CHANNELS).toContain('telegram');
   });
 
-  it('keeps telegram_verified at R1 read-only autonomous ceiling', () => {
+  it('keeps telegram_verified at R1 autonomous read/approval ceiling', () => {
     const profile = getKiaPolicyProfile('telegram_verified');
     expect(profile.channel).toBe('telegram');
     expect(profile.maxRiskTier).toBe('R1');
     expect(profile.futureRiskCeiling).toBe('R1');
-    expect(profile.allowedEffects).toEqual(['read']);
+    expect(profile.allowedEffects).toEqual(['read', 'approval_request']);
     expect(profile.autonomousOnly).toBe(true);
     expect(profile.requiredScopes).toContain('kia:authenticated');
   });
@@ -39,17 +39,18 @@ describe('KIA verified Telegram channel', () => {
     expect(allowed.ok).toBe(true);
   });
 
-  it('only exposes autonomous R0/R1 read tools on Telegram', () => {
+  it('exposes autonomous reads plus the isolated signature approval request on Telegram', () => {
     const names = resolveKiaToolDefinitions({
       channel: 'telegram',
       maxRiskTier: 'R1',
-      allowedEffects: ['read'],
+      allowedEffects: ['read', 'approval_request'],
       autonomousOnly: true,
     }).map((tool) => tool.name);
 
     expect(names).toContain('get_client_profile');
     expect(names).toContain('get_case_status');
     expect(names).not.toContain('create_internal_task');
+    expect(names).toContain('request_signature_approval');
     expect(names).not.toContain('create_next_best_action');
     expect(names).not.toContain('create_kia_decision_log');
   });

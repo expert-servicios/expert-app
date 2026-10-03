@@ -9,11 +9,11 @@ import {
 import { resolveKiaToolDefinitions } from '@/lib/ai/kia/kia-tool-registry';
 
 describe('KIA policy profiles', () => {
-  it('keeps client dashboard and shadow read-only at R1', () => {
+  it('keeps client dashboard constrained while shadow stays read-only at R1', () => {
     for (const name of ['client_dashboard', 'shadow_read_only'] as const) {
       const profile = getKiaPolicyProfile(name);
       expect(profile.maxRiskTier).toBe('R1');
-      expect(profile.allowedEffects).toEqual(['read']);
+      expect(profile.allowedEffects).toEqual(['read', 'approval_request']);
       expect(profile.autonomousOnly).toBe(true);
       expect(resolveKiaToolDefinitions(policyProfileToToolAuthorization(profile)).length).toBeGreaterThan(0);
     }
