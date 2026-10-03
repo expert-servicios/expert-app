@@ -83,6 +83,7 @@ type MetaLocaleState = {
   lastErrorCode: string | null;
   lastPayloadHash: string | null;
   isStale: boolean;
+  batchHandle?: string | null;
 } | null;
 
 type MetaCatalogDraft = {
@@ -209,6 +210,9 @@ export default function MarketingHubPage() {
   const [testMessage, setTestMessage] = useState<string | null>(null);
   const [syncingCatalog, setSyncingCatalog] = useState(false);
   const [preparingCatalog, setPreparingCatalog] = useState(false);
+  const [preparingRu, setPreparingRu] = useState(false);
+  const [syncingRu, setSyncingRu] = useState(false);
+  const [reconcilingRu, setReconcilingRu] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [selectedRetailerIds, setSelectedRetailerIds] = useState<Set<string>>(new Set());
   const [panel, setPanel] = useState<Panel>('catalog');
@@ -331,6 +335,111 @@ export default function MarketingHubPage() {
     }
   }, [load]);
 
+  const prepareRuRetailers = useCallback(async (retailerIds: string[]) => {
+    if (retailerIds.length === 0) return;
+    setPreparingRu(true);
+    setSyncMessage(null);
+    let prepared = 0;
+    const failures: string[] = [];
+
+    try {
+      for (const retailerId of retailerIds) {
+        const response = await fetch(
+          `/api/admin/meta/catalog/${encodeURIComponent(retailerId)}/localization/prepare`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              confirm: 'prepare_meta_catalog_localization',
+              locale: 'ru',
+            }),
+          },
+        );
+        const payload = await response.json() as { ok?: boolean; error?: string };
+        if (response.ok && payload.ok) prepared += 1;
+        else failures.push(`${retailerId}: ${payload.error ?? 'error'}`);
+      }
+
+      setSyncMessage(
+        failures.length
+          ? `RU preparados: ${prepared}. Con bloqueo: ${failures.length}. ${failures.slice(0, 2).join(' · ')}`
+          : `RU preparados para Meta: ${prepared}.`,
+      );
+    } finally {
+      await load();
+      setPreparingRu(false);
+    }
+  }, [load]);
+
+  const reconcileRuRetailers = useCallback(async (retailerIds: string[]) => {
+    if (retailerIds.length === 0) return;
+    setReconcilingRu(true);
+    setSyncMessage(null);
+    try {
+      const response = await fetch('/api/admin/meta/catalog/localizations/reconcile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locale: 'ru', retailerIds }),
+      });
+      const payload = await response.json() as {
+        ok?: boolean;
+        synced?: number;
+        failed?: number;
+        pending?: number;
+        error?: string;
+      };
+      if (!response.ok) {
+        setSyncMessage(payload.error ?? 'No se pudo comprobar el lote RU');
+      } else {
+        setSyncMessage(
+          `RU: ${payload.synced ?? 0} sincronizados · ${payload.pending ?? 0} procesando · ${payload.failed ?? 0} errores.`,
+        );
+      }
+    } finally {
+      await load();
+      setReconcilingRu(false);
+    }
+  }, [load]);
+
+  const syncRuRetailers = useCallback(async (retailerIds: string[]) => {
+    if (retailerIds.length === 0) return;
+    const confirmed = window.confirm(
+      `Se enviarán ${retailerIds.length} localización(es) RU al catálogo Meta sobre los mismos productos ES. No se modifica el precio base. ¿Continuar?`,
+    );
+    if (!confirmed) return;
+
+    setSyncingRu(true);
+    setSyncMessage(null);
+    try {
+      const response = await fetch('/api/admin/meta/catalog/localizations/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          confirm: 'sync_meta_catalog_localizations',
+          locale: 'ru',
+          retailerIds,
+        }),
+      });
+      const payload = await response.json() as {
+        ok?: boolean;
+        accepted?: number;
+        failed?: number;
+        pending?: number;
+        error?: string;
+      };
+      if (!response.ok) {
+        setSyncMessage(payload.error ?? 'Falló la sincronización RU');
+      } else {
+        setSyncMessage(
+          `Meta aceptó RU: ${payload.accepted ?? 0}. Pendientes de ingestión: ${payload.pending ?? 0}. Errores: ${payload.failed ?? 0}.`,
+        );
+      }
+    } finally {
+      await load();
+      setSyncingRu(false);
+    }
+  }, [load]);
+
   const filteredDrafts = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     return (catalog?.drafts ?? []).filter((draft) => {
@@ -343,7 +452,7 @@ export default function MarketingHubPage() {
         filter === 'all'
         || (filter === 'synced' && esStatus === 'synced')
         || (filter === 'ready' && (esStatus === 'ready' || (!esStatus && draft.marketingReady)))
-        || (filter === 'failed' && esStatus === 'failed')
+        || (filter === 'failed' && (esStatus === 'failed' || draft.meta.ru?.syncStatus === 'failed' || draft.meta.ru?.syncStatus === 'manual_review'))
         || (filter === 'missing-ru' && !draft.locales.ru.exists);
 
       return matchesSearch && matchesFilter;
@@ -355,7 +464,8 @@ export default function MarketingHubPage() {
 
   const { diagnostics, config } = data;
   const syncedCount = catalog?.drafts.filter((draft) => draft.meta.es?.syncStatus === 'synced').length ?? 0;
-  const failedCount = catalog?.drafts.filter((draft) => draft.meta.es?.syncStatus === 'failed').length ?? 0;
+  const syncedRuCount = catalog?.drafts.filter((draft) => draft.meta.ru?.syncStatus === 'synced').length ?? 0;
+  const failedCount = catalog?.drafts.filter((draft) => draft.meta.es?.syncStatus === 'failed' || draft.meta.ru?.syncStatus === 'failed').length ?? 0;
   const ruMissingCount = catalog?.drafts.filter((draft) => !draft.locales.ru.exists).length ?? 0;
   const manifestBySlug = new Map(diagnostics.manifest.entries.map((entry) => [entry.slug, entry]));
   const selectedDrafts = (catalog?.drafts ?? []).filter((draft) => selectedRetailerIds.has(draft.retailerId));
@@ -377,6 +487,26 @@ export default function MarketingHubPage() {
           && draft.meta.es?.isStale === true
         );
     })
+    .map((draft) => draft.retailerId);
+
+  const selectedRuPrepareIds = selectedDrafts
+    .filter((draft) => {
+      const manifest = manifestBySlug.get(draft.retailerId);
+      if (manifest?.stage !== 'production_ready') return false;
+      if (draft.meta.es?.syncStatus !== 'synced') return false;
+      if (!draft.locales.ru.exists || draft.locales.ru.status !== 'active') return false;
+      const status = draft.meta.ru?.syncStatus;
+      if (status === 'pending' || status === 'manual_review' || status === 'ready') return false;
+      return status === 'failed'
+        || status == null
+        || (status === 'synced' && draft.meta.ru?.isStale === true);
+    })
+    .map((draft) => draft.retailerId);
+  const selectedRuReadyIds = selectedDrafts
+    .filter((draft) => draft.meta.ru?.syncStatus === 'ready')
+    .map((draft) => draft.retailerId);
+  const selectedRuPendingIds = selectedDrafts
+    .filter((draft) => draft.meta.ru?.syncStatus === 'pending')
     .map((draft) => draft.retailerId);
 
   return (
@@ -424,9 +554,10 @@ export default function MarketingHubPage() {
           ) : null}
         </header>
 
-        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
           <CompactMetric label="Servicios" value={catalog?.drafts.length ?? 0} />
           <CompactMetric label="Sincronizados ES" value={syncedCount} accent={syncedCount > 0} />
+          <CompactMetric label="Sincronizados RU" value={syncedRuCount} accent={syncedRuCount > 0} />
           <CompactMetric label="Listos" value={catalog?.readyCount ?? 0} />
           <CompactMetric label="Errores" value={failedCount} />
           <CompactMetric label="RU pendientes" value={ruMissingCount} />
@@ -491,21 +622,50 @@ export default function MarketingHubPage() {
                 <button
                   type="button"
                   onClick={() => void prepareRetailers(selectedPrepareIds)}
-                  disabled={selectedPrepareIds.length === 0 || preparingCatalog || syncingCatalog}
+                  disabled={selectedPrepareIds.length === 0 || preparingCatalog || syncingCatalog || preparingRu || syncingRu}
                   className="inline-flex items-center gap-1 rounded-lg border border-[#d8cbb5] bg-white px-2.5 py-2 text-[11px] font-bold text-[#374151] disabled:opacity-40"
                 >
                   <ListChecks className="h-3.5 w-3.5" />
-                  {preparingCatalog ? 'Preparando…' : `Preparar (${selectedPrepareIds.length})`}
+                  {preparingCatalog ? 'Preparando ES…' : `Preparar ES (${selectedPrepareIds.length})`}
                 </button>
                 <button
                   type="button"
                   onClick={() => void syncRetailers(selectedReadyIds)}
-                  disabled={!data.liveTestAvailable || selectedReadyIds.length === 0 || syncingCatalog || preparingCatalog}
+                  disabled={!data.liveTestAvailable || selectedReadyIds.length === 0 || syncingCatalog || preparingCatalog || preparingRu || syncingRu}
                   className="inline-flex items-center gap-1 rounded-lg bg-[#c88b25] px-2.5 py-2 text-[11px] font-bold text-[#07111d] disabled:opacity-40"
                 >
                   <UploadCloud className="h-3.5 w-3.5" />
-                  {syncingCatalog ? 'Sincronizando…' : `Sincronizar (${selectedReadyIds.length})`}
+                  {syncingCatalog ? 'Sincronizando ES…' : `Sincronizar ES (${selectedReadyIds.length})`}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => void prepareRuRetailers(selectedRuPrepareIds)}
+                  disabled={selectedRuPrepareIds.length === 0 || preparingRu || syncingRu || preparingCatalog || syncingCatalog}
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#c9b58b] bg-[#fff9eb] px-2.5 py-2 text-[11px] font-bold text-[#7a5313] disabled:opacity-40"
+                >
+                  <Languages className="h-3.5 w-3.5" />
+                  {preparingRu ? 'Preparando RU…' : `Preparar RU (${selectedRuPrepareIds.length})`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void syncRuRetailers(selectedRuReadyIds)}
+                  disabled={!data.liveTestAvailable || selectedRuReadyIds.length === 0 || syncingRu || preparingRu || syncingCatalog}
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#07111d] px-2.5 py-2 text-[11px] font-bold text-white disabled:opacity-40"
+                >
+                  <UploadCloud className="h-3.5 w-3.5" />
+                  {syncingRu ? 'Sincronizando RU…' : `Sincronizar RU (${selectedRuReadyIds.length})`}
+                </button>
+                {selectedRuPendingIds.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => void reconcileRuRetailers(selectedRuPendingIds)}
+                    disabled={reconcilingRu}
+                    className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-2 text-[11px] font-bold text-blue-800 disabled:opacity-40"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${reconcilingRu ? 'animate-spin' : ''}`} />
+                    Comprobar RU ({selectedRuPendingIds.length})
+                  </button>
+                ) : null}
               </div>
             </div>
 
@@ -535,6 +695,7 @@ export default function MarketingHubPage() {
                     <th className="w-28 px-3 py-2">Idiomas</th>
                     <th className="w-28 px-3 py-2">Precio</th>
                     <th className="w-36 px-3 py-2">Meta ES</th>
+                    <th className="w-36 px-3 py-2">Meta RU</th>
                     <th className="w-44 px-3 py-2">ID / última sync</th>
                     <th className="w-56 px-3 py-2">Acciones</th>
                   </tr>
@@ -553,6 +714,18 @@ export default function MarketingHubPage() {
                       && metaStatus !== 'ready'
                       && (metaStatus === 'failed' || metaStatus == null || (metaStatus === 'synced' && esStale));
                     const canSync = metaStatus === 'ready';
+                    const ruStatus = draft.meta.ru?.syncStatus ?? null;
+                    const ruStale = draft.meta.ru?.isStale === true;
+                    const canPrepareRu = productionReady
+                      && metaStatus === 'synced'
+                      && draft.locales.ru.exists
+                      && draft.locales.ru.status === 'active'
+                      && ruStatus !== 'pending'
+                      && ruStatus !== 'manual_review'
+                      && ruStatus !== 'ready'
+                      && (ruStatus === 'failed' || ruStatus == null || (ruStatus === 'synced' && ruStale));
+                    const canSyncRu = ruStatus === 'ready';
+                    const canReconcileRu = ruStatus === 'pending';
 
                     return (
                     <tr key={draft.retailerId} className="hover:bg-[#fcfaf6]">
@@ -613,6 +786,13 @@ export default function MarketingHubPage() {
                         <MetaStatusBadge state={draft.meta.es} marketingReady={draft.marketingReady} stale={esStale} />
                       </td>
                       <td className="px-3 py-2">
+                        <MetaStatusBadge
+                          state={draft.meta.ru}
+                          marketingReady={draft.locales.ru.exists && draft.locales.ru.status === 'active'}
+                          stale={ruStale}
+                        />
+                      </td>
+                      <td className="px-3 py-2">
                         <p className="truncate font-mono text-[10px] text-[#374151]" title={draft.meta.es?.metaItemId ?? ''}>
                           {draft.meta.es?.metaItemId ?? '—'}
                         </p>
@@ -652,7 +832,40 @@ export default function MarketingHubPage() {
                             </button>
                           ) : null}
                           {metaStatus === 'synced' && !esStale ? (
-                            <span className="inline-flex items-center px-1.5 text-[10px] font-semibold text-green-700">Al día</span>
+                            <span className="inline-flex items-center px-1.5 text-[10px] font-semibold text-green-700">ES al día</span>
+                          ) : null}
+                          {canPrepareRu ? (
+                            <button
+                              type="button"
+                              onClick={() => void prepareRuRetailers([draft.retailerId])}
+                              disabled={preparingRu || syncingRu}
+                              className="rounded-lg border border-[#c9b58b] bg-[#fff9eb] px-2 py-1.5 text-[11px] font-bold text-[#7a5313] disabled:opacity-40"
+                            >
+                              {ruStatus === 'failed' ? 'Reintentar RU' : ruStale ? 'Preparar cambios RU' : 'Preparar RU'}
+                            </button>
+                          ) : null}
+                          {canSyncRu ? (
+                            <button
+                              type="button"
+                              onClick={() => void syncRuRetailers([draft.retailerId])}
+                              disabled={!data.liveTestAvailable || syncingRu || preparingRu}
+                              className="rounded-lg bg-[#07111d] px-2 py-1.5 text-[11px] font-bold text-white disabled:opacity-40"
+                            >
+                              Sincronizar RU
+                            </button>
+                          ) : null}
+                          {canReconcileRu ? (
+                            <button
+                              type="button"
+                              onClick={() => void reconcileRuRetailers([draft.retailerId])}
+                              disabled={reconcilingRu}
+                              className="rounded-lg border border-blue-200 bg-blue-50 px-2 py-1.5 text-[11px] font-bold text-blue-800 disabled:opacity-40"
+                            >
+                              Comprobar RU
+                            </button>
+                          ) : null}
+                          {ruStatus === 'synced' && !ruStale ? (
+                            <span className="inline-flex items-center px-1.5 text-[10px] font-semibold text-green-700">RU al día</span>
                           ) : null}
                           {!productionReady ? (
                             <span className="inline-flex items-center px-1.5 text-[10px] text-[#8a929d]" title="El servicio todavía no es production_ready">No publicable</span>
