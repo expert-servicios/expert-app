@@ -45,7 +45,7 @@ La pantalla debe ser compacta, operativa y comprensible sin conocimiento técnic
 ### Criterio de hecho
 La usuaria puede saber de un vistazo qué existe realmente en Meta y qué solo está preparado.
 
-## Fase 2 — Editor multidioma ES/RU 🚧 en curso
+## Fase 2 — Editor multidioma ES/RU ✅ completada
 
 ### Entregables
 - Edición por servicio con tabs ES/RU.
@@ -62,7 +62,7 @@ La usuaria puede saber de un vistazo qué existe realmente en Meta y qué solo e
 ### Criterio de hecho
 Un servicio puede quedar completo en ES y RU sin editar base de datos manualmente.
 
-## Fase 3 — Gestión de imágenes
+## Fase 3 — Gestión de imágenes 🚧 en curso
 
 ### Entregables
 - Upload manual.
