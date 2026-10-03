@@ -20,6 +20,17 @@ afterEach(() => {
 });
 
 describe('buildMetaCatalogDrafts', () => {
+  it('preserves absolute public asset URLs and resolves relative assets against EXPERT', async () => {
+    const { resolveMetaPublicAssetUrl } = await import('@/lib/integrations/meta/catalog-export');
+
+    expect(resolveMetaPublicAssetUrl('/catalog/servicios/demo.png')).toBe(
+      'https://expertconsulting.es/catalog/servicios/demo.png',
+    );
+    expect(resolveMetaPublicAssetUrl('https://ybtpqscmqrrjjmuoryap.supabase.co/storage/v1/object/public/user-files/meta-catalog/demo/es/image.webp')).toBe(
+      'https://ybtpqscmqrrjjmuoryap.supabase.co/storage/v1/object/public/user-files/meta-catalog/demo/es/image.webp',
+    );
+  });
+
   it('marks a fully populated, ready service as marketingReady with no warnings', async () => {
     fromMock.mockImplementation((table: string) => {
       if (table === 'catalog_services') {
