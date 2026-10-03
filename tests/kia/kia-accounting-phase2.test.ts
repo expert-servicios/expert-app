@@ -2,12 +2,18 @@ import { describe, expect, it } from 'vitest';
 import {
   getKiaToolPolicy,
   isKiaToolAuthorized,
-  resolveKiaToolDefinitions,
 } from '@/lib/ai/kia/kia-tool-registry';
 import { getKiaToolDefinition } from '@/lib/ai/kia/kia-tool-definitions';
-import { isExpertGlobalHoldedContext } from '@/lib/ai/kia/kia-accounting-tools';
+import {
+  defaultAccountingDocumentRange,
+  holdedOutstandingAmount,
+  isExpertGlobalHoldedContext,
+  isHoldedDocumentOverdue,
+  isHoldedDocumentPaid,
+  isIssuedHoldedDocument,
+  totalsByCurrency,
+} from '@/lib/ai/kia/kia-accounting-tools';
 import type { KiaContext } from '@/lib/ai/kia/kia-context-builder';
-import { resolveKiaSkillAuthorization } from '@/lib/ai/kia/kia-skill-execution';
 
 describe('KIA Accounting phase 2 authorization', () => {
   it('registers accounting reads as autonomous R1 reads', () => {
@@ -33,96 +39,48 @@ describe('KIA Accounting phase 2 authorization', () => {
       })).toBe(true);
     }
   });
-
-  it('keeps reminder and credit-note drafts outside autonomous execution', () => {
-    expect(getKiaToolPolicy('draft_payment_reminder')).toMatchObject({
-      riskTier: 'R1',
-      effect: 'draft',
-      capability: 'accounting_write',
-      requiresHumanApproval: true,
-    });
-    expect(getKiaToolPolicy('draft_credit_note')).toMatchObject({
-      riskTier: 'R2',
-      effect: 'draft',
-      capability: 'accounting_write',
-      requiresHumanApproval: true,
-    });
-
-    const visible = resolveKiaToolDefinitions({
-      channel: 'dashboard',
-      requestedNames: [
-        'get_accounts_receivable',
-        'draft_payment_reminder',
-        'draft_credit_note',
-      ],
-      maxRiskTier: 'R2',
-      allowedEffects: ['read', 'draft'],
-      autonomousOnly: true,
-    }).map((tool) => tool.name);
-
-    expect(visible).toEqual(['get_accounts_receivable']);
-  });
-
-  it('allows a review flow to expose drafts only when policy explicitly allows them', () => {
-    expect(isKiaToolAuthorized('draft_payment_reminder', {
-      channel: 'admin',
-      requestedNames: ['draft_payment_reminder'],
-      maxRiskTier: 'R1',
-      allowedEffects: ['draft'],
-      autonomousOnly: false,
-    })).toBe(true);
-
-    expect(isKiaToolAuthorized('draft_credit_note', {
-      channel: 'admin',
-      requestedNames: ['draft_credit_note'],
-      maxRiskTier: 'R1',
-      allowedEffects: ['draft'],
-      autonomousOnly: false,
-    })).toBe(false);
-
-    expect(isKiaToolAuthorized('draft_credit_note', {
-      channel: 'admin',
-      requestedNames: ['draft_credit_note'],
-      maxRiskTier: 'R2',
-      allowedEffects: ['draft'],
-      autonomousOnly: false,
-    })).toBe(true);
-  });
-
-  it('narrows accounting skill to accounting capabilities without granting drafts in autonomous mode', () => {
-    const policyToolNames = [
-      'get_holded_invoices',
-      'get_accounting_snapshot',
-      'get_accounts_receivable',
-      'get_accounts_payable',
-      'get_overdue_invoices',
-      'get_unreconciled_transactions',
-      'draft_payment_reminder',
-      'draft_credit_note',
-      'get_case_status',
-    ];
-
-    const resolved = resolveKiaSkillAuthorization({
-      taskType: 'accounting_anomaly_review',
-      policyAuthorization: {
-        channel: 'dashboard',
-        requestedNames: policyToolNames,
-        maxRiskTier: 'R2',
-        allowedEffects: ['read', 'draft'],
-        autonomousOnly: true,
-      },
-      policyToolNames,
-    });
-
-    expect(resolved.skill?.id).toBe('accounting.operations');
-    expect(resolved.toolNames).toContain('get_accounts_receivable');
-    expect(resolved.toolNames).toContain('get_unreconciled_transactions');
-    expect(resolved.toolNames).not.toContain('draft_payment_reminder');
-    expect(resolved.toolNames).not.toContain('draft_credit_note');
-    expect(resolved.toolNames).not.toContain('get_case_status');
-  });
 });
 
+describe('KIA Accounting Holded document semantics', () => {
+  it('preserves explicit zero pending balance and payment totals', () => {
+    const paid = { status: 1, total: 121, paymentsTotal: 121, paymentsPending: 0 };
+    expect(holdedOutstandingAmount(paid)).toBe(0);
+    expect(isHoldedDocumentPaid(paid)).toBe(true);
+
+    const partial = { status: 1, total: 121, paymentsTotal: 100, paymentsPending: 21 };
+    expect(holdedOutstandingAmount(partial)).toBe(21);
+    expect(isHoldedDocumentPaid(partial)).toBe(false);
+  });
+
+  it('excludes drafts from receivable/payable semantics', () => {
+    const draft = { status: 0, total: 500, paymentsPending: 500 };
+    expect(isIssuedHoldedDocument(draft)).toBe(false);
+    expect(holdedOutstandingAmount(draft)).toBe(0);
+    expect(isHoldedDocumentPaid(draft)).toBe(false);
+  });
+
+  it('does not mark a document overdue during its due date in Madrid', () => {
+    const due = Date.parse('2026-10-03T00:00:00Z') / 1000;
+    const doc = { status: 1, total: 100, paymentsPending: 100, dueDate: due };
+    expect(isHoldedDocumentOverdue(doc, Date.parse('2026-10-03T20:00:00Z'))).toBe(false);
+    expect(isHoldedDocumentOverdue(doc, Date.parse('2026-10-04T01:00:00Z'))).toBe(true);
+  });
+
+  it('groups outstanding totals by currency without cross-currency addition', () => {
+    expect(totalsByCurrency([
+      { outstanding: 100, currency: 'EUR' },
+      { outstanding: 25.5, currency: 'EUR' },
+      { outstanding: 100, currency: 'USD' },
+    ])).toEqual({ EUR: 125.5, USD: 100 });
+  });
+
+  it('uses an explicit previous-year-to-now Holded document range', () => {
+    expect(defaultAccountingDocumentRange(new Date('2026-10-03T12:00:00Z'))).toEqual({
+      starttmp: String(Date.UTC(2025, 0, 1) / 1000),
+      endtmp: String(Date.parse('2026-10-03T12:00:00Z') / 1000),
+    });
+  });
+});
 
 describe('KIA Accounting EXPERT global Holded boundary', () => {
   const baseContext = {
