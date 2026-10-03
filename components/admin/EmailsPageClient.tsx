@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Mail, Megaphone, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import { CampanasDashboard } from './CampanasDashboard';
 
@@ -37,6 +37,12 @@ const EVENT_LABELS: Record<string, string> = {
 
 export function EmailsPageClient({ initialEvents }: { initialEvents: EmailEvent[] }) {
   const [tab, setTab] = useState<'historial' | 'campanas'>('historial');
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('expert:kia-page-context', {
+      detail: { activeTab: tab, surfaceSection: 'email_360' },
+    }));
+  }, [tab]);
 
   const tabs = [
     { id: 'historial' as const, label: 'Historial', icon: Mail },

@@ -8,6 +8,7 @@ import type {
 
 export type KiaPolicyProfileName =
   | 'client_dashboard'
+  | 'admin_copilot'
   | 'telegram_verified'
   | 'shadow_read_only'
   | 'professional_operator'
@@ -49,6 +50,18 @@ const POLICY_PROFILES: Record<KiaPolicyProfileName, KiaPolicyProfileDefinition> 
     allowedRoles: [ROLES.CLIENT, ROLES.TENANT_ADMIN, ROLES.ADMIN, ROLES.OWNER],
     maxRiskTier: 'R1',
     futureRiskCeiling: 'R1',
+    allowedEffects: ['read'],
+    autonomousOnly: true,
+    requiredPlanCapabilities: [],
+    requiredScopes: [],
+    requiredFeatureFlags: [],
+  },
+  admin_copilot: {
+    name: 'admin_copilot',
+    channel: 'admin',
+    allowedRoles: [ROLES.TENANT_ADMIN, ROLES.ADMIN, ROLES.OWNER],
+    maxRiskTier: 'R1',
+    futureRiskCeiling: 'R4',
     allowedEffects: ['read'],
     autonomousOnly: true,
     requiredPlanCapabilities: [],

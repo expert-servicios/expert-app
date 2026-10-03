@@ -135,7 +135,18 @@ function contextualWelcome(context: KiaContextSummary): ChatMessage {
   };
 }
 
-function welcomeMessage(returning = false): ChatMessage {
+function welcomeMessage(returning = false, adminMode = false): ChatMessage {
+  if (adminMode) {
+    return {
+      id: 'welcome',
+      role: 'assistant',
+      text: returning
+        ? 'Sigo contigo. Estoy usando la pantalla actual del Admin como contexto; dime qué quieres revisar o hacer.'
+        : 'Soy KIA, tu copiloto operativo de EXPERT. En Admin trabajo en conversación libre: uso la pantalla actual, la empresa y las herramientas autorizadas para ayudarte a revisar pendientes, detectar problemas y avanzar trabajo.',
+      avatarState: 'bienvenida',
+    };
+  }
+
   return {
     id: 'welcome',
     role: 'assistant',
@@ -147,14 +158,26 @@ function welcomeMessage(returning = false): ChatMessage {
   };
 }
 
-function useKiaChat(pathname: string, contextToken?: string, companyId?: string) {
-  const [messages, setMessages] = useState<ChatMessage[]>(() => contextToken ? [] : [welcomeMessage()]);
+function useKiaChat(
+  pathname: string,
+  contextToken?: string,
+  companyId?: string,
+  adminMode = false,
+  pageData?: Record<string, string | number | boolean>,
+) {
+  type SendOptions = { silentUser?: boolean; currentTask?: string };
+  const [messages, setMessages] = useState<ChatMessage[]>(() => contextToken ? [] : [welcomeMessage(false, adminMode)]);
   const [contextSummary, setContextSummary] = useState<KiaContextSummary | null>(null);
   const [contextLoading, setContextLoading] = useState(Boolean(contextToken));
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [staffPreview, setStaffPreview] = useState(false);
   const [uiLocale, setUiLocale] = useState<'es' | 'ru'>('es');
+  const contextGenerationRef = useRef(0);
+
+  useEffect(() => {
+    contextGenerationRef.current += 1;
+  }, [companyId, contextToken, pathname]);
 
   useEffect(() => {
     if (!contextToken) return;
@@ -195,17 +218,17 @@ function useKiaChat(pathname: string, contextToken?: string, companyId?: string)
   useEffect(() => {
     setContextSummary(null);
     setContextLoading(false);
-    setMessages([welcomeMessage(true)]);
+    setMessages([welcomeMessage(true, adminMode)]);
     setStaffPreview(false);
     setSessionId(undefined);
     setLoading(false);
-  }, [companyId]);
+  }, [adminMode, companyId]);
 
   useEffect(() => {
     const handleCompanyChanged = () => {
       setContextSummary(null);
       setContextLoading(false);
-      setMessages([welcomeMessage(true)]);
+      setMessages([welcomeMessage(true, adminMode)]);
       setStaffPreview(false);
       setSessionId(undefined);
       setLoading(false);
@@ -213,9 +236,9 @@ function useKiaChat(pathname: string, contextToken?: string, companyId?: string)
 
     window.addEventListener('expert:active-company-changed', handleCompanyChanged);
     return () => window.removeEventListener('expert:active-company-changed', handleCompanyChanged);
-  }, []);
+  }, [adminMode]);
 
-  const send = useCallback(async (text: string) => {
+  const send = useCallback(async (text: string, options: SendOptions = {}) => {
     if (!text.trim() || loading || contextLoading) return;
 
     const history = messages
@@ -231,8 +254,9 @@ function useKiaChat(pathname: string, contextToken?: string, companyId?: string)
       ? contextSummary.preferredLanguage
       : (detectKiaMessageLocale(text) ?? contextSummary?.preferredLanguage ?? uiLocale);
     setUiLocale(detectedLocale);
-    setMessages((prev) => [...prev, userMsg]);
+    if (!options.silentUser) setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
+    const requestGeneration = contextGenerationRef.current;
 
     try {
       const res = await fetch('/api/ai/kia', {
@@ -242,6 +266,8 @@ function useKiaChat(pathname: string, contextToken?: string, companyId?: string)
           message    : text,
           sessionId,
           currentPage: pathname,
+          currentTask: options.currentTask ?? (adminMode ? 'admin_operator' : undefined),
+          pageData,
           contextToken,
           companyId,
           history,
@@ -249,6 +275,7 @@ function useKiaChat(pathname: string, contextToken?: string, companyId?: string)
       });
 
       const data: KiaApiResponse = await res.json();
+      if (requestGeneration !== contextGenerationRef.current) return;
 
       const assistantMsg: ChatMessage = {
         id          : crypto.randomUUID(),
@@ -259,7 +286,7 @@ function useKiaChat(pathname: string, contextToken?: string, companyId?: string)
         avatarState : data.avatarState ?? (data.error ? 'aviso' : 'ayuda'),
         artifacts   : data.artifacts?.length ? data.artifacts : undefined,
         decisionLogId: data.decisionLogId ?? undefined,
-        sourceUserMessage: text,
+        sourceUserMessage: options.silentUser ? undefined : text,
       };
       setMessages((prev) => [...prev, assistantMsg]);
 
@@ -267,6 +294,7 @@ function useKiaChat(pathname: string, contextToken?: string, companyId?: string)
         setSessionId(res.headers.get('x-kia-session-id') ?? undefined);
       }
     } catch {
+      if (requestGeneration !== contextGenerationRef.current) return;
       setMessages((prev) => [
         ...prev,
         {
@@ -279,7 +307,7 @@ function useKiaChat(pathname: string, contextToken?: string, companyId?: string)
     } finally {
       setLoading(false);
     }
-  }, [companyId, contextLoading, contextSummary, contextToken, loading, messages, pathname, sessionId, uiLocale]);
+  }, [adminMode, companyId, contextLoading, contextSummary, contextToken, loading, messages, pageData, pathname, sessionId, uiLocale]);
 
   const rate = useCallback(async (messageId: string, rating: 'positive' | 'negative') => {
     const target = messages.find((message) => message.id === messageId);
@@ -303,9 +331,9 @@ function useKiaChat(pathname: string, contextToken?: string, companyId?: string)
   }, [messages]);
 
   const reset = useCallback(() => {
-    setMessages(contextSummary ? [contextualWelcome(contextSummary)] : [welcomeMessage(true)]);
+    setMessages(contextSummary ? [contextualWelcome(contextSummary)] : [welcomeMessage(true, adminMode)]);
     setSessionId(undefined);
-  }, [contextSummary]);
+  }, [adminMode, contextSummary]);
 
   const appendAssistantMessage = useCallback((text: string, avatarState: KiaAvatarState = 'ayuda') => {
     setMessages((previous) => [...previous, {
@@ -405,7 +433,7 @@ function KiaMessageArtifacts({ artifacts }: { artifacts: KiaCopilotArtifact[] })
   );
 }
 
-export default function KiaCopilotWidget({ embedded = false }: { embedded?: boolean }) {
+export default function KiaCopilotWidget({ embedded = false, active = true }: { embedded?: boolean; active?: boolean }) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [telegramLinking, setTelegramLinking] = useState(false);
@@ -415,10 +443,61 @@ export default function KiaCopilotWidget({ embedded = false }: { embedded?: bool
   const [animatedMessageIds, setAnimatedMessageIds] = useState<Set<string>>(() => new Set());
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const panelVisible = embedded || open;
+  const panelVisible = embedded ? active : open;
   const [contextToken] = useState<string | undefined>(() => searchParams.get('ctx') ?? undefined);
-  const adminCompanyId = /^\/admin\/empresas\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?:\/|$)/i.exec(pathname)?.[1];
-  const { messages, loading, contextLoading, send, rate, reset, appendAssistantMessage, staffPreview, uiLocale } = useKiaChat(pathname, contextToken, adminCompanyId);
+  const adminMode = embedded && pathname.startsWith('/admin');
+  const adminCompanyFromPath = /^\/admin\/empresas\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?:\/|$)/i.exec(pathname)?.[1];
+  const adminCompanyFromQuery = searchParams.get('companyId');
+  const adminCompanyId = adminCompanyFromPath
+    ?? (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(adminCompanyFromQuery ?? '')
+      ? adminCompanyFromQuery ?? undefined
+      : undefined);
+  const [adminPageData, setAdminPageData] = useState<Record<string, string | number | boolean> | undefined>();
+  const [explicitPageContext, setExplicitPageContext] = useState<Record<string, string | number | boolean>>({});
+
+  useEffect(() => {
+    if (!adminMode) return;
+    const handlePageContext = (event: Event) => {
+      const detail = (event as CustomEvent<Record<string, unknown>>).detail;
+      if (!detail || typeof detail !== 'object') return;
+      const safe: Record<string, string | number | boolean> = {};
+      for (const [key, value] of Object.entries(detail)) {
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') safe[key] = value;
+      }
+      setExplicitPageContext(safe);
+    };
+    window.addEventListener('expert:kia-page-context', handlePageContext as EventListener);
+    return () => window.removeEventListener('expert:kia-page-context', handlePageContext as EventListener);
+  }, [adminMode]);
+
+  useEffect(() => {
+    if (!adminMode) return;
+    const frame = window.requestAnimationFrame(() => {
+      const main = document.querySelector('main');
+      const heading = main?.querySelector('h1')?.textContent?.trim() ?? document.querySelector('h1')?.textContent?.trim() ?? '';
+      const subheading = main?.querySelector('h2')?.textContent?.trim() ?? '';
+      const activeTab = document.querySelector('[role="tab"][aria-selected="true"]')?.textContent?.trim() ?? '';
+      setAdminPageData({
+        surface: 'admin',
+        path: pathname,
+        query: searchParams.toString().slice(0, 300),
+        pageTitle: document.title.slice(0, 180),
+        heading: heading.slice(0, 180),
+        subheading: subheading.slice(0, 180),
+        activeTab: String(explicitPageContext.activeTab ?? activeTab).slice(0, 120),
+        ...explicitPageContext,
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [adminMode, explicitPageContext, pathname, searchParams]);
+
+  const { messages, loading, contextLoading, send, rate, reset, appendAssistantMessage, staffPreview, uiLocale } = useKiaChat(
+    pathname,
+    contextToken,
+    adminCompanyId,
+    adminMode,
+    adminPageData,
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -428,6 +507,25 @@ export default function KiaCopilotWidget({ embedded = false }: { embedded?: bool
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
   const speechAbortRef = useRef<AbortController | null>(null);
   const discardRecordingRef = useRef(false);
+  const reviewedAdminPagesRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!adminMode || !panelVisible || !adminPageData || loading || contextLoading) return;
+    if (adminPageData.path !== pathname) return;
+    const reviewKey = `${pathname}?${searchParams.toString()}|${String(adminPageData.activeTab ?? '')}`;
+    if (reviewedAdminPagesRef.current.has(reviewKey)) return;
+
+    const timer = window.setTimeout(() => {
+      if (reviewedAdminPagesRef.current.has(reviewKey)) return;
+      reviewedAdminPagesRef.current.add(reviewKey);
+      void send(
+        'Revisa el contexto de esta pantalla Admin. Si detectas un pendiente, riesgo, incoherencia o siguiente paso útil, indícamelo de forma concreta. Si no hay suficiente contexto, dime brevemente qué puedes revisar aquí. No muestres un menú de opciones.',
+        { silentUser: true, currentTask: 'admin_page_review' },
+      );
+    }, 450);
+
+    return () => window.clearTimeout(timer);
+  }, [adminMode, adminPageData, contextLoading, loading, panelVisible, pathname, searchParams, send]);
 
   useEffect(() => {
     return () => {
@@ -842,7 +940,7 @@ export default function KiaCopilotWidget({ embedded = false }: { embedded?: bool
                     </button>
                   </div>
                 ) : null}
-                {msg.role === 'assistant' && msg.quickReplies?.length ? (
+                {!adminMode && msg.role === 'assistant' && msg.quickReplies?.length ? (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {msg.quickReplies.map((qr) => (
                       <button
@@ -857,7 +955,7 @@ export default function KiaCopilotWidget({ embedded = false }: { embedded?: bool
                     ))}
                   </div>
                 ) : null}
-                {msg.role === 'assistant' && msg.proactiveSuggestions?.length ? (
+                {!adminMode && msg.role === 'assistant' && msg.proactiveSuggestions?.length ? (
                   <div className="mt-3 rounded-xl bg-[#faf8f4] p-2.5">
                     <p className="mb-2 text-[11px] font-semibold text-[#7a6e5f]">
                       {uiLocale === 'ru' ? 'Я также могу помочь:' : 'También puedo ayudarte con:'}

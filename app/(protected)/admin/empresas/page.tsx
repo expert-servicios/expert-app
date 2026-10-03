@@ -42,6 +42,12 @@ type ResolveResult = { suggestions: CompanySuggestion[]; meta: { sources: string
 
 export default function AdminEmpresasPage() {
   const [tab, setTab] = useState<'expert' | 'public'>('expert');
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('expert:kia-page-context', {
+      detail: { activeTab: tab, surfaceSection: 'companies_directory' },
+    }));
+  }, [tab]);
   const [companies, setCompanies] = useState<CompanyRow[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [companiesError, setCompaniesError] = useState('');

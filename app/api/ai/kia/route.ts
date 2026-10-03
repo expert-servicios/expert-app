@@ -77,6 +77,12 @@ function sessionCompanyId(data: unknown): string | null {
   return typeof value === 'string' ? value : null;
 }
 
+function sessionClientId(data: unknown): string | null {
+  if (!data || typeof data !== 'object') return null;
+  const value = (data as Record<string, unknown>).client_id;
+  return typeof value === 'string' ? value : null;
+}
+
 
 export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -165,9 +171,44 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const adminCopilotMode = Boolean(
+    !staffPreview
+    && profile
+    && isStaffRole(profile.role)
+    && profile.status !== 'inactive'
+    && currentPage?.startsWith('/admin'),
+  );
+  const adminClientPageMatch = adminCopilotMode
+    ? /^\/admin\/clientes\/([0-9a-f-]{36})(?:\/|$)/i.exec(currentPage ?? '')
+    : null;
+  const adminTargetClientId = adminClientPageMatch?.[1] ?? undefined;
+
+  if (adminTargetClientId) {
+    const { data: targetProfile, error: targetProfileError } = await admin
+      .from('profiles')
+      .select('id,status')
+      .eq('id', adminTargetClientId)
+      .maybeSingle();
+    if (targetProfileError || !targetProfile) {
+      return NextResponse.json({ error: 'client_context_invalid', reply: kiaFriendlyError('client_context_invalid', 'es'), avatarState: 'aviso', artifacts: [] }, { status: 404 });
+    }
+  }
+
+  if (adminTargetClientId && companyId) {
+    const { data: targetMembership, error: targetMembershipError } = await admin
+      .from('profile_companies')
+      .select('company_id')
+      .eq('profile_id', adminTargetClientId)
+      .eq('company_id', companyId)
+      .maybeSingle();
+    if (targetMembershipError || !targetMembership) {
+      return NextResponse.json({ error: 'company_forbidden', reply: kiaFriendlyError('company_forbidden', 'es'), avatarState: 'aviso', artifacts: [] }, { status: 403 });
+    }
+  }
+
   const resolvedCompanyId = staffPreview
     ? (staffPreview.companyId ?? undefined)
-    : (companyId ?? contextualCompanyId ?? profile?.active_company_id ?? undefined);
+    : (companyId ?? contextualCompanyId ?? (adminCopilotMode ? undefined : profile?.active_company_id ?? undefined));
   const effectivePreferredLanguage = staffPreview?.client.preferred_language ?? profile?.preferred_language ?? null;
   const profileLocale = effectivePreferredLanguage === 'ru' ? 'ru' : 'es';
   // A delegated client preview must behave exactly as the client would see it.
@@ -177,6 +218,7 @@ export async function POST(request: NextRequest) {
     : resolveKiaLocale({ latestMessage: message, preferredLanguage: profileLocale });
 
   const staffCompanyScope = Boolean(companyId && profile && isStaffRole(profile.role) && profile.status !== 'inactive');
+  const copilotPolicyProfile = adminCopilotMode ? 'admin_copilot' as const : 'client_dashboard' as const;
 
   if (resolvedCompanyId && !staffPreview) {
     if (staffCompanyScope) {
@@ -223,12 +265,13 @@ export async function POST(request: NextRequest) {
   }
 
   const companyScope = resolvedCompanyId ?? null;
+  const effectiveClientId = adminTargetClientId ?? staffPreview?.clientId ?? user.id;
   let actor;
   try {
     actor = await resolveKiaActorCapabilities({
       admin,
       userId: user.id,
-      clientId: staffPreview?.clientId ?? user.id,
+      clientId: effectiveClientId,
       companyId: companyScope,
       featureFlags: getEnabledKiaPolicyFeatureFlags(),
     });
@@ -241,9 +284,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'account_inactive', reply: kiaFriendlyError('account_inactive', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 403 });
   }
 
-  const dashboardPolicy = resolveKiaPolicyToolNames('client_dashboard', actor);
-  if (!dashboardPolicy.ok) {
-    console.warn('[KiaCopilot] client dashboard policy denied:', dashboardPolicy.reason);
+  const copilotPolicy = resolveKiaPolicyToolNames(copilotPolicyProfile, actor);
+  if (!copilotPolicy.ok) {
+    console.warn('[KiaCopilot] policy denied:', copilotPolicy.reason);
     return NextResponse.json({ error: 'policy_denied', reply: kiaFriendlyError('policy_denied', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 403 });
   }
 
@@ -313,7 +356,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'session_scope_check_failed', reply: kiaFriendlyError('session_scope_check_failed', responseLocale), avatarState: 'aviso', artifacts: [] }, { status: 500 });
     }
 
-    if (!existingSession || sessionCompanyId(existingSession.data) !== companyScope) {
+    if (
+      !existingSession
+      || sessionCompanyId(existingSession.data) !== companyScope
+      || sessionClientId(existingSession.data) !== effectiveClientId
+    ) {
       effectiveSessionId = undefined;
       effectiveHistory = [];
     }
@@ -328,27 +375,27 @@ export async function POST(request: NextRequest) {
 
   let result;
   try {
-    result = await runPolicyEnforcedKiaDecision('client_dashboard', actor, {
+    result = await runPolicyEnforcedKiaDecision(copilotPolicyProfile, actor, {
       taskType   : 'chat_reply',
-      channel    : 'dashboard',
+      channel    : adminCopilotMode ? 'admin' : 'dashboard',
       message,
       locale     : responseLocale,
       allowTools : true,
       forceToolExecution: process.env.KIA_COPILOT_TOOLS_ENABLED?.toLowerCase() !== 'false',
       contextInput: {
-        channel     : 'dashboard',
+        channel     : adminCopilotMode ? 'admin' : 'dashboard',
         userId      : user.id,
-        clientId    : staffPreview?.clientId ?? user.id,
+        clientId    : effectiveClientId,
         companyId   : resolvedCompanyId,
         currentPage : currentPage ?? '/',
-        currentTask : currentTask ?? contextualTask,
+        currentTask : currentTask ?? contextualTask ?? (adminCopilotMode ? 'admin_operator' : undefined),
         pageData    : pageData,
         caseId      : contextualCaseId,
         serviceSlug : contextualServiceSlug,
         latestMessage: message,
         syntheticRecentMessages,
         originEmail: contextualOriginEmail,
-        allowStaffCompanyScope: staffCompanyScope,
+        allowStaffCompanyScope: staffCompanyScope && !adminTargetClientId,
       },
     });
   } catch (err) {
@@ -366,14 +413,17 @@ export async function POST(request: NextRequest) {
 
   if (!result.usedFallback && result.providerResult) {
     const shadowTaskType = result.decision.taskType;
-    const allowedShadowToolNames = new Set(dashboardPolicy.toolNames);
+    const allowedShadowToolNames = new Set(copilotPolicy.toolNames);
     const shadowTools = KIA_TOOL_DEFINITIONS.filter((tool) => allowedShadowToolNames.has(tool.name));
     const shadowRequest = {
       taskType: shadowTaskType,
       systemPrompt: buildKiaSystemPrompt({
         locale: responseLocale,
-        channel: 'dashboard',
+        channel: adminCopilotMode ? 'admin' : 'dashboard',
         taskType: shadowTaskType,
+        currentPage,
+        currentTask: currentTask ?? contextualTask ?? (adminCopilotMode ? 'admin_operator' : undefined),
+        pageData,
       }),
       responseSchema: KIA_DECISION_JSON_SCHEMA,
       tools: shadowTools,
@@ -445,7 +495,7 @@ export async function POST(request: NextRequest) {
     let documentToolResult = null;
     const needsDocuments = caseQuickAction === 'documents' || caseQuickAction === 'next_step';
     if (needsDocuments && process.env.KIA_COPILOT_TOOLS_ENABLED?.toLowerCase() !== 'false'
-      && dashboardPolicy.toolNames.includes('get_case_documents')) {
+      && copilotPolicy.toolNames.includes('get_case_documents')) {
       documentToolResult = await executeKiaToolCall({
         name: 'get_case_documents',
         arguments: { caseId: quickActionCase.id, limit: 20 },
@@ -498,7 +548,7 @@ export async function POST(request: NextRequest) {
   );
   const decisionLogId = reply !== result.decision.userMessage
     ? await recordKiaVisibleReply({ admin, decisionLogId: result.decisionLogId,
-      clientId: staffPreview?.clientId ?? user.id, decision: result.decision, reply })
+      clientId: effectiveClientId, decision: result.decision, reply })
     : result.decisionLogId ?? null;
 
   try {
@@ -534,6 +584,7 @@ export async function POST(request: NextRequest) {
         next_action : result.decision.nextAction,
         avatar_state: avatarState,
         company_id  : companyScope,
+        client_id   : effectiveClientId,
       };
 
       if (effectiveSessionId) {
@@ -560,8 +611,12 @@ export async function POST(request: NextRequest) {
     console.warn('[KiaCopilot] session save failed:', err);
   }
 
-  const quickReplies = (result.decision.quickReplies ?? []).map((replyItem) => replyItem.title);
-  const proactiveSuggestions = caseQuickActionPresentation && caseQuickAction
+  const quickReplies = adminCopilotMode
+    ? []
+    : (result.decision.quickReplies ?? []).map((replyItem) => replyItem.title);
+  const proactiveSuggestions = adminCopilotMode
+    ? []
+    : caseQuickActionPresentation && caseQuickAction
     ? buildKiaCaseQuickActionSuggestions(caseQuickAction, responseLocale)
     : buildKiaProactiveSuggestions({
         locale: responseLocale,
@@ -582,6 +637,7 @@ export async function POST(request: NextRequest) {
     avatarState,
     artifacts,
     decisionLogId,
+    adminCopilotMode,
   });
   if (effectiveSessionId) response.headers.set('x-kia-session-id', effectiveSessionId);
   return response;

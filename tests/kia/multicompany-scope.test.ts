@@ -14,14 +14,14 @@ describe('KIA multi-company scope', () => {
     expect(route).toContain(".eq('company_id', resolvedCompanyId)");
     expect(route).toContain("const staffCompanyScope = Boolean(companyId && profile && isStaffRole(profile.role)");
     expect(route).toContain(".from('companies')");
-    expect(route).toContain("allowStaffCompanyScope: staffCompanyScope");
+    expect(route).toContain("allowStaffCompanyScope: staffCompanyScope && !adminTargetClientId");
     expect(route).toContain("error: companyId ? 'company_forbidden' : 'active_company_invalid'");
   });
 
   it('keeps the dashboard on the policy-enforced customer-safe tool surface', () => {
     const route = source('app/api/ai/kia/route.ts');
-    expect(route).toContain("resolveKiaPolicyToolNames('client_dashboard', actor)");
-    expect(route).toContain("runPolicyEnforcedKiaDecision('client_dashboard', actor");
+    expect(route).toContain("resolveKiaPolicyToolNames(copilotPolicyProfile, actor)");
+    expect(route).toContain("runPolicyEnforcedKiaDecision(copilotPolicyProfile, actor");
     expect(route).not.toContain('LEGACY_DASHBOARD_SAFE_TOOLS');
     expect(route).not.toContain('allowedToolNames: [...LEGACY_DASHBOARD_SAFE_TOOLS]');
   });

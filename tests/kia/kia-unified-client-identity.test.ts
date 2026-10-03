@@ -24,17 +24,17 @@ describe('Unified KIA client identity', () => {
   });
 
   it('opens a contextual email case before showing generic Holded shortcuts', () => {
-    expect(widget).toContain('contextToken ? [] : [welcomeMessage()]');
+    expect(widget).toContain('contextToken ? [] : [welcomeMessage(false, adminMode)]');
     expect(widget).not.toContain('Estoy abriendo este expediente para ti… 😊');
     expect(widget).toContain('<span aria-hidden="true">•••</span>');
     expect(widget).toContain('setMessages([contextualWelcome(context)])');
-    expect(widget).toContain('contextSummary ? [contextualWelcome(contextSummary)] : [welcomeMessage(true)]');
+    expect(widget).toContain('contextSummary ? [contextualWelcome(contextSummary)] : [welcomeMessage(true, adminMode)]');
   });
 
   it('keeps delegated staff preview case scope authoritative', () => {
     expect(kiaRoute).toContain('const resolvedCompanyId = staffPreview');
     expect(kiaRoute).toContain('staffPreview.companyId ?? undefined');
-    expect(kiaRoute).toContain('clientId    : staffPreview?.clientId ?? user.id');
+    expect(kiaRoute).toContain('clientId    : effectiveClientId');
   });
 
   it('enforces the agreed KIA voice', () => {
