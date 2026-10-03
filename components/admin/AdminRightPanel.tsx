@@ -175,7 +175,7 @@ export function AdminRightPanel({ emailUnreadCount = 0 }: { emailUnreadCount?: n
             <div className="relative flex-1 overflow-hidden">
               {TABS.map(({ id }) => (
                 <div key={id} className={`absolute inset-0 overflow-auto ${tab === id ? 'z-10 visible' : 'z-0 invisible'}`}>
-                  {mounted.has(id) && (id === 'kia' ? <KiaCopilotWidget embedded /> : <NotificacionesTab />)}
+                  {mounted.has(id) && (id === 'kia' ? <KiaCopilotWidget embedded active={open && tab === 'kia'} /> : <NotificacionesTab />)}
                 </div>
               ))}
             </div>
