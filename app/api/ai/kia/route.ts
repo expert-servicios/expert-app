@@ -386,6 +386,9 @@ export async function POST(request: NextRequest) {
         channel     : adminCopilotMode ? 'admin' : 'dashboard',
         userId      : user.id,
         clientId    : effectiveClientId,
+        targetClientId: adminCopilotMode
+          ? (adminTargetClientId ?? staffPreview?.clientId ?? undefined)
+          : effectiveClientId,
         companyId   : resolvedCompanyId,
         currentPage : currentPage ?? '/',
         currentTask : currentTask ?? contextualTask ?? (adminCopilotMode ? 'admin_operator' : undefined),
