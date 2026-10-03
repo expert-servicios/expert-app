@@ -40,6 +40,12 @@ const nextConfig: NextConfig = {
       {
         source: '/(.*)',
         headers: SECURITY_HEADERS
+      },
+      {
+        source: '/ru/:path*',
+        headers: [
+          { key: 'Content-Language', value: 'ru' }
+        ]
       }
     ];
   },
