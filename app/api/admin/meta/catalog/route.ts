@@ -7,6 +7,11 @@ import {
   buildMetaProductPayload,
   hashMetaProductPayload,
 } from '@/lib/integrations/meta/catalog-sync';
+import {
+  buildMetaLocalizedRequest,
+  hashMetaLocalizedRequest,
+  readMetaLocalizationState,
+} from '@/lib/integrations/meta/catalog-localization-sync';
 
 type ServiceIdentity = {
   id: string;
@@ -31,6 +36,11 @@ type MetaItemRow = {
   last_payload_hash: string | null;
 };
 
+type MetaChannelRow = {
+  service_id: string;
+  editorial_overrides: unknown;
+};
+
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -53,8 +63,12 @@ export async function GET(request: NextRequest) {
   }
 
   const admin = getSupabaseAdmin();
-  const result = await buildMetaCatalogDrafts();
+  const [result, ruResult] = await Promise.all([
+    buildMetaCatalogDrafts('es'),
+    buildMetaCatalogDrafts('ru'),
+  ]);
   const retailerIds = result.drafts.map((draft) => draft.retailerId);
+  const ruDraftByRetailer = new Map(ruResult.drafts.map((draft) => [draft.retailerId, draft]));
 
   const [servicesResult, metaItemsResult] = await Promise.all([
     retailerIds.length
@@ -83,13 +97,22 @@ export async function GET(request: NextRequest) {
 
   const services = (servicesResult.data ?? []) as ServiceIdentity[];
   const serviceIds = services.map((service) => service.id);
-  const contentsResult = serviceIds.length
-    ? await admin
-        .from('service_contents')
-        .select('service_id,locale,status,image_url,updated_at')
-        .in('service_id', serviceIds)
-        .in('locale', ['es', 'ru'])
-    : { data: [], error: null };
+  const [contentsResult, channelsResult] = await Promise.all([
+    serviceIds.length
+      ? admin
+          .from('service_contents')
+          .select('service_id,locale,status,image_url,updated_at')
+          .in('service_id', serviceIds)
+          .in('locale', ['es', 'ru'])
+      : Promise.resolve({ data: [], error: null }),
+    serviceIds.length
+      ? admin
+          .from('service_channel_configs')
+          .select('service_id,editorial_overrides')
+          .eq('channel', 'meta')
+          .in('service_id', serviceIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
 
   if (contentsResult.error) {
     return NextResponse.json(
@@ -98,9 +121,19 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  if (channelsResult.error) {
+    return NextResponse.json(
+      { error: `No se pudo leer service_channel_configs: ${channelsResult.error.message}` },
+      { status: 500 },
+    );
+  }
+
   const serviceIdBySlug = new Map(services.map((service) => [service.slug, service.id]));
   const localeRows = (contentsResult.data ?? []) as ServiceLocaleRow[];
   const metaItems = (metaItemsResult.data ?? []) as MetaItemRow[];
+  const metaChannelByService = new Map(
+    ((channelsResult.data ?? []) as MetaChannelRow[]).map((row) => [row.service_id, row]),
+  );
 
   const localesByService = new Map<string, Record<string, { exists: boolean; status: string | null; imageUrl: string | null; updatedAt: string | null }>>();
   for (const row of localeRows) {
@@ -125,12 +158,23 @@ export async function GET(request: NextRequest) {
     const serviceId = serviceIdBySlug.get(draft.retailerId);
     const locales = serviceId ? localesByService.get(serviceId) ?? {} : {};
     const meta = metaByRetailer.get(draft.retailerId) ?? {};
+    const channel = serviceId ? metaChannelByService.get(serviceId) ?? null : null;
+    const ruState = readMetaLocalizationState(channel?.editorial_overrides, 'ru');
+    const ruDraft = ruDraftByRetailer.get(draft.retailerId);
     let currentPayloadHash: string | null = null;
+    let currentRuPayloadHash: string | null = null;
     if (draft.marketingReady) {
       try {
         currentPayloadHash = hashMetaProductPayload(buildMetaProductPayload(draft));
       } catch {
         currentPayloadHash = null;
+      }
+    }
+    if (ruDraft?.marketingReady) {
+      try {
+        currentRuPayloadHash = hashMetaLocalizedRequest(buildMetaLocalizedRequest(ruDraft, 'ru'));
+      } catch {
+        currentRuPayloadHash = null;
       }
     }
 
@@ -156,14 +200,20 @@ export async function GET(request: NextRequest) {
                 ),
             }
           : null,
-        ru: meta.ru
+        ru: ruState
           ? {
-              syncStatus: meta.ru.sync_status,
-              metaItemId: meta.ru.meta_item_id,
-              lastSyncedAt: meta.ru.last_synced_at,
-              lastErrorCode: meta.ru.last_error_code,
-              lastPayloadHash: meta.ru.last_payload_hash,
-              isStale: false,
+              syncStatus: ruState.sync_status,
+              metaItemId: meta.es?.meta_item_id ?? null,
+              lastSyncedAt: ruState.last_synced_at,
+              lastErrorCode: ruState.last_error_code,
+              lastPayloadHash: ruState.last_payload_hash,
+              isStale: ruState.sync_status === 'synced'
+                && (
+                  currentRuPayloadHash == null
+                  || ruState.last_payload_hash == null
+                  || currentRuPayloadHash !== ruState.last_payload_hash
+                ),
+              batchHandle: ruState.batch_handle,
             }
           : null,
       },
