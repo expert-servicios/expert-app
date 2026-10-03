@@ -32,16 +32,25 @@ export type MetaMarketingConfigStatus = {
   };
 };
 
+export type MetaCatalogVatTreatment =
+  | 'plus_vat'
+  | 'vat_included'
+  | 'exempt'
+  | 'outside_scope'
+  | 'manual_review';
+
 export type MetaCatalogPrice = {
   amount: number;
   currency: 'EUR';
-  taxIncluded: false;
+  taxIncluded: boolean;
+  vatTreatment: MetaCatalogVatTreatment;
 };
 
 export type MetaCatalogAvailability = 'in stock' | 'out of stock';
 
 export type MetaServiceCatalogDraft = {
   retailerId: string;
+  offerId: string;
   name: string;
   description: string;
   serviceCategory: string;
