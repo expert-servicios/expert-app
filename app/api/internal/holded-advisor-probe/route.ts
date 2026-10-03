@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 
 const BASE = 'https://api.holded.com';
-const EXPECTED_BRANCH = 'chore/holded-advisor-probe';
 const TARGET = 'diseno global meridiano';
 
 function normalize(value: string): string {
@@ -87,7 +86,7 @@ async function probe(path: string, token: string) {
 }
 
 export async function GET() {
-  if (process.env.VERCEL_ENV !== 'preview' || process.env.VERCEL_GIT_COMMIT_REF !== EXPECTED_BRANCH) {
+  if (process.env.VERCEL_ENV !== 'preview') {
     return new NextResponse(null, { status: 404 });
   }
 
