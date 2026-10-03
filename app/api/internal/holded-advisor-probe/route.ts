@@ -100,7 +100,13 @@ export async function GET() {
     probe('/api/v2/invoices?limit=10', token),
     probe('/api/v2/contacts?limit=25', token),
     probe('/api/v2/accounting-accounts?limit=10', token),
-    probe('/api/v2/treasuries?limit=10', token),
+    probe('/api/v2/treasury/accounts?limit=10', token),
+    probe('/api/v2/companies?limit=10', token),
+    probe('/api/v2/workspaces?limit=10', token),
+    probe('/api/v2/accounts?limit=10', token),
+    probe('/api/v2/advisors/clients?limit=10', token),
+    probe('/api/v2/accounting-firms/clients?limit=10', token),
+    probe('/api/v2/managed-accounts?limit=10', token),
   ]);
 
   return NextResponse.json({
