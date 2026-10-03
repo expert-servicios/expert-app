@@ -1,9 +1,25 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, CheckCircle2, RefreshCw, ShieldCheck, TestTube2, UploadCloud } from 'lucide-react';
+import Image from 'next/image';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Eye,
+  ImageIcon,
+  Languages,
+  RefreshCw,
+  Search,
+  Settings2,
+  ShieldCheck,
+  TestTube2,
+  UploadCloud,
+  X,
+} from 'lucide-react';
 
 type StatusMap = Record<string, number>;
+type Panel = 'catalog' | 'readiness' | 'settings';
+type CatalogFilter = 'all' | 'synced' | 'ready' | 'failed' | 'missing-ru';
 
 type DiagnosticsPayload = {
   config: {
@@ -50,6 +66,19 @@ type DiagnosticsPayload = {
   };
 };
 
+type LocaleContent = {
+  exists: boolean;
+  status: string | null;
+  imageUrl: string | null;
+};
+
+type MetaLocaleState = {
+  syncStatus: string;
+  metaItemId: string | null;
+  lastSyncedAt: string | null;
+  lastErrorCode: string | null;
+} | null;
+
 type MetaCatalogDraft = {
   retailerId: string;
   name: string;
@@ -57,6 +86,14 @@ type MetaCatalogDraft = {
   imageUrl: string | null;
   marketingReady: boolean;
   warnings: string[];
+  locales: {
+    es: LocaleContent;
+    ru: LocaleContent;
+  };
+  meta: {
+    es: MetaLocaleState;
+    ru: MetaLocaleState;
+  };
 };
 
 type MetaCatalogExcludedService = {
@@ -73,22 +110,84 @@ type MetaCatalogPayload = {
   initialBatch: {
     expectedCount: number;
     readyCount: number;
+    syncedCount: number;
     ready: boolean;
+    complete: boolean;
   };
 };
 
 const EXCLUSION_LABEL: Record<MetaCatalogExcludedService['reason'], string> = {
   quote_price: 'Precio "Consultar"',
   missing_offer: 'Sin oferta comercial',
-  archived: 'Archivado (solo suscripción o sin precio)',
+  archived: 'Archivado',
 };
 
-function Metric({ label, value, detail }: { label: string; value: string | number; detail?: string }) {
+function formatPrice(amount: number, currency: string) {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
+
+function formatDate(value: string | null) {
+  if (!value) return '—';
+  return new Intl.DateTimeFormat('es-ES', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(new Date(value));
+}
+
+function MetaStatusBadge({ state, marketingReady }: { state: MetaLocaleState; marketingReady: boolean }) {
+  const status = state?.syncStatus;
+
+  if (status === 'synced') {
+    return <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-[11px] font-bold text-green-800"><CheckCircle2 className="h-3.5 w-3.5" /> Sincronizado</span>;
+  }
+  if (status === 'failed') {
+    return <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-1 text-[11px] font-bold text-red-800"><AlertTriangle className="h-3.5 w-3.5" /> Error</span>;
+  }
+  if (status === 'pending') {
+    return <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-1 text-[11px] font-bold text-blue-800">Sincronizando</span>;
+  }
+  if (status === 'manual_review') {
+    return <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-[11px] font-bold text-amber-900">Revisión</span>;
+  }
+  if (status === 'ready') {
+    return <span className="inline-flex items-center gap-1 rounded-full bg-[#f3e5c5] px-2 py-1 text-[11px] font-bold text-[#7a5313]">Listo</span>;
+  }
+  if (marketingReady) {
+    return <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-700">Preparado</span>;
+  }
+  return <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-800">Pendiente</span>;
+}
+
+function LocaleChip({ locale, content, meta }: { locale: 'ES' | 'RU'; content: LocaleContent; meta: MetaLocaleState }) {
+  const synced = meta?.syncStatus === 'synced';
+  const ready = content.exists && content.status === 'active';
+
   return (
-    <div className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#6b7280]">{label}</p>
-      <p className="mt-2 font-serif text-3xl font-bold text-[#07111d]">{value}</p>
-      {detail ? <p className="mt-1 text-xs text-[#5b6470]">{detail}</p> : null}
+    <span
+      className={
+        synced
+          ? 'inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-[11px] font-bold text-green-800'
+          : ready
+            ? 'inline-flex items-center gap-1 rounded-md bg-[#f3e5c5] px-2 py-1 text-[11px] font-bold text-[#7a5313]'
+            : 'inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-500'
+      }
+      title={synced ? `${locale} sincronizado` : ready ? `${locale} preparado` : `${locale} pendiente`}
+    >
+      {locale}
+      {synced ? '✓' : ready ? '•' : '—'}
+    </span>
+  );
+}
+
+function CompactMetric({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
+  return (
+    <div className="flex min-w-0 items-center gap-2 rounded-xl border border-[#ddd3c2] bg-white px-3 py-2">
+      <span className={`text-lg font-bold ${accent ? 'text-green-700' : 'text-[#07111d]'}`}>{value}</span>
+      <span className="truncate text-[11px] font-semibold uppercase tracking-[0.08em] text-[#69717d]">{label}</span>
     </div>
   );
 }
@@ -101,6 +200,10 @@ export default function MarketingHubPage() {
   const [testMessage, setTestMessage] = useState<string | null>(null);
   const [syncingCatalog, setSyncingCatalog] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [panel, setPanel] = useState<Panel>('catalog');
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<CatalogFilter>('all');
+  const [imagePreview, setImagePreview] = useState<{ src: string; alt: string } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -127,7 +230,7 @@ export default function MarketingHubPage() {
       const response = await fetch('/api/admin/meta/diagnostics', { method: 'POST' });
       const payload = await response.json() as { ok?: boolean; catalog?: { id?: string; name?: string }; error?: string };
       setTestMessage(payload.ok
-        ? `Conexión correcta: ${payload.catalog?.name ?? 'catálogo'} (${payload.catalog?.id ?? 'sin id'})`
+        ? `Conexión correcta: ${payload.catalog?.name ?? 'catálogo'}`
         : payload.error ?? 'Falló la prueba');
     } finally {
       setTesting(false);
@@ -136,7 +239,7 @@ export default function MarketingHubPage() {
 
   const syncCatalog = useCallback(async () => {
     const confirmed = window.confirm(
-      'Se sincronizarán únicamente los 3 certificados production_ready con el catálogo Meta. No se crearán campañas ni publicaciones. ¿Continuar?',
+      'Se sincronizarán únicamente los 3 certificados ES del lote inicial. ¿Continuar?',
     );
     if (!confirmed) return;
 
@@ -158,7 +261,7 @@ export default function MarketingHubPage() {
       try {
         payload = raw ? JSON.parse(raw) : {};
       } catch {
-        payload = { error: 'Respuesta no válida del servidor; se recargará el estado antes de permitir otro intento.' };
+        payload = { error: 'Respuesta no válida del servidor; se recargará el estado.' };
       }
 
       if (!response.ok) {
@@ -171,210 +274,266 @@ export default function MarketingHubPage() {
         );
       }
     } catch {
-      setSyncMessage('Resultado de sincronización ambiguo. Se recarga el estado antes de permitir otro intento.');
+      setSyncMessage('Resultado ambiguo. Se ha recargado el estado antes de permitir otro intento.');
     } finally {
       await load();
       setSyncingCatalog(false);
     }
   }, [load]);
 
-  if (loading && !data) return <main className="p-8">Cargando Marketing Hub…</main>;
+  const filteredDrafts = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    return (catalog?.drafts ?? []).filter((draft) => {
+      const matchesSearch = !normalized
+        || draft.name.toLowerCase().includes(normalized)
+        || draft.retailerId.toLowerCase().includes(normalized);
+
+      const esStatus = draft.meta.es?.syncStatus;
+      const matchesFilter =
+        filter === 'all'
+        || (filter === 'synced' && esStatus === 'synced')
+        || (filter === 'ready' && (esStatus === 'ready' || (!esStatus && draft.marketingReady)))
+        || (filter === 'failed' && esStatus === 'failed')
+        || (filter === 'missing-ru' && !draft.locales.ru.exists);
+
+      return matchesSearch && matchesFilter;
+    });
+  }, [catalog?.drafts, filter, query]);
+
+  if (loading && !data) return <main className="p-8">Cargando catálogo Meta…</main>;
   if (!data) return <main className="p-8 text-red-700">No se pudo cargar Marketing Hub.</main>;
 
   const { diagnostics, config } = data;
+  const syncedCount = catalog?.drafts.filter((draft) => draft.meta.es?.syncStatus === 'synced').length ?? 0;
+  const failedCount = catalog?.drafts.filter((draft) => draft.meta.es?.syncStatus === 'failed').length ?? 0;
+  const ruMissingCount = catalog?.drafts.filter((draft) => !draft.locales.ru.exists).length ?? 0;
 
   return (
-    <main className="min-h-screen bg-[#f8f4eb] px-6 py-8">
-      <div className="mx-auto max-w-7xl">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="h-6 w-6 text-[#c88b25]" />
-              <h1 className="font-serif text-3xl font-bold text-[#07111d]">EXPERT Marketing Hub</h1>
+    <main className="min-h-screen bg-[#f7f3eb] px-4 py-5 lg:px-6">
+      <div className="mx-auto max-w-[1500px]">
+        <header className="rounded-2xl border border-[#d8cbb5] bg-white px-4 py-4 shadow-sm">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-[#c88b25]" />
+                <h1 className="font-serif text-2xl font-bold text-[#07111d]">Catálogo Meta</h1>
+                <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${config.configured && config.enabled ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-900'}`}>
+                  {config.configured && config.enabled ? 'Conectado' : 'Revisar conexión'}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-[#69717d]">
+                Gestión compacta de catálogo, contenidos ES/RU, imágenes y sincronización con Meta.
+              </p>
             </div>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-[#5b6470]">
-              Diagnóstico del catálogo canónico C2 y sincronización manual controlada del lote aprobado para Meta.
-              No publica campañas, no cambia precios y no programa publicaciones orgánicas.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => void load()} disabled={loading}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#d8cbb5] bg-white px-4 py-2 text-sm font-semibold">
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Actualizar
-            </button>
-            <button type="button" onClick={() => void testConnection()} disabled={!data.liveTestAvailable || testing}
-              className="inline-flex items-center gap-2 rounded-xl bg-[#07111d] px-4 py-2 text-sm font-semibold text-[#d7a33a] disabled:opacity-40">
-              <TestTube2 className="h-4 w-4" /> {testing ? 'Probando…' : 'Probar Meta'}
-            </button>
-            <button
-              type="button"
-              onClick={() => void syncCatalog()}
-              disabled={
-                !data.liveTestAvailable
-                || syncingCatalog
-                || !catalog?.initialBatch.ready
-              }
-              className="inline-flex items-center gap-2 rounded-xl bg-[#c88b25] px-4 py-2 text-sm font-bold text-[#07111d] disabled:opacity-40"
-              title="Solo sincroniza los 3 certificados production_ready ya preparados"
-            >
-              <UploadCloud className="h-4 w-4" />
-              {syncingCatalog ? 'Sincronizando…' : 'Sincronizar lote Meta (3)'}
-            </button>
-          </div>
-        </div>
 
-        <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Metric label="Servicios C2" value={diagnostics.c2.services.total} detail="Fuente comercial canónica" />
-          <Metric label="Production ready" value={diagnostics.manifest.productionReady} detail={`Estándar v${diagnostics.standardVersion}`} />
-          <Metric label="Canales Meta ready" value={diagnostics.c2.channels.metaReady} detail={`de ${diagnostics.c2.channels.metaTotal} configurados`} />
-          <Metric label="Items Meta" value={diagnostics.c2.metaItems.total} detail="Proyección C2, no fuente maestra" />
-        </div>
-
-        <section className="mt-6 rounded-2xl border border-[#d8cbb5] bg-white p-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="font-serif text-xl font-bold text-[#07111d]">Configuración Meta</h2>
-            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${config.configured ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-900'}`}>
-              {config.configured ? 'Configurada' : 'Incompleta'}
-            </span>
-            <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${config.enabled ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-700'}`}>
-              {config.enabled ? 'Habilitada' : 'Deshabilitada'}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void load()}
+                disabled={loading}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 text-xs font-bold text-[#07111d]"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> Actualizar
+              </button>
+              <button
+                type="button"
+                onClick={() => void testConnection()}
+                disabled={!data.liveTestAvailable || testing}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#07111d] px-3 py-2 text-xs font-bold text-[#d7a33a] disabled:opacity-40"
+              >
+                <TestTube2 className="h-3.5 w-3.5" /> {testing ? 'Probando…' : 'Probar Meta'}
+              </button>
+              <button
+                type="button"
+                onClick={() => void syncCatalog()}
+                disabled={!data.liveTestAvailable || syncingCatalog || !catalog?.initialBatch.ready}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#c88b25] px-3 py-2 text-xs font-bold text-[#07111d] disabled:cursor-not-allowed disabled:opacity-40"
+                title={catalog?.initialBatch.complete ? 'El lote inicial ES ya está sincronizado' : 'Sincroniza el lote inicial aprobado'}
+              >
+                {catalog?.initialBatch.complete ? <CheckCircle2 className="h-3.5 w-3.5" /> : <UploadCloud className="h-3.5 w-3.5" />}
+                {catalog?.initialBatch.complete ? 'Lote ES sincronizado' : syncingCatalog ? 'Sincronizando…' : 'Sincronizar lote ES'}
+              </button>
+            </div>
           </div>
-          <p className="mt-3 text-sm text-[#5b6470]">Graph API: {config.graphApiVersion ?? 'pendiente'}</p>
-          {config.missing.length ? (
-            <p className="mt-2 text-xs text-amber-800">Faltan: {config.missing.join(' · ')}</p>
+
+          {(testMessage || syncMessage) ? (
+            <div className="mt-3 rounded-lg bg-[#f7f3eb] px-3 py-2 text-xs font-semibold text-[#374151]">
+              {syncMessage ?? testMessage}
+            </div>
           ) : null}
-          {testMessage ? <p className="mt-3 text-sm font-semibold text-[#07111d]">{testMessage}</p> : null}
-          {syncMessage ? <p className="mt-2 text-sm font-semibold text-[#07111d]">{syncMessage}</p> : null}
-          <p className="mt-3 text-xs text-[#6b7280]">
-            La escritura de catálogo es manual y auditable. Este control solo admite el lote inicial de 3 certificados;
-            no crea campañas, anuncios ni posts.
-          </p>
-        </section>
+        </header>
 
-        {diagnostics.errors.length > 0 ? (
-          <section className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5">
-            <div className="flex items-center gap-2 font-bold text-red-800">
-              <AlertTriangle className="h-4 w-4" /> Errores de lectura C2
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          <CompactMetric label="Servicios" value={catalog?.drafts.length ?? 0} />
+          <CompactMetric label="Sincronizados ES" value={syncedCount} accent={syncedCount > 0} />
+          <CompactMetric label="Listos" value={catalog?.readyCount ?? 0} />
+          <CompactMetric label="Errores" value={failedCount} />
+          <CompactMetric label="RU pendientes" value={ruMissingCount} />
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-[#ddd3c2] bg-white p-1.5">
+          <button
+            type="button"
+            onClick={() => setPanel('catalog')}
+            className={`rounded-lg px-3 py-2 text-xs font-bold ${panel === 'catalog' ? 'bg-[#07111d] text-white' : 'text-[#5b6470] hover:bg-[#f7f3eb]'}`}
+          >
+            Catálogo
+          </button>
+          <button
+            type="button"
+            onClick={() => setPanel('readiness')}
+            className={`rounded-lg px-3 py-2 text-xs font-bold ${panel === 'readiness' ? 'bg-[#07111d] text-white' : 'text-[#5b6470] hover:bg-[#f7f3eb]'}`}
+          >
+            Preparación
+          </button>
+          <button
+            type="button"
+            onClick={() => setPanel('settings')}
+            className={`rounded-lg px-3 py-2 text-xs font-bold ${panel === 'settings' ? 'bg-[#07111d] text-white' : 'text-[#5b6470] hover:bg-[#f7f3eb]'}`}
+          >
+            Configuración
+          </button>
+        </div>
+
+        {panel === 'catalog' ? (
+          <section className="mt-3 overflow-hidden rounded-2xl border border-[#d8cbb5] bg-white shadow-sm">
+            <div className="flex flex-col gap-3 border-b border-[#eee6d8] p-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <div className="relative min-w-0 flex-1 lg:max-w-md">
+                  <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#9ca3af]" />
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Buscar servicio…"
+                    className="w-full rounded-lg border border-[#ddd3c2] bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-[#c88b25]"
+                  />
+                </div>
+                <select
+                  value={filter}
+                  onChange={(event) => setFilter(event.target.value as CatalogFilter)}
+                  className="rounded-lg border border-[#ddd3c2] bg-white px-3 py-2 text-xs font-semibold text-[#374151]"
+                  aria-label="Filtrar catálogo"
+                >
+                  <option value="all">Todos</option>
+                  <option value="synced">Sincronizados</option>
+                  <option value="ready">Listos</option>
+                  <option value="failed">Con error</option>
+                  <option value="missing-ru">Falta RU</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2 text-[11px] font-semibold text-[#69717d]">
+                <Languages className="h-4 w-4" />
+                {filteredDrafts.length} visibles · ES / RU
+              </div>
             </div>
-            {diagnostics.errors.map((error) => (
-              <p key={error.source} className="mt-2 text-xs text-red-700">{error.source}: {error.message}</p>
-            ))}
-          </section>
-        ) : null}
 
-        <section className="mt-6 overflow-hidden rounded-2xl border border-[#d8cbb5] bg-white">
-          <div className="border-b border-[#eee6d8] p-5">
-            <h2 className="font-serif text-xl font-bold text-[#07111d]">Readiness por servicio</h2>
-            <p className="mt-1 text-sm text-[#5b6470]">
-              Un servicio no se publica automáticamente hasta estar production_ready y con el canal aprobado.
-            </p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-[#f8f4eb] text-left text-xs uppercase text-[#6b7280]">
-                <tr>
-                  <th className="px-4 py-3">Servicio</th>
-                  <th className="px-4 py-3">Stage</th>
-                  <th className="px-4 py-3">Blog</th>
-                  <th className="px-4 py-3">KB</th>
-                  <th className="px-4 py-3">Gate</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#eee6d8]">
-                {diagnostics.manifest.entries.map((entry) => (
-                  <tr key={entry.slug}>
-                    <td className="px-4 py-3 font-mono text-xs font-semibold">{entry.slug}</td>
-                    <td className="px-4 py-3">{entry.stage}</td>
-                    <td className="px-4 py-3">{entry.blogCount}</td>
-                    <td className="px-4 py-3">{entry.knowledgeCount}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 font-semibold ${entry.contentGatePassed ? 'text-green-700' : 'text-amber-800'}`}>
-                        {entry.contentGatePassed ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
-                        {entry.contentGatePassed ? 'OK' : `${entry.readinessIssues.length} pendientes`}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section className="mt-6 overflow-hidden rounded-2xl border border-[#d8cbb5] bg-white">
-          <div className="border-b border-[#eee6d8] p-5">
-            <h2 className="font-serif text-xl font-bold text-[#07111d]">Catálogo para Meta</h2>
-            <p className="mt-1 text-sm text-[#5b6470]">
-              Proyección canónica de lo que se exporta al catálogo de comercio de Meta a partir de las tablas C2.
-              La sincronización externa solo se ejecuta manualmente desde el control superior y únicamente para el lote aprobado.
-            </p>
-            {catalog ? (
-              <p className="mt-2 text-sm font-semibold text-[#07111d]">
-                {catalog.readyCount} listos de {catalog.readyCount + catalog.blockedCount}
-              </p>
-            ) : null}
-          </div>
-          <div className="max-h-[32rem] overflow-auto">
-            <table className="min-w-full text-sm">
-              <thead className="sticky top-0 bg-[#f8f4eb] text-left text-xs uppercase text-[#6b7280]">
-                <tr>
-                  <th className="px-4 py-3">Servicio (retailer_id)</th>
-                  <th className="px-4 py-3">Precio</th>
-                  <th className="px-4 py-3">Imagen</th>
-                  <th className="px-4 py-3">Estado</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#eee6d8]">
-                {(catalog?.drafts ?? []).map((draft) => (
-                  <tr key={draft.retailerId}>
-                    <td className="px-4 py-3 font-mono text-xs font-semibold">{draft.retailerId}</td>
-                    <td className="px-4 py-3">{draft.price ? `${draft.price.amount.toFixed(2)} ${draft.price.currency}` : '—'}</td>
-                    <td className="px-4 py-3">{draft.imageUrl ? 'OK' : 'Falta'}</td>
-                    <td className="px-4 py-3">
-                      {draft.marketingReady ? (
-                        <span className="inline-flex items-center gap-1 font-semibold text-green-700">
-                          <CheckCircle2 className="h-4 w-4" /> Listo
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 font-semibold text-amber-800" title={draft.warnings.join(', ')}>
-                          <AlertTriangle className="h-4 w-4" /> {draft.warnings.join(', ')}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {catalog && catalog.drafts.length === 0 && catalog.excluded.length === 0 ? (
-              <p className="p-5 text-sm text-[#5b6470]">
-                No hay servicios en catalog_services todavía. Ejecuta el backfill (scripts/backfill-meta-catalog-c2.ts --apply) primero.
-              </p>
-            ) : null}
-          </div>
-        </section>
-
-        {catalog && catalog.excluded.length > 0 ? (
-          <section className="mt-6 overflow-hidden rounded-2xl border border-[#d8cbb5] bg-white">
-            <div className="border-b border-[#eee6d8] p-5">
-              <h2 className="font-serif text-xl font-bold text-[#07111d]">Fuera del catálogo de Meta</h2>
-              <p className="mt-1 text-sm text-[#5b6470]">
-                {catalog.excluded.length} servicios sin precio fijo o &ldquo;desde&rdquo; (p. ej. &ldquo;Consultar&rdquo;). Meta exige un
-                número por artículo, así que se quedan fuera en vez de mostrar un precio inventado.
-              </p>
-            </div>
-            <div className="max-h-64 overflow-auto">
+            <div className="max-h-[65vh] overflow-auto">
               <table className="min-w-full text-sm">
-                <thead className="sticky top-0 bg-[#f8f4eb] text-left text-xs uppercase text-[#6b7280]">
+                <thead className="sticky top-0 z-10 bg-[#f7f3eb] text-left text-[10px] uppercase tracking-[0.08em] text-[#69717d]">
                   <tr>
-                    <th className="px-4 py-3">Servicio (retailer_id)</th>
-                    <th className="px-4 py-3">Motivo</th>
+                    <th className="w-16 px-3 py-2">Imagen</th>
+                    <th className="px-3 py-2">Servicio</th>
+                    <th className="w-28 px-3 py-2">Idiomas</th>
+                    <th className="w-28 px-3 py-2">Precio</th>
+                    <th className="w-36 px-3 py-2">Meta ES</th>
+                    <th className="w-44 px-3 py-2">ID / última sync</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#eee6d8]">
-                  {catalog.excluded.map((item) => (
-                    <tr key={item.retailerId}>
-                      <td className="px-4 py-3 font-mono text-xs font-semibold">{item.retailerId}</td>
-                      <td className="px-4 py-3 text-[#5b6470]">{EXCLUSION_LABEL[item.reason]}</td>
+                  {filteredDrafts.map((draft) => (
+                    <tr key={draft.retailerId} className="hover:bg-[#fcfaf6]">
+                      <td className="px-3 py-2">
+                        {draft.imageUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => setImagePreview({ src: draft.imageUrl!, alt: draft.name })}
+                            className="group relative h-11 w-11 overflow-hidden rounded-lg border border-[#ddd3c2] bg-[#f7f3eb]"
+                            title="Ver imagen"
+                          >
+                            <Image
+                              src={draft.imageUrl}
+                              alt={draft.name}
+                              fill
+                              sizes="44px"
+                              className="object-cover"
+                            />
+                            <span className="absolute inset-0 hidden items-center justify-center bg-black/35 text-white group-hover:flex">
+                              <Eye className="h-4 w-4" />
+                            </span>
+                          </button>
+                        ) : (
+                          <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-dashed border-[#d8cbb5] bg-[#faf8f3] text-[#9ca3af]">
+                            <ImageIcon className="h-4 w-4" />
+                          </div>
+                        )}
+                      </td>
+                      <td className="max-w-[28rem] px-3 py-2">
+                        <p className="truncate font-semibold text-[#07111d]" title={draft.name}>{draft.name}</p>
+                        <p className="mt-0.5 truncate font-mono text-[10px] text-[#7b8490]" title={draft.retailerId}>{draft.retailerId}</p>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex gap-1">
+                          <LocaleChip locale="ES" content={draft.locales.es} meta={draft.meta.es} />
+                          <LocaleChip locale="RU" content={draft.locales.ru} meta={draft.meta.ru} />
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs font-semibold text-[#374151]">
+                        {draft.price ? formatPrice(draft.price.amount, draft.price.currency) : '—'}
+                      </td>
+                      <td className="px-3 py-2">
+                        <MetaStatusBadge state={draft.meta.es} marketingReady={draft.marketingReady} />
+                      </td>
+                      <td className="px-3 py-2">
+                        <p className="truncate font-mono text-[10px] text-[#374151]" title={draft.meta.es?.metaItemId ?? ''}>
+                          {draft.meta.es?.metaItemId ?? '—'}
+                        </p>
+                        <p className="mt-0.5 text-[10px] text-[#7b8490]">
+                          {formatDate(draft.meta.es?.lastSyncedAt ?? null)}
+                        </p>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {filteredDrafts.length === 0 ? (
+                <div className="p-8 text-center text-sm text-[#69717d]">No hay servicios que coincidan con el filtro.</div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        {panel === 'readiness' ? (
+          <section className="mt-3 overflow-hidden rounded-2xl border border-[#d8cbb5] bg-white">
+            <div className="border-b border-[#eee6d8] px-4 py-3">
+              <h2 className="font-serif text-lg font-bold text-[#07111d]">Preparación por servicio</h2>
+              <p className="text-xs text-[#69717d]">Contenido, blog, base de conocimiento y gate de producción.</p>
+            </div>
+            <div className="max-h-[65vh] overflow-auto">
+              <table className="min-w-full text-sm">
+                <thead className="sticky top-0 bg-[#f7f3eb] text-left text-[10px] uppercase text-[#69717d]">
+                  <tr>
+                    <th className="px-3 py-2">Servicio</th>
+                    <th className="px-3 py-2">Stage</th>
+                    <th className="px-3 py-2">Blog</th>
+                    <th className="px-3 py-2">KB</th>
+                    <th className="px-3 py-2">Gate</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#eee6d8]">
+                  {diagnostics.manifest.entries.map((entry) => (
+                    <tr key={entry.slug}>
+                      <td className="px-3 py-2 font-mono text-xs font-semibold">{entry.slug}</td>
+                      <td className="px-3 py-2 text-xs">{entry.stage}</td>
+                      <td className="px-3 py-2 text-xs">{entry.blogCount}</td>
+                      <td className="px-3 py-2 text-xs">{entry.knowledgeCount}</td>
+                      <td className="px-3 py-2">
+                        <span className={`inline-flex items-center gap-1 text-xs font-semibold ${entry.contentGatePassed ? 'text-green-700' : 'text-amber-800'}`}>
+                          {entry.contentGatePassed ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+                          {entry.contentGatePassed ? 'OK' : `${entry.readinessIssues.length} pendientes`}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -382,7 +541,85 @@ export default function MarketingHubPage() {
             </div>
           </section>
         ) : null}
+
+        {panel === 'settings' ? (
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            <section className="rounded-2xl border border-[#d8cbb5] bg-white p-4">
+              <div className="flex items-center gap-2">
+                <Settings2 className="h-4 w-4 text-[#c88b25]" />
+                <h2 className="font-serif text-lg font-bold text-[#07111d]">Conexión Meta</h2>
+              </div>
+              <dl className="mt-3 grid gap-2 text-xs">
+                <div className="flex justify-between gap-4"><dt className="text-[#69717d]">Estado</dt><dd className="font-bold">{config.enabled && config.configured ? 'Operativa' : 'Revisar'}</dd></div>
+                <div className="flex justify-between gap-4"><dt className="text-[#69717d]">Graph API</dt><dd className="font-mono">{config.graphApiVersion ?? '—'}</dd></div>
+                <div className="flex justify-between gap-4"><dt className="text-[#69717d]">Canales Meta ready</dt><dd className="font-bold">{diagnostics.c2.channels.metaReady}</dd></div>
+                <div className="flex justify-between gap-4"><dt className="text-[#69717d]">Items Meta</dt><dd className="font-bold">{diagnostics.c2.metaItems.total}</dd></div>
+              </dl>
+              {config.missing.length ? (
+                <p className="mt-3 rounded-lg bg-amber-50 p-2 text-xs text-amber-900">Faltan: {config.missing.join(' · ')}</p>
+              ) : null}
+            </section>
+
+            <section className="rounded-2xl border border-[#d8cbb5] bg-white p-4">
+              <h2 className="font-serif text-lg font-bold text-[#07111d]">Fuera del catálogo</h2>
+              <div className="mt-3 max-h-52 space-y-2 overflow-auto">
+                {(catalog?.excluded ?? []).map((item) => (
+                  <div key={item.retailerId} className="rounded-lg bg-[#f7f3eb] px-3 py-2">
+                    <p className="truncate font-mono text-[10px] font-semibold">{item.retailerId}</p>
+                    <p className="text-[11px] text-[#69717d]">{EXCLUSION_LABEL[item.reason]}</p>
+                  </div>
+                ))}
+                {(catalog?.excluded.length ?? 0) === 0 ? <p className="text-xs text-[#69717d]">Sin exclusiones.</p> : null}
+              </div>
+            </section>
+
+            {diagnostics.errors.length > 0 ? (
+              <section className="rounded-2xl border border-red-200 bg-red-50 p-4 lg:col-span-2">
+                <div className="flex items-center gap-2 font-bold text-red-800">
+                  <AlertTriangle className="h-4 w-4" /> Errores de lectura
+                </div>
+                {diagnostics.errors.map((error) => (
+                  <p key={error.source} className="mt-2 text-xs text-red-700">{error.source}: {error.message}</p>
+                ))}
+              </section>
+            ) : null}
+          </div>
+        ) : null}
       </div>
+
+      {imagePreview ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Vista previa de imagen"
+          onClick={() => setImagePreview(null)}
+        >
+          <div
+            className="relative max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-2xl bg-white p-3 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setImagePreview(null)}
+              className="absolute right-4 top-4 z-10 rounded-full bg-black/70 p-2 text-white"
+              aria-label="Cerrar vista previa"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-[#f7f3eb]">
+              <Image
+                src={imagePreview.src}
+                alt={imagePreview.alt}
+                fill
+                sizes="(max-width: 768px) 90vw, 720px"
+                className="object-contain"
+              />
+            </div>
+            <p className="mt-2 truncate text-center text-xs font-semibold text-[#374151]">{imagePreview.alt}</p>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
