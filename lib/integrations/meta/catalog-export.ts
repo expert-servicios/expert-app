@@ -2,11 +2,7 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import type { MetaCatalogVatTreatment, MetaServiceCatalogDraft } from './types';
 
 const SITE_ORIGIN = 'https://expertconsulting.es';
-const META_VAT_RATE_BY_SERVICE_SLUG: Readonly<Record<string, number>> = {
-  'certificado-digital-persona-fisica': 0.21,
-  'certificado-digital-entidad': 0.21,
-  'pack-certificados-digitales': 0.21,
-};
+const STANDARD_PLUS_VAT_RATE = 0.21;
 
 type CatalogServiceRow = {
   id: string;
@@ -184,7 +180,7 @@ function buildDraft(
   if (offer.vat_treatment === 'manual_review') warnings.push('vat_manual_review');
   if (!channel || !channel.enabled || channel.publish_status !== 'ready') warnings.push('meta_channel_not_ready');
 
-  const vatRate = META_VAT_RATE_BY_SERVICE_SLUG[service.slug];
+  const vatRate = offer.vat_treatment === 'plus_vat' ? STANDARD_PLUS_VAT_RATE : undefined;
   const price = offer.amount_cents != null
     ? projectMetaConsumerPrice(offer.amount_cents, offer.vat_treatment, vatRate)
     : null;
