@@ -48,6 +48,6 @@ describe('Admin Meta Catalog content editor', () => {
 
     expect(page).toContain('setEditingRetailerId');
     expect(page).toContain('MetaCatalogContentEditor');
-    expect(page).toContain('Editar ES / RU');
+    expect(page).toContain('Editar contenido, idiomas e imagen');
   });
 });
