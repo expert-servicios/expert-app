@@ -107,8 +107,8 @@ export function AdminKiaCopilotWorkspace() {
           sessionId,
           companyId,
           currentPage: '/admin/kia',
-          currentTask: 'admin_company_copilot',
-          pageData: { companyName: company?.display_name ?? null, holdedConnected: Boolean(holded) },
+          currentTask: 'admin_operator',
+          pageData: { surface: 'admin', companyName: company?.display_name ?? null, holdedConnected: Boolean(holded), pagePurpose: 'company_operator_workspace' },
           history,
         }),
       });
@@ -116,7 +116,7 @@ export function AdminKiaCopilotWorkspace() {
       const returnedSessionId = response.headers.get('x-kia-session-id');
       if (returnedSessionId) setSessionId(returnedSessionId);
       const reply = json.reply?.trim() || (response.ok ? 'No he recibido contenido útil. Vuelve a formular la consulta.' : 'No he podido completar esta consulta.');
-      const suggestions = [...(json.quickReplies ?? []), ...(json.proactiveSuggestions ?? [])].slice(0, 5);
+      const suggestions: string[] = [];
       setMessages((current) => [...current, {
         id: crypto.randomUUID(),
         role: 'assistant',
