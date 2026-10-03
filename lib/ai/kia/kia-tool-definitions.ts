@@ -210,6 +210,21 @@ export const kiaToolValidators = {
     serviceKey: z.enum(['consulta-inicial', 'demo-holded', 'academy-admision']).default('consulta-inicial'),
     days: z.number().int().min(1).max(14).default(7),
   }).strict(),
+  get_admin_inbox_summary: z.object({
+    unreadOnly: z.boolean().default(true),
+    limit: z.number().int().min(1).max(30).default(12),
+  }).strict(),
+  get_admin_agenda: z.object({
+    days: z.number().int().min(1).max(14).default(7),
+    limit: z.number().int().min(1).max(30).default(15),
+  }).strict(),
+  get_admin_pending_tasks: z.object({
+    days: z.number().int().min(0).max(60).default(14),
+    limit: z.number().int().min(1).max(30).default(15),
+  }).strict(),
+  get_admin_attention_queue: z.object({
+    limitPerSection: z.number().int().min(1).max(10).default(5),
+  }).strict(),
   create_booking_meeting: z.object({
     serviceKey: z.enum(['consulta-inicial', 'demo-holded', 'academy-admision']),
     startIso: z.string().datetime({ offset: true }),
