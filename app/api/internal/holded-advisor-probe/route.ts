@@ -86,12 +86,12 @@ async function probe(path: string, token: string) {
 }
 
 export async function GET() {
-  const token = process.env.HOLDED_ADVISOR_API_TOKEN?.trim();
+  const token = process.env.HOLDED_DGM_API_TOKEN?.trim();
   if (!token) {
     return NextResponse.json({
       ok: false,
       configured: false,
-      message: 'HOLDED_ADVISOR_API_TOKEN is not available in this Preview deployment.',
+      message: 'HOLDED_DGM_API_TOKEN is not available in this Preview deployment.',
     });
   }
 
