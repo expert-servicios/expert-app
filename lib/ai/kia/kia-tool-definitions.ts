@@ -285,6 +285,10 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_official_sources: 'Return official source links from the canonical EXPERT Regulatory Registry for a service or topic. Use when the user wants to verify information independently.',
   find_relevant_services: 'Find EXPERT services for a concrete unmet need. Use only after answering the question and only when the user explicitly lacks something necessary, asks EXPERT to handle it, or clearly intends to contract. Do not use for mere topic affinity or when the user asks to do it themselves.',
   get_booking_availability: 'Read real EXPERT availability from the active Google Calendar booking stack for public meeting types. Use before proposing meeting times.',
+  get_admin_inbox_summary: 'Admin-only read tool for recent synchronized EXPERT inbox threads, scoped to the current client/company when present.',
+  get_admin_agenda: 'Admin-only read tool for upcoming EXPERT appointments, scoped to the current client/company when present.',
+  get_admin_pending_tasks: 'Admin-only read tool for pending, upcoming and overdue EXPERT internal tasks, scoped to the current client/company when present.',
+  get_admin_attention_queue: 'Admin-only read tool that combines unread email, upcoming appointments and pending tasks into a compact attention queue.',
   create_booking_meeting: 'Create a public EXPERT meeting only after the user explicitly confirms the exact numeric date and time in their latest message. Backend rechecks availability and confirmation before writing Calendar/Meet.',
 };
 
