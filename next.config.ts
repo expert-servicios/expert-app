@@ -26,6 +26,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'expertconsulting.es' },
       { protocol: 'https', hostname: 'www.expertconsulting.es' },
+      { protocol: 'https', hostname: 'ybtpqscmqrrjjmuoryap.supabase.co' },
     ],
   },
   experimental: {
