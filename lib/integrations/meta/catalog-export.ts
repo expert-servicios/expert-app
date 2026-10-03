@@ -156,6 +156,15 @@ export async function buildMetaCatalogDrafts(locale = 'es'): Promise<MetaCatalog
   };
 }
 
+function resolvePublicAssetUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    return new URL(value, SITE_ORIGIN).toString();
+  } catch {
+    return null;
+  }
+}
+
 function buildDraft(
   service: CatalogServiceRow,
   content: ServiceContentRow | null,
@@ -187,7 +196,7 @@ function buildDraft(
     serviceCategory: service.category_key,
     sourceCategorySlug: service.category_key,
     landingUrl: content ? `${SITE_ORIGIN}${content.landing_path}` : `${SITE_ORIGIN}/servicios`,
-    imageUrl: content?.image_url ? `${SITE_ORIGIN}${content.image_url}` : null,
+    imageUrl: resolvePublicAssetUrl(content?.image_url),
     price,
     availability: 'in stock',
     marketingReady: warnings.length === 0,
