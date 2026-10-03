@@ -199,12 +199,8 @@ Primera superficie operativa segura:
 - `get_accounts_payable` — R1 read;
 - `get_overdue_invoices` — R1 read;
 - `get_unreconciled_transactions` — R1 read, resultado derivado y marcado como tal;
-- `draft_payment_reminder` — R1 draft, requiere aprobación;
-- `draft_credit_note` — R2 draft, requiere aprobación.
+Esta fase queda deliberadamente en solo lectura (`accounting_read`). Los borradores de reclamación y rectificativa pasan a la siguiente fase, donde tendrán una ruta Admin explícita y aprobación humana.
 
-Se introducen capacidades separadas:
+Ninguna herramienta de esta fase ejecuta pagos, envía reclamaciones, crea rectificativas en Holded, borra documentos ni altera asientos.
 
-- `accounting_read`;
-- `accounting_write`.
-
-Las herramientas de tipo `accounting_write` quedan excluidas cuando `autonomousOnly=true`. Ninguna herramienta de esta fase ejecuta pagos, envía reclamaciones, crea rectificativas en Holded, borra documentos ni altera asientos.
+Para la empresa legal EXPERT (CIF canónico de `EXPERT_IDENTITY`), KIA Accounting utiliza la cuenta global de Holded configurada con `HOLDED_API_KEY`. Para cualquier otra empresa, el acceso continúa aislado por `client_integrations` y sus permisos habilitados.
