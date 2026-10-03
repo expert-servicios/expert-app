@@ -772,6 +772,14 @@ export default function MarketingHubPage() {
                       <td className="max-w-[28rem] px-3 py-2">
                         <p className="truncate font-semibold text-[#07111d]" title={draft.name}>{draft.name}</p>
                         <p className="mt-0.5 truncate font-mono text-[10px] text-[#7b8490]" title={draft.retailerId}>{draft.retailerId}</p>
+                        <button
+                          type="button"
+                          onClick={() => setEditingRetailerId(draft.retailerId)}
+                          className="mt-2 inline-flex items-center gap-1 rounded-lg border border-[#c88b25]/50 bg-[#fff9eb] px-2 py-1.5 text-[11px] font-bold text-[#7a5313] hover:border-[#c88b25] hover:bg-[#fff3d8]"
+                          title="Editar contenido, idiomas e imagen"
+                        >
+                          <Pencil className="h-3.5 w-3.5" /> Editar ficha
+                        </button>
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex gap-1">
