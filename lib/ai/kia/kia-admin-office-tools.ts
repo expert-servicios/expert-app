@@ -289,7 +289,10 @@ export async function executeKiaAdminOfficeTool(
         count: result.total,
         shown: result.items.length,
         truncated: result.truncated,
-        unreadCount: result.total,
+        unreadCount: args.unreadOnly === false
+          ? result.items.filter((thread) => thread.unread).length
+          : result.total,
+        unreadCountPartial: args.unreadOnly === false && result.truncated,
         threads: result.items,
       });
     }
