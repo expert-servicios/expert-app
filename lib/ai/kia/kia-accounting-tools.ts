@@ -3,6 +3,7 @@ import { resolveHoldedAuth, buildHoldedHeaders } from '@/lib/integrations/holded
 import { resolveKiaCompanyHoldedAccess } from './kia-holded-access';
 import type { KiaContext } from './kia-context-builder';
 import type { KiaToolResult } from './kia-tool-definitions';
+import { EXPERT_IDENTITY } from '@/config/identity';
 
 export type KiaAccountingToolName =
   | 'get_accounts_receivable'
@@ -22,6 +23,36 @@ export const ACCOUNTING_TOOL_NAMES = new Set<KiaAccountingToolName>([
 ]);
 
 type Raw = Record<string, unknown>;
+
+export function isExpertGlobalHoldedContext(context: KiaContext): boolean {
+  return context.company?.taxId?.trim().toUpperCase() === EXPERT_IDENTITY.taxId;
+}
+
+async function resolveAccountingAuth(
+  context: KiaContext,
+  requiredPermission: 'salesInvoices' | 'purchaseInvoices' | 'bankMovements',
+): Promise<
+  | { ok: true; auth: Awaited<ReturnType<typeof resolveHoldedAuth>>; source: 'expert_global' | 'client_integration' }
+  | { ok: false; error: string }
+> {
+  if (isExpertGlobalHoldedContext(context)) {
+    try {
+      return { ok: true, auth: await resolveHoldedAuth(null), source: 'expert_global' };
+    } catch {
+      return { ok: false, error: 'La cuenta global de Holded de EXPERT no está configurada en este entorno.' };
+    }
+  }
+
+  const admin = getSupabaseAdmin();
+  const access = await resolveKiaCompanyHoldedAccess(admin, context, requiredPermission);
+  if (!access.ok) return { ok: false, error: access.error };
+
+  return {
+    ok: true,
+    auth: await resolveHoldedAuth(access.access.integrationId),
+    source: 'client_integration',
+  };
+}
 
 function ok(toolName: string, result: Record<string, unknown>): KiaToolResult {
   return { toolName, ok: true, result };
@@ -93,14 +124,12 @@ async function loadDocuments(
   docType: 'invoice' | 'purchase',
   limit: number,
 ): Promise<{ ok: true; docs: Raw[] } | { ok: false; error: string }> {
-  const admin = getSupabaseAdmin();
   const requiredPermission = docType === 'purchase' ? 'purchaseInvoices' : 'salesInvoices';
-  const access = await resolveKiaCompanyHoldedAccess(admin, context, requiredPermission);
-  if (!access.ok) return { ok: false, error: access.error };
+  const resolved = await resolveAccountingAuth(context, requiredPermission);
+  if (!resolved.ok) return { ok: false, error: resolved.error };
 
-  const auth = await resolveHoldedAuth(access.access.integrationId);
-  const headers = buildHoldedHeaders(auth.apiKey);
-  const response = await fetch(`${auth.baseUrl}/documents/${docType}?limit=${Math.max(limit, 50)}`, { headers });
+  const headers = buildHoldedHeaders(resolved.auth.apiKey);
+  const response = await fetch(`${resolved.auth.baseUrl}/documents/${docType}?limit=${Math.max(limit, 50)}`, { headers });
   if (!response.ok) return { ok: false, error: `Holded devolvió ${response.status}` };
 
   const raw = await response.json() as unknown;
@@ -174,7 +203,7 @@ export async function executeKiaAccountingTool(
       .slice(0, limit);
 
     return ok(toolName, {
-      source: 'holded',
+      source: isExpertGlobalHoldedContext(context) ? 'holded_expert_global' : 'holded_client_integration',
       derived: true,
       count: rows.length,
       totalOutstanding: rows.reduce((sum, row) => sum + row.outstanding, 0),
@@ -203,7 +232,7 @@ export async function executeKiaAccountingTool(
       .slice(0, limit);
 
     return ok(toolName, {
-      source: 'holded',
+      source: isExpertGlobalHoldedContext(context) ? 'holded_expert_global' : 'holded_client_integration',
       derived: true,
       count: rows.length,
       totalOutstanding: rows.reduce((sum, row) => sum + row.outstanding, 0),
@@ -212,12 +241,10 @@ export async function executeKiaAccountingTool(
   }
 
   if (toolName === 'get_unreconciled_transactions') {
-    const admin = getSupabaseAdmin();
-    const access = await resolveKiaCompanyHoldedAccess(admin, context, 'bankMovements');
-    if (!access.ok) return fail(toolName, access.error);
-    const auth = await resolveHoldedAuth(access.access.integrationId);
-    const headers = buildHoldedHeaders(auth.apiKey);
-    const response = await fetch(`${auth.baseUrl}/treasury/movements?limit=${Math.max(limit, 50)}`, { headers });
+    const resolved = await resolveAccountingAuth(context, 'bankMovements');
+    if (!resolved.ok) return fail(toolName, resolved.error);
+    const headers = buildHoldedHeaders(resolved.auth.apiKey);
+    const response = await fetch(`${resolved.auth.baseUrl}/treasury/movements?limit=${Math.max(limit, 50)}`, { headers });
     if (!response.ok) return fail(toolName, `Holded devolvió ${response.status}`);
     const raw = await response.json() as unknown;
     const movements = Array.isArray(raw)
@@ -240,7 +267,7 @@ export async function executeKiaAccountingTool(
     }));
 
     return ok(toolName, {
-      source: 'holded',
+      source: isExpertGlobalHoldedContext(context) ? 'holded_expert_global' : 'holded_client_integration',
       derived: true,
       derivation: 'movement_without_document_or_match_and_without_reconciled_status',
       count: rows.length,
@@ -263,7 +290,7 @@ export async function executeKiaAccountingTool(
 
     return ok(toolName, {
       status: 'draft_only',
-      source: 'holded',
+      source: isExpertGlobalHoldedContext(context) ? 'holded_expert_global' : 'holded_client_integration',
       invoice,
       stage,
       ...draft,
@@ -287,7 +314,7 @@ export async function executeKiaAccountingTool(
 
     return ok(toolName, {
       status: 'proposal_only',
-      source: 'holded',
+      source: isExpertGlobalHoldedContext(context) ? 'holded_expert_global' : 'holded_client_integration',
       originalInvoice: invoice,
       proposedDocumentType: 'creditnote',
       proposedAmount: requestedAmount,
