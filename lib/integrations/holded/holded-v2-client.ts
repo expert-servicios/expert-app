@@ -2,7 +2,9 @@ import { classifyHoldedError } from './holded-errors';
 import { resolveHoldedAuth } from './holded-auth';
 
 const HOLDED_V2_BASE = 'https://api.holded.com/api/v2';
-const MIN_DELAY_MS = 150;
+// Conservative baseline for Plus/Basic accounts: Holded publishes 60 requests/minute.
+// Higher-tier throughput can be introduced later from /usage + rate-limit response headers.
+const MIN_DELAY_MS = 1_050;
 const MAX_PAGE_SIZE = 200;
 const DEFAULT_PAGE_SIZE = 50;
 
