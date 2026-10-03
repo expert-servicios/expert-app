@@ -16,6 +16,7 @@ type ServiceLocaleRow = {
   locale: string;
   status: string;
   image_url: string | null;
+  updated_at: string;
 };
 
 type MetaItemRow = {
@@ -82,7 +83,7 @@ export async function GET(request: NextRequest) {
   const contentsResult = serviceIds.length
     ? await admin
         .from('service_contents')
-        .select('service_id,locale,status,image_url')
+        .select('service_id,locale,status,image_url,updated_at')
         .in('service_id', serviceIds)
         .in('locale', ['es', 'ru'])
     : { data: [], error: null };
@@ -98,13 +99,14 @@ export async function GET(request: NextRequest) {
   const localeRows = (contentsResult.data ?? []) as ServiceLocaleRow[];
   const metaItems = (metaItemsResult.data ?? []) as MetaItemRow[];
 
-  const localesByService = new Map<string, Record<string, { exists: boolean; status: string | null; imageUrl: string | null }>>();
+  const localesByService = new Map<string, Record<string, { exists: boolean; status: string | null; imageUrl: string | null; updatedAt: string | null }>>();
   for (const row of localeRows) {
     const existing = localesByService.get(row.service_id) ?? {};
     existing[row.locale] = {
       exists: true,
       status: row.status,
       imageUrl: row.image_url,
+      updatedAt: row.updated_at,
     };
     localesByService.set(row.service_id, existing);
   }
@@ -124,8 +126,8 @@ export async function GET(request: NextRequest) {
     return {
       ...draft,
       locales: {
-        es: locales.es ?? { exists: false, status: null, imageUrl: null },
-        ru: locales.ru ?? { exists: false, status: null, imageUrl: null },
+        es: locales.es ?? { exists: false, status: null, imageUrl: null, updatedAt: null },
+        ru: locales.ru ?? { exists: false, status: null, imageUrl: null, updatedAt: null },
       },
       meta: {
         es: meta.es
