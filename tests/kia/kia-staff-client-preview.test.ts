@@ -16,8 +16,8 @@ describe('KIA staff client preview', () => {
   });
 
   it('routes read-only client tools against the preview client while retaining the real actor', () => {
-    expect(route).toContain('clientId: staffPreview?.clientId ?? user.id');
-    expect(route).toContain("runPolicyEnforcedKiaDecision('client_dashboard'");
+    expect(route).toContain('const effectiveClientId = adminTargetClientId ?? staffPreview?.clientId ?? user.id');
+    expect(route).toContain('runPolicyEnforcedKiaDecision(copilotPolicyProfile, actor');
     expect(route).toContain('userId      : user.id');
     expect(route).toContain('staff_preview: Boolean(staffPreview)');
   });
