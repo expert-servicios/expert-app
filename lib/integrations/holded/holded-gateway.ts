@@ -169,18 +169,19 @@ export async function listHoldedDocuments(
 ): Promise<HoldedReadDocument[]> {
   const maxItems = Math.max(1, Math.min(2_000, Math.trunc(params.maxItems ?? 2_000)));
 
-  if (gateway.metadata.apiVersion === 'v2') {
+  if (gateway.v2) {
+    const v2 = gateway.v2;
     const items: HoldedReadDocument[] = [];
     let cursor: string | undefined;
     while (items.length < maxItems) {
       const page = kind === 'sales'
-        ? await gateway.v2.listInvoices({
+        ? await v2.listInvoices({
             startDate: params.startDate,
             endDate: params.endDate,
             limit: Math.min(200, maxItems - items.length),
             cursor,
           })
-        : await gateway.v2.listPurchases({
+        : await v2.listPurchases({
             startDate: params.startDate,
             endDate: params.endDate,
             limit: Math.min(200, maxItems - items.length),
@@ -193,13 +194,15 @@ export async function listHoldedDocuments(
     return items.slice(0, maxItems);
   }
 
+  const v1 = gateway.v1;
+  if (!v1) throw new HoldedIntegrationError('Holded v1 client is unavailable.');
   const items: HoldedReadDocument[] = [];
   const dateFrom = toUnixDate(params.startDate);
   const dateTo = toUnixDate(params.endDate);
   for (let page = 1; page <= 20 && items.length < maxItems; page++) {
     const docs = kind === 'sales'
-      ? await gateway.v1.listSalesInvoices({ page, dateFrom, dateTo })
-      : await gateway.v1.listPurchaseInvoices({ page, dateFrom, dateTo });
+      ? await v1.listSalesInvoices({ page, dateFrom, dateTo })
+      : await v1.listPurchaseInvoices({ page, dateFrom, dateTo });
     if (docs.length === 0) break;
     items.push(...docs.map(v1DocumentToReadModel));
     if (docs.length < 100) break;
@@ -213,12 +216,14 @@ export async function listHoldedContacts(
 ): Promise<HoldedReadContact[]> {
   const maxItems = Math.max(1, Math.min(100, Math.trunc(params.maxItems ?? 50)));
 
-  if (gateway.metadata.apiVersion === 'v2') {
+  if (gateway.v2) {
     const page = await gateway.v2.listContacts({ search: params.search, limit: maxItems });
     return page.items.map(v2ContactToReadModel).slice(0, maxItems);
   }
 
-  const contacts = await gateway.v1.listContacts({ page: 1 });
+  const v1 = gateway.v1;
+  if (!v1) throw new HoldedIntegrationError('Holded v1 client is unavailable.');
+  const contacts = await v1.listContacts({ page: 1 });
   const query = params.search?.trim().toLocaleLowerCase('es') ?? '';
   return contacts
     .map(v1ContactToReadModel)
@@ -231,11 +236,13 @@ export async function listHoldedBankAccounts(
   maxItems = 20,
 ): Promise<HoldedReadBankAccount[]> {
   const limit = Math.max(1, Math.min(100, Math.trunc(maxItems)));
-  if (gateway.metadata.apiVersion === 'v2') {
+  if (gateway.v2) {
     const page = await gateway.v2.listTreasuryAccounts({ limit });
     return page.items.map(v2BankToReadModel).slice(0, limit);
   }
-  return (await gateway.v1.listBankAccounts()).map(v1BankToReadModel).slice(0, limit);
+  const v1 = gateway.v1;
+  if (!v1) throw new HoldedIntegrationError('Holded v1 client is unavailable.');
+  return (await v1.listBankAccounts()).map(v1BankToReadModel).slice(0, limit);
 }
 
 type IntegrationRow = {
