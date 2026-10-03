@@ -365,6 +365,8 @@ export default function MarketingHubPage() {
       const manifest = manifestBySlug.get(draft.retailerId);
       if (manifest?.stage !== 'production_ready') return false;
       const status = draft.meta.es?.syncStatus;
+      const localBlockers = draft.warnings.filter((warning) => warning !== 'meta_channel_not_ready');
+      if (localBlockers.length > 0) return false;
       if (status === 'pending' || status === 'manual_review' || status === 'ready') return false;
       return status === 'failed'
         || status == null
@@ -550,7 +552,9 @@ export default function MarketingHubPage() {
                     const manifest = manifestBySlug.get(draft.retailerId);
                     const productionReady = manifest?.stage === 'production_ready';
                     const metaStatus = draft.meta.es?.syncStatus ?? null;
+                    const localBlockers = draft.warnings.filter((warning) => warning !== 'meta_channel_not_ready');
                     const canPrepare = productionReady
+                      && localBlockers.length === 0
                       && metaStatus !== 'pending'
                       && metaStatus !== 'manual_review'
                       && metaStatus !== 'ready'
@@ -659,6 +663,14 @@ export default function MarketingHubPage() {
                           ) : null}
                           {!productionReady ? (
                             <span className="inline-flex items-center px-1.5 text-[10px] text-[#8a929d]" title="El servicio todavía no es production_ready">No publicable</span>
+                          ) : null}
+                          {productionReady && localBlockers.length > 0 ? (
+                            <span
+                              className="inline-flex items-center px-1.5 text-[10px] font-semibold text-amber-800"
+                              title={localBlockers.join(', ')}
+                            >
+                              Bloqueado
+                            </span>
                           ) : null}
                           {metaStatus === 'manual_review' ? (
                             <span className="inline-flex items-center px-1.5 text-[10px] font-semibold text-amber-800">Revisión manual</span>
