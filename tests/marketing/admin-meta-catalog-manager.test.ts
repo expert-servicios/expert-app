@@ -36,6 +36,15 @@ describe('Admin Meta Catalog Manager', () => {
     expect(page).toContain('next/image');
   });
 
+
+  it('keeps the primary edit action visible next to every service name', () => {
+    const page = read('app/(protected)/admin/marketing-hub/page.tsx');
+
+    expect(page).toContain('Editar ficha');
+    expect(page).toContain('Editar contenido, idiomas e imagen');
+    expect(page).toContain('setEditingRetailerId(draft.retailerId)');
+  });
+
   it('supports operational filters including missing Russian content', () => {
     const page = read('app/(protected)/admin/marketing-hub/page.tsx');
 
