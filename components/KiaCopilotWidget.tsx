@@ -173,6 +173,11 @@ function useKiaChat(
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [staffPreview, setStaffPreview] = useState(false);
   const [uiLocale, setUiLocale] = useState<'es' | 'ru'>('es');
+  const contextGenerationRef = useRef(0);
+
+  useEffect(() => {
+    contextGenerationRef.current += 1;
+  }, [companyId, contextToken, pathname]);
 
   useEffect(() => {
     if (!contextToken) return;
@@ -251,6 +256,7 @@ function useKiaChat(
     setUiLocale(detectedLocale);
     if (!options.silentUser) setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
+    const requestGeneration = contextGenerationRef.current;
 
     try {
       const res = await fetch('/api/ai/kia', {
@@ -269,6 +275,7 @@ function useKiaChat(
       });
 
       const data: KiaApiResponse = await res.json();
+      if (requestGeneration !== contextGenerationRef.current) return;
 
       const assistantMsg: ChatMessage = {
         id          : crypto.randomUUID(),
@@ -287,6 +294,7 @@ function useKiaChat(
         setSessionId(res.headers.get('x-kia-session-id') ?? undefined);
       }
     } catch {
+      if (requestGeneration !== contextGenerationRef.current) return;
       setMessages((prev) => [
         ...prev,
         {
@@ -438,8 +446,29 @@ export default function KiaCopilotWidget({ embedded = false, active = true }: { 
   const panelVisible = embedded ? active : open;
   const [contextToken] = useState<string | undefined>(() => searchParams.get('ctx') ?? undefined);
   const adminMode = embedded && pathname.startsWith('/admin');
-  const adminCompanyId = /^\/admin\/empresas\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?:\/|$)/i.exec(pathname)?.[1];
+  const adminCompanyFromPath = /^\/admin\/empresas\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?:\/|$)/i.exec(pathname)?.[1];
+  const adminCompanyFromQuery = searchParams.get('companyId');
+  const adminCompanyId = adminCompanyFromPath
+    ?? (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(adminCompanyFromQuery ?? '')
+      ? adminCompanyFromQuery ?? undefined
+      : undefined);
   const [adminPageData, setAdminPageData] = useState<Record<string, string | number | boolean> | undefined>();
+  const [explicitPageContext, setExplicitPageContext] = useState<Record<string, string | number | boolean>>({});
+
+  useEffect(() => {
+    if (!adminMode) return;
+    const handlePageContext = (event: Event) => {
+      const detail = (event as CustomEvent<Record<string, unknown>>).detail;
+      if (!detail || typeof detail !== 'object') return;
+      const safe: Record<string, string | number | boolean> = {};
+      for (const [key, value] of Object.entries(detail)) {
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') safe[key] = value;
+      }
+      setExplicitPageContext(safe);
+    };
+    window.addEventListener('expert:kia-page-context', handlePageContext as EventListener);
+    return () => window.removeEventListener('expert:kia-page-context', handlePageContext as EventListener);
+  }, [adminMode]);
 
   useEffect(() => {
     if (!adminMode) return;
@@ -455,11 +484,12 @@ export default function KiaCopilotWidget({ embedded = false, active = true }: { 
         pageTitle: document.title.slice(0, 180),
         heading: heading.slice(0, 180),
         subheading: subheading.slice(0, 180),
-        activeTab: activeTab.slice(0, 120),
+        activeTab: String(explicitPageContext.activeTab ?? activeTab).slice(0, 120),
+        ...explicitPageContext,
       });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [adminMode, pathname, searchParams]);
+  }, [adminMode, explicitPageContext, pathname, searchParams]);
 
   const { messages, loading, contextLoading, send, rate, reset, appendAssistantMessage, staffPreview, uiLocale } = useKiaChat(
     pathname,
@@ -481,11 +511,13 @@ export default function KiaCopilotWidget({ embedded = false, active = true }: { 
 
   useEffect(() => {
     if (!adminMode || !panelVisible || !adminPageData || loading || contextLoading) return;
-    const reviewKey = `${pathname}?${searchParams.toString()}`;
+    if (adminPageData.path !== pathname) return;
+    const reviewKey = `${pathname}?${searchParams.toString()}|${String(adminPageData.activeTab ?? '')}`;
     if (reviewedAdminPagesRef.current.has(reviewKey)) return;
-    reviewedAdminPagesRef.current.add(reviewKey);
 
     const timer = window.setTimeout(() => {
+      if (reviewedAdminPagesRef.current.has(reviewKey)) return;
+      reviewedAdminPagesRef.current.add(reviewKey);
       void send(
         'Revisa el contexto de esta pantalla Admin. Si detectas un pendiente, riesgo, incoherencia o siguiente paso útil, indícamelo de forma concreta. Si no hay suficiente contexto, dime brevemente qué puedes revisar aquí. No muestres un menú de opciones.',
         { silentUser: true, currentTask: 'admin_page_review' },
