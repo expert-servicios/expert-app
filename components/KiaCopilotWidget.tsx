@@ -165,6 +165,7 @@ function useKiaChat(
   adminMode = false,
   pageData?: Record<string, string | number | boolean>,
 ) {
+  type SendOptions = { silentUser?: boolean; currentTask?: string };
   const [messages, setMessages] = useState<ChatMessage[]>(() => contextToken ? [] : [welcomeMessage(false, adminMode)]);
   const [contextSummary, setContextSummary] = useState<KiaContextSummary | null>(null);
   const [contextLoading, setContextLoading] = useState(Boolean(contextToken));
@@ -232,7 +233,7 @@ function useKiaChat(
     return () => window.removeEventListener('expert:active-company-changed', handleCompanyChanged);
   }, [adminMode]);
 
-  const send = useCallback(async (text: string) => {
+  const send = useCallback(async (text: string, options: SendOptions = {}) => {
     if (!text.trim() || loading || contextLoading) return;
 
     const history = messages
@@ -248,7 +249,7 @@ function useKiaChat(
       ? contextSummary.preferredLanguage
       : (detectKiaMessageLocale(text) ?? contextSummary?.preferredLanguage ?? uiLocale);
     setUiLocale(detectedLocale);
-    setMessages((prev) => [...prev, userMsg]);
+    if (!options.silentUser) setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
 
     try {
@@ -259,7 +260,7 @@ function useKiaChat(
           message    : text,
           sessionId,
           currentPage: pathname,
-          currentTask: adminMode ? 'admin_operator' : undefined,
+          currentTask: options.currentTask ?? (adminMode ? 'admin_operator' : undefined),
           pageData,
           contextToken,
           companyId,
@@ -278,7 +279,7 @@ function useKiaChat(
         avatarState : data.avatarState ?? (data.error ? 'aviso' : 'ayuda'),
         artifacts   : data.artifacts?.length ? data.artifacts : undefined,
         decisionLogId: data.decisionLogId ?? undefined,
-        sourceUserMessage: text,
+        sourceUserMessage: options.silentUser ? undefined : text,
       };
       setMessages((prev) => [...prev, assistantMsg]);
 
@@ -441,10 +442,7 @@ export default function KiaCopilotWidget({ embedded = false, active = true }: { 
   const [adminPageData, setAdminPageData] = useState<Record<string, string | number | boolean> | undefined>();
 
   useEffect(() => {
-    if (!adminMode) {
-      setAdminPageData(undefined);
-      return;
-    }
+    if (!adminMode) return;
     const frame = window.requestAnimationFrame(() => {
       const main = document.querySelector('main');
       const heading = main?.querySelector('h1')?.textContent?.trim() ?? document.querySelector('h1')?.textContent?.trim() ?? '';
@@ -479,6 +477,23 @@ export default function KiaCopilotWidget({ embedded = false, active = true }: { 
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
   const speechAbortRef = useRef<AbortController | null>(null);
   const discardRecordingRef = useRef(false);
+  const reviewedAdminPagesRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!adminMode || !panelVisible || !adminPageData || loading || contextLoading) return;
+    const reviewKey = `${pathname}?${searchParams.toString()}`;
+    if (reviewedAdminPagesRef.current.has(reviewKey)) return;
+    reviewedAdminPagesRef.current.add(reviewKey);
+
+    const timer = window.setTimeout(() => {
+      void send(
+        'Revisa el contexto de esta pantalla Admin. Si detectas un pendiente, riesgo, incoherencia o siguiente paso útil, indícamelo de forma concreta. Si no hay suficiente contexto, dime brevemente qué puedes revisar aquí. No muestres un menú de opciones.',
+        { silentUser: true, currentTask: 'admin_page_review' },
+      );
+    }, 450);
+
+    return () => window.clearTimeout(timer);
+  }, [adminMode, adminPageData, contextLoading, loading, panelVisible, pathname, searchParams, send]);
 
   useEffect(() => {
     return () => {
