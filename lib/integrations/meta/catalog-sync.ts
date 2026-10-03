@@ -41,6 +41,13 @@ type StripeBindingRow = {
   reconciliation_status: string;
 };
 
+type PreparedItem = {
+  item: MetaCatalogItemRow;
+  draft: MetaServiceCatalogDraft;
+  payload: ReturnType<typeof buildMetaProductPayload>;
+  hash: string;
+};
+
 export type MetaCatalogSyncItemResult = {
   retailerId: string;
   ok: boolean;
@@ -59,8 +66,8 @@ export function buildMetaProductPayload(draft: MetaServiceCatalogDraft) {
   if (!draft.marketingReady) {
     throw new Error(`Meta draft is not marketing-ready: ${draft.retailerId}`);
   }
-  if (!draft.price || draft.price.amount <= 0) {
-    throw new Error(`Meta draft has no valid price: ${draft.retailerId}`);
+  if (!draft.price || draft.price.amount <= 0 || !draft.price.taxIncluded) {
+    throw new Error(`Meta draft has no valid consumer price: ${draft.retailerId}`);
   }
   if (!draft.imageUrl) {
     throw new Error(`Meta draft has no image: ${draft.retailerId}`);
@@ -106,18 +113,6 @@ function errorDetails(error: unknown) {
   };
 }
 
-/**
- * First controlled catalog writer.
- *
- * Safety gates:
- * - only the three explicitly approved production_ready certificate services;
- * - max three items per invocation;
- * - meta_catalog_items must already be staged as ready;
- * - C2 projection must be marketing-ready;
- * - a live, active, matched Stripe binding must exist for the canonical offer;
- * - one auditable meta_sync_jobs row is created before each external write;
- * - no campaigns, ads, budgets, Page posts or Instagram posts are touched.
- */
 export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<MetaCatalogSyncResult> {
   const config = requireMetaMarketingConfig();
   if (!config.catalogId) throw new Error('Meta catalog ID is not configured');
@@ -132,17 +127,15 @@ export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<
     .eq('locale', 'es')
     .eq('sync_status', 'ready')
     .in('retailer_id', [...INITIAL_META_CATALOG_RETAILER_IDS])
-    .order('retailer_id')
-    .limit(INITIAL_META_CATALOG_BATCH_LIMIT);
+    .order('retailer_id');
 
   if (stagedError) throw new Error(`No se pudo leer meta_catalog_items: ${stagedError.message}`);
 
   const staged = (stagedRows ?? []) as MetaCatalogItemRow[];
-  if (staged.length === 0) {
-    throw new Error('No hay items Meta en estado ready para sincronizar');
-  }
-  if (staged.length > INITIAL_META_CATALOG_BATCH_LIMIT) {
-    throw new Error('El lote Meta excede el límite inicial de seguridad');
+  if (staged.length !== INITIAL_META_CATALOG_BATCH_LIMIT) {
+    throw new Error(
+      `El lote inicial requiere exactamente ${INITIAL_META_CATALOG_BATCH_LIMIT} items Meta ready; encontrados: ${staged.length}`,
+    );
   }
 
   const allowed = new Set<string>(INITIAL_META_CATALOG_RETAILER_IDS);
@@ -189,9 +182,7 @@ export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<
     ((bindingRows ?? []) as StripeBindingRow[]).map((row) => row.offer_id),
   );
 
-  const results: MetaCatalogSyncItemResult[] = [];
-
-  for (const item of staged) {
+  const prepared: PreparedItem[] = staged.map((item) => {
     const retailerId = item.retailer_id;
     const draft = draftByRetailerId.get(retailerId);
 
@@ -219,27 +210,68 @@ export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<
     if (!draft?.marketingReady) {
       throw new Error(`Proyección Meta no lista: ${retailerId}`);
     }
+    if (draft.offerId !== canonicalOffer.id) {
+      throw new Error(`La oferta exportada no coincide con la oferta reconciliada: ${retailerId}`);
+    }
 
     const payload = buildMetaProductPayload(draft);
-    const hash = payloadHash(payload);
+    return { item, draft, payload, hash: payloadHash(payload) };
+  });
 
-    const { data: job, error: jobError } = await admin
-      .from('meta_sync_jobs')
-      .insert({
-        operation: 'catalog_product_upsert',
-        target_type: 'meta_catalog_item',
-        target_id: item.id,
-        requested_by: requestedBy,
-        status: 'running',
-        attempt_count: 1,
-        started_at: new Date().toISOString(),
-      })
-      .select('id')
-      .single();
+  const claimedIds: string[] = [];
+  for (const { item } of prepared) {
+    const { data: claimed, error: claimError } = await admin
+      .from('meta_catalog_items')
+      .update({ sync_status: 'pending', updated_at: new Date().toISOString() })
+      .eq('id', item.id)
+      .eq('sync_status', 'ready')
+      .select('id');
 
-    if (jobError || !job?.id) {
-      throw new Error(`No se pudo crear el job Meta para ${retailerId}: ${jobError?.message ?? 'sin id'}`);
+    if (claimError || (claimed ?? []).length !== 1) {
+      if (claimedIds.length > 0) {
+        await admin
+          .from('meta_catalog_items')
+          .update({ sync_status: 'ready', updated_at: new Date().toISOString() })
+          .in('id', claimedIds)
+          .eq('sync_status', 'pending');
+      }
+      throw new Error(`El lote Meta ya está siendo procesado o cambió de estado: ${item.retailer_id}`);
     }
+    claimedIds.push(item.id);
+  }
+
+  const now = new Date().toISOString();
+  const { data: jobs, error: jobsError } = await admin
+    .from('meta_sync_jobs')
+    .insert(prepared.map(({ item }) => ({
+      operation: 'catalog_product_upsert',
+      target_type: 'meta_catalog_item',
+      target_id: item.id,
+      requested_by: requestedBy,
+      status: 'running',
+      attempt_count: 1,
+      started_at: now,
+    })))
+    .select('id,target_id');
+
+  if (jobsError || (jobs ?? []).length !== prepared.length) {
+    await admin
+      .from('meta_catalog_items')
+      .update({ sync_status: 'ready', updated_at: new Date().toISOString() })
+      .in('id', claimedIds)
+      .eq('sync_status', 'pending');
+    throw new Error(`No se pudieron crear los jobs Meta del lote: ${jobsError?.message ?? 'conteo incompleto'}`);
+  }
+
+  const jobIdByTarget = new Map((jobs ?? []).map((job) => [String(job.target_id), String(job.id)]));
+  const results: MetaCatalogSyncItemResult[] = [];
+
+  for (const { item, payload, hash } of prepared) {
+    const retailerId = item.retailer_id;
+    const jobId = jobIdByTarget.get(item.id);
+    if (!jobId) throw new Error(`No se encontró job para ${retailerId}`);
+
+    let metaItemId: string | null = null;
 
     try {
       const response = await metaGraphRequest<{ id?: string }>({
@@ -251,44 +283,12 @@ export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<
       if (!response.id) {
         throw new Error(`Meta no devolvió id para ${retailerId}`);
       }
-
-      const { error: logError } = await admin.from('meta_api_logs').insert({
-        sync_job_id: job.id,
-        operation: 'catalog_product_upsert',
-        endpoint: `/${config.catalogId}/products`,
-        http_status: 200,
-      });
-      if (logError) throw new Error(`No se pudo registrar meta_api_logs: ${logError.message}`);
-
-      const { error: itemError } = await admin
-        .from('meta_catalog_items')
-        .update({
-          meta_item_id: response.id,
-          sync_status: 'synced',
-          last_payload_hash: hash,
-          last_synced_at: new Date().toISOString(),
-          last_error_code: null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', item.id);
-      if (itemError) throw new Error(`No se pudo actualizar meta_catalog_items: ${itemError.message}`);
-
-      const { error: finishError } = await admin
-        .from('meta_sync_jobs')
-        .update({
-          status: 'succeeded',
-          finished_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', job.id);
-      if (finishError) throw new Error(`No se pudo cerrar meta_sync_jobs: ${finishError.message}`);
-
-      results.push({ retailerId, ok: true, metaItemId: response.id, error: null });
+      metaItemId = response.id;
     } catch (error) {
       const details = errorDetails(error);
 
       await admin.from('meta_api_logs').insert({
-        sync_job_id: job.id,
+        sync_job_id: jobId,
         operation: 'catalog_product_upsert',
         endpoint: `/${config.catalogId}/products`,
         http_status: details.httpStatus,
@@ -305,7 +305,8 @@ export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<
           last_error_code: details.code,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', item.id);
+        .eq('id', item.id)
+        .eq('sync_status', 'pending');
 
       await admin
         .from('meta_sync_jobs')
@@ -316,15 +317,70 @@ export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<
           finished_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .eq('id', job.id);
+        .eq('id', jobId);
 
-      results.push({
-        retailerId,
-        ok: false,
-        metaItemId: null,
-        error: details.message,
-      });
+      results.push({ retailerId, ok: false, metaItemId: null, error: details.message });
+      continue;
     }
+
+    const bookkeepingErrors: string[] = [];
+
+    const { error: itemError } = await admin
+      .from('meta_catalog_items')
+      .update({
+        meta_item_id: metaItemId,
+        sync_status: 'synced',
+        last_payload_hash: hash,
+        last_synced_at: new Date().toISOString(),
+        last_error_code: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', item.id)
+      .eq('sync_status', 'pending');
+
+    if (itemError) {
+      bookkeepingErrors.push(`meta_catalog_items: ${itemError.message}`);
+      await admin
+        .from('meta_catalog_items')
+        .update({
+          meta_item_id: metaItemId,
+          sync_status: 'manual_review',
+          last_payload_hash: hash,
+          last_synced_at: new Date().toISOString(),
+          last_error_code: 'local_bookkeeping_incomplete',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', item.id);
+    }
+
+    const { error: logError } = await admin.from('meta_api_logs').insert({
+      sync_job_id: jobId,
+      operation: 'catalog_product_upsert',
+      endpoint: `/${config.catalogId}/products`,
+      http_status: 200,
+    });
+    if (logError) bookkeepingErrors.push(`meta_api_logs: ${logError.message}`);
+
+    const { error: finishError } = await admin
+      .from('meta_sync_jobs')
+      .update({
+        status: 'succeeded',
+        error_code: bookkeepingErrors.length ? 'local_bookkeeping_incomplete' : null,
+        error_message: bookkeepingErrors.length ? bookkeepingErrors.join(' | ').slice(0, 1000) : null,
+        finished_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', jobId);
+    if (finishError) bookkeepingErrors.push(`meta_sync_jobs: ${finishError.message}`);
+
+    results.push({
+      retailerId,
+      ok: true,
+      metaItemId,
+      error: bookkeepingErrors.length
+        ? `Meta aceptó el item; revisión local necesaria: ${bookkeepingErrors.join(' | ')}`
+        : null,
+    });
   }
 
   return {
