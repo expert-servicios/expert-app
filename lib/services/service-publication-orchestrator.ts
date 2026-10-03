@@ -110,12 +110,32 @@ export async function prepareServicePublicationReview(
     };
   }
 
+  const { data: existingChannels, error: existingChannelsError } = await admin
+    .from('service_channel_configs')
+    .select('channel,editorial_overrides')
+    .eq('service_id', service.id)
+    .in('channel', REVIEW_CHANNELS);
+
+  if (existingChannelsError) {
+    throw new Error(`Could not load existing publication channels for ${slug}: ${existingChannelsError.message}`);
+  }
+
+  const existingOverridesByChannel = new Map(
+    (existingChannels ?? []).map((row) => [
+      row.channel as ReviewChannel,
+      row.editorial_overrides && typeof row.editorial_overrides === 'object' && !Array.isArray(row.editorial_overrides)
+        ? row.editorial_overrides as Record<string, unknown>
+        : {},
+    ]),
+  );
+
   const rows = REVIEW_CHANNELS.map((channel) => ({
     service_id: service.id,
     channel,
     enabled: false,
     publish_status: 'review',
     editorial_overrides: {
+      ...(existingOverridesByChannel.get(channel) ?? {}),
       prepared_by: 'batch1_publication_orchestrator',
       standard_version: SERVICE_PRODUCTION_STANDARD_VERSION,
       service_stage: manifest.stage,
