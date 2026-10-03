@@ -156,6 +156,17 @@ export async function buildMetaCatalogDrafts(locale = 'es'): Promise<MetaCatalog
   };
 }
 
+export function resolveMetaPublicAssetUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value, SITE_ORIGIN);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 function buildDraft(
   service: CatalogServiceRow,
   content: ServiceContentRow | null,
@@ -163,10 +174,11 @@ function buildDraft(
   channelByService: Map<string, ChannelConfigRow>,
 ): MetaServiceCatalogDraft {
   const channel = channelByService.get(service.id) ?? null;
+  const imageUrl = resolveMetaPublicAssetUrl(content?.image_url);
 
   const warnings: string[] = [];
   if (!content) warnings.push('missing_content');
-  if (content && !content.image_url) warnings.push('missing_image');
+  if (content && !imageUrl) warnings.push('missing_image');
   if (content && content.status !== 'active') warnings.push(`content_status:${content.status}`);
   if (offer.amount_cents == null) warnings.push('missing_amount');
   if (offer.vat_treatment === 'manual_review') warnings.push('vat_manual_review');
@@ -187,7 +199,7 @@ function buildDraft(
     serviceCategory: service.category_key,
     sourceCategorySlug: service.category_key,
     landingUrl: content ? `${SITE_ORIGIN}${content.landing_path}` : `${SITE_ORIGIN}/servicios`,
-    imageUrl: content?.image_url ? `${SITE_ORIGIN}${content.image_url}` : null,
+    imageUrl,
     price,
     availability: 'in stock',
     marketingReady: warnings.length === 0,
