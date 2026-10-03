@@ -121,10 +121,13 @@ export interface HoldedV2SalaryRecord {
 
 export interface HoldedV2Invoice extends Record<string, unknown> {
   id: string;
+  document_number?: string | null;
   contact_id?: string | null;
   contact_name?: string | null;
   date?: string | null;
   due_date?: string | null;
+  subtotal?: string | number | null;
+  tax?: string | number | null;
   total?: string | number | null;
   currency?: string | null;
   status?: string | number | null;
@@ -134,10 +137,13 @@ export interface HoldedV2Invoice extends Record<string, unknown> {
 
 export interface HoldedV2Purchase extends Record<string, unknown> {
   id: string;
+  document_number?: string | null;
   contact_id?: string | null;
   contact_name?: string | null;
   date?: string | null;
   due_date?: string | null;
+  subtotal?: string | number | null;
+  tax?: string | number | null;
   total?: string | number | null;
   currency?: string | null;
   status?: string | number | null;
@@ -149,7 +155,7 @@ export interface HoldedV2Contact extends Record<string, unknown> {
   id: string;
   name?: string | null;
   email?: string | null;
-  vatnumber?: string | null;
+  vat_number?: string | null;
 }
 
 export interface HoldedV2AccountingAccount extends Record<string, unknown> {
@@ -228,8 +234,8 @@ export interface HoldedV2Client {
   getSalaryRecord(salaryRecordId: string): Promise<HoldedV2SalaryRecord>;
   getSalaryRecordPdf(salaryRecordId: string): Promise<ArrayBuffer>;
   getUsage(): Promise<HoldedV2Usage>;
-  listInvoices(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Invoice>>;
-  listPurchases(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Purchase>>;
+  listInvoices(params?: { startDate?: string; endDate?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Invoice>>;
+  listPurchases(params?: { startDate?: string; endDate?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Purchase>>;
   listContacts(params?: { search?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Contact>>;
   listAccountingAccounts(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2AccountingAccount>>;
   listTreasuryAccounts(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2TreasuryAccount>>;
@@ -423,6 +429,8 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
 
     async listInvoices(params = {}) {
       const url = buildPaginatedUrl('/invoices', {
+        startDate: params.startDate,
+        endDate: params.endDate,
         limit: params.limit,
         cursor: params.cursor,
       });
@@ -431,6 +439,8 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
 
     async listPurchases(params = {}) {
       const url = buildPaginatedUrl('/purchases', {
+        startDate: params.startDate,
+        endDate: params.endDate,
         limit: params.limit,
         cursor: params.cursor,
       });
@@ -438,9 +448,19 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
     },
 
     async listContacts(params = {}) {
+      const limit = Math.max(1, Math.min(100, Math.trunc(params.limit ?? 50)));
+      if (params.search?.trim()) {
+        const search = new URLSearchParams({
+          name: params.search.trim(),
+          limit: String(limit),
+        });
+        appendIfPresent(search, 'cursor', params.cursor);
+        return normalizePage<HoldedV2Contact>(
+          await holdedV2FetchJson<unknown>(key, `${HOLDED_V2_BASE}/contacts/search?${search.toString()}`),
+        );
+      }
       const url = buildPaginatedUrl('/contacts', {
-        search: params.search,
-        limit: params.limit,
+        limit,
         cursor: params.cursor,
       });
       return normalizePage<HoldedV2Contact>(await holdedV2FetchJson<unknown>(key, url));
