@@ -11,7 +11,12 @@ import { getReadinessCheck, calculateReadinessResult } from '@/lib/data/service-
 import { validateKiaToolArguments, type KiaToolCall, type KiaToolResult } from './kia-tool-definitions';
 import type { KiaContext } from './kia-context-builder';
 import { redactJson, safeErrorMessage } from './kia-redaction';
-import { resolveHoldedAuth, buildHoldedHeaders } from '@/lib/integrations/holded/holded-auth';
+import {
+  createHoldedGatewayForIntegration,
+  listHoldedBankAccounts,
+  listHoldedContacts,
+  listHoldedDocuments,
+} from '@/lib/integrations/holded/holded-gateway';
 import { generateCompanyReport } from '@/lib/reports/report-generator';
 import { extractInvoiceOcr, type InvoiceMediaType } from './kia-ocr-extractor';
 import { executeKiaHoldedLaborTool, type KiaHoldedLaborToolName } from './kia-holded-labor-tools';
@@ -219,57 +224,55 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         if (!access.ok) {
           return fail(toolCall.name, `${access.error} Usa generate_holded_connection_link si necesitas vincular Holded.`);
         }
-        const auth = await resolveHoldedAuth(access.access.integrationId);
-        const hdrs = buildHoldedHeaders(auth.apiKey);
+        const gateway = await createHoldedGatewayForIntegration(access.access.integrationId);
 
         if (toolCall.name === 'get_holded_invoices') {
           const limit = Number(args.limit ?? 10);
-          const res = await fetch(`${auth.baseUrl}/documents/${docType}?limit=${limit}`, { headers: hdrs });
-          if (!res.ok) return fail(toolCall.name, `Holded devolvió ${res.status}`);
-          const docs = (await res.json()) as Array<Record<string, unknown>>;
+          if (docType !== 'invoice' && docType !== 'purchase') {
+            return fail(
+              toolCall.name,
+              `El tipo ${docType} todavía no está disponible en la capa Holded v2 unificada. Usa invoice o purchase.`,
+            );
+          }
+          const docs = await listHoldedDocuments(
+            gateway,
+            docType === 'purchase' ? 'purchase' : 'sales',
+            { maxItems: limit },
+          );
           return ok(toolCall.name, {
             count: docs.length,
-            documents: docs.slice(0, limit).map((d) => ({
+            documents: docs.map((d) => ({
               id: d.id,
-              number: d.docNumber,
+              number: d.number,
               date: d.date,
               contact: d.contactName,
               total: d.total,
               status: d.status,
+              paymentsPending: d.paymentsPending,
             })),
+            apiVersion: gateway.metadata.apiVersion,
           });
         }
 
         if (toolCall.name === 'get_holded_contacts') {
-          const query = typeof args.query === 'string' ? `?name=${encodeURIComponent(args.query)}` : '';
-          const res = await fetch(`${auth.baseUrl}/contacts${query}`, { headers: hdrs });
-          if (!res.ok) return fail(toolCall.name, `Holded devolvió ${res.status}`);
-          const contacts = (await res.json()) as Array<Record<string, unknown>>;
           const limit = Number(args.limit ?? 10);
+          const contacts = await listHoldedContacts(gateway, {
+            search: typeof args.query === 'string' ? args.query : undefined,
+            maxItems: limit,
+          });
           return ok(toolCall.name, {
             count: contacts.length,
-            contacts: contacts.slice(0, limit).map((c) => ({
-              id: c.id,
-              name: c.name,
-              email: c.email,
-              type: c.type,
-              vatNumber: c.vatnumber,
-            })),
+            contacts,
+            apiVersion: gateway.metadata.apiVersion,
           });
         }
 
-        const res = await fetch(`${auth.baseUrl}/treasury`, { headers: hdrs });
-        if (!res.ok) return fail(toolCall.name, `Holded devolvió ${res.status}`);
-        const accounts = (await res.json()) as Array<Record<string, unknown>>;
         const limit = Number(args.limit ?? 5);
+        const accounts = await listHoldedBankAccounts(gateway, limit);
         return ok(toolCall.name, {
           count: accounts.length,
-          accounts: accounts.slice(0, limit).map((a) => ({
-            id: a.id,
-            name: a.name,
-            balance: a.balance,
-            currency: a.currency ?? 'EUR',
-          })),
+          accounts,
+          apiVersion: gateway.metadata.apiVersion,
         });
       }
 
