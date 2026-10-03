@@ -113,4 +113,51 @@ describe('Meta RU localized catalog', () => {
     expect(page).toContain('Comprobar RU');
     expect(page).toContain('Sincronizados RU');
   });
+  it('requires the base ES product to be current before RU preparation or sync', () => {
+    const source = read('lib/integrations/meta/catalog-localization-sync.ts');
+
+    expect(source).toContain('hashMetaProductPayload');
+    expect(source).toContain('buildMetaProductPayload');
+    expect(source).toContain('last_payload_hash');
+    expect(source).toContain('El producto base ES tiene cambios pendientes de sincronizar');
+  });
+
+  it('rechecks production_ready immediately before the external RU write', () => {
+    const source = read('lib/integrations/meta/catalog-localization-sync.ts');
+
+    expect(source).toContain('const productionReady = productionReadyRetailerIds()');
+    expect(source).toContain('if (!productionReady.has(retailerId))');
+  });
+
+  it('recovers pending RU state that lost its Meta batch handle', () => {
+    const source = read('lib/integrations/meta/catalog-localization-sync.ts');
+
+    expect(source).toContain("state?.sync_status !== 'pending'");
+    expect(source).toContain('if (!state.batch_handle)');
+    expect(source).toContain("last_error_code: 'missing_batch_handle'");
+    expect(source).toContain('ya puede reintentarse');
+  });
+
+  it('surfaces local bookkeeping failures as manual review', () => {
+    const source = read('lib/integrations/meta/catalog-localization-sync.ts');
+
+    expect(source).toContain('Promise<string | null>');
+    expect(source).toContain("'local_bookkeeping_incomplete'");
+    expect(source).toContain("sync_status: 'manual_review'");
+  });
+
+  it('preserves localization bookkeeping during publication review', () => {
+    const orchestrator = read('lib/services/service-publication-orchestrator.ts');
+
+    expect(orchestrator).toContain('existingOverridesByChannel');
+    expect(orchestrator).toContain('...(existingOverridesByChannel.get(channel) ?? {})');
+  });
+
+  it('includes RU failures in the Admin error filter', () => {
+    const page = read('app/(protected)/admin/marketing-hub/page.tsx');
+
+    expect(page).toContain("draft.meta.ru?.syncStatus === 'failed'");
+    expect(page).toContain("draft.meta.ru?.syncStatus === 'manual_review'");
+  });
+
 });
