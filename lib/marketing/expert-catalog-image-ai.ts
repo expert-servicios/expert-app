@@ -64,7 +64,7 @@ const PRESETS: Record<CatalogImageCategoryKey, CategoryPreset> = {
       features: ['Estudio previo', 'Trámites online', 'Soporte profesional'],
     },
     ru: {
-      categoryLabel: 'Бизнес и autónomos',
+      categoryLabel: 'Бизнес и самозанятые',
       subtitle: 'Регистрация • Компания • Управление',
       features: ['Предварительный анализ', 'Онлайн-процедуры', 'Поддержка'],
     },
