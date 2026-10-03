@@ -132,16 +132,6 @@ export const kiaToolValidators = {
   get_unreconciled_transactions: z.object({
     limit: z.number().int().min(1).max(50).default(20),
   }).strict(),
-  draft_payment_reminder: z.object({
-    invoiceId: z.string().min(1).max(200),
-    stage: z.enum(['friendly', 'firm', 'formal']).default('friendly'),
-    language: z.enum(['es', 'ru']).optional(),
-  }).strict(),
-  draft_credit_note: z.object({
-    invoiceId: z.string().min(1).max(200),
-    reason: z.string().trim().min(3).max(500),
-    amount: z.number().positive().optional(),
-  }).strict(),
   // ── Holded labor v2 tools — company comes only from authorized KiaContext ─
   get_holded_employees: z.object({
     search: z.string().max(100).optional(),
@@ -279,8 +269,6 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_accounts_payable: 'Return supplier purchase invoices with outstanding balances for the active company, derived from Holded purchase data. Read-only.',
   get_overdue_invoices: 'Return overdue receivable/payable documents for the active company. Read-only; due status is derived conservatively from available Holded fields.',
   get_unreconciled_transactions: 'Return bank movements that appear unreconciled from Holded treasury data. Read-only and explicitly marked as derived.',
-  draft_payment_reminder: 'Prepare a payment-reminder draft for one outstanding invoice. Does not send email or modify Holded.',
-  draft_credit_note: 'Prepare a credit-note/rectification proposal for human review. Does not create or modify any Holded document.',
   get_holded_employees: 'List or search Holded employees for the already-authorized active company. Read-only; never changes employee data.',
   get_holded_employee_contract: 'Read one Holded employee and their active contract for the already-authorized active company. Read-only.',
   get_holded_payslips: 'List calculated Holded payroll payslips for the already-authorized active company. Keeps payslips separate from salary records.',
