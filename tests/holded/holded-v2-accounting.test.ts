@@ -65,3 +65,26 @@ describe('Holded v2 accounting reads', () => {
     expect(page.cursor).toBe('next');
   });
 });
+
+
+describe('Holded v2 ledger date requirements', () => {
+  it('adds start_date and end_date when reading the ledger', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      items: [],
+      cursor: null,
+      has_more: false,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = buildHoldedV2Client('secret-v2');
+    await client.listLedgerEntries({ limit: 1 });
+
+    const [url] = fetchMock.mock.calls[0] as [string];
+    expect(url).toContain('/api/v2/ledger-entries?');
+    expect(url).toContain('start_date=');
+    expect(url).toContain('end_date=');
+    expect(url).toContain('limit=1');
+
+    vi.unstubAllGlobals();
+  });
+});
