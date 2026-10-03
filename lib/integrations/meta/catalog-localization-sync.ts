@@ -433,7 +433,7 @@ export async function syncMetaCatalogLocalizations(
 
   const jobByChannel = new Map((jobs ?? []).map((job) => [String(job.target_id), String(job.id)]));
 
-  let claimed: PreparedLocalization[] = [];
+  const claimed: PreparedLocalization[] = [];
   try {
     for (const item of prepared) {
       const jobId = jobByChannel.get(item.channel.id) ?? null;
