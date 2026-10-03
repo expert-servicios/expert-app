@@ -75,7 +75,7 @@ Un servicio puede quedar completo en ES y RU sin editar base de datos manualment
 ### Criterio de hecho
 La usuaria puede gestionar todos los activos visuales desde Admin.
 
-## Fase 4 — Sincronización operativa completa 🚧 en curso
+## Fase 4 — Sincronización operativa completa ✅ completada
 
 ### Entregables
 - Sync individual.
@@ -99,12 +99,14 @@ No hace falta intervención de desarrollo para mantener el catálogo Meta.
 - Checklist automático.
 - Alertas de servicios listos no sincronizados.
 
-## Fase 6 — Catálogo RU inicial
+## Fase 6 — Catálogo RU inicial 🚧 en curso
 
 Primer lote:
 1. certificado-digital-persona-fisica;
 2. certificado-digital-entidad;
 3. pack-certificados-digitales.
+
+Estado 03/10/2026: contenido RU, landing e imágenes canónicas cargados en `service_contents`; pendiente validación y sincronización externa mediante localización nativa de Meta.
 
 Incluye:
 - copy RU;
