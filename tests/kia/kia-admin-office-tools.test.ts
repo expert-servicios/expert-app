@@ -25,7 +25,7 @@ describe('KIA Admin Office read layer', () => {
     }
   });
 
-  it('exposes Office tools to Admin but never to client dashboard', () => {
+  it('marks Office tools as Admin/Owner-only and never exposes them to client dashboard', () => {
     const adminNames = resolveKiaToolDefinitions({
       channel: 'admin',
       maxRiskTier: 'R1',
@@ -43,7 +43,11 @@ describe('KIA Admin Office read layer', () => {
     for (const name of officeTools) {
       expect(adminNames).toContain(name);
       expect(dashboardNames).not.toContain(name);
+      expect(getKiaToolPolicy(name)?.allowedRoles).toEqual(['admin', 'owner']);
     }
+
+    const enforcement = source('lib/ai/kia/kia-policy-enforced-decision.ts');
+    expect(enforcement).toContain('toolPolicy.allowedRoles.includes(actor.role)');
   });
 
   it('uses only synchronized read models and current authorized scope', () => {
