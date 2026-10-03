@@ -156,7 +156,7 @@ export async function buildMetaCatalogDrafts(locale = 'es'): Promise<MetaCatalog
   };
 }
 
-function resolvePublicAssetUrl(value: string | null | undefined): string | null {
+export function resolveMetaPublicAssetUrl(value: string | null | undefined): string | null {
   if (!value) return null;
   try {
     return new URL(value, SITE_ORIGIN).toString();
@@ -196,7 +196,7 @@ function buildDraft(
     serviceCategory: service.category_key,
     sourceCategorySlug: service.category_key,
     landingUrl: content ? `${SITE_ORIGIN}${content.landing_path}` : `${SITE_ORIGIN}/servicios`,
-    imageUrl: resolvePublicAssetUrl(content?.image_url),
+    imageUrl: resolveMetaPublicAssetUrl(content?.image_url),
     price,
     availability: 'in stock',
     marketingReady: warnings.length === 0,
