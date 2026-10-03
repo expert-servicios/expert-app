@@ -57,12 +57,10 @@ async function scopedCaseIds(admin: AdminClient, context: KiaContext): Promise<s
 }
 
 function requireOfficeScope(toolName: string, context: KiaContext): KiaToolResult | null {
-  if (!context.actor?.isStaff) return fail(toolName, 'La herramienta Office solo está disponible para personal interno.');
-  if (hasScopedTarget(context) || canUseGlobalOfficeScope(context)) return null;
-  return fail(
-    toolName,
-    'Selecciona primero un cliente o empresa. La vista global Office está reservada a Admin/Owner.',
-  );
+  if (!context.actor?.isStaff || !canUseGlobalOfficeScope(context)) {
+    return fail(toolName, 'La capa Office interna está reservada a roles Admin/Owner.');
+  }
+  return null;
 }
 
 async function loadInbox(
