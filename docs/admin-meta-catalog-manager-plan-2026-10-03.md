@@ -25,7 +25,7 @@ La pantalla debe ser compacta, operativa y comprensible sin conocimiento técnic
 6. **Acciones contextuales**: editar, revisar imagen, sincronizar y reintentar desde la propia fila.
 7. **Fail-closed**: ningún servicio puede sincronizarse si precio, contenido, imagen o permisos no cumplen.
 
-## Fase 1 — Catálogo compacto y estado real Meta
+## Fase 1 — Catálogo compacto y estado real Meta ✅ completada
 
 ### Entregables
 - Cabecera compacta con conexión Meta y acciones globales.
@@ -45,7 +45,7 @@ La pantalla debe ser compacta, operativa y comprensible sin conocimiento técnic
 ### Criterio de hecho
 La usuaria puede saber de un vistazo qué existe realmente en Meta y qué solo está preparado.
 
-## Fase 2 — Editor multidioma ES/RU
+## Fase 2 — Editor multidioma ES/RU 🚧 en curso
 
 ### Entregables
 - Edición por servicio con tabs ES/RU.
