@@ -57,8 +57,8 @@ const KIA_SKILLS: readonly KiaSkillDefinition[] = [
     intents: ['accounting_summary', 'anomaly_review'],
     taskTypes: ['accounting_anomaly_review', 'company_status_summary'],
     preferredSubAgentId: 'accounting',
-    requiredToolCapabilities: ['client_data', 'holded_read', 'reporting', 'accounting_read', 'accounting_write'],
-    maxRiskTier: 'R2',
+    requiredToolCapabilities: ['client_data', 'holded_read', 'reporting', 'accounting_read'],
+    maxRiskTier: 'R1',
     enabled: true,
   },
   {
