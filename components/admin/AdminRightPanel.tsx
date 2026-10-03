@@ -104,6 +104,15 @@ export function AdminRightPanel({ emailUnreadCount = 0 }: { emailUnreadCount?: n
   const [wide, setWide] = useState(false);
   const [tab, setTab] = useState<PanelTab>('kia');
   const [mounted, setMounted] = useState<Set<PanelTab>>(new Set());
+  const [desktopVisible, setDesktopVisible] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)');
+    const sync = () => setDesktopVisible(media.matches);
+    sync();
+    media.addEventListener('change', sync);
+    return () => media.removeEventListener('change', sync);
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('adminRightPanel');
@@ -175,7 +184,7 @@ export function AdminRightPanel({ emailUnreadCount = 0 }: { emailUnreadCount?: n
             <div className="relative flex-1 overflow-hidden">
               {TABS.map(({ id }) => (
                 <div key={id} className={`absolute inset-0 overflow-auto ${tab === id ? 'z-10 visible' : 'z-0 invisible'}`}>
-                  {mounted.has(id) && (id === 'kia' ? <KiaCopilotWidget embedded active={open && tab === 'kia'} /> : <NotificacionesTab />)}
+                  {mounted.has(id) && (id === 'kia' ? <KiaCopilotWidget embedded active={desktopVisible && open && tab === 'kia'} /> : <NotificacionesTab />)}
                 </div>
               ))}
             </div>
