@@ -2,7 +2,11 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import type { MetaCatalogVatTreatment, MetaServiceCatalogDraft } from './types';
 
 const SITE_ORIGIN = 'https://expertconsulting.es';
-const GENERAL_VAT_RATE = 0.21;
+const META_VAT_RATE_BY_SERVICE_SLUG: Readonly<Record<string, number>> = {
+  'certificado-digital-persona-fisica': 0.21,
+  'certificado-digital-entidad': 0.21,
+  'pack-certificados-digitales': 0.21,
+};
 
 type CatalogServiceRow = {
   id: string;
@@ -52,10 +56,15 @@ export type MetaCatalogDraftResult = {
   blockedCount: number;
 };
 
-export function projectMetaConsumerPrice(amountCents: number, vatTreatment: MetaCatalogVatTreatment) {
+export function projectMetaConsumerPrice(
+  amountCents: number,
+  vatTreatment: MetaCatalogVatTreatment,
+  vatRate?: number,
+) {
   if (vatTreatment === 'plus_vat') {
+    if (vatRate == null) return null;
     return {
-      amount: Math.round(amountCents * (1 + GENERAL_VAT_RATE)) / 100,
+      amount: Math.round(amountCents * (1 + vatRate)) / 100,
       currency: 'EUR' as const,
       taxIncluded: true,
       vatTreatment,
@@ -163,8 +172,9 @@ function buildDraft(
   if (offer.vat_treatment === 'manual_review') warnings.push('vat_manual_review');
   if (!channel || !channel.enabled || channel.publish_status !== 'ready') warnings.push('meta_channel_not_ready');
 
+  const vatRate = META_VAT_RATE_BY_SERVICE_SLUG[service.slug];
   const price = offer.amount_cents != null
-    ? projectMetaConsumerPrice(offer.amount_cents, offer.vat_treatment)
+    ? projectMetaConsumerPrice(offer.amount_cents, offer.vat_treatment, vatRate)
     : null;
 
   if (offer.amount_cents != null && !price) warnings.push('consumer_price_unavailable');
