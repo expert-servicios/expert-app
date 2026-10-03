@@ -86,10 +86,6 @@ async function probe(path: string, token: string) {
 }
 
 export async function GET() {
-  if (process.env.VERCEL_ENV !== 'preview') {
-    return new NextResponse(null, { status: 404 });
-  }
-
   const token = process.env.HOLDED_ADVISOR_API_TOKEN?.trim();
   if (!token) {
     return NextResponse.json({
