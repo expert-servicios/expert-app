@@ -10,6 +10,7 @@ export type KiaToolCapability =
   | 'documents'
   | 'holded_read'
   | 'holded_hr_read'
+  | 'accounting_read'
   | 'reporting'
   | 'checkout'
   | 'navigation'
@@ -65,6 +66,10 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_holded_invoices:                policy('R1', 'read',  'holded_read'),
   get_holded_contacts:                policy('R1', 'read',  'holded_read'),
   get_holded_bank_balance:            policy('R1', 'read',  'holded_read'),
+  get_accounts_receivable:            policy('R1', 'read',  'accounting_read'),
+  get_accounts_payable:               policy('R1', 'read',  'accounting_read'),
+  get_overdue_invoices:               policy('R1', 'read',  'accounting_read'),
+  get_unreconciled_transactions:      policy('R1', 'read',  'accounting_read'),
   get_holded_employees:               policy('R1', 'read',  'holded_hr_read'),
   get_holded_employee_contract:       policy('R1', 'read',  'holded_hr_read'),
   get_holded_payslips:                policy('R1', 'read',  'holded_hr_read'),

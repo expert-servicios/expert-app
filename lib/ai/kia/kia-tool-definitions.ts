@@ -116,6 +116,22 @@ export const kiaToolValidators = {
   get_holded_bank_balance: z.object({
     limit: z.number().int().min(1).max(10).default(5),
   }).strict(),
+  // ── KIA Accounting controller tools ───────────────────────────────────────
+  get_accounts_receivable: z.object({
+    limit: z.number().int().min(1).max(50).default(20),
+    includeNotDue: z.boolean().default(true),
+  }).strict(),
+  get_accounts_payable: z.object({
+    limit: z.number().int().min(1).max(50).default(20),
+    includeNotDue: z.boolean().default(true),
+  }).strict(),
+  get_overdue_invoices: z.object({
+    side: z.enum(['receivable', 'payable', 'both']).default('receivable'),
+    limit: z.number().int().min(1).max(50).default(20),
+  }).strict(),
+  get_unreconciled_transactions: z.object({
+    limit: z.number().int().min(1).max(50).default(20),
+  }).strict(),
   // ── Holded labor v2 tools — company comes only from authorized KiaContext ─
   get_holded_employees: z.object({
     search: z.string().max(100).optional(),
@@ -249,6 +265,10 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_holded_invoices: 'List recent Holded invoices or purchases for the active company. Requires active company-scoped Holded integration.',
   get_holded_contacts: 'Search or list Holded contacts for the active company. Requires active company-scoped Holded integration.',
   get_holded_bank_balance: 'Return Holded treasury account balances for the active company. Requires active company-scoped Holded integration.',
+  get_accounts_receivable: 'Return customer invoices with outstanding balances for the active company, derived from Holded invoice data. Read-only.',
+  get_accounts_payable: 'Return supplier purchase invoices with outstanding balances for the active company, derived from Holded purchase data. Read-only.',
+  get_overdue_invoices: 'Return overdue receivable/payable documents for the active company. Read-only; due status is derived conservatively from available Holded fields.',
+  get_unreconciled_transactions: 'Return bank movements that appear unreconciled from Holded treasury data. Read-only and explicitly marked as derived.',
   get_holded_employees: 'List or search Holded employees for the already-authorized active company. Read-only; never changes employee data.',
   get_holded_employee_contract: 'Read one Holded employee and their active contract for the already-authorized active company. Read-only.',
   get_holded_payslips: 'List calculated Holded payroll payslips for the already-authorized active company. Keeps payslips separate from salary records.',
