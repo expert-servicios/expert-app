@@ -4,6 +4,8 @@ import { buildMetaCatalogDrafts } from '@/lib/integrations/meta/catalog-export';
 import {
   INITIAL_META_CATALOG_BATCH_LIMIT,
   INITIAL_META_CATALOG_RETAILER_IDS,
+  buildMetaProductPayload,
+  hashMetaProductPayload,
 } from '@/lib/integrations/meta/catalog-sync';
 
 type ServiceIdentity = {
@@ -26,6 +28,7 @@ type MetaItemRow = {
   meta_item_id: string | null;
   last_synced_at: string | null;
   last_error_code: string | null;
+  last_payload_hash: string | null;
 };
 
 async function requireAdmin(request: NextRequest) {
@@ -60,7 +63,7 @@ export async function GET(request: NextRequest) {
     retailerIds.length
       ? admin
           .from('meta_catalog_items')
-          .select('retailer_id,locale,sync_status,meta_item_id,last_synced_at,last_error_code')
+          .select('retailer_id,locale,sync_status,meta_item_id,last_synced_at,last_error_code,last_payload_hash')
           .in('retailer_id', retailerIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
@@ -122,6 +125,14 @@ export async function GET(request: NextRequest) {
     const serviceId = serviceIdBySlug.get(draft.retailerId);
     const locales = serviceId ? localesByService.get(serviceId) ?? {} : {};
     const meta = metaByRetailer.get(draft.retailerId) ?? {};
+    let currentPayloadHash: string | null = null;
+    if (draft.marketingReady) {
+      try {
+        currentPayloadHash = hashMetaProductPayload(buildMetaProductPayload(draft));
+      } catch {
+        currentPayloadHash = null;
+      }
+    }
 
     return {
       ...draft,
@@ -136,6 +147,13 @@ export async function GET(request: NextRequest) {
               metaItemId: meta.es.meta_item_id,
               lastSyncedAt: meta.es.last_synced_at,
               lastErrorCode: meta.es.last_error_code,
+              lastPayloadHash: meta.es.last_payload_hash,
+              isStale: meta.es.sync_status === 'synced'
+                && (
+                  currentPayloadHash == null
+                  || meta.es.last_payload_hash == null
+                  || currentPayloadHash !== meta.es.last_payload_hash
+                ),
             }
           : null,
         ru: meta.ru
@@ -144,6 +162,8 @@ export async function GET(request: NextRequest) {
               metaItemId: meta.ru.meta_item_id,
               lastSyncedAt: meta.ru.last_synced_at,
               lastErrorCode: meta.ru.last_error_code,
+              lastPayloadHash: meta.ru.last_payload_hash,
+              isStale: false,
             }
           : null,
       },

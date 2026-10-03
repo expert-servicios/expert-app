@@ -32,14 +32,15 @@ describe('Admin Meta Catalog content editor', () => {
     expect(editor).toContain('Nuevo borrador RU');
   });
 
-  it('marks synchronized ES content as stale when edited after last sync', () => {
+  it('marks synchronized ES content as stale from the canonical Meta payload hash', () => {
     const page = read('app/(protected)/admin/marketing-hub/page.tsx');
     const route = read('app/api/admin/meta/catalog/route.ts');
 
-    expect(route).toContain('updated_at');
+    expect(route).toContain('last_payload_hash');
+    expect(route).toContain('hashMetaProductPayload');
+    expect(route).toContain('currentPayloadHash !== meta.es.last_payload_hash');
     expect(page).toContain('Cambios pendientes');
-    expect(page).toContain('draft.locales.es.updatedAt');
-    expect(page).toContain('draft.meta.es.lastSyncedAt');
+    expect(page).toContain('draft.meta.es?.isStale');
   });
 
   it('opens editing from the compact catalog row', () => {

@@ -8,6 +8,7 @@ import {
   Eye,
   ImageIcon,
   Languages,
+  ListChecks,
   Pencil,
   RefreshCw,
   Search,
@@ -80,6 +81,8 @@ type MetaLocaleState = {
   metaItemId: string | null;
   lastSyncedAt: string | null;
   lastErrorCode: string | null;
+  lastPayloadHash: string | null;
+  isStale: boolean;
 } | null;
 
 type MetaCatalogDraft = {
@@ -205,7 +208,9 @@ export default function MarketingHubPage() {
   const [testing, setTesting] = useState(false);
   const [testMessage, setTestMessage] = useState<string | null>(null);
   const [syncingCatalog, setSyncingCatalog] = useState(false);
+  const [preparingCatalog, setPreparingCatalog] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [selectedRetailerIds, setSelectedRetailerIds] = useState<Set<string>>(new Set());
   const [panel, setPanel] = useState<Panel>('catalog');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<CatalogFilter>('all');
@@ -244,9 +249,43 @@ export default function MarketingHubPage() {
     }
   }, [data?.liveTestAvailable]);
 
-  const syncCatalog = useCallback(async () => {
+  const prepareRetailers = useCallback(async (retailerIds: string[]) => {
+    if (retailerIds.length === 0) return;
+    setPreparingCatalog(true);
+    setSyncMessage(null);
+    let prepared = 0;
+    const failures: string[] = [];
+
+    try {
+      for (const retailerId of retailerIds) {
+        const response = await fetch(
+          `/api/admin/meta/catalog/${encodeURIComponent(retailerId)}/prepare`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ confirm: 'prepare_meta_catalog_item' }),
+          },
+        );
+        const payload = await response.json() as { ok?: boolean; error?: string };
+        if (response.ok && payload.ok) prepared += 1;
+        else failures.push(`${retailerId}: ${payload.error ?? 'error'}`);
+      }
+
+      setSyncMessage(
+        failures.length
+          ? `Preparados: ${prepared}. Con bloqueo: ${failures.length}. ${failures.slice(0, 2).join(' · ')}`
+          : `Preparados para Meta: ${prepared}.`,
+      );
+    } finally {
+      await load();
+      setPreparingCatalog(false);
+    }
+  }, [load]);
+
+  const syncRetailers = useCallback(async (retailerIds: string[]) => {
+    if (retailerIds.length === 0) return;
     const confirmed = window.confirm(
-      'Se sincronizarán únicamente los 3 certificados ES del lote inicial. ¿Continuar?',
+      `Se sincronizarán ${retailerIds.length} servicio(s) ES con Meta. Esta acción escribe en el catálogo externo. ¿Continuar?`,
     );
     if (!confirmed) return;
 
@@ -256,7 +295,10 @@ export default function MarketingHubPage() {
       const response = await fetch('/api/admin/meta/catalog/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ confirm: 'sync_initial_meta_catalog_batch' }),
+        body: JSON.stringify({
+          confirm: 'sync_meta_catalog_items',
+          retailerIds,
+        }),
       });
       const raw = await response.text();
       let payload: {
@@ -276,9 +318,10 @@ export default function MarketingHubPage() {
       } else {
         setSyncMessage(
           payload.ok
-            ? `Sincronización completada: ${payload.succeeded ?? 0} items.`
+            ? `Sincronización completada: ${payload.succeeded ?? 0} servicio(s).`
             : `Sincronización parcial: ${payload.succeeded ?? 0} correctos · ${payload.failed ?? 0} fallidos.`,
         );
+        setSelectedRetailerIds(new Set());
       }
     } catch {
       setSyncMessage('Resultado ambiguo. Se ha recargado el estado antes de permitir otro intento.');
@@ -314,6 +357,27 @@ export default function MarketingHubPage() {
   const syncedCount = catalog?.drafts.filter((draft) => draft.meta.es?.syncStatus === 'synced').length ?? 0;
   const failedCount = catalog?.drafts.filter((draft) => draft.meta.es?.syncStatus === 'failed').length ?? 0;
   const ruMissingCount = catalog?.drafts.filter((draft) => !draft.locales.ru.exists).length ?? 0;
+  const manifestBySlug = new Map(diagnostics.manifest.entries.map((entry) => [entry.slug, entry]));
+  const selectedDrafts = (catalog?.drafts ?? []).filter((draft) => selectedRetailerIds.has(draft.retailerId));
+  const selectedReadyIds = selectedDrafts
+    .filter((draft) => draft.meta.es?.syncStatus === 'ready')
+    .map((draft) => draft.retailerId);
+  const selectedPrepareIds = selectedDrafts
+    .filter((draft) => {
+      const manifest = manifestBySlug.get(draft.retailerId);
+      if (manifest?.stage !== 'production_ready') return false;
+      const status = draft.meta.es?.syncStatus;
+      const localBlockers = draft.warnings.filter((warning) => warning !== 'meta_channel_not_ready');
+      if (localBlockers.length > 0) return false;
+      if (status === 'pending' || status === 'manual_review' || status === 'ready') return false;
+      return status === 'failed'
+        || status == null
+        || (
+          status === 'synced'
+          && draft.meta.es?.isStale === true
+        );
+    })
+    .map((draft) => draft.retailerId);
 
   return (
     <main className="min-h-screen bg-[#f7f3eb] px-4 py-5 lg:px-6">
@@ -349,16 +413,6 @@ export default function MarketingHubPage() {
                 className="inline-flex items-center gap-1.5 rounded-lg bg-[#07111d] px-3 py-2 text-xs font-bold text-[#d7a33a] disabled:opacity-40"
               >
                 <TestTube2 className="h-3.5 w-3.5" /> {testing ? 'Probando…' : 'Probar Meta'}
-              </button>
-              <button
-                type="button"
-                onClick={() => void syncCatalog()}
-                disabled={!data.liveTestAvailable || syncingCatalog || !catalog?.initialBatch.ready}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-[#c88b25] px-3 py-2 text-xs font-bold text-[#07111d] disabled:cursor-not-allowed disabled:opacity-40"
-                title={catalog?.initialBatch.complete ? 'El lote inicial ES ya está sincronizado' : 'Sincroniza el lote inicial aprobado'}
-              >
-                {catalog?.initialBatch.complete ? <CheckCircle2 className="h-3.5 w-3.5" /> : <UploadCloud className="h-3.5 w-3.5" />}
-                {catalog?.initialBatch.complete ? 'Lote ES sincronizado' : syncingCatalog ? 'Sincronizando…' : 'Sincronizar lote ES'}
               </button>
             </div>
           </div>
@@ -429,9 +483,29 @@ export default function MarketingHubPage() {
                 </select>
               </div>
 
-              <div className="flex items-center gap-2 text-[11px] font-semibold text-[#69717d]">
-                <Languages className="h-4 w-4" />
-                {filteredDrafts.length} visibles · ES / RU
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#69717d]">
+                  <Languages className="h-4 w-4" />
+                  {filteredDrafts.length} visibles · {selectedRetailerIds.size} seleccionados
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void prepareRetailers(selectedPrepareIds)}
+                  disabled={selectedPrepareIds.length === 0 || preparingCatalog || syncingCatalog}
+                  className="inline-flex items-center gap-1 rounded-lg border border-[#d8cbb5] bg-white px-2.5 py-2 text-[11px] font-bold text-[#374151] disabled:opacity-40"
+                >
+                  <ListChecks className="h-3.5 w-3.5" />
+                  {preparingCatalog ? 'Preparando…' : `Preparar (${selectedPrepareIds.length})`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void syncRetailers(selectedReadyIds)}
+                  disabled={!data.liveTestAvailable || selectedReadyIds.length === 0 || syncingCatalog || preparingCatalog}
+                  className="inline-flex items-center gap-1 rounded-lg bg-[#c88b25] px-2.5 py-2 text-[11px] font-bold text-[#07111d] disabled:opacity-40"
+                >
+                  <UploadCloud className="h-3.5 w-3.5" />
+                  {syncingCatalog ? 'Sincronizando…' : `Sincronizar (${selectedReadyIds.length})`}
+                </button>
               </div>
             </div>
 
@@ -439,26 +513,64 @@ export default function MarketingHubPage() {
               <table className="min-w-full text-sm">
                 <thead className="sticky top-0 z-10 bg-[#f7f3eb] text-left text-[10px] uppercase tracking-[0.08em] text-[#69717d]">
                   <tr>
+                    <th className="w-10 px-3 py-2">
+                      <input
+                        type="checkbox"
+                        aria-label="Seleccionar servicios visibles"
+                        checked={filteredDrafts.length > 0 && filteredDrafts.every((draft) => selectedRetailerIds.has(draft.retailerId))}
+                        onChange={(event) => {
+                          setSelectedRetailerIds((current) => {
+                            const next = new Set(current);
+                            for (const draft of filteredDrafts) {
+                              if (event.target.checked) next.add(draft.retailerId);
+                              else next.delete(draft.retailerId);
+                            }
+                            return next;
+                          });
+                        }}
+                      />
+                    </th>
                     <th className="w-16 px-3 py-2">Imagen</th>
                     <th className="px-3 py-2">Servicio</th>
                     <th className="w-28 px-3 py-2">Idiomas</th>
                     <th className="w-28 px-3 py-2">Precio</th>
                     <th className="w-36 px-3 py-2">Meta ES</th>
                     <th className="w-44 px-3 py-2">ID / última sync</th>
-                    <th className="w-20 px-3 py-2">Acción</th>
+                    <th className="w-56 px-3 py-2">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#eee6d8]">
                   {filteredDrafts.map((draft) => {
-                    const esStale = Boolean(
-                      draft.meta.es?.syncStatus === 'synced'
-                      && draft.locales.es.updatedAt
-                      && draft.meta.es.lastSyncedAt
-                      && new Date(draft.locales.es.updatedAt).getTime() > new Date(draft.meta.es.lastSyncedAt).getTime(),
-                    );
+                    const esStale = draft.meta.es?.isStale === true;
+                    const manifest = manifestBySlug.get(draft.retailerId);
+                    const productionReady = manifest?.stage === 'production_ready';
+                    const metaStatus = draft.meta.es?.syncStatus ?? null;
+                    const localBlockers = draft.warnings.filter((warning) => warning !== 'meta_channel_not_ready');
+                    const canPrepare = productionReady
+                      && localBlockers.length === 0
+                      && metaStatus !== 'pending'
+                      && metaStatus !== 'manual_review'
+                      && metaStatus !== 'ready'
+                      && (metaStatus === 'failed' || metaStatus == null || (metaStatus === 'synced' && esStale));
+                    const canSync = metaStatus === 'ready';
 
                     return (
                     <tr key={draft.retailerId} className="hover:bg-[#fcfaf6]">
+                      <td className="px-3 py-2">
+                        <input
+                          type="checkbox"
+                          aria-label={`Seleccionar ${draft.name}`}
+                          checked={selectedRetailerIds.has(draft.retailerId)}
+                          onChange={(event) => {
+                            setSelectedRetailerIds((current) => {
+                              const next = new Set(current);
+                              if (event.target.checked) next.add(draft.retailerId);
+                              else next.delete(draft.retailerId);
+                              return next;
+                            });
+                          }}
+                        />
+                      </td>
                       <td className="px-3 py-2">
                         {draft.imageUrl ? (
                           <button
@@ -509,14 +621,54 @@ export default function MarketingHubPage() {
                         </p>
                       </td>
                       <td className="px-3 py-2">
-                        <button
-                          type="button"
-                          onClick={() => setEditingRetailerId(draft.retailerId)}
-                          className="inline-flex items-center gap-1 rounded-lg border border-[#d8cbb5] bg-white px-2 py-1.5 text-[11px] font-bold text-[#374151] hover:border-[#c88b25]"
-                          title="Editar ES / RU"
-                        >
-                          <Pencil className="h-3.5 w-3.5" /> Editar
-                        </button>
+                        <div className="flex flex-wrap gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setEditingRetailerId(draft.retailerId)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-[#d8cbb5] bg-white px-2 py-1.5 text-[11px] font-bold text-[#374151] hover:border-[#c88b25]"
+                            title="Editar ES / RU"
+                          >
+                            <Pencil className="h-3.5 w-3.5" /> Editar
+                          </button>
+                          {canPrepare ? (
+                            <button
+                              type="button"
+                              onClick={() => void prepareRetailers([draft.retailerId])}
+                              disabled={preparingCatalog || syncingCatalog}
+                              className="rounded-lg border border-[#d8cbb5] bg-white px-2 py-1.5 text-[11px] font-bold text-[#7a5313] disabled:opacity-40"
+                              title={metaStatus === 'failed' ? 'Preparar reintento' : esStale ? 'Preparar cambios' : 'Validar y preparar para Meta'}
+                            >
+                              {metaStatus === 'failed' ? 'Reintentar' : esStale ? 'Preparar cambios' : 'Preparar'}
+                            </button>
+                          ) : null}
+                          {canSync ? (
+                            <button
+                              type="button"
+                              onClick={() => void syncRetailers([draft.retailerId])}
+                              disabled={!data.liveTestAvailable || syncingCatalog || preparingCatalog}
+                              className="rounded-lg bg-[#c88b25] px-2 py-1.5 text-[11px] font-bold text-[#07111d] disabled:opacity-40"
+                            >
+                              Sincronizar
+                            </button>
+                          ) : null}
+                          {metaStatus === 'synced' && !esStale ? (
+                            <span className="inline-flex items-center px-1.5 text-[10px] font-semibold text-green-700">Al día</span>
+                          ) : null}
+                          {!productionReady ? (
+                            <span className="inline-flex items-center px-1.5 text-[10px] text-[#8a929d]" title="El servicio todavía no es production_ready">No publicable</span>
+                          ) : null}
+                          {productionReady && localBlockers.length > 0 ? (
+                            <span
+                              className="inline-flex items-center px-1.5 text-[10px] font-semibold text-amber-800"
+                              title={localBlockers.join(', ')}
+                            >
+                              Bloqueado
+                            </span>
+                          ) : null}
+                          {metaStatus === 'manual_review' ? (
+                            <span className="inline-flex items-center px-1.5 text-[10px] font-semibold text-amber-800">Revisión manual</span>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                     );

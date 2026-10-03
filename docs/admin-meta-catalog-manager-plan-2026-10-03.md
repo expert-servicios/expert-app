@@ -62,7 +62,7 @@ La usuaria puede saber de un vistazo qué existe realmente en Meta y qué solo e
 ### Criterio de hecho
 Un servicio puede quedar completo en ES y RU sin editar base de datos manualmente.
 
-## Fase 3 — Gestión de imágenes 🚧 en curso
+## Fase 3 — Gestión de imágenes ✅ completada
 
 ### Entregables
 - Upload manual.
@@ -75,7 +75,7 @@ Un servicio puede quedar completo en ES y RU sin editar base de datos manualment
 ### Criterio de hecho
 La usuaria puede gestionar todos los activos visuales desde Admin.
 
-## Fase 4 — Sincronización operativa completa
+## Fase 4 — Sincronización operativa completa 🚧 en curso
 
 ### Entregables
 - Sync individual.

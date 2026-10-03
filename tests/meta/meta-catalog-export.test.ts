@@ -97,6 +97,35 @@ describe('buildMetaCatalogDrafts', () => {
     });
   });
 
+  it('applies the standard 21% rate to any canonical plus-vat offer, not only certificates', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'catalog_services') {
+        return { select: () => queryResult([{ id: 's-generic', slug: 'alta-autonomo', category_key: 'empresas-autonomos', status: 'active' }]) };
+      }
+      if (table === 'service_contents') {
+        return { select: () => queryResult([{ id: 'c-generic', service_id: 's-generic', locale: 'es', name: 'Alta autónomo', short_description: 'short', description: 'long', landing_path: '/servicios/empresas-autonomos/alta-autonomo', image_url: '/api/services/og?slug=alta-autonomo&variant=square&lang=es', status: 'active' }]) };
+      }
+      if (table === 'commercial_offers') {
+        return { select: () => queryResult([{ id: 'o-generic', service_id: 's-generic', code: 'default', price_mode: 'fixed', amount_cents: 12000, vat_treatment: 'plus_vat', status: 'active' }]) };
+      }
+      if (table === 'service_channel_configs') {
+        return { select: () => queryResult([{ service_id: 's-generic', enabled: true, publish_status: 'ready' }]) };
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const { buildMetaCatalogDrafts } = await import('@/lib/integrations/meta/catalog-export');
+    const result = await buildMetaCatalogDrafts();
+
+    expect(result.readyCount).toBe(1);
+    expect(result.drafts[0].price).toEqual({
+      amount: 145.2,
+      currency: 'EUR',
+      taxIncluded: true,
+      vatTreatment: 'plus_vat',
+    });
+  });
+
   it('excludes a "Consultar" (quote price) service from the catalog outright instead of listing it blocked', async () => {
     fromMock.mockImplementation((table: string) => {
       if (table === 'catalog_services') {
