@@ -5,6 +5,8 @@ import {
   resolveKiaToolDefinitions,
 } from '@/lib/ai/kia/kia-tool-registry';
 import { getKiaToolDefinition } from '@/lib/ai/kia/kia-tool-definitions';
+import { isExpertGlobalHoldedContext } from '@/lib/ai/kia/kia-accounting-tools';
+import type { KiaContext } from '@/lib/ai/kia/kia-context-builder';
 import { resolveKiaSkillAuthorization } from '@/lib/ai/kia/kia-skill-execution';
 
 describe('KIA Accounting phase 2 authorization', () => {
@@ -118,5 +120,37 @@ describe('KIA Accounting phase 2 authorization', () => {
     expect(resolved.toolNames).not.toContain('draft_payment_reminder');
     expect(resolved.toolNames).not.toContain('draft_credit_note');
     expect(resolved.toolNames).not.toContain('get_case_status');
+  });
+});
+
+
+describe('KIA Accounting EXPERT global Holded boundary', () => {
+  const baseContext = {
+    company: {
+      id: '00000000-0000-0000-0000-000000000001',
+      name: 'EXPERT',
+      taxId: 'B44991776',
+      hasMonthlyPlan: false,
+      coverageSource: 'none',
+      coveragePlanName: null,
+      coveragePrimaryCompanyId: null,
+      coveragePrimaryCompanyName: null,
+      coverageScope: null,
+      holdedConnected: true,
+      holdedPermissions: {},
+      holdedPermissionsDetected: {},
+      holdedPermissionsEnabled: {},
+    },
+  } as unknown as KiaContext;
+
+  it('recognizes EXPERT by canonical legal tax id', () => {
+    expect(isExpertGlobalHoldedContext(baseContext)).toBe(true);
+  });
+
+  it('does not route another company to the EXPERT global credential', () => {
+    expect(isExpertGlobalHoldedContext({
+      ...baseContext,
+      company: { ...baseContext.company!, taxId: 'B54920509' },
+    })).toBe(false);
   });
 });
