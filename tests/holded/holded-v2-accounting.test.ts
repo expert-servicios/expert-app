@@ -58,8 +58,8 @@ describe('Holded v2 accounting reads', () => {
     const page = await client.listContacts({ search: 'Meridiano', limit: 10 });
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(url).toContain('/api/v2/contacts?');
-    expect(url).toContain('search=Meridiano');
+    expect(url).toContain('/api/v2/contacts/search?');
+    expect(url).toContain('name=Meridiano');
     expect(url).not.toContain('secret-v2');
     expect(init.headers).toMatchObject({ Authorization: 'Bearer secret-v2' });
     expect(page.cursor).toBe('next');
@@ -84,6 +84,27 @@ describe('Holded v2 ledger date requirements', () => {
     expect(url).toContain('start_date=');
     expect(url).toContain('end_date=');
     expect(url).toContain('limit=1');
+
+    vi.unstubAllGlobals();
+  });
+});
+
+
+describe('Holded v2 contact limits', () => {
+  it('clamps contact page size to the documented maximum of 100', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      items: [],
+      cursor: null,
+      has_more: false,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = buildHoldedV2Client('secret-v2');
+    await client.listContacts({ limit: 180 });
+
+    const [url] = fetchMock.mock.calls[0] as [string];
+    expect(url).toContain('/api/v2/contacts?');
+    expect(url).toContain('limit=100');
 
     vi.unstubAllGlobals();
   });
