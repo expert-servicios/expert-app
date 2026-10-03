@@ -72,8 +72,6 @@ async function getIntegration(admin: ReturnType<typeof getSupabaseAdmin>, compan
 async function detectAllPermissions(rawApiKey: string, apiVersion: 'v1' | 'v2' = 'v1') {
   if (apiVersion === 'v2') {
     const client = createHoldedV2ClientFromRawKey(rawApiKey);
-    await client.getUsage();
-
     const permissions = createEmptyHoldedPermissions();
     const checks: Array<[keyof HoldedPermissions, () => Promise<unknown>]> = [
       ['contacts', () => client.listContacts({ limit: 1 })],
@@ -94,6 +92,7 @@ async function detectAllPermissions(rawApiKey: string, apiVersion: 'v1' | 'v2' =
     }));
     for (const [permission, allowed] of settled) permissions[permission] = allowed;
 
+    const coreReadOk = settled.some(([, allowed]) => allowed);
     const laborPermissions = await detectHoldedLaborPermissions(rawApiKey);
     const normalized = normalizeDetectedHoldedPermissions({
       ...permissions,
@@ -101,11 +100,12 @@ async function detectAllPermissions(rawApiKey: string, apiVersion: 'v1' | 'v2' =
     });
 
     const warnings: string[] = [];
+    if (!coreReadOk) warnings.push('El token v2 no permite leer ningún recurso contable básico o no es válido.');
     if (!normalized.salesInvoices) warnings.push('Sin acceso v2 a facturas emitidas.');
     if (!normalized.purchaseInvoices) warnings.push('Sin acceso v2 a compras/facturas recibidas.');
     if (!normalized.bankAccounts) warnings.push('Sin acceso v2 a cuentas de tesorería.');
 
-    return { ok: true, permissions: normalized, warnings };
+    return { ok: coreReadOk, permissions: normalized, warnings };
   }
 
   const client = createHoldedClientFromRawKey(rawApiKey);
@@ -178,6 +178,17 @@ export async function POST(
 
     const parsed = bodySchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
+
+    if (
+      parsed.data.action === 'connect'
+      && parsed.data.mode === 'advisor_managed'
+      && parsed.data.apiVersion !== 'v2'
+    ) {
+      return NextResponse.json(
+        { error: 'Las cuentas gestionadas por EXPERT Asesoría requieren Holded API v2.' },
+        { status: 400 },
+      );
+    }
 
     const { admin, actorId } = auth;
 
