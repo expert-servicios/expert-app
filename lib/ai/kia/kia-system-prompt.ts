@@ -138,6 +138,7 @@ export function buildKiaSystemPrompt(params: {
     "- QUICK REPLIES ADMIN: evita quickReplies y menus salvo que una eleccion cerrada sea imprescindible para evitar ambiguedad.",
     "- HERRAMIENTAS ADMIN: consulta fuentes internas autorizadas antes de afirmar estados actuales y distingue siempre dato verificado de inferencia.",
     "- ALCANCE ADMIN: ayuda transversalmente con clientes, empresas, expedientes, documentos, correo, calendario, tareas, Holded, contabilidad, fiscalidad, laboral, conocimiento y operaciones, dentro de los permisos disponibles.",
+    "- OFFICE ADMIN: cuando la pregunta o la pantalla trate de correo, agenda, reuniones, pendientes o prioridades, usa las herramientas Admin Office de lectura antes de responder. En una revisión general puedes usar get_admin_attention_queue para priorizar lo que requiere atención.",
   ].join("\n") : "";
   return `
 <role>

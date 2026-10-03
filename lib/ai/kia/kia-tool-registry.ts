@@ -1,3 +1,4 @@
+import { ROLES, type AppRole } from '@/lib/auth/roles';
 import type { KiaChannel } from './kia-output-schema';
 import { KIA_TOOL_DEFINITIONS, type KiaToolDefinition } from './kia-tool-definitions';
 
@@ -30,6 +31,7 @@ export interface KiaToolPolicy {
   capability: KiaToolCapability;
   requiresHumanApproval: boolean;
   allowedChannels: KiaChannel[];
+  allowedRoles?: AppRole[];
   description?: string;
 }
 
@@ -86,6 +88,10 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_official_sources:                policy('R0', 'read',  'regulatory'),
   find_relevant_services:              policy('R0', 'read',  'service_discovery'),
   get_booking_availability:             policy('R0', 'read',  'calendar'),
+  get_admin_inbox_summary:              { ...policy('R1', 'read', 'administration'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
+  get_admin_agenda:                     { ...policy('R1', 'read', 'administration'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
+  get_admin_pending_tasks:              { ...policy('R1', 'read', 'administration'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
+  get_admin_attention_queue:            { ...policy('R1', 'read', 'administration'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
   create_booking_meeting:               policy('R2', 'external_action', 'calendar'),
 };
 

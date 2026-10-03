@@ -17,7 +17,9 @@ async function requireAdmin(request: NextRequest) {
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin.from('profiles').select('role,status').eq('id', user.id).single();
   if (profile?.status === 'inactive') return null;
-  return (profile?.role === 'admin' || profile?.role === 'owner') ? admin : null;
+  return (profile?.role === 'admin' || profile?.role === 'owner')
+    ? { admin, actorId: user.id }
+    : null;
 }
 
 const schema = z.object({
@@ -138,8 +140,9 @@ function normalizeDraftQuickReplies(
 
 export async function POST(request: NextRequest) {
   try {
-    const admin = await requireAdmin(request);
-    if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    const auth = await requireAdmin(request);
+    if (!auth) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    const { admin, actorId } = auth;
 
     if (getConfiguredWabaAiProviders().length === 0) {
       return NextResponse.json({ error: 'IA no configurada' }, { status: 503 });
@@ -302,8 +305,10 @@ ${antiRepeatInstruction}`;
           message: structuredMessage,
           contextInput: {
             channel: 'admin',
+            userId: actorId,
             phone,
             clientId: contactCtx.clientId ?? clientId ?? undefined,
+            targetClientId: contactCtx.clientId ?? clientId ?? undefined,
             leadId: contactCtx.leadId ?? undefined,
             serviceSlug: serviceId,
             latestMessage: lastInbound || intent || '',

@@ -17,6 +17,7 @@ export interface KiaContextInput {
   email?: string;
   userId?: string;
   clientId?: string;
+  targetClientId?: string;
   leadId?: string;
   caseId?: string;
   companyId?: string;
@@ -34,6 +35,15 @@ export interface KiaContextInput {
 
 export interface KiaContext {
   latestMessage: string | null;
+  actor?: {
+    userId: string | null;
+    role: string | null;
+    tenantId: string | null;
+    isStaff: boolean;
+  };
+  target?: {
+    clientId: string | null;
+  };
   contact: {
     status: 'lead' | 'client' | 'unknown';
     name: string | null;
@@ -99,7 +109,16 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
   const phone = input.phone ?? null;
   const contact = phone ? await resolveKiaContactContext(admin, phone) : null;
   const clientId = input.clientId ?? contact?.clientId ?? input.userId ?? null;
+  const targetClientId = input.targetClientId
+    ?? (input.channel === 'admin' ? null : clientId);
   const leadId = input.leadId ?? contact?.leadId ?? null;
+  const actorProfile = input.userId
+    ? await admin.from('profiles').select('role,tenant_id,status').eq('id', input.userId).maybeSingle()
+    : { data: null, error: null };
+  if (actorProfile.error) throw actorProfile.error;
+  const actorRole = actorProfile.data?.role ?? null;
+  const actorTenantId = actorProfile.data?.tenant_id ?? null;
+  const actorIsStaff = actorProfile.data?.status !== 'inactive' && isStaffRole(actorRole);
   let resolvedCompanyId: string | null;
   if (input.caseId && clientId) {
     const { data: scopedCase, error } = await admin.from('cases').select('company_id')
@@ -189,6 +208,15 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
 
   return {
     latestMessage: input.latestMessage ?? null,
+    actor: {
+      userId: input.userId ?? null,
+      role: actorRole,
+      tenantId: actorTenantId,
+      isStaff: actorIsStaff,
+    },
+    target: {
+      clientId: targetClientId,
+    },
     contact: {
       status: contact?.status ?? (clientId ? 'client' : leadId ? 'lead' : 'unknown'),
       name: contact?.name ?? profile?.name ?? null,
