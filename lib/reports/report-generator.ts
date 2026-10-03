@@ -6,7 +6,12 @@
  */
 
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { resolveHoldedAuth, buildHoldedHeaders } from '@/lib/integrations/holded/holded-auth';
+import {
+  createHoldedGatewayForIntegration,
+  listHoldedBankAccounts,
+  listHoldedDocuments,
+  type HoldedReadDocument,
+} from '@/lib/integrations/holded/holded-gateway';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -110,34 +115,19 @@ function currentQuarterLabel(): string {
   return `Q${q} ${now.getFullYear()}`;
 }
 
-function safeFetch(url: string, hdrs: HeadersInit): Promise<unknown[]> {
-  return fetch(url, { headers: hdrs })
-    .then((r) => r.ok ? r.json() : [])
-    .then((d) => (Array.isArray(d) ? d : []))
-    .catch(() => []);
-}
-
-/** Fetches all pages of a Holded document list (page=1,2,… until empty). */
-async function fetchAllHoldedDocs(baseUrl: string, docType: string, hdrs: HeadersInit): Promise<RawDoc[]> {
-  const all: RawDoc[] = [];
-  for (let page = 1; page <= 20; page++) {   // cap at 20 pages (2000 docs) to prevent infinite loop
-    const docs = await safeFetch(`${baseUrl}/documents/${docType}?page=${page}&limit=100`, hdrs) as RawDoc[];
-    if (!docs.length) break;
-    all.push(...docs);
-    if (docs.length < 100) break;             // last page — no need to fetch next
-  }
-  return all;
-}
-
-type RawDoc = Record<string, unknown>;
+type RawDoc = HoldedReadDocument;
 
 // ── Holded field normalizers ──────────────────────────────────────────────────
 
-/** Holded dates are Unix timestamps in seconds, not ISO strings. */
 function holdedDate(val: unknown): string {
-  const num = Number(val);
-  if (!num || isNaN(num)) return String(val ?? '');
-  return new Date(num * 1000).toLocaleDateString('es-ES', {
+  const raw = String(val ?? '');
+  if (!raw) return '';
+  const numeric = Number(raw);
+  const date = Number.isFinite(numeric) && numeric > 0
+    ? new Date(numeric * 1000)
+    : new Date(raw);
+  if (Number.isNaN(date.getTime())) return raw;
+  return date.toLocaleDateString('es-ES', {
     day: '2-digit', month: '2-digit', year: 'numeric',
   });
 }
@@ -150,26 +140,28 @@ function holdedDate(val: unknown): string {
  * The authoritative "is paid?" check is paymentsPending <= threshold.
  */
 function holdedStatus(d: RawDoc): string {
-  const statusCode  = Number(d.status ?? 0);
-  const pending     = Number(d.paymentsPending ?? 0);
-  const total       = Number(d.total ?? 0);
-  if (statusCode === 0) return 'borrador';
-  if (pending <= 0.05) return 'cobrada';          // fully paid (allow 0.05€ float tolerance)
-  if (pending < total) return 'parcialmente cobrada';
+  const normalized = String(d.status ?? '').toLowerCase();
+  const pending = Number(d.paymentsPending ?? 0);
+  const total = Number(d.total ?? 0);
+  if (d.isDraft || normalized === 'draft' || normalized === '0') return 'borrador';
+  if (normalized === 'cancelled' || normalized === 'canceled' || normalized === 'failed') return 'cancelada';
+  if (normalized === 'completed' || pending <= 0.05) return 'cobrada';
+  if (normalized === 'partial' || pending < total) return 'parcialmente cobrada';
   return 'pendiente';
 }
 
-/** An invoice is "unpaid" when it's not a draft AND has meaningful pending amount. */
 function isUnpaid(d: RawDoc): boolean {
-  return Number(d.status ?? 0) !== 0 && Number(d.paymentsPending ?? 0) > 0.05;
+  return !d.isDraft
+    && !['cancelled', 'canceled', 'failed'].includes(String(d.status ?? '').toLowerCase())
+    && Number(d.paymentsPending ?? 0) > 0.05;
 }
 
 function toInvoiceSummary(docs: RawDoc[]): InvoiceSummaryItem[] {
   return docs.map((d) => ({
     id     : String(d.id ?? ''),
-    number : String(d.docNumber ?? d.number ?? ''),
+    number : String(d.number ?? ''),
     date   : holdedDate(d.date),
-    contact: String(d.contactName ?? d.contact ?? ''),
+    contact: String(d.contactName ?? ''),
     total  : Number(d.total ?? 0),
     status : holdedStatus(d),
   }));
@@ -182,8 +174,7 @@ function buildMonthlyFlow(sales: RawDoc[], purchases: RawDoc[]): MonthlyFlow[] {
     for (const d of docs) {
       const raw = String(d.date ?? '');
       if (!raw) continue;
-      // date is Unix timestamp (seconds) or ISO string
-      const ts  = isNaN(Number(raw)) ? new Date(raw) : new Date(Number(raw) * 1000);
+      const ts = new Date(raw);
       const label = ts.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
       const entry = map.get(label) ?? { sales: 0, purchases: 0 };
       entry[key] += Number(d.total ?? 0);
@@ -202,7 +193,7 @@ function buildMonthlyFlow(sales: RawDoc[], purchases: RawDoc[]): MonthlyFlow[] {
 function buildTopContacts(sales: RawDoc[]): ContactVolume[] {
   const map = new Map<string, number>();
   for (const d of sales) {
-    const name = String(d.contactName ?? d.contact ?? 'Desconocido');
+    const name = String(d.contactName || 'Desconocido');
     map.set(name, (map.get(name) ?? 0) + Number(d.total ?? 0));
   }
   return Array.from(map.entries())
@@ -267,18 +258,15 @@ Sé directo, profesional y en español. No incluyas advertencias legales.`
 // ── Main generator ────────────────────────────────────────────────────────────
 
 export async function generateCompanyReport(input: GenerateReportInput): Promise<GenerateReportResult> {
-  const admin  = getSupabaseAdmin();
+  const admin = getSupabaseAdmin();
   const period = input.period ?? currentQuarterLabel();
-  const auth   = await resolveHoldedAuth(input.integrationId);
-  const hdrs   = buildHoldedHeaders(auth.apiKey);
-  const base   = auth.baseUrl;
+  const gateway = await createHoldedGatewayForIntegration(input.integrationId);
 
-  // ── Fetch Holded data in parallel (full pagination) ──────────────────────
+  // ── Fetch Holded data in parallel through the version-aware gateway ─────
   const [rawSales, rawPurchases, rawBank] = await Promise.all([
-    fetchAllHoldedDocs(base, 'invoice', hdrs),
-    fetchAllHoldedDocs(base, 'purchase', hdrs),
-    safeFetch(`${base}/treasury`, hdrs)        as Promise<RawDoc[]>,
-    safeFetch(`${base}/contacts?limit=100`, hdrs) as Promise<RawDoc[]>,
+    listHoldedDocuments(gateway, 'sales', { maxItems: 2_000 }),
+    listHoldedDocuments(gateway, 'purchase', { maxItems: 2_000 }),
+    listHoldedBankAccounts(gateway, 100),
   ]);
 
   // ── Fetch internal data ────────────────────────────────────────────────────
@@ -304,8 +292,8 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
 
   // ── Build report data ──────────────────────────────────────────────────────
   // Exclude drafts (status=0) from financial totals — they're not real invoices yet
-  const confirmedSales     = rawSales.filter(d => Number(d.status ?? 0) !== 0);
-  const confirmedPurchases = rawPurchases.filter(d => Number(d.status ?? 0) !== 0);
+  const confirmedSales = rawSales.filter((d) => !d.isDraft && !['cancelled', 'canceled', 'failed'].includes(String(d.status).toLowerCase()));
+  const confirmedPurchases = rawPurchases.filter((d) => !d.isDraft && !['cancelled', 'canceled', 'failed'].includes(String(d.status).toLowerCase()));
 
   // Show all invoices in the table (including drafts, clearly labelled)
   const salesInvoices    = toInvoiceSummary(rawSales).slice(0, 20);
