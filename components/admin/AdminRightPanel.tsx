@@ -147,7 +147,7 @@ export function AdminRightPanel({ emailUnreadCount = 0 }: { emailUnreadCount?: n
         {open ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
       </button>
 
-      <aside className={`hidden lg:flex flex-col shrink-0 border-l border-white/8 bg-[#07111d] sticky top-0 h-screen overflow-hidden transition-[width] duration-300 ease-in-out ${open ? (wide ? 'w-[50vw]' : 'w-[420px]') : 'w-0'}`}>
+      <aside className={`hidden lg:flex flex-col shrink-0 border-l border-white/8 bg-[#07111d] sticky top-0 h-screen overflow-hidden transition-[width] duration-300 ease-in-out ${open ? (wide ? 'w-[45vw]' : 'w-[360px]') : 'w-0'}`}>
         {mounted.size > 0 && (
           <>
             <div className="flex items-center border-b border-white/8 px-1 py-1">

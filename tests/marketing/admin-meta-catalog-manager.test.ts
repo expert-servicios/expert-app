@@ -36,6 +36,30 @@ describe('Admin Meta Catalog Manager', () => {
     expect(page).toContain('next/image');
   });
 
+
+  it('keeps the primary edit action visible next to every service name', () => {
+    const page = read('app/(protected)/admin/marketing-hub/page.tsx');
+
+    expect(page).toContain('<Pencil className="h-3 w-3" /> Editar');
+    expect(page).toContain('Editar contenido, idiomas e imagen');
+    expect(page).toContain('setEditingRetailerId(draft.retailerId)');
+  });
+
+
+  it('keeps the catalog compact when the KIA side panel is open', () => {
+    const page = read('app/(protected)/admin/marketing-hub/page.tsx');
+    const rightPanel = read('components/admin/AdminRightPanel.tsx');
+
+    expect(page).toContain('table-fixed text-xs');
+    expect(page).toContain('Editar contenido, idiomas e imagen');
+    expect(page).toContain('Meta ES');
+    expect(page).toContain('Meta RU');
+    expect(page).not.toContain('ID / última sync');
+    expect(page).not.toContain('>Idiomas<');
+    expect(page).not.toContain('>Precio<');
+    expect(rightPanel).toContain("wide ? 'w-[45vw]' : 'w-[360px]'");
+  });
+
   it('supports operational filters including missing Russian content', () => {
     const page = read('app/(protected)/admin/marketing-hub/page.tsx');
 

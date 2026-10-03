@@ -510,8 +510,8 @@ export default function MarketingHubPage() {
     .map((draft) => draft.retailerId);
 
   return (
-    <main className="min-h-screen bg-[#f7f3eb] px-4 py-5 lg:px-6">
-      <div className="mx-auto max-w-[1500px]">
+    <main className="min-h-screen bg-[#f7f3eb] px-3 py-3 lg:px-4">
+      <div className="mx-auto max-w-[1320px]">
         <header className="rounded-2xl border border-[#d8cbb5] bg-white px-4 py-4 shadow-sm">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="min-w-0">
@@ -669,11 +669,11 @@ export default function MarketingHubPage() {
               </div>
             </div>
 
-            <div className="max-h-[65vh] overflow-auto">
-              <table className="min-w-full text-sm">
+            <div className="max-h-[68vh] overflow-auto">
+              <table className="w-full table-fixed text-xs">
                 <thead className="sticky top-0 z-10 bg-[#f7f3eb] text-left text-[10px] uppercase tracking-[0.08em] text-[#69717d]">
                   <tr>
-                    <th className="w-10 px-3 py-2">
+                    <th className="w-9 px-2 py-2">
                       <input
                         type="checkbox"
                         aria-label="Seleccionar servicios visibles"
@@ -690,14 +690,11 @@ export default function MarketingHubPage() {
                         }}
                       />
                     </th>
-                    <th className="w-16 px-3 py-2">Imagen</th>
-                    <th className="px-3 py-2">Servicio</th>
-                    <th className="w-28 px-3 py-2">Idiomas</th>
-                    <th className="w-28 px-3 py-2">Precio</th>
-                    <th className="w-36 px-3 py-2">Meta ES</th>
-                    <th className="w-36 px-3 py-2">Meta RU</th>
-                    <th className="w-44 px-3 py-2">ID / última sync</th>
-                    <th className="w-56 px-3 py-2">Acciones</th>
+                    <th className="w-12 px-2 py-2">Img</th>
+                    <th className="px-2 py-2">Servicio</th>
+                    <th className="w-28 px-2 py-2">Meta ES</th>
+                    <th className="w-28 px-2 py-2">Meta RU</th>
+                    <th className="w-40 px-2 py-2">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#eee6d8]">
@@ -729,7 +726,7 @@ export default function MarketingHubPage() {
 
                     return (
                     <tr key={draft.retailerId} className="hover:bg-[#fcfaf6]">
-                      <td className="px-3 py-2">
+                      <td className="px-2 py-2">
                         <input
                           type="checkbox"
                           aria-label={`Seleccionar ${draft.name}`}
@@ -744,19 +741,19 @@ export default function MarketingHubPage() {
                           }}
                         />
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-2 py-2">
                         {draft.imageUrl ? (
                           <button
                             type="button"
                             onClick={() => setImagePreview({ src: draft.imageUrl!, alt: draft.name })}
-                            className="group relative h-11 w-11 overflow-hidden rounded-lg border border-[#ddd3c2] bg-[#f7f3eb]"
+                            className="group relative h-9 w-9 overflow-hidden rounded-lg border border-[#ddd3c2] bg-[#f7f3eb]"
                             title="Ver imagen"
                           >
                             <Image
                               src={draft.imageUrl}
                               alt={draft.name}
                               fill
-                              sizes="44px"
+                              sizes="36px"
                               className="object-cover"
                             />
                             <span className="absolute inset-0 hidden items-center justify-center bg-black/35 text-white group-hover:flex">
@@ -764,52 +761,55 @@ export default function MarketingHubPage() {
                             </span>
                           </button>
                         ) : (
-                          <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-dashed border-[#d8cbb5] bg-[#faf8f3] text-[#9ca3af]">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-dashed border-[#d8cbb5] bg-[#faf8f3] text-[#9ca3af]">
                             <ImageIcon className="h-4 w-4" />
                           </div>
                         )}
                       </td>
-                      <td className="max-w-[28rem] px-3 py-2">
-                        <p className="truncate font-semibold text-[#07111d]" title={draft.name}>{draft.name}</p>
-                        <p className="mt-0.5 truncate font-mono text-[10px] text-[#7b8490]" title={draft.retailerId}>{draft.retailerId}</p>
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex gap-1">
+                      <td className="min-w-0 px-2 py-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-[11px] font-semibold text-[#07111d]" title={draft.name}>{draft.name}</p>
+                            <p className="mt-0.5 truncate font-mono text-[9px] text-[#8a929d]" title={draft.retailerId}>{draft.retailerId}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setEditingRetailerId(draft.retailerId)}
+                            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#c88b25]/50 bg-[#fff9eb] px-1.5 py-1 text-[10px] font-bold text-[#7a5313] hover:border-[#c88b25] hover:bg-[#fff3d8]"
+                            title="Editar contenido, idiomas e imagen"
+                          >
+                            <Pencil className="h-3 w-3" /> Editar
+                          </button>
+                        </div>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1">
                           <LocaleChip locale="ES" content={draft.locales.es} meta={draft.meta.es} />
                           <LocaleChip locale="RU" content={draft.locales.ru} meta={draft.meta.ru} />
+                          <span className="rounded-md bg-[#f7f3eb] px-1.5 py-1 text-[9px] font-semibold text-[#374151]">
+                            {draft.price ? formatPrice(draft.price.amount, draft.price.currency) : 'Sin precio'}
+                          </span>
+                          {draft.meta.es?.metaItemId ? (
+                            <span className="max-w-[8rem] truncate font-mono text-[8px] text-[#8a929d]" title={draft.meta.es.metaItemId}>
+                              ID {draft.meta.es.metaItemId}
+                            </span>
+                          ) : null}
+                          {draft.meta.es?.lastSyncedAt ? (
+                            <span className="text-[8px] text-[#9ca3af]">{formatDate(draft.meta.es.lastSyncedAt)}</span>
+                          ) : null}
                         </div>
                       </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-xs font-semibold text-[#374151]">
-                        {draft.price ? formatPrice(draft.price.amount, draft.price.currency) : '—'}
-                      </td>
-                      <td className="px-3 py-2">
+                      <td className="px-2 py-2">
                         <MetaStatusBadge state={draft.meta.es} marketingReady={draft.marketingReady} stale={esStale} />
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-2 py-2">
                         <MetaStatusBadge
                           state={draft.meta.ru}
                           marketingReady={draft.locales.ru.exists && draft.locales.ru.status === 'active'}
                           stale={ruStale}
                         />
                       </td>
-                      <td className="px-3 py-2">
-                        <p className="truncate font-mono text-[10px] text-[#374151]" title={draft.meta.es?.metaItemId ?? ''}>
-                          {draft.meta.es?.metaItemId ?? '—'}
-                        </p>
-                        <p className="mt-0.5 text-[10px] text-[#7b8490]">
-                          {formatDate(draft.meta.es?.lastSyncedAt ?? null)}
-                        </p>
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex flex-wrap gap-1">
-                          <button
-                            type="button"
-                            onClick={() => setEditingRetailerId(draft.retailerId)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-[#d8cbb5] bg-white px-2 py-1.5 text-[11px] font-bold text-[#374151] hover:border-[#c88b25]"
-                            title="Editar ES / RU"
-                          >
-                            <Pencil className="h-3.5 w-3.5" /> Editar
-                          </button>
+
+                      <td className="px-2 py-2">
+                        <div className="flex flex-wrap items-center gap-1">
                           {canPrepare ? (
                             <button
                               type="button"
