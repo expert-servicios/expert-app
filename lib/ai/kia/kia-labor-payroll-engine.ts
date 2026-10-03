@@ -132,6 +132,13 @@ export function analyzeLaborPayrollSnapshot(snapshot: LaborPayrollSnapshot): Lab
     const contributionBasesAvailable = Object.keys(contributionBases).length > 0;
     const irpf = detectIrpf(deductions);
 
+    const netSalary = parseKnownAmount(payslip.netSalary);
+    if (netSalary === null || netSalary <= 0) findings.push({
+      code: 'payslip_net_missing_or_nonpositive', severity: 'review', category: 'data_quality',
+      summary: `La nómina ${payslip.id} no tiene un líquido positivo verificable. Revisar el cálculo y la causa; una etiqueta de pago no acredita una transferencia.`,
+      evidence: { payslipId: payslip.id, netSalary: payslip.netSalary ?? null, paymentStatus: payslip.paymentStatus ?? null },
+    });
+
     if (payslip.isDraft) findings.push({ code: 'payslip_is_draft', severity: 'warning', category: 'payslip', summary: `La nómina ${payslip.id} está en borrador; sus importes no deben tratarse como definitivos.`, evidence: { payslipId: payslip.id, date: payslip.date } });
     if (!(Number(payslip.totalDays) > 0)) findings.push({ code: 'payslip_days_missing_or_zero', severity: 'review', category: 'data_quality', summary: `La nómina ${payslip.id} no contiene un número de días positivo.`, evidence: { payslipId: payslip.id, totalDays: payslip.totalDays } });
     if (!contributionBasesAvailable) findings.push({ code: 'contribution_bases_missing', severity: 'review', category: 'contribution_bases', summary: `La nómina ${payslip.id} no expone bases de cotización en la fuente de datos.`, evidence: { payslipId: payslip.id } });
@@ -167,8 +174,20 @@ export function analyzeLaborPayrollSnapshot(snapshot: LaborPayrollSnapshot): Lab
       'La ausencia de una línea identificable de IRPF o de bases en la fuente no equivale a importe cero.',
       'Los salary-records manuales se mantienen separados de las payslips calculadas.',
       'El motor es analítico y no realiza modificaciones en el sistema origen.',
+      'Un neto coincidente no acredita conciliación completa: contrastar devengos, bases, deducciones, IRPF y aportaciones empresariales con documentación del mismo ámbito.',
+      'Treinta días de cálculo no justifican sustituir el grupo de cotización documental. Cualquier sustitución temporal sigue pendiente de revisión.',
+      'El estado de pago del proveedor no acredita por sí solo una transferencia bancaria.',
     ],
   };
+}
+
+function parseKnownAmount(value: string | number | null | undefined): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const normalized = value.trim().replace(/\s/g, '').replace(/\.(?=\d{3}(?:\D|$))/g, '').replace(',', '.');
+  if (!/^-?\d+(?:\.\d+)?$/.test(normalized)) return null;
+  const amount = Number(normalized);
+  return Number.isFinite(amount) ? amount : null;
 }
 
 function detectIrpf(deductions: unknown[]): { identified: boolean; line: Record<string, unknown> | null } {

@@ -67,6 +67,24 @@ function snapshotFor(pattern: typeof WORKER_PATTERNS[number]): LaborPayrollSnaps
 }
 
 describe('HLAB readiness matrix', () => {
+  it.each([0, '0,00', null, undefined, '', 'unknown', -1, Number.NaN])('requires review for unverified or nonpositive net %s even if marked paid', (netSalary) => {
+    const snapshot = snapshotFor(WORKER_PATTERNS[0]);
+    snapshot.payslips[0]!.netSalary = netSalary;
+    const result = analyzeLaborPayrollSnapshot(snapshot);
+    expect(result.status).toBe('review');
+    expect(result.requiresProfessionalReview).toBe(true);
+    expect(result.findings).toContainEqual(expect.objectContaining({ code: 'payslip_net_missing_or_nonpositive', severity: 'review' }));
+  });
+
+  it.each([800, '800.00', '1.234,56'])('accepts a positive known net %s without inventing payment evidence', (netSalary) => {
+    const snapshot = snapshotFor(WORKER_PATTERNS[0]);
+    snapshot.payslips[0]!.netSalary = netSalary;
+    const result = analyzeLaborPayrollSnapshot(snapshot);
+    expect(result.status).toBe('ok');
+    expect(result.findings.some((finding) => finding.code === 'payslip_net_missing_or_nonpositive')).toBe(false);
+    expect(result.caveats).toContain('El estado de pago del proveedor no acredita por sí solo una transferencia bancaria.');
+  });
+
   it('covers exactly eleven anonymized worker patterns', () => {
     expect(WORKER_PATTERNS).toHaveLength(11);
     expect(new Set(WORKER_PATTERNS.map((item) => item.alias)).size).toBe(11);
