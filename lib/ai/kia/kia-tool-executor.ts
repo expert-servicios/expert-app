@@ -21,6 +21,11 @@ import { findKiaRelevantServices, getKiaOfficialSources, searchKiaKnowledgeResou
 import { loadKiaClientCommunications } from './kia-client-brief';
 import { missingKiaCaseDocumentRequirements } from './kia-case-document-gaps';
 import { createKiaConfirmedBooking, getKiaBookingAvailability } from '@/lib/booking/kia-booking-operator';
+import {
+  ACCOUNTING_TOOL_NAMES,
+  executeKiaAccountingTool,
+  type KiaAccountingToolName,
+} from './kia-accounting-tools';
 
 const HOLDED_LABOR_TOOL_NAMES = new Set<KiaHoldedLaborToolName>([
   'get_holded_employees',
@@ -33,6 +38,10 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
   try {
     const args = validateKiaToolArguments(toolCall.name, toolCall.arguments);
     const admin = getSupabaseAdmin();
+
+    if (ACCOUNTING_TOOL_NAMES.has(toolCall.name as KiaAccountingToolName)) {
+      return executeKiaAccountingTool(toolCall.name as KiaAccountingToolName, args, context);
+    }
 
     if (toolCall.name === 'run_labor_payroll_diagnostics') {
       return executeLaborPayrollDiagnostics(args, context, admin);
