@@ -61,7 +61,7 @@ describe('Admin Meta catalog image manager', () => {
     expect(editor).toContain('onDrop=');
     expect(editor).toContain('Sustituir imagen');
     expect(editor).toContain('Usar imagen ES');
-    expect(editor).toContain('minimum 500');
+    expect(editor).toContain('500 × 500');
     expect(editor).toContain('createImageBitmap');
   });
 });
