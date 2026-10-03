@@ -1,7 +1,12 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
-import type { MetaServiceCatalogDraft } from './types';
+import type { MetaCatalogVatTreatment, MetaServiceCatalogDraft } from './types';
 
 const SITE_ORIGIN = 'https://expertconsulting.es';
+const META_VAT_RATE_BY_SERVICE_SLUG: Readonly<Record<string, number>> = {
+  'certificado-digital-persona-fisica': 0.21,
+  'certificado-digital-entidad': 0.21,
+  'pack-certificados-digitales': 0.21,
+};
 
 type CatalogServiceRow = {
   id: string;
@@ -28,6 +33,7 @@ type CommercialOfferRow = {
   code: string;
   price_mode: string;
   amount_cents: number | null;
+  vat_treatment: MetaCatalogVatTreatment;
   status: string;
 };
 
@@ -45,23 +51,38 @@ export type MetaCatalogExcludedService = {
 
 export type MetaCatalogDraftResult = {
   drafts: MetaServiceCatalogDraft[];
-  /** Services with no fixed/floor price at all — never candidates for the catalog, not just blocked. */
   excluded: MetaCatalogExcludedService[];
   readyCount: number;
   blockedCount: number;
 };
 
-/**
- * Read-only projection from the canonical C2 tables into what a Meta
- * commerce catalog item needs. Never writes anything and never calls Meta.
- * A draft with `marketingReady: false` names exactly what is missing so it
- * can be fixed before this service is exported. Services priced "Consultar"
- * (price_mode "quote") are excluded outright: Meta requires one number per
- * item, and listing a made-up price is worse than not listing it. Services
- * with `catalog_services.status` other than "active" (e.g. "paused" —
- * archived from the catalog, subscription-only or otherwise not for sale
- * standalone) are excluded the same way, never listed as merely blocked.
- */
+export function projectMetaConsumerPrice(
+  amountCents: number,
+  vatTreatment: MetaCatalogVatTreatment,
+  vatRate?: number,
+) {
+  if (vatTreatment === 'plus_vat') {
+    if (vatRate == null) return null;
+    return {
+      amount: Math.round(amountCents * (1 + vatRate)) / 100,
+      currency: 'EUR' as const,
+      taxIncluded: true,
+      vatTreatment,
+    };
+  }
+
+  if (vatTreatment === 'vat_included' || vatTreatment === 'exempt' || vatTreatment === 'outside_scope') {
+    return {
+      amount: amountCents / 100,
+      currency: 'EUR' as const,
+      taxIncluded: true,
+      vatTreatment,
+    };
+  }
+
+  return null;
+}
+
 export async function buildMetaCatalogDrafts(locale = 'es'): Promise<MetaCatalogDraftResult> {
   const admin = getSupabaseAdmin();
 
@@ -71,7 +92,7 @@ export async function buildMetaCatalogDrafts(locale = 'es'): Promise<MetaCatalog
       .from('service_contents')
       .select('id,service_id,locale,name,short_description,description,landing_path,image_url,status')
       .eq('locale', locale),
-    admin.from('commercial_offers').select('id,service_id,code,price_mode,amount_cents,status'),
+    admin.from('commercial_offers').select('id,service_id,code,price_mode,amount_cents,vat_treatment,status'),
     admin.from('service_channel_configs').select('service_id,enabled,publish_status').eq('channel', 'meta'),
   ]);
 
@@ -148,14 +169,19 @@ function buildDraft(
   if (content && !content.image_url) warnings.push('missing_image');
   if (content && content.status !== 'active') warnings.push(`content_status:${content.status}`);
   if (offer.amount_cents == null) warnings.push('missing_amount');
+  if (offer.vat_treatment === 'manual_review') warnings.push('vat_manual_review');
   if (!channel || !channel.enabled || channel.publish_status !== 'ready') warnings.push('meta_channel_not_ready');
 
+  const vatRate = META_VAT_RATE_BY_SERVICE_SLUG[service.slug];
   const price = offer.amount_cents != null
-    ? { amount: offer.amount_cents / 100, currency: 'EUR' as const, taxIncluded: false as const }
+    ? projectMetaConsumerPrice(offer.amount_cents, offer.vat_treatment, vatRate)
     : null;
+
+  if (offer.amount_cents != null && !price) warnings.push('consumer_price_unavailable');
 
   return {
     retailerId: service.slug,
+    offerId: offer.id,
     name: content?.name ?? service.slug,
     description: content?.description ?? content?.short_description ?? '',
     serviceCategory: service.category_key,
