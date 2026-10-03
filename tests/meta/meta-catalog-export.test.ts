@@ -29,6 +29,36 @@ describe('buildMetaCatalogDrafts', () => {
     expect(resolveMetaPublicAssetUrl('https://ybtpqscmqrrjjmuoryap.supabase.co/storage/v1/object/public/user-files/meta-catalog/demo/es/image.webp')).toBe(
       'https://ybtpqscmqrrjjmuoryap.supabase.co/storage/v1/object/public/user-files/meta-catalog/demo/es/image.webp',
     );
+    expect(resolveMetaPublicAssetUrl('javascript:alert(1)')).toBeNull();
+    expect(resolveMetaPublicAssetUrl('data:image/png;base64,AAAA')).toBeNull();
+    expect(resolveMetaPublicAssetUrl('ftp://example.com/image.png')).toBeNull();
+    expect(resolveMetaPublicAssetUrl('https://[')).toBeNull();
+  });
+
+  it('marks malformed or non-web image URLs as missing instead of marketing ready', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'catalog_services') {
+        return { select: () => queryResult([{ id: 's-invalid-image', slug: 'invalid-image-service', category_key: 'administrativos', status: 'active' }]) };
+      }
+      if (table === 'service_contents') {
+        return { select: () => queryResult([{ id: 'c-invalid-image', service_id: 's-invalid-image', locale: 'es', name: 'Invalid image', short_description: 'short', description: 'long', landing_path: '/servicios/administrativos/invalid-image-service', image_url: 'javascript:alert(1)', status: 'active' }]) };
+      }
+      if (table === 'commercial_offers') {
+        return { select: () => queryResult([{ id: 'o-invalid-image', service_id: 's-invalid-image', code: 'default', price_mode: 'fixed', amount_cents: 1000, vat_treatment: 'vat_included', status: 'active' }]) };
+      }
+      if (table === 'service_channel_configs') {
+        return { select: () => queryResult([{ service_id: 's-invalid-image', enabled: true, publish_status: 'ready' }]) };
+      }
+      throw new Error(`unexpected table ${table}`);
+    });
+
+    const { buildMetaCatalogDrafts } = await import('@/lib/integrations/meta/catalog-export');
+    const result = await buildMetaCatalogDrafts();
+
+    expect(result.readyCount).toBe(0);
+    expect(result.blockedCount).toBe(1);
+    expect(result.drafts[0].imageUrl).toBeNull();
+    expect(result.drafts[0].warnings).toContain('missing_image');
   });
 
   it('marks a fully populated, ready service as marketingReady with no warnings', async () => {
