@@ -109,3 +109,86 @@ export function buildClientDocumentStoragePath(caseId: string, safeName: string)
   const fileName = sanitizeFileName(safeName, extension);
   return `${folder}/${Date.now()}-${randomUUID()}-${fileName}`;
 }
+
+
+export const META_CATALOG_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+
+const ALLOWED_META_CATALOG_IMAGE_TYPES: readonly AllowedUploadType[] = [
+  { extensions: ['jpg', 'jpeg'], mimes: ['image/jpeg'], contentType: 'image/jpeg' },
+  { extensions: ['png'], mimes: ['image/png'], contentType: 'image/png' },
+  { extensions: ['webp'], mimes: ['image/webp'], contentType: 'image/webp' },
+];
+
+export type MetaCatalogImageValidationResult =
+  | { ok: true; safeName: string; contentType: string; extension: string }
+  | { ok: false; status: 400; error: string };
+
+export function validateMetaCatalogImageMetadata(
+  fileName: string,
+  mimeType: string,
+  size: number,
+): MetaCatalogImageValidationResult {
+  if (!Number.isFinite(size) || size <= 0) {
+    return { ok: false, status: 400, error: 'Imagen requerida' };
+  }
+
+  if (size > META_CATALOG_IMAGE_MAX_BYTES) {
+    return { ok: false, status: 400, error: 'La imagen no puede superar 5 MB' };
+  }
+
+  const extension = getExtension(fileName);
+  const allowedType = ALLOWED_META_CATALOG_IMAGE_TYPES.find((entry) =>
+    entry.extensions.includes(extension)
+  );
+
+  if (!allowedType) {
+    return { ok: false, status: 400, error: 'Formato no permitido. Usa JPG, PNG o WEBP.' };
+  }
+
+  const mime = mimeType.split(';')[0].trim().toLowerCase();
+  if (!allowedType.mimes.includes(mime)) {
+    return { ok: false, status: 400, error: 'El tipo MIME no coincide con la extensión.' };
+  }
+
+  return {
+    ok: true,
+    safeName: sanitizeFileName(fileName, extension),
+    contentType: allowedType.contentType,
+    extension,
+  };
+}
+
+export function validateMetaCatalogImageSignature(bytes: Uint8Array, contentType: string): boolean {
+  if (contentType === 'image/jpeg') {
+    return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  }
+  if (contentType === 'image/png') {
+    return bytes.length >= 8
+      && bytes[0] === 0x89
+      && bytes[1] === 0x50
+      && bytes[2] === 0x4e
+      && bytes[3] === 0x47
+      && bytes[4] === 0x0d
+      && bytes[5] === 0x0a
+      && bytes[6] === 0x1a
+      && bytes[7] === 0x0a;
+  }
+  if (contentType === 'image/webp') {
+    if (bytes.length < 12) return false;
+    const ascii = String.fromCharCode(...bytes.slice(0, 12));
+    return ascii.startsWith('RIFF') && ascii.slice(8, 12) === 'WEBP';
+  }
+  return false;
+}
+
+export function buildMetaCatalogImageStoragePath(
+  retailerId: string,
+  locale: string,
+  safeName: string,
+): string {
+  const safeRetailer = retailerId.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 120);
+  const safeLocale = locale.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 12);
+  const extension = getExtension(safeName) || 'bin';
+  const fileName = sanitizeFileName(safeName, extension);
+  return `meta-catalog/${safeRetailer}/${safeLocale}/${Date.now()}-${randomUUID()}-${fileName}`;
+}

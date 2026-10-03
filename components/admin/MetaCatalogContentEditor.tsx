@@ -1,7 +1,18 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Loader2, Save, X } from 'lucide-react';
+import NextImage from 'next/image';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Copy,
+  ImageIcon,
+  Loader2,
+  Save,
+  Trash2,
+  Upload,
+  X,
+} from 'lucide-react';
 
 type Locale = 'es' | 'ru';
 type ContentStatus = 'draft' | 'active' | 'paused' | 'retired';
@@ -41,6 +52,21 @@ type Payload = {
   contents: ApiContentRow[];
 };
 
+type UploadedImageResponse = {
+  ok?: boolean;
+  error?: string;
+  publicUrl?: string;
+  storagePath?: string;
+  contentType?: string;
+  size?: number;
+};
+
+type ImageInspection = {
+  width: number;
+  height: number;
+  warning: string | null;
+};
+
 function fromRow(row: ApiContentRow): FormState {
   return {
     locale: row.locale,
@@ -69,6 +95,24 @@ function emptyRu(es?: ApiContentRow): FormState {
   };
 }
 
+async function inspectImageFile(file: File): Promise<ImageInspection> {
+  const bitmap = await createImageBitmap(file);
+  const width = bitmap.width;
+  const height = bitmap.height;
+  bitmap.close();
+
+  if (width < 500 || height < 500) {
+    throw new Error('La imagen debe tener al menos 500 × 500 px.');
+  }
+
+  const ratio = width / height;
+  const warning = ratio < 0.8 || ratio > 1.25
+    ? 'La imagen es válida, pero para Meta recomendamos una creatividad más cercana a formato cuadrado.'
+    : null;
+
+  return { width, height, warning };
+}
+
 export function MetaCatalogContentEditor({
   retailerId,
   onClose,
@@ -78,11 +122,15 @@ export function MetaCatalogContentEditor({
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [payload, setPayload] = useState<Payload | null>(null);
   const [locale, setLocale] = useState<Locale>('es');
   const [form, setForm] = useState<FormState | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [draggingImage, setDraggingImage] = useState(false);
+  const [imageInspection, setImageInspection] = useState<ImageInspection | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,6 +151,7 @@ export function MetaCatalogContentEditor({
         ? data.contents.find((item) => item.locale === 'ru')
         : es;
       setForm(initial ? fromRow(initial) : locale === 'ru' ? emptyRu(es) : null);
+      setImageInspection(null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'No se pudo cargar el contenido');
     } finally {
@@ -125,6 +174,7 @@ export function MetaCatalogContentEditor({
     const existing = payload.contents.find((item) => item.locale === nextLocale);
     const es = payload.contents.find((item) => item.locale === 'es');
     setForm(existing ? fromRow(existing) : nextLocale === 'ru' ? emptyRu(es) : null);
+    setImageInspection(null);
     setMessage(null);
     setError(null);
   };
@@ -134,6 +184,49 @@ export function MetaCatalogContentEditor({
     const required = [form.name, form.shortDescription, form.description, form.landingPath, form.imageUrl];
     return Math.round((required.filter((value) => value.trim().length > 0).length / required.length) * 100);
   }, [form]);
+
+  const esImageUrl = payload?.contents.find((item) => item.locale === 'es')?.image_url ?? '';
+  const sharesEsImage = locale === 'ru' && Boolean(form?.imageUrl && esImageUrl && form.imageUrl === esImageUrl);
+
+  const uploadImage = async (file: File) => {
+    if (!retailerId || !form) return;
+    setUploadingImage(true);
+    setError(null);
+    setMessage(null);
+    try {
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        throw new Error('Usa una imagen JPG, PNG o WEBP.');
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('La imagen no puede superar 5 MB.');
+      }
+
+      const inspection = await inspectImageFile(file);
+      setImageInspection(inspection);
+
+      const body = new FormData();
+      body.set('file', file);
+      body.set('locale', form.locale);
+
+      const response = await fetch(
+        `/api/admin/meta/catalog/${encodeURIComponent(retailerId)}/image`,
+        { method: 'POST', body },
+      );
+      const data = await response.json() as UploadedImageResponse;
+      if (!response.ok || !data.publicUrl) {
+        throw new Error(data.error ?? 'No se pudo subir la imagen');
+      }
+
+      setForm({ ...form, imageUrl: data.publicUrl });
+      setMessage('Imagen subida. Pulsa Guardar para asociarla a esta ficha.');
+    } catch (cause) {
+      setImageInspection(null);
+      setError(cause instanceof Error ? cause.message : 'No se pudo subir la imagen');
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const save = async () => {
     if (!retailerId || !form) return;
@@ -160,7 +253,7 @@ export function MetaCatalogContentEditor({
       const data = await response.json() as { ok?: boolean; error?: string };
       if (!response.ok) throw new Error(data.error ?? 'No se pudo guardar');
 
-      setMessage('Contenido guardado');
+      setMessage('Contenido e imagen guardados');
       await onSaved();
       await load();
     } catch (cause) {
@@ -299,16 +392,129 @@ export function MetaCatalogContentEditor({
                 />
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-[#374151]">Imagen URL</label>
-                <input
-                  value={form.imageUrl}
-                  onChange={(event) => setForm({ ...form, imageUrl: event.target.value })}
-                  placeholder="https://…"
-                  className="mt-1 w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 font-mono text-xs outline-none focus:border-[#c88b25]"
-                />
-                <p className="mt-1 text-[10px] text-[#7b8490]">El upload directo y generación de imagen se incorporan en la siguiente fase.</p>
-              </div>
+              <section>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-[#374151]">Imagen de catálogo</label>
+                    <p className="mt-0.5 text-[10px] text-[#7b8490]">JPG, PNG o WEBP · máximo 5 MB · mínimo 500 × 500 px.</p>
+                  </div>
+                  {sharesEsImage ? (
+                    <span className="rounded-full bg-blue-50 px-2 py-1 text-[10px] font-bold text-blue-700">Compartida con ES</span>
+                  ) : null}
+                </div>
+
+                <div
+                  className={`mt-2 rounded-xl border-2 border-dashed p-3 transition ${draggingImage ? 'border-[#c88b25] bg-[#fff9eb]' : 'border-[#d8cbb5] bg-white'}`}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setDraggingImage(true);
+                  }}
+                  onDragLeave={() => setDraggingImage(false)}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    setDraggingImage(false);
+                    const file = event.dataTransfer.files?.[0];
+                    if (file) void uploadImage(file);
+                  }}
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="relative flex h-32 w-full shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#eee6d8] bg-[#f7f3eb] sm:w-32">
+                      {form.imageUrl ? (
+                        <NextImage
+                          src={form.imageUrl}
+                          alt={form.name || 'Vista previa'}
+                          fill
+                          sizes="128px"
+                          className="object-contain"
+                        />
+                      ) : (
+                        <ImageIcon className="h-7 w-7 text-[#a7adb5]" />
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) void uploadImage(file);
+                        }}
+                      />
+
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploadingImage}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#07111d] px-3 py-2 text-xs font-bold text-white disabled:opacity-40"
+                        >
+                          {uploadingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                          {form.imageUrl ? 'Sustituir imagen' : 'Subir imagen'}
+                        </button>
+
+                        {locale === 'ru' && esImageUrl && form.imageUrl !== esImageUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setForm({ ...form, imageUrl: esImageUrl });
+                              setImageInspection(null);
+                              setMessage('Imagen ES seleccionada para RU. Pulsa Guardar.');
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 text-xs font-bold text-[#374151]"
+                          >
+                            <Copy className="h-3.5 w-3.5" /> Usar imagen ES
+                          </button>
+                        ) : null}
+
+                        {form.imageUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setForm({ ...form, imageUrl: '' });
+                              setImageInspection(null);
+                              setMessage('Imagen retirada de la ficha. Pulsa Guardar para confirmar.');
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-700"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Quitar
+                          </button>
+                        ) : null}
+                      </div>
+
+                      <p className="mt-2 text-[10px] text-[#7b8490]">
+                        También puedes arrastrar una imagen aquí. Para creatividades con texto, usa una imagen específica por idioma.
+                      </p>
+
+                      {imageInspection ? (
+                        <div className="mt-2 rounded-lg bg-[#f7f3eb] p-2 text-[10px] text-[#5b6470]">
+                          {imageInspection.width} × {imageInspection.height} px
+                          {imageInspection.warning ? (
+                            <p className="mt-1 font-semibold text-amber-800">{imageInspection.warning}</p>
+                          ) : (
+                            <p className="mt-1 font-semibold text-green-700">Formato visual adecuado para catálogo.</p>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-[10px] font-semibold text-[#69717d]">URL avanzada</summary>
+                  <input
+                    value={form.imageUrl}
+                    onChange={(event) => {
+                      setForm({ ...form, imageUrl: event.target.value });
+                      setImageInspection(null);
+                    }}
+                    placeholder="https://…"
+                    className="mt-2 w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 font-mono text-xs outline-none focus:border-[#c88b25]"
+                  />
+                </details>
+              </section>
 
               {message ? (
                 <div className="flex items-center gap-2 rounded-lg bg-green-50 p-3 text-xs font-semibold text-green-800">
@@ -329,7 +535,7 @@ export function MetaCatalogContentEditor({
           <button
             type="button"
             onClick={() => void save()}
-            disabled={!form || saving || !form.name.trim() || !form.landingPath.startsWith('/')}
+            disabled={!form || saving || uploadingImage || !form.name.trim() || !form.landingPath.startsWith('/')}
             className="inline-flex items-center gap-2 rounded-lg bg-[#c88b25] px-4 py-2 text-xs font-bold text-[#07111d] disabled:opacity-40"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
