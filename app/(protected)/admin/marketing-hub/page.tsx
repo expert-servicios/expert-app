@@ -70,6 +70,11 @@ type MetaCatalogPayload = {
   excluded: MetaCatalogExcludedService[];
   readyCount: number;
   blockedCount: number;
+  initialBatch: {
+    expectedCount: number;
+    readyCount: number;
+    ready: boolean;
+  };
 };
 
 const EXCLUSION_LABEL: Record<MetaCatalogExcludedService['reason'], string> = {
@@ -143,25 +148,32 @@ export default function MarketingHubPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ confirm: 'sync_initial_meta_catalog_batch' }),
       });
-      const payload = await response.json() as {
+      const raw = await response.text();
+      let payload: {
         ok?: boolean;
         succeeded?: number;
         failed?: number;
         error?: string;
-      };
+      } = {};
+      try {
+        payload = raw ? JSON.parse(raw) : {};
+      } catch {
+        payload = { error: 'Respuesta no válida del servidor; se recargará el estado antes de permitir otro intento.' };
+      }
 
       if (!response.ok) {
         setSyncMessage(payload.error ?? 'Falló la sincronización del catálogo Meta');
-        return;
+      } else {
+        setSyncMessage(
+          payload.ok
+            ? `Sincronización completada: ${payload.succeeded ?? 0} items.`
+            : `Sincronización parcial: ${payload.succeeded ?? 0} correctos · ${payload.failed ?? 0} fallidos.`,
+        );
       }
-
-      setSyncMessage(
-        payload.ok
-          ? `Sincronización completada: ${payload.succeeded ?? 0} items.`
-          : `Sincronización parcial: ${payload.succeeded ?? 0} correctos · ${payload.failed ?? 0} fallidos.`,
-      );
-      await load();
+    } catch {
+      setSyncMessage('Resultado de sincronización ambiguo. Se recarga el estado antes de permitir otro intento.');
     } finally {
+      await load();
       setSyncingCatalog(false);
     }
   }, [load]);
@@ -200,7 +212,7 @@ export default function MarketingHubPage() {
               disabled={
                 !data.liveTestAvailable
                 || syncingCatalog
-                || (diagnostics.c2.metaItems.bySyncStatus.ready ?? 0) !== 3
+                || !catalog?.initialBatch.ready
               }
               className="inline-flex items-center gap-2 rounded-xl bg-[#c88b25] px-4 py-2 text-sm font-bold text-[#07111d] disabled:opacity-40"
               title="Solo sincroniza los 3 certificados production_ready ya preparados"
@@ -293,8 +305,8 @@ export default function MarketingHubPage() {
           <div className="border-b border-[#eee6d8] p-5">
             <h2 className="font-serif text-xl font-bold text-[#07111d]">Catálogo para Meta</h2>
             <p className="mt-1 text-sm text-[#5b6470]">
-              Proyección de solo lectura de lo que se exportaría al catálogo de comercio de Meta a partir de las tablas C2.
-              No crea ni sincroniza nada.
+              Proyección canónica de lo que se exporta al catálogo de comercio de Meta a partir de las tablas C2.
+              La sincronización externa solo se ejecuta manualmente desde el control superior y únicamente para el lote aprobado.
             </p>
             {catalog ? (
               <p className="mt-2 text-sm font-semibold text-[#07111d]">
