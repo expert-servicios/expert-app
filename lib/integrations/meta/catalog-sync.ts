@@ -90,7 +90,7 @@ export function buildMetaProductPayload(draft: MetaServiceCatalogDraft) {
   };
 }
 
-function payloadHash(payload: Record<string, unknown>) {
+export function hashMetaProductPayload(payload: Record<string, unknown>) {
   return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
 }
 
@@ -385,7 +385,7 @@ export async function syncMetaCatalogRetailers(
     }
 
     const payload = buildMetaProductPayload(draft);
-    return { item, draft, payload, hash: payloadHash(payload) };
+    return { item, draft, payload, hash: hashMetaProductPayload(payload) };
   });
 
   const claimedIds: string[] = [];
