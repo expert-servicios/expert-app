@@ -2,7 +2,9 @@ import { classifyHoldedError } from './holded-errors';
 import { resolveHoldedAuth } from './holded-auth';
 
 const HOLDED_V2_BASE = 'https://api.holded.com/api/v2';
-const MIN_DELAY_MS = 150;
+// Conservative baseline for Plus/Basic accounts: Holded publishes 60 requests/minute.
+// Higher-tier throughput can be introduced later from /usage + rate-limit response headers.
+const MIN_DELAY_MS = 1_050;
 const MAX_PAGE_SIZE = 200;
 const DEFAULT_PAGE_SIZE = 50;
 
@@ -116,6 +118,93 @@ export interface HoldedV2SalaryRecord {
   [key: string]: unknown;
 }
 
+
+export interface HoldedV2Invoice extends Record<string, unknown> {
+  id: string;
+  document_number?: string | null;
+  contact_id?: string | null;
+  contact_name?: string | null;
+  date?: string | null;
+  due_date?: string | null;
+  subtotal?: string | number | null;
+  tax?: string | number | null;
+  total?: string | number | null;
+  currency?: string | null;
+  status?: string | number | null;
+  payments_total?: string | number | null;
+  payments_pending?: string | number | null;
+}
+
+export interface HoldedV2Purchase extends Record<string, unknown> {
+  id: string;
+  document_number?: string | null;
+  contact_id?: string | null;
+  contact_name?: string | null;
+  date?: string | null;
+  due_date?: string | null;
+  subtotal?: string | number | null;
+  tax?: string | number | null;
+  total?: string | number | null;
+  currency?: string | null;
+  status?: string | number | null;
+  payments_total?: string | number | null;
+  payments_pending?: string | number | null;
+}
+
+export interface HoldedV2Contact extends Record<string, unknown> {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  vat_number?: string | null;
+}
+
+export interface HoldedV2AccountingAccount extends Record<string, unknown> {
+  id: string;
+  name?: string | null;
+  code?: string | null;
+  account_num?: string | null;
+}
+
+export interface HoldedV2TreasuryAccount extends Record<string, unknown> {
+  id: string;
+  name?: string | null;
+  iban?: string | null;
+  balance?: string | number | null;
+  currency?: string | null;
+}
+
+export interface HoldedV2Tax extends Record<string, unknown> {
+  id?: string;
+  key?: string;
+  name?: string | null;
+  value?: string | number | null;
+}
+
+export interface HoldedV2LedgerEntry extends Record<string, unknown> {
+  id: string;
+  date?: string | null;
+  description?: string | null;
+}
+
+export interface HoldedV2Payment extends Record<string, unknown> {
+  id: string;
+  date?: string | null;
+  amount?: string | number | null;
+  document_id?: string | null;
+  document_type?: string | null;
+  banking_account_id?: string | null;
+}
+
+export interface HoldedV2Usage extends Record<string, unknown> {
+  type?: string | null;
+  period?: string | null;
+  usage?: number | null;
+  limit?: number | null;
+  count?: number | null;
+  next_plan?: string | null;
+  next_limit?: number | null;
+}
+
 export interface HoldedV2Client {
   listEmployees(params?: {
     search?: string;
@@ -144,6 +233,15 @@ export interface HoldedV2Client {
   }): Promise<HoldedV2Page<HoldedV2SalaryRecord>>;
   getSalaryRecord(salaryRecordId: string): Promise<HoldedV2SalaryRecord>;
   getSalaryRecordPdf(salaryRecordId: string): Promise<ArrayBuffer>;
+  getUsage(): Promise<HoldedV2Usage>;
+  listInvoices(params?: { startDate?: string; endDate?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Invoice>>;
+  listPurchases(params?: { startDate?: string; endDate?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Purchase>>;
+  listContacts(params?: { search?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Contact>>;
+  listAccountingAccounts(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2AccountingAccount>>;
+  listTreasuryAccounts(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2TreasuryAccount>>;
+  listTaxes(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Tax>>;
+  listLedgerEntries(params?: { startDate?: string; endDate?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2LedgerEntry>>;
+  listPayments(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Payment>>;
 }
 
 function clampPageSize(limit: number | undefined): number {
@@ -323,6 +421,94 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
     async getSalaryRecordPdf(salaryRecordId) {
       const id = safePathSegment(salaryRecordId, 'salaryRecordId');
       return holdedV2FetchPdf(key, `${HOLDED_V2_BASE}/salary-records/${id}/pdf`);
+    },
+
+    async getUsage() {
+      return holdedV2FetchJson<HoldedV2Usage>(key, `${HOLDED_V2_BASE}/usage`);
+    },
+
+    async listInvoices(params = {}) {
+      const url = buildPaginatedUrl('/invoices', {
+        startDate: params.startDate,
+        endDate: params.endDate,
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2Invoice>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listPurchases(params = {}) {
+      const url = buildPaginatedUrl('/purchases', {
+        startDate: params.startDate,
+        endDate: params.endDate,
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2Purchase>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listContacts(params = {}) {
+      const limit = Math.max(1, Math.min(100, Math.trunc(params.limit ?? 50)));
+      if (params.search?.trim()) {
+        const search = new URLSearchParams({
+          name: params.search.trim(),
+          limit: String(limit),
+        });
+        appendIfPresent(search, 'cursor', params.cursor);
+        return normalizePage<HoldedV2Contact>(
+          await holdedV2FetchJson<unknown>(key, `${HOLDED_V2_BASE}/contacts/search?${search.toString()}`),
+        );
+      }
+      const url = buildPaginatedUrl('/contacts', {
+        limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2Contact>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listAccountingAccounts(params = {}) {
+      const url = buildPaginatedUrl('/accounting-accounts', {
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2AccountingAccount>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listTreasuryAccounts(params = {}) {
+      const url = buildPaginatedUrl('/treasury/accounts', {
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2TreasuryAccount>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listTaxes(params = {}) {
+      const url = buildPaginatedUrl('/taxes', {
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2Tax>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listLedgerEntries(params = {}) {
+      const now = new Date();
+      const defaultStart = `${now.getUTCFullYear()}-01-01`;
+      const defaultEnd = now.toISOString().slice(0, 10);
+      const url = buildPaginatedUrl('/ledger-entries', {
+        startDate: params.startDate ?? defaultStart,
+        endDate: params.endDate ?? defaultEnd,
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2LedgerEntry>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listPayments(params = {}) {
+      const url = buildPaginatedUrl('/payments', {
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2Payment>(await holdedV2FetchJson<unknown>(key, url));
     },
   };
 }
