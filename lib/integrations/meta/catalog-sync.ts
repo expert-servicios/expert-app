@@ -13,6 +13,7 @@ export const INITIAL_META_CATALOG_RETAILER_IDS = [
 ] as const;
 
 export const INITIAL_META_CATALOG_BATCH_LIMIT = 3;
+export const MAX_META_CATALOG_SYNC_BATCH = 25;
 
 type MetaCatalogItemRow = {
   id: string;
@@ -34,13 +35,6 @@ type CommercialOfferIdentityRow = {
   status: string;
 };
 
-type StripeBindingRow = {
-  offer_id: string;
-  environment: string;
-  status: string;
-  reconciliation_status: string;
-};
-
 type PreparedItem = {
   item: MetaCatalogItemRow;
   draft: MetaServiceCatalogDraft;
@@ -60,6 +54,13 @@ export type MetaCatalogSyncResult = {
   succeeded: number;
   failed: number;
   items: MetaCatalogSyncItemResult[];
+};
+
+export type MetaCatalogPrepareResult = {
+  retailerId: string;
+  itemId: string;
+  syncStatus: 'ready';
+  warnings: string[];
 };
 
 export function buildMetaProductPayload(draft: MetaServiceCatalogDraft) {
@@ -113,10 +114,199 @@ function errorDetails(error: unknown) {
   };
 }
 
-export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<MetaCatalogSyncResult> {
+function productionReadyRetailerIds() {
+  return new Set(
+    serviceProductionManifest
+      .filter((entry) => entry.stage === 'production_ready')
+      .map((entry) => entry.slug),
+  );
+}
+
+function normalizeRetailerIds(retailerIds: readonly string[]) {
+  const normalized = Array.from(new Set(
+    retailerIds
+      .map((value) => value.trim())
+      .filter((value) => /^[a-z0-9][a-z0-9-]{1,159}$/.test(value)),
+  ));
+
+  if (normalized.length === 0) {
+    throw new Error('Selecciona al menos un servicio para sincronizar');
+  }
+  if (normalized.length > MAX_META_CATALOG_SYNC_BATCH) {
+    throw new Error(`El lote Meta no puede superar ${MAX_META_CATALOG_SYNC_BATCH} servicios`);
+  }
+  return normalized;
+}
+
+export async function prepareMetaCatalogRetailer(
+  requestedBy: string,
+  retailerId: string,
+): Promise<MetaCatalogPrepareResult> {
+  const [normalizedRetailerId] = normalizeRetailerIds([retailerId]);
+  const productionReady = productionReadyRetailerIds();
+  if (!productionReady.has(normalizedRetailerId)) {
+    throw new Error(`Servicio no production_ready: ${normalizedRetailerId}`);
+  }
+
+  const admin = getSupabaseAdmin();
+  const firstDraftResult = await buildMetaCatalogDrafts('es');
+  const draftBeforeChannel = firstDraftResult.drafts.find(
+    (draft) => draft.retailerId === normalizedRetailerId,
+  );
+
+  if (!draftBeforeChannel) {
+    const excluded = firstDraftResult.excluded.find((item) => item.retailerId === normalizedRetailerId);
+    throw new Error(
+      excluded
+        ? `Servicio excluido del catálogo Meta: ${excluded.reason}`
+        : `Servicio no disponible para Meta: ${normalizedRetailerId}`,
+    );
+  }
+
+  const blockers = draftBeforeChannel.warnings.filter((warning) => warning !== 'meta_channel_not_ready');
+  if (blockers.length > 0) {
+    throw new Error(`Servicio bloqueado para Meta: ${blockers.join(', ')}`);
+  }
+
+  const { data: service, error: serviceError } = await admin
+    .from('catalog_services')
+    .select('id,slug')
+    .eq('slug', normalizedRetailerId)
+    .single();
+  if (serviceError || !service) {
+    throw new Error(`No se pudo resolver catalog_services: ${normalizedRetailerId}`);
+  }
+
+  const { data: offer, error: offerError } = await admin
+    .from('commercial_offers')
+    .select('id,service_id,status')
+    .eq('id', draftBeforeChannel.offerId)
+    .eq('service_id', service.id)
+    .eq('status', 'active')
+    .single();
+  if (offerError || !offer) {
+    throw new Error(`Oferta canónica activa no encontrada: ${normalizedRetailerId}`);
+  }
+
+  const { data: existingChannel } = await admin
+    .from('service_channel_configs')
+    .select('id,editorial_overrides')
+    .eq('service_id', service.id)
+    .eq('channel', 'meta')
+    .maybeSingle();
+
+  const now = new Date().toISOString();
+  if (existingChannel) {
+    const { error } = await admin
+      .from('service_channel_configs')
+      .update({
+        enabled: true,
+        publish_status: 'ready',
+        updated_at: now,
+      })
+      .eq('id', existingChannel.id);
+    if (error) throw new Error(`No se pudo habilitar canal Meta: ${error.message}`);
+  } else {
+    const { error } = await admin
+      .from('service_channel_configs')
+      .insert({
+        service_id: service.id,
+        channel: 'meta',
+        enabled: true,
+        publish_status: 'ready',
+        editorial_overrides: {},
+        created_at: now,
+        updated_at: now,
+      });
+    if (error) throw new Error(`No se pudo crear canal Meta: ${error.message}`);
+  }
+
+  const verifiedDraftResult = await buildMetaCatalogDrafts('es');
+  const verifiedDraft = verifiedDraftResult.drafts.find(
+    (draft) => draft.retailerId === normalizedRetailerId,
+  );
+  if (!verifiedDraft?.marketingReady) {
+    throw new Error(
+      `El servicio no supera el preflight Meta tras preparar canal: ${verifiedDraft?.warnings.join(', ') ?? 'sin draft'}`,
+    );
+  }
+
+  const { data: existingItem, error: existingItemError } = await admin
+    .from('meta_catalog_items')
+    .select('id,meta_item_id,sync_status')
+    .eq('retailer_id', normalizedRetailerId)
+    .maybeSingle();
+  if (existingItemError) {
+    throw new Error(`No se pudo leer meta_catalog_items: ${existingItemError.message}`);
+  }
+
+  let itemId: string;
+  if (existingItem) {
+    const { data: item, error } = await admin
+      .from('meta_catalog_items')
+      .update({
+        service_id: service.id,
+        offer_id: offer.id,
+        locale: 'es',
+        sync_status: 'ready',
+        last_error_code: null,
+        updated_at: now,
+      })
+      .eq('id', existingItem.id)
+      .select('id')
+      .single();
+    if (error || !item) {
+      throw new Error(`No se pudo preparar item Meta: ${error?.message ?? 'sin id'}`);
+    }
+    itemId = String(item.id);
+  } else {
+    const { data: item, error } = await admin
+      .from('meta_catalog_items')
+      .insert({
+        service_id: service.id,
+        offer_id: offer.id,
+        locale: 'es',
+        retailer_id: normalizedRetailerId,
+        sync_status: 'ready',
+        created_at: now,
+        updated_at: now,
+      })
+      .select('id')
+      .single();
+    if (error || !item) {
+      throw new Error(`No se pudo crear item Meta: ${error?.message ?? 'sin id'}`);
+    }
+    itemId = String(item.id);
+  }
+
+  await admin.from('meta_sync_jobs').insert({
+    operation: 'catalog_item_prepare',
+    target_type: 'meta_catalog_item',
+    target_id: itemId,
+    requested_by: requestedBy,
+    status: 'succeeded',
+    attempt_count: 1,
+    started_at: now,
+    finished_at: now,
+  });
+
+  return {
+    retailerId: normalizedRetailerId,
+    itemId,
+    syncStatus: 'ready',
+    warnings: [],
+  };
+}
+
+export async function syncMetaCatalogRetailers(
+  requestedBy: string,
+  retailerIds: readonly string[],
+): Promise<MetaCatalogSyncResult> {
   const config = requireMetaMarketingConfig();
   if (!config.catalogId) throw new Error('Meta catalog ID is not configured');
 
+  const requestedRetailerIds = normalizeRetailerIds(retailerIds);
+  const requestedSet = new Set(requestedRetailerIds);
   const admin = getSupabaseAdmin();
   const draftResult = await buildMetaCatalogDrafts('es');
   const draftByRetailerId = new Map(draftResult.drafts.map((draft) => [draft.retailerId, draft]));
@@ -126,24 +316,22 @@ export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<
     .select('id,service_id,offer_id,locale,retailer_id,sync_status')
     .eq('locale', 'es')
     .eq('sync_status', 'ready')
-    .in('retailer_id', [...INITIAL_META_CATALOG_RETAILER_IDS])
+    .in('retailer_id', requestedRetailerIds)
     .order('retailer_id');
 
   if (stagedError) throw new Error(`No se pudo leer meta_catalog_items: ${stagedError.message}`);
 
   const staged = (stagedRows ?? []) as MetaCatalogItemRow[];
-  if (staged.length !== INITIAL_META_CATALOG_BATCH_LIMIT) {
-    throw new Error(
-      `El lote inicial requiere exactamente ${INITIAL_META_CATALOG_BATCH_LIMIT} items Meta ready; encontrados: ${staged.length}`,
-    );
+  if (staged.length !== requestedRetailerIds.length) {
+    const stagedIds = new Set(staged.map((row) => row.retailer_id));
+    const missing = requestedRetailerIds.filter((id) => !stagedIds.has(id));
+    throw new Error(`Hay servicios que no están listos para sincronizar: ${missing.join(', ')}`);
   }
-
-  const allowed = new Set<string>(INITIAL_META_CATALOG_RETAILER_IDS);
 
   const { data: serviceIdentityRows, error: serviceIdentityError } = await admin
     .from('catalog_services')
     .select('id,slug')
-    .in('slug', [...INITIAL_META_CATALOG_RETAILER_IDS]);
+    .in('slug', requestedRetailerIds);
   if (serviceIdentityError) {
     throw new Error(`No se pudo verificar catalog_services: ${serviceIdentityError.message}`);
   }
@@ -163,31 +351,14 @@ export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<
     ((offerIdentityRows ?? []) as CommercialOfferIdentityRow[]).map((row) => [row.id, row]),
   );
 
-  const productionReady = new Set(
-    serviceProductionManifest
-      .filter((entry) => entry.stage === 'production_ready')
-      .map((entry) => entry.slug),
-  );
-
-  const { data: bindingRows, error: bindingsError } = await admin
-    .from('stripe_price_bindings')
-    .select('offer_id,environment,status,reconciliation_status')
-    .eq('environment', 'live')
-    .eq('status', 'active')
-    .eq('reconciliation_status', 'matched');
-
-  if (bindingsError) throw new Error(`No se pudo leer stripe_price_bindings: ${bindingsError.message}`);
-
-  const matchedOfferIds = new Set(
-    ((bindingRows ?? []) as StripeBindingRow[]).map((row) => row.offer_id),
-  );
+  const productionReady = productionReadyRetailerIds();
 
   const prepared: PreparedItem[] = staged.map((item) => {
     const retailerId = item.retailer_id;
     const draft = draftByRetailerId.get(retailerId);
 
-    if (!allowed.has(retailerId)) {
-      throw new Error(`Item fuera del lote inicial permitido: ${retailerId}`);
+    if (!requestedSet.has(retailerId)) {
+      throw new Error(`Item fuera del lote solicitado: ${retailerId}`);
     }
     if (!productionReady.has(retailerId)) {
       throw new Error(`Servicio no production_ready: ${retailerId}`);
@@ -203,15 +374,14 @@ export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<
       !canonicalOffer
       || canonicalOffer.service_id !== item.service_id
       || canonicalOffer.status !== 'active'
-      || !matchedOfferIds.has(canonicalOffer.id)
     ) {
-      throw new Error(`Oferta canónica sin binding Stripe live reconciliado: ${retailerId}`);
+      throw new Error(`Oferta canónica activa no encontrada: ${retailerId}`);
     }
     if (!draft?.marketingReady) {
       throw new Error(`Proyección Meta no lista: ${retailerId}`);
     }
     if (draft.offerId !== canonicalOffer.id) {
-      throw new Error(`La oferta exportada no coincide con la oferta reconciliada: ${retailerId}`);
+      throw new Error(`La oferta exportada no coincide con la oferta canónica: ${retailerId}`);
     }
 
     const payload = buildMetaProductPayload(draft);
@@ -389,4 +559,8 @@ export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<
     failed: results.filter((item) => !item.ok).length,
     items: results,
   };
+}
+
+export async function syncInitialMetaCatalogBatch(requestedBy: string): Promise<MetaCatalogSyncResult> {
+  return syncMetaCatalogRetailers(requestedBy, INITIAL_META_CATALOG_RETAILER_IDS);
 }
