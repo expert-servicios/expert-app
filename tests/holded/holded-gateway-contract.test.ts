@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const gateway = readFileSync(resolve(process.cwd(), 'lib/integrations/holded/holded-gateway.ts'), 'utf8');
-const migration = readFileSync(resolve(process.cwd(), 'supabase/migrations/20261003190500_holded_advisor_managed_mode.sql'), 'utf8');
+const migration = readFileSync(resolve(process.cwd(), 'supabase/migrations/20261003175941_holded_advisor_managed_mode.sql'), 'utf8');
 
 describe('Holded version-aware gateway contract', () => {
   it('selects API version from canonical client_integrations metadata', () => {
@@ -29,9 +29,6 @@ describe('Holded version-aware gateway contract', () => {
 
 describe('Holded legacy pagination safety', () => {
   it('does not assume a 100-item v1 page size', () => {
-    const { readFileSync } = require('node:fs');
-    const { resolve } = require('node:path');
-    const gateway = readFileSync(resolve(process.cwd(), 'lib/integrations/holded/holded-gateway.ts'), 'utf8');
     expect(gateway).not.toContain('docs.length < 100');
     expect(gateway).toContain('page <= 20');
     expect(gateway).toContain('if (contacts.length === 0) break');
