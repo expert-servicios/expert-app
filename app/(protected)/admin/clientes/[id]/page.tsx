@@ -177,6 +177,12 @@ export default function ClientePage() {
   }, [id]);
 
   useEffect(() => {
+    window.dispatchEvent(new CustomEvent('expert:kia-page-context', {
+      detail: { activeTab, surfaceSection: 'client_360', clientId: id },
+    }));
+  }, [activeTab, id]);
+
+  useEffect(() => {
     if (activeTab === 'timeline' && timeline.length === 0 && !timelineLoading) loadTimeline(); // eslint-disable-line react-hooks/set-state-in-effect
     if (activeTab === 'documentos' && documents.length === 0 && !documentsLoading) loadDocuments();
   }, [activeTab, timeline.length, documents.length, timelineLoading, documentsLoading, loadTimeline, loadDocuments]);
