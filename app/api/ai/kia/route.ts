@@ -165,9 +165,16 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const adminCopilotMode = Boolean(
+    !staffPreview
+    && profile
+    && isStaffRole(profile.role)
+    && profile.status !== 'inactive'
+    && currentPage?.startsWith('/admin'),
+  );
   const resolvedCompanyId = staffPreview
     ? (staffPreview.companyId ?? undefined)
-    : (companyId ?? contextualCompanyId ?? profile?.active_company_id ?? undefined);
+    : (companyId ?? contextualCompanyId ?? (adminCopilotMode ? undefined : profile?.active_company_id ?? undefined));
   const effectivePreferredLanguage = staffPreview?.client.preferred_language ?? profile?.preferred_language ?? null;
   const profileLocale = effectivePreferredLanguage === 'ru' ? 'ru' : 'es';
   // A delegated client preview must behave exactly as the client would see it.
@@ -177,13 +184,6 @@ export async function POST(request: NextRequest) {
     : resolveKiaLocale({ latestMessage: message, preferredLanguage: profileLocale });
 
   const staffCompanyScope = Boolean(companyId && profile && isStaffRole(profile.role) && profile.status !== 'inactive');
-  const adminCopilotMode = Boolean(
-    !staffPreview
-    && profile
-    && isStaffRole(profile.role)
-    && profile.status !== 'inactive'
-    && currentPage?.startsWith('/admin'),
-  );
   const copilotPolicyProfile = adminCopilotMode ? 'admin_copilot' as const : 'client_dashboard' as const;
 
   if (resolvedCompanyId && !staffPreview) {
