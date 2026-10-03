@@ -30,9 +30,13 @@ function draft(priceAmount: number): MetaServiceCatalogDraft {
 
 describe('controlled Meta catalog sync', () => {
   it('projects the full consumer price for plus-VAT certificate offers', () => {
-    expect(projectMetaConsumerPrice(9000, 'plus_vat')?.amount).toBe(108.9);
-    expect(projectMetaConsumerPrice(15000, 'plus_vat')?.amount).toBe(181.5);
-    expect(projectMetaConsumerPrice(20000, 'plus_vat')?.amount).toBe(242);
+    expect(projectMetaConsumerPrice(9000, 'plus_vat', 0.21)?.amount).toBe(108.9);
+    expect(projectMetaConsumerPrice(15000, 'plus_vat', 0.21)?.amount).toBe(181.5);
+    expect(projectMetaConsumerPrice(20000, 'plus_vat', 0.21)?.amount).toBe(242);
+  });
+
+  it('fails closed when a plus-VAT service has no explicit VAT rate', () => {
+    expect(projectMetaConsumerPrice(9000, 'plus_vat')).toBeNull();
   });
 
   it('publishes the gross consumer price in cents', () => {
