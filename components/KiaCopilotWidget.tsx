@@ -424,7 +424,7 @@ function KiaMessageArtifacts({ artifacts }: { artifacts: KiaCopilotArtifact[] })
   );
 }
 
-export default function KiaCopilotWidget({ embedded = false }: { embedded?: boolean }) {
+export default function KiaCopilotWidget({ embedded = false, active = true }: { embedded?: boolean; active?: boolean }) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const [telegramLinking, setTelegramLinking] = useState(false);
@@ -434,10 +434,42 @@ export default function KiaCopilotWidget({ embedded = false }: { embedded?: bool
   const [animatedMessageIds, setAnimatedMessageIds] = useState<Set<string>>(() => new Set());
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const panelVisible = embedded || open;
+  const panelVisible = embedded ? active : open;
   const [contextToken] = useState<string | undefined>(() => searchParams.get('ctx') ?? undefined);
+  const adminMode = embedded && pathname.startsWith('/admin');
   const adminCompanyId = /^\/admin\/empresas\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?:\/|$)/i.exec(pathname)?.[1];
-  const { messages, loading, contextLoading, send, rate, reset, appendAssistantMessage, staffPreview, uiLocale } = useKiaChat(pathname, contextToken, adminCompanyId);
+  const [adminPageData, setAdminPageData] = useState<Record<string, string | number | boolean> | undefined>();
+
+  useEffect(() => {
+    if (!adminMode) {
+      setAdminPageData(undefined);
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      const main = document.querySelector('main');
+      const heading = main?.querySelector('h1')?.textContent?.trim() ?? document.querySelector('h1')?.textContent?.trim() ?? '';
+      const subheading = main?.querySelector('h2')?.textContent?.trim() ?? '';
+      const activeTab = document.querySelector('[role="tab"][aria-selected="true"]')?.textContent?.trim() ?? '';
+      setAdminPageData({
+        surface: 'admin',
+        path: pathname,
+        query: searchParams.toString().slice(0, 300),
+        pageTitle: document.title.slice(0, 180),
+        heading: heading.slice(0, 180),
+        subheading: subheading.slice(0, 180),
+        activeTab: activeTab.slice(0, 120),
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [adminMode, pathname, searchParams]);
+
+  const { messages, loading, contextLoading, send, rate, reset, appendAssistantMessage, staffPreview, uiLocale } = useKiaChat(
+    pathname,
+    contextToken,
+    adminCompanyId,
+    adminMode,
+    adminPageData,
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -861,7 +893,7 @@ export default function KiaCopilotWidget({ embedded = false }: { embedded?: bool
                     </button>
                   </div>
                 ) : null}
-                {msg.role === 'assistant' && msg.quickReplies?.length ? (
+                {!adminMode && msg.role === 'assistant' && msg.quickReplies?.length ? (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {msg.quickReplies.map((qr) => (
                       <button
@@ -876,7 +908,7 @@ export default function KiaCopilotWidget({ embedded = false }: { embedded?: bool
                     ))}
                   </div>
                 ) : null}
-                {msg.role === 'assistant' && msg.proactiveSuggestions?.length ? (
+                {!adminMode && msg.role === 'assistant' && msg.proactiveSuggestions?.length ? (
                   <div className="mt-3 rounded-xl bg-[#faf8f4] p-2.5">
                     <p className="mb-2 text-[11px] font-semibold text-[#7a6e5f]">
                       {uiLocale === 'ru' ? 'Я также могу помочь:' : 'También puedo ayudarte con:'}
