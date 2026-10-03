@@ -9,6 +9,7 @@ import {
   ImageIcon,
   Loader2,
   Save,
+  Sparkles,
   Trash2,
   Upload,
   X,
@@ -59,6 +60,16 @@ type UploadedImageResponse = {
   storagePath?: string;
   contentType?: string;
   size?: number;
+};
+
+type GeneratedImageResponse = UploadedImageResponse & {
+  width?: number;
+  height?: number;
+  model?: string;
+  quality?: string;
+  styleVersion?: string;
+  revisedPrompt?: string | null;
+  latencyMs?: number;
 };
 
 type ImageInspection = {
@@ -129,6 +140,8 @@ export function MetaCatalogContentEditor({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [aiBrief, setAiBrief] = useState('');
   const [draggingImage, setDraggingImage] = useState(false);
   const [imageInspection, setImageInspection] = useState<ImageInspection | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -175,6 +188,7 @@ export function MetaCatalogContentEditor({
     const es = payload.contents.find((item) => item.locale === 'es');
     setForm(existing ? fromRow(existing) : nextLocale === 'ru' ? emptyRu(es) : null);
     setImageInspection(null);
+    setAiBrief('');
     setMessage(null);
     setError(null);
   };
@@ -225,6 +239,46 @@ export function MetaCatalogContentEditor({
     } finally {
       setUploadingImage(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const generateImage = async () => {
+    if (!retailerId || !form) return;
+    setGeneratingImage(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const response = await fetch(
+        `/api/admin/meta/catalog/${encodeURIComponent(retailerId)}/image/generate`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            locale: form.locale,
+            name: form.name,
+            shortDescription: form.shortDescription.trim() || null,
+            customBrief: aiBrief.trim() || null,
+          }),
+        },
+      );
+      const data = await response.json() as GeneratedImageResponse;
+      if (!response.ok || !data.publicUrl) {
+        throw new Error(data.error ?? 'No se pudo generar la imagen');
+      }
+
+      setForm({ ...form, imageUrl: data.publicUrl });
+      setImageInspection({
+        width: data.width ?? 1024,
+        height: data.height ?? 1024,
+        warning: null,
+      });
+      const modelCopy = data.model ? ` · ${data.model}` : '';
+      const seconds = data.latencyMs ? ` · ${Math.max(1, Math.round(data.latencyMs / 1000))} s` : '';
+      setMessage(`Creatividad IA generada${modelCopy}${seconds}. Revísala y pulsa Guardar si quieres usarla.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'No se pudo generar la imagen');
+    } finally {
+      setGeneratingImage(false);
     }
   };
 
@@ -403,6 +457,45 @@ export function MetaCatalogContentEditor({
                   ) : null}
                 </div>
 
+                <div className="mt-2 rounded-xl border border-[#d9c69b] bg-[#fffaf0] p-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#7a5313]">
+                        <Sparkles className="h-4 w-4" /> Generador IA EXPERT
+                      </div>
+                      <p className="mt-1 max-w-md text-[10px] leading-4 text-[#6f6047]">
+                        Crea una escena 3D premium y superpone después el logo EXPERT real y los textos exactos de esta ficha.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void generateImage()}
+                      disabled={generatingImage || uploadingImage || !form.name.trim()}
+                      className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#c88b25] px-3 py-2 text-xs font-bold text-[#07111d] disabled:opacity-40"
+                    >
+                      {generatingImage ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                      {generatingImage ? 'Generando…' : form.imageUrl ? 'Regenerar con IA' : 'Generar con IA'}
+                    </button>
+                  </div>
+
+                  <details className="mt-3">
+                    <summary className="cursor-pointer text-[10px] font-semibold text-[#7a5313]">
+                      Indicaciones visuales opcionales
+                    </summary>
+                    <textarea
+                      value={aiBrief}
+                      onChange={(event) => setAiBrief(event.target.value)}
+                      rows={2}
+                      maxLength={500}
+                      placeholder="Ej.: más minimalista, incluir una vivienda, menos elementos…"
+                      className="mt-2 w-full resize-y rounded-lg border border-[#ddcfb1] bg-white px-3 py-2 text-xs outline-none focus:border-[#c88b25]"
+                    />
+                    <p className="mt-1 text-[10px] text-[#8a7a5e]">
+                      El estilo EXPERT, formato 1:1, paleta crema/azul/dorado, logo y textos ya se aplican automáticamente.
+                    </p>
+                  </details>
+                </div>
+
                 <div
                   className={`mt-2 rounded-xl border-2 border-dashed p-3 transition ${draggingImage ? 'border-[#c88b25] bg-[#fff9eb]' : 'border-[#d8cbb5] bg-white'}`}
                   onDragOver={(event) => {
@@ -535,7 +628,7 @@ export function MetaCatalogContentEditor({
           <button
             type="button"
             onClick={() => void save()}
-            disabled={!form || saving || uploadingImage || !form.name.trim() || !form.landingPath.startsWith('/')}
+            disabled={!form || saving || uploadingImage || generatingImage || !form.name.trim() || !form.landingPath.startsWith('/')}
             className="inline-flex items-center gap-2 rounded-lg bg-[#c88b25] px-4 py-2 text-xs font-bold text-[#07111d] disabled:opacity-40"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
