@@ -34,7 +34,7 @@ describe('Admin Meta catalog image manager', () => {
     );
 
     expect(path).toMatch(/^meta-catalog\/certificado-digital-persona-fisica\/ru\//);
-    expect(path).toEndWith('-creativa.webp');
+    expect(path.endsWith('-creativa.webp')).toBe(true);
   });
 
   it('uploads only through the admin route and public catalog folder', () => {
