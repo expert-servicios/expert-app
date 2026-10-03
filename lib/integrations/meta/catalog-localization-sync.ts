@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { serviceProductionManifest } from '@/lib/services/service-production-manifest';
 import { buildMetaCatalogDrafts } from './catalog-export';
+import { buildMetaProductPayload, hashMetaProductPayload } from './catalog-sync';
 import { MetaGraphError, metaGraphRequest } from './client';
 import { requireMetaMarketingConfig } from './config';
 import type { MetaServiceCatalogDraft } from './types';
@@ -230,11 +231,15 @@ async function getChannelForRetailer(retailerId: string) {
   };
 }
 
-async function assertBaseItemSynced(retailerId: string, serviceId: string) {
+async function assertBaseItemCurrent(
+  retailerId: string,
+  serviceId: string,
+  suppliedDraft?: MetaServiceCatalogDraft,
+) {
   const admin = getSupabaseAdmin();
   const { data, error } = await admin
     .from('meta_catalog_items')
-    .select('id,meta_item_id,sync_status')
+    .select('id,meta_item_id,sync_status,last_payload_hash')
     .eq('service_id', serviceId)
     .eq('retailer_id', retailerId)
     .eq('locale', 'es')
@@ -242,6 +247,17 @@ async function assertBaseItemSynced(retailerId: string, serviceId: string) {
 
   if (error || !data || data.sync_status !== 'synced' || !data.meta_item_id) {
     throw new Error(`El producto base ES debe estar sincronizado antes de localizar RU: ${retailerId}`);
+  }
+
+  const draft = suppliedDraft
+    ?? (await buildMetaCatalogDrafts('es')).drafts.find((item) => item.retailerId === retailerId);
+  if (!draft?.marketingReady) {
+    throw new Error(`El producto base ES no está listo actualmente: ${retailerId}`);
+  }
+
+  const currentHash = hashMetaProductPayload(buildMetaProductPayload(draft));
+  if (!data.last_payload_hash || data.last_payload_hash !== currentHash) {
+    throw new Error(`El producto base ES tiene cambios pendientes de sincronizar: ${retailerId}`);
   }
 
   return data;
@@ -277,7 +293,7 @@ export async function prepareMetaCatalogLocalization(
   }
 
   const { serviceId, channel } = await getChannelForRetailer(normalizedRetailerId);
-  await assertBaseItemSynced(normalizedRetailerId, serviceId);
+  await assertBaseItemCurrent(normalizedRetailerId, serviceId);
 
   const draftResult = await buildMetaCatalogDrafts(locale);
   const draft = draftResult.drafts.find((item) => item.retailerId === normalizedRetailerId);
@@ -330,9 +346,9 @@ async function finishLocalizationJob(
   status: 'succeeded' | 'failed',
   errorCode: string | null,
   errorMessage: string | null,
-) {
-  if (!jobId) return;
-  await getSupabaseAdmin()
+): Promise<string | null> {
+  if (!jobId) return null;
+  const { error } = await getSupabaseAdmin()
     .from('meta_sync_jobs')
     .update({
       status,
@@ -342,6 +358,8 @@ async function finishLocalizationJob(
       updated_at: new Date().toISOString(),
     })
     .eq('id', jobId);
+
+  return error?.message ?? null;
 }
 
 async function logLocalizationApiCall(args: {
@@ -387,13 +405,21 @@ export async function syncMetaCatalogLocalizations(
   if (!config.catalogId) throw new Error('Meta catalog ID is not configured');
 
   const ids = normalizeRetailerIds(retailerIds);
-  const draftResult = await buildMetaCatalogDrafts(locale);
+  const productionReady = productionReadyRetailerIds();
+  const [draftResult, baseDraftResult] = await Promise.all([
+    buildMetaCatalogDrafts(locale),
+    buildMetaCatalogDrafts('es'),
+  ]);
   const drafts = new Map(draftResult.drafts.map((draft) => [draft.retailerId, draft]));
+  const baseDrafts = new Map(baseDraftResult.drafts.map((draft) => [draft.retailerId, draft]));
   const prepared: PreparedLocalization[] = [];
 
   for (const retailerId of ids) {
+    if (!productionReady.has(retailerId)) {
+      throw new Error(`Servicio no production_ready: ${retailerId}`);
+    }
     const { serviceId, channel } = await getChannelForRetailer(retailerId);
-    await assertBaseItemSynced(retailerId, serviceId);
+    await assertBaseItemCurrent(retailerId, serviceId, baseDrafts.get(retailerId));
     const state = readMetaLocalizationState(channel.editorial_overrides, locale);
     if (state?.sync_status !== 'ready') {
       throw new Error(`La localización ${locale.toUpperCase()} no está preparada: ${retailerId}`);
@@ -458,8 +484,18 @@ export async function syncMetaCatalogLocalizations(
         sync_job_id: null,
       }).catch(() => null);
     }
+    const bookkeepingErrors: string[] = [];
     for (const job of jobs ?? []) {
-      await finishLocalizationJob(String(job.id), 'failed', 'local_claim_failed', 'No se pudo reclamar el lote localizado');
+      const finishError = await finishLocalizationJob(
+        String(job.id),
+        'failed',
+        'local_claim_failed',
+        'No se pudo reclamar el lote localizado',
+      );
+      if (finishError) bookkeepingErrors.push(finishError);
+    }
+    if (bookkeepingErrors.length > 0) {
+      throw new Error(`No se pudo reclamar el lote y falló su bookkeeping: ${bookkeepingErrors.join(' | ')}`);
     }
     throw error;
   }
@@ -476,6 +512,7 @@ export async function syncMetaCatalogLocalizations(
     });
   } catch (error) {
     const details = graphErrorDetails(error);
+    const bookkeepingErrors: string[] = [];
     for (const item of claimed) {
       const jobId = jobByChannel.get(item.channel.id) ?? null;
       await logLocalizationApiCall({
@@ -487,15 +524,30 @@ export async function syncMetaCatalogLocalizations(
         traceId: details.traceId,
       });
       const current = readMetaLocalizationState(item.channel.editorial_overrides, locale);
+      let failedChannel: ChannelRow | null = null;
       if (current) {
-        await updateLocalizationState(item.channel, locale, {
+        failedChannel = await updateLocalizationState(item.channel, locale, {
           ...current,
           sync_status: 'failed',
           last_error_code: details.code,
           sync_job_id: jobId,
         }).catch(() => null);
       }
-      await finishLocalizationJob(jobId, 'failed', details.code, details.message);
+      const finishError = await finishLocalizationJob(jobId, 'failed', details.code, details.message);
+      if (finishError) {
+        bookkeepingErrors.push(`${item.retailerId}: ${finishError}`);
+        if (failedChannel && current) {
+          await updateLocalizationState(failedChannel, locale, {
+            ...current,
+            sync_status: 'manual_review',
+            last_error_code: 'local_bookkeeping_incomplete',
+            sync_job_id: jobId,
+          }).catch(() => null);
+        }
+      }
+    }
+    if (bookkeepingErrors.length > 0) {
+      throw new Error(`${details.message}; bookkeeping incompleto: ${bookkeepingErrors.join(' | ')}`);
     }
     throw error;
   }
@@ -526,19 +578,35 @@ export async function syncMetaCatalogLocalizations(
 
     if (errors.length > 0 || !handle) {
       const message = errors.join(' | ') || 'Meta no devolvió handle de ingestión';
-      await updateLocalizationState(item.channel, locale, {
+      const failedChannel = await updateLocalizationState(item.channel, locale, {
         ...current,
         sync_status: 'failed',
         last_error_code: errors.length > 0 ? 'validation_error' : 'missing_batch_handle',
         batch_handle: handle,
         sync_job_id: jobId,
       });
-      await finishLocalizationJob(
+      const finishError = await finishLocalizationJob(
         jobId,
         'failed',
         errors.length > 0 ? 'validation_error' : 'missing_batch_handle',
         message,
       );
+      if (finishError) {
+        await updateLocalizationState(failedChannel, locale, {
+          ...current,
+          sync_status: 'manual_review',
+          last_error_code: 'local_bookkeeping_incomplete',
+          batch_handle: handle,
+          sync_job_id: jobId,
+        });
+        results.push({
+          retailerId: item.retailerId,
+          locale,
+          syncStatus: 'manual_review',
+          error: `${message}; bookkeeping incompleto: ${finishError}`,
+        });
+        continue;
+      }
       results.push({ retailerId: item.retailerId, locale, syncStatus: 'failed', error: message });
       continue;
     }
@@ -555,7 +623,7 @@ export async function syncMetaCatalogLocalizations(
   return {
     attempted: results.length,
     accepted: results.filter((item) => item.syncStatus === 'pending').length,
-    failed: results.filter((item) => item.syncStatus === 'failed').length,
+    failed: results.filter((item) => item.syncStatus === 'failed' || item.syncStatus === 'manual_review').length,
     pending: results.filter((item) => item.syncStatus === 'pending').length,
     results,
   };
@@ -580,11 +648,48 @@ export async function reconcileMetaCatalogLocalizations(
     channel: ChannelRow;
     state: LocalizationSyncState;
   }> = [];
+  const results: LocalizationOperationResult[] = [];
 
   for (const retailerId of ids) {
     const { channel } = await getChannelForRetailer(retailerId);
     const state = readMetaLocalizationState(channel.editorial_overrides, locale);
-    if (state?.sync_status !== 'pending' || !state.batch_handle) continue;
+    if (state?.sync_status !== 'pending') continue;
+
+    if (!state.batch_handle) {
+      const failedChannel = await updateLocalizationState(channel, locale, {
+        ...state,
+        sync_status: 'failed',
+        last_error_code: 'missing_batch_handle',
+      });
+      const finishError = await finishLocalizationJob(
+        state.sync_job_id,
+        'failed',
+        'missing_batch_handle',
+        'La sincronización quedó pendiente sin handle de Meta',
+      );
+      if (finishError) {
+        await updateLocalizationState(failedChannel, locale, {
+          ...state,
+          sync_status: 'manual_review',
+          last_error_code: 'local_bookkeeping_incomplete',
+        });
+        results.push({
+          retailerId,
+          locale,
+          syncStatus: 'manual_review',
+          error: `Pending sin handle y bookkeeping incompleto: ${finishError}`,
+        });
+      } else {
+        results.push({
+          retailerId,
+          locale,
+          syncStatus: 'failed',
+          error: 'La sincronización pendiente no tenía handle de Meta; ya puede reintentarse.',
+        });
+      }
+      continue;
+    }
+
     entries.push({ retailerId, channel, state });
   }
 
@@ -594,8 +699,6 @@ export async function reconcileMetaCatalogLocalizations(
     list.push(entry);
     groups.set(entry.state.batch_handle!, list);
   }
-
-  const results: LocalizationOperationResult[] = [];
 
   for (const [handle, group] of groups) {
     const statusResponse = await metaGraphRequest<BatchStatusResponse>({
@@ -631,13 +734,28 @@ export async function reconcileMetaCatalogLocalizations(
         last_error_code: errorCode,
       };
 
-      await updateLocalizationState(entry.channel, locale, updatedState);
-      await finishLocalizationJob(
+      const updatedChannel = await updateLocalizationState(entry.channel, locale, updatedState);
+      const finishError = await finishLocalizationJob(
         entry.state.sync_job_id,
         invalid ? 'failed' : 'succeeded',
         errorCode,
         invalid ? 'Meta rechazó la localización durante la ingestión asíncrona' : null,
       );
+
+      if (finishError) {
+        await updateLocalizationState(updatedChannel, locale, {
+          ...updatedState,
+          sync_status: 'manual_review',
+          last_error_code: 'local_bookkeeping_incomplete',
+        });
+        results.push({
+          retailerId: entry.retailerId,
+          locale,
+          syncStatus: 'manual_review',
+          error: `Meta terminó la ingestión, pero falló el bookkeeping local: ${finishError}`,
+        });
+        continue;
+      }
 
       results.push({
         retailerId: entry.retailerId,
@@ -651,7 +769,7 @@ export async function reconcileMetaCatalogLocalizations(
   return {
     checked: results.length,
     synced: results.filter((item) => item.syncStatus === 'synced').length,
-    failed: results.filter((item) => item.syncStatus === 'failed').length,
+    failed: results.filter((item) => item.syncStatus === 'failed' || item.syncStatus === 'manual_review').length,
     pending: results.filter((item) => item.syncStatus === 'pending').length,
     results,
   };
