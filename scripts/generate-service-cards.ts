@@ -6,6 +6,14 @@ import { getLocalizedServicePresentations } from '../lib/services/service-locali
 import { isArchivedService, MONTHLY_PLANS } from '../lib/marketing/meta-catalog-archive';
 
 /**
+ * LEGACY / OFFLINE FALLBACK (2026-10-03).
+ *
+ * The canonical premium image workflow now lives in Admin > Marketing Hub:
+ * it generates the 3D artwork with the image model, then overlays the real
+ * EXPERT logo and exact ES/RU copy server-side before saving a preview to
+ * Supabase Storage. Keep this script deterministic and API-free for CI,
+ * recovery and local fallback; do not use it as the primary creative flow.
+ *
  * Generates one branded PNG per catalog item (EXPERT logo mark + category
  * label + name + a row of 3 category-specific feature pills) so the Meta
  * catalog export has an image_url to point at. Pure asset generation: never
