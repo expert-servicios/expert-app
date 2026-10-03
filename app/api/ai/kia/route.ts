@@ -562,8 +562,8 @@ export async function POST(request: NextRequest) {
         caseId: contextualCaseId ?? null,
         serviceSlug: contextualServiceSlug ?? null,
         topic: contextualTask ?? currentTask ?? null,
-        originType: contextToken ? 'email' : (adminCopilotMode ? 'admin' : 'dashboard'),
-        channel: adminCopilotMode ? 'admin' : 'dashboard',
+        originType: contextToken ? 'email' : 'dashboard',
+        channel: 'dashboard',
         userMessage: message,
         assistantMessage: reply,
         intent: result.decision.intent,
@@ -597,7 +597,7 @@ export async function POST(request: NextRequest) {
         const { data: createdSession } = await admin
           .from('kia_sessions')
           .insert({
-            channel  : adminCopilotMode ? 'admin' : 'dashboard',
+            channel  : 'dashboard',
             user_id  : user.id,
             phone    : null,
             data     : sessionData,
