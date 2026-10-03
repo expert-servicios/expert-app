@@ -58,7 +58,7 @@ describe('controlled Meta catalog sync', () => {
     expect(preflight).toBeGreaterThan(-1);
     expect(claim).toBeGreaterThan(preflight);
     expect(graphWrite).toBeGreaterThan(claim);
-    expect(source).toContain('staged.length !== INITIAL_META_CATALOG_BATCH_LIMIT');
+    expect(source).toContain('staged.length !== requestedRetailerIds.length');
     expect(source).toContain('draft.offerId !== canonicalOffer.id');
   });
 
@@ -76,13 +76,17 @@ describe('controlled Meta catalog sync', () => {
     expect(source).toContain("status: 'succeeded'");
   });
 
-  it('scopes the UI readiness gate to the approved three-item batch', () => {
-    const route = read('app/api/admin/meta/catalog/route.ts');
+  it('supports controlled selected-service preparation and sync from Admin', () => {
+    const syncRoute = read('app/api/admin/meta/catalog/sync/route.ts');
+    const prepareRoute = read('app/api/admin/meta/catalog/[retailerId]/prepare/route.ts');
     const page = read('app/(protected)/admin/marketing-hub/page.tsx');
 
-    expect(route).toContain('initialBatchReadyCount');
-    expect(route).toContain('INITIAL_META_CATALOG_RETAILER_IDS');
-    expect(page).toContain('catalog?.initialBatch.ready');
-    expect(page).not.toContain('(diagnostics.c2.metaItems.bySyncStatus.ready ?? 0) !== 3');
+    expect(syncRoute).toContain("confirm: z.literal('sync_meta_catalog_items')");
+    expect(syncRoute).toContain('retailerIds');
+    expect(prepareRoute).toContain("confirm: z.literal('prepare_meta_catalog_item')");
+    expect(page).toContain('prepareRetailers');
+    expect(page).toContain('syncRetailers');
+    expect(page).toContain('Preparar cambios');
+    expect(page).toContain('Reintentar');
   });
 });
