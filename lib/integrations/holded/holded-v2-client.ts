@@ -475,8 +475,8 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
       const defaultStart = `${now.getUTCFullYear()}-01-01`;
       const defaultEnd = now.toISOString().slice(0, 10);
       const url = buildPaginatedUrl('/ledger-entries', {
-        start_date: params.startDate ?? defaultStart,
-        end_date: params.endDate ?? defaultEnd,
+        startDate: params.startDate ?? defaultStart,
+        endDate: params.endDate ?? defaultEnd,
         limit: params.limit,
         cursor: params.cursor,
       });
