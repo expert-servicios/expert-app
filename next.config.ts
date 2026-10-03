@@ -22,6 +22,12 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'expertconsulting.es' },
+      { protocol: 'https', hostname: 'www.expertconsulting.es' },
+    ],
+  },
   experimental: {
     serverActions: {
       allowedOrigins: ['localhost:3000', 'expertconsulting.es', 'www.expertconsulting.es'],
