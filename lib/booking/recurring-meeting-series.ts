@@ -283,7 +283,7 @@ export async function materializeRecurringMeetingSeries(
                 timezone: series.timezone || BOOKING_TIMEZONE,
                 reminderMinutesBefore: [1440, 60],
               },
-              calendarProviderFromBookingProvider(confirmedAppointment.booking_provider),
+              calendarProviderFromBookingProvider(confirmedAppointment.booking_provider) ?? getConfiguredBookingCalendarProvider(),
             );
           }
           const { error: repairError } = await admin
