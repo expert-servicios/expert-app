@@ -285,35 +285,47 @@ export async function listHoldedDocumentType(
 export async function listHoldedDocuments(
   gateway: HoldedGateway,
   kind: 'sales' | 'purchase',
-  params: { startDate?: string; endDate?: string; maxItems?: number } = {},
+  params: { startDate?: string; endDate?: string; maxItems?: number; includeDrafts?: boolean } = {},
 ): Promise<HoldedReadDocument[]> {
   const maxItems = Math.max(1, Math.min(2_000, Math.trunc(params.maxItems ?? 2_000)));
 
   if (gateway.v2) {
     const v2 = gateway.v2;
     const items: HoldedReadDocument[] = [];
-    let cursor: string | undefined;
-    while (items.length < maxItems) {
-      const page = kind === 'sales'
-        ? await v2.listInvoices({
-            startDate: params.startDate,
-            endDate: params.endDate,
-            approvalStatus: 'approved',
-            limit: Math.min(200, maxItems - items.length),
-            cursor,
-          })
-        : await v2.listPurchases({
-            startDate: params.startDate,
-            endDate: params.endDate,
-            approvalStatus: 'approved',
-            limit: Math.min(200, maxItems - items.length),
-            cursor,
-          });
-      items.push(...page.items.map(v2DocumentToReadModel));
-      if (!page.has_more || !page.cursor) break;
-      cursor = page.cursor;
+    const approvalStatuses: Array<'approved' | 'draft'> = params.includeDrafts
+      ? ['approved', 'draft']
+      : ['approved'];
+
+    for (const approvalStatus of approvalStatuses) {
+      let cursor: string | undefined;
+      let statusItems = 0;
+      while (statusItems < maxItems) {
+        const page = kind === 'sales'
+          ? await v2.listInvoices({
+              startDate: params.startDate,
+              endDate: params.endDate,
+              approvalStatus,
+              limit: Math.min(200, maxItems - statusItems),
+              cursor,
+            })
+          : await v2.listPurchases({
+              startDate: params.startDate,
+              endDate: params.endDate,
+              approvalStatus,
+              limit: Math.min(200, maxItems - statusItems),
+              cursor,
+            });
+        const mapped = page.items.map(v2DocumentToReadModel);
+        items.push(...mapped);
+        statusItems += mapped.length;
+        if (!page.has_more || !page.cursor) break;
+        cursor = page.cursor;
+      }
     }
-    return items.slice(0, maxItems);
+
+    return items
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, maxItems);
   }
 
   const v1 = gateway.v1;
