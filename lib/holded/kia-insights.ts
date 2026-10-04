@@ -23,6 +23,7 @@ Datos del trimestre:
 - IVA repercutido: ${fmt(data.vatRepercutido)}
 - IVA soportado: ${fmt(data.vatSoportado)}
 - Resultado estimado Modelo 303: ${fmt(Math.abs(data.vatResult))} ${data.vatResult >= 0 ? 'a ingresar' : 'a compensar'}
+${data.dataWarnings.length ? `- Limitaciones: ${data.dataWarnings.join(' | ')}` : ''}
 
 REGLAS ESTRICTAS:
 - Máximo 3 frases.
