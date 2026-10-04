@@ -262,9 +262,11 @@ function buildTopContacts(sales: RawDoc[]): ContactVolume[] {
     .map(([name, total]) => ({ name, total }));
 }
 
-function documentVat(doc: RawDoc): number {
-  const explicit = Number(doc.tax);
-  if (Number.isFinite(explicit)) return explicit;
+export function holdedDocumentVat(doc: RawDoc): number {
+  if (doc.tax !== null && doc.tax !== undefined && String(doc.tax).trim() !== '') {
+    const explicit = Number(doc.tax);
+    if (Number.isFinite(explicit)) return explicit;
+  }
   const fallback = Number(doc.total ?? 0) - Number(doc.subtotal ?? 0);
   return Number.isFinite(fallback) ? fallback : 0;
 }
@@ -450,8 +452,8 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
 
   const totalSales = eurSales.reduce((sum, doc) => sum + Number(doc.total ?? 0), 0);
   const totalPurchases = eurPurchases.reduce((sum, doc) => sum + Number(doc.total ?? 0), 0);
-  const vatCollected = eurSales.reduce((sum, doc) => sum + documentVat(doc), 0);
-  const vatDeductible = eurPurchases.reduce((sum, doc) => sum + documentVat(doc), 0);
+  const vatCollected = eurSales.reduce((sum, doc) => sum + holdedDocumentVat(doc), 0);
+  const vatDeductible = eurPurchases.reduce((sum, doc) => sum + holdedDocumentVat(doc), 0);
   const totalBank = eurBank.reduce((sum, account) => sum + Number(account.balance ?? 0), 0);
   const unpaid = confirmedSales.filter(isUnpaid).length;
   const pendingPurch = confirmedPurchases.filter(isUnpaid).length;
