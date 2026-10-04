@@ -404,6 +404,17 @@ async function createEmailRequestTask(input: {
   if (!error) return data ? { ...data, created: true } : null;
   if (error.code !== '23505') throw error;
 
+  const { data: existingConflict, error: existingConflictError } = await input.admin
+    .from('internal_tasks')
+    .select('id,title')
+    .in('status', ['pendiente', 'en_progreso'])
+    .contains('metadata', { action_fingerprint: actionFingerprint })
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existingConflictError) throw existingConflictError;
+  if (existingConflict) return { ...existingConflict, created: false };
+
   const { data: existingMessage, error: existingMessageError } = await input.admin
     .from('internal_tasks')
     .select('id,title')
