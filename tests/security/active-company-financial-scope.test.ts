@@ -18,6 +18,14 @@ describe('active company financial scope', () => {
     }
   });
 
+  it('gates Estado de empresa by the active entity commercial coverage', () => {
+    const page = source('app/(protected)/dashboard/estado-empresa/page.tsx');
+    expect(page).toContain('resolveCompanyCommercialCoverage(admin, user.id, activeCompanyId)');
+    expect(page).toContain('const hasCommercialCoverage = activeCompanyId');
+    expect(page).toContain('Boolean(profile?.has_monthly_plan)');
+    expect(page).toContain('if (!hasCommercialCoverage) return <UpsellView />');
+  });
+
   it('revalidates the target client membership before report generation', () => {
     const route = source('app/api/reports/generate/route.ts');
     expect(route).toContain("from('profile_companies')");
