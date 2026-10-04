@@ -134,6 +134,7 @@ export interface HoldedClient {
   listTaxes(): Promise<HoldedTax[]>;
   listBankAccounts(): Promise<HoldedBankAccount[]>;
   listBankMovements(params?: { page?: number; dateFrom?: number; dateTo?: number }): Promise<HoldedBankMovement[]>;
+  listBankAccountMovements(accountId: string, params?: { page?: number; dateFrom?: number; dateTo?: number }): Promise<HoldedBankMovement[]>;
   listInboxDocuments(params?: { page?: number }): Promise<HoldedInboxDocument[]>;
   getDocument(docType: 'invoice' | 'estimate' | 'proforma' | 'order', docId: string): Promise<HoldedDocument | null>;
   getContact(contactId: string): Promise<HoldedContact | null>;
@@ -256,6 +257,17 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
       if (dateFrom) qs.set('dateFrom', String(dateFrom));
       if (dateTo) qs.set('dateTo', String(dateTo));
       return listOrData<HoldedBankMovement>(await get<unknown>(`/treasury/movements?${qs}`));
+    },
+
+    async listBankAccountMovements(accountId, { page = 1, dateFrom, dateTo } = {}) {
+      const id = encodeURIComponent(accountId.trim());
+      if (!id) throw new Error('accountId is required');
+      const qs = new URLSearchParams({ page: String(page) });
+      if (dateFrom) qs.set('dateFrom', String(dateFrom));
+      if (dateTo) qs.set('dateTo', String(dateTo));
+      return listOrData<HoldedBankMovement>(
+        await get<unknown>(`/treasury/${id}/movements?${qs}`),
+      );
     },
 
     async listInboxDocuments({ page = 1 } = {}) {
