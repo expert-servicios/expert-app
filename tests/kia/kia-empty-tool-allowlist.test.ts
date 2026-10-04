@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { resolveKiaToolDefinitions } from '@/lib/ai/kia/kia-tool-registry';
+import { isKiaToolAuthorized, resolveKiaToolDefinitions } from '@/lib/ai/kia/kia-tool-registry';
 
 describe('KIA empty tool allowlist', () => {
   it('means deny-all rather than no restriction', () => {
-    expect(resolveKiaToolDefinitions({
-      channel: 'email',
+    const context = {
+      channel: 'email' as const,
       requestedNames: [],
-      maxRiskTier: 'R2',
-      allowedEffects: ['read', 'external_action'],
+      maxRiskTier: 'R2' as const,
+      allowedEffects: ['read', 'external_action'] as const,
       autonomousOnly: false,
-    })).toEqual([]);
+    };
+    expect(resolveKiaToolDefinitions(context)).toEqual([]);
+    expect(isKiaToolAuthorized('create_booking_meeting', context)).toBe(false);
+    expect(isKiaToolAuthorized('get_case_status', context)).toBe(false);
   });
 });
