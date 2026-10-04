@@ -331,14 +331,27 @@ async function createEmailRequestTask(input: {
   caseId: string | null;
   companyId: string | null;
   nextAction: string;
+  actionSummary: string;
 }) {
   if (input.nextAction !== 'create_task') return null;
 
-  const taskKey = `email-request:${input.message.id}`;
-  const subject = input.message.subject?.trim() || 'Solicitud por correo';
+  const actionText = input.actionSummary.trim() || input.message.subject?.trim() || 'Solicitud por correo';
+  const normalizedAction = actionText
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .slice(0, 240);
+  const scope = input.caseId ?? input.leadId ?? input.clientId ?? normalizedEmail(input.message.fromEmail);
+  const actionFingerprint = createHash('sha256')
+    .update(`${scope}|${input.nextAction}|${normalizedAction}`)
+    .digest('hex')
+    .slice(0, 40);
+  const taskKey = `email-action:${actionFingerprint}`;
   const { data, error } = await input.admin.from('internal_tasks').insert({
     source_key: taskKey,
-    title: `Correo: ${subject}`.slice(0, 220),
+    title: actionText.slice(0, 220),
     description: input.excerpt.slice(0, 1500),
     status: 'pendiente',
     priority: 'media',
@@ -353,6 +366,8 @@ async function createEmailRequestTask(input: {
       gmail_message_id: input.message.id,
       gmail_thread_id: input.message.conversationId,
       sender_email: normalizedEmail(input.message.fromEmail),
+      action_fingerprint: actionFingerprint,
+      action_summary: actionText.slice(0, 500),
     },
   }).select('id,title').single();
 
@@ -365,6 +380,17 @@ async function createEmailRequestTask(input: {
     .eq('source_key', taskKey)
     .maybeSingle();
   if (existingError) throw existingError;
+  if (existing?.id) {
+    const { error: updateError } = await input.admin
+      .from('internal_tasks')
+      .update({
+        description: input.excerpt.slice(0, 1500),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existing.id)
+      .neq('status', 'completada');
+    if (updateError) throw updateError;
+  }
   return existing;
 }
 
@@ -787,6 +813,7 @@ export async function GET(request: NextRequest) {
             caseId: identity.caseId,
             companyId: identity.companyId,
             nextAction: result.decision.nextAction,
+            actionSummary: result.decision.decisionSummary,
           }).catch((taskError) => {
             console.error('[kia-email-agent] request task:', taskError);
             return null;
