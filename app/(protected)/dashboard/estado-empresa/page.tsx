@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createServerClient } from '@supabase/ssr';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { resolveCompanyCommercialCoverage } from '@/lib/subscriptions/company-commercial-coverage';
 import { fetchQuarterData, currentQuarter, type QuarterSummary } from '@/lib/holded/quarter-data';
 import { generateQuarterInsight } from '@/lib/holded/kia-insights';
 import { QuarterSelector } from '@/components/dashboard/company-status/QuarterSelector';
@@ -169,7 +170,8 @@ export default async function EstadoEmpresaPage({
     .eq('id', user.id)
     .single();
 
-  if (!profile?.has_monthly_plan) return <UpsellView />;
+  // Gate 1 continues below after the active company is authorized. The legacy
+  // profile flag is only a fallback for old client-scoped accounts without a company.
 
   // Gate 2: validate the active company before any service-role financial lookup.
   const requestedCompanyId = profile?.active_company_id ?? null;
@@ -182,6 +184,11 @@ export default async function EstadoEmpresaPage({
         .maybeSingle()
     : { data: null };
   const activeCompanyId = activeMembership?.company_id ?? null;
+
+  const hasCommercialCoverage = activeCompanyId
+    ? (await resolveCompanyCommercialCoverage(admin, user.id, activeCompanyId)).covered
+    : Boolean(profile?.has_monthly_plan);
+  if (!hasCommercialCoverage) return <UpsellView />;
 
   // Prefer the canonical company-scoped integration, but keep compatibility
   // with legacy client-scoped rows that predate company_id.
