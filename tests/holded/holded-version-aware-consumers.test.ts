@@ -26,6 +26,7 @@ describe('Holded version-aware accounting consumers', () => {
     const executor = source('lib/ai/kia/kia-tool-executor.ts');
     expect(executor).toContain('createHoldedGatewayForIntegration(access.access.integrationId)');
     expect(executor).toContain('listHoldedDocuments(');
+    expect(executor).toContain('listHoldedDocumentType(');
     expect(executor).toContain('listHoldedContacts(');
     expect(executor).toContain('listHoldedBankAccounts(');
     expect(executor).not.toContain('resolveHoldedAuth(access.access.integrationId)');
@@ -36,6 +37,6 @@ describe('Holded version-aware accounting consumers', () => {
     expect(gateway).toContain('export interface HoldedReadDocument');
     expect(gateway).toContain('v1DocumentToReadModel');
     expect(gateway).toContain('v2DocumentToReadModel');
-    expect(gateway).toContain("gateway.metadata.apiVersion === 'v2'");
+    expect(gateway).toContain('if (gateway.v2)');
   });
 });
