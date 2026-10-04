@@ -8,7 +8,7 @@ const migration = readFileSync(
 
 describe('case task lifecycle reconciliation', () => {
   it('closes pre-submission workflow tasks when a case becomes presentado', () => {
-    expect(migration).toContain("v_status = 'presentado'");
+    expect(migration).toContain("new.status = 'presentado' or new.state = 'presentado'");
     expect(migration).toContain("metadata ->> 'blocks_submission'");
     expect(migration).toContain("metadata ->> 'task_key' = 'submit_and_archive_receipt'");
     expect(migration).toContain("status in ('pendiente', 'en_progreso')");
@@ -20,7 +20,7 @@ describe('case task lifecycle reconciliation', () => {
   });
 
   it('closes all remaining case tasks when the case is finalized and clears case deadlines', () => {
-    expect(migration).toContain("v_status = 'finalizado'");
+    expect(migration).toContain("new.status = 'finalizado' or new.state = 'finalizado'");
     expect(migration).toContain("new.due_date := null");
   });
 
