@@ -6,6 +6,7 @@ import {
   type HoldedClient,
   type HoldedContact,
   type HoldedDocument,
+  type HoldedDocumentType,
 } from './holded-client';
 import {
   createHoldedV2Client,
@@ -37,6 +38,8 @@ export interface HoldedReadDocument {
   number: string;
   date: string;
   timestamp: number;
+  accountingDate: string;
+  accountingTimestamp: number;
   total: number;
   subtotal: number;
   tax: number;
@@ -64,9 +67,10 @@ export interface HoldedReadBankAccount {
   currency: string;
 }
 
-function toUnixDate(value: string | undefined): number | undefined {
+function toUnixDate(value: string | undefined, endOfDay = false): number | undefined {
   if (!value) return undefined;
-  const timestamp = Date.parse(value);
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const timestamp = Date.parse(dateOnly ? `${value}T${endOfDay ? '23:59:59' : '00:00:00'}` : value);
   return Number.isFinite(timestamp) ? Math.floor(timestamp / 1000) : undefined;
 }
 
@@ -87,6 +91,8 @@ function v1DocumentToReadModel(doc: HoldedDocument): HoldedReadDocument {
     number: String(doc.docNumber ?? raw.document_number ?? ''),
     date: timestamp ? new Date(timestamp * 1000).toISOString().slice(0, 10) : '',
     timestamp,
+    accountingDate: timestamp ? new Date(timestamp * 1000).toISOString().slice(0, 10) : '',
+    accountingTimestamp: timestamp,
     total,
     subtotal,
     tax,
@@ -101,14 +107,21 @@ function v1DocumentToReadModel(doc: HoldedDocument): HoldedReadDocument {
 
 function v2DocumentToReadModel(doc: HoldedV2Invoice | HoldedV2Purchase): HoldedReadDocument {
   const date = typeof doc.date === 'string' ? doc.date : '';
+  const accountingDate = typeof (doc as HoldedV2Purchase).deduction_date === 'string'
+    ? String((doc as HoldedV2Purchase).deduction_date)
+    : date;
   const timestamp = date ? Math.floor(Date.parse(date) / 1000) : 0;
+  const accountingTimestamp = accountingDate ? Math.floor(Date.parse(accountingDate) / 1000) : timestamp;
   const status = String(doc.status ?? '');
+  const approvalStatus = String(doc.approval_status ?? '').toLowerCase();
 
   return {
     id: String(doc.id ?? ''),
     number: String(doc.document_number ?? ''),
     date,
     timestamp: Number.isFinite(timestamp) ? timestamp : 0,
+    accountingDate,
+    accountingTimestamp: Number.isFinite(accountingTimestamp) ? accountingTimestamp : (Number.isFinite(timestamp) ? timestamp : 0),
     total: Number(doc.total ?? 0),
     subtotal: Number(doc.subtotal ?? 0),
     tax: Number(doc.tax ?? 0),
@@ -117,7 +130,7 @@ function v2DocumentToReadModel(doc: HoldedV2Invoice | HoldedV2Purchase): HoldedR
     contactId: doc.contact_id ? String(doc.contact_id) : null,
     contactName: String(doc.contact_name ?? ''),
     paymentsPending: Number(doc.payments_pending ?? 0),
-    isDraft: status.toLowerCase() === 'draft',
+    isDraft: approvalStatus ? approvalStatus !== 'approved' : status.toLowerCase() === 'draft',
   };
 }
 
@@ -162,6 +175,29 @@ function v2BankToReadModel(account: HoldedV2TreasuryAccount): HoldedReadBankAcco
   };
 }
 
+export async function listHoldedDocumentType(
+  gateway: HoldedGateway,
+  docType: HoldedDocumentType,
+  params: { startDate?: string; endDate?: string; maxItems?: number } = {},
+): Promise<HoldedReadDocument[]> {
+  if (docType === 'invoice') return listHoldedDocuments(gateway, 'sales', params);
+  if (docType === 'purchase') return listHoldedDocuments(gateway, 'purchase', params);
+  if (!gateway.v1) {
+    throw new HoldedIntegrationError(`Document type ${docType} is not yet available through Holded API v2.`);
+  }
+
+  const maxItems = Math.max(1, Math.min(2_000, Math.trunc(params.maxItems ?? 2_000)));
+  const dateFrom = toUnixDate(params.startDate);
+  const dateTo = toUnixDate(params.endDate, true);
+  const items: HoldedReadDocument[] = [];
+  for (let page = 1; page <= 20 && items.length < maxItems; page++) {
+    const docs = await gateway.v1.listDocuments(docType, { page, dateFrom, dateTo });
+    if (docs.length === 0) break;
+    items.push(...docs.map(v1DocumentToReadModel));
+  }
+  return items.slice(0, maxItems);
+}
+
 export async function listHoldedDocuments(
   gateway: HoldedGateway,
   kind: 'sales' | 'purchase',
@@ -178,12 +214,14 @@ export async function listHoldedDocuments(
         ? await v2.listInvoices({
             startDate: params.startDate,
             endDate: params.endDate,
+            approvalStatus: 'approved',
             limit: Math.min(200, maxItems - items.length),
             cursor,
           })
         : await v2.listPurchases({
             startDate: params.startDate,
             endDate: params.endDate,
+            approvalStatus: 'approved',
             limit: Math.min(200, maxItems - items.length),
             cursor,
           });
@@ -198,7 +236,7 @@ export async function listHoldedDocuments(
   if (!v1) throw new HoldedIntegrationError('Holded v1 client is unavailable.');
   const items: HoldedReadDocument[] = [];
   const dateFrom = toUnixDate(params.startDate);
-  const dateTo = toUnixDate(params.endDate);
+  const dateTo = toUnixDate(params.endDate, true);
   for (let page = 1; page <= 20 && items.length < maxItems; page++) {
     const docs = kind === 'sales'
       ? await v1.listSalesInvoices({ page, dateFrom, dateTo })
@@ -242,7 +280,7 @@ export async function listHoldedBankAccounts(
 ): Promise<HoldedReadBankAccount[]> {
   const limit = Math.max(1, Math.min(100, Math.trunc(maxItems)));
   if (gateway.v2) {
-    const page = await gateway.v2.listTreasuryAccounts({ limit });
+    const page = await gateway.v2.listTreasuryAccounts({ limit, archived: false });
     return page.items.map(v2BankToReadModel).slice(0, limit);
   }
   const v1 = gateway.v1;
