@@ -65,6 +65,18 @@ export async function GET(request: NextRequest) {
   const errors: string[] = [];
 
   for (const entitlement of entitlements) {
+    const recurringSeriesKey = `subscription:${entitlement.subscriptionId}:${entitlement.companyId}`;
+    const { data: recurringSeries } = await admin
+      .from('recurring_meeting_series')
+      .select('id')
+      .eq('source_key', recurringSeriesKey)
+      .eq('active', true)
+      .maybeSingle();
+    if (recurringSeries?.id) {
+      existing++;
+      continue;
+    }
+
     const sourceKey = `monthly-review:${key}:${entitlement.subscriptionId}:${entitlement.companyId}`;
     const { data: previous, error: lookupError } = await admin
       .from('internal_tasks')
