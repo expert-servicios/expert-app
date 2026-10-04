@@ -143,12 +143,15 @@ function buildSheets(data: ReportData): SheetDefinition[] {
         [],
         ['Ventas totales (EUR)', data.kpis.totalSales],
         ['Gastos totales (EUR)', data.kpis.totalPurchases],
-        ['IVA repercutido est. (EUR)', data.kpis.vatCollected],
-        ['IVA soportado est. (EUR)', data.kpis.vatDeductible],
-        ['Balance IVA est. (EUR)', data.kpis.vatBalance],
+        ['IVA repercutido documentos (EUR)', data.kpis.vatCollected],
+        ['IVA soportado documentos (EUR)', data.kpis.vatDeductible],
+        ['Balance IVA orientativo (EUR)', data.kpis.vatBalance],
         ['Saldo bancario total (EUR)', data.kpis.totalBankBalance],
         ['Facturas emitidas sin cobrar', data.kpis.unpaidInvoices],
         ['Facturas recibidas pendientes', data.kpis.pendingPurchases],
+        [],
+        ['Limitaciones de datos'],
+        ...((data.dataWarnings ?? []).map((warning) => [warning])),
         [],
         ['Resumen Kia'],
         [data.aiSummary ?? ''],
@@ -157,12 +160,13 @@ function buildSheets(data: ReportData): SheetDefinition[] {
     {
       name: 'Facturas emitidas',
       rows: [
-        ['Numero', 'Fecha', 'Contacto', 'Total (EUR)', 'Estado'],
+        ['Numero', 'Fecha', 'Contacto', 'Total', 'Moneda', 'Estado'],
         ...data.salesInvoices.map((invoice) => [
           invoice.number,
           invoice.date,
           invoice.contact,
           invoice.total,
+          invoice.currency ?? 'EUR',
           invoice.status,
         ]),
       ],
@@ -170,12 +174,13 @@ function buildSheets(data: ReportData): SheetDefinition[] {
     {
       name: 'Facturas recibidas',
       rows: [
-        ['Numero', 'Fecha', 'Contacto', 'Total (EUR)', 'Estado'],
+        ['Numero', 'Fecha', 'Contacto', 'Total', 'Moneda', 'Estado'],
         ...data.purchaseInvoices.map((invoice) => [
           invoice.number,
           invoice.date,
           invoice.contact,
           invoice.total,
+          invoice.currency ?? 'EUR',
           invoice.status,
         ]),
       ],
