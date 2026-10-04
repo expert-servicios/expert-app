@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import JSZip from 'jszip';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { canAccessFinancialReport } from '@/lib/reports/report-access';
 import type { ReportData } from '@/lib/reports/report-generator';
 
 export const runtime = 'nodejs';
@@ -236,14 +237,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
   const { id } = await params;
-  const { data: report } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin();
+  const { data: report } = await admin
     .from('kia_financial_reports')
-    .select('title, data')
+    .select('title, data, client_id')
     .eq('id', id)
-    .eq('client_id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (!report) return NextResponse.json({ error: 'Informe no encontrado' }, { status: 404 });
+  if (!report || !(await canAccessFinancialReport(admin, user.id, report.client_id))) {
+    return NextResponse.json({ error: 'Informe no encontrado' }, { status: 404 });
+  }
 
   const buffer = await buildWorkbookBuffer(report.data as ReportData);
 
