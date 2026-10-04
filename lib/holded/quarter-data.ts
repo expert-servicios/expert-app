@@ -14,6 +14,7 @@ export interface RecentInvoice {
   docNumber: string;
   date: number;
   total: number;
+  currency: string;
   contact: string;
   status?: string;
 }
@@ -31,6 +32,7 @@ export interface QuarterSummary {
   recentSales: RecentInvoice[];
   recentPurchases: RecentInvoice[];
   monthlyData: MonthlySnapshot[];
+  dataWarnings: string[];
   syncedAt: string;
 }
 
@@ -74,10 +76,25 @@ export async function fetchQuarterData(
       ? d.accountingTimestamp >= from && d.accountingTimestamp <= to
       : true);
 
-  const salesTotal     = sales.reduce((s, d) => s + d.total, 0);
-  const purchasesTotal = purchases.reduce((s, d) => s + d.total, 0);
-  const vatRepercutido = sales.reduce((s, d) => s + extractVat(d), 0);
-  const vatSoportado   = purchases.reduce((s, d) => s + extractVat(d), 0);
+  const eurSales = sales.filter((d) => String(d.currency ?? 'EUR').toUpperCase() === 'EUR');
+  const eurPurchases = purchases.filter((d) => String(d.currency ?? 'EUR').toUpperCase() === 'EUR');
+  const nonEurCount = sales.length + purchases.length - eurSales.length - eurPurchases.length;
+  const dataWarnings: string[] = [];
+  if (nonEurCount > 0) {
+    dataWarnings.push(
+      `${nonEurCount} documento(s) en divisa distinta de EUR se excluyen de ventas, gastos e IVA agregados.`,
+    );
+  }
+  if (gateway.v2 && purchaseCandidates.length >= 2_000) {
+    dataWarnings.push(
+      'La lectura de compras v2 alcanzó 2.000 documentos; revisa periodos históricos de alto volumen.',
+    );
+  }
+
+  const salesTotal     = eurSales.reduce((s, d) => s + d.total, 0);
+  const purchasesTotal = eurPurchases.reduce((s, d) => s + d.total, 0);
+  const vatRepercutido = eurSales.reduce((s, d) => s + extractVat(d), 0);
+  const vatSoportado   = eurPurchases.reduce((s, d) => s + extractVat(d), 0);
 
   const startMonth = (quarter - 1) * 3;
   const monthlyData: MonthlySnapshot[] = [0, 1, 2].map((offset) => {
@@ -86,8 +103,8 @@ export async function fetchQuarterData(
     const mTo   = Date.UTC(year, mi + 1, 0, 23, 59, 59) / 1000;
     return {
       month:     MONTH_LABELS[mi],
-      sales:     sales.filter((d) => d.timestamp >= mFrom && d.timestamp <= mTo).reduce((s, d) => s + d.total, 0),
-      purchases: purchases.filter((d) => d.accountingTimestamp >= mFrom && d.accountingTimestamp <= mTo).reduce((s, d) => s + d.total, 0),
+      sales:     eurSales.filter((d) => d.timestamp >= mFrom && d.timestamp <= mTo).reduce((s, d) => s + d.total, 0),
+      purchases: eurPurchases.filter((d) => d.accountingTimestamp >= mFrom && d.accountingTimestamp <= mTo).reduce((s, d) => s + d.total, 0),
     };
   });
 
@@ -99,12 +116,15 @@ export async function fetchQuarterData(
     purchasesCount: purchases.length,
     recentSales: sales.slice(0, 5).map((d) => ({
       docNumber: d.number, date: d.timestamp, total: d.total,
+      currency: String(d.currency ?? 'EUR').toUpperCase(),
       contact: d.contactName, status: d.status,
     })),
     recentPurchases: purchases.slice(0, 5).map((d) => ({
-      docNumber: d.number, date: d.timestamp, total: d.total, contact: d.contactName,
+      docNumber: d.number, date: d.timestamp, total: d.total,
+      currency: String(d.currency ?? 'EUR').toUpperCase(), contact: d.contactName,
     })),
     monthlyData,
+    dataWarnings,
     syncedAt: new Date().toISOString(),
   };
 }
