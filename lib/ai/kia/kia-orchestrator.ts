@@ -7,6 +7,7 @@ import {
   resolveKiaSkillAuthorization,
   type KiaSkillExecutionTrace,
 } from './kia-skill-execution';
+import { getKiaSkillDefinition } from './kia-skill-registry';
 import { selectSubAgentProfile, type KiaSubAgentProfile } from './kia-sub-agent-router';
 import type { KiaToolAuthorizationContext } from './kia-tool-registry';
 
@@ -38,6 +39,7 @@ export function resolveKiaOrchestrationPlan(params: {
   const subAgent = selectSubAgentProfile({
     taskType: params.resolvedTaskType,
     detectedIntent: params.detectedIntent ?? undefined,
+    channel: params.policyAuthorization.channel,
   });
 
   return {
@@ -73,9 +75,15 @@ function selectionBasis(params: {
   requestedTaskType: KiaTaskType;
   resolvedTaskType: KiaTaskType;
   detectedIntent: string | null;
+  skillId: string | null;
 }): KiaSkillExecutionTrace['selectionBasis'] {
-  if (params.detectedIntent) return 'resolved_intent';
-  if (params.resolvedTaskType !== params.requestedTaskType) return 'resolved_task';
+  const skill = getKiaSkillDefinition(params.skillId ?? '');
+  if (skill && params.detectedIntent && skill.intents.includes(params.detectedIntent)) {
+    return 'resolved_intent';
+  }
+  if (skill?.taskTypes.includes(params.resolvedTaskType) && params.resolvedTaskType !== params.requestedTaskType) {
+    return 'resolved_task';
+  }
   return 'requested_task';
 }
 
@@ -89,9 +97,12 @@ export function shouldFailClosedChatOrchestration(params: {
   classificationResolved: boolean;
   skillId: string | null;
   needsClarification: boolean;
+  allowResolvedUnskilled?: boolean;
 }): boolean {
-  return params.needsClarification
-    || (params.chatEntrypoint && (!params.classificationResolved || params.skillId === null));
+  if (params.needsClarification) return true;
+  if (!params.chatEntrypoint) return false;
+  if (!params.classificationResolved) return true;
+  return params.skillId === null && params.allowResolvedUnskilled !== true;
 }
 
 export async function runKiaOrchestratedDecision(params: {
@@ -132,6 +143,7 @@ export async function runKiaOrchestratedDecision(params: {
     classificationResolved: classification !== null,
     skillId: plan.skillId,
     needsClarification,
+    allowResolvedUnskilled: input.channel === 'email',
   });
   const effectiveTaskType = needsClarification ? 'chat_reply' : plan.resolvedTaskType;
   const effectiveToolNames = orchestrationFailClosed ? [] : plan.toolNames;
@@ -150,7 +162,12 @@ export async function runKiaOrchestratedDecision(params: {
     taskType: input.taskType,
     resolvedTaskType: plan.resolvedTaskType,
     detectedIntent: plan.detectedIntent,
-    selectionBasis: selectionBasis(plan),
+    selectionBasis: selectionBasis({
+      requestedTaskType: plan.requestedTaskType,
+      resolvedTaskType: plan.resolvedTaskType,
+      detectedIntent: plan.detectedIntent,
+      skillId: plan.skillId,
+    }),
     resolution: {
       ...skillResolution,
       authorization: effectiveAuthorization,
