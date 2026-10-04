@@ -31,6 +31,14 @@ describe('KIA M6.2 skill-first subagent routing', () => {
     })?.id).toBe('fiscal');
   });
 
+  it('routes explicit operational intent through the assistant skill', () => {
+    expect(selectSubAgentProfile({
+      taskType: 'chat_reply',
+      detectedIntent: 'assistant_operations',
+      channel: 'email',
+    })?.id).toBe('assistant');
+  });
+
   it('routes generic email work through the operational assistant', () => {
     expect(selectSubAgentProfile({
       taskType: 'chat_reply',
