@@ -118,27 +118,40 @@ function parseClassification(raw: string): KiaIntentClassification | null {
     if (start === -1 || end === -1) return null;
     const parsed = JSON.parse(trimmed.slice(start, end + 1)) as Record<string, unknown>;
 
-    const suggestedTaskType = KIA_TASK_TYPES.includes(parsed.suggestedTaskType as KiaTaskType)
-      ? (parsed.suggestedTaskType as KiaTaskType)
-      : 'chat_reply';
-    const detectedIntent = KIA_INTENTS.includes(parsed.detectedIntent as (typeof KIA_INTENTS)[number])
-      ? (parsed.detectedIntent as (typeof KIA_INTENTS)[number])
-      : 'unknown';
+    if (!KIA_TASK_TYPES.includes(parsed.suggestedTaskType as KiaTaskType)) return null;
+    if (!KIA_INTENTS.includes(parsed.detectedIntent as (typeof KIA_INTENTS)[number])) return null;
+    if (typeof parsed.ambiguityScore !== 'number' || !Number.isFinite(parsed.ambiguityScore)
+      || parsed.ambiguityScore < 0 || parsed.ambiguityScore > 1) return null;
+    if (typeof parsed.needsClarify !== 'boolean') return null;
+    if (typeof parsed.clarifyQuestion !== 'string') return null;
+    if (!Array.isArray(parsed.clarifyOptions)) return null;
+    if (parsed.detectedLanguage !== 'es' && parsed.detectedLanguage !== 'ru') return null;
+    if (typeof parsed.confidence !== 'number' || !Number.isFinite(parsed.confidence)
+      || parsed.confidence < 0 || parsed.confidence > 1) return null;
+
+    const clarifyOptions = (parsed.clarifyOptions as unknown[]).map((option) => {
+      if (!option || typeof option !== 'object' || Array.isArray(option)) return null;
+      const item = option as Record<string, unknown>;
+      if (typeof item.id !== 'string' || typeof item.title !== 'string') return null;
+      if (!item.id.trim() || !item.title.trim() || item.title.length > 20) return null;
+      return { id: item.id, title: item.title };
+    });
+    if (clarifyOptions.some((option) => option === null) || clarifyOptions.length > 3) return null;
+    if (parsed.needsClarify) {
+      if (!parsed.clarifyQuestion.trim() || clarifyOptions.length < 2) return null;
+    } else if (parsed.clarifyQuestion !== '' || clarifyOptions.length !== 0) {
+      return null;
+    }
 
     return {
-      suggestedTaskType,
-      detectedIntent,
-      ambiguityScore: typeof parsed.ambiguityScore === 'number' ? Math.max(0, Math.min(1, parsed.ambiguityScore)) : 0.5,
-      needsClarify: Boolean(parsed.needsClarify),
-      clarifyQuestion: typeof parsed.clarifyQuestion === 'string' ? parsed.clarifyQuestion : '',
-      clarifyOptions: Array.isArray(parsed.clarifyOptions)
-        ? (parsed.clarifyOptions as Array<{ id?: string; title?: string }>)
-            .filter((o) => typeof o?.id === 'string' && typeof o?.title === 'string')
-            .slice(0, 3)
-            .map((o) => ({ id: o.id as string, title: (o.title as string).slice(0, 20) }))
-        : [],
-      detectedLanguage: parsed.detectedLanguage === 'ru' ? 'ru' : 'es',
-      confidence: typeof parsed.confidence === 'number' ? Math.max(0, Math.min(1, parsed.confidence)) : 0.5,
+      suggestedTaskType: parsed.suggestedTaskType as KiaTaskType,
+      detectedIntent: parsed.detectedIntent as (typeof KIA_INTENTS)[number],
+      ambiguityScore: parsed.ambiguityScore,
+      needsClarify: parsed.needsClarify,
+      clarifyQuestion: parsed.clarifyQuestion,
+      clarifyOptions: clarifyOptions as Array<{ id: string; title: string }>,
+      detectedLanguage: parsed.detectedLanguage,
+      confidence: parsed.confidence,
     };
   } catch {
     return null;
