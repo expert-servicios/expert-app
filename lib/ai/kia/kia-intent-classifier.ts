@@ -1,8 +1,6 @@
-import { getConfiguredWabaAiProviders } from '@/lib/integrations/waba-ai';
 import { KIA_TASK_TYPES, KIA_INTENTS, type KiaTaskType, type KiaChannel } from './kia-output-schema';
+import { runKiaProviderRequest } from './kia-provider-router';
 import { safeErrorMessage } from './kia-redaction';
-
-const HAIKU = 'claude-haiku-4-5-20251001';
 
 export interface KiaIntentClassification {
   suggestedTaskType: KiaTaskType;
@@ -153,9 +151,6 @@ export async function classifyKiaIntent(params: {
   contactStatus: 'lead' | 'client' | 'unknown';
   channel: KiaChannel;
 }): Promise<KiaIntentClassification | null> {
-  const providers = getConfiguredWabaAiProviders();
-  if (!providers.length) return null;
-
   const systemPrompt = buildClassifierSystemPrompt();
   const userPrompt = buildClassifierUserPrompt(
     params.message,
@@ -164,58 +159,27 @@ export async function classifyKiaIntent(params: {
     params.channel,
   );
 
-  for (const provider of providers) {
-    try {
-      if (provider.provider === 'anthropic') {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'x-api-key': provider.apiKey,
-            'anthropic-version': '2023-06-01',
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: HAIKU,
-            max_tokens: 300,
-            temperature: 0,
-            system: systemPrompt,
-            messages: [{ role: 'user', content: userPrompt }],
-          }),
-        });
-        const data = await response.json() as { content?: Array<{ type: string; text?: string }> };
-        const rawText = data?.content?.find((c) => c.type === 'text')?.text ?? '';
-        const result = parseClassification(rawText);
-        if (result) return result;
-      } else {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            authorization: `Bearer ${provider.apiKey}`,
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: provider.model,
-            max_tokens: 300,
-            temperature: 0,
-            response_format: {
-              type: 'json_schema',
-              json_schema: { name: 'kia_intent_classification', strict: true, schema: CLASSIFIER_SCHEMA },
-            },
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userPrompt },
-            ],
-          }),
-        });
-        const data = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
-        const rawText = data?.choices?.[0]?.message?.content ?? '';
-        const result = parseClassification(rawText);
-        if (result) return result;
-      }
-    } catch (err) {
-      console.warn('[KiaIntentClassifier] provider failed', { provider: provider.provider, error: safeErrorMessage(err) });
+  try {
+    const result = await runKiaProviderRequest({
+      taskType: 'chat_reply',
+      systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+      responseSchema: CLASSIFIER_SCHEMA,
+      effort: 'low',
+      maxTokens: 300,
+      temperature: 0,
+    });
+    if (result.error) {
+      console.warn('[KiaIntentClassifier] provider pool failed', { error: result.error });
+      return null;
     }
+    if (result.parsedJson) {
+      const parsed = parseClassification(JSON.stringify(result.parsedJson));
+      if (parsed) return parsed;
+    }
+    return parseClassification(result.rawText ?? '');
+  } catch (err) {
+    console.warn('[KiaIntentClassifier] provider pool failed', { error: safeErrorMessage(err) });
+    return null;
   }
-
-  return null;
 }
