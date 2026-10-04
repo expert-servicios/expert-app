@@ -70,6 +70,8 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_accounts_payable:               policy('R1', 'read',  'accounting_read'),
   get_overdue_invoices:               policy('R1', 'read',  'accounting_read'),
   get_unreconciled_transactions:      policy('R1', 'read',  'accounting_read'),
+  prepare_payment_reminder:            adminReadPolicy('accounting_read'),
+  prepare_credit_note_proposal:        adminReadPolicy('accounting_read'),
   get_holded_employees:               policy('R1', 'read',  'holded_hr_read'),
   get_holded_employee_contract:       policy('R1', 'read',  'holded_hr_read'),
   get_holded_payslips:                policy('R1', 'read',  'holded_hr_read'),
@@ -93,6 +95,15 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_booking_availability:             policy('R0', 'read',  'calendar'),
   create_booking_meeting:               policy('R2', 'external_action', 'calendar'),
 };
+
+function adminReadPolicy(
+  capability: KiaToolCapability,
+): Omit<KiaToolPolicy, 'name' | 'description'> {
+  return {
+    ...policy('R1', 'read', capability),
+    allowedChannels: ['admin'],
+  };
+}
 
 function policy(
   riskTier: KiaToolRiskTier,
