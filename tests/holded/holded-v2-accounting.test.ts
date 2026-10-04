@@ -66,6 +66,28 @@ describe('Holded v2 accounting reads', () => {
   });
 });
 
+describe('Holded v2 accounting safety filters', () => {
+  it('requests approved invoices and active treasury accounts when asked', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      items: [],
+      cursor: null,
+      has_more: false,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = buildHoldedV2Client('safety-key-a');
+    await client.listInvoices({ limit: 10, approvalStatus: 'approved' });
+    await client.listTreasuryAccounts({ limit: 10, archived: false });
+
+    const invoiceUrl = String(fetchMock.mock.calls[0]?.[0] ?? '');
+    const treasuryUrl = String(fetchMock.mock.calls[1]?.[0] ?? '');
+    expect(invoiceUrl).toContain('approval_status=approved');
+    expect(treasuryUrl).toContain('archived=false');
+
+    vi.unstubAllGlobals();
+  });
+});
+
 
 describe('Holded v2 ledger date requirements', () => {
   it('adds start_date and end_date when reading the ledger', async () => {
