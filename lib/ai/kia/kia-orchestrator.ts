@@ -81,7 +81,7 @@ function selectionBasis(params: {
 
 function shouldClassifyChat(input: Parameters<typeof runKiaDecision>[0]): boolean {
   return input.taskType === 'chat_reply'
-    && (input.channel === 'dashboard' || input.channel === 'telegram');
+    && (input.channel === 'dashboard' || input.channel === 'telegram' || input.channel === 'email');
 }
 
 export function shouldFailClosedChatOrchestration(params: {
