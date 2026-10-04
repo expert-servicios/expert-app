@@ -34,6 +34,8 @@ function KpiBox({ label, value, isMoney = true }: { label: string; value: number
 function RecentInvoicesCard({ data }: { data: QuarterSummary }) {
   const dateStr = (ts: number) =>
     new Date(ts * 1000).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  const money = (value: number, currency: string) =>
+    value.toLocaleString('es-ES', { style: 'currency', currency, maximumFractionDigits: 2 });
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -50,7 +52,7 @@ function RecentInvoicesCard({ data }: { data: QuarterSummary }) {
               <div key={inv.docNumber} className="flex items-center justify-between text-xs">
                 <span className="font-medium text-[#07111d]">{inv.docNumber}</span>
                 <span className="text-[#29384a]">{inv.contact}</span>
-                <span className="font-semibold text-[#07111d]">{fmt(inv.total)}</span>
+                <span className="font-semibold text-[#07111d]">{money(inv.total, inv.currency)}</span>
                 <span className="text-[#29384a]">{dateStr(inv.date)}</span>
               </div>
             ))}
@@ -70,7 +72,7 @@ function RecentInvoicesCard({ data }: { data: QuarterSummary }) {
               <div key={inv.docNumber} className="flex items-center justify-between text-xs">
                 <span className="font-medium text-[#07111d]">{inv.docNumber}</span>
                 <span className="text-[#29384a]">{inv.contact}</span>
-                <span className="font-semibold text-[#07111d]">{fmt(inv.total)}</span>
+                <span className="font-semibold text-[#07111d]">{money(inv.total, inv.currency)}</span>
                 <span className="text-[#29384a]">{dateStr(inv.date)}</span>
               </div>
             ))}
@@ -323,11 +325,17 @@ export default async function EstadoEmpresaPage({
         {quarterData && (
           <>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <KpiBox label="Ventas" value={quarterData.salesTotal} />
-              <KpiBox label="Gastos" value={quarterData.purchasesTotal} />
+              <KpiBox label="Ventas EUR" value={quarterData.salesTotal} />
+              <KpiBox label="Gastos EUR" value={quarterData.purchasesTotal} />
               <KpiBox label="Facturas emitidas" value={quarterData.salesCount} isMoney={false} />
               <KpiBox label="Facturas recibidas" value={quarterData.purchasesCount} isMoney={false} />
             </div>
+
+            {quarterData.dataWarnings.length > 0 && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900">
+                {quarterData.dataWarnings.map((warning) => <p key={warning}>• {warning}</p>)}
+              </div>
+            )}
 
             <VatSummaryCard
               vatRepercutido={quarterData.vatRepercutido}
