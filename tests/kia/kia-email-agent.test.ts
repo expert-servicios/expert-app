@@ -71,6 +71,14 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain('/admin/correo/hilo?provider=gmail&conversationId=');
   });
 
+  it('deduplicates email tasks by operational action rather than only message id', () => {
+    expect(route).toContain('action_fingerprint');
+    expect(route).toContain(".contains('metadata', { action_fingerprint: actionFingerprint })");
+    expect(route).toContain("email-request:");
+    expect(route).toContain("title: actionText.slice(0, 220)");
+    expect(route).toContain("if (createdTask?.created)");
+  });
+
   it('persists every human inbound and KIA outbound with CRM links', () => {
     expect(route).toContain("event_type: 'email.inbound'");
     expect(route).toContain("direction: 'in'");
