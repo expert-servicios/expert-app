@@ -1,5 +1,6 @@
 create table if not exists public.recurring_meeting_series (
   id uuid primary key default gen_random_uuid(),
+  source_key text not null unique,
   title text not null,
   attendee_name text not null,
   attendee_email text not null,
