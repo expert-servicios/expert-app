@@ -89,7 +89,7 @@ export interface ReportData {
   salesInvoices   : InvoiceSummaryItem[];
   purchaseInvoices: InvoiceSummaryItem[];
   anomalies       : Anomaly[];
-  dataWarnings    : string[];
+  dataWarnings?   : string[];
   aiSummary       : string;
 }
 
