@@ -8,7 +8,7 @@ import {
   getOperationalGmailThread,
   sendOperationalGmailReply,
 } from '@/lib/integrations/operational-gmail';
-import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
+import { runKiaOrchestratedDecision } from '@/lib/ai/kia/kia-orchestrator';
 import { appendKiaSignature } from '@/lib/email/kia-signature';
 import { maybeAppendKiaContextualCta } from '@/lib/email/kia-contextual-cta';
 import type { GmailMessage } from '@/lib/integrations/gmail';
@@ -20,13 +20,29 @@ import { notifyKiaAdminEscalation } from '@/lib/admin/kia-admin-escalation';
 export const maxDuration = 60;
 
 const EXPERT_MAILBOX = 'info@expertconsulting.es';
-const READ_ONLY_TOOLS = [
+const KNOWN_CONTACT_TOOLS = [
+  'get_client_profile',
   'get_case_status',
   'get_case_tasks',
   'get_case_documents',
   'get_case_timeline',
   'get_client_communications',
   'get_service_operational_blueprint',
+  'get_holded_connection_status',
+  'get_company_status_snapshot',
+  'get_accounting_snapshot',
+  'get_holded_invoices',
+  'get_holded_contacts',
+  'get_holded_bank_balance',
+  'get_accounts_receivable',
+  'get_accounts_payable',
+  'get_overdue_invoices',
+  'get_unreconciled_transactions',
+  'get_holded_employees',
+  'get_holded_employee_contract',
+  'get_holded_payslips',
+  'get_holded_salary_records',
+  'run_labor_payroll_diagnostics',
   'search_knowledge_resources',
   'get_official_sources',
   'find_relevant_services',
@@ -706,42 +722,52 @@ export async function GET(request: NextRequest) {
         && !replyToMismatch
         && envelope.recipientPurpose !== 'noreply'
         && !hasAttachments;
-      const baseAllowedTools = wasKnownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS;
+      const baseAllowedTools = wasKnownContact ? KNOWN_CONTACT_TOOLS : PUBLIC_PROSPECT_TOOLS;
       const allowedTools = baseAllowedTools.filter(
         (toolName) => toolName !== 'create_booking_meeting' || externalActionPreEligible,
       );
 
-      const result = await runKiaDecision({
-        taskType: 'chat_reply',
-        channel: 'email',
-        message: latestReply,
-        locale: /[А-Яа-яЁё]/.test(text) ? 'ru' : 'es',
-        contextInput: {
+      const result = await runKiaOrchestratedDecision({
+        input: {
+          taskType: 'chat_reply',
           channel: 'email',
-          clientId: identity.clientId ?? undefined,
-          leadId: identity.leadId ?? undefined,
-          caseId: identity.caseId ?? undefined,
-          companyId: identity.companyId ?? undefined,
-          serviceSlug: identity.serviceSlug ?? undefined,
-          email: latest.fromEmail,
-          latestMessage: latestReply,
-          syntheticRecentMessages: recent,
-          originEmail: {
-            ref: latest.id,
-            eventType: 'email.inbound',
-            subject: latest.subject,
-            excerpt: latestReply.slice(0, 1500),
+          message: latestReply,
+          locale: /[А-Яа-яЁё]/.test(text) ? 'ru' : 'es',
+          contextInput: {
+            channel: 'email',
+            clientId: identity.clientId ?? undefined,
+            leadId: identity.leadId ?? undefined,
+            caseId: identity.caseId ?? undefined,
+            companyId: identity.companyId ?? undefined,
+            serviceSlug: identity.serviceSlug ?? undefined,
+            email: latest.fromEmail,
+            latestMessage: latestReply,
+            syntheticRecentMessages: recent,
+            originEmail: {
+              ref: latest.id,
+              eventType: 'email.inbound',
+              subject: latest.subject,
+              excerpt: latestReply.slice(0, 1500),
+            },
           },
+          allowTools: true,
+          forceToolExecution: true,
+          allowedToolNames: [...allowedTools],
+          toolAuthorization: {
+            maxRiskTier: 'R2',
+            allowedEffects: ['read', 'external_action'],
+            autonomousOnly: false,
+          },
+          externalActionMinConfidence: confidenceFloor,
         },
-        allowTools: true,
-        forceToolExecution: true,
-        allowedToolNames: [...allowedTools],
-        toolAuthorization: {
+        policyAuthorization: {
+          channel: 'email',
+          requestedNames: [...allowedTools],
           maxRiskTier: 'R2',
           allowedEffects: ['read', 'external_action'],
           autonomousOnly: false,
         },
-        externalActionMinConfidence: confidenceFloor,
+        policyToolNames: [...allowedTools],
       });
       const taskEligible = (identity.clientId || identity.leadId)
         && !identity.ambiguousCase
