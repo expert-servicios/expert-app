@@ -11,7 +11,22 @@ as $$
 declare
   v_now timestamptz := now();
 begin
-  if new.status = 'presentado' or new.state = 'presentado' then
+  -- Finalization wins over a legacy state that may still say "presentado".
+  if new.status = 'finalizado' or new.state = 'finalizado' then
+    update public.internal_tasks
+       set status = 'completada',
+           completed_at = coalesce(completed_at, v_now),
+           updated_at = v_now,
+           metadata = coalesce(metadata, '{}'::jsonb)
+             || jsonb_build_object(
+                  'auto_completed_by_case_status', 'finalizado',
+                  'auto_completed_at', v_now
+                )
+     where case_id = new.id
+       and status in ('pendiente', 'en_progreso');
+
+    new.due_date := null;
+  elsif new.status = 'presentado' or new.state = 'presentado' then
     update public.internal_tasks
        set status = 'completada',
            completed_at = coalesce(completed_at, v_now),
@@ -31,20 +46,6 @@ begin
     if new.due_date is not null then
       new.due_date := null;
     end if;
-  elsif new.status = 'finalizado' or new.state = 'finalizado' then
-    update public.internal_tasks
-       set status = 'completada',
-           completed_at = coalesce(completed_at, v_now),
-           updated_at = v_now,
-           metadata = coalesce(metadata, '{}'::jsonb)
-             || jsonb_build_object(
-                  'auto_completed_by_case_status', 'finalizado',
-                  'auto_completed_at', v_now
-                )
-     where case_id = new.id
-       and status in ('pendiente', 'en_progreso');
-
-    new.due_date := null;
   end if;
 
   return new;
@@ -79,6 +80,7 @@ begin
      or old.status = 'completada'
      or new.case_id is null
      or coalesce(new.metadata ->> 'task_key', '') <> 'submit_and_archive_receipt'
+     or new.metadata ? 'auto_completed_by_case_status'
   then
     return new;
   end if;
@@ -93,14 +95,14 @@ begin
    limit 1;
 
   update public.cases
-     set status = case when status = 'finalizado' then status else 'presentado' end,
-         state = case when state = 'finalizado' then state else 'presentado' end,
+     set status = 'presentado',
          due_date = null,
          next_action = coalesce(v_next_action, 'Seguimiento posterior a presentación'),
          updated_at = now()
    where id = new.case_id
-     and status <> 'finalizado'
-     and state <> 'finalizado';
+     and coalesce(status, '') <> 'finalizado'
+     and coalesce(state, '') <> 'finalizado'
+     and status is distinct from 'presentado';
 
   return new;
 end;
