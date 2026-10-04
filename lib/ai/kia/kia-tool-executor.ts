@@ -15,6 +15,7 @@ import {
   createHoldedGatewayForIntegration,
   listHoldedBankAccounts,
   listHoldedContacts,
+  listHoldedDocumentType,
   listHoldedDocuments,
 } from '@/lib/integrations/holded/holded-gateway';
 import { generateCompanyReport } from '@/lib/reports/report-generator';
@@ -228,17 +229,14 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
 
         if (toolCall.name === 'get_holded_invoices') {
           const limit = Number(args.limit ?? 10);
-          if (docType !== 'invoice' && docType !== 'purchase') {
-            return fail(
-              toolCall.name,
-              `El tipo ${docType} todavía no está disponible en la capa Holded v2 unificada. Usa invoice o purchase.`,
-            );
-          }
-          const docs = await listHoldedDocuments(
-            gateway,
-            docType === 'purchase' ? 'purchase' : 'sales',
-            { maxItems: limit },
-          );
+          const supportedDocType = docType as 'invoice' | 'purchase' | 'salesreceipt' | 'creditnote';
+          const docs = supportedDocType === 'invoice' || supportedDocType === 'purchase'
+            ? await listHoldedDocuments(
+                gateway,
+                supportedDocType === 'purchase' ? 'purchase' : 'sales',
+                { maxItems: limit },
+              )
+            : await listHoldedDocumentType(gateway, supportedDocType, { maxItems: limit });
           return ok(toolCall.name, {
             count: docs.length,
             documents: docs.map((d) => ({
