@@ -18,6 +18,10 @@ export async function saveKiaDecisionLog(input: {
   tokensOut?: number;
   estimatedCostUsd?: number;
   loopIterations?: number;
+  skillId?: string | null;
+  subAgentId?: string | null;
+  detectedIntent?: string | null;
+  selectionBasis?: string | null;
 }): Promise<string | null> {
   if (process.env.KIA_AI_DECISION_LOGS_ENABLED?.toLowerCase() === 'false') return null;
 
@@ -48,6 +52,10 @@ export async function saveKiaDecisionLog(input: {
       tokens_out: input.tokensOut ?? null,
       estimated_cost_usd: input.estimatedCostUsd ?? null,
       loop_iterations: input.loopIterations ?? 0,
+      skill_id: input.skillId ?? null,
+      sub_agent_id: input.subAgentId ?? null,
+      detected_intent: input.detectedIntent ?? null,
+      selection_basis: input.selectionBasis ?? null,
     }).select('id').single();
     if (insertError) throw insertError;
     return data?.id ?? null;
