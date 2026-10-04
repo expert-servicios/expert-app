@@ -165,19 +165,27 @@ export default async function EstadoEmpresaPage({
   // Gate 1: monthly plan
   const { data: profile } = await admin
     .from('profiles')
-    .select('has_monthly_plan')
+    .select('has_monthly_plan, active_company_id')
     .eq('id', user.id)
     .single();
 
   if (!profile?.has_monthly_plan) return <UpsellView />;
 
-  // Gate 2: Holded active
-  const { data: integration } = await admin
+  // Gate 2: Holded active. Advisor-managed integrations are company-scoped
+  // and may intentionally have client_id = null.
+  let integrationQuery = admin
     .from('client_integrations')
     .select('id, status, last_sync_at')
-    .eq('client_id', user.id)
     .eq('provider', 'holded')
-    .neq('status', 'revoked')
+    .neq('status', 'revoked');
+
+  integrationQuery = profile?.active_company_id
+    ? integrationQuery.eq('company_id', profile.active_company_id)
+    : integrationQuery.eq('client_id', user.id);
+
+  const { data: integration } = await integrationQuery
+    .order('updated_at', { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (!integration)                      return <ConnectHoldedView />;
