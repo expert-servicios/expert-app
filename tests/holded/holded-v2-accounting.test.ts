@@ -29,6 +29,8 @@ describe('Holded v2 accounting reads', () => {
 
   it.each([
     ['listInvoices', '/api/v2/invoices?limit=25'],
+    ['listSalesReceipts', '/api/v2/sales-receipts?limit=25'],
+    ['listCreditNotes', '/api/v2/credit-notes?limit=25'],
     ['listAccountingAccounts', '/api/v2/accounting-accounts?limit=25'],
     ['listTreasuryAccounts', '/api/v2/treasury/accounts?limit=25'],
   ] as const)('%s uses the documented v2 endpoint', async (method, expected) => {
@@ -127,6 +129,28 @@ describe('Holded v2 contact limits', () => {
     const [url] = fetchMock.mock.calls[0] as [string];
     expect(url).toContain('/api/v2/contacts?');
     expect(url).toContain('limit=100');
+
+    vi.unstubAllGlobals();
+  });
+});
+
+
+describe('Holded v2 bank movements', () => {
+  it('uses the account-scoped bank-movements endpoint and status filter', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      items: [],
+      cursor: null,
+      has_more: false,
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const client = buildHoldedV2Client('bank-key');
+    await client.listBankMovements('acc-1', { status: ['pending', 'partial'], limit: 20 });
+
+    const [url] = fetchMock.mock.calls[0] as [string];
+    expect(url).toContain('/api/v2/treasury/accounts/acc-1/bank-movements?');
+    expect(url).toContain('status=pending%2Cpartial');
+    expect(url).toContain('limit=20');
 
     vi.unstubAllGlobals();
   });
