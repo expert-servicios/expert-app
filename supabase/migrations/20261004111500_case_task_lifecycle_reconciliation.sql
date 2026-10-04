@@ -61,6 +61,61 @@ when (
 )
 execute function public.reconcile_case_task_lifecycle();
 
+
+
+-- Promote the case automatically when the canonical submission task is completed.
+-- This closes the loop for Admin/KIA Work: completing "presentar y archivar justificante"
+-- must not leave the case in pre-submission state with stale reminders.
+create or replace function public.promote_case_after_submission_task()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $
+declare
+  v_next_action text;
+begin
+  if new.status <> 'completada'
+     or old.status = 'completada'
+     or new.case_id is null
+     or coalesce(new.metadata ->> 'task_key', '') <> 'submit_and_archive_receipt'
+  then
+    return new;
+  end if;
+
+  select t.title
+    into v_next_action
+    from public.internal_tasks t
+   where t.case_id = new.case_id
+     and t.status in ('pendiente', 'en_progreso')
+     and coalesce(t.metadata ->> 'phase', '') = 'follow_up'
+   order by t.created_at, t.id
+   limit 1;
+
+  update public.cases
+     set status = case when status = 'finalizado' then status else 'presentado' end,
+         state = case when state = 'finalizado' then state else 'presentado' end,
+         due_date = null,
+         next_action = coalesce(v_next_action, 'Seguimiento posterior a presentación'),
+         updated_at = now()
+   where id = new.case_id
+     and status <> 'finalizado'
+     and state <> 'finalizado';
+
+  return new;
+end;
+$;
+
+drop trigger if exists trg_promote_case_after_submission_task on public.internal_tasks;
+create trigger trg_promote_case_after_submission_task
+after update of status on public.internal_tasks
+for each row
+when (old.status is distinct from new.status)
+execute function public.promote_case_after_submission_task();
+
+revoke all on function public.promote_case_after_submission_task() from public, anon, authenticated;
+grant execute on function public.promote_case_after_submission_task() to service_role;
+
 -- Backfill existing drift without touching unrelated manual/email tasks on presented cases.
 update public.internal_tasks t
    set status = 'completada',
