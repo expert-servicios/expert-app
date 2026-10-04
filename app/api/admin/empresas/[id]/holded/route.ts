@@ -91,6 +91,10 @@ async function detectAllPermissions(rawApiKey: string, apiVersion: 'v1' | 'v2' =
       }
     }));
     for (const [permission, allowed] of settled) permissions[permission] = allowed;
+    // Holded v2 protects treasury accounts and their movements with the same
+    // accounting:banks.read scope, so a successful account probe also proves
+    // that KIA may attempt read-only bank-movement queries.
+    permissions.bankMovements = permissions.bankAccounts;
 
     const coreReadOk = settled.some(([, allowed]) => allowed);
     const laborPermissions = await detectHoldedLaborPermissions(rawApiKey);
