@@ -9,6 +9,7 @@ export type BookingServiceKey =
   | 'demo-holded'
   | 'onboarding'
   | 'formacion-holded'
+  | 'mentoria-mensual'
   | 'seguimiento-mensual-empresa'
   | 'seguimiento-mensual-autonomo'
   | 'academy-admision';
@@ -49,6 +50,12 @@ export function getBookingServices(): Record<BookingServiceKey, BookingServiceDe
       key: 'formacion-holded',
       label: 'Formación Holded',
       durationMinutes: 120,
+      public: false,
+    },
+    'mentoria-mensual': {
+      key: 'mentoria-mensual',
+      label: 'Mentoría mensual',
+      durationMinutes: 60,
       public: false,
     },
     'seguimiento-mensual-empresa': {
