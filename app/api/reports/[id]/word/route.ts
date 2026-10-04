@@ -33,10 +33,10 @@ function kpiTable(kpis: ReportData['kpis']): Table {
   const rows = [
     ['Ventas totales',              fmtEur(kpis.totalSales)],
     ['Gastos totales',              fmtEur(kpis.totalPurchases)],
-    ['IVA repercutido estimado',    fmtEur(kpis.vatCollected)],
-    ['IVA soportado estimado',      fmtEur(kpis.vatDeductible)],
-    ['Balance IVA estimado',        fmtEur(kpis.vatBalance)],
-    ['Saldo bancario total',        fmtEur(kpis.totalBankBalance)],
+    ['IVA repercutido documentos EUR', fmtEur(kpis.vatCollected)],
+    ['IVA soportado documentos EUR',   fmtEur(kpis.vatDeductible)],
+    ['Balance IVA orientativo',         fmtEur(kpis.vatBalance)],
+    ['Saldo bancario total EUR',        fmtEur(kpis.totalBankBalance)],
     ['Facturas emitidas sin cobrar',String(kpis.unpaidInvoices)],
   ];
 
@@ -68,7 +68,7 @@ function invoiceTable(invoices: InvoiceSummaryItem[], title: string): (Paragraph
 
   const dataRows = invoices.slice(0, 10).map((inv) =>
     new TableRow({
-      children: [inv.number, inv.date, inv.contact, fmtEur(inv.total), inv.status].map((v) =>
+      children: [inv.number, inv.date, inv.contact, `${inv.total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} ${inv.currency ?? 'EUR'}`, inv.status].map((v) =>
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: v, size: 16 })] })] })
       ),
     })
@@ -99,6 +99,13 @@ function buildDoc(data: ReportData): Document {
     heading1('Resumen financiero'),
     kpiTable(data.kpis),
     new Paragraph({ text: '', spacing: { after: 200 } }),
+
+    // Data limitations
+    ...((data.dataWarnings?.length ?? 0) > 0 ? [
+      heading1('Limitaciones de datos'),
+      ...((data.dataWarnings ?? []).map((warning) => para(`• ${warning}`))),
+      new Paragraph({ text: '', spacing: { after: 200 } }),
+    ] : []),
 
     // AI summary
     ...(data.aiSummary ? [
