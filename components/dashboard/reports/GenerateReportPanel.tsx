@@ -14,7 +14,14 @@ type GenerateReportResponse = {
 
 function currentQuarterLabel() {
   const now = new Date();
-  return `Q${Math.ceil((now.getMonth() + 1) / 3)} ${now.getFullYear()}`;
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(now);
+  const year = Number(parts.find((part) => part.type === 'year')?.value);
+  const month = Number(parts.find((part) => part.type === 'month')?.value);
+  return `Q${Math.ceil(month / 3)} ${year}`;
 }
 
 export function GenerateReportPanel() {
