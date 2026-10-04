@@ -12,6 +12,8 @@ import {
   isHoldedDocumentPaid,
   isIssuedHoldedDocument,
   totalsByCurrency,
+  buildPaymentReminderDraft,
+  buildCreditNoteProposal,
 } from '@/lib/ai/kia/kia-accounting-tools';
 import type { KiaContext } from '@/lib/ai/kia/kia-context-builder';
 
@@ -110,5 +112,80 @@ describe('KIA Accounting EXPERT global Holded boundary', () => {
       ...baseContext,
       company: { ...baseContext.company!, taxId: 'B54920509' },
     })).toBe(false);
+  });
+});
+
+
+describe('KIA Accounting phase 2B preparation safety', () => {
+  it('exposes preparation tools only in Admin and keeps them read-only', () => {
+    for (const name of ['prepare_payment_reminder', 'prepare_credit_note_proposal']) {
+      expect(getKiaToolDefinition(name)).not.toBeNull();
+      expect(getKiaToolPolicy(name)).toMatchObject({
+        riskTier: 'R1',
+        effect: 'read',
+        capability: 'accounting_read',
+        requiresHumanApproval: false,
+      });
+      expect(isKiaToolAuthorized(name, {
+        channel: 'admin',
+        requestedNames: [name],
+        maxRiskTier: 'R1',
+        allowedEffects: ['read'],
+        autonomousOnly: true,
+      })).toBe(true);
+      expect(isKiaToolAuthorized(name, {
+        channel: 'dashboard',
+        requestedNames: [name],
+        maxRiskTier: 'R1',
+        allowedEffects: ['read'],
+        autonomousOnly: true,
+      })).toBe(false);
+    }
+  });
+
+  it('preserves invoice currency in payment-reminder drafts', () => {
+    const invoice = {
+      id: 'inv-1',
+      number: 'F-2026-10',
+      date: 1_790_000_000,
+      dueDate: 1_790_000_000,
+      contact: 'Cliente Test',
+      total: 250,
+      outstanding: 125.5,
+      currency: 'USD',
+      status: 1,
+      overdue: true,
+    };
+    const draft = buildPaymentReminderDraft({ invoice, tone: 'firm', lang: 'es' });
+    expect(draft.subject).toContain('F-2026-10');
+    expect(draft.body).toContain('125,50 USD');
+  });
+
+  it('creates a credit-note proposal without claiming a Holded mutation', () => {
+    const invoice = {
+      id: 'inv-2',
+      number: 'F-2026-11',
+      date: 1_790_000_000,
+      dueDate: null,
+      contact: 'Cliente Test',
+      total: 500,
+      outstanding: 500,
+      currency: 'EUR',
+      status: 1,
+      overdue: false,
+    };
+    const proposal = buildCreditNoteProposal({
+      invoice,
+      reason: 'Corrección parcial',
+      amount: 100,
+      lang: 'es',
+    });
+    expect(proposal).toMatchObject({
+      proposalType: 'credit_note',
+      documentType: 'creditnote',
+      proposedAmount: 100,
+      requiresHumanApproval: true,
+      holdedMutated: false,
+    });
   });
 });
