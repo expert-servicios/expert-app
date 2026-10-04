@@ -26,5 +26,18 @@ describe('KIA email action deduplication', () => {
 
   it('blocks task creation and auto-send when orchestration failed closed', () => {
     expect(route).toContain('!result.executionTrace.lateClassificationFailClosed');
+    expect(route).toContain("blockReason = 'orchestration_requires_review'");
+    expect(route).toContain("'orchestration_requires_review'");
+  });
+
+  it('rechecks open status before reusing an action task', () => {
+    expect(route).toContain(".in('status', ['pendiente', 'en_progreso'])");
+    expect(route).toContain(".select('id,title')");
+    expect(route).toContain('if (reused?.id)');
+  });
+
+  it('indexes JSON containment lookups as well as enforcing unique open fingerprints', () => {
+    expect(migration).toContain('idx_internal_tasks_open_metadata_gin');
+    expect(migration).toContain('using gin (metadata jsonb_path_ops)');
   });
 });
