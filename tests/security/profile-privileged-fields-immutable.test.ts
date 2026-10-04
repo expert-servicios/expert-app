@@ -9,7 +9,7 @@ const migration = readFileSync(
 describe('profile privileged fields', () => {
   it('blocks ordinary users from self-promoting through editable profiles', () => {
     expect(migration).toContain('auth.uid() = old.id');
-    expect(migration).toContain('not public.is_admin_email()');
+    expect(migration).toContain('not (public.is_admin() or public.is_admin_email())');
     expect(migration).toContain('new.role is distinct from old.role');
     expect(migration).toContain("errcode = '42501'");
   });
