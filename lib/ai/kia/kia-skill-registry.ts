@@ -26,6 +26,27 @@ export interface KiaSkillDefinition {
 
 const KIA_SKILLS: readonly KiaSkillDefinition[] = [
   {
+    id: 'operations.assistant',
+    version: '1.0',
+    domain: 'operations',
+    description: 'Coordina correo, calendario y seguimiento operativo; clasifica solicitudes, consulta contexto y mantiene continuidad sin sustituir a especialistas de dominio.',
+    intents: ['assistant_operations', 'book_call'],
+    taskTypes: [],
+    preferredSubAgentId: 'assistant',
+    requiredToolCapabilities: [
+      'client_data',
+      'case_management',
+      'case_operations',
+      'documents',
+      'calendar',
+      'knowledge',
+      'regulatory',
+      'service_discovery',
+    ],
+    maxRiskTier: 'R2',
+    enabled: true,
+  },
+  {
     id: 'fiscal.viability',
     version: '1.0',
     domain: 'fiscal',
