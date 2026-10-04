@@ -27,6 +27,7 @@ import { findKiaRelevantServices, getKiaOfficialSources, searchKiaKnowledgeResou
 import { loadKiaClientCommunications } from './kia-client-brief';
 import { missingKiaCaseDocumentRequirements } from './kia-case-document-gaps';
 import { createKiaConfirmedBooking, getKiaBookingAvailability } from '@/lib/booking/kia-booking-operator';
+import { materializeRecurringMeetingSeries } from '@/lib/booking/recurring-meeting-series';
 import {
   ACCOUNTING_TOOL_NAMES,
   executeKiaAccountingTool,
@@ -651,6 +652,41 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
           serviceKey: String(args.serviceKey),
           days: Number(args.days ?? 7),
         }));
+
+      case 'upsert_recurring_meeting_series': {
+        const sourceKey = String(args.sourceKey);
+        const attendeeEmail = String(args.attendeeEmail).trim().toLowerCase();
+        const payload = {
+          source_key: sourceKey,
+          title: String(args.title),
+          attendee_name: String(args.attendeeName),
+          attendee_email: attendeeEmail,
+          attendee_phone: typeof args.attendeePhone === 'string' ? args.attendeePhone : null,
+          client_id: typeof args.clientId === 'string' ? args.clientId : null,
+          company_id: typeof args.companyId === 'string' ? args.companyId : null,
+          lead_id: typeof args.leadId === 'string' ? args.leadId : null,
+          service_key: String(args.serviceKey),
+          duration_minutes: Number(args.durationMinutes),
+          day_of_month: Number(args.dayOfMonth),
+          local_time: `${String(args.localTime)}:00`,
+          timezone: 'Europe/Madrid',
+          months_ahead: Number(args.monthsAhead ?? 12),
+          start_month: String(args.startMonth),
+          weekend_policy: 'next_weekday',
+          conflict_policy: String(args.conflictPolicy ?? 'next_available_weekday'),
+          active: true,
+          created_by: 'kia-admin',
+          updated_at: new Date().toISOString(),
+        };
+        const { data: series, error } = await admin
+          .from('recurring_meeting_series')
+          .upsert(payload, { onConflict: 'source_key' })
+          .select('id,source_key,title,service_key,duration_minutes,day_of_month,local_time,months_ahead')
+          .single();
+        if (error || !series) throw error ?? new Error('recurring_series_upsert_failed');
+        const materialized = await materializeRecurringMeetingSeries(admin);
+        return ok(toolCall.name, { series, materialized });
+      }
 
       case 'create_booking_meeting': {
         const attendeeEmail = String(args.attendeeEmail).trim().toLowerCase();
