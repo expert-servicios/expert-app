@@ -57,17 +57,22 @@ export async function fetchQuarterData(
   const startDate = new Date(from * 1000).toISOString().slice(0, 10);
   const endDate = new Date(to * 1000).toISOString().slice(0, 10);
 
-  const [sales, purchaseCandidates] = await Promise.all([
+  const [salesCandidates, purchaseCandidates] = await Promise.all([
     listHoldedDocuments(gateway, 'sales', { startDate, endDate }).catch((): HoldedReadDocument[] => []),
-    // Holded v2 filters purchases by issue date, while deduction_date drives the
-    // tax deduction period. Load the approved purchase set and filter below by
-    // the normalized accounting timestamp so prior-period invoices deducted in
-    // this quarter are not silently omitted.
-    listHoldedDocuments(gateway, 'purchase', { maxItems: 2_000 }).catch((): HoldedReadDocument[] => []),
+    gateway.v2
+      // v2 purchase tax period follows deduction_date rather than issue date.
+      ? listHoldedDocuments(gateway, 'purchase', { maxItems: 2_000 }).catch((): HoldedReadDocument[] => [])
+      // v1 has no deduction_date semantic here: preserve the historical quarter-scoped request.
+      : listHoldedDocuments(gateway, 'purchase', { startDate, endDate }).catch((): HoldedReadDocument[] => []),
   ]);
-  const purchases = purchaseCandidates.filter(
-    (d) => d.accountingTimestamp >= from && d.accountingTimestamp <= to,
-  );
+  const activeDocument = (d: HoldedReadDocument) =>
+    !['cancelled', 'failed'].includes(String(d.status ?? '').toLowerCase());
+  const sales = salesCandidates.filter(activeDocument);
+  const purchases = purchaseCandidates
+    .filter(activeDocument)
+    .filter((d) => gateway.v2
+      ? d.accountingTimestamp >= from && d.accountingTimestamp <= to
+      : true);
 
   const salesTotal     = sales.reduce((s, d) => s + d.total, 0);
   const purchasesTotal = purchases.reduce((s, d) => s + d.total, 0);
