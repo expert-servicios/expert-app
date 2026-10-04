@@ -114,6 +114,41 @@ async function pickAvailableSlot(
   throw new Error('recurring_meeting_no_available_weekday');
 }
 
+async function recurringSeriesStillEntitled(admin: AdminClient, series: RecurringSeries): Promise<boolean> {
+  const subscriptionId = typeof series.metadata?.subscription_id === 'string'
+    ? series.metadata.subscription_id
+    : null;
+  if (!subscriptionId) return true;
+
+  const { data: subscription, error: subscriptionError } = await admin
+    .from('subscriptions')
+    .select('id,status')
+    .eq('id', subscriptionId)
+    .in('status', ['active', 'trialing'])
+    .maybeSingle();
+  if (subscriptionError) throw subscriptionError;
+  if (!subscription) return false;
+
+  const entitlementId = typeof series.metadata?.entitlement_id === 'string'
+    ? series.metadata.entitlement_id
+    : null;
+  if (!entitlementId) return true;
+
+  const { data: entitlement, error: entitlementError } = await admin
+    .from('subscription_entitlements')
+    .select('id,active,valid_from,valid_until')
+    .eq('id', entitlementId)
+    .eq('active', true)
+    .maybeSingle();
+  if (entitlementError) throw entitlementError;
+  if (!entitlement) return false;
+
+  const now = Date.now();
+  if (entitlement.valid_from && new Date(entitlement.valid_from).getTime() > now) return false;
+  if (entitlement.valid_until && new Date(entitlement.valid_until).getTime() < now) return false;
+  return true;
+}
+
 export async function materializeRecurringMeetingSeries(
   admin: AdminClient = getSupabaseAdmin(),
 ) {
@@ -133,6 +168,13 @@ export async function materializeRecurringMeetingSeries(
 
   for (const raw of seriesRows ?? []) {
     const series = raw as RecurringSeries;
+    if (!(await recurringSeriesStillEntitled(admin, series))) {
+      await admin.from('recurring_meeting_series').update({
+        active: false,
+        updated_at: new Date().toISOString(),
+      }).eq('id', series.id);
+      continue;
+    }
     const startMonth = monthStart(new Date(`${series.start_month}T00:00:00Z`));
     const firstMonth = startMonth > horizonStart ? startMonth : horizonStart;
     const endMonth = series.end_month ? monthStart(new Date(`${series.end_month}T00:00:00Z`)) : null;
