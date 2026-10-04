@@ -1357,3 +1357,5 @@ EXPERT/KIA es la fuente operativa de las reuniones recurrentes. No usar una RRUL
 - Una serie dependiente puede usar `metadata.anchor_source_key` para mantenerse el mismo día que una serie principal. Caso de referencia: revisión de SIGMAKNOT (60 min) seguida de Josep autónomo (30 min).
 - Las series ligadas a suscripción/entitlement dejan de generar nuevas citas cuando la cobertura deja de estar activa.
 - Los enlaces de reprogramación de citas futuras permanecen válidos hasta 30 días después de la propia reunión.
+
+- `CRON_SECRET` se rota desde Supabase Vault (`expert_vercel_cron_secret`) y se sincroniza con los proyectos Vercel; no debe almacenarse en tablas de aplicación ni documentación.
