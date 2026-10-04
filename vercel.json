@@ -21,6 +21,10 @@
       "schedule": "5,20,35,50 * * * *"
     },
     {
+      "path": "/api/cron/recurring-meeting-series",
+      "schedule": "10 7 * * *"
+    },
+    {
       "path": "/api/cron/fiscal-reminders",
       "schedule": "0 8 * * *"
     },
