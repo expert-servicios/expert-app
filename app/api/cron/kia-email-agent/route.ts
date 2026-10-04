@@ -337,12 +337,13 @@ async function createEmailRequestTask(input: {
 
   const actionText = input.actionSummary.trim() || input.message.subject?.trim() || 'Solicitud por correo';
   const normalizedAction = actionText
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .normalize('NFKD')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim()
-    .slice(0, 240);
+    .slice(0, 240)
+    || (input.message.subject?.trim().normalize('NFKD').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim().slice(0, 240))
+    || input.message.id;
   const scope = input.caseId ?? input.leadId ?? input.clientId ?? normalizedEmail(input.message.fromEmail);
   const actionFingerprint = createHash('sha256')
     .update(`${scope}|${input.nextAction}|${normalizedAction}`)
@@ -814,6 +815,7 @@ export async function GET(request: NextRequest) {
         policyToolNames: [...allowedTools],
       });
       const taskEligible = (identity.clientId || identity.leadId)
+        && !result.executionTrace.lateClassificationFailClosed
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
@@ -848,6 +850,7 @@ export async function GET(request: NextRequest) {
 
       const canAutoSend = autoSend
         && health.ok
+        && !result.executionTrace.lateClassificationFailClosed
         && (wasKnownContact || (safeUnknownProspect && newLeadAutoSend))
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
