@@ -171,22 +171,46 @@ export default async function EstadoEmpresaPage({
 
   if (!profile?.has_monthly_plan) return <UpsellView />;
 
-  // Gate 2: Holded active. Advisor-managed integrations are company-scoped
-  // and may intentionally have client_id = null.
-  let integrationQuery = admin
-    .from('client_integrations')
-    .select('id, status, last_sync_at')
-    .eq('provider', 'holded')
-    .neq('status', 'revoked');
+  // Gate 2: prefer the canonical company-scoped integration, but keep
+  // compatibility with legacy client-scoped rows that predate company_id.
+  let integration = null;
+  if (profile?.active_company_id) {
+    const { data: companyIntegration } = await admin
+      .from('client_integrations')
+      .select('id, status, last_sync_at')
+      .eq('provider', 'holded')
+      .eq('company_id', profile.active_company_id)
+      .neq('status', 'revoked')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    integration = companyIntegration;
 
-  integrationQuery = profile?.active_company_id
-    ? integrationQuery.eq('company_id', profile.active_company_id)
-    : integrationQuery.eq('client_id', user.id);
-
-  const { data: integration } = await integrationQuery
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    if (!integration) {
+      const { data: legacyIntegration } = await admin
+        .from('client_integrations')
+        .select('id, status, last_sync_at')
+        .eq('provider', 'holded')
+        .eq('client_id', user.id)
+        .is('company_id', null)
+        .neq('status', 'revoked')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      integration = legacyIntegration;
+    }
+  } else {
+    const { data: clientIntegration } = await admin
+      .from('client_integrations')
+      .select('id, status, last_sync_at')
+      .eq('provider', 'holded')
+      .eq('client_id', user.id)
+      .neq('status', 'revoked')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    integration = clientIntegration;
+  }
 
   if (!integration)                      return <ConnectHoldedView />;
   if (integration.status !== 'active')   return <HoldedErrorView />;
