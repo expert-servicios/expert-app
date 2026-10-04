@@ -93,7 +93,7 @@ describe('Holded v2 accounting safety filters', () => {
 
 describe('Holded v2 ledger date requirements', () => {
   it('adds start_date and end_date when reading the ledger', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+    const fetchMock = vi.fn().mockImplementation(async () => new Response(JSON.stringify({
       items: [],
       cursor: null,
       has_more: false,
