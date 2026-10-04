@@ -379,7 +379,11 @@ export async function materializeRecurringMeetingSeries(
           throw materializeError;
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = error instanceof Error
+          ? error.message
+          : typeof error === 'object' && error !== null
+            ? JSON.stringify(error)
+            : String(error);
         if (message.includes('conflict')) conflicts++;
         errors.push(`${series.id}:${key}: ${message}`);
         if (occurrenceId) {
