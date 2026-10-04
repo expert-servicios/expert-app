@@ -171,15 +171,27 @@ export default async function EstadoEmpresaPage({
 
   if (!profile?.has_monthly_plan) return <UpsellView />;
 
-  // Gate 2: prefer the canonical company-scoped integration, but keep
-  // compatibility with legacy client-scoped rows that predate company_id.
+  // Gate 2: validate the active company before any service-role financial lookup.
+  const requestedCompanyId = profile?.active_company_id ?? null;
+  const { data: activeMembership } = requestedCompanyId
+    ? await admin
+        .from('profile_companies')
+        .select('company_id')
+        .eq('profile_id', user.id)
+        .eq('company_id', requestedCompanyId)
+        .maybeSingle()
+    : { data: null };
+  const activeCompanyId = activeMembership?.company_id ?? null;
+
+  // Prefer the canonical company-scoped integration, but keep compatibility
+  // with legacy client-scoped rows that predate company_id.
   let integration = null;
-  if (profile?.active_company_id) {
+  if (activeCompanyId) {
     const { data: companyIntegration } = await admin
       .from('client_integrations')
       .select('id, status, last_sync_at')
       .eq('provider', 'holded')
-      .eq('company_id', profile.active_company_id)
+      .eq('company_id', activeCompanyId)
       .neq('status', 'revoked')
       .order('updated_at', { ascending: false })
       .limit(1)
