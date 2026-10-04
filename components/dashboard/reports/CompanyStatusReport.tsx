@@ -45,7 +45,7 @@ function InvoiceTable({ invoices, label }: { invoices: ReportData['salesInvoices
               <td className="py-1.5 pr-4 text-[#7a6e5f]">{inv.date}</td>
               <td className="py-1.5 pr-4 text-[#3d3528]">{inv.contact || '—'}</td>
               <td className="py-1.5 pr-4 text-right font-semibold text-[#07111d]">
-                {inv.total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €
+                {inv.total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} {inv.currency ?? 'EUR'}
               </td>
               <td className="py-1.5">
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
@@ -95,6 +95,16 @@ export function CompanyStatusReport({ reportId, data }: Props) {
       <Section title="Resumen financiero">
         <FiscalKPIStrip kpis={data.kpis} />
       </Section>
+
+      {(data.dataWarnings?.length ?? 0) > 0 && (
+        <Section title="Limitaciones de datos">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+            <ul className="space-y-1 text-xs leading-5 text-amber-900">
+              {(data.dataWarnings ?? []).map((warning) => <li key={warning}>• {warning}</li>)}
+            </ul>
+          </div>
+        </Section>
+      )}
 
       {/* AI summary */}
       {data.aiSummary && (
