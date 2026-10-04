@@ -235,9 +235,15 @@ export default async function EstadoEmpresaPage({
   if (integration.status !== 'active')   return <HoldedErrorView />;
 
   // Quarter params
-  const now     = currentQuarter();
-  const year    = parseInt(sp.year    ?? String(now.year),    10);
-  const quarter = (parseInt(sp.quarter ?? String(now.quarter), 10) || now.quarter) as 1 | 2 | 3 | 4;
+  const now = currentQuarter();
+  const requestedYear = Number.parseInt(sp.year ?? String(now.year), 10);
+  const requestedQuarter = Number.parseInt(sp.quarter ?? String(now.quarter), 10);
+  const year = Number.isInteger(requestedYear) && requestedYear >= 2000 && requestedYear <= 2100
+    ? requestedYear
+    : now.year;
+  const quarter = ([1, 2, 3, 4] as const).includes(requestedQuarter as 1 | 2 | 3 | 4)
+    ? requestedQuarter as 1 | 2 | 3 | 4
+    : now.quarter;
 
   // Fetch Holded + DB data in parallel
   let quarterData: QuarterSummary | null = null;
