@@ -9,7 +9,7 @@ import { generateCompanyReport } from '@/lib/reports/report-generator';
 import { isStaffRole } from '@/lib/auth/roles';
 
 const bodySchema = z.object({
-  period     : z.string().max(20).optional(),
+  period     : z.string().trim().regex(/^Q[1-4]\s+\d{4}$/i, 'Periodo inválido').optional(),
   lang       : z.enum(['es', 'ru']).default('es'),
   generatedBy: z.enum(['kia', 'admin', 'user']).default('user'),
   clientId   : z.string().uuid().optional(), // admin override
