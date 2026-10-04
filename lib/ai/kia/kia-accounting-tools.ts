@@ -17,13 +17,17 @@ export type KiaAccountingToolName =
   | 'get_accounts_receivable'
   | 'get_accounts_payable'
   | 'get_overdue_invoices'
-  | 'get_unreconciled_transactions';
+  | 'get_unreconciled_transactions'
+  | 'prepare_payment_reminder'
+  | 'prepare_credit_note_proposal';
 
 export const ACCOUNTING_TOOL_NAMES = new Set<KiaAccountingToolName>([
   'get_accounts_receivable',
   'get_accounts_payable',
   'get_overdue_invoices',
   'get_unreconciled_transactions',
+  'prepare_payment_reminder',
+  'prepare_credit_note_proposal',
 ]);
 
 type Raw = Record<string, unknown>;
@@ -252,6 +256,94 @@ async function loadBankMovements(context: KiaContext, limit: number): Promise<
   }
 }
 
+export function buildPaymentReminderDraft(input: {
+  invoice: ReturnType<typeof normalizeDocument>;
+  tone: 'gentle' | 'firm' | 'formal';
+  lang: 'es' | 'ru';
+}): { subject: string; body: string } {
+  const { invoice, tone, lang } = input;
+  const number = String(invoice.number ?? invoice.id ?? '');
+  const contact = String(invoice.contact ?? '').trim();
+  const amount = Number(invoice.outstanding).toLocaleString(lang === 'ru' ? 'ru-RU' : 'es-ES', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  const currency = invoice.currency;
+  const dueLabel = invoice.dueDate
+    ? new Date(Number(invoice.dueDate) * 1000).toLocaleDateString(lang === 'ru' ? 'ru-RU' : 'es-ES')
+    : null;
+
+  if (lang === 'ru') {
+    const subject = tone === 'formal'
+      ? `Требование об оплате счета ${number}`
+      : `Напоминание об оплате счета ${number}`;
+    const opening = contact ? `${contact}, добрый день.` : 'Добрый день.';
+    const due = dueLabel ? ` Срок оплаты: ${dueLabel}.` : '';
+    const closing = tone === 'gentle'
+      ? 'Если оплата уже произведена, пожалуйста, сообщите нам, чтобы мы могли сверить ее.'
+      : tone === 'firm'
+        ? 'Просим оплатить задолженность или сообщить нам дату оплаты.'
+        : 'Просим погасить задолженность без дальнейшей задержки либо связаться с нами для урегулирования.';
+    return {
+      subject,
+      body: `${opening}\n\nПо нашим данным, по счету ${number} остается к оплате ${amount} ${currency}.${due}\n\n${closing}`,
+    };
+  }
+
+  const subject = tone === 'formal'
+    ? `Requerimiento de pago — factura ${number}`
+    : `Recordatorio de pago — factura ${number}`;
+  const opening = contact ? `Buenos días, ${contact}.` : 'Buenos días.';
+  const due = dueLabel ? ` Fecha de vencimiento: ${dueLabel}.` : '';
+  const closing = tone === 'gentle'
+    ? 'Si el pago ya se ha realizado, indícanoslo para poder comprobarlo.'
+    : tone === 'firm'
+      ? 'Te agradeceríamos que regularizaras el importe pendiente o nos indicaras la fecha prevista de pago.'
+      : 'Solicitamos la regularización del importe pendiente sin más demora o que contactes con nosotros para acordar su resolución.';
+  return {
+    subject,
+    body: `${opening}\n\nSegún nuestros datos, la factura ${number} mantiene un importe pendiente de ${amount} ${currency}.${due}\n\n${closing}`,
+  };
+}
+
+export function buildCreditNoteProposal(input: {
+  invoice: ReturnType<typeof normalizeDocument>;
+  reason: string;
+  amount?: number;
+  lang: 'es' | 'ru';
+}) {
+  const { invoice, reason, amount, lang } = input;
+  return {
+    proposalType: 'credit_note',
+    documentType: 'creditnote',
+    originalInvoiceId: String(invoice.id ?? ''),
+    originalInvoiceNumber: String(invoice.number ?? ''),
+    originalTotal: invoice.total,
+    currency: invoice.currency,
+    reason,
+    proposedAmount: amount ?? null,
+    maximumAmount: invoice.total,
+    requiresAmountConfirmation: amount === undefined,
+    summary: lang === 'ru'
+      ? `Подготовлено предложение корректировочного документа по счету ${String(invoice.number ?? '')}. Документ в Holded не создан.`
+      : `Propuesta de factura rectificativa preparada para la factura ${String(invoice.number ?? '')}. No se ha creado ningún documento en Holded.`,
+    requiresHumanApproval: true,
+    holdedMutated: false,
+  };
+}
+
+async function findIssuedSalesInvoice(
+  context: KiaContext,
+  invoiceId: string,
+): Promise<{ ok: true; invoice: ReturnType<typeof normalizeDocument> } | { ok: false; error: string }> {
+  const loaded = await loadDocuments(context, 'invoice');
+  if (!loaded.ok) return loaded;
+  const raw = loaded.docs.find((doc) => String(doc.id ?? '') === invoiceId || String(doc.docNumber ?? doc.number ?? '') === invoiceId);
+  if (!raw) return { ok: false, error: 'No se ha encontrado la factura indicada en el rango contable disponible.' };
+  if (!isIssuedHoldedDocument(raw)) return { ok: false, error: 'La factura indicada sigue en borrador y no puede utilizarse para este flujo.' };
+  return { ok: true, invoice: normalizeDocument(raw) };
+}
+
 export async function executeKiaAccountingTool(
   toolName: KiaAccountingToolName,
   args: Record<string, unknown>,
@@ -261,6 +353,44 @@ export async function executeKiaAccountingTool(
   const source = isExpertGlobalHoldedContext(context)
     ? 'holded_expert_global'
     : 'holded_client_integration';
+
+  if (toolName === 'prepare_payment_reminder') {
+    const invoiceId = String(args.invoiceId ?? '').trim();
+    const found = await findIssuedSalesInvoice(context, invoiceId);
+    if (!found.ok) return fail(toolName, found.error);
+    if (found.invoice.outstanding <= 0.05) return fail(toolName, 'La factura no tiene saldo pendiente.');
+    const tone = (args.tone as 'gentle' | 'firm' | 'formal') ?? 'gentle';
+    if (tone === 'formal' && !found.invoice.overdue) {
+      return fail(toolName, 'No se prepara un requerimiento formal antes de que la factura esté vencida.');
+    }
+    const lang = (args.lang as 'es' | 'ru') ?? 'es';
+    const draft = buildPaymentReminderDraft({ invoice: found.invoice, tone, lang });
+    return ok(toolName, {
+      proposalType: 'payment_reminder',
+      invoice: found.invoice,
+      tone,
+      ...draft,
+      requiresHumanApproval: true,
+      emailSent: false,
+      holdedMutated: false,
+    });
+  }
+
+  if (toolName === 'prepare_credit_note_proposal') {
+    const invoiceId = String(args.invoiceId ?? '').trim();
+    const found = await findIssuedSalesInvoice(context, invoiceId);
+    if (!found.ok) return fail(toolName, found.error);
+    const amount = typeof args.amount === 'number' ? args.amount : undefined;
+    if (amount !== undefined && amount > found.invoice.total + 0.01) {
+      return fail(toolName, 'El importe propuesto no puede superar el total de la factura original.');
+    }
+    return ok(toolName, buildCreditNoteProposal({
+      invoice: found.invoice,
+      reason: String(args.reason ?? '').trim(),
+      amount,
+      lang: (args.lang as 'es' | 'ru') ?? 'es',
+    }));
+  }
 
   if (toolName === 'get_accounts_receivable' || toolName === 'get_accounts_payable') {
     const docType = toolName === 'get_accounts_payable' ? 'purchase' : 'invoice';
