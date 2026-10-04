@@ -162,7 +162,7 @@ export const kiaToolValidators = {
   }).strict(),
   generate_company_report: z.object({
     reportType: z.enum(['empresa_status']).default('empresa_status'),
-    period: z.string().optional(),
+    period: z.string().trim().regex(/^Q[1-4]\s+\d{4}$/i).optional(),
     lang: z.enum(['es', 'ru']).default('es'),
   }).strict(),
   extract_invoice_ocr: z.object({
