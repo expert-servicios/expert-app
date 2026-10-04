@@ -125,7 +125,7 @@ export function CompanyStatusReport({ reportId, data }: Props) {
 
       {/* Saldos bancarios */}
       {data.bankAccounts.length > 0 && (
-        <Section title="Saldos bancarios (Holded)">
+        <Section title="Saldos bancarios actuales (Holded)">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {data.bankAccounts.map((a) => (
               <div key={a.id} className="rounded-xl border border-[#e8dfc8] bg-white p-4">
@@ -157,7 +157,7 @@ export function CompanyStatusReport({ reportId, data }: Props) {
       </Section>
 
       {/* Anomalías */}
-      <Section title={`Alertas contables${data.anomalies.length ? ` (${data.anomalies.length})` : ''}`}>
+      <Section title={`Alertas contables abiertas actuales${data.anomalies.length ? ` (${data.anomalies.length})` : ''}`}>
         <AnomaliesTable anomalies={data.anomalies} />
       </Section>
 
