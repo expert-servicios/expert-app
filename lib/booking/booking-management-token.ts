@@ -6,6 +6,7 @@ export type BookingManagementAuthorization = {
   appointmentId: string;
   email: string;
   service: BookingServiceKey;
+  expiresAt?: Date;
 };
 
 const TTL_SECONDS = 90 * 24 * 60 * 60;
@@ -33,7 +34,11 @@ export async function createBookingManagementToken(
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime(`${TTL_SECONDS}s`)
+    .setExpirationTime(
+      input.expiresAt
+        ? Math.max(Math.floor(input.expiresAt.getTime() / 1000), Math.floor(Date.now() / 1000) + 3600)
+        : `${TTL_SECONDS}s`,
+    )
     .sign(secret());
 }
 
