@@ -66,7 +66,7 @@ export async function fetchQuarterData(
       : listHoldedDocuments(gateway, 'purchase', { startDate, endDate }).catch((): HoldedReadDocument[] => []),
   ]);
   const activeDocument = (d: HoldedReadDocument) =>
-    !['cancelled', 'failed'].includes(String(d.status ?? '').toLowerCase());
+    !['cancelled', 'canceled', 'failed'].includes(String(d.status ?? '').toLowerCase());
   const sales = salesCandidates.filter(activeDocument);
   const purchases = purchaseCandidates
     .filter(activeDocument)
