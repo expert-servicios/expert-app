@@ -46,7 +46,16 @@ export async function POST(request: NextRequest) {
   // Resolve company
   const { data: profile } = await admin
     .from('profiles').select('active_company_id').eq('id', clientId).single();
-  const companyId = profile?.active_company_id ?? null;
+  const requestedCompanyId = profile?.active_company_id ?? null;
+  const { data: membership } = requestedCompanyId
+    ? await admin
+        .from('profile_companies')
+        .select('company_id')
+        .eq('profile_id', clientId)
+        .eq('company_id', requestedCompanyId)
+        .maybeSingle()
+    : { data: null };
+  const companyId = membership?.company_id ?? null;
 
   // Find active Holded integration
   let query = admin
