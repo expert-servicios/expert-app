@@ -41,6 +41,13 @@ describe('recurring meeting series', () => {
     expect(executor).toContain("onConflict: 'source_key'");
   });
 
+  it('keeps dependent monthly meetings anchored to the primary series date', () => {
+    expect(helper).toContain('anchor_source_key');
+    expect(helper).toContain('resolveAnchoredLocalDate');
+    expect(helper).toContain('recurring_meeting_anchor_not_ready');
+    expect(helper).toContain('orderedSeriesRows');
+  });
+
   it('runs a daily materializer cron', () => {
     expect(cron).toContain('materializeRecurringMeetingSeries');
     expect(vercel).toContain('/api/cron/recurring-meeting-series');
