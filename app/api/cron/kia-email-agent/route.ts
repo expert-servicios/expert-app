@@ -348,7 +348,36 @@ async function createEmailRequestTask(input: {
     .update(`${scope}|${input.nextAction}|${normalizedAction}`)
     .digest('hex')
     .slice(0, 40);
-  const taskKey = `email-action:${actionFingerprint}`;
+  const taskKey = `email-request:${input.message.id}`;
+
+  const { data: existingAction, error: existingActionError } = await input.admin
+    .from('internal_tasks')
+    .select('id,title,metadata')
+    .in('status', ['pendiente', 'en_progreso'])
+    .contains('metadata', { action_fingerprint: actionFingerprint })
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existingActionError) throw existingActionError;
+  if (existingAction?.id) {
+    const previousMetadata = (existingAction.metadata ?? {}) as Record<string, unknown>;
+    const { error: updateError } = await input.admin
+      .from('internal_tasks')
+      .update({
+        description: input.excerpt.slice(0, 1500),
+        updated_at: new Date().toISOString(),
+        metadata: {
+          ...previousMetadata,
+          last_gmail_message_id: input.message.id,
+          last_gmail_thread_id: input.message.conversationId,
+          last_email_seen_at: new Date().toISOString(),
+        },
+      })
+      .eq('id', existingAction.id);
+    if (updateError) throw updateError;
+    return { id: existingAction.id, title: existingAction.title, created: false };
+  }
+
   const { data, error } = await input.admin.from('internal_tasks').insert({
     source_key: taskKey,
     title: actionText.slice(0, 220),
@@ -371,27 +400,16 @@ async function createEmailRequestTask(input: {
     },
   }).select('id,title').single();
 
-  if (!error) return data;
+  if (!error) return data ? { ...data, created: true } : null;
   if (error.code !== '23505') throw error;
 
-  const { data: existing, error: existingError } = await input.admin
+  const { data: existingMessage, error: existingMessageError } = await input.admin
     .from('internal_tasks')
     .select('id,title')
     .eq('source_key', taskKey)
     .maybeSingle();
-  if (existingError) throw existingError;
-  if (existing?.id) {
-    const { error: updateError } = await input.admin
-      .from('internal_tasks')
-      .update({
-        description: input.excerpt.slice(0, 1500),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', existing.id)
-      .neq('status', 'completada');
-    if (updateError) throw updateError;
-  }
-  return existing;
+  if (existingMessageError) throw existingMessageError;
+  return existingMessage ? { ...existingMessage, created: false } : null;
 }
 
 async function writeAgentHeartbeat(
@@ -819,7 +837,7 @@ export async function GET(request: NextRequest) {
             return null;
           })
         : null;
-      if (createdTask) {
+      if (createdTask?.created) {
         await notifyAdmins({
           title: 'KIA creó una tarea',
           body: `${createdTask.title} · ${senderDisplayName(latest)}`.slice(0, 240),
