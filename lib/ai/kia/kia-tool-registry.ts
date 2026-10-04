@@ -92,6 +92,7 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   find_relevant_services:              policy('R0', 'read',  'service_discovery'),
   get_booking_availability:             policy('R0', 'read',  'calendar'),
   create_booking_meeting:               policy('R2', 'external_action', 'calendar'),
+  upsert_recurring_meeting_series:       { ...policy('R2', 'external_action', 'calendar', true), allowedChannels: ['admin'] },
 };
 
 function policy(
