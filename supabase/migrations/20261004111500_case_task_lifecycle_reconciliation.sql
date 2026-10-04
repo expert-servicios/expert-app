@@ -27,7 +27,7 @@ begin
      where case_id = new.id
        and status in ('pendiente', 'en_progreso')
        and (
-         coalesce((metadata ->> 'blocks_submission')::boolean, false)
+         coalesce(metadata ->> 'blocks_submission', 'false') = 'true'
          or metadata ->> 'task_key' = 'submit_and_archive_receipt'
        );
 
@@ -79,7 +79,7 @@ update public.internal_tasks t
    and coalesce(c.status, c.state) = 'presentado'
    and t.status in ('pendiente', 'en_progreso')
    and (
-     coalesce((t.metadata ->> 'blocks_submission')::boolean, false)
+     coalesce(t.metadata ->> 'blocks_submission', 'false') = 'true'
      or t.metadata ->> 'task_key' = 'submit_and_archive_receipt'
    );
 
