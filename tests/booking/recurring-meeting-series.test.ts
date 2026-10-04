@@ -48,6 +48,19 @@ describe('recurring meeting series', () => {
     expect(helper).toContain('orderedSeriesRows');
   });
 
+  it('processes at most one new month per series per run and recovers interrupted writes', () => {
+    expect(helper).toContain('attemptedSeriesMonth');
+    expect(helper).toContain('seriesMarker');
+    expect(helper).toContain('recoveredAppointment');
+    expect(helper).toContain('if (attemptedSeriesMonth) break');
+  });
+
+  it('repairs confirmed occurrences when the recurring service type changes', () => {
+    expect(helper).toContain('updateBookingCalendarMeeting');
+    expect(helper).toContain('repairedConfirmedThisSeries');
+    expect(helper).toContain('appointment_type: series.service_key');
+  });
+
   it('runs a daily materializer cron', () => {
     expect(cron).toContain('materializeRecurringMeetingSeries');
     expect(vercel).toContain('/api/cron/recurring-meeting-series');
