@@ -46,8 +46,9 @@ function quarterToUnix(year: number, quarter: number): { from: number; to: numbe
 }
 
 function extractVat(doc: HoldedReadDocument): number {
-  return typeof doc.tax === 'number' && Number.isFinite(doc.tax)
-    ? Math.max(0, doc.tax)
+  const tax = doc.tax;
+  return typeof tax === 'number' && Number.isFinite(tax)
+    ? Math.max(0, tax)
     : Math.max(0, doc.total - doc.subtotal);
 }
 
