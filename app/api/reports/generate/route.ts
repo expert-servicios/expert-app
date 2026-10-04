@@ -9,7 +9,12 @@ import { generateCompanyReport } from '@/lib/reports/report-generator';
 import { isStaffRole } from '@/lib/auth/roles';
 
 const bodySchema = z.object({
-  period     : z.string().trim().regex(/^Q[1-4]\s+\d{4}$/i, 'Periodo inválido').optional(),
+  period     : z.string().trim().regex(/^Q[1-4]\s+\d{4}$/i, 'Periodo inválido')
+    .refine((value) => {
+      const year = Number(value.trim().split(/\s+/)[1]);
+      return Number.isInteger(year) && year >= 2000 && year <= 2100;
+    }, 'Periodo fuera de rango')
+    .optional(),
   lang       : z.enum(['es', 'ru']).default('es'),
   generatedBy: z.enum(['kia', 'admin', 'user']).default('user'),
   clientId   : z.string().uuid().optional(), // admin override
@@ -47,15 +52,19 @@ export async function POST(request: NextRequest) {
   const { data: profile } = await admin
     .from('profiles').select('active_company_id').eq('id', clientId).single();
   const requestedCompanyId = profile?.active_company_id ?? null;
-  const { data: membership } = requestedCompanyId
-    ? await admin
-        .from('profile_companies')
-        .select('company_id')
-        .eq('profile_id', clientId)
-        .eq('company_id', requestedCompanyId)
-        .maybeSingle()
-    : { data: null };
-  const companyId = membership?.company_id ?? null;
+  let companyId: string | null = null;
+  if (requestedCompanyId) {
+    const { data: membership, error: membershipError } = await admin
+      .from('profile_companies')
+      .select('company_id')
+      .eq('profile_id', clientId)
+      .eq('company_id', requestedCompanyId)
+      .maybeSingle();
+    if (membershipError || !membership) {
+      return NextResponse.json({ error: 'No autorizado para la empresa activa' }, { status: 403 });
+    }
+    companyId = membership.company_id;
+  }
 
   // Find active Holded integration
   let query = admin
@@ -65,7 +74,9 @@ export async function POST(request: NextRequest) {
     .eq('status', 'active')
     .order('created_at', { ascending: false })
     .limit(1);
-  query = companyId ? query.eq('company_id', companyId) : query.eq('client_id', clientId);
+  query = companyId
+    ? query.eq('company_id', companyId)
+    : query.eq('client_id', clientId).is('company_id', null);
   const { data: intRow } = await query.maybeSingle();
 
   if (!intRow?.id) {
