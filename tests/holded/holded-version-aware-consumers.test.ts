@@ -24,12 +24,17 @@ describe('Holded version-aware accounting consumers', () => {
 
   it('routes KIA accounting reads through HoldedGateway', () => {
     const executor = source('lib/ai/kia/kia-tool-executor.ts');
+    const accounting = source('lib/ai/kia/kia-accounting-tools.ts');
     expect(executor).toContain('createHoldedGatewayForIntegration(access.access.integrationId)');
     expect(executor).toContain('listHoldedDocuments(');
     expect(executor).toContain('listHoldedDocumentType(');
     expect(executor).toContain('listHoldedContacts(');
     expect(executor).toContain('listHoldedBankAccounts(');
     expect(executor).not.toContain('resolveHoldedAuth(access.access.integrationId)');
+    expect(accounting).toContain('createHoldedGatewayForIntegration(access.access.integrationId)');
+    expect(accounting).toContain('listHoldedBankMovements(');
+    expect(accounting).not.toContain('buildHoldedHeaders');
+    expect(accounting).not.toContain('resolveHoldedAuth');
   });
 
   it('normalizes v1 and v2 into a shared read model', () => {
@@ -38,5 +43,22 @@ describe('Holded version-aware accounting consumers', () => {
     expect(gateway).toContain('v1DocumentToReadModel');
     expect(gateway).toContain('v2DocumentToReadModel');
     expect(gateway).toContain('if (gateway.v2)');
+  });
+});
+
+
+describe('Holded legacy compatibility contracts', () => {
+  it('keeps v1 treasury on the supported /treasury endpoint', () => {
+    const client = source('lib/integrations/holded/holded-client.ts');
+    expect(client).toContain("get<unknown>('/treasury')");
+    expect(client).not.toContain("get<unknown>('/treasury/accounts')");
+  });
+
+  it('prevents Client 360 from rewriting managed v2 integrations as legacy v1', () => {
+    const route = source('app/api/admin/clientes/[id]/holded/route.ts');
+    expect(route).toContain("existing.api_version === 'v2'");
+    expect(route).toContain("existing.mode === 'advisor_managed'");
+    expect(route).toContain("api_version: 'v1'");
+    expect(route).toContain('se administra desde Company 360');
   });
 });
