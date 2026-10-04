@@ -24,7 +24,7 @@ const bodySchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('disconnect'), companyId: z.string().uuid() }).strict(),
 ]);
 
-const SAFE_COLUMNS = 'id,client_id,company_id,provider,mode,api_key_last4,permissions_detected,permissions_enabled,status,sync_mode,last_sync_at,last_success_at,last_error,consent_at,consent_version,created_at,updated_at';
+const SAFE_COLUMNS = 'id,client_id,company_id,provider,mode,api_version,api_key_last4,permissions_detected,permissions_enabled,status,sync_mode,last_sync_at,last_success_at,last_error,consent_at,consent_version,created_at,updated_at,channel';
 
 async function requireStaff(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -101,13 +101,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const now = new Date().toISOString();
       const encryptedApiKey = encryptSecret(parsed.data.apiKey);
       const existing = await getIntegration(admin, companyId);
+      if (existing && (existing.api_version === 'v2' || existing.mode === 'advisor_managed')) {
+        return NextResponse.json(
+          { error: 'Esta integración Holded v2/gestionada se administra desde Company 360.' },
+          { status: 409 },
+        );
+      }
       const enabledPermissions = intersectHoldedReadPermissions(testResult.permissions, {
         ...testResult.permissions,
         laborEmployeesRead: parsed.data.laborReadAuthorized,
         laborPayrollsRead: parsed.data.laborReadAuthorized,
       });
       const payload = {
-        provider: 'holded', mode: 'client_account', client_id: clientId, company_id: companyId,
+        provider: 'holded', mode: 'client_account', api_version: 'v1', client_id: clientId, company_id: companyId,
         api_key_last4: keyLast4(parsed.data.apiKey), permissions_detected: testResult.permissions,
         permissions_enabled: enabledPermissions, status: 'active', sync_mode: 'read_only',
         last_success_at: now, last_error: null, connected_by: actorId, consent_at: now,
@@ -145,6 +151,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const integration = await getIntegration(admin, companyId);
     if (!integration) return NextResponse.json({ error: 'No existe una integración Holded activa para esta empresa' }, { status: 404 });
+    if (integration.api_version === 'v2' || integration.mode === 'advisor_managed') {
+      return NextResponse.json(
+        { error: 'Esta integración Holded v2/gestionada se administra desde Company 360.' },
+        { status: 409 },
+      );
+    }
 
     if (parsed.data.action === 'disconnect') {
       await admin.from('client_integration_secrets').delete().eq('integration_id', integration.id);
