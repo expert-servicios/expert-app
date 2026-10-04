@@ -15,8 +15,8 @@ describe('case task lifecycle reconciliation', () => {
   });
 
   it('keeps post-submission follow-up eligible instead of closing every presented task', () => {
-    expect(migration).not.toContain("v_status = 'presentado' then\n    update public.internal_tasks\n       set status = 'completada'\n");
-    expect(migration).toContain("blocks_submission");
+    expect(migration).not.toContain("metadata ->> 'task_key' = 'follow_up_after_submission'");
+    expect(migration).toContain("metadata ->> 'blocks_submission'");
   });
 
   it('closes all remaining case tasks when the case is finalized and clears case deadlines', () => {
