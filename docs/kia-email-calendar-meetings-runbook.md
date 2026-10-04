@@ -1343,3 +1343,17 @@ No considerar esos puntos publicados en producción hasta que:
 
 - PR #511: KIA Gmail + reuniones Google/Calendar/Meet + trazabilidad CRM.
 - PR #515: atribución del funnel público y cierre de huecos de lead/origen.
+
+
+## Series recurrentes y calendario anticipado
+
+EXPERT/KIA es la fuente operativa de las reuniones recurrentes. No usar una RRULE de Google Calendar como fuente maestra cuando la reunión deba generar tareas, trazabilidad, enlaces de reprogramación o contexto por empresa.
+
+- `recurring_meeting_series` define la serie y `recurring_meeting_occurrences` cada mes materializado.
+- El worker `/api/cron/recurring-meeting-series` mantiene el horizonte futuro y requiere `CRON_SECRET`.
+- Cada ocurrencia genera una cita EXPERT individual, un evento Google Calendar/Meet, recordatorios y tarea Admin.
+- Si el día objetivo cae en fin de semana, pasa al siguiente laborable.
+- Los conflictos desplazan la cita al siguiente laborable disponible según la política de la serie.
+- Una serie dependiente puede usar `metadata.anchor_source_key` para mantenerse el mismo día que una serie principal. Caso de referencia: revisión de SIGMAKNOT (60 min) seguida de Josep autónomo (30 min).
+- Las series ligadas a suscripción/entitlement dejan de generar nuevas citas cuando la cobertura deja de estar activa.
+- Los enlaces de reprogramación de citas futuras permanecen válidos hasta 30 días después de la propia reunión.
