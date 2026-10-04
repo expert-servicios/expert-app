@@ -45,7 +45,7 @@ export interface HoldedReadDocument {
   accountingTimestamp: number;
   total: number;
   subtotal: number;
-  tax: number;
+  tax: number | null;
   currency: string;
   status: string;
   contactId: string | null;
@@ -137,6 +137,11 @@ function v2DocumentToReadModel(doc: HoldedV2Invoice | HoldedV2Purchase): HoldedR
   const accountingTimestamp = accountingDate ? Math.floor(Date.parse(accountingDate) / 1000) : timestamp;
   const status = String(doc.status ?? '');
   const approvalStatus = String(doc.approval_status ?? '').toLowerCase();
+  const rawTax = doc.tax;
+  const parsedTax = rawTax === null || rawTax === undefined || String(rawTax).trim() === ''
+    ? null
+    : Number(rawTax);
+  const tax = parsedTax !== null && Number.isFinite(parsedTax) ? parsedTax : null;
 
   return {
     id: String(doc.id ?? ''),
@@ -148,7 +153,7 @@ function v2DocumentToReadModel(doc: HoldedV2Invoice | HoldedV2Purchase): HoldedR
     accountingTimestamp: Number.isFinite(accountingTimestamp) ? accountingTimestamp : (Number.isFinite(timestamp) ? timestamp : 0),
     total: Number(doc.total ?? 0),
     subtotal: Number(doc.subtotal ?? 0),
-    tax: Number(doc.tax ?? 0),
+    tax,
     currency: String(doc.currency ?? 'EUR'),
     status,
     contactId: doc.contact_id ? String(doc.contact_id) : null,
