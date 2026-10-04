@@ -178,6 +178,12 @@ export async function runKiaOrchestratedDecision(params: {
     channel: effectiveAuthorization.channel,
     allowedToolNames: effectiveToolNames,
     detectedIntentOverride: plan.detectedIntent,
+    orchestrationMetadata: {
+      skillId: executionTrace.skillId,
+      subAgentId: executionTrace.preferredSubAgentId,
+      detectedIntent: executionTrace.detectedIntent,
+      selectionBasis: executionTrace.selectionBasis,
+    },
     toolAuthorization: {
       maxRiskTier: effectiveAuthorization.maxRiskTier,
       allowedEffects: effectiveAuthorization.allowedEffects
