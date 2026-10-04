@@ -1,4 +1,8 @@
-import { createHoldedClient, type HoldedDocument } from '@/lib/integrations/holded/holded-client';
+import {
+  createHoldedGatewayForIntegration,
+  listHoldedDocuments,
+  type HoldedReadDocument,
+} from '@/lib/integrations/holded/holded-gateway';
 
 export interface MonthlySnapshot {
   month: string;
@@ -39,9 +43,8 @@ function quarterToUnix(year: number, quarter: number): { from: number; to: numbe
   return { from: Math.floor(start.getTime() / 1000), to: Math.floor(end.getTime() / 1000) };
 }
 
-function extractVat(doc: HoldedDocument): number {
-  const base = doc.items.reduce((s, item) => s + (item.subtotal ?? 0), 0);
-  return Math.max(0, doc.total - base);
+function extractVat(doc: HoldedReadDocument): number {
+  return Number.isFinite(doc.tax) ? Math.max(0, doc.tax) : Math.max(0, doc.total - doc.subtotal);
 }
 
 export async function fetchQuarterData(
@@ -50,12 +53,26 @@ export async function fetchQuarterData(
   quarter: 1 | 2 | 3 | 4,
 ): Promise<QuarterSummary> {
   const { from, to } = quarterToUnix(year, quarter);
-  const client = await createHoldedClient(integrationId);
+  const gateway = await createHoldedGatewayForIntegration(integrationId);
+  const startDate = new Date(from * 1000).toISOString().slice(0, 10);
+  const endDate = new Date(to * 1000).toISOString().slice(0, 10);
 
-  const [sales, purchases] = await Promise.all([
-    client.listSalesInvoices({ dateFrom: from, dateTo: to }).catch((): HoldedDocument[] => []),
-    client.listPurchaseInvoices({ dateFrom: from, dateTo: to }).catch((): HoldedDocument[] => []),
+  const [salesCandidates, purchaseCandidates] = await Promise.all([
+    listHoldedDocuments(gateway, 'sales', { startDate, endDate }).catch((): HoldedReadDocument[] => []),
+    gateway.v2
+      // v2 purchase tax period follows deduction_date rather than issue date.
+      ? listHoldedDocuments(gateway, 'purchase', { maxItems: 2_000 }).catch((): HoldedReadDocument[] => [])
+      // v1 has no deduction_date semantic here: preserve the historical quarter-scoped request.
+      : listHoldedDocuments(gateway, 'purchase', { startDate, endDate }).catch((): HoldedReadDocument[] => []),
   ]);
+  const activeDocument = (d: HoldedReadDocument) =>
+    !['cancelled', 'failed'].includes(String(d.status ?? '').toLowerCase());
+  const sales = salesCandidates.filter(activeDocument);
+  const purchases = purchaseCandidates
+    .filter(activeDocument)
+    .filter((d) => gateway.v2
+      ? d.accountingTimestamp >= from && d.accountingTimestamp <= to
+      : true);
 
   const salesTotal     = sales.reduce((s, d) => s + d.total, 0);
   const purchasesTotal = purchases.reduce((s, d) => s + d.total, 0);
@@ -69,8 +86,8 @@ export async function fetchQuarterData(
     const mTo   = new Date(year, mi + 1, 0, 23, 59, 59).getTime() / 1000;
     return {
       month:     MONTH_LABELS[mi],
-      sales:     sales.filter((d) => d.date >= mFrom && d.date <= mTo).reduce((s, d) => s + d.total, 0),
-      purchases: purchases.filter((d) => d.date >= mFrom && d.date <= mTo).reduce((s, d) => s + d.total, 0),
+      sales:     sales.filter((d) => d.timestamp >= mFrom && d.timestamp <= mTo).reduce((s, d) => s + d.total, 0),
+      purchases: purchases.filter((d) => d.accountingTimestamp >= mFrom && d.accountingTimestamp <= mTo).reduce((s, d) => s + d.total, 0),
     };
   });
 
@@ -81,11 +98,11 @@ export async function fetchQuarterData(
     salesCount: sales.length,
     purchasesCount: purchases.length,
     recentSales: sales.slice(0, 5).map((d) => ({
-      docNumber: d.docNumber, date: d.date, total: d.total,
-      contact: d.contact.name, status: d.status,
+      docNumber: d.number, date: d.timestamp, total: d.total,
+      contact: d.contactName, status: d.status,
     })),
     recentPurchases: purchases.slice(0, 5).map((d) => ({
-      docNumber: d.docNumber, date: d.date, total: d.total, contact: d.contact.name,
+      docNumber: d.number, date: d.timestamp, total: d.total, contact: d.contactName,
     })),
     monthlyData,
     syncedAt: new Date().toISOString(),

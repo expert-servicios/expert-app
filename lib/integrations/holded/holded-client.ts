@@ -40,6 +40,8 @@ export interface HoldedDocument {
   items: HoldedDocumentItem[];
 }
 
+export type HoldedDocumentType = 'invoice' | 'purchase' | 'salesreceipt' | 'creditnote' | 'estimate' | 'proforma' | 'order';
+
 export interface HoldedDocumentItem {
   name: string;
   units: number;
@@ -128,9 +130,11 @@ export interface HoldedClient {
   listContacts(params?: { page?: number; email?: string }): Promise<HoldedContact[]>;
   listSalesInvoices(params?: { page?: number; dateFrom?: number; dateTo?: number }): Promise<HoldedDocument[]>;
   listPurchaseInvoices(params?: { page?: number; dateFrom?: number; dateTo?: number }): Promise<HoldedDocument[]>;
+  listDocuments(docType: HoldedDocumentType, params?: { page?: number; dateFrom?: number; dateTo?: number }): Promise<HoldedDocument[]>;
   listTaxes(): Promise<HoldedTax[]>;
   listBankAccounts(): Promise<HoldedBankAccount[]>;
   listBankMovements(params?: { page?: number; dateFrom?: number; dateTo?: number }): Promise<HoldedBankMovement[]>;
+  listBankAccountMovements(accountId: string, params?: { page?: number; dateFrom?: number; dateTo?: number }): Promise<HoldedBankMovement[]>;
   listInboxDocuments(params?: { page?: number }): Promise<HoldedInboxDocument[]>;
   getDocument(docType: 'invoice' | 'estimate' | 'proforma' | 'order', docId: string): Promise<HoldedDocument | null>;
   getContact(contactId: string): Promise<HoldedContact | null>;
@@ -152,7 +156,7 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
       { key: 'salesInvoices', probe: () => get('/documents/invoice?page=1') },
       { key: 'purchaseInvoices', probe: () => get('/documents/purchase?page=1') },
       { key: 'taxes', probe: () => get('/taxes') },
-      { key: 'bankAccounts', probe: () => get('/treasury/accounts') },
+      { key: 'bankAccounts', probe: () => get('/treasury') },
       { key: 'bankMovements', probe: () => get('/treasury/movements?page=1') },
       { key: 'inboxDocuments', probe: () => get('/documents/inbox?page=1') },
       { key: 'accountingReports', probe: () => getAccounting(`/reports/vat?year=${new Date().getFullYear()}`) },
@@ -232,12 +236,20 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
       return listOrData<HoldedDocument>(raw);
     },
 
+    async listDocuments(docType, { page = 1, dateFrom, dateTo } = {}) {
+      const qs = new URLSearchParams({ page: String(page) });
+      if (dateFrom) qs.set('dateFrom', String(dateFrom));
+      if (dateTo) qs.set('dateTo', String(dateTo));
+      const raw = await get<unknown>(`/documents/${docType}?${qs}`);
+      return listOrData<HoldedDocument>(raw);
+    },
+
     async listTaxes() {
       return listOrData<HoldedTax>(await get<unknown>('/taxes'));
     },
 
     async listBankAccounts() {
-      return listOrData<HoldedBankAccount>(await get<unknown>('/treasury/accounts'));
+      return listOrData<HoldedBankAccount>(await get<unknown>('/treasury'));
     },
 
     async listBankMovements({ page = 1, dateFrom, dateTo } = {}) {
@@ -245,6 +257,17 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
       if (dateFrom) qs.set('dateFrom', String(dateFrom));
       if (dateTo) qs.set('dateTo', String(dateTo));
       return listOrData<HoldedBankMovement>(await get<unknown>(`/treasury/movements?${qs}`));
+    },
+
+    async listBankAccountMovements(accountId, { page = 1, dateFrom, dateTo } = {}) {
+      const id = encodeURIComponent(accountId.trim());
+      if (!id) throw new Error('accountId is required');
+      const qs = new URLSearchParams({ page: String(page) });
+      if (dateFrom) qs.set('dateFrom', String(dateFrom));
+      if (dateTo) qs.set('dateTo', String(dateTo));
+      return listOrData<HoldedBankMovement>(
+        await get<unknown>(`/treasury/${id}/movements?${qs}`),
+      );
     },
 
     async listInboxDocuments({ page = 1 } = {}) {

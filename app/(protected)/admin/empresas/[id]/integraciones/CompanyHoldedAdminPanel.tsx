@@ -13,6 +13,8 @@ type Company = {
 type Integration = {
   id: string;
   company_id: string | null;
+  mode: 'expert_account' | 'client_account' | 'advisor_managed';
+  api_version: 'v1' | 'v2' | null;
   status: string;
   api_key_last4: string | null;
   sync_mode: string;
@@ -33,6 +35,8 @@ export function CompanyHoldedAdminPanel({ companyId }: { companyId: string }) {
   const [showKey, setShowKey] = useState(false);
   const [consent, setConsent] = useState(false);
   const [laborConsent, setLaborConsent] = useState(false);
+  const [connectionMode, setConnectionMode] = useState<'client_account' | 'advisor_managed'>('advisor_managed');
+  const [apiVersion, setApiVersion] = useState<'v1' | 'v2'>('v2');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
@@ -84,6 +88,8 @@ export function CompanyHoldedAdminPanel({ companyId }: { companyId: string }) {
       setShowKey(false);
       setConsent(false);
       setLaborConsent(false);
+      setConnectionMode('advisor_managed');
+      setApiVersion('v2');
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error de conexión');
@@ -134,6 +140,14 @@ export function CompanyHoldedAdminPanel({ companyId }: { companyId: string }) {
                 <p className="mt-1 text-sm text-green-800">
                   clave ••••{integration.api_key_last4 ?? '????'} · {integration.sync_mode === 'read_write' ? 'lectura/escritura' : 'solo lectura'}
                 </p>
+                <p className="mt-1 text-xs font-semibold text-green-800">
+                  {integration.mode === 'advisor_managed'
+                    ? 'Licencia gestionada por EXPERT Asesoría'
+                    : integration.mode === 'expert_account'
+                      ? 'Cuenta propia de EXPERT'
+                      : 'Cuenta colaborativa del cliente'}
+                  {' · '}API {integration.api_version ?? 'v1'}
+                </p>
                 {integration.last_success_at && (
                   <p className="mt-1 text-xs text-green-700">
                     Última verificación correcta: {new Date(integration.last_success_at).toLocaleString('es-ES')}
@@ -183,8 +197,54 @@ export function CompanyHoldedAdminPanel({ companyId }: { companyId: string }) {
             <h2 className="font-serif text-xl font-bold">Conectar tenant Holded</h2>
           </div>
           <p className="mt-2 text-sm leading-6 text-[#6b7280]">
-            Pega el API Token autorizado por la empresa. EXPERT lo valida en servidor, lo cifra y no vuelve a mostrarlo.
+            El token se valida exclusivamente en servidor, se cifra y no vuelve a mostrarse.
           </p>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => { setConnectionMode('advisor_managed'); setApiVersion('v2'); }}
+              className={`rounded-xl border p-4 text-left transition ${
+                connectionMode === 'advisor_managed'
+                  ? 'border-[#c88b25] bg-[#fff9ec]'
+                  : 'border-[#d8cbb5] bg-white'
+              }`}
+            >
+              <p className="text-sm font-bold text-[#07111d]">Gestionada por EXPERT Asesoría</p>
+              <p className="mt-1 text-xs leading-5 text-[#6b7280]">
+                Licencia de gestión contable creada y administrada desde el portal de asesorías de EXPERT. Usa API v2.
+              </p>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setConnectionMode('client_account'); setApiVersion('v2'); }}
+              className={`rounded-xl border p-4 text-left transition ${
+                connectionMode === 'client_account'
+                  ? 'border-[#c88b25] bg-[#fff9ec]'
+                  : 'border-[#d8cbb5] bg-white'
+              }`}
+            >
+              <p className="text-sm font-bold text-[#07111d]">Cuenta propia del cliente</p>
+              <p className="mt-1 text-xs leading-5 text-[#6b7280]">
+                Tenant contratado por el cliente y compartido con EXPERT para contabilidad colaborativa.
+              </p>
+            </button>
+          </div>
+
+          {connectionMode === 'client_account' && (
+            <div className="mt-4">
+              <label className="text-xs font-semibold text-[#29384a]" htmlFor="holded-api-version">Versión API</label>
+              <select
+                id="holded-api-version"
+                value={apiVersion}
+                onChange={(event) => setApiVersion(event.target.value as 'v1' | 'v2')}
+                className="mt-1 w-full rounded-xl border border-[#d8cbb5] bg-white px-3 py-2.5 text-sm text-[#07111d]"
+              >
+                <option value="v2">API v2 · Bearer (recomendada)</option>
+                <option value="v1">API v1 · legacy (solo conexiones antiguas)</option>
+              </select>
+            </div>
+          )}
 
           <div className="relative mt-5">
             <input
@@ -202,7 +262,11 @@ export function CompanyHoldedAdminPanel({ companyId }: { companyId: string }) {
 
           <label className="mt-4 flex items-start gap-2 text-xs leading-5 text-[#4b5563]">
             <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} className="mt-1" />
-            <span>Confirmo que la empresa ha autorizado la conexión de su cuenta Holded a EXPERT y el registro cifrado de esta credencial.</span>
+            <span>
+              {connectionMode === 'advisor_managed'
+                ? 'Confirmo que esta cuenta pertenece a una licencia de gestión contable administrada por EXPERT y autorizo el registro cifrado de su token.'
+                : 'Confirmo que el cliente ha autorizado la conexión de su cuenta Holded a EXPERT y el registro cifrado de esta credencial.'}
+            </span>
           </label>
 
           <label className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-xs leading-5 text-amber-900">
@@ -219,6 +283,8 @@ export function CompanyHoldedAdminPanel({ companyId }: { companyId: string }) {
                 apiKey: apiKey.trim(),
                 consentConfirmed: true,
                 laborReadAuthorized: laborConsent,
+                mode: connectionMode,
+                apiVersion: connectionMode === 'advisor_managed' ? 'v2' : apiVersion,
               })}
               className="inline-flex items-center gap-2 rounded-xl bg-[#07111d] px-5 py-3 text-sm font-bold text-white disabled:opacity-40"
             >

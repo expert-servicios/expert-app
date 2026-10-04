@@ -4,9 +4,11 @@ import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations
 import { isStaffRole } from '@/lib/auth/roles';
 import { encryptSecret, decryptSecret, keyLast4 } from '@/lib/security/encryption';
 import { createHoldedClientFromRawKey, isEncryptionConfigured } from '@/lib/integrations/holded/holded-client';
+import { createHoldedV2ClientFromRawKey } from '@/lib/integrations/holded/holded-v2-client';
 import { detectHoldedLaborPermissions } from '@/lib/integrations/holded/holded-labor-permissions';
 import {
   intersectHoldedReadPermissions,
+  createEmptyHoldedPermissions,
   normalizeDetectedHoldedPermissions,
   type HoldedPermissions,
 } from '@/lib/integrations/holded/holded-permissions';
@@ -18,12 +20,14 @@ const bodySchema = z.discriminatedUnion('action', [
     apiKey: z.string().trim().min(8).max(256),
     consentConfirmed: z.literal(true),
     laborReadAuthorized: z.boolean().default(false),
+    apiVersion: z.enum(['v1', 'v2']).default('v1'),
+    mode: z.enum(['client_account', 'advisor_managed']).default('client_account'),
   }).strict(),
   z.object({ action: z.literal('test_stored') }).strict(),
   z.object({ action: z.literal('disconnect') }).strict(),
 ]);
 
-const SAFE_COLUMNS = 'id,client_id,company_id,provider,mode,api_key_last4,permissions_detected,permissions_enabled,status,sync_mode,last_sync_at,last_success_at,last_error,consent_at,consent_version,created_at,updated_at,channel';
+const SAFE_COLUMNS = 'id,client_id,company_id,provider,mode,api_version,api_key_last4,permissions_detected,permissions_enabled,status,sync_mode,last_sync_at,last_success_at,last_error,consent_at,consent_version,created_at,updated_at,channel';
 
 async function requireStaff(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -65,7 +69,49 @@ async function getIntegration(admin: ReturnType<typeof getSupabaseAdmin>, compan
   return data;
 }
 
-async function detectAllPermissions(rawApiKey: string) {
+async function detectAllPermissions(rawApiKey: string, apiVersion: 'v1' | 'v2' = 'v1') {
+  if (apiVersion === 'v2') {
+    const client = createHoldedV2ClientFromRawKey(rawApiKey);
+    const permissions = createEmptyHoldedPermissions();
+    const checks: Array<[keyof HoldedPermissions, () => Promise<unknown>]> = [
+      ['contacts', () => client.listContacts({ limit: 1 })],
+      ['salesInvoices', () => client.listInvoices({ limit: 1 })],
+      ['purchaseInvoices', () => client.listPurchases({ limit: 1 })],
+      ['taxes', () => client.listTaxes({ limit: 1 })],
+      ['bankAccounts', () => client.listTreasuryAccounts({ limit: 1 })],
+      ['accountingEntries', () => client.listLedgerEntries({ limit: 1 })],
+    ];
+
+    const settled = await Promise.all(checks.map(async ([permission, probe]) => {
+      try {
+        await probe();
+        return [permission, true] as const;
+      } catch {
+        return [permission, false] as const;
+      }
+    }));
+    for (const [permission, allowed] of settled) permissions[permission] = allowed;
+    // Holded v2 protects treasury accounts and their movements with the same
+    // accounting:banks.read scope, so a successful account probe also proves
+    // that KIA may attempt read-only bank-movement queries.
+    permissions.bankMovements = permissions.bankAccounts;
+
+    const coreReadOk = settled.some(([, allowed]) => allowed);
+    const laborPermissions = await detectHoldedLaborPermissions(rawApiKey);
+    const normalized = normalizeDetectedHoldedPermissions({
+      ...permissions,
+      ...laborPermissions,
+    });
+
+    const warnings: string[] = [];
+    if (!coreReadOk) warnings.push('El token v2 no permite leer ningún recurso contable básico o no es válido.');
+    if (!normalized.salesInvoices) warnings.push('Sin acceso v2 a facturas emitidas.');
+    if (!normalized.purchaseInvoices) warnings.push('Sin acceso v2 a compras/facturas recibidas.');
+    if (!normalized.bankAccounts) warnings.push('Sin acceso v2 a cuentas de tesorería.');
+
+    return { ok: coreReadOk, permissions: normalized, warnings };
+  }
+
   const client = createHoldedClientFromRawKey(rawApiKey);
   const [testResult, laborPermissions] = await Promise.all([
     client.testConnection(),
@@ -137,6 +183,17 @@ export async function POST(
     const parsed = bodySchema.safeParse(await request.json().catch(() => null));
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
 
+    if (
+      parsed.data.action === 'connect'
+      && parsed.data.mode === 'advisor_managed'
+      && parsed.data.apiVersion !== 'v2'
+    ) {
+      return NextResponse.json(
+        { error: 'Las cuentas gestionadas por EXPERT Asesoría requieren Holded API v2.' },
+        { status: 400 },
+      );
+    }
+
     const { admin, actorId } = auth;
 
     if (parsed.data.action === 'connect') {
@@ -146,7 +203,7 @@ export async function POST(
 
       let testResult;
       try {
-        testResult = await detectAllPermissions(parsed.data.apiKey);
+        testResult = await detectAllPermissions(parsed.data.apiKey, parsed.data.apiVersion);
       } catch (error) {
         return NextResponse.json(
           { error: `No se pudo conectar con Holded: ${holdedErrorMessage(error)}` },
@@ -175,7 +232,8 @@ export async function POST(
 
       const payload = {
         provider: 'holded',
-        mode: 'client_account',
+        mode: parsed.data.mode,
+        api_version: parsed.data.apiVersion,
         company_id: companyId,
         api_key_last4: keyLast4(parsed.data.apiKey),
         permissions_detected: testResult.permissions,
@@ -186,7 +244,7 @@ export async function POST(
         last_error: null,
         connected_by: actorId,
         consent_at: now,
-        consent_version: 'admin-company-360-v1',
+        consent_version: parsed.data.apiVersion === 'v2' ? 'admin-company-360-v2' : 'admin-company-360-v1',
         channel: 'admin_company_360',
         disconnected_at: null,
         updated_at: now,
@@ -265,6 +323,8 @@ export async function POST(
           integration_id: integration.id,
           sync_mode: 'read_only',
           labor_read_authorized: parsed.data.laborReadAuthorized,
+          api_version: parsed.data.apiVersion,
+          mode: parsed.data.mode,
         },
       }).then(() => {});
 
@@ -317,7 +377,10 @@ export async function POST(
     let result;
     try {
       const rawApiKey = decryptSecret(secret.encrypted_api_key);
-      result = await detectAllPermissions(rawApiKey);
+      result = await detectAllPermissions(
+        rawApiKey,
+        integration.api_version === 'v2' ? 'v2' : 'v1',
+      );
     } catch (error) {
       const message = holdedErrorMessage(error);
       await admin
