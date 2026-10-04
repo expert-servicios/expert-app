@@ -107,7 +107,7 @@ export const kiaToolValidators = {
   get_holded_invoices: z.object({
     docType: z.enum(['invoice', 'salesreceipt', 'purchase', 'creditnote']).default('invoice'),
     limit: z.number().int().min(1).max(20).default(10),
-    since: z.string().optional(),
+    since: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   }).strict(),
   get_holded_contacts: z.object({
     query: z.string().max(100).optional(),
