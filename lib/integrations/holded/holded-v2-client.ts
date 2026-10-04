@@ -191,6 +191,23 @@ export interface HoldedV2LedgerEntry extends Record<string, unknown> {
   description?: string | null;
 }
 
+export interface HoldedV2BankMovement extends Record<string, unknown> {
+  id: string;
+  banking_account_id?: string | null;
+  description?: string | null;
+  note?: string | null;
+  amount?: string | number | null;
+  currency?: string | null;
+  balance?: string | number | null;
+  accounting_amount?: string | number | null;
+  accounting_currency?: string | null;
+  booking_date?: string | null;
+  value_date?: string | null;
+  status?: 'pending' | 'reconciled' | 'partial' | 'forced_reconciled' | string | null;
+  reconciled_amount?: string | number | null;
+  origin?: string | null;
+}
+
 export interface HoldedV2Payment extends Record<string, unknown> {
   id: string;
   date?: string | null;
@@ -241,12 +258,21 @@ export interface HoldedV2Client {
   getUsage(): Promise<HoldedV2Usage>;
   listInvoices(params?: { startDate?: string; endDate?: string; approvalStatus?: 'draft' | 'approved'; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Invoice>>;
   listPurchases(params?: { startDate?: string; endDate?: string; approvalStatus?: 'draft' | 'approved'; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Purchase>>;
+  listSalesReceipts(params?: { startDate?: string; endDate?: string; approvalStatus?: 'draft' | 'approved'; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Invoice>>;
+  listCreditNotes(params?: { startDate?: string; endDate?: string; approvalStatus?: 'draft' | 'approved'; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Invoice>>;
   listContacts(params?: { search?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Contact>>;
   listAccountingAccounts(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2AccountingAccount>>;
   listTreasuryAccounts(params?: { limit?: number; cursor?: string; archived?: boolean }): Promise<HoldedV2Page<HoldedV2TreasuryAccount>>;
   listTaxes(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Tax>>;
   listLedgerEntries(params?: { startDate?: string; endDate?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2LedgerEntry>>;
   listPayments(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Payment>>;
+  listBankMovements(accountId: string, params?: {
+    startDate?: string;
+    endDate?: string;
+    status?: Array<'pending' | 'reconciled' | 'partial' | 'forced_reconciled'>;
+    limit?: number;
+    cursor?: string;
+  }): Promise<HoldedV2Page<HoldedV2BankMovement>>;
 }
 
 function clampPageSize(limit: number | undefined): number {
@@ -459,6 +485,28 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
       return normalizePage<HoldedV2Purchase>(await holdedV2FetchJson<unknown>(key, url));
     },
 
+    async listSalesReceipts(params = {}) {
+      const url = buildPaginatedUrl('/sales-receipts', {
+        startDate: params.startDate,
+        endDate: params.endDate,
+        approvalStatus: params.approvalStatus,
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2Invoice>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listCreditNotes(params = {}) {
+      const url = buildPaginatedUrl('/credit-notes', {
+        startDate: params.startDate,
+        endDate: params.endDate,
+        approvalStatus: params.approvalStatus,
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2Invoice>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
     async listContacts(params = {}) {
       const limit = Math.max(1, Math.min(100, Math.trunc(params.limit ?? 50)));
       if (params.search?.trim()) {
@@ -522,6 +570,22 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
         cursor: params.cursor,
       });
       return normalizePage<HoldedV2Payment>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listBankMovements(accountId, params = {}) {
+      const id = safePathSegment(accountId, 'accountId');
+      const search = new URLSearchParams();
+      search.set('limit', String(clampPageSize(params.limit)));
+      appendIfPresent(search, 'cursor', params.cursor);
+      appendIfPresent(search, 'start_date', params.startDate);
+      appendIfPresent(search, 'end_date', params.endDate);
+      if (params.status?.length) search.set('status', params.status.join(','));
+      return normalizePage<HoldedV2BankMovement>(
+        await holdedV2FetchJson<unknown>(
+          key,
+          `${HOLDED_V2_BASE}/treasury/accounts/${id}/bank-movements?${search.toString()}`,
+        ),
+      );
     },
   };
 }
