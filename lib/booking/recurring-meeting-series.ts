@@ -2,6 +2,8 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import {
   createBookingCalendarMeeting,
   deleteBookingCalendarEvent,
+  updateBookingCalendarMeeting,
+  calendarProviderFromBookingProvider,
   getConfiguredBookingCalendarProvider,
   listBookingCalendarBusyWindows,
 } from '@/lib/booking/calendar-provider';
@@ -215,6 +217,8 @@ export async function materializeRecurringMeetingSeries(
 
   for (const raw of orderedSeriesRows) {
     const series = raw as RecurringSeries;
+    let attemptedSeriesMonth = false;
+    let repairedConfirmedThisSeries = false;
     if (!(await recurringSeriesStillEntitled(admin, series))) {
       await admin.from('recurring_meeting_series').update({
         active: false,
@@ -239,9 +243,98 @@ export async function materializeRecurringMeetingSeries(
         .maybeSingle();
 
       if (occurrence?.appointment_id && occurrence.status === 'confirmed') {
+        const { data: confirmedAppointment, error: confirmedAppointmentError } = await admin
+          .from('appointments')
+          .select('id,appointment_type,appointment_date,booking_provider,provider_booking_id,google_event_id')
+          .eq('id', occurrence.appointment_id)
+          .maybeSingle();
+        if (confirmedAppointmentError) throw confirmedAppointmentError;
+
+        if (
+          confirmedAppointment
+          && confirmedAppointment.appointment_type !== series.service_key
+          && !repairedConfirmedThisSeries
+        ) {
+          const expiresAt = confirmedAppointment.appointment_date
+            ? new Date(new Date(confirmedAppointment.appointment_date).getTime() + 30 * 24 * 60 * 60_000)
+            : undefined;
+          const managementToken = await createBookingManagementToken({
+            appointmentId: confirmedAppointment.id,
+            email: series.attendee_email.toLowerCase(),
+            service: series.service_key as BookingServiceKey,
+            expiresAt,
+          });
+          const managementLinks = bookingManagementUrls(
+            managementToken,
+            series.service_key as BookingServiceKey,
+          );
+          const eventId = confirmedAppointment.provider_booking_id ?? confirmedAppointment.google_event_id;
+          if (eventId) {
+            await updateBookingCalendarMeeting(
+              eventId,
+              {
+                summary: `${series.title} — ${series.attendee_name}`,
+                description: [
+                  'Cita recurrente generada por KIA desde EXPERT.',
+                  `Cliente: ${series.attendee_name} (${series.attendee_email})`,
+                  `EXPERT appointment: ${confirmedAppointment.id}`,
+                  `Cambiar hora: ${managementLinks.rescheduleUrl}`,
+                ].join('\n'),
+                timezone: series.timezone || BOOKING_TIMEZONE,
+                reminderMinutesBefore: [1440, 60],
+              },
+              calendarProviderFromBookingProvider(confirmedAppointment.booking_provider),
+            );
+          }
+          const { error: repairError } = await admin
+            .from('appointments')
+            .update({
+              appointment_type: series.service_key,
+              service: series.title,
+              admin_notes: [
+                `Serie recurrente EXPERT: ${series.id} · ${key}`,
+                `Reprogramación: ${managementLinks.rescheduleUrl}`,
+              ].join('\n'),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', confirmedAppointment.id);
+          if (repairError) throw repairError;
+          repairedConfirmedThisSeries = true;
+        }
+
         existing++;
         continue;
       }
+
+      const seriesMarker = `Serie recurrente EXPERT: ${series.id} · ${key}`;
+      if (!occurrence?.appointment_id) {
+        const { data: recoveredAppointment, error: recoveredAppointmentError } = await admin
+          .from('appointments')
+          .select('id,status')
+          .ilike('admin_notes', `%${seriesMarker}%`)
+          .in('status', ['confirmed', 'confirmada'])
+          .order('appointment_date', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (recoveredAppointmentError) throw recoveredAppointmentError;
+        if (recoveredAppointment?.id && occurrence?.id) {
+          const { error: recoverOccurrenceError } = await admin
+            .from('recurring_meeting_occurrences')
+            .update({
+              appointment_id: recoveredAppointment.id,
+              status: 'confirmed',
+              last_error: null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', occurrence.id);
+          if (recoverOccurrenceError) throw recoverOccurrenceError;
+          existing++;
+          continue;
+        }
+      }
+
+      if (attemptedSeriesMonth) break;
+      attemptedSeriesMonth = true;
 
       let occurrenceId = occurrence?.id as string | undefined;
       try {
