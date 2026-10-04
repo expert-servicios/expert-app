@@ -40,6 +40,8 @@ export interface HoldedDocument {
   items: HoldedDocumentItem[];
 }
 
+export type HoldedDocumentType = 'invoice' | 'purchase' | 'salesreceipt' | 'creditnote' | 'estimate' | 'proforma' | 'order';
+
 export interface HoldedDocumentItem {
   name: string;
   units: number;
@@ -128,6 +130,7 @@ export interface HoldedClient {
   listContacts(params?: { page?: number; email?: string }): Promise<HoldedContact[]>;
   listSalesInvoices(params?: { page?: number; dateFrom?: number; dateTo?: number }): Promise<HoldedDocument[]>;
   listPurchaseInvoices(params?: { page?: number; dateFrom?: number; dateTo?: number }): Promise<HoldedDocument[]>;
+  listDocuments(docType: HoldedDocumentType, params?: { page?: number; dateFrom?: number; dateTo?: number }): Promise<HoldedDocument[]>;
   listTaxes(): Promise<HoldedTax[]>;
   listBankAccounts(): Promise<HoldedBankAccount[]>;
   listBankMovements(params?: { page?: number; dateFrom?: number; dateTo?: number }): Promise<HoldedBankMovement[]>;
@@ -229,6 +232,14 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
       if (dateFrom) qs.set('dateFrom', String(dateFrom));
       if (dateTo) qs.set('dateTo', String(dateTo));
       const raw = await get<unknown>(`/documents/purchase?${qs}`);
+      return listOrData<HoldedDocument>(raw);
+    },
+
+    async listDocuments(docType, { page = 1, dateFrom, dateTo } = {}) {
+      const qs = new URLSearchParams({ page: String(page) });
+      if (dateFrom) qs.set('dateFrom', String(dateFrom));
+      if (dateTo) qs.set('dateTo', String(dateTo));
+      const raw = await get<unknown>(`/documents/${docType}?${qs}`);
       return listOrData<HoldedDocument>(raw);
     },
 
