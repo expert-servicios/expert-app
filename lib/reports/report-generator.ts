@@ -112,8 +112,15 @@ export interface GenerateReportResult {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function currentQuarterLabel(now = new Date()): string {
-  const q = Math.ceil((now.getMonth() + 1) / 3);
-  return `Q${q} ${now.getFullYear()}`;
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(now);
+  const year = Number(parts.find((part) => part.type === 'year')?.value);
+  const month = Number(parts.find((part) => part.type === 'month')?.value);
+  const q = Math.ceil(month / 3);
+  return `Q${q} ${year}`;
 }
 
 export interface ReportPeriodRange {
