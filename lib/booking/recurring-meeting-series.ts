@@ -114,6 +114,47 @@ async function pickAvailableSlot(
   throw new Error('recurring_meeting_no_available_weekday');
 }
 
+async function resolveAnchoredLocalDate(
+  admin: AdminClient,
+  series: RecurringSeries,
+  monthKeyValue: string,
+  fallbackDate: string,
+): Promise<string> {
+  const anchorSourceKey = typeof series.metadata?.anchor_source_key === 'string'
+    ? series.metadata.anchor_source_key
+    : null;
+  if (!anchorSourceKey) return fallbackDate;
+
+  const { data: anchorSeries, error: anchorSeriesError } = await admin
+    .from('recurring_meeting_series')
+    .select('id')
+    .eq('source_key', anchorSourceKey)
+    .eq('active', true)
+    .maybeSingle();
+  if (anchorSeriesError) throw anchorSeriesError;
+  if (!anchorSeries?.id) throw new Error('recurring_meeting_anchor_series_missing');
+
+  const { data: anchorOccurrence, error: anchorOccurrenceError } = await admin
+    .from('recurring_meeting_occurrences')
+    .select('appointment_id,status')
+    .eq('series_id', anchorSeries.id)
+    .eq('month_key', monthKeyValue)
+    .eq('status', 'confirmed')
+    .maybeSingle();
+  if (anchorOccurrenceError) throw anchorOccurrenceError;
+  if (!anchorOccurrence?.appointment_id) throw new Error('recurring_meeting_anchor_not_ready');
+
+  const { data: anchorAppointment, error: anchorAppointmentError } = await admin
+    .from('appointments')
+    .select('appointment_date')
+    .eq('id', anchorOccurrence.appointment_id)
+    .maybeSingle();
+  if (anchorAppointmentError) throw anchorAppointmentError;
+  if (!anchorAppointment?.appointment_date) throw new Error('recurring_meeting_anchor_appointment_missing');
+
+  return formatMadridDate(new Date(anchorAppointment.appointment_date));
+}
+
 async function recurringSeriesStillEntitled(admin: AdminClient, series: RecurringSeries): Promise<boolean> {
   const subscriptionId = typeof series.metadata?.subscription_id === 'string'
     ? series.metadata.subscription_id
@@ -166,7 +207,13 @@ export async function materializeRecurringMeetingSeries(
   let conflicts = 0;
   const errors: string[] = [];
 
-  for (const raw of seriesRows ?? []) {
+  const orderedSeriesRows = [...(seriesRows ?? [])].sort((left, right) => {
+    const leftAnchored = typeof (left as RecurringSeries).metadata?.anchor_source_key === 'string' ? 1 : 0;
+    const rightAnchored = typeof (right as RecurringSeries).metadata?.anchor_source_key === 'string' ? 1 : 0;
+    return leftAnchored - rightAnchored;
+  });
+
+  for (const raw of orderedSeriesRows) {
     const series = raw as RecurringSeries;
     if (!(await recurringSeriesStillEntitled(admin, series))) {
       await admin.from('recurring_meeting_series').update({
@@ -198,7 +245,8 @@ export async function materializeRecurringMeetingSeries(
 
       let occurrenceId = occurrence?.id as string | undefined;
       try {
-        const baseDate = dateForMonth(month, series.day_of_month);
+        const fallbackDate = dateForMonth(month, series.day_of_month);
+        const baseDate = await resolveAnchoredLocalDate(admin, series, key, fallbackDate);
         const slot = await pickAvailableSlot(admin, series, baseDate);
         planned++;
 
