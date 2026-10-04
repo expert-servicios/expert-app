@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
 
-  const { period, lang, generatedBy, clientId: adminClientId } = parsed.data;
-  const admin    = getSupabaseAdmin();
+  const { period, lang, clientId: adminClientId } = parsed.data;
+  const admin = getSupabaseAdmin();
 
   if (adminClientId && adminClientId !== user.id) {
     const { data: actorProfile } = await admin
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       integrationId: intRow.id,
       period,
       lang,
-      generatedBy,
+      generatedBy: adminClientId && adminClientId !== user.id ? 'admin' : 'user',
     });
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
