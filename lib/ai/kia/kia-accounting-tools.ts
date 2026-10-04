@@ -1,5 +1,13 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { resolveHoldedAuth, buildHoldedHeaders } from '@/lib/integrations/holded/holded-auth';
+import {
+  createExpertHoldedGateway,
+  createHoldedGatewayForIntegration,
+  listHoldedBankAccounts,
+  listHoldedBankMovements,
+  listHoldedDocuments,
+  type HoldedGateway,
+  type HoldedReadDocument,
+} from '@/lib/integrations/holded/holded-gateway';
 import { resolveKiaCompanyHoldedAccess } from './kia-holded-access';
 import type { KiaContext } from './kia-context-builder';
 import type { KiaToolResult } from './kia-tool-definitions';
@@ -24,16 +32,16 @@ export function isExpertGlobalHoldedContext(context: KiaContext): boolean {
   return context.company?.taxId?.trim().toUpperCase() === EXPERT_IDENTITY.taxId;
 }
 
-async function resolveAccountingAuth(
+async function resolveAccountingGateway(
   context: KiaContext,
   requiredPermission: 'salesInvoices' | 'purchaseInvoices' | 'bankMovements',
 ): Promise<
-  | { ok: true; auth: Awaited<ReturnType<typeof resolveHoldedAuth>>; source: 'expert_global' | 'client_integration' }
+  | { ok: true; gateway: HoldedGateway; source: 'expert_global' | 'client_integration' }
   | { ok: false; error: string }
 > {
   if (isExpertGlobalHoldedContext(context)) {
     try {
-      return { ok: true, auth: await resolveHoldedAuth(null), source: 'expert_global' };
+      return { ok: true, gateway: await createExpertHoldedGateway(), source: 'expert_global' };
     } catch {
       return { ok: false, error: 'La cuenta global de Holded de EXPERT no está configurada en este entorno.' };
     }
@@ -45,7 +53,7 @@ async function resolveAccountingAuth(
 
   return {
     ok: true,
-    auth: await resolveHoldedAuth(access.access.integrationId),
+    gateway: await createHoldedGatewayForIntegration(access.access.integrationId),
     source: 'client_integration',
   };
 }
@@ -73,6 +81,7 @@ function firstPresent(doc: Raw, keys: string[]): unknown {
 }
 
 export function isIssuedHoldedDocument(doc: Raw): boolean {
+  if (doc.isDraft === true) return false;
   const status = String(doc.status ?? '').trim().toLowerCase();
   if (status === '0' || status === 'draft' || status === 'borrador') return false;
   return true;
@@ -177,82 +186,70 @@ export function defaultAccountingDocumentRange(now = new Date()): { starttmp: st
   };
 }
 
+function rangeToIso(range: { starttmp: string; endtmp: string }): { startDate: string; endDate: string } {
+  return {
+    startDate: new Date(Number(range.starttmp) * 1000).toISOString().slice(0, 10),
+    endDate: new Date(Number(range.endtmp) * 1000).toISOString().slice(0, 10),
+  };
+}
+
+function readDocumentToRaw(doc: HoldedReadDocument): Raw {
+  return {
+    ...doc,
+    docNumber: doc.number,
+    contactName: doc.contactName,
+    paymentsPending: doc.paymentsPending,
+    dueDate: doc.dueDate,
+  };
+}
+
 async function loadDocuments(
   context: KiaContext,
   docType: 'invoice' | 'purchase',
 ): Promise<{ ok: true; docs: Raw[] } | { ok: false; error: string }> {
   const requiredPermission = docType === 'purchase' ? 'purchaseInvoices' : 'salesInvoices';
-  const resolved = await resolveAccountingAuth(context, requiredPermission);
+  const resolved = await resolveAccountingGateway(context, requiredPermission);
   if (!resolved.ok) return { ok: false, error: resolved.error };
 
-  const range = defaultAccountingDocumentRange();
-  const query = new URLSearchParams(range);
-  const headers = buildHoldedHeaders(resolved.auth.apiKey);
-  const response = await fetch(`${resolved.auth.baseUrl}/documents/${docType}?${query.toString()}`, { headers });
-  if (!response.ok) return { ok: false, error: `Holded devolvió ${response.status}` };
-
-  const raw = await response.json() as unknown;
-  const docs = Array.isArray(raw)
-    ? raw as Raw[]
-    : raw && typeof raw === 'object' && Array.isArray((raw as { data?: unknown }).data)
-      ? (raw as { data: Raw[] }).data
-      : [];
-  return { ok: true, docs };
-}
-
-async function loadTreasuryAccounts(context: KiaContext): Promise<
-  | { ok: true; auth: Awaited<ReturnType<typeof resolveHoldedAuth>>; accounts: Raw[] }
-  | { ok: false; error: string }
-> {
-  const resolved = await resolveAccountingAuth(context, 'bankMovements');
-  if (!resolved.ok) return resolved;
-
-  const headers = buildHoldedHeaders(resolved.auth.apiKey);
-  const response = await fetch(`${resolved.auth.baseUrl}/treasury`, { headers });
-  if (!response.ok) return { ok: false, error: `Holded devolvió ${response.status} al consultar tesorería` };
-
-  const raw = await response.json() as unknown;
-  const accounts = Array.isArray(raw)
-    ? raw as Raw[]
-    : raw && typeof raw === 'object' && Array.isArray((raw as { data?: unknown }).data)
-      ? (raw as { data: Raw[] }).data
-      : [];
-
-  return { ok: true, auth: resolved.auth, accounts };
+  try {
+    const range = rangeToIso(defaultAccountingDocumentRange());
+    const docs = await listHoldedDocuments(
+      resolved.gateway,
+      docType === 'purchase' ? 'purchase' : 'sales',
+      { ...range, maxItems: 2_000 },
+    );
+    return { ok: true, docs: docs.map(readDocumentToRaw) };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Error consultando documentos Holded.' };
+  }
 }
 
 async function loadBankMovements(context: KiaContext, limit: number): Promise<
   | { ok: true; movements: Raw[] }
   | { ok: false; error: string }
 > {
-  const treasury = await loadTreasuryAccounts(context);
-  if (!treasury.ok) return treasury;
+  const resolved = await resolveAccountingGateway(context, 'bankMovements');
+  if (!resolved.ok) return { ok: false, error: resolved.error };
 
-  const headers = buildHoldedHeaders(treasury.auth.apiKey);
-  const perAccount = await Promise.all(
-    treasury.accounts.slice(0, 10).map(async (account) => {
-      const accountId = String(account.id ?? '').trim();
-      if (!accountId) return [] as Raw[];
-      const response = await fetch(
-        `${treasury.auth.baseUrl}/treasury/${encodeURIComponent(accountId)}/movements?page=1`,
-        { headers },
-      );
-      if (!response.ok) return [] as Raw[];
-      const raw = await response.json() as unknown;
-      const rows = Array.isArray(raw)
-        ? raw as Raw[]
-        : raw && typeof raw === 'object' && Array.isArray((raw as { data?: unknown }).data)
-          ? (raw as { data: Raw[] }).data
-          : [];
-      return rows.map((movement) => ({
-        ...movement,
-        treasuryAccountId: accountId,
-        treasuryAccountName: account.name ?? null,
-      }));
-    }),
-  );
-
-  return { ok: true, movements: perAccount.flat().slice(0, Math.max(limit, 50)) };
+  try {
+    const accounts = await listHoldedBankAccounts(resolved.gateway, 10);
+    const perAccount = await Promise.all(
+      accounts.map(async (account) => {
+        const rows = await listHoldedBankMovements(resolved.gateway, account.id, {
+          pendingOnly: true,
+          maxItems: Math.max(limit, 50),
+        }).catch(() => []);
+        return rows.map((movement) => ({
+          ...movement,
+          treasuryAccountId: account.id,
+          treasuryAccountName: account.name,
+        }));
+      }),
+    );
+    return { ok: true, movements: perAccount.flat().slice(0, Math.max(limit, 50)) };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Error consultando movimientos Holded.' };
+  }
 }
 
 export async function executeKiaAccountingTool(
