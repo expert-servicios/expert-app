@@ -160,7 +160,50 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
     );
   }
 
-  // ── Non-active state (show error if any + form) ────────────────────────────
+  // ── Managed but non-active state ─────────────────────────────────────────
+  if (integration && isManagedByExpert) {
+    return (
+      <div className="space-y-6">
+        <KiaGuidanceCard
+          state={guidance.state}
+          title={guidance.title}
+          message={guidance.message}
+          compact
+          animateOnChange
+        />
+
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          {integration.status === 'failed' ? (
+            <XCircle size={16} className="mt-0.5 shrink-0 text-red-500" />
+          ) : (
+            <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
+          )}
+          <div className="text-sm">
+            <p className="font-medium text-[#3d3528]">{STATUS_LABELS[integration.status] ?? integration.status}</p>
+            {integration.last_error && (
+              <p className="mt-0.5 text-[#7a6e5f]">{integration.last_error}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#d8cbb5] bg-[#faf8f2] px-4 py-3 text-sm leading-6 text-[#6b7280]">
+          Esta conexión está gestionada por EXPERT y usa Holded API {integration.api_version ?? 'v2'}.
+          El cliente no puede sustituir la credencial ni reconectarla desde este panel. Solicita la revisión a tu asesor.
+        </div>
+
+        <button
+          type="button"
+          onClick={() => router.refresh()}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[#e8dfc8] bg-white px-3 py-2 text-xs font-medium text-[#7a6e5f] hover:border-[#c88b25] hover:text-[#c88b25]"
+        >
+          <RefreshCw size={12} />
+          Actualizar estado
+        </button>
+      </div>
+    );
+  }
+
+  // ── Non-active self-managed state (show error if any + form) ──────────────
   return (
     <div className="space-y-6">
       <KiaGuidanceCard
