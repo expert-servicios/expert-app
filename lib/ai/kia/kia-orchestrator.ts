@@ -177,6 +177,7 @@ export async function runKiaOrchestratedDecision(params: {
     taskType: effectiveTaskType,
     channel: effectiveAuthorization.channel,
     allowedToolNames: effectiveToolNames,
+    detectedIntentOverride: plan.detectedIntent,
     toolAuthorization: {
       maxRiskTier: effectiveAuthorization.maxRiskTier,
       allowedEffects: effectiveAuthorization.allowedEffects
