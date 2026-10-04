@@ -19,9 +19,10 @@ describe('Holded version-aware accounting consumers', () => {
     expect(report).toContain("listHoldedDocuments(gateway, 'sales'");
     expect(report).toContain("listHoldedDocuments(gateway, 'purchase'");
     expect(report).toContain('listHoldedBankAccounts(gateway');
-    expect(report).toContain("maxItems: 20, includeDrafts: true");
-    expect(report).toContain('buildTopContacts(confirmedSales)');
-    expect(report).toContain('buildMonthlyFlow(confirmedSales, confirmedPurchases)');
+    expect(report).toContain("maxItems: 100,");
+    expect(report).toContain("includeDrafts: true");
+    expect(report).toContain('buildTopContacts(eurSales)');
+    expect(report).toContain('buildMonthlyFlow(eurSales, eurPurchases, reportPeriod)');
     expect(report).toContain('toInvoiceSummary(tableSales)');
     expect(report).toContain('toInvoiceSummary(tablePurchases)');
     expect(report).not.toContain('resolveHoldedAuth(input.integrationId)');
