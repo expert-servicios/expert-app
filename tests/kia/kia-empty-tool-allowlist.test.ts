@@ -7,7 +7,7 @@ describe('KIA empty tool allowlist', () => {
       channel: 'email' as const,
       requestedNames: [],
       maxRiskTier: 'R2' as const,
-      allowedEffects: ['read', 'external_action'] as const,
+      allowedEffects: ['read', 'external_action'],
       autonomousOnly: false,
     };
     expect(resolveKiaToolDefinitions(context)).toEqual([]);
