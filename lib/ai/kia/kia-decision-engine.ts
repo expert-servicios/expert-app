@@ -72,6 +72,7 @@ export async function runKiaDecision(input: {
   mediaUrl?: string;
   mediaType?: string;
   externalActionMinConfidence?: number;
+  detectedIntentOverride?: string | null;
   onProgress?: KiaProgressCallback;
 }): Promise<KiaDecisionResult> {
   const context = await buildKiaContext({ ...input.contextInput, channel: input.channel, latestMessage: input.message });
@@ -160,9 +161,10 @@ export async function runKiaDecision(input: {
   );
   const modelOverride = modelForTask(resolvedTaskType, allowToolExecution);
 
+  const effectiveDetectedIntent = classification?.detectedIntent ?? input.detectedIntentOverride ?? undefined;
   const subAgentProfile = selectSubAgentProfile({
     taskType: resolvedTaskType,
-    detectedIntent: classification?.detectedIntent,
+    detectedIntent: effectiveDetectedIntent,
     channel: input.channel,
   });
   const finalSystemPrompt = subAgentProfile
