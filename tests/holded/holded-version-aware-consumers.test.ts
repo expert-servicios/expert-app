@@ -19,6 +19,11 @@ describe('Holded version-aware accounting consumers', () => {
     expect(report).toContain("listHoldedDocuments(gateway, 'sales'");
     expect(report).toContain("listHoldedDocuments(gateway, 'purchase'");
     expect(report).toContain('listHoldedBankAccounts(gateway');
+    expect(report).toContain("maxItems: 20, includeDrafts: true");
+    expect(report).toContain('buildTopContacts(confirmedSales)');
+    expect(report).toContain('buildMonthlyFlow(confirmedSales, confirmedPurchases)');
+    expect(report).toContain('toInvoiceSummary(tableSales)');
+    expect(report).toContain('toInvoiceSummary(tablePurchases)');
     expect(report).not.toContain('resolveHoldedAuth(input.integrationId)');
   });
 
@@ -33,6 +38,7 @@ describe('Holded version-aware accounting consumers', () => {
     expect(executor).not.toContain('resolveHoldedAuth(access.access.integrationId)');
     expect(accounting).toContain('createHoldedGatewayForIntegration(access.access.integrationId)');
     expect(accounting).toContain('listHoldedBankMovements(');
+    expect(accounting).toContain("'cancelled', 'canceled', 'failed'");
     expect(accounting).not.toContain('buildHoldedHeaders');
     expect(accounting).not.toContain('resolveHoldedAuth');
   });
@@ -42,6 +48,8 @@ describe('Holded version-aware accounting consumers', () => {
     expect(gateway).toContain('export interface HoldedReadDocument');
     expect(gateway).toContain('v1DocumentToReadModel');
     expect(gateway).toContain('v2DocumentToReadModel');
+    expect(gateway).toContain('includeDrafts?: boolean');
+    expect(gateway).toContain("['approved', 'draft']");
     expect(gateway).toContain('if (gateway.v2)');
   });
 });
