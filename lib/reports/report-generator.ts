@@ -265,9 +265,13 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
   // ── Fetch Holded data in parallel through the version-aware gateway ─────
   // Connections may legitimately expose only part of the accounting surface.
   // Keep the report useful with the resources that are actually authorized.
-  const [rawSales, rawPurchases, rawBank] = await Promise.all([
-    listHoldedDocuments(gateway, 'sales', { maxItems: 2_000, includeDrafts: true }).catch((): HoldedReadDocument[] => []),
-    listHoldedDocuments(gateway, 'purchase', { maxItems: 2_000, includeDrafts: true }).catch((): HoldedReadDocument[] => []),
+  const [rawSales, rawPurchases, tableSales, tablePurchases, rawBank] = await Promise.all([
+    // Financial analytics stay approved-only. Drafts are fetched separately only
+    // for the visible tables, so they can never displace approved documents from KPIs.
+    listHoldedDocuments(gateway, 'sales', { maxItems: 2_000 }).catch((): HoldedReadDocument[] => []),
+    listHoldedDocuments(gateway, 'purchase', { maxItems: 2_000 }).catch((): HoldedReadDocument[] => []),
+    listHoldedDocuments(gateway, 'sales', { maxItems: 20, includeDrafts: true }).catch((): HoldedReadDocument[] => []),
+    listHoldedDocuments(gateway, 'purchase', { maxItems: 20, includeDrafts: true }).catch((): HoldedReadDocument[] => []),
     listHoldedBankAccounts(gateway, 100).catch(() => []),
   ]);
 
@@ -298,8 +302,8 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
   const confirmedPurchases = rawPurchases.filter((d) => !d.isDraft && !['cancelled', 'canceled', 'failed'].includes(String(d.status).toLowerCase()));
 
   // Show all invoices in the table (including drafts, clearly labelled)
-  const salesInvoices    = toInvoiceSummary(rawSales).slice(0, 20);
-  const purchaseInvoices = toInvoiceSummary(rawPurchases).slice(0, 20);
+  const salesInvoices    = toInvoiceSummary(tableSales).slice(0, 20);
+  const purchaseInvoices = toInvoiceSummary(tablePurchases).slice(0, 20);
 
   const totalSales     = confirmedSales.reduce((s, d) => s + Number(d.total ?? 0), 0);
   const totalPurchases = confirmedPurchases.reduce((s, d) => s + Number(d.total ?? 0), 0);
