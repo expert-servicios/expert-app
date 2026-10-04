@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { classifyHoldedError } from './holded-errors';
 import { resolveHoldedAuth } from './holded-auth';
 
@@ -8,7 +9,7 @@ const MIN_DELAY_MS = 1_050;
 const MAX_PAGE_SIZE = 200;
 const DEFAULT_PAGE_SIZE = 50;
 
-let nextRequestAt = 0;
+const nextRequestAtByAccount = new Map<string, number>();
 
 export interface HoldedV2Page<T> {
   items: T[];
@@ -133,6 +134,7 @@ export interface HoldedV2Invoice extends Record<string, unknown> {
   status?: string | number | null;
   payments_total?: string | number | null;
   payments_pending?: string | number | null;
+  approval_status?: 'draft' | 'approved' | string | null;
 }
 
 export interface HoldedV2Purchase extends Record<string, unknown> {
@@ -149,6 +151,8 @@ export interface HoldedV2Purchase extends Record<string, unknown> {
   status?: string | number | null;
   payments_total?: string | number | null;
   payments_pending?: string | number | null;
+  approval_status?: 'draft' | 'approved' | string | null;
+  deduction_date?: string | null;
 }
 
 export interface HoldedV2Contact extends Record<string, unknown> {
@@ -171,6 +175,7 @@ export interface HoldedV2TreasuryAccount extends Record<string, unknown> {
   iban?: string | null;
   balance?: string | number | null;
   currency?: string | null;
+  archived?: boolean | null;
 }
 
 export interface HoldedV2Tax extends Record<string, unknown> {
@@ -234,11 +239,11 @@ export interface HoldedV2Client {
   getSalaryRecord(salaryRecordId: string): Promise<HoldedV2SalaryRecord>;
   getSalaryRecordPdf(salaryRecordId: string): Promise<ArrayBuffer>;
   getUsage(): Promise<HoldedV2Usage>;
-  listInvoices(params?: { startDate?: string; endDate?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Invoice>>;
-  listPurchases(params?: { startDate?: string; endDate?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Purchase>>;
+  listInvoices(params?: { startDate?: string; endDate?: string; approvalStatus?: 'draft' | 'approved'; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Invoice>>;
+  listPurchases(params?: { startDate?: string; endDate?: string; approvalStatus?: 'draft' | 'approved'; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Purchase>>;
   listContacts(params?: { search?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Contact>>;
   listAccountingAccounts(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2AccountingAccount>>;
-  listTreasuryAccounts(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2TreasuryAccount>>;
+  listTreasuryAccounts(params?: { limit?: number; cursor?: string; archived?: boolean }): Promise<HoldedV2Page<HoldedV2TreasuryAccount>>;
   listTaxes(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Tax>>;
   listLedgerEntries(params?: { startDate?: string; endDate?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2LedgerEntry>>;
   listPayments(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Payment>>;
@@ -249,10 +254,11 @@ function clampPageSize(limit: number | undefined): number {
   return Math.max(1, Math.min(MAX_PAGE_SIZE, Math.trunc(limit)));
 }
 
-async function respectRateLimit(): Promise<void> {
+async function respectRateLimit(apiKey: string): Promise<void> {
+  const accountKey = createHash('sha256').update(apiKey).digest('hex');
   const now = Date.now();
-  const reservedAt = Math.max(now, nextRequestAt);
-  nextRequestAt = reservedAt + MIN_DELAY_MS;
+  const reservedAt = Math.max(now, nextRequestAtByAccount.get(accountKey) ?? 0);
+  nextRequestAtByAccount.set(accountKey, reservedAt + MIN_DELAY_MS);
   const delay = reservedAt - now;
 
   if (delay > 0) {
@@ -297,6 +303,8 @@ function buildPaginatedUrl(
     endDate?: string;
     kind?: string;
     isDraft?: boolean;
+    approvalStatus?: 'draft' | 'approved';
+    archived?: boolean;
   },
 ): string {
   const search = new URLSearchParams();
@@ -308,6 +316,8 @@ function buildPaginatedUrl(
   appendIfPresent(search, 'end_date', params.endDate);
   appendIfPresent(search, 'kind', params.kind);
   if (typeof params.isDraft === 'boolean') search.set('is_draft', String(params.isDraft));
+  appendIfPresent(search, 'approval_status', params.approvalStatus);
+  if (typeof params.archived === 'boolean') search.set('archived', String(params.archived));
   return `${HOLDED_V2_BASE}${path}?${search.toString()}`;
 }
 
@@ -318,7 +328,7 @@ function safePathSegment(value: string, label: string): string {
 }
 
 async function holdedV2FetchJson<T>(apiKey: string, url: string): Promise<T> {
-  await respectRateLimit();
+  await respectRateLimit(apiKey);
   const response = await fetch(url, {
     method: 'GET',
     headers: buildHeaders(apiKey),
@@ -334,7 +344,7 @@ async function holdedV2FetchJson<T>(apiKey: string, url: string): Promise<T> {
 }
 
 async function holdedV2FetchPdf(apiKey: string, url: string): Promise<ArrayBuffer> {
-  await respectRateLimit();
+  await respectRateLimit(apiKey);
   const response = await fetch(url, {
     method: 'GET',
     headers: buildHeaders(apiKey, 'application/pdf'),
@@ -431,6 +441,7 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
       const url = buildPaginatedUrl('/invoices', {
         startDate: params.startDate,
         endDate: params.endDate,
+        approvalStatus: params.approvalStatus,
         limit: params.limit,
         cursor: params.cursor,
       });
@@ -441,6 +452,7 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
       const url = buildPaginatedUrl('/purchases', {
         startDate: params.startDate,
         endDate: params.endDate,
+        approvalStatus: params.approvalStatus,
         limit: params.limit,
         cursor: params.cursor,
       });
@@ -478,6 +490,7 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
       const url = buildPaginatedUrl('/treasury/accounts', {
         limit: params.limit,
         cursor: params.cursor,
+        archived: params.archived,
       });
       return normalizePage<HoldedV2TreasuryAccount>(await holdedV2FetchJson<unknown>(key, url));
     },
