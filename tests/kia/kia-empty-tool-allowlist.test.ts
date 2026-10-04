@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { isKiaToolAuthorized, resolveKiaToolDefinitions } from '@/lib/ai/kia/kia-tool-registry';
+import {
+  isKiaToolAuthorized,
+  resolveKiaToolDefinitions,
+  type KiaToolAuthorizationContext,
+} from '@/lib/ai/kia/kia-tool-registry';
 
 describe('KIA empty tool allowlist', () => {
   it('means deny-all rather than no restriction', () => {
-    const context = {
-      channel: 'email' as const,
+    const context: KiaToolAuthorizationContext = {
+      channel: 'email',
       requestedNames: [],
-      maxRiskTier: 'R2' as const,
+      maxRiskTier: 'R2',
       allowedEffects: ['read', 'external_action'],
       autonomousOnly: false,
     };
