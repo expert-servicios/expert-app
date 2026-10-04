@@ -7,6 +7,7 @@ import { getKiaToolDefinition } from '@/lib/ai/kia/kia-tool-definitions';
 import {
   defaultAccountingDocumentRange,
   holdedOutstandingAmount,
+  holdedUnreconciledMovementAmount,
   isExpertGlobalHoldedContext,
   isHoldedDocumentOverdue,
   isHoldedDocumentPaid,
@@ -64,6 +65,29 @@ describe('KIA Accounting Holded document semantics', () => {
     const doc = { status: 1, total: 100, paymentsPending: 100, dueDate: due };
     expect(isHoldedDocumentOverdue(doc, Date.parse('2026-10-03T20:00:00Z'))).toBe(false);
     expect(isHoldedDocumentOverdue(doc, Date.parse('2026-10-04T01:00:00Z'))).toBe(true);
+  });
+
+  it('returns only the remaining amount for partially reconciled bank movements', () => {
+    expect(holdedUnreconciledMovementAmount({
+      status: 'partial',
+      amount: 1500,
+      reconciledAmount: 1000,
+    })).toBe(500);
+    expect(holdedUnreconciledMovementAmount({
+      status: 'partial',
+      amount: -1500,
+      reconciled_amount: 1000,
+    })).toBe(-500);
+    expect(holdedUnreconciledMovementAmount({
+      status: 'pending',
+      amount: 250,
+      reconciledAmount: 0,
+    })).toBe(250);
+    expect(holdedUnreconciledMovementAmount({
+      status: 'forced_reconciled',
+      amount: 250,
+      reconciledAmount: 0,
+    })).toBe(0);
   });
 
   it('groups outstanding totals by currency without cross-currency addition', () => {
