@@ -37,7 +37,6 @@ export function GenerateReportPanel() {
         body: JSON.stringify({
           period: period.trim() || undefined,
           lang: 'es',
-          generatedBy: 'user',
         }),
       });
       const data = await res.json().catch(() => ({})) as GenerateReportResponse;
