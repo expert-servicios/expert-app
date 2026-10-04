@@ -171,6 +171,21 @@ function normalizeDocument(doc: Raw) {
   };
 }
 
+export function holdedUnreconciledMovementAmount(movement: Raw): number {
+  const amount = asNumber(movement.amount);
+  const status = String(movement.status ?? movement.reconciled ?? '').trim().toLowerCase();
+
+  if (['reconciled', 'conciliated', 'conciliado', 'matched', 'true', 'forced_reconciled'].includes(status)) {
+    return 0;
+  }
+
+  if (status !== 'partial') return amount;
+
+  const reconciled = asNumber(movement.reconciledAmount ?? movement.reconciled_amount);
+  const remaining = Math.max(0, Math.abs(amount) - Math.abs(reconciled));
+  return amount < 0 ? -remaining : remaining;
+}
+
 export function totalsByCurrency(rows: Array<{ outstanding: number; currency: string }>): Record<string, number> {
   return rows.reduce<Record<string, number>>((totals, row) => {
     totals[row.currency] = Math.round(((totals[row.currency] ?? 0) + row.outstanding) * 100) / 100;
@@ -321,17 +336,19 @@ export async function executeKiaAccountingTool(
     const rows = loaded.movements.filter((movement) => {
       const status = String(movement.status ?? movement.reconciled ?? '').toLowerCase();
       const hasDocument = Boolean(movement.documentId ?? movement.invoiceId ?? movement.matchId);
-      return !hasDocument && !['reconciled', 'conciliated', 'conciliado', 'matched', 'true'].includes(status);
-    }).slice(0, limit).map((movement) => ({
+      return !hasDocument && !['reconciled', 'conciliated', 'conciliado', 'matched', 'true', 'forced_reconciled'].includes(status);
+    }).map((movement) => ({
       id: movement.id,
       date: movement.date,
-      amount: asNumber(movement.amount),
+      amount: holdedUnreconciledMovementAmount(movement),
+      originalAmount: asNumber(movement.amount),
+      reconciledAmount: asNumber(movement.reconciledAmount ?? movement.reconciled_amount),
       description: movement.description ?? movement.name,
       reference: movement.reference,
       status: movement.status ?? 'unknown',
       treasuryAccountId: movement.treasuryAccountId,
       treasuryAccountName: movement.treasuryAccountName,
-    }));
+    })).filter((movement) => Math.abs(movement.amount) > 0.005).slice(0, limit);
 
     return ok(toolName, {
       source,
