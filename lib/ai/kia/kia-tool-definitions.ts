@@ -255,6 +255,7 @@ export const kiaToolValidators = {
       'demo-holded',
       'onboarding',
       'formacion-holded',
+      'mentoria-mensual',
       'seguimiento-mensual-empresa',
       'seguimiento-mensual-autonomo',
       'academy-admision',
