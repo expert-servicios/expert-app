@@ -362,7 +362,7 @@ async function createEmailRequestTask(input: {
   if (existingActionError) throw existingActionError;
   if (existingAction?.id) {
     const previousMetadata = (existingAction.metadata ?? {}) as Record<string, unknown>;
-    const { error: updateError } = await input.admin
+    const { data: reused, error: updateError } = await input.admin
       .from('internal_tasks')
       .update({
         description: input.excerpt.slice(0, 1500),
@@ -374,9 +374,12 @@ async function createEmailRequestTask(input: {
           last_email_seen_at: new Date().toISOString(),
         },
       })
-      .eq('id', existingAction.id);
+      .eq('id', existingAction.id)
+      .in('status', ['pendiente', 'en_progreso'])
+      .select('id,title')
+      .maybeSingle();
     if (updateError) throw updateError;
-    return { id: existingAction.id, title: existingAction.title, created: false };
+    if (reused?.id) return { id: reused.id, title: reused.title, created: false };
   }
 
   const { data, error } = await input.admin.from('internal_tasks').insert({
@@ -978,7 +981,8 @@ export async function GET(request: NextRequest) {
           sentNow = true;
         }
       } else {
-        if (!autoSend) blockReason = 'auto_send_disabled';
+        if (result.executionTrace.lateClassificationFailClosed) blockReason = 'orchestration_requires_review';
+        else if (!autoSend) blockReason = 'auto_send_disabled';
         else if (!health.ok) blockReason = health.reason;
         else if (!wasKnownContact && !safeUnknownProspect) blockReason = 'unknown_contact_not_safe_prospect';
         else if (!wasKnownContact && safeUnknownProspect && !newLeadAutoSend) blockReason = 'new_lead_approval_required';
@@ -1011,7 +1015,7 @@ export async function GET(request: NextRequest) {
       });
       const interventionRequired = result.decision.requiresManualReview
         || result.decision.nextAction === 'needs_review'
-        || ['ambiguous_case', 'linked_case_sender_mismatch', 'reply_to_requires_review', 'attachment_requires_review', 'provider_fallback']
+        || ['orchestration_requires_review', 'ambiguous_case', 'linked_case_sender_mismatch', 'reply_to_requires_review', 'attachment_requires_review', 'provider_fallback']
           .includes(blockReason ?? '');
 
       if (firstInboundProcessing && interventionRequired) {
