@@ -209,10 +209,11 @@ export async function materializeRecurringMeetingSeries(
             .select('id')
             .single();
           if (appointmentError || !appointment?.id) throw appointmentError ?? new Error('appointment_insert_failed');
-          appointmentId = appointment.id;
+          const confirmedAppointmentId = appointment.id;
+          appointmentId = confirmedAppointmentId;
 
           const managementToken = await createBookingManagementToken({
-            appointmentId,
+            appointmentId: confirmedAppointmentId,
             email: series.attendee_email.toLowerCase(),
             service: series.service_key as BookingServiceKey,
             expiresAt: new Date(slot.start.getTime() + 30 * 24 * 60 * 60_000),
@@ -224,7 +225,7 @@ export async function materializeRecurringMeetingSeries(
             description: [
               'Cita recurrente generada por KIA desde EXPERT.',
               `Cliente: ${series.attendee_name} (${series.attendee_email})`,
-              `EXPERT appointment: ${appointmentId}`,
+              `EXPERT appointment: ${confirmedAppointmentId}`,
               `Cambiar hora: ${managementLinks.rescheduleUrl}`,
             ].join('\n'),
             start: slot.start.toISOString(),
@@ -234,38 +235,40 @@ export async function materializeRecurringMeetingSeries(
             reminderMinutesBefore: [1440, 60],
           });
           remoteEventId = meeting.eventId;
+          if (!meeting.meetingUrl) throw new Error('recurring_meeting_meet_unavailable');
+          const meetingUrl = meeting.meetingUrl;
 
           const { error: finalizeError } = await admin.from('appointments').update({
             status: 'confirmed',
             booking_provider: meeting.bookingProvider,
             provider_booking_id: meeting.eventId,
             google_event_id: meeting.provider === 'google' ? meeting.eventId : null,
-            meeting_url: meeting.meetingUrl,
+            meeting_url: meetingUrl,
             admin_notes: [
               `Serie recurrente EXPERT: ${series.id} · ${key}`,
               `Reprogramación: ${managementLinks.rescheduleUrl}`,
             ].join('\n'),
             updated_at: new Date().toISOString(),
-          }).eq('id', appointmentId);
+          }).eq('id', confirmedAppointmentId);
           if (finalizeError) throw finalizeError;
 
           await ensureBookingAdminTask({
             admin,
-            appointmentId,
+            appointmentId: confirmedAppointmentId,
             serviceKey: series.service_key,
             serviceLabel: series.title,
             name: series.attendee_name,
             email: series.attendee_email.toLowerCase(),
             localDate: slot.localDate,
             localTime: formatMadridTime(slot.start),
-            meetingUrl: meeting.meetingUrl,
+            meetingUrl,
             clientId: series.client_id,
             companyId: series.company_id,
             leadId: series.lead_id,
           });
 
           const { error: occurrenceFinalizeError } = await admin.from('recurring_meeting_occurrences').update({
-            appointment_id: appointmentId,
+            appointment_id: confirmedAppointmentId,
             status: 'confirmed',
             last_error: null,
             updated_at: new Date().toISOString(),
