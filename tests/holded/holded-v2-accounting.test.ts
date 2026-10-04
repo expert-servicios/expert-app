@@ -68,11 +68,11 @@ describe('Holded v2 accounting reads', () => {
 
 describe('Holded v2 accounting safety filters', () => {
   it('requests approved invoices and active treasury accounts when asked', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(new Response(JSON.stringify({
       items: [],
       cursor: null,
       has_more: false,
-    }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } })));
     vi.stubGlobal('fetch', fetchMock);
 
     const client = buildHoldedV2Client('safety-key-a');
