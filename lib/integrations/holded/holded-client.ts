@@ -155,7 +155,7 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
       { key: 'salesInvoices', probe: () => get('/documents/invoice?page=1') },
       { key: 'purchaseInvoices', probe: () => get('/documents/purchase?page=1') },
       { key: 'taxes', probe: () => get('/taxes') },
-      { key: 'bankAccounts', probe: () => get('/treasury/accounts') },
+      { key: 'bankAccounts', probe: () => get('/treasury') },
       { key: 'bankMovements', probe: () => get('/treasury/movements?page=1') },
       { key: 'inboxDocuments', probe: () => get('/documents/inbox?page=1') },
       { key: 'accountingReports', probe: () => getAccounting(`/reports/vat?year=${new Date().getFullYear()}`) },
@@ -248,7 +248,7 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
     },
 
     async listBankAccounts() {
-      return listOrData<HoldedBankAccount>(await get<unknown>('/treasury/accounts'));
+      return listOrData<HoldedBankAccount>(await get<unknown>('/treasury'));
     },
 
     async listBankMovements({ page = 1, dateFrom, dateTo } = {}) {
