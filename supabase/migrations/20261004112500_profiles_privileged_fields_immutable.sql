@@ -9,7 +9,7 @@ set search_path = public, pg_temp
 as $$
 begin
   if auth.uid() = old.id
-     and not public.is_admin_email()
+     and not (public.is_admin() or public.is_admin_email())
      and (
        new.role is distinct from old.role
        or new.status is distinct from old.status
