@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { currentQuarter } from '@/lib/holded/quarter-data';
 
@@ -11,8 +13,6 @@ describe('Holded quarter calendar semantics', () => {
 
 describe('Holded quarter currency safety', () => {
   it('keeps aggregated quarter KPIs on EUR documents only', () => {
-    const { readFileSync } = require('node:fs') as typeof import('node:fs');
-    const { resolve } = require('node:path') as typeof import('node:path');
     const quarter = readFileSync(resolve(process.cwd(), 'lib/holded/quarter-data.ts'), 'utf8');
     expect(quarter).toContain("const eurSales = sales.filter");
     expect(quarter).toContain("const eurPurchases = purchases.filter");
