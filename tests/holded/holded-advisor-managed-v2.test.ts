@@ -22,6 +22,7 @@ describe('Holded advisor-managed v2 connection', () => {
     expect(route).toContain("['salesInvoices', () => client.listInvoices({ limit: 1 })]");
     expect(route).toContain("['purchaseInvoices', () => client.listPurchases({ limit: 1 })]");
     expect(route).toContain("['bankAccounts', () => client.listTreasuryAccounts({ limit: 1 })]");
+    expect(route).toContain('permissions.bankMovements = permissions.bankAccounts');
   });
 
   it('rejects advisor-managed v1 combinations before persisting them', () => {
