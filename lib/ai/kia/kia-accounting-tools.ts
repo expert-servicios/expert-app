@@ -83,7 +83,7 @@ function firstPresent(doc: Raw, keys: string[]): unknown {
 export function isIssuedHoldedDocument(doc: Raw): boolean {
   if (doc.isDraft === true) return false;
   const status = String(doc.status ?? '').trim().toLowerCase();
-  if (status === '0' || status === 'draft' || status === 'borrador') return false;
+  if (['0', 'draft', 'borrador', 'cancelled', 'canceled', 'failed'].includes(status)) return false;
   return true;
 }
 
