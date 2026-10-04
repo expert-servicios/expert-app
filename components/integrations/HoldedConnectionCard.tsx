@@ -15,6 +15,8 @@ import {
 interface Integration {
   id                  : string;
   status              : string;
+  mode                : 'expert_account' | 'client_account' | 'advisor_managed';
+  api_version         : 'v1' | 'v2' | null;
   api_key_last4       : string | null;
   permissions_detected: HoldedPermissions;
   last_success_at     : string | null;
@@ -49,6 +51,7 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
   const [error, setError] = useState('');
 
   const isActive = integration?.status === 'active';
+  const isManagedByExpert = integration?.mode === 'advisor_managed' || integration?.api_version === 'v2';
   const guidance = resolveHoldedIntegrationGuidance({
     integrationStatus: integration?.status ?? null,
     phase: disconnecting ? 'disconnecting' : phase,
@@ -118,20 +121,29 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
               <RefreshCw size={12} />
               Actualizar
             </button>
-            <button
-              type="button"
-              onClick={handleDisconnect}
-              disabled={disconnecting}
-              className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-100 disabled:opacity-50"
-            >
-              {disconnecting ? <Loader2 size={12} className="animate-spin" /> : <Unplug size={12} />}
-              Desconectar
-            </button>
+            {!isManagedByExpert && (
+              <button
+                type="button"
+                onClick={handleDisconnect}
+                disabled={disconnecting}
+                className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-100 disabled:opacity-50"
+              >
+                {disconnecting ? <Loader2 size={12} className="animate-spin" /> : <Unplug size={12} />}
+                Desconectar
+              </button>
+            )}
           </div>
         </div>
 
         {error && (
           <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+        )}
+
+        {isManagedByExpert && (
+          <div className="rounded-xl border border-[#d8cbb5] bg-[#faf8f2] px-4 py-3 text-xs leading-5 text-[#6b7280]">
+            Esta conexión está gestionada por EXPERT y usa Holded API {integration.api_version ?? 'v2'}.
+            Para cambiar la credencial o desconectarla, solicita la gestión a tu asesor.
+          </div>
         )}
 
         {/* Permissions */}
