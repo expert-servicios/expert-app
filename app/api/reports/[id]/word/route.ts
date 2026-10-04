@@ -8,6 +8,7 @@ import {
   HeadingLevel, AlignmentType, ShadingType,
 } from 'docx';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { canAccessFinancialReport } from '@/lib/reports/report-access';
 import type { ReportData, InvoiceSummaryItem } from '@/lib/reports/report-generator';
 
 function fmtEur(n: number) {
@@ -174,14 +175,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
   const { id } = await params;
-  const { data: report } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin();
+  const { data: report } = await admin
     .from('kia_financial_reports')
-    .select('title, data')
+    .select('title, data, client_id')
     .eq('id', id)
-    .eq('client_id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (!report) return NextResponse.json({ error: 'Informe no encontrado' }, { status: 404 });
+  if (!report || !(await canAccessFinancialReport(admin, user.id, report.client_id))) {
+    return NextResponse.json({ error: 'Informe no encontrado' }, { status: 404 });
+  }
 
   const doc    = buildDoc(report.data as ReportData);
   const buffer = await Packer.toBuffer(doc);
