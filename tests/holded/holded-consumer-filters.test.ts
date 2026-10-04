@@ -9,7 +9,7 @@ describe('Holded consumer date and status filters', () => {
     const defs = source('lib/ai/kia/kia-tool-definitions.ts');
     const executor = source('lib/ai/kia/kia-tool-executor.ts');
 
-    expect(defs).toContain("since: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/)");
+    expect(defs).toContain('since: calendarDateSchema.optional()');
     expect(executor).toContain("const startDate = typeof args.since === 'string' ? args.since : undefined");
     expect(executor).toContain('{ maxItems: limit, startDate }');
     expect(executor).toContain('currency: d.currency');
