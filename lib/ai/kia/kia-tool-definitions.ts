@@ -241,6 +241,31 @@ export const kiaToolValidators = {
     attendeePhone: z.string().trim().max(30).optional(),
     notes: z.string().trim().max(500).optional(),
   }).strict(),
+  upsert_recurring_meeting_series: z.object({
+    sourceKey: z.string().trim().min(3).max(180),
+    title: z.string().trim().min(3).max(180),
+    attendeeName: z.string().trim().min(2).max(120),
+    attendeeEmail: z.string().email().max(200),
+    attendeePhone: z.string().trim().max(30).optional(),
+    clientId: z.string().uuid().optional(),
+    companyId: z.string().uuid().optional(),
+    leadId: z.string().uuid().optional(),
+    serviceKey: z.enum([
+      'consulta-inicial',
+      'demo-holded',
+      'onboarding',
+      'formacion-holded',
+      'seguimiento-mensual-empresa',
+      'seguimiento-mensual-autonomo',
+      'academy-admision',
+    ]),
+    durationMinutes: z.number().int().min(15).max(240),
+    dayOfMonth: z.number().int().min(1).max(28),
+    localTime: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/),
+    startMonth: z.string().regex(/^\\d{4}-\\d{2}-01$/),
+    monthsAhead: z.number().int().min(1).max(24).default(12),
+    conflictPolicy: z.enum(['next_available_weekday', 'manual_review']).default('next_available_weekday'),
+  }).strict(),
 } satisfies Record<string, z.ZodTypeAny>;
 
 type ToolName = keyof typeof kiaToolValidators;
@@ -298,6 +323,7 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   find_relevant_services: 'Find EXPERT services for a concrete unmet need. Use only after answering the question and only when the user explicitly lacks something necessary, asks EXPERT to handle it, or clearly intends to contract. Do not use for mere topic affinity or when the user asks to do it themselves.',
   get_booking_availability: 'Read real EXPERT availability from the active Google Calendar booking stack for public meeting types. Use before proposing meeting times.',
   create_booking_meeting: 'Create a public EXPERT meeting only after the user explicitly confirms the exact numeric date and time in their latest message. Backend rechecks availability and confirmation before writing Calendar/Meet.',
+  upsert_recurring_meeting_series: 'Admin-only: create or update an EXPERT recurring meeting series and materialize the future appointment horizon in Calendar/Meet with individual reschedule links.',
 };
 
 export const KIA_TOOL_DEFINITIONS: KiaToolDefinition[] = (Object.keys(kiaToolValidators) as ToolName[]).map((name) => ({
