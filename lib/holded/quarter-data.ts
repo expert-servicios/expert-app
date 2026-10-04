@@ -38,8 +38,8 @@ const MONTH_LABELS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct
 
 function quarterToUnix(year: number, quarter: number): { from: number; to: number } {
   const startMonth = (quarter - 1) * 3;
-  const start = new Date(year, startMonth, 1);
-  const end   = new Date(year, startMonth + 3, 0, 23, 59, 59);
+  const start = new Date(Date.UTC(year, startMonth, 1, 0, 0, 0));
+  const end   = new Date(Date.UTC(year, startMonth + 3, 0, 23, 59, 59));
   return { from: Math.floor(start.getTime() / 1000), to: Math.floor(end.getTime() / 1000) };
 }
 
@@ -82,8 +82,8 @@ export async function fetchQuarterData(
   const startMonth = (quarter - 1) * 3;
   const monthlyData: MonthlySnapshot[] = [0, 1, 2].map((offset) => {
     const mi    = startMonth + offset;
-    const mFrom = new Date(year, mi, 1).getTime() / 1000;
-    const mTo   = new Date(year, mi + 1, 0, 23, 59, 59).getTime() / 1000;
+    const mFrom = Date.UTC(year, mi, 1, 0, 0, 0) / 1000;
+    const mTo   = Date.UTC(year, mi + 1, 0, 23, 59, 59) / 1000;
     return {
       month:     MONTH_LABELS[mi],
       sales:     sales.filter((d) => d.timestamp >= mFrom && d.timestamp <= mTo).reduce((s, d) => s + d.total, 0),
@@ -109,10 +109,16 @@ export async function fetchQuarterData(
   };
 }
 
-export function currentQuarter(): { year: number; quarter: 1 | 2 | 3 | 4 } {
-  const now = new Date();
+export function currentQuarter(now = new Date()): { year: number; quarter: 1 | 2 | 3 | 4 } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric',
+    month: 'numeric',
+  }).formatToParts(now);
+  const year = Number(parts.find((part) => part.type === 'year')?.value ?? now.getUTCFullYear());
+  const month = Number(parts.find((part) => part.type === 'month')?.value ?? (now.getUTCMonth() + 1));
   return {
-    year:    now.getFullYear(),
-    quarter: Math.ceil((now.getMonth() + 1) / 3) as 1 | 2 | 3 | 4,
+    year,
+    quarter: Math.ceil(month / 3) as 1 | 2 | 3 | 4,
   };
 }
