@@ -445,6 +445,21 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
       'La lectura de compras v2 alcanzó el límite de 2.000 documentos; revisa periodos históricos de alto volumen antes de usar el informe con fines fiscales.',
     );
   }
+  if (rawBank.length > 0) {
+    dataWarnings.push(
+      'Los saldos bancarios reflejan el saldo actual de Holded en la fecha de generación, no el saldo reconstruido al cierre del trimestre.',
+    );
+  }
+  if (confirmedSales.some((doc) => isUnpaid(doc)) || confirmedPurchases.some((doc) => isUnpaid(doc))) {
+    dataWarnings.push(
+      'Los estados pendiente/cobrado reflejan la situación actual del documento, no necesariamente su estado al cierre del trimestre.',
+    );
+  }
+  if ((anomalyRows ?? []).length > 0) {
+    dataWarnings.push(
+      'Las alertas contables son incidencias abiertas en la fecha de generación y pueden haberse originado fuera del trimestre informado.',
+    );
+  }
 
   // Show period documents in the table (including drafts, clearly labelled).
   const salesInvoices = toInvoiceSummary(tableSales);
