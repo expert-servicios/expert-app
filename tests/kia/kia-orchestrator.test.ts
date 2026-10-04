@@ -67,6 +67,18 @@ describe('KIA M7 orchestration plan', () => {
     expect(plan.authorization.requestedNames).toEqual(plan.toolNames);
   });
 
+  it('allows a resolved unskilled email intent to keep its policy-scoped public tools', async () => {
+    const source = readFileSync(resolve(process.cwd(), 'lib/ai/kia/kia-orchestrator.ts'), 'utf8');
+    expect(source).toContain("allowResolvedUnskilled: input.channel === 'email'");
+    expect(source).toContain('params.allowResolvedUnskilled !== true');
+  });
+
+  it('derives selection basis from the skill that actually matched', () => {
+    const source = readFileSync(resolve(process.cwd(), 'lib/ai/kia/kia-orchestrator.ts'), 'utf8');
+    expect(source).toContain('skill.intents.includes(params.detectedIntent)');
+    expect(source).toContain('skill?.taskTypes.includes(params.resolvedTaskType)');
+  });
+
   it('propagates the resolved intent into final decision task context without overwriting an explicit page task', () => {
     const source = readFileSync(resolve(process.cwd(), 'lib/ai/kia/kia-orchestrator.ts'), 'utf8');
     expect(source).toContain('currentTask: input.contextInput.currentTask ?? plan.detectedIntent ?? undefined');
