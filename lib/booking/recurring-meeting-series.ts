@@ -194,6 +194,7 @@ export async function materializeRecurringMeetingSeries(
           appointmentId: appointment.id,
           email: series.attendee_email.toLowerCase(),
           service: series.service_key as BookingServiceKey,
+          expiresAt: new Date(slot.start.getTime() + 30 * 24 * 60 * 60_000),
         });
         const managementLinks = bookingManagementUrls(managementToken, series.service_key as BookingServiceKey);
 
