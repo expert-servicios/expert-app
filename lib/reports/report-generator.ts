@@ -266,8 +266,8 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
   // Connections may legitimately expose only part of the accounting surface.
   // Keep the report useful with the resources that are actually authorized.
   const [rawSales, rawPurchases, rawBank] = await Promise.all([
-    listHoldedDocuments(gateway, 'sales', { maxItems: 2_000 }).catch((): HoldedReadDocument[] => []),
-    listHoldedDocuments(gateway, 'purchase', { maxItems: 2_000 }).catch((): HoldedReadDocument[] => []),
+    listHoldedDocuments(gateway, 'sales', { maxItems: 2_000, includeDrafts: true }).catch((): HoldedReadDocument[] => []),
+    listHoldedDocuments(gateway, 'purchase', { maxItems: 2_000, includeDrafts: true }).catch((): HoldedReadDocument[] => []),
     listHoldedBankAccounts(gateway, 100).catch(() => []),
   ]);
 
@@ -333,8 +333,8 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
     status  : String(r.status ?? ''),
   }));
 
-  const topContacts  = buildTopContacts(rawSales);
-  const monthlyFlow  = buildMonthlyFlow(rawSales, rawPurchases);
+  const topContacts  = buildTopContacts(confirmedSales);
+  const monthlyFlow  = buildMonthlyFlow(confirmedSales, confirmedPurchases);
   const aiSummary    = await generateAiSummary(kpis, anomalies, input.lang);
 
   const companyName  = companyRow?.nombre_comercial ?? companyRow?.razon_social ?? 'Mi empresa';
