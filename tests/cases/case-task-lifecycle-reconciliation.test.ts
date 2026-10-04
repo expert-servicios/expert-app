@@ -19,6 +19,13 @@ describe('case task lifecycle reconciliation', () => {
     expect(migration).toContain("metadata ->> 'blocks_submission'");
   });
 
+  it('promotes the case when the canonical submission task is completed', () => {
+    expect(migration).toContain('promote_case_after_submission_task');
+    expect(migration).toContain("metadata ->> 'task_key'");
+    expect(migration).toContain("'submit_and_archive_receipt'");
+    expect(migration).toContain("'Seguimiento posterior a presentación'");
+  });
+
   it('closes all remaining case tasks when the case is finalized and clears case deadlines', () => {
     expect(migration).toContain("new.status = 'finalizado' or new.state = 'finalizado'");
     expect(migration).toContain("new.due_date := null");
