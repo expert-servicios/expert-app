@@ -19,17 +19,19 @@ async function getIntegrationData(userId: string) {
 
   const requestedCompanyId = profile?.active_company_id ?? null;
   let companyId: string | null = null;
+  let canManageHolded = true;
   if (requestedCompanyId) {
     const { data: membership, error: membershipError } = await admin
       .from('profile_companies')
-      .select('company_id')
+      .select('company_id,role')
       .eq('profile_id', userId)
       .eq('company_id', requestedCompanyId)
       .maybeSingle();
     if (membershipError || !membership) {
-      return { integration: null, companyId: null, forbidden: true };
+      return { integration: null, companyId: null, canManageHolded: false, forbidden: true };
     }
     companyId = membership.company_id;
+    canManageHolded = ['owner', 'admin'].includes(String(membership.role ?? ''));
   }
 
   let query = admin
@@ -48,7 +50,7 @@ async function getIntegrationData(userId: string) {
 
   const { data: rows } = await query;
 
-  return { integration: rows?.[0] ?? null, companyId, forbidden: false };
+  return { integration: rows?.[0] ?? null, companyId, canManageHolded, forbidden: false };
 }
 
 export default async function HoldedIntegrationPage() {
@@ -63,7 +65,7 @@ export default async function HoldedIntegrationPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');
 
-  const { integration, companyId, forbidden } = await getIntegrationData(user.id);
+  const { integration, companyId, canManageHolded, forbidden } = await getIntegrationData(user.id);
   if (forbidden) redirect('/dashboard');
 
   return (
@@ -117,6 +119,7 @@ export default async function HoldedIntegrationPage() {
         <HoldedConnectionCard
           integration={integration as Parameters<typeof HoldedConnectionCard>[0]['integration']}
           companyId={companyId}
+          canManage={canManageHolded}
         />
       </div>
 
