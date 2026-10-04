@@ -177,15 +177,17 @@ export default async function EstadoEmpresaPage({
 
   // Gate 2: validate the active company before any service-role financial lookup.
   const requestedCompanyId = profile?.active_company_id ?? null;
-  const { data: activeMembership } = requestedCompanyId
-    ? await admin
-        .from('profile_companies')
-        .select('company_id')
-        .eq('profile_id', user.id)
-        .eq('company_id', requestedCompanyId)
-        .maybeSingle()
-    : { data: null };
-  const activeCompanyId = activeMembership?.company_id ?? null;
+  let activeCompanyId: string | null = null;
+  if (requestedCompanyId) {
+    const { data: activeMembership, error: membershipError } = await admin
+      .from('profile_companies')
+      .select('company_id')
+      .eq('profile_id', user.id)
+      .eq('company_id', requestedCompanyId)
+      .maybeSingle();
+    if (membershipError || !activeMembership) redirect('/dashboard');
+    activeCompanyId = activeMembership.company_id;
+  }
 
   const hasCommercialCoverage = activeCompanyId
     ? (await resolveCompanyCommercialCoverage(admin, user.id, activeCompanyId)).covered
@@ -226,6 +228,7 @@ export default async function EstadoEmpresaPage({
       .select('id, status, last_sync_at')
       .eq('provider', 'holded')
       .eq('client_id', user.id)
+      .is('company_id', null)
       .neq('status', 'revoked')
       .order('updated_at', { ascending: false })
       .limit(1)
