@@ -263,10 +263,12 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
   const gateway = await createHoldedGatewayForIntegration(input.integrationId);
 
   // ── Fetch Holded data in parallel through the version-aware gateway ─────
+  // Connections may legitimately expose only part of the accounting surface.
+  // Keep the report useful with the resources that are actually authorized.
   const [rawSales, rawPurchases, rawBank] = await Promise.all([
-    listHoldedDocuments(gateway, 'sales', { maxItems: 2_000 }),
-    listHoldedDocuments(gateway, 'purchase', { maxItems: 2_000 }),
-    listHoldedBankAccounts(gateway, 100),
+    listHoldedDocuments(gateway, 'sales', { maxItems: 2_000 }).catch((): HoldedReadDocument[] => []),
+    listHoldedDocuments(gateway, 'purchase', { maxItems: 2_000 }).catch((): HoldedReadDocument[] => []),
+    listHoldedBankAccounts(gateway, 100).catch(() => []),
   ]);
 
   // ── Fetch internal data ────────────────────────────────────────────────────
