@@ -28,6 +28,7 @@ interface Integration {
 interface Props {
   integration : Integration | null;
   companyId  ?: string | null;
+  canManage  ?: boolean;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -43,7 +44,7 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
-export function HoldedConnectionCard({ integration: initialIntegration, companyId }: Props) {
+export function HoldedConnectionCard({ integration: initialIntegration, companyId, canManage = true }: Props) {
   const router = useRouter();
   const [integration, setIntegration] = useState<Integration | null>(initialIntegration);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -121,7 +122,7 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
               <RefreshCw size={12} />
               Actualizar
             </button>
-            {!isManagedByExpert && (
+            {!isManagedByExpert && canManage && (
               <button
                 type="button"
                 onClick={handleDisconnect}
@@ -156,6 +157,50 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
           Modo de sincronización: <span className="font-medium">{integration.sync_mode === 'read_write' ? 'Lectura y escritura' : 'Solo lectura'}</span>.
           EXPERT solo lee tus datos — nunca modifica tu contabilidad sin confirmación explícita.
         </p>
+      </div>
+    );
+  }
+
+  // ── Read-only member state ────────────────────────────────────────────────
+  if (!canManage) {
+    return (
+      <div className="space-y-6">
+        <KiaGuidanceCard
+          state={guidance.state}
+          title={guidance.title}
+          message={guidance.message}
+          compact
+          animateOnChange
+        />
+
+        {integration && !isActive && (
+          <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            {integration.status === 'failed' ? (
+              <XCircle size={16} className="mt-0.5 shrink-0 text-red-500" />
+            ) : (
+              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
+            )}
+            <div className="text-sm">
+              <p className="font-medium text-[#3d3528]">{STATUS_LABELS[integration.status] ?? integration.status}</p>
+              {integration.last_error && (
+                <p className="mt-0.5 text-[#7a6e5f]">{integration.last_error}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="rounded-xl border border-[#d8cbb5] bg-[#faf8f2] px-4 py-3 text-sm leading-6 text-[#6b7280]">
+          Puedes consultar el estado de la integración, pero solo un propietario o administrador de la empresa puede conectar, reconectar o desconectar Holded.
+        </div>
+
+        <button
+          type="button"
+          onClick={() => router.refresh()}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[#e8dfc8] bg-white px-3 py-2 text-xs font-medium text-[#7a6e5f] hover:border-[#c88b25] hover:text-[#c88b25]"
+        >
+          <RefreshCw size={12} />
+          Actualizar estado
+        </button>
       </div>
     );
   }
