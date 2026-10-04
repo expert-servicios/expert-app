@@ -69,6 +69,8 @@ function buildClassifierSystemPrompt(): string {
     '</task_type_guide>',
     '',
     '<intent_guide>',
+    '- assistant_operations: solicitud operativa de correo/calendario/seguimiento/tarea, confirmación de algo ya realizado, petición de enviar/recordar/revisar algo sin especialidad fiscal-contable-laboral dominante',
+    '- book_call: pedir, proponer, confirmar, cambiar o cancelar una reunión/cita',
     '- payroll_diagnostics: revisar o comparar nómina, contrato laboral, jornada, pagas extra, bases de cotización, IRPF de nómina, coste empresa o salary-records de un empleado',
     '- anomaly_review: anomalías contables generales; no usar para discrepancias de nómina si payroll_diagnostics encaja',
     '</intent_guide>',
