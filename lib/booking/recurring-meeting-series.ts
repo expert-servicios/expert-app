@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import {
   createBookingCalendarMeeting,
+  deleteBookingCalendarEvent,
   getConfiguredBookingCalendarProvider,
   listBookingCalendarBusyWindows,
 } from '@/lib/booking/calendar-provider';
@@ -70,6 +71,7 @@ function nextWeekday(localDate: string): string {
 }
 
 async function pickAvailableSlot(
+  admin: AdminClient,
   series: RecurringSeries,
   localDate: string,
 ): Promise<{ start: Date; end: Date; localDate: string }> {
@@ -77,16 +79,31 @@ async function pickAvailableSlot(
   for (let attempts = 0; attempts < 10; attempts += 1) {
     const start = madridLocalToDate(candidateDate, series.local_time.slice(0, 5));
     const end = new Date(start.getTime() + series.duration_minutes * 60_000);
-    const busy = await listBookingCalendarBusyWindows(
-      start.toISOString(),
-      end.toISOString(),
-      getConfiguredBookingCalendarProvider(),
-    );
-    const conflict = busy.some((range) => {
+    const [busy, localAppointments] = await Promise.all([
+      listBookingCalendarBusyWindows(
+        start.toISOString(),
+        end.toISOString(),
+        getConfiguredBookingCalendarProvider(),
+      ),
+      admin
+        .from('appointments')
+        .select('id,appointment_date,appointment_end,status')
+        .in('status', ['pending_calendar', 'confirmed', 'confirmada'])
+        .lt('appointment_date', end.toISOString())
+        .gt('appointment_end', start.toISOString()),
+    ]);
+    if (localAppointments.error) throw localAppointments.error;
+    const calendarConflict = busy.some((range) => {
       const rangeStart = new Date(range.start);
       const rangeEnd = new Date(range.end);
       return start < rangeEnd && end > rangeStart;
     });
+    const localConflict = (localAppointments.data ?? []).some((row) =>
+      Boolean(row.appointment_date && row.appointment_end)
+      && start < new Date(row.appointment_end as string)
+      && end > new Date(row.appointment_date as string)
+    );
+    const conflict = calendarConflict || localConflict;
     if (!conflict) return { start, end, localDate: candidateDate };
     if (series.conflict_policy === 'manual_review') {
       throw new Error('recurring_meeting_conflict_manual_review');
@@ -140,7 +157,7 @@ export async function materializeRecurringMeetingSeries(
       let occurrenceId = occurrence?.id as string | undefined;
       try {
         const baseDate = dateForMonth(month, series.day_of_month);
-        const slot = await pickAvailableSlot(series, baseDate);
+        const slot = await pickAvailableSlot(admin, series, baseDate);
         planned++;
 
         if (!occurrenceId) {
@@ -165,89 +182,109 @@ export async function materializeRecurringMeetingSeries(
           }).eq('id', occurrenceId);
         }
 
-        const { data: appointment, error: appointmentError } = await admin
-          .from('appointments')
-          .insert({
+        let appointmentId: string | null = null;
+        let remoteEventId: string | null = null;
+        try {
+          const { data: appointment, error: appointmentError } = await admin
+            .from('appointments')
+            .insert({
+              name: series.attendee_name,
+              email: series.attendee_email.toLowerCase(),
+              phone: series.attendee_phone ?? 'No facilitado',
+              appointment_type: series.service_key,
+              appointment_date: slot.start.toISOString(),
+              appointment_end: slot.end.toISOString(),
+              notes: 'Cita generada por KIA desde una serie recurrente EXPERT.',
+              status: 'pending_calendar',
+              preferred_date: slot.localDate,
+              preferred_time: formatMadridTime(slot.start),
+              confirmed_date: slot.localDate,
+              confirmed_time: formatMadridTime(slot.start),
+              service: series.title,
+              client_id: series.client_id,
+              company_id: series.company_id,
+              booking_provider: 'google_native',
+              admin_notes: `Serie recurrente EXPERT: ${series.id} · ${key}`,
+            })
+            .select('id')
+            .single();
+          if (appointmentError || !appointment?.id) throw appointmentError ?? new Error('appointment_insert_failed');
+          appointmentId = appointment.id;
+
+          const managementToken = await createBookingManagementToken({
+            appointmentId,
+            email: series.attendee_email.toLowerCase(),
+            service: series.service_key as BookingServiceKey,
+            expiresAt: new Date(slot.start.getTime() + 30 * 24 * 60 * 60_000),
+          });
+          const managementLinks = bookingManagementUrls(managementToken, series.service_key as BookingServiceKey);
+
+          const meeting = await createBookingCalendarMeeting({
+            summary: `${series.title} — ${series.attendee_name}`,
+            description: [
+              'Cita recurrente generada por KIA desde EXPERT.',
+              `Cliente: ${series.attendee_name} (${series.attendee_email})`,
+              `EXPERT appointment: ${appointmentId}`,
+              `Cambiar hora: ${managementLinks.rescheduleUrl}`,
+            ].join('\n'),
+            start: slot.start.toISOString(),
+            end: slot.end.toISOString(),
+            attendeeEmail: series.attendee_email.toLowerCase(),
+            timezone: series.timezone || BOOKING_TIMEZONE,
+            reminderMinutesBefore: [1440, 60],
+          });
+          remoteEventId = meeting.eventId;
+
+          const { error: finalizeError } = await admin.from('appointments').update({
+            status: 'confirmed',
+            booking_provider: meeting.bookingProvider,
+            provider_booking_id: meeting.eventId,
+            google_event_id: meeting.provider === 'google' ? meeting.eventId : null,
+            meeting_url: meeting.meetingUrl,
+            admin_notes: [
+              `Serie recurrente EXPERT: ${series.id} · ${key}`,
+              `Reprogramación: ${managementLinks.rescheduleUrl}`,
+            ].join('\n'),
+            updated_at: new Date().toISOString(),
+          }).eq('id', appointmentId);
+          if (finalizeError) throw finalizeError;
+
+          await ensureBookingAdminTask({
+            admin,
+            appointmentId,
+            serviceKey: series.service_key,
+            serviceLabel: series.title,
             name: series.attendee_name,
             email: series.attendee_email.toLowerCase(),
-            phone: series.attendee_phone ?? 'No facilitado',
-            appointment_type: series.service_key,
-            appointment_date: slot.start.toISOString(),
-            appointment_end: slot.end.toISOString(),
-            notes: 'Cita generada por KIA desde una serie recurrente EXPERT.',
-            status: 'pending_calendar',
-            preferred_date: slot.localDate,
-            preferred_time: formatMadridTime(slot.start),
-            confirmed_date: slot.localDate,
-            confirmed_time: formatMadridTime(slot.start),
-            service: series.title,
-            client_id: series.client_id,
-            company_id: series.company_id,
-            booking_provider: 'google_native',
-            admin_notes: `Serie recurrente EXPERT: ${series.id} · ${key}`,
-          })
-          .select('id')
-          .single();
-        if (appointmentError || !appointment?.id) throw appointmentError ?? new Error('appointment_insert_failed');
+            localDate: slot.localDate,
+            localTime: formatMadridTime(slot.start),
+            meetingUrl: meeting.meetingUrl,
+            clientId: series.client_id,
+            companyId: series.company_id,
+            leadId: series.lead_id,
+          });
 
-        const managementToken = await createBookingManagementToken({
-          appointmentId: appointment.id,
-          email: series.attendee_email.toLowerCase(),
-          service: series.service_key as BookingServiceKey,
-          expiresAt: new Date(slot.start.getTime() + 30 * 24 * 60 * 60_000),
-        });
-        const managementLinks = bookingManagementUrls(managementToken, series.service_key as BookingServiceKey);
-
-        const meeting = await createBookingCalendarMeeting({
-          summary: `${series.title} — ${series.attendee_name}`,
-          description: [
-            'Cita recurrente generada por KIA desde EXPERT.',
-            `Cliente: ${series.attendee_name} (${series.attendee_email})`,
-            `EXPERT appointment: ${appointment.id}`,
-            `Cambiar hora: ${managementLinks.rescheduleUrl}`,
-          ].join('\n'),
-          start: slot.start.toISOString(),
-          end: slot.end.toISOString(),
-          attendeeEmail: series.attendee_email.toLowerCase(),
-          timezone: series.timezone || BOOKING_TIMEZONE,
-          reminderMinutesBefore: [1440, 60],
-        });
-
-        await admin.from('appointments').update({
-          status: 'confirmed',
-          booking_provider: meeting.bookingProvider,
-          provider_booking_id: meeting.eventId,
-          google_event_id: meeting.provider === 'google' ? meeting.eventId : null,
-          meeting_url: meeting.meetingUrl,
-          admin_notes: [
-            `Serie recurrente EXPERT: ${series.id} · ${key}`,
-            `Reprogramación: ${managementLinks.rescheduleUrl}`,
-          ].join('\n'),
-          updated_at: new Date().toISOString(),
-        }).eq('id', appointment.id);
-
-        await ensureBookingAdminTask({
-          admin,
-          appointmentId: appointment.id,
-          serviceKey: series.service_key,
-          serviceLabel: series.title,
-          name: series.attendee_name,
-          email: series.attendee_email.toLowerCase(),
-          localDate: slot.localDate,
-          localTime: formatMadridTime(slot.start),
-          meetingUrl: meeting.meetingUrl,
-          clientId: series.client_id,
-          companyId: series.company_id,
-          leadId: series.lead_id,
-        });
-
-        await admin.from('recurring_meeting_occurrences').update({
-          appointment_id: appointment.id,
-          status: 'confirmed',
-          last_error: null,
-          updated_at: new Date().toISOString(),
-        }).eq('id', occurrenceId);
-        confirmed++;
+          const { error: occurrenceFinalizeError } = await admin.from('recurring_meeting_occurrences').update({
+            appointment_id: appointmentId,
+            status: 'confirmed',
+            last_error: null,
+            updated_at: new Date().toISOString(),
+          }).eq('id', occurrenceId);
+          if (occurrenceFinalizeError) throw occurrenceFinalizeError;
+          confirmed++;
+        } catch (materializeError) {
+          if (remoteEventId) {
+            await deleteBookingCalendarEvent(
+              remoteEventId,
+              getConfiguredBookingCalendarProvider(),
+            ).catch(() => {});
+          }
+          if (appointmentId) {
+            await admin.from('appointments').delete().eq('id', appointmentId).eq('status', 'pending_calendar');
+            await admin.from('appointments').delete().eq('id', appointmentId).eq('status', 'confirmed');
+          }
+          throw materializeError;
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         if (message.includes('conflict')) conflicts++;
