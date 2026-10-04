@@ -18,16 +18,19 @@ async function getIntegrationData(userId: string) {
     .single();
 
   const requestedCompanyId = profile?.active_company_id ?? null;
-  const { data: membership } = requestedCompanyId
-    ? await admin
-        .from('profile_companies')
-        .select('company_id')
-        .eq('profile_id', userId)
-        .eq('company_id', requestedCompanyId)
-        .maybeSingle()
-    : { data: null };
-
-  const companyId = membership?.company_id ?? null;
+  let companyId: string | null = null;
+  if (requestedCompanyId) {
+    const { data: membership, error: membershipError } = await admin
+      .from('profile_companies')
+      .select('company_id')
+      .eq('profile_id', userId)
+      .eq('company_id', requestedCompanyId)
+      .maybeSingle();
+    if (membershipError || !membership) {
+      return { integration: null, companyId: null, forbidden: true };
+    }
+    companyId = membership.company_id;
+  }
 
   let query = admin
     .from('client_integrations')
@@ -40,12 +43,12 @@ async function getIntegrationData(userId: string) {
   if (companyId) {
     query = query.eq('company_id', companyId);
   } else {
-    query = query.eq('client_id', userId);
+    query = query.eq('client_id', userId).is('company_id', null);
   }
 
   const { data: rows } = await query;
 
-  return { integration: rows?.[0] ?? null, companyId };
+  return { integration: rows?.[0] ?? null, companyId, forbidden: false };
 }
 
 export default async function HoldedIntegrationPage() {
@@ -60,7 +63,8 @@ export default async function HoldedIntegrationPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');
 
-  const { integration, companyId } = await getIntegrationData(user.id);
+  const { integration, companyId, forbidden } = await getIntegrationData(user.id);
+  if (forbidden) redirect('/dashboard');
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 lg:px-8">
