@@ -239,38 +239,11 @@ export async function listHoldedDocumentType(
 ): Promise<HoldedReadDocument[]> {
   if (docType === 'invoice') return listHoldedDocuments(gateway, 'sales', params);
   if (docType === 'purchase') return listHoldedDocuments(gateway, 'purchase', params);
+  if (!gateway.v1) {
+    throw new HoldedIntegrationError(`Document type ${docType} is not yet available through Holded API v2.`);
+  }
 
   const maxItems = Math.max(1, Math.min(2_000, Math.trunc(params.maxItems ?? 2_000)));
-
-  if (gateway.v2 && (docType === 'salesreceipt' || docType === 'creditnote')) {
-    const items: HoldedReadDocument[] = [];
-    let cursor: string | undefined;
-    while (items.length < maxItems) {
-      const page = docType === 'salesreceipt'
-        ? await gateway.v2.listSalesReceipts({
-            startDate: params.startDate,
-            endDate: params.endDate,
-            approvalStatus: 'approved',
-            limit: Math.min(200, maxItems - items.length),
-            cursor,
-          })
-        : await gateway.v2.listCreditNotes({
-            startDate: params.startDate,
-            endDate: params.endDate,
-            approvalStatus: 'approved',
-            limit: Math.min(200, maxItems - items.length),
-            cursor,
-          });
-      items.push(...page.items.map(v2DocumentToReadModel));
-      if (!page.has_more || !page.cursor) break;
-      cursor = page.cursor;
-    }
-    return items.slice(0, maxItems);
-  }
-
-  if (!gateway.v1) {
-    throw new HoldedIntegrationError(`Document type ${docType} is not available through the configured Holded API version.`);
-  }
   const dateFrom = toUnixDate(params.startDate);
   const dateTo = toUnixDate(params.endDate, true);
   const items: HoldedReadDocument[] = [];
@@ -369,7 +342,6 @@ export async function listHoldedBankMovements(
   } = {},
 ): Promise<HoldedReadBankMovement[]> {
   const maxItems = Math.max(1, Math.min(2_000, Math.trunc(params.maxItems ?? 200)));
-
   if (gateway.v2) {
     const items: HoldedReadBankMovement[] = [];
     let cursor: string | undefined;
@@ -388,19 +360,17 @@ export async function listHoldedBankMovements(
     return items.slice(0, maxItems);
   }
 
-  const v1 = gateway.v1;
-  if (!v1) throw new HoldedIntegrationError('Holded v1 client is unavailable.');
+  if (!gateway.v1) throw new HoldedIntegrationError('Holded v1 client is unavailable.');
   const dateFrom = toUnixDate(params.startDate);
   const dateTo = toUnixDate(params.endDate, true);
   const items: HoldedReadBankMovement[] = [];
   for (let page = 1; page <= 20 && items.length < maxItems; page++) {
-    const movements = await v1.listBankAccountMovements(accountId, { page, dateFrom, dateTo });
+    const movements = await gateway.v1.listBankAccountMovements(accountId, { page, dateFrom, dateTo });
     if (movements.length === 0) break;
     items.push(...movements.map((movement) => v1BankMovementToReadModel(movement, accountId)));
   }
   return items
-    .filter((movement) => !params.pendingOnly
-      || !['reconciled', 'conciliado', 'matched', 'true', 'forced_reconciled'].includes(movement.status.toLowerCase()))
+    .filter((movement) => !params.pendingOnly || !['reconciled', 'conciliado', 'matched', 'true', 'forced_reconciled'].includes(movement.status.toLowerCase()))
     .slice(0, maxItems);
 }
 
