@@ -31,6 +31,7 @@ describe('active company financial scope', () => {
     expect(route).toContain("from('profile_companies')");
     expect(route).toContain(".eq('profile_id', clientId)");
     expect(route).toContain(".eq('company_id', requestedCompanyId)");
-    expect(route).toContain('const companyId = membership?.company_id ?? null');
+    expect(route).toContain('if (membershipError || !membership)');
+    expect(route).toContain('companyId = membership.company_id');
   });
 });
