@@ -73,6 +73,12 @@ export async function runKiaDecision(input: {
   mediaType?: string;
   externalActionMinConfidence?: number;
   detectedIntentOverride?: string | null;
+  orchestrationMetadata?: {
+    skillId?: string | null;
+    subAgentId?: string | null;
+    detectedIntent?: string | null;
+    selectionBasis?: string | null;
+  };
   onProgress?: KiaProgressCallback;
 }): Promise<KiaDecisionResult> {
   const context = await buildKiaContext({ ...input.contextInput, channel: input.channel, latestMessage: input.message });
@@ -146,6 +152,10 @@ export async function runKiaDecision(input: {
       toolResults: [],
       rawInput: { taskType: input.taskType, channel: input.channel, message: input.message, contextInput: input.contextInput },
       error: undefined,
+      skillId: input.orchestrationMetadata?.skillId ?? null,
+      subAgentId: input.orchestrationMetadata?.subAgentId ?? null,
+      detectedIntent: input.orchestrationMetadata?.detectedIntent ?? classification?.detectedIntent ?? input.detectedIntentOverride ?? null,
+      selectionBasis: input.orchestrationMetadata?.selectionBasis ?? null,
     });
     return { decision: clarifyDecision, context, toolResults: [], userMessage: clarifyDecision.userMessage, usedFallback: false, decisionLogId };
   }
@@ -464,6 +474,10 @@ export async function runKiaDecision(input: {
     tokensOut: totalCost?.tokensOut,
     estimatedCostUsd: totalCost?.estimatedCostUsd,
     loopIterations: toolResults.length > 0 ? Math.ceil(toolResults.length / Math.max(1, decision.toolRequests.length || 1)) : 0,
+    skillId: input.orchestrationMetadata?.skillId ?? null,
+    subAgentId: input.orchestrationMetadata?.subAgentId ?? subAgentProfile?.id ?? null,
+    detectedIntent: input.orchestrationMetadata?.detectedIntent ?? effectiveDetectedIntent ?? null,
+    selectionBasis: input.orchestrationMetadata?.selectionBasis ?? null,
   });
 
   if (
