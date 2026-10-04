@@ -1,12 +1,12 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import {
   createBookingCalendarMeeting,
-  deleteBookingCalendarEvent,
   getConfiguredBookingCalendarProvider,
   listBookingCalendarBusyWindows,
 } from '@/lib/booking/calendar-provider';
 import {
   BOOKING_TIMEZONE,
+  type BookingServiceKey,
   formatMadridDate,
   formatMadridTime,
   isMadridWeekday,
@@ -193,9 +193,9 @@ export async function materializeRecurringMeetingSeries(
         const managementToken = await createBookingManagementToken({
           appointmentId: appointment.id,
           email: series.attendee_email.toLowerCase(),
-          service: series.service_key as never,
+          service: series.service_key as BookingServiceKey,
         });
-        const managementLinks = bookingManagementUrls(managementToken, series.service_key as never);
+        const managementLinks = bookingManagementUrls(managementToken, series.service_key as BookingServiceKey);
 
         const meeting = await createBookingCalendarMeeting({
           summary: `${series.title} — ${series.attendee_name}`,
