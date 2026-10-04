@@ -8,6 +8,27 @@ export interface KiaSubAgentProfile {
   maxTokensOverride?: number;
 }
 
+const ASSISTANT_ADDENDUM = `
+<sub_agent_assistant>
+Eres el sub-agente de asistencia operativa de Kia para correo, calendario y tareas de EXPERT.
+
+Misión:
+- Vigilar comunicaciones humanas y convertir solo las acciones reales en seguimiento operativo.
+- Distinguir información, confirmaciones, solicitudes, plazos, documentos, reuniones y hechos ya completados.
+- Mantener alineados correo, expediente, calendario y tareas sin duplicar trabajo.
+
+Reglas adicionales:
+- Si un correo acredita que una actuación ya se realizó (por ejemplo presentación registrada, justificante emitido, pago confirmado o firma recibida), no generes una nueva tarea para volver a hacerla.
+- Si el contexto muestra una tarea equivalente ya abierta, evita duplicarla y usa esa tarea como referencia.
+- Crea tarea solo cuando exista una acción posterior concreta que requiera seguimiento; el título debe expresar la acción, no repetir el asunto del correo.
+- Para solicitudes de reunión, consulta disponibilidad real y no reserves hasta tener fecha y hora inequívocamente confirmadas por la persona.
+- Conserva la relación con clientId, leadId, caseId y companyId cuando esté verificada; ante ambigüedad, exige revisión humana.
+- No cierres un expediente ni afirmes que una presentación, pago o trámite se ha completado sin evidencia registrada.
+- No envíes correos ni ejecutes acciones externas si la política del canal no las autoriza.
+- Cuando una novedad implique plazo, requerimiento oficial o riesgo, prioriza la tarea y escálala a Admin.
+</sub_agent_assistant>
+`.trim();
+
 const FISCAL_ADDENDUM = `
 <sub_agent_fiscal>
 Eres el sub-agente fiscal de Kia. Especialización:
@@ -100,6 +121,11 @@ Reglas adicionales:
 `.trim();
 
 const SUB_AGENT_MAP: Record<string, KiaSubAgentProfile> = {
+  assistant: {
+    id: 'assistant',
+    systemPromptAddendum: ASSISTANT_ADDENDUM,
+    maxTokensOverride: 1000,
+  },
   fiscal: {
     id: 'fiscal',
     systemPromptAddendum: FISCAL_ADDENDUM,
@@ -164,6 +190,7 @@ export function getKiaSubAgentProfile(id: string | null | undefined): KiaSubAgen
 export function selectSubAgentProfile(params: {
   taskType: KiaTaskType;
   detectedIntent?: string;
+  channel?: string;
 }): KiaSubAgentProfile | null {
   const skill = selectKiaSkill({
     taskType: params.taskType,
@@ -174,5 +201,12 @@ export function selectSubAgentProfile(params: {
 
   const byIntent = params.detectedIntent ? INTENT_TO_SUB_AGENT[params.detectedIntent] : null;
   const byTask = TASK_TYPE_TO_SUB_AGENT[params.taskType];
-  return getKiaSubAgentProfile(byIntent ?? byTask);
+  const selected = getKiaSubAgentProfile(byIntent ?? byTask);
+  if (selected) return selected;
+
+  // Email is an operational surface: when no domain specialist is selected,
+  // route it through the assistant rather than the generic chat profile.
+  if (params.channel === 'email') return getKiaSubAgentProfile('assistant');
+
+  return null;
 }
