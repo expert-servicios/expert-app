@@ -11,6 +11,7 @@ import {
   Document, Page, Text, View, StyleSheet,
 } from '@react-pdf/renderer';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { canAccessFinancialReport } from '@/lib/reports/report-access';
 import type { ReportData } from '@/lib/reports/report-generator';
 
 // ── Styles ────────────────────────────────────────────────────────────────────
@@ -69,8 +70,8 @@ function ReportPDF({ data }: { data: ReportData }) {
           ...[
             { label: 'Ventas totales',     value: fmt(data.kpis.totalSales) },
             { label: 'Gastos totales',     value: fmt(data.kpis.totalPurchases) },
-            { label: 'IVA est. a pagar',   value: fmt(data.kpis.vatBalance) },
-            { label: 'Saldo bancario',     value: fmt(data.kpis.totalBankBalance) },
+            { label: 'Balance IVA orient.', value: fmt(data.kpis.vatBalance) },
+            { label: 'Saldo bancario EUR',  value: fmt(data.kpis.totalBankBalance) },
           ].map(({ label, value }) =>
             React.createElement(View, { key: label, style: styles.kpiBox },
               React.createElement(Text, { style: styles.kpiLabel }, label),
@@ -79,6 +80,16 @@ function ReportPDF({ data }: { data: ReportData }) {
           ),
         ),
       ),
+
+      // Data limitations
+      (data.dataWarnings?.length ?? 0) > 0 ? React.createElement(View, { style: styles.section },
+        React.createElement(Text, { style: styles.sectionTitle }, 'Limitaciones de datos'),
+        React.createElement(View, { style: styles.summaryBox },
+          ...(data.dataWarnings ?? []).map((warning) =>
+            React.createElement(Text, { key: warning, style: styles.summaryText }, `• ${warning}`)
+          ),
+        ),
+      ) : null,
 
       // AI summary
       data.aiSummary ? React.createElement(View, { style: styles.section },
@@ -118,7 +129,7 @@ function ReportPDF({ data }: { data: ReportData }) {
             React.createElement(Text, { style: { ...styles.tableCellGray, flex: 1 } }, inv.number),
             React.createElement(Text, { style: { ...styles.tableCellGray, flex: 1 } }, inv.date),
             React.createElement(Text, { style: { ...styles.tableCell, flex: 3 } }, inv.contact),
-            React.createElement(Text, { style: { ...styles.tableCell, flex: 1, textAlign: 'right' } }, fmt(inv.total)),
+            React.createElement(Text, { style: { ...styles.tableCell, flex: 1, textAlign: 'right' } }, `${inv.total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} ${inv.currency ?? 'EUR'}`),
             React.createElement(Text, { style: { ...styles.tableCellGray, flex: 1 } }, inv.status),
           )
         ),
@@ -155,14 +166,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
   const { id } = await params;
-  const { data: report } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin();
+  const { data: report } = await admin
     .from('kia_financial_reports')
-    .select('title, data')
+    .select('title, data, client_id')
     .eq('id', id)
-    .eq('client_id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (!report) return NextResponse.json({ error: 'Informe no encontrado' }, { status: 404 });
+  if (!report || !(await canAccessFinancialReport(admin, user.id, report.client_id))) {
+    return NextResponse.json({ error: 'Informe no encontrado' }, { status: 404 });
+  }
 
   const pdfBuffer = await renderToBuffer(React.createElement(ReportPDF, { data: report.data as ReportData }));
 

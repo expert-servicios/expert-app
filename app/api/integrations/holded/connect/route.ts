@@ -36,7 +36,7 @@ const bodySchema = z.object({
   consentAt: z.string().datetime().optional(),
 }).strict();
 
-const SAFE_COLUMNS = 'id,provider,mode,api_key_last4,permissions_detected,permissions_enabled,status,sync_mode,last_sync_at,last_success_at,last_error,consent_at,consent_version,created_at,updated_at';
+const SAFE_COLUMNS = 'id,provider,mode,api_version,api_key_last4,permissions_detected,permissions_enabled,status,sync_mode,last_sync_at,last_success_at,last_error,consent_at,consent_version,created_at,updated_at';
 
 export async function POST(request: NextRequest) {
   try {
@@ -88,6 +88,31 @@ export async function POST(request: NextRequest) {
     if (!membership) {
       return NextResponse.json({ error: 'No tienes acceso a esta empresa' }, { status: 403 });
     }
+    if (!['owner', 'admin'].includes(String(membership.role ?? ''))) {
+      return NextResponse.json(
+        { error: 'Solo un propietario o administrador de la empresa puede cambiar la conexión con Holded.' },
+        { status: 403 },
+      );
+    }
+
+    const existing = await admin
+      .from('client_integrations')
+      .select('id, client_id, mode, api_version')
+      .eq('provider', 'holded')
+      .eq('company_id', companyId)
+      .neq('status', 'revoked')
+      .maybeSingle();
+
+    if (existing.error) {
+      console.error('[holded/connect] existing integration error:', existing.error.message);
+      return NextResponse.json({ error: 'No se pudo comprobar la integración actual' }, { status: 500 });
+    }
+    if (existing.data && (existing.data.mode === 'advisor_managed' || existing.data.api_version === 'v2')) {
+      return NextResponse.json(
+        { error: 'Esta integración Holded v2/gestionada se administra desde EXPERT. Contacta con tu asesor para modificarla.' },
+        { status: 409 },
+      );
+    }
 
     const client = createHoldedClientFromRawKey(apiKey);
     let testResult;
@@ -126,18 +151,11 @@ export async function POST(request: NextRequest) {
     const encryptedApiKey = encryptSecret(apiKey);
     const last4 = keyLast4(apiKey);
 
-    const existing = await admin
-      .from('client_integrations')
-      .select('id, client_id')
-      .eq('provider', 'holded')
-      .eq('company_id', companyId)
-      .neq('status', 'revoked')
-      .maybeSingle();
-
     const now = new Date().toISOString();
     const upsertPayload = {
       provider: 'holded',
       mode: 'client_account',
+      api_version: 'v1',
       api_key_last4: last4,
       permissions_detected: detectedPermissions,
       permissions_enabled: enabledPermissions,

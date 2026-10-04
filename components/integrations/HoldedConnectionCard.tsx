@@ -15,6 +15,8 @@ import {
 interface Integration {
   id                  : string;
   status              : string;
+  mode                : 'expert_account' | 'client_account' | 'advisor_managed';
+  api_version         : 'v1' | 'v2' | null;
   api_key_last4       : string | null;
   permissions_detected: HoldedPermissions;
   last_success_at     : string | null;
@@ -26,6 +28,7 @@ interface Integration {
 interface Props {
   integration : Integration | null;
   companyId  ?: string | null;
+  canManage  ?: boolean;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -41,7 +44,7 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
-export function HoldedConnectionCard({ integration: initialIntegration, companyId }: Props) {
+export function HoldedConnectionCard({ integration: initialIntegration, companyId, canManage = true }: Props) {
   const router = useRouter();
   const [integration, setIntegration] = useState<Integration | null>(initialIntegration);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -49,6 +52,7 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
   const [error, setError] = useState('');
 
   const isActive = integration?.status === 'active';
+  const isManagedByExpert = integration?.mode === 'advisor_managed' || integration?.api_version === 'v2';
   const guidance = resolveHoldedIntegrationGuidance({
     integrationStatus: integration?.status ?? null,
     phase: disconnecting ? 'disconnecting' : phase,
@@ -118,20 +122,29 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
               <RefreshCw size={12} />
               Actualizar
             </button>
-            <button
-              type="button"
-              onClick={handleDisconnect}
-              disabled={disconnecting}
-              className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-100 disabled:opacity-50"
-            >
-              {disconnecting ? <Loader2 size={12} className="animate-spin" /> : <Unplug size={12} />}
-              Desconectar
-            </button>
+            {!isManagedByExpert && canManage && (
+              <button
+                type="button"
+                onClick={handleDisconnect}
+                disabled={disconnecting}
+                className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-100 disabled:opacity-50"
+              >
+                {disconnecting ? <Loader2 size={12} className="animate-spin" /> : <Unplug size={12} />}
+                Desconectar
+              </button>
+            )}
           </div>
         </div>
 
         {error && (
           <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
+        )}
+
+        {isManagedByExpert && (
+          <div className="rounded-xl border border-[#d8cbb5] bg-[#faf8f2] px-4 py-3 text-xs leading-5 text-[#6b7280]">
+            Esta conexión está gestionada por EXPERT y usa Holded API {integration.api_version ?? 'v2'}.
+            Para cambiar la credencial o desconectarla, solicita la gestión a tu asesor.
+          </div>
         )}
 
         {/* Permissions */}
@@ -148,7 +161,94 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
     );
   }
 
-  // ── Non-active state (show error if any + form) ────────────────────────────
+  // ── Read-only member state ────────────────────────────────────────────────
+  if (!canManage) {
+    return (
+      <div className="space-y-6">
+        <KiaGuidanceCard
+          state={guidance.state}
+          title={guidance.title}
+          message={guidance.message}
+          compact
+          animateOnChange
+        />
+
+        {integration && !isActive && (
+          <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+            {integration.status === 'failed' ? (
+              <XCircle size={16} className="mt-0.5 shrink-0 text-red-500" />
+            ) : (
+              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
+            )}
+            <div className="text-sm">
+              <p className="font-medium text-[#3d3528]">{STATUS_LABELS[integration.status] ?? integration.status}</p>
+              {integration.last_error && (
+                <p className="mt-0.5 text-[#7a6e5f]">{integration.last_error}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="rounded-xl border border-[#d8cbb5] bg-[#faf8f2] px-4 py-3 text-sm leading-6 text-[#6b7280]">
+          Puedes consultar el estado de la integración, pero solo un propietario o administrador de la empresa puede conectar, reconectar o desconectar Holded.
+        </div>
+
+        <button
+          type="button"
+          onClick={() => router.refresh()}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[#e8dfc8] bg-white px-3 py-2 text-xs font-medium text-[#7a6e5f] hover:border-[#c88b25] hover:text-[#c88b25]"
+        >
+          <RefreshCw size={12} />
+          Actualizar estado
+        </button>
+      </div>
+    );
+  }
+
+  // ── Managed but non-active state ─────────────────────────────────────────
+  if (integration && isManagedByExpert) {
+    return (
+      <div className="space-y-6">
+        <KiaGuidanceCard
+          state={guidance.state}
+          title={guidance.title}
+          message={guidance.message}
+          compact
+          animateOnChange
+        />
+
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          {integration.status === 'failed' ? (
+            <XCircle size={16} className="mt-0.5 shrink-0 text-red-500" />
+          ) : (
+            <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
+          )}
+          <div className="text-sm">
+            <p className="font-medium text-[#3d3528]">{STATUS_LABELS[integration.status] ?? integration.status}</p>
+            {integration.last_error && (
+              <p className="mt-0.5 text-[#7a6e5f]">{integration.last_error}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#d8cbb5] bg-[#faf8f2] px-4 py-3 text-sm leading-6 text-[#6b7280]">
+          Esta conexión está gestionada por EXPERT y usa Holded API {integration.api_version ?? 'v2'}.
+          El cliente no puede sustituir la credencial ni reconectarla desde este panel. Solicita la revisión a tu asesor.
+        </div>
+
+        <button
+          type="button"
+          onClick={() => router.refresh()}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[#e8dfc8] bg-white px-3 py-2 text-xs font-medium text-[#7a6e5f] hover:border-[#c88b25] hover:text-[#c88b25]"
+        >
+          <RefreshCw size={12} />
+          Actualizar estado
+        </button>
+      </div>
+    );
+  }
+
+  // ── Non-active self-managed state (show error if any + form) ──────────────
   return (
     <div className="space-y-6">
       <KiaGuidanceCard

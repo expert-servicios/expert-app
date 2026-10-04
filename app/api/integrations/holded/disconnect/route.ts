@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     // Load the integration and verify ownership
     const { data: integration, error: fetchError } = await admin
       .from('client_integrations')
-      .select('id,client_id,company_id,status')
+      .select('id,client_id,company_id,status,mode,api_version')
       .eq('id', parsed.data.integrationId)
       .single();
 
@@ -37,32 +37,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, message: 'Ya estaba desconectada' });
     }
 
-    // Verify the authenticated user owns or belongs to the company
-    const ownedByUser = integration.client_id === user.id;
-    let ownedByCompany = false;
+    // Managed/v2 integrations are controlled from EXPERT Company 360.
+    if (integration.mode === 'advisor_managed' || integration.api_version === 'v2') {
+      return NextResponse.json(
+        { error: 'Esta integración Holded v2/gestionada se administra desde EXPERT. Contacta con tu asesor para desconectarla.' },
+        { status: 409 },
+      );
+    }
 
-    if (!ownedByUser && integration.company_id) {
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('role,status')
+      .eq('id', user.id)
+      .single();
+    const isInternalAdmin = profile?.status !== 'inactive'
+      && (profile?.role === 'admin' || profile?.role === 'owner');
+
+    let canManageCompany = false;
+    if (integration.company_id) {
       const { data: membership } = await admin
         .from('profile_companies')
         .select('role')
         .eq('company_id', integration.company_id)
         .eq('profile_id', user.id)
-        .single();
-
-      ownedByCompany = !!membership;
+        .maybeSingle();
+      canManageCompany = ['owner', 'admin'].includes(String(membership?.role ?? ''));
     }
 
-    // Also allow admins
-    const { data: profile } = await admin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    const canManageLegacyOwned = !integration.company_id && integration.client_id === user.id;
 
-    const isAdmin = profile?.role === 'admin';
-
-    if (!ownedByUser && !ownedByCompany && !isAdmin) {
-      return NextResponse.json({ error: 'Sin acceso a esta integración' }, { status: 403 });
+    if (!canManageLegacyOwned && !canManageCompany && !isInternalAdmin) {
+      return NextResponse.json(
+        { error: 'Solo un propietario o administrador puede desconectar Holded.' },
+        { status: 403 },
+      );
     }
 
     // Delete the secret first (IMP-002: secret lives in a separate table)

@@ -14,7 +14,14 @@ type GenerateReportResponse = {
 
 function currentQuarterLabel() {
   const now = new Date();
-  return `Q${Math.ceil((now.getMonth() + 1) / 3)} ${now.getFullYear()}`;
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(now);
+  const year = Number(parts.find((part) => part.type === 'year')?.value);
+  const month = Number(parts.find((part) => part.type === 'month')?.value);
+  return `Q${Math.ceil(month / 3)} ${year}`;
 }
 
 export function GenerateReportPanel() {
@@ -37,7 +44,6 @@ export function GenerateReportPanel() {
         body: JSON.stringify({
           period: period.trim() || undefined,
           lang: 'es',
-          generatedBy: 'user',
         }),
       });
       const data = await res.json().catch(() => ({})) as GenerateReportResponse;
@@ -77,11 +83,15 @@ export function GenerateReportPanel() {
       <input
         id="report-period"
         value={period}
-        onChange={(event) => setPeriod(event.target.value)}
-        maxLength={20}
+        onChange={(event) => setPeriod(event.target.value.toUpperCase())}
+        maxLength={7}
+        inputMode="text"
+        pattern="Q[1-4] [0-9]{4}"
+        title="Formato: Q1 2026"
         placeholder="Q2 2026"
         className="mt-2 w-full rounded-xl border border-[#d8cbb5] bg-[#faf8f2] px-4 py-3 text-sm font-semibold text-[#07111d] outline-none transition focus:border-[#c88b25] focus:ring-2 focus:ring-[#c88b25]/20"
       />
+      <p className="mt-1 text-xs text-[#a89880]">Formato trimestral: Q1 2026, Q2 2026, Q3 2026 o Q4 2026.</p>
 
       {error && (
         <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">

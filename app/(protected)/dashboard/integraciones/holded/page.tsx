@@ -6,7 +6,7 @@ import { createServerClient } from '@supabase/ssr';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { HoldedConnectionCard } from '@/components/integrations/HoldedConnectionCard';
 
-const SAFE_COLUMNS = 'id,provider,mode,api_key_last4,permissions_detected,status,sync_mode,last_sync_at,last_success_at,last_error,connected_by,disconnected_at,created_at,updated_at';
+const SAFE_COLUMNS = 'id,provider,mode,api_version,api_key_last4,permissions_detected,status,sync_mode,last_sync_at,last_success_at,last_error,connected_by,disconnected_at,created_at,updated_at';
 
 async function getIntegrationData(userId: string) {
   const admin = getSupabaseAdmin();
@@ -17,7 +17,22 @@ async function getIntegrationData(userId: string) {
     .eq('id', userId)
     .single();
 
-  const companyId = profile?.active_company_id ?? null;
+  const requestedCompanyId = profile?.active_company_id ?? null;
+  let companyId: string | null = null;
+  let canManageHolded = true;
+  if (requestedCompanyId) {
+    const { data: membership, error: membershipError } = await admin
+      .from('profile_companies')
+      .select('company_id,role')
+      .eq('profile_id', userId)
+      .eq('company_id', requestedCompanyId)
+      .maybeSingle();
+    if (membershipError || !membership) {
+      return { integration: null, companyId: null, canManageHolded: false, forbidden: true };
+    }
+    companyId = membership.company_id;
+    canManageHolded = ['owner', 'admin'].includes(String(membership.role ?? ''));
+  }
 
   let query = admin
     .from('client_integrations')
@@ -30,12 +45,12 @@ async function getIntegrationData(userId: string) {
   if (companyId) {
     query = query.eq('company_id', companyId);
   } else {
-    query = query.eq('client_id', userId);
+    query = query.eq('client_id', userId).is('company_id', null);
   }
 
   const { data: rows } = await query;
 
-  return { integration: rows?.[0] ?? null, companyId };
+  return { integration: rows?.[0] ?? null, companyId, canManageHolded, forbidden: false };
 }
 
 export default async function HoldedIntegrationPage() {
@@ -50,7 +65,8 @@ export default async function HoldedIntegrationPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login');
 
-  const { integration, companyId } = await getIntegrationData(user.id);
+  const { integration, companyId, canManageHolded, forbidden } = await getIntegrationData(user.id);
+  if (forbidden) redirect('/dashboard');
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 lg:px-8">
@@ -103,6 +119,7 @@ export default async function HoldedIntegrationPage() {
         <HoldedConnectionCard
           integration={integration as Parameters<typeof HoldedConnectionCard>[0]['integration']}
           companyId={companyId}
+          canManage={canManageHolded}
         />
       </div>
 

@@ -14,6 +14,7 @@ export interface RecentInvoice {
   docNumber: string;
   date: number;
   total: number;
+  currency: string;
   contact: string;
   status?: string;
 }
@@ -31,6 +32,7 @@ export interface QuarterSummary {
   recentSales: RecentInvoice[];
   recentPurchases: RecentInvoice[];
   monthlyData: MonthlySnapshot[];
+  dataWarnings: string[];
   syncedAt: string;
 }
 
@@ -38,13 +40,16 @@ const MONTH_LABELS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct
 
 function quarterToUnix(year: number, quarter: number): { from: number; to: number } {
   const startMonth = (quarter - 1) * 3;
-  const start = new Date(year, startMonth, 1);
-  const end   = new Date(year, startMonth + 3, 0, 23, 59, 59);
+  const start = new Date(Date.UTC(year, startMonth, 1, 0, 0, 0));
+  const end   = new Date(Date.UTC(year, startMonth + 3, 0, 23, 59, 59));
   return { from: Math.floor(start.getTime() / 1000), to: Math.floor(end.getTime() / 1000) };
 }
 
 function extractVat(doc: HoldedReadDocument): number {
-  return Number.isFinite(doc.tax) ? Math.max(0, doc.tax) : Math.max(0, doc.total - doc.subtotal);
+  const tax = doc.tax;
+  return typeof tax === 'number' && Number.isFinite(tax)
+    ? Math.max(0, tax)
+    : Math.max(0, doc.total - doc.subtotal);
 }
 
 export async function fetchQuarterData(
@@ -66,7 +71,7 @@ export async function fetchQuarterData(
       : listHoldedDocuments(gateway, 'purchase', { startDate, endDate }).catch((): HoldedReadDocument[] => []),
   ]);
   const activeDocument = (d: HoldedReadDocument) =>
-    !['cancelled', 'failed'].includes(String(d.status ?? '').toLowerCase());
+    !['cancelled', 'canceled', 'failed'].includes(String(d.status ?? '').toLowerCase());
   const sales = salesCandidates.filter(activeDocument);
   const purchases = purchaseCandidates
     .filter(activeDocument)
@@ -74,20 +79,35 @@ export async function fetchQuarterData(
       ? d.accountingTimestamp >= from && d.accountingTimestamp <= to
       : true);
 
-  const salesTotal     = sales.reduce((s, d) => s + d.total, 0);
-  const purchasesTotal = purchases.reduce((s, d) => s + d.total, 0);
-  const vatRepercutido = sales.reduce((s, d) => s + extractVat(d), 0);
-  const vatSoportado   = purchases.reduce((s, d) => s + extractVat(d), 0);
+  const eurSales = sales.filter((d) => String(d.currency ?? 'EUR').toUpperCase() === 'EUR');
+  const eurPurchases = purchases.filter((d) => String(d.currency ?? 'EUR').toUpperCase() === 'EUR');
+  const nonEurCount = sales.length + purchases.length - eurSales.length - eurPurchases.length;
+  const dataWarnings: string[] = [];
+  if (nonEurCount > 0) {
+    dataWarnings.push(
+      `${nonEurCount} documento(s) en divisa distinta de EUR se excluyen de ventas, gastos e IVA agregados.`,
+    );
+  }
+  if (gateway.v2 && purchaseCandidates.length >= 2_000) {
+    dataWarnings.push(
+      'La lectura de compras v2 alcanzó 2.000 documentos; revisa periodos históricos de alto volumen.',
+    );
+  }
+
+  const salesTotal     = eurSales.reduce((s, d) => s + d.total, 0);
+  const purchasesTotal = eurPurchases.reduce((s, d) => s + d.total, 0);
+  const vatRepercutido = eurSales.reduce((s, d) => s + extractVat(d), 0);
+  const vatSoportado   = eurPurchases.reduce((s, d) => s + extractVat(d), 0);
 
   const startMonth = (quarter - 1) * 3;
   const monthlyData: MonthlySnapshot[] = [0, 1, 2].map((offset) => {
     const mi    = startMonth + offset;
-    const mFrom = new Date(year, mi, 1).getTime() / 1000;
-    const mTo   = new Date(year, mi + 1, 0, 23, 59, 59).getTime() / 1000;
+    const mFrom = Date.UTC(year, mi, 1, 0, 0, 0) / 1000;
+    const mTo   = Date.UTC(year, mi + 1, 0, 23, 59, 59) / 1000;
     return {
       month:     MONTH_LABELS[mi],
-      sales:     sales.filter((d) => d.timestamp >= mFrom && d.timestamp <= mTo).reduce((s, d) => s + d.total, 0),
-      purchases: purchases.filter((d) => d.accountingTimestamp >= mFrom && d.accountingTimestamp <= mTo).reduce((s, d) => s + d.total, 0),
+      sales:     eurSales.filter((d) => d.timestamp >= mFrom && d.timestamp <= mTo).reduce((s, d) => s + d.total, 0),
+      purchases: eurPurchases.filter((d) => d.accountingTimestamp >= mFrom && d.accountingTimestamp <= mTo).reduce((s, d) => s + d.total, 0),
     };
   });
 
@@ -99,20 +119,29 @@ export async function fetchQuarterData(
     purchasesCount: purchases.length,
     recentSales: sales.slice(0, 5).map((d) => ({
       docNumber: d.number, date: d.timestamp, total: d.total,
+      currency: String(d.currency ?? 'EUR').toUpperCase(),
       contact: d.contactName, status: d.status,
     })),
     recentPurchases: purchases.slice(0, 5).map((d) => ({
-      docNumber: d.number, date: d.timestamp, total: d.total, contact: d.contactName,
+      docNumber: d.number, date: d.timestamp, total: d.total,
+      currency: String(d.currency ?? 'EUR').toUpperCase(), contact: d.contactName,
     })),
     monthlyData,
+    dataWarnings,
     syncedAt: new Date().toISOString(),
   };
 }
 
-export function currentQuarter(): { year: number; quarter: 1 | 2 | 3 | 4 } {
-  const now = new Date();
+export function currentQuarter(now = new Date()): { year: number; quarter: 1 | 2 | 3 | 4 } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric',
+    month: 'numeric',
+  }).formatToParts(now);
+  const year = Number(parts.find((part) => part.type === 'year')?.value ?? now.getUTCFullYear());
+  const month = Number(parts.find((part) => part.type === 'month')?.value ?? (now.getUTCMonth() + 1));
   return {
-    year:    now.getFullYear(),
-    quarter: Math.ceil((now.getMonth() + 1) / 3) as 1 | 2 | 3 | 4,
+    year,
+    quarter: Math.ceil(month / 3) as 1 | 2 | 3 | 4,
   };
 }

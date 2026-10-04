@@ -33,10 +33,10 @@ export function FiscalKPIStrip({ kpis }: Props) {
       icon  : Euro,
       color : vatPositive ? 'text-amber-600' : 'text-blue-600',
       bg    : vatPositive ? 'bg-amber-50' : 'bg-blue-50',
-      note  : 'Estimación al 21% — sujeta a revisión',
+      note  : 'Calculado con el IVA registrado en los documentos EUR — sujeto a revisión',
     },
     {
-      label : 'Saldo bancario',
+      label : 'Saldo bancario actual',
       value : `${fmt(kpis.totalBankBalance)} €`,
       icon  : Landmark,
       color : 'text-[#c88b25]',

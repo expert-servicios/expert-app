@@ -26,6 +26,13 @@ const holdedLaborPageSchema = {
   cursor: z.string().min(1).optional(),
 };
 
+const calendarDateSchema = z.string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine((value) => {
+    const parsed = new Date(`${value}T00:00:00Z`);
+    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+  }, 'Invalid calendar date');
+
 export const kiaToolValidators = {
   resolve_contact_context: z.object({
     phone: z.string().optional(),
@@ -107,7 +114,7 @@ export const kiaToolValidators = {
   get_holded_invoices: z.object({
     docType: z.enum(['invoice', 'salesreceipt', 'purchase', 'creditnote']).default('invoice'),
     limit: z.number().int().min(1).max(20).default(10),
-    since: z.string().optional(),
+    since: calendarDateSchema.optional(),
   }).strict(),
   get_holded_contacts: z.object({
     query: z.string().max(100).optional(),
@@ -162,7 +169,7 @@ export const kiaToolValidators = {
   }).strict(),
   generate_company_report: z.object({
     reportType: z.enum(['empresa_status']).default('empresa_status'),
-    period: z.string().optional(),
+    period: z.string().trim().regex(/^Q[1-4]\s+\d{4}$/i).optional(),
     lang: z.enum(['es', 'ru']).default('es'),
   }).strict(),
   extract_invoice_ocr: z.object({

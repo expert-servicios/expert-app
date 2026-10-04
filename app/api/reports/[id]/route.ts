@@ -3,6 +3,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { canAccessFinancialReport } from '@/lib/reports/report-access';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const supabase = createServerSupabaseClient(request);
@@ -16,13 +17,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     .from('kia_financial_reports')
     .select('*')
     .eq('id', id)
-    .eq('client_id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (!report) return NextResponse.json({ error: 'Informe no encontrado' }, { status: 404 });
+  if (!report || !(await canAccessFinancialReport(admin, user.id, report.client_id))) {
+    return NextResponse.json({ error: 'Informe no encontrado' }, { status: 404 });
+  }
 
-  // Mark as viewed
-  if (!report.viewed_at) {
+  // Only the client owner's view counts as client-facing viewed_at.
+  if (report.client_id === user.id && !report.viewed_at) {
     await admin
       .from('kia_financial_reports')
       .update({ viewed_at: new Date().toISOString() })

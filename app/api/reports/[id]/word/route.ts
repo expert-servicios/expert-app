@@ -8,6 +8,7 @@ import {
   HeadingLevel, AlignmentType, ShadingType,
 } from 'docx';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { canAccessFinancialReport } from '@/lib/reports/report-access';
 import type { ReportData, InvoiceSummaryItem } from '@/lib/reports/report-generator';
 
 function fmtEur(n: number) {
@@ -33,10 +34,10 @@ function kpiTable(kpis: ReportData['kpis']): Table {
   const rows = [
     ['Ventas totales',              fmtEur(kpis.totalSales)],
     ['Gastos totales',              fmtEur(kpis.totalPurchases)],
-    ['IVA repercutido estimado',    fmtEur(kpis.vatCollected)],
-    ['IVA soportado estimado',      fmtEur(kpis.vatDeductible)],
-    ['Balance IVA estimado',        fmtEur(kpis.vatBalance)],
-    ['Saldo bancario total',        fmtEur(kpis.totalBankBalance)],
+    ['IVA repercutido documentos EUR', fmtEur(kpis.vatCollected)],
+    ['IVA soportado documentos EUR',   fmtEur(kpis.vatDeductible)],
+    ['Balance IVA orientativo',         fmtEur(kpis.vatBalance)],
+    ['Saldo bancario total EUR',        fmtEur(kpis.totalBankBalance)],
     ['Facturas emitidas sin cobrar',String(kpis.unpaidInvoices)],
   ];
 
@@ -68,7 +69,7 @@ function invoiceTable(invoices: InvoiceSummaryItem[], title: string): (Paragraph
 
   const dataRows = invoices.slice(0, 10).map((inv) =>
     new TableRow({
-      children: [inv.number, inv.date, inv.contact, fmtEur(inv.total), inv.status].map((v) =>
+      children: [inv.number, inv.date, inv.contact, `${inv.total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} ${inv.currency ?? 'EUR'}`, inv.status].map((v) =>
         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: v, size: 16 })] })] })
       ),
     })
@@ -99,6 +100,13 @@ function buildDoc(data: ReportData): Document {
     heading1('Resumen financiero'),
     kpiTable(data.kpis),
     new Paragraph({ text: '', spacing: { after: 200 } }),
+
+    // Data limitations
+    ...((data.dataWarnings?.length ?? 0) > 0 ? [
+      heading1('Limitaciones de datos'),
+      ...((data.dataWarnings ?? []).map((warning) => para(`• ${warning}`))),
+      new Paragraph({ text: '', spacing: { after: 200 } }),
+    ] : []),
 
     // AI summary
     ...(data.aiSummary ? [
@@ -167,14 +175,16 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
 
   const { id } = await params;
-  const { data: report } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin();
+  const { data: report } = await admin
     .from('kia_financial_reports')
-    .select('title, data')
+    .select('title, data, client_id')
     .eq('id', id)
-    .eq('client_id', user.id)
-    .single();
+    .maybeSingle();
 
-  if (!report) return NextResponse.json({ error: 'Informe no encontrado' }, { status: 404 });
+  if (!report || !(await canAccessFinancialReport(admin, user.id, report.client_id))) {
+    return NextResponse.json({ error: 'Informe no encontrado' }, { status: 404 });
+  }
 
   const doc    = buildDoc(report.data as ReportData);
   const buffer = await Packer.toBuffer(doc);

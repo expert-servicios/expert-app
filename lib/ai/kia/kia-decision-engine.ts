@@ -163,6 +163,7 @@ export async function runKiaDecision(input: {
   const subAgentProfile = selectSubAgentProfile({
     taskType: resolvedTaskType,
     detectedIntent: classification?.detectedIntent,
+    channel: input.channel,
   });
   const finalSystemPrompt = subAgentProfile
     ? buildKiaSystemPrompt({

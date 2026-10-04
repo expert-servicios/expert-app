@@ -238,14 +238,15 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
 
         if (toolCall.name === 'get_holded_invoices') {
           const limit = Number(args.limit ?? 10);
+          const startDate = typeof args.since === 'string' ? args.since : undefined;
           const supportedDocType = docType as 'invoice' | 'purchase' | 'salesreceipt' | 'creditnote';
           const docs = supportedDocType === 'invoice' || supportedDocType === 'purchase'
             ? await listHoldedDocuments(
                 gateway,
                 supportedDocType === 'purchase' ? 'purchase' : 'sales',
-                { maxItems: limit },
+                { maxItems: limit, startDate },
               )
-            : await listHoldedDocumentType(gateway, supportedDocType, { maxItems: limit });
+            : await listHoldedDocumentType(gateway, supportedDocType, { maxItems: limit, startDate });
           return ok(toolCall.name, {
             count: docs.length,
             documents: docs.map((d) => ({
@@ -254,6 +255,8 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
               date: d.date,
               contact: d.contactName,
               total: d.total,
+              currency: d.currency,
+              dueDate: d.dueDate,
               status: d.status,
               paymentsPending: d.paymentsPending,
             })),

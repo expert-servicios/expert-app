@@ -22,6 +22,7 @@ export interface InvoiceSummaryItem {
   date     : string;
   contact  : string;
   total    : number;
+  currency : string;
   status   : string;
 }
 
@@ -69,10 +70,10 @@ export interface MonthlyFlow {
 export interface ReportKPIs {
   totalSales      : number;
   totalPurchases  : number;
-  vatCollected    : number;   // IVA repercutido estimado (21%)
-  vatDeductible   : number;   // IVA soportado estimado (21%)
-  vatBalance      : number;   // collectado - deducible
-  totalBankBalance: number;
+  vatCollected    : number;   // IVA registrado en documentos EUR del periodo
+  vatDeductible   : number;   // IVA registrado en compras EUR del periodo
+  vatBalance      : number;   // repercutido - soportado
+  totalBankBalance: number;   // saldo actual de cuentas EUR
   unpaidInvoices  : number;   // facturas emitidas sin pagar
   pendingPurchases: number;   // facturas recibidas sin pagar
 }
@@ -88,6 +89,7 @@ export interface ReportData {
   salesInvoices   : InvoiceSummaryItem[];
   purchaseInvoices: InvoiceSummaryItem[];
   anomalies       : Anomaly[];
+  dataWarnings?   : string[];
   aiSummary       : string;
 }
 
@@ -109,10 +111,54 @@ export interface GenerateReportResult {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function currentQuarterLabel(): string {
-  const now = new Date();
-  const q   = Math.ceil((now.getMonth() + 1) / 3);
-  return `Q${q} ${now.getFullYear()}`;
+function currentQuarterLabel(now = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Madrid',
+    year: 'numeric',
+    month: '2-digit',
+  }).formatToParts(now);
+  const year = Number(parts.find((part) => part.type === 'year')?.value);
+  const month = Number(parts.find((part) => part.type === 'month')?.value);
+  const q = Math.ceil(month / 3);
+  return `Q${q} ${year}`;
+}
+
+export interface ReportPeriodRange {
+  label: string;
+  year: number;
+  quarter: 1 | 2 | 3 | 4;
+  startDate: string;
+  endDate: string;
+  fromTimestamp: number;
+  toTimestamp: number;
+}
+
+export function resolveReportPeriod(value?: string, now = new Date()): ReportPeriodRange {
+  const normalized = (value?.trim() || currentQuarterLabel(now)).toUpperCase();
+  const match = /^Q([1-4])\s+(\d{4})$/.exec(normalized);
+  if (!match) {
+    throw new Error('Periodo inválido. Usa el formato Q1 2026.');
+  }
+
+  const quarter = Number(match[1]) as 1 | 2 | 3 | 4;
+  const year = Number(match[2]);
+  if (year < 2000 || year > 2100) {
+    throw new Error('Periodo fuera de rango. Usa un año entre 2000 y 2100.');
+  }
+
+  const startMonth = (quarter - 1) * 3;
+  const start = new Date(Date.UTC(year, startMonth, 1, 0, 0, 0));
+  const end = new Date(Date.UTC(year, startMonth + 3, 0, 23, 59, 59));
+
+  return {
+    label: `Q${quarter} ${year}`,
+    year,
+    quarter,
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
+    fromTimestamp: Math.floor(start.getTime() / 1000),
+    toTimestamp: Math.floor(end.getTime() / 1000),
+  };
 }
 
 type RawDoc = HoldedReadDocument;
@@ -158,36 +204,57 @@ function isUnpaid(d: RawDoc): boolean {
 
 function toInvoiceSummary(docs: RawDoc[]): InvoiceSummaryItem[] {
   return docs.map((d) => ({
-    id     : String(d.id ?? ''),
-    number : String(d.number ?? ''),
-    date   : holdedDate(d.date),
-    contact: String(d.contactName ?? ''),
-    total  : Number(d.total ?? 0),
-    status : holdedStatus(d),
+    id      : String(d.id ?? ''),
+    number  : String(d.number ?? ''),
+    date    : holdedDate(d.date),
+    contact : String(d.contactName ?? ''),
+    total   : Number(d.total ?? 0),
+    currency: String(d.currency ?? 'EUR').toUpperCase(),
+    status  : holdedStatus(d),
   }));
 }
 
-function buildMonthlyFlow(sales: RawDoc[], purchases: RawDoc[]): MonthlyFlow[] {
-  const map = new Map<string, { sales: number; purchases: number }>();
+function buildMonthlyFlow(
+  sales: RawDoc[],
+  purchases: RawDoc[],
+  period: ReportPeriodRange,
+): MonthlyFlow[] {
+  const startMonth = (period.quarter - 1) * 3;
+  const buckets = [0, 1, 2].map((offset) => {
+    const monthIndex = startMonth + offset;
+    const key = `${period.year}-${String(monthIndex + 1).padStart(2, '0')}`;
+    return {
+      key,
+      month: new Date(Date.UTC(period.year, monthIndex, 1)).toLocaleDateString('es-ES', {
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'UTC',
+      }),
+      sales: 0,
+      purchases: 0,
+    };
+  });
+  const map = new Map(buckets.map((bucket) => [bucket.key, bucket]));
 
-  const addDoc = (docs: RawDoc[], key: 'sales' | 'purchases') => {
-    for (const d of docs) {
-      const raw = String(d.date ?? '');
-      if (!raw) continue;
-      const ts = new Date(raw);
-      const label = ts.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
-      const entry = map.get(label) ?? { sales: 0, purchases: 0 };
-      entry[key] += Number(d.total ?? 0);
-      map.set(label, entry);
-    }
-  };
+  for (const d of sales) {
+    const raw = String(d.date ?? '');
+    const date = raw ? new Date(raw) : null;
+    if (!date || Number.isNaN(date.getTime())) continue;
+    const key = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+    const bucket = map.get(key);
+    if (bucket) bucket.sales += Number(d.total ?? 0);
+  }
 
-  addDoc(sales, 'sales');
-  addDoc(purchases, 'purchases');
+  for (const d of purchases) {
+    const raw = String(d.accountingDate ?? d.date ?? '');
+    const date = raw ? new Date(raw) : null;
+    if (!date || Number.isNaN(date.getTime())) continue;
+    const key = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+    const bucket = map.get(key);
+    if (bucket) bucket.purchases += Number(d.total ?? 0);
+  }
 
-  return Array.from(map.entries())
-    .map(([month, v]) => ({ month, ...v }))
-    .slice(-6); // last 6 months
+  return buckets.map(({ month, sales, purchases }) => ({ month, sales, purchases }));
 }
 
 function buildTopContacts(sales: RawDoc[]): ContactVolume[] {
@@ -202,13 +269,38 @@ function buildTopContacts(sales: RawDoc[]): ContactVolume[] {
     .map(([name, total]) => ({ name, total }));
 }
 
-function calcVat(amount: number, rate = 0.21): number {
-  return Math.round((amount * rate) * 100) / 100;
+export function holdedDocumentVat(doc: RawDoc): number {
+  if (doc.tax !== null && doc.tax !== undefined && String(doc.tax).trim() !== '') {
+    const explicit = Number(doc.tax);
+    if (Number.isFinite(explicit)) return explicit;
+  }
+  const fallback = Number(doc.total ?? 0) - Number(doc.subtotal ?? 0);
+  return Number.isFinite(fallback) ? fallback : 0;
+}
+
+function isActiveDocument(doc: RawDoc): boolean {
+  return !doc.isDraft
+    && !['cancelled', 'canceled', 'failed'].includes(String(doc.status ?? '').toLowerCase());
+}
+
+function isEur(value: unknown): boolean {
+  return String(value ?? 'EUR').trim().toUpperCase() === 'EUR';
+}
+
+function inTimestampRange(timestamp: number, period: ReportPeriodRange): boolean {
+  return Number.isFinite(timestamp)
+    && timestamp >= period.fromTimestamp
+    && timestamp <= period.toTimestamp;
 }
 
 // ── AI summary ────────────────────────────────────────────────────────────────
 
-async function generateAiSummary(kpis: ReportKPIs, anomalies: Anomaly[], lang: 'es' | 'ru'): Promise<string> {
+async function generateAiSummary(
+  kpis: ReportKPIs,
+  anomalies: Anomaly[],
+  dataWarnings: string[],
+  lang: 'es' | 'ru',
+): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return lang === 'es'
     ? 'Resumen automático no disponible (clave API no configurada).'
@@ -218,17 +310,19 @@ async function generateAiSummary(kpis: ReportKPIs, anomalies: Anomaly[], lang: '
     ? `Eres Kia, asistente contable de EXPERT. Redacta un resumen ejecutivo breve (3-5 frases) del estado financiero de la empresa basándote en estos datos del periodo:
 - Ventas totales: ${kpis.totalSales.toFixed(2)} €
 - Gastos totales: ${kpis.totalPurchases.toFixed(2)} €
-- IVA repercutido estimado: ${kpis.vatCollected.toFixed(2)} €
-- IVA soportado estimado: ${kpis.vatDeductible.toFixed(2)} €
-- Balance IVA (a pagar/devolver): ${kpis.vatBalance.toFixed(2)} €
-- Saldo bancario total: ${kpis.totalBankBalance.toFixed(2)} €
+- IVA repercutido según documentos EUR: ${kpis.vatCollected.toFixed(2)} €
+- IVA soportado según documentos EUR: ${kpis.vatDeductible.toFixed(2)} €
+- Balance IVA orientativo: ${kpis.vatBalance.toFixed(2)} €
+- Saldo bancario actual en cuentas EUR: ${kpis.totalBankBalance.toFixed(2)} €
 - Facturas emitidas sin cobrar: ${kpis.unpaidInvoices}
 - Alertas contables: ${anomalies.filter(a => a.severity === 'critical').length} críticas, ${anomalies.filter(a => a.severity === 'warning').length} advertencias
+${dataWarnings.length ? `- Limitaciones de datos: ${dataWarnings.join(' | ')}` : ''}
 Sé directo, profesional y en español. No incluyas advertencias legales.`
     : `Ты Kia, бухгалтерский ассистент EXPERT. Напиши краткое резюме (3-5 предложений) финансового состояния компании на основе данных периода:
 - Продажи: ${kpis.totalSales.toFixed(2)} €, Расходы: ${kpis.totalPurchases.toFixed(2)} €
 - НДС к уплате: ${kpis.vatBalance.toFixed(2)} €, Банковский баланс: ${kpis.totalBankBalance.toFixed(2)} €
 - Неоплаченных счетов: ${kpis.unpaidInvoices}, Критических предупреждений: ${anomalies.filter(a => a.severity === 'critical').length}
+${dataWarnings.length ? `- Ограничения данных: ${dataWarnings.join(' | ')}` : ''}
 Будь кратким и профессиональным.`;
 
   try {
@@ -259,21 +353,58 @@ Sé directo, profesional y en español. No incluyas advertencias legales.`
 
 export async function generateCompanyReport(input: GenerateReportInput): Promise<GenerateReportResult> {
   const admin = getSupabaseAdmin();
-  const period = input.period ?? currentQuarterLabel();
+  const reportPeriod = resolveReportPeriod(input.period);
+  const period = reportPeriod.label;
   const gateway = await createHoldedGatewayForIntegration(input.integrationId);
 
+  if (input.companyId && gateway.metadata.companyId && gateway.metadata.companyId !== input.companyId) {
+    throw new Error('La integración Holded no pertenece a la empresa seleccionada.');
+  }
+
   // ── Fetch Holded data in parallel through the version-aware gateway ─────
-  // Connections may legitimately expose only part of the accounting surface.
-  // Keep the report useful with the resources that are actually authorized.
-  const [rawSales, rawPurchases, tableSales, tablePurchases, rawBank] = await Promise.all([
-    // Financial analytics stay approved-only. Drafts are fetched separately only
-    // for the visible tables, so they can never displace approved documents from KPIs.
-    listHoldedDocuments(gateway, 'sales', { maxItems: 2_000 }).catch((): HoldedReadDocument[] => []),
-    listHoldedDocuments(gateway, 'purchase', { maxItems: 2_000 }).catch((): HoldedReadDocument[] => []),
-    listHoldedDocuments(gateway, 'sales', { maxItems: 20, includeDrafts: true }).catch((): HoldedReadDocument[] => []),
-    listHoldedDocuments(gateway, 'purchase', { maxItems: 20, includeDrafts: true }).catch((): HoldedReadDocument[] => []),
+  // Sales are scoped by issue date. Holded v2 purchases use deduction_date as
+  // accounting/tax date, so they are fetched broadly and filtered locally.
+  const [salesCandidates, purchaseCandidates, tableSalesCandidates, tablePurchaseCandidates, rawBank] = await Promise.all([
+    listHoldedDocuments(gateway, 'sales', {
+      startDate: reportPeriod.startDate,
+      endDate: reportPeriod.endDate,
+      maxItems: 2_000,
+    }).catch((): HoldedReadDocument[] => []),
+    gateway.v2
+      ? listHoldedDocuments(gateway, 'purchase', { maxItems: 2_000 }).catch((): HoldedReadDocument[] => [])
+      : listHoldedDocuments(gateway, 'purchase', {
+          startDate: reportPeriod.startDate,
+          endDate: reportPeriod.endDate,
+          maxItems: 2_000,
+        }).catch((): HoldedReadDocument[] => []),
+    listHoldedDocuments(gateway, 'sales', {
+      startDate: reportPeriod.startDate,
+      endDate: reportPeriod.endDate,
+      maxItems: 100,
+      includeDrafts: true,
+    }).catch((): HoldedReadDocument[] => []),
+    gateway.v2
+      ? listHoldedDocuments(gateway, 'purchase', { maxItems: 2_000, includeDrafts: true }).catch((): HoldedReadDocument[] => [])
+      : listHoldedDocuments(gateway, 'purchase', {
+          startDate: reportPeriod.startDate,
+          endDate: reportPeriod.endDate,
+          maxItems: 100,
+          includeDrafts: true,
+        }).catch((): HoldedReadDocument[] => []),
     listHoldedBankAccounts(gateway, 100).catch(() => []),
   ]);
+
+  const rawSales = salesCandidates.filter((doc) => inTimestampRange(doc.timestamp, reportPeriod));
+  const rawPurchases = purchaseCandidates.filter((doc) =>
+    inTimestampRange(gateway.v2 ? doc.accountingTimestamp : doc.timestamp, reportPeriod));
+  const tableSales = tableSalesCandidates
+    .filter((doc) => inTimestampRange(doc.timestamp, reportPeriod))
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 20);
+  const tablePurchases = tablePurchaseCandidates
+    .filter((doc) => inTimestampRange(gateway.v2 ? doc.accountingTimestamp : doc.timestamp, reportPeriod))
+    .sort((a, b) => (gateway.v2 ? b.accountingTimestamp - a.accountingTimestamp : b.timestamp - a.timestamp))
+    .slice(0, 20);
 
   // ── Fetch internal data ────────────────────────────────────────────────────
   // accounting_anomalies is entity-scoped by company_id, not client_id.
@@ -297,28 +428,66 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
     .maybeSingle();
 
   // ── Build report data ──────────────────────────────────────────────────────
-  // Exclude drafts (status=0) from financial totals — they're not real invoices yet
-  const confirmedSales = rawSales.filter((d) => !d.isDraft && !['cancelled', 'canceled', 'failed'].includes(String(d.status).toLowerCase()));
-  const confirmedPurchases = rawPurchases.filter((d) => !d.isDraft && !['cancelled', 'canceled', 'failed'].includes(String(d.status).toLowerCase()));
+  const confirmedSales = rawSales.filter(isActiveDocument);
+  const confirmedPurchases = rawPurchases.filter(isActiveDocument);
+  const eurSales = confirmedSales.filter((doc) => isEur(doc.currency));
+  const eurPurchases = confirmedPurchases.filter((doc) => isEur(doc.currency));
+  const eurBank = rawBank.filter((account) => isEur(account.currency));
 
-  // Show all invoices in the table (including drafts, clearly labelled)
-  const salesInvoices    = toInvoiceSummary(tableSales).slice(0, 20);
-  const purchaseInvoices = toInvoiceSummary(tablePurchases).slice(0, 20);
+  const nonEurDocuments = [...confirmedSales, ...confirmedPurchases].filter((doc) => !isEur(doc.currency));
+  const nonEurBankAccounts = rawBank.filter((account) => !isEur(account.currency));
+  const dataWarnings: string[] = [];
+  if (nonEurDocuments.length > 0) {
+    dataWarnings.push(
+      `${nonEurDocuments.length} documento(s) en divisa distinta de EUR se muestran en tablas pero no se suman a los KPIs monetarios sin un tipo de cambio confirmado.`,
+    );
+  }
+  if (nonEurBankAccounts.length > 0) {
+    dataWarnings.push(
+      `${nonEurBankAccounts.length} cuenta(s) bancaria(s) en divisa distinta de EUR no se suman al saldo bancario EUR.`,
+    );
+  }
+  if (gateway.v2 && purchaseCandidates.length >= 2_000) {
+    dataWarnings.push(
+      'La lectura de compras v2 alcanzó el límite de 2.000 documentos; revisa periodos históricos de alto volumen antes de usar el informe con fines fiscales.',
+    );
+  }
+  if (rawBank.length > 0) {
+    dataWarnings.push(
+      'Los saldos bancarios reflejan el saldo actual de Holded en la fecha de generación, no el saldo reconstruido al cierre del trimestre.',
+    );
+  }
+  if (confirmedSales.some((doc) => isUnpaid(doc)) || confirmedPurchases.some((doc) => isUnpaid(doc))) {
+    dataWarnings.push(
+      'Los estados pendiente/cobrado reflejan la situación actual del documento, no necesariamente su estado al cierre del trimestre.',
+    );
+  }
+  if ((anomalyRows ?? []).length > 0) {
+    dataWarnings.push(
+      'Las alertas contables son incidencias abiertas en la fecha de generación y pueden haberse originado fuera del trimestre informado.',
+    );
+  }
 
-  const totalSales     = confirmedSales.reduce((s, d) => s + Number(d.total ?? 0), 0);
-  const totalPurchases = confirmedPurchases.reduce((s, d) => s + Number(d.total ?? 0), 0);
-  const totalBank      = rawBank.reduce((s, a) => s + Number(a.balance ?? 0), 0);
-  const unpaid         = confirmedSales.filter(isUnpaid).length;
-  const pendingPurch   = confirmedPurchases.filter(isUnpaid).length;
+  // Show period documents in the table (including drafts, clearly labelled).
+  const salesInvoices = toInvoiceSummary(tableSales);
+  const purchaseInvoices = toInvoiceSummary(tablePurchases);
+
+  const totalSales = eurSales.reduce((sum, doc) => sum + Number(doc.total ?? 0), 0);
+  const totalPurchases = eurPurchases.reduce((sum, doc) => sum + Number(doc.total ?? 0), 0);
+  const vatCollected = eurSales.reduce((sum, doc) => sum + holdedDocumentVat(doc), 0);
+  const vatDeductible = eurPurchases.reduce((sum, doc) => sum + holdedDocumentVat(doc), 0);
+  const totalBank = eurBank.reduce((sum, account) => sum + Number(account.balance ?? 0), 0);
+  const unpaid = confirmedSales.filter(isUnpaid).length;
+  const pendingPurch = confirmedPurchases.filter(isUnpaid).length;
 
   const kpis: ReportKPIs = {
     totalSales,
     totalPurchases,
-    vatCollected    : calcVat(totalSales),
-    vatDeductible   : calcVat(totalPurchases),
-    vatBalance      : calcVat(totalSales) - calcVat(totalPurchases),
+    vatCollected,
+    vatDeductible,
+    vatBalance: vatCollected - vatDeductible,
     totalBankBalance: totalBank,
-    unpaidInvoices  : unpaid,
+    unpaidInvoices: unpaid,
     pendingPurchases: pendingPurch,
   };
 
@@ -337,9 +506,9 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
     status  : String(r.status ?? ''),
   }));
 
-  const topContacts  = buildTopContacts(confirmedSales);
-  const monthlyFlow  = buildMonthlyFlow(confirmedSales, confirmedPurchases);
-  const aiSummary    = await generateAiSummary(kpis, anomalies, input.lang);
+  const topContacts = buildTopContacts(eurSales);
+  const monthlyFlow = buildMonthlyFlow(eurSales, eurPurchases, reportPeriod);
+  const aiSummary = await generateAiSummary(kpis, anomalies, dataWarnings, input.lang);
 
   const companyName  = companyRow?.nombre_comercial ?? companyRow?.razon_social ?? 'Mi empresa';
   const title        = input.lang === 'es'
@@ -357,6 +526,7 @@ export async function generateCompanyReport(input: GenerateReportInput): Promise
     salesInvoices,
     purchaseInvoices,
     anomalies,
+    dataWarnings,
     aiSummary,
   };
 

@@ -45,7 +45,7 @@ function InvoiceTable({ invoices, label }: { invoices: ReportData['salesInvoices
               <td className="py-1.5 pr-4 text-[#7a6e5f]">{inv.date}</td>
               <td className="py-1.5 pr-4 text-[#3d3528]">{inv.contact || '—'}</td>
               <td className="py-1.5 pr-4 text-right font-semibold text-[#07111d]">
-                {inv.total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} €
+                {inv.total.toLocaleString('es-ES', { minimumFractionDigits: 2 })} {inv.currency ?? 'EUR'}
               </td>
               <td className="py-1.5">
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
@@ -96,6 +96,16 @@ export function CompanyStatusReport({ reportId, data }: Props) {
         <FiscalKPIStrip kpis={data.kpis} />
       </Section>
 
+      {(data.dataWarnings?.length ?? 0) > 0 && (
+        <Section title="Limitaciones de datos">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+            <ul className="space-y-1 text-xs leading-5 text-amber-900">
+              {(data.dataWarnings ?? []).map((warning) => <li key={warning}>• {warning}</li>)}
+            </ul>
+          </div>
+        </Section>
+      )}
+
       {/* AI summary */}
       {data.aiSummary && (
         <Section title="Análisis Kia">
@@ -115,7 +125,7 @@ export function CompanyStatusReport({ reportId, data }: Props) {
 
       {/* Saldos bancarios */}
       {data.bankAccounts.length > 0 && (
-        <Section title="Saldos bancarios (Holded)">
+        <Section title="Saldos bancarios actuales (Holded)">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {data.bankAccounts.map((a) => (
               <div key={a.id} className="rounded-xl border border-[#e8dfc8] bg-white p-4">
@@ -147,7 +157,7 @@ export function CompanyStatusReport({ reportId, data }: Props) {
       </Section>
 
       {/* Anomalías */}
-      <Section title={`Alertas contables${data.anomalies.length ? ` (${data.anomalies.length})` : ''}`}>
+      <Section title={`Alertas contables abiertas actuales${data.anomalies.length ? ` (${data.anomalies.length})` : ''}`}>
         <AnomaliesTable anomalies={data.anomalies} />
       </Section>
 

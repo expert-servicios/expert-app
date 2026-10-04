@@ -19,7 +19,20 @@ export async function GET(request: NextRequest) {
     .eq('id', user.id)
     .single();
 
-  const companyId = profile?.active_company_id ?? null;
+  const requestedCompanyId = profile?.active_company_id ?? null;
+  let companyId: string | null = null;
+  if (requestedCompanyId) {
+    const { data: membership, error: membershipError } = await admin
+      .from('profile_companies')
+      .select('company_id')
+      .eq('profile_id', user.id)
+      .eq('company_id', requestedCompanyId)
+      .maybeSingle();
+    if (membershipError || !membership) {
+      return NextResponse.json({ error: 'No autorizado para la empresa activa' }, { status: 403 });
+    }
+    companyId = membership.company_id;
+  }
 
   let query = admin
     .from('client_integrations')
@@ -29,7 +42,9 @@ export async function GET(request: NextRequest) {
     .order('created_at', { ascending: false })
     .limit(1);
 
-  query = companyId ? query.eq('company_id', companyId) : query.eq('client_id', user.id);
+  query = companyId
+    ? query.eq('company_id', companyId)
+    : query.eq('client_id', user.id).is('company_id', null);
 
   const { data: row } = await query.maybeSingle();
 

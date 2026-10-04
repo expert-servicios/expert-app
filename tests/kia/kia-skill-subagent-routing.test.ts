@@ -31,7 +31,22 @@ describe('KIA M6.2 skill-first subagent routing', () => {
     })?.id).toBe('fiscal');
   });
 
-  it('keeps legacy fallback for task types without a matching skill', () => {
+  it('routes generic email work through the operational assistant', () => {
+    expect(selectSubAgentProfile({
+      taskType: 'chat_reply',
+      channel: 'email',
+    })?.id).toBe('assistant');
+  });
+
+  it('keeps domain specialists ahead of the email assistant fallback', () => {
+    expect(selectSubAgentProfile({
+      taskType: 'chat_reply',
+      detectedIntent: 'accounting_summary',
+      channel: 'email',
+    })?.id).toBe('accounting');
+  });
+
+  it('keeps legacy fallback for non-email task types without a matching skill', () => {
     expect(selectSubAgentProfile({ taskType: 'checkout_decision' })).toBeNull();
   });
 });

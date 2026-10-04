@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createServerClient } from '@supabase/ssr';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { resolveCompanyCommercialCoverage } from '@/lib/subscriptions/company-commercial-coverage';
 import { fetchQuarterData, currentQuarter, type QuarterSummary } from '@/lib/holded/quarter-data';
 import { generateQuarterInsight } from '@/lib/holded/kia-insights';
 import { QuarterSelector } from '@/components/dashboard/company-status/QuarterSelector';
@@ -33,6 +34,8 @@ function KpiBox({ label, value, isMoney = true }: { label: string; value: number
 function RecentInvoicesCard({ data }: { data: QuarterSummary }) {
   const dateStr = (ts: number) =>
     new Date(ts * 1000).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  const money = (value: number, currency: string) =>
+    value.toLocaleString('es-ES', { style: 'currency', currency, maximumFractionDigits: 2 });
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -49,7 +52,7 @@ function RecentInvoicesCard({ data }: { data: QuarterSummary }) {
               <div key={inv.docNumber} className="flex items-center justify-between text-xs">
                 <span className="font-medium text-[#07111d]">{inv.docNumber}</span>
                 <span className="text-[#29384a]">{inv.contact}</span>
-                <span className="font-semibold text-[#07111d]">{fmt(inv.total)}</span>
+                <span className="font-semibold text-[#07111d]">{money(inv.total, inv.currency)}</span>
                 <span className="text-[#29384a]">{dateStr(inv.date)}</span>
               </div>
             ))}
@@ -69,7 +72,7 @@ function RecentInvoicesCard({ data }: { data: QuarterSummary }) {
               <div key={inv.docNumber} className="flex items-center justify-between text-xs">
                 <span className="font-medium text-[#07111d]">{inv.docNumber}</span>
                 <span className="text-[#29384a]">{inv.contact}</span>
-                <span className="font-semibold text-[#07111d]">{fmt(inv.total)}</span>
+                <span className="font-semibold text-[#07111d]">{money(inv.total, inv.currency)}</span>
                 <span className="text-[#29384a]">{dateStr(inv.date)}</span>
               </div>
             ))}
@@ -169,17 +172,37 @@ export default async function EstadoEmpresaPage({
     .eq('id', user.id)
     .single();
 
-  if (!profile?.has_monthly_plan) return <UpsellView />;
+  // Gate 1 continues below after the active company is authorized. The legacy
+  // profile flag is only a fallback for old client-scoped accounts without a company.
 
-  // Gate 2: prefer the canonical company-scoped integration, but keep
-  // compatibility with legacy client-scoped rows that predate company_id.
+  // Gate 2: validate the active company before any service-role financial lookup.
+  const requestedCompanyId = profile?.active_company_id ?? null;
+  let activeCompanyId: string | null = null;
+  if (requestedCompanyId) {
+    const { data: activeMembership, error: membershipError } = await admin
+      .from('profile_companies')
+      .select('company_id')
+      .eq('profile_id', user.id)
+      .eq('company_id', requestedCompanyId)
+      .maybeSingle();
+    if (membershipError || !activeMembership) redirect('/dashboard');
+    activeCompanyId = activeMembership.company_id;
+  }
+
+  const hasCommercialCoverage = activeCompanyId
+    ? (await resolveCompanyCommercialCoverage(admin, user.id, activeCompanyId)).covered
+    : Boolean(profile?.has_monthly_plan);
+  if (!hasCommercialCoverage) return <UpsellView />;
+
+  // Prefer the canonical company-scoped integration, but keep compatibility
+  // with legacy client-scoped rows that predate company_id.
   let integration = null;
-  if (profile?.active_company_id) {
+  if (activeCompanyId) {
     const { data: companyIntegration } = await admin
       .from('client_integrations')
       .select('id, status, last_sync_at')
       .eq('provider', 'holded')
-      .eq('company_id', profile.active_company_id)
+      .eq('company_id', activeCompanyId)
       .neq('status', 'revoked')
       .order('updated_at', { ascending: false })
       .limit(1)
@@ -205,6 +228,7 @@ export default async function EstadoEmpresaPage({
       .select('id, status, last_sync_at')
       .eq('provider', 'holded')
       .eq('client_id', user.id)
+      .is('company_id', null)
       .neq('status', 'revoked')
       .order('updated_at', { ascending: false })
       .limit(1)
@@ -216,9 +240,15 @@ export default async function EstadoEmpresaPage({
   if (integration.status !== 'active')   return <HoldedErrorView />;
 
   // Quarter params
-  const now     = currentQuarter();
-  const year    = parseInt(sp.year    ?? String(now.year),    10);
-  const quarter = (parseInt(sp.quarter ?? String(now.quarter), 10) || now.quarter) as 1 | 2 | 3 | 4;
+  const now = currentQuarter();
+  const requestedYear = Number.parseInt(sp.year ?? String(now.year), 10);
+  const requestedQuarter = Number.parseInt(sp.quarter ?? String(now.quarter), 10);
+  const year = Number.isInteger(requestedYear) && requestedYear >= 2000 && requestedYear <= 2100
+    ? requestedYear
+    : now.year;
+  const quarter = ([1, 2, 3, 4] as const).includes(requestedQuarter as 1 | 2 | 3 | 4)
+    ? requestedQuarter as 1 | 2 | 3 | 4
+    : now.quarter;
 
   // Fetch Holded + DB data in parallel
   let quarterData: QuarterSummary | null = null;
@@ -298,11 +328,17 @@ export default async function EstadoEmpresaPage({
         {quarterData && (
           <>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <KpiBox label="Ventas" value={quarterData.salesTotal} />
-              <KpiBox label="Gastos" value={quarterData.purchasesTotal} />
+              <KpiBox label="Ventas EUR" value={quarterData.salesTotal} />
+              <KpiBox label="Gastos EUR" value={quarterData.purchasesTotal} />
               <KpiBox label="Facturas emitidas" value={quarterData.salesCount} isMoney={false} />
               <KpiBox label="Facturas recibidas" value={quarterData.purchasesCount} isMoney={false} />
             </div>
+
+            {quarterData.dataWarnings.length > 0 && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-900">
+                {quarterData.dataWarnings.map((warning) => <p key={warning}>• {warning}</p>)}
+              </div>
+            )}
 
             <VatSummaryCard
               vatRepercutido={quarterData.vatRepercutido}
