@@ -15,6 +15,7 @@ export interface DocumentMirrorInput {
   mimeType: string;
   clientName: string;
   serviceName: string;
+  companyId?: string | null;
 }
 
 export interface DocumentMirrorResult {
