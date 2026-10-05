@@ -12,6 +12,7 @@
 - **Company ID EXPERT:** `188a1871-0ea8-4b11-adac-c9acc41c4a4b`
 - **Tipo:** sociedad patrimonial.
 - **Actividad operativa:** arrendamiento de viviendas.
+- **CNAE:** 68.20 / 6820 — Alquiler de bienes inmobiliarios por cuenta propia.
 - **Inmuebles:** 5 viviendas en alquiler.
 - **Ejercicios a reconstruir:** 2025 y 2026.
 
