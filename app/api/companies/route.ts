@@ -3,6 +3,11 @@ import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { lockedRegistryFields } from '@/lib/companies/registry-locks';
 
+function normalizeTaxId(value: string | null | undefined): string | null {
+  const normalized = String(value ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return normalized || null;
+}
+
 const FORMA_JURIDICA = ['autonomo','sl','sa','slne','cb','cooperativa','fundacion','otra'] as const;
 
 const companySchema = z.object({
@@ -95,7 +100,7 @@ export async function POST(request: NextRequest) {
     const canonicalProvince = officialValue('province') ?? d.provincia ?? null;
     const canonicalPostalCode = officialValue('postalCode') ?? d.codigo_postal ?? null;
     const canonicalCountry = officialValue('country') ?? d.pais ?? 'ES';
-    const normalizedTaxId = canonicalTaxId?.trim().toUpperCase() || null;
+    const normalizedTaxId = normalizeTaxId(canonicalTaxId);
     const registryLocks = registryOfficial ? lockedRegistryFields(d._registrySource, snapshot) : [];
 
     if (normalizedTaxId) {
@@ -111,22 +116,22 @@ export async function POST(request: NextRequest) {
       const { data: matches, error: duplicateError } = await admin
         .from('companies')
         .select('id,razon_social,cif_nif')
-        .eq('cif_nif', normalizedTaxId)
-        .limit(10);
+        .limit(100);
       if (duplicateError) {
         return NextResponse.json({ error: 'No se pudo verificar el CIF/NIF' }, { status: 500 });
       }
 
-      const ownMatch = (matches ?? []).find((row) => ownedIds.has(row.id));
+      const normalizedMatches = (matches ?? []).filter((row) => normalizeTaxId(row.cif_nif) === normalizedTaxId);
+      const ownMatch = normalizedMatches.find((row) => ownedIds.has(row.id));
       if (ownMatch) {
         return NextResponse.json({ error: 'Ya tienes una entidad con este CIF/NIF', code: 'tax_id_duplicate' }, { status: 409 });
       }
 
-      if ((matches ?? []).length > 0) {
+      if (normalizedMatches.length > 0) {
         return NextResponse.json({
           error: 'Ya existe una entidad con este CIF/NIF vinculada a otra cuenta. Revisión manual necesaria.',
           code: 'tax_id_conflict',
-          existingCompanyIds: (matches ?? []).map((row) => row.id)
+          existingCompanyIds: normalizedMatches.map((row) => row.id)
         }, { status: 409 });
       }
     }
@@ -166,6 +171,12 @@ export async function POST(request: NextRequest) {
 
     if (createError || !company) {
       console.error('[companies POST] create', createError);
+      if (createError?.code === '23505' && normalizedTaxId) {
+        return NextResponse.json({
+          error: 'Ya existe una entidad con este CIF/NIF.',
+          code: 'tax_id_duplicate',
+        }, { status: 409 });
+      }
       return NextResponse.json({ error: 'Error al crear la empresa' }, { status: 500 });
     }
 
