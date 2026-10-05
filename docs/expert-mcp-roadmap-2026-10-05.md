@@ -41,15 +41,18 @@ KIA usa los mismos gateways internos que EXPERT MCP. No se implementa una segund
 
 ## Piloto
 
-Empresa piloto:
+Empresa canónica en EXPERT:
 - EXPERT ESTUDIOS PROFESIONALES, S.L.U.
 - CIF B44991776.
+- una sola integración Holded canónica;
+- inicialmente read-only sobre la cuenta con contabilidad real.
 
-Dos cuentas Holded previstas:
-- `asesoria_sandbox`: cuenta vacía para pruebas controladas;
-- `contabilidad_real`: cuenta con la contabilidad actual de EXPERT.
+Sandbox de escritura:
+- la cuenta Holded vacía de asesoría se conecta directamente mediante el MCP oficial de Holded;
+- no se registra como segunda integración Holded de la misma empresa en EXPERT;
+- se usa exclusivamente para probar tools y operaciones de escritura sin riesgo contable.
 
-No activar escrituras sobre `contabilidad_real` durante las primeras fases.
+No activar escrituras sobre la cuenta real de EXPERT durante las primeras fases.
 
 ## Fase 0 — saneamiento de entidades
 
@@ -58,29 +61,22 @@ No activar escrituras sobre `contabilidad_real` durante las primeras fases.
 - toda alta cliente/admin reutiliza o rechaza la entidad ya existente;
 - mantener una única entidad canónica por titular fiscal.
 
-## Fase 1 — multi-conexión por proveedor
+## Fase 1 — conexión Holded canónica simple
 
-El modelo actual permite una única conexión viva `company_id + provider`.
-Debe evolucionar a conexiones nombradas.
+Mantener la regla actual: una única conexión Holded activa por empresa.
 
-Añadir a `client_integrations`:
-- `connection_key text not null default 'default'`;
-- `display_name text`;
-- `purpose text`;
-- `environment text` (sandbox/production);
-- `is_primary boolean not null default false`.
+No introducir multi-conexión mientras no exista un caso de negocio recurrente.
 
-Nueva identidad lógica:
-`company_id + provider + connection_key`.
+La resolución sigue siendo:
+`company_id + provider=holded -> integración activa`.
 
-Reglas:
-- máximo una conexión primaria activa por empresa/proveedor;
-- múltiples conexiones secundarias activas permitidas;
-- resolver por `integration_id` o `connection_key` cuando haya más de una;
-- nunca escoger “la última” si existen varias activas;
-- callers legacy solo pueden usar resolución automática cuando haya exactamente una conexión activa o una primary inequívoca.
+Para pruebas de escritura se usa el MCP oficial de Holded contra la cuenta vacía de asesoría, fuera de la integración canónica de EXPERT.
 
-Antes de eliminar el índice antiguo, actualizar todos los resolvers y tests.
+Esto evita:
+- selector de conexiones;
+- ambigüedad de tenant;
+- cambios amplios en resolvers y APIs;
+- complejidad innecesaria en KIA y EXPERT MCP.
 
 ## Fase 2 — Holded v2 común
 
@@ -159,7 +155,9 @@ Suite comparativa:
 
 ## Fase 5 — writes controlados
 
-Primero solo en `asesoria_sandbox`.
+Primero solo mediante el MCP oficial de Holded conectado a la cuenta vacía de asesoría.
+
+Una vez validadas las operaciones, se implementan las equivalentes en HoldedGateway/KIA.
 
 Categoría R1:
 - crear borrador de factura;
@@ -235,13 +233,11 @@ Preparar EXPERT MCP para distribución más amplia:
 
 ## Criterio de éxito del piloto
 
-EXPERT ESTUDIOS PROFESIONALES debe poder:
-
-1. seleccionar `asesoria_sandbox`;
-2. consultar Holded desde KIA y desde EXPERT MCP;
-3. obtener resultados equivalentes;
-4. ejecutar una write R1 segura solo en sandbox;
-5. cambiar a `contabilidad_real` y quedar read-only;
-6. demostrar que ninguna tool puede cruzar ambas conexiones sin selección explícita.
+1. La cuenta real de EXPERT se conecta a HoldedGateway como única integración canónica y permanece read-only.
+2. La cuenta vacía de asesoría se conecta al MCP oficial de Holded con permisos de escritura controlados.
+3. Se comparan las operaciones de lectura entre MCP oficial y HoldedGateway cuando sea posible.
+4. Se ejecuta una write R1 segura en la cuenta vacía.
+5. La misma operación se implementa después en HoldedGateway/KIA con preview, confirmación, read-back y auditoría.
+6. EXPERT MCP reutiliza HoldedGateway y no almacena credenciales Holded propias.
 
 Después del piloto se habilita DGM como segunda empresa de validación, inicialmente read-only.
