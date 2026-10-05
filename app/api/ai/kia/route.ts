@@ -209,16 +209,12 @@ export async function POST(request: NextRequest) {
   const resolvedCompanyId = staffPreview
     ? (staffPreview.companyId ?? undefined)
     : (companyId ?? contextualCompanyId ?? (adminCopilotMode ? undefined : profile?.active_company_id ?? undefined));
-  const effectivePreferredLanguage = staffPreview?.client.preferred_language
-    ?? (adminCopilotMode ? companyPreferredLanguage : null)
-    ?? profile?.preferred_language
-    ?? null;
-  const profileLocale = effectivePreferredLanguage === 'ru' ? 'ru' : 'es';
-  // A delegated client preview must behave exactly as the client would see it.
-  // Admin typing language must not override the preview client's preferred locale.
-  const responseLocale = staffPreview
-    ? profileLocale
-    : resolveKiaLocale({ latestMessage: message, preferredLanguage: profileLocale });
+
+  const operatorPreferredLanguage = staffPreview?.client.preferred_language ?? profile?.preferred_language ?? null;
+  const operatorLocale = operatorPreferredLanguage === 'ru' ? 'ru' : 'es';
+  let responseLocale = staffPreview
+    ? operatorLocale
+    : resolveKiaLocale({ latestMessage: message, preferredLanguage: operatorLocale });
 
   const staffCompanyScope = Boolean(companyId && profile && isStaffRole(profile.role) && profile.status !== 'inactive');
   const copilotPolicyProfile = adminCopilotMode ? 'admin_copilot' as const : 'client_dashboard' as const;
@@ -268,6 +264,11 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+  }
+
+  if (adminCopilotMode && companyPreferredLanguage) {
+    const companyLocale = companyPreferredLanguage === 'ru' ? 'ru' : 'es';
+    responseLocale = resolveKiaLocale({ latestMessage: message, preferredLanguage: companyLocale });
   }
 
   const companyScope = resolvedCompanyId ?? null;
