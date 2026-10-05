@@ -18,6 +18,7 @@ import { KIA_PAE_KNOWLEDGE_PROMPT } from "./prompts/kia-pae-knowledge";
 import { KIA_CCAA_KNOWLEDGE_PROMPT } from "./prompts/kia-ccaa-knowledge";
 import { KIA_ACADEMY_KNOWLEDGE_PROMPT } from "./prompts/kia-academy-knowledge";
 import { KIA_IMMIGRATION_KNOWLEDGE_PROMPT } from "./prompts/kia-immigration-knowledge";
+import { KIA_CIVIL_REGISTRY_NATIONALITY_KNOWLEDGE_PROMPT } from "./prompts/kia-civil-registry-nationality-knowledge";
 import { KIA_CIVIL_REGISTRY_NATIONALITY_PROMPT } from "./prompts/kia-civil-registry-nationality";
 
 const HOLDED_CONTEXT_RE =
@@ -34,6 +35,8 @@ const PAE_CONTEXT_RE =
   /\b(pae|circe|crear empresa online|sl.*online|online.*sl|alta autonomo.*online|online.*alta autonomo|ventanilla unica|constitucion.*online|online.*constitucion)\b/i;
 const CCAA_CONTEXT_RE =
   /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos documentados|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|iivtnu|suma.*alicante|atv.*valencia|hacienda.*comunidad|ccaa.*impuesto|impuesto.*regional)\b/i;
+const CIVIL_REGISTRY_NATIONALITY_CONTEXT_RE =
+  /\b(nacionalidad|registro civil|jura|promesa|opci[oó]n.*nacionalidad|recuperaci[oó]n.*nacionalidad|p[eé]rdida.*nacionalidad|conservaci[oó]n.*nacionalidad|carta de naturaleza|certificado.*nacimiento|certificado.*matrimonio|certificado.*defunci[oó]n|inscripci[oó]n.*nacimiento|inscripci[oó]n.*matrimonio|apellidos?|nombre.*registro civil|filiaci[oó]n|adopci[oó]n)\b|гражданств|загс|свидетельств.*рожд/i;
 const IMMIGRATION_CONTEXT_RE =
   /\b(extranjer[ií]a|residencia|residente|permiso.*residencia|autorizaci[oó]n.*residencia|tie|\bnie\b|arraigo|reagrupaci[oó]n|protecci[oó]n temporal|protecci[oó]n internacional|asilo|refugiado|apatrid|ucrania|larga duraci[oó]n|familiar.*espa[nñ]ol|familiar.*ciudadano.*uni[oó]n|ciudadano.*ue|estancia.*estudios|nacionalidad espa[nñ]ola|nacionalidad por residencia|mercurio|oficina.*extranjer)/i;
 const ACADEMY_CONTEXT_RE =
@@ -114,6 +117,7 @@ export function buildKiaSystemPrompt(params: {
   includeCcaa?: boolean;
   includeAcademy?: boolean;
   includeImmigration?: boolean;
+  includeCivilRegistryNationality?: boolean;
   fewShotBlock?: string;
   subAgentAddendum?: string;
 }): string {
@@ -137,6 +141,8 @@ export function buildKiaSystemPrompt(params: {
     params.includeAcademy ?? matchesContext(ACADEMY_CONTEXT_RE, params);
   const withImmigration =
     params.includeImmigration ?? matchesContext(IMMIGRATION_CONTEXT_RE, params);
+  const withCivilRegistryNationality =
+    params.includeCivilRegistryNationality ?? matchesContext(CIVIL_REGISTRY_NATIONALITY_CONTEXT_RE, params);
 
   const adminBehavior = params.channel === "admin" ? [
     "- MODO ADMIN COPILOT: estas asistiendo a un profesional interno de EXPERT, no a un cliente final. Trabaja como copiloto operativo, conecta informacion autorizada y responde en texto libre.",
@@ -240,6 +246,7 @@ ${withPae ? KIA_PAE_KNOWLEDGE_PROMPT : ""}
 ${withCcaa ? KIA_CCAA_KNOWLEDGE_PROMPT : ""}
 ${withAcademy ? KIA_ACADEMY_KNOWLEDGE_PROMPT : ""}
 ${withImmigration ? KIA_IMMIGRATION_KNOWLEDGE_PROMPT : ""}
+${withCivilRegistryNationality ? KIA_CIVIL_REGISTRY_NATIONALITY_KNOWLEDGE_PROMPT : ""}
 
 ${params.fewShotBlock ? `\n<few_shot_examples>\n${params.fewShotBlock}\n</few_shot_examples>` : ""}
 
