@@ -33,6 +33,7 @@ const envSchema = z.object({
   EXPERT_PUBLIC_URL: z.string().url().default('https://expertconsulting.es'),
   EXPERT_OAUTH_BRIDGE_ENABLED: z.enum(['0', '1']).default('0'),
   EXPERT_CENTRAL_REGISTRY_ENABLED: z.enum(['0', '1']).default('0'),
+  EXPERT_BACKEND_TOOLS_ENABLED: z.enum(['0', '1']).default('0'),
   // Legacy Verifactu names are accepted only to keep old deploys bootable.
   VERIFACTU_APP_URL: z.string().url().optional(),
   VERIFACTU_APP_SHARED_SECRET: z.string().optional(),
@@ -75,7 +76,8 @@ function loadConfig() {
   if (
     data.NODE_ENV === 'production' &&
     (data.EXPERT_OAUTH_BRIDGE_ENABLED === '1' ||
-      data.EXPERT_CENTRAL_REGISTRY_ENABLED === '1') &&
+      data.EXPERT_CENTRAL_REGISTRY_ENABLED === '1' ||
+      data.EXPERT_BACKEND_TOOLS_ENABLED === '1') &&
     !(data.EXPERT_APP_SHARED_SECRET ?? data.VERIFACTU_APP_SHARED_SECRET)
   ) {
     console.error(
