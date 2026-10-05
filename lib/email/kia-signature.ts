@@ -1,5 +1,34 @@
 import { getPublicAppUrl } from '@/lib/utils/app-url';
 
+export type KiaEmailSignatureLocale = 'es' | 'ru';
+
+export const KIA_EMAIL_SIGNATURE_COPY: Record<KiaEmailSignatureLocale, {
+  introAuthored: string;
+  introCopilot: string;
+  ctaLabel: string;
+  chatLabel: string;
+  footer: string;
+}> = {
+  es: {
+    introAuthored: 'Soy KIA 😊, asistente IA de EXPERT. Puedes seguir hablando conmigo por chat o Telegram.',
+    introCopilot: '¿Te queda alguna duda? 😊 KIA, la asistente IA de EXPERT, puede seguir contigo por chat o Telegram.',
+    ctaLabel: 'Hablar con KIA:',
+    chatLabel: 'Chat',
+    footer: 'KIA es una asistente virtual de EXPERT.',
+  },
+  ru: {
+    introAuthored: 'Я KIA 😊 ИИ-помощница EXPERT. Можете ответить мне в чате или Telegram.',
+    introCopilot: 'Остались вопросы? 😊 KIA, ИИ-помощница EXPERT, может продолжить разговор в чате или Telegram.',
+    ctaLabel: 'Поговорить с KIA:',
+    chatLabel: 'Чат',
+    footer: 'KIA — виртуальная ассистентка EXPERT.',
+  },
+};
+
+export function resolveKiaEmailSignatureLocale(metadata?: Record<string, unknown>): KiaEmailSignatureLocale {
+  return metadata?.preferred_language === 'ru' || metadata?.checkout_locale === 'ru' ? 'ru' : 'es';
+}
+
 function stringMeta(metadata: Record<string, unknown> | undefined, key: string): string | null {
   const value = metadata?.[key];
   return typeof value === 'string' && value.trim() ? value.trim() : null;
@@ -13,23 +42,18 @@ export function appendKiaSignature(html: string, metadata?: Record<string, unkno
   if (metadata?.kia_signature === false) return html;
   if (html.includes('data-kia-signature=')) return html;
 
-  const ru = metadata?.preferred_language === 'ru' || metadata?.checkout_locale === 'ru';
+  const locale = resolveKiaEmailSignatureLocale(metadata);
+  const copy = KIA_EMAIL_SIGNATURE_COPY[locale];
+  const ru = locale === 'ru';
   const appUrl = getPublicAppUrl().replace(/\/$/, '');
   const chatHref = stringMeta(metadata, 'kia_chat_href') ?? `${appUrl}/dashboard?kia=open`;
   const telegramHref = stringMeta(metadata, 'kia_telegram_href') ?? 'https://t.me/kia_expert_bot';
   const authored = metadata?.kia_author === true;
   const avatar = `${appUrl}/avatars/kia/kia-bienvenida.webp`;
 
-  const intro = ru
-    ? (authored
-      ? 'Я KIA 😊 ИИ-помощница EXPERT. Можете ответить мне в чате или Telegram.'
-      : 'Есть вопрос? 😊 KIA, ИИ-помощница EXPERT, может продолжить разговор в чате или Telegram.')
-    : (authored
-      ? 'Soy KIA 😊, asistente IA de EXPERT. Puedes seguir hablando conmigo por chat o Telegram.'
-      : '¿Te queda alguna duda? 😊 KIA, la asistente IA de EXPERT, puede seguir contigo por chat o Telegram.');
-
-  const ctaLabel = ru ? 'Поговорить с KIA:' : 'Hablar con KIA:';
-  const chatLabel = ru ? 'Чат' : 'Chat';
+  const intro = authored ? copy.introAuthored : copy.introCopilot;
+  const ctaLabel = copy.ctaLabel;
+  const chatLabel = copy.chatLabel;
   const telegramLabel = 'Telegram';
   const telegramIcon = 'https://telegram.org/img/t_logo.png';
 
@@ -55,7 +79,7 @@ export function appendKiaSignature(html: string, metadata?: Record<string, unkno
               </td>
             </tr>
           </table>
-          <div style="margin-top:2px;font-size:11px;color:#7b8794;">${ru ? 'KIA — виртуальная ассистентка EXPERT.' : 'KIA es una asistente virtual de EXPERT.'} · <a href="mailto:info@expertconsulting.es" style="color:#9a6700;text-decoration:none;">info@expertconsulting.es</a></div>
+          <div style="margin-top:2px;font-size:11px;color:#7b8794;">${copy.footer} · <a href="mailto:info@expertconsulting.es" style="color:#9a6700;text-decoration:none;">info@expertconsulting.es</a></div>
         </td>
       </tr>
     </table>`;
