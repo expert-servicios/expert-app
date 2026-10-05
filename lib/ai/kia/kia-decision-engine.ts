@@ -46,6 +46,13 @@ import { caseStatusLabel, isCaseStatus } from '@/lib/cases/case-status';
 
 const KIA_MAX_TOOL_ITERATIONS = 5;
 const KIA_TOOL_LOOP_TIMEOUT_MS = 25_000;
+const CIVIL_REGISTRY_NATIONALITY_MESSAGE_RE = /\b(nacionalidad|registro civil|jura|promesa|opci[oó]n.*nacionalidad|recuperaci[oó]n.*nacionalidad|p[eé]rdida.*nacionalidad|conservaci[oó]n.*nacionalidad|carta de naturaleza|certificado.*nacimiento|certificado.*matrimonio|certificado.*defunci[oó]n|inscripci[oó]n.*nacimiento|inscripci[oó]n.*matrimonio|apellidos?|nombre.*registro civil|filiaci[oó]n|adopci[oó]n)\b|гражданств|загс|свидетельств.*рожд/i;
+
+function isCivilRegistryNationalityMessage(message: string, serviceSlug = ''): boolean {
+  return CIVIL_REGISTRY_NATIONALITY_MESSAGE_RE.test(`${message} ${serviceSlug}`)
+    || /nacionalidad-espanola|registro-civil/i.test(serviceSlug);
+}
+
 const IMMIGRATION_MESSAGE_RE = /\b(extranjer[ií]a|residencia|permiso.*residencia|autorizaci[oó]n.*residencia|tie|\bnie\b|arraigo|reagrupaci[oó]n|protecci[oó]n temporal|protecci[oó]n internacional|asilo|refugiado|apatrid|ucrania|larga duraci[oó]n|familiar.*espa[nñ]ol|familiar.*ciudadano.*uni[oó]n|ciudadano.*ue|estancia.*estudios|nacionalidad espa[nñ]ola|nacionalidad por residencia|mercurio|oficina.*extranjer)/i;
 
 function isImmigrationMessage(message: string, serviceSlug = ''): boolean {
@@ -106,6 +113,7 @@ export async function runKiaDecision(input: {
     includeCcaa    : /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|suma.*alicante)\b/i.test(msg) || /notaria|herencia|compraventa/i.test(slug),
     includeAcademy : /\b(academy|business academy|programa superior|adgd0210|certificaci[oó]n oficial|entrevista de admisi[oó]n|matr[ií]cul|curso.*laboral|gesti[oó]n laboral integral|siltra)\b/i.test(msg) || /academy/i.test(slug) || /academy/i.test(input.contextInput.currentPage ?? ''),
     includeImmigration: isImmigrationMessage(msg, slug),
+        includeCivilRegistryNationality: isCivilRegistryNationalityMessage(msg, slug),
     fewShotBlock,
   });
 
@@ -190,6 +198,7 @@ export async function runKiaDecision(input: {
         includeCcaa: /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|suma.*alicante)\b/i.test(msg) || /notaria|herencia|compraventa/i.test(slug),
         includeAcademy: /\b(academy|business academy|programa superior|adgd0210|certificaci[oó]n oficial|entrevista de admisi[oó]n|matr[ií]cul|curso.*laboral|gesti[oó]n laboral integral|siltra)\b/i.test(msg) || /academy/i.test(slug) || /academy/i.test(input.contextInput.currentPage ?? ''),
         includeImmigration: isImmigrationMessage(msg, slug),
+        includeCivilRegistryNationality: isCivilRegistryNationalityMessage(msg, slug),
         fewShotBlock,
         subAgentAddendum: subAgentProfile.systemPromptAddendum,
       })
