@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { reconcileClientRegistry } from '@/lib/ai/kia/kia-client-ledger';
+import { reconcileCompanyRegistry } from '@/lib/ai/kia/kia-company-ledger';
 import { verifyCronRequest } from '@/lib/security/cron';
 
 export const maxDuration = 60;
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
 
   const { data: state, error: stateError } = await admin
     .from('client_registry_reconcile_state')
-    .select('profile_cursor,lead_cursor')
+    .select('profile_cursor,lead_cursor,company_cursor')
     .eq('id', 'default')
     .maybeSingle();
   if (stateError) {
@@ -40,11 +41,23 @@ export async function GET(request: NextRequest) {
     .limit(batchSize);
   if (state?.lead_cursor) leadsQuery = leadsQuery.gt('id', state.lead_cursor);
 
-  const [{ data: profiles, error: profilesError }, { data: leads, error: leadsError }] = await Promise.all([
+  let companiesQuery = admin.from('companies')
+    .select('id')
+    .eq('status', 'active')
+    .order('id', { ascending: true })
+    .limit(batchSize);
+  if (state?.company_cursor) companiesQuery = companiesQuery.gt('id', state.company_cursor);
+
+  const [
+    { data: profiles, error: profilesError },
+    { data: leads, error: leadsError },
+    { data: companies, error: companiesError },
+  ] = await Promise.all([
     profilesQuery,
     leadsQuery,
+    companiesQuery,
   ]);
-  if (profilesError || leadsError) {
+  if (profilesError || leadsError || companiesError) {
     return NextResponse.json({ error: 'reconcile_source_unavailable' }, { status: 503 });
   }
 
@@ -67,12 +80,27 @@ export async function GET(request: NextRequest) {
     results.push(...settled);
   }
 
+  for (let offset = 0; offset < (companies?.length ?? 0); offset += concurrency) {
+    const slice = (companies ?? []).slice(offset, offset + concurrency);
+    const settled = await Promise.all(slice.map(async (company) => {
+      try {
+        const ledger = await reconcileCompanyRegistry(admin, company.id);
+        return { ok: true, subjectId: ledger?.subjectId ?? null };
+      } catch (error) {
+        return { ok: false, error: error instanceof Error ? error.message : 'unknown_error' };
+      }
+    }));
+    results.push(...settled);
+  }
+
   const nextProfileCursor = (profiles?.length ?? 0) < batchSize ? null : profiles?.at(-1)?.id ?? null;
   const nextLeadCursor = (leads?.length ?? 0) < batchSize ? null : leads?.at(-1)?.id ?? null;
+  const nextCompanyCursor = (companies?.length ?? 0) < batchSize ? null : companies?.at(-1)?.id ?? null;
   const { error: cursorError } = await admin.from('client_registry_reconcile_state').upsert({
     id: 'default',
     profile_cursor: nextProfileCursor,
     lead_cursor: nextLeadCursor,
+    company_cursor: nextCompanyCursor,
     updated_at: new Date().toISOString(),
   }, { onConflict: 'id' });
   if (cursorError) {
@@ -85,5 +113,6 @@ export async function GET(request: NextRequest) {
     failed: results.filter((item) => !item.ok).length,
     profileCursor: nextProfileCursor,
     leadCursor: nextLeadCursor,
+    companyCursor: nextCompanyCursor,
   });
 }
