@@ -12,9 +12,13 @@ describe('EXPERT MCP list_companies boundary', () => {
     expect(route).toContain(".eq('profile_id', supabaseUserId)");
   });
 
-  it('keeps EXPERT-native tools disabled by default', () => {
+  it('keeps EXPERT-native tools disabled by default and registers them only behind the flag', () => {
     const example = source('apps/holded-mcp/.env.example');
+    const app = source('apps/holded-mcp/src/app.ts');
     expect(example).toContain('EXPERT_BACKEND_TOOLS_ENABLED=0');
+    expect(app).toContain("config.EXPERT_BACKEND_TOOLS_ENABLED === '1'");
+    expect(app).toContain('registerExpertTools(mcpServer, () => expertClient)');
+    expect(app).toContain('createMcpBackend({ holdedApiKey: record.holdedApiKey })');
   });
 
   it('uses only the authenticated MCP identity to resolve companies', () => {
