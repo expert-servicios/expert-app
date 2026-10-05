@@ -19,6 +19,8 @@ describe('KIA voice and durable client registry', () => {
   const migration = source('supabase/migrations/20260929160818_kia_client_registry_ledger.sql');
   const deny = source('supabase/migrations/20260929162529_kia_client_registry_explicit_deny.sql');
   const hardening = source('supabase/migrations/20260930113000_kia_client_registry_hardening.sql');
+  const companyMigration = source('supabase/migrations/20261005100500_kia_client_registry_company_subjects.sql');
+  const companyLedger = source('lib/ai/kia/kia-company-ledger.ts');
 
   it('keeps audio credentials server-side and enforces auth/size/type gates', () => {
     expect(audio).toContain('process.env.OPENAI_API_KEY');
@@ -61,6 +63,8 @@ describe('KIA voice and durable client registry', () => {
     expect(hardening).toContain('revoke all on table public.client_registry_events from service_role');
     expect(hardening).toContain('grant select, insert on table public.client_registry_events to service_role');
     expect(hardening).toContain('client_registry_reconcile_state');
+    expect(companyMigration).toContain('client_registry_subjects_company_uidx');
+    expect(companyMigration).toContain('company_cursor');
   });
 
   it('preserves lead-to-client continuity and fails closed on exact identity conflict', () => {
@@ -78,6 +82,8 @@ describe('KIA voice and durable client registry', () => {
     expect(cron).toContain('client_registry_reconcile_state');
     expect(cron).toContain("order('id', { ascending: true })");
     expect(cron).toContain('KIA_CLIENT_LEDGER_CONCURRENCY');
+    expect(cron).toContain('reconcileCompanyRegistry');
+    expect(cron).toContain('company_cursor');
   });
 
   it('records verified source references instead of copying full artifacts', () => {
@@ -96,6 +102,9 @@ describe('KIA voice and durable client registry', () => {
     expect(ledger).toContain('pendingEvents: RegistryEventInput[]');
     expect(ledger).toContain("metadata.staff_preview === true");
     expect(ledger).toContain('companyId: scope.companyId');
+    expect(companyLedger).toContain("from('internal_tasks')");
+    expect(companyLedger).toContain("from('client_integrations')");
+    expect(companyLedger).toContain("from('admin_email_item_state')");
   });
 
   it('tells KIA to use the registry for continuity and live tools for exact state', () => {
