@@ -325,6 +325,133 @@ Solo después de contraste con contrato/documentación:
 - intención de desahucio;
 - quejas puntuales de vecinos.
 
+## 4.2. Reconstrucción validada — Av. del Norte 40, 1º D
+
+### Sujetos y señales
+- vivienda: **Avda. del Norte 40, 1º D, Calpe**;
+- inquilino principal recurrente en el hilo: **Frank Ivarwin Quintero Rodríguez**;
+- **Sandra Liliana Bermúdez** figura como coarrendataria/ocupante en comunicaciones posteriores;
+- el corpus refleja deuda, incidencias de comunidad y cambios de ocupantes.
+
+### 21/01/2026 — primer impago detectado
+Se comunica a Frank que no se había recibido la renta del mes.
+
+**Evento propuesto:** `rent.payment_overdue`
+
+### 23/01/2026 — alternativa de pago
+EXPERT responde ofreciendo alternativa de ingreso/transferencia mientras Frank resuelve una incidencia bancaria.
+
+**Evento propuesto:** `rent.payment_method_alternative_offered`
+
+### febrero–abril 2026 — retrasos recurrentes
+- 23/02: febrero aún pendiente.
+- 02/03: se confirma recepción de febrero y queda marzo pendiente.
+- 01/04: se reclama marzo.
+- 10/04: se informa internamente de que Frank ha pagado marzo.
+
+**Tratamiento:** secuencia de eventos de vencimiento/pago, nunca hecho estructural de deuda.
+
+### 08/05/2026 — escalado por impago
+Propietarios solicitan carta formal por retrasos reiterados de Frank.
+
+**Evento propuesto:** `rent.debt_escalated`
+
+### 28/05/2026 — comunidad y pagos atrasados
+Se localizan dos comunicaciones:
+- una queja de la administración por molestias a otros residentes;
+- una reclamación por retrasos reiterados en renta y tasa de residuos.
+
+**Eventos propuestos:**
+- `community.complaint_received`;
+- `rent.formal_reminder_sent`.
+
+### 01/06/2026 — plan de pago aceptado
+En el hilo se indica a Frank:
+- renta pendiente de un mes: **1.100 €**;
+- basura: **111,53 €**;
+- se acepta su propuesta de plan de pago.
+
+**Evento propuesto:** `payment_plan_accepted`
+
+### 03/06/2026 — pago parcial
+Se agradece un abono parcial y se indica:
+- renta del mes en curso pendiente;
+- resto **600 €** previsto para julio.
+
+**Evento propuesto:** `payment_plan_partial_payment`
+
+### 16/06/2026 — nueva renta pendiente
+Se reclama renta mensual de **1.125 €** y se pide información sobre la resolución de problemas con la comunidad.
+
+**Evento propuesto:** `rent.payment_overdue`
+
+### 14/07/2026 — retraso + saldo previo
+Se reclama de nuevo:
+- renta del mes;
+- **600 €** restantes del acuerdo anterior.
+
+**Evento propuesto:** `payment_plan_breach_risk`
+
+### 16–17/07/2026 — Sandra comunica cambio de convivencia
+Sandra Liliana Bermúdez comunica que su expareja ya no reside en la vivienda y solicita continuar ella con el alquiler.
+EXPERT responde acusando recibo y abre la revisión contractual.
+
+**Eventos propuestos:**
+- `tenant.change_requested`;
+- `lease.review_opened`.
+
+### 30/07/2026 — situación contradictoria / deuda
+Se remite comunicación a Frank indicando:
+- julio de 2026 pendiente: **1.125 €**;
+- deuda previa: **600 €**;
+- Sandra había indicado que Frank no tenía intención de seguir residiendo.
+
+**Regla:** este correo describe un estado a fecha concreta; no promover saldo a dato vivo.
+
+### 15/08/2026 — identificación de ocupantes
+Se solicita a Frank:
+- datos de contacto de todos los ocupantes;
+- confirmación de sus planes respecto al alquiler.
+
+**Evento propuesto:** `occupants.identification_requested`
+
+### 14/09/2026 — Sandra solicita baja contractual
+Sandra solicita formalmente causar baja del contrato de Av. del Norte 40, 1º D.
+EXPERT responde que el contrato figura firmado junto con Frank y que la salida de una parte requiere regularización.
+
+**Eventos propuestos:**
+- `tenant.exit_requested`;
+- `lease.amendment_required`.
+
+### 14/09/2026 — documentación de otros ocupantes
+Frank remite documentos de identidad de varias personas relacionadas con la vivienda.
+EXPERT solicita aclarar quién reside realmente y en qué condición antes de aceptar cambios.
+
+**Evento propuesto:** `occupants.documents_received_needs_review`
+
+### 21–28/09/2026 — reconstrucción de deuda
+- EXPERT solicita regularización para evitar conflicto.
+- Olga comunica que había una deuda histórica que se componía de varios tramos y menciona una cifra de referencia de **1.800 €**.
+- Se indica que una parte deriva de un mes de invierno y otra de mayo-junio, incluyendo **625 €**.
+- EXPERT decide no fijar una cifra definitiva sin revisar los movimientos bancarios.
+- Se solicita extracto Excel desde 01/01/2026 para conciliar exactamente pagos y deuda.
+
+**Eventos propuestos:**
+- `rent.debt_reconciliation_opened`;
+- `bank_statement_requested`.
+
+### Hechos estructurales candidatos de Norte 40
+Solo tras contraste contractual:
+- dirección **Avda. del Norte 40, 1º D, Calpe**;
+- Frank y Sandra como partes del contrato durante el periodo que corresponda;
+- calendario contractual de pago entre días 20 y 25, si consta en contrato.
+
+### No promover a hecho estructural
+- 600 €, 1.100 €, 1.125 €, 1.800 € o 625 € como deuda permanente;
+- intención de Frank de quedarse/irse;
+- composición de ocupantes hasta aclaración documental;
+- quejas puntuales de comunidad.
+
 ## 5. Viviendas / señales actuales
 
 ### Boreal
