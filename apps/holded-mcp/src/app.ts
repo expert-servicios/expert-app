@@ -7,12 +7,14 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { config } from './config.js';
 import { HoldedClient } from './holded-client.js';
+import { ExpertBackendClient } from './expert-backend-client.js';
 import { apiRateLimit, requireAuth, requestLogger } from './middleware/auth.js';
 import { corsMiddleware } from './middleware/cors.js';
 import { logger } from './logger.js';
 import { oauthRouter } from './oauth-routes.js';
 import { renderLandingPage } from './public-pages.js';
 import { registerProductionTools } from './tools/index.js';
+import { registerExpertTools } from './tools/expert.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
