@@ -8,7 +8,7 @@ describe('DGM internal accounting rebuild context', () => {
   const contextBuilder = source('lib/ai/kia/kia-context-builder.ts');
   const companyLedger = source('lib/ai/kia/kia-company-ledger.ts');
   const migration = source('supabase/migrations/20261005100500_kia_client_registry_company_subjects.sql');
-  const playbook = source('docs/clients/dgm-accounting-rebuild.md');
+  const playbook = source('docs/clients/dgm-accounting-rebuild-2025-2026.md');
   const learningLoop = source('docs/kia-operator-learning-loop.md');
 
   it('uses a company-scoped registry subject before a portal user exists', () => {
