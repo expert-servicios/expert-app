@@ -117,6 +117,22 @@ function replyFromForPurpose(purpose: ReturnType<typeof classifyInboundEnvelope>
   }
 }
 
+function isExpertOutboundMessage(message: GmailMessage): boolean {
+  const email = normalizedEmail(message.fromEmail);
+  return email === EXPERT_MAILBOX || /@expertconsulting\.es$/i.test(email);
+}
+
+async function hasLiveOutboundReplyAfterInbound(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  threadId: string,
+  inboundMessageId: string,
+): Promise<boolean> {
+  const live = await getOperationalGmailThread(admin, threadId);
+  const index = live.messages.findIndex((message) => message.id === inboundMessageId);
+  if (index < 0) return live.messages.some((message) => isExpertOutboundMessage(message));
+  return live.messages.slice(index + 1).some((message) => isExpertOutboundMessage(message));
+}
+
 function isLikelyHuman(message: GmailMessage) {
   const email = normalizedEmail(message.fromEmail);
   const local = email.split('@')[0] ?? '';
@@ -837,60 +853,84 @@ export async function GET(request: NextRequest) {
             throw claimError;
           }
         } else {
-          let authMode: 'service_account' | 'oauth';
-          try {
-            authMode = await sendOperationalGmailReply(admin, {
-              threadId: row.thread_id,
-              to: replyRecipient,
-              subject: replySubject,
-              body: html,
-              bodyHtml: true,
-              from: replyFromForPurpose(envelope.recipientPurpose),
-            });
-          } catch (sendError) {
+          const alreadyAnsweredLive = await hasLiveOutboundReplyAfterInbound(
+            admin,
+            row.thread_id,
+            latest.id,
+          ).catch((liveCheckError) => {
+            console.error('[kia-email-agent] live duplicate pre-send check failed:', liveCheckError);
+            return true;
+          });
+
+          if (alreadyAnsweredLive) {
             await admin.from('system_kv').update({
               value: {
-                state: 'uncertain_failure',
+                state: 'sent_or_already_answered',
                 thread_hash: key.split(':')[1],
                 message_id: latest.id,
-                failed_at: new Date().toISOString(),
-                error: sendError instanceof Error ? sendError.message.slice(0, 240) : 'unknown_send_error',
+                checked_at: new Date().toISOString(),
+                source: 'live_gmail_pre_send_check',
               },
               updated_at: new Date().toISOString(),
             }).eq('key', sendClaimKey);
-            throw sendError;
-          }
+            duplicateClaim = true;
+            blockReason = 'live_thread_already_answered';
+          } else {
+            let authMode: 'service_account' | 'oauth';
+            try {
+              authMode = await sendOperationalGmailReply(admin, {
+                threadId: row.thread_id,
+                to: replyRecipient,
+                subject: replySubject,
+                body: html,
+                bodyHtml: true,
+                from: replyFromForPurpose(envelope.recipientPurpose),
+              });
+            } catch (sendError) {
+              await admin.from('system_kv').update({
+                value: {
+                  state: 'uncertain_failure',
+                  thread_hash: key.split(':')[1],
+                  message_id: latest.id,
+                  failed_at: new Date().toISOString(),
+                  error: sendError instanceof Error ? sendError.message.slice(0, 240) : 'unknown_send_error',
+                },
+                updated_at: new Date().toISOString(),
+              }).eq('key', sendClaimKey);
+              throw sendError;
+            }
 
-          const { error: eventError } = await admin.from('email_events').insert({
-          event_type: 'kia.email.auto_reply',
-          recipient_email: replyRecipient,
-          subject: replySubject,
-          html,
-          status: 'sent',
-          metadata: {
-            ...(contextual.metadata ?? metadata),
-            transport: 'gmail',
-            auth_mode: authMode,
-            decision_log_id: result.decisionLogId ?? null,
-            inbound_message_id: latest.id,
-            thread_id: row.thread_id,
-            direction: 'out',
-          },
-          });
-          if (eventError) {
-            console.error('[kia-email-agent] email event audit:', eventError);
+            const { error: eventError } = await admin.from('email_events').insert({
+              event_type: 'kia.email.auto_reply',
+              recipient_email: replyRecipient,
+              subject: replySubject,
+              html,
+              status: 'sent',
+              metadata: {
+                ...(contextual.metadata ?? metadata),
+                transport: 'gmail',
+                auth_mode: authMode,
+                decision_log_id: result.decisionLogId ?? null,
+                inbound_message_id: latest.id,
+                thread_id: row.thread_id,
+                direction: 'out',
+              },
+            });
+            if (eventError) {
+              console.error('[kia-email-agent] email event audit:', eventError);
+            }
+            await admin.from('system_kv').update({
+              value: {
+                state: 'sent',
+                thread_hash: key.split(':')[1],
+                message_id: latest.id,
+                sent_at: new Date().toISOString(),
+              },
+              updated_at: new Date().toISOString(),
+            }).eq('key', sendClaimKey);
+            sent++;
+            sentNow = true;
           }
-          await admin.from('system_kv').update({
-            value: {
-              state: 'sent',
-              thread_hash: key.split(':')[1],
-              message_id: latest.id,
-              sent_at: new Date().toISOString(),
-            },
-            updated_at: new Date().toISOString(),
-          }).eq('key', sendClaimKey);
-          sent++;
-          sentNow = true;
         }
       } else {
         if (!autoSend) blockReason = 'auto_send_disabled';
