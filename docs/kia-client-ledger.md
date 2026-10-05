@@ -193,3 +193,29 @@ Los eventos pueden quedar pseudonimizados/eliminados cuando proceda legalmente, 
 - [x] aislamiento de company/case y exclusión de staff preview cubiertos por regresión;
 - [ ] backfill de producción activado y observado con `KIA_CLIENT_LEDGER_ENABLED=true`;
 - [ ] admin timeline visible en Company 360/cliente.
+
+
+## Subjects empresariales sin usuario
+
+La hoja registral también admite empresas internas que todavía no tienen usuario/portal.
+
+Uso:
+- `client_registry_subjects.company_id` actúa como ancla canónica de la empresa;
+- el subject empresarial es independiente de la historia personal de socio, administrador o representante;
+- permite registrar la relación profesional desde antes de crear un usuario;
+- cuando posteriormente se activa el portal, no se pierde la historia previa de la empresa.
+
+Fuentes empresariales reconciliadas:
+- alta/estado de `companies`;
+- controles operativos;
+- tareas internas;
+- integraciones;
+- documentos;
+- expedientes;
+- reuniones;
+- correos vinculados a la empresa.
+
+Regla:
+> Company 360 = identidad y estado vivo. Hoja registral = historia verificable y contexto. Operator Lessons = aprendizaje generalizable.
+
+No usar `companies.notes` como sustituto de la hoja registral.

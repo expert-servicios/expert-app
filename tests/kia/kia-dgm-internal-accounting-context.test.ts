@@ -6,13 +6,19 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf
 
 describe('DGM internal accounting rebuild context', () => {
   const contextBuilder = source('lib/ai/kia/kia-context-builder.ts');
+  const companyLedger = source('lib/ai/kia/kia-company-ledger.ts');
+  const migration = source('supabase/migrations/20261005100500_kia_client_registry_company_subjects.sql');
   const playbook = source('docs/clients/dgm-accounting-rebuild.md');
   const learningLoop = source('docs/kia-operator-learning-loop.md');
 
-  it('loads company internal notes into KIA context', () => {
-    expect(contextBuilder).toContain('internalNotes: string | null');
-    expect(contextBuilder).toContain("select('id, razon_social, nombre_comercial, cif_nif, notes')");
-    expect(contextBuilder).toContain('internalNotes: typeof company.notes');
+  it('uses a company-scoped registry subject before a portal user exists', () => {
+    expect(migration).toContain('client_registry_subjects_company_uidx');
+    expect(migration).toContain('company_id uuid references public.companies');
+    expect(contextBuilder).toContain('loadClientRegistryContext');
+    expect(contextBuilder).not.toContain('internalNotes: string | null');
+    expect(companyLedger).toContain('reconcileCompanyRegistry');
+    expect(companyLedger).toContain("eventType: 'company.registered'");
+    expect(companyLedger).toContain("eventType: 'company.operational_controls'");
   });
 
   it('keeps DGM internal until accounting is validated', () => {
