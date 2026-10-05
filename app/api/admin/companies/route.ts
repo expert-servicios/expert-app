@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { z } from 'zod';
 
+function normalizeTaxId(value: string | null | undefined): string | null {
+  const normalized = String(value ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return normalized || null;
+}
+
 const LEGAL_FORMS = ['autonomo', 'sl', 'sa', 'slne', 'cb', 'cooperativa', 'fundacion', 'otra'] as const;
 
 async function requireAdmin(request: NextRequest) {
@@ -73,13 +78,37 @@ export async function POST(request: NextRequest) {
     }
 
     const { razon_social, cif_nif, forma_juridica, email, phone, ciudad, direccion } = parsed.data;
+    const normalizedTaxId = normalizeTaxId(cif_nif);
+
+    if (normalizedTaxId) {
+      const { data: existing, error: duplicateError } = await admin
+        .from('companies')
+        .select('id,razon_social,cif_nif')
+        .limit(500);
+
+      if (duplicateError) {
+        return NextResponse.json({ error: 'No se pudo verificar el CIF/NIF' }, { status: 500 });
+      }
+
+      const match = (existing ?? []).find((row) => normalizeTaxId(row.cif_nif) === normalizedTaxId);
+      if (match) {
+        return NextResponse.json({
+          error: 'Ya existe una entidad con este CIF/NIF.',
+          code: 'tax_id_duplicate',
+          existingCompanyId: match.id,
+        }, { status: 409 });
+      }
+    }
 
     const insert: Record<string, unknown> = {
       razon_social,
       status: 'active',
       created_by: userId,
     };
-    if (cif_nif)        insert.cif_nif        = cif_nif;
+    if (normalizedTaxId) {
+      insert.cif_nif = normalizedTaxId;
+      insert.vat_id = normalizedTaxId;
+    }
     if (forma_juridica) insert.forma_juridica  = forma_juridica;
     if (email)          insert.email           = email;
     if (phone)          insert.telefono        = phone;
