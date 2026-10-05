@@ -28,7 +28,7 @@ describe('Universal KIA email signature', () => {
   it('renders a single KIA CTA zone with Chat and Telegram', () => {
     const signature = source('lib/email/kia-signature.ts');
     expect(signature).toContain('data-kia-contact-cta="true"');
-    expect(signature).toContain("ctaLabel = ru ? 'Поговорить с KIA:' : 'Hablar con KIA:'");
+    expect(signature).toContain("ctaLabel: 'Hablar con KIA:'");\n    expect(signature).toContain("ctaLabel: 'Поговорить с KIA:'");\n    expect(signature).toContain('const ctaLabel = copy.ctaLabel;');
     expect(signature).toContain('https://telegram.org/img/t_logo.png');
     expect(signature).toContain('kia_chat_href');
     expect(signature).toContain('kia_telegram_href');
