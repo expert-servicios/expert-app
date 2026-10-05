@@ -26,15 +26,35 @@ export async function GET(
   if (!ctx) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   const { id } = await params;
 
-  const { data, error } = await ctx.admin
-    .from('company_document_index')
-    .select('id,relative_path,name,mime_type,size_bytes,is_folder,category,provider_modified_at,indexed_at')
-    .eq('company_id', id)
-    .order('relative_path')
-    .limit(5000);
+  const [{ data, error }, { data: root, error: rootError }] = await Promise.all([
+    ctx.admin
+      .from('company_document_index')
+      .select('id,relative_path,name,mime_type,size_bytes,is_folder,category,provider_modified_at,indexed_at')
+      .eq('company_id', id)
+      .order('relative_path')
+      .limit(5000),
+    ctx.admin
+      .from('company_document_roots')
+      .select('provider,display_name,status,sync_mode,last_indexed_at,last_error')
+      .eq('company_id', id)
+      .eq('provider', 'google')
+      .maybeSingle(),
+  ]);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ items: data ?? [] });
+  if (rootError) return NextResponse.json({ error: rootError.message }, { status: 500 });
+
+  const items = data ?? [];
+  const folders = items.filter((item) => item.is_folder).length;
+  return NextResponse.json({
+    root: root ?? null,
+    summary: {
+      total: items.length,
+      folders,
+      files: items.length - folders,
+    },
+    items,
+  });
 }
 
 export async function POST(
