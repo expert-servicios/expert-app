@@ -6,7 +6,7 @@
 - Alias operativo: DGM
 - Tipo: sociedad patrimonial
 - Actividad operativa conocida: arrendamiento de 5 viviendas
-- Company 360 ID: b5935762-f25a-48b4-b1ac-bc92fd413d51
+- Company 360 ID: 188a1871-0ea8-4b11-adac-c9acc41c4a4b
 
 ## Regla de fase
 **Fase interna EXPERT.**
