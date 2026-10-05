@@ -10,10 +10,10 @@ describe('DGM internal accounting rebuild controls', () => {
   const gates = source('supabase/migrations/20261005094500_company_operational_controls_dgm.sql');
   const playbook = source('docs/clients/dgm-accounting-rebuild-2025-2026.md');
 
-  it('keeps company internal notes staff-only', () => {
-    expect(context).toContain('includeInternalNotes = false');
-    expect(context).toContain('loadCompany(admin, clientId, resolvedCompanyId, staffCompanyScope)');
-    expect(context).toContain('internalNotes: includeInternalNotes');
+  it('keeps company history in the client registry rather than companies.notes', () => {
+    expect(context).toContain('loadClientRegistryContext');
+    expect(context).not.toContain('internalNotes: string | null');
+    expect(context).not.toContain("select('id, razon_social, nombre_comercial, cif_nif, notes')");
   });
 
   it('exposes operational gates to KIA context', () => {
