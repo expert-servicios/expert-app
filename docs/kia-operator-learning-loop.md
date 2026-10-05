@@ -30,3 +30,25 @@ Before every autonomous KIA email send:
 - preserve the existing idempotency claim as a second layer.
 
 This protects against timeouts, manual sends and internal-state lag.
+
+
+## DGM as first accounting case study
+
+DISEÑO GLOBAL MERIDIANO, S.L. is the first explicit accounting-rebuild case using this loop.
+
+What remains company-scoped:
+- the identity of DGM;
+- its five rental properties;
+- tenant/incidence details;
+- accounting balances and corrections;
+- its email history.
+
+What is promoted globally:
+- audit read-only before write;
+- take a snapshot before reconstruction;
+- classify correct/missing/wrong/duplicate/review items;
+- analyse multi-asset businesses by economic unit when useful;
+- reconcile tax filings against accounting;
+- do not activate client access until the internal environment is ready.
+
+Canonical playbook: `docs/clients/dgm-accounting-rebuild.md`.
