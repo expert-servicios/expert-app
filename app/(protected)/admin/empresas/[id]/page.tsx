@@ -1,5 +1,6 @@
 'use client';
 import { Company360Questionnaire } from '@/components/company/Company360Questionnaire';
+import { CompanyDriveDocumentsPanel } from './CompanyDriveDocumentsPanel';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -370,6 +371,8 @@ export default function Company360Page() {
             </div>
           </section>
         </div>
+
+        <CompanyDriveDocumentsPanel companyId={id} />
 
         <Company360Questionnaire companyId={id} compact />
 
