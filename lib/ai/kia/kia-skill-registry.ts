@@ -3,6 +3,7 @@ import type { KiaToolCapability, KiaToolRiskTier } from './kia-tool-registry';
 
 export type KiaSkillDomain =
   | 'fiscal'
+  | 'immigration'
   | 'accounting'
   | 'labor'
   | 'corporate'
@@ -25,6 +26,18 @@ export interface KiaSkillDefinition {
 }
 
 const KIA_SKILLS: readonly KiaSkillDefinition[] = [
+  {
+    id: 'immigration.advice',
+    version: '1.0',
+    domain: 'immigration',
+    description: 'Compara vías de Extranjería con fuentes oficiales y prioriza la estrategia migratoria más estable sin ejecutar trámites.',
+    intents: ['immigration_advice'],
+    taskTypes: [],
+    preferredSubAgentId: 'immigration',
+    requiredToolCapabilities: ['regulatory', 'knowledge'],
+    maxRiskTier: 'R1',
+    enabled: true,
+  },
   {
     id: 'fiscal.viability',
     version: '1.0',

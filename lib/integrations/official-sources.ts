@@ -24,6 +24,7 @@ const OFFICIAL_DOMAINS = [
   'www.inclusion.gob.es',
   'boe.es',
   'www.boe.es',
+  'eur-lex.europa.eu',
   'sepe.es',
   'www.sepe.es',
   'clave.gob.es',
@@ -154,6 +155,26 @@ const FALLBACK_SOURCES: Array<OfficialSource & { keywords: RegExp[] }> = [
     url: 'https://www.inclusion.gob.es/web/migraciones',
     snippet: 'Informacion oficial sobre extranjeria, inmigracion y migraciones.',
     keywords: [/extranjer|nie|tie|arraigo|residencia|nacionalidad|reagrupaci|asilo|visado/i],
+  },
+  {
+    title: 'Ministerio de Inclusión — Instrucciones SEM 2/2026 sobre transición desde protección temporal',
+    url: 'https://inclusion.gob.es/es/web/migraciones/instrucciones',
+    snippet: [
+      'Fuente oficial de Migraciones. SEM 2/2026 regula la transición desde la protección temporal vinculada a la Decisión (UE) 2022/382 hacia otras autorizaciones de residencia.',
+      'Para estrategia migratoria debe compararse la modificación inmediata con alternativas de mayor estabilidad, incluida larga duración nacional cuando se alcance el período exigible.',
+      'El cómputo y la fecha exacta deben confirmarse con la resolución de protección temporal y la continuidad de residencia del interesado.',
+    ].join(' '),
+    keywords: [/sem\s*2\/2026|protecci[oó]n temporal.*(ucrania|residencia|modificaci[oó]n|larga duraci[oó]n)|ucrania.*(larga duraci[oó]n|residencia|modificaci[oó]n)|temporary protection.*ukraine/i],
+  },
+  {
+    title: 'EUR-Lex — Decisión de Ejecución (UE) 2026/1912, prórroga de protección temporal',
+    url: 'https://eur-lex.europa.eu/legal-content/ES/TXT/?uri=CELEX%3A32026D1912',
+    snippet: [
+      'La Decisión de Ejecución (UE) 2026/1912 prorroga la protección temporal de las personas desplazadas de Ucrania hasta el 4 de marzo de 2028.',
+      'La prórroga permite valorar si conviene mantener temporalmente este estatus mientras se prepara el acceso a una autorización más estable.',
+      'Debe revisarse la versión vigente/consolidada y las reglas aplicables a quienes ya disfrutaban de protección temporal antes de la fecha de la nueva decisión.',
+    ].join(' '),
+    keywords: [/2026\/1912|4 de marzo de 2028|protecci[oó]n temporal.*2028|ucrania.*2028/i],
   },
   {
     title: 'SEPE - Servicio Publico de Empleo Estatal',
