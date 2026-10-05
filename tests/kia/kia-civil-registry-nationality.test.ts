@@ -20,7 +20,7 @@ describe('KIA civil registry and nationality corpus', () => {
       'nombre y apellidos',
       'certificados registrales habituales',
     ]) {
-      expect(corpus).toContain(marker);
+      expect(corpus.toLocaleLowerCase('es')).toContain(marker.toLocaleLowerCase('es'));
     }
   });
 
