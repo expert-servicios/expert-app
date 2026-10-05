@@ -48,6 +48,7 @@ type RegistrySubjectRow = {
   lifecycle_stage: string;
   lead_id: string | null;
   client_id: string | null;
+  company_id: string | null;
   email_normalized: string | null;
   phone_normalized: string | null;
 };
@@ -58,15 +59,39 @@ export async function resolveClientRegistrySubject(
 ): Promise<{ id: string; lifecycleStage: string } | null> {
   const clientId = input.clientId ?? null;
   const leadId = input.leadId ?? null;
+  const companyId = input.companyId ?? null;
   const email = normalizeEmail(input.email);
   const phone = normalizePhone(input.phone);
 
-  if (!clientId && !leadId && !email && !phone) return null;
+  if (!clientId && !leadId && !companyId && !email && !phone) return null;
+
+  if (companyId) {
+    const { data: existingCompanySubject, error: companySubjectError } = await admin
+      .from('client_registry_subjects')
+      .select('id,lifecycle_stage')
+      .eq('company_id', companyId)
+      .is('merged_into_subject_id', null)
+      .maybeSingle();
+    if (companySubjectError) throw companySubjectError;
+    if (existingCompanySubject) {
+      return { id: existingCompanySubject.id, lifecycleStage: existingCompanySubject.lifecycle_stage };
+    }
+    const { data: createdCompanySubject, error: createCompanySubjectError } = await admin
+      .from('client_registry_subjects')
+      .insert({ company_id: companyId, lifecycle_stage: 'client' })
+      .select('id,lifecycle_stage')
+      .single();
+    if (createCompanySubjectError) {
+      if (createCompanySubjectError.code === '23505') throw new Error('client_registry_identity_conflict');
+      throw createCompanySubjectError;
+    }
+    return { id: createdCompanySubject.id, lifecycleStage: createdCompanySubject.lifecycle_stage };
+  }
 
   const exact: RegistrySubjectRow[] = [];
   if (clientId) {
     const { data, error } = await admin.from('client_registry_subjects')
-      .select('id,lifecycle_stage,lead_id,client_id,email_normalized,phone_normalized')
+      .select('id,lifecycle_stage,lead_id,client_id,company_id,email_normalized,phone_normalized')
       .eq('client_id', clientId)
       .is('merged_into_subject_id', null)
       .maybeSingle();
@@ -75,7 +100,7 @@ export async function resolveClientRegistrySubject(
   }
   if (leadId) {
     const { data, error } = await admin.from('client_registry_subjects')
-      .select('id,lifecycle_stage,lead_id,client_id,email_normalized,phone_normalized')
+      .select('id,lifecycle_stage,lead_id,client_id,company_id,email_normalized,phone_normalized')
       .eq('lead_id', leadId)
       .is('merged_into_subject_id', null)
       .maybeSingle();
@@ -97,7 +122,7 @@ export async function resolveClientRegistrySubject(
     for (const [column, value] of [['email_normalized', email], ['phone_normalized', phone]] as const) {
       if (!value) continue;
       const { data, error } = await admin.from('client_registry_subjects')
-        .select('id,lifecycle_stage,lead_id,client_id,email_normalized,phone_normalized')
+        .select('id,lifecycle_stage,lead_id,client_id,company_id,email_normalized,phone_normalized')
         .eq(column, value)
         .is('lead_id', null)
         .is('client_id', null)
@@ -121,6 +146,7 @@ export async function resolveClientRegistrySubject(
     const { data, error } = await admin.from('client_registry_subjects').insert({
       lead_id: leadId,
       client_id: clientId,
+      company_id: null,
       email_normalized: email,
       phone_normalized: phone,
       lifecycle_stage: lifecycleStage,
@@ -230,6 +256,7 @@ export async function recordClientRegistryEvent(
     subjectId: subject.id,
     leadId: identity.leadId ?? null,
     clientId: identity.clientId ?? null,
+    companyId: event.companyId ?? identity.companyId ?? null,
   });
   return subject.id;
 }
