@@ -18,6 +18,7 @@ import { KIA_PAE_KNOWLEDGE_PROMPT } from "./prompts/kia-pae-knowledge";
 import { KIA_CCAA_KNOWLEDGE_PROMPT } from "./prompts/kia-ccaa-knowledge";
 import { KIA_ACADEMY_KNOWLEDGE_PROMPT } from "./prompts/kia-academy-knowledge";
 import { KIA_IMMIGRATION_KNOWLEDGE_PROMPT } from "./prompts/kia-immigration-knowledge";
+import { KIA_CIVIL_REGISTRY_NATIONALITY_PROMPT } from "./prompts/kia-civil-registry-nationality";
 
 const HOLDED_CONTEXT_RE =
   /\bholded\b|pack starter|migraci[oó]n holded|formaci[oó]n holded|plan supervision|plan avanzado|plan colaborativo|erp|control horario.*holded|holded.*control horario|холдед/i;
@@ -234,6 +235,7 @@ ${withAeat ? KIA_AEAT_KNOWLEDGE_PROMPT : ""}
 ${withSs ? KIA_SS_KNOWLEDGE_PROMPT : ""}
 ${withDgt ? KIA_DGT_KNOWLEDGE_PROMPT : ""}
 ${withJusticia ? KIA_JUSTICIA_REGISTROS_KNOWLEDGE_PROMPT : ""}
+${withJusticia ? KIA_CIVIL_REGISTRY_NATIONALITY_PROMPT : ""}
 ${withPae ? KIA_PAE_KNOWLEDGE_PROMPT : ""}
 ${withCcaa ? KIA_CCAA_KNOWLEDGE_PROMPT : ""}
 ${withAcademy ? KIA_ACADEMY_KNOWLEDGE_PROMPT : ""}
