@@ -31,6 +31,18 @@ describe('KIA M6.2 skill-first subagent routing', () => {
     })?.id).toBe('fiscal');
   });
 
+  it('routes immigration advice through the immigration specialist, including email', () => {
+    const selected = selectSubAgentProfile({
+      taskType: 'chat_reply',
+      detectedIntent: 'immigration_advice',
+      channel: 'email',
+    });
+    expect(selected?.id).toBe('immigration');
+    expect(selected?.systemPromptAddendum).toContain('SEM 2/2026');
+    expect(selected?.systemPromptAddendum).toContain('4 de marzo de 2028');
+    expect(selected?.systemPromptAddendum).toContain('No recomiendes modificar un estatus solo porque sea posible');
+  });
+
   it('routes generic email work through the operational assistant', () => {
     expect(selectSubAgentProfile({
       taskType: 'chat_reply',
