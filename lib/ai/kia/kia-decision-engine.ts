@@ -190,7 +190,6 @@ export async function runKiaDecision(input: {
         includeCcaa: /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|suma.*alicante)\b/i.test(msg) || /notaria|herencia|compraventa/i.test(slug),
         includeAcademy: /\b(academy|business academy|programa superior|adgd0210|certificaci[oó]n oficial|entrevista de admisi[oó]n|matr[ií]cul|curso.*laboral|gesti[oó]n laboral integral|siltra)\b/i.test(msg) || /academy/i.test(slug) || /academy/i.test(input.contextInput.currentPage ?? ''),
         includeImmigration: isImmigrationMessage(msg, slug),
-    includeImmigration: isImmigrationMessage(msg, slug),
         fewShotBlock,
         subAgentAddendum: subAgentProfile.systemPromptAddendum,
       })
