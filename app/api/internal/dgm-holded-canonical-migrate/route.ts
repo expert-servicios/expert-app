@@ -20,7 +20,6 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const COMPANY_ID = '188a1871-0ea8-4b11-adac-c9acc41c4a4b';
-const EXPECTED_BRANCH = 'ops/dgm-holded-canonical-migrate-20261005';
 
 async function detect(rawToken: string) {
   const client = createHoldedV2ClientFromRawKey(rawToken);
@@ -61,8 +60,14 @@ async function detect(rawToken: string) {
   return { detected, enabled, coreReadOk };
 }
 
-export async function GET() {
-  if (process.env.VERCEL_ENV !== 'preview' || process.env.VERCEL_GIT_COMMIT_REF !== EXPECTED_BRANCH) {
+export async function GET(request: Request) {
+  const deploymentHost = process.env.VERCEL_URL?.trim().toLowerCase();
+  const requestHost = new URL(request.url).host.trim().toLowerCase();
+  if (
+    process.env.VERCEL_ENV !== 'production'
+    || !deploymentHost
+    || requestHost !== deploymentHost
+  ) {
     return new NextResponse(null, { status: 404 });
   }
 
