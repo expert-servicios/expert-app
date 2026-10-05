@@ -1,5 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { HoldedClient } from '../holded-client.js';
+import type { HoldedBackend } from '../backend.js';
 import { registerContactsTools } from './contacts.js';
 import { registerInvoicingTools, type ToolContext } from './invoicing.js';
 import {
@@ -52,7 +52,7 @@ function makeFilteredServer(server: McpServer, allowedTools: Set<string> | null)
 
 export function registerProductionTools(
   server: McpServer,
-  getClient: () => HoldedClient,
+  getClient: () => HoldedBackend,
   // F5.3: contexto opcional con datos del token (userId, channel) para que
   // tools con side-effects (p.ej. create_invoice_draft) puedan disparar
   // eventos al endpoint receptor de apps/holded.

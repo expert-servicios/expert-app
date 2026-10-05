@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { HoldedClient } from '../holded-client.js';
+import type { HoldedBackend } from '../backend.js';
 import { paginateInMemory, parsePageParam } from '../utils.js';
 import { withControlledErrors } from './errors.js';
 import { readOnlyAnnotations } from './policy.js';
@@ -28,7 +28,7 @@ export function readCreatedAt(contact: unknown): number {
   return 0;
 }
 
-export function registerContactsTools(server: McpServer, getClient: () => HoldedClient) {
+export function registerContactsTools(server: McpServer, getClient: () => HoldedBackend) {
   server.tool(
     'list_contacts',
     'Returns Holded contacts (clients, suppliers, debtors and creditors). Read-only. ' +

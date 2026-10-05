@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { HoldedApiError, HoldedClient } from '../holded-client.js';
+import { HoldedApiError } from '../holded-client.js';
+import type { HoldedBackend } from '../backend.js';
 import {
   buildPaginationMeta,
   dateInputOptional,
@@ -25,7 +26,7 @@ function isHoldedNotConfigured(err: unknown): boolean {
   );
 }
 
-export function registerProductsTools(server: McpServer, getClient: () => HoldedClient) {
+export function registerProductsTools(server: McpServer, getClient: () => HoldedBackend) {
   server.tool(
     'list_products',
     'Returns the list of Holded products and services in the catalog. Read-only. ' +
@@ -144,7 +145,7 @@ export function registerProductsTools(server: McpServer, getClient: () => Holded
   );
 }
 
-export function registerCatalogsTools(server: McpServer, getClient: () => HoldedClient) {
+export function registerCatalogsTools(server: McpServer, getClient: () => HoldedBackend) {
   server.tool(
     'list_taxes',
     'Returns the list of VAT and other tax IDs configured in Holded. Read-only.',
@@ -179,7 +180,7 @@ export function registerCatalogsTools(server: McpServer, getClient: () => Holded
   );
 }
 
-export function registerProjectsTools(server: McpServer, getClient: () => HoldedClient) {
+export function registerProjectsTools(server: McpServer, getClient: () => HoldedBackend) {
   server.tool(
     'list_projects',
     'Returns the list of Holded projects with their general status. Read-only.',
@@ -264,7 +265,7 @@ export function registerProjectsTools(server: McpServer, getClient: () => Holded
   );
 }
 
-export function registerAccountingTools(server: McpServer, getClient: () => HoldedClient) {
+export function registerAccountingTools(server: McpServer, getClient: () => HoldedBackend) {
   server.tool(
     'get_chart_of_accounts',
     'Returns the Holded chart of accounts. Read-only.',
@@ -394,7 +395,7 @@ export function registerAccountingTools(server: McpServer, getClient: () => Hold
   );
 }
 
-export function registerTeamTools(server: McpServer, getClient: () => HoldedClient) {
+export function registerTeamTools(server: McpServer, getClient: () => HoldedBackend) {
   server.tool(
     'list_employees',
     'Returns the list of active Holded employees. Read-only.',
@@ -436,7 +437,7 @@ export function registerTeamTools(server: McpServer, getClient: () => HoldedClie
   );
 }
 
-export function registerTreasuryTools(server: McpServer, getClient: () => HoldedClient) {
+export function registerTreasuryTools(server: McpServer, getClient: () => HoldedBackend) {
   server.tool(
     'list_treasury_accounts',
     'Returns the list of Holded treasury accounts with their current balances. Read-only.',
@@ -471,7 +472,7 @@ export function registerTreasuryTools(server: McpServer, getClient: () => Holded
 
 // ── Informes de contabilidad ──────────────────────────────────────────────────
 
-export function registerAccountingReportTools(server: McpServer, getClient: () => HoldedClient) {
+export function registerAccountingReportTools(server: McpServer, getClient: () => HoldedBackend) {
   server.tool(
     'get_vat_report',
     'Returns the Holded VAT report (IVA) for a given year and period. Read-only. ' +

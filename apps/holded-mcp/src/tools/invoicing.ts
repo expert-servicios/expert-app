@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { HoldedClient, HOLDED_DOC_TYPES } from '../holded-client.js';
+import { HOLDED_DOC_TYPES } from '../holded-client.js';
+import type { HoldedBackend } from '../backend.js';
 import {
   dateInput,
   dateInputOptional,
@@ -28,7 +29,7 @@ export interface ToolContext {
 
 export function registerInvoicingTools(
   server: McpServer,
-  getClient: () => HoldedClient,
+  getClient: () => HoldedBackend,
   getContext?: () => ToolContext,
   options: { includeWriteTools?: boolean } = {}
 ) {

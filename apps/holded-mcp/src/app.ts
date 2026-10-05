@@ -6,7 +6,7 @@ import { jwtVerify } from 'jose';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { config } from './config.js';
-import { HoldedClient } from './holded-client.js';
+import { createMcpBackend } from './backend-factory.js';
 import { apiRateLimit, requireAuth, requestLogger } from './middleware/auth.js';
 import { corsMiddleware } from './middleware/cors.js';
 import { logger } from './logger.js';
@@ -262,7 +262,7 @@ export function createApp() {
 
   app.post('/mcp', apiRateLimit, requireAuth, async (req, res) => {
     const record = req.holdedRecord!;
-    const holdedClient = new HoldedClient(record.holdedApiKey);
+    const holdedClient = createMcpBackend({ holdedApiKey: record.holdedApiKey });
 
     // serverInfo enriquecido — la spec MCP 2025-11 permite `icons`,
     // `websiteUrl`, `description` y `title` en el initialize response.
