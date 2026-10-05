@@ -60,6 +60,7 @@ export interface KiaContext {
     coveragePrimaryCompanyId: string | null;
     coveragePrimaryCompanyName: string | null;
     coverageScope: string | null;
+    internalNotes: string | null;
     holdedConnected: boolean;
     /** Backwards-compatible alias for the effective/enabled permission map. */
     holdedPermissions: HoldedPermissions;
@@ -301,7 +302,7 @@ async function loadCompany(
   if (!resolvedCompanyId) return null;
 
   const [{ data: company }, { data: integrations }, coverage] = await Promise.all([
-    admin.from('companies').select('id, razon_social, nombre_comercial, cif_nif').eq('id', resolvedCompanyId).maybeSingle(),
+    admin.from('companies').select('id, razon_social, nombre_comercial, cif_nif, notes').eq('id', resolvedCompanyId).maybeSingle(),
     admin.from('client_integrations')
       .select('status, permissions_detected, permissions_enabled')
       .eq('company_id', resolvedCompanyId)
@@ -351,6 +352,7 @@ async function loadCompany(
     coveragePrimaryCompanyId: coverage?.primaryCompanyId ?? null,
     coveragePrimaryCompanyName: coverage?.primaryCompanyName ?? null,
     coverageScope: coverage?.coverageScope ?? null,
+    internalNotes: company.notes ?? null,
     holdedConnected: connected,
     holdedPermissions: enabled,
     holdedPermissionsDetected: detected,
