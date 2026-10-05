@@ -1,6 +1,6 @@
 # KIA — hoja registral del cliente (Client Ledger)
 
-Fecha de diseño: 29/09/2026. Última actualización: 30/09/2026.
+Fecha de diseño: 29/09/2026. Última actualización: 05/10/2026.
 
 ## Decisión
 
@@ -173,11 +173,41 @@ Las tablas del ledger:
 - el contexto filtrado respeta `company_id` y `case_id`;
 - conversaciones `staff_preview` no se incorporan al ledger del administrador.
 
-## Retención
+## Retención y capas de memoria
 
-El ledger registra hechos de relación profesional y debe respetar la matriz de conservación RGPD.
-No marcar “permanent” por defecto.
-Los eventos pueden quedar pseudonimizados/eliminados cuando proceda legalmente, manteniendo únicamente evidencias necesarias.
+Política operativa aprobada el 05/10/2026:
+
+1. **Hechos estructurales confirmados**
+   - no caducan por antigüedad;
+   - permanecen activos mientras sigan siendo ciertos;
+   - nunca se sobreescriben silenciosamente: una corrección crea una nueva versión y la anterior queda como `superseded`;
+   - ejemplos: origen del cliente, relación con otra gestoría, representantes, preferencias verificadas o peculiaridades estables.
+
+2. **Instrucciones operativas específicas del cliente**
+   - tampoco caducan por tiempo mientras sigan vigentes;
+   - se versionan/sustituyen con trazabilidad;
+   - ejemplos: a quién copiar en determinados asuntos, canal preferido o reglas específicas de trabajo acordadas;
+   - no pueden sustituir legislación, seguridad, instrucciones explícitas actuales ni fuentes canónicas vivas.
+
+3. **Cronología detallada**
+   - ventana móvil de **24 meses**;
+   - conserva eventos verificables de correo, chat, Telegram, reuniones, tareas, documentos, expedientes, presupuestos, facturas y demás actuaciones;
+   - la hoja registral guarda resumen + metadata + referencia, no el cuerpo completo del artefacto.
+
+4. **Histórico consolidado**
+   - los eventos que salen de la ventana detallada se condensan por periodo en `client_registry_period_summaries`;
+   - la trazabilidad mínima mantiene una política de conservación de referencia de **hasta 6 años**, salvo otra obligación o bloqueo legal aplicable;
+   - el resumen histórico entra en contexto solo cuando aporta continuidad y no sustituye la fuente canónica.
+
+5. **Legal hold / RGPD**
+   - `retention_class=legal_hold` permite separar registros sujetos a una obligación especial;
+   - la fecha de retención no ejecuta borrado automático por sí sola;
+   - cualquier eliminación, anonimización o conservación superior debe resolverse con la matriz documental/RGPD aplicable y conservar solo lo necesario.
+
+### Regla de confianza
+
+KIA nunca promueve una inferencia débil a hecho estructural o instrucción permanente.
+Las filas activas de `client_registry_facts` y `client_registry_instructions` deben ser `confirmed` y tener procedencia trazable.
 
 ## Criterio de listo
 
@@ -193,6 +223,7 @@ Los eventos pueden quedar pseudonimizados/eliminados cuando proceda legalmente, 
 - [x] aislamiento de company/case y exclusión de staff preview cubiertos por regresión;
 - [ ] backfill de producción activado y observado con `KIA_CLIENT_LEDGER_ENABLED=true`;
 - [ ] admin timeline visible en Company 360/cliente.
+- [x] política v2: 24 meses detallados + histórico consolidado + hechos/instrucciones versionados.
 
 
 ## Subjects empresariales sin usuario
