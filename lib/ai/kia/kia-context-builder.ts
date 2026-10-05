@@ -62,6 +62,7 @@ export interface KiaContext {
     coverageScope: string | null;
     internalNotes: string | null;
     holdedConnected: boolean;
+    internalNotes: string | null;
     /** Backwards-compatible alias for the effective/enabled permission map. */
     holdedPermissions: HoldedPermissions;
     holdedPermissionsDetected: HoldedPermissions;
@@ -354,6 +355,7 @@ async function loadCompany(
     coverageScope: coverage?.coverageScope ?? null,
     internalNotes: company.notes ?? null,
     holdedConnected: connected,
+    internalNotes: typeof company.notes === 'string' && company.notes.trim() ? company.notes.trim() : null,
     holdedPermissions: enabled,
     holdedPermissionsDetected: detected,
     holdedPermissionsEnabled: enabled,
