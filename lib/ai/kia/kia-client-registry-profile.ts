@@ -165,7 +165,7 @@ export async function recordConfirmedRegistryFact(
       source_ref: input.sourceRef ?? null,
       source_event_id: input.sourceEventId ?? null,
       valid_from: input.validFrom ?? now,
-      status: 'active',
+      status: current?.id ? 'staged' : 'active',
       metadata: input.metadata ?? {},
       updated_at: now,
     })
@@ -185,6 +185,13 @@ export async function recordConfirmedRegistryFact(
       .eq('subject_id', input.subjectId)
       .eq('status', 'active');
     if (supersedeError) throw supersedeError;
+
+    const { error: activateError } = await admin.from('client_registry_facts')
+      .update({ status: 'active', updated_at: now })
+      .eq('id', created.id)
+      .eq('subject_id', input.subjectId)
+      .eq('status', 'staged');
+    if (activateError) throw activateError;
   }
 
   return created.id;
@@ -230,7 +237,7 @@ export async function recordConfirmedRegistryInstruction(
       source_ref: input.sourceRef ?? null,
       source_event_id: input.sourceEventId ?? null,
       valid_from: input.validFrom ?? now,
-      status: 'active',
+      status: current?.id ? 'staged' : 'active',
       metadata: input.metadata ?? {},
       updated_at: now,
     })
@@ -250,6 +257,13 @@ export async function recordConfirmedRegistryInstruction(
       .eq('subject_id', input.subjectId)
       .eq('status', 'active');
     if (supersedeError) throw supersedeError;
+
+    const { error: activateError } = await admin.from('client_registry_instructions')
+      .update({ status: 'active', updated_at: now })
+      .eq('id', created.id)
+      .eq('subject_id', input.subjectId)
+      .eq('status', 'staged');
+    if (activateError) throw activateError;
   }
 
   return created.id;
