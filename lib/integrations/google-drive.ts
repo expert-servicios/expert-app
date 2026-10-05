@@ -164,3 +164,79 @@ export async function syncDocumentToDrive({
     webViewLink: file.data.webViewLink as string,
   };
 }
+
+
+export interface DriveTreeItem {
+  id: string;
+  parentId: string | null;
+  relativePath: string;
+  name: string;
+  mimeType: string | null;
+  size: string | null;
+  createdTime: string | null;
+  modifiedTime: string | null;
+  md5Checksum: string | null;
+  isFolder: boolean;
+}
+
+export async function listDriveTreeFromFolder(
+  rootFolderId: string,
+  maxItems = 20000,
+): Promise<DriveTreeItem[]> {
+  const drive = await getDriveClient();
+  if (!drive) throw new Error('Google Drive credentials are not configured');
+
+  const queue: Array<{ id: string; path: string }> = [{ id: rootFolderId, path: '' }];
+  const seenFolders = new Set<string>([rootFolderId]);
+  const items: DriveTreeItem[] = [];
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    let pageToken: string | undefined;
+
+    do {
+      const response = await drive.files.list({
+        q: `'${current.id}' in parents and trashed=false`,
+        fields: 'nextPageToken,files(id,name,mimeType,size,createdTime,modifiedTime,md5Checksum,parents)',
+        orderBy: 'folder,name',
+        pageSize: 1000,
+        spaces: 'drive',
+        pageToken,
+      });
+
+      for (const file of response.data.files ?? []) {
+        const id = String(file.id ?? '');
+        const name = String(file.name ?? '');
+        if (!id || !name) continue;
+
+        const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
+        const relativePath = current.path ? `${current.path}/${name}` : name;
+        items.push({
+          id,
+          parentId: Array.isArray(file.parents) && file.parents.length ? String(file.parents[0]) : current.id,
+          relativePath,
+          name,
+          mimeType: file.mimeType ?? null,
+          size: file.size ?? null,
+          createdTime: file.createdTime ?? null,
+          modifiedTime: file.modifiedTime ?? null,
+          md5Checksum: file.md5Checksum ?? null,
+          isFolder,
+        });
+
+        if (items.length >= maxItems) {
+          throw new Error(`Drive index limit exceeded (${maxItems})`);
+        }
+
+        if (isFolder && !seenFolders.has(id)) {
+          seenFolders.add(id);
+          queue.push({ id, path: relativePath });
+        }
+      }
+
+      pageToken = response.data.nextPageToken ?? undefined;
+    } while (pageToken);
+  }
+
+  return items;
+}
