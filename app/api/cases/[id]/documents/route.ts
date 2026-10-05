@@ -240,6 +240,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
             mimeType: validation.contentType,
             clientName,
             serviceName,
+            companyId,
           }, mirrorProvider);
 
           if (mirrorResult) {

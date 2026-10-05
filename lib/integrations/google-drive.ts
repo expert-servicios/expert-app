@@ -100,18 +100,40 @@ export async function listDriveFilesForClient(
   }
 }
 
+async function resolveMappedCompanyFolderId(companyId?: string | null): Promise<string | null> {
+  if (!companyId) return null;
+  try {
+    const { getSupabaseAdmin } = await import('@/lib/integrations/supabase');
+    const admin = getSupabaseAdmin();
+    const { data, error } = await admin
+      .from('company_document_roots')
+      .select('external_folder_id,status')
+      .eq('company_id', companyId)
+      .eq('provider', 'google')
+      .maybeSingle();
+
+    if (error || !data || data.status !== 'active') return null;
+    return data.external_folder_id?.trim() || null;
+  } catch (error) {
+    console.error('[Drive] mapped company folder lookup failed:', error);
+    return null;
+  }
+}
+
 export async function syncDocumentToDrive({
   fileBuffer,
   fileName,
   mimeType,
   clientName,
   serviceName,
+  companyId,
 }: {
   fileBuffer: Buffer;
   fileName: string;
   mimeType: string;
   clientName: string;
   serviceName: string;
+  companyId?: string | null;
 }): Promise<DriveSyncResult | null> {
   const rootFolderId = process.env.GOOGLE_DRIVE_CLIENTS_FOLDER_ID;
   if (!rootFolderId) {
@@ -125,7 +147,9 @@ export async function syncDocumentToDrive({
     return null;
   }
 
-  const clientFolderId = await findOrCreateFolder(drive, clientName, rootFolderId);
+  const mappedCompanyFolderId = await resolveMappedCompanyFolderId(companyId);
+  const clientFolderId = mappedCompanyFolderId
+    ?? await findOrCreateFolder(drive, clientName, rootFolderId);
   const serviceFolderId = await findOrCreateFolder(drive, serviceName, clientFolderId);
 
   const stream = Readable.from(fileBuffer);
