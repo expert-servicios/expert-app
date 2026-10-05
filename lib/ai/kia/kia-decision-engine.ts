@@ -43,6 +43,7 @@ import { estimateCost, sumCostEstimates, extractTokenUsageFromProviderResult, ty
 import { detectKiaConversationOpportunity } from './kia-contextual-opportunity';
 import { kiaFriendlyError } from './kia-error-copy';
 import { caseStatusLabel, isCaseStatus } from '@/lib/cases/case-status';
+import { loadKiaOperatorLessons, formatKiaOperatorLessons } from './kia-operator-lessons';
 
 const KIA_MAX_TOOL_ITERATIONS = 5;
 const KIA_TOOL_LOOP_TIMEOUT_MS = 25_000;
@@ -93,9 +94,14 @@ export async function runKiaDecision(input: {
   const slug = input.contextInput.serviceSlug ?? '';
   const recentAssistantTexts = getRecentAssistantTextsFromContext(context);
 
-  const fewShotBlock = await getKiaFewShotExamples({ taskType: input.taskType, limit: 3 })
-    .then(formatFewShotExamples)
-    .catch(() => '');
+  const [fewShotBlock, operatorLessonsBlock] = await Promise.all([
+    getKiaFewShotExamples({ taskType: input.taskType, limit: 3 })
+      .then(formatFewShotExamples)
+      .catch(() => ''),
+    loadKiaOperatorLessons(input.channel)
+      .then(formatKiaOperatorLessons)
+      .catch(() => ''),
+  ]);
 
   const systemPrompt = buildKiaSystemPrompt({
     locale,
@@ -132,7 +138,7 @@ export async function runKiaDecision(input: {
   const mediaInfo = input.mediaUrl ? { url: input.mediaUrl, type: input.mediaType ?? 'image/jpeg' } : null;
 
   const memoriesBlock = formatMemoriesForContext(context.memories ?? []);
-  const promptPayload = buildUserPayload(input.message, context, locale, recentAssistantTexts, officialSourceContext, mediaInfo, memoriesBlock);
+  const promptPayload = buildUserPayload(input.message, context, locale, recentAssistantTexts, officialSourceContext, mediaInfo, memoriesBlock, operatorLessonsBlock);
 
   let classification: KiaIntentClassification | null = null;
   if ((input.channel === 'waba' && input.taskType === 'waba_reply') || (input.channel === 'email' && input.taskType === 'chat_reply')) {
@@ -733,6 +739,7 @@ function buildUserPayload(
   officialSourceContext: string,
   mediaInfo?: { url: string; type: string } | null,
   memoriesBlock?: string,
+  operatorLessonsBlock?: string,
 ): string {
   const localizedContext = {
     ...context,
@@ -751,6 +758,7 @@ function buildUserPayload(
   if (officialSourceContext) {
     parts.push(`<official_source_context>\n${officialSourceContext}\n</official_source_context>`);
   }
+  if (operatorLessonsBlock) parts.push(operatorLessonsBlock);
   if (memoriesBlock) parts.push(memoriesBlock);
   if (mediaInfo) {
     parts.push(
