@@ -46,6 +46,12 @@ import { caseStatusLabel, isCaseStatus } from '@/lib/cases/case-status';
 
 const KIA_MAX_TOOL_ITERATIONS = 5;
 const KIA_TOOL_LOOP_TIMEOUT_MS = 25_000;
+const IMMIGRATION_MESSAGE_RE = /\b(extranjer[ií]a|residencia|permiso.*residencia|autorizaci[oó]n.*residencia|tie|\bnie\b|arraigo|reagrupaci[oó]n|protecci[oó]n temporal|protecci[oó]n internacional|asilo|refugiado|apatrid|ucrania|larga duraci[oó]n|familiar.*espa[nñ]ol|familiar.*ciudadano.*uni[oó]n|ciudadano.*ue|estancia.*estudios|nacionalidad espa[nñ]ola|nacionalidad por residencia|mercurio|oficina.*extranjer)/i;
+
+function isImmigrationMessage(message: string, serviceSlug = ''): boolean {
+  return IMMIGRATION_MESSAGE_RE.test(`${message} ${serviceSlug}`)
+    || /arraigo|reagrupacion|renovacion-residencia|permiso-residencia|nacionalidad-espanola/i.test(serviceSlug);
+}
 
 export interface KiaDecisionResult {
   decision: KiaDecision;
@@ -99,6 +105,7 @@ export async function runKiaDecision(input: {
     includePae     : /\b(pae|circe|crear empresa online|sl.*online|alta autonomo.*online|ventanilla unica|constitucion.*online)\b/i.test(msg) || /constitucion.sl|alta.autonomo/i.test(slug),
     includeCcaa    : /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|suma.*alicante)\b/i.test(msg) || /notaria|herencia|compraventa/i.test(slug),
     includeAcademy : /\b(academy|business academy|programa superior|adgd0210|certificaci[oó]n oficial|entrevista de admisi[oó]n|matr[ií]cul|curso.*laboral|gesti[oó]n laboral integral|siltra)\b/i.test(msg) || /academy/i.test(slug) || /academy/i.test(input.contextInput.currentPage ?? ''),
+    includeImmigration: isImmigrationMessage(msg, slug),
     fewShotBlock,
   });
 
@@ -162,7 +169,8 @@ export async function runKiaDecision(input: {
 
   const subAgentProfile = selectSubAgentProfile({
     taskType: resolvedTaskType,
-    detectedIntent: classification?.detectedIntent,
+    detectedIntent: classification?.detectedIntent
+      ?? (isImmigrationMessage(msg, slug) ? 'immigration_advice' : undefined),
     channel: input.channel,
   });
   const finalSystemPrompt = subAgentProfile
@@ -181,6 +189,8 @@ export async function runKiaDecision(input: {
         includePae: /\b(pae|circe|crear empresa online|sl.*online|alta autonomo.*online|ventanilla unica|constitucion.*online)\b/i.test(msg) || /constitucion.sl|alta.autonomo/i.test(slug),
         includeCcaa: /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|suma.*alicante)\b/i.test(msg) || /notaria|herencia|compraventa/i.test(slug),
         includeAcademy: /\b(academy|business academy|programa superior|adgd0210|certificaci[oó]n oficial|entrevista de admisi[oó]n|matr[ií]cul|curso.*laboral|gesti[oó]n laboral integral|siltra)\b/i.test(msg) || /academy/i.test(slug) || /academy/i.test(input.contextInput.currentPage ?? ''),
+        includeImmigration: isImmigrationMessage(msg, slug),
+    includeImmigration: isImmigrationMessage(msg, slug),
         fewShotBlock,
         subAgentAddendum: subAgentProfile.systemPromptAddendum,
       })
