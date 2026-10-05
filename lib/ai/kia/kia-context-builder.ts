@@ -60,7 +60,6 @@ export interface KiaContext {
     coveragePrimaryCompanyId: string | null;
     coveragePrimaryCompanyName: string | null;
     coverageScope: string | null;
-    internalNotes: string | null;
     externalCommunicationBlocked: boolean;
     portalActivationBlocked: boolean;
     accountingWriteBlocked: boolean;
@@ -129,7 +128,7 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
 
   const [profile, company, service, documents, conversation, selectedMessage, accounting, legacyMemories, clientBrief, clientLedger] = await Promise.all([
     loadProfile(admin, clientId, contact),
-    loadCompany(admin, clientId, resolvedCompanyId, staffCompanyScope),
+    loadCompany(admin, clientId, resolvedCompanyId),
     loadService(input.serviceSlug),
     loadDocuments(admin, resourceClientId, input.caseId, resolvedCompanyId),
     loadConversation(admin, phone),
@@ -301,12 +300,11 @@ async function loadCompany(
   admin: AdminClient,
   clientId: string | null,
   resolvedCompanyId: string | null,
-  includeInternalNotes = false,
 ): Promise<KiaContext['company']> {
   if (!resolvedCompanyId) return null;
 
   const [{ data: company }, { data: integrations }, { data: controls }, coverage] = await Promise.all([
-    admin.from('companies').select('id, razon_social, nombre_comercial, cif_nif, notes').eq('id', resolvedCompanyId).maybeSingle(),
+    admin.from('companies').select('id, razon_social, nombre_comercial, cif_nif').eq('id', resolvedCompanyId).maybeSingle(),
     admin.from('client_integrations')
       .select('status, permissions_detected, permissions_enabled')
       .eq('company_id', resolvedCompanyId)
@@ -360,9 +358,6 @@ async function loadCompany(
     coveragePrimaryCompanyId: coverage?.primaryCompanyId ?? null,
     coveragePrimaryCompanyName: coverage?.primaryCompanyName ?? null,
     coverageScope: coverage?.coverageScope ?? null,
-    internalNotes: includeInternalNotes && typeof company.notes === 'string' && company.notes.trim()
-      ? company.notes.trim()
-      : null,
     externalCommunicationBlocked: Boolean(controls?.external_communication_blocked),
     portalActivationBlocked: Boolean(controls?.portal_activation_blocked),
     accountingWriteBlocked: Boolean(controls?.accounting_write_blocked),
