@@ -17,6 +17,7 @@ import { KIA_JUSTICIA_REGISTROS_KNOWLEDGE_PROMPT } from "./prompts/kia-justicia-
 import { KIA_PAE_KNOWLEDGE_PROMPT } from "./prompts/kia-pae-knowledge";
 import { KIA_CCAA_KNOWLEDGE_PROMPT } from "./prompts/kia-ccaa-knowledge";
 import { KIA_ACADEMY_KNOWLEDGE_PROMPT } from "./prompts/kia-academy-knowledge";
+import { KIA_IMMIGRATION_KNOWLEDGE_PROMPT } from "./prompts/kia-immigration-knowledge";
 
 const HOLDED_CONTEXT_RE =
   /\bholded\b|pack starter|migraci[oó]n holded|formaci[oó]n holded|plan supervision|plan avanzado|plan colaborativo|erp|control horario.*holded|holded.*control horario|холдед/i;
@@ -32,6 +33,8 @@ const PAE_CONTEXT_RE =
   /\b(pae|circe|crear empresa online|sl.*online|online.*sl|alta autonomo.*online|online.*alta autonomo|ventanilla unica|constitucion.*online|online.*constitucion)\b/i;
 const CCAA_CONTEXT_RE =
   /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos documentados|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|iivtnu|suma.*alicante|atv.*valencia|hacienda.*comunidad|ccaa.*impuesto|impuesto.*regional)\b/i;
+const IMMIGRATION_CONTEXT_RE =
+  /\b(extranjer[ií]a|residencia|residente|permiso.*residencia|autorizaci[oó]n.*residencia|tie|\bnie\b|arraigo|reagrupaci[oó]n|protecci[oó]n temporal|protecci[oó]n internacional|asilo|refugiado|apatrid|ucrania|larga duraci[oó]n|familiar.*espa[nñ]ol|familiar.*ciudadano.*uni[oó]n|ciudadano.*ue|estancia.*estudios|nacionalidad espa[nñ]ola|nacionalidad por residencia|mercurio|oficina.*extranjer)/i;
 const ACADEMY_CONTEXT_RE =
   /\b(academy|business academy|programa superior|adgd0210|certificaci[oó]n oficial|curso.*direcci[oó]n|direcci[oó]n.*administraci[oó]n.*gesti[oó]n|entrevista de admisi[oó]n|matr[ií]cul|curso.*laboral|gesti[oó]n laboral integral|курс|академ)\b/i;
 
@@ -109,6 +112,7 @@ export function buildKiaSystemPrompt(params: {
   includePae?: boolean;
   includeCcaa?: boolean;
   includeAcademy?: boolean;
+  includeImmigration?: boolean;
   fewShotBlock?: string;
   subAgentAddendum?: string;
 }): string {
@@ -130,6 +134,8 @@ export function buildKiaSystemPrompt(params: {
     params.includeCcaa ?? matchesContext(CCAA_CONTEXT_RE, params);
   const withAcademy =
     params.includeAcademy ?? matchesContext(ACADEMY_CONTEXT_RE, params);
+  const withImmigration =
+    params.includeImmigration ?? matchesContext(IMMIGRATION_CONTEXT_RE, params);
 
   const adminBehavior = params.channel === "admin" ? [
     "- MODO ADMIN COPILOT: estas asistiendo a un profesional interno de EXPERT, no a un cliente final. Trabaja como copiloto operativo, conecta informacion autorizada y responde en texto libre.",
@@ -231,6 +237,7 @@ ${withJusticia ? KIA_JUSTICIA_REGISTROS_KNOWLEDGE_PROMPT : ""}
 ${withPae ? KIA_PAE_KNOWLEDGE_PROMPT : ""}
 ${withCcaa ? KIA_CCAA_KNOWLEDGE_PROMPT : ""}
 ${withAcademy ? KIA_ACADEMY_KNOWLEDGE_PROMPT : ""}
+${withImmigration ? KIA_IMMIGRATION_KNOWLEDGE_PROMPT : ""}
 
 ${params.fewShotBlock ? `\n<few_shot_examples>\n${params.fewShotBlock}\n</few_shot_examples>` : ""}
 
