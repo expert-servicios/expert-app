@@ -681,6 +681,13 @@ export async function GET(request: NextRequest) {
       const replyRecipient = normalizedEmail(latest.replyTo || latest.fromEmail);
       const replyToMismatch = replyRecipient !== senderEmail;
       let identity = await resolveIdentity(admin, senderEmail, row.case_id ?? null, authUsers);
+      const { data: companyControls } = identity.companyId
+        ? await admin.from('company_operational_controls')
+            .select('external_communication_blocked,portal_activation_blocked,accounting_write_blocked')
+            .eq('company_id', identity.companyId)
+            .maybeSingle()
+        : { data: null };
+      const externalCommunicationBlocked = Boolean(companyControls?.external_communication_blocked);
       const wasKnownContact = Boolean(identity.clientId || identity.leadId);
       const safeUnknownProspect = !wasKnownContact && !row.case_id
         && isSafeUnknownProspect(latest.subject, latestReply);
@@ -716,6 +723,7 @@ export async function GET(request: NextRequest) {
       const confidenceFloor = wasKnownContact ? minConfidence : prospectMinConfidence;
       const externalActionPreEligible = autoSend
         && health.ok
+        && !externalCommunicationBlocked
         && (wasKnownContact || (safeUnknownProspect && newLeadAutoSend))
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
@@ -793,6 +801,7 @@ export async function GET(request: NextRequest) {
 
       const canAutoSend = autoSend
         && health.ok
+        && !externalCommunicationBlocked
         && (wasKnownContact || (safeUnknownProspect && newLeadAutoSend))
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
@@ -820,6 +829,7 @@ export async function GET(request: NextRequest) {
           lead_id: identity.leadId,
           case_id: identity.caseId,
           company_id: identity.companyId,
+          company_external_communication_blocked: externalCommunicationBlocked,
           service_slug: identity.serviceSlug,
         };
         const contextual = await maybeAppendKiaContextualCta({
@@ -935,6 +945,7 @@ export async function GET(request: NextRequest) {
       } else {
         if (!autoSend) blockReason = 'auto_send_disabled';
         else if (!health.ok) blockReason = health.reason;
+        else if (externalCommunicationBlocked) blockReason = 'company_external_communication_blocked';
         else if (!wasKnownContact && !safeUnknownProspect) blockReason = 'unknown_contact_not_safe_prospect';
         else if (!wasKnownContact && safeUnknownProspect && !newLeadAutoSend) blockReason = 'new_lead_approval_required';
         else if (identity.ambiguousCase) blockReason = 'ambiguous_case';
