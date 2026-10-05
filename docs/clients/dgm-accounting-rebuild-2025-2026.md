@@ -2,7 +2,7 @@
 
 > **Estado:** INTERNAL ONLY · NO CLIENT ACCESS · NO EXTERNAL EMAIL · ACCOUNTING READ-ONLY
 >
-> Este documento es el hilo operativo maestro de DGM. Debe actualizarse a medida que avancemos. Las decisiones específicas de DGM permanecen aquí y en el contexto interno de la empresa; solo las reglas generalizables se promocionan a KIA Operator Lessons.
+> Este documento es el hilo operativo maestro de DGM. Debe actualizarse a medida que avancemos. Las decisiones específicas de DGM permanecen aquí y en su hoja registral empresarial; solo las reglas generalizables se promocionan a KIA Operator Lessons.
 
 ## 1. Identidad y alcance
 
@@ -215,6 +215,26 @@ Ejemplos:
 - creadas cinco tareas internas de reconstrucción;
 - activadas tres puertas operativas;
 - documentada arquitectura Holded correcta;
-- KIA preparada para recibir notas internas solo en contexto staff;
+- hoja registral empresarial creada antes de habilitar usuario/portal;
 - pendiente conectar tenant DGM desde Company 360;
 - sin comunicaciones externas.
+
+
+## 10. Hoja registral
+
+DGM dispone de un subject registral empresarial propio, independiente de cualquier futuro usuario.
+
+Debe registrar progresivamente:
+- alta interna de la empresa;
+- controles/gates;
+- tareas;
+- conexión Holded;
+- snapshots contables;
+- anomalías;
+- documentos;
+- correos vinculados;
+- reuniones;
+- decisiones internas;
+- apertura futura al titular.
+
+No usar `companies.notes` como memoria histórica de DGM. El dato actual vive en su tabla canónica; la secuencia histórica vive en `client_registry_events`.
