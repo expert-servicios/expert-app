@@ -29,6 +29,7 @@ export type KiaDecisionContactStatus = (typeof KIA_CONTACT_STATUSES)[number];
 export const KIA_INTENTS = [
   'greeting',
   'service_selection',
+  'immigration_advice',
   'viability',
   'readiness',
   'checkout',
