@@ -62,7 +62,6 @@ export interface KiaContext {
     coverageScope: string | null;
     internalNotes: string | null;
     holdedConnected: boolean;
-    internalNotes: string | null;
     /** Backwards-compatible alias for the effective/enabled permission map. */
     holdedPermissions: HoldedPermissions;
     holdedPermissionsDetected: HoldedPermissions;
@@ -127,7 +126,7 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
 
   const [profile, company, service, documents, conversation, selectedMessage, accounting, legacyMemories, clientBrief, clientLedger] = await Promise.all([
     loadProfile(admin, clientId, contact),
-    loadCompany(admin, clientId, resolvedCompanyId),
+    loadCompany(admin, clientId, resolvedCompanyId, staffCompanyScope),
     loadService(input.serviceSlug),
     loadDocuments(admin, resourceClientId, input.caseId, resolvedCompanyId),
     loadConversation(admin, phone),
@@ -299,6 +298,7 @@ async function loadCompany(
   admin: AdminClient,
   clientId: string | null,
   resolvedCompanyId: string | null,
+  includeInternalNotes = false,
 ): Promise<KiaContext['company']> {
   if (!resolvedCompanyId) return null;
 
@@ -353,9 +353,10 @@ async function loadCompany(
     coveragePrimaryCompanyId: coverage?.primaryCompanyId ?? null,
     coveragePrimaryCompanyName: coverage?.primaryCompanyName ?? null,
     coverageScope: coverage?.coverageScope ?? null,
-    internalNotes: company.notes ?? null,
+    internalNotes: includeInternalNotes && typeof company.notes === 'string' && company.notes.trim()
+      ? company.notes.trim()
+      : null,
     holdedConnected: connected,
-    internalNotes: typeof company.notes === 'string' && company.notes.trim() ? company.notes.trim() : null,
     holdedPermissions: enabled,
     holdedPermissionsDetected: detected,
     holdedPermissionsEnabled: enabled,
