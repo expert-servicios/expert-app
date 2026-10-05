@@ -217,6 +217,114 @@ Para DGM aparece:
 - Indica que Portalet ya fue enviado y pide distribuir el resto según contactos.
 - **Tratamiento futuro:** evento operativo; falta asignar cada recibo a inmueble.
 
+## 4.1. Reconstrucción validada — Alba
+
+### Sujetos y señales
+- vivienda: **Alba**;
+- inquilinos identificados en el hilo: **Ricardo** y **Zoe**;
+- contactos remitidos por Solcalpe en octubre de 2025;
+- DGM figura como arrendador en el contexto de los correos.
+
+### 17/10/2025 — basura / dificultad de contacto
+Olga y Alexey remiten a EXPERT los contactos de Ricardo y Zoe porque no conseguían contactar con ellos durante 2025.
+Indican que los inquilinos debían reembolsar las tasas de basura del primer y segundo semestre y que la renta llegaba de Ricardo.
+
+**Evento propuesto:** `tenant.collection_issue_opened`
+- asunto: reembolso de basura;
+- estado: contacto pendiente;
+- source: Outlook 17/10/2025.
+
+### 02/07/2026 — deuda de renta > 2 meses
+Olga comunica que la deuda de alquiler supera ya los dos meses y que sigue pendiente el reembolso de basura.
+Solicita preparar burofax/advertencia formal.
+
+**Evento propuesto:** `rent.debt_escalated`
+- estado histórico: deuda superior a dos meses a esa fecha;
+- no guardar como saldo actual permanente.
+
+### 03/07/2026 — preparación de requerimiento
+EXPERT prepara requerimiento para Ricardo y Zoe y solicita validar:
+- diciembre 2025;
+- parte pendiente de marzo 2026;
+- junio 2026;
+- basura 2025–2026;
+- otros posibles importes.
+
+En ese momento también se estaba valorando incluir julio, pero después se corrige.
+
+**Evento propuesto:** `legal.notice_draft_prepared`
+
+### 04/07/2026 — incidencias contractuales confirmadas por propietarios
+Olga confirma que deben incluirse:
+- quejas de vecinos/comunidad por perro;
+- existencia de prohibición contractual de mascota;
+- ocupación no autorizada del trastero usado por propietario;
+- importe de basura de **111,53 €** por periodo;
+- objeción a incluir julio porque acababa de comenzar.
+
+**Eventos propuestos:**
+- `lease.breach_reported` — mascota / quejas;
+- `lease.breach_reported` — trastero ocupado;
+- `rent.debt_calculation_corrected`.
+
+### 06/07/2026 — requerimiento corregido
+EXPERT actualiza el requerimiento:
+- excluye julio;
+- fija basura en **111,53 € por cada periodo impagado**;
+- incorpora mascota/quejas;
+- incorpora ocupación del trastero;
+- prevé que la deuda aumente con nuevos vencimientos.
+
+Se solicita confirmación final.
+
+**Evento propuesto:** `legal.notice_ready_for_approval`
+
+### 07/07/2026 — aprobación para envío
+Alexey confirma que está de acuerdo y autoriza enviar el burofax.
+
+**Evento propuesto:** `legal.notice_approved`
+
+Ese mismo día, después de comunicación de Ricardo indicando que había solicitado crédito para pagar, EXPERT recomienda esperar antes de enviar para poder actualizar correctamente el saldo.
+
+**Evento propuesto:** `legal.notice_paused_for_payment_window`
+
+### 08/07/2026 — pago de julio y espera hasta 17/07
+Olga confirma:
+- julio ha sido pagado íntegramente;
+- se acuerda esperar hasta el **17/07/2026**;
+- continúa pendiente la cuestión del trastero.
+
+**Eventos propuestos:**
+- `rent.payment_received` — julio;
+- `collection.deadline_extended` — hasta 17/07/2026;
+- `lease.breach_open` — trastero.
+
+### 22/09/2026 — nuevo estado de deuda
+Olga informa:
+- basura 2025: dos periodos de **111,53 €**;
+- basura 2026: un periodo de **111,53 €**;
+- total basura pendiente: **334,59 €**;
+- septiembre no pagado.
+
+**Evento propuesto:** `rent.debt_snapshot`
+- fecha de corte: 22/09/2026;
+- basura: 334,59 €;
+- septiembre: pendiente;
+- no tratar esta cifra como saldo vivo después de esa fecha.
+
+### Hechos estructurales candidatos de Alba
+Solo después de contraste con contrato/documentación:
+- Ricardo y Zoe como inquilinos del periodo analizado;
+- prohibición contractual de mascota;
+- existencia de trastero fuera del objeto del contrato, si así consta en contrato/título.
+
+### No promover a hecho estructural
+- importes de deuda;
+- pagos de meses concretos;
+- plazos de espera;
+- intención de desahucio;
+- quejas puntuales de vecinos.
+
 ## 5. Viviendas / señales actuales
 
 ### Boreal
