@@ -51,4 +51,4 @@ What is promoted globally:
 - reconcile tax filings against accounting;
 - do not activate client access until the internal environment is ready.
 
-Canonical playbook: `docs/clients/dgm-accounting-rebuild.md`.
+Canonical playbook: `docs/clients/dgm-accounting-rebuild-2025-2026.md`.
