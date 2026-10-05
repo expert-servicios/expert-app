@@ -57,7 +57,7 @@ create table if not exists public.client_registry_facts (
   check (char_length(fact_key) between 1 and 160),
   check (char_length(fact_value) between 1 and 4000),
   check (verification_status in ('confirmed','needs_review')),
-  check (status in ('active','superseded','revoked')),
+  check (status in ('staged','active','superseded','revoked')),
   check (valid_to is null or valid_to >= valid_from)
 );
 
@@ -88,7 +88,7 @@ create table if not exists public.client_registry_instructions (
   check (char_length(instruction_key) between 1 and 160),
   check (char_length(instruction_text) between 1 and 4000),
   check (verification_status in ('confirmed','needs_review')),
-  check (status in ('active','superseded','revoked')),
+  check (status in ('staged','active','superseded','revoked')),
   check (valid_to is null or valid_to >= valid_from)
 );
 
