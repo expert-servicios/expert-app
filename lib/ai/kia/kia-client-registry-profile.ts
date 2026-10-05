@@ -146,14 +146,14 @@ export async function recordConfirmedRegistryFact(
   if (!key || !value) throw new Error('client_registry_fact_invalid');
 
   const { data: current, error: currentError } = await admin.from('client_registry_facts')
-    .select('id,fact_value')
+    .select('id,fact_value,category')
     .eq('subject_id', input.subjectId)
     .eq('fact_key', key)
     .eq('status', 'active')
     .is('valid_to', null)
     .maybeSingle();
   if (currentError) throw currentError;
-  if (current?.fact_value === value) return current.id;
+  if (current?.fact_value === value && current.category === (input.category?.trim() || 'general')) return current.id;
 
   const { data: created, error: createError } = await admin.from('client_registry_facts')
     .insert({
@@ -217,14 +217,14 @@ export async function recordConfirmedRegistryInstruction(
   if (!key || !instructionText) throw new Error('client_registry_instruction_invalid');
 
   const { data: current, error: currentError } = await admin.from('client_registry_instructions')
-    .select('id,instruction_text')
+    .select('id,instruction_text,scope,priority')
     .eq('subject_id', input.subjectId)
     .eq('instruction_key', key)
     .eq('status', 'active')
     .is('valid_to', null)
     .maybeSingle();
   if (currentError) throw currentError;
-  if (current?.instruction_text === instructionText) return current.id;
+  if (current?.instruction_text === instructionText && current.scope === (input.scope?.trim() || 'general') && Number(current.priority ?? 3) === Math.max(1, Math.min(5, input.priority ?? 3))) return current.id;
 
   const { data: created, error: createError } = await admin.from('client_registry_instructions')
     .insert({
