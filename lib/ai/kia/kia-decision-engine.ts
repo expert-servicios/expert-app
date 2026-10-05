@@ -120,7 +120,7 @@ export async function runKiaDecision(input: {
   const promptPayload = buildUserPayload(input.message, context, locale, recentAssistantTexts, officialSourceContext, mediaInfo, memoriesBlock);
 
   let classification: KiaIntentClassification | null = null;
-  if (input.channel === 'waba' && input.taskType === 'waba_reply') {
+  if ((input.channel === 'waba' && input.taskType === 'waba_reply') || (input.channel === 'email' && input.taskType === 'chat_reply')) {
     input.onProgress?.({ type: 'classifying' });
     classification = await classifyKiaIntent({
       message: input.message,
