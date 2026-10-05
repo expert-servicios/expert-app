@@ -30,15 +30,7 @@ export async function GET(request: NextRequest) {
       .select('id, razon_social, cif_nif, forma_juridica, direccion, ciudad, email, telefono, stripe_customer_id, status, created_at, profile_companies(profile_id)')
       .order('razon_social');
 
-    if (error) {
-      if (error.code === '23505' && normalizedTaxId) {
-        return NextResponse.json({
-          error: 'Ya existe una entidad con este CIF/NIF.',
-          code: 'tax_id_duplicate',
-        }, { status: 409 });
-      }
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
     const companies = (data ?? []).map((c) => ({
       id:           c.id,
