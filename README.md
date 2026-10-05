@@ -55,6 +55,7 @@ La fuente de verdad de estos datos de identidad esta en `config/identity.ts`.
 - `docs/roadmap.md`: roadmap maestro.
 - `docs/master-checklist.md`: checklist de cumplimiento.
 - `docs/architecture.md`: arquitectura operativa.
+- `docs/document-archive-runbook.md`: modelo de carpetas, limpieza documental y continuidad de la asociación con EXPERT/Kia.
 - `docs/improvement-plan.md`: plan vivo de mejoras tecnicas priorizadas.
 
 ## Flujo operativo core
