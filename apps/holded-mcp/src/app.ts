@@ -67,6 +67,10 @@ function tokenHasScope(scope: string | null | undefined, required: 'holded:read'
   return new Set((scope ?? '').split(/[\s,]+/).filter(Boolean)).has(required);
 }
 
+function isSupabaseUserId(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 export function createApp() {
   const app = express();
 
@@ -264,6 +268,15 @@ export function createApp() {
 
   app.post('/mcp', apiRateLimit, requireAuth, async (req, res) => {
     const record = req.holdedRecord!;
+
+    if (config.EXPERT_BACKEND_TOOLS_ENABLED === '1' && !isSupabaseUserId(record.userId)) {
+      res.status(401).json({
+        error: 'reauthentication_required',
+        message: 'Reconnect the connector to verify your EXPERT identity before using EXPERT-native tools.',
+      });
+      return;
+    }
+
     const holdedClient = createMcpBackend({ holdedApiKey: record.holdedApiKey });
 
     // serverInfo enriquecido — la spec MCP 2025-11 permite `icons`,
