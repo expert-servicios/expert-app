@@ -7,12 +7,14 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { config } from './config.js';
 import { createMcpBackend } from './backend-factory.js';
+import { ExpertBackendClient } from './expert-backend-client.js';
 import { apiRateLimit, requireAuth, requestLogger } from './middleware/auth.js';
 import { corsMiddleware } from './middleware/cors.js';
 import { logger } from './logger.js';
 import { oauthRouter } from './oauth-routes.js';
 import { renderLandingPage } from './public-pages.js';
 import { registerProductionTools } from './tools/index.js';
+import { registerExpertTools } from './tools/expert.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -63,6 +65,10 @@ async function readLaunchSession(req: express.Request): Promise<{ tenantId?: str
 
 function tokenHasScope(scope: string | null | undefined, required: 'holded:read' | 'holded:write') {
   return new Set((scope ?? '').split(/[\s,]+/).filter(Boolean)).has(required);
+}
+
+function isSupabaseUserId(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 export function createApp() {
@@ -262,6 +268,15 @@ export function createApp() {
 
   app.post('/mcp', apiRateLimit, requireAuth, async (req, res) => {
     const record = req.holdedRecord!;
+
+    if (config.EXPERT_BACKEND_TOOLS_ENABLED === '1' && !isSupabaseUserId(record.userId)) {
+      res.status(401).json({
+        error: 'reauthentication_required',
+        message: 'Reconnect the connector to verify your EXPERT identity before using EXPERT-native tools.',
+      });
+      return;
+    }
+
     const holdedClient = createMcpBackend({ holdedApiKey: record.holdedApiKey });
 
     // serverInfo enriquecido — la spec MCP 2025-11 permite `icons`,
@@ -297,6 +312,11 @@ export function createApp() {
     registerProductionTools(mcpServer, getClient, getContext, {
       includeWriteTools: tokenHasScope(record.scope, 'holded:write'),
     });
+
+    if (config.EXPERT_BACKEND_TOOLS_ENABLED === '1') {
+      const expertClient = new ExpertBackendClient(record.userId);
+      registerExpertTools(mcpServer, () => expertClient);
+    }
 
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
