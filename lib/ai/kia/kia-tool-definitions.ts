@@ -26,13 +26,6 @@ const holdedLaborPageSchema = {
   cursor: z.string().min(1).optional(),
 };
 
-const calendarDateSchema = z.string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .refine((value) => {
-    const parsed = new Date(`${value}T00:00:00Z`);
-    return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
-  }, 'Invalid calendar date');
-
 export const kiaToolValidators = {
   resolve_contact_context: z.object({
     phone: z.string().optional(),
@@ -114,7 +107,7 @@ export const kiaToolValidators = {
   get_holded_invoices: z.object({
     docType: z.enum(['invoice', 'salesreceipt', 'purchase', 'creditnote']).default('invoice'),
     limit: z.number().int().min(1).max(20).default(10),
-    since: calendarDateSchema.optional(),
+    since: z.string().optional(),
   }).strict(),
   get_holded_contacts: z.object({
     query: z.string().max(100).optional(),
@@ -122,22 +115,6 @@ export const kiaToolValidators = {
   }).strict(),
   get_holded_bank_balance: z.object({
     limit: z.number().int().min(1).max(10).default(5),
-  }).strict(),
-  // ── KIA Accounting controller tools ───────────────────────────────────────
-  get_accounts_receivable: z.object({
-    limit: z.number().int().min(1).max(50).default(20),
-    includeNotDue: z.boolean().default(true),
-  }).strict(),
-  get_accounts_payable: z.object({
-    limit: z.number().int().min(1).max(50).default(20),
-    includeNotDue: z.boolean().default(true),
-  }).strict(),
-  get_overdue_invoices: z.object({
-    side: z.enum(['receivable', 'payable', 'both']).default('receivable'),
-    limit: z.number().int().min(1).max(50).default(20),
-  }).strict(),
-  get_unreconciled_transactions: z.object({
-    limit: z.number().int().min(1).max(50).default(20),
   }).strict(),
   // ── Holded labor v2 tools — company comes only from authorized KiaContext ─
   get_holded_employees: z.object({
@@ -169,7 +146,7 @@ export const kiaToolValidators = {
   }).strict(),
   generate_company_report: z.object({
     reportType: z.enum(['empresa_status']).default('empresa_status'),
-    period: z.string().trim().regex(/^Q[1-4]\s+\d{4}$/i).optional(),
+    period: z.string().optional(),
     lang: z.enum(['es', 'ru']).default('es'),
   }).strict(),
   extract_invoice_ocr: z.object({
@@ -233,6 +210,21 @@ export const kiaToolValidators = {
     serviceKey: z.enum(['consulta-inicial', 'demo-holded', 'academy-admision']).default('consulta-inicial'),
     days: z.number().int().min(1).max(14).default(7),
   }).strict(),
+  get_admin_inbox_summary: z.object({
+    unreadOnly: z.boolean().default(true),
+    limit: z.number().int().min(1).max(30).default(12),
+  }).strict(),
+  get_admin_agenda: z.object({
+    days: z.number().int().min(1).max(14).default(7),
+    limit: z.number().int().min(1).max(30).default(15),
+  }).strict(),
+  get_admin_pending_tasks: z.object({
+    days: z.number().int().min(0).max(60).default(14),
+    limit: z.number().int().min(1).max(30).default(15),
+  }).strict(),
+  get_admin_attention_queue: z.object({
+    limitPerSection: z.number().int().min(1).max(10).default(5),
+  }).strict(),
   create_booking_meeting: z.object({
     serviceKey: z.enum(['consulta-inicial', 'demo-holded', 'academy-admision']),
     startIso: z.string().datetime({ offset: true }),
@@ -240,32 +232,6 @@ export const kiaToolValidators = {
     attendeeEmail: z.string().email().max(200),
     attendeePhone: z.string().trim().max(30).optional(),
     notes: z.string().trim().max(500).optional(),
-  }).strict(),
-  upsert_recurring_meeting_series: z.object({
-    sourceKey: z.string().trim().min(3).max(180),
-    title: z.string().trim().min(3).max(180),
-    attendeeName: z.string().trim().min(2).max(120),
-    attendeeEmail: z.string().email().max(200),
-    attendeePhone: z.string().trim().max(30).optional(),
-    clientId: z.string().uuid().optional(),
-    companyId: z.string().uuid().optional(),
-    leadId: z.string().uuid().optional(),
-    serviceKey: z.enum([
-      'consulta-inicial',
-      'demo-holded',
-      'onboarding',
-      'formacion-holded',
-      'mentoria-mensual',
-      'seguimiento-mensual-empresa',
-      'seguimiento-mensual-autonomo',
-      'academy-admision',
-    ]),
-    durationMinutes: z.number().int().min(15).max(240),
-    dayOfMonth: z.number().int().min(1).max(28),
-    localTime: z.string().regex(/^([01]\\d|2[0-3]):[0-5]\\d$/),
-    startMonth: z.string().regex(/^\\d{4}-\\d{2}-01$/),
-    monthsAhead: z.number().int().min(1).max(24).default(12),
-    conflictPolicy: z.enum(['next_available_weekday', 'manual_review']).default('next_available_weekday'),
   }).strict(),
 } satisfies Record<string, z.ZodTypeAny>;
 
@@ -298,10 +264,6 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_holded_invoices: 'List recent Holded invoices or purchases for the active company. Requires active company-scoped Holded integration.',
   get_holded_contacts: 'Search or list Holded contacts for the active company. Requires active company-scoped Holded integration.',
   get_holded_bank_balance: 'Return Holded treasury account balances for the active company. Requires active company-scoped Holded integration.',
-  get_accounts_receivable: 'Return customer invoices with outstanding balances for the active company, derived from Holded invoice data. Read-only.',
-  get_accounts_payable: 'Return supplier purchase invoices with outstanding balances for the active company, derived from Holded purchase data. Read-only.',
-  get_overdue_invoices: 'Return overdue receivable/payable documents for the active company. Read-only; due status is derived conservatively from available Holded fields.',
-  get_unreconciled_transactions: 'Return bank movements that appear unreconciled from Holded treasury data. Read-only and explicitly marked as derived.',
   get_holded_employees: 'List or search Holded employees for the already-authorized active company. Read-only; never changes employee data.',
   get_holded_employee_contract: 'Read one Holded employee and their active contract for the already-authorized active company. Read-only.',
   get_holded_payslips: 'List calculated Holded payroll payslips for the already-authorized active company. Keeps payslips separate from salary records.',
@@ -323,8 +285,11 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_official_sources: 'Return official source links from the canonical EXPERT Regulatory Registry for a service or topic. Use when the user wants to verify information independently.',
   find_relevant_services: 'Find EXPERT services for a concrete unmet need. Use only after answering the question and only when the user explicitly lacks something necessary, asks EXPERT to handle it, or clearly intends to contract. Do not use for mere topic affinity or when the user asks to do it themselves.',
   get_booking_availability: 'Read real EXPERT availability from the active Google Calendar booking stack for public meeting types. Use before proposing meeting times.',
+  get_admin_inbox_summary: 'Admin-only read tool for recent synchronized EXPERT inbox threads, scoped to the current client/company when present.',
+  get_admin_agenda: 'Admin-only read tool for upcoming EXPERT appointments, scoped to the current client/company when present.',
+  get_admin_pending_tasks: 'Admin-only read tool for pending, upcoming and overdue EXPERT internal tasks, scoped to the current client/company when present.',
+  get_admin_attention_queue: 'Admin-only read tool that combines unread email, upcoming appointments and pending tasks into a compact attention queue.',
   create_booking_meeting: 'Create a public EXPERT meeting only after the user explicitly confirms the exact numeric date and time in their latest message. Backend rechecks availability and confirmation before writing Calendar/Meet.',
-  upsert_recurring_meeting_series: 'Admin-only: create or update an EXPERT recurring meeting series and materialize the future appointment horizon in Calendar/Meet with individual reschedule links.',
 };
 
 export const KIA_TOOL_DEFINITIONS: KiaToolDefinition[] = (Object.keys(kiaToolValidators) as ToolName[]).map((name) => ({
