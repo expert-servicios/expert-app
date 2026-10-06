@@ -1,8 +1,6 @@
-import { getConfiguredWabaAiProviders } from '@/lib/integrations/waba-ai';
 import { KIA_TASK_TYPES, KIA_INTENTS, type KiaTaskType, type KiaChannel } from './kia-output-schema';
+import { runKiaProviderRequest } from './kia-provider-router';
 import { safeErrorMessage } from './kia-redaction';
-
-const HAIKU = 'claude-haiku-4-5-20251001';
 
 export interface KiaIntentClassification {
   suggestedTaskType: KiaTaskType;
@@ -59,8 +57,8 @@ function buildClassifierSystemPrompt(): string {
     'Tu unica tarea: dado el mensaje del usuario y los ultimos mensajes, devolver un JSON de clasificacion.',
     '',
     '<task_type_guide>',
-    '- chat_reply: saludo, estado expediente, pregunta general, respuesta conversacional, asesoramiento jurídico/Extranjería o diagnóstico laboral/nómina',
-    '- viability_reasoning: comprobación formal de requisitos de un servicio concreto (incluidos arraigo, nacionalidad, residencia, Beckham, patrimonio, modelo 720); no usar para comparar estratégicamente varios estatus migratorios',
+    '- chat_reply: saludo, estado expediente, pregunta general, respuesta conversacional o diagnóstico laboral/nómina',
+    '- viability_reasoning: servicios con filtro juridico (arraigo, nacionalidad, NIE, residencia, Beckham, patrimonio, modelo 720)',
     '- readiness_reasoning: servicios que requieren Holded (contabilidad, plan mensual, migracion Holded)',
     '- checkout_decision: usuario quiere contratar, pagar o preguntar precio',
     '- next_best_action: cliente pide accion operativa sobre su expediente',
@@ -69,7 +67,8 @@ function buildClassifierSystemPrompt(): string {
     '</task_type_guide>',
     '',
     '<intent_guide>',
-    '- immigration_advice: consultas de Extranjería sobre residencia, TIE/NIE, protección temporal, Ucrania, modificaciones de permiso, larga duración, arraigo, reagrupación, visados o comparación entre vías migratorias. Para comparar estatus o decidir si conviene modificar ahora o esperar, usar chat_reply + immigration_advice.',
+    '- assistant_operations: solicitud operativa de correo/calendario/seguimiento/tarea, confirmación de algo ya realizado, petición de enviar/recordar/revisar algo sin especialidad fiscal-contable-laboral dominante',
+    '- book_call: pedir, proponer, confirmar, cambiar o cancelar una reunión/cita',
     '- payroll_diagnostics: revisar o comparar nómina, contrato laboral, jornada, pagas extra, bases de cotización, IRPF de nómina, coste empresa o salary-records de un empleado',
     '- anomaly_review: anomalías contables generales; no usar para discrepancias de nómina si payroll_diagnostics encaja',
     '</intent_guide>',
@@ -119,31 +118,52 @@ function parseClassification(raw: string): KiaIntentClassification | null {
     if (start === -1 || end === -1) return null;
     const parsed = JSON.parse(trimmed.slice(start, end + 1)) as Record<string, unknown>;
 
-    const suggestedTaskType = KIA_TASK_TYPES.includes(parsed.suggestedTaskType as KiaTaskType)
-      ? (parsed.suggestedTaskType as KiaTaskType)
-      : 'chat_reply';
-    const detectedIntent = KIA_INTENTS.includes(parsed.detectedIntent as (typeof KIA_INTENTS)[number])
-      ? (parsed.detectedIntent as (typeof KIA_INTENTS)[number])
-      : 'unknown';
+    if (!KIA_TASK_TYPES.includes(parsed.suggestedTaskType as KiaTaskType)) return null;
+    if (!KIA_INTENTS.includes(parsed.detectedIntent as (typeof KIA_INTENTS)[number])) return null;
+    if (typeof parsed.ambiguityScore !== 'number' || !Number.isFinite(parsed.ambiguityScore)
+      || parsed.ambiguityScore < 0 || parsed.ambiguityScore > 1) return null;
+    if (typeof parsed.needsClarify !== 'boolean') return null;
+    if (typeof parsed.clarifyQuestion !== 'string') return null;
+    if (!Array.isArray(parsed.clarifyOptions)) return null;
+    if (parsed.detectedLanguage !== 'es' && parsed.detectedLanguage !== 'ru') return null;
+    if (typeof parsed.confidence !== 'number' || !Number.isFinite(parsed.confidence)
+      || parsed.confidence < 0 || parsed.confidence > 1) return null;
+
+    const clarifyOptions = (parsed.clarifyOptions as unknown[]).map((option) => {
+      if (!option || typeof option !== 'object' || Array.isArray(option)) return null;
+      const item = option as Record<string, unknown>;
+      if (typeof item.id !== 'string' || typeof item.title !== 'string') return null;
+      if (!item.id.trim() || !item.title.trim() || item.title.length > 20) return null;
+      return { id: item.id, title: item.title };
+    });
+    if (clarifyOptions.some((option) => option === null) || clarifyOptions.length > 3) return null;
+    if (parsed.needsClarify) {
+      if (!parsed.clarifyQuestion.trim() || clarifyOptions.length < 2) return null;
+    } else if (parsed.clarifyQuestion !== '' || clarifyOptions.length !== 0) {
+      return null;
+    }
 
     return {
-      suggestedTaskType,
-      detectedIntent,
-      ambiguityScore: typeof parsed.ambiguityScore === 'number' ? Math.max(0, Math.min(1, parsed.ambiguityScore)) : 0.5,
-      needsClarify: Boolean(parsed.needsClarify),
-      clarifyQuestion: typeof parsed.clarifyQuestion === 'string' ? parsed.clarifyQuestion : '',
-      clarifyOptions: Array.isArray(parsed.clarifyOptions)
-        ? (parsed.clarifyOptions as Array<{ id?: string; title?: string }>)
-            .filter((o) => typeof o?.id === 'string' && typeof o?.title === 'string')
-            .slice(0, 3)
-            .map((o) => ({ id: o.id as string, title: (o.title as string).slice(0, 20) }))
-        : [],
-      detectedLanguage: parsed.detectedLanguage === 'ru' ? 'ru' : 'es',
-      confidence: typeof parsed.confidence === 'number' ? Math.max(0, Math.min(1, parsed.confidence)) : 0.5,
+      suggestedTaskType: parsed.suggestedTaskType as KiaTaskType,
+      detectedIntent: parsed.detectedIntent as (typeof KIA_INTENTS)[number],
+      ambiguityScore: parsed.ambiguityScore,
+      needsClarify: parsed.needsClarify,
+      clarifyQuestion: parsed.clarifyQuestion,
+      clarifyOptions: clarifyOptions as Array<{ id: string; title: string }>,
+      detectedLanguage: parsed.detectedLanguage,
+      confidence: parsed.confidence,
     };
   } catch {
     return null;
   }
+}
+
+function parseProviderClassification(result: { parsedJson?: unknown; rawText?: string }): KiaIntentClassification | null {
+  if (result.parsedJson) {
+    const parsed = parseClassification(JSON.stringify(result.parsedJson));
+    if (parsed) return parsed;
+  }
+  return parseClassification(result.rawText ?? '');
 }
 
 export async function classifyKiaIntent(params: {
@@ -152,9 +172,6 @@ export async function classifyKiaIntent(params: {
   contactStatus: 'lead' | 'client' | 'unknown';
   channel: KiaChannel;
 }): Promise<KiaIntentClassification | null> {
-  const providers = getConfiguredWabaAiProviders();
-  if (!providers.length) return null;
-
   const systemPrompt = buildClassifierSystemPrompt();
   const userPrompt = buildClassifierUserPrompt(
     params.message,
@@ -163,58 +180,24 @@ export async function classifyKiaIntent(params: {
     params.channel,
   );
 
-  for (const provider of providers) {
-    try {
-      if (provider.provider === 'anthropic') {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'x-api-key': provider.apiKey,
-            'anthropic-version': '2023-06-01',
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: HAIKU,
-            max_tokens: 300,
-            temperature: 0,
-            system: systemPrompt,
-            messages: [{ role: 'user', content: userPrompt }],
-          }),
-        });
-        const data = await response.json() as { content?: Array<{ type: string; text?: string }> };
-        const rawText = data?.content?.find((c) => c.type === 'text')?.text ?? '';
-        const result = parseClassification(rawText);
-        if (result) return result;
-      } else {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            authorization: `Bearer ${provider.apiKey}`,
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: provider.model,
-            max_tokens: 300,
-            temperature: 0,
-            response_format: {
-              type: 'json_schema',
-              json_schema: { name: 'kia_intent_classification', strict: true, schema: CLASSIFIER_SCHEMA },
-            },
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userPrompt },
-            ],
-          }),
-        });
-        const data = await response.json() as { choices?: Array<{ message?: { content?: string } }> };
-        const rawText = data?.choices?.[0]?.message?.content ?? '';
-        const result = parseClassification(rawText);
-        if (result) return result;
-      }
-    } catch (err) {
-      console.warn('[KiaIntentClassifier] provider failed', { provider: provider.provider, error: safeErrorMessage(err) });
+  try {
+    const result = await runKiaProviderRequest({
+      taskType: 'chat_reply',
+      systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+      responseSchema: CLASSIFIER_SCHEMA,
+      effort: 'low',
+      maxTokens: 300,
+      temperature: 0,
+      semanticValidator: (candidate) => parseProviderClassification(candidate) !== null,
+    });
+    if (result.error) {
+      console.warn('[KiaIntentClassifier] provider pool failed', { error: result.error });
+      return null;
     }
+    return parseProviderClassification(result);
+  } catch (err) {
+    console.warn('[KiaIntentClassifier] provider pool failed', { error: safeErrorMessage(err) });
+    return null;
   }
-
-  return null;
 }
