@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 const route = readFileSync('app/api/cron/kia-email-agent/route.ts', 'utf8');
 const migration = readFileSync(
-  'supabase/migrations/20261004183000_internal_tasks_open_action_fingerprint.sql',
+  'supabase/migrations/20261006110514_internal_tasks_open_action_fingerprint.sql',
   'utf8',
 );
 
