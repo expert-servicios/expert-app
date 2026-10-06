@@ -50,7 +50,7 @@ export interface HoldedReadDocument {
   status: string;
   contactId: string | null;
   contactName: string;
-  paymentsPending: number;
+  paymentsPending: number | null;
   isDraft: boolean;
 }
 
@@ -65,6 +65,9 @@ export interface HoldedReadBankMovement {
   currency: string;
   status: string;
   reconciledAmount: number;
+  documentId: string | null;
+  invoiceId: string | null;
+  matchId: string | null;
 }
 
 export interface HoldedReadContact {
@@ -106,7 +109,10 @@ function v1DocumentToReadModel(doc: HoldedDocument): HoldedReadDocument {
     : typeof rawDueDate === 'string' && rawDueDate.trim()
       ? rawDueDate
       : null;
-  const paymentsPending = Number(raw.paymentsPending ?? raw.payments_pending ?? 0);
+  const rawPaymentsPending = raw.paymentsPending ?? raw.payments_pending;
+  const paymentsPending = rawPaymentsPending === null || rawPaymentsPending === undefined
+    ? null
+    : Number(rawPaymentsPending);
 
   return {
     id: String(doc.id ?? ''),
@@ -153,13 +159,16 @@ function v2DocumentToReadModel(doc: HoldedV2Invoice | HoldedV2Purchase): HoldedR
     status,
     contactId: doc.contact_id ? String(doc.contact_id) : null,
     contactName: String(doc.contact_name ?? ''),
-    paymentsPending: Number(doc.payments_pending ?? 0),
+    paymentsPending: doc.payments_pending === null || doc.payments_pending === undefined
+      ? null
+      : Number(doc.payments_pending),
     isDraft: approvalStatus ? approvalStatus !== 'approved' : status.toLowerCase() === 'draft',
   };
 }
 
 function v1BankMovementToReadModel(movement: HoldedBankMovement, accountId: string): HoldedReadBankMovement {
   const timestamp = Number(movement.date ?? 0);
+  const raw = movement as unknown as Record<string, unknown>;
   return {
     id: String(movement.id ?? ''),
     accountId,
@@ -171,6 +180,9 @@ function v1BankMovementToReadModel(movement: HoldedBankMovement, accountId: stri
     currency: 'EUR',
     status: String(movement.status ?? 'unknown'),
     reconciledAmount: 0,
+    documentId: movement.documentId ? String(movement.documentId) : raw.document_id ? String(raw.document_id) : null,
+    invoiceId: raw.invoiceId ? String(raw.invoiceId) : raw.invoice_id ? String(raw.invoice_id) : null,
+    matchId: raw.matchId ? String(raw.matchId) : raw.match_id ? String(raw.match_id) : null,
   };
 }
 
@@ -188,6 +200,9 @@ function v2BankMovementToReadModel(movement: HoldedV2BankMovement): HoldedReadBa
     currency: String(movement.currency ?? 'EUR'),
     status: String(movement.status ?? 'unknown'),
     reconciledAmount: Number(movement.reconciled_amount ?? 0),
+    documentId: typeof movement.document_id === 'string' ? movement.document_id : null,
+    invoiceId: typeof movement.invoice_id === 'string' ? movement.invoice_id : null,
+    matchId: typeof movement.match_id === 'string' ? movement.match_id : null,
   };
 }
 
@@ -272,14 +287,14 @@ export async function listHoldedDocuments(
             startDate: params.startDate,
             endDate: params.endDate,
             approvalStatus: 'approved',
-            limit: Math.min(200, maxItems - items.length),
+            limit: Math.min(100, maxItems - items.length),
             cursor,
           })
         : await v2.listPurchases({
             startDate: params.startDate,
             endDate: params.endDate,
             approvalStatus: 'approved',
-            limit: Math.min(200, maxItems - items.length),
+            limit: Math.min(100, maxItems - items.length),
             cursor,
           });
       items.push(...page.items.map(v2DocumentToReadModel));
@@ -367,11 +382,16 @@ export async function listHoldedBankMovements(
   for (let page = 1; page <= 20 && items.length < maxItems; page++) {
     const movements = await gateway.v1.listBankAccountMovements(accountId, { page, dateFrom, dateTo });
     if (movements.length === 0) break;
-    items.push(...movements.map((movement) => v1BankMovementToReadModel(movement, accountId)));
+    const normalized = movements
+      .map((movement) => v1BankMovementToReadModel(movement, accountId))
+      .filter((movement) =>
+        !params.pendingOnly
+        || !movement.documentId && !movement.invoiceId && !movement.matchId
+          && !['reconciled', 'conciliado', 'matched', 'true', 'forced_reconciled'].includes(movement.status.toLowerCase())
+      );
+    items.push(...normalized.slice(0, maxItems - items.length));
   }
-  return items
-    .filter((movement) => !params.pendingOnly || !['reconciled', 'conciliado', 'matched', 'true', 'forced_reconciled'].includes(movement.status.toLowerCase()))
-    .slice(0, maxItems);
+  return items.slice(0, maxItems);
 }
 
 export async function listHoldedBankAccounts(
