@@ -11,7 +11,13 @@ import { getReadinessCheck, calculateReadinessResult } from '@/lib/data/service-
 import { validateKiaToolArguments, type KiaToolCall, type KiaToolResult } from './kia-tool-definitions';
 import type { KiaContext } from './kia-context-builder';
 import { redactJson, safeErrorMessage } from './kia-redaction';
-import { resolveHoldedAuth, buildHoldedHeaders } from '@/lib/integrations/holded/holded-auth';
+import {
+  createHoldedGatewayForIntegration,
+  listHoldedBankAccounts,
+  listHoldedContacts,
+  listHoldedDocumentType,
+  listHoldedDocuments,
+} from '@/lib/integrations/holded/holded-gateway';
 import { generateCompanyReport } from '@/lib/reports/report-generator';
 import { extractInvoiceOcr, type InvoiceMediaType } from './kia-ocr-extractor';
 import { executeKiaHoldedLaborTool, type KiaHoldedLaborToolName } from './kia-holded-labor-tools';
@@ -21,11 +27,17 @@ import { findKiaRelevantServices, getKiaOfficialSources, searchKiaKnowledgeResou
 import { loadKiaClientCommunications } from './kia-client-brief';
 import { missingKiaCaseDocumentRequirements } from './kia-case-document-gaps';
 import { createKiaConfirmedBooking, getKiaBookingAvailability } from '@/lib/booking/kia-booking-operator';
+import { materializeRecurringMeetingSeries } from '@/lib/booking/recurring-meeting-series';
 import {
   KIA_ADMIN_OFFICE_TOOL_NAMES,
   executeKiaAdminOfficeTool,
   type KiaAdminOfficeToolName,
 } from './kia-admin-office-tools';
+import {
+  ACCOUNTING_TOOL_NAMES,
+  executeKiaAccountingTool,
+  type KiaAccountingToolName,
+} from './kia-accounting-tools';
 
 const HOLDED_LABOR_TOOL_NAMES = new Set<KiaHoldedLaborToolName>([
   'get_holded_employees',
@@ -41,6 +53,10 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
 
     if (KIA_ADMIN_OFFICE_TOOL_NAMES.has(toolCall.name as KiaAdminOfficeToolName)) {
       return executeKiaAdminOfficeTool(toolCall.name as KiaAdminOfficeToolName, args, context, admin);
+    }
+
+    if (ACCOUNTING_TOOL_NAMES.has(toolCall.name as KiaAccountingToolName)) {
+      return executeKiaAccountingTool(toolCall.name as KiaAccountingToolName, args, context);
     }
 
     if (toolCall.name === 'run_labor_payroll_diagnostics') {
@@ -228,57 +244,55 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         if (!access.ok) {
           return fail(toolCall.name, `${access.error} Usa generate_holded_connection_link si necesitas vincular Holded.`);
         }
-        const auth = await resolveHoldedAuth(access.access.integrationId);
-        const hdrs = buildHoldedHeaders(auth.apiKey);
+        const gateway = await createHoldedGatewayForIntegration(access.access.integrationId);
 
         if (toolCall.name === 'get_holded_invoices') {
           const limit = Number(args.limit ?? 10);
-          const res = await fetch(`${auth.baseUrl}/documents/${docType}?limit=${limit}`, { headers: hdrs });
-          if (!res.ok) return fail(toolCall.name, `Holded devolvió ${res.status}`);
-          const docs = (await res.json()) as Array<Record<string, unknown>>;
+          const startDate = typeof args.since === 'string' ? args.since : undefined;
+          const supportedDocType = docType as 'invoice' | 'purchase' | 'salesreceipt' | 'creditnote';
+          const docs = supportedDocType === 'invoice' || supportedDocType === 'purchase'
+            ? await listHoldedDocuments(
+                gateway,
+                supportedDocType === 'purchase' ? 'purchase' : 'sales',
+                { maxItems: limit, startDate },
+              )
+            : await listHoldedDocumentType(gateway, supportedDocType, { maxItems: limit, startDate });
           return ok(toolCall.name, {
             count: docs.length,
-            documents: docs.slice(0, limit).map((d) => ({
+            documents: docs.map((d) => ({
               id: d.id,
-              number: d.docNumber,
+              number: d.number,
               date: d.date,
               contact: d.contactName,
               total: d.total,
+              currency: d.currency,
+              dueDate: d.dueDate,
               status: d.status,
+              paymentsPending: d.paymentsPending,
             })),
+            apiVersion: gateway.metadata.apiVersion,
           });
         }
 
         if (toolCall.name === 'get_holded_contacts') {
-          const query = typeof args.query === 'string' ? `?name=${encodeURIComponent(args.query)}` : '';
-          const res = await fetch(`${auth.baseUrl}/contacts${query}`, { headers: hdrs });
-          if (!res.ok) return fail(toolCall.name, `Holded devolvió ${res.status}`);
-          const contacts = (await res.json()) as Array<Record<string, unknown>>;
           const limit = Number(args.limit ?? 10);
+          const contacts = await listHoldedContacts(gateway, {
+            search: typeof args.query === 'string' ? args.query : undefined,
+            maxItems: limit,
+          });
           return ok(toolCall.name, {
             count: contacts.length,
-            contacts: contacts.slice(0, limit).map((c) => ({
-              id: c.id,
-              name: c.name,
-              email: c.email,
-              type: c.type,
-              vatNumber: c.vatnumber,
-            })),
+            contacts,
+            apiVersion: gateway.metadata.apiVersion,
           });
         }
 
-        const res = await fetch(`${auth.baseUrl}/treasury`, { headers: hdrs });
-        if (!res.ok) return fail(toolCall.name, `Holded devolvió ${res.status}`);
-        const accounts = (await res.json()) as Array<Record<string, unknown>>;
         const limit = Number(args.limit ?? 5);
+        const accounts = await listHoldedBankAccounts(gateway, limit);
         return ok(toolCall.name, {
           count: accounts.length,
-          accounts: accounts.slice(0, limit).map((a) => ({
-            id: a.id,
-            name: a.name,
-            balance: a.balance,
-            currency: a.currency ?? 'EUR',
-          })),
+          accounts,
+          apiVersion: gateway.metadata.apiVersion,
         });
       }
 
@@ -647,6 +661,41 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
           serviceKey: String(args.serviceKey),
           days: Number(args.days ?? 7),
         }));
+
+      case 'upsert_recurring_meeting_series': {
+        const sourceKey = String(args.sourceKey);
+        const attendeeEmail = String(args.attendeeEmail).trim().toLowerCase();
+        const payload = {
+          source_key: sourceKey,
+          title: String(args.title),
+          attendee_name: String(args.attendeeName),
+          attendee_email: attendeeEmail,
+          attendee_phone: typeof args.attendeePhone === 'string' ? args.attendeePhone : null,
+          client_id: typeof args.clientId === 'string' ? args.clientId : null,
+          company_id: typeof args.companyId === 'string' ? args.companyId : null,
+          lead_id: typeof args.leadId === 'string' ? args.leadId : null,
+          service_key: String(args.serviceKey),
+          duration_minutes: Number(args.durationMinutes),
+          day_of_month: Number(args.dayOfMonth),
+          local_time: `${String(args.localTime)}:00`,
+          timezone: 'Europe/Madrid',
+          months_ahead: Number(args.monthsAhead ?? 12),
+          start_month: String(args.startMonth),
+          weekend_policy: 'next_weekday',
+          conflict_policy: String(args.conflictPolicy ?? 'next_available_weekday'),
+          active: true,
+          created_by: 'kia-admin',
+          updated_at: new Date().toISOString(),
+        };
+        const { data: series, error } = await admin
+          .from('recurring_meeting_series')
+          .upsert(payload, { onConflict: 'source_key' })
+          .select('id,source_key,title,service_key,duration_minutes,day_of_month,local_time,months_ahead')
+          .single();
+        if (error || !series) throw error ?? new Error('recurring_series_upsert_failed');
+        const materialized = await materializeRecurringMeetingSeries(admin);
+        return ok(toolCall.name, { series, materialized });
+      }
 
       case 'create_booking_meeting': {
         const attendeeEmail = String(args.attendeeEmail).trim().toLowerCase();
