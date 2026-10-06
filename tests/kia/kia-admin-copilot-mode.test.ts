@@ -56,7 +56,7 @@ describe('KIA Admin Copilot mode', () => {
   it('preserves page context when routing into a specialized sub-agent', () => {
     const decision = source('lib/ai/kia/kia-decision-engine.ts');
     const subAgentBlock = decision.slice(
-      decision.indexOf('const finalSystemPrompt = subAgentProfile'),
+      decision.indexOf('const baseFinalSystemPrompt = subAgentProfile'),
       decision.indexOf('const finalMaxTokens'),
     );
     expect(subAgentBlock).toContain('currentPage: input.contextInput.currentPage');
