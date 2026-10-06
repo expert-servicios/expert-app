@@ -12,6 +12,7 @@ import { AdminDeliverableUpload } from '@/components/admin/AdminDeliverableUploa
 import { CaseMessageThread } from '@/components/cases/CaseMessageThread';
 import { CaseOperationsEditor } from '@/components/admin/CaseOperationsEditor';
 import { CaseWorkflowPanel } from '@/components/admin/CaseWorkflowPanel';
+import { CaseSignaturePanel, type SignatureAction } from '@/components/admin/CaseSignaturePanel';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
 
 interface Document {
@@ -193,9 +194,10 @@ export default async function AdminCaseDetailPage({
 }) {
   const { id } = await params;
 
-  const [data, messagesData] = await Promise.all([
+  const [data, messagesData, signatureData] = await Promise.all([
     fetchWithCookies<{ case: CaseDetail; documents: Document[]; documentNotes: DocumentNote[] }>(`/api/admin/cases/${id}`),
-    fetchWithCookies<{ messages: Message[] }>(`/api/cases/${id}/messages`)
+    fetchWithCookies<{ messages: Message[] }>(`/api/cases/${id}/messages`),
+    fetchWithCookies<{ actions: SignatureAction[] }>(`/api/admin/cases/${id}/signature-actions`).catch(() => null),
   ]);
 
   if (!data) {
@@ -376,6 +378,17 @@ export default async function AdminCaseDetailPage({
 
         {/* AI actions */}
         <AiCaseActions caseId={id} />
+
+        <CaseSignaturePanel
+          caseId={id}
+          initialActions={signatureData?.actions ?? []}
+          documents={documents.map((doc) => ({
+            id: doc.id,
+            original_name: doc.original_name,
+            state: doc.state,
+            downloadUrl: doc.downloadUrl,
+          }))}
+        />
         {process.env.KIA_WORK_CONNECTOR_ENABLED === 'true' ? (
           <Suspense fallback={<p role="status">Cargando actividad de KIA…</p>}>
             <KiaWorkResults caseId={id} />
