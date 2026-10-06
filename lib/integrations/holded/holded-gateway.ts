@@ -50,7 +50,7 @@ export interface HoldedReadDocument {
   status: string;
   contactId: string | null;
   contactName: string;
-  paymentsPending: number;
+  paymentsPending: number | null;
   isDraft: boolean;
 }
 
@@ -65,6 +65,9 @@ export interface HoldedReadBankMovement {
   currency: string;
   status: string;
   reconciledAmount: number;
+  documentId: string | null;
+  invoiceId: string | null;
+  matchId: string | null;
 }
 
 export interface HoldedReadContact {
@@ -106,7 +109,10 @@ function v1DocumentToReadModel(doc: HoldedDocument): HoldedReadDocument {
     : typeof rawDueDate === 'string' && rawDueDate.trim()
       ? rawDueDate
       : null;
-  const paymentsPending = Number(raw.paymentsPending ?? raw.payments_pending ?? 0);
+  const rawPaymentsPending = raw.paymentsPending ?? raw.payments_pending;
+  const paymentsPending = rawPaymentsPending === null || rawPaymentsPending === undefined
+    ? null
+    : Number(rawPaymentsPending);
 
   return {
     id: String(doc.id ?? ''),
@@ -158,7 +164,9 @@ function v2DocumentToReadModel(doc: HoldedV2Invoice | HoldedV2Purchase): HoldedR
     status,
     contactId: doc.contact_id ? String(doc.contact_id) : null,
     contactName: String(doc.contact_name ?? ''),
-    paymentsPending: Number(doc.payments_pending ?? 0),
+    paymentsPending: doc.payments_pending === null || doc.payments_pending === undefined
+      ? null
+      : Number(doc.payments_pending),
     isDraft: approvalStatus ? approvalStatus !== 'approved' : status.toLowerCase() === 'draft',
   };
 }
@@ -173,9 +181,12 @@ function v1BankMovementToReadModel(movement: HoldedBankMovement, accountId: stri
     description: String(movement.description ?? ''),
     reference: movement.reference ? String(movement.reference) : null,
     amount: Number(movement.amount ?? 0),
-    currency: 'EUR',
+    currency: String(movement.currency ?? 'EUR').toUpperCase(),
     status: String(movement.status ?? 'unknown'),
-    reconciledAmount: 0,
+    reconciledAmount: Number(movement.reconciledAmount ?? 0),
+    documentId: movement.documentId ? String(movement.documentId) : null,
+    invoiceId: movement.invoiceId ? String(movement.invoiceId) : null,
+    matchId: movement.matchId ? String(movement.matchId) : null,
   };
 }
 
@@ -190,9 +201,12 @@ function v2BankMovementToReadModel(movement: HoldedV2BankMovement): HoldedReadBa
     description: String(movement.description ?? movement.note ?? ''),
     reference: null,
     amount: Number(movement.amount ?? 0),
-    currency: String(movement.currency ?? 'EUR'),
+    currency: String(movement.currency ?? 'EUR').toUpperCase(),
     status: String(movement.status ?? 'unknown'),
     reconciledAmount: Number(movement.reconciled_amount ?? 0),
+    documentId: null,
+    invoiceId: null,
+    matchId: null,
   };
 }
 
@@ -310,14 +324,14 @@ export async function listHoldedDocuments(
               startDate: params.startDate,
               endDate: params.endDate,
               approvalStatus,
-              limit: Math.min(200, maxItems - statusItems),
+              limit: Math.min(100, maxItems - statusItems),
               cursor,
             })
           : await v2.listPurchases({
               startDate: params.startDate,
               endDate: params.endDate,
               approvalStatus,
-              limit: Math.min(200, maxItems - statusItems),
+              limit: Math.min(100, maxItems - statusItems),
               cursor,
             });
         const mapped = page.items.map(v2DocumentToReadModel);
