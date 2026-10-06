@@ -805,12 +805,21 @@ export async function GET(request: NextRequest) {
 
       const hasAttachments = latest.attachments.some((attachment) => !attachment.inline);
       const confidenceFloor = wasKnownContact ? minConfidence : prospectMinConfidence;
+      const { data: companyOperationalControls, error: companyOperationalControlsError } = identity.companyId
+        ? await admin.from('company_operational_controls')
+            .select('external_communication_blocked')
+            .eq('company_id', identity.companyId)
+            .maybeSingle()
+        : { data: null, error: null };
+      if (companyOperationalControlsError) throw companyOperationalControlsError;
+      const externalCommunicationBlocked = Boolean(companyOperationalControls?.external_communication_blocked);
       const externalActionPreEligible = autoSend
         && health.ok
         && (wasKnownContact || (safeUnknownProspect && newLeadAutoSend))
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
+        && !externalCommunicationBlocked
         && envelope.recipientPurpose !== 'noreply'
         && !hasAttachments;
       const baseAllowedTools = wasKnownContact ? KNOWN_CONTACT_TOOLS : PUBLIC_PROSPECT_TOOLS;
@@ -860,7 +869,6 @@ export async function GET(request: NextRequest) {
         },
         policyToolNames: [...allowedTools],
       });
-      const externalCommunicationBlocked = result.context.company?.externalCommunicationBlocked === true;
       const taskEligible = (identity.clientId || identity.leadId)
         && !result.executionTrace.lateClassificationFailClosed
         && !identity.ambiguousCase
