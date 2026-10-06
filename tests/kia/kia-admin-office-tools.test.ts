@@ -94,6 +94,16 @@ describe('KIA Admin Office read layer', () => {
     expect(office).toContain('from_email.in.');
     expect(office).toContain('email.in.');
     expect(office).toContain("from('profile_companies')");
+    expect(office).toContain("admin.auth.admin.getUserById(clientId)");
+    expect(office).toContain("from('companies')");
+    expect(office).toContain('client_id.is.null,company_id.is.null,email.in.');
+  });
+
+  it('paginates scoped cases and includes case-linked tasks', () => {
+    const office = source('lib/ai/kia/kia-admin-office-tools.ts');
+    expect(office).toContain('.range(offset, offset + pageSize - 1)');
+    expect(office).toContain('case_id.in.');
+    expect(office).not.toContain('.limit(300)');
   });
 
   it('returns exact section counts plus truncation metadata', () => {
