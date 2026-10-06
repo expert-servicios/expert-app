@@ -21,6 +21,14 @@ describe('EXPERT MCP list_companies boundary', () => {
     expect(app).toContain('createMcpBackend({ holdedApiKey: record.holdedApiKey })');
   });
 
+  it('requires verified OAuth identity and rejects legacy hash sessions', () => {
+    const config = source('apps/holded-mcp/src/config.ts');
+    const app = source('apps/holded-mcp/src/app.ts');
+    expect(config).toContain("EXPERT_BACKEND_TOOLS_ENABLED=1 requires EXPERT_OAUTH_BRIDGE_ENABLED=1");
+    expect(app).toContain('isSupabaseUserId(record.userId)');
+    expect(app).toContain("error: 'reauthentication_required'");
+  });
+
   it('uses only the authenticated MCP identity to resolve companies', () => {
     const client = source('apps/holded-mcp/src/expert-backend-client.ts');
     expect(client).toContain('constructor(private readonly userId: string)');
