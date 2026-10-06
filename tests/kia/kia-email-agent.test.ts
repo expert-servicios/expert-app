@@ -73,7 +73,7 @@ describe('KIA guarded email agent', () => {
 
   it('deduplicates email tasks by operational action rather than only message id', () => {
     expect(route).toContain('action_fingerprint');
-    expect(route).toContain(".contains('metadata', { action_fingerprint: actionFingerprint })");
+    expect(route).toContain(".eq('metadata->>action_fingerprint', actionFingerprint)");
     expect(route).toContain("email-request:");
     expect(route).toContain("title: actionText.slice(0, 220)");
     expect(route).toContain("if (createdTask?.created)");
