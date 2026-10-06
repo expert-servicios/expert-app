@@ -45,12 +45,12 @@ export interface HoldedReadDocument {
   accountingTimestamp: number;
   total: number;
   subtotal: number;
-  tax: number | null;
+  tax: number;
   currency: string;
   status: string;
   contactId: string | null;
   contactName: string;
-  paymentsPending: number;
+  paymentsPending: number | null;
   isDraft: boolean;
 }
 
@@ -65,6 +65,9 @@ export interface HoldedReadBankMovement {
   currency: string;
   status: string;
   reconciledAmount: number;
+  documentId: string | null;
+  invoiceId: string | null;
+  matchId: string | null;
 }
 
 export interface HoldedReadContact {
@@ -106,7 +109,10 @@ function v1DocumentToReadModel(doc: HoldedDocument): HoldedReadDocument {
     : typeof rawDueDate === 'string' && rawDueDate.trim()
       ? rawDueDate
       : null;
-  const paymentsPending = Number(raw.paymentsPending ?? raw.payments_pending ?? 0);
+  const rawPaymentsPending = raw.paymentsPending ?? raw.payments_pending;
+  const paymentsPending = rawPaymentsPending === null || rawPaymentsPending === undefined
+    ? null
+    : Number(rawPaymentsPending);
 
   return {
     id: String(doc.id ?? ''),
@@ -137,11 +143,6 @@ function v2DocumentToReadModel(doc: HoldedV2Invoice | HoldedV2Purchase): HoldedR
   const accountingTimestamp = accountingDate ? Math.floor(Date.parse(accountingDate) / 1000) : timestamp;
   const status = String(doc.status ?? '');
   const approvalStatus = String(doc.approval_status ?? '').toLowerCase();
-  const rawTax = doc.tax;
-  const parsedTax = rawTax === null || rawTax === undefined || String(rawTax).trim() === ''
-    ? null
-    : Number(rawTax);
-  const tax = parsedTax !== null && Number.isFinite(parsedTax) ? parsedTax : null;
 
   return {
     id: String(doc.id ?? ''),
@@ -153,18 +154,21 @@ function v2DocumentToReadModel(doc: HoldedV2Invoice | HoldedV2Purchase): HoldedR
     accountingTimestamp: Number.isFinite(accountingTimestamp) ? accountingTimestamp : (Number.isFinite(timestamp) ? timestamp : 0),
     total: Number(doc.total ?? 0),
     subtotal: Number(doc.subtotal ?? 0),
-    tax,
+    tax: Number(doc.tax ?? 0),
     currency: String(doc.currency ?? 'EUR'),
     status,
     contactId: doc.contact_id ? String(doc.contact_id) : null,
     contactName: String(doc.contact_name ?? ''),
-    paymentsPending: Number(doc.payments_pending ?? 0),
+    paymentsPending: doc.payments_pending === null || doc.payments_pending === undefined
+      ? null
+      : Number(doc.payments_pending),
     isDraft: approvalStatus ? approvalStatus !== 'approved' : status.toLowerCase() === 'draft',
   };
 }
 
 function v1BankMovementToReadModel(movement: HoldedBankMovement, accountId: string): HoldedReadBankMovement {
   const timestamp = Number(movement.date ?? 0);
+  const raw = movement as unknown as Record<string, unknown>;
   return {
     id: String(movement.id ?? ''),
     accountId,
@@ -176,6 +180,9 @@ function v1BankMovementToReadModel(movement: HoldedBankMovement, accountId: stri
     currency: 'EUR',
     status: String(movement.status ?? 'unknown'),
     reconciledAmount: 0,
+    documentId: movement.documentId ? String(movement.documentId) : raw.document_id ? String(raw.document_id) : null,
+    invoiceId: raw.invoiceId ? String(raw.invoiceId) : raw.invoice_id ? String(raw.invoice_id) : null,
+    matchId: raw.matchId ? String(raw.matchId) : raw.match_id ? String(raw.match_id) : null,
   };
 }
 
@@ -193,6 +200,9 @@ function v2BankMovementToReadModel(movement: HoldedV2BankMovement): HoldedReadBa
     currency: String(movement.currency ?? 'EUR'),
     status: String(movement.status ?? 'unknown'),
     reconciledAmount: Number(movement.reconciled_amount ?? 0),
+    documentId: typeof movement.document_id === 'string' ? movement.document_id : null,
+    invoiceId: typeof movement.invoice_id === 'string' ? movement.invoice_id : null,
+    matchId: typeof movement.match_id === 'string' ? movement.match_id : null,
   };
 }
 
@@ -244,38 +254,11 @@ export async function listHoldedDocumentType(
 ): Promise<HoldedReadDocument[]> {
   if (docType === 'invoice') return listHoldedDocuments(gateway, 'sales', params);
   if (docType === 'purchase') return listHoldedDocuments(gateway, 'purchase', params);
+  if (!gateway.v1) {
+    throw new HoldedIntegrationError(`Document type ${docType} is not yet available through Holded API v2.`);
+  }
 
   const maxItems = Math.max(1, Math.min(2_000, Math.trunc(params.maxItems ?? 2_000)));
-
-  if (gateway.v2 && (docType === 'salesreceipt' || docType === 'creditnote')) {
-    const items: HoldedReadDocument[] = [];
-    let cursor: string | undefined;
-    while (items.length < maxItems) {
-      const page = docType === 'salesreceipt'
-        ? await gateway.v2.listSalesReceipts({
-            startDate: params.startDate,
-            endDate: params.endDate,
-            approvalStatus: 'approved',
-            limit: Math.min(200, maxItems - items.length),
-            cursor,
-          })
-        : await gateway.v2.listCreditNotes({
-            startDate: params.startDate,
-            endDate: params.endDate,
-            approvalStatus: 'approved',
-            limit: Math.min(200, maxItems - items.length),
-            cursor,
-          });
-      items.push(...page.items.map(v2DocumentToReadModel));
-      if (!page.has_more || !page.cursor) break;
-      cursor = page.cursor;
-    }
-    return items.slice(0, maxItems);
-  }
-
-  if (!gateway.v1) {
-    throw new HoldedIntegrationError(`Document type ${docType} is not available through the configured Holded API version.`);
-  }
   const dateFrom = toUnixDate(params.startDate);
   const dateTo = toUnixDate(params.endDate, true);
   const items: HoldedReadDocument[] = [];
@@ -290,47 +273,35 @@ export async function listHoldedDocumentType(
 export async function listHoldedDocuments(
   gateway: HoldedGateway,
   kind: 'sales' | 'purchase',
-  params: { startDate?: string; endDate?: string; maxItems?: number; includeDrafts?: boolean } = {},
+  params: { startDate?: string; endDate?: string; maxItems?: number } = {},
 ): Promise<HoldedReadDocument[]> {
   const maxItems = Math.max(1, Math.min(2_000, Math.trunc(params.maxItems ?? 2_000)));
 
   if (gateway.v2) {
     const v2 = gateway.v2;
     const items: HoldedReadDocument[] = [];
-    const approvalStatuses: Array<'approved' | 'draft'> = params.includeDrafts
-      ? ['approved', 'draft']
-      : ['approved'];
-
-    for (const approvalStatus of approvalStatuses) {
-      let cursor: string | undefined;
-      let statusItems = 0;
-      while (statusItems < maxItems) {
-        const page = kind === 'sales'
-          ? await v2.listInvoices({
-              startDate: params.startDate,
-              endDate: params.endDate,
-              approvalStatus,
-              limit: Math.min(200, maxItems - statusItems),
-              cursor,
-            })
-          : await v2.listPurchases({
-              startDate: params.startDate,
-              endDate: params.endDate,
-              approvalStatus,
-              limit: Math.min(200, maxItems - statusItems),
-              cursor,
-            });
-        const mapped = page.items.map(v2DocumentToReadModel);
-        items.push(...mapped);
-        statusItems += mapped.length;
-        if (!page.has_more || !page.cursor) break;
-        cursor = page.cursor;
-      }
+    let cursor: string | undefined;
+    while (items.length < maxItems) {
+      const page = kind === 'sales'
+        ? await v2.listInvoices({
+            startDate: params.startDate,
+            endDate: params.endDate,
+            approvalStatus: 'approved',
+            limit: Math.min(100, maxItems - items.length),
+            cursor,
+          })
+        : await v2.listPurchases({
+            startDate: params.startDate,
+            endDate: params.endDate,
+            approvalStatus: 'approved',
+            limit: Math.min(100, maxItems - items.length),
+            cursor,
+          });
+      items.push(...page.items.map(v2DocumentToReadModel));
+      if (!page.has_more || !page.cursor) break;
+      cursor = page.cursor;
     }
-
-    return items
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, maxItems);
+    return items.slice(0, maxItems);
   }
 
   const v1 = gateway.v1;
@@ -386,7 +357,6 @@ export async function listHoldedBankMovements(
   } = {},
 ): Promise<HoldedReadBankMovement[]> {
   const maxItems = Math.max(1, Math.min(2_000, Math.trunc(params.maxItems ?? 200)));
-
   if (gateway.v2) {
     const items: HoldedReadBankMovement[] = [];
     let cursor: string | undefined;
@@ -405,20 +375,23 @@ export async function listHoldedBankMovements(
     return items.slice(0, maxItems);
   }
 
-  const v1 = gateway.v1;
-  if (!v1) throw new HoldedIntegrationError('Holded v1 client is unavailable.');
+  if (!gateway.v1) throw new HoldedIntegrationError('Holded v1 client is unavailable.');
   const dateFrom = toUnixDate(params.startDate);
   const dateTo = toUnixDate(params.endDate, true);
   const items: HoldedReadBankMovement[] = [];
   for (let page = 1; page <= 20 && items.length < maxItems; page++) {
-    const movements = await v1.listBankAccountMovements(accountId, { page, dateFrom, dateTo });
+    const movements = await gateway.v1.listBankAccountMovements(accountId, { page, dateFrom, dateTo });
     if (movements.length === 0) break;
-    items.push(...movements.map((movement) => v1BankMovementToReadModel(movement, accountId)));
+    const normalized = movements
+      .map((movement) => v1BankMovementToReadModel(movement, accountId))
+      .filter((movement) =>
+        !params.pendingOnly
+        || !movement.documentId && !movement.invoiceId && !movement.matchId
+          && !['reconciled', 'conciliado', 'matched', 'true', 'forced_reconciled'].includes(movement.status.toLowerCase())
+      );
+    items.push(...normalized.slice(0, maxItems - items.length));
   }
-  return items
-    .filter((movement) => !params.pendingOnly
-      || !['reconciled', 'conciliado', 'matched', 'true', 'forced_reconciled'].includes(movement.status.toLowerCase()))
-    .slice(0, maxItems);
+  return items.slice(0, maxItems);
 }
 
 export async function listHoldedBankAccounts(
