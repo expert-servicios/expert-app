@@ -10,6 +10,7 @@ import { retrieveKiaMemories, type KiaMemory } from './kia-memory-retriever';
 import { loadKiaMemoryV2Context, mergeKiaMemoryContexts } from './kia-memory-v2-context';
 import { loadKiaClientBrief, type KiaClientBrief, type KiaOriginEmailContext } from './kia-client-brief';
 import { loadClientRegistryContext, type KiaClientLedgerContext } from './kia-client-ledger';
+import { EXPERT_IDENTITY } from '@/config/identity';
 
 export interface KiaContextInput {
   channel: 'waba' | 'telegram' | 'admin' | 'email' | 'dashboard' | 'document';
@@ -69,6 +70,9 @@ export interface KiaContext {
     coveragePrimaryCompanyId: string | null;
     coveragePrimaryCompanyName: string | null;
     coverageScope: string | null;
+    externalCommunicationBlocked: boolean;
+    portalActivationBlocked: boolean;
+    accountingWriteBlocked: boolean;
     holdedConnected: boolean;
     /** Backwards-compatible alias for the effective/enabled permission map. */
     holdedPermissions: HoldedPermissions;
@@ -327,7 +331,7 @@ async function loadCompany(
 ): Promise<KiaContext['company']> {
   if (!resolvedCompanyId) return null;
 
-  const [{ data: company }, { data: integrations }, coverage] = await Promise.all([
+  const [{ data: company }, { data: integrations }, { data: controls }, coverage] = await Promise.all([
     admin.from('companies').select('id, razon_social, nombre_comercial, cif_nif').eq('id', resolvedCompanyId).maybeSingle(),
     admin.from('client_integrations')
       .select('status, permissions_detected, permissions_enabled')
@@ -336,6 +340,10 @@ async function loadCompany(
       .neq('status', 'revoked')
       .order('created_at', { ascending: false })
       .limit(1),
+    admin.from('company_operational_controls')
+      .select('external_communication_blocked,portal_activation_blocked,accounting_write_blocked')
+      .eq('company_id', resolvedCompanyId)
+      .maybeSingle(),
     clientId
       ? resolveCompanyCommercialCoverage(admin, clientId, resolvedCompanyId)
       : Promise.resolve(null),
@@ -347,7 +355,9 @@ async function loadCompany(
     permissions_detected?: Record<string, boolean>;
     permissions_enabled?: Record<string, boolean>;
   } | undefined;
-  const connected = integration?.status === 'active';
+  const expertGlobalHolded = company.cif_nif?.trim().toUpperCase() === EXPERT_IDENTITY.taxId
+    && Boolean(process.env.HOLDED_API_KEY?.trim());
+  const connected = expertGlobalHolded || integration?.status === 'active';
   const detected = connected
     ? normalizeDetectedHoldedPermissions(integration?.permissions_detected ?? {})
     : normalizeDetectedHoldedPermissions({});
@@ -376,6 +386,9 @@ async function loadCompany(
     coveragePrimaryCompanyId: coverage?.primaryCompanyId ?? null,
     coveragePrimaryCompanyName: coverage?.primaryCompanyName ?? null,
     coverageScope: coverage?.coverageScope ?? null,
+    externalCommunicationBlocked: Boolean(controls?.external_communication_blocked),
+    portalActivationBlocked: Boolean(controls?.portal_activation_blocked),
+    accountingWriteBlocked: Boolean(controls?.accounting_write_blocked),
     holdedConnected: connected,
     holdedPermissions: enabled,
     holdedPermissionsDetected: detected,
