@@ -222,8 +222,6 @@ export const kiaToolValidators = {
       email: z.string().email().optional().nullable(),
     }).strict()).min(1).max(20),
   }).strict(),
-  get_case_signature_status: 'Read the auditable signature lifecycle for one authorized case. Only completed actions with explicit final-document evidence are returned as signed.',
-  prepare_signature_request: 'Prepare an Admin/Owner-only Google eSignature action for an accessible current document. Creates a review item but never sends a signature request externally.',
   get_case_documents: z.object({
     caseId: z.string().uuid(),
     limit: z.number().int().min(1).max(50).default(20),
@@ -329,6 +327,8 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   create_next_best_action: 'Draft a next best action for backend/admin review.',
   classify_document: 'Classify a document using safe metadata or text preview.',
   get_case_status: 'Return status of one case or recent client cases.',
+  get_case_signature_status: 'Read the auditable signature lifecycle for one authorized case. Only completed actions with explicit final-document evidence are returned as signed.',
+  prepare_signature_request: 'Prepare an Admin/Owner-only Google eSignature action for an accessible current document. Creates a review item but never sends a signature request externally.',
   create_internal_task: 'Draft an internal task for backend/admin review.',
   generate_checkout_gate_link: 'Generate a protected /contratar link; does not create Stripe checkout.',
   generate_profile_link: 'Generate secure profile/login link.',
