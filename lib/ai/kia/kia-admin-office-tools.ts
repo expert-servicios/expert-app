@@ -78,28 +78,29 @@ function addDaysToDateKey(dateKey: string, days: number): string {
 }
 
 async function scopedCaseIds(admin: AdminClient, context: KiaContext): Promise<string[]> {
-  if (context.company?.id) {
-    const { data, error } = await admin
+  const pageSize = 500;
+  const ids: string[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    let query = admin
       .from('cases')
       .select('id')
-      .eq('company_id', context.company.id)
-      .limit(300);
-    if (error) throw error;
-    return (data ?? []).map((row) => String(row.id));
-  }
+      .order('id', { ascending: true })
+      .range(offset, offset + pageSize - 1);
 
-  const clientId = targetClientId(context);
-  if (clientId) {
-    const { data, error } = await admin
-      .from('cases')
-      .select('id')
-      .eq('client_id', clientId)
-      .limit(300);
-    if (error) throw error;
-    return (data ?? []).map((row) => String(row.id));
-  }
+    if (context.company?.id) query = query.eq('company_id', context.company.id);
+    else {
+      const clientId = targetClientId(context);
+      if (clientId) query = query.eq('client_id', clientId);
+      else return [];
+    }
 
-  return [];
+    const { data, error } = await query;
+    if (error) throw error;
+    const rows = data ?? [];
+    ids.push(...rows.map((row) => String(row.id)));
+    if (rows.length < pageSize) break;
+  }
+  return ids;
 }
 
 async function scopedEmails(admin: AdminClient, context: KiaContext): Promise<string[]> {
@@ -114,9 +115,24 @@ async function scopedEmails(admin: AdminClient, context: KiaContext): Promise<st
       .maybeSingle();
     if (error) throw error;
     if (typeof data?.email === 'string' && data.email.trim()) values.add(data.email.trim().toLowerCase());
+
+    const { data: authUser, error: authUserError } = await admin.auth.admin.getUserById(clientId);
+    if (authUserError) throw authUserError;
+    const authEmail = authUser.user?.email?.trim().toLowerCase();
+    if (authEmail) values.add(authEmail);
   }
 
   if (context.company?.id) {
+    const { data: company, error: companyError } = await admin
+      .from('companies')
+      .select('email')
+      .eq('id', context.company.id)
+      .maybeSingle();
+    if (companyError) throw companyError;
+    if (typeof company?.email === 'string' && company.email.trim()) {
+      values.add(company.email.trim().toLowerCase());
+    }
+
     const { data: memberships, error: membershipError } = await admin
       .from('profile_companies')
       .select('profile_id')
@@ -199,7 +215,9 @@ async function buildAppointmentScopeFilter(admin: AdminClient, context: KiaConte
   if (context.company?.id) clauses.push(`company_id.eq.${context.company.id}`);
   const clientId = targetClientId(context);
   if (clientId) clauses.push(`client_id.eq.${clientId}`);
-  if (emails.length > 0) clauses.push(`email.in.(${emails.map(quoteFilterValue).join(',')})`);
+  if (emails.length > 0) {
+    clauses.push(`and(client_id.is.null,company_id.is.null,email.in.(${emails.map(quoteFilterValue).join(',')}))`);
+  }
   return clauses.length > 0 ? clauses.join(',') : '__no_match__';
 }
 
@@ -252,10 +270,18 @@ async function loadTasks(
     .order('created_at', { ascending: false })
     .limit(limit);
 
-  if (context.company?.id) query = query.eq('company_id', context.company.id);
-  else {
+  const caseIds = await scopedCaseIds(admin, context);
+  if (context.company?.id) {
+    const clauses = [`company_id.eq.${context.company.id}`];
+    if (caseIds.length > 0) clauses.push(`case_id.in.(${caseIds.join(',')})`);
+    query = query.or(clauses.join(','));
+  } else {
     const clientId = targetClientId(context);
-    if (clientId) query = query.eq('client_id', clientId);
+    if (clientId) {
+      const clauses = [`client_id.eq.${clientId}`];
+      if (caseIds.length > 0) clauses.push(`case_id.in.(${caseIds.join(',')})`);
+      query = query.or(clauses.join(','));
+    }
   }
 
   const { data, error, count } = await query;
