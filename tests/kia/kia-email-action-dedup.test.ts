@@ -9,6 +9,7 @@ const migration = readFileSync(
 
 describe('KIA email action deduplication', () => {
   it('preserves Unicode letters and numbers in action fingerprints', () => {
+    expect(route).toContain("\\p{M}+");
     expect(route).toContain("[^\\p{L}\\p{N}]+");
     expect(route).toContain("|| input.message.id");
   });
@@ -21,7 +22,7 @@ describe('KIA email action deduplication', () => {
 
   it('resolves concurrent unique conflicts back to the existing open task', () => {
     expect(route).toContain("error.code !== '23505'");
-    expect(route).toContain(".contains('metadata', { action_fingerprint: actionFingerprint })");
+    expect(route).toContain(".eq('metadata->>action_fingerprint', actionFingerprint)");
   });
 
   it('blocks task creation and auto-send when orchestration failed closed', () => {
@@ -36,8 +37,8 @@ describe('KIA email action deduplication', () => {
     expect(route).toContain('if (reused?.id)');
   });
 
-  it('indexes JSON containment lookups as well as enforcing unique open fingerprints', () => {
-    expect(migration).toContain('idx_internal_tasks_open_metadata_gin');
-    expect(migration).toContain('using gin (metadata jsonb_path_ops)');
+  it('uses the partial unique expression index as the canonical lookup index', () => {
+    expect(migration).toContain("on public.internal_tasks ((metadata ->> 'action_fingerprint'))");
+    expect(migration).not.toContain('using gin');
   });
 });
