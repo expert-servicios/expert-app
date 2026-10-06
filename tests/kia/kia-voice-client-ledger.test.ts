@@ -19,7 +19,7 @@ describe('KIA voice and durable client registry', () => {
   const migration = source('supabase/migrations/20260929160818_kia_client_registry_ledger.sql');
   const deny = source('supabase/migrations/20260929162529_kia_client_registry_explicit_deny.sql');
   const hardening = source('supabase/migrations/20260930113000_kia_client_registry_hardening.sql');
-  const companyMigration = source('supabase/migrations/20261005100500_kia_client_registry_company_subjects.sql');
+  const companyMigration = source('supabase/migrations/20261005080633_kia_client_registry_company_subjects.sql');
   const companyLedger = source('lib/ai/kia/kia-company-ledger.ts');
 
   it('keeps audio credentials server-side and enforces auth/size/type gates', () => {
