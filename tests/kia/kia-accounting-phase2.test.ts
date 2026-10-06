@@ -229,7 +229,7 @@ describe('KIA Accounting v1 Holded compatibility contracts', () => {
   });
 
   it('caps v2 invoice and purchase pages at 100 but keeps bank movement pages at 200', () => {
-    expect(gateway).toContain('limit: Math.min(100, maxItems - items.length)');
+    expect(gateway).toContain('limit: Math.min(100, maxItems - statusItems)');
     expect(gateway).toContain("status: params.pendingOnly ? ['pending', 'partial'] : undefined");
     expect(gateway).toContain('limit: Math.min(200, maxItems - items.length)');
   });
