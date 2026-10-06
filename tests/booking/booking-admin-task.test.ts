@@ -12,7 +12,7 @@ describe('booking admin task lifecycle', () => {
   const calWebhook = source('app/api/webhooks/cal/route.ts');
   const reconciler = source('app/api/cron/booking-task-reconcile/route.ts');
   const migration = source('supabase/migrations/20260928101218_booking_admin_task_appointment_key.sql');
-  const vercel = source('vercel.json');
+  const scheduler = source('supabase/migrations/20261006090844_consolidate_application_crons_20261006.sql');
 
   it('enforces one canonical system task per appointment in PostgreSQL', () => {
     expect(route).toContain('ensureBookingAdminTask({');
@@ -75,7 +75,8 @@ describe('booking admin task lifecycle', () => {
     expect(helper).toContain('.range(offset, offset + pageSize - 1)');
     expect(helper).toContain("appointment.status === 'confirmed' || appointment.status === 'confirmada'");
     expect(reconciler).toContain('reconcileBookingAdminTasks');
-    expect(vercel).toContain('/api/cron/booking-task-reconcile');
+    expect(scheduler).toContain('/api/cron/booking-task-reconcile');
+    expect(scheduler).toContain("'5,20,35,50 * * * *'");
   });
 
   it('preserves booking acquisition origin for Admin operations', () => {
