@@ -2,6 +2,7 @@ import { ROLES } from '@/lib/auth/roles';
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import type { KiaContext } from './kia-context-builder';
 import type { KiaToolResult } from './kia-tool-definitions';
+import { redactJson } from './kia-redaction';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -25,7 +26,7 @@ type PageResult<T> = {
 };
 
 function ok(toolName: string, result: Record<string, unknown>): KiaToolResult {
-  return { toolName, ok: true, result };
+  return { toolName, ok: true, result: redactJson(result) };
 }
 
 function fail(toolName: string, error: string): KiaToolResult {
@@ -133,18 +134,27 @@ async function scopedEmails(admin: AdminClient, context: KiaContext): Promise<st
       values.add(company.email.trim().toLowerCase());
     }
 
-    const { data: memberships, error: membershipError } = await admin
-      .from('profile_companies')
-      .select('profile_id')
-      .eq('company_id', context.company.id)
-      .limit(300);
-    if (membershipError) throw membershipError;
-    const profileIds = (memberships ?? []).map((row) => String(row.profile_id)).filter(Boolean);
-    if (profileIds.length > 0) {
+    const profileIds: string[] = [];
+    const membershipPageSize = 500;
+    for (let offset = 0; ; offset += membershipPageSize) {
+      const { data: memberships, error: membershipError } = await admin
+        .from('profile_companies')
+        .select('profile_id')
+        .eq('company_id', context.company.id)
+        .order('profile_id', { ascending: true })
+        .range(offset, offset + membershipPageSize - 1);
+      if (membershipError) throw membershipError;
+      const rows = memberships ?? [];
+      profileIds.push(...rows.map((row) => String(row.profile_id)).filter(Boolean));
+      if (rows.length < membershipPageSize) break;
+    }
+
+    for (let offset = 0; offset < profileIds.length; offset += 100) {
+      const batch = profileIds.slice(offset, offset + 100);
       const { data: profiles, error: profileError } = await admin
         .from('profiles')
         .select('email')
-        .in('id', profileIds);
+        .in('id', batch);
       if (profileError) throw profileError;
       for (const row of profiles ?? []) {
         if (typeof row.email === 'string' && row.email.trim()) values.add(row.email.trim().toLowerCase());
