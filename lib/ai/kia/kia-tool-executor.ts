@@ -38,6 +38,10 @@ import {
   executeKiaAccountingTool,
   type KiaAccountingToolName,
 } from './kia-accounting-tools';
+import {
+  getKiaCaseSignatureStatus,
+  prepareKiaSignatureRequest,
+} from './kia-signature-workflow';
 
 const HOLDED_LABOR_TOOL_NAMES = new Set<KiaHoldedLaborToolName>([
   'get_holded_employees',
@@ -528,6 +532,17 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         if (error) return fail(toolCall.name, 'Error consultando tareas.');
         return ok(toolCall.name, { tasks: data ?? [] });
       }
+
+      case 'get_case_signature_status':
+        return getKiaCaseSignatureStatus(admin, context, String(args.caseId));
+
+      case 'prepare_signature_request':
+        return prepareKiaSignatureRequest(admin, context, {
+          caseId: String(args.caseId),
+          documentId: String(args.documentId),
+          signatureLevel: args.signatureLevel as 'simple' | 'advanced' | 'qualified',
+          signers: args.signers as Array<{ name: string; email?: string | null }>,
+        });
 
       case 'get_case_documents': {
         const clientId = context.contact?.clientId;
