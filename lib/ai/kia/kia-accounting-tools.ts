@@ -479,6 +479,7 @@ export async function executeKiaAccountingTool(
       reconciledAmount: asNumber(movement.reconciledAmount ?? movement.reconciled_amount),
       description: movement.description ?? movement.name,
       reference: movement.reference,
+      currency: String(movement.currency ?? 'EUR').toUpperCase(),
       status: movement.status ?? 'unknown',
       treasuryAccountId: movement.treasuryAccountId,
       treasuryAccountName: movement.treasuryAccountName,
