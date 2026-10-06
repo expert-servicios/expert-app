@@ -94,13 +94,58 @@ export async function prepareKiaSignatureRequest(
     .filter((signer) => signer.name);
   if (normalizedSigners.length === 0) return fail('Debe indicarse al menos un firmante.');
 
-  const idempotencyKey = [
-    'signature',
-    input.caseId,
+  const requestIdentity = [
     input.documentId,
     input.signatureLevel,
     ...normalizedSigners.map((signer) => signer.email ?? signer.name.toLowerCase()),
-  ].join(':');
+  ].join('|');
+
+  const { data: previousActions, error: previousActionError } = await admin
+    .from('administrative_actions')
+    .select('id,state,action_snapshot,created_at')
+    .eq('case_id', input.caseId)
+    .eq('capability', KIA_SIGNATURE_CAPABILITY)
+    .eq('action_type', KIA_SIGNATURE_ACTION_TYPE)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (previousActionError) throw previousActionError;
+
+  const matching = (previousActions ?? []).filter((row) => {
+    const snapshot = (row.action_snapshot ?? {}) as Record<string, unknown>;
+    const existingSigners = Array.isArray(snapshot.signers)
+      ? snapshot.signers.map((value) => {
+          const signer = value as Record<string, unknown>;
+          return String(signer.email ?? signer.name ?? '').trim().toLowerCase();
+        })
+      : [];
+    const existingIdentity = [
+      String(snapshot.sourceDocumentId ?? ''),
+      String(snapshot.signatureLevel ?? ''),
+      ...existingSigners,
+    ].join('|');
+    return existingIdentity === requestIdentity;
+  });
+
+  const activeExisting = matching.find((row) =>
+    !['completed', 'cancelled', 'failed_safe', 'expired'].includes(String(row.state))
+  );
+  if (activeExisting) {
+    return {
+      ok: true as const,
+      actionId: activeExisting.id,
+      state: activeExisting.state,
+      provider: 'google_esignature',
+      sourceDocumentId: input.documentId,
+      sourceDocumentUrl: absoluteAppUrl(`/api/documents/${encodeURIComponent(input.documentId)}/download?redirect=1`),
+      requiresHumanLaunch: true,
+      alreadyPrepared: true,
+    };
+  }
+
+  const retryOrdinal = matching.filter((row) =>
+    ['cancelled', 'failed_safe', 'expired'].includes(String(row.state))
+  ).length;
+  const idempotencyKey = ['signature', input.caseId, requestIdentity, 'attempt', retryOrdinal + 1].join(':');
 
   const created = await createKiaAdministrativeAction({
     supabase: admin,
