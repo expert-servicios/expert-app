@@ -212,7 +212,7 @@ Ejemplos:
 ### 05/10/2026
 
 - creada empresa interna en EXPERT sin usuario;
-- creadas cinco tareas internas de reconstrucción;
+- creadas tareas internas de reconstrucción, auditoría, inventario, correo, Holded y activación;
 - activadas tres puertas operativas;
 - documentada arquitectura Holded correcta;
 - hoja registral empresarial creada antes de habilitar usuario/portal;

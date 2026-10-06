@@ -8,7 +8,7 @@ describe('DGM internal accounting rebuild context', () => {
   const contextBuilder = source('lib/ai/kia/kia-context-builder.ts');
   const companyLedger = source('lib/ai/kia/kia-company-ledger.ts');
   const migration = source('supabase/migrations/20261005100500_kia_client_registry_company_subjects.sql');
-  const playbook = source('docs/clients/dgm-accounting-rebuild.md');
+  const playbook = source('docs/clients/dgm-accounting-rebuild-2025-2026.md');
   const learningLoop = source('docs/kia-operator-learning-loop.md');
 
   it('uses a company-scoped registry subject before a portal user exists', () => {
@@ -22,15 +22,15 @@ describe('DGM internal accounting rebuild context', () => {
   });
 
   it('keeps DGM internal until accounting is validated', () => {
-    expect(playbook).toContain('Fase interna EXPERT');
+    expect(playbook).toContain('INTERNAL ONLY');
     expect(playbook).toContain('no crear usuario');
-    expect(playbook).toContain('no enviar correos al titular');
+    expect(playbook).toContain('no enviar correos automáticos ni manuales al titular');
     expect(playbook).toContain('advisor_managed');
     expect(playbook).toContain('auditoría read-only');
   });
 
   it('separates company-specific facts from global KIA learning', () => {
-    expect(playbook).toContain('no se convierten en lecciones globales');
+    expect(playbook).toContain('Contexto específico DGM — NO globalizar');
     expect(learningLoop).toContain('What remains company-scoped');
     expect(learningLoop).toContain('What is promoted globally');
   });
