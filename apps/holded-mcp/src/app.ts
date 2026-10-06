@@ -7,12 +7,14 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { config } from './config.js';
 import { createMcpBackend } from './backend-factory.js';
+import { ExpertBackendClient } from './expert-backend-client.js';
 import { apiRateLimit, requireAuth, requestLogger } from './middleware/auth.js';
 import { corsMiddleware } from './middleware/cors.js';
 import { logger } from './logger.js';
 import { oauthRouter } from './oauth-routes.js';
 import { renderLandingPage } from './public-pages.js';
 import { registerProductionTools } from './tools/index.js';
+import { registerExpertTools } from './tools/expert.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -297,6 +299,11 @@ export function createApp() {
     registerProductionTools(mcpServer, getClient, getContext, {
       includeWriteTools: tokenHasScope(record.scope, 'holded:write'),
     });
+
+    if (config.EXPERT_BACKEND_TOOLS_ENABLED === '1') {
+      const expertClient = new ExpertBackendClient(record.userId);
+      registerExpertTools(mcpServer, () => expertClient);
+    }
 
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
