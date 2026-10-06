@@ -184,6 +184,9 @@ export function AcademyLeadForm({
             </select>
             <input
               type="tel"
+              inputMode="tel"
+              pattern="(?=.*[0-9])[+]?[0-9\s().-]{7,20}"
+              title="Introduce un teléfono válido (7-20 caracteres; puede incluir +, espacios, paréntesis, puntos o guiones)"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="600 000 000"
