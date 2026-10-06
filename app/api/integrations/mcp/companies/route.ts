@@ -14,7 +14,6 @@ async function resolveSupabaseUserId(mcpUserId: string): Promise<string | null> 
   if (directProfileError) {
     throw new Error(`MCP direct profile lookup failed: ${directProfileError.message}`);
   }
-  if (directProfile?.status === 'inactive') return null;
   if (directProfile?.id) return directProfile.id;
 
   const { data: connection, error: connectionError } = await admin
@@ -56,7 +55,7 @@ export async function GET(request: NextRequest) {
   }
 
   const admin = getSupabaseAdmin();
-  const [{ data: memberships, error }, { data: profile }] = await Promise.all([
+  const [{ data: memberships, error }, { data: profile, error: profileError }] = await Promise.all([
     admin
       .from('profile_companies')
       .select('role, company:companies(id,razon_social,nombre_comercial,cif_nif,status,preferred_language)')
@@ -71,6 +70,10 @@ export async function GET(request: NextRequest) {
   if (error) {
     console.error('[MCP companies] membership lookup failed:', error.message);
     return NextResponse.json({ error: 'company_lookup_failed' }, { status: 500 });
+  }
+  if (profileError) {
+    console.error('[MCP companies] profile lookup failed:', profileError.message);
+    return NextResponse.json({ error: 'profile_lookup_failed' }, { status: 500 });
   }
 
   if (profile?.status === 'inactive') {
