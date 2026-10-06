@@ -42,6 +42,7 @@ export const KIA_INTENTS = [
   'document_classification',
   'anomaly_review',
   'payroll_diagnostics',
+  'immigration_advice',
   'company_data_resolve',
   'company_data_confirm',
   'company_data_reject',
