@@ -87,7 +87,7 @@ function firstPresent(doc: Raw, keys: string[]): unknown {
 export function isIssuedHoldedDocument(doc: Raw): boolean {
   if (doc.isDraft === true) return false;
   const status = String(doc.status ?? '').trim().toLowerCase();
-  if (status === '0' || status === 'draft' || status === 'borrador') return false;
+  if (['0', 'draft', 'borrador', 'cancelled', 'canceled', 'failed'].includes(status)) return false;
   return true;
 }
 
@@ -173,6 +173,21 @@ function normalizeDocument(doc: Raw) {
     status: doc.status ?? doc.paymentStatus ?? 'unknown',
     overdue: isHoldedDocumentOverdue(doc),
   };
+}
+
+export function holdedUnreconciledMovementAmount(movement: Raw): number {
+  const amount = asNumber(movement.amount);
+  const status = String(movement.status ?? movement.reconciled ?? '').trim().toLowerCase();
+
+  if (['reconciled', 'conciliated', 'conciliado', 'matched', 'true', 'forced_reconciled'].includes(status)) {
+    return 0;
+  }
+
+  if (status !== 'partial') return amount;
+
+  const reconciled = asNumber(movement.reconciledAmount ?? movement.reconciled_amount);
+  const remaining = Math.max(0, Math.abs(amount) - Math.abs(reconciled));
+  return amount < 0 ? -remaining : remaining;
 }
 
 export function totalsByCurrency(rows: Array<{ outstanding: number; currency: string }>): Record<string, number> {
@@ -338,9 +353,13 @@ async function findIssuedSalesInvoice(
 ): Promise<{ ok: true; invoice: ReturnType<typeof normalizeDocument> } | { ok: false; error: string }> {
   const loaded = await loadDocuments(context, 'invoice');
   if (!loaded.ok) return loaded;
-  const raw = loaded.docs.find((doc) => String(doc.id ?? '') === invoiceId || String(doc.docNumber ?? doc.number ?? '') === invoiceId);
+  const raw = loaded.docs.find((doc) =>
+    String(doc.id ?? '') === invoiceId || String(doc.docNumber ?? doc.number ?? '') === invoiceId
+  );
   if (!raw) return { ok: false, error: 'No se ha encontrado la factura indicada en el rango contable disponible.' };
-  if (!isIssuedHoldedDocument(raw)) return { ok: false, error: 'La factura indicada sigue en borrador y no puede utilizarse para este flujo.' };
+  if (!isIssuedHoldedDocument(raw)) {
+    return { ok: false, error: 'La factura indicada sigue en borrador y no puede utilizarse para este flujo.' };
+  }
   return { ok: true, invoice: normalizeDocument(raw) };
 }
 
@@ -381,10 +400,7 @@ export async function executeKiaAccountingTool(
     const found = await findIssuedSalesInvoice(context, invoiceId);
     if (!found.ok) return fail(toolName, found.error);
     const amount = typeof args.amount === 'number' ? args.amount : undefined;
-    if (
-      amount !== undefined
-      && Math.round(amount * 100) > Math.round(found.invoice.total * 100)
-    ) {
+    if (amount !== undefined && Math.round(amount * 100) > Math.round(found.invoice.total * 100)) {
       return fail(toolName, 'El importe propuesto no puede superar el total de la factura original.');
     }
     return ok(toolName, buildCreditNoteProposal({
@@ -454,18 +470,19 @@ export async function executeKiaAccountingTool(
     const rows = loaded.movements.filter((movement) => {
       const status = String(movement.status ?? movement.reconciled ?? '').toLowerCase();
       const hasDocument = Boolean(movement.documentId ?? movement.invoiceId ?? movement.matchId);
-      return !hasDocument && !['reconciled', 'conciliated', 'conciliado', 'matched', 'true'].includes(status);
-    }).slice(0, limit).map((movement) => ({
+      return !hasDocument && !['reconciled', 'conciliated', 'conciliado', 'matched', 'true', 'forced_reconciled'].includes(status);
+    }).map((movement) => ({
       id: movement.id,
       date: movement.date,
-      amount: asNumber(movement.amount),
-      currency: String(movement.currency ?? 'EUR').toUpperCase(),
+      amount: holdedUnreconciledMovementAmount(movement),
+      originalAmount: asNumber(movement.amount),
+      reconciledAmount: asNumber(movement.reconciledAmount ?? movement.reconciled_amount),
       description: movement.description ?? movement.name,
       reference: movement.reference,
       status: movement.status ?? 'unknown',
       treasuryAccountId: movement.treasuryAccountId,
       treasuryAccountName: movement.treasuryAccountName,
-    }));
+    })).filter((movement) => Math.abs(movement.amount) > 0.005).slice(0, limit);
 
     return ok(toolName, {
       source,
