@@ -1,4 +1,13 @@
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import {
+  clientRegistryDetailCutoff,
+  clientRegistryRetentionDates,
+  loadClientRegistryProfile,
+  refreshClientRegistryHistoricalSummaries,
+  type KiaRegistryHistoricalSummary,
+  type KiaRegistryOperationalInstruction,
+  type KiaRegistryStructuralFact,
+} from './kia-client-registry-profile';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -7,6 +16,9 @@ export interface KiaClientLedgerContext {
   lifecycleStage: string;
   summaryText: string;
   asOf: string;
+  structuralFacts: KiaRegistryStructuralFact[];
+  operationalInstructions: KiaRegistryOperationalInstruction[];
+  historicalSummaries: KiaRegistryHistoricalSummary[];
   recentEvents: Array<{
     eventType: string;
     occurredAt: string;
@@ -206,6 +218,7 @@ type RegistryEventInput = {
 };
 
 function serializeRegistryEvent(input: RegistryEventInput) {
+  const retention = clientRegistryRetentionDates(input.occurredAt);
   return {
     subject_id: input.subjectId,
     event_type: input.eventType,
@@ -224,6 +237,9 @@ function serializeRegistryEvent(input: RegistryEventInput) {
     case_id: input.caseId ?? null,
     importance: Math.max(0, Math.min(5, input.importance ?? 1)),
     metadata: input.metadata ?? {},
+    detail_until: retention.detailUntil,
+    retain_until: retention.retainUntil,
+    retention_class: 'standard',
   };
 }
 
@@ -273,9 +289,15 @@ export async function loadClientRegistryContext(
     .eq('subject_id', subject.id)
     .maybeSingle();
 
+  const profilePromise = loadClientRegistryProfile(admin, subject.id, {
+    companyId: input.companyId ?? null,
+    caseId: input.caseId ?? null,
+  });
+
   let eventsQuery = admin.from('client_registry_events')
     .select('event_type,occurred_at,title,summary,channel,direction,case_id,company_id,importance,source_ref')
-    .eq('subject_id', subject.id);
+    .eq('subject_id', subject.id)
+    .gte('occurred_at', clientRegistryDetailCutoff());
 
   if (input.companyId) {
     eventsQuery = eventsQuery.or(`company_id.is.null,company_id.eq.${input.companyId}`);
@@ -286,9 +308,10 @@ export async function loadClientRegistryContext(
     eventsQuery = eventsQuery.or(`case_id.is.null,case_id.eq.${input.caseId}`);
   }
 
-  const [snapshotResult, eventsResult] = await Promise.all([
+  const [snapshotResult, eventsResult, profile] = await Promise.all([
     snapshotPromise,
-    eventsQuery.order('occurred_at', { ascending: false }).limit(40),
+    eventsQuery.order('occurred_at', { ascending: false }).limit(120),
+    profilePromise,
   ]);
   if (snapshotResult.error) throw snapshotResult.error;
   if (eventsResult.error) throw eventsResult.error;
@@ -305,6 +328,9 @@ export async function loadClientRegistryContext(
     lifecycleStage: subject.lifecycleStage,
     summaryText,
     asOf: snapshotResult.data?.as_of ?? new Date(0).toISOString(),
+    structuralFacts: profile.structuralFacts,
+    operationalInstructions: profile.operationalInstructions,
+    historicalSummaries: profile.historicalSummaries,
     recentEvents: rows.slice(0, 24).map((row) => ({
       eventType: row.event_type,
       occurredAt: row.occurred_at,
@@ -719,6 +745,7 @@ export async function reconcileClientRegistry(
     throw first instanceof Error ? first : new Error('client_registry_reconciliation_partial_failure');
   }
   await appendEvents(admin, pendingEvents);
+  await refreshClientRegistryHistoricalSummaries(admin, subject.id);
   return refreshClientRegistrySnapshot(admin, subject.id, subject.lifecycleStage);
 }
 
@@ -727,11 +754,15 @@ async function refreshClientRegistrySnapshot(
   subjectId: string,
   lifecycleStage: string,
 ): Promise<KiaClientLedgerContext> {
-  const { data: events, error } = await admin.from('client_registry_events')
-    .select('event_type,occurred_at,title,summary,channel,direction,case_id,company_id,importance,source_ref')
-    .eq('subject_id', subjectId)
-    .order('occurred_at', { ascending: false })
-    .limit(80);
+  const [{ data: events, error }, profile] = await Promise.all([
+    admin.from('client_registry_events')
+      .select('event_type,occurred_at,title,summary,channel,direction,case_id,company_id,importance,source_ref')
+      .eq('subject_id', subjectId)
+      .gte('occurred_at', clientRegistryDetailCutoff())
+      .order('occurred_at', { ascending: false })
+      .limit(500),
+    loadClientRegistryProfile(admin, subjectId),
+  ]);
   if (error) throw error;
 
   const rows = events ?? [];
@@ -790,6 +821,9 @@ async function refreshClientRegistrySnapshot(
     lifecycleStage,
     summaryText,
     asOf: now,
+    structuralFacts: profile.structuralFacts,
+    operationalInstructions: profile.operationalInstructions,
+    historicalSummaries: profile.historicalSummaries,
     recentEvents: recent.map((row) => ({
       eventType: row.event_type,
       occurredAt: row.occurred_at,

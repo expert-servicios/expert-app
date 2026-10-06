@@ -219,3 +219,26 @@ Regla:
 > Company 360 = identidad y estado vivo. Hoja registral = historia verificable y contexto. Operator Lessons = aprendizaje generalizable.
 
 No usar `companies.notes` como sustituto de la hoja registral.
+
+
+## Hoja Registral v2
+
+La Hoja Registral usa tres capas separadas:
+
+1. **Detalle operativo (24 meses)**: eventos verificables recientes, filtrados por subject, empresa y expediente.
+2. **Hechos estructurales e instrucciones operativas**: permanecen activos hasta sustitución o revocación expresa. Todo registro confirmado exige procedencia (`source_ref` o `source_event_id`) y la sustitución se ejecuta de forma atómica en base de datos.
+3. **Histórico consolidado (6 años por defecto)**: resúmenes compactos por año y scope. Los resúmenes de un expediente no se cargan en otro expediente. `legal_hold` puede conservar evidencias fuera de la ventana estándar.
+
+Reglas de autoridad:
+- la Hoja Registral aporta continuidad y memoria operativa;
+- no sustituye normativa, fuentes oficiales vivas, contabilidad actual ni datos de Holded;
+- una inferencia del modelo nunca se convierte automáticamente en hecho estructural;
+- Company 360 puede versionar o revocar hechos/instrucciones, pero no modifica las fuentes canónicas;
+- al sustituir un registro, la versión anterior queda conservada como `superseded`.
+
+Criterios técnicos:
+- tablas v2 denegadas a `anon` y `authenticated`;
+- escrituras confirmadas únicamente mediante `service_role`;
+- funciones `replace_client_registry_fact` y `replace_client_registry_instruction` bloquean concurrencia con `FOR UPDATE`;
+- los resúmenes históricos incluyen `company_id` y `case_id` para evitar contaminación entre expedientes;
+- los eventos estándar dejan de formar parte del contexto al superar la retención aplicable; `legal_hold` se trata separadamente.
