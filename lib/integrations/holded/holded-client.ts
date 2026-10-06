@@ -156,7 +156,7 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
       { key: 'salesInvoices', probe: () => get('/documents/invoice?page=1') },
       { key: 'purchaseInvoices', probe: () => get('/documents/purchase?page=1') },
       { key: 'taxes', probe: () => get('/taxes') },
-      { key: 'bankAccounts', probe: () => get('/treasury/accounts') },
+      { key: 'bankAccounts', probe: () => get('/treasury') },
       { key: 'bankMovements', probe: () => get('/treasury/movements?page=1') },
       { key: 'inboxDocuments', probe: () => get('/documents/inbox?page=1') },
       { key: 'accountingReports', probe: () => getAccounting(`/reports/vat?year=${new Date().getFullYear()}`) },
@@ -222,24 +222,24 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
 
     async listSalesInvoices({ page = 1, dateFrom, dateTo } = {}) {
       const qs = new URLSearchParams({ page: String(page) });
-      if (dateFrom) qs.set('dateFrom', String(dateFrom));
-      if (dateTo) qs.set('dateTo', String(dateTo));
+      if (dateFrom) qs.set('starttmp', String(dateFrom));
+      if (dateTo) qs.set('endtmp', String(dateTo));
       const raw = await get<unknown>(`/documents/invoice?${qs}`);
       return listOrData<HoldedDocument>(raw);
     },
 
     async listPurchaseInvoices({ page = 1, dateFrom, dateTo } = {}) {
       const qs = new URLSearchParams({ page: String(page) });
-      if (dateFrom) qs.set('dateFrom', String(dateFrom));
-      if (dateTo) qs.set('dateTo', String(dateTo));
+      if (dateFrom) qs.set('starttmp', String(dateFrom));
+      if (dateTo) qs.set('endtmp', String(dateTo));
       const raw = await get<unknown>(`/documents/purchase?${qs}`);
       return listOrData<HoldedDocument>(raw);
     },
 
     async listDocuments(docType, { page = 1, dateFrom, dateTo } = {}) {
       const qs = new URLSearchParams({ page: String(page) });
-      if (dateFrom) qs.set('dateFrom', String(dateFrom));
-      if (dateTo) qs.set('dateTo', String(dateTo));
+      if (dateFrom) qs.set('starttmp', String(dateFrom));
+      if (dateTo) qs.set('endtmp', String(dateTo));
       const raw = await get<unknown>(`/documents/${docType}?${qs}`);
       return listOrData<HoldedDocument>(raw);
     },
@@ -249,13 +249,13 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
     },
 
     async listBankAccounts() {
-      return listOrData<HoldedBankAccount>(await get<unknown>('/treasury/accounts'));
+      return listOrData<HoldedBankAccount>(await get<unknown>('/treasury'));
     },
 
     async listBankMovements({ page = 1, dateFrom, dateTo } = {}) {
       const qs = new URLSearchParams({ page: String(page) });
-      if (dateFrom) qs.set('dateFrom', String(dateFrom));
-      if (dateTo) qs.set('dateTo', String(dateTo));
+      if (dateFrom) qs.set('starttmp', String(dateFrom));
+      if (dateTo) qs.set('endtmp', String(dateTo));
       return listOrData<HoldedBankMovement>(await get<unknown>(`/treasury/movements?${qs}`));
     },
 
@@ -263,8 +263,8 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
       const id = encodeURIComponent(accountId.trim());
       if (!id) throw new Error('accountId is required');
       const qs = new URLSearchParams({ page: String(page) });
-      if (dateFrom) qs.set('dateFrom', String(dateFrom));
-      if (dateTo) qs.set('dateTo', String(dateTo));
+      if (dateFrom) qs.set('starttmp', String(dateFrom));
+      if (dateTo) qs.set('endtmp', String(dateTo));
       return listOrData<HoldedBankMovement>(
         await get<unknown>(`/treasury/${id}/movements?${qs}`),
       );
