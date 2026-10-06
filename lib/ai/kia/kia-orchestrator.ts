@@ -138,12 +138,13 @@ export async function runKiaOrchestratedDecision(params: {
   });
 
   const needsClarification = classification?.needsClarify === true && classification.ambiguityScore >= 0.7;
+  const classificationResolved = classification !== null && classification.detectedIntent !== 'unknown';
   const orchestrationFailClosed = shouldFailClosedChatOrchestration({
     chatEntrypoint: shouldClassifyChat(input),
-    classificationResolved: classification !== null,
+    classificationResolved,
     skillId: plan.skillId,
     needsClarification,
-    allowResolvedUnskilled: input.channel === 'email',
+    allowResolvedUnskilled: input.channel === 'email' && classificationResolved,
   });
   const effectiveTaskType = needsClarification ? 'chat_reply' : plan.resolvedTaskType;
   const effectiveToolNames = orchestrationFailClosed ? [] : plan.toolNames;
