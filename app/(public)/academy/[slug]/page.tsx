@@ -6,6 +6,7 @@ import { AcademyLeadForm } from '@/components/site/AcademyLeadForm';
 import { AcademyCheckoutButton } from '@/components/site/AcademyCheckoutButton';
 import { CalButton } from '@/components/site/CalButton';
 import { FaqSection } from '@/components/site/FaqSection';
+import { OtherAcademyPrograms } from '@/components/site/OtherAcademyPrograms';
 import { getCalAcademyUrl } from '@/lib/utils/cal';
 import { EventTracker } from '@/components/site/EventTracker';
 import { TrackedAnchor } from '@/components/site/TrackedAnchor';
@@ -321,6 +322,8 @@ export default async function AcademyProgramPage({ params }: Props) {
           ) : null}
         </div>
       </section>
+
+      <OtherAcademyPrograms currentSlug={program.slug} />
 
       {/* FAQ */}
       <FaqSection items={program.faqs} />
