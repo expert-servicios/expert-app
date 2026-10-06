@@ -338,11 +338,12 @@ async function createEmailRequestTask(input: {
   const actionText = input.actionSummary.trim() || input.message.subject?.trim() || 'Solicitud por correo';
   const normalizedAction = actionText
     .normalize('NFKD')
+    .replace(/\p{M}+/gu, '')
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim()
     .slice(0, 240)
-    || (input.message.subject?.trim().normalize('NFKD').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim().slice(0, 240))
+    || (input.message.subject?.trim().normalize('NFKD').replace(/\p{M}+/gu, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim().slice(0, 240))
     || input.message.id;
   const scope = input.caseId ?? input.leadId ?? input.clientId ?? normalizedEmail(input.message.fromEmail);
   const actionFingerprint = createHash('sha256')
@@ -355,7 +356,7 @@ async function createEmailRequestTask(input: {
     .from('internal_tasks')
     .select('id,title,metadata')
     .in('status', ['pendiente', 'en_progreso'])
-    .contains('metadata', { action_fingerprint: actionFingerprint })
+    .eq('metadata->>action_fingerprint', actionFingerprint)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -409,14 +410,34 @@ async function createEmailRequestTask(input: {
 
   const { data: existingConflict, error: existingConflictError } = await input.admin
     .from('internal_tasks')
-    .select('id,title')
+    .select('id,title,metadata')
     .in('status', ['pendiente', 'en_progreso'])
-    .contains('metadata', { action_fingerprint: actionFingerprint })
+    .eq('metadata->>action_fingerprint', actionFingerprint)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
   if (existingConflictError) throw existingConflictError;
-  if (existingConflict) return { ...existingConflict, created: false };
+  if (existingConflict?.id) {
+    const previousMetadata = (existingConflict.metadata ?? {}) as Record<string, unknown>;
+    const { data: reusedConflict, error: reuseConflictError } = await input.admin
+      .from('internal_tasks')
+      .update({
+        description: input.excerpt.slice(0, 1500),
+        updated_at: new Date().toISOString(),
+        metadata: {
+          ...previousMetadata,
+          last_gmail_message_id: input.message.id,
+          last_gmail_thread_id: input.message.conversationId,
+          last_email_seen_at: new Date().toISOString(),
+        },
+      })
+      .eq('id', existingConflict.id)
+      .in('status', ['pendiente', 'en_progreso'])
+      .select('id,title')
+      .maybeSingle();
+    if (reuseConflictError) throw reuseConflictError;
+    if (reusedConflict?.id) return { ...reusedConflict, created: false };
+  }
 
   const { data: existingMessage, error: existingMessageError } = await input.admin
     .from('internal_tasks')
