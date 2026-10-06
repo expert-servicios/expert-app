@@ -74,6 +74,17 @@ function loadConfig() {
   }
 
   if (
+    data.EXPERT_BACKEND_TOOLS_ENABLED === '1' &&
+    data.EXPERT_OAUTH_BRIDGE_ENABLED !== '1' &&
+    data.EXPERT_CENTRAL_REGISTRY_ENABLED !== '1'
+  ) {
+    console.error(
+      'EXPERT_BACKEND_TOOLS_ENABLED=1 requires EXPERT_OAUTH_BRIDGE_ENABLED=1 or EXPERT_CENTRAL_REGISTRY_ENABLED=1 so MCP tokens resolve to an EXPERT user identity.'
+    );
+    process.exit(1);
+  }
+
+  if (
     data.NODE_ENV === 'production' &&
     (data.EXPERT_OAUTH_BRIDGE_ENABLED === '1' ||
       data.EXPERT_CENTRAL_REGISTRY_ENABLED === '1' ||
