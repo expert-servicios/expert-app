@@ -8,7 +8,7 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf
 describe('KIA operator lessons and email duplicate guard', () => {
   const engine = source('lib/ai/kia/kia-decision-engine.ts');
   const emailAgent = source('app/api/cron/kia-email-agent/route.ts');
-  const migration = source('supabase/migrations/20261005090000_kia_operator_lessons.sql');
+  const migration = source('supabase/migrations/20261005070044_kia_operator_lessons.sql');
 
   it('injects validated operator lessons into KIA decisions', () => {
     expect(engine).toContain('loadKiaOperatorLessons');
