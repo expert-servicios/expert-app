@@ -1,0 +1,4 @@
+-- The partial unique expression index created in
+-- 20261004183000_internal_tasks_open_action_fingerprint.sql is also the
+-- canonical lookup index for metadata->>'action_fingerprint'.
+-- No additional JSONB GIN index is required.

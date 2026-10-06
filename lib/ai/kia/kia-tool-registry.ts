@@ -143,7 +143,7 @@ export function isKiaToolSafeForAutonomousExecution(name: string): boolean {
 }
 
 export function resolveKiaToolDefinitions(context: KiaToolAuthorizationContext): KiaToolDefinition[] {
-  const requested = context.requestedNames?.length ? new Set(context.requestedNames) : null;
+  const requested = context.requestedNames === undefined ? null : new Set(context.requestedNames);
   const maxRiskRank = RISK_RANK[context.maxRiskTier ?? 'R1'];
   const allowedEffects = context.allowedEffects ? new Set(context.allowedEffects) : null;
 
@@ -157,7 +157,7 @@ export function resolveKiaToolDefinitions(context: KiaToolAuthorizationContext):
 }
 
 export function isKiaToolAuthorized(name: string, context: KiaToolAuthorizationContext): boolean {
-  if (context.requestedNames?.length && !context.requestedNames.includes(name)) return false;
+  if (context.requestedNames !== undefined && !context.requestedNames.includes(name)) return false;
   return resolveKiaToolDefinitions({ ...context, requestedNames: [name] }).some((tool) => tool.name === name);
 }
 

@@ -8,7 +8,7 @@ import {
   getOperationalGmailThread,
   sendOperationalGmailReply,
 } from '@/lib/integrations/operational-gmail';
-import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
+import { runKiaOrchestratedDecision } from '@/lib/ai/kia/kia-orchestrator';
 import { appendKiaSignature } from '@/lib/email/kia-signature';
 import { maybeAppendKiaContextualCta } from '@/lib/email/kia-contextual-cta';
 import type { GmailMessage } from '@/lib/integrations/gmail';
@@ -20,13 +20,29 @@ import { notifyKiaAdminEscalation } from '@/lib/admin/kia-admin-escalation';
 export const maxDuration = 60;
 
 const EXPERT_MAILBOX = 'info@expertconsulting.es';
-const READ_ONLY_TOOLS = [
+const KNOWN_CONTACT_TOOLS = [
+  'get_client_profile',
   'get_case_status',
   'get_case_tasks',
   'get_case_documents',
   'get_case_timeline',
   'get_client_communications',
   'get_service_operational_blueprint',
+  'get_holded_connection_status',
+  'get_company_status_snapshot',
+  'get_accounting_snapshot',
+  'get_holded_invoices',
+  'get_holded_contacts',
+  'get_holded_bank_balance',
+  'get_accounts_receivable',
+  'get_accounts_payable',
+  'get_overdue_invoices',
+  'get_unreconciled_transactions',
+  'get_holded_employees',
+  'get_holded_employee_contract',
+  'get_holded_payslips',
+  'get_holded_salary_records',
+  'run_labor_payroll_diagnostics',
   'search_knowledge_resources',
   'get_official_sources',
   'find_relevant_services',
@@ -115,22 +131,6 @@ function replyFromForPurpose(purpose: ReturnType<typeof classifyInboundEnvelope>
     case 'billing': return 'KIA · Facturación <facturacion@expertconsulting.es>';
     default: return 'KIA · EXPERT <info@expertconsulting.es>';
   }
-}
-
-function isExpertOutboundMessage(message: GmailMessage): boolean {
-  const email = normalizedEmail(message.fromEmail);
-  return email === EXPERT_MAILBOX || /@expertconsulting\.es$/i.test(email);
-}
-
-async function hasLiveOutboundReplyAfterInbound(
-  admin: ReturnType<typeof getSupabaseAdmin>,
-  threadId: string,
-  inboundMessageId: string,
-): Promise<boolean> {
-  const live = await getOperationalGmailThread(admin, threadId);
-  const index = live.messages.findIndex((message) => message.id === inboundMessageId);
-  if (index < 0) return live.messages.some((message) => isExpertOutboundMessage(message));
-  return live.messages.slice(index + 1).some((message) => isExpertOutboundMessage(message));
 }
 
 function isLikelyHuman(message: GmailMessage) {
@@ -331,14 +331,61 @@ async function createEmailRequestTask(input: {
   caseId: string | null;
   companyId: string | null;
   nextAction: string;
+  actionSummary: string;
 }) {
   if (input.nextAction !== 'create_task') return null;
 
+  const actionText = input.actionSummary.trim() || input.message.subject?.trim() || 'Solicitud por correo';
+  const normalizedAction = actionText
+    .normalize('NFKD')
+    .replace(/\p{M}+/gu, '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
+    .slice(0, 240)
+    || (input.message.subject?.trim().normalize('NFKD').replace(/\p{M}+/gu, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim().slice(0, 240))
+    || input.message.id;
+  const scope = input.caseId ?? input.leadId ?? input.clientId ?? normalizedEmail(input.message.fromEmail);
+  const actionFingerprint = createHash('sha256')
+    .update(`${scope}|${input.nextAction}|${normalizedAction}`)
+    .digest('hex')
+    .slice(0, 40);
   const taskKey = `email-request:${input.message.id}`;
-  const subject = input.message.subject?.trim() || 'Solicitud por correo';
+
+  const { data: existingAction, error: existingActionError } = await input.admin
+    .from('internal_tasks')
+    .select('id,title,metadata')
+    .in('status', ['pendiente', 'en_progreso'])
+    .eq('metadata->>action_fingerprint', actionFingerprint)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existingActionError) throw existingActionError;
+  if (existingAction?.id) {
+    const previousMetadata = (existingAction.metadata ?? {}) as Record<string, unknown>;
+    const { data: reused, error: updateError } = await input.admin
+      .from('internal_tasks')
+      .update({
+        description: input.excerpt.slice(0, 1500),
+        updated_at: new Date().toISOString(),
+        metadata: {
+          ...previousMetadata,
+          last_gmail_message_id: input.message.id,
+          last_gmail_thread_id: input.message.conversationId,
+          last_email_seen_at: new Date().toISOString(),
+        },
+      })
+      .eq('id', existingAction.id)
+      .in('status', ['pendiente', 'en_progreso'])
+      .select('id,title')
+      .maybeSingle();
+    if (updateError) throw updateError;
+    if (reused?.id) return { id: reused.id, title: reused.title, created: false };
+  }
+
   const { data, error } = await input.admin.from('internal_tasks').insert({
     source_key: taskKey,
-    title: `Correo: ${subject}`.slice(0, 220),
+    title: actionText.slice(0, 220),
     description: input.excerpt.slice(0, 1500),
     status: 'pendiente',
     priority: 'media',
@@ -353,19 +400,52 @@ async function createEmailRequestTask(input: {
       gmail_message_id: input.message.id,
       gmail_thread_id: input.message.conversationId,
       sender_email: normalizedEmail(input.message.fromEmail),
+      action_fingerprint: actionFingerprint,
+      action_summary: actionText.slice(0, 500),
     },
   }).select('id,title').single();
 
-  if (!error) return data;
+  if (!error) return data ? { ...data, created: true } : null;
   if (error.code !== '23505') throw error;
 
-  const { data: existing, error: existingError } = await input.admin
+  const { data: existingConflict, error: existingConflictError } = await input.admin
+    .from('internal_tasks')
+    .select('id,title,metadata')
+    .in('status', ['pendiente', 'en_progreso'])
+    .eq('metadata->>action_fingerprint', actionFingerprint)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existingConflictError) throw existingConflictError;
+  if (existingConflict?.id) {
+    const previousMetadata = (existingConflict.metadata ?? {}) as Record<string, unknown>;
+    const { data: reusedConflict, error: reuseConflictError } = await input.admin
+      .from('internal_tasks')
+      .update({
+        description: input.excerpt.slice(0, 1500),
+        updated_at: new Date().toISOString(),
+        metadata: {
+          ...previousMetadata,
+          last_gmail_message_id: input.message.id,
+          last_gmail_thread_id: input.message.conversationId,
+          last_email_seen_at: new Date().toISOString(),
+        },
+      })
+      .eq('id', existingConflict.id)
+      .in('status', ['pendiente', 'en_progreso'])
+      .select('id,title')
+      .maybeSingle();
+    if (reuseConflictError) throw reuseConflictError;
+    if (reusedConflict?.id) return { ...reusedConflict, created: false };
+  }
+
+  const { data: existingMessage, error: existingMessageError } = await input.admin
     .from('internal_tasks')
     .select('id,title')
     .eq('source_key', taskKey)
     .maybeSingle();
-  if (existingError) throw existingError;
-  return existing;
+  if (existingMessageError) throw existingMessageError;
+  return existingMessage ? { ...existingMessage, created: false } : null;
 }
 
 async function writeAgentHeartbeat(
@@ -681,13 +761,6 @@ export async function GET(request: NextRequest) {
       const replyRecipient = normalizedEmail(latest.replyTo || latest.fromEmail);
       const replyToMismatch = replyRecipient !== senderEmail;
       let identity = await resolveIdentity(admin, senderEmail, row.case_id ?? null, authUsers);
-      const { data: companyControls } = identity.companyId
-        ? await admin.from('company_operational_controls')
-            .select('external_communication_blocked,portal_activation_blocked,accounting_write_blocked')
-            .eq('company_id', identity.companyId)
-            .maybeSingle()
-        : { data: null };
-      const externalCommunicationBlocked = Boolean(companyControls?.external_communication_blocked);
       const wasKnownContact = Boolean(identity.clientId || identity.leadId);
       const safeUnknownProspect = !wasKnownContact && !row.case_id
         && isSafeUnknownProspect(latest.subject, latestReply);
@@ -723,51 +796,61 @@ export async function GET(request: NextRequest) {
       const confidenceFloor = wasKnownContact ? minConfidence : prospectMinConfidence;
       const externalActionPreEligible = autoSend
         && health.ok
-        && !externalCommunicationBlocked
         && (wasKnownContact || (safeUnknownProspect && newLeadAutoSend))
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
         && envelope.recipientPurpose !== 'noreply'
         && !hasAttachments;
-      const baseAllowedTools = wasKnownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS;
+      const baseAllowedTools = wasKnownContact ? KNOWN_CONTACT_TOOLS : PUBLIC_PROSPECT_TOOLS;
       const allowedTools = baseAllowedTools.filter(
         (toolName) => toolName !== 'create_booking_meeting' || externalActionPreEligible,
       );
 
-      const result = await runKiaDecision({
-        taskType: 'chat_reply',
-        channel: 'email',
-        message: latestReply,
-        locale: /[А-Яа-яЁё]/.test(text) ? 'ru' : 'es',
-        contextInput: {
+      const result = await runKiaOrchestratedDecision({
+        input: {
+          taskType: 'chat_reply',
           channel: 'email',
-          clientId: identity.clientId ?? undefined,
-          leadId: identity.leadId ?? undefined,
-          caseId: identity.caseId ?? undefined,
-          companyId: identity.companyId ?? undefined,
-          serviceSlug: identity.serviceSlug ?? undefined,
-          email: latest.fromEmail,
-          latestMessage: latestReply,
-          syntheticRecentMessages: recent,
-          originEmail: {
-            ref: latest.id,
-            eventType: 'email.inbound',
-            subject: latest.subject,
-            excerpt: latestReply.slice(0, 1500),
+          message: latestReply,
+          locale: /[А-Яа-яЁё]/.test(text) ? 'ru' : 'es',
+          contextInput: {
+            channel: 'email',
+            clientId: identity.clientId ?? undefined,
+            leadId: identity.leadId ?? undefined,
+            caseId: identity.caseId ?? undefined,
+            companyId: identity.companyId ?? undefined,
+            serviceSlug: identity.serviceSlug ?? undefined,
+            email: latest.fromEmail,
+            latestMessage: latestReply,
+            syntheticRecentMessages: recent,
+            originEmail: {
+              ref: latest.id,
+              eventType: 'email.inbound',
+              subject: latest.subject,
+              excerpt: latestReply.slice(0, 1500),
+            },
           },
+          allowTools: true,
+          forceToolExecution: true,
+          allowedToolNames: [...allowedTools],
+          toolAuthorization: {
+            maxRiskTier: 'R2',
+            allowedEffects: ['read', 'external_action'],
+            autonomousOnly: false,
+          },
+          externalActionMinConfidence: confidenceFloor,
         },
-        allowTools: true,
-        forceToolExecution: true,
-        allowedToolNames: [...allowedTools],
-        toolAuthorization: {
+        policyAuthorization: {
+          channel: 'email',
+          requestedNames: [...allowedTools],
           maxRiskTier: 'R2',
           allowedEffects: ['read', 'external_action'],
           autonomousOnly: false,
         },
-        externalActionMinConfidence: confidenceFloor,
+        policyToolNames: [...allowedTools],
       });
       const taskEligible = (identity.clientId || identity.leadId)
+        && !result.executionTrace.lateClassificationFailClosed
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
@@ -785,12 +868,13 @@ export async function GET(request: NextRequest) {
             caseId: identity.caseId,
             companyId: identity.companyId,
             nextAction: result.decision.nextAction,
+            actionSummary: result.decision.decisionSummary,
           }).catch((taskError) => {
             console.error('[kia-email-agent] request task:', taskError);
             return null;
           })
         : null;
-      if (createdTask) {
+      if (createdTask?.created) {
         await notifyAdmins({
           title: 'KIA creó una tarea',
           body: `${createdTask.title} · ${senderDisplayName(latest)}`.slice(0, 240),
@@ -801,7 +885,7 @@ export async function GET(request: NextRequest) {
 
       const canAutoSend = autoSend
         && health.ok
-        && !externalCommunicationBlocked
+        && !result.executionTrace.lateClassificationFailClosed
         && (wasKnownContact || (safeUnknownProspect && newLeadAutoSend))
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
@@ -829,7 +913,6 @@ export async function GET(request: NextRequest) {
           lead_id: identity.leadId,
           case_id: identity.caseId,
           company_id: identity.companyId,
-          company_external_communication_blocked: externalCommunicationBlocked,
           service_slug: identity.serviceSlug,
         };
         const contextual = await maybeAppendKiaContextualCta({
@@ -863,89 +946,65 @@ export async function GET(request: NextRequest) {
             throw claimError;
           }
         } else {
-          const alreadyAnsweredLive = await hasLiveOutboundReplyAfterInbound(
-            admin,
-            row.thread_id,
-            latest.id,
-          ).catch((liveCheckError) => {
-            console.error('[kia-email-agent] live duplicate pre-send check failed:', liveCheckError);
-            return true;
-          });
-
-          if (alreadyAnsweredLive) {
-            await admin.from('system_kv').update({
-              value: {
-                state: 'sent_or_already_answered',
-                thread_hash: key.split(':')[1],
-                message_id: latest.id,
-                checked_at: new Date().toISOString(),
-                source: 'live_gmail_pre_send_check',
-              },
-              updated_at: new Date().toISOString(),
-            }).eq('key', sendClaimKey);
-            duplicateClaim = true;
-            blockReason = 'live_thread_already_answered';
-          } else {
-            let authMode: 'service_account' | 'oauth';
-            try {
-              authMode = await sendOperationalGmailReply(admin, {
-                threadId: row.thread_id,
-                to: replyRecipient,
-                subject: replySubject,
-                body: html,
-                bodyHtml: true,
-                from: replyFromForPurpose(envelope.recipientPurpose),
-              });
-            } catch (sendError) {
-              await admin.from('system_kv').update({
-                value: {
-                  state: 'uncertain_failure',
-                  thread_hash: key.split(':')[1],
-                  message_id: latest.id,
-                  failed_at: new Date().toISOString(),
-                  error: sendError instanceof Error ? sendError.message.slice(0, 240) : 'unknown_send_error',
-                },
-                updated_at: new Date().toISOString(),
-              }).eq('key', sendClaimKey);
-              throw sendError;
-            }
-
-            const { error: eventError } = await admin.from('email_events').insert({
-              event_type: 'kia.email.auto_reply',
-              recipient_email: replyRecipient,
+          let authMode: 'service_account' | 'oauth';
+          try {
+            authMode = await sendOperationalGmailReply(admin, {
+              threadId: row.thread_id,
+              to: replyRecipient,
               subject: replySubject,
-              html,
-              status: 'sent',
-              metadata: {
-                ...(contextual.metadata ?? metadata),
-                transport: 'gmail',
-                auth_mode: authMode,
-                decision_log_id: result.decisionLogId ?? null,
-                inbound_message_id: latest.id,
-                thread_id: row.thread_id,
-                direction: 'out',
-              },
+              body: html,
+              bodyHtml: true,
+              from: replyFromForPurpose(envelope.recipientPurpose),
             });
-            if (eventError) {
-              console.error('[kia-email-agent] email event audit:', eventError);
-            }
+          } catch (sendError) {
             await admin.from('system_kv').update({
               value: {
-                state: 'sent',
+                state: 'uncertain_failure',
                 thread_hash: key.split(':')[1],
                 message_id: latest.id,
-                sent_at: new Date().toISOString(),
+                failed_at: new Date().toISOString(),
+                error: sendError instanceof Error ? sendError.message.slice(0, 240) : 'unknown_send_error',
               },
               updated_at: new Date().toISOString(),
             }).eq('key', sendClaimKey);
-            sent++;
-            sentNow = true;
+            throw sendError;
           }
+
+          const { error: eventError } = await admin.from('email_events').insert({
+          event_type: 'kia.email.auto_reply',
+          recipient_email: replyRecipient,
+          subject: replySubject,
+          html,
+          status: 'sent',
+          metadata: {
+            ...(contextual.metadata ?? metadata),
+            transport: 'gmail',
+            auth_mode: authMode,
+            decision_log_id: result.decisionLogId ?? null,
+            inbound_message_id: latest.id,
+            thread_id: row.thread_id,
+            direction: 'out',
+          },
+          });
+          if (eventError) {
+            console.error('[kia-email-agent] email event audit:', eventError);
+          }
+          await admin.from('system_kv').update({
+            value: {
+              state: 'sent',
+              thread_hash: key.split(':')[1],
+              message_id: latest.id,
+              sent_at: new Date().toISOString(),
+            },
+            updated_at: new Date().toISOString(),
+          }).eq('key', sendClaimKey);
+          sent++;
+          sentNow = true;
         }
       } else {
-        if (!autoSend) blockReason = 'auto_send_disabled';
+        if (result.executionTrace.lateClassificationFailClosed) blockReason = 'orchestration_requires_review';
+        else if (!autoSend) blockReason = 'auto_send_disabled';
         else if (!health.ok) blockReason = health.reason;
-        else if (externalCommunicationBlocked) blockReason = 'company_external_communication_blocked';
         else if (!wasKnownContact && !safeUnknownProspect) blockReason = 'unknown_contact_not_safe_prospect';
         else if (!wasKnownContact && safeUnknownProspect && !newLeadAutoSend) blockReason = 'new_lead_approval_required';
         else if (identity.ambiguousCase) blockReason = 'ambiguous_case';
@@ -977,7 +1036,7 @@ export async function GET(request: NextRequest) {
       });
       const interventionRequired = result.decision.requiresManualReview
         || result.decision.nextAction === 'needs_review'
-        || ['ambiguous_case', 'linked_case_sender_mismatch', 'reply_to_requires_review', 'attachment_requires_review', 'provider_fallback']
+        || ['orchestration_requires_review', 'ambiguous_case', 'linked_case_sender_mismatch', 'reply_to_requires_review', 'attachment_requires_review', 'provider_fallback']
           .includes(blockReason ?? '');
 
       if (firstInboundProcessing && interventionRequired) {

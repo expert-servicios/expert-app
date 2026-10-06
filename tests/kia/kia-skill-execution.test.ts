@@ -26,6 +26,27 @@ const dashboardPolicy = {
 };
 
 describe('KIA M6.2 skill authorization', () => {
+  it('registers operational assistant as a bounded email/calendar skill', () => {
+    const resolved = resolveKiaSkillAuthorization({
+      taskType: 'chat_reply',
+      detectedIntent: 'assistant_operations',
+      policyAuthorization: {
+        channel: 'email',
+        requestedNames: ['get_client_profile', 'get_case_status', 'get_booking_availability', 'create_booking_meeting', 'get_holded_invoices'],
+        maxRiskTier: 'R2',
+        allowedEffects: ['read', 'external_action'],
+        autonomousOnly: false,
+      },
+      policyToolNames: ['get_client_profile', 'get_case_status', 'get_booking_availability', 'create_booking_meeting', 'get_holded_invoices'],
+    });
+
+    expect(resolved.skill?.id).toBe('operations.assistant');
+    expect(resolved.skill?.preferredSubAgentId).toBe('assistant');
+    expect(resolved.toolNames).toContain('get_booking_availability');
+    expect(resolved.toolNames).toContain('create_booking_meeting');
+    expect(resolved.toolNames).not.toContain('get_holded_invoices');
+  });
+
   it('narrows policy tools to the capabilities declared by the selected skill', () => {
     const resolved = resolveKiaSkillAuthorization({
       taskType: 'viability_reasoning',

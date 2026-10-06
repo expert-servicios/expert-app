@@ -43,23 +43,9 @@ import { estimateCost, sumCostEstimates, extractTokenUsageFromProviderResult, ty
 import { detectKiaConversationOpportunity } from './kia-contextual-opportunity';
 import { kiaFriendlyError } from './kia-error-copy';
 import { caseStatusLabel, isCaseStatus } from '@/lib/cases/case-status';
-import { loadKiaOperatorLessons, formatKiaOperatorLessons } from './kia-operator-lessons';
 
 const KIA_MAX_TOOL_ITERATIONS = 5;
 const KIA_TOOL_LOOP_TIMEOUT_MS = 25_000;
-const CIVIL_REGISTRY_NATIONALITY_MESSAGE_RE = /\b(nacionalidad|registro civil|jura|promesa|opci[oó]n.*nacionalidad|recuperaci[oó]n.*nacionalidad|p[eé]rdida.*nacionalidad|conservaci[oó]n.*nacionalidad|carta de naturaleza|certificado.*nacimiento|certificado.*matrimonio|certificado.*defunci[oó]n|inscripci[oó]n.*nacimiento|inscripci[oó]n.*matrimonio|apellidos?|nombre.*registro civil|filiaci[oó]n|adopci[oó]n)\b|гражданств|загс|свидетельств.*рожд/i;
-
-function isCivilRegistryNationalityMessage(message: string, serviceSlug = ''): boolean {
-  return CIVIL_REGISTRY_NATIONALITY_MESSAGE_RE.test(`${message} ${serviceSlug}`)
-    || /nacionalidad-espanola|registro-civil/i.test(serviceSlug);
-}
-
-const IMMIGRATION_MESSAGE_RE = /\b(extranjer[ií]a|residencia|permiso.*residencia|autorizaci[oó]n.*residencia|tie|\bnie\b|arraigo|reagrupaci[oó]n|protecci[oó]n temporal|protecci[oó]n internacional|asilo|refugiado|apatrid|ucrania|larga duraci[oó]n|familiar.*espa[nñ]ol|familiar.*ciudadano.*uni[oó]n|ciudadano.*ue|estancia.*estudios|nacionalidad espa[nñ]ola|nacionalidad por residencia|mercurio|oficina.*extranjer)/i;
-
-function isImmigrationMessage(message: string, serviceSlug = ''): boolean {
-  return IMMIGRATION_MESSAGE_RE.test(`${message} ${serviceSlug}`)
-    || /arraigo|reagrupacion|renovacion-residencia|permiso-residencia|nacionalidad-espanola/i.test(serviceSlug);
-}
 
 export interface KiaDecisionResult {
   decision: KiaDecision;
@@ -86,6 +72,13 @@ export async function runKiaDecision(input: {
   mediaUrl?: string;
   mediaType?: string;
   externalActionMinConfidence?: number;
+  detectedIntentOverride?: string | null;
+  orchestrationMetadata?: {
+    skillId?: string | null;
+    subAgentId?: string | null;
+    detectedIntent?: string | null;
+    selectionBasis?: string | null;
+  };
   onProgress?: KiaProgressCallback;
 }): Promise<KiaDecisionResult> {
   const context = await buildKiaContext({ ...input.contextInput, channel: input.channel, latestMessage: input.message });
@@ -94,14 +87,9 @@ export async function runKiaDecision(input: {
   const slug = input.contextInput.serviceSlug ?? '';
   const recentAssistantTexts = getRecentAssistantTextsFromContext(context);
 
-  const [fewShotBlock, operatorLessonsBlock] = await Promise.all([
-    getKiaFewShotExamples({ taskType: input.taskType, limit: 3 })
-      .then(formatFewShotExamples)
-      .catch(() => ''),
-    loadKiaOperatorLessons(input.channel)
-      .then(formatKiaOperatorLessons)
-      .catch(() => ''),
-  ]);
+  const fewShotBlock = await getKiaFewShotExamples({ taskType: input.taskType, limit: 3 })
+    .then(formatFewShotExamples)
+    .catch(() => '');
 
   const systemPrompt = buildKiaSystemPrompt({
     locale,
@@ -118,8 +106,6 @@ export async function runKiaDecision(input: {
     includePae     : /\b(pae|circe|crear empresa online|sl.*online|alta autonomo.*online|ventanilla unica|constitucion.*online)\b/i.test(msg) || /constitucion.sl|alta.autonomo/i.test(slug),
     includeCcaa    : /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|suma.*alicante)\b/i.test(msg) || /notaria|herencia|compraventa/i.test(slug),
     includeAcademy : /\b(academy|business academy|programa superior|adgd0210|certificaci[oó]n oficial|entrevista de admisi[oó]n|matr[ií]cul|curso.*laboral|gesti[oó]n laboral integral|siltra)\b/i.test(msg) || /academy/i.test(slug) || /academy/i.test(input.contextInput.currentPage ?? ''),
-    includeImmigration: isImmigrationMessage(msg, slug),
-        includeCivilRegistryNationality: isCivilRegistryNationalityMessage(msg, slug),
     fewShotBlock,
   });
 
@@ -138,10 +124,10 @@ export async function runKiaDecision(input: {
   const mediaInfo = input.mediaUrl ? { url: input.mediaUrl, type: input.mediaType ?? 'image/jpeg' } : null;
 
   const memoriesBlock = formatMemoriesForContext(context.memories ?? []);
-  const promptPayload = buildUserPayload(input.message, context, locale, recentAssistantTexts, officialSourceContext, mediaInfo, memoriesBlock, operatorLessonsBlock);
+  const promptPayload = buildUserPayload(input.message, context, locale, recentAssistantTexts, officialSourceContext, mediaInfo, memoriesBlock);
 
   let classification: KiaIntentClassification | null = null;
-  if ((input.channel === 'waba' && input.taskType === 'waba_reply') || (input.channel === 'email' && input.taskType === 'chat_reply')) {
+  if (input.channel === 'waba' && input.taskType === 'waba_reply') {
     input.onProgress?.({ type: 'classifying' });
     classification = await classifyKiaIntent({
       message: input.message,
@@ -166,6 +152,10 @@ export async function runKiaDecision(input: {
       toolResults: [],
       rawInput: { taskType: input.taskType, channel: input.channel, message: input.message, contextInput: input.contextInput },
       error: undefined,
+      skillId: input.orchestrationMetadata?.skillId ?? null,
+      subAgentId: input.orchestrationMetadata?.subAgentId ?? null,
+      detectedIntent: input.orchestrationMetadata?.detectedIntent ?? classification?.detectedIntent ?? input.detectedIntentOverride ?? null,
+      selectionBasis: input.orchestrationMetadata?.selectionBasis ?? null,
     });
     return { decision: clarifyDecision, context, toolResults: [], userMessage: clarifyDecision.userMessage, usedFallback: false, decisionLogId };
   }
@@ -181,10 +171,10 @@ export async function runKiaDecision(input: {
   );
   const modelOverride = modelForTask(resolvedTaskType, allowToolExecution);
 
+  const effectiveDetectedIntent = classification?.detectedIntent ?? input.detectedIntentOverride ?? undefined;
   const subAgentProfile = selectSubAgentProfile({
     taskType: resolvedTaskType,
-    detectedIntent: classification?.detectedIntent
-      ?? (isImmigrationMessage(msg, slug) ? 'immigration_advice' : undefined),
+    detectedIntent: effectiveDetectedIntent,
     channel: input.channel,
   });
   const finalSystemPrompt = subAgentProfile
@@ -203,8 +193,6 @@ export async function runKiaDecision(input: {
         includePae: /\b(pae|circe|crear empresa online|sl.*online|alta autonomo.*online|ventanilla unica|constitucion.*online)\b/i.test(msg) || /constitucion.sl|alta.autonomo/i.test(slug),
         includeCcaa: /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|suma.*alicante)\b/i.test(msg) || /notaria|herencia|compraventa/i.test(slug),
         includeAcademy: /\b(academy|business academy|programa superior|adgd0210|certificaci[oó]n oficial|entrevista de admisi[oó]n|matr[ií]cul|curso.*laboral|gesti[oó]n laboral integral|siltra)\b/i.test(msg) || /academy/i.test(slug) || /academy/i.test(input.contextInput.currentPage ?? ''),
-        includeImmigration: isImmigrationMessage(msg, slug),
-        includeCivilRegistryNationality: isCivilRegistryNationalityMessage(msg, slug),
         fewShotBlock,
         subAgentAddendum: subAgentProfile.systemPromptAddendum,
       })
@@ -486,6 +474,10 @@ export async function runKiaDecision(input: {
     tokensOut: totalCost?.tokensOut,
     estimatedCostUsd: totalCost?.estimatedCostUsd,
     loopIterations: toolResults.length > 0 ? Math.ceil(toolResults.length / Math.max(1, decision.toolRequests.length || 1)) : 0,
+    skillId: input.orchestrationMetadata?.skillId ?? null,
+    subAgentId: input.orchestrationMetadata?.subAgentId ?? subAgentProfile?.id ?? null,
+    detectedIntent: input.orchestrationMetadata?.detectedIntent ?? effectiveDetectedIntent ?? null,
+    selectionBasis: input.orchestrationMetadata?.selectionBasis ?? null,
   });
 
   if (
@@ -739,7 +731,6 @@ function buildUserPayload(
   officialSourceContext: string,
   mediaInfo?: { url: string; type: string } | null,
   memoriesBlock?: string,
-  operatorLessonsBlock?: string,
 ): string {
   const localizedContext = {
     ...context,
@@ -758,7 +749,6 @@ function buildUserPayload(
   if (officialSourceContext) {
     parts.push(`<official_source_context>\n${officialSourceContext}\n</official_source_context>`);
   }
-  if (operatorLessonsBlock) parts.push(operatorLessonsBlock);
   if (memoriesBlock) parts.push(memoriesBlock);
   if (mediaInfo) {
     parts.push(
