@@ -7,6 +7,7 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf
 describe('KIA provider health semantics', () => {
   const health = source('lib/ai/kia/health/kia-health-checks.ts');
   const router = source('lib/ai/kia/kia-provider-router.ts');
+  const anthropicRuntime = source('lib/ai/kia/runtime/anthropic-messages-adapter.ts');
 
   it('keeps the Gemini primary smoke critical', () => {
     expect(health).toMatch(/checkId: 'gemini_credential_smoke'[\s\S]{0,260}severity: 'critical'/);
@@ -24,6 +25,8 @@ describe('KIA provider health semantics', () => {
     expect(health).toContain("'anthropic-workspace-id': workspaceId");
     expect(router).toContain("function anthropicWorkspaceHeader()");
     expect((router.match(/anthropicWorkspaceHeader\(\)/g) ?? []).length).toBeGreaterThanOrEqual(3);
+    expect(anthropicRuntime).toContain('process.env.ANTHROPIC_WORKSPACE_ID');
+    expect(anthropicRuntime).toContain("'anthropic-workspace-id': workspaceId");
   });
 
   it('does not silently remove fallback errors', () => {
