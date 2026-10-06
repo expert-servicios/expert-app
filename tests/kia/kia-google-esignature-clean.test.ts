@@ -18,6 +18,7 @@ describe('KIA Google eSignature clean lifecycle', () => {
     expect(workflow).toContain("event.event_type === 'signature.completed'");
     expect(workflow).toContain('completedPayload.finalDocumentId');
     expect(workflow).toContain("action.state === 'completed' && finalDocumentId");
+    expect(workflow).toContain('finalDocumentId === sourceDocumentId');
     expect(workflow).toContain(".neq('state', 'rechazado')");
     expect(workflow).toContain(".is('replaced_by', null)");
     expect(panel).toContain('El documento origen nunca se considera firmado');
@@ -67,6 +68,7 @@ describe('KIA Google eSignature clean lifecycle', () => {
     expect(lifecycleRoute).toContain("z.enum(['requested', 'partially_signed', 'completed', 'cancelled'])");
     expect(lifecycleRoute).toContain("status: z.enum(['pending', 'signed', 'declined'])");
     expect(workflow).toContain("if (!finalDocumentId) return fail('La finalización exige el documento firmado final.')");
+    expect(workflow).toContain("effectiveSigners.some((signer) => signer.status !== 'signed')");
     expect(panel).toContain('Documento firmado final…');
     expect(panel).toContain('Guardar firmantes');
   });
@@ -75,7 +77,7 @@ describe('KIA Google eSignature clean lifecycle', () => {
     expect(listRoute).toContain(".eq('case_id', caseId)");
     expect(listRoute).toContain("['admin', 'owner'].includes(profile.role)");
     expect(lifecycleRoute).toContain("['admin', 'owner'].includes(profile.role)");
-    expect(lifecycleRoute).toContain('action.case_id !== input.caseId');
+    expect(workflow).toContain('action.case_id !== input.caseId');
   });
 
   it('surfaces the workflow in the existing Admin case detail', () => {
