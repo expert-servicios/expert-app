@@ -5,15 +5,19 @@ import { validateMcpSharedSecret } from '@/lib/integrations/holded-mcp/mcp-auth'
 async function resolveSupabaseUserId(mcpUserId: string): Promise<string | null> {
   const admin = getSupabaseAdmin();
 
-  const { data: directProfile } = await admin
+  const { data: directProfile, error: directProfileError } = await admin
     .from('profiles')
-    .select('id')
+    .select('id,status')
     .eq('id', mcpUserId)
     .maybeSingle();
 
+  if (directProfileError) {
+    throw new Error(`MCP direct profile lookup failed: ${directProfileError.message}`);
+  }
+  if (directProfile?.status === 'inactive') return null;
   if (directProfile?.id) return directProfile.id;
 
-  const { data: connection } = await admin
+  const { data: connection, error: connectionError } = await admin
     .from('holded_mcp_connections')
     .select('supabase_user_id')
     .eq('mcp_user_id', mcpUserId)
@@ -21,6 +25,10 @@ async function resolveSupabaseUserId(mcpUserId: string): Promise<string | null> 
     .order('updated_at', { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  if (connectionError) {
+    throw new Error(`MCP connection lookup failed: ${connectionError.message}`);
+  }
 
   return connection?.supabase_user_id ?? null;
 }
@@ -36,7 +44,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'userId requerido' }, { status: 400 });
   }
 
-  const supabaseUserId = await resolveSupabaseUserId(userId);
+  let supabaseUserId: string | null;
+  try {
+    supabaseUserId = await resolveSupabaseUserId(userId);
+  } catch (error) {
+    console.error('[MCP companies] identity lookup failed:', error);
+    return NextResponse.json({ error: 'identity_lookup_failed' }, { status: 500 });
+  }
   if (!supabaseUserId) {
     return NextResponse.json({ ok: true, companies: [] });
   }
@@ -49,7 +63,7 @@ export async function GET(request: NextRequest) {
       .eq('profile_id', supabaseUserId),
     admin
       .from('profiles')
-      .select('active_company_id')
+      .select('active_company_id,status')
       .eq('id', supabaseUserId)
       .maybeSingle(),
   ]);
@@ -57,6 +71,10 @@ export async function GET(request: NextRequest) {
   if (error) {
     console.error('[MCP companies] membership lookup failed:', error.message);
     return NextResponse.json({ error: 'company_lookup_failed' }, { status: 500 });
+  }
+
+  if (profile?.status === 'inactive') {
+    return NextResponse.json({ error: 'profile_inactive' }, { status: 403 });
   }
 
   const companies = (memberships ?? []).flatMap((membership) => {
