@@ -48,7 +48,7 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain('isSafeUnknownProspect');
     expect(route).toContain('explicitCommercialRequest');
     expect(route).toContain('expertServiceIntent');
-    expect(route).toContain('wasKnownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS');
+    expect(route).toContain('wasKnownContact ? KNOWN_CONTACT_TOOLS : PUBLIC_PROSPECT_TOOLS');
     expect(route).toContain('(wasKnownContact || (safeUnknownProspect && newLeadAutoSend))');
     expect(route).toContain('KIA_EMAIL_PROSPECT_MIN_CONFIDENCE');
     expect(route).toContain("'kia.email_new_lead_auto_send'");
@@ -71,6 +71,14 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain('/admin/correo/hilo?provider=gmail&conversationId=');
   });
 
+  it('deduplicates email tasks by operational action rather than only message id', () => {
+    expect(route).toContain('action_fingerprint');
+    expect(route).toContain(".contains('metadata', { action_fingerprint: actionFingerprint })");
+    expect(route).toContain("email-request:");
+    expect(route).toContain("title: actionText.slice(0, 220)");
+    expect(route).toContain("if (createdTask?.created)");
+  });
+
   it('persists every human inbound and KIA outbound with CRM links', () => {
     expect(route).toContain("event_type: 'email.inbound'");
     expect(route).toContain("direction: 'in'");
@@ -85,7 +93,7 @@ describe('KIA guarded email agent', () => {
 
   it('does not upgrade a newly-created lead to trusted private context', () => {
     expect(route).toContain('const wasKnownContact = Boolean(identity.clientId || identity.leadId)');
-    expect(route).toContain('wasKnownContact ? READ_ONLY_TOOLS : PUBLIC_PROSPECT_TOOLS');
+    expect(route).toContain('wasKnownContact ? KNOWN_CONTACT_TOOLS : PUBLIC_PROSPECT_TOOLS');
     expect(route).toContain('confidenceFloor = wasKnownContact ? minConfidence : prospectMinConfidence');
   });
 
@@ -179,6 +187,22 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain('externalActionPreEligible');
     expect(route).toContain("toolName !== 'create_booking_meeting' || externalActionPreEligible");
     expect(route).toContain('externalActionMinConfidence: confidenceFloor');
+  });
+
+  it('routes email through skill orchestration before specialist execution', () => {
+    expect(route).toContain("runKiaOrchestratedDecision({");
+    expect(route).toContain("channel: 'email'");
+    expect(route).toContain("policyAuthorization:");
+    expect(route).toContain("policyToolNames: [...allowedTools]");
+    expect(route).not.toContain("runKiaDecision({");
+  });
+
+  it('gives known contacts domain read tools that skills can narrow safely', () => {
+    expect(route).toContain('KNOWN_CONTACT_TOOLS');
+    expect(route).toContain('get_accounting_snapshot');
+    expect(route).toContain('get_holded_invoices');
+    expect(route).toContain('get_holded_employees');
+    expect(route).toContain('run_labor_payroll_diagnostics');
   });
 
 });
