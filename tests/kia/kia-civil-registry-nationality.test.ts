@@ -18,7 +18,7 @@ describe('KIA civil registry and nationality corpus', () => {
       'recuperación de nacionalidad',
       'Jura o promesa',
       'nombre y apellidos',
-      'certificados registrales habituales',
+      'Certificados registrales habituales',
     ]) {
       expect(corpus).toContain(marker);
     }
