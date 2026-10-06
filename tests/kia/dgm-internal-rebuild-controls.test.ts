@@ -26,7 +26,7 @@ describe('DGM internal accounting rebuild controls', () => {
   it('blocks autonomous email when company communication is gated', () => {
     expect(emailAgent).toContain('externalCommunicationBlocked');
     expect(emailAgent).toContain("company_external_communication_blocked");
-    expect(emailAgent).toContain("company_operational_controls");
+    expect(emailAgent).toContain("result.context.company?.externalCommunicationBlocked");
   });
 
   it('starts DGM fully internal and read-only', () => {
