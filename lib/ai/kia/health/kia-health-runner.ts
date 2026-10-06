@@ -104,7 +104,7 @@ export async function runKiaHealthChecks(input: {
   }
 
   const anomalies = results.flatMap(anomaliesFromHealthResult);
-  await saveKiaBehaviorAnomalies(anomalies);
+  await saveKiaBehaviorAnomalies(anomalies, 'canary');
   await maybeAutoDisableStructuredAi(run);
 
   return run;

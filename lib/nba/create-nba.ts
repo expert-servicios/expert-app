@@ -12,6 +12,7 @@ export interface NbaParams {
   case_id?: string;
   due_at?: string;
   metadata?: Record<string, unknown>;
+  dedup_key?: string;
 }
 
 // Creates an NBA only if one with the same action_type + scope (case/lead/client) is not already open.
@@ -35,10 +36,27 @@ export async function createNba(params: NbaParams): Promise<void> {
       .eq('action_type', params.action_type)
       .eq('status', 'open')
       .eq(scopeField, scopeValue!)
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) return;
+  } else if (params.dedup_key) {
+    const { data: existing } = await admin
+      .from('next_best_actions')
+      .select('id')
+      .eq('action_type', params.action_type)
+      .eq('status', 'open')
+      .contains('metadata', { dedup_key: params.dedup_key })
+      .limit(1)
       .maybeSingle();
 
     if (existing) return;
   }
+
+  const metadata = {
+    ...(params.metadata ?? {}),
+    ...(params.dedup_key ? { dedup_key: params.dedup_key } : {}),
+  };
 
   const { error } = await admin.from('next_best_actions').insert({
     action_type:  params.action_type,
@@ -49,10 +67,10 @@ export async function createNba(params: NbaParams): Promise<void> {
     lead_id:      params.lead_id ?? null,
     case_id:      params.case_id ?? null,
     due_at:       params.due_at ?? null,
-    metadata:     params.metadata ?? {},
+    metadata,
   });
 
-  if (error) console.error('[createNba]', params.action_type, error.message);
+  if (error && error.code !== '23505') console.error('[createNba]', params.action_type, error.message);
 }
 
 // Closes (marks done) all open NBAs of a given type for a given scope.

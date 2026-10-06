@@ -428,6 +428,11 @@ function buildAnthropicJsonSchemaInstruction(schema: unknown): string {
   ].join("\n");
 }
 
+function anthropicWorkspaceHeader(): Record<string, string> {
+  const workspaceId = process.env.ANTHROPIC_WORKSPACE_ID?.trim();
+  return workspaceId ? { 'anthropic-workspace-id': workspaceId } : {};
+}
+
 async function postAnthropic(
   provider: ProviderConfig,
   body: Record<string, unknown>,
@@ -440,6 +445,7 @@ async function postAnthropic(
       "x-api-key": provider.apiKey,
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
+      ...anthropicWorkspaceHeader(),
     },
     body: JSON.stringify(body),
   });
@@ -764,6 +770,7 @@ export async function* streamAnthropicText(
       "x-api-key": anthropic.apiKey,
       "anthropic-version": "2023-06-01",
       "content-type": "application/json",
+      ...anthropicWorkspaceHeader(),
     },
     body: JSON.stringify({
       model: anthropic.model ?? SONNET,

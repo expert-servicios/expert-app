@@ -188,8 +188,8 @@ async function checkOpenAiCredential(): Promise<KiaHealthCheckResult> {
     return technicalResult({
       checkId: 'openai_credential_smoke',
       title: 'OpenAI credencial/modelo operativo',
-      severity: 'critical',
-      status: 'failed',
+      severity: 'warning',
+      status: 'warning',
       error: 'OPENAI_API_KEY missing',
     });
   }
@@ -212,13 +212,14 @@ async function checkAnthropicCredential(): Promise<KiaHealthCheckResult> {
     return technicalResult({
       checkId: 'anthropic_credential_smoke',
       title: 'Anthropic credencial/modelo operativo',
-      severity: 'critical',
-      status: 'failed',
+      severity: 'warning',
+      status: 'warning',
       error: 'ANTHROPIC_API_KEY missing',
     });
   }
 
   const model = process.env.KIA_HEALTH_ANTHROPIC_MODEL?.trim() || 'claude-haiku-4-5-20251001';
+  const workspaceId = process.env.ANTHROPIC_WORKSPACE_ID?.trim();
   const started = Date.now();
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -227,6 +228,7 @@ async function checkAnthropicCredential(): Promise<KiaHealthCheckResult> {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
         'content-type': 'application/json',
+        ...(workspaceId ? { 'anthropic-workspace-id': workspaceId } : {}),
       },
       body: JSON.stringify({
         model,
@@ -241,9 +243,9 @@ async function checkAnthropicCredential(): Promise<KiaHealthCheckResult> {
       const message = typeof data?.error?.message === 'string' ? data.error.message : `HTTP ${response.status}`;
       return technicalResult({
         checkId: 'anthropic_credential_smoke',
-        title: 'Anthropic credencial/modelo operativo',
-        severity: 'critical',
-        status: 'failed',
+        title: 'Anthropic fallback directo operativo',
+        severity: 'warning',
+        status: 'warning',
         latencyMs: Date.now() - started,
         provider: 'anthropic',
         model,
@@ -254,8 +256,8 @@ async function checkAnthropicCredential(): Promise<KiaHealthCheckResult> {
     const cost = estimateCost(model, usage.tokensIn, usage.tokensOut);
     return technicalResult({
       checkId: 'anthropic_credential_smoke',
-      title: 'Anthropic credencial/modelo operativo',
-      severity: 'critical',
+      title: 'Anthropic fallback directo operativo',
+      severity: 'warning',
       status: 'passed',
       latencyMs: Date.now() - started,
       provider: 'anthropic',
@@ -268,9 +270,9 @@ async function checkAnthropicCredential(): Promise<KiaHealthCheckResult> {
   } catch (error) {
     return technicalResult({
       checkId: 'anthropic_credential_smoke',
-      title: 'Anthropic credencial/modelo operativo',
-      severity: 'critical',
-      status: 'failed',
+      title: 'Anthropic fallback directo operativo',
+      severity: 'warning',
+      status: 'warning',
       latencyMs: Date.now() - started,
       provider: 'anthropic',
       model,
@@ -311,8 +313,8 @@ async function checkOpenAiCompatibleCredential(input: {
       return technicalResult({
         checkId: input.checkId,
         title: input.title,
-        severity: 'critical',
-        status: 'failed',
+        severity: input.provider === 'google' ? 'critical' : 'warning',
+        status: input.provider === 'google' ? 'failed' : 'warning',
         latencyMs: Date.now() - started,
         provider: input.provider,
         model: input.model,
@@ -324,7 +326,7 @@ async function checkOpenAiCompatibleCredential(input: {
     return technicalResult({
       checkId: input.checkId,
       title: input.title,
-      severity: 'critical',
+      severity: input.provider === 'google' ? 'critical' : 'warning',
       status: 'passed',
       latencyMs: Date.now() - started,
       provider: input.provider,
@@ -338,8 +340,8 @@ async function checkOpenAiCompatibleCredential(input: {
     return technicalResult({
       checkId: input.checkId,
       title: input.title,
-      severity: 'critical',
-      status: 'failed',
+      severity: input.provider === 'google' ? 'critical' : 'warning',
+      status: input.provider === 'google' ? 'failed' : 'warning',
       latencyMs: Date.now() - started,
       provider: input.provider,
       model: input.model,
@@ -443,7 +445,7 @@ function checkThreeProviderFailoverPool(): KiaHealthCheckResult {
   return technicalResult({
     checkId: 'three_provider_failover_pool',
     title: 'Failover Gemini / Claude / OpenAI',
-    severity: 'critical',
+    severity: 'warning',
     status: missing.length === 0 ? 'passed' : 'warning',
     actual: {
       configuredProviders: Array.from(configured),

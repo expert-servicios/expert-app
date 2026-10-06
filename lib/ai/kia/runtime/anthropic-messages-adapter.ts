@@ -134,6 +134,7 @@ export async function runAnthropicMessagesRequest(
     };
   }
 
+  const workspaceId = process.env.ANTHROPIC_WORKSPACE_ID?.trim();
   const fetchImpl = options.fetchImpl ?? fetch;
   try {
     const response = await fetchImpl(ANTHROPIC_MESSAGES_URL, {
@@ -142,6 +143,7 @@ export async function runAnthropicMessagesRequest(
         'x-api-key': apiKey,
         'anthropic-version': ANTHROPIC_VERSION,
         'content-type': 'application/json',
+        ...(workspaceId ? { 'anthropic-workspace-id': workspaceId } : {}),
       },
       body: JSON.stringify(buildAnthropicMessagesBody(request, model)),
     });
