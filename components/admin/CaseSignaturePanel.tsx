@@ -8,7 +8,7 @@ type SignatureEvent = {
   created_at?: string;
 };
 
-type SignatureAction = {
+export type SignatureAction = {
   id: string;
   state: string;
   snapshot: Record<string, unknown>;
@@ -19,7 +19,7 @@ type SignatureAction = {
   updatedAt: string;
 };
 
-type DocumentOption = {
+export type SignatureDocumentOption = {
   id: string;
   original_name: string;
   state: 'pendiente' | 'revisado' | 'rechazado';
@@ -62,7 +62,7 @@ export function CaseSignaturePanel({
 }: {
   caseId: string;
   initialActions: SignatureAction[];
-  documents: DocumentOption[];
+  documents: SignatureDocumentOption[];
 }) {
   const [actions, setActions] = useState(initialActions);
   const [busy, setBusy] = useState<string | null>(null);
