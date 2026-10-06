@@ -55,7 +55,7 @@ export default function PrivacidadPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-[#0D1B2A]">2.4 Analítica web</h3>
-                <p>Utilizamos <strong>Google Tag Manager</strong> y <strong>Google Analytics 4</strong> para analizar el uso del sitio web de forma agregada y mejorar la experiencia de usuario. Estos servicios recopilan datos como tipo de dispositivo, sistema operativo, idioma del navegador, páginas visitadas, duración de la sesión y ubicación geográfica aproximada (nivel de país/región). No se recopilan datos que permitan identificar directamente a una persona.</p>
+                <p>Solo después de tu consentimiento utilizamos <strong>Google Tag Manager</strong>, <strong>Google Analytics 4</strong>, <strong>Metricool</strong> y atribución comercial de primera parte para analizar el uso del sitio y el origen de solicitudes. Si rechazas o retiras el consentimiento, estas herramientas opcionales no se cargan y se eliminan las cookies/atribución opcionales gestionadas por EXPERT.</p>
               </div>
               <div>
                 <h3 className="font-semibold text-[#0D1B2A]">2.5 Reseñas y moderación asistida por IA</h3>
@@ -140,7 +140,7 @@ export default function PrivacidadPage() {
                     ['Supabase', 'Base de datos y autenticación', 'UE (Frankfurt)'],
                     ['Stripe', 'Procesamiento de pagos', 'EEUU (cláusulas contractuales tipo)'],
                     ['Resend', 'Envío de emails transaccionales', 'EEUU (cláusulas contractuales tipo)'],
-                    ['Google LLC', 'Autenticación OAuth y analítica consentida (GA4/GTM)', 'EEUU / otras ubicaciones del proveedor · CCT o mecanismo válido aplicable'],
+                    ['Google LLC', 'Autenticación OAuth, Google Workspace/eSignature cuando se utilice y analítica consentida (GA4/GTM)', 'EEUU / otras ubicaciones del proveedor · CCT o mecanismo válido aplicable'],
                     ['Metricool', 'Analítica de contenidos y campañas, solo tras consentimiento', 'Proveedor internacional · garantías contractuales aplicables'],
                     ['Holded Technologies', 'Software de facturación y contabilidad', 'UE (España)'],
                     ['Vercel', 'Alojamiento y ejecución de la aplicación', 'EEUU / red internacional · CCT o mecanismo válido aplicable'],
