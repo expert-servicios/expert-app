@@ -50,7 +50,10 @@ begin
 
   return new;
 end;
-$$;
+$;
+
+revoke all on function public.reconcile_case_task_lifecycle() from public, anon, authenticated;
+grant execute on function public.reconcile_case_task_lifecycle() to service_role;
 
 drop trigger if exists trg_reconcile_case_task_lifecycle on public.cases;
 create trigger trg_reconcile_case_task_lifecycle
