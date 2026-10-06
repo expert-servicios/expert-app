@@ -2,6 +2,7 @@ import { ROLES } from '@/lib/auth/roles';
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import type { KiaContext } from './kia-context-builder';
 import type { KiaToolResult } from './kia-tool-definitions';
+import { redactJson } from './kia-redaction';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -25,7 +26,7 @@ type PageResult<T> = {
 };
 
 function ok(toolName: string, result: Record<string, unknown>): KiaToolResult {
-  return { toolName, ok: true, result };
+  return { toolName, ok: true, result: redactJson(result) };
 }
 
 function fail(toolName: string, error: string): KiaToolResult {
@@ -77,31 +78,7 @@ function addDaysToDateKey(dateKey: string, days: number): string {
   return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
 }
 
-async function scopedCaseIds(admin: AdminClient, context: KiaContext): Promise<string[]> {
-  const pageSize = 500;
-  const ids: string[] = [];
-  for (let offset = 0; ; offset += pageSize) {
-    let query = admin
-      .from('cases')
-      .select('id')
-      .order('id', { ascending: true })
-      .range(offset, offset + pageSize - 1);
 
-    if (context.company?.id) query = query.eq('company_id', context.company.id);
-    else {
-      const clientId = targetClientId(context);
-      if (clientId) query = query.eq('client_id', clientId);
-      else return [];
-    }
-
-    const { data, error } = await query;
-    if (error) throw error;
-    const rows = data ?? [];
-    ids.push(...rows.map((row) => String(row.id)));
-    if (rows.length < pageSize) break;
-  }
-  return ids;
-}
 
 async function scopedEmails(admin: AdminClient, context: KiaContext): Promise<string[]> {
   const values = new Set<string>();
@@ -133,18 +110,27 @@ async function scopedEmails(admin: AdminClient, context: KiaContext): Promise<st
       values.add(company.email.trim().toLowerCase());
     }
 
-    const { data: memberships, error: membershipError } = await admin
-      .from('profile_companies')
-      .select('profile_id')
-      .eq('company_id', context.company.id)
-      .limit(300);
-    if (membershipError) throw membershipError;
-    const profileIds = (memberships ?? []).map((row) => String(row.profile_id)).filter(Boolean);
-    if (profileIds.length > 0) {
+    const profileIds: string[] = [];
+    const membershipPageSize = 500;
+    for (let offset = 0; ; offset += membershipPageSize) {
+      const { data: memberships, error: membershipError } = await admin
+        .from('profile_companies')
+        .select('profile_id')
+        .eq('company_id', context.company.id)
+        .order('profile_id', { ascending: true })
+        .range(offset, offset + membershipPageSize - 1);
+      if (membershipError) throw membershipError;
+      const rows = memberships ?? [];
+      profileIds.push(...rows.map((row) => String(row.profile_id)).filter(Boolean));
+      if (rows.length < membershipPageSize) break;
+    }
+
+    for (let offset = 0; offset < profileIds.length; offset += 100) {
+      const batch = profileIds.slice(offset, offset + 100);
       const { data: profiles, error: profileError } = await admin
         .from('profiles')
         .select('email')
-        .in('id', profileIds);
+        .in('id', batch);
       if (profileError) throw profileError;
       for (const row of profiles ?? []) {
         if (typeof row.email === 'string' && row.email.trim()) values.add(row.email.trim().toLowerCase());
@@ -155,20 +141,6 @@ async function scopedEmails(admin: AdminClient, context: KiaContext): Promise<st
   return [...values];
 }
 
-async function buildInboxScopeFilter(admin: AdminClient, context: KiaContext): Promise<string | null> {
-  if (!hasScopedTarget(context)) return null;
-
-  const [caseIds, emails] = await Promise.all([
-    scopedCaseIds(admin, context),
-    scopedEmails(admin, context),
-  ]);
-
-  const clauses: string[] = [];
-  if (caseIds.length > 0) clauses.push(`case_id.in.(${caseIds.join(',')})`);
-  if (emails.length > 0) clauses.push(`from_email.in.(${emails.map(quoteFilterValue).join(',')})`);
-  return clauses.length > 0 ? clauses.join(',') : '__no_match__';
-}
-
 async function loadInbox(
   admin: AdminClient,
   context: KiaContext,
@@ -176,21 +148,9 @@ async function loadInbox(
 ): Promise<PageResult<Record<string, unknown>>> {
   const limit = Math.max(1, Math.min(30, Number(args.limit ?? args.limitPerSection ?? 12)));
   const unreadOnly = args.unreadOnly !== false;
-  const scopeFilter = await buildInboxScopeFilter(admin, context);
-  if (scopeFilter === '__no_match__') return { items: [], total: 0, truncated: false };
+  const selectColumns = 'thread_id,provider,subject,from_name,from_email,snippet,date,unread,has_attachment,case_id';
 
-  let query = admin
-    .from('email_inbox_cache')
-    .select('thread_id,provider,subject,from_name,from_email,snippet,date,unread,has_attachment,case_id', { count: 'exact' })
-    .order('date', { ascending: false })
-    .limit(limit);
-
-  if (unreadOnly) query = query.eq('unread', true);
-  if (scopeFilter) query = query.or(scopeFilter);
-
-  const { data, error, count } = await query;
-  if (error) throw error;
-  const items = (data ?? []).map((row) => ({
+  const mapRows = (rows: Array<Record<string, unknown>>) => rows.map((row) => ({
     threadId: row.thread_id,
     provider: row.provider,
     subject: row.subject,
@@ -203,22 +163,62 @@ async function loadInbox(
     caseId: row.case_id,
   }));
 
-  const total = count ?? items.length;
-  return { items, total, truncated: total > items.length };
-}
+  if (!hasScopedTarget(context)) {
+    let query = admin
+      .from('email_inbox_cache')
+      .select(selectColumns, { count: 'exact' })
+      .order('date', { ascending: false })
+      .limit(limit);
+    if (unreadOnly) query = query.eq('unread', true);
+    const { data, error, count } = await query;
+    if (error) throw error;
+    const items = mapRows((data ?? []) as Array<Record<string, unknown>>);
+    const total = count ?? items.length;
+    return { items, total, truncated: total > items.length };
+  }
 
-async function buildAppointmentScopeFilter(admin: AdminClient, context: KiaContext): Promise<string | null> {
-  if (!hasScopedTarget(context)) return null;
+  const collected = new Map<string, Record<string, unknown>>();
+  let total = 0;
+
+  let caseQuery = admin
+    .from('email_inbox_cache')
+    .select(`${selectColumns},case:cases!email_inbox_cache_case_id_fkey!inner(id,client_id,company_id)`, { count: 'exact' })
+    .order('date', { ascending: false })
+    .limit(limit);
+  if (unreadOnly) caseQuery = caseQuery.eq('unread', true);
+  if (context.company?.id) caseQuery = caseQuery.eq('case.company_id', context.company.id);
+  else caseQuery = caseQuery.eq('case.client_id', targetClientId(context)!);
+
+  const caseResult = await caseQuery;
+  if (caseResult.error) throw caseResult.error;
+  for (const row of mapRows((caseResult.data ?? []) as Array<Record<string, unknown>>)) {
+    collected.set(String(row.threadId), row);
+  }
+  total += caseResult.count ?? (caseResult.data ?? []).length;
 
   const emails = await scopedEmails(admin, context);
-  const clauses: string[] = [];
-  if (context.company?.id) clauses.push(`company_id.eq.${context.company.id}`);
-  const clientId = targetClientId(context);
-  if (clientId) clauses.push(`client_id.eq.${clientId}`);
-  if (emails.length > 0) {
-    clauses.push(`and(client_id.is.null,company_id.is.null,email.in.(${emails.map(quoteFilterValue).join(',')}))`);
+  for (let offset = 0; offset < emails.length; offset += 20) {
+    const batch = emails.slice(offset, offset + 20);
+    let emailQuery = admin
+      .from('email_inbox_cache')
+      .select(selectColumns, { count: 'exact' })
+      .is('case_id', null)
+      .or(batch.map((email) => `from_email.ilike.${email}`).join(','))
+      .order('date', { ascending: false })
+      .limit(limit);
+    if (unreadOnly) emailQuery = emailQuery.eq('unread', true);
+    const emailResult = await emailQuery;
+    if (emailResult.error) throw emailResult.error;
+    for (const row of mapRows((emailResult.data ?? []) as Array<Record<string, unknown>>)) {
+      collected.set(String(row.threadId), row);
+    }
+    total += emailResult.count ?? (emailResult.data ?? []).length;
   }
-  return clauses.length > 0 ? clauses.join(',') : '__no_match__';
+
+  const items = [...collected.values()]
+    .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')))
+    .slice(0, limit);
+  return { items, total, truncated: total > items.length };
 }
 
 async function loadAgenda(
@@ -230,24 +230,55 @@ async function loadAgenda(
   const limit = Math.max(1, Math.min(30, Number(args.limit ?? args.limitPerSection ?? 15)));
   const start = new Date();
   const end = new Date(start.getTime() + days * 24 * 60 * 60 * 1000);
-  const scopeFilter = await buildAppointmentScopeFilter(admin, context);
-  if (scopeFilter === '__no_match__') return { items: [], total: 0, truncated: false };
+  const selectColumns = 'id,name,email,appointment_type,appointment_date,appointment_end,status,service,meeting_url,booking_provider,client_id,company_id';
 
-  let query = admin
+  const base = () => admin
     .from('appointments')
-    .select('id,name,email,appointment_type,appointment_date,appointment_end,status,service,meeting_url,booking_provider,client_id,company_id', { count: 'exact' })
+    .select(selectColumns, { count: 'exact' })
     .gte('appointment_date', start.toISOString())
     .lte('appointment_date', end.toISOString())
     .not('status', 'in', '("cancelled","canceled","cancelada","rescheduled","reprogramada")')
     .order('appointment_date', { ascending: true })
     .limit(limit);
 
-  if (scopeFilter) query = query.or(scopeFilter);
+  if (!hasScopedTarget(context)) {
+    const result = await base();
+    if (result.error) throw result.error;
+    const items = (result.data ?? []) as Array<Record<string, unknown>>;
+    const total = result.count ?? items.length;
+    return { items, total, truncated: total > items.length };
+  }
 
-  const { data, error, count } = await query;
-  if (error) throw error;
-  const items = (data ?? []) as Array<Record<string, unknown>>;
-  const total = count ?? items.length;
+  const collected = new Map<string, Record<string, unknown>>();
+  let total = 0;
+
+  let direct = base();
+  if (context.company?.id) direct = direct.eq('company_id', context.company.id);
+  else direct = direct.eq('client_id', targetClientId(context)!);
+  const directResult = await direct;
+  if (directResult.error) throw directResult.error;
+  for (const row of (directResult.data ?? []) as Array<Record<string, unknown>>) {
+    collected.set(String(row.id), row);
+  }
+  total += directResult.count ?? (directResult.data ?? []).length;
+
+  const emails = await scopedEmails(admin, context);
+  for (let offset = 0; offset < emails.length; offset += 20) {
+    const batch = emails.slice(offset, offset + 20);
+    const legacy = await base()
+      .is('client_id', null)
+      .is('company_id', null)
+      .or(batch.map((email) => `email.ilike.${email}`).join(','));
+    if (legacy.error) throw legacy.error;
+    for (const row of (legacy.data ?? []) as Array<Record<string, unknown>>) {
+      collected.set(String(row.id), row);
+    }
+    total += legacy.count ?? (legacy.data ?? []).length;
+  }
+
+  const items = [...collected.values()]
+    .sort((a, b) => String(a.appointment_date ?? '').localeCompare(String(b.appointment_date ?? '')))
+    .slice(0, limit);
   return { items, total, truncated: total > items.length };
 }
 
@@ -260,37 +291,72 @@ async function loadTasks(
   const limit = Math.max(1, Math.min(30, Number(args.limit ?? args.limitPerSection ?? 15)));
   const todayKey = madridDateKey();
   const horizon = addDaysToDateKey(todayKey, days);
+  const selectColumns = 'id,title,description,status,priority,assigned_to,case_id,client_id,company_id,due_date,source,created_at,updated_at';
 
-  let query = admin
+  const base = () => admin
     .from('internal_tasks')
-    .select('id,title,description,status,priority,assigned_to,case_id,client_id,company_id,due_date,source,created_at,updated_at', { count: 'exact' })
+    .select(selectColumns, { count: 'exact' })
     .not('status', 'in', '("completada","cancelada","completed","done","cancelled","canceled")')
     .or(`due_date.is.null,due_date.lte.${horizon}`)
     .order('due_date', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false })
     .limit(limit);
 
-  const caseIds = await scopedCaseIds(admin, context);
-  if (context.company?.id) {
-    const clauses = [`company_id.eq.${context.company.id}`];
-    if (caseIds.length > 0) clauses.push(`case_id.in.(${caseIds.join(',')})`);
-    query = query.or(clauses.join(','));
-  } else {
-    const clientId = targetClientId(context);
-    if (clientId) {
-      const clauses = [`client_id.eq.${clientId}`];
-      if (caseIds.length > 0) clauses.push(`case_id.in.(${caseIds.join(',')})`);
-      query = query.or(clauses.join(','));
-    }
+  const decorate = (
+    rows: Array<Record<string, unknown>>,
+  ): Array<Record<string, unknown> & { overdue: boolean }> => rows.map((row) => ({
+    ...row,
+    overdue: Boolean(row.due_date && String(row.due_date) < todayKey),
+  }));
+
+  if (!hasScopedTarget(context)) {
+    const result = await base();
+    if (result.error) throw result.error;
+    const items = decorate((result.data ?? []) as Array<Record<string, unknown>>);
+    const total = result.count ?? items.length;
+    return { items, total, truncated: total > items.length };
   }
 
-  const { data, error, count } = await query;
-  if (error) throw error;
-  const items = (data ?? []).map((row) => ({
-    ...row,
-    overdue: Boolean(row.due_date && row.due_date < todayKey),
-  }));
-  const total = count ?? items.length;
+  const collected = new Map<string, Record<string, unknown> & { overdue: boolean }>();
+  let total = 0;
+
+  let direct = base();
+  if (context.company?.id) direct = direct.eq('company_id', context.company.id);
+  else direct = direct.eq('client_id', targetClientId(context)!);
+  const directResult = await direct;
+  if (directResult.error) throw directResult.error;
+  for (const row of decorate((directResult.data ?? []) as Array<Record<string, unknown>>)) {
+    collected.set(String(row.id), row);
+  }
+  total += directResult.count ?? (directResult.data ?? []).length;
+
+  let viaCase = admin
+    .from('internal_tasks')
+    .select(`${selectColumns},case:cases!internal_tasks_case_id_fkey!inner(id,client_id,company_id)`, { count: 'exact' })
+    .not('status', 'in', '("completada","cancelada","completed","done","cancelled","canceled")')
+    .or(`due_date.is.null,due_date.lte.${horizon}`)
+    .order('due_date', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (context.company?.id) {
+    viaCase = viaCase.is('company_id', null).eq('case.company_id', context.company.id);
+  } else {
+    viaCase = viaCase.is('client_id', null).eq('case.client_id', targetClientId(context)!);
+  }
+  const caseResult = await viaCase;
+  if (caseResult.error) throw caseResult.error;
+  for (const row of decorate((caseResult.data ?? []) as Array<Record<string, unknown>>)) {
+    collected.set(String(row.id), row);
+  }
+  total += caseResult.count ?? (caseResult.data ?? []).length;
+
+  const items = [...collected.values()]
+    .sort((a, b) => {
+      const ad = String(a.due_date ?? '9999-12-31');
+      const bd = String(b.due_date ?? '9999-12-31');
+      return ad.localeCompare(bd) || String(b.created_at ?? '').localeCompare(String(a.created_at ?? ''));
+    })
+    .slice(0, limit);
   return { items, total, truncated: total > items.length };
 }
 

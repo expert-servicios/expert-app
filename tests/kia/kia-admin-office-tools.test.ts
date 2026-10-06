@@ -91,19 +91,29 @@ describe('KIA Admin Office read layer', () => {
 
   it('includes authorized email fallbacks for unlinked inbox and legacy appointments', () => {
     const office = source('lib/ai/kia/kia-admin-office-tools.ts');
-    expect(office).toContain('from_email.in.');
-    expect(office).toContain('email.in.');
+    expect(office).toContain('from_email.ilike.');
+    expect(office).toContain('email.ilike.');
     expect(office).toContain("from('profile_companies')");
     expect(office).toContain("admin.auth.admin.getUserById(clientId)");
     expect(office).toContain("from('companies')");
-    expect(office).toContain('client_id.is.null,company_id.is.null,email.in.');
+    expect(office).toContain(".is('case_id', null)");
+    expect(office).toContain(".is('client_id', null)");
+    expect(office).toContain(".is('company_id', null)");
   });
 
-  it('paginates scoped cases and includes case-linked tasks', () => {
+  it('paginates memberships and scopes case-linked rows through FK joins', () => {
     const office = source('lib/ai/kia/kia-admin-office-tools.ts');
-    expect(office).toContain('.range(offset, offset + pageSize - 1)');
-    expect(office).toContain('case_id.in.');
+    expect(office).toContain('.range(offset, offset + membershipPageSize - 1)');
+    expect(office).toContain('cases!email_inbox_cache_case_id_fkey!inner');
+    expect(office).toContain('cases!internal_tasks_case_id_fkey!inner');
+    expect(office).not.toContain('case_id.in.');
     expect(office).not.toContain('.limit(300)');
+  });
+
+  it('redacts Office results before they return to the model', () => {
+    const office = source('lib/ai/kia/kia-admin-office-tools.ts');
+    expect(office).toContain("import { redactJson } from './kia-redaction'");
+    expect(office).toContain('result: redactJson(result)');
   });
 
   it('returns exact section counts plus truncation metadata', () => {

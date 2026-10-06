@@ -149,6 +149,7 @@ export async function POST(request: NextRequest) {
         ].filter(Boolean).join('\n\n');
 
         const locale = detectLocale(`${lastInbound}\n${intent ?? ''}`);
+        const hasScopedOfficeTarget = Boolean(contactCtx.clientId ?? clientId);
         const result = await runKiaDecision({
           taskType: 'admin_ai_compose',
           channel: 'admin',
@@ -164,7 +165,7 @@ export async function POST(request: NextRequest) {
             latestMessage: lastInbound || intent || '',
           },
           locale,
-          allowTools: true,
+          allowTools: hasScopedOfficeTarget,
           onProgress: emit,
         });
 
