@@ -24,7 +24,7 @@ describe('DGM internal accounting rebuild context', () => {
   it('keeps DGM internal until accounting is validated', () => {
     expect(playbook).toContain('INTERNAL ONLY');
     expect(playbook).toContain('no crear usuario');
-    expect(playbook).toContain('no enviar correos al titular');
+    expect(playbook).toContain('no enviar correos automáticos ni manuales al titular');
     expect(playbook).toContain('advisor_managed');
     expect(playbook).toContain('auditoría read-only');
   });
