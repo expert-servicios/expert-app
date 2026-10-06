@@ -89,6 +89,8 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_user_subscriptions:             policy('R0', 'read',  'subscriptions'),
   get_case_tasks:                     policy('R0', 'read',  'case_operations'),
   get_case_documents:                 policy('R0', 'read',  'documents'),
+  get_case_signature_status:           policy('R1', 'read',  'documents'),
+  prepare_signature_request:           { ...policy('R1', 'draft', 'documents', true), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
   get_case_timeline:                  policy('R0', 'read',  'case_operations'),
   get_client_communications:          policy('R0', 'read',  'client_data'),
   search_knowledge_resources:          policy('R0', 'read',  'knowledge'),
