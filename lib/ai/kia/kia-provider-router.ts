@@ -19,6 +19,7 @@ export interface KiaProviderRequest {
   maxTokens?: number;
   temperature?: number;
   modelOverride?: string;
+  semanticValidator?: (result: { rawText?: string; parsedJson?: unknown; toolCalls?: KiaToolCall[] }) => boolean;
 }
 
 const SONNET = "claude-sonnet-4-6";
@@ -219,8 +220,13 @@ export async function runKiaProviderRequest(
   if (allowGateway && gatewayToken && !providerCoolingDown("gateway")) {
     try {
       const result = await callGateway(gatewayToken, request);
-      clearProviderFailure("gateway");
-      return result;
+      if (request.semanticValidator && !request.semanticValidator(result)) {
+        lastError = "semantic_validation_failed";
+        markProviderFailure("gateway", lastError);
+      } else {
+        clearProviderFailure("gateway");
+        return result;
+      }
     } catch (error) {
       lastError = safeErrorMessage(error);
       markProviderFailure("gateway", lastError);
@@ -266,6 +272,12 @@ export async function runKiaProviderRequest(
           : provider.provider === "google"
             ? await callGoogle(provider, request)
             : await callOpenAi(provider, request);
+      if (request.semanticValidator && !request.semanticValidator(result)) {
+        lastError = "semantic_validation_failed";
+        lastFailedProvider = provider;
+        markProviderFailure(provider.provider, lastError);
+        continue;
+      }
       clearProviderFailure(provider.provider);
       return result;
     } catch (error) {
