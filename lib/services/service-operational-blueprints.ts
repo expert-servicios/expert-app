@@ -328,12 +328,12 @@ function nationalityMinorTasks(): ServiceTaskTemplate[] {
     {
       key: 'archive_docusign_completion_certificate',
       title: 'Archivar certificado de finalización del mandato — Nacionalidad menor',
-      description: 'Si el mandato se firmó por DocuSign, archivar tanto el mandato firmado como el certificado oficial de finalización. Una captura o una nota no sustituyen el certificado.',
+      description: 'Archivar la evidencia final de la firma del mandato: documento firmado y, cuando el proveedor lo genere, su evidencia o certificado de finalización. El documento origen sin firmar no satisface este paso.',
       priority: 'alta',
       phase: 'representation_mandate',
       dependsOn: ['prepare_representation_mandate'],
       blocksSubmission: true,
-      skipAllowed: true,
+      skipAllowed: false,
     },
     {
       key: 'pre_submission_validation',
