@@ -3,8 +3,10 @@ import { createNba } from '@/lib/nba/create-nba';
 import { redactJson } from '../kia-redaction';
 import type { KiaBehaviorAnomalyInput, KiaHealthRunResult } from './kia-health-types';
 
-export async function saveKiaBehaviorAnomalies(anomalies: KiaBehaviorAnomalyInput[]): Promise<void> {
-  if (anomalies.length === 0) return;
+export async function saveKiaBehaviorAnomalies(
+  anomalies: KiaBehaviorAnomalyInput[],
+  sourceScope?: KiaBehaviorAnomalyInput['source'],
+): Promise<void> {
   const admin = getSupabaseAdmin();
   const rows = anomalies.map((anomaly) => ({
     source: anomaly.source,
@@ -17,21 +19,72 @@ export async function saveKiaBehaviorAnomalies(anomalies: KiaBehaviorAnomalyInpu
     metadata: redactJson(anomaly.metadata ?? {}),
   }));
 
-  const { error } = await admin.from('kia_behavior_anomalies').insert(rows);
-  if (error) console.error('[Kia health anomalies]', error.message);
+  if (rows.length > 0) {
+    const { error } = await admin.from('kia_behavior_anomalies').insert(rows);
+    if (error) console.error('[Kia health anomalies]', error.message);
+  }
 
   if (process.env.KIA_HEALTH_ALERTS_ENABLED?.toLowerCase() !== 'false') {
-    await createCriticalHealthNbas(anomalies);
+    const scope = sourceScope ?? anomalies[0]?.source;
+    if (scope) await syncCriticalHealthNbas(anomalies, scope);
   }
 }
 
-export async function createCriticalHealthNbas(anomalies: KiaBehaviorAnomalyInput[]): Promise<void> {
-  for (const anomaly of anomalies.filter((item) => item.severity === 'critical')) {
+function healthNbaKey(anomaly: KiaBehaviorAnomalyInput): string {
+  const metadata = anomaly.metadata ?? {};
+  const checkId = typeof metadata.checkId === 'string' ? metadata.checkId : null;
+  return `health:${anomaly.source}:${checkId ?? anomaly.anomalyType}`;
+}
+
+export async function syncCriticalHealthNbas(
+  anomalies: KiaBehaviorAnomalyInput[],
+  sourceScope: KiaBehaviorAnomalyInput['source'],
+): Promise<void> {
+  const admin = getSupabaseAdmin();
+  const critical = anomalies.filter(
+    (item) => item.severity === 'critical' && item.source === sourceScope,
+  );
+  const activeKeys = new Set(critical.map(healthNbaKey));
+
+  const { data: existing, error: lookupError } = await admin
+    .from('next_best_actions')
+    .select('id,metadata,created_at')
+    .eq('action_type', 'kia_health_critical_anomaly')
+    .eq('status', 'open')
+    .is('client_id', null)
+    .is('lead_id', null)
+    .is('case_id', null)
+    .contains('metadata', { source: sourceScope })
+    .order('created_at', { ascending: false });
+  if (lookupError) throw lookupError;
+
+  const seen = new Set<string>();
+  const closeIds: string[] = [];
+  for (const row of existing ?? []) {
+    const metadata = (row.metadata ?? {}) as Record<string, unknown>;
+    const storedKey = typeof metadata.dedup_key === 'string'
+      ? metadata.dedup_key
+      : `health:${sourceScope}:${String(metadata.checkId ?? metadata.anomaly_type ?? row.id)}`;
+    if (!activeKeys.has(storedKey) || seen.has(storedKey)) closeIds.push(row.id);
+    else seen.add(storedKey);
+  }
+
+  if (closeIds.length > 0) {
+    const { error: closeError } = await admin
+      .from('next_best_actions')
+      .update({ status: 'done', resolved_at: new Date().toISOString() })
+      .in('id', closeIds);
+    if (closeError) throw closeError;
+  }
+
+  for (const anomaly of critical) {
+    const dedupKey = healthNbaKey(anomaly);
     await createNba({
       action_type: 'kia_health_critical_anomaly',
       priority: 'critica',
       title: anomaly.title,
       description: anomaly.description,
+      dedup_key: dedupKey,
       metadata: {
         source: anomaly.source,
         anomaly_type: anomaly.anomalyType,
