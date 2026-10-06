@@ -3,7 +3,6 @@ import type { KiaToolCapability, KiaToolRiskTier } from './kia-tool-registry';
 
 export type KiaSkillDomain =
   | 'fiscal'
-  | 'immigration'
   | 'accounting'
   | 'labor'
   | 'corporate'
@@ -27,15 +26,24 @@ export interface KiaSkillDefinition {
 
 const KIA_SKILLS: readonly KiaSkillDefinition[] = [
   {
-    id: 'immigration.advice',
+    id: 'operations.assistant',
     version: '1.0',
-    domain: 'immigration',
-    description: 'Compara vías de Extranjería con fuentes oficiales y prioriza la estrategia migratoria más estable sin ejecutar trámites.',
-    intents: ['immigration_advice'],
+    domain: 'operations',
+    description: 'Coordina correo, calendario y seguimiento operativo; clasifica solicitudes, consulta contexto y mantiene continuidad sin sustituir a especialistas de dominio.',
+    intents: ['assistant_operations', 'book_call'],
     taskTypes: [],
-    preferredSubAgentId: 'immigration',
-    requiredToolCapabilities: ['regulatory', 'knowledge'],
-    maxRiskTier: 'R1',
+    preferredSubAgentId: 'assistant',
+    requiredToolCapabilities: [
+      'client_data',
+      'case_management',
+      'case_operations',
+      'documents',
+      'calendar',
+      'knowledge',
+      'regulatory',
+      'service_discovery',
+    ],
+    maxRiskTier: 'R2',
     enabled: true,
   },
   {
