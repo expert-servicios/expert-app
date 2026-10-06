@@ -55,7 +55,7 @@ export default function PrivacidadPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-[#0D1B2A]">2.4 Analítica web</h3>
-                <p>Utilizamos <strong>Google Tag Manager</strong> y <strong>Google Analytics 4</strong> para analizar el uso del sitio web de forma agregada y mejorar la experiencia de usuario. Estos servicios recopilan datos como tipo de dispositivo, sistema operativo, idioma del navegador, páginas visitadas, duración de la sesión y ubicación geográfica aproximada (nivel de país/región). No se recopilan datos que permitan identificar directamente a una persona.</p>
+                <p>Solo después de tu consentimiento utilizamos <strong>Google Tag Manager</strong>, <strong>Google Analytics 4</strong>, <strong>Metricool</strong> y atribución comercial de primera parte para analizar el uso del sitio y el origen de solicitudes. Si rechazas o retiras el consentimiento, estas herramientas opcionales no se cargan y se eliminan las cookies/atribución opcionales gestionadas por EXPERT.</p>
               </div>
               <div>
                 <h3 className="font-semibold text-[#0D1B2A]">2.5 Reseñas y moderación asistida por IA</h3>
@@ -140,10 +140,12 @@ export default function PrivacidadPage() {
                     ['Supabase', 'Base de datos y autenticación', 'UE (Frankfurt)'],
                     ['Stripe', 'Procesamiento de pagos', 'EEUU (cláusulas contractuales tipo)'],
                     ['Resend', 'Envío de emails transaccionales', 'EEUU (cláusulas contractuales tipo)'],
-                    ['Google LLC', 'Autenticación OAuth, analítica web (GA4)', 'EEUU (cláusulas contractuales tipo)'],
+                    ['Google LLC', 'Autenticación OAuth, Google Workspace/eSignature cuando se utilice y analítica consentida (GA4/GTM)', 'EEUU / otras ubicaciones del proveedor · CCT o mecanismo válido aplicable'],
+                    ['Metricool', 'Analítica de contenidos y campañas, solo tras consentimiento', 'Proveedor internacional · garantías contractuales aplicables'],
                     ['Holded Technologies', 'Software de facturación y contabilidad', 'UE (España)'],
-                    ['Vercel', 'Alojamiento del sitio web', 'EEUU (cláusulas contractuales tipo)'],
-                    ['OpenAI / Anthropic', 'Funciones de IA de KIA, incluida moderación de comentarios cuando estén configuradas', 'EEUU (garantías de transferencia aplicables)'],
+                    ['Vercel', 'Alojamiento y ejecución de la aplicación', 'EEUU / red internacional · CCT o mecanismo válido aplicable'],
+                    ['OpenAI Ireland Limited / afiliadas', 'Funciones de IA de KIA cuando OpenAI está configurado', 'EEE y transferencias ulteriores mediante CCT o decisión de adecuación conforme al DPA aplicable'],
+                    ['Anthropic', 'Funciones de IA de KIA cuando Anthropic está configurado', 'Tratamiento internacional sujeto al DPA y a las salvaguardas de transferencia aplicables al contrato'],
                   ].map(([p, f, u]) => (
                     <tr key={p} className="bg-white even:bg-[#F8F6F1]">
                       <td className="px-4 py-3 font-medium text-[#0D1B2A]">{p}</td>
@@ -160,7 +162,7 @@ export default function PrivacidadPage() {
           <section>
             <h2 className="font-serif text-2xl font-bold text-[#0D1B2A]">7. Cookies y tecnologías de seguimiento</h2>
             <div className="mt-4 space-y-2 text-sm leading-7">
-              <p>Este sitio utiliza cookies técnicas necesarias para el funcionamiento del área privada y cookies analíticas de Google Analytics 4 (cargadas a través de Google Tag Manager) para medir el uso del sitio de forma agregada.</p>
+              <p>Este sitio utiliza tecnologías técnicas necesarias para el funcionamiento y, únicamente tras consentimiento, Google Analytics 4, Google Tag Manager, Metricool y atribución comercial de primera parte para medir el uso y origen de las solicitudes.</p>
               <p>Las cookies analíticas solo se activan si el usuario acepta su uso. Puedes consultar y gestionar tus preferencias de cookies en cualquier momento desde el banner de cookies del sitio.</p>
             </div>
           </section>

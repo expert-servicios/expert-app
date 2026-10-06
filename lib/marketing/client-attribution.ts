@@ -6,6 +6,7 @@ import type {
   LeadSource,
 } from '@/lib/marketing/acquisition-taxonomy';
 import type { SupportedLocale } from '@/lib/i18n/config';
+import { readCookieConsent } from '@/lib/privacy/cookie-consent';
 
 export const ACQUISITION_STORAGE_KEY = 'expert_acquisition_v1';
 export const ACQUISITION_COOKIE_NAME = 'expert_acquisition';
@@ -111,6 +112,7 @@ function persistAttribution(attribution: LeadAttribution) {
 
 export function captureClientAttribution(): LeadAttribution | null {
   if (typeof window === 'undefined') return null;
+  if (readCookieConsent()?.value !== 'accepted') return null;
 
   const params = new URLSearchParams(window.location.search);
   const stored = readStored();
@@ -155,4 +157,15 @@ export function captureClientAttribution(): LeadAttribution | null {
 export function readClientAttribution(): LeadAttribution | null {
   if (typeof window === 'undefined') return null;
   return captureClientAttribution();
+}
+
+
+export function clearClientAttribution(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(ACQUISITION_STORAGE_KEY);
+  } catch {}
+  try {
+    document.cookie = `${ACQUISITION_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
+  } catch {}
 }

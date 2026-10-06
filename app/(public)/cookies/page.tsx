@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   }
 };
 
-const LAST_UPDATED = '8 de mayo de 2026';
+const LAST_UPDATED = '6 de octubre de 2026';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -68,6 +68,20 @@ const cookies = [
         purpose: 'Identifica al usuario durante 24 horas para medir sesiones de forma agregada.',
         duration: '24 horas',
         type: 'Tercera parte (google.com)'
+      },
+      {
+        name: 'be / Metricool',
+        provider: 'Metricool',
+        purpose: 'Mide de forma agregada el rendimiento de contenidos y campañas después del consentimiento.',
+        duration: 'Según configuración del proveedor',
+        type: 'Tercera parte (metricool.com)'
+      },
+      {
+        name: 'expert_acquisition',
+        provider: 'EXPERT (primera parte)',
+        purpose: 'Conserva atribución de campaña y origen comercial para formularios y leads únicamente después del consentimiento.',
+        duration: 'Sesión / cookie de primera parte',
+        type: 'Primera parte'
       }
     ]
   },
@@ -117,6 +131,7 @@ export default function CookiesPage() {
             <ul className="list-disc space-y-1 pl-6">
               <li><strong>Técnicas o necesarias:</strong> imprescindibles para el funcionamiento del sitio (autenticación, seguridad). No requieren consentimiento.</li>
               <li><strong>Analíticas:</strong> permiten conocer el número de visitantes, cómo navegan y qué contenidos son más consultados. Requieren consentimiento previo.</li>
+              <li><strong>Atribución comercial:</strong> conserva el origen/campaña de una visita para relacionarlo con una solicitud posterior. Solo se activa tras consentimiento.</li>
               <li><strong>Funcionales de terceros:</strong> instaladas por proveedores de servicios integrados (Stripe) para garantizar el funcionamiento seguro de sus funciones.</li>
             </ul>
           </Section>
@@ -175,7 +190,7 @@ export default function CookiesPage() {
               <li><a href="https://support.apple.com/es-es/guide/safari/sfri11471/mac" target="_blank" rel="noopener noreferrer" className="text-[#D4A017] underline underline-offset-4">Apple Safari</a></li>
               <li><a href="https://support.microsoft.com/es-es/microsoft-edge/eliminar-cookies-en-microsoft-edge-63947406-40ac-c3b8-57b9-2a946a29ae09" target="_blank" rel="noopener noreferrer" className="text-[#D4A017] underline underline-offset-4">Microsoft Edge</a></li>
             </ul>
-            <p>Ten en cuenta que desactivar las cookies técnicas puede impedir el correcto funcionamiento del área privada del sitio.</p>
+            <p>Ten en cuenta que desactivar las cookies técnicas puede impedir el correcto funcionamiento del área privada del sitio. Las preferencias opcionales pueden revisarse en cualquier momento desde «Configurar cookies» en el pie de página.</p>
           </Section>
 
           <Section title="6. Transferencias internacionales">
