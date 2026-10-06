@@ -67,7 +67,7 @@ alter table public.client_registry_facts
     verification_status <> 'confirmed'
     or source_ref is not null
     or source_event_id is not null
-  );
+  ) not valid;
 
 create unique index if not exists client_registry_facts_active_key_uidx
   on public.client_registry_facts(subject_id, fact_key)
@@ -110,7 +110,7 @@ alter table public.client_registry_instructions
     verification_status <> 'confirmed'
     or source_ref is not null
     or source_event_id is not null
-  );
+  ) not valid;
 
 create unique index if not exists client_registry_instructions_active_key_uidx
   on public.client_registry_instructions(subject_id, instruction_key)
@@ -145,6 +145,9 @@ alter table public.client_registry_period_summaries
 alter table public.client_registry_period_summaries
   add constraint client_registry_period_summaries_retention_class_check
   check (retention_class in ('standard','legal_hold'));
+
+alter table public.client_registry_period_summaries
+  drop constraint if exists client_registry_period_summaries_subject_id_period_start_period_end_key;
 
 drop index if exists client_registry_period_summaries_scope_uidx;
 create unique index client_registry_period_summaries_scope_uidx
