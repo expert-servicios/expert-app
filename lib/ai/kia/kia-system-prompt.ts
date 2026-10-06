@@ -17,9 +17,6 @@ import { KIA_JUSTICIA_REGISTROS_KNOWLEDGE_PROMPT } from "./prompts/kia-justicia-
 import { KIA_PAE_KNOWLEDGE_PROMPT } from "./prompts/kia-pae-knowledge";
 import { KIA_CCAA_KNOWLEDGE_PROMPT } from "./prompts/kia-ccaa-knowledge";
 import { KIA_ACADEMY_KNOWLEDGE_PROMPT } from "./prompts/kia-academy-knowledge";
-import { KIA_IMMIGRATION_KNOWLEDGE_PROMPT } from "./prompts/kia-immigration-knowledge";
-import { KIA_CIVIL_REGISTRY_NATIONALITY_KNOWLEDGE_PROMPT } from "./prompts/kia-civil-registry-nationality-knowledge";
-import { KIA_CIVIL_REGISTRY_NATIONALITY_PROMPT } from "./prompts/kia-civil-registry-nationality";
 
 const HOLDED_CONTEXT_RE =
   /\bholded\b|pack starter|migraci[oó]n holded|formaci[oó]n holded|plan supervision|plan avanzado|plan colaborativo|erp|control horario.*holded|holded.*control horario|холдед/i;
@@ -35,10 +32,6 @@ const PAE_CONTEXT_RE =
   /\b(pae|circe|crear empresa online|sl.*online|online.*sl|alta autonomo.*online|online.*alta autonomo|ventanilla unica|constitucion.*online|online.*constitucion)\b/i;
 const CCAA_CONTEXT_RE =
   /\b(itp|transmisiones patrimoniales|isd|sucesiones|donaciones|ajd|actos juridicos documentados|impuesto.*herencia|herencia.*impuesto|impuesto de patrimonio|plusvalia.*municipal|iivtnu|suma.*alicante|atv.*valencia|hacienda.*comunidad|ccaa.*impuesto|impuesto.*regional)\b/i;
-const CIVIL_REGISTRY_NATIONALITY_CONTEXT_RE =
-  /\b(nacionalidad|registro civil|jura|promesa|opci[oó]n.*nacionalidad|recuperaci[oó]n.*nacionalidad|p[eé]rdida.*nacionalidad|conservaci[oó]n.*nacionalidad|carta de naturaleza|certificado.*nacimiento|certificado.*matrimonio|certificado.*defunci[oó]n|inscripci[oó]n.*nacimiento|inscripci[oó]n.*matrimonio|apellidos?|nombre.*registro civil|filiaci[oó]n|adopci[oó]n)\b|гражданств|загс|свидетельств.*рожд/i;
-const IMMIGRATION_CONTEXT_RE =
-  /\b(extranjer[ií]a|residencia|residente|permiso.*residencia|autorizaci[oó]n.*residencia|tie|\bnie\b|arraigo|reagrupaci[oó]n|protecci[oó]n temporal|protecci[oó]n internacional|asilo|refugiado|apatrid|ucrania|larga duraci[oó]n|familiar.*espa[nñ]ol|familiar.*ciudadano.*uni[oó]n|ciudadano.*ue|estancia.*estudios|nacionalidad espa[nñ]ola|nacionalidad por residencia|mercurio|oficina.*extranjer)/i;
 const ACADEMY_CONTEXT_RE =
   /\b(academy|business academy|programa superior|adgd0210|certificaci[oó]n oficial|curso.*direcci[oó]n|direcci[oó]n.*administraci[oó]n.*gesti[oó]n|entrevista de admisi[oó]n|matr[ií]cul|curso.*laboral|gesti[oó]n laboral integral|курс|академ)\b/i;
 
@@ -116,8 +109,6 @@ export function buildKiaSystemPrompt(params: {
   includePae?: boolean;
   includeCcaa?: boolean;
   includeAcademy?: boolean;
-  includeImmigration?: boolean;
-  includeCivilRegistryNationality?: boolean;
   fewShotBlock?: string;
   subAgentAddendum?: string;
 }): string {
@@ -139,10 +130,6 @@ export function buildKiaSystemPrompt(params: {
     params.includeCcaa ?? matchesContext(CCAA_CONTEXT_RE, params);
   const withAcademy =
     params.includeAcademy ?? matchesContext(ACADEMY_CONTEXT_RE, params);
-  const withImmigration =
-    params.includeImmigration ?? matchesContext(IMMIGRATION_CONTEXT_RE, params);
-  const withCivilRegistryNationality =
-    params.includeCivilRegistryNationality ?? matchesContext(CIVIL_REGISTRY_NATIONALITY_CONTEXT_RE, params);
 
   const adminBehavior = params.channel === "admin" ? [
     "- MODO ADMIN COPILOT: estas asistiendo a un profesional interno de EXPERT, no a un cliente final. Trabaja como copiloto operativo, conecta informacion autorizada y responde en texto libre.",
@@ -151,6 +138,7 @@ export function buildKiaSystemPrompt(params: {
     "- QUICK REPLIES ADMIN: evita quickReplies y menus salvo que una eleccion cerrada sea imprescindible para evitar ambiguedad.",
     "- HERRAMIENTAS ADMIN: consulta fuentes internas autorizadas antes de afirmar estados actuales y distingue siempre dato verificado de inferencia.",
     "- ALCANCE ADMIN: ayuda transversalmente con clientes, empresas, expedientes, documentos, correo, calendario, tareas, Holded, contabilidad, fiscalidad, laboral, conocimiento y operaciones, dentro de los permisos disponibles.",
+    "- OFFICE ADMIN: cuando la pregunta o la pantalla trate de correo, agenda, reuniones, pendientes o prioridades, usa las herramientas Admin Office de lectura antes de responder. En una revisión general puedes usar get_admin_attention_queue para priorizar lo que requiere atención.",
   ].join("\n") : "";
   return `
 <role>
@@ -241,12 +229,9 @@ ${withAeat ? KIA_AEAT_KNOWLEDGE_PROMPT : ""}
 ${withSs ? KIA_SS_KNOWLEDGE_PROMPT : ""}
 ${withDgt ? KIA_DGT_KNOWLEDGE_PROMPT : ""}
 ${withJusticia ? KIA_JUSTICIA_REGISTROS_KNOWLEDGE_PROMPT : ""}
-${withJusticia ? KIA_CIVIL_REGISTRY_NATIONALITY_PROMPT : ""}
 ${withPae ? KIA_PAE_KNOWLEDGE_PROMPT : ""}
 ${withCcaa ? KIA_CCAA_KNOWLEDGE_PROMPT : ""}
 ${withAcademy ? KIA_ACADEMY_KNOWLEDGE_PROMPT : ""}
-${withImmigration ? KIA_IMMIGRATION_KNOWLEDGE_PROMPT : ""}
-${withCivilRegistryNationality ? KIA_CIVIL_REGISTRY_NATIONALITY_KNOWLEDGE_PROMPT : ""}
 
 ${params.fewShotBlock ? `\n<few_shot_examples>\n${params.fewShotBlock}\n</few_shot_examples>` : ""}
 
