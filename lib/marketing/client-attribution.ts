@@ -156,3 +156,14 @@ export function readClientAttribution(): LeadAttribution | null {
   if (typeof window === 'undefined') return null;
   return captureClientAttribution();
 }
+
+
+export function clearClientAttribution(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(ACQUISITION_STORAGE_KEY);
+  } catch {}
+  try {
+    document.cookie = `${ACQUISITION_COOKIE_NAME}=; Max-Age=0; Path=/; SameSite=Lax`;
+  } catch {}
+}
