@@ -139,6 +139,17 @@ export const kiaToolValidators = {
   get_unreconciled_transactions: z.object({
     limit: z.number().int().min(1).max(50).default(20),
   }).strict(),
+  prepare_payment_reminder: z.object({
+    invoiceId: z.string().trim().min(1).max(200),
+    tone: z.enum(['gentle', 'firm', 'formal']).default('gentle'),
+    lang: z.enum(['es', 'ru']).default('es'),
+  }).strict(),
+  prepare_credit_note_proposal: z.object({
+    invoiceId: z.string().trim().min(1).max(200),
+    reason: z.string().trim().min(3).max(500),
+    amount: z.number().positive().optional(),
+    lang: z.enum(['es', 'ru']).default('es'),
+  }).strict(),
   // ── Holded labor v2 tools — company comes only from authorized KiaContext ─
   get_holded_employees: z.object({
     search: z.string().max(100).optional(),
