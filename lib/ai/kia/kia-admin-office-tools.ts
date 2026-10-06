@@ -302,7 +302,9 @@ async function loadTasks(
     .order('created_at', { ascending: false })
     .limit(limit);
 
-  const decorate = (rows: Array<Record<string, unknown>>) => rows.map((row) => ({
+  const decorate = (
+    rows: Array<Record<string, unknown>>,
+  ): Array<Record<string, unknown> & { overdue: boolean }> => rows.map((row) => ({
     ...row,
     overdue: Boolean(row.due_date && String(row.due_date) < todayKey),
   }));
