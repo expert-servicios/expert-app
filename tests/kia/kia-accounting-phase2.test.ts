@@ -189,3 +189,37 @@ describe('KIA Accounting phase 2B preparation safety', () => {
     });
   });
 });
+
+
+describe('KIA Accounting v1 Holded compatibility contracts', () => {
+  const fs = require('node:fs') as typeof import('node:fs');
+  const client = fs.readFileSync('lib/integrations/holded/holded-client.ts', 'utf8');
+  const gateway = fs.readFileSync('lib/integrations/holded/holded-gateway.ts', 'utf8');
+  const accounting = fs.readFileSync('lib/ai/kia/kia-accounting-tools.ts', 'utf8');
+
+  it('uses the documented v1 treasury endpoint and timestamp query names', () => {
+    expect(client).toContain("get<unknown>('/treasury')");
+    expect(client).toContain("qs.set('starttmp', String(dateFrom))");
+    expect(client).toContain("qs.set('endtmp', String(dateTo))");
+    expect(client).not.toContain("get<unknown>('/treasury/accounts')");
+  });
+
+  it('caps v2 invoice and purchase pages at 100 but keeps bank movement pages at 200', () => {
+    expect(gateway).toContain('limit: Math.min(100, maxItems - items.length)');
+    expect(gateway).toContain("status: params.pendingOnly ? ['pending', 'partial'] : undefined");
+    expect(gateway).toContain('limit: Math.min(200, maxItems - items.length)');
+  });
+
+  it('preserves unknown pending balances and v1 movement linkage', () => {
+    expect(gateway).toContain('paymentsPending: number | null');
+    expect(gateway).toContain('rawPaymentsPending === null || rawPaymentsPending === undefined');
+    expect(gateway).toContain('documentId: movement.documentId');
+    expect(gateway).toContain('invoiceId:');
+    expect(gateway).toContain('matchId:');
+  });
+
+  it('returns transaction currency and validates credit notes in integer cents', () => {
+    expect(accounting).toContain("currency: String(movement.currency ?? 'EUR').toUpperCase()");
+    expect(accounting).toContain('Math.round(amount * 100) > Math.round(found.invoice.total * 100)');
+  });
+});
