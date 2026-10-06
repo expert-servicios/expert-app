@@ -57,7 +57,9 @@ describe('KIA proactive mobile conversation UX', () => {
 
   it('stacks email CTAs so Hablar con KIA cannot overlap Telegram on mobile', () => {
     const signature = source('lib/email/kia-signature.ts');
-    expect(signature).toContain("ctaLabel = ru ? 'Поговорить с KIA:' : 'Hablar con KIA:'");
+    expect(signature).toContain("ctaLabel: 'Hablar con KIA:'");
+    expect(signature).toContain("ctaLabel: 'Поговорить с KIA:'");
+    expect(signature).toContain('const ctaLabel = copy.ctaLabel');
     expect(signature).toContain('data-kia-contact-cta="true"');
     expect(signature).toContain('https://telegram.org/img/t_logo.png');
     expect(signature).toContain('data-kia-contact-cta="true"');

@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   getKiaToolPolicy,
@@ -216,7 +217,6 @@ describe('KIA Accounting phase 2B preparation safety', () => {
 
 
 describe('KIA Accounting v1 Holded compatibility contracts', () => {
-  const fs = require('node:fs') as typeof import('node:fs');
   const client = fs.readFileSync('lib/integrations/holded/holded-client.ts', 'utf8');
   const gateway = fs.readFileSync('lib/integrations/holded/holded-gateway.ts', 'utf8');
   const accounting = fs.readFileSync('lib/ai/kia/kia-accounting-tools.ts', 'utf8');
@@ -229,7 +229,7 @@ describe('KIA Accounting v1 Holded compatibility contracts', () => {
   });
 
   it('caps v2 invoice and purchase pages at 100 but keeps bank movement pages at 200', () => {
-    expect(gateway).toContain('limit: Math.min(100, maxItems - items.length)');
+    expect(gateway).toContain('limit: Math.min(100, maxItems - statusItems)');
     expect(gateway).toContain("status: params.pendingOnly ? ['pending', 'partial'] : undefined");
     expect(gateway).toContain('limit: Math.min(200, maxItems - items.length)');
   });

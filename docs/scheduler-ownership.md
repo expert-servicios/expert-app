@@ -20,7 +20,7 @@ Authentication uses the Vault secret `cron_secret`, exposed to the public Vercel
 1. Verify a real pg_net request to `email-queue` returns 2xx using Vault.
 2. Deploy the commit that removes `vercel.json.crons`.
 3. Confirm the production deployment is READY.
-4. Apply `20261006113000_consolidate_application_crons.sql`.
+4. Apply `20261006090844_consolidate_application_crons_20261006.sql`.
 5. Verify `cron.job` contains exactly one application schedule per route.
 6. Inspect `net._http_response` after representative runs for 2xx/timeouts.
 7. Only then retire legacy `CRON_SECRET` / GitHub scheduler credentials if no other consumer needs them.

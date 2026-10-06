@@ -5,6 +5,7 @@ export type KiaSkillDomain =
   | 'fiscal'
   | 'accounting'
   | 'labor'
+  | 'immigration'
   | 'corporate'
   | 'administration'
   | 'documents'
@@ -91,6 +92,18 @@ const KIA_SKILLS: readonly KiaSkillDefinition[] = [
     taskTypes: [],
     preferredSubAgentId: 'labor',
     requiredToolCapabilities: ['client_data', 'holded_hr_read'],
+    maxRiskTier: 'R1',
+    enabled: true,
+  },
+  {
+    id: 'immigration.advice',
+    version: '1.0',
+    domain: 'immigration',
+    description: 'Responde y orienta consultas de Extranjería con corpus oficial contextual, separando regímenes y sin ejecutar trámites ni pedir documentación por defecto.',
+    intents: ['immigration_advice'],
+    taskTypes: [],
+    preferredSubAgentId: 'immigration',
+    requiredToolCapabilities: ['knowledge', 'regulatory', 'service_discovery', 'case_management'],
     maxRiskTier: 'R1',
     enabled: true,
   },

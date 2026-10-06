@@ -7,7 +7,7 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf
 describe('KIA civil registry and nationality corpus', () => {
   const prompt = source('lib/ai/kia/prompts/kia-civil-registry-nationality-knowledge.ts');
   const system = source('lib/ai/kia/kia-system-prompt.ts');
-  const engine = source('lib/ai/kia/kia-decision-engine.ts');
+
 
   it('covers nationality routes and post-acquisition acts', () => {
     for (const marker of [
@@ -45,8 +45,7 @@ describe('KIA civil registry and nationality corpus', () => {
   it('loads the corpus contextually', () => {
     expect(system).toContain('KIA_CIVIL_REGISTRY_NATIONALITY_KNOWLEDGE_PROMPT');
     expect(system).toContain('includeCivilRegistryNationality');
-    expect(engine).toContain('CIVIL_REGISTRY_NATIONALITY_MESSAGE_RE');
-    expect(engine).toContain('isCivilRegistryNationalityMessage');
+    expect(system).toContain('CIVIL_REGISTRY_NATIONALITY_CONTEXT_RE');
   });
 
   it('applies consultation-first minimization', () => {

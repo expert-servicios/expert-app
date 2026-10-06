@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
 
 describe('KIA Client Registry v2 clean boundaries', () => {
-  const migration = source('supabase/migrations/20261006102000_kia_client_registry_v2_clean.sql');
+  const migration = source('supabase/migrations/20261006082354_kia_client_registry_v2_clean_20261006.sql');
   const profile = source('lib/ai/kia/kia-client-registry-profile.ts');
   const ledger = source('lib/ai/kia/kia-client-ledger.ts');
   const prompt = source('lib/ai/kia/kia-system-prompt.ts');

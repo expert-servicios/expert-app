@@ -8,7 +8,7 @@ describe('KIA Health NBA deduplication', () => {
   const alerts = source('lib/ai/kia/health/kia-health-alerts.ts');
   const nba = source('lib/nba/create-nba.ts');
   const runner = source('lib/ai/kia/health/kia-health-runner.ts');
-  const migration = source('supabase/migrations/20261006114500_dedupe_global_health_nbas.sql');
+  const migration = source('supabase/migrations/20261006092254_dedupe_global_health_nbas_20261006.sql');
 
   it('uses a stable source/check key for global health alerts', () => {
     expect(alerts).toContain('healthNbaKey');

@@ -120,6 +120,17 @@ function normalizedEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
+function hasLiveOutboundReplyAfterInbound(messages: GmailMessage[], inbound: GmailMessage): boolean {
+  const inboundAt = Date.parse(inbound.date);
+  if (!Number.isFinite(inboundAt)) return false;
+  return messages.some((message) =>
+    normalizedEmail(message.fromEmail) === EXPERT_MAILBOX
+    && message.id !== inbound.id
+    && Number.isFinite(Date.parse(message.date))
+    && Date.parse(message.date) > inboundAt
+  );
+}
+
 function replyFromForPurpose(purpose: ReturnType<typeof classifyInboundEnvelope>['recipientPurpose']): string {
   const aliasesEnabled = process.env.KIA_EMAIL_SEND_AS_ALIASES_ENABLED?.trim().toLowerCase() === 'true';
   if (!aliasesEnabled) return 'KIA · EXPERT <info@expertconsulting.es>';
@@ -794,12 +805,21 @@ export async function GET(request: NextRequest) {
 
       const hasAttachments = latest.attachments.some((attachment) => !attachment.inline);
       const confidenceFloor = wasKnownContact ? minConfidence : prospectMinConfidence;
+      const { data: companyOperationalControls, error: companyOperationalControlsError } = identity.companyId
+        ? await admin.from('company_operational_controls')
+            .select('external_communication_blocked')
+            .eq('company_id', identity.companyId)
+            .maybeSingle()
+        : { data: null, error: null };
+      if (companyOperationalControlsError) throw companyOperationalControlsError;
+      const externalCommunicationBlocked = Boolean(companyOperationalControls?.external_communication_blocked);
       const externalActionPreEligible = autoSend
         && health.ok
         && (wasKnownContact || (safeUnknownProspect && newLeadAutoSend))
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
+        && !externalCommunicationBlocked
         && envelope.recipientPurpose !== 'noreply'
         && !hasAttachments;
       const baseAllowedTools = wasKnownContact ? KNOWN_CONTACT_TOOLS : PUBLIC_PROSPECT_TOOLS;
@@ -890,6 +910,7 @@ export async function GET(request: NextRequest) {
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
+        && !externalCommunicationBlocked
         && envelope.recipientPurpose !== 'noreply'
         && !hasAttachments
         && !result.usedFallback
@@ -902,6 +923,22 @@ export async function GET(request: NextRequest) {
       let blockReason: string | null = null;
 
       if (canAutoSend) {
+        const livePreSendThread = await getOperationalGmailThread(admin, row.thread_id);
+        const liveAlreadyAnswered = hasLiveOutboundReplyAfterInbound(livePreSendThread.messages, latest);
+        if (liveAlreadyAnswered) {
+          blockReason = 'live_thread_already_answered';
+          await admin.from('system_kv').upsert({
+            key: `kia_email_live_check:${createHash('sha256').update(`${row.thread_id}:${latest.id}`).digest('hex').slice(0, 40)}`,
+            value: {
+              check: 'live_gmail_pre_send_check',
+              state: 'blocked',
+              reason: blockReason,
+              inbound_message_id: latest.id,
+              checked_at: new Date().toISOString(),
+            },
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'key' });
+        } else {
         const baseHtml = replyHtml(result.userMessage);
         const metadata: Record<string, unknown> = {
           kia_author: true,
@@ -1001,6 +1038,7 @@ export async function GET(request: NextRequest) {
           sent++;
           sentNow = true;
         }
+        }
       } else {
         if (result.executionTrace.lateClassificationFailClosed) blockReason = 'orchestration_requires_review';
         else if (!autoSend) blockReason = 'auto_send_disabled';
@@ -1009,6 +1047,7 @@ export async function GET(request: NextRequest) {
         else if (!wasKnownContact && safeUnknownProspect && !newLeadAutoSend) blockReason = 'new_lead_approval_required';
         else if (identity.ambiguousCase) blockReason = 'ambiguous_case';
         else if (identity.linkedCaseSenderMismatch) blockReason = 'linked_case_sender_mismatch';
+        else if (externalCommunicationBlocked) blockReason = 'company_external_communication_blocked';
         else if (replyToMismatch) blockReason = 'reply_to_requires_review';
         else if (envelope.recipientPurpose === 'noreply') blockReason = 'noreply_recipient';
         else if (hasAttachments) blockReason = 'attachment_requires_review';

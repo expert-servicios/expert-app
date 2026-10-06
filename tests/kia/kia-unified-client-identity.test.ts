@@ -11,7 +11,9 @@ const kiaRoute = readFileSync(resolve(process.cwd(), 'app/api/ai/kia/route.ts'),
 describe('Unified KIA client identity', () => {
   it('uses one visual KIA signature for Chat and Telegram', () => {
     expect(signature).toContain('/avatars/kia/kia-bienvenida.webp');
-    expect(signature).toContain("ctaLabel = ru ? 'Поговорить с KIA:' : 'Hablar con KIA:'");
+    expect(signature).toContain("ctaLabel: 'Hablar con KIA:'");
+    expect(signature).toContain("ctaLabel: 'Поговорить с KIA:'");
+    expect(signature).toContain('const ctaLabel = copy.ctaLabel');
     expect(signature).toContain('https://t.me/kia_expert_bot');
     expect(signature).toContain('KIA es una asistente virtual de EXPERT');
   });

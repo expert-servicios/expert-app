@@ -7,7 +7,7 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf
 describe('KIA immigration corpus', () => {
   const prompt = source('lib/ai/kia/prompts/kia-immigration-knowledge.ts');
   const system = source('lib/ai/kia/kia-system-prompt.ts');
-  const engine = source('lib/ai/kia/kia-decision-engine.ts');
+  const skillRegistry = source('lib/ai/kia/kia-skill-registry.ts');
   const signature = source('lib/email/kia-signature.ts');
   const emailAgent = source('app/api/cron/kia-email-agent/route.ts');
 
@@ -37,8 +37,9 @@ describe('KIA immigration corpus', () => {
   it('loads immigration knowledge contextually and routes it across channels', () => {
     expect(system).toContain('KIA_IMMIGRATION_KNOWLEDGE_PROMPT');
     expect(system).toContain('includeImmigration');
-    expect(engine).toContain('IMMIGRATION_MESSAGE_RE');
-    expect(engine).toContain("isImmigrationMessage(msg, slug) ? 'immigration_advice' : undefined");
+    expect(system).toContain('IMMIGRATION_CONTEXT_RE');
+    expect(skillRegistry).toContain("id: 'immigration.advice'");
+    expect(skillRegistry).toContain("preferredSubAgentId: 'immigration'");
   });
 
   it('enforces consultation-first data minimization', () => {

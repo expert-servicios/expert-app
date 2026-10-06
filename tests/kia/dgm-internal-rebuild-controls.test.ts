@@ -7,7 +7,7 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf
 describe('DGM internal accounting rebuild controls', () => {
   const context = source('lib/ai/kia/kia-context-builder.ts');
   const emailAgent = source('app/api/cron/kia-email-agent/route.ts');
-  const gates = source('supabase/migrations/20261005094500_company_operational_controls_dgm.sql');
+  const gates = source('supabase/migrations/20261005075737_company_operational_controls_dgm.sql');
   const playbook = source('docs/clients/dgm-accounting-rebuild-2025-2026.md');
 
   it('keeps company history in the client registry rather than companies.notes', () => {

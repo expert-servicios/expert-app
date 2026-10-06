@@ -7,7 +7,7 @@ import { getKiaSkillDefinition } from '@/lib/ai/kia/kia-skill-registry';
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
 
 describe('KIA immigration strategy contract', () => {
-  const engine = source('lib/ai/kia/kia-decision-engine.ts');
+  const orchestrator = source('lib/ai/kia/kia-orchestrator.ts');
   const classifier = source('lib/ai/kia/kia-intent-classifier.ts');
   const official = source('lib/integrations/official-sources.ts');
 
@@ -17,7 +17,8 @@ describe('KIA immigration strategy contract', () => {
   });
 
   it('classifies inbound email before specialist routing', () => {
-    expect(engine).toContain("(input.channel === 'email' && input.taskType === 'chat_reply')");
+    expect(orchestrator).toContain("input.taskType === 'chat_reply'");
+    expect(orchestrator).toContain("input.channel === 'email'");
     expect(classifier).toContain('immigration_advice');
     expect(classifier).toContain('protección temporal');
     expect(classifier).toContain('larga duración');

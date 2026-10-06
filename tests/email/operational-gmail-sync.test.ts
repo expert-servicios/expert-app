@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const cron = readFileSync(resolve(process.cwd(), 'app/api/cron/email-sync/route.ts'), 'utf8');
-const vercel = readFileSync(resolve(process.cwd(), 'vercel.json'), 'utf8');
+const scheduler = readFileSync(resolve(process.cwd(), 'supabase/migrations/20261006090844_consolidate_application_crons_20261006.sql'), 'utf8');
 
 describe('operational Gmail sync for KIA', () => {
   it('prefers service account but falls back to admin OAuth', () => {
@@ -25,7 +25,7 @@ describe('operational Gmail sync for KIA', () => {
   });
 
   it('polls often enough for operational case intake', () => {
-    expect(vercel).toContain('"path": "/api/cron/email-sync"');
-    expect(vercel).toContain('"schedule": "*/10 * * * *"');
+    expect(scheduler).toContain('/api/cron/email-sync');
+    expect(scheduler).toContain("'*/10 * * * *'");
   });
 });
