@@ -96,13 +96,17 @@ describe('KIA Admin Office read layer', () => {
     expect(office).toContain("from('profile_companies')");
     expect(office).toContain("admin.auth.admin.getUserById(clientId)");
     expect(office).toContain("from('companies')");
-    expect(office).toContain(".is('case_id', null)");\n    expect(office).toContain(".is('client_id', null)");\n    expect(office).toContain(".is('company_id', null)");
+    expect(office).toContain(".is('case_id', null)");
+    expect(office).toContain(".is('client_id', null)");
+    expect(office).toContain(".is('company_id', null)");
   });
 
   it('paginates memberships and scopes case-linked rows through FK joins', () => {
     const office = source('lib/ai/kia/kia-admin-office-tools.ts');
     expect(office).toContain('.range(offset, offset + membershipPageSize - 1)');
-    expect(office).toContain('cases!email_inbox_cache_case_id_fkey!inner');\n    expect(office).toContain('cases!internal_tasks_case_id_fkey!inner');\n    expect(office).not.toContain('case_id.in.');
+    expect(office).toContain('cases!email_inbox_cache_case_id_fkey!inner');
+    expect(office).toContain('cases!internal_tasks_case_id_fkey!inner');
+    expect(office).not.toContain('case_id.in.');
     expect(office).not.toContain('.limit(300)');
   });
 
