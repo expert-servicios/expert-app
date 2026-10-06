@@ -533,16 +533,20 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         return ok(toolCall.name, { tasks: data ?? [] });
       }
 
-      case 'get_case_signature_status':
-        return getKiaCaseSignatureStatus(admin, context, String(args.caseId));
+      case 'get_case_signature_status': {
+        const result = await getKiaCaseSignatureStatus(admin, context, String(args.caseId));
+        return result.ok ? ok(toolCall.name, result) : fail(toolCall.name, result.error);
+      }
 
-      case 'prepare_signature_request':
-        return prepareKiaSignatureRequest(admin, context, {
+      case 'prepare_signature_request': {
+        const result = await prepareKiaSignatureRequest(admin, context, {
           caseId: String(args.caseId),
           documentId: String(args.documentId),
           signatureLevel: args.signatureLevel as 'simple' | 'advanced' | 'qualified',
           signers: args.signers as Array<{ name: string; email?: string | null }>,
         });
+        return result.ok ? ok(toolCall.name, result) : fail(toolCall.name, result.error);
+      }
 
       case 'get_case_documents': {
         const clientId = context.contact?.clientId;
