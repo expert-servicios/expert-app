@@ -311,6 +311,170 @@ export async function getKiaCaseSignatureStatus(
   return { ok: true as const, requests: projected };
 }
 
+
+function actionSnapshotFromRow(row: SignatureActionRow) {
+  return {
+    id: row.id,
+    tenantId: row.tenant_id,
+    companyId: row.company_id,
+    caseId: row.case_id,
+    requestedBy: row.requested_by,
+    assignedProfessionalId: row.assigned_professional_id,
+    capability: row.capability,
+    organism: row.organism,
+    actionType: row.action_type,
+    state: row.state as import('./kia-administrative-action').KiaAdministrativeActionState,
+    risk: row.risk,
+    effect: row.effect,
+    requiresUserAuth: row.requires_user_auth,
+    requiresFinalApproval: row.requires_final_approval,
+    actionSnapshotHash: row.action_snapshot_hash,
+    approvalTokenExpiresAt: null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    rowVersion: row.row_version,
+  };
+}
+
+async function appendSignatureEvent(
+  admin: AdminClient,
+  row: SignatureActionRow,
+  eventType: string,
+  actorId: string,
+  payload: Record<string, unknown>,
+) {
+  const { error } = await admin.from('administrative_action_events').insert({
+    action_id: row.id,
+    tenant_id: row.tenant_id,
+    event_type: eventType,
+    previous_state: row.state,
+    new_state: row.state,
+    actor_type: 'professional',
+    actor_id: actorId,
+    payload,
+  });
+  if (error) throw error;
+}
+
+async function transitionSignature(
+  admin: AdminClient,
+  row: SignatureActionRow,
+  toState: import('./kia-administrative-action').KiaAdministrativeActionState,
+  actorId: string,
+  eventType: string,
+  payload: Record<string, unknown> = {},
+): Promise<SignatureActionRow> {
+  const next = await transitionKiaAdministrativeAction({
+    supabase: admin,
+    current: actionSnapshotFromRow(row),
+    toState,
+    actorType: 'professional',
+    actorId,
+    eventType,
+    payload,
+  });
+  const refreshed = await loadSignatureActionForAdmin(admin, next.id);
+  if (!refreshed) throw new Error('signature_action_disappeared');
+  return refreshed;
+}
+
+export async function recordKiaSignatureLifecycle(
+  admin: AdminClient,
+  input: {
+    actionId: string;
+    caseId: string;
+    actorId: string;
+    lifecycle: 'requested' | 'partially_signed' | 'completed' | 'cancelled';
+    signers?: SignatureSigner[];
+    finalDocumentId?: string | null;
+  },
+) {
+  let action = await loadSignatureActionForAdmin(admin, input.actionId);
+  if (!action || action.case_id !== input.caseId) return fail('Solicitud de firma no encontrada en el expediente.');
+
+  const payload: Record<string, unknown> = {
+    signatureStatus: input.lifecycle,
+    signers: input.signers ?? [],
+  };
+
+  if (input.lifecycle === 'cancelled') {
+    if (action.state === 'verifying' || action.state === 'completed') {
+      return fail('La firma ya está en verificación/finalizada y no puede cancelarse desde este flujo.');
+    }
+    if (action.state === 'cancelled') return { ok: true as const, actionId: action.id, state: action.state };
+    action = await transitionSignature(admin, action, 'cancelled', input.actorId, 'signature.cancelled', payload);
+    return { ok: true as const, actionId: action.id, state: action.state };
+  }
+
+  if (input.lifecycle === 'requested') {
+    const path = [
+      ['approved', 'signature.approved'],
+      ['queued', 'signature.queued'],
+      ['claimed', 'signature.claimed'],
+      ['running', 'signature.requested'],
+    ] as const;
+    if (action.state === 'needs_review') {
+      for (const [state, eventType] of path) {
+        action = await transitionSignature(admin, action, state, input.actorId, eventType, payload);
+      }
+    } else if (action.state !== 'running') {
+      return fail(`No se puede registrar envío a firma desde el estado ${action.state}.`);
+    } else {
+      await appendSignatureEvent(admin, action, 'signature.requested', input.actorId, payload);
+    }
+    return { ok: true as const, actionId: action.id, state: action.state };
+  }
+
+  if (action.state !== 'running') {
+    return fail('La solicitud debe estar enviada y en curso antes de registrar firmas.');
+  }
+
+  if (input.lifecycle === 'partially_signed') {
+    await appendSignatureEvent(admin, action, 'signature.partially_signed', input.actorId, payload);
+    return { ok: true as const, actionId: action.id, state: action.state };
+  }
+
+  const finalDocumentId = input.finalDocumentId?.trim();
+  if (!finalDocumentId) return fail('La finalización exige el documento firmado final.');
+
+  const { data: finalDocument, error: finalDocumentError } = await admin
+    .from('documents')
+    .select('id,case_id,client_id,state,replaced_by,file_path,drive_file_id')
+    .eq('id', finalDocumentId)
+    .eq('case_id', input.caseId)
+    .is('replaced_by', null)
+    .neq('state', 'rechazado')
+    .maybeSingle();
+  if (finalDocumentError) throw finalDocumentError;
+  if (!finalDocument || (!finalDocument.file_path && !finalDocument.drive_file_id)) {
+    return fail('El documento final no existe, no está vigente o no es accesible.');
+  }
+
+  action = await transitionSignature(
+    admin,
+    action,
+    'verifying',
+    input.actorId,
+    'signature.verifying',
+    { ...payload, finalDocumentId },
+  );
+  action = await transitionSignature(
+    admin,
+    action,
+    'completed',
+    input.actorId,
+    'signature.completed',
+    { ...payload, finalDocumentId, signatureStatus: 'completed' },
+  );
+  return {
+    ok: true as const,
+    actionId: action.id,
+    state: action.state,
+    finalDocumentId,
+    finalDocumentUrl: absoluteAppUrl(`/api/documents/${encodeURIComponent(finalDocumentId)}/download?redirect=1`),
+  };
+}
+
 export async function loadSignatureActionForAdmin(admin: AdminClient, actionId: string) {
   const { data, error } = await admin
     .from('administrative_actions')
