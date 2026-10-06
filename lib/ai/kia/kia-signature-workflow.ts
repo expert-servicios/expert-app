@@ -408,19 +408,24 @@ export async function recordKiaSignatureLifecycle(
 
   if (input.lifecycle === 'requested') {
     const path = [
-      ['approved', 'signature.approved'],
-      ['queued', 'signature.queued'],
-      ['claimed', 'signature.claimed'],
-      ['running', 'signature.requested'],
+      ['needs_review', 'approved', 'signature.approved'],
+      ['approved', 'queued', 'signature.queued'],
+      ['queued', 'claimed', 'signature.claimed'],
+      ['claimed', 'running', 'signature.requested'],
     ] as const;
-    if (action.state === 'needs_review') {
-      for (const [state, eventType] of path) {
-        action = await transitionSignature(admin, action, state, input.actorId, eventType, payload);
-      }
-    } else if (action.state !== 'running') {
-      return fail(`No se puede registrar envío a firma desde el estado ${action.state}.`);
-    } else {
+
+    if (action.state === 'running') {
       await appendSignatureEvent(admin, action, 'signature.requested', input.actorId, payload);
+      return { ok: true as const, actionId: action.id, state: action.state };
+    }
+
+    const startIndex = path.findIndex(([from]) => from === action.state);
+    if (startIndex < 0) {
+      return fail(`No se puede registrar envío a firma desde el estado ${action.state}.`);
+    }
+    for (let index = startIndex; index < path.length; index++) {
+      const [, state, eventType] = path[index];
+      action = await transitionSignature(admin, action, state, input.actorId, eventType, payload);
     }
     return { ok: true as const, actionId: action.id, state: action.state };
   }
