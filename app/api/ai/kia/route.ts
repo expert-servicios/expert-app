@@ -209,26 +209,24 @@ export async function POST(request: NextRequest) {
   const resolvedCompanyId = staffPreview
     ? (staffPreview.companyId ?? undefined)
     : (companyId ?? contextualCompanyId ?? (adminCopilotMode ? undefined : profile?.active_company_id ?? undefined));
-
-  const operatorPreferredLanguage = staffPreview?.client.preferred_language ?? profile?.preferred_language ?? null;
-  const operatorLocale = operatorPreferredLanguage === 'ru' ? 'ru' : 'es';
-  let responseLocale = staffPreview
-    ? operatorLocale
-    : resolveKiaLocale({ latestMessage: message, preferredLanguage: operatorLocale });
+  const effectivePreferredLanguage = staffPreview?.client.preferred_language ?? profile?.preferred_language ?? null;
+  const profileLocale = effectivePreferredLanguage === 'ru' ? 'ru' : 'es';
+  // A delegated client preview must behave exactly as the client would see it.
+  // Admin typing language must not override the preview client's preferred locale.
+  const responseLocale = staffPreview
+    ? profileLocale
+    : resolveKiaLocale({ latestMessage: message, preferredLanguage: profileLocale });
 
   const staffCompanyScope = Boolean(companyId && profile && isStaffRole(profile.role) && profile.status !== 'inactive');
   const copilotPolicyProfile = adminCopilotMode ? 'admin_copilot' as const : 'client_dashboard' as const;
-  let companyPreferredLanguage: string | null = null;
 
   if (resolvedCompanyId && !staffPreview) {
     if (staffCompanyScope) {
       const { data: companyRow, error: companyError } = await admin
         .from('companies')
-        .select('id,preferred_language')
+        .select('id')
         .eq('id', resolvedCompanyId)
         .maybeSingle();
-
-      companyPreferredLanguage = companyRow?.preferred_language ?? null;
 
       if (companyError) {
         console.error('[KiaCopilot] staff company lookup failed:', companyError.message);
@@ -264,11 +262,6 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-  }
-
-  if (adminCopilotMode && companyPreferredLanguage) {
-    const companyLocale = companyPreferredLanguage === 'ru' ? 'ru' : 'es';
-    responseLocale = resolveKiaLocale({ latestMessage: message, preferredLanguage: companyLocale });
   }
 
   const companyScope = resolvedCompanyId ?? null;
@@ -393,6 +386,9 @@ export async function POST(request: NextRequest) {
         channel     : adminCopilotMode ? 'admin' : 'dashboard',
         userId      : user.id,
         clientId    : effectiveClientId,
+        targetClientId: adminCopilotMode
+          ? (adminTargetClientId ?? staffPreview?.clientId ?? undefined)
+          : effectiveClientId,
         companyId   : resolvedCompanyId,
         currentPage : currentPage ?? '/',
         currentTask : currentTask ?? contextualTask ?? (adminCopilotMode ? 'admin_operator' : undefined),
