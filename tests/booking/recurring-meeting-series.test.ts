@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
 
 describe('recurring meeting series', () => {
-  const migration = source('supabase/migrations/20261004193000_kia_recurring_meeting_series.sql');
+  const migration = source('supabase/migrations/20261004190404_kia_recurring_meeting_series.sql');
   const helper = source('lib/booking/recurring-meeting-series.ts');
   const cron = source('app/api/cron/recurring-meeting-series/route.ts');
   const definitions = source('lib/ai/kia/kia-tool-definitions.ts');
