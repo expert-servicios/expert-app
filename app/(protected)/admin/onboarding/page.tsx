@@ -501,7 +501,7 @@ export default function AdminOnboardingPage() {
 
               {client.mode === 'invite_email' && (
                 <p className="mt-2 text-xs text-[#8a9aab]">
-                  El cliente recibirá un email de invitación para establecer su contraseña y completar sus datos.
+                  El cliente recibirá un enlace seguro por email para acceder y completar sus datos.
                 </p>
               )}
 
