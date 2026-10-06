@@ -45,14 +45,21 @@ function fail(error: string) {
 }
 
 async function loadAuthorizedCase(admin: AdminClient, context: KiaContext, caseId: string) {
-  const clientId = context.contact.clientId;
-  if (!clientId) return null;
-  const { data, error } = await admin
+  let query = admin
     .from('cases')
     .select('id,client_id,company_id,tenant_id')
-    .eq('id', caseId)
-    .eq('client_id', clientId)
-    .maybeSingle();
+    .eq('id', caseId);
+
+  if (context.actor?.isStaff) {
+    if (!context.actor.tenantId) return null;
+    query = query.eq('tenant_id', context.actor.tenantId);
+  } else {
+    const clientId = context.contact.clientId;
+    if (!clientId) return null;
+    query = query.eq('client_id', clientId);
+  }
+
+  const { data, error } = await query.maybeSingle();
   if (error) throw error;
   return data;
 }
@@ -287,9 +294,11 @@ export async function getKiaCaseSignatureStatus(
         return {
           name: typeof signer.name === 'string' ? signer.name : null,
           email: typeof signer.email === 'string' ? signer.email : null,
-          status: ['pending', 'signed', 'declined'].includes(String(signer.status))
-            ? String(signer.status)
-            : 'pending',
+          status: signer.status === 'signed'
+            ? 'signed'
+            : signer.status === 'declined'
+              ? 'declined'
+              : 'pending',
         } satisfies SignatureSigner;
       });
 
