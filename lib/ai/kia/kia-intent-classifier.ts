@@ -158,6 +158,14 @@ function parseClassification(raw: string): KiaIntentClassification | null {
   }
 }
 
+function parseProviderClassification(result: { parsedJson?: unknown; rawText?: string }): KiaIntentClassification | null {
+  if (result.parsedJson) {
+    const parsed = parseClassification(JSON.stringify(result.parsedJson));
+    if (parsed) return parsed;
+  }
+  return parseClassification(result.rawText ?? '');
+}
+
 export async function classifyKiaIntent(params: {
   message: string;
   recentMessages: Array<{ role: string; text: string }>;
@@ -181,16 +189,13 @@ export async function classifyKiaIntent(params: {
       effort: 'low',
       maxTokens: 300,
       temperature: 0,
+      semanticValidator: (candidate) => parseProviderClassification(candidate) !== null,
     });
     if (result.error) {
       console.warn('[KiaIntentClassifier] provider pool failed', { error: result.error });
       return null;
     }
-    if (result.parsedJson) {
-      const parsed = parseClassification(JSON.stringify(result.parsedJson));
-      if (parsed) return parsed;
-    }
-    return parseClassification(result.rawText ?? '');
+    return parseProviderClassification(result);
   } catch (err) {
     console.warn('[KiaIntentClassifier] provider pool failed', { error: safeErrorMessage(err) });
     return null;
