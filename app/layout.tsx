@@ -4,9 +4,8 @@ import { Inter, Playfair_Display } from 'next/font/google';
 import Script from 'next/script';
 import { type ReactNode } from 'react';
 import { PwaRegister } from '@/components/PwaRegister';
+import { CookieConsent } from '@/components/privacy/CookieConsent';
 
-const GTM_ID = 'GTM-MKZ522HP';
-const GA4_MEASUREMENT_ID = 'G-NWTGS6DH5E';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -75,61 +74,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             __html: `document.documentElement.lang=(location.pathname==='/ru'||location.pathname.startsWith('/ru/'))?'ru':'es';`
           }}
         />
-        {/* GTM noscript fallback — must be first in body */}
-        <noscript>
-          <iframe
-            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
-            height="0"
-            width="0"
-            className="gtm-noscript"
-          />
-        </noscript>
-        {/* GTM — kept for any non-GA4 tags managed there. GA4 itself is NOT
-            configured inside this GTM container (no GA4 config tag exists
-            there), so it does not double-track with the direct gtag.js
-            below. If a GA4 tag is ever added inside GTM pointing at
-            G-NWTGS6DH5E, remove the standalone gtag.js below first. */}
-        <Script
-          id="gtm-script"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${GTM_ID}');`
-          }}
-        />
-        {/* Google Analytics 4 — direct gtag.js, not routed through GTM (see above) */}
-        <Script id="ga4-lib" src={`https://www.googletagmanager.com/gtag/js?id=${GA4_MEASUREMENT_ID}`} strategy="afterInteractive" />
-        <Script
-          id="ga4-init"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', '${GA4_MEASUREMENT_ID}');`
-          }}
-        />
+        <CookieConsent />
         <PwaRegister />
         {children}
-        {/* Metricool — analytics y seguimiento de publicaciones */}
-        <Script
-          id="metricool-tracker"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `function loadScript(a){var b=document.getElementsByTagName("head")[0],c=document.createElement("script");c.type="text/javascript",c.src="https://tracker.metricool.com/resources/be.js",c.onreadystatechange=a,c.onload=a,b.appendChild(c)}loadScript(function(){beTracker.t({hash:"a5e06adb5ddd99592958d258ef71a513"})});`
-          }}
-        />
-        {/* Metricool pixel — fallback sin JS y verificación de dominio */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="https://tracker.metricool.com/c3po.jpg?hash=a5e06adb5ddd99592958d258ef71a513"
-          alt=""
-          aria-hidden="true"
-          className="hidden"
-        />
       </body>
     </html>
   );
