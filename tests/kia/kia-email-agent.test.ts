@@ -8,7 +8,7 @@ describe('KIA guarded email agent', () => {
   const route = source('app/api/cron/kia-email-agent/route.ts');
   const helper = source('lib/integrations/operational-gmail.ts');
   const gmail = source('lib/integrations/gmail.ts');
-  const vercel = source('vercel.json');
+  const scheduler = source('supabase/migrations/20261006090844_consolidate_application_crons_20261006.sql');
 
   it('is fail-closed and requires explicit auto-send plus a live communication stack', () => {
     expect(route).toContain("'kia.email_agent'");
@@ -164,8 +164,8 @@ describe('KIA guarded email agent', () => {
     expect(helper).toContain('sendGmailReplySA');
     expect(helper).toContain('Autonomous writes are deliberately single-transport');
     expect(route).toContain('sendOperationalGmailReply');
-    expect(vercel).toContain('/api/cron/kia-email-agent');
-    expect(vercel).toContain('2-59/10 * * * *');
+    expect(scheduler).toContain('/api/cron/kia-email-agent');
+    expect(scheduler).toContain("'2-59/10 * * * *'");
   });
   it('keeps coarse unread push while KIA email is disabled, stale or degraded', () => {
     const sync = source('app/api/cron/email-sync/route.ts');
