@@ -451,6 +451,32 @@ export async function recordKiaSignatureLifecycle(
   const finalDocumentId = input.finalDocumentId?.trim();
   if (!finalDocumentId) return fail('La finalización exige el documento firmado final.');
 
+  const snapshot = (action.action_snapshot ?? {}) as Record<string, unknown>;
+  const sourceDocumentId = typeof snapshot.sourceDocumentId === 'string' ? snapshot.sourceDocumentId : null;
+  if (sourceDocumentId && finalDocumentId === sourceDocumentId) {
+    return fail('El documento final firmado debe ser distinto del documento origen.');
+  }
+
+  const effectiveSigners = input.signers?.length
+    ? input.signers
+    : Array.isArray(snapshot.signers)
+      ? snapshot.signers.map((value) => {
+          const signer = value as Record<string, unknown>;
+          return {
+            id: typeof signer.id === 'string' ? signer.id : null,
+            name: typeof signer.name === 'string' ? signer.name : null,
+            email: typeof signer.email === 'string' ? signer.email : null,
+            status: signer.status === 'signed' ? 'signed' as const
+              : signer.status === 'declined' ? 'declined' as const
+                : 'pending' as const,
+          };
+        })
+      : [];
+  if (effectiveSigners.length === 0 || effectiveSigners.some((signer) => signer.status !== 'signed')) {
+    return fail('No se puede completar la firma hasta que todos los firmantes requeridos consten como firmados.');
+  }
+  payload.signers = effectiveSigners;
+
   const { data: finalDocument, error: finalDocumentError } = await admin
     .from('documents')
     .select('id,case_id,client_id,state,replaced_by,file_path,drive_file_id')
