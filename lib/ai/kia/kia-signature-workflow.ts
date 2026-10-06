@@ -428,9 +428,10 @@ export async function recordKiaSignatureLifecycle(
       return { ok: true as const, actionId: action.id, state: action.state };
     }
 
-    const startIndex = path.findIndex(([from]) => from === action.state);
+    const actionState = action.state;
+    const startIndex = path.findIndex(([from]) => from === actionState);
     if (startIndex < 0) {
-      return fail(`No se puede registrar envío a firma desde el estado ${action.state}.`);
+      return fail(`No se puede registrar envío a firma desde el estado ${actionState}.`);
     }
     for (let index = startIndex; index < path.length; index++) {
       const [, state, eventType] = path[index];
