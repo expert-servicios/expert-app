@@ -210,6 +210,20 @@ export const kiaToolValidators = {
     caseId: z.string().uuid(),
     limit: z.number().int().min(1).max(50).default(20),
   }).strict(),
+  get_case_signature_status: z.object({
+    caseId: z.string().uuid(),
+  }).strict(),
+  prepare_signature_request: z.object({
+    caseId: z.string().uuid(),
+    documentId: z.string().uuid(),
+    signatureLevel: z.enum(['simple', 'advanced', 'qualified']).default('simple'),
+    signers: z.array(z.object({
+      name: z.string().trim().min(1).max(200),
+      email: z.string().email().optional().nullable(),
+    }).strict()).min(1).max(20),
+  }).strict(),
+  get_case_signature_status: 'Read the auditable signature lifecycle for one authorized case. Only completed actions with explicit final-document evidence are returned as signed.',
+  prepare_signature_request: 'Prepare an Admin/Owner-only Google eSignature action for an accessible current document. Creates a review item but never sends a signature request externally.',
   get_case_documents: z.object({
     caseId: z.string().uuid(),
     limit: z.number().int().min(1).max(50).default(20),
