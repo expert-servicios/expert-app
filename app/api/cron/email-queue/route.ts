@@ -20,3 +20,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'internal_error' }, { status: 500 });
   }
 }
+
+export const POST = GET;
