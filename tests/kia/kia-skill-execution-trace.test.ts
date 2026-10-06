@@ -72,7 +72,8 @@ describe('KIA skill execution trace', () => {
 
     expect(source).toContain('const resolvedTaskType = resolveTaskAfterClassification');
     expect(source).toContain('const plan = resolveKiaOrchestrationPlan({');
-    expect(source).toContain('selectionBasis: selectionBasis(plan)');
+    expect(source).toContain('selectionBasis: selectionBasis({');
+    expect(source).toContain('skillId: plan.skillId');
     expect(source).toContain("console.info('[KIA orchestration]', executionTrace)");
     expect(source).toContain('executionTrace,');
   });
