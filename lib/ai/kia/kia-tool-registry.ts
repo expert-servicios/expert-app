@@ -1,4 +1,3 @@
-import { ROLES, type AppRole } from '@/lib/auth/roles';
 import type { KiaChannel } from './kia-output-schema';
 import { KIA_TOOL_DEFINITIONS, type KiaToolDefinition } from './kia-tool-definitions';
 
@@ -32,7 +31,6 @@ export interface KiaToolPolicy {
   capability: KiaToolCapability;
   requiresHumanApproval: boolean;
   allowedChannels: KiaChannel[];
-  allowedRoles?: AppRole[];
   description?: string;
 }
 
@@ -93,12 +91,7 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_official_sources:                policy('R0', 'read',  'regulatory'),
   find_relevant_services:              policy('R0', 'read',  'service_discovery'),
   get_booking_availability:             policy('R0', 'read',  'calendar'),
-  get_admin_inbox_summary:              { ...policy('R1', 'read', 'administration'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
-  get_admin_agenda:                     { ...policy('R1', 'read', 'administration'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
-  get_admin_pending_tasks:              { ...policy('R1', 'read', 'administration'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
-  get_admin_attention_queue:            { ...policy('R1', 'read', 'administration'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
   create_booking_meeting:               policy('R2', 'external_action', 'calendar'),
-  upsert_recurring_meeting_series:       { ...policy('R2', 'external_action', 'calendar', true), allowedChannels: ['admin'] },
 };
 
 function policy(
@@ -143,7 +136,7 @@ export function isKiaToolSafeForAutonomousExecution(name: string): boolean {
 }
 
 export function resolveKiaToolDefinitions(context: KiaToolAuthorizationContext): KiaToolDefinition[] {
-  const requested = context.requestedNames?.length ? new Set(context.requestedNames) : null;
+  const requested = context.requestedNames === undefined ? null : new Set(context.requestedNames);
   const maxRiskRank = RISK_RANK[context.maxRiskTier ?? 'R1'];
   const allowedEffects = context.allowedEffects ? new Set(context.allowedEffects) : null;
 
@@ -157,7 +150,7 @@ export function resolveKiaToolDefinitions(context: KiaToolAuthorizationContext):
 }
 
 export function isKiaToolAuthorized(name: string, context: KiaToolAuthorizationContext): boolean {
-  if (context.requestedNames?.length && !context.requestedNames.includes(name)) return false;
+  if (context.requestedNames !== undefined && !context.requestedNames.includes(name)) return false;
   return resolveKiaToolDefinitions({ ...context, requestedNames: [name] }).some((tool) => tool.name === name);
 }
 
