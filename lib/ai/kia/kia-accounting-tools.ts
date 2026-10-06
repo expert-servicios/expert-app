@@ -381,7 +381,10 @@ export async function executeKiaAccountingTool(
     const found = await findIssuedSalesInvoice(context, invoiceId);
     if (!found.ok) return fail(toolName, found.error);
     const amount = typeof args.amount === 'number' ? args.amount : undefined;
-    if (amount !== undefined && amount > found.invoice.total + 0.01) {
+    if (
+      amount !== undefined
+      && Math.round(amount * 100) > Math.round(found.invoice.total * 100)
+    ) {
       return fail(toolName, 'El importe propuesto no puede superar el total de la factura original.');
     }
     return ok(toolName, buildCreditNoteProposal({
@@ -456,6 +459,7 @@ export async function executeKiaAccountingTool(
       id: movement.id,
       date: movement.date,
       amount: asNumber(movement.amount),
+      currency: String(movement.currency ?? 'EUR').toUpperCase(),
       description: movement.description ?? movement.name,
       reference: movement.reference,
       status: movement.status ?? 'unknown',
