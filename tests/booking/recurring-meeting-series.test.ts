@@ -11,7 +11,7 @@ describe('recurring meeting series', () => {
   const definitions = source('lib/ai/kia/kia-tool-definitions.ts');
   const registry = source('lib/ai/kia/kia-tool-registry.ts');
   const executor = source('lib/ai/kia/kia-tool-executor.ts');
-  const vercel = source('vercel.json');
+  const scheduler = source('supabase/migrations/20261006090844_consolidate_application_crons_20261006.sql');
 
   it('stores idempotent master series and monthly occurrences', () => {
     expect(migration).toContain('recurring_meeting_series');
@@ -63,6 +63,7 @@ describe('recurring meeting series', () => {
 
   it('runs a daily materializer cron', () => {
     expect(cron).toContain('materializeRecurringMeetingSeries');
-    expect(vercel).toContain('/api/cron/recurring-meeting-series');
+    expect(scheduler).toContain('/api/cron/recurring-meeting-series');
+    expect(scheduler).toContain("'10 7 * * *'");
   });
 });
