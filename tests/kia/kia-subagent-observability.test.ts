@@ -5,7 +5,7 @@ const decisionLog = readFileSync('lib/ai/kia/kia-decision-log.ts', 'utf8');
 const decisionEngine = readFileSync('lib/ai/kia/kia-decision-engine.ts', 'utf8');
 const orchestrator = readFileSync('lib/ai/kia/kia-orchestrator.ts', 'utf8');
 const migration = readFileSync(
-  'supabase/migrations/20261004152500_kia_subagent_observability.sql',
+  'supabase/migrations/20261006110512_kia_subagent_observability.sql',
   'utf8',
 );
 
