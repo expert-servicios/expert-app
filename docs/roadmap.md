@@ -297,36 +297,41 @@ Tareas:
 
 ## Fase 8 - Kia: copiloto operativo in-app
 
-Estado: reorientado (decision 2026-06-04).
+Estado: arquitectura 2.0 consolidada; quedan expansiones de superficie y capacidades específicas.
 
-Tipo: IA, producto, operacion, automatizacion, escalabilidad SaaS.
+Tipo: IA, producto, operación, automatización, escalabilidad SaaS.
 
-Decision estrategica: Kia se convierte en un widget copiloto flotante que aparece en cualquier pagina del portal. El usuario hace clic en el boton flotante y se abre una ventana de chat donde puede gestionar las empresas conectadas, consultar datos de expedientes, resolver dudas fiscales/legales y ejecutar acciones asistidas. El motor WABA queda como canal de notificaciones salientes, no como interfaz de Kia.
+Referencia canónica: [KIA 2.0 — estrategia y arquitectura vigente](kia-2-strategy.md).
 
-Entregado (base de conocimiento y motor):
+Implementado:
 
-- [x] Motor de decision estructurado con schema validado, `decisionSummary` y `rulesApplied`. Ver IMP-017.
-- [x] Health checks y canary runner con panel `/admin/kia-health`. Ver IMP-017.
-- [x] Kia Auditor con reglas criticas y panel `/admin/kia-auditor`. Ver IMP-017.
-- [x] Conocimiento Holded Academy (modulos, tarifas, integraciones, FAQs). Ver IMP-018.
-- [x] Conocimiento AEAT y Seguridad Social (IRPF, IVA, autonomos, RETA, modelos). Ver IMP-019.
-- [x] Mapa de fuentes oficiales: DGT, Justicia/Registros, PAE/CIRCE, tributos autonomicos. Ver IMP-020.
-- [x] Anti-repeticion, redaccion de datos sensibles, provider router con fallback. Ver IMP-016/017.
+- [x] `KiaCopilotWidget` como superficie in-app canónica.
+- [x] `POST /api/ai/kia` con contexto autenticado.
+- [x] actor capabilities, grants autoritativos y policy-enforced decision.
+- [x] tools tipadas con riesgo/efecto/canal/rol/scope.
+- [x] artifacts derivados de resultados autorizados y decisión final validada.
+- [x] contexto company/case-scoped y Hoja Registral v2.
+- [x] sistema visual/contextual, trusted presentation signals y alertas fiscales estructuradas.
+- [x] Telegram KIA con identidad verificada y continuidad contextual.
+- [x] correo/calendario/reuniones contextuales.
+- [x] KIA Work, evidencias y lifecycle de tareas.
+- [x] `administrative_actions` + approvals para capacidades implementadas.
+- [x] eSignature auditable.
+- [x] Holded company-scoped con separación `permissions_detected` / `permissions_enabled`.
+- [x] herramientas contables read/preparation y health de proveedores IA.
 
-Tareas pendientes (ver IMP-022):
+Pendiente / roadmap:
 
-- [ ] Widget flotante `<KiaCopilotWidget />` en layout protegido.
-- [ ] Endpoint de chat in-app `POST /api/ai/kia` (separado del webhook WABA).
-- [ ] Contexto enriquecido con datos del tenant: empresas conectadas, expedientes activos, integraciones.
-- [ ] Herramientas del copiloto: consultar empresa, listar expedientes, estado de Holded, buscar cliente.
-- [ ] Historial de sesion en `kia_sessions` vinculado a usuario y tenant.
-- [ ] Confirmacion humana antes de acciones con efecto externo.
-- [ ] Clasificacion obligatoria de cada salida IA:
-  - automatica permitida,
-  - borrador para revision,
-  - requiere intervencion humana.
-- [Futuro] Agentes especializados por tarea: leads, documental, comunicaciones, expediente, fiscal/legal, contenido, operativo diario.
-- [Futuro] Opcion B Holded Academy: crawler periodico -> chunks -> embeddings -> Supabase pgvector -> busqueda semantica para preguntas tecnicas de configuracion Holded.
+- [ ] Operations 360 para Telegram y reply manual unificado.
+- [ ] expansión completa de superficies visuales Sprint 5.
+- [ ] Local Connector genérico fuera del conector Work controlado.
+- [ ] cobertura completa de KIA Administración para trámites públicos.
+- [ ] ampliar escrituras Holded solo con gates específicos.
+- [ ] consentimiento explícito antes de cualquier escritura laboral.
+- [ ] completar paridad multi-tenant en todas las superficies.
+- [ ] consolidar subagentes especializados sin ampliar permisos del actor.
+
+Regla: cualquier nueva capacidad debe definir fuente de verdad, actor, scope, policy, riesgo, aprobación/consentimiento, evidencia y fallo seguro antes de habilitar ejecución autónoma.
 
 ## Fase 9 - Multi-tenant para asesorias
 
