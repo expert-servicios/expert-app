@@ -6,9 +6,10 @@ describe('verifyCronRequest', () => {
     vi.unstubAllEnvs();
   });
 
-  it('fails closed in production when CRON_SECRET is missing', () => {
+  it('fails closed in production when no cron secret is configured', () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('CRON_SECRET', '');
+    vi.stubEnv('PG_CRON_SECRET', '');
 
     expect(verifyCronRequest(new Headers())).toEqual({
       ok: false,
@@ -17,28 +18,53 @@ describe('verifyCronRequest', () => {
     });
   });
 
-  it('allows local development without CRON_SECRET', () => {
+  it('allows local development without cron secrets', () => {
     vi.stubEnv('NODE_ENV', 'development');
     vi.stubEnv('CRON_SECRET', '');
+    vi.stubEnv('PG_CRON_SECRET', '');
 
     expect(verifyCronRequest(new Headers())).toEqual({ ok: true });
   });
 
-  it('rejects requests with the wrong bearer token', () => {
+  it('accepts the canonical pg_cron bearer independently of the Vercel scheduler', () => {
     vi.stubEnv('NODE_ENV', 'production');
-    vi.stubEnv('CRON_SECRET', 'expected-secret');
+    vi.stubEnv('CRON_SECRET', 'vercel-secret');
+    vi.stubEnv('PG_CRON_SECRET', 'pg-secret');
+    vi.stubEnv('VERCEL_CRON_EXECUTOR_ENABLED', '0');
 
-    expect(verifyCronRequest(new Headers({ authorization: 'Bearer wrong' }))).toEqual({
+    expect(verifyCronRequest(new Headers({ authorization: 'Bearer pg-secret' }))).toEqual({ ok: true });
+  });
+
+  it('rejects the Vercel bearer when that project is not a Vercel cron executor', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('CRON_SECRET', 'vercel-secret');
+    vi.stubEnv('PG_CRON_SECRET', 'pg-secret');
+    vi.stubEnv('VERCEL_CRON_EXECUTOR_ENABLED', '0');
+
+    expect(verifyCronRequest(new Headers({ authorization: 'Bearer vercel-secret' }))).toEqual({
       ok: false,
       status: 401,
       error: 'Unauthorized',
     });
   });
 
-  it('accepts requests with the configured bearer token', () => {
+  it('accepts CRON_SECRET by default for the temporary Vercel scheduler project', () => {
     vi.stubEnv('NODE_ENV', 'production');
-    vi.stubEnv('CRON_SECRET', 'expected-secret');
+    vi.stubEnv('CRON_SECRET', 'vercel-secret');
+    vi.stubEnv('PG_CRON_SECRET', '');
 
-    expect(verifyCronRequest(new Headers({ authorization: 'Bearer expected-secret' }))).toEqual({ ok: true });
+    expect(verifyCronRequest(new Headers({ authorization: 'Bearer vercel-secret' }))).toEqual({ ok: true });
+  });
+
+  it('rejects requests with an unknown bearer token', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('CRON_SECRET', 'vercel-secret');
+    vi.stubEnv('PG_CRON_SECRET', 'pg-secret');
+
+    expect(verifyCronRequest(new Headers({ authorization: 'Bearer wrong' }))).toEqual({
+      ok: false,
+      status: 401,
+      error: 'Unauthorized',
+    });
   });
 });
