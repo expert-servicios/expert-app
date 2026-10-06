@@ -99,32 +99,30 @@ Resend gestiona email transaccional. Los eventos quedan en `email_events`.
 
 WhatsApp se usa exclusivamente como canal de notificaciones salientes: avisos de estado de expediente, recordatorios de documentacion pendiente, confirmaciones de pago y enlaces al portal seguro. No es la interfaz principal de Kia ni repositorio documental.
 
-### Kia Copiloto (IA)
+### KIA Copiloto (IA)
 
-Kia es el copiloto operativo interno de EXPERT. Se accede mediante un boton flotante en la esquina inferior derecha de cualquier pagina del portal (dashboard, expedientes, empresa, admin). Al activarlo, se abre una ventana de chat lateral.
+Referencia canónica: [KIA 2.0 — estrategia y arquitectura vigente](kia-2-strategy.md).
 
-Capacidades del copiloto:
+KIA es la capa de razonamiento y orquestación operativa de EXPERT. Su superficie in-app canónica es `KiaCopilotWidget`, con `POST /api/ai/kia` como endpoint principal.
 
-- Consultar y resumir el estado de las empresas conectadas del tenant.
-- Responder preguntas sobre expedientes activos, documentacion pendiente e integraciones.
-- Orientar en tramites fiscales, laborales, mercantiles, de extranjeria y de trafico usando conocimiento de dominio curado (AEAT, SS, DGT, Holded Academy, PAE, Justicia, CCAA).
-- Guiar al usuario por flujos del sistema: conectar Holded, crear un expediente, subir documentacion.
-- Ejecutar acciones asistidas con confirmacion humana previa: enviar email, actualizar estado, crear nota.
+La autorización no depende del prompt. Se resuelve mediante actor capabilities, grants autoritativos, policy profiles y tool registry. La herramienta disponible es siempre la intersección entre identidad, rol, canal, tenant/company/case scope, capability habilitada, riesgo y feature flags.
 
-Arquitectura del widget:
+KIA puede trabajar con:
 
-- `components/KiaCopilotWidget.tsx` — boton flotante + ventana de chat (posicion fixed).
-- `app/api/ai/kia/route.ts` — endpoint de chat in-app con streaming.
-- `lib/ai/kia/kia-context-builder.ts` — contexto enriquecido con tenant, empresas, expedientes activos, pagina actual.
-- `lib/ai/kia/kia-tool-definitions.ts` y `kia-tool-executor.ts` — herramientas del copiloto.
-- `kia_sessions` en Supabase — historial de sesion vinculado a usuario y tenant.
+- empresas y expedientes autorizados;
+- Hoja Registral y memoria operativa versionada;
+- documentos, tareas, correo, calendario y reuniones;
+- Telegram con identidad verificada;
+- Holded company-scoped;
+- herramientas contables read/preparation;
+- KIA Work y evidencias;
+- acciones administrativas concretas que tengan policy y lifecycle implementados.
 
-Reglas de la IA:
+Las acciones externas no se deducen del lenguaje natural: necesitan herramienta explícita, autorización y el gate humano/técnico que corresponda.
 
-- Toda salida se registra y clasifica: automatica permitida / borrador para revision / requiere intervencion humana.
-- Las acciones con efecto externo requieren confirmacion del usuario.
-- El motor de decision estructurado actua como primera linea; el LLM entra cuando el determinismo no es suficiente.
-- Health checks y auditor Kia vigilan el comportamiento en produccion.
+Artifacts, CTAs y señales visuales se derivan de resultados autorizados y señales estructuradas, no de texto arbitrario del modelo.
+
+El Work connector y `administrative_actions` ya existen para capacidades concretas. Esto no equivale a ejecución administrativa universal. El Local Connector genérico, la cobertura total de sedes públicas y la expansión completa de KIA Administración siguen siendo roadmap.
 
 ## Seguridad
 
