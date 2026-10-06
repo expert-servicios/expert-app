@@ -310,14 +310,19 @@ export async function refreshClientRegistryHistoricalSummaries(
     const legalHold = bucket.events.some((event) => event.retention_class === 'legal_hold');
     const summaryText = buildYearSummary(bucket.year, bucket.events);
 
-    const { data: current, error: currentError } = await admin.from('client_registry_period_summaries')
+    let currentQuery = admin.from('client_registry_period_summaries')
       .select('version')
       .eq('subject_id', subjectId)
       .eq('period_start', periodStart)
-      .eq('period_end', periodEnd)
-      .is('company_id', bucket.companyId === null ? null : undefined)
-      .maybeSingle();
-    if (currentError && currentError.code !== 'PGRST116') throw currentError;
+      .eq('period_end', periodEnd);
+    currentQuery = bucket.companyId
+      ? currentQuery.eq('company_id', bucket.companyId)
+      : currentQuery.is('company_id', null);
+    currentQuery = bucket.caseId
+      ? currentQuery.eq('case_id', bucket.caseId)
+      : currentQuery.is('case_id', null);
+    const { data: current, error: currentError } = await currentQuery.maybeSingle();
+    if (currentError) throw currentError;
 
     const { error } = await admin.from('client_registry_period_summaries').upsert({
       subject_id: subjectId,
