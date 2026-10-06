@@ -93,7 +93,7 @@ Project: expert-holded-mcp
 Project ID: prj_CMbPAXYGk4RU92IB2YvMb0DP23t6
 Git: https://github.com/expertestudiospro/kiabusiness_app.git
 Root Directory: apps/holded-mcp
-Node.js: 20.x
+Node.js: 24.x
 Framework: Other
 Production URL temporal: https://expert-holded-mcp.vercel.app
 Dominio final añadido: https://claude.expertconsulting.es

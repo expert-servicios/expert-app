@@ -9,7 +9,7 @@ Supabase Postgres como almacén persistente de OAuth.
 
 | Herramienta | Versión mínima |
 |---|---|
-| Node.js | 20.x |
+| Node.js | 24.x |
 | Vercel CLI | `npm i -g vercel` (cualquier versión reciente) |
 | Supabase proyecto | instancia existente (DB URL disponible) |
 
@@ -31,8 +31,8 @@ esa carpeta.
 
 ### Runtime
 
-El campo `"engines": { "node": "20.x" }` en `apps/holded-mcp/package.json`
-ya especifica Node 20.
+El campo `"engines": { "node": "24.x" }` en `apps/holded-mcp/package.json`
+ya especifica Node 24.
 
 ### Dominio
 
