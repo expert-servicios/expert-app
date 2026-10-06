@@ -29,6 +29,11 @@ import { missingKiaCaseDocumentRequirements } from './kia-case-document-gaps';
 import { createKiaConfirmedBooking, getKiaBookingAvailability } from '@/lib/booking/kia-booking-operator';
 import { materializeRecurringMeetingSeries } from '@/lib/booking/recurring-meeting-series';
 import {
+  KIA_ADMIN_OFFICE_TOOL_NAMES,
+  executeKiaAdminOfficeTool,
+  type KiaAdminOfficeToolName,
+} from './kia-admin-office-tools';
+import {
   ACCOUNTING_TOOL_NAMES,
   executeKiaAccountingTool,
   type KiaAccountingToolName,
@@ -45,6 +50,10 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
   try {
     const args = validateKiaToolArguments(toolCall.name, toolCall.arguments);
     const admin = getSupabaseAdmin();
+
+    if (KIA_ADMIN_OFFICE_TOOL_NAMES.has(toolCall.name as KiaAdminOfficeToolName)) {
+      return executeKiaAdminOfficeTool(toolCall.name as KiaAdminOfficeToolName, args, context, admin);
+    }
 
     if (ACCOUNTING_TOOL_NAMES.has(toolCall.name as KiaAccountingToolName)) {
       return executeKiaAccountingTool(toolCall.name as KiaAccountingToolName, args, context);

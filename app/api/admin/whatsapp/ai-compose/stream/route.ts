@@ -16,7 +16,9 @@ async function requireAdmin(request: NextRequest) {
   const admin = getSupabaseAdmin();
   const { data: profile } = await admin.from('profiles').select('role,status').eq('id', user.id).single();
   if (profile?.status === 'inactive') return null;
-  return (profile?.role === 'admin' || profile?.role === 'owner') ? admin : null;
+  return (profile?.role === 'admin' || profile?.role === 'owner')
+    ? { admin, actorId: user.id }
+    : null;
 }
 
 const schema = z.object({
@@ -72,10 +74,11 @@ function sseData(event: KiaProgressEvent): Uint8Array {
 }
 
 export async function POST(request: NextRequest) {
-  const admin = await requireAdmin(request);
-  if (!admin) {
+  const auth = await requireAdmin(request);
+  if (!auth) {
     return new Response(null, { status: 403 });
   }
+  const { admin, actorId } = auth;
 
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
@@ -152,8 +155,10 @@ export async function POST(request: NextRequest) {
           message: structuredMessage,
           contextInput: {
             channel: 'admin',
+            userId: actorId,
             phone,
             clientId: contactCtx.clientId ?? clientId ?? undefined,
+            targetClientId: contactCtx.clientId ?? clientId ?? undefined,
             leadId: contactCtx.leadId ?? undefined,
             serviceSlug: serviceId,
             latestMessage: lastInbound || intent || '',
