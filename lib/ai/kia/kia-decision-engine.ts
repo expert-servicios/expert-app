@@ -39,6 +39,7 @@ import { formatMemoriesForContext } from './kia-memory-retriever';
 import { storeKiaMemory, buildMemorySummary } from './kia-memory-store';
 import { getKiaFewShotExamples, formatFewShotExamples } from './kia-few-shot-provider';
 import { selectSubAgentProfile } from './kia-sub-agent-router';
+import { formatKiaOperatorLessons, loadKiaOperatorLessons } from './kia-operator-lessons';
 import { estimateCost, sumCostEstimates, extractTokenUsageFromProviderResult, type KiaCostEstimate } from './kia-cost-tracker';
 import { detectKiaConversationOpportunity } from './kia-contextual-opportunity';
 import { kiaFriendlyError } from './kia-error-copy';
@@ -90,6 +91,12 @@ export async function runKiaDecision(input: {
   const fewShotBlock = await getKiaFewShotExamples({ taskType: input.taskType, limit: 3 })
     .then(formatFewShotExamples)
     .catch(() => '');
+  const operatorLessonsBlock = await loadKiaOperatorLessons(input.channel)
+    .then(formatKiaOperatorLessons)
+    .catch((err) => {
+      console.error('[KiaDecision] operator lessons load failed:', safeErrorMessage(err));
+      return '';
+    });
 
   const systemPrompt = buildKiaSystemPrompt({
     locale,
@@ -177,7 +184,7 @@ export async function runKiaDecision(input: {
     detectedIntent: effectiveDetectedIntent,
     channel: input.channel,
   });
-  const finalSystemPrompt = subAgentProfile
+  const baseFinalSystemPrompt = subAgentProfile
     ? buildKiaSystemPrompt({
         locale,
         channel: input.channel,
@@ -197,6 +204,7 @@ export async function runKiaDecision(input: {
         subAgentAddendum: subAgentProfile.systemPromptAddendum,
       })
     : systemPrompt;
+  const finalSystemPrompt = [baseFinalSystemPrompt, operatorLessonsBlock].filter(Boolean).join('\n\n');
   const finalMaxTokens = subAgentProfile?.maxTokensOverride ?? 900;
 
   let providerResult: KiaProviderResult | undefined;
