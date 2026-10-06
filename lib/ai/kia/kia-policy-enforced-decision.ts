@@ -8,6 +8,7 @@ import {
   type KiaPolicyProfileName,
 } from './kia-policy-profiles';
 import {
+  getKiaToolPolicy,
   resolveKiaToolDefinitions,
   type KiaToolAuthorizationContext,
 } from './kia-tool-registry';
@@ -29,7 +30,12 @@ export function resolveKiaPolicyAuthorization(
   if (!resolved.ok) return { ok: false, reason: resolved.reason ?? 'policy_denied' };
 
   const authorization = policyProfileToToolAuthorization(resolved.profile);
-  const toolNames = resolveKiaToolDefinitions(authorization).map((tool) => tool.name);
+  const toolNames = resolveKiaToolDefinitions(authorization)
+    .map((tool) => tool.name)
+    .filter((name) => {
+      const toolPolicy = getKiaToolPolicy(name);
+      return !toolPolicy?.allowedRoles || toolPolicy.allowedRoles.includes(actor.role);
+    });
 
   return {
     ok: true,
