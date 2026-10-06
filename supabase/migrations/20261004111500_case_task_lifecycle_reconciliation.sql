@@ -50,7 +50,7 @@ begin
 
   return new;
 end;
-$;
+$$;
 
 revoke all on function public.reconcile_case_task_lifecycle() from public, anon, authenticated;
 grant execute on function public.reconcile_case_task_lifecycle() to service_role;
@@ -75,7 +75,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $
+as $$
 declare
   v_next_action text;
 begin
@@ -109,7 +109,7 @@ begin
 
   return new;
 end;
-$;
+$$;
 
 drop trigger if exists trg_promote_case_after_submission_task on public.internal_tasks;
 create trigger trg_promote_case_after_submission_task
