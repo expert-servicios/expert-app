@@ -150,7 +150,7 @@ export default function AdminEquipoPage() {
             </p>
           )}
           <p className="mt-2 text-[10px] text-[#29384a]">
-            El usuario recibirá un email para establecer su contraseña y acceder a la plataforma.
+            El usuario recibirá un enlace seguro por email para acceder a la plataforma.
           </p>
         </div>
 
