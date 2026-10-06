@@ -258,6 +258,8 @@ export interface HoldedV2Client {
   getUsage(): Promise<HoldedV2Usage>;
   listInvoices(params?: { startDate?: string; endDate?: string; approvalStatus?: 'draft' | 'approved'; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Invoice>>;
   listPurchases(params?: { startDate?: string; endDate?: string; approvalStatus?: 'draft' | 'approved'; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Purchase>>;
+  listSalesReceipts(params?: { startDate?: string; endDate?: string; approvalStatus?: 'draft' | 'approved'; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Invoice>>;
+  listCreditNotes(params?: { startDate?: string; endDate?: string; approvalStatus?: 'draft' | 'approved'; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Invoice>>;
   listContacts(params?: { search?: string; limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2Contact>>;
   listAccountingAccounts(params?: { limit?: number; cursor?: string }): Promise<HoldedV2Page<HoldedV2AccountingAccount>>;
   listTreasuryAccounts(params?: { limit?: number; cursor?: string; archived?: boolean }): Promise<HoldedV2Page<HoldedV2TreasuryAccount>>;
@@ -481,6 +483,28 @@ export function buildHoldedV2Client(apiKey: string): HoldedV2Client {
         cursor: params.cursor,
       });
       return normalizePage<HoldedV2Purchase>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listSalesReceipts(params = {}) {
+      const url = buildPaginatedUrl('/sales-receipts', {
+        startDate: params.startDate,
+        endDate: params.endDate,
+        approvalStatus: params.approvalStatus,
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2Invoice>(await holdedV2FetchJson<unknown>(key, url));
+    },
+
+    async listCreditNotes(params = {}) {
+      const url = buildPaginatedUrl('/credit-notes', {
+        startDate: params.startDate,
+        endDate: params.endDate,
+        approvalStatus: params.approvalStatus,
+        limit: params.limit,
+        cursor: params.cursor,
+      });
+      return normalizePage<HoldedV2Invoice>(await holdedV2FetchJson<unknown>(key, url));
     },
 
     async listContacts(params = {}) {
