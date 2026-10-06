@@ -69,7 +69,8 @@ describe('KIA M7 orchestration plan', () => {
 
   it('allows a resolved unskilled email intent to keep its policy-scoped public tools', async () => {
     const source = readFileSync(resolve(process.cwd(), 'lib/ai/kia/kia-orchestrator.ts'), 'utf8');
-    expect(source).toContain("allowResolvedUnskilled: input.channel === 'email'");
+    expect(source).toContain("classification.detectedIntent !== 'unknown'");
+    expect(source).toContain("allowResolvedUnskilled: input.channel === 'email' && classificationResolved");
     expect(source).toContain('params.allowResolvedUnskilled !== true');
   });
 
