@@ -8,7 +8,7 @@ describe('KIA company registry ledger', () => {
   const ledger = source('lib/ai/kia/kia-client-ledger.ts');
   const companyLedger = source('lib/ai/kia/kia-company-ledger.ts');
   const cron = source('app/api/cron/kia-client-ledger/route.ts');
-  const migration = source('supabase/migrations/20261005100500_kia_client_registry_company_subjects.sql');
+  const migration = source('supabase/migrations/20261005080633_kia_client_registry_company_subjects.sql');
   const context = source('lib/ai/kia/kia-context-builder.ts');
 
   it('supports a company-only subject before a portal user exists', () => {
