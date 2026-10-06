@@ -71,6 +71,10 @@ export interface HoldedBankMovement {
   reference?: string;
   contactId?: string;
   documentId?: string;
+  invoiceId?: string;
+  matchId?: string;
+  currency?: string;
+  reconciledAmount?: number;
   status: string;
 }
 
@@ -222,24 +226,24 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
 
     async listSalesInvoices({ page = 1, dateFrom, dateTo } = {}) {
       const qs = new URLSearchParams({ page: String(page) });
-      if (dateFrom) qs.set('dateFrom', String(dateFrom));
-      if (dateTo) qs.set('dateTo', String(dateTo));
+      if (dateFrom) qs.set('starttmp', String(dateFrom));
+      if (dateTo) qs.set('endtmp', String(dateTo));
       const raw = await get<unknown>(`/documents/invoice?${qs}`);
       return listOrData<HoldedDocument>(raw);
     },
 
     async listPurchaseInvoices({ page = 1, dateFrom, dateTo } = {}) {
       const qs = new URLSearchParams({ page: String(page) });
-      if (dateFrom) qs.set('dateFrom', String(dateFrom));
-      if (dateTo) qs.set('dateTo', String(dateTo));
+      if (dateFrom) qs.set('starttmp', String(dateFrom));
+      if (dateTo) qs.set('endtmp', String(dateTo));
       const raw = await get<unknown>(`/documents/purchase?${qs}`);
       return listOrData<HoldedDocument>(raw);
     },
 
     async listDocuments(docType, { page = 1, dateFrom, dateTo } = {}) {
       const qs = new URLSearchParams({ page: String(page) });
-      if (dateFrom) qs.set('dateFrom', String(dateFrom));
-      if (dateTo) qs.set('dateTo', String(dateTo));
+      if (dateFrom) qs.set('starttmp', String(dateFrom));
+      if (dateTo) qs.set('endtmp', String(dateTo));
       const raw = await get<unknown>(`/documents/${docType}?${qs}`);
       return listOrData<HoldedDocument>(raw);
     },
@@ -254,8 +258,8 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
 
     async listBankMovements({ page = 1, dateFrom, dateTo } = {}) {
       const qs = new URLSearchParams({ page: String(page) });
-      if (dateFrom) qs.set('dateFrom', String(dateFrom));
-      if (dateTo) qs.set('dateTo', String(dateTo));
+      if (dateFrom) qs.set('starttmp', String(dateFrom));
+      if (dateTo) qs.set('endtmp', String(dateTo));
       return listOrData<HoldedBankMovement>(await get<unknown>(`/treasury/movements?${qs}`));
     },
 
@@ -263,8 +267,8 @@ function buildHoldedClient(apiKey: string, baseUrl: string): HoldedClient {
       const id = encodeURIComponent(accountId.trim());
       if (!id) throw new Error('accountId is required');
       const qs = new URLSearchParams({ page: String(page) });
-      if (dateFrom) qs.set('dateFrom', String(dateFrom));
-      if (dateTo) qs.set('dateTo', String(dateTo));
+      if (dateFrom) qs.set('starttmp', String(dateFrom));
+      if (dateTo) qs.set('endtmp', String(dateTo));
       return listOrData<HoldedBankMovement>(
         await get<unknown>(`/treasury/${id}/movements?${qs}`),
       );
