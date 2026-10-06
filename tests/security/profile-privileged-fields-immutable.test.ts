@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const migration = readFileSync(
-  'supabase/migrations/20261004112500_profiles_privileged_fields_immutable.sql',
+  'supabase/migrations/20261006110510_profiles_privileged_fields_immutable.sql',
   'utf8',
 );
 
