@@ -85,6 +85,7 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_user_expedientes:               policy('R0', 'read',  'case_management'),
   get_user_companies:                 policy('R0', 'read',  'client_data'),
   get_user_pending_docs:              policy('R0', 'read',  'documents'),
+  get_user_quotes:                    policy('R0', 'read',  'payments'),
   get_user_orders:                    policy('R0', 'read',  'payments'),
   get_user_subscriptions:             policy('R0', 'read',  'subscriptions'),
   get_case_tasks:                     policy('R0', 'read',  'case_operations'),
