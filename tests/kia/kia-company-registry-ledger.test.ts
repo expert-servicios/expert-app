@@ -31,8 +31,7 @@ describe('KIA company registry ledger', () => {
       'email.inbound',
       'email.outbound',
     ]) expect(companyLedger).toContain(marker);
-    expect(documentProvenance).toContain("eventType: 'document.received'");
-    expect(documentProvenance).toContain("eventType: 'document.historical'");
+    expect(documentProvenance).toContain("eventType: 'document.received' | 'document.historical'");
     expect(companyLedger).toContain('recordClientRegistryEvent');
     expect(companyLedger).toContain('reconcileClientRegistry');
   });
