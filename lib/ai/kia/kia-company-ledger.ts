@@ -1,7 +1,10 @@
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { resolveDocumentRegistryTiming } from '@/lib/documents/document-provenance';
 import { recordClientRegistryEvent, reconcileClientRegistry } from './kia-client-ledger';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
+
+export const KIA_COMPANY_DOCUMENT_EVENT_CONTRACT = ['document.received', 'document.historical'] as const;
 
 export async function reconcileCompanyRegistry(
   admin: AdminClient,
@@ -21,7 +24,7 @@ export async function reconcileCompanyRegistry(
         .select('id,provider,mode,api_version,status,last_success_at,last_error,created_at,updated_at')
         .eq('company_id', companyId).order('created_at', { ascending: true }).limit(100),
       admin.from('documents')
-        .select('id,original_name,state,created_at,case_id')
+        .select('id,original_name,state,created_at,document_date,ingestion_source,ingestion_ref,case_id')
         .eq('company_id', companyId).order('created_at', { ascending: true }).limit(300),
       admin.from('cases')
         .select('id,service,service_id,status,state,opened_at,closed_at,next_action')
@@ -127,11 +130,13 @@ export async function reconcileCompanyRegistry(
   }
 
   for (const row of documentsRes.data ?? []) {
+    const timing = resolveDocumentRegistryTiming(row);
+    if (!timing) continue;
     await recordClientRegistryEvent(admin, { companyId }, {
-      eventType: 'document.received',
-      occurredAt: row.created_at,
-      sourceKey: `document:${row.id}:received`,
-      title: row.original_name ?? 'Documento',
+      eventType: timing.eventType,
+      occurredAt: timing.occurredAt,
+      sourceKey: timing.sourceKey,
+      title: row.original_name ?? (timing.eventType === 'document.historical' ? 'Documento histórico' : 'Documento'),
       summary: row.state,
       sourceTable: 'documents',
       sourceId: row.id,
@@ -139,6 +144,7 @@ export async function reconcileCompanyRegistry(
       companyId,
       caseId: row.case_id,
       importance: 2,
+      metadata: timing.metadata,
     });
   }
 
