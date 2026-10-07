@@ -21,6 +21,7 @@ describe('KIA voice and durable client registry', () => {
   const hardening = source('supabase/migrations/20260930113000_kia_client_registry_hardening.sql');
   const companyMigration = source('supabase/migrations/20261005080633_kia_client_registry_company_subjects.sql');
   const companyLedger = source('lib/ai/kia/kia-company-ledger.ts');
+  const documentProvenance = source('lib/documents/document-provenance.ts');
 
   it('keeps audio credentials server-side and enforces auth/size/type gates', () => {
     expect(audio).toContain('process.env.OPENAI_API_KEY');
@@ -87,7 +88,7 @@ describe('KIA voice and durable client registry', () => {
   });
 
   it('records verified source references instead of copying full artifacts', () => {
-    expect(ledger).toContain("eventType: 'document.received'");
+    expect(documentProvenance).toContain("eventType: 'document.received' | 'document.historical'");
     expect(ledger).toContain("eventType: 'email.inbound'");
     expect(ledger).toContain("eventType: 'email.outbound'");
     expect(ledger).toContain("eventType: 'invoice.issued'");

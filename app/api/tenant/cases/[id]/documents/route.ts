@@ -85,6 +85,7 @@ export async function POST(
         mime_type: validation.contentType,
         state: 'pendiente',
         uploaded_by_role: 'admin',
+        ingestion_source: 'tenant_portal',
       })
       .select('id, original_name, state, created_at, file_path, uploaded_by_role')
       .single();

@@ -1,4 +1,6 @@
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { filterSupersededDocumentEvents } from '@/lib/documents/document-ledger-filter';
+import { resolveDocumentRegistryTiming } from '@/lib/documents/document-provenance';
 import {
   clientRegistryDetailCutoff,
   clientRegistryRetentionDates,
@@ -10,6 +12,8 @@ import {
 } from './kia-client-registry-profile';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
+
+export const KIA_DOCUMENT_RECEIVED_EVENT_CONTRACT = { eventType: 'document.received' } as const;
 
 export interface KiaClientLedgerContext {
   subjectId: string;
@@ -295,7 +299,7 @@ export async function loadClientRegistryContext(
   });
 
   let eventsQuery = admin.from('client_registry_events')
-    .select('event_type,occurred_at,title,summary,channel,direction,case_id,company_id,importance,source_ref')
+    .select('event_type,occurred_at,title,summary,channel,direction,case_id,company_id,importance,source_ref,source_table,source_id')
     .eq('subject_id', subject.id)
     .gte('occurred_at', clientRegistryDetailCutoff());
 
@@ -316,7 +320,7 @@ export async function loadClientRegistryContext(
   if (snapshotResult.error) throw snapshotResult.error;
   if (eventsResult.error) throw eventsResult.error;
 
-  const rows = eventsResult.data ?? [];
+  const rows = await filterSupersededDocumentEvents(admin, eventsResult.data ?? []);
   const important = rows.filter((row) => Number(row.importance ?? 0) >= 2).slice(0, 10);
   const summaryText = important
     .map((row) => `${row.occurred_at.slice(0, 10)} · ${row.title ?? row.event_type}${row.summary ? ` · ${row.summary}` : ''}`)
@@ -459,19 +463,21 @@ export async function reconcileClientRegistry(
 
     jobs.push((async () => {
       const { data, error } = await admin.from('documents')
-        .select('id,original_name,title,state,case_id,company_id,created_at,replaced_by')
+        .select('id,original_name,title,state,case_id,company_id,created_at,document_date,ingestion_source,ingestion_ref,replaced_by')
         .eq('client_id', clientId)
         .is('replaced_by', null)
         .order('created_at', { ascending: false })
         .limit(200);
       if (error) throw error;
       for (const row of data ?? []) {
+        const timing = resolveDocumentRegistryTiming(row);
+        if (!timing) continue;
         pendingEvents.push({
           subjectId: subject.id,
-          eventType: 'document.received',
-          occurredAt: row.created_at,
-          sourceKey: `document:${row.id}:received`,
-          title: row.original_name ?? row.title ?? 'Documento recibido',
+          eventType: timing.eventType,
+          occurredAt: timing.occurredAt,
+          sourceKey: timing.sourceKey,
+          title: row.original_name ?? row.title ?? (timing.eventType === 'document.historical' ? 'Documento histórico' : 'Documento recibido'),
           summary: row.state ?? null,
           sourceTable: 'documents',
           sourceId: row.id,
@@ -479,7 +485,7 @@ export async function reconcileClientRegistry(
           companyId: row.company_id,
           caseId: row.case_id,
           importance: 2,
-          metadata: { state: row.state },
+          metadata: { state: row.state, ...timing.metadata },
         });
       }
     })());
@@ -756,7 +762,7 @@ async function refreshClientRegistrySnapshot(
 ): Promise<KiaClientLedgerContext> {
   const [{ data: events, error }, profile] = await Promise.all([
     admin.from('client_registry_events')
-      .select('event_type,occurred_at,title,summary,channel,direction,case_id,company_id,importance,source_ref')
+      .select('event_type,occurred_at,title,summary,channel,direction,case_id,company_id,importance,source_ref,source_table,source_id')
       .eq('subject_id', subjectId)
       .gte('occurred_at', clientRegistryDetailCutoff())
       .order('occurred_at', { ascending: false })
@@ -765,7 +771,7 @@ async function refreshClientRegistrySnapshot(
   ]);
   if (error) throw error;
 
-  const rows = events ?? [];
+  const rows = await filterSupersededDocumentEvents(admin, events ?? []);
   const recent = rows.slice(0, 24);
   const important = rows.filter((row) => Number(row.importance ?? 0) >= 2).slice(0, 10);
   const summaryText = important
