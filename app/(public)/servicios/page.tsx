@@ -116,7 +116,7 @@ const serviceAreas: ServiceArea[] = [
       'Implantación, migración y formación práctica en Holded para autónomos, pymes y empresas que quieren trabajar con datos ordenados, procesos claros y una configuración preparada para facturación, contabilidad, bancos e impuestos.',
     href: '/holded',
     ctaLabel: 'Ver servicios Holded',
-    secondaryCta: { label: 'Reservar demo gratuita', href: '/holded#demo' },
+    secondaryCta: { label: 'Reservar demo gratuita · 30 min', href: '/cita?tipo=demo-holded' },
     Icon: MonitorCheck,
     services: [
       'Pack Starter / Onboarding a Holded',

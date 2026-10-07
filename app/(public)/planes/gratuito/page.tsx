@@ -91,6 +91,20 @@ export default function PlanGratuitoPage() {
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#9CA3AF]">
             Prueba Holded durante 14 días. No es un plan EXPERT: es acceso al software para que puedas empezar antes de elegir Pack Starter o un plan mensual.
           </p>
+          <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <a
+              href="#solicitar-prueba"
+              className="inline-flex min-h-11 items-center justify-center bg-[#D4A017] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+            >
+              Solicitar prueba 14 días
+            </a>
+            <Link
+              href="/cita?tipo=demo-holded"
+              className="inline-flex min-h-11 items-center justify-center border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017]/10"
+            >
+              Ver demo gratuita · 30 min
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -111,7 +125,7 @@ export default function PlanGratuitoPage() {
       </section>
 
       {/* Formulario */}
-      <section className="px-6 py-16 md:py-20">
+      <section id="solicitar-prueba" className="px-6 py-16 md:py-20">
         <div className="mx-auto max-w-2xl">
           <div className="mx-auto max-w-xl text-center">
             <p className="text-xs font-bold uppercase tracking-[0.26em] text-[#D4A017]">Solicitar prueba Holded</p>

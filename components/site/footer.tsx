@@ -182,6 +182,13 @@ export function Footer() {
             <Calendar className="h-4 w-4 shrink-0" />
             Consulta gratuita · 15 min
           </CalButton>
+          <Link
+            href="/cita?tipo=demo-holded"
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-md border border-white/15 px-4 py-2.5 text-sm font-semibold text-[#F8F6F1] transition hover:border-[#D4A017] hover:text-[#D4A017]"
+          >
+            <Calendar className="h-4 w-4 shrink-0" />
+            Demo Holded gratuita · 30 min
+          </Link>
         </div>
       </div>
 
