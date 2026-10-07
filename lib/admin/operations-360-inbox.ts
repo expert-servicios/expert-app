@@ -156,6 +156,8 @@ function searchHaystack(item: Operations360InboxItem) {
     item.threadId,
     item.channel,
     item.identity,
+    typeof item.metadata.company_name === 'string' ? item.metadata.company_name : null,
+    typeof item.metadata.company_tax_id === 'string' ? item.metadata.company_tax_id : null,
   ].filter(Boolean).join(' ').toLowerCase();
 }
 
@@ -332,6 +334,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
         company_name: companyId
           ? (companyById.get(companyId)?.razon_social ?? companyById.get(companyId)?.nombre_comercial ?? null)
           : null,
+        company_tax_id: companyId ? (companyById.get(companyId)?.cif_nif ?? null) : null,
       },
     });
   }
@@ -390,6 +393,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
         company_name: companyId
           ? (companyById.get(companyId)?.razon_social ?? companyById.get(companyId)?.nombre_comercial ?? null)
           : null,
+        company_tax_id: companyId ? (companyById.get(companyId)?.cif_nif ?? null) : null,
       },
     });
   }
