@@ -1,6 +1,6 @@
 # Clasificación Documental Automática — Flujo Kia
 
-> **ESTADO HISTÓRICO — NO USAR COMO CONTRATO DE IMPLEMENTACIÓN ACTUAL.** Este documento conserva el diseño de mayo de 2026. La plataforma vigente usa el bucket privado `client-documents` y la tabla canónica `documents`; cualquier cambio debe verificarse contra las rutas, migraciones y runbooks actuales. Véase `document-archive-runbook.md`.
+> **ESTADO HISTÓRICO — NO USAR COMO CONTRATO DE IMPLEMENTACIÓN ACTUAL.** Este documento conserva el diseño de mayo de 2026. Para documentos de expediente/archivo ya incorporados al modelo canónico, la plataforma usa `client-documents` + `documents`. **WhatsApp sigue siendo una excepción viva** (`whatsapp-attachments` + `whatsapp_conversations` + `document_classifications`) hasta su reconciliación. Cualquier cambio debe verificarse contra las rutas, migraciones y runbooks actuales. Véase `document-archive-runbook.md`.
 >
 > Última actualización del diseño histórico: 2026-05-23
 
