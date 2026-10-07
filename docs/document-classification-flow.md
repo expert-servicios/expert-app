@@ -1,6 +1,8 @@
 # Clasificación Documental Automática — Flujo Kia
 
-> Última actualización: 2026-05-23
+> **ESTADO HISTÓRICO — NO USAR COMO CONTRATO DE IMPLEMENTACIÓN ACTUAL.** Este documento conserva el diseño de mayo de 2026. La plataforma vigente usa el bucket privado `client-documents` y la tabla canónica `documents`; cualquier cambio debe verificarse contra las rutas, migraciones y runbooks actuales. Véase `document-archive-runbook.md`.
+>
+> Última actualización del diseño histórico: 2026-05-23
 
 ## Flujo completo
 
@@ -15,12 +17,16 @@ Documento entrante
 └────────────┬────────────┘
              │
              ▼
+   [HISTÓRICO]
    Supabase Storage
-   (carpeta: documents/{client_id}/)
+   (antiguo diseño: documents/{client_id}/)
              │
              ▼
-   Registro en tabla `files`
-   (o `user_files` / `whatsapp_conversations`)
+   [HISTÓRICO]
+   Registro en `files` / `user_files`
+
+   CONTRATO VIGENTE: objeto privado en `client-documents`
+   + registro canónico y ownership en `documents`
              │
              ▼
    lib/documents/document-router.ts
@@ -128,7 +134,7 @@ Si Kia detecta que una clasificación previa es incorrecta (p.ej., el usuario in
 
 ## Confidencialidad
 
-- Los documentos se almacenan en Supabase Storage con `bucket = 'documents'`, acceso privado.
+- Diseño histórico: este documento usaba `bucket = 'documents'`. **Contrato vigente:** almacenamiento privado en `client-documents` y autorización/ownership desde la fila canónica de `documents`.
 - Las URLs son firmadas con TTL de 1 hora máximo.
 - Nunca se envían documentos completos a APIs externas sin consentimiento.
 - Para OCR/clasificación AI: solo se envía texto extraído o nombre de archivo, no el binario completo.
