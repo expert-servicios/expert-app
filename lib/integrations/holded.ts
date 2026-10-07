@@ -1,4 +1,12 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import {
+  claimHoldedContactCreation,
+  completeHoldedContactCreation,
+  flagHoldedContactCreationReview,
+  markHoldedContactCreationStarted,
+  newHoldedContactClaimOwnerToken,
+  releaseHoldedContactCreationClaim,
+} from '@/lib/integrations/holded/contact-creation-claim';
 
 // ── Architecture note ─────────────────────────────────────────────────────────
 // EXPERT is the operational source of truth for clients, cases, communications,
@@ -481,32 +489,113 @@ async function resolveCompanyBillingContact(params: {
     );
   }
 
-  const contactId = await createContact({ name: params.name, email: params.email, phone: params.phone });
-  const { error: insertError } = await admin.from('external_mappings').insert({
-    provider: 'holded',
-    local_entity: 'companies',
-    local_id: params.companyId,
-    external_entity: 'holded_contact',
-    external_id: contactId,
-    company_id: params.companyId,
-    metadata: { source: 'subscription_billing' },
+  const ownerToken = newHoldedContactClaimOwnerToken();
+  const claim = await claimHoldedContactCreation(admin, {
+    companyId: params.companyId,
+    ownerToken,
   });
 
-  if (insertError) {
-    const { data: concurrentMapping } = await admin
-      .from('external_mappings')
-      .select('external_id')
-      .eq('provider', 'holded')
-      .eq('local_entity', 'companies')
-      .eq('local_id', params.companyId)
-      .eq('external_entity', 'holded_contact')
-      .maybeSingle();
+  if (!claim.acquired || !claim.claimId) {
+    if (claim.state === 'completed' && claim.holdedContactId) {
+      const { data: completedMapping } = await admin
+        .from('external_mappings')
+        .select('external_id')
+        .eq('provider', 'holded')
+        .eq('local_entity', 'companies')
+        .eq('local_id', params.companyId)
+        .eq('external_entity', 'holded_contact')
+        .maybeSingle();
+      if (completedMapping?.external_id === claim.holdedContactId) return claim.holdedContactId;
+      throw new Error(
+        `Holded contact claim for company ${params.companyId} is completed without a matching entity mapping; manual review required`
+      );
+    }
 
-    if (concurrentMapping?.external_id === contactId) return contactId;
-    throw new Error(`Could not persist company Holded mapping; manual review required: ${insertError.message}`);
+    throw new Error(
+      `Holded contact creation already in progress for company ${params.companyId}; retry later without writing to Holded`
+    );
   }
 
-  return contactId;
+  let contactId: string | null = null;
+  try {
+    await markHoldedContactCreationStarted(admin, {
+      claimId: claim.claimId,
+      ownerToken,
+    });
+
+    try {
+      contactId = await createContact({ name: params.name, email: params.email, phone: params.phone });
+    } catch (error) {
+      const msg = errorMessage(error);
+      await releaseHoldedContactCreationClaim(admin, {
+        claimId: claim.claimId,
+        ownerToken,
+        error: msg,
+      });
+      throw error;
+    }
+
+    const { error: insertError } = await admin.from('external_mappings').insert({
+      provider: 'holded',
+      local_entity: 'companies',
+      local_id: params.companyId,
+      external_entity: 'holded_contact',
+      external_id: contactId,
+      company_id: params.companyId,
+      metadata: { source: 'subscription_billing' },
+    });
+
+    if (insertError) {
+      const { data: concurrentMapping } = await admin
+        .from('external_mappings')
+        .select('external_id')
+        .eq('provider', 'holded')
+        .eq('local_entity', 'companies')
+        .eq('local_id', params.companyId)
+        .eq('external_entity', 'holded_contact')
+        .maybeSingle();
+
+      if (concurrentMapping?.external_id === contactId) {
+        await completeHoldedContactCreation(admin, {
+          claimId: claim.claimId,
+          ownerToken,
+          holdedContactId: contactId,
+        });
+        return contactId;
+      }
+
+      const msg = `Could not persist company Holded mapping; manual review required: ${insertError.message}`;
+      await flagHoldedContactCreationReview(admin, {
+        claimId: claim.claimId,
+        ownerToken,
+        error: msg,
+      });
+      throw new Error(msg);
+    }
+
+    await completeHoldedContactCreation(admin, {
+      claimId: claim.claimId,
+      ownerToken,
+      holdedContactId: contactId,
+    });
+
+    return contactId;
+  } catch (error) {
+    if (contactId) {
+      const msg = errorMessage(error);
+      try {
+        await flagHoldedContactCreationReview(admin, {
+          claimId: claim.claimId,
+          ownerToken,
+          error: msg,
+        });
+      } catch {
+        // The claim may already be completed/manual_review. Preserve the
+        // original operational error and never retry contact creation here.
+      }
+    }
+    throw error;
+  }
 }
 
 interface HoldedInvoiceItem {
