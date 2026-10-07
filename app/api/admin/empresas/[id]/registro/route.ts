@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { resolveClientRegistrySubject } from '@/lib/ai/kia/kia-client-ledger';
+import { filterSupersededDocumentEvents } from '@/lib/documents/document-ledger-filter';
 import {
   clientRegistryDetailCutoff,
   clientRegistryRetentionCutoff,
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         .order('priority', { ascending: false })
         .order('updated_at', { ascending: false }),
       ctx.admin.from('client_registry_events')
-        .select('id,event_type,occurred_at,title,summary,channel,direction,importance,source_ref,case_id')
+        .select('id,event_type,occurred_at,title,summary,channel,direction,importance,source_ref,case_id,source_table,source_id')
         .eq('subject_id', subject.id)
         .gte('occurred_at', clientRegistryDetailCutoff())
         .order('occurred_at', { ascending: false })
@@ -101,6 +102,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const firstError = [facts.error, instructions.error, events.error, summaries.error].find(Boolean);
     if (firstError) return NextResponse.json({ error: firstError.message }, { status: 500 });
 
+    const filteredEvents = await filterSupersededDocumentEvents(ctx.admin, events.data ?? []);
+
     return NextResponse.json({
       subjectId: subject.id,
       lifecycleStage: subject.lifecycleStage,
@@ -108,7 +111,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       retentionYears: 6,
       facts: facts.data ?? [],
       instructions: instructions.data ?? [],
-      events: events.data ?? [],
+      events: filteredEvents,
       summaries: summaries.data ?? [],
     });
   } catch (error) {
