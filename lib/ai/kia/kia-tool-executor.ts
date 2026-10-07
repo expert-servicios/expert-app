@@ -7,6 +7,7 @@ import { caseStatusLabel, resolveEffectiveCaseStatus } from '@/lib/cases/case-st
 import { getNationalityMinorAutonomyPolicy } from '@/lib/services/nationality-minor-autonomy';
 import { getCurrentRegulatoryValue } from '@/lib/regulatory/regulatory-values';
 import { getCurrentRegulatoryRuleset } from '@/lib/regulatory/regulatory-rulesets';
+import { resolveCompanyCommercialCoverage } from '@/lib/subscriptions/company-commercial-coverage';
 import { getReadinessCheck, calculateReadinessResult } from '@/lib/data/service-readiness-checks';
 import { validateKiaToolArguments, type KiaToolCall, type KiaToolResult } from './kia-tool-definitions';
 import type { KiaContext } from './kia-context-builder';
@@ -471,6 +472,30 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
             expediente_id: row.case_id,
             fecha: row.created_at,
           })),
+        });
+      }
+
+      case 'get_user_subscription_status': {
+        const clientId = context.contact?.clientId;
+        const companyId = context.company?.id ?? null;
+        if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+        if (!companyId) return fail(toolCall.name, 'No hay una empresa activa y autorizada en el contexto de KIA.');
+
+        const coverage = await resolveCompanyCommercialCoverage(admin, clientId, companyId);
+        return ok(toolCall.name, {
+          covered: coverage.covered,
+          source: coverage.source,
+          plan: coverage.planName,
+          status: coverage.subscriptionStatus,
+          coverage_scope: coverage.coverageScope,
+          valid_from: coverage.validFrom,
+          valid_until: coverage.validUntil,
+          excluded_services: coverage.excludedServices,
+          included_via_primary_company: coverage.source === 'included_entity'
+            ? {
+                company_name: coverage.primaryCompanyName,
+              }
+            : null,
         });
       }
 
