@@ -40,10 +40,14 @@ describe('Holded company billing contact isolation', () => {
     expect(source).toContain('already exists without an entity mapping');
   });
 
-  it('creates a new contact only after proving there is no email collision', () => {
+  it('creates a new contact only after proving there is no email collision and acquiring the company claim', () => {
     const collisionGuard = source.indexOf('existingContacts.length > 0');
-    const scopedCreate = source.indexOf('const contactId = await createContact', collisionGuard);
+    const claim = source.indexOf('claimHoldedContactCreation(', collisionGuard);
+    const markCreating = source.indexOf('markHoldedContactCreationStarted(', claim);
+    const scopedCreate = source.indexOf('contactId = await createContact', markCreating);
     expect(collisionGuard).toBeGreaterThan(-1);
-    expect(scopedCreate).toBeGreaterThan(collisionGuard);
+    expect(claim).toBeGreaterThan(collisionGuard);
+    expect(markCreating).toBeGreaterThan(claim);
+    expect(scopedCreate).toBeGreaterThan(markCreating);
   });
 });
