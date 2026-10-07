@@ -1,4 +1,5 @@
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { filterSupersededDocumentEvents } from '@/lib/documents/document-ledger-filter';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -222,6 +223,8 @@ export async function recordConfirmedRegistryInstruction(
 
 type HistoricalEventRow = {
   event_type: string;
+  source_table: string | null;
+  source_id: string | null;
   occurred_at: string;
   title: string | null;
   summary: string | null;
@@ -277,7 +280,7 @@ export async function refreshClientRegistryHistoricalSummaries(
   const pageSize = 500;
   for (let offset = 0; ; offset += pageSize) {
     const { data, error } = await admin.from('client_registry_events')
-      .select('event_type,occurred_at,title,summary,importance,source_ref,company_id,case_id,retention_class,retain_until')
+      .select('event_type,occurred_at,title,summary,importance,source_ref,company_id,case_id,retention_class,retain_until,source_table,source_id')
       .eq('subject_id', subjectId)
       .lt('occurred_at', detailCutoff)
       .or(`retention_class.eq.legal_hold,retain_until.gte.${now.toISOString()}`)
@@ -289,6 +292,8 @@ export async function refreshClientRegistryHistoricalSummaries(
     if (page.length < pageSize) break;
   }
 
+  const filteredRows = await filterSupersededDocumentEvents(admin, rows);
+
   const buckets = new Map<string, SummaryBucket>();
   const add = (year: string, companyId: string | null, caseId: string | null, row: HistoricalEventRow) => {
     const key = bucketKey(year, companyId, caseId);
@@ -297,7 +302,7 @@ export async function refreshClientRegistryHistoricalSummaries(
     buckets.set(key, bucket);
   };
 
-  for (const row of rows) {
+  for (const row of filteredRows) {
     const year = row.occurred_at.slice(0, 4);
     add(year, null, null, row);
     if (row.company_id) add(year, row.company_id, null, row);
