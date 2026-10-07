@@ -483,7 +483,7 @@ export async function PATCH(
       }, { status: 409 });
     }
     updates.case_id = parsed.data.caseId;
-    if (parsed.data.caseId) {
+    if (caseAssignmentChanged && parsed.data.caseId) {
       updates.owner_type = 'case';
       updates.owner_id = parsed.data.caseId;
     }
