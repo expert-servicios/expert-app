@@ -96,6 +96,7 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   search_knowledge_resources:          policy('R0', 'read',  'knowledge'),
   get_official_sources:                policy('R0', 'read',  'regulatory'),
   find_relevant_services:              policy('R0', 'read',  'service_discovery'),
+  get_user_onboarding_appointments:     policy('R0', 'read',  'calendar'),
   get_booking_availability:             policy('R0', 'read',  'calendar'),
   get_admin_inbox_summary:              { ...policy('R1', 'read', 'administration'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
   get_admin_agenda:                     { ...policy('R1', 'read', 'administration'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
