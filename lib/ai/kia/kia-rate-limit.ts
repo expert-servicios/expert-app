@@ -72,6 +72,24 @@ export async function reserveKiaAudioDailyQuota(userId: string, kind: KiaAudioQu
  * Durable per-user daily spend cap backed by kia_decision_logs, so it holds
  * even across cold starts / multiple serverless instances.
  */
+export async function checkKiaLeadDailyCostCap(leadId: string): Promise<{ ok: boolean; spentUsd: number }> {
+  try {
+    const admin = getSupabaseAdmin();
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await admin
+      .from('kia_decision_logs')
+      .select('estimated_cost_usd')
+      .eq('lead_id', leadId)
+      .gte('created_at', since);
+
+    if (error || !data) return { ok: false, spentUsd: 0 };
+    const spentUsd = data.reduce((sum, row) => sum + (row.estimated_cost_usd ?? 0), 0);
+    return { ok: spentUsd < DAILY_COST_CAP_USD, spentUsd };
+  } catch {
+    return { ok: false, spentUsd: 0 };
+  }
+}
+
 export async function checkKiaDailyCostCap(userId: string): Promise<{ ok: boolean; spentUsd: number }> {
   try {
     const admin = getSupabaseAdmin();
