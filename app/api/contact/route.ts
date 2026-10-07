@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (body.hp_url) return NextResponse.json({ ok: true, leadId: lead.leadId }, { status: lead.created ? 201 : 200 });
+    if (body.hp_url) return NextResponse.json({ ok: true });
 
     const ip = getClientIp(request.headers);
     if (!checkRateLimit(ip)) {
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       tag: `contact-${email}`,
     }).catch(() => {});
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, leadId: lead.leadId }, { status: lead.created ? 201 : 200 });
   } catch (error) {
     console.error('[api/contact]', error);
     return NextResponse.json({ error: 'Error al enviar el mensaje. Inténtalo de nuevo.' }, { status: 500 });
