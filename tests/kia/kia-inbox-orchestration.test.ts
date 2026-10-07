@@ -48,7 +48,9 @@ describe('KIA inbox orchestration', () => {
   it('escalates to push, Telegram fanout and Ksenia email only for intervention', () => {
     expect(escalation).toContain('await sendEmailOnce({');
     expect(escalation).toContain('await notifyAdmins({');
-    expect(escalation).toContain("to: 'soy@kseniailicheva.com'");
+    expect(escalation).toContain('to: getAdminOwnerEmail()');
+    const adminOwner = source('lib/admin/admin-owner.ts');
+    expect(adminOwner).toContain("DEFAULT_ADMIN_OWNER_EMAIL = 'soy@kseniailicheva.com'");
     expect(escalation).toContain('KIA necesita tu intervención');
     expect(escalation).toContain("from: 'KIA Alertas <noreply@expertconsulting.es>'");
   });
