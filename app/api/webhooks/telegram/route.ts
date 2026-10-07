@@ -451,7 +451,7 @@ async function handleTelegramUpdate(request: NextRequest) {
         text: result.userMessage,
       });
 
-      if (result.decision.requiresManualReview || result.decision.nextAction === 'needs_review') {
+      if (result.decision.requiresManualReview || ['needs_review', 'create_task'].includes(result.decision.nextAction)) {
         const sourceKey = `telegram-review:${inbound.updateId}`;
         const { data: task, error: taskError } = await admin
           .from('internal_tasks')
@@ -460,7 +460,7 @@ async function handleTelegramUpdate(request: NextRequest) {
             title: `Revisar consulta Telegram · ${inbound.username ? '@' + inbound.username : inbound.userId}`,
             description: inbound.text.trim().slice(0, 1500),
             status: 'pendiente',
-            priority: 'alta',
+            priority: result.decision.nextAction === 'create_task' ? 'media' : 'alta',
             lead_id: lead.leadId,
             source: 'kia',
             metadata: {
@@ -480,7 +480,9 @@ async function handleTelegramUpdate(request: NextRequest) {
             title: 'Consulta Telegram requiere intervención',
             summary: inbound.text.trim().slice(0, 300),
             actionTaken: 'KIA respondió en modo público, registró/actualizó el lead y creó una tarea de revisión',
-            interventionNeeded: 'revisar la consulta y decidir la actuación o trámite',
+            interventionNeeded: result.decision.nextAction === 'create_task'
+              ? 'ejecutar la tarea operativa que KIA ha identificado'
+              : 'revisar la consulta y decidir la actuación o trámite',
             url: '/admin/tareas',
             eventRef: sourceKey,
             priority: 'high',
