@@ -36,6 +36,18 @@ describe('document alias and KIA internal-document hardening', () => {
     expect(downloadRoute).toContain("select('id, file_path, original_name, client_id, case_id, kind')");
   });
 
+  it('provisions the canonical private bucket with application-compatible limits', () => {
+    const migration = source('supabase/migrations/20261007105433_provision_client_documents_bucket.sql');
+
+    expect(migration).toContain("'client-documents'");
+    expect(migration).toContain('20971520');
+    expect(migration).toContain('public = false');
+    expect(migration).toContain("'image/webp'");
+    expect(migration).toContain("'image/heic'");
+    expect(migration).toContain("'text/csv'");
+    expect(migration).toContain('on conflict (id) do update');
+  });
+
   it('aligns tenant uploads with the canonical document contract', () => {
     const route = source('app/api/tenant/cases/[id]/documents/route.ts');
 
