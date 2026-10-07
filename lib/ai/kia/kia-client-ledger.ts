@@ -1,4 +1,5 @@
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { filterSupersededDocumentEvents } from '@/lib/documents/document-ledger-filter';
 import { resolveDocumentRegistryTiming } from '@/lib/documents/document-provenance';
 import {
   clientRegistryDetailCutoff,
@@ -296,7 +297,7 @@ export async function loadClientRegistryContext(
   });
 
   let eventsQuery = admin.from('client_registry_events')
-    .select('event_type,occurred_at,title,summary,channel,direction,case_id,company_id,importance,source_ref')
+    .select('event_type,occurred_at,title,summary,channel,direction,case_id,company_id,importance,source_ref,source_table,source_id')
     .eq('subject_id', subject.id)
     .gte('occurred_at', clientRegistryDetailCutoff());
 
@@ -317,7 +318,7 @@ export async function loadClientRegistryContext(
   if (snapshotResult.error) throw snapshotResult.error;
   if (eventsResult.error) throw eventsResult.error;
 
-  const rows = eventsResult.data ?? [];
+  const rows = await filterSupersededDocumentEvents(admin, eventsResult.data ?? []);
   const important = rows.filter((row) => Number(row.importance ?? 0) >= 2).slice(0, 10);
   const summaryText = important
     .map((row) => `${row.occurred_at.slice(0, 10)} · ${row.title ?? row.event_type}${row.summary ? ` · ${row.summary}` : ''}`)
@@ -759,7 +760,7 @@ async function refreshClientRegistrySnapshot(
 ): Promise<KiaClientLedgerContext> {
   const [{ data: events, error }, profile] = await Promise.all([
     admin.from('client_registry_events')
-      .select('event_type,occurred_at,title,summary,channel,direction,case_id,company_id,importance,source_ref')
+      .select('event_type,occurred_at,title,summary,channel,direction,case_id,company_id,importance,source_ref,source_table,source_id')
       .eq('subject_id', subjectId)
       .gte('occurred_at', clientRegistryDetailCutoff())
       .order('occurred_at', { ascending: false })
@@ -768,7 +769,7 @@ async function refreshClientRegistrySnapshot(
   ]);
   if (error) throw error;
 
-  const rows = events ?? [];
+  const rows = await filterSupersededDocumentEvents(admin, events ?? []);
   const recent = rows.slice(0, 24);
   const important = rows.filter((row) => Number(row.importance ?? 0) >= 2).slice(0, 10);
   const summaryText = important
