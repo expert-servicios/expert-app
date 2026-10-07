@@ -256,6 +256,10 @@ export const kiaToolValidators = {
     category: z.string().max(100).optional(),
     limit: z.number().int().min(1).max(3).default(2),
   }).strict(),
+  get_user_onboarding_appointments: z.object({
+    kind: z.enum(['all', 'onboarding', 'formacion-holded']).default('all'),
+    limit: z.number().int().min(1).max(20).default(10),
+  }).strict(),
   get_booking_availability: z.object({
     serviceKey: z.enum(['consulta-inicial', 'demo-holded', 'academy-admision']).default('consulta-inicial'),
     days: z.number().int().min(1).max(14).default(7),
@@ -370,6 +374,7 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   search_knowledge_resources: 'Search EXPERT blog articles and knowledge-base documents. Use to share a relevant guide or article with the user. Returns canonical public links.',
   get_official_sources: 'Return official source links from the canonical EXPERT Regulatory Registry for a service or topic. Use when the user wants to verify information independently.',
   find_relevant_services: 'Find EXPERT services for a concrete unmet need. Use only after answering the question and only when the user explicitly lacks something necessary, asks EXPERT to handle it, or clearly intends to contract. Do not use for mere topic affinity or when the user asks to do it themselves.',
+  get_user_onboarding_appointments: 'Read onboarding and Holded training appointments for the authenticated user and already-authorized active company. Read-only; never books, cancels or reschedules.',
   get_booking_availability: 'Read real EXPERT availability from the active Google Calendar booking stack for public meeting types. Use before proposing meeting times.',
   get_admin_inbox_summary: 'Admin-only read tool for recent synchronized EXPERT inbox threads, scoped to the current client/company when present.',
   get_admin_agenda: 'Admin-only read tool for upcoming EXPERT appointments, scoped to the current client/company when present.',

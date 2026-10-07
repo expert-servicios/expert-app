@@ -1,5 +1,6 @@
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getAuthorizedBookingEmails } from '@/lib/admin/onboarding-booking-identity';
 import { resolveKiaContactContext } from '@/lib/integrations/kia-contact-resolver';
 import { getService } from '@/lib/services/service-registry';
 import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
@@ -733,6 +734,95 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
             limit: Number(args.limit ?? 2),
           }),
         });
+
+      case 'get_user_onboarding_appointments': {
+        const clientId = context.contact?.clientId;
+        const companyId = context.company?.id ?? null;
+        if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+        if (!companyId) return fail(toolCall.name, 'No hay una empresa activa y autorizada en el contexto de KIA.');
+
+        const kind = String(args.kind ?? 'all');
+        const types = kind === 'all'
+          ? ['onboarding', 'formacion-holded', 'formacion']
+          : kind === 'formacion-holded'
+            ? ['formacion-holded', 'formacion']
+            : [kind];
+        const limit = Number(args.limit ?? 10);
+        const selectColumns = 'id,email,client_id,company_id,appointment_type,appointment_date,appointment_end,status,service,meeting_url,booking_provider,created_at';
+
+        const { data: scopedData, error: scopedError } = await admin
+          .from('appointments')
+          .select(selectColumns)
+          .eq('client_id', clientId)
+          .eq('company_id', companyId)
+          .in('appointment_type', types)
+          .order('appointment_date', { ascending: false })
+          .limit(limit);
+
+        if (scopedError) return fail(toolCall.name, 'Error consultando onboarding/formación.');
+
+        // Legacy rows created before entity-scoped appointments keep null entity IDs.
+        // They are discoverable only through emails already authorized for this
+        // authenticated client/company and are never rewritten or re-attributed here.
+        const authorizedEmails = await getAuthorizedBookingEmails(
+          admin,
+          clientId,
+          companyId,
+          context.contact?.email,
+        );
+        const legacyResults = await Promise.all(authorizedEmails.map(async (email) => {
+          const { data, error } = await admin
+            .from('appointments')
+            .select(selectColumns)
+            .is('client_id', null)
+            .is('company_id', null)
+            .ilike('email', email)
+            .in('appointment_type', types)
+            .order('appointment_date', { ascending: false })
+            .limit(limit);
+          if (error) throw error;
+          return data ?? [];
+        }));
+
+        const rows = [...(scopedData ?? []), ...legacyResults.flat()]
+          .filter((row, index, all) => all.findIndex((candidate) => candidate.id === row.id) === index)
+          .sort((a, b) => {
+            const aTime = a.appointment_date ? new Date(a.appointment_date).getTime() : 0;
+            const bTime = b.appointment_date ? new Date(b.appointment_date).getTime() : 0;
+            return bTime - aTime;
+          })
+          .slice(0, limit);
+
+        const now = Date.now();
+        return ok(toolCall.name, {
+          count: rows.length,
+          appointments: rows.map((row) => {
+            const startsAtMs = row.appointment_date ? new Date(row.appointment_date).getTime() : Number.NaN;
+            const endsAtMs = row.appointment_end ? new Date(row.appointment_end).getTime() : startsAtMs;
+            const canJoin = row.status === 'confirmed'
+              && Number.isFinite(endsAtMs)
+              && endsAtMs > now;
+
+            return {
+              id: row.id,
+              type: row.appointment_type,
+              service: row.service,
+              status: row.status,
+              starts_at: row.appointment_date,
+              ends_at: row.appointment_end,
+              meeting_url: row.meeting_url,
+              provider: row.booking_provider,
+              next_action: canJoin
+                ? 'join_scheduled_meeting'
+                : row.status === 'pending_calendar'
+                  ? 'wait_for_calendar_confirmation'
+                  : row.status === 'cancelled'
+                    ? 'book_new_slot_if_needed'
+                    : null,
+            };
+          }),
+        });
+      }
 
       case 'get_booking_availability':
         return ok(toolCall.name, await getKiaBookingAvailability({
