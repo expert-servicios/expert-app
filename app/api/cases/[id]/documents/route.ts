@@ -173,6 +173,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         mime_type: validation.contentType,
         state: 'pendiente',
         uploaded_by_role: isAdmin ? 'admin' : 'client',
+        ingestion_source: isAdmin ? 'admin_portal' : 'client_portal',
         checklist_item_key: checklistItemKey,
         checklist_item_label: checklistItemLabel,
         client_comment: clientComment,
