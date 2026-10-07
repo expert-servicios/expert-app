@@ -5,7 +5,8 @@ import { adminTaskReminder, citaReminder, dailyAdminSummary, type DailySummaryDa
 import { notifyAdminsTelegram } from '@/lib/integrations/telegram';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { verifyCronRequest } from '@/lib/security/cron';
-import { getAdminOwnerRecipients } from '@/lib/admin/admin-owner';
+import { getAdminOwnerEmail, getAdminOwnerRecipients } from '@/lib/admin/admin-owner';
+import { createAdminAgendaEventSA } from '@/lib/integrations/google-calendar';
 
 // Vercel Cron: runs daily at 08:30 UTC (30 min after fiscal-reminders)
 // Protected by CRON_SECRET header
@@ -55,6 +56,17 @@ export async function GET(request: NextRequest) {
     .select('id,name,email,service,confirmed_date,confirmed_time,meeting_url')
     .eq('status', 'confirmed')
     .eq('confirmed_date', tomorrowStr);
+
+  const { data: todayAppts, error: todayApptsError } = await admin
+    .from('appointments')
+    .select('id,name,email,service,confirmed_date,confirmed_time,meeting_url')
+    .eq('status', 'confirmed')
+    .eq('confirmed_date', madridDate)
+    .order('confirmed_time', { ascending: true });
+
+  if (todayApptsError) {
+    console.error('[daily-summary] today appointment lookup failed:', todayApptsError.message);
+  }
 
   for (const appt of tomorrowAppts ?? []) {
     if (!appt.email || !appt.confirmed_date || !appt.confirmed_time) continue;
@@ -266,7 +278,62 @@ export async function GET(request: NextRequest) {
     }).catch(() => {});
   }
 
-  // ── 10. Build and send summary ────────────────────────────────────────────
+  // ── 10. Publish today's operational agenda to Google Calendar ──────────────
+  const agendaKey = `admin_agenda_event:${madridDate}`;
+  const { data: existingAgenda } = await admin
+    .from('system_kv')
+    .select('value')
+    .eq('key', agendaKey)
+    .maybeSingle();
+
+  if (!existingAgenda?.value) {
+    const nextDate = new Date(`${madridDate}T12:00:00Z`);
+    nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+    const nextMadridDate = nextDate.toISOString().slice(0, 10);
+    const taskLines = dueTaskRows.slice(0, 30).map((task) =>
+      `• [${task.priority ?? 'media'}] ${task.title} — ${task.client}`
+    );
+    const meetingLines = (todayAppts ?? []).slice(0, 20).map((appt) =>
+      `• ${appt.confirmed_time ?? '—'} · ${appt.service ?? 'Reunión'} · ${appt.name ?? appt.email ?? 'Contacto'}`
+    );
+    const description = [
+      `Agenda operativa EXPERT · ${today}`,
+      '',
+      `Tareas de hoy o vencidas: ${dueTaskRows.length}`,
+      ...(taskLines.length ? taskLines : ['• Sin tareas vencidas o con vencimiento hoy.']),
+      '',
+      `Reuniones de hoy: ${todayAppts?.length ?? 0}`,
+      ...(meetingLines.length ? meetingLines : ['• Sin reuniones confirmadas hoy.']),
+      '',
+      'Panel de tareas: https://expertconsulting.es/admin/tareas',
+      'KIA mantiene esta agenda como resumen operativo; el detalle canónico permanece en EXPERT.',
+    ].join('\n');
+
+    try {
+      const eventId = await createAdminAgendaEventSA({
+        summary: `KIA · Agenda EXPERT · ${dueTaskRows.length} tareas · ${todayAppts?.length ?? 0} reuniones`,
+        description,
+        startDate: madridDate,
+        endDate: nextMadridDate,
+        attendeeEmail: getAdminOwnerEmail(),
+      });
+      await admin.from('system_kv').upsert({
+        key: agendaKey,
+        value: {
+          event_id: eventId,
+          date: madridDate,
+          tasks: dueTaskRows.length,
+          meetings: todayAppts?.length ?? 0,
+          created_at: new Date().toISOString(),
+        },
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'key' });
+    } catch (agendaError) {
+      console.error('[daily-summary] Google Calendar agenda event failed:', agendaError);
+    }
+  }
+
+  // ── 11. Build and send summary ────────────────────────────────────────────
 
   const summaryData: DailySummaryData = {
     date: today,
