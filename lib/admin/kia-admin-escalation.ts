@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { sendEmailOnce } from '@/lib/email/send';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
+import { getAdminOwnerEmail } from '@/lib/admin/admin-owner';
 
 export async function notifyKiaAdminEscalation(input: {
   title: string;
@@ -22,7 +23,7 @@ export async function notifyKiaAdminEscalation(input: {
   // Email is the durable mandatory escalation channel. Only after Resend
   // accepts/idempotently confirms the email do we fan out best-effort push/Telegram.
   await sendEmailOnce({
-      to: 'soy@kseniailicheva.com',
+      to: getAdminOwnerEmail(),
       from: 'KIA Alertas <noreply@expertconsulting.es>',
       eventType: 'kia.admin_escalation',
       subject: input.priority === 'critical'

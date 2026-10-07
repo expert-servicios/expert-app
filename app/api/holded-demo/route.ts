@@ -5,6 +5,9 @@ import { sendEmail } from '@/lib/email/send';
 import { holdedDemoRequested, holdedDemoRequestAdmin } from '@/lib/email/templates';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
+import { ensureInboundLead } from '@/lib/leads/ensure-inbound-lead';
+import { notifyAdmins } from '@/lib/integrations/push';
+import { getAdminOwnerRecipients } from '@/lib/admin/admin-owner';
 
 const schema = z.object({
   hp_url: z.string().optional(),
@@ -75,15 +78,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No se pudo registrar la solicitud.' }, { status: 500 });
     }
 
-    const adminEmails = (process.env.ADMIN_EMAILS ?? 'info@expertconsulting.es')
-      .split(',').map((e) => e.trim()).filter(Boolean);
+    const lead = await ensureInboundLead({
+      admin: supabase,
+      name: d.name,
+      email: d.email,
+      phone: d.phone,
+      source: 'website',
+      sourceKey: `holded-demo:${demo.id}`,
+      category: 'Holded',
+      service: 'Demostración Holded',
+      message: d.needs?.trim() || `Solicitud de demostración Holded para ${d.company_name}.`,
+      channel: 'web_form',
+      origin: 'form:holded-demo',
+      metadata: {
+        holded_demo_id: demo.id,
+        company_name: d.company_name,
+        company_type: d.company_type ?? null,
+        employees_count: d.employees_count ?? null,
+        current_software: d.current_software ?? null,
+      },
+    });
+
+    const adminEmails = Array.from(new Set(['info@expertconsulting.es', ...getAdminOwnerRecipients()]));
 
     await Promise.all([
       sendEmail({
         to: d.email,
         eventType: 'holded_demo.requested',
         ...holdedDemoRequested(d.name, d.company_name),
-        metadata: { demo_id: demo.id }
+        metadata: { demo_id: demo.id, lead_id: lead.leadId }
       }),
       sendEmail({
         to: adminEmails,
@@ -99,9 +122,16 @@ export async function POST(request: NextRequest) {
           needs: d.needs,
           demoId: demo.id
         }),
-        metadata: { demo_id: demo.id }
+        metadata: { demo_id: demo.id, lead_id: lead.leadId }
       })
     ]);
+
+    await notifyAdmins({
+      title: 'Nueva solicitud Holded',
+      body: `${d.name} · ${d.company_name}`.slice(0, 240),
+      url: `/admin/leads?focus=${lead.leadId}`,
+      tag: `holded-demo-${demo.id}`,
+    }).catch(() => {});
 
     return NextResponse.json({ ok: true });
   } catch (err) {
