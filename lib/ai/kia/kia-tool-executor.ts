@@ -425,6 +425,40 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         });
       }
 
+      case 'get_user_quotes': {
+        const clientId = context.contact?.clientId;
+        const companyId = context.company?.id ?? null;
+        if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+        if (!companyId) return fail(toolCall.name, 'No hay una empresa activa y autorizada en el contexto de KIA.');
+
+        const { data, error } = await admin
+          .from('quotes')
+          .select('id,title,status,amount_eur,currency,expires_at,created_at,updated_at')
+          .eq('client_id', clientId)
+          .eq('company_id', companyId)
+          .order('created_at', { ascending: false })
+          .limit(Number(args.limit ?? 10));
+
+        if (error) return fail(toolCall.name, 'Error consultando presupuestos.');
+
+        const now = Date.now();
+        return ok(toolCall.name, {
+          count: (data ?? []).length,
+          quotes: (data ?? []).map((row) => ({
+            id: row.id,
+            title: row.title,
+            status: row.status,
+            amount_eur: row.amount_eur,
+            currency: row.currency ?? 'EUR',
+            expires_at: row.expires_at,
+            expired: Boolean(row.expires_at && new Date(row.expires_at).getTime() < now),
+            payment_pending: ['sent', 'accepted'].includes(String(row.status)),
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+          })),
+        });
+      }
+
       case 'get_user_orders': {
         const clientId = context.contact?.clientId;
         if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
