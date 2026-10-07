@@ -675,6 +675,46 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
           }),
         });
 
+      case 'get_user_onboarding_appointments': {
+        const clientId = context.contact?.clientId;
+        const companyId = context.company?.id ?? null;
+        if (!clientId) return fail(toolCall.name, 'No hay usuario identificado.');
+        if (!companyId) return fail(toolCall.name, 'No hay una empresa activa y autorizada en el contexto de KIA.');
+
+        const kind = String(args.kind ?? 'all');
+        const types = kind === 'all' ? ['onboarding', 'formacion-holded'] : [kind];
+        const { data, error } = await admin
+          .from('appointments')
+          .select('id,appointment_type,appointment_date,appointment_end,status,service,meeting_url,booking_provider,created_at')
+          .eq('client_id', clientId)
+          .eq('company_id', companyId)
+          .in('appointment_type', types)
+          .order('appointment_date', { ascending: false })
+          .limit(Number(args.limit ?? 10));
+
+        if (error) return fail(toolCall.name, 'Error consultando onboarding/formación.');
+        return ok(toolCall.name, {
+          count: (data ?? []).length,
+          appointments: (data ?? []).map((row) => ({
+            id: row.id,
+            type: row.appointment_type,
+            service: row.service,
+            status: row.status,
+            starts_at: row.appointment_date,
+            ends_at: row.appointment_end,
+            meeting_url: row.meeting_url,
+            provider: row.booking_provider,
+            next_action: row.status === 'confirmed'
+              ? 'join_scheduled_meeting'
+              : row.status === 'pending_calendar'
+                ? 'wait_for_calendar_confirmation'
+                : row.status === 'cancelled'
+                  ? 'book_new_slot_if_needed'
+                  : null,
+          })),
+        });
+      }
+
       case 'get_booking_availability':
         return ok(toolCall.name, await getKiaBookingAvailability({
           serviceKey: String(args.serviceKey),
