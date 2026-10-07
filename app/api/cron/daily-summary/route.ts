@@ -5,6 +5,7 @@ import { adminTaskReminder, citaReminder, dailyAdminSummary, type DailySummaryDa
 import { notifyAdminsTelegram } from '@/lib/integrations/telegram';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { verifyCronRequest } from '@/lib/security/cron';
+import { getAdminOwnerRecipients } from '@/lib/admin/admin-owner';
 
 // Vercel Cron: runs daily at 08:30 UTC (30 min after fiscal-reminders)
 // Protected by CRON_SECRET header
@@ -12,15 +13,7 @@ export const maxDuration = 60;
 
 // Supports comma-separated list: "a@x.com,b@y.com"
 // Also strips display-name format: "EXPERT <info@x.com>" → "info@x.com"
-function parseAdminRecipients(): string[] {
-  const raw = process.env.ADMIN_SUMMARY_EMAIL ?? process.env.RESEND_FROM_EMAIL ?? 'info@expertconsulting.es';
-  return raw
-    .split(',')
-    .map((e) => e.trim().replace(/^[^<]*<([^>]+)>$/, '$1'))
-    .filter(Boolean);
-}
-
-const ADMIN_RECIPIENTS = parseAdminRecipients();
+const ADMIN_RECIPIENTS = getAdminOwnerRecipients();
 
 // Cases blocking threshold: flag if awaiting docs or blocked for >3 days
 const DAYS_PENDING_THRESHOLD = 3;
