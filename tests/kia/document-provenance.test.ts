@@ -69,7 +69,7 @@ describe('document provenance and chronology', () => {
   });
 
   it('adds provenance columns without rewriting created_at', () => {
-    const migration = source('supabase/migrations/20261007110000_document_provenance.sql');
+    const migration = source('supabase/migrations/20261007110509_document_provenance.sql');
 
     expect(migration).toContain('add column if not exists document_date date');
     expect(migration).toContain("add column if not exists ingestion_source text not null default 'unknown'");
