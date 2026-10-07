@@ -237,7 +237,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
     ...meetingRows.map((row) => row.client_id),
   ].filter(Boolean))];
 
-  const companyIds = [...new Set([
+  const directCompanyIds = [...new Set([
     ...conversationRows.map((row) => row.company_id),
     ...taskRows.map((row) => row.company_id),
     ...meetingRows.map((row) => row.company_id),
@@ -248,7 +248,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
     ...leadRows.map((row) => lower(row.email)),
   ].filter(Boolean))];
 
-  const [casesRes, profilesByIdRes, profilesByEmailRes, companiesRes] = await Promise.all([
+  const [casesRes, profilesByIdRes, profilesByEmailRes] = await Promise.all([
     caseIds.length
       ? admin.from('cases').select('id,client_id,company_id,service').in('id', caseIds)
       : Promise.resolve({ data: [], error: null }),
@@ -258,19 +258,25 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
     emailCandidates.length
       ? admin.from('profiles').select('id,full_name,email,phone').in('email', emailCandidates)
       : Promise.resolve({ data: [], error: null }),
-    companyIds.length
-      ? admin.from('companies').select('id,razon_social,nombre_comercial,cif_nif').in('id', companyIds)
-      : Promise.resolve({ data: [], error: null }),
-  ]) as [DbResult<any>, DbResult<any>, DbResult<any>, DbResult<any>];
+  ]) as [DbResult<any>, DbResult<any>, DbResult<any>];
 
   for (const [name, result] of [
     ['cases_lookup', casesRes],
     ['profiles_lookup', profilesByIdRes],
     ['profiles_email_lookup', profilesByEmailRes],
-    ['companies_lookup', companiesRes],
   ] as const) {
     if (result.error) warnings.push(`${name}: ${result.error.message}`);
   }
+
+  const allCompanyIds = [...new Set([
+    ...directCompanyIds,
+    ...(casesRes.data ?? []).map((row) => row.company_id),
+  ].filter(Boolean))];
+
+  const companiesRes = allCompanyIds.length
+    ? await admin.from('companies').select('id,razon_social,nombre_comercial,cif_nif').in('id', allCompanyIds)
+    : { data: [], error: null };
+  if (companiesRes.error) warnings.push(`companies_lookup: ${companiesRes.error.message}`);
 
   const caseById = new Map((casesRes.data ?? []).map((row) => [row.id, row]));
   const profiles = [...(profilesByIdRes.data ?? []), ...(profilesByEmailRes.data ?? [])];
