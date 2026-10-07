@@ -131,7 +131,7 @@ describe('Admin client documents 360', () => {
   it('blocks cross-entity case assignment and never changes company automatically', () => {
     const route = source('app/api/admin/clientes/[id]/documents/route.ts');
     expect(route).toContain("code: 'case_company_mismatch'");
-    expect(route).toContain('targetCase.company_id !== current.company_id');
+    expect(route).toContain('targetCase.company_id !== currentScopeCompanyId');
     expect(route).toContain('No se cambia la entidad automáticamente.');
     expect(route).not.toContain('updates.company_id');
   });
@@ -145,7 +145,7 @@ describe('Admin client documents 360', () => {
 
   it('keeps case moves inside the exact personal or company scope', () => {
     const route = source('app/api/admin/clientes/[id]/documents/route.ts');
-    expect(route).toContain('targetCase.company_id !== current.company_id');
+    expect(route).toContain('targetCase.company_id !== currentScopeCompanyId');
     expect(route).toContain("code: 'case_company_mismatch'");
   });
 
@@ -153,6 +153,7 @@ describe('Admin client documents 360', () => {
     const route = source('app/api/admin/clientes/[id]/documents/route.ts');
     expect(route).toContain("const TRANSFERABLE_CASE_OWNER_TYPES = new Set<string | null>([null, 'profile', 'company', 'case'])");
     expect(route).toContain("code: 'document_owner_not_transferable'");
+    expect(route).toContain("if (caseAssignmentChanged && parsed.data.caseId)");
     expect(route).toContain("updates.owner_type = 'case'");
     expect(route).toContain('updates.owner_id = parsed.data.caseId');
     expect(route).toContain("code: 'document_case_unassignment_not_supported'");
