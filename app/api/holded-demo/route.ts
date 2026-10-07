@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       tag: `holded-demo-${demo.id}`,
     }).catch(() => {});
 
-    return NextResponse.json({ ok: true, leadId: lead.leadId }, { status: lead.created ? 201 : 200 });
+    return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[holded-demo]', err);
     return NextResponse.json({ error: 'Error interno.' }, { status: 500 });
