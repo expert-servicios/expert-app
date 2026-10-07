@@ -94,6 +94,7 @@ const DOCUMENT_SELECT = 'id,company_id,owner_type,owner_id,kind,drive_file_id,mi
 const LEGACY_CASE_DOCUMENT_SELECT = 'id,case_id,client_id,file_path,original_name,state,created_at';
 const LEGACY_FILE_SELECT = 'id,user_id,file_name,file_size,file_type,file_url,category,created_at';
 const LEGACY_USER_FILE_SELECT = 'id,user_id,file_name,file_url,file_size,file_type,uploaded_at,created_at';
+const TRANSFERABLE_CASE_OWNER_TYPES = new Set<string | null>([null, 'profile', 'company', 'case']);
 
 async function loadClientContext(admin: ReturnType<typeof getSupabaseAdmin>, id: string) {
   const [profileRes, authRes, casesRes, membershipsRes] = await Promise.all([
@@ -243,6 +244,8 @@ export async function GET(
       createdAt: doc.created_at,
       caseId: doc.case_id,
       caseName: caseRow?.service ?? null,
+      ownerType: doc.owner_type,
+      ownerId: doc.owner_id,
       companyId,
       companyName: companyId ? companyNameById.get(companyId) ?? null : null,
       driveFileId: doc.drive_file_id,
@@ -442,6 +445,12 @@ export async function PATCH(
   }
 
   let targetCase: ClientCase | null = null;
+  if (parsed.data.caseId !== undefined && !TRANSFERABLE_CASE_OWNER_TYPES.has(current.owner_type)) {
+    return NextResponse.json({
+      error: 'El owner canónico de este documento no es transferible a expediente.',
+      code: 'document_owner_not_transferable',
+    }, { status: 409 });
+  }
   if (parsed.data.caseId) {
     targetCase = context.cases.find((row) => row.id === parsed.data.caseId) ?? null;
     if (!targetCase) return NextResponse.json({ error: 'El expediente no pertenece a este cliente' }, { status: 409 });
