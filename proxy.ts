@@ -2,7 +2,18 @@ import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  const { pathname } = request.nextUrl;
+  const isRussianPublicPath = pathname === '/ru' || pathname.startsWith('/ru/');
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-expert-locale', isRussianPublicPath ? 'ru' : 'es');
+
+  let response = NextResponse.next({ request: { headers: requestHeaders } });
+
+  // Russian public routes only need the locale marker here. Avoid an
+  // unnecessary Supabase Auth round-trip for unauthenticated public pages.
+  if (isRussianPublicPath) {
+    return response;
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,7 +23,7 @@ export async function proxy(request: NextRequest) {
         getAll: () => request.cookies.getAll(),
         setAll: (cookiesToSet) => {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
+          response = NextResponse.next({ request: { headers: requestHeaders } });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );
@@ -23,7 +34,6 @@ export async function proxy(request: NextRequest) {
 
   // getUser() re-validates JWT with Supabase Auth server on each request
   const { data: { user } } = await supabase.auth.getUser();
-  const { pathname } = request.nextUrl;
 
   const isProtectedPath = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
   const isAuthPath = pathname === '/auth/login' || pathname === '/auth/signup';
@@ -74,5 +84,5 @@ export const config = {
   // redirect logic runs for it here; per-article access is enforced in
   // lib/utils/academy-enrollment.ts instead, since the public index article
   // must stay reachable without a session.
-  matcher: ['/dashboard/:path*', '/admin/:path*', '/auth/login', '/auth/signup', '/docs/laboral/:path*']
+  matcher: ['/ru/:path*', '/dashboard/:path*', '/admin/:path*', '/auth/login', '/auth/signup', '/docs/laboral/:path*']
 };
