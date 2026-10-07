@@ -88,8 +88,7 @@ describe('KIA voice and durable client registry', () => {
   });
 
   it('records verified source references instead of copying full artifacts', () => {
-    expect(documentProvenance).toContain("eventType: 'document.received'");
-    expect(documentProvenance).toContain("eventType: 'document.historical'");
+    expect(documentProvenance).toContain("eventType: 'document.received' | 'document.historical'");
     expect(ledger).toContain("eventType: 'email.inbound'");
     expect(ledger).toContain("eventType: 'email.outbound'");
     expect(ledger).toContain("eventType: 'invoice.issued'");
