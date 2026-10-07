@@ -34,6 +34,8 @@ type DocumentItem = {
   createdAt: string | null;
   caseId: string | null;
   caseName: string | null;
+  ownerType: string | null;
+  ownerId: string | null;
   companyId: string | null;
   companyName: string | null;
   driveFileId: string | null;
@@ -305,6 +307,7 @@ export default function ClientDocumentsPage() {
             {visible.map((doc) => {
               const editing = doc.editable && editingId === doc.id && draft;
               const compatibleCases = (data?.cases ?? []).filter((item) => item.companyId === doc.companyId);
+              const caseAssignmentLocked = doc.ownerType !== null && !['profile', 'company', 'case'].includes(doc.ownerType);
               const possibleDuplicate = duplicateSignals.has(doc.recordKey);
               return (
                 <article key={doc.recordKey} className="rounded-2xl border border-[#d8cbb5] bg-white p-5 shadow-sm">
@@ -349,10 +352,16 @@ export default function ClientDocumentsPage() {
                             </div>
                             <div className="md:col-span-2">
                               <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-[#8a9aab]">Expediente · misma entidad</label>
-                              <select value={draft.caseId} onChange={(e) => setDraft({ ...draft, caseId: e.target.value })} className="w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 text-sm">
-                                <option value="">Sin expediente</option>
+                              <select
+                                value={draft.caseId}
+                                disabled={caseAssignmentLocked}
+                                onChange={(e) => setDraft({ ...draft, caseId: e.target.value })}
+                                className="w-full rounded-lg border border-[#d8cbb5] bg-white px-3 py-2 text-sm disabled:bg-slate-100 disabled:text-slate-500"
+                              >
+                                {doc.ownerType !== 'case' && <option value="">Sin expediente</option>}
                                 {compatibleCases.map((item) => <option key={item.id} value={item.id}>{item.service || item.category || item.id}{item.state ? ` · ${item.state}` : ''}</option>)}
                               </select>
+                              {caseAssignmentLocked && <p className="mt-1 text-[11px] text-[#8a9aab]">Este documento conserva su vínculo canónico {doc.ownerType}; el expediente no se puede reasignar desde esta vista.</p>}
                             </div>
                             <div className="md:col-span-2 flex justify-end gap-2">
                               <button type="button" onClick={() => { setEditingId(null); setDraft(null); }} className="rounded-lg border border-[#d8cbb5] px-3 py-2 text-xs font-semibold">Cancelar</button>
