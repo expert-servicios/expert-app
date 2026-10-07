@@ -20,7 +20,7 @@ export interface KiaInboxClassification {
 }
 
 const OFFICIAL_DOMAIN = /(?:^|\.)(?:mjusticia\.es|agenciatributaria\.gob\.es|aeat\.es|seg-social\.es|dgt\.es|boe\.es|administracion\.gob\.es|notificaciones\.060\.es|registradores\.org)$/i;
-const PROVIDER_DOMAIN = /(?:^|\.)(?:stripe\.com|revolut\.com|google\.com|github\.com|vercel\.com|docusign\.com|holded\.com|resend\.com|supabase\.com|openai\.com|anthropic\.com|microsoft\.com)$/i;
+const PROVIDER_DOMAIN = /(?:^|\.)(?:stripe\.com|revolut\.com|google\.com|github\.com|vercel\.com|docusign\.com|holded\.com|resend\.com|supabase\.com|openai\.com|anthropic\.com|microsoft\.com|einforma\.com)$/i;
 
 const URGENT_SIGNAL = /\b(?:acción requerida|accion requerida|action required|requerimiento|subsanaci[oó]n|caducidad|caduca|plazo|deadline|vence|vencimiento|suspensi[oó]n|bloquead[oa]|payment failed|pago fallido|chargeback|dispute|contracargo|incumplimiento|security alert|alerta de seguridad|suspicious|inicio de sesi[oó]n sospechoso)\b/i;
 const CRITICAL_OFFICIAL_SIGNAL = /\b(?:requerimiento|subsanaci[oó]n|caducidad|caduca|plazo|notificaci[oó]n electr[oó]nica|comparecencia|sanci[oó]n|embargo)\b/i;
