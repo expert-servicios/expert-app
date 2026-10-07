@@ -1,4 +1,5 @@
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { resolveDocumentRegistryTiming } from '@/lib/documents/document-provenance';
 import {
   clientRegistryDetailCutoff,
   clientRegistryRetentionDates,
@@ -459,19 +460,21 @@ export async function reconcileClientRegistry(
 
     jobs.push((async () => {
       const { data, error } = await admin.from('documents')
-        .select('id,original_name,title,state,case_id,company_id,created_at,replaced_by')
+        .select('id,original_name,title,state,case_id,company_id,created_at,document_date,ingestion_source,ingestion_ref,replaced_by')
         .eq('client_id', clientId)
         .is('replaced_by', null)
         .order('created_at', { ascending: false })
         .limit(200);
       if (error) throw error;
       for (const row of data ?? []) {
+        const timing = resolveDocumentRegistryTiming(row);
+        if (!timing) continue;
         pendingEvents.push({
           subjectId: subject.id,
-          eventType: 'document.received',
-          occurredAt: row.created_at,
-          sourceKey: `document:${row.id}:received`,
-          title: row.original_name ?? row.title ?? 'Documento recibido',
+          eventType: timing.eventType,
+          occurredAt: timing.occurredAt,
+          sourceKey: timing.sourceKey,
+          title: row.original_name ?? row.title ?? (timing.eventType === 'document.historical' ? 'Documento histórico' : 'Documento recibido'),
           summary: row.state ?? null,
           sourceTable: 'documents',
           sourceId: row.id,
@@ -479,7 +482,7 @@ export async function reconcileClientRegistry(
           companyId: row.company_id,
           caseId: row.case_id,
           importance: 2,
-          metadata: { state: row.state },
+          metadata: { state: row.state, ...timing.metadata },
         });
       }
     })());
