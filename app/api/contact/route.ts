@@ -4,6 +4,7 @@ import { contactAutoReply, contactMessage } from '@/lib/email/templates';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkRateLimit, checkSpam, getClientIp } from '@/lib/utils/spam-guard';
 import { notifyAdmins } from '@/lib/integrations/push';
+import { getAdminOwnerRecipients } from '@/lib/admin/admin-owner';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { ensureInboundLead } from '@/lib/leads/ensure-inbound-lead';
 
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
       metadata: { subject: asunto || null },
     });
 
-    const adminEmail = process.env.ADMIN_EMAILS ?? 'info@expertconsulting.es';
+    const adminEmail = Array.from(new Set(['info@expertconsulting.es', ...getAdminOwnerRecipients()]));
 
     await Promise.all([
       sendEmail({
