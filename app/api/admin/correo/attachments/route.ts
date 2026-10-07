@@ -317,6 +317,8 @@ export async function POST(request: NextRequest) {
       doc_type: 'email_attachment',
       state: 'pendiente',
       uploaded_by_role: 'admin',
+      ingestion_source: 'admin_email',
+      ingestion_ref: `${provider}:${accountEmail}:${messageId}:${attachmentId}`,
     })
     .select('id')
     .single();
