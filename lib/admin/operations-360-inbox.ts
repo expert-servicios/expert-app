@@ -144,6 +144,7 @@ function limited(value: string, max = 360) {
 
 function searchHaystack(item: Operations360InboxItem) {
   return [
+    item.id,
     item.subject,
     item.preview,
     item.actor.name,
