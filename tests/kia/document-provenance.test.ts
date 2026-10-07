@@ -57,7 +57,7 @@ describe('document provenance and chronology', () => {
     expect(clientRoute).toContain("ingestion_source: isAdmin ? 'admin_portal' : 'client_portal'");
     expect(tenantRoute).toContain("ingestion_source: 'tenant_portal'");
     expect(emailRoute).toContain("ingestion_source: 'admin_email'");
-    expect(emailRoute).toContain('ingestion_ref:');
+    expect(emailRoute).not.toContain('ingestion_ref:');
   });
 
   it('keeps historical imports out of recent KIA surfaces', () => {
