@@ -7,27 +7,36 @@ export interface KiaSurfaceGuidance {
   detail?: string;
 }
 
-export function resolveCaseListGuidance(activeCount: number, closedCount: number): KiaSurfaceGuidance {
+export function resolveCaseListGuidance(activeCount: number, closedCount: number, locale: 'es' | 'ru' = 'es'): KiaSurfaceGuidance {
+  const isRu = locale === 'ru';
   if (activeCount > 0) {
     return {
       state: 'seguimiento',
-      title: activeCount === 1 ? 'Tienes 1 expediente activo' : `Tienes ${activeCount} expedientes activos`,
-      message: 'Puedes abrir cada expediente para revisar su estado, documentación pendiente y nuevas comunicaciones.',
+      title: isRu
+        ? (activeCount === 1 ? 'У Вас 1 активный expediente' : `У Вас ${activeCount} активных expediente`)
+        : (activeCount === 1 ? 'Tienes 1 expediente activo' : `Tienes ${activeCount} expedientes activos`),
+      message: isRu
+        ? 'Откройте expediente, чтобы проверить статус, недостающие документы и новые сообщения.'
+        : 'Puedes abrir cada expediente para revisar su estado, documentación pendiente y nuevas comunicaciones.',
     };
   }
 
   if (closedCount > 0) {
     return {
       state: 'exito',
-      title: 'Tus expedientes visibles están finalizados',
-      message: 'Puedes consultar el histórico cuando lo necesites o contratar un nuevo servicio desde tu panel.',
+      title: isRu ? 'Все видимые expediente завершены' : 'Tus expedientes visibles están finalizados',
+      message: isRu
+        ? 'История остаётся доступной в кабинете; при необходимости можно оформить новую услугу.'
+        : 'Puedes consultar el histórico cuando lo necesites o contratar un nuevo servicio desde tu panel.',
     };
   }
 
   return {
     state: 'ayuda',
-    title: 'Estoy aquí para ayudarte con tus expedientes',
-    message: 'Cuando contrates un servicio, podrás seguir aquí su estado, documentación y mensajes.',
+    title: isRu ? 'Я помогу Вам с expediente' : 'Estoy aquí para ayudarte con tus expedientes',
+    message: isRu
+      ? 'После оформления услуги здесь будут доступны статус, документы и сообщения по expediente.'
+      : 'Cuando contrates un servicio, podrás seguir aquí su estado, documentación y mensajes.',
   };
 }
 
