@@ -73,39 +73,53 @@ export async function ensureInboundLead(input: {
 
   if (candidateIds.size === 1) {
     const leadId = [...candidateIds][0];
-    const { data: current, error: currentError } = await input.admin
-      .from('leads')
-      .select('metadata,message,state,lifecycle_stage')
-      .eq('id', leadId)
-      .single();
-    if (currentError) throw currentError;
 
-    const metadata = current.metadata && typeof current.metadata === 'object' && !Array.isArray(current.metadata)
-      ? current.metadata as Record<string, unknown>
-      : {};
-    const previous = Array.isArray(metadata.inquiries) ? metadata.inquiries.slice(-29) : [];
-    const previousMessage = typeof current.message === 'string' ? current.message.trim() : '';
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const { data: current, error: currentError } = await input.admin
+        .from('leads')
+        .select('metadata,message,updated_at')
+        .eq('id', leadId)
+        .single();
+      if (currentError) throw currentError;
 
-    const { error: updateError } = await input.admin
-      .from('leads')
-      .update({
-        name: input.name,
-        ...(email ? { email } : {}),
-        ...(phone ? { phone } : {}),
-        category: input.category,
-        service: input.service,
-        message: [previousMessage, input.message].filter(Boolean).join('\n\n').slice(-12000),
-        updated_at: new Date().toISOString(),
-        metadata: {
-          ...metadata,
-          ...input.metadata,
-          last_acquisition: interaction,
-          inquiries: [...previous, interaction],
-        },
-      })
-      .eq('id', leadId);
-    if (updateError) throw updateError;
-    return { leadId, created: false };
+      const metadata = current.metadata && typeof current.metadata === 'object' && !Array.isArray(current.metadata)
+        ? current.metadata as Record<string, unknown>
+        : {};
+      const previous = Array.isArray(metadata.inquiries) ? metadata.inquiries.slice(-29) : [];
+      const previousMessage = typeof current.message === 'string' ? current.message.trim() : '';
+      const nextUpdatedAt = new Date().toISOString();
+
+      let updateQuery = input.admin
+        .from('leads')
+        .update({
+          name: input.name,
+          ...(email ? { email } : {}),
+          ...(phone ? { phone } : {}),
+          category: input.category,
+          service: input.service,
+          message: [previousMessage, input.message].filter(Boolean).join('\n\n').slice(-12000),
+          updated_at: nextUpdatedAt,
+          metadata: {
+            ...metadata,
+            ...input.metadata,
+            last_acquisition: interaction,
+            inquiries: [...previous, interaction],
+          },
+        })
+        .eq('id', leadId);
+
+      updateQuery = current.updated_at
+        ? updateQuery.eq('updated_at', current.updated_at)
+        : updateQuery.is('updated_at', null);
+
+      const { data: updated, error: updateError } = await updateQuery
+        .select('id')
+        .maybeSingle();
+      if (updateError) throw updateError;
+      if (updated?.id) return { leadId, created: false };
+    }
+
+    throw new Error('inbound_lead_concurrency_retry_exhausted');
   }
 
   const identityAmbiguous = candidateIds.size > 1;
