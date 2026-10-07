@@ -198,6 +198,9 @@ export const kiaToolValidators = {
   get_user_pending_docs: z.object({
     caseId: z.string().uuid().optional(),
   }).strict(),
+  get_user_quotes: z.object({
+    limit: z.number().int().min(1).max(20).default(10),
+  }).strict(),
   get_user_orders: z.object({
     caseId: z.string().uuid().optional(),
     limit: z.number().int().min(1).max(20).default(10),
@@ -355,6 +358,7 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_user_expedientes: 'List the authenticated user\'s own cases (expedientes). Use when the user asks "mis expedientes", "mis trámites", "qué tengo pendiente", or any question about their own cases. Returns status, service name, and ID.',
   get_user_companies: 'List the authenticated user\'s own companies. Use when the user asks "mis empresas", "mis sociedades", or questions about their company data.',
   get_user_pending_docs: 'List documents pending upload or review for the authenticated user. Use when the user asks "qué documentos me piden", "documentos pendientes", or similar.',
+  get_user_quotes: 'List recent quotes for the authenticated user and already-authorized active company, including status, amount and expiry. Read-only; never creates checkout or mutates payment state.',
   get_user_orders: 'List recent orders/payments for the authenticated user, optionally scoped to one case. Read-only and safe for payment-status questions.',
   get_user_subscriptions: 'List active/recent EXPERT subscriptions for the authenticated user or active company. Read-only.',
   get_case_tasks: 'List operational tasks for one case owned by the authenticated user.',
