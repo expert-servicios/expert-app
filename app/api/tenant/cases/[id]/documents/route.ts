@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import {
+  buildClientDocumentStoragePath,
+  TENANT_DOCUMENT_MAX_BYTES,
+  validateClientDocumentFile,
+} from '@/lib/security/uploads';
 
 export async function POST(
   request: NextRequest,
@@ -25,7 +30,7 @@ export async function POST(
 
     const { data: caseData } = await admin
       .from('cases')
-      .select('id, client_id, service')
+      .select('id, client_id, company_id, service')
       .eq('id', caseId)
       .single();
 
@@ -44,19 +49,21 @@ export async function POST(
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
 
-    if (!file || file.size === 0) return NextResponse.json({ error: 'Archivo requerido' }, { status: 400 });
-    if (file.size > 20 * 1024 * 1024) return NextResponse.json({ error: 'El archivo no puede superar 20 MB' }, { status: 400 });
+    if (!file) return NextResponse.json({ error: 'Archivo requerido' }, { status: 400 });
 
-    const ext = file.name.split('.').pop() ?? 'bin';
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storagePath = `${caseId}/${Date.now()}_${safeName}`;
+    const validation = validateClientDocumentFile(file, TENANT_DOCUMENT_MAX_BYTES);
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: validation.status });
+    }
+
+    const storagePath = buildClientDocumentStoragePath(caseId, validation.safeName);
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
     const { data: uploadData, error: uploadError } = await admin.storage
       .from('client-documents')
-      .upload(storagePath, buffer, { contentType: file.type || `application/${ext}`, upsert: false });
+      .upload(storagePath, buffer, { contentType: validation.contentType, upsert: false });
 
     if (uploadError) {
       console.error('[tenant docs upload]', uploadError);
@@ -66,17 +73,30 @@ export async function POST(
     const { data: doc, error: docError } = await admin
       .from('documents')
       .insert({
+        company_id: caseData.company_id ?? null,
+        owner_type: 'case',
+        owner_id: caseId,
+        kind: 'client_document',
         case_id: caseId,
         client_id: caseData.client_id,
         file_path: uploadData.path,
         original_name: file.name,
+        title: file.name,
+        mime_type: validation.contentType,
         state: 'pendiente',
         uploaded_by_role: 'admin',
       })
       .select('id, original_name, state, created_at, file_path, uploaded_by_role')
       .single();
 
-    if (docError || !doc) return NextResponse.json({ error: 'Error al registrar el documento' }, { status: 500 });
+    if (docError || !doc) {
+      try {
+        await admin.storage.from('client-documents').remove([uploadData.path]);
+      } catch (cleanupError) {
+        console.error('[tenant docs upload] storage cleanup failed', cleanupError);
+      }
+      return NextResponse.json({ error: 'Error al registrar el documento' }, { status: 500 });
+    }
 
     return NextResponse.json({ document: doc }, { status: 201 });
   } catch (err) {
