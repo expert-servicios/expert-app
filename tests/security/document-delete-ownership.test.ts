@@ -14,7 +14,7 @@ describe('document delete ownership boundary', () => {
     expect(route).toContain("doc.client_id !== user.id");
     expect(route).toContain("doc.uploaded_by_role !== 'client'");
     expect(route).toContain("roleFlagReliable");
-    expect(route).toContain("2026-06-06T00:00:00.000Z");
+    expect(route).toContain("2026-06-07T00:00:00.000Z");
     expect(route).toContain("document_delete_managed_forbidden");
   });
 
