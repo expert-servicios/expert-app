@@ -26,14 +26,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     if (String(body.hp_url ?? '').trim()) {
-      await notifyAdmins({
-      title: 'Nueva solicitud Holded',
-      body: `${d.name} · ${d.company_name}`.slice(0, 240),
-      url: `/admin/leads?focus=${lead.leadId}`,
-      tag: `holded-demo-${demo.id}`,
-    }).catch(() => {});
-
-    return NextResponse.json({ ok: true, leadId: lead.leadId }, { status: lead.created ? 201 : 200 });
+      return NextResponse.json({ ok: true });
     }
 
     const ip = getClientIp(request.headers);
@@ -133,7 +126,14 @@ export async function POST(request: NextRequest) {
       })
     ]);
 
-    return NextResponse.json({ ok: true });
+    await notifyAdmins({
+      title: 'Nueva solicitud Holded',
+      body: `${d.name} · ${d.company_name}`.slice(0, 240),
+      url: `/admin/leads?focus=${lead.leadId}`,
+      tag: `holded-demo-${demo.id}`,
+    }).catch(() => {});
+
+    return NextResponse.json({ ok: true, leadId: lead.leadId }, { status: lead.created ? 201 : 200 });
   } catch (err) {
     console.error('[holded-demo]', err);
     return NextResponse.json({ error: 'Error interno.' }, { status: 500 });
