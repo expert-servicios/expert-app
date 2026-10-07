@@ -1,4 +1,5 @@
 import { getStripeClient } from '@/lib/integrations/stripe';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 
 export type ServiceCheckoutVerification = {
   ok: boolean;
@@ -42,7 +43,7 @@ export async function verifyCompletedServiceCheckout(input: {
       };
     }
 
-    const admin = (await import('@/lib/integrations/supabase')).getSupabaseAdmin();
+    const admin = getSupabaseAdmin();
     const paymentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.id;
     const { data: order } = await admin
       .from('orders')
