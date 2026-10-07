@@ -102,10 +102,11 @@ describe('entity-scoped subscription invitations', () => {
     expect(planCards).toContain('titular fiscal correcto');
   });
 
-  it('keeps Holded demo duration internal while hiding it from the booking UI', () => {
+  it('shows Holded demo duration and supports additional attendees', () => {
     const bookingForm = source('components/booking/NativeBookingForm.tsx');
-    expect(bookingForm).toContain("serviceKey !== 'demo-holded'");
     expect(bookingForm).toContain('availability.service.durationMinutes');
+    expect(bookingForm).toContain('Correos de invitados (opcional)');
+    expect(bookingForm).toContain('guest_emails');
   });
 
   it('preserves requested subscription context through login and first-time onboarding', () => {
