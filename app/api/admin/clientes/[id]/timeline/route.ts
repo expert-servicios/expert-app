@@ -126,7 +126,7 @@ export async function GET(
 
     admin
       .from('documents')
-      .select('id, original_name, state, file_path, created_at, case_id')
+      .select('id, original_name, state, file_path, created_at, document_date, ingestion_source, case_id')
       .eq('client_id', id)
       .order('created_at', { ascending: false })
       .limit(50),
@@ -341,12 +341,14 @@ export async function GET(
 
   // ── Documents ────────────────────────────────────────────────────────────────
   for (const d of documentsRes.data ?? []) {
+    if (d.ingestion_source === 'historical_import' && !d.document_date) continue;
+    const historical = d.ingestion_source === 'historical_import';
     events.push({
       id: `doc-${d.id}`,
-      date: d.created_at,
+      date: historical ? `${d.document_date}T00:00:00.000Z` : d.created_at,
       type: 'document',
-      title: `Documento subido: ${d.original_name}`,
-      detail: `Estado: ${d.state}`,
+      title: historical ? `Documento histórico: ${d.original_name}` : `Documento subido: ${d.original_name}`,
+      detail: historical ? `Estado: ${d.state} · Incorporado a EXPERT: ${d.created_at}` : `Estado: ${d.state}`,
       link: d.case_id ? `/admin/expedientes/${d.case_id}` : undefined,
     });
   }
