@@ -359,6 +359,7 @@ export interface Ms365MeetingInput {
   start: string;
   end: string;
   attendeeEmail: string;
+  additionalAttendeeEmails?: string[];
   timezone?: string;
   reminderMinutesBefore?: number[];
 }
@@ -427,10 +428,10 @@ export async function createMs365TeamsMeeting(
     },
     start: graphDateTime(input.start),
     end: graphDateTime(input.end),
-    attendees: [{
-      emailAddress: { address: input.attendeeEmail },
+    attendees: [input.attendeeEmail, ...(input.additionalAttendeeEmails ?? [])].map((address) => ({
+      emailAddress: { address },
       type: 'required',
-    }],
+    })),
     isOnlineMeeting: true,
     onlineMeetingProvider: 'teamsForBusiness',
     isReminderOn: true,
