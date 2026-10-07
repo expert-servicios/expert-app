@@ -184,15 +184,15 @@ const STATE_GUIDE: Record<string, StateGuide> = {
 
 const STEPS = CASE_PROGRESS_STATES;
 
-const STEP_LABELS: Record<string, string> = {
-  nuevo: 'Abierto',
-  docs_pendientes: 'Docs.',
-  docs_recibidos: 'Recibido',
-  en_tramitacion: 'Trámite',
-  pendiente_externo: 'Espera',
-  resolucion_recibida: 'Resolución',
-  entregado: 'Entregado',
-  finalizado: 'Finalizado'
+const STEP_LABELS: Record<string, { es: string; ru: string }> = {
+  nuevo: { es: 'Abierto', ru: 'Открыт' },
+  docs_pendientes: { es: 'Docs.', ru: 'Док.' },
+  docs_recibidos: { es: 'Recibido', ru: 'Получено' },
+  en_tramitacion: { es: 'Trámite', ru: 'В работе' },
+  pendiente_externo: { es: 'Espera', ru: 'Ожидание' },
+  resolucion_recibida: { es: 'Resolución', ru: 'Решение' },
+  entregado: { es: 'Entregado', ru: 'Готово' },
+  finalizado: { es: 'Finalizado', ru: 'Завершено' }
 };
 
 function resolveLocale(caseItem: CaseDetail): 'es' | 'ru' {
@@ -247,7 +247,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
       <div className="mx-auto max-w-4xl px-6">
         <div className="mb-6 flex items-center gap-3 text-sm font-semibold text-[#061321]">
           <ArrowLeft className="h-4 w-4" />
-          <Link href="/dashboard/expedientes" className="underline underline-offset-4">Mis expedientes</Link>
+          <Link href="/dashboard/expedientes" className="underline underline-offset-4">{locale === 'ru' ? 'Мои expediente' : 'Mis expedientes'}</Link>
         </div>
 
         <div className="rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
@@ -260,7 +260,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                 <p className="text-xs font-semibold uppercase tracking-widest text-[#c88b25]">{caseItem.category}</p>
                 <h1 className="mt-1 font-serif text-xl font-bold text-[#07111d]">{caseItem.service}</h1>
                 <p className="mt-1 text-xs text-[#29384a]">
-                  Abierto el {new Date(caseItem.opened_at).toLocaleDateString(locale === 'ru' ? 'ru-RU' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {locale === 'ru' ? 'Открыт ' : 'Abierto el '}{new Date(caseItem.opened_at).toLocaleDateString(locale === 'ru' ? 'ru-RU' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
               </div>
             </div>
@@ -285,7 +285,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                         {done ? '✓' : i + 1}
                       </div>
                       <p className={`mt-1 hidden text-[10px] font-semibold sm:block ${active ? 'text-[#07111d]' : 'text-[#29384a]'}`}>
-                        {STEP_LABELS[step]}
+                        {STEP_LABELS[step]?.[locale] ?? step}
                       </p>
                     </div>
                     {i < STEPS.length - 1 && (
@@ -333,8 +333,9 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
               <p className="mt-1 text-sm text-[#29384a]">{guide.desc}</p>
               {uploadedCount > 0 && caseItem.state !== 'finalizado' && (
                 <p className="mt-2 text-xs text-[#29384a]">
-                  {uploadedCount} documento{uploadedCount !== 1 ? 's' : ''} subido{uploadedCount !== 1 ? 's' : ''}
-                  {reviewedCount > 0 && ` · ${reviewedCount} revisado${reviewedCount !== 1 ? 's' : ''}`}
+                  {locale === 'ru'
+                    ? `${uploadedCount} загружено · ${reviewedCount} проверено`
+                    : `${uploadedCount} documento${uploadedCount !== 1 ? 's' : ''} subido${uploadedCount !== 1 ? 's' : ''}${reviewedCount > 0 ? ` · ${reviewedCount} revisado${reviewedCount !== 1 ? 's' : ''}` : ''}`}
                 </p>
               )}
             </div>
@@ -363,12 +364,12 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           </div>
         ) : (
           <div id="documentos" className="mt-4 rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
-            <p className="text-sm text-[#29384a]">No hay checklist documental definido para este expediente.</p>
+            <p className="text-sm text-[#29384a]">{locale === 'ru' ? 'Для этого expediente пока не задан checklist документов.' : 'No hay checklist documental definido para este expediente.'}</p>
           </div>
         )}
 
         <div className="mt-4 rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
-          <CaseMessageThread caseId={id} initialMessages={messages} currentRole="client" />
+          <CaseMessageThread caseId={id} initialMessages={messages} currentRole="client" locale={locale} />
         </div>
 
         {deliverables.length > 0 && (
@@ -376,18 +377,18 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             <div className="mb-4 flex items-center gap-2">
               <Download className="h-4 w-4 text-[#c88b25]" />
               <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">
-                Entregables de tu asesoría
+                {locale === 'ru' ? 'Итоговые документы EXPERT' : 'Entregables de tu asesoría'}
               </p>
               <span className="ml-auto rounded-full bg-[#d7a33a]/15 px-2.5 py-0.5 text-xs font-semibold text-[#c88b25]">
                 {deliverables.length} archivo{deliverables.length !== 1 ? 's' : ''}
               </span>
             </div>
             <p className="mb-4 text-sm text-[#29384a]">
-              Tu equipo de asesoría ha preparado estos documentos como resultado de tu trámite.
+              {locale === 'ru' ? 'Команда EXPERT подготовила эти документы как результат работы по Вашему expediente.' : 'Tu equipo de asesoría ha preparado estos documentos como resultado de tu trámite.'}
             </p>
             <div className="space-y-2">
               {deliverables.map((doc) => (
-                <DeliverableRow key={doc.id} doc={doc} />
+                <DeliverableRow key={doc.id} doc={doc} locale={locale} />
               ))}
             </div>
           </div>
@@ -398,7 +399,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             <div className="mb-4 flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-[#25D366]" />
               <p className="text-xs font-bold uppercase tracking-widest text-[#c88b25]">
-                Archivos enviados por WhatsApp
+                {locale === 'ru' ? 'Файлы из WhatsApp' : 'Archivos enviados por WhatsApp'}
               </p>
               <span className="ml-auto rounded-full bg-[#f8f4eb] px-2.5 py-0.5 text-xs font-semibold text-[#29384a]">
                 {waAttachments.length}
@@ -410,7 +411,13 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                 const isAudio = att.media_type === 'audio';
                 const isVideo = att.media_type === 'video';
                 const Icon = isImage ? ImageIcon : isAudio ? Mic : isVideo ? Video : FileText;
-                const label = isImage ? 'Imagen' : isAudio ? 'Audio' : isVideo ? 'Vídeo' : 'Documento';
+                const label = isImage
+                  ? (locale === 'ru' ? 'Изображение' : 'Imagen')
+                  : isAudio
+                    ? (locale === 'ru' ? 'Аудио' : 'Audio')
+                    : isVideo
+                      ? (locale === 'ru' ? 'Видео' : 'Vídeo')
+                      : (locale === 'ru' ? 'Документ' : 'Documento');
                 const caption = att.body.startsWith('[') ? label : att.body;
                 return (
                   <div key={att.id} className="flex items-center gap-3 rounded-xl border border-[#f0e8d8] bg-[#f8f4eb] px-4 py-3">
@@ -420,8 +427,10 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-[#07111d]">{caption}</p>
                       <p className="text-[10px] text-[#29384a]/50">
-                        {new Date(att.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        {' · '}{att.direction === 'inbound' ? 'Enviado por ti' : 'Enviado por EXPERT'}
+                        {new Date(att.created_at).toLocaleDateString(locale === 'ru' ? 'ru-RU' : 'es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {' · '}{att.direction === 'inbound'
+                          ? (locale === 'ru' ? 'Отправлено Вами' : 'Enviado por ti')
+                          : (locale === 'ru' ? 'Отправлено EXPERT' : 'Enviado por EXPERT')}
                       </p>
                     </div>
                     <a
@@ -430,7 +439,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
                       rel="noopener noreferrer"
                       className="shrink-0 rounded-lg border border-[#d8cbb5] bg-white px-3 py-1.5 text-xs font-semibold text-[#07111d] hover:bg-[#f0e9d8] transition"
                     >
-                      {isImage ? 'Ver' : 'Descargar'}
+                      {isImage ? (locale === 'ru' ? 'Открыть' : 'Ver') : (locale === 'ru' ? 'Скачать' : 'Descargar')}
                     </a>
                   </div>
                 );

@@ -9,7 +9,8 @@ interface Doc {
   created_at: string;
 }
 
-export function DeliverableRow({ doc }: { doc: Doc }) {
+export function DeliverableRow({ doc, locale = 'es' }: { doc: Doc; locale?: 'es' | 'ru' }) {
+  const isRu = locale === 'ru';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +20,7 @@ export function DeliverableRow({ doc }: { doc: Doc }) {
     try {
       const res = await fetch(`/api/documents/${doc.id}/download`);
       const data = await res.json();
-      if (!res.ok) { setError(data.error ?? 'Error al descargar'); return; }
+      if (!res.ok) { setError(data.error ?? (isRu ? 'Ошибка при скачивании' : 'Error al descargar')); return; }
       const a = document.createElement('a');
       a.href = data.url;
       a.download = doc.original_name;
@@ -27,7 +28,7 @@ export function DeliverableRow({ doc }: { doc: Doc }) {
       a.rel = 'noopener noreferrer';
       a.click();
     } catch {
-      setError('Error de conexión.');
+      setError(isRu ? 'Ошибка соединения.' : 'Error de conexión.');
     } finally {
       setLoading(false);
     }
@@ -40,7 +41,7 @@ export function DeliverableRow({ doc }: { doc: Doc }) {
         <div>
           <p className="text-sm font-semibold text-[#07111d]">{doc.original_name}</p>
           <p className="text-xs text-[#29384a]">
-            {new Date(doc.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+            {new Date(doc.created_at).toLocaleDateString(isRu ? 'ru-RU' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
       </div>
@@ -57,7 +58,7 @@ export function DeliverableRow({ doc }: { doc: Doc }) {
           className="inline-flex items-center gap-1.5 rounded-lg bg-[#d7a33a] px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#061321] transition hover:bg-[#c88b25] disabled:opacity-50"
         >
           <Download className="h-3.5 w-3.5" />
-          {loading ? 'Descargando...' : 'Descargar'}
+          {loading ? (isRu ? 'Скачиваем...' : 'Descargando...') : (isRu ? 'Скачать' : 'Descargar')}
         </button>
       </div>
     </div>

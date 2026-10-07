@@ -15,7 +15,19 @@ const CERTIFICATE_SERVICE_SLUGS = new Set([
 
 export const metadata: Metadata = {
   title: 'Оплата подтверждена | EXPERT',
+  description: 'Подтверждение оплаты услуги EXPERT и переход к следующему шагу в личном кабинете.',
   robots: { index: false, follow: false },
+  openGraph: {
+    locale: 'ru_RU',
+    title: 'Оплата подтверждена | EXPERT',
+    description: 'Оплата подтверждена. Продолжите работу по expediente в личном кабинете EXPERT.',
+    siteName: 'EXPERT — Asesoría Fiscal y Legal',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Оплата подтверждена | EXPERT',
+    description: 'Оплата подтверждена. Продолжите работу по expediente в личном кабинете EXPERT.',
+  },
 };
 
 function UnverifiedPayment() {
@@ -110,7 +122,7 @@ function CertificateSuccess({ service }: { service: string }) {
   );
 }
 
-function NationalitySuccess() {
+function NationalitySuccess({ caseId }: { caseId: string | null }) {
   const servicePath = getPublicServicePath(
     { slug: NATIONALITY_SLUG, category: 'extranjeria-nacionalidad' },
     'ru',
@@ -149,7 +161,7 @@ function NationalitySuccess() {
 
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <Link
-            href="/dashboard/expedientes"
+            href={caseId ? `/dashboard/expedientes/${caseId}` : '/dashboard/expedientes'}
             className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#F2C14E]"
           >
             Открыть мои expediente
@@ -193,5 +205,5 @@ export default async function RuPaymentSuccessPage({
     return <CertificateSuccess service={service} />;
   }
 
-  return <NationalitySuccess />;
+  return <NationalitySuccess caseId={verification.caseId} />;
 }

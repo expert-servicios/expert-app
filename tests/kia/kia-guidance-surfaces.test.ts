@@ -34,6 +34,7 @@ describe('KIA contextual guidance surfaces', () => {
     expect(resolveCaseListGuidance(2, 1).state).toBe('seguimiento');
     expect(resolveCaseListGuidance(0, 3).state).toBe('exito');
     expect(resolveCaseListGuidance(0, 0).state).toBe('ayuda');
+    expect(resolveCaseListGuidance(2, 1, 'ru').title).toContain('активных');
   });
 
   it('maps expediente detail from trusted state and document counts only', () => {
@@ -96,7 +97,7 @@ describe('KIA contextual guidance surfaces', () => {
   });
 
   it('wires expediente guidance without adding an LLM call', () => {
-    expect(casesPage).toContain('resolveCaseListGuidance(active.length, closed.length)');
+    expect(casesPage).toContain('resolveCaseListGuidance(active.length, closed.length, locale)');
     expect(casesPage).toContain('<KiaGuidanceCard');
     expect(casesPage).not.toContain('/api/ai/kia');
     expect(casesPage).not.toContain('runKiaDecision');

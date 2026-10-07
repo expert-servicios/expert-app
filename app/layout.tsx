@@ -1,7 +1,7 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
-import Script from 'next/script';
+import { headers } from 'next/headers';
 import { type ReactNode } from 'react';
 import { PwaRegister } from '@/components/PwaRegister';
 import { CookieConsent } from '@/components/privacy/CookieConsent';
@@ -63,17 +63,13 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const requestHeaders = await headers();
+  const documentLocale = requestHeaders.get('x-expert-locale') === 'ru' ? 'ru' : 'es';
+
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang={documentLocale} suppressHydrationWarning>
       <body className={`${inter.variable} ${playfair.variable} font-sans`}>
-        <Script
-          id="document-language"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `document.documentElement.lang=(location.pathname==='/ru'||location.pathname.startsWith('/ru/'))?'ru':'es';`
-          }}
-        />
         <CookieConsent />
         <PwaRegister />
         {children}
