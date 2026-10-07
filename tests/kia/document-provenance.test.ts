@@ -68,6 +68,15 @@ describe('document provenance and chronology', () => {
     expect((tools.match(/\.neq\('ingestion_source', 'historical_import'\)/g) ?? []).length).toBeGreaterThanOrEqual(2);
   });
 
+  it('dates Admin 360 historical documents by verified document date', () => {
+    const timeline = source('app/api/admin/clientes/[id]/timeline/route.ts');
+
+    expect(timeline).toContain('document_date');
+    expect(timeline).toContain('historical_import');
+    expect(timeline).toContain("if (d.ingestion_source === 'historical_import' && !d.document_date) continue");
+    expect(timeline).toContain("date: historical ? `${d.document_date}T00:00:00.000Z` : d.created_at");
+  });
+
   it('adds provenance columns without rewriting created_at', () => {
     const migration = source('supabase/migrations/20261007110509_document_provenance.sql');
 
