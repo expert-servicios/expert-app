@@ -75,7 +75,7 @@ export async function ensureInboundLead(input: {
     const leadId = [...candidateIds][0];
     const { data: current, error: currentError } = await input.admin
       .from('leads')
-      .select('metadata,message')
+      .select('metadata,message,state,lifecycle_stage')
       .eq('id', leadId)
       .single();
     if (currentError) throw currentError;
@@ -95,8 +95,6 @@ export async function ensureInboundLead(input: {
         category: input.category,
         service: input.service,
         message: [previousMessage, input.message].filter(Boolean).join('\n\n').slice(-12000),
-        state: 'new',
-        lifecycle_stage: 'lead',
         updated_at: new Date().toISOString(),
         metadata: {
           ...metadata,
