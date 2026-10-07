@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getAdminOwnerEmail } from '@/lib/admin/admin-owner';
 import {
   CalendarMeetingCreationError,
   createCalendarMeetingSA,
@@ -207,9 +208,20 @@ export async function createBookingCalendarMeeting(
   input: BookingCalendarMeetingInput,
   provider = configuredProviderName()
 ): Promise<BookingCalendarMeetingResult> {
+  const ownerEmail = getAdminOwnerEmail().toLowerCase();
+  const attendeeEmail = input.attendeeEmail.trim().toLowerCase();
+  const additionalAttendeeEmails = Array.from(new Set([
+    ...(input.additionalAttendeeEmails ?? []).map((email) => email.trim().toLowerCase()),
+    ownerEmail,
+  ])).filter((email) => email && email !== attendeeEmail);
+  const meetingInput: BookingCalendarMeetingInput = {
+    ...input,
+    attendeeEmail,
+    additionalAttendeeEmails,
+  };
   if (provider === 'google') {
     try {
-      const result = await createCalendarMeetingSA(input);
+      const result = await createCalendarMeetingSA(meetingInput);
       return {
         eventId: result.eventId,
         meetingUrl: result.meetUrl,
@@ -238,7 +250,7 @@ export async function createBookingCalendarMeeting(
 
   const stored = await getMs365StoredTokens();
   try {
-    const result = await createMs365TeamsMeeting(stored, input);
+    const result = await createMs365TeamsMeeting(stored, meetingInput);
 
     try {
       await persistMs365Refresh(result.refreshed);
