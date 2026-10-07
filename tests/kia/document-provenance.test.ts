@@ -77,6 +77,30 @@ describe('document provenance and chronology', () => {
     expect(timeline).toContain("date: historical ? `${d.document_date}T00:00:00.000Z` : d.created_at");
   });
 
+  it('chunks document lookups and filters superseded events in every ledger consumer', () => {
+    const filter = source('lib/documents/document-ledger-filter.ts');
+    const profile = source('lib/ai/kia/kia-client-registry-profile.ts');
+    const companyRegistry = source('app/api/admin/empresas/[id]/registro/route.ts');
+
+    expect(filter).toContain('const chunkSize = 100');
+    expect(filter).toContain('documentIds.slice(offset, offset + chunkSize)');
+    expect(profile).toContain('filterSupersededDocumentEvents(admin, rows)');
+    expect(profile).toContain('source_table,source_id');
+    expect(companyRegistry).toContain('filterSupersededDocumentEvents(ctx.admin, events.data ?? [])');
+    expect(companyRegistry).toContain('events: filteredEvents');
+  });
+
+  it('limits recent and historical Admin 360 documents independently', () => {
+    const timeline = source('app/api/admin/clientes/[id]/timeline/route.ts');
+
+    expect(timeline).toContain('documentsRecentRes');
+    expect(timeline).toContain('documentsHistoricalRes');
+    expect(timeline).toContain(".neq('ingestion_source', 'historical_import')");
+    expect(timeline).toContain(".eq('ingestion_source', 'historical_import')");
+    expect(timeline).toContain(".not('document_date', 'is', null)");
+    expect(timeline).toContain("[...(documentsRecentRes.data ?? []), ...(documentsHistoricalRes.data ?? [])]");
+  });
+
   it('adds provenance columns without rewriting created_at', () => {
     const migration = source('supabase/migrations/20261007110509_document_provenance.sql');
 
