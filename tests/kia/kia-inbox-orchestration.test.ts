@@ -19,6 +19,7 @@ describe('KIA inbox orchestration', () => {
     expect(classifier).toContain('CATEGORY_PROMOTIONS');
     expect(classifier).toContain('OFFICIAL_DOMAIN');
     expect(classifier).toContain('PROVIDER_DOMAIN');
+    expect(classifier).toContain('einforma\\.com');
   });
 
   it('treats deadlines and formal notices as actionable', () => {
