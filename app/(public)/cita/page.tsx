@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { CheckCircle2, Clock, Phone, Calendar } from 'lucide-react';
 import { NativeBookingForm } from '@/components/booking/NativeBookingForm';
+import { getBookingService } from '@/lib/booking/native-booking';
 
 export const metadata: Metadata = {
   title: 'Reservar cita | EXPERT — Asesoría Fiscal y Legal',
@@ -43,6 +44,8 @@ export default async function CitaPage({
   const companyId = params.companyId?.trim() || null;
   const manageToken = params.manage?.trim() || null;
   const origin = params.origen?.trim() || null;
+  const selectedService = getBookingService(serviceKey);
+  const showPublicChoices = selectedService?.public !== false;
 
   return (
     <main className="min-h-screen bg-[#F8F6F1] text-[#0D1B2A]">
@@ -62,6 +65,18 @@ export default async function CitaPage({
       </div>
 
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+        {showPublicChoices && (
+          <div className="mb-6 grid gap-3 sm:grid-cols-2">
+            <a href="/cita?tipo=consulta-inicial" className={`border p-4 transition ${serviceKey === 'consulta-inicial' ? 'border-[#D4A017] bg-[#D4A017]/10' : 'border-[#D4A017]/20 bg-white hover:border-[#D4A017]'}`}>
+              <span className="block font-serif text-lg font-bold">Consulta inicial gratuita</span>
+              <span className="mt-1 block text-sm text-[#52606d]">15 minutos</span>
+            </a>
+            <a href="/cita?tipo=demo-holded" className={`border p-4 transition ${serviceKey === 'demo-holded' ? 'border-[#D4A017] bg-[#D4A017]/10' : 'border-[#D4A017]/20 bg-white hover:border-[#D4A017]'}`}>
+              <span className="block font-serif text-lg font-bold">Demostración Holded gratuita</span>
+              <span className="mt-1 block text-sm text-[#52606d]">30 minutos · permite invitados</span>
+            </a>
+          </div>
+        )}
         <div className="grid gap-6 lg:grid-cols-[1fr_260px] lg:items-start">
           <NativeBookingForm
             serviceKey={serviceKey}
