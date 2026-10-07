@@ -58,14 +58,17 @@ describe('KIA M7.2d Telegram linking', () => {
     expect(route).toContain('createTelegramLinkCode');
   });
 
-  it('consumes /link before normal KIA identity routing and before the client rollout gate', () => {
+  it('consumes /link before normal routing and keeps the rollout gate only for verified private clients', () => {
     const route = source('app/api/webhooks/telegram/route.ts');
     expect(route).toContain("if (command === '/link')");
     expect(route).toContain('consumeTelegramLinkCode');
     expect(route).toContain('externalUserId: inbound.userId');
     expect(route).toContain('externalChatId: inbound.chatId');
     expect(route).toContain('resolveVerifiedTelegramIdentity');
-    expect(route.indexOf("if (command === '/link')")).toBeLessThan(route.indexOf("if (!adminChat && !telegramClientsEnabled)"));
-    expect(route.indexOf("startPayload.startsWith('link_')")).toBeLessThan(route.indexOf("if (!adminChat && !telegramClientsEnabled)"));
+    expect(route).toContain('publicProspect: true');
+    expect(route).toContain('allowTools: false');
+    expect(route).toContain("if (identity && !adminChat && !telegramClientsEnabled)");
+    expect(route.indexOf("if (command === '/link')")).toBeLessThan(route.indexOf("if (identity && !adminChat && !telegramClientsEnabled)"));
+    expect(route.indexOf("publicProspect: true")).toBeLessThan(route.indexOf("if (identity && !adminChat && !telegramClientsEnabled)"));
   });
 });
