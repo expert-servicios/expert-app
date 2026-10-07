@@ -10,10 +10,12 @@ describe('document delete ownership boundary', () => {
   it('allows clients to delete only documents they uploaded themselves', () => {
     const route = source('app/api/documents/[id]/route.ts');
 
-    expect(route).toContain("select('id, file_path, client_id, uploaded_by_role')");
+    expect(route).toContain("select('id, file_path, client_id, uploaded_by_role, created_at')");
     expect(route).toContain("doc.client_id !== user.id");
     expect(route).toContain("doc.uploaded_by_role !== 'client'");
-    expect(route).toContain("document_delete_admin_owned_forbidden");
+    expect(route).toContain("roleFlagReliable");
+    expect(route).toContain("2026-06-06T00:00:00.000Z");
+    expect(route).toContain("document_delete_managed_forbidden");
   });
 
   it('keeps admin and owner deletion available for managed cleanup', () => {
