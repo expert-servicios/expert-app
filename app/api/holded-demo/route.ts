@@ -7,6 +7,7 @@ import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkSpam, checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 import { ensureInboundLead } from '@/lib/leads/ensure-inbound-lead';
 import { notifyAdmins } from '@/lib/integrations/push';
+import { getAdminOwnerRecipients } from '@/lib/admin/admin-owner';
 
 const schema = z.object({
   hp_url: z.string().optional(),
@@ -98,8 +99,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const adminEmails = (process.env.ADMIN_EMAILS ?? 'info@expertconsulting.es')
-      .split(',').map((e) => e.trim()).filter(Boolean);
+    const adminEmails = Array.from(new Set(['info@expertconsulting.es', ...getAdminOwnerRecipients()]));
 
     await Promise.all([
       sendEmail({
