@@ -6,7 +6,7 @@ const querySchema = z.object({ documentId: z.string().uuid() });
 
 type AuditMetadata = {
   client_id?: string;
-  company_id?: string;
+  company_id?: string | null;
   previous?: Record<string, unknown>;
   next?: Record<string, unknown>;
 };
@@ -76,7 +76,7 @@ export async function GET(
   if (!belongsToClient(document, id, caseIds, companyIds)) {
     return NextResponse.json({ error: 'Documento no vinculado a este cliente' }, { status: 409 });
   }
-  if (!document.company_id || !companyIds.includes(document.company_id)) {
+  if (document.company_id && !companyIds.includes(document.company_id)) {
     return NextResponse.json({ error: 'Entidad del documento no vinculada al cliente' }, { status: 409 });
   }
 
