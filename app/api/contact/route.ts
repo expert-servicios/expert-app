@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       tag: `contact-${email}`,
     }).catch(() => {});
 
-    return NextResponse.json({ ok: true, leadId: lead.leadId }, { status: lead.created ? 201 : 200 });
+    return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('[api/contact]', error);
     return NextResponse.json({ error: 'Error al enviar el mensaje. Inténtalo de nuevo.' }, { status: 500 });
