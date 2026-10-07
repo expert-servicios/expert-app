@@ -4,6 +4,8 @@ import { recordClientRegistryEvent, reconcileClientRegistry } from './kia-client
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
+export const KIA_COMPANY_DOCUMENT_EVENT_CONTRACT = ['document.received', 'document.historical'] as const;
+
 export async function reconcileCompanyRegistry(
   admin: AdminClient,
   companyId: string,
