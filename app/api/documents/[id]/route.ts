@@ -19,7 +19,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const { data: doc, error: docError } = await admin
       .from('documents')
-      .select('id, file_path, client_id')
+      .select('id, file_path, client_id, uploaded_by_role, created_at')
       .eq('id', id)
       .single();
 
@@ -27,8 +27,21 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ error: 'Documento no encontrado' }, { status: 404 });
     }
 
-    if (!isAdmin && doc.client_id !== user.id) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    if (!isAdmin) {
+      if (doc.client_id !== user.id) {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+      }
+      // Legacy rows were backfilled to uploaded_by_role='client' when the column
+      // was introduced on 2026-06-06; the following full day is the conservative boundary, so that flag alone is not reliable for
+      // older documents. Fail closed for ambiguous legacy rows.
+      const roleFlagReliable = Boolean(doc.created_at)
+        && Date.parse(doc.created_at) >= Date.parse('2026-06-07T00:00:00.000Z');
+      if (doc.uploaded_by_role !== 'client' || !roleFlagReliable) {
+        return NextResponse.json({
+          error: 'Este documento forma parte del archivo gestionado por EXPERT y no puede eliminarse desde el área de cliente.',
+          code: 'document_delete_managed_forbidden',
+        }, { status: 403 });
+      }
     }
 
     if (doc.file_path) {
