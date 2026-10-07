@@ -149,8 +149,10 @@ describe('Admin client documents 360', () => {
     expect(route).toContain("code: 'case_company_mismatch'");
   });
 
-  it('synchronizes canonical ownership when assigning a document to a case', () => {
+  it('synchronizes only transferable canonical ownership when assigning a document to a case', () => {
     const route = source('app/api/admin/clientes/[id]/documents/route.ts');
+    expect(route).toContain("const TRANSFERABLE_CASE_OWNER_TYPES = new Set<string | null>([null, 'profile', 'company', 'case'])");
+    expect(route).toContain("code: 'document_owner_not_transferable'");
     expect(route).toContain("updates.owner_type = 'case'");
     expect(route).toContain('updates.owner_id = parsed.data.caseId');
     expect(route).toContain("code: 'document_case_unassignment_not_supported'");
@@ -158,6 +160,15 @@ describe('Admin client documents 360', () => {
     expect(route).toContain('owner_id: current.owner_id');
     expect(route).toContain('owner_type: updated.owner_type');
     expect(route).toContain('owner_id: updated.owner_id');
+  });
+
+  it('does not offer invalid case actions for protected or case-owned documents', () => {
+    const route = source('app/api/admin/clientes/[id]/documents/route.ts');
+    const page = source('app/(protected)/admin/clientes/[id]/documentos/page.tsx');
+    expect(route).toContain('ownerType: doc.owner_type');
+    expect(page).toContain("const caseAssignmentLocked = doc.ownerType !== null && !['profile', 'company', 'case'].includes(doc.ownerType)");
+    expect(page).toContain('disabled={caseAssignmentLocked}');
+    expect(page).toContain("{doc.ownerType !== 'case' && <option value="">Sin expediente</option>}");
   });
 
   it('writes an audit event with previous and next canonical document values', () => {
@@ -179,6 +190,8 @@ describe('Admin client documents 360', () => {
     expect(historyRoute).toContain(".eq('action', 'document.admin_updated')");
     expect(historyRoute).toContain('metadata.client_id === id');
     expect(historyRoute).toContain('metadata.company_id === document.company_id');
+    expect(historyRoute).toContain('if (document.company_id && !companyIds.includes(document.company_id))');
+    expect(historyRoute).not.toContain('if (!document.company_id || !companyIds.includes(document.company_id))');
     expect(historyRoute).toContain('.limit(50)');
     expect(history).toContain('Historial');
     expect(history).toContain('Todavía no hay cambios administrativos registrados');
