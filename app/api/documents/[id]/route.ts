@@ -32,10 +32,10 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
       }
       // Legacy rows were backfilled to uploaded_by_role='client' when the column
-      // was introduced on 2026-06-06, so that flag alone is not reliable for
+      // was introduced on 2026-06-06; the following full day is the conservative boundary, so that flag alone is not reliable for
       // older documents. Fail closed for ambiguous legacy rows.
       const roleFlagReliable = Boolean(doc.created_at)
-        && Date.parse(doc.created_at) >= Date.parse('2026-06-06T00:00:00.000Z');
+        && Date.parse(doc.created_at) >= Date.parse('2026-06-07T00:00:00.000Z');
       if (doc.uploaded_by_role !== 'client' || !roleFlagReliable) {
         return NextResponse.json({
           error: 'Este documento forma parte del archivo gestionado por EXPERT y no puede eliminarse desde el área de cliente.',
