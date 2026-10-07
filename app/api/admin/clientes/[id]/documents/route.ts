@@ -437,7 +437,7 @@ export async function PATCH(
   if (!documentBelongsToClient(current, id, context.caseIds, context.companyIds)) {
     return NextResponse.json({ error: 'Documento no vinculado a este cliente' }, { status: 409 });
   }
-  if (!current.company_id || !context.allowedCompanyIds.has(current.company_id)) {
+  if (current.company_id && !context.allowedCompanyIds.has(current.company_id)) {
     return NextResponse.json({ error: 'La entidad del documento no está vinculada al cliente' }, { status: 409 });
   }
 
@@ -445,9 +445,9 @@ export async function PATCH(
   if (parsed.data.caseId) {
     targetCase = context.cases.find((row) => row.id === parsed.data.caseId) ?? null;
     if (!targetCase) return NextResponse.json({ error: 'El expediente no pertenece a este cliente' }, { status: 409 });
-    if (!targetCase.company_id || targetCase.company_id !== current.company_id) {
+    if (targetCase.company_id !== current.company_id) {
       return NextResponse.json({
-        error: 'El expediente debe pertenecer a la misma entidad que el documento. No se cambia la entidad automáticamente.',
+        error: 'El expediente debe pertenecer al mismo ámbito empresarial o personal que el documento. No se cambia la entidad automáticamente.',
         code: 'case_company_mismatch',
       }, { status: 409 });
     }
@@ -457,7 +457,19 @@ export async function PATCH(
   if (parsed.data.state !== undefined) updates.state = parsed.data.state;
   if (parsed.data.docType !== undefined) updates.doc_type = parsed.data.docType;
   if (parsed.data.title !== undefined) updates.title = parsed.data.title;
-  if (parsed.data.caseId !== undefined) updates.case_id = parsed.data.caseId;
+  if (parsed.data.caseId !== undefined) {
+    if (parsed.data.caseId === null && current.owner_type === 'case') {
+      return NextResponse.json({
+        error: 'No se puede desvincular el documento del expediente sin asignar antes un owner canónico alternativo.',
+        code: 'document_case_unassignment_not_supported',
+      }, { status: 409 });
+    }
+    updates.case_id = parsed.data.caseId;
+    if (parsed.data.caseId) {
+      updates.owner_type = 'case';
+      updates.owner_id = parsed.data.caseId;
+    }
+  }
 
   const { data: updated, error: updateError } = await admin
     .from('documents')
@@ -483,12 +495,16 @@ export async function PATCH(
         doc_type: current.doc_type,
         title: current.title,
         case_id: current.case_id,
+        owner_type: current.owner_type,
+        owner_id: current.owner_id,
       },
       next: {
         state: updated.state,
         doc_type: updated.doc_type,
         title: updated.title,
         case_id: updated.case_id,
+        owner_type: updated.owner_type,
+        owner_id: updated.owner_id,
       },
     },
   }).then(() => {});
