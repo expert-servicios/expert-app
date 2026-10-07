@@ -107,6 +107,8 @@ export default function AdminOperations360InboxPage() {
   const [status, setStatus] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionMessage, setActionMessage] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -142,6 +144,27 @@ export default function AdminOperations360InboxPage() {
     () => data?.items.find((item) => item.id === selectedId) ?? null,
     [data, selectedId],
   );
+
+  const escalateSelected = useCallback(async () => {
+    if (!selected || actionBusy) return;
+    setActionBusy(true);
+    setActionMessage('');
+    try {
+      const response = await fetch('/api/admin/inbox/escalate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId: selected.id }),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error ?? 'No se pudo escalar la entrada');
+      setActionMessage('Tarea creada o reutilizada correctamente.');
+      await load();
+    } catch (actionError) {
+      setActionMessage(actionError instanceof Error ? actionError.message : 'No se pudo escalar la entrada');
+    } finally {
+      setActionBusy(false);
+    }
+  }, [actionBusy, load, selected]);
 
   const stats = data?.summary ?? { total: 0, needs_action: 0, kia_working: 0, resolved: 0, byChannel: {} };
 
@@ -325,6 +348,14 @@ export default function AdminOperations360InboxPage() {
                         <Link href={selected.sourceHref} className="rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-bold">
                           Responder manualmente
                         </Link>
+                        <button
+                          type="button"
+                          onClick={() => void escalateSelected()}
+                          disabled={actionBusy}
+                          className="rounded-xl bg-[#07111d] px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
+                        >
+                          {actionBusy ? 'Escalando…' : 'Escalar a mí'}
+                        </button>
                         {selected.clientId && (
                           <Link href={`/admin/clientes/${selected.clientId}/operaciones`} className="rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-bold">
                             Abrir cliente 360
@@ -341,6 +372,7 @@ export default function AdminOperations360InboxPage() {
                           </Link>
                         )}
                       </div>
+                      {actionMessage && <p className="mt-3 text-xs text-[#526171]">{actionMessage}</p>}
                     </section>
                   </div>
 
