@@ -50,7 +50,8 @@ export async function GET(
     quotesRes,
     appointmentsRes,
     subsRes,
-    documentsRes,
+    documentsRecentRes,
+    documentsHistoricalRes,
     manualPaymentsRes,
   ] = await Promise.all([
     admin
@@ -128,7 +129,17 @@ export async function GET(
       .from('documents')
       .select('id, original_name, state, file_path, created_at, document_date, ingestion_source, case_id')
       .eq('client_id', id)
+      .neq('ingestion_source', 'historical_import')
       .order('created_at', { ascending: false })
+      .limit(50),
+
+    admin
+      .from('documents')
+      .select('id, original_name, state, file_path, created_at, document_date, ingestion_source, case_id')
+      .eq('client_id', id)
+      .eq('ingestion_source', 'historical_import')
+      .not('document_date', 'is', null)
+      .order('document_date', { ascending: false })
       .limit(50),
 
     admin
@@ -340,7 +351,7 @@ export async function GET(
   }
 
   // ── Documents ────────────────────────────────────────────────────────────────
-  for (const d of documentsRes.data ?? []) {
+  for (const d of [...(documentsRecentRes.data ?? []), ...(documentsHistoricalRes.data ?? [])]) {
     if (d.ingestion_source === 'historical_import' && !d.document_date) continue;
     const historical = d.ingestion_source === 'historical_import';
     events.push({
@@ -369,7 +380,7 @@ export async function GET(
       quotes: quotesRes.data?.length ?? 0,
       appointments: appointmentsRes?.data?.length ?? 0,
       subscriptions: subsRes.data?.length ?? 0,
-      documents: documentsRes.data?.length ?? 0,
+      documents: (documentsRecentRes.data?.length ?? 0) + (documentsHistoricalRes.data?.length ?? 0),
       manualPayments: manualPaymentsRes.data?.length ?? 0,
     },
   });
