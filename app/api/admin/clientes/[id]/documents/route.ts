@@ -94,6 +94,7 @@ const DOCUMENT_SELECT = 'id,company_id,owner_type,owner_id,kind,drive_file_id,mi
 const LEGACY_CASE_DOCUMENT_SELECT = 'id,case_id,client_id,file_path,original_name,state,created_at';
 const LEGACY_FILE_SELECT = 'id,user_id,file_name,file_size,file_type,file_url,category,created_at';
 const LEGACY_USER_FILE_SELECT = 'id,user_id,file_name,file_url,file_size,file_type,uploaded_at,created_at';
+const TRANSFERABLE_CASE_OWNER_TYPES = new Set<string | null>([null, 'profile', 'company', 'case']);
 
 async function loadClientContext(admin: ReturnType<typeof getSupabaseAdmin>, id: string) {
   const [profileRes, authRes, casesRes, membershipsRes] = await Promise.all([
@@ -243,6 +244,8 @@ export async function GET(
       createdAt: doc.created_at,
       caseId: doc.case_id,
       caseName: caseRow?.service ?? null,
+      ownerType: doc.owner_type,
+      ownerId: doc.owner_id,
       companyId,
       companyName: companyId ? companyNameById.get(companyId) ?? null : null,
       driveFileId: doc.drive_file_id,
@@ -437,17 +440,32 @@ export async function PATCH(
   if (!documentBelongsToClient(current, id, context.caseIds, context.companyIds)) {
     return NextResponse.json({ error: 'Documento no vinculado a este cliente' }, { status: 409 });
   }
-  if (!current.company_id || !context.allowedCompanyIds.has(current.company_id)) {
+  if (current.company_id && !context.allowedCompanyIds.has(current.company_id)) {
     return NextResponse.json({ error: 'La entidad del documento no está vinculada al cliente' }, { status: 409 });
   }
 
+  const currentCase = current.case_id
+    ? context.cases.find((row) => row.id === current.case_id) ?? null
+    : null;
+  const currentScopeCompanyId =
+    (current.company_id && context.allowedCompanyIds.has(current.company_id) ? current.company_id : null)
+    ?? (currentCase?.company_id && context.allowedCompanyIds.has(currentCase.company_id) ? currentCase.company_id : null)
+    ?? (current.owner_type === 'company' && current.owner_id && context.allowedCompanyIds.has(current.owner_id) ? current.owner_id : null);
+
   let targetCase: ClientCase | null = null;
+  const caseAssignmentChanged = parsed.data.caseId !== undefined && parsed.data.caseId !== current.case_id;
+  if (caseAssignmentChanged && !TRANSFERABLE_CASE_OWNER_TYPES.has(current.owner_type)) {
+    return NextResponse.json({
+      error: 'El owner canónico de este documento no es transferible a expediente.',
+      code: 'document_owner_not_transferable',
+    }, { status: 409 });
+  }
   if (parsed.data.caseId) {
     targetCase = context.cases.find((row) => row.id === parsed.data.caseId) ?? null;
     if (!targetCase) return NextResponse.json({ error: 'El expediente no pertenece a este cliente' }, { status: 409 });
-    if (!targetCase.company_id || targetCase.company_id !== current.company_id) {
+    if (targetCase.company_id !== currentScopeCompanyId) {
       return NextResponse.json({
-        error: 'El expediente debe pertenecer a la misma entidad que el documento. No se cambia la entidad automáticamente.',
+        error: 'El expediente debe pertenecer al mismo ámbito empresarial o personal que el documento. No se cambia la entidad automáticamente.',
         code: 'case_company_mismatch',
       }, { status: 409 });
     }
@@ -457,7 +475,19 @@ export async function PATCH(
   if (parsed.data.state !== undefined) updates.state = parsed.data.state;
   if (parsed.data.docType !== undefined) updates.doc_type = parsed.data.docType;
   if (parsed.data.title !== undefined) updates.title = parsed.data.title;
-  if (parsed.data.caseId !== undefined) updates.case_id = parsed.data.caseId;
+  if (parsed.data.caseId !== undefined) {
+    if (caseAssignmentChanged && parsed.data.caseId === null && current.owner_type === 'case') {
+      return NextResponse.json({
+        error: 'No se puede desvincular el documento del expediente sin asignar antes un owner canónico alternativo.',
+        code: 'document_case_unassignment_not_supported',
+      }, { status: 409 });
+    }
+    updates.case_id = parsed.data.caseId;
+    if (caseAssignmentChanged && parsed.data.caseId) {
+      updates.owner_type = 'case';
+      updates.owner_id = parsed.data.caseId;
+    }
+  }
 
   const { data: updated, error: updateError } = await admin
     .from('documents')
@@ -483,12 +513,16 @@ export async function PATCH(
         doc_type: current.doc_type,
         title: current.title,
         case_id: current.case_id,
+        owner_type: current.owner_type,
+        owner_id: current.owner_id,
       },
       next: {
         state: updated.state,
         doc_type: updated.doc_type,
         title: updated.title,
         case_id: updated.case_id,
+        owner_type: updated.owner_type,
+        owner_id: updated.owner_id,
       },
     },
   }).then(() => {});
