@@ -10,7 +10,7 @@ import {
   resolveKiaPolicyToolNames,
   runPolicyEnforcedKiaDecision,
 } from '@/lib/ai/kia/kia-policy-enforced-decision';
-import { checkKiaDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
+import { checkKiaDailyCostCap, checkKiaLeadDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
 import { safeErrorMessage } from '@/lib/ai/kia/kia-redaction';
 import { getServiceOperationalBlueprint } from '@/lib/services/service-operational-blueprints';
 import { serviceProductionManifest } from '@/lib/services/service-production-manifest';
@@ -429,6 +429,23 @@ async function handleTelegramUpdate(request: NextRequest) {
       }).catch(() => {});
     }
 
+    if (!checkKiaMessageRateLimit(`telegram-public:${inbound.userId}`)) {
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'Has enviado varios mensajes seguidos. Espera un momento y vuelve a intentarlo.',
+      });
+      return NextResponse.json({ ok: true, identityLinked: false, routed: false, reason: 'rate_limited' });
+    }
+
+    const publicCostCap = await checkKiaLeadDailyCostCap(lead.leadId);
+    if (!publicCostCap.ok) {
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'Has alcanzado el límite diario de consultas automáticas. Puedes continuar mañana o reservar una reunión informativa.',
+      });
+      return NextResponse.json({ ok: true, identityLinked: false, routed: false, reason: 'daily_cost_cap_reached' });
+    }
+
     try {
       const locale = /[А-Яа-яЁё]/.test(inbound.text) ? 'ru' : 'es';
       const result = await runKiaDecision({
@@ -448,7 +465,7 @@ async function handleTelegramUpdate(request: NextRequest) {
 
       await sendTelegramMessage({
         chatId: inbound.chatId,
-        text: result.userMessage,
+        text: escapeTelegramHtml(result.userMessage),
       });
 
       if (result.decision.requiresManualReview || ['needs_review', 'create_task'].includes(result.decision.nextAction)) {
@@ -473,9 +490,9 @@ async function handleTelegramUpdate(request: NextRequest) {
           .select('id')
           .single();
 
-        if (taskError) {
-          console.error('[Telegram prospect] review task failed:', taskError.message);
-        } else if (task?.id) {
+        if (taskError || !task?.id) {
+          throw taskError ?? new Error('telegram_review_task_not_created');
+        } else {
           await notifyKiaAdminEscalation({
             title: 'Consulta Telegram requiere intervención',
             summary: inbound.text.trim().slice(0, 300),
