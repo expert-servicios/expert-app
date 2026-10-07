@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const itemId = typeof body.itemId === 'string' ? body.itemId.trim().slice(0, 300) : '';
     if (!itemId) return NextResponse.json({ error: 'Entrada no válida' }, { status: 400 });
 
-    const inbox = await loadOperations360Inbox(admin, { limit: 200 });
+    const inbox = await loadOperations360Inbox(admin, { q: itemId, limit: 20 });
     const item = inbox.items.find((candidate) => candidate.id === itemId);
     if (!item) return NextResponse.json({ error: 'Entrada no encontrada' }, { status: 404 });
 
