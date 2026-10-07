@@ -14,7 +14,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const { data: doc, error: docError } = await admin
       .from('documents')
-      .select('id, file_path, original_name, client_id, case_id')
+      .select('id, file_path, original_name, client_id, case_id, kind')
       .eq('id', id)
       .single();
 
@@ -25,8 +25,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
     const isAdmin = profile?.role === 'admin' || profile?.role === 'owner';
 
-    if (!isAdmin && doc.client_id !== user.id) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    if (!isAdmin) {
+      if (doc.client_id !== user.id || doc.kind === 'internal') {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+      }
     }
 
     const { data: signedData, error: signError } = await admin.storage
