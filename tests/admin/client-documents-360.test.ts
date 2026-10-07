@@ -136,6 +136,30 @@ describe('Admin client documents 360', () => {
     expect(route).not.toContain('updates.company_id');
   });
 
+
+  it('allows controlled edits for personal documents without a company', () => {
+    const route = source('app/api/admin/clientes/[id]/documents/route.ts');
+    expect(route).toContain("if (current.company_id && !context.allowedCompanyIds.has(current.company_id))");
+    expect(route).not.toContain("if (!current.company_id || !context.allowedCompanyIds.has(current.company_id))");
+  });
+
+  it('keeps case moves inside the exact personal or company scope', () => {
+    const route = source('app/api/admin/clientes/[id]/documents/route.ts');
+    expect(route).toContain('targetCase.company_id !== current.company_id');
+    expect(route).toContain("code: 'case_company_mismatch'");
+  });
+
+  it('synchronizes canonical ownership when assigning a document to a case', () => {
+    const route = source('app/api/admin/clientes/[id]/documents/route.ts');
+    expect(route).toContain("updates.owner_type = 'case'");
+    expect(route).toContain('updates.owner_id = parsed.data.caseId');
+    expect(route).toContain("code: 'document_case_unassignment_not_supported'");
+    expect(route).toContain('owner_type: current.owner_type');
+    expect(route).toContain('owner_id: current.owner_id');
+    expect(route).toContain('owner_type: updated.owner_type');
+    expect(route).toContain('owner_id: updated.owner_id');
+  });
+
   it('writes an audit event with previous and next canonical document values', () => {
     const route = source('app/api/admin/clientes/[id]/documents/route.ts');
     expect(route).toContain(".from('audit_logs').insert");
