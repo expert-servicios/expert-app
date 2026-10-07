@@ -62,7 +62,9 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
   const [availabilityError, setAvailabilityError] = useState('');
   const [loadingSlots, setLoadingSlots] = useState(true);
   const [selected, setSelected] = useState<Slot | null>(null);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', notes: '', hp_url: '' });
+  const [form, setForm] = useState({
+    name: '', email: '', phone: '', guest_emails: '', notes: '', hp_url: '',
+  });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [meetingUrl, setMeetingUrl] = useState<string | null>(null);
@@ -142,6 +144,10 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          guest_emails: form.guest_emails
+            .split(/[;,\s]+/)
+            .map((email) => email.trim().toLowerCase())
+            .filter(Boolean),
           service: serviceKey,
           start: selected.start,
           recaptcha_token,
@@ -209,7 +215,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
               {availability?.service?.label ?? 'Reserva tu cita'}
             </h2>
           </div>
-          {availability?.service && serviceKey !== 'demo-holded' && (
+          {availability?.service && (
             <div className="flex items-center gap-2 text-xs font-semibold text-[#52606d]">
               <Clock className="h-4 w-4 text-[#D4A017]" />
               {availability.service.durationMinutes} min
@@ -343,6 +349,23 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
               className="mt-2 w-full border border-[#D4A017]/30 px-4 py-3 text-sm font-normal normal-case tracking-normal outline-none focus:border-[#D4A017]"
             />
           </label>
+          {serviceKey === 'demo-holded' && (
+            <label className="text-xs font-bold uppercase tracking-wide sm:col-span-2">
+              Correos de invitados (opcional)
+              <input
+                type="text"
+                name="guest_emails"
+                value={form.guest_emails}
+                onChange={updateField}
+                placeholder="persona@empresa.com, otra@empresa.com"
+                aria-describedby="guest-emails-help"
+                className="mt-2 w-full border border-[#D4A017]/30 px-4 py-3 text-sm font-normal normal-case tracking-normal outline-none focus:border-[#D4A017]"
+              />
+              <span id="guest-emails-help" className="mt-2 block text-xs font-normal normal-case leading-5 tracking-normal text-[#52606d]">
+                Puedes añadir hasta 8 personas. Recibirán la invitación de Calendar y el enlace de Google Meet.
+              </span>
+            </label>
+          )}
           <label className="text-xs font-bold uppercase tracking-wide sm:col-span-2">
             Comentario opcional
             <textarea
