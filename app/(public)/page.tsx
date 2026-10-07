@@ -482,7 +482,7 @@ function FeaturedServices() {
           text="Cada servicio se orienta a un resultado concreto: documentación revisada, trámite presentado y seguimiento claro."
         />
 
-        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
           {featuredServices.map(({ Icon, title, text, href }) => (
             <Link
               href={href}
@@ -610,7 +610,7 @@ function HoldedMigration() {
           </Link>
         </div>
 
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {holdedCards.map(({ Icon, title, text, href, cta }) => (
             <Link
               href={href}
