@@ -279,58 +279,88 @@ export async function GET(request: NextRequest) {
   }
 
   // ── 10. Publish today's operational agenda to Google Calendar ──────────────
-  const agendaKey = `admin_agenda_event:${madridDate}`;
-  const { data: existingAgenda } = await admin
-    .from('system_kv')
-    .select('value')
-    .eq('key', agendaKey)
-    .maybeSingle();
-
-  if (!existingAgenda?.value) {
-    const nextDate = new Date(`${madridDate}T12:00:00Z`);
-    nextDate.setUTCDate(nextDate.getUTCDate() + 1);
-    const nextMadridDate = nextDate.toISOString().slice(0, 10);
-    const taskLines = dueTaskRows.slice(0, 30).map((task) =>
-      `• [${task.priority ?? 'media'}] ${task.title} — ${task.client}`
-    );
-    const meetingLines = (todayAppts ?? []).slice(0, 20).map((appt) =>
-      `• ${appt.confirmed_time ?? '—'} · ${appt.service ?? 'Reunión'} · ${appt.name ?? appt.email ?? 'Contacto'}`
-    );
-    const description = [
-      `Agenda operativa EXPERT · ${today}`,
-      '',
-      `Tareas de hoy o vencidas: ${dueTaskRows.length}`,
-      ...(taskLines.length ? taskLines : ['• Sin tareas vencidas o con vencimiento hoy.']),
-      '',
-      `Reuniones de hoy: ${todayAppts?.length ?? 0}`,
-      ...(meetingLines.length ? meetingLines : ['• Sin reuniones confirmadas hoy.']),
-      '',
-      'Panel de tareas: https://expertconsulting.es/admin/tareas',
-      'KIA mantiene esta agenda como resumen operativo; el detalle canónico permanece en EXPERT.',
-    ].join('\n');
-
-    try {
-      const eventId = await createAdminAgendaEventSA({
-        summary: `KIA · Agenda EXPERT · ${dueTaskRows.length} tareas · ${todayAppts?.length ?? 0} reuniones`,
-        description,
-        startDate: madridDate,
-        endDate: nextMadridDate,
-        attendeeEmail: getAdminOwnerEmail(),
-      });
-      await admin.from('system_kv').upsert({
+  if (!todayApptsError && !dueTasksError) {
+    const agendaKey = `admin_agenda_event:${madridDate}`;
+    const reservationId = crypto.randomUUID();
+    const { error: reserveAgendaError } = await admin
+      .from('system_kv')
+      .insert({
         key: agendaKey,
         value: {
-          event_id: eventId,
+          status: 'creating',
+          reservation_id: reservationId,
           date: madridDate,
-          tasks: dueTaskRows.length,
-          meetings: todayAppts?.length ?? 0,
           created_at: new Date().toISOString(),
         },
         updated_at: new Date().toISOString(),
-      }, { onConflict: 'key' });
-    } catch (agendaError) {
-      console.error('[daily-summary] Google Calendar agenda event failed:', agendaError);
+      });
+
+    if (!reserveAgendaError) {
+      const nextDate = new Date(`${madridDate}T12:00:00Z`);
+      nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+      const nextMadridDate = nextDate.toISOString().slice(0, 10);
+      const taskLines = dueTaskRows.slice(0, 30).map((task) =>
+        `• [${task.priority ?? 'media'}] ${task.title} — ${task.client}`
+      );
+      const meetingLines = (todayAppts ?? []).slice(0, 20).map((appt) =>
+        `• ${appt.confirmed_time ?? '—'} · ${appt.service ?? 'Reunión'} · ${appt.name ?? appt.email ?? 'Contacto'}`
+      );
+      const description = [
+        `Agenda operativa EXPERT · ${today}`,
+        '',
+        `Tareas de hoy o vencidas: ${dueTaskRows.length}`,
+        ...(taskLines.length ? taskLines : ['• Sin tareas vencidas o con vencimiento hoy.']),
+        '',
+        `Reuniones de hoy: ${todayAppts?.length ?? 0}`,
+        ...(meetingLines.length ? meetingLines : ['• Sin reuniones confirmadas hoy.']),
+        '',
+        'Panel de tareas: https://expertconsulting.es/admin/tareas',
+        'KIA mantiene esta agenda como resumen operativo; el detalle canónico permanece en EXPERT.',
+      ].join('\n');
+
+      try {
+        const eventId = await createAdminAgendaEventSA({
+          summary: `KIA · Agenda EXPERT · ${dueTaskRows.length} tareas · ${todayAppts?.length ?? 0} reuniones`,
+          description,
+          startDate: madridDate,
+          endDate: nextMadridDate,
+          attendeeEmail: getAdminOwnerEmail(),
+        });
+        const { error: finalizeAgendaError } = await admin
+          .from('system_kv')
+          .update({
+            value: {
+              status: 'ready',
+              reservation_id: reservationId,
+              event_id: eventId,
+              date: madridDate,
+              tasks: dueTaskRows.length,
+              meetings: todayAppts?.length ?? 0,
+              created_at: new Date().toISOString(),
+            },
+            updated_at: new Date().toISOString(),
+          })
+          .eq('key', agendaKey)
+          .contains('value', { reservation_id: reservationId });
+        if (finalizeAgendaError) {
+          console.error('[daily-summary] agenda marker finalize failed:', finalizeAgendaError.message);
+        }
+      } catch (agendaError) {
+        const { error: releaseAgendaError } = await admin
+          .from('system_kv')
+          .delete()
+          .eq('key', agendaKey)
+          .contains('value', { reservation_id: reservationId });
+        if (releaseAgendaError) {
+          console.error('[daily-summary] agenda reservation release failed:', releaseAgendaError.message);
+        }
+        console.error('[daily-summary] Google Calendar agenda event failed:', agendaError);
+      }
+    } else if (reserveAgendaError.code !== '23505') {
+      console.error('[daily-summary] agenda reservation failed:', reserveAgendaError.message);
     }
+  } else {
+    console.error('[daily-summary] agenda skipped because task or meeting lookup failed');
   }
 
   // ── 11. Build and send summary ────────────────────────────────────────────
