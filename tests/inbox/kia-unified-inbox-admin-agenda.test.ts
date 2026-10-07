@@ -50,6 +50,6 @@ describe('KIA unified inbox and admin agenda', () => {
     expect(telegram).toContain('publicProspect: true');
     expect(telegram).toContain('allowTools: false');
     expect(telegram).toContain("task_kind: 'telegram_review'");
-    expect(telegram).not.toContain('client_telegram_disabled');
+    expect(telegram).toContain("if (identity && !adminChat && !telegramClientsEnabled)");
   });
 });
