@@ -444,8 +444,17 @@ export async function PATCH(
     return NextResponse.json({ error: 'La entidad del documento no está vinculada al cliente' }, { status: 409 });
   }
 
+  const currentCase = current.case_id
+    ? context.cases.find((row) => row.id === current.case_id) ?? null
+    : null;
+  const currentScopeCompanyId =
+    (current.company_id && context.allowedCompanyIds.has(current.company_id) ? current.company_id : null)
+    ?? (currentCase?.company_id && context.allowedCompanyIds.has(currentCase.company_id) ? currentCase.company_id : null)
+    ?? (current.owner_type === 'company' && current.owner_id && context.allowedCompanyIds.has(current.owner_id) ? current.owner_id : null);
+
   let targetCase: ClientCase | null = null;
-  if (parsed.data.caseId !== undefined && !TRANSFERABLE_CASE_OWNER_TYPES.has(current.owner_type)) {
+  const caseAssignmentChanged = parsed.data.caseId !== undefined && parsed.data.caseId !== current.case_id;
+  if (caseAssignmentChanged && !TRANSFERABLE_CASE_OWNER_TYPES.has(current.owner_type)) {
     return NextResponse.json({
       error: 'El owner canónico de este documento no es transferible a expediente.',
       code: 'document_owner_not_transferable',
@@ -454,7 +463,7 @@ export async function PATCH(
   if (parsed.data.caseId) {
     targetCase = context.cases.find((row) => row.id === parsed.data.caseId) ?? null;
     if (!targetCase) return NextResponse.json({ error: 'El expediente no pertenece a este cliente' }, { status: 409 });
-    if (targetCase.company_id !== current.company_id) {
+    if (targetCase.company_id !== currentScopeCompanyId) {
       return NextResponse.json({
         error: 'El expediente debe pertenecer al mismo ámbito empresarial o personal que el documento. No se cambia la entidad automáticamente.',
         code: 'case_company_mismatch',
@@ -467,7 +476,7 @@ export async function PATCH(
   if (parsed.data.docType !== undefined) updates.doc_type = parsed.data.docType;
   if (parsed.data.title !== undefined) updates.title = parsed.data.title;
   if (parsed.data.caseId !== undefined) {
-    if (parsed.data.caseId === null && current.owner_type === 'case') {
+    if (caseAssignmentChanged && parsed.data.caseId === null && current.owner_type === 'case') {
       return NextResponse.json({
         error: 'No se puede desvincular el documento del expediente sin asignar antes un owner canónico alternativo.',
         code: 'document_case_unassignment_not_supported',
