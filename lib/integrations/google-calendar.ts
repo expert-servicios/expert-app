@@ -470,6 +470,7 @@ export interface CalendarMeetingInput {
   start: string;
   end: string;
   attendeeEmail: string;
+  additionalAttendeeEmails?: string[];
   timezone?: string;
   reminderMinutesBefore?: number[];
 }
@@ -510,7 +511,8 @@ export async function createCalendarMeetingSA(
       description: input.description,
       start: { dateTime: input.start, timeZone: input.timezone ?? 'Europe/Madrid' },
       end: { dateTime: input.end, timeZone: input.timezone ?? 'Europe/Madrid' },
-      attendees: [{ email: input.attendeeEmail }],
+      attendees: [input.attendeeEmail, ...(input.additionalAttendeeEmails ?? [])]
+        .map((email) => ({ email })),
       conferenceData: {
         createRequest: {
           requestId,
