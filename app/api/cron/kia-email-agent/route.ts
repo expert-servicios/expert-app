@@ -796,6 +796,14 @@ export async function GET(request: NextRequest) {
         return false;
       });
 
+      if (firstInboundProcessing && !wasKnownContact && identity.leadId) {
+        await notifyAdmins({
+          title: 'Nuevo lead por email',
+          body: `${senderDisplayName(latest)} · ${latest.subject || 'Sin asunto'}`.slice(0, 240),
+          url: `/admin/leads?focus=${identity.leadId}`,
+          tag: `kia-email-new-lead-${identity.leadId}`,
+        }).catch(() => {});
+      }
 
       const recent = gmail.messages.slice(-10).map((message) => ({
         role: normalizedEmail(message.fromEmail) === EXPERT_MAILBOX ? 'assistant' as const : 'user' as const,
