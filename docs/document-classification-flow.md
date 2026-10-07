@@ -1,6 +1,6 @@
 # Clasificación Documental Automática — Flujo Kia
 
-> **ESTADO HISTÓRICO — NO USAR COMO CONTRATO DE IMPLEMENTACIÓN ACTUAL.** Este documento conserva el diseño de mayo de 2026. Para documentos de expediente/archivo ya incorporados al modelo canónico, la plataforma usa `client-documents` + `documents`. **WhatsApp sigue siendo una excepción viva** (`whatsapp-attachments` + `whatsapp_conversations` + `document_classifications`) hasta su reconciliación. Cualquier cambio debe verificarse contra las rutas, migraciones y runbooks actuales. Véase `document-archive-runbook.md`.
+> **ESTADO HISTÓRICO — NO USAR COMO CONTRATO DE IMPLEMENTACIÓN ACTUAL.** Este documento conserva el diseño de mayo de 2026. Para documentos de expediente/archivo ya incorporados al modelo canónico, la plataforma usa `client-documents` + `documents`. **WhatsApp no es hoy un flujo de entrada activo en EXPERT**: el webhook está retirado y `whatsapp-attachments`, `whatsapp_conversations` y `document_classifications` deben tratarse como inventario legacy para reconciliación histórica. Cualquier cambio debe verificarse contra las rutas, migraciones y runbooks actuales. Véase `document-archive-runbook.md`.
 >
 > Última actualización del diseño histórico: 2026-05-23
 
@@ -134,7 +134,7 @@ Si Kia detecta que una clasificación previa es incorrecta (p.ej., el usuario in
 
 ## Confidencialidad
 
-- Diseño histórico: este documento usaba `bucket = 'documents'`. **Contrato vigente:** almacenamiento privado en `client-documents` y autorización/ownership desde la fila canónica de `documents`.
+- Diseño histórico: este documento usaba `bucket = 'documents'`. **Contrato canónico para documentos de expediente/archivo ya incorporados:** almacenamiento privado en `client-documents` y autorización/ownership desde `documents`. El antiguo flujo WhatsApp queda fuera de este contrato y debe tratarse como legacy.
 - Las URLs son firmadas con TTL de 1 hora máximo.
 - Nunca se envían documentos completos a APIs externas sin consentimiento.
 - Para OCR/clasificación AI: solo se envía texto extraído o nombre de archivo, no el binario completo.
