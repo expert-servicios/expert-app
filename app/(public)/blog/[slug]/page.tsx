@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, Clock, Tag } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Tag } from 'lucide-react';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
 import { ArticleIntentCTA } from '@/components/content/ArticleIntentCTA';
 import { blogArticles, getArticle } from '@/lib/utils/blog';
@@ -74,6 +74,10 @@ export default async function BlogArticlePage({
     ? services.find((service) => service.slug === article.relatedServiceSlugs?.[0]) ?? null
     : null;
   const canonicalUrl = `https://expertconsulting.es/blog/${article.slug}`;
+  const isHoldedArticle =
+    article.category.toLowerCase() === 'holded' ||
+    article.tags.some((tag) => tag.toLowerCase().includes('holded')) ||
+    /holded/i.test(`${article.title} ${article.excerpt}`);
 
   // Parse "13 may 2026" → "2026-05-13"
   const MONTHS: Record<string, string> = {
@@ -166,6 +170,31 @@ export default async function BlogArticlePage({
               <Section key={heading} heading={heading} content={content} />
             ))}
 
+            {isHoldedArticle && (
+              <section className="border border-[#D4A017]/35 bg-[#0D1B2A] p-6 text-[#F8F6F1] shadow-[0_16px_38px_rgba(13,27,42,0.14)]">
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#D4A017]">Demostración gratuita</p>
+                <h2 className="mt-3 font-serif text-2xl font-bold">¿Quieres ver Holded aplicado a tu empresa?</h2>
+                <p className="mt-3 text-sm leading-7 text-[#C9D2DC]">
+                  Reserva una demostración de 30 minutos. Te enseñamos el flujo en directo y resolvemos dudas sobre implantación, migración, facturación y contabilidad.
+                </p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Link
+                    href="/cita?tipo=demo-holded"
+                    className="inline-flex min-h-11 items-center justify-center gap-2 bg-[#D4A017] px-5 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Reservar demostración gratuita
+                  </Link>
+                  <Link
+                    href="/holded"
+                    className="inline-flex min-h-11 items-center justify-center border border-[#D4A017]/50 px-5 py-3 text-sm font-semibold text-[#D4A017] transition hover:bg-[#D4A017]/10"
+                  >
+                    Ver servicios Holded
+                  </Link>
+                </div>
+              </section>
+            )}
+
             <ArticleIntentCTA
               sourceKind="blog"
               sourceSlug={article.slug}
@@ -195,6 +224,22 @@ export default async function BlogArticlePage({
                 Conocer más sobre EXPERT →
               </Link>
             </div>
+
+            {isHoldedArticle && (
+              <div className="border border-[#D4A017]/35 bg-white p-5">
+                <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">Holded en directo</p>
+                <p className="mt-2 text-sm leading-6 text-[#23364D]">
+                  Demo gratuita de 30 minutos para ver el sistema antes de contratar o migrar.
+                </p>
+                <Link
+                  href="/cita?tipo=demo-holded"
+                  className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#D4A017] hover:text-[#B8860B]"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Reservar demo →
+                </Link>
+              </div>
+            )}
 
             <div className="border border-[#D4A017]/25 bg-white p-5">
               <p className="text-xs font-bold uppercase tracking-widest text-[#23364D]">Novedades</p>
