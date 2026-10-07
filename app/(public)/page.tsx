@@ -9,6 +9,7 @@ import {
   Bell,
   Briefcase,
   Calculator,
+  Calendar,
   Check,
   Clock,
   FileCheck,
@@ -204,6 +205,13 @@ const holdedCards = [
     text: 'Contrata Holded a través de nosotros: configuración, soporte y formación, mismas condiciones que Holded.',
     href: '/contacto?asunto=Licencia%20Holded%20con%20asistencia',
     cta: 'Solicitar información',
+  },
+  {
+    Icon: Calendar,
+    title: 'Demostración Holded · 30 min',
+    text: 'Te enseñamos Holded en directo, adaptado a tu actividad, y resolvemos tus dudas antes de decidir.',
+    href: '/cita?tipo=demo-holded',
+    cta: 'Reservar demo gratuita',
   },
 ] as const;
 
@@ -474,7 +482,7 @@ function FeaturedServices() {
           text="Cada servicio se orienta a un resultado concreto: documentación revisada, trámite presentado y seguimiento claro."
         />
 
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {featuredServices.map(({ Icon, title, text, href }) => (
             <Link
               href={href}
