@@ -117,6 +117,7 @@ async function handleTelegramUpdate(request: NextRequest) {
   const parts = inbound.text.split(/\s+/);
   const command = parts[0]?.toLowerCase();
   const telegramToolsEnabled = process.env.KIA_TELEGRAM_TOOLS_ENABLED?.toLowerCase() === 'true';
+  const telegramClientsEnabled = process.env.KIA_TELEGRAM_CLIENTS_ENABLED?.toLowerCase() === 'true';
   const adminChat = isConfiguredTelegramAdminChat(inbound.chatId);
 
   const startPayload = command === '/start' ? parts[1]?.trim() ?? '' : '';
@@ -502,6 +503,14 @@ async function handleTelegramUpdate(request: NextRequest) {
       });
       return NextResponse.json({ ok: true, identityLinked: false, routed: false, leadId: lead.leadId, reason: 'kia_error' });
     }
+  }
+
+  if (identity && !adminChat && !telegramClientsEnabled) {
+    await sendTelegramMessage({
+      chatId: inbound.chatId,
+      text: 'Tu identidad EXPERT está vinculada, pero el acceso privado de clientes en Telegram todavía está en despliegue. Puedes usar el portal EXPERT mientras tanto.',
+    });
+    return NextResponse.json({ ok: true, ignored: true, reason: 'client_telegram_disabled' });
   }
 
   if (!checkKiaMessageRateLimit(identity.profileId)) {
