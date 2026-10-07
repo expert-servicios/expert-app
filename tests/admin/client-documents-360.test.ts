@@ -168,7 +168,7 @@ describe('Admin client documents 360', () => {
     expect(route).toContain('ownerType: doc.owner_type');
     expect(page).toContain("const caseAssignmentLocked = doc.ownerType !== null && !['profile', 'company', 'case'].includes(doc.ownerType)");
     expect(page).toContain('disabled={caseAssignmentLocked}');
-    expect(page).toContain("{doc.ownerType !== 'case' && <option value="">Sin expediente</option>}");
+    expect(page).toContain("{doc.ownerType !== 'case' && <option value=\"\">Sin expediente</option>}");
   });
 
   it('writes an audit event with previous and next canonical document values', () => {
