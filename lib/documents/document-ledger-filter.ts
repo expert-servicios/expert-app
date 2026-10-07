@@ -1,3 +1,7 @@
+import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
+
+type AdminClient = ReturnType<typeof getSupabaseAdmin>;
+
 type RegistryDocumentEvent = {
   event_type: string;
   source_table?: string | null;
@@ -10,13 +14,7 @@ type DocumentSourceRow = {
 };
 
 export async function filterSupersededDocumentEvents<T extends RegistryDocumentEvent>(
-  admin: {
-    from: (table: string) => {
-      select: (columns: string) => {
-        in: (column: string, values: string[]) => Promise<{ data: DocumentSourceRow[] | null; error: { message?: string } | null }>;
-      };
-    };
-  },
+  admin: AdminClient,
   rows: T[],
 ): Promise<T[]> {
   const documentIds = [...new Set(
