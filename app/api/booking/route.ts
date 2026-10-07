@@ -57,6 +57,7 @@ const schema = z.object({
   service: z.string().min(2).max(80),
   start: z.string().datetime({ offset: true }),
   notes: z.string().trim().max(800).optional(),
+  guest_emails: z.array(z.string().trim().email().max(200)).max(8).optional(),
   recaptcha_token: z.string().optional(),
   booking_auth: z.string().max(4096).optional(),
   company_id: z.string().uuid().optional(),
@@ -433,6 +434,11 @@ export async function POST(request: NextRequest) {
     }
     const contentOrigin = normalizeContentOrigin(input.origin, 'form:cita');
     const contentOriginLabel = describeContentOrigin(contentOrigin);
+    const guestEmails = (service.key === 'demo-holded'
+      ? Array.from(new Set(input.guest_emails ?? []))
+      : [])
+      .map((email) => email.toLowerCase())
+      .filter((email) => email !== input.email.toLowerCase());
 
     const user = await authenticatedUser(request);
     const signedAuthorization =
@@ -690,6 +696,7 @@ export async function POST(request: NextRequest) {
         appointment_date: start.toISOString(),
         appointment_end: end.toISOString(),
         notes: input.notes ?? null,
+        additional_attendees: guestEmails.length ? guestEmails.join(', ') : null,
         admin_notes: `Origen CTA/contenido: ${contentOrigin}`,
         status: 'pending_calendar',
         preferred_date: localDate,
@@ -724,12 +731,14 @@ export async function POST(request: NextRequest) {
         `Cliente: ${input.name} (${bookingEmail})`,
         `Teléfono: ${input.phone}`,
         input.notes ? `Notas: ${input.notes}` : '',
+        guestEmails.length ? `Invitados: ${guestEmails.join(', ')}` : '',
         `Origen CTA/contenido: ${contentOrigin}`,
         appointmentId ? `EXPERT appointment: ${appointmentId}` : '',
       ].filter(Boolean).join('\n'),
       start: start.toISOString(),
       end: end.toISOString(),
       attendeeEmail: bookingEmail,
+      additionalAttendeeEmails: guestEmails,
       timezone: BOOKING_TIMEZONE,
       reminderMinutesBefore: service.durationMinutes >= 60 ? [1440, 60] : [1440, 30],
     }, calendarProvider);

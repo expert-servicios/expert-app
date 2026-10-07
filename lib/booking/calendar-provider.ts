@@ -31,6 +31,7 @@ export interface BookingCalendarMeetingInput {
   start: string;
   end: string;
   attendeeEmail: string;
+  additionalAttendeeEmails?: string[];
   timezone?: string;
   reminderMinutesBefore?: number[];
 }
