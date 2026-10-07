@@ -171,6 +171,21 @@ describe('Admin client documents 360', () => {
     expect(page).toContain("{doc.ownerType !== 'case' && <option value=\"\">Sin expediente</option>}");
   });
 
+  it('allows metadata-only saves for protected owners when the case did not change', () => {
+    const route = source('app/api/admin/clientes/[id]/documents/route.ts');
+    expect(route).toContain('const caseAssignmentChanged = parsed.data.caseId !== undefined && parsed.data.caseId !== current.case_id');
+    expect(route).toContain('if (caseAssignmentChanged && !TRANSFERABLE_CASE_OWNER_TYPES.has(current.owner_type))');
+    expect(route).not.toContain('if (parsed.data.caseId !== undefined && !TRANSFERABLE_CASE_OWNER_TYPES.has(current.owner_type))');
+  });
+
+  it('validates case assignment against the same effective company scope used by GET', () => {
+    const route = source('app/api/admin/clientes/[id]/documents/route.ts');
+    expect(route).toContain('const currentScopeCompanyId =');
+    expect(route).toContain("current.owner_type === 'company'");
+    expect(route).toContain('targetCase.company_id !== currentScopeCompanyId');
+    expect(route).not.toContain('targetCase.company_id !== current.company_id');
+  });
+
   it('writes an audit event with previous and next canonical document values', () => {
     const route = source('app/api/admin/clientes/[id]/documents/route.ts');
     expect(route).toContain(".from('audit_logs').insert");
