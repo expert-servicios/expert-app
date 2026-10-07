@@ -14,11 +14,11 @@ describe('entity-scoped subscriptions and Company 360 registry locks', () => {
     expect(disabledCart).toContain("subscription_cart_disabled");
   });
 
-  it('sets Holded demo to one free hour', () => {
+  it('sets Holded demo to a free 30-minute meeting', () => {
     const booking = source('lib/booking/native-booking.ts');
     const demoBlock = booking.slice(booking.indexOf("'demo-holded': {"), booking.indexOf('onboarding:', booking.indexOf("'demo-holded': {")));
-    expect(demoBlock).toContain("label: 'Demo Holded gratuita'");
-    expect(demoBlock).toContain('durationMinutes: 60');
+    expect(demoBlock).toContain("label: 'Demostración Holded gratuita'");
+    expect(demoBlock).toContain('durationMinutes: 30');
   });
 
   it('includes periodic tax filing in all fixed monthly plans', () => {
