@@ -24,6 +24,19 @@ describe('document alias and KIA internal-document hardening', () => {
     expect(route).toContain('.insert({');
   });
 
+  it('aligns tenant uploads with the canonical document contract', () => {
+    const route = source('app/api/tenant/cases/[id]/documents/route.ts');
+
+    expect(route).toContain('TENANT_DOCUMENT_MAX_BYTES');
+    expect(route).toContain('validateClientDocumentFile');
+    expect(route).toContain("owner_type: 'case'");
+    expect(route).toContain('owner_id: caseId');
+    expect(route).toContain("kind: 'client_document'");
+    expect(route).toContain('company_id: caseData.company_id ?? null');
+    expect(route).toContain('mime_type: validation.contentType');
+    expect(route).toContain("storage.from('client-documents').remove([uploadData.path])");
+  });
+
   it('excludes internal documents from KIA context and client-facing tools', () => {
     const context = source('lib/ai/kia/kia-context-builder.ts');
     const tools = source('lib/ai/kia/kia-tool-executor.ts');
