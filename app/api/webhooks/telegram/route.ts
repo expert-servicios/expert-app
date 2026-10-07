@@ -36,6 +36,10 @@ import { recordKiaVisibleReply } from '@/lib/ai/kia/kia-visible-decision-log';
 import { persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import { resolveTelegramContentOrigin } from '@/lib/marketing/telegram-content-origin-server';
 import { transcribeKiaAudio } from '@/lib/ai/kia/kia-audio';
+import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
+import { ensureInboundLead } from '@/lib/leads/ensure-inbound-lead';
+import { notifyAdmins } from '@/lib/integrations/push';
+import { notifyKiaAdminEscalation } from '@/lib/admin/kia-admin-escalation';
 import {
   escapeTelegramHtml,
   isConfiguredTelegramAdminChat,
@@ -113,7 +117,6 @@ async function handleTelegramUpdate(request: NextRequest) {
   const parts = inbound.text.split(/\s+/);
   const command = parts[0]?.toLowerCase();
   const telegramToolsEnabled = process.env.KIA_TELEGRAM_TOOLS_ENABLED?.toLowerCase() === 'true';
-  const telegramClientsEnabled = process.env.KIA_TELEGRAM_CLIENTS_ENABLED?.toLowerCase() === 'true';
   const adminChat = isConfiguredTelegramAdminChat(inbound.chatId);
 
   const startPayload = command === '/start' ? parts[1]?.trim() ?? '' : '';
@@ -253,16 +256,6 @@ async function handleTelegramUpdate(request: NextRequest) {
     }
   }
 
-  // Secure one-time identity linking is available before the client-channel rollout
-  // flag. Ordinary KIA conversation remains fail-closed until the channel is enabled.
-  if (!adminChat && !telegramClientsEnabled) {
-    await sendTelegramMessage({
-      chatId: inbound.chatId,
-      text: 'El canal KIA para clientes en Telegram todavía no está habilitado. Usa el portal EXPERT mientras se completa el despliegue.',
-    });
-    return NextResponse.json({ ok: true, ignored: true, reason: 'client_telegram_disabled' });
-  }
-
   const identity = await resolveVerifiedTelegramIdentity({
     admin,
     externalUserId: inbound.userId,
@@ -373,7 +366,7 @@ async function handleTelegramUpdate(request: NextRequest) {
         ...(adminChat ? ['/lote1 — ver estado operativo del lote 1', '/legal status|cambios|valor|revisar — Regulatory Pulse'] : []),
         identity
           ? `Identidad EXPERT verificada. Chat KIA: activo. Tools R0/R1 read: ${telegramToolsEnabled ? 'activadas' : 'bloqueadas por feature flag'}.`
-          : 'Identidad EXPERT aún no vinculada o no verificada. KIA permanece bloqueada.',
+          : 'Consulta pública activa. KIA puede orientarte y guardar tu conversación como lead; para expedientes y datos privados vincula tu identidad con /link CÓDIGO.',
       ].join('\n'),
     });
     return NextResponse.json({ ok: true, identityLinked: Boolean(identity), contentOrigin });
@@ -384,17 +377,131 @@ async function handleTelegramUpdate(request: NextRequest) {
       chatId: inbound.chatId,
       text: identity
         ? `✅ Telegram e identidad EXPERT verificados. Chat KIA: activo. Tools R0/R1 read: ${telegramToolsEnabled ? 'activadas' : 'bloqueadas'}.`
-        : '⚠️ Telegram operativo, pero esta identidad no está vinculada y verificada en EXPERT. KIA: bloqueada.',
+        : 'ℹ️ Telegram operativo en modo consulta pública. Para expedientes, documentos o datos privados vincula tu identidad con /link CÓDIGO.',
     });
     return NextResponse.json({ ok: true, identityLinked: Boolean(identity) });
   }
 
   if (!identity) {
-    await sendTelegramMessage({
-      chatId: inbound.chatId,
-      text: 'Mensaje recibido. KIA permanece bloqueada porque esta identidad Telegram no está vinculada y verificada en EXPERT. Genera un código en EXPERT y usa /link CÓDIGO.',
+    if (!inbound.text?.trim()) {
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'Puedo atender consultas públicas por texto. Para consultar expedientes o usar información privada, vincula tu identidad EXPERT con /link CÓDIGO.',
+      });
+      return NextResponse.json({ ok: true, identityLinked: false, routed: false, reason: 'public_text_required' });
+    }
+
+    const lead = await ensureInboundLead({
+      admin,
+      name: inbound.username ? `@${inbound.username}` : `Telegram ${inbound.userId}`,
+      source: 'telegram',
+      sourceKey: `telegram:${inbound.userId}`,
+      category: 'Consulta Telegram',
+      service: 'consulta-general',
+      message: inbound.text.trim().slice(0, 4000),
+      channel: 'telegram',
+      origin: contentOrigin ?? 'telegram:kia',
+      metadata: {
+        telegram_user_id: inbound.userId,
+        telegram_chat_id: inbound.chatId,
+        telegram_username: inbound.username ?? null,
+      },
+    }).catch((leadError) => {
+      console.error('[Telegram prospect] lead upsert failed:', safeErrorMessage(leadError));
+      return null;
     });
-    return NextResponse.json({ ok: true, identityLinked: false, routed: false });
+
+    if (!lead) {
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'He recibido tu consulta, pero ahora mismo no he podido registrarla de forma segura. Inténtalo de nuevo en unos minutos.',
+      });
+      return NextResponse.json({ ok: true, identityLinked: false, routed: false, reason: 'lead_capture_failed' });
+    }
+
+    if (lead.created) {
+      await notifyAdmins({
+        title: 'Nuevo lead desde Telegram',
+        body: `${inbound.username ? '@' + inbound.username : 'Contacto Telegram'} · KIA atendiendo consulta`,
+        url: `/admin/leads?focus=${lead.leadId}`,
+        tag: `telegram-lead-${lead.leadId}`,
+      }).catch(() => {});
+    }
+
+    try {
+      const locale = /[А-Яа-яЁё]/.test(inbound.text) ? 'ru' : 'es';
+      const result = await runKiaDecision({
+        taskType: 'chat_reply',
+        channel: 'telegram',
+        message: inbound.text.trim(),
+        locale,
+        contextInput: {
+          channel: 'telegram',
+          leadId: lead.leadId,
+          latestMessage: inbound.text.trim(),
+          currentPage: '/telegram',
+        },
+        allowTools: false,
+        includeOfficialSourceContext: true,
+      });
+
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: result.userMessage,
+      });
+
+      if (result.decision.requiresManualReview || result.decision.nextAction === 'needs_review') {
+        const sourceKey = `telegram-review:${inbound.updateId}`;
+        const { data: task, error: taskError } = await admin
+          .from('internal_tasks')
+          .upsert({
+            source_key: sourceKey,
+            title: `Revisar consulta Telegram · ${inbound.username ? '@' + inbound.username : inbound.userId}`,
+            description: inbound.text.trim().slice(0, 1500),
+            status: 'pendiente',
+            priority: 'alta',
+            lead_id: lead.leadId,
+            source: 'kia',
+            metadata: {
+              task_kind: 'telegram_review',
+              telegram_update_id: inbound.updateId,
+              telegram_chat_id: inbound.chatId,
+              decision_log_id: result.decisionLogId ?? null,
+            },
+          }, { onConflict: 'source_key' })
+          .select('id')
+          .single();
+
+        if (taskError) {
+          console.error('[Telegram prospect] review task failed:', taskError.message);
+        } else if (task?.id) {
+          await notifyKiaAdminEscalation({
+            title: 'Consulta Telegram requiere intervención',
+            summary: inbound.text.trim().slice(0, 300),
+            actionTaken: 'KIA respondió en modo público, registró/actualizó el lead y creó una tarea de revisión',
+            interventionNeeded: 'revisar la consulta y decidir la actuación o trámite',
+            url: '/admin/tareas',
+            eventRef: sourceKey,
+            priority: 'high',
+          }).catch((notifyError) => console.error('[Telegram prospect] escalation failed:', notifyError));
+        }
+      }
+
+      return NextResponse.json({
+        ok: true,
+        identityLinked: false,
+        routed: true,
+        publicProspect: true,
+        leadId: lead.leadId,
+      });
+    } catch (prospectError) {
+      console.error('[Telegram prospect] KIA response failed:', safeErrorMessage(prospectError));
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'He guardado tu consulta, pero ahora mismo no he podido preparar la respuesta. KIA la retomará cuando el servicio esté disponible.',
+      });
+      return NextResponse.json({ ok: true, identityLinked: false, routed: false, leadId: lead.leadId, reason: 'kia_error' });
+    }
   }
 
   if (!checkKiaMessageRateLimit(identity.profileId)) {
