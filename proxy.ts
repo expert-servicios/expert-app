@@ -84,5 +84,5 @@ export const config = {
   // redirect logic runs for it here; per-article access is enforced in
   // lib/utils/academy-enrollment.ts instead, since the public index article
   // must stay reachable without a session.
-  matcher: ['/ru/:path*', '/dashboard/:path*', '/admin/:path*', '/auth/login', '/auth/signup', '/docs/laboral/:path*']
+  matcher: ['/ru', '/ru/:path*', '/dashboard/:path*', '/admin/:path*', '/auth/login', '/auth/signup', '/docs/laboral/:path*']
 };
