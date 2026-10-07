@@ -410,7 +410,8 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
           .from('documents')
           .select('id, original_name, state, case_id, created_at, company_id')
           .eq('client_id', clientId)
-          .eq('state', 'pendiente');
+          .eq('state', 'pendiente')
+          .neq('kind', 'internal');
         if (companyId) query = query.eq('company_id', companyId);
         if (caseId) query = query.eq('case_id', caseId);
         const { data, error } = await query.order('created_at', { ascending: false }).limit(10);
@@ -620,6 +621,7 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
           .select('id,original_name,title,doc_type,kind,state,checklist_item_key,checklist_item_label,file_path,created_at,updated_at')
           .eq('case_id', caseId)
           .eq('client_id', clientId)
+          .neq('kind', 'internal')
           .is('replaced_by', null)
           .order('created_at', { ascending: false })
           .limit(1001);
@@ -665,7 +667,7 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
         const limit = Number(args.limit ?? 25);
         const [tasks, docs, emails] = await Promise.all([
           admin.from('internal_tasks').select('id,title,status,created_at,completed_at,updated_at').eq('case_id', caseId).eq('client_id', clientId).order('created_at', { ascending: false }).limit(limit),
-          admin.from('documents').select('id,original_name,title,state,created_at,updated_at').eq('case_id', caseId).eq('client_id', clientId).order('created_at', { ascending: false }).limit(limit),
+          admin.from('documents').select('id,original_name,title,state,created_at,updated_at').eq('case_id', caseId).eq('client_id', clientId).neq('kind', 'internal').order('created_at', { ascending: false }).limit(limit),
           admin.from('email_events').select('id,event_type,subject,status,created_at').contains('metadata', { case_id: caseId }).order('created_at', { ascending: false }).limit(limit),
         ]);
 

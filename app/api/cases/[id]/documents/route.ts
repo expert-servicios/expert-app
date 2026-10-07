@@ -34,6 +34,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       .from('documents')
       .select('id,original_name,state,created_at,file_path,uploaded_by_role,company_id,drive_file_id,mime_type,checklist_item_key,checklist_item_label,client_comment,replaced_by')
       .eq('case_id', id)
+      .neq('kind', 'internal')
       .order('created_at', { ascending: false });
 
     if (error) {

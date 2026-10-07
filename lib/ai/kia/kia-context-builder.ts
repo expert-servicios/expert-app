@@ -422,7 +422,7 @@ async function loadDocuments(
   companyId: string | null,
 ): Promise<KiaContext['documents']> {
   if (!clientId && !caseId && !companyId) return { pendingCount: 0, recent: [] };
-  let query = admin.from('documents').select('id, original_name, state, created_at').order('created_at', { ascending: false }).limit(5);
+  let query = admin.from('documents').select('id, original_name, state, created_at').neq('kind', 'internal').order('created_at', { ascending: false }).limit(5);
   if (caseId) query = query.eq('case_id', caseId);
   if (clientId) query = query.eq('client_id', clientId);
   if (companyId) query = query.eq('company_id', companyId);
