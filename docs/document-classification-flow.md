@@ -25,8 +25,10 @@ Documento entrante
    [HISTÓRICO]
    Registro en `files` / `user_files`
 
-   CONTRATO VIGENTE: objeto privado en `client-documents`
-   + registro canónico y ownership en `documents`
+   CONTRATO CANÓNICO DE EXPEDIENTE/ARCHIVO:
+   objeto privado en `client-documents`
+   + registro y ownership en `documents`
+   (WhatsApp histórico queda fuera de este contrato)
              │
              ▼
    lib/documents/document-router.ts
