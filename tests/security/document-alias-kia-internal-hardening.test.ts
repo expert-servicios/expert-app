@@ -24,6 +24,18 @@ describe('document alias and KIA internal-document hardening', () => {
     expect(route).toContain('.insert({');
   });
 
+  it('hides internal documents at RLS and route boundaries', () => {
+    const migration = source('supabase/migrations/20261007105246_hide_internal_documents_from_clients.sql');
+    const caseRoute = source('app/api/cases/[id]/documents/route.ts');
+    const downloadRoute = source('app/api/documents/[id]/download/route.ts');
+
+    expect(migration).toContain('kind <> \'internal\'');
+    expect(migration).toContain('to authenticated');
+    expect(caseRoute).toContain(".neq('kind', 'internal')");
+    expect(downloadRoute).toContain("doc.kind === 'internal'");
+    expect(downloadRoute).toContain("select('id, file_path, original_name, client_id, case_id, kind')");
+  });
+
   it('aligns tenant uploads with the canonical document contract', () => {
     const route = source('app/api/tenant/cases/[id]/documents/route.ts');
 
