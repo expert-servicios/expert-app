@@ -13,6 +13,8 @@ import {
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
+export const KIA_DOCUMENT_RECEIVED_EVENT_CONTRACT = { eventType: 'document.received' } as const;
+
 export interface KiaClientLedgerContext {
   subjectId: string;
   lifecycleStage: string;
