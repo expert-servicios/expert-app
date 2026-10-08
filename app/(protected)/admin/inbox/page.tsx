@@ -60,6 +60,13 @@ type TimelineItem = {
   metadata: Record<string, unknown>;
 };
 
+type ClientOption = { id: string; name: string | null; email: string; phone?: string | null };
+type ClientContext = {
+  profile: { id: string; full_name: string | null; email: string };
+  companies: Array<{ id: string; name: string | null; razon_social?: string | null; nombre_comercial?: string | null }>;
+  cases: Array<{ id: string; service: string; company_id: string | null; status?: string | null; state?: string | null }>;
+};
+
 type Payload = {
   generatedAt: string;
   summary: {
@@ -130,6 +137,13 @@ export default function AdminOperations360InboxPage() {
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [manualReply, setManualReply] = useState('');
+  const [reassignOpen, setReassignOpen] = useState(false);
+  const [clientQuery, setClientQuery] = useState('');
+  const [clientOptions, setClientOptions] = useState<ClientOption[]>([]);
+  const [reassignClientId, setReassignClientId] = useState('');
+  const [clientContext, setClientContext] = useState<ClientContext | null>(null);
+  const [reassignCompanyId, setReassignCompanyId] = useState('');
+  const [reassignCaseId, setReassignCaseId] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -301,6 +315,74 @@ export default function AdminOperations360InboxPage() {
       setActionBusy(false);
     }
   }, [actionBusy, load, loadTimeline, manualReply, selected]);
+
+
+  const loadClientOptions = useCallback(async (query: string) => {
+    const response = await fetch(`/api/admin/clients-quick?q=${encodeURIComponent(query)}`, { cache: 'no-store' });
+    const json = await response.json();
+    if (!response.ok) throw new Error(json.error ?? 'No se pudieron cargar clientes');
+    setClientOptions(json.clients ?? []);
+  }, []);
+
+  const chooseReassignClient = useCallback(async (clientId: string) => {
+    setReassignClientId(clientId);
+    setReassignCompanyId('');
+    setReassignCaseId('');
+    if (!clientId) {
+      setClientContext(null);
+      return;
+    }
+    const response = await fetch(`/api/admin/clientes/${clientId}`, { cache: 'no-store' });
+    const json = await response.json();
+    if (!response.ok) throw new Error(json.error ?? 'No se pudo cargar el contexto del cliente');
+    setClientContext(json);
+  }, []);
+
+  const openReassign = useCallback(async () => {
+    if (!selected) return;
+    setActionMessage('');
+    setReassignOpen(true);
+    const initialClientId = selected.clientId ?? '';
+    const initialQuery = selected.actor.email ?? selected.actor.name ?? '';
+    setClientQuery(initialQuery);
+    try {
+      await loadClientOptions(initialQuery);
+      if (initialClientId) {
+        await chooseReassignClient(initialClientId);
+        setReassignCompanyId(selected.companyId ?? '');
+        setReassignCaseId(selected.caseId ?? '');
+      }
+    } catch (reassignError) {
+      setActionMessage(reassignError instanceof Error ? reassignError.message : 'No se pudo preparar la reasignación');
+    }
+  }, [chooseReassignClient, loadClientOptions, selected]);
+
+  const saveReassignment = useCallback(async () => {
+    if (!selected || !reassignClientId || actionBusy) return;
+    setActionBusy(true);
+    setActionMessage('');
+    try {
+      const response = await fetch('/api/admin/inbox/reassign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          itemId: selected.id,
+          clientId: reassignClientId,
+          companyId: reassignCompanyId || null,
+          caseId: reassignCaseId || null,
+        }),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error ?? 'No se pudo reasignar el contexto');
+      setActionMessage('Contexto reasignado y auditado.');
+      setReassignOpen(false);
+      await load();
+    } catch (reassignError) {
+      setActionMessage(reassignError instanceof Error ? reassignError.message : 'No se pudo reasignar el contexto');
+    } finally {
+      setActionBusy(false);
+    }
+  }, [actionBusy, load, reassignCaseId, reassignClientId, reassignCompanyId, selected]);
 
   const stats = data?.summary ?? { total: 0, needs_action: 0, waiting_client: 0, kia_working: 0, resolved: 0, byChannel: {} };
 
@@ -562,6 +644,16 @@ export default function AdminOperations360InboxPage() {
                         >
                           {actionBusy ? 'Escalando…' : 'Escalar a mí'}
                         </button>
+                        {(selected.source === 'email_inbox_cache' || selected.source === 'kia_conversations') && (
+                          <button
+                            type="button"
+                            onClick={() => void openReassign()}
+                            disabled={actionBusy}
+                            className="rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-bold disabled:opacity-50"
+                          >
+                            Reasignar contexto
+                          </button>
+                        )}
                         {selected.clientId && (
                           <Link href={`/admin/clientes/${selected.clientId}/operaciones`} className="rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-bold">
                             Abrir cliente 360
@@ -614,6 +706,84 @@ export default function AdminOperations360InboxPage() {
                         <div><dt className="text-[#8a8177]">Expediente</dt><dd className="break-all font-mono text-[10px]">{selected.caseId || '—'}</dd></div>
                       </dl>
                     </section>
+
+                    {reassignOpen && (
+                      <section className="rounded-2xl border border-[#decda9] bg-[#fffaf0] p-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a6111]">Reasignar contexto</p>
+                          <button type="button" onClick={() => setReassignOpen(false)} className="text-[10px] font-bold text-[#6b7280]">Cerrar</button>
+                        </div>
+                        {selected.source === 'email_inbox_cache' ? (
+                          <div className="mt-3 space-y-2">
+                            <div className="flex gap-2">
+                              <input
+                                value={clientQuery}
+                                onChange={(event) => setClientQuery(event.target.value)}
+                                placeholder="Buscar cliente por nombre o email"
+                                className="min-w-0 flex-1 rounded-xl border border-[#d8cbb5] bg-white px-3 py-2 text-xs"
+                              />
+                              <button type="button" onClick={() => void loadClientOptions(clientQuery)} className="rounded-xl border border-[#d8cbb5] bg-white px-3 py-2 text-xs font-bold">Buscar</button>
+                            </div>
+                            <select
+                              value={reassignClientId}
+                              onChange={(event) => void chooseReassignClient(event.target.value)}
+                              className="w-full rounded-xl border border-[#d8cbb5] bg-white px-3 py-2 text-xs"
+                            >
+                              <option value="">Selecciona cliente</option>
+                              {clientOptions.map((client) => (
+                                <option key={client.id} value={client.id}>{client.name || client.email} · {client.email}</option>
+                              ))}
+                            </select>
+                          </div>
+                        ) : (
+                          <p className="mt-3 text-xs text-[#526171]">
+                            Identidad verificada: {selected.actor.name || selected.actor.email || selected.clientId}. Solo puedes cambiar empresa/expediente dentro de este cliente.
+                          </p>
+                        )}
+                        {clientContext && (
+                          <div className="mt-3 space-y-2">
+                            <select
+                              value={reassignCompanyId}
+                              onChange={(event) => {
+                                setReassignCompanyId(event.target.value);
+                                setReassignCaseId('');
+                              }}
+                              className="w-full rounded-xl border border-[#d8cbb5] bg-white px-3 py-2 text-xs"
+                            >
+                              <option value="">Sin empresa</option>
+                              {clientContext.companies.map((company) => (
+                                <option key={company.id} value={company.id}>{company.name || company.razon_social || company.nombre_comercial || company.id}</option>
+                              ))}
+                            </select>
+                            <select
+                              value={reassignCaseId}
+                              onChange={(event) => {
+                                const nextCaseId = event.target.value;
+                                setReassignCaseId(nextCaseId);
+                                const selectedCase = clientContext.cases.find((item) => item.id === nextCaseId);
+                                if (selectedCase?.company_id) setReassignCompanyId(selectedCase.company_id);
+                              }}
+                              className="w-full rounded-xl border border-[#d8cbb5] bg-white px-3 py-2 text-xs"
+                            >
+                              <option value="">Sin expediente</option>
+                              {clientContext.cases
+                                .filter((caseItem) => !reassignCompanyId || caseItem.company_id === reassignCompanyId)
+                                .map((caseItem) => (
+                                  <option key={caseItem.id} value={caseItem.id}>{caseItem.service} · {caseItem.id.slice(0, 8)}</option>
+                                ))}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => void saveReassignment()}
+                              disabled={actionBusy || !reassignClientId}
+                              className="w-full rounded-xl bg-[#07111d] px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
+                            >
+                              Guardar reasignación
+                            </button>
+                          </div>
+                        )}
+                      </section>
+                    )}
 
                     <section className="rounded-2xl border border-[#e2d7c7] bg-white p-4">
                       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a6111]">Siguiente trabajo</p>
