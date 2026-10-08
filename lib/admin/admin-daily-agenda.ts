@@ -36,7 +36,7 @@ export async function refreshAdminDailyAgenda(admin: AdminClient, now = new Date
   const [tasksRes, meetingsRes] = await Promise.all([
     admin
       .from('internal_tasks')
-      .select('id,title,priority,due_date,client_id,lead_id,case_id,company_id,status')
+      .select('id,title,priority,due_date,client_id,lead_id,case_id,company_id,status,metadata')
       .in('status', ['pendiente', 'en_progreso'])
       .not('due_date', 'is', null)
       .lte('due_date', date)
@@ -46,7 +46,7 @@ export async function refreshAdminDailyAgenda(admin: AdminClient, now = new Date
     admin
       .from('appointments')
       .select('id,name,email,service,confirmed_date,confirmed_time,meeting_url,status,client_id,company_id')
-      .eq('status', 'confirmed')
+      .in('status', ['confirmed', 'confirmada'])
       .eq('confirmed_date', date)
       .order('confirmed_time', { ascending: true })
       .limit(100),
@@ -55,7 +55,12 @@ export async function refreshAdminDailyAgenda(admin: AdminClient, now = new Date
   if (tasksRes.error) throw tasksRes.error;
   if (meetingsRes.error) throw meetingsRes.error;
 
-  const tasks = tasksRes.data ?? [];
+  const tasks = (tasksRes.data ?? []).filter((task) => {
+    const metadata = task.metadata && typeof task.metadata === 'object' && !Array.isArray(task.metadata)
+      ? task.metadata as Record<string, unknown>
+      : {};
+    return metadata.task_kind !== 'booking_meeting';
+  });
   const meetings = meetingsRes.data ?? [];
   const clientIds = [...new Set(tasks.map((task) => task.client_id).filter(Boolean))] as string[];
   const clientNames = new Map<string, string>();
