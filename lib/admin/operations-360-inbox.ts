@@ -768,7 +768,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
     contract: {
       mode: 'read_model',
       sources: ['email_inbox_cache', 'kia_conversations', 'kia_conversation_messages', 'leads'],
-      enrichments: ['profiles', 'cases', 'companies', 'internal_tasks', 'appointments'],
+      enrichments: ['profiles', 'cases', 'companies', 'internal_tasks', 'appointments', 'system_kv'],
       persistentEnvelope: 'kia_conversations',
     },
   };
