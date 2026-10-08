@@ -236,3 +236,41 @@ La herramienta `prepare_journal_entry_proposal` devuelve un resultado `pending_h
 - Lectura del diario con `startDate` y `endDate` explícitos; `has_more=true` impide marcar un mayor como completo.
 - Toda corrección histórica exige trazabilidad, justificación contable/fiscal y revisión humana.
 - Las pruebas de CI y los dos despliegues Vercel son obligatorios antes de fusionar.
+
+
+## Revisión de seguridad y plan de pruebas — 08/10/2026, PR #673
+
+### Estado implementado
+- PR #668: método de reconstrucción documental; PR #669: permisos de lectura Holded v2; PR #670: validación de propuestas; PR #671: consultas contables v2; PR #672: bandeja de propuestas y eventos de auditoría. Estas PR ya están fusionadas.
+- PR #673: servicio compartido \`saveKiaJournalInboxProposal\` para almacenar propuestas validadas desde la **API Admin autenticada** en \`kia_journal_proposals\` y recuperar duplicados por \`(company_id, fingerprint)\`.
+- Tras la segunda revisión, **KIA NO dispone de herramienta LLM \`save_journal_entry_proposal\`**. Una marca \`requiresHumanApproval\` en el catálogo no equivale a una confirmación inequívoca del usuario. El guardado debe permanecer fuera de la ejecución autónoma.
+- La herramienta \`prepare_journal_entry_proposal\` sigue siendo solo cálculo y validación; devuelve \`pending_human_review\`, sin persistencia ni llamadas Holded.
+- La API \`POST /api/admin/empresas/{id}/propuestas-contables\` exige sesión EXPERT y rol owner/admin, resuelve la empresa desde la ruta y valida que existe antes de guardar. Nunca toma el identificador de empresa desde un argumento de KIA.
+- La bandeja \`CompanyJournalProposalsPanel\` muestra propuestas y permite aprobar/rechazar internamente. **La interfaz actual no incorpora todavía un botón/formulario para guardar una propuesta generada por KIA**; el POST del Admin es el único ingreso disponible en esta etapa. No anunciar un flujo extremo a extremo hasta probarlo.
+- La aprobación interna actualiza \`status\` y genera evento de auditoría, **pero no escribe, modifica ni elimina asientos de Holded**.
+
+### Matriz de pruebas obligatorias
+
+| ID | Prueba | Criterio de aceptación |
+| --- | --- | --- |
+| T01 | Compilación, tipado y lint de PR #673 | CI y ambos despliegues de Vercel en verde |
+| T02 | Visibilidad de herramientas IA | \`save_journal_entry_proposal\` no existe en catálogo ni executor LLM; \`prepare_journal_entry_proposal\` permanece |
+| T03 | Control Admin y aislamiento por empresa | POST/PATCH/GET accesibles exclusivamente por sesión válida owner/admin y \`company_id\` resuelto por ruta/contexto |
+| T04 | Asiento equilibrado | Suma Debe = Haber en céntimos, fecha válida, al menos dos líneas y soporte documental |
+| T05 | Asiento inválido | Falta de fuentes, fecha errónea, descuadre o importes no válidos se rechazan sin insertar |
+| T06 | Idempotencia | Segundo guardado del mismo documento/empresa devuelve ID de propuesta existente sin duplicar eventos |
+| T07 | Revisión | Transición de pendiente a aprobado/rechazado crea evento; modificación posterior o segunda revisión se rechaza |
+| T08 | Seguridad de BD | RLS, privilegios no públicos, acceso exclusivo mediante API del servidor |
+| T09 | Reversión | Las pruebas transaccionales dejan tablas de propuestas y eventos con los conteos iniciales |
+| T10 | No efectos en Holded | No invocaciones POST/PATCH/DELETE de Holded; bloqueo contable de DGM permanece activo |
+| T11 | E2E con sesión Admin real | Crear, consultar y revisar propuesta ficticia desde EXPERT; pendiente hasta ejecutar con autenticación en interfaz |
+
+### Procedimiento para pruebas con datos sensibles
+1. Utilizar exclusivamente empresa y usuario Admin autorizados y propuesta ficticia sin documentos de clientes.
+2. En pruebas SQL usar transacción o subtransacción con rollback; comprobar que no quedan filas.
+3. Comprobar el bloqueo \`company_operational_controls.accounting_write_blocked\` para DGM antes y después.
+4. No mostrar credenciales, archivos privados ni datos personales de inquilinos en repositorio o logs.
+5. No fusionar PR con CI rojo, ni afirmar que la bandeja es operativa extremo a extremo sin T11.
+
+### Siguiente desarrollo
+Añadir a Company 360 una acción explícita \`Guardar propuesta preparada\` con confirmación visible por Admin (mostrando fecha, empresas, líneas, importe y justificantes). La acción debe llamar al POST autenticado, no a un tool autónomo de KIA, y permitir revisar/rechazar antes de una fase separada de contabilización supervisada.
