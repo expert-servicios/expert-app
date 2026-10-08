@@ -39,8 +39,11 @@ describe('Telegram Operations 360 canonical attachments', () => {
     expect(route).toContain("reason: 'telegram_document_case_required'");
     expect(route).toContain('ingestTelegramCaseDocument');
     expect(route).not.toContain("reason: 'unsupported_media'");
+    const documentBranch = route.indexOf("if (inbound.media?.kind === 'document' || inbound.media?.kind === 'photo')");
+    const documentDownload = route.indexOf('const file = await downloadTelegramMedia(inbound.media)', documentBranch);
     expect(route.indexOf('caseContext = await loadTelegramCaseContext'))
-      .toBeLessThan(route.indexOf('const file = await downloadTelegramMedia(inbound.media)'));
+      .toBeLessThan(documentBranch);
+    expect(documentBranch).toBeLessThan(documentDownload);
   });
 
   it('keeps unverified prospects away from document ingestion', () => {
