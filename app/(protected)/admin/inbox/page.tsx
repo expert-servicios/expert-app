@@ -42,6 +42,21 @@ type InboxItem = {
   sourceHref: string;
   taskCount: number;
   nextMeetingAt: string | null;
+  ownerId: string | null;
+  ownerName: string | null;
+  slaDueAt: string | null;
+  controlMode: 'kia' | 'manual' | null;
+  metadata: Record<string, unknown>;
+};
+
+
+type TimelineItem = {
+  id: string;
+  kind: 'message' | 'audit';
+  role: string;
+  text: string;
+  intent: string | null;
+  createdAt: string;
   metadata: Record<string, unknown>;
 };
 
@@ -109,6 +124,9 @@ export default function AdminOperations360InboxPage() {
   const [error, setError] = useState('');
   const [actionBusy, setActionBusy] = useState(false);
   const [actionMessage, setActionMessage] = useState('');
+  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+  const [manualReply, setManualReply] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -145,6 +163,56 @@ export default function AdminOperations360InboxPage() {
     [data, selectedId],
   );
 
+  const loadTimeline = useCallback(async () => {
+    if (!selected) {
+      setTimeline([]);
+      return;
+    }
+    setTimelineLoading(true);
+    try {
+      if (selected.source === 'kia_conversations' && selected.threadId) {
+        const response = await fetch(`/api/admin/inbox/timeline?conversationId=${encodeURIComponent(selected.threadId)}`, { cache: 'no-store' });
+        const json = await response.json();
+        if (!response.ok) throw new Error(json.error ?? 'No se pudo cargar el timeline');
+        setTimeline(json.timeline ?? []);
+        return;
+      }
+      if (selected.source === 'email_inbox_cache' && selected.threadId) {
+        const provider = typeof selected.metadata.provider === 'string' ? selected.metadata.provider : 'gmail';
+        const response = await fetch(`/api/admin/correo?action=conversation&provider=${encodeURIComponent(provider)}&conversationId=${encodeURIComponent(selected.threadId)}`, { cache: 'no-store' });
+        const json = await response.json();
+        if (!response.ok) throw new Error(json.error ?? 'No se pudo cargar el hilo');
+        setTimeline((json.messages ?? []).map((message: Record<string, unknown>) => ({
+          id: `email:${String(message.id ?? crypto.randomUUID())}`,
+          kind: 'message' as const,
+          role: String(message.fromEmail ?? '') === selected.actor.email ? 'user' : 'professional',
+          text: String(message.body ?? ''),
+          intent: null,
+          createdAt: String(message.date ?? selected.lastActivityAt),
+          metadata: {},
+        })));
+        return;
+      }
+      setTimeline([]);
+    } catch (timelineError) {
+      setTimeline([{
+        id: 'timeline-error',
+        kind: 'audit',
+        role: 'system',
+        text: timelineError instanceof Error ? timelineError.message : 'No se pudo cargar el timeline',
+        intent: null,
+        createdAt: new Date().toISOString(),
+        metadata: {},
+      }]);
+    } finally {
+      setTimelineLoading(false);
+    }
+  }, [selected]);
+
+  useEffect(() => {
+    void loadTimeline();
+  }, [loadTimeline]);
+
   const escalateSelected = useCallback(async () => {
     if (!selected || actionBusy) return;
     setActionBusy(true);
@@ -165,6 +233,50 @@ export default function AdminOperations360InboxPage() {
       setActionBusy(false);
     }
   }, [actionBusy, load, selected]);
+
+
+  const changeControlMode = useCallback(async (mode: 'kia' | 'manual') => {
+    if (!selected?.threadId || selected.source !== 'kia_conversations' || actionBusy) return;
+    setActionBusy(true);
+    setActionMessage('');
+    try {
+      const response = await fetch('/api/admin/inbox/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId: selected.threadId, mode }),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error ?? 'No se pudo cambiar el control');
+      setActionMessage(mode === 'manual' ? 'Control manual activado.' : 'Conversación devuelta a KIA.');
+      await Promise.all([load(), loadTimeline()]);
+    } catch (controlError) {
+      setActionMessage(controlError instanceof Error ? controlError.message : 'No se pudo cambiar el control');
+    } finally {
+      setActionBusy(false);
+    }
+  }, [actionBusy, load, loadTimeline, selected]);
+
+  const sendManualTelegramReply = useCallback(async () => {
+    if (!selected?.threadId || selected.channel !== 'telegram' || !manualReply.trim() || actionBusy) return;
+    setActionBusy(true);
+    setActionMessage('');
+    try {
+      const response = await fetch('/api/admin/inbox/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId: selected.threadId, text: manualReply.trim() }),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error ?? 'No se pudo enviar la respuesta');
+      setManualReply('');
+      setActionMessage('Respuesta Telegram enviada y auditada.');
+      await Promise.all([load(), loadTimeline()]);
+    } catch (replyError) {
+      setActionMessage(replyError instanceof Error ? replyError.message : 'No se pudo enviar la respuesta');
+    } finally {
+      setActionBusy(false);
+    }
+  }, [actionBusy, load, loadTimeline, manualReply, selected]);
 
   const stats = data?.summary ?? { total: 0, needs_action: 0, kia_working: 0, resolved: 0, byChannel: {} };
 
@@ -322,9 +434,29 @@ export default function AdminOperations360InboxPage() {
                 <div className="grid flex-1 gap-4 overflow-y-auto p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_300px]">
                   <div className="space-y-4">
                     <section className="rounded-2xl border border-[#e2d7c7] bg-[#fffdf8] p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a6111]">Última actividad</p>
-                      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#29384a]">{selected.preview}</p>
-                      <p className="mt-3 text-[11px] text-[#8a8177]">{formatWhen(selected.lastActivityAt)}</p>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a6111]">Timeline</p>
+                        <button type="button" onClick={() => void loadTimeline()} className="text-[10px] font-bold text-[#8a6111]">Actualizar hilo</button>
+                      </div>
+                      {timelineLoading ? (
+                        <p className="mt-3 text-xs text-[#71808e]">Cargando conversación…</p>
+                      ) : timeline.length ? (
+                        <div className="mt-3 space-y-3">
+                          {timeline.map((entry) => (
+                            <div key={entry.id} className={`rounded-xl border p-3 ${entry.kind === 'audit' ? 'border-slate-200 bg-slate-50' : entry.role === 'user' ? 'border-[#ead9b8] bg-white' : 'border-sky-100 bg-sky-50/40'}`}>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-[10px] font-bold uppercase tracking-wide text-[#6b7280]">
+                                  {entry.kind === 'audit' ? 'Audit' : entry.role === 'user' ? 'Cliente' : entry.role === 'assistant' ? 'KIA' : 'Profesional'}
+                                </span>
+                                <span className="text-[9px] text-[#9a8f81]">{formatWhen(entry.createdAt)}</span>
+                              </div>
+                              <p className="mt-1 whitespace-pre-wrap text-sm leading-5 text-[#29384a]">{entry.text}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-xs text-[#71808e]">Sin timeline persistido para esta entrada.</p>
+                      )}
                     </section>
 
                     <section className="rounded-2xl border border-[#dfe5eb] bg-white p-4">
@@ -340,14 +472,41 @@ export default function AdminOperations360InboxPage() {
                             : 'La entrada no tiene acción inmediata pendiente.'}
                       </p>
                       {selected.kiaState && <p className="mt-2 text-xs text-[#8a8177]">Estado técnico: {selected.kiaState}</p>}
+                      {selected.controlMode && (
+                        <p className="mt-2 text-xs font-semibold text-[#526171]">
+                          Control: {selected.controlMode === 'manual' ? 'Humano' : 'KIA'}
+                        </p>
+                      )}
                     </section>
 
                     <section className="rounded-2xl border border-[#e2d7c7] bg-white p-4">
                       <h3 className="font-semibold">Acciones</h3>
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <Link href={selected.sourceHref} className="rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-bold">
-                          Responder manualmente
-                        </Link>
+                        {selected.source === 'kia_conversations' && selected.controlMode !== 'manual' && (
+                          <button
+                            type="button"
+                            onClick={() => void changeControlMode('manual')}
+                            disabled={actionBusy}
+                            className="rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-bold disabled:opacity-50"
+                          >
+                            Tomar yo
+                          </button>
+                        )}
+                        {selected.source === 'kia_conversations' && selected.controlMode === 'manual' && (
+                          <button
+                            type="button"
+                            onClick={() => void changeControlMode('kia')}
+                            disabled={actionBusy}
+                            className="rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-bold disabled:opacity-50"
+                          >
+                            Dejar a KIA
+                          </button>
+                        )}
+                        {selected.source === 'email_inbox_cache' && (
+                          <Link href={selected.sourceHref} className="rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-bold">
+                            Responder en Correo 360
+                          </Link>
+                        )}
                         <button
                           type="button"
                           onClick={() => void escalateSelected()}
@@ -372,6 +531,26 @@ export default function AdminOperations360InboxPage() {
                           </Link>
                         )}
                       </div>
+                      {selected.channel === 'telegram' && selected.controlMode === 'manual' && (
+                        <div className="mt-3 space-y-2">
+                          <textarea
+                            value={manualReply}
+                            onChange={(event) => setManualReply(event.target.value)}
+                            rows={3}
+                            maxLength={4000}
+                            placeholder="Respuesta manual a Telegram…"
+                            className="w-full rounded-xl border border-[#d8cbb5] p-3 text-sm outline-none focus:border-[#c88b25]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => void sendManualTelegramReply()}
+                            disabled={actionBusy || !manualReply.trim()}
+                            className="rounded-xl bg-[#07111d] px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
+                          >
+                            Enviar por Telegram
+                          </button>
+                        </div>
+                      )}
                       {actionMessage && <p className="mt-3 text-xs text-[#526171]">{actionMessage}</p>}
                     </section>
                   </div>
@@ -393,6 +572,8 @@ export default function AdminOperations360InboxPage() {
                       <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8a6111]">Siguiente trabajo</p>
                       <div className="mt-3 space-y-2 text-xs">
                         <p><span className="font-bold">{selected.taskCount}</span> tarea(s) abiertas asociadas.</p>
+                        <p>Owner: <span className="font-semibold">{selected.ownerName || selected.ownerId || 'Sin asignar'}</span></p>
+                        <p>SLA: <span className="font-semibold">{selected.slaDueAt ? formatWhen(selected.slaDueAt) : 'Sin vencimiento'}</span></p>
                         <p>
                           {selected.nextMeetingAt
                             ? `Próxima reunión: ${formatWhen(selected.nextMeetingAt)}`

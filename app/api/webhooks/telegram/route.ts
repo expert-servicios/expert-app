@@ -33,7 +33,7 @@ import {
 import { executeKiaToolCall } from '@/lib/ai/kia/kia-tool-executor';
 import { resolveKiaQuickActionCase } from '@/lib/ai/kia/kia-quick-action-case';
 import { recordKiaVisibleReply } from '@/lib/ai/kia/kia-visible-decision-log';
-import { persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
+import { appendKiaConversationMessage, getKiaConversationControlMode, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import { resolveTelegramContentOrigin } from '@/lib/marketing/telegram-content-origin-server';
 import { transcribeKiaAudio } from '@/lib/ai/kia/kia-audio';
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
@@ -599,7 +599,7 @@ async function handleTelegramUpdate(request: NextRequest) {
       if (!caseContext && !genericTelegramConversationId) {
         const genericQuery = admin
           .from('kia_conversations')
-          .select('id')
+          .select('id,metadata')
           .eq('profile_id', identity.profileId)
           .eq('channel', 'telegram')
           .eq('status', 'active')
@@ -622,6 +622,47 @@ async function handleTelegramUpdate(request: NextRequest) {
       return NextResponse.json({ ok: true, ignored: true, reason: 'invalid_case_context' });
     }
   }
+  const controlledConversationId = caseContext?.stored?.conversation.id ?? genericTelegramConversationId ?? null;
+  if (controlledConversationId) {
+    const { data: controlledConversation, error: controlError } = await admin
+      .from('kia_conversations')
+      .select('id,metadata,status')
+      .eq('id', controlledConversationId)
+      .eq('profile_id', identity.profileId)
+      .maybeSingle();
+    if (controlError) {
+      console.error('[Telegram KIA] control lookup failed:', controlError.message);
+      return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'conversation_control_unavailable' });
+    }
+    if (controlledConversation?.status === 'active' && getKiaConversationControlMode(controlledConversation.metadata) === 'manual') {
+      await appendKiaConversationMessage({
+        admin,
+        conversationId: controlledConversation.id,
+        role: 'user',
+        body: effectiveText,
+        metadata: {
+          telegram_chat_id: inbound.chatId,
+          telegram_update_id: inbound.updateId,
+          operations360_manual_queue: true,
+        },
+      });
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'Tu mensaje ha quedado registrado para atención humana. No voy a generar una respuesta automática mientras esta conversación esté en modo manual.',
+      });
+      await notifyKiaAdminEscalation({
+        title: 'Telegram en modo manual',
+        summary: `Nuevo mensaje pendiente de atención humana · ${inbound.username ? '@' + inbound.username : inbound.chatId}`,
+        actionTaken: 'Se ha guardado el mensaje sin generar respuesta automática.',
+        interventionNeeded: 'Revisar la conversación y responder desde Operations 360.',
+        url: '/admin/inbox',
+        eventRef: `telegram-manual:${controlledConversation.id}:${inbound.updateId}`,
+        priority: 'high',
+      }).catch(() => {});
+      return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'manual_takeover' });
+    }
+  }
+
   const companyId = caseContext ? caseContext.companyId : profile?.active_company_id ?? null;
   const profileLocale = profile?.preferred_language === 'ru' ? 'ru' : 'es';
   const responseLocale = resolveKiaLocale({ latestMessage: effectiveText, preferredLanguage: profileLocale });

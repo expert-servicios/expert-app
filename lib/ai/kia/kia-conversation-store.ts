@@ -3,6 +3,99 @@ import { recordClientRegistryEvent } from './kia-client-ledger';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
+
+export type KiaConversationControlMode = 'kia' | 'manual';
+
+function asMetadata(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+export function getKiaConversationControlMode(metadata: unknown): KiaConversationControlMode {
+  return asMetadata(metadata).operations360_mode === 'manual' ? 'manual' : 'kia';
+}
+
+export async function setKiaConversationControl(input: {
+  admin: AdminClient;
+  conversationId: string;
+  mode: KiaConversationControlMode;
+  actorId: string;
+}) {
+  const { data: conversation, error } = await input.admin
+    .from('kia_conversations')
+    .select('id,metadata,status')
+    .eq('id', input.conversationId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!conversation || conversation.status !== 'active') throw new Error('conversation_not_active');
+
+  const now = new Date().toISOString();
+  const metadata = {
+    ...asMetadata(conversation.metadata),
+    operations360_mode: input.mode,
+    operations360_owner_id: input.mode === 'manual' ? input.actorId : null,
+    operations360_controlled_at: now,
+  };
+
+  const { error: updateError } = await input.admin
+    .from('kia_conversations')
+    .update({ metadata, updated_at: now })
+    .eq('id', input.conversationId)
+    .eq('status', 'active');
+  if (updateError) throw updateError;
+
+  return {
+    mode: input.mode,
+    ownerId: input.mode === 'manual' ? input.actorId : null,
+    controlledAt: now,
+  };
+}
+
+export async function appendKiaConversationMessage(input: {
+  admin: AdminClient;
+  conversationId: string;
+  role: 'user' | 'assistant' | 'professional' | 'system';
+  body: string;
+  intent?: string | null;
+  metadata?: Record<string, unknown>;
+}) {
+  const { data: conversation, error } = await input.admin
+    .from('kia_conversations')
+    .select('id,tenant_id,profile_id,channel,status')
+    .eq('id', input.conversationId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!conversation || conversation.status !== 'active') throw new Error('conversation_not_active');
+
+  const now = new Date().toISOString();
+  const { data: message, error: insertError } = await input.admin
+    .from('kia_conversation_messages')
+    .insert({
+      conversation_id: conversation.id,
+      tenant_id: conversation.tenant_id ?? null,
+      profile_id: conversation.profile_id,
+      channel: conversation.channel,
+      role: input.role,
+      body: input.body,
+      intent: input.intent ?? null,
+      metadata: input.metadata ?? {},
+    })
+    .select('id,created_at')
+    .single();
+  if (insertError) throw insertError;
+
+  const { error: updateError } = await input.admin
+    .from('kia_conversations')
+    .update({ last_message_at: now, updated_at: now })
+    .eq('id', conversation.id);
+  if (updateError) throw updateError;
+
+  return message;
+}
+
 export async function loadKiaConversation(input: {
   admin: AdminClient;
   conversationId: string;

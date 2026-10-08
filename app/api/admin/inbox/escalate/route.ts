@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminClient } from '@/lib/auth/require-admin';
+import { createServerSupabaseClient } from '@/lib/integrations/supabase';
 import { loadOperations360Inbox } from '@/lib/admin/operations-360-inbox';
 import { notifyAdmins } from '@/lib/integrations/push';
 
@@ -12,6 +13,9 @@ export async function POST(request: NextRequest) {
   try {
     const admin = await requireAdminClient(request);
     if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    const supabase = createServerSupabaseClient(request);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
     const body = await request.json().catch(() => ({}));
     const itemId = typeof body.itemId === 'string' ? body.itemId.trim().slice(0, 300) : '';
@@ -35,6 +39,8 @@ export async function POST(request: NextRequest) {
         ].filter(Boolean).join('\n').slice(0, 1800),
         status: 'pendiente',
         priority: 'alta',
+        assigned_to: user.id,
+        due_date: new Date().toISOString().slice(0, 10),
         source: 'kia',
         lead_id: item.leadId,
         client_id: item.clientId,
@@ -55,6 +61,19 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error || !task?.id) throw error ?? new Error('operations360_review_task_not_created');
+
+    const { error: auditError } = await admin.from('audit_logs').insert({
+      actor_id: user.id,
+      action: 'operations360.escalated_to_admin',
+      entity: 'internal_tasks',
+      entity_id: task.id,
+      metadata: {
+        inbox_item_id: item.id,
+        channel: item.channel,
+        source_key: key,
+      },
+    });
+    if (auditError) throw auditError;
 
     await notifyAdmins({
       title: 'Operations 360 requiere intervención',
