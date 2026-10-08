@@ -68,6 +68,8 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_holded_invoices:                policy('R1', 'read',  'holded_read'),
   get_holded_contacts:                policy('R1', 'read',  'holded_read'),
   get_holded_bank_balance:            policy('R1', 'read',  'holded_read'),
+  get_holded_chart_of_accounts:       { ...policy('R1', 'read', 'holded_read'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
+  get_holded_ledger_entries:          { ...policy('R1', 'read', 'holded_read'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
   get_accounts_receivable:            policy('R1', 'read',  'accounting_read'),
   get_accounts_payable:               policy('R1', 'read',  'accounting_read'),
   get_overdue_invoices:               policy('R1', 'read',  'accounting_read'),
