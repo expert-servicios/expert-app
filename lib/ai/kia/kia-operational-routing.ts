@@ -15,6 +15,10 @@ export const KIA_OPERATIONAL_CATEGORIES = [
 
 export type KiaOperationalCategory = (typeof KIA_OPERATIONAL_CATEGORIES)[number];
 
+export function isKiaOperationalCategory(value: unknown): value is KiaOperationalCategory {
+  return typeof value === 'string' && (KIA_OPERATIONAL_CATEGORIES as readonly string[]).includes(value);
+}
+
 export type KiaOperationalRoutingInput = {
   skillId?: string | null;
   subAgentId?: string | null;
