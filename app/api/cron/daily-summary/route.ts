@@ -6,7 +6,7 @@ import { notifyAdminsTelegram } from '@/lib/integrations/telegram';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { verifyCronRequest } from '@/lib/security/cron';
 import { getAdminOwnerEmail, getAdminOwnerRecipients } from '@/lib/admin/admin-owner';
-import { upsertAdminAgendaEventSA } from '@/lib/integrations/google-calendar';
+import { refreshAdminDailyAgenda } from '@/lib/admin/admin-daily-agenda';
 
 // Vercel Cron: runs daily at 08:30 UTC (30 min after fiscal-reminders)
 // Protected by CRON_SECRET header
@@ -278,153 +278,11 @@ export async function GET(request: NextRequest) {
     }).catch(() => {});
   }
 
-  // ── 10. Publish or refresh today's operational agenda in Google Calendar ───
+  // ── 10. Reconcile today's operational agenda in Google Calendar ────────────
   if (!todayApptsError && !dueTasksError) {
-    const agendaKey = `admin_agenda_event:${madridDate}`;
-    const nextDate = new Date(`${madridDate}T12:00:00Z`);
-    nextDate.setUTCDate(nextDate.getUTCDate() + 1);
-    const nextMadridDate = nextDate.toISOString().slice(0, 10);
-    const taskLines = dueTaskRows.slice(0, 30).map((task) =>
-      `• [${task.priority ?? 'media'}] ${task.title} — ${task.client}`
-    );
-    const meetingLines = (todayAppts ?? []).slice(0, 20).map((appt) =>
-      `• ${appt.confirmed_time ?? '—'} · ${appt.service ?? 'Reunión'} · ${appt.name ?? appt.email ?? 'Contacto'}`
-    );
-    const summary = `KIA · Agenda EXPERT · ${dueTaskRows.length} tareas · ${todayAppts?.length ?? 0} reuniones`;
-    const description = [
-      `Agenda operativa EXPERT · ${today}`,
-      '',
-      `Tareas de hoy o vencidas: ${dueTaskRows.length}`,
-      ...(taskLines.length ? taskLines : ['• Sin tareas vencidas o con vencimiento hoy.']),
-      '',
-      `Reuniones de hoy: ${todayAppts?.length ?? 0}`,
-      ...(meetingLines.length ? meetingLines : ['• Sin reuniones confirmadas hoy.']),
-      '',
-      'Panel de tareas: https://expertconsulting.es/admin/tareas',
-      'KIA mantiene esta agenda como resumen operativo; el detalle canónico permanece en EXPERT.',
-    ].join('\n');
-
-    const syncAgendaEvent = async (eventId?: string | null) => {
-      const syncedEventId = await upsertAdminAgendaEventSA({
-        eventId,
-        summary,
-        description,
-        startDate: madridDate,
-        endDate: nextMadridDate,
-        attendeeEmail: getAdminOwnerEmail(),
-      });
-      const nowIso = new Date().toISOString();
-      const { error } = await admin.from('system_kv').upsert({
-        key: agendaKey,
-        value: {
-          status: 'ready',
-          event_id: syncedEventId,
-          date: madridDate,
-          tasks: dueTaskRows.length,
-          meetings: todayAppts?.length ?? 0,
-          refreshed_at: nowIso,
-        },
-        updated_at: nowIso,
-      }, { onConflict: 'key' });
-      if (error) throw error;
-      return syncedEventId;
-    };
-
-    const { data: agendaMarker, error: markerLookupError } = await admin
-      .from('system_kv')
-      .select('value')
-      .eq('key', agendaKey)
-      .maybeSingle();
-    if (markerLookupError) {
-      console.error('[daily-summary] agenda marker lookup failed:', markerLookupError.message);
-    }
-
-    const markerValue = agendaMarker?.value && typeof agendaMarker.value === 'object' && !Array.isArray(agendaMarker.value)
-      ? agendaMarker.value as Record<string, unknown>
-      : {};
-    const existingEventId = markerValue.status === 'ready' && typeof markerValue.event_id === 'string'
-      ? markerValue.event_id
-      : null;
-
-    if (existingEventId) {
-      await syncAgendaEvent(existingEventId).catch((agendaError) => {
-        console.error('[daily-summary] Google Calendar agenda refresh failed:', agendaError);
-      });
-    } else {
-      const reservationId = crypto.randomUUID();
-      const { error: reserveAgendaError } = await admin
-        .from('system_kv')
-        .insert({
-          key: agendaKey,
-          value: {
-            status: 'creating',
-            reservation_id: reservationId,
-            date: madridDate,
-            created_at: new Date().toISOString(),
-          },
-          updated_at: new Date().toISOString(),
-        });
-
-      if (!reserveAgendaError) {
-        try {
-          const eventId = await upsertAdminAgendaEventSA({
-            summary,
-            description,
-            startDate: madridDate,
-            endDate: nextMadridDate,
-            attendeeEmail: getAdminOwnerEmail(),
-          });
-          const nowIso = new Date().toISOString();
-          const { error: finalizeAgendaError } = await admin
-            .from('system_kv')
-            .update({
-              value: {
-                status: 'ready',
-                reservation_id: reservationId,
-                event_id: eventId,
-                date: madridDate,
-                tasks: dueTaskRows.length,
-                meetings: todayAppts?.length ?? 0,
-                created_at: nowIso,
-                refreshed_at: nowIso,
-              },
-              updated_at: nowIso,
-            })
-            .eq('key', agendaKey)
-            .contains('value', { reservation_id: reservationId });
-          if (finalizeAgendaError) throw finalizeAgendaError;
-        } catch (agendaError) {
-          const { error: releaseAgendaError } = await admin
-            .from('system_kv')
-            .delete()
-            .eq('key', agendaKey)
-            .contains('value', { reservation_id: reservationId });
-          if (releaseAgendaError) {
-            console.error('[daily-summary] agenda reservation release failed:', releaseAgendaError.message);
-          }
-          console.error('[daily-summary] Google Calendar agenda event failed:', agendaError);
-        }
-      } else if (reserveAgendaError.code === '23505') {
-        const { data: concurrentMarker } = await admin
-          .from('system_kv')
-          .select('value')
-          .eq('key', agendaKey)
-          .maybeSingle();
-        const concurrentValue = concurrentMarker?.value && typeof concurrentMarker.value === 'object' && !Array.isArray(concurrentMarker.value)
-          ? concurrentMarker.value as Record<string, unknown>
-          : {};
-        const concurrentEventId = concurrentValue.status === 'ready' && typeof concurrentValue.event_id === 'string'
-          ? concurrentValue.event_id
-          : null;
-        if (concurrentEventId) {
-          await syncAgendaEvent(concurrentEventId).catch((agendaError) => {
-            console.error('[daily-summary] concurrent agenda refresh failed:', agendaError);
-          });
-        }
-      } else {
-        console.error('[daily-summary] agenda reservation failed:', reserveAgendaError.message);
-      }
-    }
+    await refreshAdminDailyAgenda(admin, now).catch((agendaError) => {
+      console.error('[daily-summary] Google Calendar agenda reconciliation failed:', agendaError);
+    });
   } else {
     console.error('[daily-summary] agenda skipped because task or meeting lookup failed');
   }
