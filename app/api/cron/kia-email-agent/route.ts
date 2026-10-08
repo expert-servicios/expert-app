@@ -16,6 +16,7 @@ import { notifyAdmins } from '@/lib/integrations/push';
 import { getKiaProviderOrder, isKiaGatewayConfigured } from '@/lib/ai/kia/kia-provider-router';
 import { classifyInboundEnvelope, humanPriority } from '@/lib/email/kia-inbox-classifier';
 import { notifyKiaAdminEscalation } from '@/lib/admin/kia-admin-escalation';
+import { resolveKiaOperationalCategory, type KiaOperationalCategory } from '@/lib/ai/kia/kia-operational-routing';
 import { getEmailManualLock } from '@/lib/admin/operations-360-email-control';
 
 export const maxDuration = 60;
@@ -344,6 +345,7 @@ async function createEmailRequestTask(input: {
   companyId: string | null;
   nextAction: string;
   actionSummary: string;
+  operationalCategory: KiaOperationalCategory;
 }) {
   if (input.nextAction !== 'create_task') return null;
 
@@ -701,6 +703,11 @@ export async function GET(request: NextRequest) {
       });
 
       if (envelope.kind !== 'human') {
+        const envelopeOperationalCategory = resolveKiaOperationalCategory({
+          envelopeKind: envelope.kind,
+          recipientPurpose: envelope.recipientPurpose,
+          requiresManualReview: envelope.requiresAttention,
+        });
         if (envelope.requiresAttention) {
           const eventRef = `gmail:${latest.id}:operational-escalation`;
           const claim = await reserveEscalationClaim(admin, eventRef);
@@ -736,6 +743,7 @@ export async function GET(request: NextRequest) {
             last_message_at: latest.date,
             evaluated_at: new Date().toISOString(),
             classification: envelope,
+            operational_category: envelopeOperationalCategory,
             block_reason: 'non_human',
             sent: false,
           },
@@ -915,6 +923,16 @@ export async function GET(request: NextRequest) {
         },
         policyToolNames: [...allowedTools],
       });
+      const operationalCategory = resolveKiaOperationalCategory({
+        skillId: result.executionTrace.skillId,
+        subAgentId: result.executionTrace.preferredSubAgentId,
+        detectedIntent: result.executionTrace.detectedIntent ?? result.decision.intent,
+        serviceSlug: identity.serviceSlug,
+        recipientPurpose: envelope.recipientPurpose,
+        envelopeKind: envelope.kind,
+        requiresManualReview: result.decision.requiresManualReview || result.decision.nextAction === 'needs_review',
+      });
+
       const taskEligible = (identity.clientId || identity.leadId)
         && !result.executionTrace.lateClassificationFailClosed
         && !identity.ambiguousCase
@@ -935,6 +953,7 @@ export async function GET(request: NextRequest) {
             companyId: identity.companyId,
             nextAction: result.decision.nextAction,
             actionSummary: result.decision.decisionSummary,
+            operationalCategory,
           }).catch((taskError) => {
             console.error('[kia-email-agent] request task:', taskError);
             return null;
@@ -997,6 +1016,10 @@ export async function GET(request: NextRequest) {
           case_id: identity.caseId,
           company_id: identity.companyId,
           service_slug: identity.serviceSlug,
+          operational_category: operationalCategory,
+          skill_id: result.executionTrace.skillId,
+          sub_agent_id: result.executionTrace.preferredSubAgentId,
+          detected_intent: result.executionTrace.detectedIntent,
         };
         const contextual = await maybeAppendKiaContextualCta({
           admin,
@@ -1175,6 +1198,10 @@ export async function GET(request: NextRequest) {
           block_reason: blockReason,
           sent: sentNow,
           inbox_classification: envelope,
+          operational_category: operationalCategory,
+          skill_id: result.executionTrace.skillId,
+          sub_agent_id: result.executionTrace.preferredSubAgentId,
+          detected_intent: result.executionTrace.detectedIntent,
           priority,
         },
         updated_at: new Date().toISOString(),
