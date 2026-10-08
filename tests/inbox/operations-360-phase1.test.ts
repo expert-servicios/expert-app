@@ -58,7 +58,9 @@ describe('Operations 360 Inbox phase 1', () => {
     expect(page).toContain('Inbox unificado');
     expect(page).toContain('Necesita acción');
     expect(page).toContain('KIA trabajando');
-    expect(page).toContain('Responder manualmente');
+    expect(page).toContain('Responder en Correo 360');
+    expect(page).toContain('Tomar yo');
+    expect(page).toContain('Dejar a KIA');
     expect(page).toContain('Escalar a mí');
     expect(page).toContain('selected.sourceHref');
     expect(sidebar).toContain('{ label: "Inbox 360", href: "/admin/inbox" }');
