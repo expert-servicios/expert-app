@@ -16,6 +16,7 @@ import { notifyAdmins } from '@/lib/integrations/push';
 import { getKiaProviderOrder, isKiaGatewayConfigured } from '@/lib/ai/kia/kia-provider-router';
 import { classifyInboundEnvelope, humanPriority } from '@/lib/email/kia-inbox-classifier';
 import { notifyKiaAdminEscalation } from '@/lib/admin/kia-admin-escalation';
+import { getEmailManualLock } from '@/lib/admin/operations-360-email-control';
 
 export const maxDuration = 60;
 
@@ -795,6 +796,43 @@ export async function GET(request: NextRequest) {
         console.error('[kia-email-agent] inbound audit:', auditError);
         return false;
       });
+
+      const manualLock = await getEmailManualLock(admin, row.thread_id);
+      if (manualLock) {
+        await admin.from('system_kv').upsert({
+          key,
+          value: {
+            ...previous,
+            mode: 'manual',
+            last_message_id: latest.id,
+            last_message_at: latest.date,
+            evaluated_at: new Date().toISOString(),
+            client_id: identity.clientId,
+            lead_id: identity.leadId,
+            case_id: identity.caseId,
+            company_id: identity.companyId,
+            block_reason: 'manual_takeover',
+            sent: false,
+            manual_lock_task_id: manualLock.id,
+          },
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'key' });
+
+        if (firstInboundProcessing) {
+          await notifyKiaAdminEscalation({
+            title: latest.subject || 'Correo en control manual',
+            summary: `${senderDisplayName(latest)} · nuevo mensaje en hilo tomado por Admin`,
+            actionTaken: 'registró el correo y mantuvo bloqueada la respuesta automática de KIA',
+            interventionNeeded: 'responder desde Correo 360 o devolver el hilo a KIA',
+            url: adminThreadUrl(row.thread_id),
+            eventRef: `gmail:${latest.id}:manual-takeover`,
+            priority: 'high',
+          }).catch((notifyError) => console.error('[kia-email-agent] manual takeover alert:', notifyError));
+        }
+
+        skipped++;
+        continue;
+      }
 
       if (firstInboundProcessing && !wasKnownContact && identity.leadId) {
         await notifyAdmins({
