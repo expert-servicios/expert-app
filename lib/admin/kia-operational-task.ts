@@ -45,6 +45,7 @@ function madridDate(now = new Date()) {
 export async function materializeKiaOperationalTask(input: MaterializeKiaOperationalTaskInput) {
   if (input.nextAction !== 'create_task') return null;
   if (input.requiresManualReview || input.confidence < 0.75) return null;
+  if (input.operationalCategory === 'manual_review' || input.operationalCategory === 'non_human') return null;
 
   const scope = input.caseId ?? input.leadId ?? input.clientId ?? input.companyId ?? null;
   if (!scope) return null;
