@@ -184,7 +184,7 @@ Telegram:
 - contexto de expediente mediante token autorizado;
 - entrega confirmada por proveedor.
 
-Pendiente de producto: Operations 360 / bandeja Admin unificada para Telegram y reply manual.
+Operations 360 / bandeja Admin unificada ya está activa para email, Telegram y conversaciones KIA, con timeline, takeover humano/KIA y respuesta manual Telegram. Quedan como cierre de Fase 1 la reasignación explícita de contexto, estado esperando cliente, refresh incremental y hardening de aislamiento.
 
 ## 10. Work, evidencia y acciones administrativas
 
