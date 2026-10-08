@@ -75,6 +75,7 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_overdue_invoices:               policy('R1', 'read',  'accounting_read'),
   get_unreconciled_transactions:      policy('R1', 'read',  'accounting_read'),
   prepare_payment_reminder:            { ...policy('R1', 'read', 'accounting_read'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
+  save_journal_entry_proposal:        { ...policy('R2', 'draft', 'accounting_read', true), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
   prepare_journal_entry_proposal:     { ...policy('R1', 'read', 'accounting_read'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
   prepare_credit_note_proposal:        { ...policy('R1', 'read', 'accounting_read'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
   get_holded_employees:               policy('R1', 'read',  'holded_hr_read'),
