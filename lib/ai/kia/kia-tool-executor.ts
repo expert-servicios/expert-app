@@ -1,3 +1,4 @@
+import { KIA_ACCOUNTING_READ_NAMES, executeKiaAccountingRead, type KiaAccountingReadName } from './kia-accounting-v2-reads';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { getAuthorizedBookingEmails } from '@/lib/admin/onboarding-booking-identity';
@@ -59,6 +60,10 @@ export async function executeKiaToolCall(toolCall: KiaToolCall, context: KiaCont
 
     if (KIA_ADMIN_OFFICE_TOOL_NAMES.has(toolCall.name as KiaAdminOfficeToolName)) {
       return executeKiaAdminOfficeTool(toolCall.name as KiaAdminOfficeToolName, args, context, admin);
+    }
+
+    if (KIA_ACCOUNTING_READ_NAMES.has(toolCall.name as KiaAccountingReadName)) {
+      return executeKiaAccountingRead(toolCall.name as KiaAccountingReadName, args, context);
     }
 
     if (ACCOUNTING_TOOL_NAMES.has(toolCall.name as KiaAccountingToolName)) {

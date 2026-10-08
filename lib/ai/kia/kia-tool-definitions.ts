@@ -120,6 +120,8 @@ export const kiaToolValidators = {
     query: z.string().max(100).optional(),
     limit: z.number().int().min(1).max(20).default(10),
   }).strict(),
+  get_holded_chart_of_accounts: z.object({ limit: z.number().int().min(1).max(100).default(30), cursor: z.string().min(1).optional() }).strict(),
+  get_holded_ledger_entries: z.object({ startDate: calendarDateSchema, endDate: calendarDateSchema, limit: z.number().int().min(1).max(100).default(30), cursor: z.string().min(1).optional() }).strict(),
   get_holded_bank_balance: z.object({
     limit: z.number().int().min(1).max(10).default(5),
   }).strict(),
@@ -356,6 +358,8 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_accounting_snapshot: 'Return full accounting period snapshots and open anomalies for the already-authorized active company. The company scope comes only from KiaContext.',
   get_holded_invoices: 'List recent Holded invoices or purchases for the active company. Requires active company-scoped Holded integration.',
   get_holded_contacts: 'Search or list Holded contacts for the active company. Requires active company-scoped Holded integration.',
+  get_holded_chart_of_accounts: 'Read a paginated list of accounting accounts for the authorized company through Holded v2; admin only, no writes.',
+  get_holded_ledger_entries: 'Read paginated ledger entries within an explicit period for the authorized company through Holded v2; admin only, no writes.',
   get_holded_bank_balance: 'Return Holded treasury account balances for the active company. Requires active company-scoped Holded integration.',
   get_accounts_receivable: 'Return customer invoices with outstanding balances for the active company, derived from Holded invoice data. Read-only.',
   get_accounts_payable: 'Return supplier purchase invoices with outstanding balances for the active company, derived from Holded purchase data. Read-only.',
