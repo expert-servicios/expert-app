@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 type Channel = 'email' | 'telegram' | 'web' | 'kia' | 'meta' | 'google' | 'linkedin';
-type Status = 'needs_action' | 'kia_working' | 'resolved';
+type Status = 'needs_action' | 'waiting_client' | 'kia_working' | 'resolved';
 
 type InboxItem = {
   id: string;
@@ -65,6 +65,7 @@ type Payload = {
   summary: {
     total: number;
     needs_action: number;
+    waiting_client: number;
     kia_working: number;
     resolved: number;
     byChannel: Record<string, number>;
@@ -91,6 +92,7 @@ const CHANNEL_LABELS: Record<Channel, string> = {
 
 const STATUS_LABELS: Record<Status, string> = {
   needs_action: 'Necesita acción',
+  waiting_client: 'Esperando cliente',
   kia_working: 'KIA trabajando',
   resolved: 'Resuelto',
 };
@@ -103,6 +105,7 @@ function formatWhen(value: string) {
 
 function statusTone(status: Status) {
   if (status === 'needs_action') return 'border-amber-200 bg-amber-50 text-amber-800';
+  if (status === 'waiting_client') return 'border-violet-200 bg-violet-50 text-violet-800';
   if (status === 'kia_working') return 'border-sky-200 bg-sky-50 text-sky-800';
   return 'border-emerald-200 bg-emerald-50 text-emerald-800';
 }
@@ -299,7 +302,7 @@ export default function AdminOperations360InboxPage() {
     }
   }, [actionBusy, load, loadTimeline, manualReply, selected]);
 
-  const stats = data?.summary ?? { total: 0, needs_action: 0, kia_working: 0, resolved: 0, byChannel: {} };
+  const stats = data?.summary ?? { total: 0, needs_action: 0, waiting_client: 0, kia_working: 0, resolved: 0, byChannel: {} };
 
   return (
     <main className="min-h-screen bg-[#f8f4eb] px-3 py-4 text-[#07111d] sm:px-5 lg:px-6">
@@ -332,10 +335,11 @@ export default function AdminOperations360InboxPage() {
           </div>
         ) : null}
 
-        <section className="grid grid-cols-2 gap-2 md:grid-cols-4">
+        <section className="grid grid-cols-2 gap-2 md:grid-cols-5">
           {[
             ['all', 'Total', stats.total],
             ['needs_action', 'Necesita acción', stats.needs_action],
+            ['waiting_client', 'Esperando cliente', stats.waiting_client],
             ['kia_working', 'KIA trabajando', stats.kia_working],
             ['resolved', 'Resuelto', stats.resolved],
           ].map(([key, label, count]) => (
@@ -488,6 +492,8 @@ export default function AdminOperations360InboxPage() {
                       <p className="mt-2 text-sm text-[#526171]">
                         {selected.status === 'needs_action'
                           ? 'La entrada requiere intervención humana o revisión antes de continuar.'
+                          : selected.status === 'waiting_client'
+                            ? 'KIA ha pedido información y la siguiente acción depende del cliente.'
                           : selected.status === 'kia_working'
                             ? 'KIA mantiene la conversación activa y no hay escalación humana registrada.'
                             : 'La entrada no tiene acción inmediata pendiente.'}
