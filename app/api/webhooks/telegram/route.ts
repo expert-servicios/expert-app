@@ -33,7 +33,7 @@ import {
 import { executeKiaToolCall } from '@/lib/ai/kia/kia-tool-executor';
 import { resolveKiaQuickActionCase } from '@/lib/ai/kia/kia-quick-action-case';
 import { recordKiaVisibleReply } from '@/lib/ai/kia/kia-visible-decision-log';
-import { persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
+import { appendKiaConversationMessage, getKiaConversationControlMode, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import { resolveTelegramContentOrigin } from '@/lib/marketing/telegram-content-origin-server';
 import { transcribeKiaAudio } from '@/lib/ai/kia/kia-audio';
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
@@ -652,9 +652,12 @@ async function handleTelegramUpdate(request: NextRequest) {
       });
       await notifyKiaAdminEscalation({
         title: 'Telegram en modo manual',
-        body: `Nuevo mensaje pendiente de atención humana · ${inbound.username ? '@' + inbound.username : inbound.chatId}`,
+        summary: `Nuevo mensaje pendiente de atención humana · ${inbound.username ? '@' + inbound.username : inbound.chatId}`,
+        actionTaken: 'Se ha guardado el mensaje sin generar respuesta automática.',
+        interventionNeeded: 'Revisar la conversación y responder desde Operations 360.',
         url: '/admin/inbox',
-        tag: `telegram-manual-${controlledConversation.id}`,
+        eventRef: `telegram-manual:${controlledConversation.id}:${inbound.updateId}`,
+        priority: 'high',
       }).catch(() => {});
       return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'manual_takeover' });
     }
