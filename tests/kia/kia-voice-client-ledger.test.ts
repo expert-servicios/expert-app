@@ -50,7 +50,9 @@ describe('KIA voice and durable client registry', () => {
     expect(telegramRoute).toContain('transcribeKiaAudio');
     expect(telegramRoute).toContain('effectiveText');
     expect(widget).not.toContain('TELEGRAM_BOT_TOKEN');
-    expect(telegramRoute).toContain("reason: 'unsupported_media'");
+    expect(telegramRoute).toContain("reason: 'telegram_document_case_required'");
+    expect(telegramRoute).toContain('ingestTelegramCaseDocument');
+    expect(telegramRoute).not.toContain("reason: 'unsupported_media'");
   });
 
   it('creates a service-role-only append-only-style registry surface', () => {

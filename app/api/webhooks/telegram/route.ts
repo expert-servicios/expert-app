@@ -42,6 +42,7 @@ import { ensureInboundLead } from '@/lib/leads/ensure-inbound-lead';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { notifyKiaAdminEscalation } from '@/lib/admin/kia-admin-escalation';
 import { materializeKiaOperationalTask } from '@/lib/admin/kia-operational-task';
+import { ingestTelegramCaseDocument } from '@/lib/documents/telegram-document-ingestion';
 import {
   escapeTelegramHtml,
   isConfiguredTelegramAdminChat,
@@ -587,17 +588,6 @@ async function handleTelegramUpdate(request: NextRequest) {
   }
 
   let effectiveText = inbound.text;
-  if (inbound.media && inbound.media.kind !== 'voice' && inbound.media.kind !== 'audio') {
-    await sendTelegramMessage({
-      chatId: inbound.chatId,
-      text: inbound.text
-        ? 'He recibido el adjunto y el texto. Por ahora KIA solo procesa texto y audio; usaré únicamente el texto del mensaje.'
-        : 'Por ahora KIA en Telegram solo procesa texto y notas de voz. Para documentos o imágenes, súbelos desde tu expediente en EXPERT.',
-    });
-    if (!inbound.text) {
-      return NextResponse.json({ ok: true, identityLinked: true, routed: false, reason: 'unsupported_media' });
-    }
-  }
   if (inbound.media?.kind === 'voice' || inbound.media?.kind === 'audio') {
     if (process.env.KIA_TELEGRAM_VOICE_ENABLED?.trim().toLowerCase() !== 'true') {
       await sendTelegramMessage({
@@ -665,6 +655,62 @@ async function handleTelegramUpdate(request: NextRequest) {
       return NextResponse.json({ ok: true, ignored: true, reason: 'invalid_case_context' });
     }
   }
+  if (inbound.media?.kind === 'document' || inbound.media?.kind === 'photo') {
+    if (!caseContext?.caseId) {
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: inbound.text
+          ? 'He recibido el adjunto, pero no puedo archivarlo sin un expediente verificado. Usaré solo el texto del mensaje.'
+          : 'Para guardar un documento o imagen necesito que abras primero el expediente correspondiente desde EXPERT o desde un enlace contextual de KIA.',
+      });
+      if (!inbound.text) {
+        return NextResponse.json({
+          ok: true,
+          identityLinked: true,
+          routed: false,
+          reason: 'telegram_document_case_required',
+        });
+      }
+    } else {
+      try {
+        const file = await downloadTelegramMedia(inbound.media);
+        const ingested = await ingestTelegramCaseDocument({
+          admin,
+          profileId: identity.profileId,
+          tenantId: identity.tenantId,
+          caseId: caseContext.caseId,
+          companyId: caseContext.companyId,
+          inbound,
+          file,
+        });
+        effectiveText = [
+          inbound.text,
+          `[Documento recibido en expediente: ${ingested.document.original_name}]`,
+        ].filter(Boolean).join('\n').trim();
+        await sendTelegramMessage({
+          chatId: inbound.chatId,
+          text: ingested.created
+            ? 'Documento recibido y archivado correctamente en tu expediente EXPERT.'
+            : 'Este documento ya estaba registrado en tu expediente; no lo he duplicado.',
+        });
+      } catch (err) {
+        console.error('[Telegram KIA] document ingestion failed:', safeErrorMessage(err));
+        await sendTelegramMessage({
+          chatId: inbound.chatId,
+          text: 'No he podido archivar este adjunto de forma segura. Comprueba que sea PDF, imagen, Word, Excel o CSV y que no supere 10 MB.',
+        });
+        if (!inbound.text) {
+          return NextResponse.json({
+            ok: true,
+            identityLinked: true,
+            routed: false,
+            reason: 'telegram_document_ingestion_failed',
+          });
+        }
+      }
+    }
+  }
+
   const controlledConversationId = caseContext?.stored?.conversation.id ?? genericTelegramConversationId ?? null;
   if (controlledConversationId) {
     const { data: controlledConversation, error: controlError } = await admin
