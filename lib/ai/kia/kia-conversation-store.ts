@@ -63,7 +63,7 @@ export async function appendKiaConversationMessage(input: {
 }) {
   const { data: conversation, error } = await input.admin
     .from('kia_conversations')
-    .select('id,tenant_id,profile_id,channel,status')
+    .select('id,tenant_id,profile_id,lead_id,channel,status')
     .eq('id', input.conversationId)
     .maybeSingle();
 
@@ -94,6 +94,68 @@ export async function appendKiaConversationMessage(input: {
   if (updateError) throw updateError;
 
   return message;
+}
+
+
+export async function getOrCreateKiaLeadConversation(input: {
+  admin: AdminClient;
+  leadId: string;
+  channel: 'meta';
+  originRef: string;
+  topic?: string | null;
+  metadata?: Record<string, unknown>;
+}) {
+  const { data: existing, error: existingError } = await input.admin
+    .from('kia_conversations')
+    .select('id,metadata,status')
+    .eq('lead_id', input.leadId)
+    .eq('channel', input.channel)
+    .eq('status', 'active')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+  if (existing?.id) {
+    const now = new Date().toISOString();
+    const { error: updateError } = await input.admin
+      .from('kia_conversations')
+      .update({
+        topic: input.topic ?? null,
+        origin_ref: input.originRef,
+        metadata: {
+          ...asMetadata(existing.metadata),
+          ...input.metadata,
+        },
+        updated_at: now,
+      })
+      .eq('id', existing.id)
+      .eq('lead_id', input.leadId)
+      .eq('status', 'active');
+    if (updateError) throw updateError;
+    return existing.id;
+  }
+
+  const { data: created, error } = await input.admin
+    .from('kia_conversations')
+    .insert({
+      profile_id: null,
+      lead_id: input.leadId,
+      channel: input.channel,
+      company_id: null,
+      case_id: null,
+      service_slug: null,
+      topic: input.topic ?? null,
+      status: 'active',
+      origin_type: 'meta',
+      origin_ref: input.originRef,
+      metadata: input.metadata ?? {},
+      last_message_at: new Date().toISOString(),
+    })
+    .select('id')
+    .single();
+  if (error) throw error;
+  return created.id;
 }
 
 export async function loadKiaConversation(input: {
