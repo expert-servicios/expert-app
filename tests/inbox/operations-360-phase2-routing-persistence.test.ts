@@ -7,6 +7,7 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf
 const dashboard = source('app/api/ai/kia/route.ts');
 const telegram = source('app/api/webhooks/telegram/route.ts');
 const email = source('app/api/cron/kia-email-agent/route.ts');
+const taskMaterializer = source('lib/admin/kia-operational-task.ts');
 const inbox = source('lib/admin/operations-360-inbox.ts');
 const page = source('app/(protected)/admin/inbox/page.tsx');
 
@@ -24,7 +25,7 @@ describe('Operations 360 Phase 2 routing persistence', () => {
   it('persists routing evidence on email state, outbound audit and tasks', () => {
     expect(email).toContain('resolveKiaOperationalCategory');
     expect(email).toContain('operational_category: operationalCategory');
-    expect(email).toContain('operational_category: input.operationalCategory');
+    expect(taskMaterializer).toContain('operational_category: input.operationalCategory');
     expect(email).toContain('skill_id: result.executionTrace.skillId');
     expect(email).toContain('sub_agent_id: result.executionTrace.preferredSubAgentId');
     expect(email).toContain('detected_intent: result.executionTrace.detectedIntent');
