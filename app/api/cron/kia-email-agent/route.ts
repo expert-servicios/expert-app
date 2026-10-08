@@ -15,6 +15,7 @@ import type { GmailMessage } from '@/lib/integrations/gmail';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { getKiaProviderOrder, isKiaGatewayConfigured } from '@/lib/ai/kia/kia-provider-router';
 import { classifyInboundEnvelope, humanPriority } from '@/lib/email/kia-inbox-classifier';
+import { kiaEmailAgentStateKey } from '@/lib/email/kia-email-agent-state';
 import { notifyKiaAdminEscalation } from '@/lib/admin/kia-admin-escalation';
 import { resolveKiaOperationalCategory, type KiaOperationalCategory } from '@/lib/ai/kia/kia-operational-routing';
 import { getEmailManualLock } from '@/lib/admin/operations-360-email-control';
@@ -61,10 +62,6 @@ const PUBLIC_PROSPECT_TOOLS = [
   'get_booking_availability',
   'create_booking_meeting',
 ] as const;
-
-function stateKey(threadId: string) {
-  return `kia_email_agent:${createHash('sha256').update(threadId).digest('hex').slice(0, 32)}`;
-}
 
 function messageText(body: string, bodyType: 'html' | 'text') {
   if (bodyType === 'text') return body.trim().slice(0, 12000);
@@ -673,7 +670,7 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    const key = stateKey(row.thread_id);
+    const key = kiaEmailAgentStateKey(row.thread_id);
     const { data: watermark } = await admin
       .from('system_kv')
       .select('value')
