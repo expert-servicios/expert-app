@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     const { data: conversation, error: conversationError } = await admin
       .from('kia_conversations')
-      .select('id,channel,metadata,status,profile_id,company_id,case_id,updated_at')
+      .select('id,channel,metadata,status,profile_id,lead_id,company_id,case_id,updated_at')
       .eq('id', conversationId)
       .maybeSingle();
     if (conversationError) throw conversationError;
@@ -82,6 +82,7 @@ export async function GET(request: NextRequest) {
         channel: conversation.channel,
         status: conversation.status,
         profileId: conversation.profile_id,
+        leadId: conversation.lead_id,
         companyId: conversation.company_id,
         caseId: conversation.case_id,
         mode: conversation.metadata?.operations360_mode === 'manual' ? 'manual' : 'kia',
