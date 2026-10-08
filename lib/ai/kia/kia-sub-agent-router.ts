@@ -1,5 +1,6 @@
 import type { KiaTaskType } from './kia-output-schema';
 import { selectKiaSkill } from './kia-skill-registry';
+import { KIA_ACCOUNTING_DOCUMENTARY_KNOWLEDGE_PROMPT } from './prompts/kia-accounting-documentary-knowledge';
 
 export interface KiaSubAgentProfile {
   id: string;
@@ -112,7 +113,7 @@ Reglas adicionales:
 - Si una operación afecta impuestos, retenciones o criterio tributario, coordina la respuesta con el dominio fiscal y no inventes tratamiento fiscal.
 - Si faltan datos de Holded o la conexión está degradada, explica exactamente qué falta y deriva la incidencia técnica al sub-agente holded.
 </sub_agent_accounting>
-`.trim();
+`.trim() + '\n\n' + KIA_ACCOUNTING_DOCUMENTARY_KNOWLEDGE_PROMPT;
 
 const LABOR_ADDENDUM = `
 <sub_agent_labor>
