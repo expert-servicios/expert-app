@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import type { KiaOperationalCategory } from '@/lib/ai/kia/kia-operational-routing';
+import { refreshAdminDailyAgenda } from '@/lib/admin/admin-daily-agenda';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -95,7 +96,13 @@ export async function materializeKiaOperationalTask(input: MaterializeKiaOperati
       .select('id,title,due_date')
       .maybeSingle();
     if (error) throw error;
-    return reused ? { ...reused, created: false, actionFingerprint } : null;
+    if (reused) {
+      await refreshAdminDailyAgenda(input.admin).catch((agendaError) => {
+        console.error('[KIA operational task] agenda refresh failed:', agendaError);
+      });
+      return { ...reused, created: false, actionFingerprint };
+    }
+    return null;
   }
 
   const { data, error } = await input.admin
@@ -129,7 +136,13 @@ export async function materializeKiaOperationalTask(input: MaterializeKiaOperati
     .select('id,title,due_date')
     .single();
 
-  if (!error) return data ? { ...data, created: true, actionFingerprint } : null;
+  if (!error) {
+    if (!data) return null;
+    await refreshAdminDailyAgenda(input.admin).catch((agendaError) => {
+      console.error('[KIA operational task] agenda refresh failed:', agendaError);
+    });
+    return { ...data, created: true, actionFingerprint };
+  }
   if (error.code !== '23505') throw error;
 
   const { data: sameOrigin, error: sameOriginError } = await input.admin
@@ -138,5 +151,11 @@ export async function materializeKiaOperationalTask(input: MaterializeKiaOperati
     .eq('source_key', sourceKey)
     .maybeSingle();
   if (sameOriginError) throw sameOriginError;
-  return sameOrigin ? { ...sameOrigin, created: false, actionFingerprint } : null;
+  if (sameOrigin) {
+    await refreshAdminDailyAgenda(input.admin).catch((agendaError) => {
+      console.error('[KIA operational task] agenda refresh failed:', agendaError);
+    });
+    return { ...sameOrigin, created: false, actionFingerprint };
+  }
+  return null;
 }
