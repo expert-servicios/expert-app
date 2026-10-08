@@ -17,6 +17,9 @@ export async function executeKiaAccountingRead(
   if (context.actor?.isStaff !== true || !['admin', 'owner'].includes(context.actor.role ?? '') || !context.company?.id) {
     return { toolName: name, ok: false, error: 'Requiere acceso Admin de EXPERT y empresa autorizada.' };
   }
+  if (name === 'get_holded_ledger_entries' && String(args.startDate) > String(args.endDate)) {
+    return { toolName: name, ok: false, error: 'El periodo contable tiene las fechas invertidas.' };
+  }
   const admin = getSupabaseAdmin();
   const permission = name === 'get_holded_ledger_entries' ? 'accountingEntries' : 'accountingAccounts';
   const access = await resolveKiaCompanyHoldedAccess(admin, context, permission);
