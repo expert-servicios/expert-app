@@ -610,6 +610,49 @@ export async function createAdminAgendaEventSA(input: {
   return data.id;
 }
 
+export async function upsertAdminAgendaEventSA(input: {
+  eventId?: string | null;
+  summary: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  attendeeEmail: string;
+}): Promise<string> {
+  const cal = await getCalendarSAClient();
+  if (!cal) throw new Error('Google Calendar service account is not configured');
+
+  if (input.eventId) {
+    try {
+      const { data } = await cal.events.patch({
+        calendarId: 'primary',
+        eventId: input.eventId,
+        sendUpdates: 'all',
+        resource: {
+          summary: input.summary,
+          description: input.description,
+          start: { date: input.startDate },
+          end: { date: input.endDate },
+          attendees: [{ email: input.attendeeEmail }],
+          transparency: 'transparent',
+          visibility: 'private',
+          reminders: {
+            useDefault: false,
+            overrides: [{ method: 'email', minutes: 0 }],
+          },
+        },
+      });
+      if (!data.id) throw new Error('Google Calendar did not return the updated agenda event id');
+      return data.id;
+    } catch (error) {
+      const status = (error as { response?: { status?: number }; code?: number }).response?.status
+        ?? (error as { code?: number }).code;
+      if (status !== 404 && status !== 410) throw error;
+    }
+  }
+
+  return createAdminAgendaEventSA(input);
+}
+
 export async function ensureCalendarMeetingUrlSA(eventId: string): Promise<string> {
   const cal = await getCalendarSAClient();
   if (!cal) throw new Error('Google Calendar service account is not configured');
