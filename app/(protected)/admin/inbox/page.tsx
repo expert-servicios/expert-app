@@ -256,6 +256,27 @@ export default function AdminOperations360InboxPage() {
     }
   }, [actionBusy, load, loadTimeline, selected]);
 
+  const changeEmailControlMode = useCallback(async (mode: 'kia' | 'manual') => {
+    if (!selected || selected.source !== 'email_inbox_cache' || actionBusy) return;
+    setActionBusy(true);
+    setActionMessage('');
+    try {
+      const response = await fetch('/api/admin/inbox/email-control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId: selected.id, mode }),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(json.error ?? 'No se pudo cambiar el control del email');
+      setActionMessage(mode === 'manual' ? 'Control manual del email activado.' : 'Hilo de email devuelto a KIA.');
+      await Promise.all([load(), loadTimeline()]);
+    } catch (controlError) {
+      setActionMessage(controlError instanceof Error ? controlError.message : 'No se pudo cambiar el control del email');
+    } finally {
+      setActionBusy(false);
+    }
+  }, [actionBusy, load, loadTimeline, selected]);
+
   const sendManualTelegramReply = useCallback(async () => {
     if (!selected?.threadId || selected.channel !== 'telegram' || !manualReply.trim() || actionBusy) return;
     setActionBusy(true);
@@ -500,6 +521,26 @@ export default function AdminOperations360InboxPage() {
                             className="rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-bold disabled:opacity-50"
                           >
                             Dejar a KIA
+                          </button>
+                        )}
+                        {selected.source === 'email_inbox_cache' && selected.controlMode !== 'manual' && (
+                          <button
+                            type="button"
+                            onClick={() => void changeEmailControlMode('manual')}
+                            disabled={actionBusy}
+                            className="rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-bold disabled:opacity-50"
+                          >
+                            Tomar email
+                          </button>
+                        )}
+                        {selected.source === 'email_inbox_cache' && selected.controlMode === 'manual' && (
+                          <button
+                            type="button"
+                            onClick={() => void changeEmailControlMode('kia')}
+                            disabled={actionBusy}
+                            className="rounded-xl border border-[#d8cbb5] px-3 py-2 text-xs font-bold disabled:opacity-50"
+                          >
+                            Dejar email a KIA
                           </button>
                         )}
                         {selected.source === 'email_inbox_cache' && (

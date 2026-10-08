@@ -1,6 +1,6 @@
 # Kia como Operador Interno — Rol y Límites
 
-> Última actualización: 2026-09-24. El contenido de mayo describe el motor interno inicial. Para la ampliación a Work, correo, copiloto y Telegram, consultar el [contrato de orquestación de expedientes](kia-work-case-orchestration.md), pendiente de implementación.
+> Última actualización: 2026-09-24. El contenido de mayo describe el motor interno inicial. Para la ampliación a Work, correo, copiloto y Telegram, consultar el [contrato de orquestación de expedientes](kia-work-case-orchestration.md). Varias piezas ya están desplegadas; el documento debe leerse como contrato y roadmap, no como indicación de que todo el bloque sigue pendiente.
 
 ## Ampliación acordada: KIA como encargada de tramitación
 
