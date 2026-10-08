@@ -19,6 +19,7 @@ import { kiaEmailAgentStateKey } from '@/lib/email/kia-email-agent-state';
 import { notifyKiaAdminEscalation } from '@/lib/admin/kia-admin-escalation';
 import { resolveKiaOperationalCategory, type KiaOperationalCategory } from '@/lib/ai/kia/kia-operational-routing';
 import { getEmailManualLock } from '@/lib/admin/operations-360-email-control';
+import { materializeKiaOperationalTask } from '@/lib/admin/kia-operational-task';
 
 export const maxDuration = 60;
 
@@ -343,122 +344,31 @@ async function createEmailRequestTask(input: {
   nextAction: string;
   actionSummary: string;
   operationalCategory: KiaOperationalCategory;
+  confidence: number;
+  requiresManualReview: boolean;
+  decisionLogId: string | null;
 }) {
-  if (input.nextAction !== 'create_task') return null;
-
-  const actionText = input.actionSummary.trim() || input.message.subject?.trim() || 'Solicitud por correo';
-  const normalizedAction = actionText
-    .normalize('NFKD')
-    .replace(/\p{M}+/gu, '')
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, ' ')
-    .trim()
-    .slice(0, 240)
-    || (input.message.subject?.trim().normalize('NFKD').replace(/\p{M}+/gu, '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim().slice(0, 240))
-    || input.message.id;
-  const scope = input.caseId ?? input.leadId ?? input.clientId ?? normalizedEmail(input.message.fromEmail);
-  const actionFingerprint = createHash('sha256')
-    .update(`${scope}|${input.nextAction}|${normalizedAction}`)
-    .digest('hex')
-    .slice(0, 40);
-  const taskKey = `email-request:${input.message.id}`;
-
-  const { data: existingAction, error: existingActionError } = await input.admin
-    .from('internal_tasks')
-    .select('id,title,metadata')
-    .in('status', ['pendiente', 'en_progreso'])
-    .eq('metadata->>action_fingerprint', actionFingerprint)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (existingActionError) throw existingActionError;
-  if (existingAction?.id) {
-    const previousMetadata = (existingAction.metadata ?? {}) as Record<string, unknown>;
-    const { data: reused, error: updateError } = await input.admin
-      .from('internal_tasks')
-      .update({
-        description: input.excerpt.slice(0, 1500),
-        updated_at: new Date().toISOString(),
-        metadata: {
-          ...previousMetadata,
-          last_gmail_message_id: input.message.id,
-          last_gmail_thread_id: input.message.conversationId,
-          last_email_seen_at: new Date().toISOString(),
-          operational_category: input.operationalCategory,
-        },
-      })
-      .eq('id', existingAction.id)
-      .in('status', ['pendiente', 'en_progreso'])
-      .select('id,title')
-      .maybeSingle();
-    if (updateError) throw updateError;
-    if (reused?.id) return { id: reused.id, title: reused.title, created: false };
-  }
-
-  const { data, error } = await input.admin.from('internal_tasks').insert({
-    source_key: taskKey,
-    title: actionText.slice(0, 220),
-    description: input.excerpt.slice(0, 1500),
-    status: 'pendiente',
-    priority: 'media',
-    case_id: input.caseId,
-    client_id: input.clientId,
-    lead_id: input.leadId,
-    company_id: input.companyId,
-    source: 'kia',
+  return materializeKiaOperationalTask({
+    admin: input.admin,
+    origin: 'email',
+    originId: input.message.id,
+    summary: input.actionSummary.trim() || input.message.subject?.trim() || 'Solicitud por correo',
+    description: input.excerpt,
+    nextAction: input.nextAction,
+    confidence: input.confidence,
+    requiresManualReview: input.requiresManualReview,
+    operationalCategory: input.operationalCategory,
+    clientId: input.clientId,
+    leadId: input.leadId,
+    caseId: input.caseId,
+    companyId: input.companyId,
+    decisionLogId: input.decisionLogId,
     metadata: {
-      task_kind: 'email_request',
-      source_key: taskKey,
       gmail_message_id: input.message.id,
       gmail_thread_id: input.message.conversationId,
       sender_email: normalizedEmail(input.message.fromEmail),
-      action_fingerprint: actionFingerprint,
-      action_summary: actionText.slice(0, 500),
     },
-  }).select('id,title').single();
-
-  if (!error) return data ? { ...data, created: true } : null;
-  if (error.code !== '23505') throw error;
-
-  const { data: existingConflict, error: existingConflictError } = await input.admin
-    .from('internal_tasks')
-    .select('id,title,metadata')
-    .in('status', ['pendiente', 'en_progreso'])
-    .eq('metadata->>action_fingerprint', actionFingerprint)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (existingConflictError) throw existingConflictError;
-  if (existingConflict?.id) {
-    const previousMetadata = (existingConflict.metadata ?? {}) as Record<string, unknown>;
-    const { data: reusedConflict, error: reuseConflictError } = await input.admin
-      .from('internal_tasks')
-      .update({
-        description: input.excerpt.slice(0, 1500),
-        updated_at: new Date().toISOString(),
-        metadata: {
-          ...previousMetadata,
-          last_gmail_message_id: input.message.id,
-          last_gmail_thread_id: input.message.conversationId,
-          last_email_seen_at: new Date().toISOString(),
-          operational_category: input.operationalCategory,
-        },
-      })
-      .eq('id', existingConflict.id)
-      .in('status', ['pendiente', 'en_progreso'])
-      .select('id,title')
-      .maybeSingle();
-    if (reuseConflictError) throw reuseConflictError;
-    if (reusedConflict?.id) return { ...reusedConflict, created: false };
-  }
-
-  const { data: existingMessage, error: existingMessageError } = await input.admin
-    .from('internal_tasks')
-    .select('id,title')
-    .eq('source_key', taskKey)
-    .maybeSingle();
-  if (existingMessageError) throw existingMessageError;
-  return existingMessage ? { ...existingMessage, created: false } : null;
+  });
 }
 
 async function writeAgentHeartbeat(
@@ -953,6 +863,9 @@ export async function GET(request: NextRequest) {
             nextAction: result.decision.nextAction,
             actionSummary: result.decision.decisionSummary,
             operationalCategory,
+            confidence: result.decision.confidence,
+            requiresManualReview: result.decision.requiresManualReview,
+            decisionLogId: result.decisionLogId ?? null,
           }).catch((taskError) => {
             console.error('[kia-email-agent] request task:', taskError);
             return null;
