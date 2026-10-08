@@ -137,9 +137,9 @@ export function normalizeMetaLeadFields(fieldData: MetaLeadData['field_data']) {
 
   const firstName = first('first_name', 'firstname', 'nombre');
   const lastName = first('last_name', 'lastname', 'apellidos', 'surname');
+  const derivedName = [firstName, lastName].filter(Boolean).join(' ').trim();
   const fullName = first('full_name', 'fullname', 'name', 'nombre_completo')
-    ?? [firstName, lastName].filter(Boolean).join(' ').trim()
-    || null;
+    ?? (derivedName || null);
 
   return {
     fullName,
