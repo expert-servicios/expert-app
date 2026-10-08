@@ -33,6 +33,7 @@ import {
 import { executeKiaToolCall } from '@/lib/ai/kia/kia-tool-executor';
 import { resolveKiaQuickActionCase } from '@/lib/ai/kia/kia-quick-action-case';
 import { recordKiaVisibleReply } from '@/lib/ai/kia/kia-visible-decision-log';
+import { resolveKiaOperationalCategory } from '@/lib/ai/kia/kia-operational-routing';
 import { appendKiaConversationMessage, getKiaConversationControlMode, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import { resolveTelegramContentOrigin } from '@/lib/marketing/telegram-content-origin-server';
 import { transcribeKiaAudio } from '@/lib/ai/kia/kia-audio';
@@ -958,11 +959,28 @@ async function handleTelegramUpdate(request: NextRequest) {
         clientId: identity.profileId, decision: result.decision, reply: presentation.text });
     }
 
+    const operationalCategory = resolveKiaOperationalCategory({
+      skillId: result.executionTrace.skillId,
+      subAgentId: result.executionTrace.preferredSubAgentId,
+      detectedIntent: result.executionTrace.detectedIntent ?? result.decision.intent,
+      serviceSlug: caseContext?.serviceSlug ?? null,
+      requiresManualReview: result.decision.requiresManualReview || result.decision.nextAction === 'needs_review',
+    });
+
     const storedConversationId = contextEnabled ? await persistKiaConversationTurn({ admin, profileId: identity.profileId,
       tenantId: identity.tenantId, companyId, caseId: caseContext?.caseId, serviceSlug: caseContext?.serviceSlug,
       conversationId: caseContext?.stored?.conversation.id ?? genericTelegramConversationId ?? undefined, channel: 'telegram', originType: 'telegram',
       userMessage: message, assistantMessage: reply, intent: result.decision.intent,
-      metadata: { telegram_chat_id: inbound.chatId, telegram_update_id: inbound.updateId, delivery_state: 'prepared', next_action: result.decision.nextAction } }) : null;
+      metadata: {
+        telegram_chat_id: inbound.chatId,
+        telegram_update_id: inbound.updateId,
+        delivery_state: 'prepared',
+        next_action: result.decision.nextAction,
+        operational_category: operationalCategory,
+        skill_id: result.executionTrace.skillId,
+        sub_agent_id: result.executionTrace.preferredSubAgentId,
+        detected_intent: result.executionTrace.detectedIntent,
+      } }) : null;
 
     const outboundId = await sendTelegramMessage({
       chatId: inbound.chatId,
@@ -991,6 +1009,7 @@ async function handleTelegramUpdate(request: NextRequest) {
       identityLinked: true,
       routed: true,
       intent: result.decision.intent,
+      operationalCategory,
       toolsEnabled: telegramToolsEnabled,
     });
   } catch (err) {

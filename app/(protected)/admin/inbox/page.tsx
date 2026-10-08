@@ -19,6 +19,7 @@ import {
 
 type Channel = 'email' | 'telegram' | 'web' | 'kia' | 'meta' | 'google' | 'linkedin';
 type Status = 'needs_action' | 'waiting_client' | 'kia_working' | 'resolved';
+type OperationalCategory = 'commercial' | 'fiscal_accounting' | 'labor' | 'immigration' | 'rentals' | 'holded_support' | 'case_operations' | 'billing_collection' | 'non_human' | 'manual_review';
 
 type InboxItem = {
   id: string;
@@ -48,6 +49,7 @@ type InboxItem = {
   controlMode: 'kia' | 'manual' | null;
   kiaSummary: string | null;
   suggestedAction: string | null;
+  operationalCategory: OperationalCategory | null;
   metadata: Record<string, unknown>;
 };
 
@@ -104,6 +106,19 @@ const STATUS_LABELS: Record<Status, string> = {
   waiting_client: 'Esperando cliente',
   kia_working: 'KIA trabajando',
   resolved: 'Resuelto',
+};
+
+const CATEGORY_LABELS: Record<OperationalCategory, string> = {
+  commercial: 'Comercial',
+  fiscal_accounting: 'Fiscal / contable',
+  labor: 'Laboral',
+  immigration: 'Extranjería',
+  rentals: 'Arrendamientos',
+  holded_support: 'Holded / soporte',
+  case_operations: 'Trámite / expediente',
+  billing_collection: 'Facturación / cobro',
+  non_human: 'Spam / no humano',
+  manual_review: 'Otro / revisión manual',
 };
 
 function formatWhen(value: string) {
@@ -511,6 +526,11 @@ export default function AdminOperations360InboxPage() {
                           {item.priority === 'high' && <CircleDot className="h-3 w-3 shrink-0 text-amber-600" />}
                         </div>
                         <p className="mt-0.5 truncate text-xs font-semibold text-[#374554]">{item.subject}</p>
+                        {item.operationalCategory && (
+                          <p className="mt-1 text-[9px] font-bold uppercase tracking-wide text-[#8a6111]">
+                            {CATEGORY_LABELS[item.operationalCategory]}
+                          </p>
+                        )}
                         <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-[#71808e]">{item.preview}</p>
                         <div className="mt-2 flex items-center justify-between gap-2">
                           <span className={`rounded-full border px-2 py-0.5 text-[9px] font-bold ${statusTone(item.status)}`}>
@@ -547,6 +567,11 @@ export default function AdminOperations360InboxPage() {
                         <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-600">
                           {selected.identity === 'client' ? 'Cliente' : selected.identity === 'lead' ? 'Lead' : 'Sin identificar'}
                         </span>
+                        {selected.operationalCategory && (
+                          <span className="rounded-full border border-[#d9cba9] bg-[#fff8e8] px-2 py-1 text-[10px] font-bold text-[#8a6111]">
+                            {CATEGORY_LABELS[selected.operationalCategory]}
+                          </span>
+                        )}
                       </div>
                       <h2 className="mt-3 font-serif text-2xl font-bold">{selected.subject}</h2>
                       <p className="mt-1 text-sm text-[#5f6d7a]">{selected.actor.name || 'Contacto'}</p>

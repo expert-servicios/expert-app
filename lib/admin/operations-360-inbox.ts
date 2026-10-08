@@ -1,4 +1,6 @@
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { isKiaOperationalCategory, type KiaOperationalCategory } from '@/lib/ai/kia/kia-operational-routing';
+import { kiaEmailAgentStateKey } from '@/lib/email/kia-email-agent-state';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -47,6 +49,7 @@ export type Operations360InboxItem = {
   controlMode: 'kia' | 'manual' | null;
   kiaSummary: string | null;
   suggestedAction: string | null;
+  operationalCategory: KiaOperationalCategory | null;
   metadata: Record<string, unknown>;
 };
 
@@ -167,6 +170,11 @@ type CompanyRow = {
   razon_social: string | null;
   nombre_comercial: string | null;
   cif_nif: string | null;
+};
+
+type EmailAgentStateRow = {
+  key: string;
+  value: unknown;
 };
 
 function normalize(value: unknown) {
@@ -370,6 +378,22 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
   const taskRows = tasksRes.data ?? [];
   const meetingRows = meetingsRes.data ?? [];
 
+  const emailStateKeyToThread = new Map<string, string>();
+  for (const row of emailRows) {
+    if (!row.thread_id) continue;
+    emailStateKeyToThread.set(kiaEmailAgentStateKey(row.thread_id), row.thread_id);
+  }
+  const emailStateKeys = [...emailStateKeyToThread.keys()];
+  const emailAgentStatesRes = (emailStateKeys.length
+    ? await admin.from('system_kv').select('key,value').in('key', emailStateKeys)
+    : { data: [], error: null }) as DbResult<EmailAgentStateRow>;
+  if (emailAgentStatesRes.error) warnings.push(`email_agent_state: ${emailAgentStatesRes.error.message}`);
+  const emailAgentStateByThread = new Map<string, Record<string, unknown>>();
+  for (const row of emailAgentStatesRes.data ?? []) {
+    const threadId = emailStateKeyToThread.get(row.key);
+    if (threadId) emailAgentStateByThread.set(threadId, objectValue(row.value));
+  }
+
   const caseIds = [...new Set([
     ...emailRows.map((row) => row.case_id),
     ...conversationRows.map((row) => row.case_id),
@@ -451,6 +475,11 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
     const clientId = caseRow?.client_id ?? matchedProfile?.id ?? null;
     const companyId = caseRow?.company_id ?? null;
     const provider = safeText(row.provider, 'gmail');
+    const emailAgentState = emailAgentStateByThread.get(row.thread_id) ?? {};
+    const emailOperationalCategory = isKiaOperationalCategory(emailAgentState.operational_category)
+      ? emailAgentState.operational_category
+      : null;
+    const emailNextAction = normalize(emailAgentState.next_action);
     const status: Operations360Status = row.unread ? 'needs_action' : 'resolved';
 
     items.push({
@@ -484,7 +513,8 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       slaDueAt: null,
       controlMode: null,
       kiaSummary: null,
-      suggestedAction: null,
+      suggestedAction: emailNextAction || null,
+      operationalCategory: emailOperationalCategory,
       metadata: {
         provider,
         unread: Boolean(row.unread),
@@ -495,6 +525,10 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
         company_tax_id: companyId ? (companyById.get(companyId)?.cif_nif ?? null) : null,
         ambiguous_profile_email: profileEmailIndex.ambiguous.has(senderEmail),
         ambiguous_lead_email: leadEmailIndex.ambiguous.has(senderEmail),
+        operational_category: emailOperationalCategory,
+        next_action: emailNextAction || null,
+        block_reason: normalize(emailAgentState.block_reason) || null,
+        confidence: typeof emailAgentState.confidence === 'number' ? emailAgentState.confidence : null,
       },
     });
   }
@@ -512,6 +546,9 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
     const escalated = hasHumanEscalation({ ...metadata, ...latestMetadata });
     const nextAction = normalize(latestMetadata.next_action ?? metadata.next_action);
     const waitingClient = nextAction === 'ask_one_question';
+    const operationalCategory = isKiaOperationalCategory(metadata.operational_category)
+      ? metadata.operational_category
+      : null;
     const status: Operations360Status =
       row.status !== 'active'
         ? 'resolved'
@@ -556,12 +593,14 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       controlMode: manualMode ? 'manual' : 'kia',
       kiaSummary: null,
       suggestedAction: nextAction || null,
+      operationalCategory,
       metadata: {
         origin_type: row.origin_type,
         origin_ref: row.origin_ref,
         latest_role: latest?.role ?? null,
         intent: latest?.intent ?? null,
         next_action: nextAction || null,
+        operational_category: operationalCategory,
         company_name: companyId
           ? (companyById.get(companyId)?.razon_social ?? companyById.get(companyId)?.nombre_comercial ?? null)
           : null,
@@ -580,6 +619,9 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
     if (channel === 'email') continue;
 
     const matchedProfile = row.email ? profileByEmail.get(lower(row.email)) ?? null : null;
+    const leadOperationalCategory = isKiaOperationalCategory(metadata.operational_category)
+      ? metadata.operational_category
+      : null;
     const state = lower(row.state);
     const lifecycle = lower(row.lifecycle_stage);
     const needsAction = state === 'new' || state === 'needs_review' || lifecycle === 'lead' || lifecycle === 'prospect';
@@ -618,6 +660,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       controlMode: null,
       kiaSummary: null,
       suggestedAction: null,
+      operationalCategory: leadOperationalCategory,
       metadata: {
         source: row.source,
         source_key: row.source_key,
@@ -725,7 +768,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
     contract: {
       mode: 'read_model',
       sources: ['email_inbox_cache', 'kia_conversations', 'kia_conversation_messages', 'leads'],
-      enrichments: ['profiles', 'cases', 'companies', 'internal_tasks', 'appointments'],
+      enrichments: ['profiles', 'cases', 'companies', 'internal_tasks', 'appointments', 'system_kv'],
       persistentEnvelope: 'kia_conversations',
     },
   };
