@@ -54,6 +54,13 @@ describe('Operations 360 Inbox phase 1', () => {
     expect(model).toContain("source: 'leads'");
   });
 
+  it('surfaces KIA assessments prepared for Meta lead rows', () => {
+    expect(model).toContain('kiaSummary: normalize(metadata.kia_summary) || null');
+    expect(model).toContain('suggestedAction: normalize(metadata.next_action) || null');
+    expect(model).toContain('meta_kia_status');
+    expect(model).toContain("raw.includes('facebook') || raw.includes('instagram') || raw === 'meta'");
+  });
+
   it('exposes a compact admin surface with source links and KIA status', () => {
     expect(page).toContain('Inbox unificado');
     expect(page).toContain('Necesita acción');

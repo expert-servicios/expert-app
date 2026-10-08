@@ -13,7 +13,7 @@ import { loadClientRegistryContext, type KiaClientLedgerContext } from './kia-cl
 import { EXPERT_IDENTITY } from '@/config/identity';
 
 export interface KiaContextInput {
-  channel: 'waba' | 'telegram' | 'admin' | 'email' | 'dashboard' | 'document';
+  channel: 'waba' | 'telegram' | 'meta' | 'admin' | 'email' | 'dashboard' | 'document';
   phone?: string;
   email?: string;
   userId?: string;

@@ -74,6 +74,15 @@ describe('KIA M7 orchestration plan', () => {
     expect(source).toContain('params.allowResolvedUnskilled !== true');
   });
 
+  it('classifies Meta public chat as a first-class KIA channel', () => {
+    const source = readFileSync(resolve(process.cwd(), 'lib/ai/kia/kia-orchestrator.ts'), 'utf8');
+    const schema = readFileSync(resolve(process.cwd(), 'lib/ai/kia/kia-output-schema.ts'), 'utf8');
+    const context = readFileSync(resolve(process.cwd(), 'lib/ai/kia/kia-context-builder.ts'), 'utf8');
+    expect(source).toContain("input.channel === 'meta'");
+    expect(schema).toContain("'waba', 'telegram', 'meta', 'admin'");
+    expect(context).toContain("'waba' | 'telegram' | 'meta' | 'admin'");
+  });
+
   it('retries the provider pool after semantic classifier failure', () => {
     const classifier = readFileSync(resolve(process.cwd(), 'lib/ai/kia/kia-intent-classifier.ts'), 'utf8');
     const router = readFileSync(resolve(process.cwd(), 'lib/ai/kia/kia-provider-router.ts'), 'utf8');

@@ -6,6 +6,7 @@ import {
   parseMetaWebhookPayload,
   verifyMetaWebhookChallenge,
 } from '@/lib/integrations/meta/webhook';
+import { normalizeMetaLeadFields } from '@/lib/integrations/meta/client';
 
 const route = readFileSync('app/api/webhooks/meta/route.ts', 'utf8');
 
@@ -89,9 +90,32 @@ describe('Meta inbound webhook foundation', () => {
     expect(route).not.toContain('case_id:');
   });
 
-  it('does not send outbound Meta messages in the foundation cut', () => {
-    expect(route).not.toContain('metaGraphRequest');
+  it('normalizes Lead Ads contact fields without persisting raw field_data', () => {
+    expect(normalizeMetaLeadFields([
+      { name: 'full_name', values: ['María Pérez'] },
+      { name: 'email', values: ['MARIA@example.com'] },
+      { name: 'phone_number', values: ['+34600111222'] },
+      { name: 'city', values: ['Alicante'] },
+    ])).toMatchObject({
+      fullName: 'María Pérez',
+      email: 'MARIA@example.com',
+      phone: '+34600111222',
+      city: 'Alicante',
+    });
+    expect(route).toContain('retrieveMetaLead(event.leadgenId)');
+    expect(route.indexOf('retrieveMetaLead(event.leadgenId)'))
+      .toBeLessThan(route.indexOf('const lead = await ensureInboundLead({', route.indexOf('async function processLeadgenEvent')));
+    expect(route).not.toContain('field_data:');
+  });
+
+  it('prepares KIA for Meta DMs without tools or outbound Meta delivery', () => {
+    expect(route).toContain('runKiaOrchestratedDecision({');
+    expect(route).toContain("channel: 'meta'");
+    expect(route).toContain('requestedNames: []');
+    expect(route).toContain('policyToolNames: []');
+    expect(route).toContain("meta_kia_status: 'prepared_not_sent'");
+    expect(route).toContain('kia_draft_reply: result.userMessage');
     expect(route).not.toContain('/messages');
-    expect(route).not.toContain('runKiaDecision');
+    expect(route).not.toContain('sendMeta');
   });
 });

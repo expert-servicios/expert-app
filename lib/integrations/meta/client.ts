@@ -77,3 +77,76 @@ export async function testMetaMarketingConnection() {
     searchParams: { fields: 'id,name' },
   });
 }
+
+
+export type MetaLeadData = {
+  id: string;
+  created_time?: string;
+  ad_id?: string;
+  ad_name?: string;
+  adset_id?: string;
+  adset_name?: string;
+  campaign_id?: string;
+  campaign_name?: string;
+  form_id?: string;
+  is_organic?: boolean;
+  platform?: string;
+  field_data?: Array<{ name?: string; values?: string[] }>;
+};
+
+export async function retrieveMetaLead(leadgenId: string): Promise<MetaLeadData> {
+  const id = leadgenId.trim();
+  if (!id) throw new Error('Meta lead id is required');
+
+  return metaGraphRequest<MetaLeadData>({
+    path: id,
+    searchParams: {
+      fields: [
+        'id',
+        'created_time',
+        'ad_id',
+        'ad_name',
+        'adset_id',
+        'adset_name',
+        'campaign_id',
+        'campaign_name',
+        'form_id',
+        'is_organic',
+        'platform',
+        'field_data',
+      ].join(','),
+    },
+  });
+}
+
+export function normalizeMetaLeadFields(fieldData: MetaLeadData['field_data']) {
+  const values = new Map<string, string>();
+  for (const field of fieldData ?? []) {
+    const key = field.name?.trim().toLowerCase();
+    const value = field.values?.map(String).map((item) => item.trim()).filter(Boolean).join(', ');
+    if (key && value) values.set(key, value);
+  }
+
+  const first = (...keys: string[]) => {
+    for (const key of keys) {
+      const value = values.get(key);
+      if (value) return value;
+    }
+    return null;
+  };
+
+  const firstName = first('first_name', 'firstname', 'nombre');
+  const lastName = first('last_name', 'lastname', 'apellidos', 'surname');
+  const derivedName = [firstName, lastName].filter(Boolean).join(' ').trim();
+  const fullName = first('full_name', 'fullname', 'name', 'nombre_completo')
+    ?? (derivedName || null);
+
+  return {
+    fullName,
+    email: first('email', 'correo', 'correo_electronico'),
+    phone: first('phone_number', 'phone', 'telefono', 'teléfono'),
+    city: first('city', 'ciudad', 'localidad'),
+    companyName: first('company_name', 'company', 'empresa'),
+    fieldNames: [...values.keys()],
+  };
+}
