@@ -34,7 +34,7 @@ describe('Operations 360 Inbox phase 1b', () => {
     expect(webKia).toContain("getKiaConversationControlMode(controlledConversation.metadata) === 'manual'");
     expect(webKia).toContain("appendKiaConversationMessage");
     expect(webKia).toContain("manualTakeover: true");
-    expect(webKia.indexOf("manualTakeover: true")).toBeLessThan(webKia.indexOf("runPolicyEnforcedKiaDecision"));
+    expect(webKia.indexOf("manualTakeover: true")).toBeLessThan(webKia.indexOf("result = await runPolicyEnforcedKiaDecision"));
   });
 
   it('makes Telegram stop autonomous replies and queue inbound messages during manual takeover', () => {
