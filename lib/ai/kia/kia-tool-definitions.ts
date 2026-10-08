@@ -149,7 +149,7 @@ export const kiaToolValidators = {
     reason: z.string().trim().min(3).max(500),
     evidenceRefs: z.array(z.string().trim().min(1).max(1024)).min(1).max(20),
     lines: z.array(z.object({
-      account: z.string().regex(/^\\d{3,12}$/),
+      account: z.string().regex(/^\d{3,12}$/),
       debitCents: z.number().int().nonnegative(),
       creditCents: z.number().int().nonnegative(),
       explanation: z.string().max(500).optional(),
