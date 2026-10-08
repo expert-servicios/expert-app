@@ -17,6 +17,7 @@ import {
 } from '@/lib/booking/native-booking';
 import { ensureBookingAdminTask } from '@/lib/booking/booking-admin-task';
 import { createBookingManagementToken, bookingManagementUrls } from '@/lib/booking/booking-management-token';
+import { refreshAdminDailyAgenda } from '@/lib/admin/admin-daily-agenda';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -488,6 +489,12 @@ export async function materializeRecurringMeetingSeries(
         }
       }
     }
+  }
+
+  if (confirmed > 0) {
+    await refreshAdminDailyAgenda(admin).catch((agendaError) => {
+      console.error('[recurring-meetings] agenda refresh failed:', agendaError);
+    });
   }
 
   return { planned, confirmed, existing, conflicts, errors };
