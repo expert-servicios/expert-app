@@ -80,6 +80,8 @@ async function detectAllPermissions(rawApiKey: string, apiVersion: 'v1' | 'v2' =
       ['taxes', () => client.listTaxes({ limit: 1 })],
       ['bankAccounts', () => client.listTreasuryAccounts({ limit: 1 })],
       ['accountingEntries', () => client.listLedgerEntries({ limit: 1 })],
+      ['accountingAccounts', () => client.listAccountingAccounts({ limit: 1 })],
+      ['accountingPayments', () => client.listPayments({ limit: 1 })],
     ];
 
     const settled = await Promise.all(checks.map(async ([permission, probe]) => {

@@ -9,6 +9,8 @@ export interface HoldedPermissions {
   writeInbox: boolean;
   accountingReports: boolean;
   accountingEntries: boolean;
+  accountingAccounts: boolean;
+  accountingPayments: boolean;
   laborEmployeesRead: boolean;
   laborPayrollsRead: boolean;
   laborEmployeesWrite: boolean;
@@ -25,6 +27,8 @@ export const HOLDED_READ_PERMISSION_KEYS = [
   'inboxDocuments',
   'accountingReports',
   'accountingEntries',
+  'accountingAccounts',
+  'accountingPayments',
   'laborEmployeesRead',
   'laborPayrollsRead',
 ] as const satisfies ReadonlyArray<keyof HoldedPermissions>;
@@ -47,6 +51,8 @@ export function createEmptyHoldedPermissions(): HoldedPermissions {
     writeInbox: false,
     accountingReports: false,
     accountingEntries: false,
+    accountingAccounts: false,
+    accountingPayments: false,
     laborEmployeesRead: false,
     laborPayrollsRead: false,
     laborEmployeesWrite: false,
