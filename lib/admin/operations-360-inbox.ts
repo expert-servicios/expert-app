@@ -327,7 +327,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       .limit(200),
     admin
       .from('kia_conversations')
-      .select('id,tenant_id,profile_id,channel,company_id,case_id,service_slug,topic,status,origin_type,origin_ref,metadata,last_message_at,created_at,updated_at')
+      .select('id,tenant_id,profile_id,lead_id,channel,company_id,case_id,service_slug,topic,status,origin_type,origin_ref,metadata,last_message_at,created_at,updated_at')
       .order('last_message_at', { ascending: false, nullsFirst: false })
       .limit(200),
     admin
@@ -455,6 +455,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
   const leadEmailIndex = uniqueEmailIndex(leadRows);
   const profileByEmail = profileEmailIndex.unique;
   const leadByEmail = leadEmailIndex.unique;
+  const leadById = new Map(leadRows.map((row) => [row.id, row]));
   const companyById = new Map((companiesRes.data ?? []).map((row) => [row.id, row]));
 
   const latestMessageByConversation = new Map<string, ConversationMessageRow>();
@@ -539,6 +540,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
     const metadata = objectValue(row.metadata);
     const latestMetadata = objectValue(latest?.metadata);
     const profile = row.profile_id ? profileById.get(row.profile_id) ?? null : null;
+    const lead = row.lead_id ? leadById.get(row.lead_id) ?? null : null;
     const caseRow = row.case_id ? caseById.get(row.case_id) : null;
     const clientId = row.profile_id ?? caseRow?.client_id ?? null;
     const companyId = row.company_id ?? caseRow?.company_id ?? null;
@@ -568,21 +570,21 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       direction: 'mixed',
       externalId: latest?.id ?? row.origin_ref ?? null,
       threadId: row.id,
-      leadId: null,
+      leadId: row.lead_id ?? null,
       clientId,
       companyId,
       caseId: row.case_id ?? null,
       actor: {
-        name: profile?.full_name ?? null,
-        email: profile?.email ?? null,
-        phone: profile?.phone ?? null,
+        name: profile?.full_name ?? lead?.name ?? null,
+        email: profile?.email ?? lead?.email ?? null,
+        phone: profile?.phone ?? lead?.phone ?? null,
       },
       subject: safeText(row.topic, safeText(row.service_slug, channel === 'telegram' ? 'Telegram KIA' : 'Conversación KIA')),
       preview: limited(safeText(latest?.body, 'Conversación activa')),
       status,
       priority: escalated ? 'high' : 'normal',
       kiaState: latest?.role === 'assistant' ? 'responded' : latest?.role === 'user' ? 'processing' : row.status,
-      identity: clientId ? 'client' : 'unknown',
+      identity: clientId ? 'client' : row.lead_id ? 'lead' : 'unknown',
       lastActivityAt,
       sourceHref: '/admin/kia',
       taskCount: 0,
