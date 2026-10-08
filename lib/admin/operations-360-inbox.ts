@@ -11,7 +11,7 @@ export type Operations360Channel =
   | 'google'
   | 'linkedin';
 
-export type Operations360Status = 'needs_action' | 'kia_working' | 'resolved';
+export type Operations360Status = 'needs_action' | 'waiting_client' | 'kia_working' | 'resolved';
 export type Operations360Identity = 'lead' | 'client' | 'unknown';
 export type Operations360Priority = 'high' | 'normal' | 'low';
 
@@ -481,12 +481,16 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
     const companyId = row.company_id ?? caseRow?.company_id ?? null;
     const manualMode = metadata.operations360_mode === 'manual';
     const escalated = hasHumanEscalation({ ...metadata, ...latestMetadata });
+    const nextAction = normalize(latestMetadata.next_action ?? metadata.next_action);
+    const waitingClient = nextAction === 'ask_one_question';
     const status: Operations360Status =
       row.status !== 'active'
         ? 'resolved'
         : manualMode || escalated
           ? 'needs_action'
-          : 'kia_working';
+          : waitingClient
+            ? 'waiting_client'
+            : 'kia_working';
     const channel = asChannel(row.channel, 'kia');
     const lastActivityAt = latest?.created_at ?? row.last_message_at ?? row.updated_at ?? row.created_at;
     if (!lastActivityAt) continue;
@@ -526,6 +530,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
         origin_ref: row.origin_ref,
         latest_role: latest?.role ?? null,
         intent: latest?.intent ?? null,
+        next_action: nextAction || null,
         company_name: companyId
           ? (companyById.get(companyId)?.razon_social ?? companyById.get(companyId)?.nombre_comercial ?? null)
           : null,
@@ -652,6 +657,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
     total: items.length,
     needs_action: items.filter((item) => item.status === 'needs_action').length,
     kia_working: items.filter((item) => item.status === 'kia_working').length,
+    waiting_client: items.filter((item) => item.status === 'waiting_client').length,
     resolved: items.filter((item) => item.status === 'resolved').length,
     byChannel: items.reduce<Record<string, number>>((acc, item) => {
       acc[item.channel] = (acc[item.channel] ?? 0) + 1;
