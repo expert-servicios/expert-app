@@ -47,7 +47,7 @@ describe('Telegram -> KIA -> Operations 360 end-to-end contract', () => {
   });
 
   it('surfaces Telegram conversations in Operations 360', () => {
-    expect(inbox).toContain("channel: 'telegram'");
+    expect(inbox).toContain("if (raw === 'telegram') return 'telegram'");
     expect(inbox).toContain("source: 'kia_conversations'");
     expect(inbox).toContain('taskCount');
     expect(inbox).toContain('nextMeetingAt');
@@ -56,7 +56,8 @@ describe('Telegram -> KIA -> Operations 360 end-to-end contract', () => {
 
   it('supports audited human takeover and return-to-KIA', () => {
     expect(control).toContain('setKiaConversationControl');
-    expect(control).toContain('operations360.control_changed');
+    expect(control).toContain('operations360.conversation_taken_over');
+    expect(control).toContain('operations360.conversation_returned_to_kia');
     expect(conversationStore).toContain('operations360_mode: input.mode');
     expect(conversationStore).toContain('operations360_owner_id');
   });
@@ -73,8 +74,10 @@ describe('Telegram -> KIA -> Operations 360 end-to-end contract', () => {
   it('exposes messages and Admin actions in one timeline', () => {
     expect(timeline).toContain("from('kia_conversation_messages')");
     expect(timeline).toContain("from('audit_logs')");
-    expect(timeline).toContain('operations360.control_changed');
-    expect(timeline).toContain('operations360.manual_reply');
+    expect(timeline).toContain(".select('id,actor_id,action,metadata,created_at')");
+    expect(timeline).toContain("text: row.action");
+    expect(timeline).toContain("mode: conversation.metadata?.operations360_mode === 'manual' ? 'manual' : 'kia'");
+    expect(reply).toContain('operations360.telegram_manual_reply_sent');
   });
 
   it('archives verified Telegram documents canonically', () => {
