@@ -6,6 +6,7 @@ const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf
 
 const inbox = source('lib/admin/operations-360-inbox.ts');
 const page = source('app/(protected)/admin/inbox/page.tsx');
+const adminGuard = source('lib/auth/require-admin.ts');
 
 describe('Operations 360 Fase 1 hardening', () => {
   it('refuses ambiguous email identity instead of last-write-wins maps', () => {
@@ -38,9 +39,17 @@ describe('Operations 360 Fase 1 hardening', () => {
     expect(page).toContain("load({ silent: true })");
   });
 
-  it('shows persisted next action without bulk AI generation', () => {
+  it('shows deterministic KIA summary and persisted next action without bulk AI generation', () => {
+    expect(inbox).toContain('kiaSummary');
+    expect(inbox).toContain('suggestedAction');
+    expect(page).toContain('selected.kiaSummary');
     expect(page).toContain('Siguiente acción KIA:');
-    expect(page).toContain('nextActionLabel(selected.metadata.next_action)');
+    expect(page).toContain('selected.suggestedAction ?? selected.metadata.next_action');
     expect(page).not.toContain('/api/ai/kia');
+  });
+
+  it('keeps Inbox unavailable to tenant_admin until tenant-aware Fase 2 exists', () => {
+    expect(adminGuard).toContain("profile?.role === 'admin' || profile?.role === 'owner'");
+    expect(adminGuard).not.toContain("profile?.role === 'tenant_admin'");
   });
 });
