@@ -951,6 +951,10 @@ export async function POST(request: NextRequest) {
         .eq('id', appointmentId!);
     });
 
+    await refreshAdminDailyAgenda(admin).catch((agendaError) => {
+      console.error('[booking] agenda refresh failed:', agendaError);
+    });
+
     let clientEmailSent = false;
     try {
       await sendBookingEmail({
