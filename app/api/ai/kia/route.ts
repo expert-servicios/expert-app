@@ -55,6 +55,8 @@ import { executeKiaToolCall } from '@/lib/ai/kia/kia-tool-executor';
 import { resolveKiaQuickActionCase } from '@/lib/ai/kia/kia-quick-action-case';
 import { recordKiaVisibleReply } from '@/lib/ai/kia/kia-visible-decision-log';
 import { resolveKiaOperationalCategory } from '@/lib/ai/kia/kia-operational-routing';
+import { materializeKiaOperationalTask } from '@/lib/admin/kia-operational-task';
+import { notifyAdmins } from '@/lib/integrations/push';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -659,6 +661,41 @@ export async function POST(request: NextRequest) {
     }
   } catch (err) {
     console.warn('[KiaCopilot] session save failed:', err);
+  }
+
+  const dashboardTaskOriginId = decisionLogId ?? effectiveSessionId ?? null;
+  const dashboardOperationalTask = !adminCopilotMode && !staffPreview && dashboardTaskOriginId
+    ? await materializeKiaOperationalTask({
+        admin,
+        origin: 'dashboard',
+        originId: dashboardTaskOriginId,
+        summary: result.decision.decisionSummary,
+        description: message,
+        nextAction: result.decision.nextAction,
+        confidence: result.decision.confidence,
+        requiresManualReview: result.decision.requiresManualReview,
+        operationalCategory,
+        clientId: effectiveClientId,
+        companyId: companyScope,
+        caseId: contextualCaseId ?? null,
+        decisionLogId,
+        metadata: {
+          session_id: effectiveSessionId ?? null,
+          contextual: Boolean(contextToken),
+        },
+      }).catch((taskError) => {
+        console.error('[KiaCopilot] operational task failed:', taskError);
+        return null;
+      })
+    : null;
+
+  if (dashboardOperationalTask?.created) {
+    await notifyAdmins({
+      title: 'KIA creó una tarea desde el chat',
+      body: dashboardOperationalTask.title.slice(0, 220),
+      url: contextualCaseId ? `/admin/expedientes/${contextualCaseId}` : '/admin/tareas',
+      tag: `kia-dashboard-task-${dashboardOperationalTask.id}`,
+    }).catch(() => {});
   }
 
   const quickReplies = adminCopilotMode

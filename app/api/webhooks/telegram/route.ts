@@ -41,6 +41,7 @@ import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
 import { ensureInboundLead } from '@/lib/leads/ensure-inbound-lead';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { notifyKiaAdminEscalation } from '@/lib/admin/kia-admin-escalation';
+import { materializeKiaOperationalTask } from '@/lib/admin/kia-operational-task';
 import {
   escapeTelegramHtml,
   isConfiguredTelegramAdminChat,
@@ -469,7 +470,43 @@ async function handleTelegramUpdate(request: NextRequest) {
         text: escapeTelegramHtml(result.userMessage),
       });
 
-      if (result.decision.requiresManualReview || ['needs_review', 'create_task'].includes(result.decision.nextAction)) {
+      const publicOperationalCategory = resolveKiaOperationalCategory({
+        detectedIntent: result.decision.intent,
+        requiresManualReview: result.decision.requiresManualReview || result.decision.nextAction === 'needs_review',
+      });
+
+      const operationalTask = await materializeKiaOperationalTask({
+        admin,
+        origin: 'telegram',
+        originId: `prospect:${inbound.updateId}`,
+        summary: result.decision.decisionSummary,
+        description: inbound.text.trim(),
+        nextAction: result.decision.nextAction,
+        confidence: result.decision.confidence,
+        requiresManualReview: result.decision.requiresManualReview,
+        operationalCategory: publicOperationalCategory,
+        leadId: lead.leadId,
+        decisionLogId: result.decisionLogId ?? null,
+        metadata: {
+          telegram_update_id: inbound.updateId,
+          telegram_chat_id: inbound.chatId,
+          public_prospect: true,
+        },
+      }).catch((taskError) => {
+        console.error('[Telegram prospect] operational task failed:', taskError);
+        return null;
+      });
+
+      if (operationalTask?.created) {
+        await notifyAdmins({
+          title: 'KIA creó una tarea desde Telegram',
+          body: operationalTask.title.slice(0, 220),
+          url: '/admin/tareas',
+          tag: `kia-telegram-task-${operationalTask.id}`,
+        }).catch(() => {});
+      }
+
+      if (result.decision.requiresManualReview || result.decision.nextAction === 'needs_review') {
         const sourceKey = `telegram-review:${inbound.updateId}`;
         const { data: task, error: taskError } = await admin
           .from('internal_tasks')
@@ -478,11 +515,18 @@ async function handleTelegramUpdate(request: NextRequest) {
             title: `Revisar consulta Telegram · ${inbound.username ? '@' + inbound.username : inbound.userId}`,
             description: inbound.text.trim().slice(0, 1500),
             status: 'pendiente',
-            priority: result.decision.nextAction === 'create_task' ? 'media' : 'alta',
+            priority: 'alta',
+            due_date: new Intl.DateTimeFormat('en-CA', {
+              timeZone: 'Europe/Madrid',
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+            }).format(new Date()),
             lead_id: lead.leadId,
             source: 'kia',
             metadata: {
               task_kind: 'telegram_review',
+              operational_category: publicOperationalCategory,
               telegram_update_id: inbound.updateId,
               telegram_chat_id: inbound.chatId,
               decision_log_id: result.decisionLogId ?? null,
@@ -498,9 +542,7 @@ async function handleTelegramUpdate(request: NextRequest) {
             title: 'Consulta Telegram requiere intervención',
             summary: inbound.text.trim().slice(0, 300),
             actionTaken: 'KIA respondió en modo público, registró/actualizó el lead y creó una tarea de revisión',
-            interventionNeeded: result.decision.nextAction === 'create_task'
-              ? 'ejecutar la tarea operativa que KIA ha identificado'
-              : 'revisar la consulta y decidir la actuación o trámite',
+            interventionNeeded: 'revisar la consulta y decidir la actuación o trámite',
             url: '/admin/tareas',
             eventRef: sourceKey,
             priority: 'high',
@@ -966,6 +1008,37 @@ async function handleTelegramUpdate(request: NextRequest) {
       serviceSlug: caseContext?.serviceSlug ?? null,
       requiresManualReview: result.decision.requiresManualReview || result.decision.nextAction === 'needs_review',
     });
+
+    const privateOperationalTask = await materializeKiaOperationalTask({
+      admin,
+      origin: 'telegram',
+      originId: `private:${inbound.updateId}`,
+      summary: result.decision.decisionSummary,
+      description: message,
+      nextAction: result.decision.nextAction,
+      confidence: result.decision.confidence,
+      requiresManualReview: result.decision.requiresManualReview,
+      operationalCategory,
+      clientId: identity.profileId,
+      companyId,
+      caseId: caseContext?.caseId ?? null,
+      decisionLogId: result.decisionLogId ?? null,
+      metadata: {
+        telegram_update_id: inbound.updateId,
+        telegram_chat_id: inbound.chatId,
+      },
+    }).catch((taskError) => {
+      console.error('[Telegram KIA] operational task failed:', taskError);
+      return null;
+    });
+    if (privateOperationalTask?.created) {
+      await notifyAdmins({
+        title: 'KIA creó una tarea desde Telegram',
+        body: privateOperationalTask.title.slice(0, 220),
+        url: caseContext?.caseId ? `/admin/expedientes/${caseContext.caseId}` : '/admin/tareas',
+        tag: `kia-telegram-task-${privateOperationalTask.id}`,
+      }).catch(() => {});
+    }
 
     const storedConversationId = contextEnabled ? await persistKiaConversationTurn({ admin, profileId: identity.profileId,
       tenantId: identity.tenantId, companyId, caseId: caseContext?.caseId, serviceSlug: caseContext?.serviceSlug,

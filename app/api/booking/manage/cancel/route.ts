@@ -6,6 +6,7 @@ import {
   deleteBookingCalendarEvent,
 } from '@/lib/booking/calendar-provider';
 import { cancelBookingAdminTask } from '@/lib/booking/booking-admin-task';
+import { refreshAdminDailyAgenda } from '@/lib/admin/admin-daily-agenda';
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,6 +40,9 @@ export async function POST(request: NextRequest) {
         appointment.id,
         'Reconciliación de una cita ya cancelada.',
       ).catch((taskError) => console.error('[booking/manage/cancel] retry admin task:', taskError));
+      await refreshAdminDailyAgenda(admin).catch((agendaError) => {
+        console.error('[booking/manage/cancel] retry agenda refresh:', agendaError);
+      });
       return NextResponse.json({ ok: true, alreadyCancelled: true });
     }
     if (appointment.status !== 'confirmed') {
@@ -82,6 +86,10 @@ export async function POST(request: NextRequest) {
       appointment.id,
       'Cita cancelada por el cliente desde enlace seguro de gestión.',
     ).catch((taskError) => console.error('[booking/manage/cancel] admin task:', taskError));
+
+    await refreshAdminDailyAgenda(admin).catch((agendaError) => {
+      console.error('[booking/manage/cancel] agenda refresh:', agendaError);
+    });
 
     return NextResponse.json({ ok: true });
   } catch (error) {

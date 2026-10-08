@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const route = readFileSync('app/api/cron/kia-email-agent/route.ts', 'utf8');
+const materializer = readFileSync('lib/admin/kia-operational-task.ts', 'utf8');
 const migration = readFileSync(
   'supabase/migrations/20261006110514_internal_tasks_open_action_fingerprint.sql',
   'utf8',
@@ -9,9 +10,9 @@ const migration = readFileSync(
 
 describe('KIA email action deduplication', () => {
   it('preserves Unicode letters and numbers in action fingerprints', () => {
-    expect(route).toContain("\\p{M}+");
-    expect(route).toContain("[^\\p{L}\\p{N}]+");
-    expect(route).toContain("|| input.message.id");
+    expect(materializer).toContain("\\p{M}+");
+    expect(materializer).toContain("[^\\p{L}\\p{N}]+");
+    expect(materializer).toContain('input.originId');
   });
 
   it('enforces one open task per action fingerprint at database level', () => {
@@ -21,8 +22,8 @@ describe('KIA email action deduplication', () => {
   });
 
   it('resolves concurrent unique conflicts back to the existing open task', () => {
-    expect(route).toContain("error.code !== '23505'");
-    expect(route).toContain(".eq('metadata->>action_fingerprint', actionFingerprint)");
+    expect(materializer).toContain("error.code !== '23505'");
+    expect(materializer).toContain(".eq('metadata->>action_fingerprint', actionFingerprint)");
   });
 
   it('blocks task creation and auto-send when orchestration failed closed', () => {
@@ -32,9 +33,9 @@ describe('KIA email action deduplication', () => {
   });
 
   it('rechecks open status before reusing an action task', () => {
-    expect(route).toContain(".in('status', ['pendiente', 'en_progreso'])");
-    expect(route).toContain(".select('id,title')");
-    expect(route).toContain('if (reused?.id)');
+    expect(materializer).toContain(".in('status', ['pendiente', 'en_progreso'])");
+    expect(materializer).toContain(".select('id,title,metadata')");
+    expect(materializer).toContain('if (reused)');
   });
 
   it('uses the partial unique expression index as the canonical lookup index', () => {

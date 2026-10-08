@@ -33,6 +33,7 @@ import { verifyPrivateBookingAuthorization } from '@/lib/booking/private-booking
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 import { checkRateLimit, checkSpam, getClientIp, releaseRateLimit } from '@/lib/utils/spam-guard';
 import { notifyAdmins } from '@/lib/integrations/push';
+import { refreshAdminDailyAgenda } from '@/lib/admin/admin-daily-agenda';
 import { describeContentOrigin, normalizeContentOrigin } from '@/lib/marketing/content-origin';
 import { buildLeadAttributionFields } from '@/lib/marketing/server-attribution';
 import {
@@ -949,6 +950,10 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', appointmentId!);
+    });
+
+    await refreshAdminDailyAgenda(admin).catch((agendaError) => {
+      console.error('[booking] agenda refresh failed:', agendaError);
     });
 
     let clientEmailSent = false;

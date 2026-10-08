@@ -20,6 +20,7 @@ import { ensureBookingAdminTask, cancelBookingAdminTask } from '@/lib/booking/bo
 import { resolveActiveClientIdsByEmails, resolveBookingIdentityByEmail } from '@/lib/admin/onboarding-booking-identity';
 import { attributionFromMetadata } from '@/lib/marketing/server-attribution';
 import { describeContentOrigin } from '@/lib/marketing/content-origin';
+import { refreshAdminDailyAgenda } from '@/lib/admin/admin-daily-agenda';
 
 async function requireAdmin(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -774,6 +775,10 @@ export async function PATCH(request: NextRequest) {
       }).catch((e) => console.error('[cita] confirmation email failed:', e));
     }
 
+    await refreshAdminDailyAgenda(admin).catch((agendaError) => {
+      console.error('[admin/citas] agenda refresh:', agendaError);
+    });
+
     return NextResponse.json({ appointment: appt });
   } catch (err) {
     console.error('[admin/citas]', err);
@@ -838,6 +843,10 @@ export async function DELETE(request: NextRequest) {
       id,
       'Cita eliminada desde Admin.',
     ).catch((taskError) => console.error('[admin/citas] DELETE task:', taskError));
+
+    await refreshAdminDailyAgenda(admin).catch((agendaError) => {
+      console.error('[admin/citas] DELETE agenda refresh:', agendaError);
+    });
 
     return NextResponse.json({ ok: true });
   } catch (err) {

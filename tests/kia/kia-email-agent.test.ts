@@ -8,6 +8,7 @@ describe('KIA guarded email agent', () => {
   const route = source('app/api/cron/kia-email-agent/route.ts');
   const helper = source('lib/integrations/operational-gmail.ts');
   const gmail = source('lib/integrations/gmail.ts');
+  const taskMaterializer = source('lib/admin/kia-operational-task.ts');
   const scheduler = source('supabase/migrations/20261006090844_consolidate_application_crons_20261006.sql');
 
   it('is fail-closed and requires explicit auto-send plus a live communication stack', () => {
@@ -71,11 +72,12 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain('/admin/correo/hilo?provider=gmail&conversationId=');
   });
 
-  it('deduplicates email tasks by operational action rather than only message id', () => {
-    expect(route).toContain('action_fingerprint');
-    expect(route).toContain(".eq('metadata->>action_fingerprint', actionFingerprint)");
-    expect(route).toContain("email-request:");
-    expect(route).toContain("title: actionText.slice(0, 220)");
+  it('deduplicates email tasks through the shared operational action materializer', () => {
+    expect(route).toContain('materializeKiaOperationalTask');
+    expect(taskMaterializer).toContain('action_fingerprint');
+    expect(taskMaterializer).toContain(".eq('metadata->>action_fingerprint', actionFingerprint)");
+    expect(taskMaterializer).toContain("kia-action:");
+    expect(taskMaterializer).toContain("title: actionText.slice(0, 220)");
     expect(route).toContain("if (createdTask?.created)");
   });
 
@@ -104,8 +106,8 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain('search_knowledge_resources');
     expect(route).toContain('get_booking_availability');
     expect(route).toContain('create_booking_meeting');
-    expect(route).toContain("if (input.nextAction !== 'create_task') return null");
-    expect(route).toContain("task_kind: 'email_request'");
+    expect(taskMaterializer).toContain("if (input.nextAction !== 'create_task') return null");
+    expect(taskMaterializer).toContain("task_kind: 'kia_operational_action'");
   });
 
   it('keeps operational inspection unread until a human or policy changes it', () => {

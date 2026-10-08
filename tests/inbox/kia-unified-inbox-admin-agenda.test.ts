@@ -31,14 +31,17 @@ describe('KIA unified inbox and admin agenda', () => {
     expect(provider).toContain('createMs365TeamsMeeting(stored, meetingInput)');
   });
 
-  it('publishes daily tasks and meetings to the admin Google agenda', () => {
+  it('publishes and refreshes daily tasks and meetings in the canonical admin Google agenda', () => {
     const summary = source('app/api/cron/daily-summary/route.ts');
+    const agenda = source('lib/admin/admin-daily-agenda.ts');
     const google = source('lib/integrations/google-calendar.ts');
 
-    expect(summary).toContain('createAdminAgendaEventSA({');
-    expect(summary).toContain('admin_agenda_event:');
-    expect(summary).toContain("Panel de tareas: https://expertconsulting.es/admin/tareas");
+    expect(summary).toContain('refreshAdminDailyAgenda(admin, now)');
+    expect(agenda).toContain('admin_agenda_event:');
+    expect(agenda).toContain('upsertAdminAgendaEventSA({');
+    expect(agenda).toContain("Panel de tareas: https://expertconsulting.es/admin/tareas");
     expect(google).toContain('export async function createAdminAgendaEventSA');
+    expect(google).toContain('export async function upsertAdminAgendaEventSA');
     expect(google).toContain("transparency: 'transparent'");
   });
 
