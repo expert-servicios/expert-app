@@ -387,6 +387,7 @@ async function createEmailRequestTask(input: {
           last_gmail_message_id: input.message.id,
           last_gmail_thread_id: input.message.conversationId,
           last_email_seen_at: new Date().toISOString(),
+          operational_category: input.operationalCategory,
         },
       })
       .eq('id', existingAction.id)
@@ -443,6 +444,7 @@ async function createEmailRequestTask(input: {
           last_gmail_message_id: input.message.id,
           last_gmail_thread_id: input.message.conversationId,
           last_email_seen_at: new Date().toISOString(),
+          operational_category: input.operationalCategory,
         },
       })
       .eq('id', existingConflict.id)
