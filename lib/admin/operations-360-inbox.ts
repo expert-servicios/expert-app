@@ -79,6 +79,7 @@ type ConversationRow = {
   id: string;
   tenant_id: string | null;
   profile_id: string | null;
+  lead_id: string | null;
   channel: string | null;
   company_id: string | null;
   case_id: string | null;
