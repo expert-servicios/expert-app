@@ -63,6 +63,7 @@ const NAV_GROUPS: NavGroup[] = [
     short: "Comms",
     icon: MessageCircle,
     items: [
+      { label: "Inbox 360", href: "/admin/inbox" },
       { label: "Correo", href: "/admin/correo" },
       { label: "Emails", href: "/admin/emails" },
     ],
