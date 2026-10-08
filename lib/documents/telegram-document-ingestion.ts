@@ -111,7 +111,9 @@ export async function ingestTelegramCaseDocument(input: {
       ingestion_ref: ingestionRef,
     },
   });
-  if (auditError) throw auditError;
+  if (auditError) {
+    console.error('[Telegram document] audit log failed:', auditError.message);
+  }
 
   void notifyAdminCaseActivity({
     kind: 'document_uploaded',
