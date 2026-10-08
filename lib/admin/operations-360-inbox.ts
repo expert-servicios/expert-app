@@ -658,8 +658,8 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       ownerName: null,
       slaDueAt: null,
       controlMode: null,
-      kiaSummary: null,
-      suggestedAction: null,
+      kiaSummary: normalize(metadata.kia_summary) || null,
+      suggestedAction: normalize(metadata.next_action) || null,
       operationalCategory: leadOperationalCategory,
       metadata: {
         source: row.source,
@@ -667,6 +667,11 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
         category: row.category,
         lifecycle_stage: row.lifecycle_stage,
         origin: acquisition.origin ?? null,
+        next_action: normalize(metadata.next_action) || null,
+        kia_summary: normalize(metadata.kia_summary) || null,
+        kia_confidence: typeof metadata.kia_confidence === 'number' ? metadata.kia_confidence : null,
+        kia_requires_manual_review: metadata.kia_requires_manual_review === true,
+        meta_kia_status: normalize(metadata.meta_kia_status) || null,
       },
     });
   }
