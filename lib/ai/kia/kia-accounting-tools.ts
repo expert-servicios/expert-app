@@ -13,6 +13,7 @@ import type { KiaContext } from './kia-context-builder';
 import type { KiaToolResult } from './kia-tool-definitions';
 import { EXPERT_IDENTITY } from '@/config/identity';
 import { prepareKiaJournalProposal, type KiaJournalLineInput } from './kia-journal-proposals';
+import { saveKiaJournalInboxProposal } from './kia-journal-inbox-save';
 
 export type KiaAccountingToolName =
   | 'get_accounts_receivable'
@@ -21,7 +22,8 @@ export type KiaAccountingToolName =
   | 'get_unreconciled_transactions'
   | 'prepare_payment_reminder'
   | 'prepare_credit_note_proposal'
-  | 'prepare_journal_entry_proposal';
+  | 'prepare_journal_entry_proposal'
+  | 'save_journal_entry_proposal';
 
 export const ACCOUNTING_TOOL_NAMES = new Set<KiaAccountingToolName>([
   'get_accounts_receivable',
@@ -31,6 +33,7 @@ export const ACCOUNTING_TOOL_NAMES = new Set<KiaAccountingToolName>([
   'prepare_payment_reminder',
   'prepare_credit_note_proposal',
   'prepare_journal_entry_proposal',
+  'save_journal_entry_proposal',
 ]);
 
 type Raw = Record<string, unknown>;
@@ -375,6 +378,15 @@ export async function executeKiaAccountingTool(
   const source = isExpertGlobalHoldedContext(context)
     ? 'holded_expert_global'
     : 'holded_client_integration';
+
+  if (toolName === 'save_journal_entry_proposal') {
+    if (context.actor?.isStaff !== true || !['admin','owner'].includes(context.actor.role ?? '') || !context.actor.userId || !context.company?.id) return fail(toolName, 'Requiere confirmación y contexto Admin de EXPERT.');
+    const saved = await saveKiaJournalInboxProposal(getSupabaseAdmin(),context.actor.userId,{
+      companyId:context.company.id, date:String(args.date ?? ''),reason:String(args.reason ?? ''),
+      evidenceRefs:args.evidenceRefs as string[],lines:args.lines as KiaJournalLineInput[],
+    });
+    return saved.ok ? ok(toolName,{...saved,source:'expert_private_review_inbox'}) : fail(toolName,saved.error);
+  }
 
   if (toolName === 'prepare_journal_entry_proposal') {
     const companyId = context.company?.id;
