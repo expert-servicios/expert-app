@@ -45,6 +45,8 @@ export type Operations360InboxItem = {
   ownerName: string | null;
   slaDueAt: string | null;
   controlMode: 'kia' | 'manual' | null;
+  kiaSummary: string | null;
+  suggestedAction: string | null;
   metadata: Record<string, unknown>;
 };
 
@@ -481,6 +483,8 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       ownerName: null,
       slaDueAt: null,
       controlMode: null,
+      kiaSummary: null,
+      suggestedAction: null,
       metadata: {
         provider,
         unread: Boolean(row.unread),
@@ -550,6 +554,8 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       ownerName: null,
       slaDueAt: null,
       controlMode: manualMode ? 'manual' : 'kia',
+      kiaSummary: null,
+      suggestedAction: nextAction || null,
       metadata: {
         origin_type: row.origin_type,
         origin_ref: row.origin_ref,
@@ -610,6 +616,8 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       ownerName: null,
       slaDueAt: null,
       controlMode: null,
+      kiaSummary: null,
+      suggestedAction: null,
       metadata: {
         source: row.source,
         source_key: row.source_key,
@@ -658,6 +666,25 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       .sort((a, b) => Date.parse(a) - Date.parse(b));
 
     item.nextMeetingAt = meetings[0] ?? null;
+
+    const persistedNextAction = normalize(item.metadata.next_action);
+    if (!item.suggestedAction && persistedNextAction) item.suggestedAction = persistedNextAction;
+
+    if (item.controlMode === 'manual') {
+      item.kiaSummary = 'Conversación bajo control humano; KIA no responderá automáticamente.';
+    } else if (item.status === 'waiting_client') {
+      item.kiaSummary = 'KIA ha pedido información al cliente y está esperando su respuesta.';
+    } else if (item.status === 'needs_action') {
+      item.kiaSummary = item.channel === 'email'
+        ? 'Entrada pendiente de actuación o revisión humana.'
+        : 'KIA ha escalado esta entrada para revisión humana.';
+    } else if (item.status === 'kia_working') {
+      item.kiaSummary = item.metadata.latest_role === 'assistant'
+        ? 'KIA ya respondió y mantiene la conversación activa.'
+        : 'KIA mantiene esta conversación activa y puede continuar la gestión.';
+    } else {
+      item.kiaSummary = 'Sin acción inmediata pendiente.';
+    }
   }
 
   const q = lower(options.q);
