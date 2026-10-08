@@ -196,7 +196,8 @@ function uniqueEmailIndex<T extends { id: string; email: string | null }>(rows: 
   const ambiguous = new Set<string>();
   for (const [email, byId] of grouped) {
     if (byId.size === 1) {
-      unique.set(email, [...byId.values()][0]);
+      const only = byId.values().next().value;
+      if (only) unique.set(email, only);
     } else {
       ambiguous.add(email);
     }
