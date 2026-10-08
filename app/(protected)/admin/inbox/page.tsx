@@ -46,6 +46,8 @@ type InboxItem = {
   ownerName: string | null;
   slaDueAt: string | null;
   controlMode: 'kia' | 'manual' | null;
+  kiaSummary: string | null;
+  suggestedAction: string | null;
   metadata: Record<string, unknown>;
 };
 
@@ -592,13 +594,15 @@ export default function AdminOperations360InboxPage() {
                         <h3 className="font-semibold">Estado KIA</h3>
                       </div>
                       <p className="mt-2 text-sm text-[#526171]">
-                        {selected.status === 'needs_action'
-                          ? 'La entrada requiere intervención humana o revisión antes de continuar.'
-                          : selected.status === 'waiting_client'
-                            ? 'KIA ha pedido información y la siguiente acción depende del cliente.'
-                          : selected.status === 'kia_working'
-                            ? 'KIA mantiene la conversación activa y no hay escalación humana registrada.'
-                            : 'La entrada no tiene acción inmediata pendiente.'}
+                        {selected.kiaSummary || (
+                          selected.status === 'needs_action'
+                            ? 'La entrada requiere intervención humana o revisión antes de continuar.'
+                            : selected.status === 'waiting_client'
+                              ? 'KIA ha pedido información y la siguiente acción depende del cliente.'
+                              : selected.status === 'kia_working'
+                                ? 'KIA mantiene la conversación activa y no hay escalación humana registrada.'
+                                : 'La entrada no tiene acción inmediata pendiente.'
+                        )}
                       </p>
                       {selected.kiaState && <p className="mt-2 text-xs text-[#8a8177]">Estado técnico: {selected.kiaState}</p>}
                       {selected.controlMode && (
@@ -606,9 +610,9 @@ export default function AdminOperations360InboxPage() {
                           Control: {selected.controlMode === 'manual' ? 'Humano' : 'KIA'}
                         </p>
                       )}
-                      {nextActionLabel(selected.metadata.next_action) && (
+                      {nextActionLabel(selected.suggestedAction ?? selected.metadata.next_action) && (
                         <p className="mt-2 text-xs text-[#526171]">
-                          Siguiente acción KIA: <span className="font-semibold">{nextActionLabel(selected.metadata.next_action)}</span>
+                          Siguiente acción KIA: <span className="font-semibold">{nextActionLabel(selected.suggestedAction ?? selected.metadata.next_action)}</span>
                         </p>
                       )}
                     </section>
