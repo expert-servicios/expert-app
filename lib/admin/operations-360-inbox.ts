@@ -53,6 +53,113 @@ type LoadOptions = {
 
 type DbResult<T> = { data: T[] | null; error: { message: string } | null };
 
+type EmailRow = {
+  thread_id: string | null;
+  provider: string | null;
+  subject: string | null;
+  from_name: string | null;
+  from_email: string | null;
+  snippet: string | null;
+  date: string | null;
+  unread: boolean | null;
+  has_attachment: boolean | null;
+  case_id: string | null;
+};
+
+type ConversationRow = {
+  id: string;
+  tenant_id: string | null;
+  profile_id: string | null;
+  channel: string | null;
+  company_id: string | null;
+  case_id: string | null;
+  service_slug: string | null;
+  topic: string | null;
+  status: string | null;
+  origin_type: string | null;
+  origin_ref: string | null;
+  metadata: unknown;
+  last_message_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+type ConversationMessageRow = {
+  id: string;
+  conversation_id: string;
+  profile_id: string | null;
+  channel: string | null;
+  role: string | null;
+  body: string | null;
+  intent: string | null;
+  metadata: unknown;
+  created_at: string | null;
+};
+
+type LeadRow = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  category: string | null;
+  service: string | null;
+  message: string | null;
+  state: string | null;
+  source: string | null;
+  source_key: string | null;
+  metadata: unknown;
+  created_at: string | null;
+  updated_at: string | null;
+  lifecycle_stage: string | null;
+};
+
+type TaskRow = {
+  id: string;
+  status: string | null;
+  client_id: string | null;
+  company_id: string | null;
+  case_id: string | null;
+  lead_id: string | null;
+  due_date: string | null;
+  priority: string | null;
+  created_at: string | null;
+};
+
+type MeetingRow = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  service: string | null;
+  appointment_type: string | null;
+  appointment_date: string | null;
+  confirmed_date: string | null;
+  confirmed_time: string | null;
+  status: string | null;
+  client_id: string | null;
+  company_id: string | null;
+};
+
+type CaseRow = {
+  id: string;
+  client_id: string | null;
+  company_id: string | null;
+  service: string | null;
+};
+
+type ProfileRow = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  phone: string | null;
+};
+
+type CompanyRow = {
+  id: string;
+  razon_social: string | null;
+  nombre_comercial: string | null;
+  cif_nif: string | null;
+};
+
 function normalize(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
@@ -199,12 +306,12 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       .order('appointment_date', { ascending: false })
       .limit(250),
   ]) as [
-    DbResult<any>,
-    DbResult<any>,
-    DbResult<any>,
-    DbResult<any>,
-    DbResult<any>,
-    DbResult<any>,
+    DbResult<EmailRow>,
+    DbResult<ConversationRow>,
+    DbResult<ConversationMessageRow>,
+    DbResult<LeadRow>,
+    DbResult<TaskRow>,
+    DbResult<MeetingRow>,
   ];
 
   for (const [name, result] of [
@@ -258,7 +365,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
     emailCandidates.length
       ? admin.from('profiles').select('id,full_name,email,phone').in('email', emailCandidates)
       : Promise.resolve({ data: [], error: null }),
-  ]) as [DbResult<any>, DbResult<any>, DbResult<any>];
+  ]) as [DbResult<CaseRow>, DbResult<ProfileRow>, DbResult<ProfileRow>];
 
   for (const [name, result] of [
     ['cases_lookup', casesRes],
@@ -273,9 +380,9 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
     ...(casesRes.data ?? []).map((row) => row.company_id),
   ].filter(Boolean))];
 
-  const companiesRes = allCompanyIds.length
+  const companiesRes = (allCompanyIds.length
     ? await admin.from('companies').select('id,razon_social,nombre_comercial,cif_nif').in('id', allCompanyIds)
-    : { data: [], error: null };
+    : { data: [], error: null }) as DbResult<CompanyRow>;
   if (companiesRes.error) warnings.push(`companies_lookup: ${companiesRes.error.message}`);
 
   const caseById = new Map((casesRes.data ?? []).map((row) => [row.id, row]));
@@ -289,7 +396,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
   );
   const companyById = new Map((companiesRes.data ?? []).map((row) => [row.id, row]));
 
-  const latestMessageByConversation = new Map<string, any>();
+  const latestMessageByConversation = new Map<string, ConversationMessageRow>();
   for (const message of messageRows) {
     if (!latestMessageByConversation.has(message.conversation_id)) {
       latestMessageByConversation.set(message.conversation_id, message);
