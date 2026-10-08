@@ -144,6 +144,17 @@ export const kiaToolValidators = {
     tone: z.enum(['gentle', 'firm', 'formal']).default('gentle'),
     lang: z.enum(['es', 'ru']).default('es'),
   }).strict(),
+  prepare_journal_entry_proposal: z.object({
+    date: calendarDateSchema,
+    reason: z.string().trim().min(3).max(500),
+    evidenceRefs: z.array(z.string().trim().min(1).max(1024)).min(1).max(20),
+    lines: z.array(z.object({
+      account: z.string().regex(/^\\d{3,12}$/),
+      debitCents: z.number().int().nonnegative(),
+      creditCents: z.number().int().nonnegative(),
+      explanation: z.string().max(500).optional(),
+    }).strict()).min(2).max(100),
+  }).strict(),
   prepare_credit_note_proposal: z.object({
     invoiceId: z.string().trim().min(1).max(200),
     reason: z.string().trim().min(3).max(500),
@@ -351,6 +362,7 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_overdue_invoices: 'Return overdue receivable/payable documents for the active company. Read-only; due status is derived conservatively from available Holded fields.',
   get_unreconciled_transactions: 'Return bank movements that remain pending or partially reconciled in Holded treasury data. Read-only.',
   prepare_payment_reminder: 'Prepare an admin-only payment reminder for one outstanding Holded invoice. Does not send email or mutate Holded.',
+  prepare_journal_entry_proposal: 'Validate an admin-only proposed journal entry with balanced debits and credits; never posts to Holded.',
   prepare_credit_note_proposal: 'Prepare an admin-only credit-note proposal linked to one issued Holded invoice. Does not create or modify any Holded document.',
   get_holded_employees: 'List or search Holded employees for the already-authorized active company. Read-only; never changes employee data.',
   get_holded_employee_contract: 'Read one Holded employee and their active contract for the already-authorized active company. Read-only.',
