@@ -41,6 +41,10 @@ export type Operations360InboxItem = {
   sourceHref: string;
   taskCount: number;
   nextMeetingAt: string | null;
+  ownerId: string | null;
+  ownerName: string | null;
+  slaDueAt: string | null;
+  controlMode: 'kia' | 'manual' | null;
   metadata: Record<string, unknown>;
 };
 
@@ -122,6 +126,7 @@ type TaskRow = {
   lead_id: string | null;
   due_date: string | null;
   priority: string | null;
+  assigned_to: string | null;
   created_at: string | null;
 };
 
@@ -296,7 +301,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       .limit(250),
     admin
       .from('internal_tasks')
-      .select('id,status,client_id,company_id,case_id,lead_id,due_date,priority,created_at')
+      .select('id,status,client_id,company_id,case_id,lead_id,due_date,priority,assigned_to,created_at')
       .in('status', ['pendiente', 'en_progreso'])
       .order('created_at', { ascending: false })
       .limit(300),
@@ -341,6 +346,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
   const profileIds = [...new Set([
     ...conversationRows.map((row) => row.profile_id),
     ...taskRows.map((row) => row.client_id),
+    ...taskRows.map((row) => row.assigned_to),
     ...meetingRows.map((row) => row.client_id),
   ].filter(Boolean))];
 
@@ -441,6 +447,10 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       sourceHref: `/admin/correo/hilo?provider=${encodeURIComponent(provider)}&conversationId=${encodeURIComponent(row.thread_id)}${clientId ? `&clientId=${encodeURIComponent(clientId)}` : ''}`,
       taskCount: 0,
       nextMeetingAt: null,
+      ownerId: null,
+      ownerName: null,
+      slaDueAt: null,
+      controlMode: null,
       metadata: {
         provider,
         unread: Boolean(row.unread),
@@ -462,11 +472,12 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
     const caseRow = row.case_id ? caseById.get(row.case_id) : null;
     const clientId = row.profile_id ?? caseRow?.client_id ?? null;
     const companyId = row.company_id ?? caseRow?.company_id ?? null;
+    const manualMode = metadata.operations360_mode === 'manual';
     const escalated = hasHumanEscalation({ ...metadata, ...latestMetadata });
     const status: Operations360Status =
       row.status !== 'active'
         ? 'resolved'
-        : escalated
+        : manualMode || escalated
           ? 'needs_action'
           : 'kia_working';
     const channel = asChannel(row.channel, 'kia');
@@ -499,6 +510,10 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       sourceHref: '/admin/kia',
       taskCount: 0,
       nextMeetingAt: null,
+      ownerId: null,
+      ownerName: null,
+      slaDueAt: null,
+      controlMode: manualMode ? 'manual' : 'kia',
       metadata: {
         origin_type: row.origin_type,
         origin_ref: row.origin_ref,
@@ -554,6 +569,10 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       sourceHref: `/admin/leads?focus=${encodeURIComponent(row.id)}`,
       taskCount: 0,
       nextMeetingAt: null,
+      ownerId: null,
+      ownerName: null,
+      slaDueAt: null,
+      controlMode: null,
       metadata: {
         source: row.source,
         source_key: row.source_key,
@@ -566,7 +585,17 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
 
   const now = Date.now();
   for (const item of items) {
-    item.taskCount = taskRows.filter((task) => taskMatches(task, item)).length;
+    const matchingTasks = taskRows.filter((task) => taskMatches(task, item));
+    item.taskCount = matchingTasks.length;
+    const assignedTask = matchingTasks.find((task) => task.assigned_to) ?? null;
+    item.ownerId = assignedTask?.assigned_to ?? (
+      typeof item.metadata.operations360_owner_id === 'string' ? item.metadata.operations360_owner_id : null
+    );
+    item.ownerName = item.ownerId ? (profileById.get(item.ownerId)?.full_name ?? null) : null;
+    item.slaDueAt = matchingTasks
+      .map((task) => task.due_date)
+      .filter((value): value is string => Boolean(value))
+      .sort()[0] ?? null;
 
     const meetings = meetingRows
       .filter((meeting) => !['cancelled', 'canceled'].includes(lower(meeting.status)))
