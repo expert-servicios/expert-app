@@ -12,6 +12,7 @@ import { resolveKiaCompanyHoldedAccess } from './kia-holded-access';
 import type { KiaContext } from './kia-context-builder';
 import type { KiaToolResult } from './kia-tool-definitions';
 import { EXPERT_IDENTITY } from '@/config/identity';
+import { prepareKiaJournalProposal, type KiaJournalLineInput } from './kia-journal-proposals';
 
 export type KiaAccountingToolName =
   | 'get_accounts_receivable'
@@ -19,7 +20,8 @@ export type KiaAccountingToolName =
   | 'get_overdue_invoices'
   | 'get_unreconciled_transactions'
   | 'prepare_payment_reminder'
-  | 'prepare_credit_note_proposal';
+  | 'prepare_credit_note_proposal'
+  | 'prepare_journal_entry_proposal';
 
 export const ACCOUNTING_TOOL_NAMES = new Set<KiaAccountingToolName>([
   'get_accounts_receivable',
@@ -28,6 +30,7 @@ export const ACCOUNTING_TOOL_NAMES = new Set<KiaAccountingToolName>([
   'get_unreconciled_transactions',
   'prepare_payment_reminder',
   'prepare_credit_note_proposal',
+  'prepare_journal_entry_proposal',
 ]);
 
 type Raw = Record<string, unknown>;
@@ -372,6 +375,19 @@ export async function executeKiaAccountingTool(
   const source = isExpertGlobalHoldedContext(context)
     ? 'holded_expert_global'
     : 'holded_client_integration';
+
+  if (toolName === 'prepare_journal_entry_proposal') {
+    const companyId = context.company?.id;
+    if (!companyId || !context.actor?.isStaff) return fail(toolName, 'Se requiere empresa autorizada y acceso de personal EXPERT.');
+    const proposal = prepareKiaJournalProposal({
+      companyId,
+      date: String(args.date ?? ''),
+      reason: String(args.reason ?? ''),
+      evidenceRefs: args.evidenceRefs as string[],
+      lines: args.lines as KiaJournalLineInput[],
+    });
+    return proposal.ok ? ok(toolName, { ...proposal, source: 'proposal_only' }) : fail(toolName, proposal.errors.join(' '));
+  }
 
   if (toolName === 'prepare_payment_reminder') {
     const invoiceId = String(args.invoiceId ?? '').trim();
