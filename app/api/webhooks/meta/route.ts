@@ -13,6 +13,11 @@ import { runKiaOrchestratedDecision } from '@/lib/ai/kia/kia-orchestrator';
 import { checkKiaLeadDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
 import { resolveKiaOperationalCategory } from '@/lib/ai/kia/kia-operational-routing';
 import { materializeKiaOperationalTask } from '@/lib/admin/kia-operational-task';
+import {
+  appendKiaConversationMessage,
+  getKiaConversationControlMode,
+  getOrCreateKiaLeadConversation,
+} from '@/lib/ai/kia/kia-conversation-store';
 
 function claimKey(event: MetaInboundEvent) {
   return `meta_inbound:${event.channel}:${event.eventId}`;
@@ -169,6 +174,56 @@ async function processMessagingEvent(
     }).catch(() => {});
   }
 
+  const conversationId = await getOrCreateKiaLeadConversation({
+    admin,
+    leadId: lead.leadId,
+    channel: 'meta',
+    originRef: `${event.channel}:${event.senderId}`,
+    topic: `${label} · ${event.senderId}`,
+    metadata: {
+      meta_channel: event.channel,
+      meta_sender_id: event.senderId,
+      meta_recipient_id: event.recipientId,
+      lead_id: lead.leadId,
+    },
+  });
+
+  const { data: conversation, error: conversationError } = await admin
+    .from('kia_conversations')
+    .select('metadata,status')
+    .eq('id', conversationId)
+    .eq('lead_id', lead.leadId)
+    .maybeSingle();
+  if (conversationError) throw conversationError;
+  if (!conversation || conversation.status !== 'active') throw new Error('meta_conversation_not_active');
+
+  await appendKiaConversationMessage({
+    admin,
+    conversationId,
+    role: 'user',
+    body: message,
+    metadata: {
+      meta_channel: event.channel,
+      meta_event_id: event.eventId,
+      meta_message_id: event.messageId,
+      meta_sender_id: event.senderId,
+      attachments_count: event.attachmentsCount,
+      delivery_state: 'received',
+    },
+  });
+
+  if (getKiaConversationControlMode(conversation.metadata) === 'manual') {
+    await persistMetaKiaAssessment(admin, lead.leadId, {
+      meta_kia_status: 'manual_control',
+      next_action: 'needs_review',
+      operational_category: 'manual_review',
+      kia_summary: 'Conversación Meta bajo control humano; KIA no responderá automáticamente.',
+      kia_requires_manual_review: true,
+      meta_conversation_id: conversationId,
+    });
+    return lead.leadId;
+  }
+
   if (!event.text?.trim()) {
     await persistMetaKiaAssessment(admin, lead.leadId, {
       operational_category: 'manual_review',
@@ -178,6 +233,7 @@ async function processMessagingEvent(
       kia_confidence: 0,
       kia_requires_manual_review: true,
       meta_kia_status: 'needs_review',
+      meta_conversation_id: conversationId,
     });
     return lead.leadId;
   }
@@ -187,6 +243,7 @@ async function processMessagingEvent(
       meta_kia_status: 'rate_limited',
       next_action: 'needs_review',
       operational_category: 'manual_review',
+      meta_conversation_id: conversationId,
     });
     return lead.leadId;
   }
@@ -197,75 +254,122 @@ async function processMessagingEvent(
       meta_kia_status: 'daily_cost_cap_reached',
       next_action: 'needs_review',
       operational_category: 'manual_review',
+      meta_conversation_id: conversationId,
     });
     return lead.leadId;
   }
 
-  const locale = /[А-Яа-яЁё]/.test(event.text) ? 'ru' : 'es';
-  const result = await runKiaOrchestratedDecision({
-    input: {
-      taskType: 'chat_reply',
-      channel: 'meta',
-      message: event.text.trim(),
-      locale,
-      contextInput: {
+  try {
+    const locale = /[А-Яа-яЁё]/.test(event.text) ? 'ru' : 'es';
+    const result = await runKiaOrchestratedDecision({
+      input: {
+        taskType: 'chat_reply',
         channel: 'meta',
-        leadId: lead.leadId,
-        latestMessage: event.text.trim(),
-        currentPage: event.channel === 'instagram' ? '/instagram' : '/facebook',
+        message: event.text.trim(),
+        locale,
+        contextInput: {
+          channel: 'meta',
+          leadId: lead.leadId,
+          latestMessage: event.text.trim(),
+          currentPage: event.channel === 'instagram' ? '/instagram' : '/facebook',
+        },
+        allowTools: false,
+        includeOfficialSourceContext: true,
       },
-      allowTools: false,
-      includeOfficialSourceContext: true,
-    },
-    policyAuthorization: {
-      channel: 'meta',
-      requestedNames: [],
-      maxRiskTier: 'R0',
-      allowedEffects: ['read'],
-      autonomousOnly: true,
-    },
-    policyToolNames: [],
-  });
+      policyAuthorization: {
+        channel: 'meta',
+        requestedNames: [],
+        maxRiskTier: 'R0',
+        allowedEffects: ['read'],
+        autonomousOnly: true,
+      },
+      policyToolNames: [],
+    });
 
-  const operationalCategory = resolveKiaOperationalCategory({
-    skillId: result.executionTrace.skillId,
-    subAgentId: result.executionTrace.preferredSubAgentId,
-    detectedIntent: result.decision.intent,
-    requiresManualReview: result.decision.requiresManualReview || result.decision.nextAction === 'needs_review',
-  });
+    const operationalCategory = resolveKiaOperationalCategory({
+      skillId: result.executionTrace.skillId,
+      subAgentId: result.executionTrace.preferredSubAgentId,
+      detectedIntent: result.decision.intent,
+      requiresManualReview: result.decision.requiresManualReview || result.decision.nextAction === 'needs_review',
+    });
 
-  await persistMetaKiaAssessment(admin, lead.leadId, {
-    operational_category: operationalCategory,
-    next_action: result.decision.nextAction,
-    kia_summary: result.decision.decisionSummary,
-    kia_draft_reply: result.userMessage,
-    kia_confidence: result.decision.confidence,
-    kia_requires_manual_review: result.decision.requiresManualReview,
-    kia_decision_log_id: result.decisionLogId ?? null,
-    meta_kia_status: 'prepared_not_sent',
-    meta_kia_channel: event.channel,
-    meta_last_event_id: event.eventId,
-  });
+    await appendKiaConversationMessage({
+      admin,
+      conversationId,
+      role: 'assistant',
+      body: result.userMessage,
+      intent: result.decision.intent,
+      metadata: {
+        delivery_state: 'prepared',
+        not_sent: true,
+        meta_channel: event.channel,
+        meta_event_id: event.eventId,
+        next_action: result.decision.nextAction,
+        operational_category: operationalCategory,
+        decision_log_id: result.decisionLogId ?? null,
+        confidence: result.decision.confidence,
+        requires_manual_review: result.decision.requiresManualReview,
+      },
+    });
 
-  await materializeKiaOperationalTask({
-    admin,
-    origin: 'meta',
-    originId: `${event.channel}:${event.eventId}`,
-    summary: result.decision.decisionSummary,
-    description: event.text.trim(),
-    nextAction: result.decision.nextAction,
-    confidence: result.decision.confidence,
-    requiresManualReview: result.decision.requiresManualReview,
-    operationalCategory,
-    leadId: lead.leadId,
-    decisionLogId: result.decisionLogId ?? null,
-    metadata: {
-      meta_channel: event.channel,
-      meta_event_id: event.eventId,
-      meta_sender_id: event.senderId,
-      reply_status: 'prepared_not_sent',
-    },
-  }).catch((error) => console.error('[Meta webhook] KIA operational task failed:', error));
+    await persistMetaKiaAssessment(admin, lead.leadId, {
+      operational_category: operationalCategory,
+      next_action: result.decision.nextAction,
+      kia_summary: result.decision.decisionSummary,
+      kia_draft_reply: result.userMessage,
+      kia_confidence: result.decision.confidence,
+      kia_requires_manual_review: result.decision.requiresManualReview,
+      kia_decision_log_id: result.decisionLogId ?? null,
+      meta_kia_status: 'prepared_not_sent',
+      meta_kia_channel: event.channel,
+      meta_last_event_id: event.eventId,
+      meta_conversation_id: conversationId,
+    });
+
+    await materializeKiaOperationalTask({
+      admin,
+      origin: 'meta',
+      originId: `${event.channel}:${event.eventId}`,
+      summary: result.decision.decisionSummary,
+      description: event.text.trim(),
+      nextAction: result.decision.nextAction,
+      confidence: result.decision.confidence,
+      requiresManualReview: result.decision.requiresManualReview,
+      operationalCategory,
+      leadId: lead.leadId,
+      decisionLogId: result.decisionLogId ?? null,
+      metadata: {
+        meta_channel: event.channel,
+        meta_event_id: event.eventId,
+        meta_sender_id: event.senderId,
+        meta_conversation_id: conversationId,
+        reply_status: 'prepared_not_sent',
+      },
+    }).catch((error) => console.error('[Meta webhook] KIA operational task failed:', error));
+  } catch (error) {
+    const messageText = error instanceof Error ? error.message : String(error);
+    console.error('[Meta webhook] KIA draft failed:', messageText);
+    await appendKiaConversationMessage({
+      admin,
+      conversationId,
+      role: 'system',
+      body: 'KIA no pudo preparar una respuesta. Revisión humana requerida.',
+      metadata: {
+        delivery_state: 'failed',
+        meta_event_id: event.eventId,
+        failure_stage: 'kia_draft',
+      },
+    }).catch(() => {});
+    await persistMetaKiaAssessment(admin, lead.leadId, {
+      operational_category: 'manual_review',
+      next_action: 'needs_review',
+      kia_summary: 'KIA no pudo preparar una respuesta; revisar manualmente.',
+      kia_draft_reply: null,
+      kia_requires_manual_review: true,
+      meta_kia_status: 'kia_error',
+      meta_conversation_id: conversationId,
+    });
+  }
 
   return lead.leadId;
 }
