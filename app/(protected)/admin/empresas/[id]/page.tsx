@@ -2,6 +2,7 @@
 import { Company360Questionnaire } from '@/components/company/Company360Questionnaire';
 import { CompanyDriveDocumentsPanel } from './CompanyDriveDocumentsPanel';
 import { CompanyRegistryPanel } from './CompanyRegistryPanel';
+import { CompanyJournalProposalsPanel } from './CompanyJournalProposalsPanel';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -378,6 +379,7 @@ export default function Company360Page() {
         <Company360Questionnaire companyId={id} compact />
 
         <CompanyRegistryPanel companyId={id} />
+          <CompanyJournalProposalsPanel companyId={id} />
 
         <section className="rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
           <h2 className="font-serif text-xl font-bold text-[#07111d]">Operación de la entidad</h2>
