@@ -1,5 +1,6 @@
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import type { TelegramInboundMessage } from '@/lib/integrations/telegram';
+import { notifyAdminCaseActivity } from '@/lib/admin/case-admin-notifications';
 import {
   buildClientDocumentStoragePath,
   CLIENT_DOCUMENT_MAX_BYTES,
@@ -24,7 +25,7 @@ export async function ingestTelegramCaseDocument(input: {
 
   const caseQuery = input.admin
     .from('cases')
-    .select('id,client_id,company_id,tenant_id')
+    .select('id,client_id,company_id,tenant_id,service')
     .eq('id', input.caseId)
     .eq('client_id', input.profileId);
   const { data: caseRow, error: caseError } = await (
@@ -111,6 +112,16 @@ export async function ingestTelegramCaseDocument(input: {
     },
   });
   if (auditError) throw auditError;
+
+  void notifyAdminCaseActivity({
+    kind: 'document_uploaded',
+    caseId: input.caseId,
+    service: caseRow.service ?? 'Expediente',
+    clientName: null,
+    detail: `Documento recibido por Telegram: ${document.original_name}`,
+    eventRef: document.id,
+    occurredAt: document.created_at,
+  });
 
   return { document, created: true };
 }
