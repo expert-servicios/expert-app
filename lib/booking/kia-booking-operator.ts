@@ -28,6 +28,7 @@ import { createBookingManagementToken, bookingManagementUrls } from '@/lib/booki
 import { buildBookingIcs } from '@/lib/booking/calendar-invite';
 import { sendBookingEmail } from '@/lib/booking/booking-email';
 import { citaConfirmed } from '@/lib/email/templates';
+import { refreshAdminDailyAgenda } from '@/lib/admin/admin-daily-agenda';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -286,6 +287,10 @@ export async function createKiaConfirmedBooking(input: {
       clientId: input.clientId ?? null,
       companyId: input.companyId ?? null,
       leadId: input.leadId ?? null,
+    });
+
+    await refreshAdminDailyAgenda(admin).catch((agendaError) => {
+      console.error('[kia-booking] agenda refresh failed:', agendaError);
     });
 
     const managementToken = await createBookingManagementToken({
