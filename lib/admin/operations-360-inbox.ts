@@ -458,7 +458,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
     const latest = latestMessageByConversation.get(row.id);
     const metadata = objectValue(row.metadata);
     const latestMetadata = objectValue(latest?.metadata);
-    const profile = profileById.get(row.profile_id) ?? null;
+    const profile = row.profile_id ? profileById.get(row.profile_id) ?? null : null;
     const caseRow = row.case_id ? caseById.get(row.case_id) : null;
     const clientId = row.profile_id ?? caseRow?.client_id ?? null;
     const companyId = row.company_id ?? caseRow?.company_id ?? null;
