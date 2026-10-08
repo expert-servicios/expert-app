@@ -10,6 +10,7 @@ const email = source('app/api/cron/kia-email-agent/route.ts');
 const publicBooking = source('app/api/booking/route.ts');
 const kiaBooking = source('lib/booking/kia-booking-operator.ts');
 const adminAppointments = source('app/api/admin/citas/route.ts');
+const clientCancellation = source('app/api/booking/manage/cancel/route.ts');
 const recurring = source('lib/booking/recurring-meeting-series.ts');
 
 describe('Operations 360 Phase 2 mutation hooks', () => {
@@ -32,6 +33,7 @@ describe('Operations 360 Phase 2 mutation hooks', () => {
     expect(kiaBooking).toContain('refreshAdminDailyAgenda(admin)');
     expect(adminAppointments).toContain('refreshAdminDailyAgenda(admin)');
     expect(adminAppointments).toContain('DELETE agenda refresh');
+    expect(clientCancellation).toContain('refreshAdminDailyAgenda(admin)');
     expect(recurring).toContain('refreshAdminDailyAgenda(admin)');
   });
 });
