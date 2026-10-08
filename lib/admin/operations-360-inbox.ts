@@ -127,6 +127,8 @@ type TaskRow = {
   due_date: string | null;
   priority: string | null;
   assigned_to: string | null;
+  source_key: string | null;
+  metadata: unknown;
   created_at: string | null;
 };
 
@@ -211,9 +213,14 @@ function taskMatches(
     company_id: string | null;
     case_id: string | null;
     lead_id: string | null;
+    metadata?: unknown;
   },
-  item: Pick<Operations360InboxItem, 'leadId' | 'clientId' | 'companyId' | 'caseId'>,
+  item: Pick<Operations360InboxItem, 'leadId' | 'clientId' | 'companyId' | 'caseId' | 'threadId' | 'channel'>,
 ) {
+  const metadata = objectValue(task.metadata);
+  if (item.channel === 'email' && item.threadId && metadata.task_kind === 'email_manual_lock' && metadata.gmail_thread_id === item.threadId) {
+    return true;
+  }
   if (item.caseId && task.case_id === item.caseId) return true;
   if (item.leadId && task.lead_id === item.leadId) return true;
   if (item.clientId && task.client_id === item.clientId) return true;
@@ -301,7 +308,7 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       .limit(250),
     admin
       .from('internal_tasks')
-      .select('id,status,client_id,company_id,case_id,lead_id,due_date,priority,assigned_to,created_at')
+      .select('id,status,client_id,company_id,case_id,lead_id,due_date,priority,assigned_to,source_key,metadata,created_at')
       .in('status', ['pendiente', 'en_progreso'])
       .order('created_at', { ascending: false })
       .limit(300),
@@ -587,7 +594,19 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
   for (const item of items) {
     const matchingTasks = taskRows.filter((task) => taskMatches(task, item));
     item.taskCount = matchingTasks.length;
-    const assignedTask = matchingTasks.find((task) => task.assigned_to) ?? null;
+    const emailManualLock = item.channel === 'email' && item.threadId
+      ? matchingTasks.find((task) => {
+          const metadata = objectValue(task.metadata);
+          return metadata.task_kind === 'email_manual_lock' && metadata.gmail_thread_id === item.threadId;
+        }) ?? null
+      : null;
+    if (emailManualLock) {
+      item.controlMode = 'manual';
+      item.status = 'needs_action';
+    } else if (item.channel === 'email') {
+      item.controlMode = 'kia';
+    }
+    const assignedTask = emailManualLock ?? matchingTasks.find((task) => task.assigned_to) ?? null;
     item.ownerId = assignedTask?.assigned_to ?? (
       typeof item.metadata.operations360_owner_id === 'string' ? item.metadata.operations360_owner_id : null
     );
