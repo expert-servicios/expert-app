@@ -204,3 +204,35 @@ Esta fase queda deliberadamente en solo lectura (`accounting_read`). Los borrado
 Ninguna herramienta de esta fase ejecuta pagos, envía reclamaciones, crea rectificativas en Holded, borra documentos ni altera asientos.
 
 Para la empresa legal EXPERT (CIF canónico de `EXPERT_IDENTITY`), KIA Accounting utiliza la cuenta global de Holded configurada con `HOLDED_API_KEY`. Para cualquier otra empresa, el acceso continúa aislado por `client_integrations` y sus permisos habilitados.
+
+
+## Actualización operativa — 08/10/2026 (PR #668, #669 y #670)
+
+### Cerrado y fusionado
+
+| Entrega | Estado | Evidencia |
+| --- | --- | --- |
+| Método contable documental de KIA | Fusionado | PR #668 — validación de fuentes, modelos fiscales y conciliación |
+| Holded v2: detección de permisos de consulta | Fusionado | PR #669 — GET plan contable y pagos; escrituras no activadas |
+| KIA: propuestas de asientos no contabilizadas | Fusionado | PR #670 — validación de partidas, fuentes, fecha y revisión humana |
+
+La herramienta `prepare_journal_entry_proposal` devuelve un resultado `pending_human_review`, sin envío a Holded y sin registro persistente. **No es todavía una bandeja de aprobaciones.**
+
+### Plan actualizado, priorizado
+
+| Fase | Objetivo | Criterio de cierre |
+| --- | --- | --- |
+| 3A — Consulta contable autorizada | KIA Admin consulta plan de cuentas y asientos de un periodo con token v2 de la empresa exacta | Paginación, rango explícito, permisos efectivos, prueba de aislamiento por empresa y consultas GET sin efectos |
+| 3B — Bandeja de propuestas | Guardar propuestas con empresa, debe/haber, justificantes, estado, autor y revisión | RLS, historial, prevención de duplicados, API Admin y pruebas de aprobación/rechazo |
+| 3C — Saldos y conciliación histórica | Comparar diario completo y saldos por cuenta con bancos, facturas y cierres 2023-2025 | Señalar periodos incompletos, documentar fuentes e inconsistencias, no afirmar balance certificado desde una sola página API |
+| 4 — Escritura supervisada | En un tenant piloto explícito, crear asientos después de aprobación | Scope write efectivamente verificado, periodo abierto, idempotencia, doble validación, auditoría; sin borrados automáticos |
+| 5 — DGM 2026 | Regularizar apertura y comenzar explotación controlada | Reconstrucción 2023-2025 y conciliación con IS 200, asiento de apertura aprobado; levantar bloqueo solo con autorización independiente |
+
+### Decisiones inalterables hasta autorización
+
+- DGM continúa en `read_only` y `accounting_write_blocked=true`.
+- Una API key Holded con acceso total **no anula** el permiso efectivo de EXPERT ni los controles por empresa.
+- No usar una conexión Holded genérica para acceder a DGM: resolver integración de `client_integrations` por `company_id`.
+- Lectura del diario con `startDate` y `endDate` explícitos; `has_more=true` impide marcar un mayor como completo.
+- Toda corrección histórica exige trazabilidad, justificación contable/fiscal y revisión humana.
+- Las pruebas de CI y los dos despliegues Vercel son obligatorios antes de fusionar.
