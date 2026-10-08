@@ -38,7 +38,7 @@ import { redactSensitiveText, safeErrorMessage, stableHash } from '@/lib/ai/kia/
 import { runSampledKiaShadow } from '@/lib/ai/kia/evals/kia-shadow-sampler';
 import { resolveKiaLocale } from '@/lib/ai/kia/kia-locale';
 import { resolveKiaContextToken } from '@/lib/ai/kia/kia-context-token';
-import { loadKiaConversation, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
+import { appendKiaConversationMessage, getKiaConversationControlMode, loadKiaConversation, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import { findCaseConversation } from '@/lib/ai/kia/kia-telegram-context';
 import { buildAutomaticKiaKnowledgeResult, findKiaRelevantServices } from '@/lib/ai/kia/kia-knowledge-discovery';
 import { buildAutomaticKiaVisualResult } from '@/lib/ai/kia/kia-visual-discovery';
@@ -363,6 +363,40 @@ export async function POST(request: NextRequest) {
     ) {
       effectiveSessionId = undefined;
       effectiveHistory = [];
+    }
+  }
+
+  if (effectiveSessionId && contextualPersistenceEnabled && !adminCopilotMode) {
+    const { data: controlledConversation, error: controlError } = await admin
+      .from('kia_conversations')
+      .select('id,metadata,status')
+      .eq('id', effectiveSessionId)
+      .eq('profile_id', user.id)
+      .maybeSingle();
+    if (controlError) {
+      console.error('[KiaCopilot] conversation control lookup failed:', controlError.message);
+      return NextResponse.json({ error: 'conversation_control_unavailable', reply: 'No he podido comprobar el estado operativo de esta conversación.', avatarState: 'aviso', artifacts: [] }, { status: 500 });
+    }
+    if (controlledConversation?.status === 'active' && getKiaConversationControlMode(controlledConversation.metadata) === 'manual') {
+      await appendKiaConversationMessage({
+        admin,
+        conversationId: controlledConversation.id,
+        role: 'user',
+        body: message,
+        metadata: { operations360_manual_queue: true, source: 'dashboard' },
+      });
+      return NextResponse.json({
+        reply: 'Tu mensaje ha quedado registrado para atención humana.',
+        quickReplies: [],
+        proactiveSuggestions: [],
+        intent: 'manual_handoff',
+        nextAction: 'manual_review',
+        avatarState: 'espera',
+        artifacts: [],
+        decisionLogId: null,
+        adminCopilotMode: false,
+        manualTakeover: true,
+      });
     }
   }
 
