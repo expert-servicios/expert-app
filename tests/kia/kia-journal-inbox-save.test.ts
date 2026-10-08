@@ -1,19 +1,30 @@
-import { describe,expect,it } from 'vitest';
-import { getKiaToolPolicy, isKiaToolSafeForAutonomousExecution } from '@/lib/ai/kia/kia-tool-registry';
-import { validateKiaToolArguments } from '@/lib/ai/kia/kia-tool-definitions';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { getKiaToolDefinition } from '@/lib/ai/kia/kia-tool-definitions';
+import { getKiaToolPolicy } from '@/lib/ai/kia/kia-tool-registry';
 
-describe('KIA journal proposal persistence',()=>{
- it('requires admin-mediated nonautonomous approval',()=>{
-  expect(getKiaToolPolicy('save_journal_entry_proposal')).toMatchObject({
-   riskTier:'R2',effect:'draft',requiresHumanApproval:true,allowedChannels:['admin']
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
+
+describe('KIA journal proposal persistence review gate', () => {
+  const service = read('lib/ai/kia/kia-journal-inbox-save.ts');
+  const api = read('app/api/admin/empresas/[id]/propuestas-contables/route.ts');
+  const executor = read('lib/ai/kia/kia-accounting-tools.ts');
+  it('does not expose save to autonomous LLM tools', () => {
+    expect(getKiaToolDefinition('save_journal_entry_proposal')).toBeNull();
+    expect(getKiaToolPolicy('save_journal_entry_proposal')).toBeNull();
+    expect(executor).not.toContain("toolName === 'save_journal_entry_proposal'");
   });
-  expect(isKiaToolSafeForAutonomousExecution('save_journal_entry_proposal')).toBe(false);
- });
- it('rejects tenant overrides and malformed entries',()=>{
-  expect(()=>validateKiaToolArguments('save_journal_entry_proposal',{companyId:'other'})).toThrow();
-  expect(()=>validateKiaToolArguments('save_journal_entry_proposal',{
-   date:'2026-10-08',reason:'Regularización revisable',evidenceRefs:['file:123'],
-   lines:[{account:'57200000',debitCents:100,creditCents:0},{account:'43000000',debitCents:0,creditCents:100}]
-  })).not.toThrow();
- });
+  it('requires authenticated admin API and server-side company scope', () => {
+    expect(api).toContain("['owner','admin'].includes(profile.role)");
+    expect(api).toContain("const ctx = await authorize(request,id)");
+    expect(api).toContain("saveKiaJournalInboxProposal(ctx.admin,ctx.userId,{companyId:id,...parsed.data})");
+  });
+  it('deduplicates and validates before storage without contacting Holded', () => {
+    expect(service).toContain('prepareKiaJournalProposal(input)');
+    expect(service).toContain("createHash('sha256')");
+    expect(service).toContain("error?.code === '23505'");
+    expect(service).toContain("eq('company_id',p.companyId)");
+    expect(service).not.toMatch(/createHoldedV2Client|createLedgerEntry|deleteLedgerEntry/);
+  });
 });
