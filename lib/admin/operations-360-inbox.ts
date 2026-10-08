@@ -45,6 +45,8 @@ export type Operations360InboxItem = {
   ownerName: string | null;
   slaDueAt: string | null;
   controlMode: 'kia' | 'manual' | null;
+  kiaSummary: string | null;
+  suggestedAction: string | null;
   metadata: Record<string, unknown>;
 };
 
@@ -181,6 +183,30 @@ function objectValue(value: unknown): Record<string, unknown> {
     : {};
 }
 
+
+function uniqueEmailIndex<T extends { id: string; email: string | null }>(rows: T[]) {
+  const grouped = new Map<string, Map<string, T>>();
+  for (const row of rows) {
+    const email = lower(row.email);
+    if (!email) continue;
+    const byId = grouped.get(email) ?? new Map<string, T>();
+    byId.set(row.id, row);
+    grouped.set(email, byId);
+  }
+
+  const unique = new Map<string, T>();
+  const ambiguous = new Set<string>();
+  for (const [email, byId] of grouped) {
+    if (byId.size === 1) {
+      const only = byId.values().next().value;
+      if (only) unique.set(email, only);
+    } else {
+      ambiguous.add(email);
+    }
+  }
+  return { unique, ambiguous };
+}
+
 function asBool(value: unknown) {
   return value === true || value === 'true' || value === 1;
 }
@@ -221,9 +247,9 @@ function taskMatches(
   if (item.channel === 'email' && item.threadId && metadata.task_kind === 'email_manual_lock' && metadata.gmail_thread_id === item.threadId) {
     return true;
   }
-  if (item.caseId && task.case_id === item.caseId) return true;
-  if (item.leadId && task.lead_id === item.leadId) return true;
-  if (item.clientId && task.client_id === item.clientId) return true;
+  if (item.caseId) return task.case_id === item.caseId;
+  if (item.leadId) return task.lead_id === item.leadId;
+  if (item.clientId) return task.client_id === item.clientId;
   return Boolean(item.companyId && task.company_id === item.companyId);
 }
 
@@ -235,8 +261,8 @@ function meetingMatches(
   },
   item: Pick<Operations360InboxItem, 'clientId' | 'companyId' | 'actor'>,
 ) {
-  if (item.clientId && meeting.client_id === item.clientId) return true;
-  if (item.companyId && meeting.company_id === item.companyId) return true;
+  if (item.clientId) return meeting.client_id === item.clientId;
+  if (item.companyId) return meeting.company_id === item.companyId;
   const actorEmail = lower(item.actor.email);
   return Boolean(actorEmail && lower(meeting.email) === actorEmail);
 }
@@ -401,12 +427,10 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
   const caseById = new Map((casesRes.data ?? []).map((row) => [row.id, row]));
   const profiles = [...(profilesByIdRes.data ?? []), ...(profilesByEmailRes.data ?? [])];
   const profileById = new Map(profiles.map((row) => [row.id, row]));
-  const profileByEmail = new Map(
-    profiles.filter((row) => row.email).map((row) => [lower(row.email), row]),
-  );
-  const leadByEmail = new Map(
-    leadRows.filter((row) => row.email).map((row) => [lower(row.email), row]),
-  );
+  const profileEmailIndex = uniqueEmailIndex(profiles);
+  const leadEmailIndex = uniqueEmailIndex(leadRows);
+  const profileByEmail = profileEmailIndex.unique;
+  const leadByEmail = leadEmailIndex.unique;
   const companyById = new Map((companiesRes.data ?? []).map((row) => [row.id, row]));
 
   const latestMessageByConversation = new Map<string, ConversationMessageRow>();
@@ -421,9 +445,10 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
   for (const row of emailRows) {
     if (!row.thread_id || !row.date) continue;
     const caseRow = row.case_id ? caseById.get(row.case_id) : null;
-    const matchedProfile = profileByEmail.get(lower(row.from_email)) ?? null;
-    const matchedLead = leadByEmail.get(lower(row.from_email)) ?? null;
-    const clientId = matchedProfile?.id ?? caseRow?.client_id ?? null;
+    const senderEmail = lower(row.from_email);
+    const matchedProfile = profileByEmail.get(senderEmail) ?? null;
+    const matchedLead = leadByEmail.get(senderEmail) ?? null;
+    const clientId = caseRow?.client_id ?? matchedProfile?.id ?? null;
     const companyId = caseRow?.company_id ?? null;
     const provider = safeText(row.provider, 'gmail');
     const status: Operations360Status = row.unread ? 'needs_action' : 'resolved';
@@ -458,6 +483,8 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       ownerName: null,
       slaDueAt: null,
       controlMode: null,
+      kiaSummary: null,
+      suggestedAction: null,
       metadata: {
         provider,
         unread: Boolean(row.unread),
@@ -466,6 +493,8 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
           ? (companyById.get(companyId)?.razon_social ?? companyById.get(companyId)?.nombre_comercial ?? null)
           : null,
         company_tax_id: companyId ? (companyById.get(companyId)?.cif_nif ?? null) : null,
+        ambiguous_profile_email: profileEmailIndex.ambiguous.has(senderEmail),
+        ambiguous_lead_email: leadEmailIndex.ambiguous.has(senderEmail),
       },
     });
   }
@@ -525,6 +554,8 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       ownerName: null,
       slaDueAt: null,
       controlMode: manualMode ? 'manual' : 'kia',
+      kiaSummary: null,
+      suggestedAction: nextAction || null,
       metadata: {
         origin_type: row.origin_type,
         origin_ref: row.origin_ref,
@@ -585,6 +616,8 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       ownerName: null,
       slaDueAt: null,
       controlMode: null,
+      kiaSummary: null,
+      suggestedAction: null,
       metadata: {
         source: row.source,
         source_key: row.source_key,
@@ -633,6 +666,25 @@ export async function loadOperations360Inbox(admin: AdminClient, options: LoadOp
       .sort((a, b) => Date.parse(a) - Date.parse(b));
 
     item.nextMeetingAt = meetings[0] ?? null;
+
+    const persistedNextAction = normalize(item.metadata.next_action);
+    if (!item.suggestedAction && persistedNextAction) item.suggestedAction = persistedNextAction;
+
+    if (item.controlMode === 'manual') {
+      item.kiaSummary = 'Conversación bajo control humano; KIA no responderá automáticamente.';
+    } else if (item.status === 'waiting_client') {
+      item.kiaSummary = 'KIA ha pedido información al cliente y está esperando su respuesta.';
+    } else if (item.status === 'needs_action') {
+      item.kiaSummary = item.channel === 'email'
+        ? 'Entrada pendiente de actuación o revisión humana.'
+        : 'KIA ha escalado esta entrada para revisión humana.';
+    } else if (item.status === 'kia_working') {
+      item.kiaSummary = item.metadata.latest_role === 'assistant'
+        ? 'KIA ya respondió y mantiene la conversación activa.'
+        : 'KIA mantiene esta conversación activa y puede continuar la gestión.';
+    } else {
+      item.kiaSummary = 'Sin acción inmediata pendiente.';
+    }
   }
 
   const q = lower(options.q);
