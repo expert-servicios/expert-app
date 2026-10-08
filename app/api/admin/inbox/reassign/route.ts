@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     let companyId = requestedCompanyId;
-    let caseId = requestedCaseId;
+    const caseId = requestedCaseId;
 
     if (caseId) {
       const { data: caseRow, error: caseError } = await ctx.admin
