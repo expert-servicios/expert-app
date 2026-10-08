@@ -54,6 +54,7 @@ import {
 import { executeKiaToolCall } from '@/lib/ai/kia/kia-tool-executor';
 import { resolveKiaQuickActionCase } from '@/lib/ai/kia/kia-quick-action-case';
 import { recordKiaVisibleReply } from '@/lib/ai/kia/kia-visible-decision-log';
+import { resolveKiaOperationalCategory } from '@/lib/ai/kia/kia-operational-routing';
 
 const historyItemSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -588,6 +589,14 @@ export async function POST(request: NextRequest) {
       clientId: effectiveClientId, decision: result.decision, reply })
     : result.decisionLogId ?? null;
 
+  const operationalCategory = resolveKiaOperationalCategory({
+    skillId: result.executionTrace.skillId,
+    subAgentId: result.executionTrace.preferredSubAgentId,
+    detectedIntent: result.executionTrace.detectedIntent ?? result.decision.intent,
+    serviceSlug: contextualServiceSlug ?? null,
+    requiresManualReview: result.decision.requiresManualReview || result.decision.nextAction === 'needs_review',
+  });
+
   try {
     if (contextualPersistenceEnabled) {
       effectiveSessionId = await persistKiaConversationTurn({
@@ -607,6 +616,10 @@ export async function POST(request: NextRequest) {
         avatarState,
         metadata: {
           next_action: result.decision.nextAction,
+          operational_category: operationalCategory,
+          skill_id: result.executionTrace.skillId,
+          sub_agent_id: result.executionTrace.preferredSubAgentId,
+          detected_intent: result.executionTrace.detectedIntent,
           contextual: Boolean(contextToken),
           staff_preview: Boolean(staffPreview),
           preview_client_id: staffPreview?.clientId ?? null,
@@ -671,6 +684,7 @@ export async function POST(request: NextRequest) {
     proactiveSuggestions,
     intent     : result.decision.intent,
     nextAction : result.decision.nextAction,
+    operationalCategory,
     avatarState,
     artifacts,
     decisionLogId,
