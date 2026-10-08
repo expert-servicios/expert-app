@@ -25,6 +25,6 @@ describe('KIA documentary accounting knowledge', () => {
   it('does not include client-specific case data or permit accounting writes', () => {
     expect(KIA_ACCOUNTING_DOCUMENTARY_KNOWLEDGE_PROMPT).not.toMatch(/DGM|DISEÑO GLOBAL|Frank|Liliana|Ricardo|Zoe|ensen|B42700427/i);
     expect(KIA_ACCOUNTING_DOCUMENTARY_KNOWLEDGE_PROMPT).toContain('No modificar asientos');
-    expect(KIA_ACCOUNTING_DOCUMENTARY_KNOWLEDGE_PROMPT).toContain('no copiar hechos o identidad de un cliente a otro');
+    expect(KIA_ACCOUNTING_DOCUMENTARY_KNOWLEDGE_PROMPT).toContain('nunca copiar hechos o identidad de un cliente a otro');
   });
 });
