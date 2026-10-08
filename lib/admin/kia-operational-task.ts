@@ -7,7 +7,7 @@ type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
 export type MaterializeKiaOperationalTaskInput = {
   admin: AdminClient;
-  origin: 'email' | 'telegram' | 'dashboard';
+  origin: 'email' | 'telegram' | 'meta' | 'dashboard';
   originId: string;
   summary: string;
   description?: string | null;
