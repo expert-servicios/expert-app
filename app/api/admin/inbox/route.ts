@@ -3,7 +3,7 @@ import { requireAdminClient } from '@/lib/auth/require-admin';
 import { loadOperations360Inbox } from '@/lib/admin/operations-360-inbox';
 
 const VALID_CHANNELS = new Set(['all', 'email', 'telegram', 'web', 'kia', 'meta', 'google', 'linkedin']);
-const VALID_STATUSES = new Set(['all', 'needs_action', 'kia_working', 'resolved']);
+const VALID_STATUSES = new Set(['all', 'needs_action', 'waiting_client', 'kia_working', 'resolved']);
 
 function limitedSearch(value: string | null) {
   return (value ?? '')

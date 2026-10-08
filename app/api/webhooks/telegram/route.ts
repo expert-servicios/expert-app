@@ -962,7 +962,7 @@ async function handleTelegramUpdate(request: NextRequest) {
       tenantId: identity.tenantId, companyId, caseId: caseContext?.caseId, serviceSlug: caseContext?.serviceSlug,
       conversationId: caseContext?.stored?.conversation.id ?? genericTelegramConversationId ?? undefined, channel: 'telegram', originType: 'telegram',
       userMessage: message, assistantMessage: reply, intent: result.decision.intent,
-      metadata: { telegram_chat_id: inbound.chatId, telegram_update_id: inbound.updateId, delivery_state: 'prepared' } }) : null;
+      metadata: { telegram_chat_id: inbound.chatId, telegram_update_id: inbound.updateId, delivery_state: 'prepared', next_action: result.decision.nextAction } }) : null;
 
     const outboundId = await sendTelegramMessage({
       chatId: inbound.chatId,
