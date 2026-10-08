@@ -8,6 +8,11 @@ import {
   type MetaInboundEvent,
 } from '@/lib/integrations/meta/webhook';
 import { notifyAdmins } from '@/lib/integrations/push';
+import { retrieveMetaLead, normalizeMetaLeadFields } from '@/lib/integrations/meta/client';
+import { runKiaOrchestratedDecision } from '@/lib/ai/kia/kia-orchestrator';
+import { checkKiaLeadDailyCostCap, checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
+import { resolveKiaOperationalCategory } from '@/lib/ai/kia/kia-operational-routing';
+import { materializeKiaOperationalTask } from '@/lib/admin/kia-operational-task';
 
 function claimKey(event: MetaInboundEvent) {
   return `meta_inbound:${event.channel}:${event.eventId}`;
@@ -88,6 +93,43 @@ async function finalizeClaim(
   if (error) console.error('[Meta webhook] claim finalize failed:', error.message);
 }
 
+async function persistMetaKiaAssessment(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  leadId: string,
+  assessment: Record<string, unknown>,
+) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const { data: current, error: currentError } = await admin
+      .from('leads')
+      .select('metadata,updated_at')
+      .eq('id', leadId)
+      .single();
+    if (currentError) throw currentError;
+
+    const metadata = current.metadata && typeof current.metadata === 'object' && !Array.isArray(current.metadata)
+      ? current.metadata as Record<string, unknown>
+      : {};
+    const nextUpdatedAt = new Date().toISOString();
+
+    let update = admin
+      .from('leads')
+      .update({
+        metadata: { ...metadata, ...assessment },
+        updated_at: nextUpdatedAt,
+      })
+      .eq('id', leadId);
+
+    update = current.updated_at
+      ? update.eq('updated_at', current.updated_at)
+      : update.is('updated_at', null);
+
+    const { data: updated, error } = await update.select('id').maybeSingle();
+    if (error) throw error;
+    if (updated?.id) return;
+  }
+  throw new Error('meta_kia_assessment_concurrency_retry_exhausted');
+}
+
 async function processMessagingEvent(
   admin: ReturnType<typeof getSupabaseAdmin>,
   event: MetaInboundEvent,
@@ -127,6 +169,104 @@ async function processMessagingEvent(
     }).catch(() => {});
   }
 
+  if (!event.text?.trim()) {
+    await persistMetaKiaAssessment(admin, lead.leadId, {
+      operational_category: 'manual_review',
+      next_action: 'needs_review',
+      kia_summary: 'Mensaje Meta sin texto; requiere revisión humana del contenido adjunto.',
+      kia_draft_reply: null,
+      kia_confidence: 0,
+      kia_requires_manual_review: true,
+      meta_kia_status: 'needs_review',
+    });
+    return lead.leadId;
+  }
+
+  if (!checkKiaMessageRateLimit(`meta-public:${event.channel}:${event.senderId}`)) {
+    await persistMetaKiaAssessment(admin, lead.leadId, {
+      meta_kia_status: 'rate_limited',
+      next_action: 'needs_review',
+      operational_category: 'manual_review',
+    });
+    return lead.leadId;
+  }
+
+  const costCap = await checkKiaLeadDailyCostCap(lead.leadId);
+  if (!costCap.ok) {
+    await persistMetaKiaAssessment(admin, lead.leadId, {
+      meta_kia_status: 'daily_cost_cap_reached',
+      next_action: 'needs_review',
+      operational_category: 'manual_review',
+    });
+    return lead.leadId;
+  }
+
+  const locale = /[А-Яа-яЁё]/.test(event.text) ? 'ru' : 'es';
+  const result = await runKiaOrchestratedDecision({
+    input: {
+      taskType: 'chat_reply',
+      channel: 'meta',
+      message: event.text.trim(),
+      locale,
+      contextInput: {
+        channel: 'meta',
+        leadId: lead.leadId,
+        latestMessage: event.text.trim(),
+        currentPage: event.channel === 'instagram' ? '/instagram' : '/facebook',
+      },
+      allowTools: false,
+      includeOfficialSourceContext: true,
+    },
+    policyAuthorization: {
+      channel: 'meta',
+      requestedNames: [],
+      maxRiskTier: 'R0',
+      allowedEffects: ['read'],
+      autonomousOnly: true,
+    },
+    policyToolNames: [],
+  });
+
+  const operationalCategory = resolveKiaOperationalCategory({
+    skillId: result.executionTrace.skillId,
+    subAgentId: result.executionTrace.preferredSubAgentId,
+    detectedIntent: result.decision.intent,
+    requiresManualReview: result.decision.requiresManualReview || result.decision.nextAction === 'needs_review',
+  });
+
+  await persistMetaKiaAssessment(admin, lead.leadId, {
+    operational_category: operationalCategory,
+    next_action: result.decision.nextAction,
+    kia_summary: result.decision.decisionSummary,
+    kia_draft_reply: result.userMessage,
+    kia_confidence: result.decision.confidence,
+    kia_requires_manual_review: result.decision.requiresManualReview,
+    kia_decision_log_id: result.decisionLogId ?? null,
+    meta_kia_status: 'prepared_not_sent',
+    meta_kia_channel: event.channel,
+    meta_last_event_id: event.eventId,
+  });
+
+  await materializeKiaOperationalTask({
+    admin,
+    origin: 'meta',
+    originId: `${event.channel}:${event.eventId}`,
+    summary: result.decision.decisionSummary,
+    description: event.text.trim(),
+    nextAction: result.decision.nextAction,
+    confidence: result.decision.confidence,
+    requiresManualReview: result.decision.requiresManualReview,
+    operationalCategory,
+    leadId: lead.leadId,
+    decisionLogId: result.decisionLogId ?? null,
+    metadata: {
+      meta_channel: event.channel,
+      meta_event_id: event.eventId,
+      meta_sender_id: event.senderId,
+      reply_status: 'prepared_not_sent',
+    },
+  }).catch((error) => console.error('[Meta webhook] KIA operational task failed:', error));
+
   return lead.leadId;
 }
 
@@ -134,29 +274,63 @@ async function processLeadgenEvent(
   admin: ReturnType<typeof getSupabaseAdmin>,
   event: MetaInboundEvent,
 ) {
+  let retrieved: Awaited<ReturnType<typeof retrieveMetaLead>> | null = null;
+  let normalized: ReturnType<typeof normalizeMetaLeadFields> | null = null;
+  let retrievalError: string | null = null;
+
+  if (event.leadgenId) {
+    try {
+      retrieved = await retrieveMetaLead(event.leadgenId);
+      normalized = normalizeMetaLeadFields(retrieved.field_data);
+    } catch (error) {
+      retrievalError = error instanceof Error ? error.message : String(error);
+      console.error('[Meta leadgen] retrieval failed:', retrievalError);
+    }
+  }
+
+  const name = normalized?.fullName
+    || normalized?.companyName
+    || `Meta Lead Ads ${event.leadgenId}`;
+
   const lead = await ensureInboundLead({
     admin,
-    name: `Meta Lead Ads ${event.leadgenId}`,
+    name,
+    email: normalized?.email ?? null,
+    phone: normalized?.phone ?? null,
     source: 'meta_lead_ads',
     sourceKey: `meta-leadgen:${event.leadgenId}`,
     category: 'Meta Lead Ads',
     service: 'consulta-general',
-    message: 'Lead recibido desde Meta Lead Ads. Datos completos pendientes de recuperación segura mediante lead id.',
+    message: retrieved
+      ? 'Lead recibido desde Meta Lead Ads con datos recuperados de forma segura.'
+      : 'Lead recibido desde Meta Lead Ads. Datos completos pendientes de recuperación segura mediante lead id.',
     channel: 'meta',
     origin: 'meta:leadgen',
     metadata: {
       meta_leadgen_id: event.leadgenId,
       meta_page_id: event.metadata.page_id ?? null,
-      meta_form_id: event.metadata.form_id ?? null,
-      meta_ad_id: event.metadata.ad_id ?? null,
-      meta_adgroup_id: event.metadata.adgroup_id ?? null,
-      meta_lead_data_status: 'pending_retrieval',
+      meta_form_id: retrieved?.form_id ?? event.metadata.form_id ?? null,
+      meta_ad_id: retrieved?.ad_id ?? event.metadata.ad_id ?? null,
+      meta_ad_name: retrieved?.ad_name ?? null,
+      meta_adset_id: retrieved?.adset_id ?? event.metadata.adgroup_id ?? null,
+      meta_adset_name: retrieved?.adset_name ?? null,
+      meta_campaign_id: retrieved?.campaign_id ?? null,
+      meta_campaign_name: retrieved?.campaign_name ?? null,
+      meta_platform: retrieved?.platform ?? null,
+      meta_is_organic: retrieved?.is_organic ?? null,
+      meta_submitted_field_names: normalized?.fieldNames ?? [],
+      meta_city: normalized?.city ?? null,
+      meta_company_name: normalized?.companyName ?? null,
+      meta_lead_data_status: retrieved ? 'retrieved' : 'pending_retrieval',
+      meta_lead_retrieval_error: retrievalError,
     },
   });
 
   await notifyAdmins({
     title: 'Nuevo lead desde Meta Lead Ads',
-    body: 'Lead recibido. Pendiente recuperar datos completos de Meta.',
+    body: retrieved
+      ? `${name} · datos de Lead Ads recuperados`
+      : 'Lead recibido. Pendiente recuperar datos completos de Meta.',
     url: `/admin/leads?focus=${lead.leadId}`,
     tag: `meta-leadgen-${event.leadgenId}`,
   }).catch(() => {});
