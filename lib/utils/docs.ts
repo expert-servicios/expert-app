@@ -2,6 +2,7 @@ import type { CategorySlug } from './catalog';
 import { getGeneratedBatch1KnowledgeDocs } from '@/lib/services/service-generated-content';
 import { proteccionDatosKnowledgeDocs } from '@/lib/content/proteccion-datos-docs';
 import { fiscal2026KnowledgeDocs } from '@/lib/content/fiscal-2026-docs';
+import { holdedIntegrationDocs } from '@/lib/content/holded-integration-docs';
 
 export type DocCategorySlug = 'extranjeria-nacionalidad' | 'fiscalidad' | 'empresas' | 'proteccion-datos' | 'tramites' | 'holded';
 
@@ -53,6 +54,7 @@ Consulta la guía completa en esta misma URL. Incluye la diferencia entre repres
   ...getGeneratedBatch1KnowledgeDocs(),
   ...proteccionDatosKnowledgeDocs,
   ...fiscal2026KnowledgeDocs,
+  ...holdedIntegrationDocs,
   {
     slug: 'conectar-google-workspace-expert',
     category: 'empresas',

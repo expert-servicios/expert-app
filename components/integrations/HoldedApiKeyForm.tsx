@@ -45,7 +45,7 @@ export function HoldedApiKeyForm({ companyId, onConnected, onPhaseChange }: Prop
       const res  = await fetch('/api/integrations/holded/test', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({ apiKey: key }),
+        body   : JSON.stringify({ apiKey: key, apiVersion: 'v2' }),
       });
       const data = await res.json();
 

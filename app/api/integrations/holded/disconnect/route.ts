@@ -38,9 +38,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Managed/v2 integrations are controlled from EXPERT Company 360.
-    if (integration.mode === 'advisor_managed' || integration.api_version === 'v2') {
+    if (integration.mode === 'advisor_managed' || integration.mode === 'expert_account') {
       return NextResponse.json(
-        { error: 'Esta integración Holded v2/gestionada se administra desde EXPERT. Contacta con tu asesor para desconectarla.' },
+        { error: 'Esta integración Holded gestionada por EXPERT no puede modificarse desde el panel de cliente. Contacta con tu asesor para desconectarla.' },
         { status: 409 },
       );
     }

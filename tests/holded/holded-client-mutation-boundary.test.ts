@@ -15,21 +15,26 @@ describe('Holded client mutation boundary', () => {
     expect(disconnect).toContain('Solo un propietario o administrador');
   });
 
-  it('prevents the client surface from rewriting or revoking managed v2 integrations', () => {
+  it('prevents client changes to advisor-managed and EXPERT-owned integrations', () => {
     const connect = source('app/api/integrations/holded/connect/route.ts');
     const disconnect = source('app/api/integrations/holded/disconnect/route.ts');
     const card = source('components/integrations/HoldedConnectionCard.tsx');
 
     expect(connect).toContain("existing.data.mode === 'advisor_managed'");
-    expect(connect).toContain("existing.data.api_version === 'v2'");
+    expect(connect).toContain("existing.data.mode === 'expert_account'");
     expect(disconnect).toContain("integration.mode === 'advisor_managed'");
-    expect(disconnect).toContain("integration.api_version === 'v2'");
+    expect(disconnect).toContain("integration.mode === 'expert_account'");
     expect(card).toContain('isManagedByExpert');
     expect(card).toContain('Esta conexión está gestionada por EXPERT');
   });
 
-  it('writes client-created connections explicitly as legacy v1', () => {
+  it('creates client-owned Holded connections as API v2 by default without treating every v2 tenant as managed', () => {
     const connect = source('app/api/integrations/holded/connect/route.ts');
-    expect(connect).toContain("api_version: 'v1'");
+    const card = source('components/integrations/HoldedConnectionCard.tsx');
+    expect(connect).toContain("apiVersion: z.enum(['v1','v2']).default('v2')");
+    expect(connect).toContain('api_version: apiVersion');
+    expect(connect).toContain("mode: 'client_account'");
+    expect(card).toContain("integration?.mode === 'advisor_managed' || integration?.mode === 'expert_account'");
+    expect(card).not.toContain("integration?.api_version === 'v2'");
   });
 });

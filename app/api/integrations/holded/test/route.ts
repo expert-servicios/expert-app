@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient } from '@/lib/integrations/supabase';
-import { createHoldedClientFromRawKey } from '@/lib/integrations/holded/holded-client';
-import { detectHoldedLaborPermissions } from '@/lib/integrations/holded/holded-labor-permissions';
-import { forceHoldedReadOnly } from '@/lib/integrations/holded/holded-permissions';
+import { detectHoldedPermissions } from '@/lib/integrations/holded/holded-permission-probes';
 import { holdedErrorMessage } from '@/lib/integrations/holded/holded-errors';
 
 const bodySchema = z.object({
   apiKey: z.string().min(8).max(256).trim(),
+  apiVersion: z.enum(['v1','v2']).default('v2'),
 });
 
 export async function POST(request: NextRequest) {
@@ -25,18 +24,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Raw key used only for this test — never logged, never stored here.
-    const client = createHoldedClientFromRawKey(parsed.data.apiKey);
-    const [result, laborPermissions] = await Promise.all([
-      client.testConnection(),
-      detectHoldedLaborPermissions(parsed.data.apiKey),
-    ]);
-
-    const permissions = forceHoldedReadOnly({
-      ...result.permissions,
-      ...laborPermissions,
-    });
-
-    return NextResponse.json({ ...result, permissions });
+    const result = await detectHoldedPermissions(parsed.data.apiKey, parsed.data.apiVersion);
+    return NextResponse.json(result);
   } catch (err) {
     const msg = holdedErrorMessage(err);
     console.error('[holded/test] connection failed:', msg);

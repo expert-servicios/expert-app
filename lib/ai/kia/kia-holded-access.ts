@@ -60,7 +60,7 @@ export async function resolveKiaCompanyHoldedAccess(
   if (requiredPermission && permissionsEnabled[requiredPermission] !== true) {
     return {
       ok: false,
-      error: `La integración Holded no tiene habilitada la capacidad ${requiredPermission} para la empresa activa.`,
+      error: `No tengo permiso para consultar ${requiredPermission} en Holded de esta empresa. Revisa la guía https://expertconsulting.es/docs/actualizar-permisos-token-holded-kia y, si necesitas ese módulo, actualiza los permisos del token en Holded. El propietario puede pulsar «Revisar permisos del token» en https://expertconsulting.es/dashboard/integraciones/holded. Los demás módulos autorizados siguen funcionando.`,
     };
   }
 
