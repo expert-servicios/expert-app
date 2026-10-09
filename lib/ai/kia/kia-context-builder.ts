@@ -10,7 +10,6 @@ import { retrieveKiaMemories, type KiaMemory } from './kia-memory-retriever';
 import { loadKiaMemoryV2Context, mergeKiaMemoryContexts } from './kia-memory-v2-context';
 import { loadKiaClientBrief, type KiaClientBrief, type KiaOriginEmailContext } from './kia-client-brief';
 import { loadClientRegistryContext, type KiaClientLedgerContext } from './kia-client-ledger';
-import { EXPERT_IDENTITY } from '@/config/identity';
 
 export interface KiaContextInput {
   channel: 'waba' | 'telegram' | 'meta' | 'admin' | 'email' | 'dashboard' | 'document';
@@ -355,9 +354,7 @@ async function loadCompany(
     permissions_detected?: Record<string, boolean>;
     permissions_enabled?: Record<string, boolean>;
   } | undefined;
-  const expertGlobalHolded = company.cif_nif?.trim().toUpperCase() === EXPERT_IDENTITY.taxId
-    && Boolean(process.env.HOLDED_API_KEY?.trim());
-  const connected = expertGlobalHolded || integration?.status === 'active';
+  const connected = integration?.status === 'active';
   const detected = connected
     ? normalizeDetectedHoldedPermissions(integration?.permissions_detected ?? {})
     : normalizeDetectedHoldedPermissions({});
