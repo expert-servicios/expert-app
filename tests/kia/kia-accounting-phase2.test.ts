@@ -9,7 +9,6 @@ import {
   defaultAccountingDocumentRange,
   holdedOutstandingAmount,
   holdedUnreconciledMovementAmount,
-  isExpertGlobalHoldedContext,
   isHoldedDocumentOverdue,
   isHoldedDocumentPaid,
   isIssuedHoldedDocument,
@@ -109,37 +108,19 @@ describe('KIA Accounting Holded document semantics', () => {
   });
 });
 
-describe('KIA Accounting EXPERT global Holded boundary', () => {
-  const baseContext = {
-    company: {
-      id: '00000000-0000-0000-0000-000000000001',
-      name: 'EXPERT',
-      taxId: 'B44991776',
-      hasMonthlyPlan: false,
-      coverageSource: 'none',
-      coveragePlanName: null,
-      coveragePrimaryCompanyId: null,
-      coveragePrimaryCompanyName: null,
-      coverageScope: null,
-      holdedConnected: true,
-      holdedPermissions: {},
-      holdedPermissionsDetected: {},
-      holdedPermissionsEnabled: {},
-    },
-  } as unknown as KiaContext;
-
-  it('recognizes EXPERT by canonical legal tax id', () => {
-    expect(isExpertGlobalHoldedContext(baseContext)).toBe(true);
-  });
-
-  it('does not route another company to the EXPERT global credential', () => {
-    expect(isExpertGlobalHoldedContext({
-      ...baseContext,
-      company: { ...baseContext.company!, taxId: 'B54920509' },
-    })).toBe(false);
+describe('KIA Accounting canonical tenant boundary', () => {
+  it('never selects a global Holded tenant by EXPERT tax ID', () => {
+    const accounting = fs.readFileSync('lib/ai/kia/kia-accounting-tools.ts', 'utf8');
+    const context = fs.readFileSync('lib/ai/kia/kia-context-builder.ts', 'utf8');
+    expect(accounting).toContain('resolveKiaCompanyHoldedAccess');
+    expect(accounting).toContain('createHoldedGatewayForIntegration(access.access.integrationId)');
+    expect(accounting).toContain('gateway.metadata.companyId !== access.access.companyId');
+    expect(accounting).not.toContain('createExpertHoldedGateway');
+    expect(accounting).not.toContain('holded_expert_global');
+    expect(context).not.toContain('expertGlobalHolded');
+    expect(context).toContain("const connected = integration?.status === 'active'");
   });
 });
-
 
 describe('KIA Accounting phase 2B preparation safety', () => {
   it('exposes preparation tools only in Admin and keeps them read-only', () => {
