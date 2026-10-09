@@ -5,6 +5,7 @@ interface Review {
   id: string;
   rating: number;
   comment: string | null;
+  comment_translations: Record<string,string> | null;
   service_name: string | null;
   created_at: string;
   publication_mode: string;
@@ -18,7 +19,7 @@ async function fetchPublicReviews(): Promise<Review[]> {
     const admin = getSupabaseAdmin();
     const { data } = await admin
       .from('reviews')
-      .select('id,rating,comment,service_name,created_at,publication_mode,public_name,public_avatar_url,avatar_consent')
+      .select('id,rating,comment,comment_translations,service_name,created_at,publication_mode,public_name,public_avatar_url,avatar_consent')
       .eq('status', 'approved')
       .neq('publication_mode','private')
       .eq('allow_publish', true)
@@ -34,7 +35,7 @@ async function fetchPublicReviews(): Promise<Review[]> {
   }
 }
 
-export async function ReviewsPreview() {
+export async function ReviewsPreview({ locale = 'es' }: { locale?: 'es' | 'ru' } = {}) {
   const reviews = await fetchPublicReviews();
 
   if (reviews.length === 0) return null;
@@ -72,7 +73,8 @@ export async function ReviewsPreview() {
                 ))}
               </div>
               <p className="mt-4 flex-1 text-sm leading-6 text-white/80">
-                {r.comment}
+                {r.comment_translations?.[locale] || r.comment}
+                {r.comment_translations?.[locale] && r.comment_translations[locale] !== r.comment && <details className="mt-2 text-xs text-white/60"><summary className="cursor-pointer">{locale === 'ru' ? 'Автоматический перевод · Оригинал' : 'Traducción automática · Ver original'}</summary><p className="mt-1">{r.comment}</p></details>}
               </p>
               <div className="mt-5 border-t border-white/10 pt-4 text-xs text-white/50">
                 <span className="font-semibold text-white">{r.publication_mode === 'profile' && r.public_name ? r.public_name : 'Cliente EXPERT'}</span>
