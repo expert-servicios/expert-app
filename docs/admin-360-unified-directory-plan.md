@@ -119,3 +119,9 @@ INVERSIONES PASO SEGURO, S.L.U. debe poder:
 3. abrir su gestión Holded desde Admin;
 4. conectar tenant con autorización laboral;
 5. permitir a KIA diagnosticar Oksana sin crear un usuario ficticio.
+
+## Rediseño compacto futuro — decisión 09/10/2026
+
+**Estado: documentación únicamente, NO IMPLEMENTAR en la fase actual.** La dirección solicita evolucionar el Directorio y las fichas 360 a filas compactas (no tarjetas), detalles en ventanas modales/drawers, navegación contextual con pocos clics, escalabilidad a cientos de clientes, un único panel intuitivo para personal nuevo y asistencia de KIA sin ocultar la pantalla. Se preserva la separación entre la cuenta de asesorías Holded y la contabilidad propia EXPERT.
+
+**Especificación completa y criterios de aceptación:** [Rediseño compacto de Admin 360](./admin-360-compact-redesign-backlog-2026-10-09.md).
