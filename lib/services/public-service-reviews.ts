@@ -21,7 +21,7 @@ const EMPTY_SUMMARY: PublicServiceReviewSummary = {
 };
 
 /**
- * Reads only reviews that are explicitly publishable and approved.
+ * Counts every approved verified rating; displays comments only with explicit permission.
  * Fail-closed: public service pages must keep rendering if Supabase is unavailable.
  */
 export async function getPublicServiceReviewSummary(
@@ -43,21 +43,19 @@ export async function getPublicServiceReviewSummary(
 
     const { data: reviews, error: reviewsError } = await admin
       .from('reviews')
-      .select('id,rating,comment,comment_publishable,created_at,featured')
+      .select('id,rating,comment,comment_publishable,allow_publish,published,created_at,featured')
       .in('case_id', caseIds)
       .eq('status', 'approved')
-      .eq('published', true)
-      .eq('allow_publish', true)
       .order('featured', { ascending: false })
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(1000);
 
     if (reviewsError || !reviews?.length) return EMPTY_SUMMARY;
 
     const normalized = reviews.map((review) => ({
       id: review.id,
       rating: Number(review.rating),
-      comment: review.comment_publishable === true && typeof review.comment === 'string' && review.comment.trim()
+      comment: review.comment_publishable === true && review.allow_publish === true && review.published === true && typeof review.comment === 'string' && review.comment.trim()
         ? review.comment.trim()
         : null,
       createdAt: review.created_at,
