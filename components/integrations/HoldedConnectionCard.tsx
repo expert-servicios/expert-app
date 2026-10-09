@@ -177,7 +177,7 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
           </div>
         )}
 
-        <div className="flex flex-wrap gap-3 text-xs"><Link className="text-[#c88b25] underline" href="/docs/conectar-holded-kia-token-api-v2">Crear token</Link><a className="text-[#c88b25] underline" href="/docs/permisos-holded-kia-lectura-escritura">Permisos necesarios</Link><a className="text-[#c88b25] underline" href="/docs/actualizar-permisos-token-holded-kia">Modificar permisos</Link></div>
+        <div className="flex flex-wrap gap-3 text-xs"><Link className="text-[#c88b25] underline" href="/docs/conectar-holded-kia-token-api-v2">Crear token</Link><Link className="text-[#c88b25] underline" href="/docs/permisos-holded-kia-lectura-escritura">Permisos necesarios</Link><Link className="text-[#c88b25] underline" href="/docs/actualizar-permisos-token-holded-kia">Modificar permisos</Link></div>
         {!isManagedByExpert && canManage && (
           <div className="rounded-xl border border-[#e8dfc8] bg-white p-4">
             <button type="button" onClick={() => setReplacingToken(v => !v)} className="text-sm font-semibold text-[#29384a] underline">
