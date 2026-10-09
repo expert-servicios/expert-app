@@ -140,6 +140,105 @@ EXPERT Design System (tokens EXPERT, tablas, formularios, dialogs, filtros, enca
 
 ---
 
+## 2 ter. Modo soporte: operar en el portal del cliente desde Admin (decisión 09/10/2026)
+
+**Decisión de producto:** implementar **«Abrir portal del cliente · Modo soporte»** como vía principal para dar de alta y configurar el espacio del cliente desde EXPERT, **sin exigir que el cliente haga por sí mismo todas las operaciones** y sin generar un segundo conjunto de pantallas de configuración Admin. Mantener una ficha Contacto 360 mínima para búsqueda, identidad, relaciones, historial y acciones rápidas. Reutilizar componentes de las pantallas reales del portal cliente en vez de duplicarlos.
+
+### 2 ter.1. Auditoría de lo que existe hoy
+
+- `/admin/clientes/[id]/portal` YA existe y muestra una vista delegada identificada, cargada desde `/api/admin/clientes/[id]`. Mantiene la sesión del Admin y enlaza a expedientes, documentos, suscripciones, integración, etc.; **no es todavía el portal real completo ni integra todos los formularios operativos en línea**.
+- `/admin/clientes/[id]/integraciones` y `/admin/empresas/[id]/integraciones` ya ofrecen conexiones Holded administradas: selección de entidad, comprobación del token, cifrado, permisos y confirmación de autorización. Esas capacidades se deben reutilizar, no reconstruir.
+- `/dashboard` y sus pantallas actuales llaman a endpoints de cliente como `/api/profile`, `/api/companies`, `/api/subscriptions`, `/api/cases`. **No basta con redirigir a un Admin hacia `/dashboard`: seguiría viendo su propia identidad, no la del cliente**. Tampoco debe modificarse el cliente HTTP para que admita IDs arbitrarios.
+- `/api/admin/clientes/[id]` ya implementa algunos PATCH administrativos sobre datos de perfil y valida pertenencia al cambiar empresa activa. Mantener controles de servidor y auditoría, endurecer donde sea necesario.
+- `/dashboard` tiene un selector de empresa y KIA contextual; el modo soporte debe usar **un contexto delegado independiente**, sin cambiar el `active_company_id` del cliente ni el del administrador.
+
+### 2 ter.2. Cómo se usa
+
+1. Desde **Contactos**, buscar una persona o empresa y pulsar **«Abrir portal · Modo soporte»**. Solo usuarios owner/admin o staff con permiso específico podrán hacerlo; nunca un cliente.
+2. Abrir un workspace con **barra persistente y visible**: «Modo soporte · Estás trabajando con [persona/empresa] · Administrador [actor]», selector de empresa autorizada y botón **«Salir del modo soporte»**.
+3. Mostrar el mismo **contenido y navegación de portal** que vería ese cliente, con elementos adicionales autorizados «Configurar», «Verificar», «Editar datos permitidos» y «Crear tarea». No superponer pantallas Admin inconexas.
+4. Cambiar entre Resumen, Empresas, Integraciones, Documentos, Expedientes, Citas, Facturación y Suscripción sin abandonar el contexto del cliente. Mantener filtros, empresa seleccionada y retorno a Contactos.
+5. Al guardar, mostrar resultado real y auditoría; si la integración requiere actuar por parte de un tercero, mostrar estado **«Requiere autorización del titular»**, generar enlace/instrucciones y tarea, no simular éxito.
+
+### 2 ter.3. Arquitectura de reutilización sin impersonación
+
+**Reutilizar pantallas de presentación, no sesiones, credenciales ni privilegios.**
+
+```text
+Admin (/admin/contactos) ──▶ Abrir portal · Modo soporte
+                                    │
+                                    ▼
+                  /admin/soporte/[tipo]/[id]?companyId=...
+                  [SupportSession: actor=admin, subject, company, audit]
+                                    │
+                ClientPortalFeature Components (UI compartida)
+                      /                              \
+            ClientDataAdapter                   AdminSupportAdapter
+       auth.uid + membresía RLS          actor auth.uid + permiso de delegación
+         /api/* del cliente              /api/admin/soporte/* company-scoped
+                      \                              /
+                         Servicios de dominio
+         (integraciones, expediente, docs, suscripciones, citas)
+```
+
+- La ruta propuesta `/admin/soporte/[tipo]/[id]` es ilustrativa, a validar en Fase 0 frente a los enlaces profundos existentes. Preservar `/admin/clientes/[id]/portal` como compatibilidad y punto de entrada inicial.
+- **SupportContext**: actor autenticado, sujeto original con tipo e ID canónico, empresa seleccionada, modo read/write según política, scopes efectivos y correlation_id. Todos validados **en servidor por petición**, no solo al abrir el portal.
+- **Adapters separados**: `ClientDataAdapter` resuelve sus propios datos; `AdminSupportAdapter` valida actor/sujeto/compañía. Ambos comparten componentes, validación de formularios y servicios de negocio autorizados; los endpoints Admin nunca quedan disponibles desde el cliente.
+- Sin JWT de cliente, sin contraseña de cliente, sin `auth.signInAsUser`, sin inyección de una `user_id` controlada por navegador en consultas privilegiadas; la sesión que ejecuta cada acción **es siempre la del Admin**.
+- No compartir caché o estado local entre sujetos; clave de caché incorpora actor, tipo/ID, companyId y modo; invalidar al cambiar de contexto. No persistir tokens sensibles ni datos de terceros en browser storage.
+
+### 2 ter.4. ¿Qué puede configurar realmente el Admin?
+
+| Función | Desde modo soporte | Condición |
+| --- | --- | --- |
+| Alta/edición de datos operativos, contactos, direcciones, vincular empresa | **Sí** | Validación server-side, identidad oficial verificada bloqueada o con proceso de rectificación |
+| Crear expediente, tarea, checklist, solicitud documental, seguimiento | **Sí** | Empresa, actor y fuente identificables; guardar auditoría |
+| Preparar reserva, confirmar/reprogramar cita y comunicaciones | **Sí** | Disponibilidad real, consentimiento/confirmación cuando aplique, Meet e invitaciones verificadas |
+| Activar productos y planes EXPERT, consultar pagos, resolver incidencia Stripe | **Sí, según permisos** | Respetar términos, facturas y reglas de cobro; no facturar en nombre del cliente sin base/confirmación |
+| Conectar/configurar Holded de una empresa | **Sí** | Cuenta/tenant correcto, token autorizado por titular o licencia asesoría administrada, permisos y alcance empresa, auditados. Solo lectura inicialmente |
+| Google/Meta/OAuth de cuentas **del cliente** | **No automáticamente** | Si el proveedor exige login/consentimiento del titular, debe completar OAuth él mismo o conceder delegación válida. Admin prepara el enlace y verifica el estado |
+| Acceso a documentos sensibles o datos laborales | **Según autorización específica** | Minimización, rol, finalidad, empresa, RGPD y consentimiento/mandato cuando proceda |
+| Escritura contable, banca, bajas, borrado, cambios fiscales oficiales | **Solo flujos ya autorizados y con confirmación** | No ampliar permisos por estar en modo soporte; prohibir operaciones irreversibles no implementadas |
+
+**Permiso EXPERT ≠ permiso de tercero**: tener rol Admin no concede automáticamente acceso a banca, Google, Meta, Holded ni información laboral. El panel debe explicar qué autorización falta y permitir una solicitud verificable sin pedir contraseñas.
+
+### 2 ter.5. Seguridad, UX y supervisión
+
+- Mostrar una banda de «Modo soporte» siempre, con nombre de cliente/empresa, empresa activa, identidad del operador y atajo «Volver a Contactos»; jamás camuflarse como sesión real de cliente.
+- No permitir entrar al portal de un cliente solo con sustituir ID en la URL (BOLA/IDOR). Validar permiso de **staff + subject + company + acción**; protección RLS y auditoría para cada lectura/escritura sensible.
+- `support_action_log` (concepto: registro de auditoría o tabla existente compatible) con actor, sujeto, entidad, tipo de cambio, origen, antes/después permitidos, fecha, IP/trace según política. Crear migración **solo si** el inventario muestra que las tablas de auditoría existentes son insuficientes.
+- Evitar dualidad de «modo read-only» y «modo edición» implícita: permisos granulares por acción y confirmaciones explícitas en destructivas, externas o económicas.
+- En caso de cliente con varias empresas, seleccionar entidad explícitamente, no resolver por coincidencia de CIF/nombre ni por la última API key Holded usada.
+- Entorno de prueba: EXPERT Asesorías; contabilidad propia EXPERT Consulting es conexión distinta; nunca mezclar su contexto o permitir mutación por simple cambio de cliente.
+- Conservar portal real ligero y seguro: el cliente no ve barras de soporte, listas globales, campañas ni botones internos. No duplicar widget KIA; usar configuración KIA por superficie y permisos reales.
+
+### 2 ter.6. Diseño y fases concretas
+
+**Fase 0 (inventario):** enumerar qué pantallas de `/dashboard` pueden compartir contenido con modo soporte; identificar qué rutas Admin existentes ya permiten CRUD; mapear acciones que necesitan OAuth/mandato; pruebas de identidades y empresas. Sin escrituras contables.
+
+**Fase 1 (base):** componente `SupportWorkspaceShell`, bandera `support_mode_v1`, barra de identidad, salida al mismo filtro de Contactos, permisos y auditoría de evento de entrada/cambio/salida. Primer prototipo **solo lectura** de Resumen / Mis empresas / estado Holded.
+
+**Fase 2 (configuración):** reutilizar el formulario operativo de perfil y la conexión Holded autorizada desde **el contexto de portal**, apuntando a endpoints Admin existentes; idempotencia, validación y logs. No intentar OAuth como cliente.
+
+**Fase 3 (operaciones):** citas, documentos, expedientes, suscripciones/Stripe y comunicaciones en el mismo portal; nuevas APIs solo si falta acción real, no clonar UI ya disponible.
+
+**Fase 4 (cierre):** consolidar enlaces desde Contactos y fichas 360, dejar accesos legacy como alias o redirect tras pruebas; comprobar responsive, roles, exportación y KIA.
+
+**Criterios de aceptación:**
+1. Owner abre a Rafael desde Contactos y ve ComfyApp, reunión, tareas y próxima acción; vuelve conservando el filtro.
+2. Admin abre Josep, cambia empresa entre su SL y su contexto de autónomo sin modificar la empresa activa real del cliente; conexiones/planes son independientes.
+3. Admin abre DGM, que puede ser empresa sin usuario, y configura un tenant Holded permitido sin crear un perfil ficticio.
+4. Un cliente, tenant_admin o staff sin permiso delegado que intenta `/admin/soporte/*` y su API recibe 403. Cambiar IDs/companyId manipulando URL no devuelve información ni modifica registros.
+5. Entrada, selección de empresa, configuración, salida y fallo quedan atribuidos al operador real en auditoría; no se registran secretos.
+6. OAuth de cuenta privada bloquea configuración automática sin autorización y ofrece solicitud al titular.
+7. El portal del cliente conserva exactamente sus permisos y no muestra controles Admin, aunque comparta componentes.
+8. Todo botón de guardar refleja persistencia real y el mismo cambio puede verificarse desde otra vista. Rollback independiente mediante feature flag.
+9. KIA en modo soporte usa el contexto de empresa explícitamente seleccionado y no puede ejecutar acciones de cliente en un tenant distinto.
+
+**Consecuencia en el plan:** se reduce el alcance de los formularios duplicados de «Ficha 360 administrativa». La ficha de Contactos es una **tarjeta de identidad + relaciones + timeline + acciones**, mientras que la configuración completa se realiza desde **Portal en modo soporte**. Esto **no elimina** las funciones de back-office que nunca deberían existir en un portal cliente (campañas, Inbox general, conciliaciones globales, auditoría del equipo), ni convierte el soporte en impersonación.
+
+---
+
 ## 3. Objetivos y reglas no negociables
 
 - Una única entrada visible **Contactos** en la navegación: personas, empresas, leads, prospectos, clientes, exclientes, suscripciones, empleados/staff y directorios externos mediante filtros combinables.
@@ -403,4 +502,5 @@ Para declarar una pantalla lista deben estar completos: UI responsive, datos rea
 
 - 09/10/2026: elegir **Kiranism adaptado a EXPERT**; una sola entrada **Contactos**; nuevo shell integral, datos canónicos conservados y migración segura por fases.
 - 09/10/2026 (ampliación): definir **dos productos con un design system común** (Admin Workspace y Client Workspace), shells, navegación, KIA y permisos específicos; preservar vista cliente delegada y tercera superficie tenant.
+- 09/10/2026 (modo soporte): la configuración cotidiana se realizará desde **Portal del cliente en modo soporte** por Admin autorizado, reutilizando la UI Cliente y APIs Admin, con actor real y trazabilidad, evitando desarrollar formularios duplicados.
 - EXPERT MCP continúa **aplazado** y fuera de alcance de este plan hasta decisión explícita.
