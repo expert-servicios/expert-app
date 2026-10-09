@@ -67,7 +67,7 @@ describe('punctual service template', () => {
 
     expect(moderation).toContain("current.allow_publish === true");
     expect(moderation).toContain("update.published = false");
-    expect(publicReviews).toContain(".eq('status', 'approved')");
+    expect(publicReviews).toContain(".in('status', ['approved', 'pending'])");
     expect(publicReviews).toContain("review.allow_publish === true &&");
     expect(publicReviews).toContain("review.published === true &&");
     expect(publicReviews).not.toContain(".eq('allow_publish', true)");
@@ -100,6 +100,7 @@ describe('punctual service template', () => {
     expect(moderation).toContain('published = review.allow_publish === true');
     expect(moderation).toContain('commentPublishable = false');
     expect(publicReviews).toContain('review.comment_publishable === true');
+    expect(publicReviews).toContain("review.status !== 'approved' && !review.review_request_id");
   });
 
   it('runs review moderation after the response lifecycle', () => {
@@ -115,6 +116,7 @@ describe('punctual service template', () => {
     expect(moderation).toContain("decision: 'hold_for_review'");
     expect(moderation).toContain("moderationStatus = 'hold_for_review'");
     expect(moderation).toContain("status = 'pending'");
+    expect(moderation).toContain('notifyKiaAdminEscalation');
   });
 
   it('publishes a transparent review policy and links it from consent', () => {
