@@ -19,6 +19,7 @@ interface Integration {
   api_version         : 'v1' | 'v2' | null;
   api_key_last4       : string | null;
   permissions_detected: HoldedPermissions;
+  permissions_enabled?: HoldedPermissions;
   last_success_at     : string | null;
   last_error          : string | null;
   sync_mode           : string;
@@ -48,6 +49,8 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
   const router = useRouter();
   const [integration, setIntegration] = useState<Integration | null>(initialIntegration);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [refreshingPermissions,setRefreshingPermissions] = useState(false);
+  const [permissionNotice,setPermissionNotice] = useState('');
   const [phase, setPhase] = useState<KiaHoldedConnectionPhase>('idle');
   const [error, setError] = useState('');
 
@@ -58,6 +61,27 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
     phase: disconnecting ? 'disconnecting' : phase,
     hasUiError: Boolean(error),
   });
+
+  async function handleRefreshPermissions() {
+    setRefreshingPermissions(true);
+    setError('');
+    setPermissionNotice('');
+    try {
+      const res = await fetch('/api/integrations/holded/refresh-permissions', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'No se pudieron revisar los permisos.');
+      setIntegration(previous => previous ? { ...previous,
+        permissions_detected: data.permissions,
+        permissions_enabled: data.permissions,
+      } : previous);
+      setPermissionNotice('Permisos del token revisados. KIA utiliza las capacidades efectivamente disponibles.');
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo comprobar el token.');
+    } finally {
+      setRefreshingPermissions(false);
+    }
+  }
 
   async function handleDisconnect() {
     if (!integration) return;
@@ -123,6 +147,9 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
               Actualizar
             </button>
             {!isManagedByExpert && canManage && (
+              <button type="button" disabled={refreshingPermissions} onClick={handleRefreshPermissions} className="rounded-xl border border-[#e8dfc8] bg-white px-3 py-2 text-xs font-medium text-[#3d3528] disabled:opacity-50">{refreshingPermissions ? 'Comprobando…' : 'Revisar permisos del token'}</button>
+            )}
+            {!isManagedByExpert && canManage && (
               <button
                 type="button"
                 onClick={handleDisconnect}
@@ -136,6 +163,7 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
           </div>
         </div>
 
+        {permissionNotice && <p role="status" className="text-sm text-emerald-700">{permissionNotice}</p>}
         {error && (
           <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>
         )}
@@ -149,7 +177,7 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
 
         {/* Permissions */}
         <div className="rounded-2xl border border-[#e8dfc8] bg-[#faf9f6] p-5">
-          <HoldedPermissionStatus permissions={integration.permissions_detected} />
+          <HoldedPermissionStatus permissions={integration.permissions_enabled ?? integration.permissions_detected} />
         </div>
 
         {/* Sync mode note */}
