@@ -24,6 +24,11 @@ const bodySchema = z.discriminatedUnion('action', [
     mode: z.enum(['client_account', 'advisor_managed']).default('client_account'),
   }).strict(),
   z.object({ action: z.literal('test_stored') }).strict(),
+  z.object({
+    action: z.literal('enable_accounting_reads'),
+    consentConfirmed: z.literal(true),
+    capabilities: z.array(z.enum(['accountingAccounts', 'accountingPayments'])).min(1).max(2),
+  }).strict(),
   z.object({ action: z.literal('disconnect') }).strict(),
 ]);
 
@@ -42,7 +47,7 @@ async function requireStaff(request: NextRequest) {
     .single();
 
   if (!profile || profile.status === 'inactive' || !isStaffRole(profile.role)) return null;
-  return { admin, actorId: user.id };
+  return { admin, actorId: user.id, actorRole: profile.role };
 }
 
 async function getCompany(admin: ReturnType<typeof getSupabaseAdmin>, companyId: string) {
@@ -339,6 +344,61 @@ export async function POST(
         { error: 'No existe una integración Holded activa para esta empresa' },
         { status: 404 },
       );
+    }
+
+    if (parsed.data.action === 'enable_accounting_reads') {
+      // This is a new, explicit Admin permission grant; a successful GET probe
+      // alone never authorizes KIA to read newly detected accounting resources.
+      if (!['owner', 'admin'].includes(auth.actorRole)) {
+        return NextResponse.json({ error: 'Requiere rol Admin de EXPERT' }, { status: 403 });
+      }
+      if (integration.status !== 'active' || integration.api_version !== 'v2' || integration.sync_mode !== 'read_only') {
+        return NextResponse.json({ error: 'Solo disponible en conexiones Holded v2 activas de solo lectura' }, { status: 409 });
+      }
+
+      const detected = normalizeDetectedHoldedPermissions(integration.permissions_detected as Partial<HoldedPermissions>);
+      const capabilities = [...new Set(parsed.data.capabilities)];
+      if (capabilities.some(capability => detected[capability] !== true)) {
+        return NextResponse.json({ error: 'La clave no ha acreditado todos los permisos de lectura solicitados' }, { status: 422 });
+      }
+
+      const oldEffective = intersectHoldedReadPermissions(
+        detected,
+        integration.permissions_enabled as Partial<HoldedPermissions> | null,
+      );
+      const requested = { ...oldEffective };
+      for (const capability of capabilities) requested[capability] = true;
+      const enabledPermissions = intersectHoldedReadPermissions(detected, requested);
+
+      // Audit the Admin consent before making a change; fail closed if audit is unavailable.
+      const { error: auditError } = await admin.from('audit_logs').insert({
+        actor_id: actorId,
+        action: 'holded.admin_company_accounting_reads_requested',
+        entity: 'companies',
+        entity_id: companyId,
+        metadata: {
+          integration_id: integration.id,
+          capabilities,
+          previous_enabled: capabilities.filter(capability => oldEffective[capability] === true),
+          sync_mode: 'read_only',
+          consent_confirmed: true,
+        },
+      });
+      if (auditError) {
+        return NextResponse.json({ error: 'No se pudo auditar el consentimiento' }, { status: 500 });
+      }
+
+      const now = new Date().toISOString();
+      const { data: updated, error: updateError } = await admin.from('client_integrations')
+        .update({ permissions_enabled: enabledPermissions, updated_at: now })
+        .eq('id', integration.id).eq('company_id', companyId)
+        .eq('provider', 'holded').eq('status', 'active').eq('sync_mode', 'read_only')
+        .select(SAFE_COLUMNS).maybeSingle();
+
+      if (updateError || !updated) {
+        return NextResponse.json({ error: 'No se pudieron habilitar las lecturas solicitadas' }, { status: 409 });
+      }
+      return NextResponse.json({ ok: true, integration: updated, holdedMutated: false });
     }
 
     if (parsed.data.action === 'disconnect') {
