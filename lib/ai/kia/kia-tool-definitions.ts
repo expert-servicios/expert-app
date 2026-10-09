@@ -141,6 +141,12 @@ export const kiaToolValidators = {
   get_unreconciled_transactions: z.object({
     limit: z.number().int().min(1).max(50).default(20),
   }).strict(),
+  get_bank_payment_evidence: z.object({
+    startDate: calendarDateSchema,
+    endDate: calendarDateSchema,
+    terms: z.array(z.string().trim().min(2).max(70)).min(1).max(8),
+    limit: z.number().int().min(1).max(100).default(40),
+  }).strict(),
   prepare_payment_reminder: z.object({
     invoiceId: z.string().trim().min(1).max(200),
     tone: z.enum(['gentle', 'firm', 'formal']).default('gentle'),
@@ -365,6 +371,7 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_accounts_payable: 'Return supplier purchase invoices with outstanding balances for the active company, derived from Holded purchase data. Read-only.',
   get_overdue_invoices: 'Return overdue receivable/payable documents for the active company. Read-only; due status is derived conservatively from available Holded fields.',
   get_unreconciled_transactions: 'Return bank movements that remain pending or partially reconciled in Holded treasury data. Read-only.',
+  get_bank_payment_evidence: 'Search all bank movements for matching merchant names, including reconciled movements, for the authorized company; Admin/Owner only and read-only.',
   prepare_payment_reminder: 'Prepare an admin-only payment reminder for one outstanding Holded invoice. Does not send email or mutate Holded.',
   prepare_journal_entry_proposal: 'Validate an admin-only proposed journal entry with balanced debits and credits; never posts to Holded.',
   prepare_credit_note_proposal: 'Prepare an admin-only credit-note proposal linked to one issued Holded invoice. Does not create or modify any Holded document.',
