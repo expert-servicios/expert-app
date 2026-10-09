@@ -26,13 +26,16 @@ function OpinionContent() {
   const [rating, setRating] = useState(() => { const initial = Number(searchParams.get('rating')); return Number.isInteger(initial) && initial >= 1 && initial <= 5 ? initial : 0; });
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState('');
-  const [allowPublish, setAllowPublish] = useState(false);
+  const [publicationMode, setPublicationMode] = useState<'private' | 'anonymous' | 'profile'>('private');
+  const [publicName, setPublicName] = useState('');
+  const [avatarConsent, setAvatarConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (publicationMode === 'profile' && comment.trim() && publicName.trim().length < 2) { setError(ru ? 'Укажите публичное имя.' : 'Indica un nombre público.'); return; }
     if (rating === 0) { setError(ru ? 'Выберите оценку.' : 'Por favor selecciona una valoración.'); return; }
     setSubmitting(true);
     setError(null);
@@ -40,7 +43,7 @@ function OpinionContent() {
       const res = await fetch('/api/reviews/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, rating, comment: comment.trim() || undefined, allow_publish: allowPublish }),
+        body: JSON.stringify({ token, rating, comment: comment.trim() || undefined, allow_publish: publicationMode !== 'private', publication_mode: comment.trim() ? publicationMode : 'private', public_name: publicName, avatar_consent: avatarConsent }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? 'Error al enviar la valoración.'); return; }
@@ -133,21 +136,26 @@ function OpinionContent() {
               <p className="mt-1 text-right text-xs text-[#29384a]/50">{comment.length}/800</p>
             </div>
 
-            {/* Allow publish */}
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#d8cbb5] bg-[#f8f4eb] px-4 py-3">
-              <input
-                type="checkbox"
-                checked={allowPublish}
-                onChange={(e) => setAllowPublish(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded accent-[#d7a33a]"
-              />
-              <span className="text-sm text-[#29384a]">
-                {ru ? 'Разрешаю опубликовать мой комментарий анонимно. Оценка звёздами учитывается отдельно.' : 'Autorizo a EXPERT a publicar mi comentario de forma anónima. Las estrellas cuentan para la media del servicio.'}
-                <span className="mt-1 block text-xs">
-                  Consulta la <Link href="/politica-de-resenas" target="_blank" className="font-semibold text-[#c88b25] underline">Política de reseñas y valoraciones</Link>.
-                </span>
-              </span>
-            </label>
+            {comment.trim() && (
+              <fieldset className="space-y-3 rounded-xl border border-[#d8cbb5] p-4">
+                <legend className="text-sm font-semibold">{ru ? 'Публикация отзыва' : 'Publicación del comentario'}</legend>
+                {(['private','anonymous','profile'] as const).map((mode) => (
+                  <label key={mode} className="flex items-center gap-2 text-sm">
+                    <input type="radio" name="publication" checked={publicationMode===mode} onChange={()=>setPublicationMode(mode)} />
+                    {mode==='private' ? (ru?'Не публиковать текст':'No publicar el comentario') : mode==='anonymous' ? (ru?'Анонимно':'Publicar anónimamente') : (ru?'С моим публичным профилем':'Publicar con mi perfil público')}
+                  </label>
+                ))}
+                {publicationMode==='profile' && (
+                  <div className="space-y-3">
+                    <label className="block text-sm">{ru?'Публичное имя':'Nombre público'}
+                      <input value={publicName} onChange={e=>setPublicName(e.target.value)} maxLength={80} className="mt-1 block w-full rounded-lg border p-2" required />
+                    </label>
+                    <label className="flex gap-2 text-sm"><input type="checkbox" checked={avatarConsent} onChange={e=>setAvatarConsent(e.target.checked)} />{ru?'Отдельно разрешаю опубликовать фото Google, если оно доступно.':'Autorizo por separado publicar mi foto de Google si está disponible.'}</label>
+                  </div>
+                )}
+                <Link href="/politica-de-resenas" target="_blank" className="text-xs underline">{ru?'Политика отзывов':'Política de reseñas y valoraciones'}</Link>
+              </fieldset>
+            )}
 
             {error && (
               <div className="flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
