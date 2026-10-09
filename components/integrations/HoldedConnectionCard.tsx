@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, XCircle, AlertTriangle, Loader2, RefreshCw, Unplug } from 'lucide-react';
 import { HoldedPermissionStatus, type HoldedPermissions } from './HoldedPermissionStatus';
+import { HOLDED_READ_PERMISSION_KEYS } from '@/lib/integrations/holded/holded-permissions';
 import { HoldedApiKeyForm } from './HoldedApiKeyForm';
 import { HoldedConnectionGuide } from './HoldedConnectionGuide';
 import { KiaGuidanceCard } from '@/components/kia/KiaGuidanceCard';
@@ -53,6 +54,7 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
   const [refreshingPermissions,setRefreshingPermissions] = useState(false);
   const [permissionNotice,setPermissionNotice] = useState('');
   const [replacingToken,setReplacingToken] = useState(false);
+  const [savingScope, setSavingScope] = useState(false);
   const [phase, setPhase] = useState<KiaHoldedConnectionPhase>('idle');
   const [error, setError] = useState('');
 
@@ -73,7 +75,7 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'No se pudieron revisar los permisos.');
       setIntegration(previous => previous ? { ...previous,
-        permissions_detected: data.permissions,
+        permissions_detected: data.detected,
         permissions_enabled: data.permissions,
       } : previous);
       setPermissionNotice('Permisos del token revisados. KIA utiliza las capacidades efectivamente disponibles.');
@@ -82,6 +84,28 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
       setError(err instanceof Error ? err.message : 'No se pudo comprobar el token.');
     } finally {
       setRefreshingPermissions(false);
+    }
+  }
+
+  async function changeReadPermission(key: keyof HoldedPermissions, enabled: boolean) {
+    if (!integration || !companyId || savingScope) return;
+    setSavingScope(true);
+    setError('');
+    setPermissionNotice('');
+    try {
+      const res = await fetch('/api/integrations/holded/update-permissions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ companyId, changes: { [key]: enabled } }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'No se pudo actualizar el permiso');
+      setIntegration(previous => previous ? { ...previous, permissions_enabled: data.permissions } : previous);
+      setPermissionNotice('Permisos guardados. KIA aplicará el nuevo alcance en la próxima consulta.');
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error de actualización');
+    } finally {
+      setSavingScope(false);
     }
   }
 
@@ -199,6 +223,21 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
         {/* Permissions */}
         <div className="rounded-2xl border border-[#e8dfc8] bg-[#faf9f6] p-5">
           <HoldedPermissionStatus permissions={integration.permissions_enabled ?? integration.permissions_detected} />
+          {!isManagedByExpert && canManage && companyId && (
+            <div className="mt-4 space-y-2 border-t border-[#e8dfc8] pt-4">
+              <p className="text-sm font-semibold text-[#29384a]">Permisos de lectura autorizados para KIA</p>
+              <p className="text-xs text-[#7a6e5f]">Solo puedes activar permisos ya disponibles en el token de esta empresa.</p>
+              {HOLDED_READ_PERMISSION_KEYS.map(key => (
+                <label key={key} className="flex items-center justify-between gap-4 text-xs text-[#29384a]">
+                  <span>{key}</span>
+                  <input type="checkbox" checked={integration.permissions_enabled?.[key] === true}
+                    disabled={savingScope || integration.permissions_detected?.[key] !== true}
+                    onChange={event => void changeReadPermission(key, event.target.checked)}
+                    aria-label={`Permitir ${key}`} />
+                </label>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Sync mode note */}

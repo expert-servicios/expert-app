@@ -9,7 +9,7 @@ describe('Client-owned Holded v2 capabilities', () => {
     const test=read('app/api/integrations/holded/test/route.ts');
     expect(connect).toContain("apiVersion: z.enum(['v1','v2']).default('v2')");
     expect(connect).toContain('detectHoldedPermissions(apiKey, apiVersion)');
-    expect(connect).toContain('intersectHoldedReadPermissions(detectedPermissions, requestedPermissions)');
+    expect(connect).toContain('selectHoldedReadPermissions(detectedPermissions, permissionsEnabled ?? requestedPermissions)');
     expect(test).toContain('detectHoldedPermissions(parsed.data.apiKey, parsed.data.apiVersion)');
   });
   it('keeps managed tenants separate and allows authorized owner to refresh without exposing token', () => {
@@ -17,7 +17,7 @@ describe('Client-owned Holded v2 capabilities', () => {
     expect(refresh).toContain("integration.mode !== 'client_account'");
     expect(refresh).toContain("['owner','admin']");
     expect(refresh).toContain("select('encrypted_api_key')");
-    expect(refresh).toContain('intersectHoldedReadPermissions');
+    expect(refresh).toContain('refreshHoldedReadPermissions(result.permissions, old)');
     expect(refresh).not.toContain('return NextResponse.json({ apiKey:');
   });
   it('enforces read-only operation and notices to update scopes in Holded', () => {

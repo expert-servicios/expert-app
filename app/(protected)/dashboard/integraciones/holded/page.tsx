@@ -6,7 +6,7 @@ import { createServerClient } from '@supabase/ssr';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { HoldedConnectionCard } from '@/components/integrations/HoldedConnectionCard';
 
-const SAFE_COLUMNS = 'id,provider,mode,api_version,api_key_last4,permissions_detected,status,sync_mode,last_sync_at,last_success_at,last_error,connected_by,disconnected_at,created_at,updated_at';
+const SAFE_COLUMNS = 'id,provider,mode,api_version,api_key_last4,permissions_detected,permissions_enabled,status,sync_mode,last_sync_at,last_success_at,last_error,connected_by,disconnected_at,created_at,updated_at';
 
 async function getIntegrationData(userId: string) {
   const admin = getSupabaseAdmin();
