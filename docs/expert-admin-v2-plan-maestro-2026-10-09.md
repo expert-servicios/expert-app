@@ -7,6 +7,8 @@
 **Estado:** LISTO PARA INICIAR FASE 0. Implementación bajo PRs independientes, CI, seguridad y verificación de producción.  
 **Plan rector:** este documento prevalece sobre los borradores visuales anteriores; conserva sus requisitos operativos válidos.
 
+**Ampliación incorporada 10/10/2026 — adquisición y registro verificables (§25):** primera/última procedencia, contenido y CTA, paso por OAuth, historial técnico de sesiones, notificaciones de altas y solicitudes, vistas Admin/Cliente diferenciadas y privacidad. El caso Alberto Bouza es una prueba negativa de atribución: acceso Google no prueba Google orgánico. **Pendiente de desarrollo, no operativo aún.**
+
 **Ampliación aprobada 09/10/2026 — KIA Work + Inbox 360 + Finanzas Holded + Hoja Registral:** requisitos vinculantes en §§17–22. Se completa **primero la planificación y validación**, antes de activar nuevos ejecutores, automatizaciones o métricas financieras. La implementación no está declarada operativa por el mero hecho de documentarla.
 
 ## 1. Decisión de diseño: EXPERT Workspace
@@ -860,3 +862,124 @@ Una credencial de proveedor con acceso completo **no autoriza por sí sola** a u
 Pruebas MCP nativas read-only en el chat 09/10: lectura facturas sin registros, asientos 01–09/10 sin registros; get_usage periodo 2026-10 reportó 24/7.500 en el momento de consulta. No extrapolar esas cantidades a la cuenta real de Expert Consulting. La condición de prueba «con todos los permisos» es declarada por la dirección, no una evidencia de permiso efectivo de escritura ni de administración de tokens en el backend.
 
 **Cambio de prioridad:** cerrar #690; matriz de paridad; probar KIA sobre integración existente y capacidades reales; ejecutar primer write con consentimiento específico solo tras verificar tenant y readback. Evitar trabajo de clonación no imprescindible.
+
+---
+
+## 25. Trazabilidad de adquisición y alta de usuarios en EXPERT Workspace V2 (decisión 10/10/2026)
+
+**Objetivo vinculante:** en el nuevo Admin, responder desde la ficha de cualquier persona **cómo llegó, qué le llevó a registrarse, qué acción realizó y qué actividad posterior existe**, sin confundir el método de autenticación (Google) con la fuente de captación (Google Search, social, email, referido, directo u origen desconocido). El Portal Cliente comparte plantilla y eventos de cuenta, pero **no** muestra datos comerciales internos, segmentos ni trazas de otros usuarios. Esta ampliación se integra en Contactos, Inbox 360, Marketing, Inicio y Sistema del mismo EXPERT Workspace; **no propone un tercer dashboard ni otro CRM**.
+
+**Estado de la decisión:** aprobado como alcance del plan y pendiente de implementación/verificación. No declarar operativa ninguna captura, vista, push o métrica hasta comprobar eventos reales en producción. PR #693, actualmente abierto, cubre la base visual Admin/Cliente y no sustituye estas fases de trazabilidad.
+
+### 25.1. Caso de control: registro de Alberto Bouza (hechos observados)
+
+- **Identidad en Auth:** Alberto Bouza, correo `albbouza@gmail.com`, ID de usuario `b6d17c9b-3d43-43f3-8d3f-ff4079e518f6`.
+- **Alta:** 09/10/2026 a las 21:36:33 UTC (23:36:33, Europe/Madrid); autenticación con **proveedor Google** por flujo OAuth/PKCE.
+- **Dominio confirmado:** `expertconsulting.es`. Los logs de inicio muestran Safari en iPhone.
+- **Redirección de autenticación:** `/auth/callback?next=%2Fdashboard%3Fkia%3Dopen`; confirma que el flujo conducía al dashboard con KIA abierta, **no** que sepamos desde qué página hizo clic ni que conversara efectivamente con KIA.
+- **Origen comercial:** **NO DETERMINADO**. Los logs de autenticación no acreditan primera página visitada, referrer externo, búsqueda orgánica, campaña ni UTM. No etiquetar como «Google orgánico» por usar Google OAuth. No convertir un `Referer: expertconsulting.es` del callback en adquisición externa.
+- **Dispositivo:** un user-agent del evento es evidencia técnica puntual, no identidad inequívoca del terminal ni garantía de ubicación. Evitar deducir residencia, IP del usuario o fuente de marketing de proxies/saltos de red.
+
+**Resultado exigido para este registro:** ficha Admin debe mostrar «Captación: no determinada», «Alta: web EXPERT», «Acceso: Google», «Continuación: KIA», «Dispositivo observado: iPhone/Safari», hora y nivel de evidencia; las dimensiones aún no conocidas permanecen desconocidas. **No rellenar retroactivamente fuentes inventadas** ni transformar el alta de Auth por sí sola en una solicitud profesional.
+
+### 25.2. Reutilización de lo existente y diagnóstico de brechas
+
+Código ya presente que debe aprovecharse:
+- `lib/marketing/client-attribution.ts`: `captureClientAttribution()`, `readClientAttribution()`, `ACQUISITION_STORAGE_KEY` y cookie first-party `expert_acquisition`; captación **solo tras consentimiento de cookies**, primera ruta `originPath`, UTM y clasificación parcial de canal.
+- `lib/marketing/server-attribution.ts`: `readRequestAttribution()`, `buildLeadAttributionFields()`; lectura validada de cookie para ciertas entradas comerciales.
+- `lib/marketing/acquisition-taxonomy.ts`: enum `LeadSource`, esquema y `LeadAttribution`; se amplían con compatibilidad, no crear taxonomías incompatibles.
+- `components/content/ArticleIntentCTA.tsx`: identificador `origen=blog:slug` o `docs:slug` en CTA, enlaces para consulta gratuita, servicio, cita y `/dashboard?kia=open`; tracking de clics de contenido.
+- `leads.source`, `leads.source_key`, `leads.metadata.acquisition` e Inbox/KIA ya contienen parte de la trazabilidad comercial; `profiles` y `auth.users` son identidades, no sinónimos de lead.
+
+**Hueco central:** el consentimiento/captura en visita o formulario, el CTA, la redirección OAuth, el alta en `auth.users`, el `profile`, la conversación KIA y el nuevo registro en Contactos **no constituyen hoy una cadena probada end-to-end**. Específicamente no hay evidencia confirmada de persistencia de first-touch + last-touch vinculada al perfil después del OAuth. Revisar integridad de `origen` al pasar por el callback y los redirects. No confundir un clic en CTA con una consulta iniciada.
+
+### 25.3. Modelo canónico de procedencia y evidencias
+
+**Diseñar un contrato tipado de adquisición**, guardando campos y eventos separados; la siguiente estructura es lógica, **no una orden para crear tablas sin inventario y Security Advisor**:
+
+| Dimensión | Campo semántico | Regla |
+| --- | --- | --- |
+| Identidad | `profile_id`, `lead_id`, `company_id`, `tenant_id` | Referencias autorizadas, relaciones explícitas; jamás unificar por nombre/email solamente. |
+| Primera procedencia | `first_touch_source`, `first_touch_medium`, `first_touch_at`, `first_landing_path` | Primera evidencia válida, inmutable salvo corrección auditada. |
+| Último contacto previo al alta | `last_touch_source`, `last_touch_medium`, `last_touch_at`, `last_landing_path` | Actualiza en la ventana definida; no sustituye primera procedencia. |
+| Campaña | `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`, `campaign_id` | Lista permitida, longitud máxima, saneamiento y procedencia. No aceptar datos como hechos verificados por venir de query string. |
+| Referencia de entrada | `referrer_hostname`, `landing_path`, `origin_type`, `origin_ref`, `content_slug`, `cta_id` | Separar referrer externo, ruta interna y artículo/guía/servicio concreto; conservar enlaces funcionales sin parámetros sensibles. |
+| Contexto KIA | `kia_entry_surface`, `conversation_id`, `chat_started_at` | «Abrir KIA» no es lo mismo que «mensaje enviado» o «necesidad profesional detectada». |
+| Autenticación | `auth_provider`, `signup_at`, `signup_entry_path`, `auth_flow_id` | Google OAuth es **método de login**, nunca `lead_source=google`. |
+| Nivel de prueba | `evidence_type`, `confidence`, `captured_at`, `consent_state` | Distinguir `explicit_cta`, `utm`, `referrer`, `inferred`, `unknown`; no usar una clasificación inferida como certeza. |
+| Seguridad de sesión | `session_id`, `first_seen_at`, `last_seen_at`, `device_label`, `browser`, `os` | Registro técnico limitado, administrado por Auth; no atribuir actividad de proxies a un dispositivo real. |
+
+**Vocabulario obligatorio:** `direct` = ausencia de referencia detectable en condiciones instrumentadas; `unknown` / «no determinado» = evidencia insuficiente, rechazo de consentimiento o pérdida de datos. Nunca asignar automáticamente `direct` por fallo de tracking o ausencia de permiso. Mantener `organic_search`, `paid_search`, `social`, `referral`, `telegram`, `email`, `partner`, `other` del contrato actual.
+
+**Causalidad y jerarquía:** mostrar **first-touch** y **last-touch** independientes y la **acción inmediata antes de registrarse** (CTA/servicio), indicando fuente de cada hecho. Un referrer sin UTM no prueba siempre una búsqueda orgánica; `google.com` puede ser redirect de autenticación. En caso de conflicto, mostrar ambas evidencias o «por verificar» y conservar raw event sanitizado, nunca sobrescribir la primera entrada.
+
+**Persistencia propuesta:** reusar `leads.metadata.acquisition` y `profiles` con una vista/compositor server-side de Contactos 360; evaluar un registro de eventos de adquisición de solo inserción con IDs tipados, marcas temporales y expiración si el inventario lo necesita. Toda migración futura exige diseño mínimo, índice, RLS, retención y tests; los eventos no deben alojar secretos, tokens OAuth, URLs con credenciales, IP en claro ni texto libre confidencial.
+
+### 25.4. Embudo completo de visita a trabajo profesional
+
+1. **Primera visita pública:** capturar landing interna (sin query sensible), referrer de dominio externo, UTM y consentimiento aplicable; conservar el primer toque permitido, sin forzar cookies de marketing si no consiente.
+2. **Navegación y CTA:** instrumentar `content_view` cuando legalmente proceda, `cta_clicked` con `blog:slug`, `docs:slug`, `service:slug`, `form:slug`, `kia_widget`, cita o Telegram. El contexto funcional `origen` viaja por la acción hasta su objeto, sin registrar navegación adicional no consentida.
+3. **Inicio de autenticación:** vincular **estado firmado/validado, de un solo uso y caducidad breve**, a la acción legítima antes del OAuth; no poner datos personales en la URL ni confiar en parámetros editables. El callback recupera contexto permitido y evita open redirects.
+4. **Alta o acceso repetido:** asociar a `profile_id` solo tras validar sesión e identidad. Evento `account_registered` **solo para alta nueva**, `account_logged_in` separado, `auth_provider` independiente. La falta de consentimiento para analítica **no impide registrarse**.
+5. **Actividad posterior:** `kia_chat_started` solo cuando exista primer mensaje/hilo; `lead_requested` con necesidad explícita; `service_requested`, `quote_created`, `meeting_booked`, `checkout_started`, `payment_completed` cada uno tras persistencia/confirmación real, no al hacer clic.
+6. **CRM:** añadir contacto de portal a directorio unificado con estado **«Registrado · sin solicitud»** si no pidió servicio. Un lead profesional se activa al registrar una petición real o señal comercial verificable, sin duplicar contacto, crear empresa ficticia ni confundir usuarios Auth con clientes.
+7. **Comunicaciones:** Inbox 360 y KIA heredan solo el contexto autorizado del origen para atender la petición; si no hay conversación/expediente, no inventar motivo de contacto. Notificaciones y tareas por eventos comerciales o incidentes definidos, no por cada autenticación/turno de chat.
+
+**Tráfico multicanal:** Telegram, formulario, email, redes, publicaciones y Google deben converger en Contactos, pero una identidad externa solo se vincula al `profile_id` mediante vínculo verificado. Conservar `origen` en redirecciones ES/RU, selector de idioma, calculadoras, enlaces a reserva, deep-links Telegram y cambio de dispositivo cuando exista evidencia de vinculación; si se pierde el rastro, mostrar «no determinado» sin rellenar.
+
+### 25.5. Pantallas a incluir en los dos dashboards
+
+**Admin Workspace — Inicio / Contactos / Marketing / Sistema**
+- Tarjeta compacta de **«Nuevas altas de portal»** con nombre, fecha, acción siguiente y origen conocido/no determinado; distinguir altas de leads que requieren respuesta.
+- En **Contactos 360**, pestaña **«Origen y recorrido»** con línea temporal verificada: primera visita conocida → página/contenido → CTA → login → primer mensaje KIA → solicitud → cita/presupuesto/compra. Cada nodo enlaza a evento/objeto existente y muestra origen, fecha, método, evidencia y consentimiento.
+- Filtros combinables por canal, landing, `blog:slug`/`docs:slug`, campaña, CTA, registro por Google/email, estado de solicitud y `unknown`; no confundir `login_provider` y `lead_source`.
+- En **Marketing**, embudo por fuente y contenido: visita consentida → CTA → registro → conversación → solicitud → presupuesto → contratación; cohortes y conversiones sobre personas/objetos **deduplicados**, y aviso de cobertura incompleta por consentimiento/adblock. No presentar ratios brutos como certeza estadística.
+- En **Inbox 360**, mostrar badge de origen trazable en nueva comunicación, sin inferir intención; **«abrir ficha»** y «crear tarea» reutilizan objetos existentes.
+- En **Sistema > Auditoría/Seguridad**, historial de accesos y cambios: operador real, entidad, fecha, acción, resultado, origen, navegador/dispositivo aproximado cuando exista base jurídica; diferenciar eventos de autenticación de operaciones administrativas y de sesiones delegadas.
+
+**Client Workspace — Mi EXPERT / Perfil y seguridad**
+- Mantener el **mismo design system Kiranism** que Admin, pero sus accesos, navegación, endpoints y filtros continúan cliente/empresa-scoped.
+- En **Mi perfil > Seguridad y sesiones**, mostrar únicamente dispositivos/sesiones propias disponibles, fecha de acceso y, cuando Auth lo permita, cerrar sesión/revocar. Mostrar claramente qué detalles son aproximados y si el historial no existe. No inventar datos históricos.
+- Preservar en el flujo de KIA únicamente contexto de página/servicio y empresa autorizada; ninguna vista de campañas, segmentación, UTM de otras personas o analítica global en Client.
+- **Modo soporte Admin:** consultar la parte operativa del portal sin suplantar al cliente; acceso a su historial de eventos sujeto a permiso y finalidad; registrar entrada/salida/acciones con actor Admin. Nunca ver tokens, cookies, atributos privados innecesarios ni sesiones activas como credenciales reutilizables.
+
+### 25.6. Avisos, consentimiento, retención y antifraude
+
+- **Notificar a Dirección/Admin:** alta nueva de portal como aviso informativo compacto con enlace a ficha y procedencia si existe; notificación **prioritaria/push** cuando llega una consulta humana, nueva solicitud de servicio, reserva o incidente de onboarding/KIA. Deduplicación por `event_id` + tipo; preferencia configurable, agrupación y silencio nocturno salvo urgencia, con acuse, reintentos y estado de entrega. No enviar un push por cada mensaje o respuesta de KIA.
+- **Entrega:** canal push admin existente como preferencia; fallback por email/agenda según configuración real. **No afirmar que ha llegado** sin prueba de envío/entrega. Contador y feed de avisos coherentes con Inbox y Contactos.
+- **RGPD/ePrivacy:** distinguir almacenamiento estrictamente necesario para iniciar sesión/atender una petición de **analítica/marketing no esencial**, sujeto al consentimiento o base jurídica evaluada. Si rechaza cookies, no usar localStorage, cookies de campaña o identificadores alternativos para reconstruir navegación; respetar revocación y expiración. El `origen` que el propio usuario envía al pedir un servicio puede conservarse como contexto transaccional cuando resulte necesario, no como consentimiento de marketing.
+- **Minimización:** no incluir PII en eventos de analítica, no exponer email/teléfono en UTM; no fingerprinting, geolocalización por IP ni inferencias de identidad. Política de retención diferenciada: metadata de campaña transitoria, audit de seguridad por plazo justificado y expediente según obligación legal; documentar periodos concretos con revisión RGPD antes de activar.
+- **Seguridad:** allowlist de campos/rutas/eventos, comprobación de firma y anti replay del estado de login, mismos límites tenant/empresa y RLS que Contactos, filtrado anti-bot, llamadas idempotentes y bloqueo de URL inyectada. **No enviar datos de origen comercial a KIA como instrucción confiable**.
+- **Auditoría:** cada corrección manual de fuente o vinculación de identidades conserva dato anterior, autor, motivo, fecha, evidencia y permiso; nunca completar `unknown` por intuición humana sin marcar la corrección como manual.
+
+### 25.7. PRs y dependencias; respetar la secuencia de Workspace V2
+
+| Orden | Entrega acotada | Dependencia / resultado verificable |
+| --- | --- | --- |
+| A0 | Inventario de puntos de captura, callback OAuth, click CTA, cookie consent, eventos en leads/profiles, observabilidad Vercel/Supabase | Informe de brechas y pruebas existentes; **no crear tablas todavía**. |
+| A1 | Contrato de adquisición y propagación segura por CTA/login, first/last touch, `unknown`, prueba de consentimiento | Tests unitarios de clasificación y flujo ES/RU; sin persistir PII en URL. |
+| A2 | Asociación idempotente del alta Auth al perfil/contacto, `account_registered` distinto de login y solicitud; timeline de evidencias | E2E Google OAuth, callback y regreso a KIA; no duplicar leads. |
+| A3 | Contactos 360 «Origen y recorrido», filtros, badge Inbox, feed nuevas altas + alertas push | Admin-only API paginada; permisos, dedupe, pruebas mobile y escritorio. |
+| A4 | Embudo Marketing con cobertura y tasas correctamente denominadas + sesiones propias del cliente + modo soporte auditado | Misma fuente de datos, capas RBAC/RLS distintas y ninguna fuga de tracking comercial. |
+| A5 | Validación con datos reales, métricas de ingestión y alertas, retención/consentimiento, rollback por flag | Prueba contra los casos de aceptación; despliegue por superficie, sin alterar históricos. |
+
+A0–A2 pueden avanzar en paralelo con la implementación visual PR #693 cuando no toquen los mismos archivos; A3–A5 se montan sobre `AdminWorkspaceShell` y `ClientWorkspaceShell` compartidos. Mantener la regla general de cambios por PR pequeña, typecheck/lint/tests/Vercel, migración revisada y rollback independiente. **No** añadir nuevas herramientas externas para duplicar Supabase, ni otro tablero comercial.
+
+### 25.8. Criterios de aceptación y pruebas E2E obligatorias
+
+1. **Alberto Bouza (histórico real):** alta Google en web EXPERT y salto a KIA acreditados; origen comercial «No determinado». Nunca mostrar «Google orgánico» sin evidencia.
+2. **Búsqueda orgánica con referrer verificable y consentimiento:** registra ruta y canal apropiados si existe evidencia válida; Google OAuth posterior no altera `first_touch`.
+3. **Campaña etiquetada:** conserva `utm_source/medium/campaign/content/term`, landing y CTA a través de redirección al login y vuelta a `/dashboard?kia=open`; diferencia first/last touch.
+4. **Artículo `blog:slug` / guía `docs:slug`:** consulta, servicio, reserva y KIA retienen el CTA de origen; no basta contabilizar visualización.
+5. **Cookie rechazada o revocada:** login, KIA pública y contratación siguen funcionando; no se instala rastreo de campaña alternativo; fuente desconocida donde falten evidencias.
+6. **Registro vs login:** un usuario recurrente no dispara nueva alta, alerta ni lead; segundo clic en CTA no crea dos conversiones.
+7. **KIA sin mensaje:** el botón abierto no se registra como conversación o lead; `kia_chat_started` exige conversación real.
+8. **Persona multientidad / lead previo por Stripe o email:** una identidad puede estar relacionada con varios objetos sin fusionar por email ni mezclar empresa, tenant o histórico contable.
+9. **Push y tarea:** una nueva solicitud humana genera un aviso único y trabajo vinculable; el simple registro informa según preferencias sin crear tarea profesional ficticia; auditar fallos de entrega.
+10. **Dos superficies:** un cliente no puede acceder a /admin ni consultar fuentes/embudos globales; un admin en modo soporte queda identificado y auditado.
+11. **Sesiones:** cliente solo ve las suyas y no puede consultar/revocar las de otro; datos de navegador son aproximados; no se expone IP completa ni token.
+12. **Reconstrucción incompleta:** una fuente perdida se muestra `unknown`; informe de calidad indica cobertura y no calcula una conversión falsa.
+13. **Dispositivos e idiomas:** Safari iPhone, Android, desktop, ES/RU, redirecciones y viewport móvil; KIA no tapa el panel ni corta botones de recorrido.
+14. **Auditoría y rollback:** rastro de cambios con autor, resultado y trazabilidad; con feature flag OFF, registro/autenticación siguen operativos sin errores ni alteración de fuentes históricas.
+
+**Definition of Done:** se puede responder «¿de dónde vino este usuario?» desde Admin mostrando **hechos verificables y los huecos de información**, con enlace a la evidencia disponible, alertas funcionando y controles de privacidad. No declarar completado el punto hasta pasar la prueba con un registro nuevo, al menos un origen externo consentido y el caso histórico Alberto.
