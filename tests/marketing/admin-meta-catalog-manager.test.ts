@@ -57,7 +57,7 @@ describe('Admin Meta Catalog Manager', () => {
     expect(page).not.toContain('ID / última sync');
     expect(page).not.toContain('>Idiomas<');
     expect(page).not.toContain('>Precio<');
-    expect(rightPanel).toContain("wide ? 'w-[45vw]' : 'w-[360px]'");
+    expect(rightPanel).toContain("wide ? '2xl:w-[min(45vw,620px)]' : '2xl:w-[370px]'");
   });
 
   it('supports operational filters including missing Russian content', () => {
