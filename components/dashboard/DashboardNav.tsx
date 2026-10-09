@@ -1,3 +1,5 @@
+import { WorkspaceBrand } from '@/components/workspace/WorkspaceBrand';
+import { WorkspaceNavLink } from '@/components/workspace/WorkspaceNavLink';
 'use client';
 
 import { useState } from 'react';
@@ -86,12 +88,7 @@ export function DashboardNav({ companies, activeCompanyId, userName, userEmail, 
           {/* Header */}
           <div className="flex items-center border-b border-white/8 px-3 py-4">
             {!collapsed && (
-              <Link
-                href="/dashboard"
-                className="flex-1 font-serif text-sm font-bold tracking-[0.22em] text-white"
-              >
-                EXPERT
-              </Link>
+              <WorkspaceBrand area="client" className="flex-1" />
             )}
             <button
               type="button"
@@ -119,23 +116,7 @@ export function DashboardNav({ companies, activeCompanyId, userName, userEmail, 
           <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
             {NAV_LINKS.map(({ href, label, icon: Icon, exact }) => {
               const active = isActive(href, exact);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  title={collapsed ? label : undefined}
-                  className={`flex items-center rounded-lg px-3 py-2 text-sm transition ${
-                    collapsed ? 'justify-center' : 'gap-3'
-                  } ${
-                    active
-                      ? 'bg-[#D4A017]/15 font-semibold text-[#D4A017]'
-                      : 'text-white/60 hover:bg-white/6 hover:text-white'
-                  }`}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span>{label}</span>}
-                </Link>
-              );
+              return <WorkspaceNavLink key={href} href={href} label={label} icon={Icon} active={active} compact={collapsed} />;
             })}
 
             {isAdmin && (
