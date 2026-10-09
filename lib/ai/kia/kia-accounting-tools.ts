@@ -505,20 +505,26 @@ export async function executeKiaAccountingTool(
         }
       }));
       const matches = scans.flatMap(({ account, movements }) => movements
-        .filter(m => terms.some(term => m.description.toLowerCase().includes(term)))
+        .filter(m => terms.some(term => m.description.toLocaleLowerCase('es').includes(term)))
         .map(m => ({
-          accountName: account.name, date: m.date, description: m.description,
+          movementId: m.id, accountName: account.name,
+          date: m.date, description: m.description,
           amount: m.amount, currency: m.currency, reconciliationStatus: m.status,
           reconciledAmount: m.reconciledAmount,
+          linkedDocumentId: m.documentId ?? m.invoiceId ?? null,
         }))).sort((a, b) => b.date.localeCompare(a.date));
       const limit = Math.max(1, Math.min(100, Number(args.limit ?? 40)));
       return ok(toolName, {
         source, companyId: context.company?.id,
+        period: { startDate, endDate },
         accountsScanned: scans.length,
+        noAccountsReturned: accounts.length === 0,
+        accountsWithErrors: scans.filter(scan => scan.failed).length,
         movementsScanned: scans.reduce((n, scan) => n + scan.movements.length, 0),
-        incomplete: scans.some(scan => scan.failed || scan.movements.length >= 400),
+        incomplete: accounts.length >= 20 || scans.some(scan => scan.failed || scan.movements.length >= 400),
         matchingCount: matches.length, matches: matches.slice(0, limit),
         invoicePaymentConfirmed: false, reconciliationChanged: false,
+        note: 'Coincidencias bancarias por concepto, no prueba de factura pagada. Revisar el documento vinculado y cargos de tarjeta o pasarela por separado.',
       });
     } catch {
       return fail(toolName, 'Error de lectura bancaria Holded.');
