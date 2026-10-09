@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { getHoldedApiDocsUrl } from '@/lib/utils/holded-urls';
 
 const HOLDED_API_URL = getHoldedApiDocsUrl();
@@ -42,7 +43,7 @@ export function HoldedConnectionGuide() {
         </a>
       </p>
 
-      <div className="flex flex-wrap gap-3 text-sm"><a className="font-medium text-[#c88b25] underline" href="/docs/conectar-holded-kia-token-api-v2">Guía paso a paso</a><a className="font-medium text-[#c88b25] underline" href="/docs/permisos-holded-kia-lectura-escritura">Qué permisos conceder</a><a className="font-medium text-[#c88b25] underline" href="/docs/actualizar-permisos-token-holded-kia">Cambiar permisos</a></div>
+      <div className="flex flex-wrap gap-3 text-sm"><Link className="font-medium text-[#c88b25] underline" href="/docs/conectar-holded-kia-token-api-v2">Guía paso a paso</Link><a className="font-medium text-[#c88b25] underline" href="/docs/permisos-holded-kia-lectura-escritura">Qué permisos conceder</Link><a className="font-medium text-[#c88b25] underline" href="/docs/actualizar-permisos-token-holded-kia">Cambiar permisos</Link></div>
       <ol className="space-y-3">
         {STEPS.map((s) => (
           <li key={s.n} className="flex gap-3">
