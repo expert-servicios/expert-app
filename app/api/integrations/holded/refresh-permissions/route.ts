@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { decryptSecret } from '@/lib/security/encryption';
 import { detectHoldedPermissions } from '@/lib/integrations/holded/holded-permission-probes';
-import { intersectHoldedReadPermissions } from '@/lib/integrations/holded/holded-permissions';
+import { refreshHoldedReadPermissions } from '@/lib/integrations/holded/holded-permissions';
 
 export async function POST(request: NextRequest) {
   const auth = createServerSupabaseClient(request);
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     laborEmployeesRead: old.laborEmployeesRead === true,
     laborPayrollsRead: old.laborPayrollsRead === true,
   } : old;
-  const effective = intersectHoldedReadPermissions(result.permissions, requested);
+  const effective = refreshHoldedReadPermissions(result.permissions, old);
   const now = new Date().toISOString();
   const { error } = await admin.from('client_integrations')
     .update({ permissions_detected: result.permissions, permissions_enabled: effective,
