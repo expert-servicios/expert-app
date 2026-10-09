@@ -95,96 +95,141 @@ function PanelLoader() {
 }
 
 const TABS: { id: PanelTab; label: string; icon: React.ElementType }[] = [
-  { id: 'kia', label: 'KIA', icon: Sparkles },
+  { id: 'kia', label: 'KIA Copiloto', icon: Sparkles },
   { id: 'notificaciones', label: 'Avisos', icon: Bell },
 ];
 
+/**
+ * Single Admin KIA dock across the workspace (including delegated support).
+ *
+ * On very wide desktops the panel is a dedicated right-hand column; on
+ * narrower desktop/mobile screens it overlays the page without squeezing
+ * the working area. The same embedded KIA instance stays mounted when hidden
+ * or when the user switches between KIA and Notifications.
+ */
 export function AdminRightPanel({ emailUnreadCount = 0 }: { emailUnreadCount?: number }) {
   const [open, setOpen] = useState(false);
   const [wide, setWide] = useState(false);
   const [tab, setTab] = useState<PanelTab>('kia');
   const [mounted, setMounted] = useState<Set<PanelTab>>(new Set());
-  const [desktopVisible, setDesktopVisible] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia('(min-width: 1024px)');
-    const sync = () => setDesktopVisible(media.matches);
-    sync();
-    media.addEventListener('change', sync);
-    return () => media.removeEventListener('change', sync);
-  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem('adminRightPanel');
-    if (saved === 'open') setOpen(true); // eslint-disable-line react-hooks/set-state-in-effect
+    // Keep the current preference. For new visitors, show KIA as the
+    // additional open window on spacious desktops.
+    if (saved === 'open' || saved === 'closed') {
+      setOpen(saved === 'open');
+    } else {
+      setOpen(window.matchMedia('(min-width: 1536px)').matches);
+    }
     if (localStorage.getItem('adminRightPanelWide') === 'true') setWide(true);
   }, []);
 
   const toggle = useCallback(() => {
-    setOpen((prev) => {
-      const next = !prev;
+    setOpen((previous) => {
+      const next = !previous;
       localStorage.setItem('adminRightPanel', next ? 'open' : 'closed');
       return next;
     });
   }, []);
 
   const toggleWide = useCallback(() => {
-    setWide((prev) => {
-      const next = !prev;
+    setWide((previous) => {
+      const next = !previous;
       localStorage.setItem('adminRightPanelWide', String(next));
       return next;
     });
   }, []);
 
-  const handleTabChange = (t: PanelTab) => {
-    setTab(t);
-    setMounted((prev) => new Set([...prev, t]));
+  const handleTabChange = (nextTab: PanelTab) => {
+    setTab(nextTab);
+    setMounted((previous) => new Set([...previous, nextTab]));
   };
 
   useEffect(() => {
-    if (open) setMounted((prev) => new Set([...prev, tab])); // eslint-disable-line react-hooks/set-state-in-effect
+    if (open) setMounted((previous) => new Set([...previous, tab])); // eslint-disable-line react-hooks/set-state-in-effect
   }, [open, tab]);
 
   return (
     <>
-      <button
-        type="button"
-        onClick={toggle}
-        title={open ? 'Cerrar KIA' : 'Abrir KIA'}
-        className="hidden lg:flex fixed right-0 z-30 flex-col items-center gap-1 rounded-l-xl border border-r-0 border-white/10 bg-[#07111d] px-2 py-3 text-white/40 shadow-lg transition hover:text-white/80 top-1/2 -translate-y-1/2"
-      >
-        {open ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
-      </button>
+      {!open && (
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label="Abrir ventana KIA Copiloto"
+          aria-controls="expert-workspace-kia-dock"
+          aria-expanded={false}
+          title="Abrir KIA Copiloto"
+          className="fixed bottom-[calc(88px+env(safe-area-inset-bottom))] right-3 z-[60] inline-flex items-center gap-2 rounded-xl border border-white/10 bg-[#0D1B2A] px-3 py-2.5 text-xs font-semibold text-[#D4A017] shadow-lg transition hover:bg-[#172b42] lg:bottom-auto lg:right-0 lg:top-1/2 lg:-translate-y-1/2 lg:rounded-r-none"
+        >
+          <PanelRightOpen className="h-4 w-4" aria-hidden="true" />
+          <span>KIA</span>
+        </button>
+      )}
 
-      <aside className={`hidden lg:flex flex-col shrink-0 border-l border-white/8 bg-[#07111d] sticky top-0 h-screen overflow-hidden transition-[width] duration-300 ease-in-out ${open ? (wide ? 'w-[45vw]' : 'w-[360px]') : 'w-0'}`}>
+      <aside
+        id="expert-workspace-kia-dock"
+        aria-label="Panel lateral KIA Copiloto y notificaciones"
+        aria-hidden={!open}
+        className={
+          open
+            ? `fixed inset-x-3 top-[max(12px,env(safe-area-inset-top))] bottom-[calc(76px+env(safe-area-inset-bottom))] z-[70] flex min-h-0 flex-col overflow-hidden rounded-xl border border-white/10 bg-[#0D1B2A] shadow-2xl sm:inset-x-auto sm:right-4 sm:top-4 sm:bottom-4 ${wide ? 'sm:w-[min(620px,calc(100vw-2rem))]' : 'sm:w-[390px]'} 2xl:sticky 2xl:top-0 2xl:right-auto 2xl:bottom-auto 2xl:h-screen 2xl:shrink-0 2xl:rounded-none 2xl:border-y-0 2xl:border-r-0 2xl:shadow-none ${wide ? '2xl:w-[min(45vw,620px)]' : '2xl:w-[370px]'}`
+            : 'hidden'
+        }
+      >
         {mounted.size > 0 && (
           <>
-            <div className="flex items-center border-b border-white/8 px-1 py-1">
+            <div className="flex shrink-0 items-center border-b border-white/10 px-1 py-1">
               {TABS.map(({ id, label, icon: Icon }) => (
-                <button key={id} type="button" onClick={() => handleTabChange(id)} className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${tab === id ? 'bg-[#D4A017]/15 text-[#D4A017]' : 'text-white/40 hover:text-white/70'}`}>
-                  <Icon className="h-3.5 w-3.5" />{label}
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => handleTabChange(id)}
+                  aria-pressed={tab === id}
+                  className={`flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition ${tab === id ? 'bg-[#D4A017]/15 text-[#D4A017]' : 'text-white/50 hover:text-white/80'}`}
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{label}</span>
                 </button>
               ))}
               <Link
                 href="/admin/correo"
                 title="Abrir Correo 360"
-                className="relative ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/8 hover:text-white/70"
+                aria-label="Abrir Correo 360"
+                className="relative ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/60 transition hover:bg-white/10"
               >
-                <Mail className="h-3.5 w-3.5" />
+                <Mail className="h-4 w-4" aria-hidden="true" />
                 {emailUnreadCount > 0 && (
                   <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-blue-500 px-0.5 text-[8px] font-bold text-white">
                     {emailUnreadCount > 99 ? '99+' : emailUnreadCount}
                   </span>
                 )}
               </Link>
-              <button type="button" onClick={toggleWide} title={wide ? 'Reducir panel' : 'Ampliar panel'} className="ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/8 hover:text-white/70">
-                {wide ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+              <button
+                type="button"
+                onClick={toggleWide}
+                title={wide ? 'Reducir ventana KIA' : 'Ampliar ventana KIA'}
+                aria-label={wide ? 'Reducir ventana KIA' : 'Ampliar ventana KIA'}
+                className="ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/60 hover:bg-white/10"
+              >
+                {wide ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </button>
+              <button
+                type="button"
+                onClick={toggle}
+                title="Cerrar ventana KIA"
+                aria-label="Cerrar ventana KIA Copiloto"
+                className="ml-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/60 hover:bg-white/10"
+              >
+                <PanelRightClose className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
-            <div className="relative flex-1 overflow-hidden">
+            <div className="relative min-h-0 flex-1 overflow-hidden">
               {TABS.map(({ id }) => (
                 <div key={id} className={`absolute inset-0 overflow-auto ${tab === id ? 'z-10 visible' : 'z-0 invisible'}`}>
-                  {mounted.has(id) && (id === 'kia' ? <KiaCopilotWidget embedded active={desktopVisible && open && tab === 'kia'} /> : <NotificacionesTab />)}
+                  {mounted.has(id) && (id === 'kia'
+                    ? <KiaCopilotWidget embedded active={open && tab === 'kia'} />
+                    : <NotificacionesTab />)}
                 </div>
               ))}
             </div>
