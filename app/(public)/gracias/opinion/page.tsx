@@ -21,8 +21,9 @@ export default function OpinionPage() {
 function OpinionContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') ?? '';
+  const ru = searchParams.get('lang') === 'ru';
 
-  const [rating, setRating] = useState(0);
+  const [rating, setRating] = useState(() => { const initial = Number(searchParams.get('rating')); return Number.isInteger(initial) && initial >= 1 && initial <= 5 ? initial : 0; });
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState('');
   const [allowPublish, setAllowPublish] = useState(false);
@@ -32,7 +33,7 @@ function OpinionContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (rating === 0) { setError('Por favor selecciona una valoración.'); return; }
+    if (rating === 0) { setError(ru ? 'Выберите оценку.' : 'Por favor selecciona una valoración.'); return; }
     setSubmitting(true);
     setError(null);
     try {
@@ -68,9 +69,9 @@ function OpinionContent() {
       <main className="flex min-h-screen items-center justify-center bg-[#f8f4eb] px-6">
         <div className="max-w-md text-center">
           <CheckCircle2 className="mx-auto mb-4 h-14 w-14 text-green-500" />
-          <h1 className="font-serif text-3xl font-bold text-[#07111d]">¡Muchas gracias!</h1>
-          <p className="mt-3 text-lg text-[#29384a]">Tu valoración ha quedado registrada. Nos ayuda a mejorar y a ayudar a más personas.</p>
-          <p className="mt-6 text-sm text-[#29384a]/70">Puedes cerrar esta página.</p>
+          <h1 className="font-serif text-3xl font-bold text-[#07111d]">{ru ? 'Спасибо!' : '¡Muchas gracias!'}</h1>
+          <p className="mt-3 text-lg text-[#29384a]">{ru ? 'Ваша оценка сохранена. Спасибо за отзыв!' : 'Tu valoración ha quedado registrada. Nos ayuda a mejorar y a ayudar a más personas.'}</p>
+          <p className="mt-6 text-sm text-[#29384a]/70">{ru ? 'Вы можете закрыть эту страницу.' : 'Puedes cerrar esta página.'}</p>
         </div>
       </main>
     );
@@ -80,13 +81,13 @@ function OpinionContent() {
     <main className="flex min-h-screen items-start justify-center bg-[#f8f4eb] px-6 py-16">
       <div className="w-full max-w-lg">
         <div className="rounded-2xl border border-[#d8cbb5] bg-white p-8 shadow-sm">
-          <h1 className="font-serif text-2xl font-bold text-[#07111d]">¿Cómo fue tu experiencia?</h1>
-          <p className="mt-2 text-sm text-[#29384a]">Tu opinión nos ayuda a mejorar el servicio y a llegar a más personas que lo necesitan.</p>
+          <h1 className="font-serif text-2xl font-bold text-[#07111d]">{ru ? 'Оцените нашу работу' : '¿Cómo fue tu experiencia?'}</h1>
+          <p className="mt-2 text-sm text-[#29384a]">{ru ? 'Оцените подготовку и подачу заявления, независимо от ожидаемого решения Министерства.' : 'Tu opinión nos ayuda a mejorar el servicio y a llegar a más personas que lo necesitan.'}</p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-6">
             {/* Star rating */}
             <div>
-              <p className="mb-3 text-sm font-semibold text-[#07111d]">Tu valoración *</p>
+              <p className="mb-3 text-sm font-semibold text-[#07111d]">{ru ? 'Ваша оценка *' : 'Tu valoración *'}</p>
               <div className="flex gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
@@ -118,7 +119,7 @@ function OpinionContent() {
             {/* Comment */}
             <div>
               <label className="mb-2 block text-sm font-semibold text-[#07111d]" htmlFor="comment">
-                Comentario <span className="font-normal text-[#29384a]">(opcional)</span>
+                {ru ? 'Комментарий' : 'Comentario'} <span className="font-normal text-[#29384a]">{ru ? '(необязательно)' : '(opcional)'}</span>
               </label>
               <textarea
                 id="comment"
@@ -141,7 +142,7 @@ function OpinionContent() {
                 className="mt-0.5 h-4 w-4 rounded accent-[#d7a33a]"
               />
               <span className="text-sm text-[#29384a]">
-                Autorizo a EXPERT a publicar mi valoración de forma anónima en la web y materiales de comunicación.
+                {ru ? 'Разрешаю опубликовать мой комментарий анонимно. Оценка звёздами учитывается отдельно.' : 'Autorizo a EXPERT a publicar mi comentario de forma anónima. Las estrellas cuentan para la media del servicio.'}
                 <span className="mt-1 block text-xs">
                   Consulta la <Link href="/politica-de-resenas" target="_blank" className="font-semibold text-[#c88b25] underline">Política de reseñas y valoraciones</Link>.
                 </span>
@@ -159,7 +160,7 @@ function OpinionContent() {
               disabled={submitting || rating === 0}
               className="w-full rounded-xl bg-[#d7a33a] py-3.5 text-sm font-bold uppercase tracking-wide text-[#061321] transition hover:bg-[#c88b25] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {submitting ? 'Enviando...' : 'Enviar mi valoración'}
+              {submitting ? (ru ? 'Отправка...' : 'Enviando...') : (ru ? 'Сохранить оценку' : 'Enviar mi valoración')}
             </button>
           </form>
         </div>
