@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -125,6 +125,7 @@ export default function AdminClientPortalPage() {
   const [auditError, setAuditError] = useState('');
   const [auditing, setAuditing] = useState(false);
   const [auditEntries, setAuditEntries] = useState<SupportAuditEntry[]>([]);
+  const loadedContextRef = useRef<string | null>(null);
   const requestedCompanyId = searchParams.get('companyId');
 
   async function changeCompany(nextCompanyId: string | null) {
@@ -135,7 +136,11 @@ export default function AdminClientPortalPage() {
       // The server validates membership before the UI changes context.
       await recordSupportAccess(id, 'company_switched', nextCompanyId);
       setCompanyId(nextCompanyId);
-      setAuditEntries(await fetchSupportHistory(id));
+      try {
+        setAuditEntries(await fetchSupportHistory(id));
+      } catch {
+        setAuditError('El cambio se ha registrado, pero no se pudo actualizar el historial.');
+      }
     } catch (err) {
       setAuditError(err instanceof Error ? err.message : 'No se pudo cambiar de entidad');
     } finally {
@@ -157,6 +162,12 @@ export default function AdminClientPortalPage() {
   }
 
   useEffect(() => {
+    // Avoid duplicate audit events from React dev strict-effects remounts.
+    const contextKey = `${id}:${requestedCompanyId ?? ''}`;
+    if (loadedContextRef.current === contextKey) return;
+    loadedContextRef.current = contextKey;
+    setData(null);
+    setAuditEntries([]);
     void (async () => {
       setLoading(true);
       setError('');
