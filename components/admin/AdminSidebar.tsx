@@ -1,3 +1,5 @@
+import { WorkspaceBrand } from '@/components/workspace/WorkspaceBrand';
+import { WorkspaceNavLink } from '@/components/workspace/WorkspaceNavLink';
 "use client";
 
 import Link from "next/link";
@@ -147,27 +149,9 @@ function SidebarContent({
 }: SidebarContentProps) {
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="flex items-center gap-2.5 border-b border-white/8 px-4 py-4">
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#D4A017]">
-          <ShieldCheck className="h-4 w-4 text-[#07111d]" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#D4A017]">
-            Expert
-          </p>
-          <p className="text-[10px] text-white/40">Panel de administración</p>
-        </div>
-        {isMobile && (
-          <button
-            type="button"
-            title="Cerrar menú"
-            onClick={onCloseMobile}
-            className="ml-auto rounded-lg p-1 text-white/40 hover:bg-white/8 hover:text-white"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
+      <div className="flex items-center justify-between border-b border-white/8 px-3 py-3">
+        <WorkspaceBrand area="admin" />
+        {isMobile && <button type="button" aria-label="Cerrar menú" onClick={onCloseMobile} className="rounded-lg p-2 text-white/60 hover:bg-white/10"><X className="h-4 w-4" /></button>}
       </div>
 
       {/* Global search trigger */}
