@@ -17,10 +17,13 @@ async function fetchPublicReviews(): Promise<Review[]> {
       .select('id,rating,comment,service_name,created_at')
       .eq('status', 'approved')
       .eq('allow_publish', true)
+      .eq('published', true)
+      .eq('comment_publishable', true)
+      .not('comment', 'is', null)
       .order('featured', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(6);
-    return data ?? [];
+    return (data ?? []).filter((review) => Boolean(review.comment?.trim()));
   } catch {
     return [];
   }
@@ -64,7 +67,7 @@ export async function ReviewsPreview() {
                 ))}
               </div>
               <p className="mt-4 flex-1 text-sm leading-6 text-white/80">
-                {r.comment ? `"${r.comment}"` : 'Servicio excelente.'}
+                {r.comment}
               </p>
               <div className="mt-5 border-t border-white/10 pt-4 text-xs text-white/50">
                 {r.service_name && <span className="font-semibold text-[#D4A017]/80">{r.service_name} · </span>}
