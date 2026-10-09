@@ -52,6 +52,7 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
   const [disconnecting, setDisconnecting] = useState(false);
   const [refreshingPermissions,setRefreshingPermissions] = useState(false);
   const [permissionNotice,setPermissionNotice] = useState('');
+  const [replacingToken,setReplacingToken] = useState(false);
   const [phase, setPhase] = useState<KiaHoldedConnectionPhase>('idle');
   const [error, setError] = useState('');
 
@@ -177,6 +178,24 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
         )}
 
         <div className="flex flex-wrap gap-3 text-xs"><Link className="text-[#c88b25] underline" href="/docs/conectar-holded-kia-token-api-v2">Crear token</Link><a className="text-[#c88b25] underline" href="/docs/permisos-holded-kia-lectura-escritura">Permisos necesarios</Link><a className="text-[#c88b25] underline" href="/docs/actualizar-permisos-token-holded-kia">Modificar permisos</Link></div>
+        {!isManagedByExpert && canManage && (
+          <div className="rounded-xl border border-[#e8dfc8] bg-white p-4">
+            <button type="button" onClick={() => setReplacingToken(v => !v)} className="text-sm font-semibold text-[#29384a] underline">
+              {replacingToken ? 'Cancelar sustitución' : 'Sustituir token de esta empresa'}
+            </button>
+            {replacingToken && (
+              <div className="mt-4">
+                <p className="mb-3 text-xs text-[#7a6e5f]">Genera un token nuevo en la misma empresa de Holded y utiliza solo este formulario cifrado. La credencial anterior se conservará si falla la verificación.</p>
+                <HoldedApiKeyForm companyId={companyId} onPhaseChange={setPhase}
+                  onConnected={(newIntegration) => {
+                    setIntegration(newIntegration as unknown as Integration);
+                    setReplacingToken(false);
+                    router.refresh();
+                  }} />
+              </div>
+            )}
+          </div>
+        )}
         {/* Permissions */}
         <div className="rounded-2xl border border-[#e8dfc8] bg-[#faf9f6] p-5">
           <HoldedPermissionStatus permissions={integration.permissions_enabled ?? integration.permissions_detected} />
