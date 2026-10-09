@@ -14,7 +14,7 @@ async function authorize(request: NextRequest, id: string) {
   const admin = getSupabaseAdmin();
   const { data: actor, error: actorError } = await admin
     .from('profiles').select('id,role,status').eq('id', user.id).maybeSingle();
-  if (actorError || !actor || actor.status === 'inactive' || !['admin', 'owner'].includes(actor.role)) return null;
+  if (actorError || !actor || actor.status !== 'active' || !['admin', 'owner'].includes(actor.role)) return null;
 
   const { data: subject, error: subjectError } = await admin
     .from('profiles').select('id').eq('id', id).maybeSingle();
