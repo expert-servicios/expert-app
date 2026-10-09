@@ -124,7 +124,7 @@ describe('punctual service template', () => {
     expect(policy).toContain('no recibe la puntuación en estrellas');
     expect(policy).toContain('no crea reseñas ficticias');
     expect(form).toContain('/politica-de-resenas');
-    expect(form).toContain('publicar mi valoración de forma anónima');
+    expect(form).toContain('publicar mi comentario de forma anónima');
   });
 
   it('does not offer routine rejection of a verified review from the admin card', () => {
