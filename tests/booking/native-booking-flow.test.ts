@@ -5,6 +5,17 @@ import { resolve } from 'node:path';
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
 
 describe('native booking public flow', () => {
+  it('public booking CTAs work as native links without JavaScript-driven navigation', () => {
+    const button = read('components/site/CalButton.tsx');
+    const badge = read('components/site/CalBadge.tsx');
+    expect(button).toContain('<a');
+    expect(button).toContain('href={href}');
+    expect(badge).toContain('<a');
+    expect(badge).toContain("href={BOOKING_URL ?? '/cita?tipo=consulta-inicial'}");
+    expect(button).not.toContain('window.location.assign');
+    expect(badge).not.toContain('window.location.assign');
+  });
+
   const route = read('app/api/booking/route.ts');
   const availability = read('app/api/booking/availability/route.ts');
   const migration = read('supabase/migrations/20260923132714_native_google_booking.sql');
