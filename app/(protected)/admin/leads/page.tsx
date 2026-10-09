@@ -240,8 +240,20 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
               <option value="en">EN</option>
             </select>
             <select name="segment" defaultValue={segment} className="rounded-xl border border-[#d8cbb5] bg-[#fffdf8] px-3 py-2.5 text-sm">
-              <option value="">Todos los orígenes</option>
+              <option value="attention">Requieren atención</option>
+              <option value="all">Todos los contactos</option>
+              <option value="actionable">Solicitudes reales</option>
+              <option value="stripe_history">Histórico Stripe completo</option>
+              <option value="stripe_imported">Stripe · antiguos sin pagos</option>
+              <option value="stripe_customer">Stripe · clientes con actividad</option>
+              <option value="stripe_abandoned">Stripe · abandonados</option>
+              <option value="mentorday_directory">MentorDay · directorio</option>
               <option value="mentorday-projects">MentorDay · proyectos 2026</option>
+              <option value="mentoring_followup">Mentoring · seguimiento</option>
+              <option value="needs_review">Pendientes de revisión</option>
+              <option value="spam_review">Spam probable</option>
+              <option value="internal_test">Pruebas internas</option>
+              <option value="system_notice">Notificaciones automáticas</option>
             </select>
             <button className="rounded-xl bg-[#07111d] px-4 py-2.5 text-sm font-bold text-white">Filtrar</button>
           </form>
