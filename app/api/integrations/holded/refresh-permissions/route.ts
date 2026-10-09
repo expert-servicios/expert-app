@@ -38,7 +38,11 @@ export async function POST(request: NextRequest) {
   }
   if (!result.ok) return NextResponse.json({ error: 'El token no tiene capacidades de lectura verificables. Se mantienen los permisos anteriores.', warnings: result.warnings }, { status: 422 });
   const old = (integration.permissions_enabled ?? {}) as Record<string,boolean>;
-  const requested = integration.api_version === 'v2' ? result.permissions : old;
+  const requested = integration.api_version === 'v2' ? {
+    ...result.permissions,
+    laborEmployeesRead: old.laborEmployeesRead === true,
+    laborPayrollsRead: old.laborPayrollsRead === true,
+  } : old;
   const effective = intersectHoldedReadPermissions(result.permissions, requested);
   const now = new Date().toISOString();
   const { error } = await admin.from('client_integrations')
