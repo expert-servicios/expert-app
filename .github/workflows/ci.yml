@@ -43,6 +43,15 @@ jobs:
       - name: Production build
         run: npm run build
 
+      - name: Install MCP server dependencies
+        run: npm ci --prefix apps/holded-mcp
+
+      - name: MCP server typecheck/build
+        run: npm run holded-mcp:build
+
+      - name: MCP server tests
+        run: npm run holded-mcp:test
+
       - name: Supabase migration baseline check
         run: npm run check:supabase-migrations
 
