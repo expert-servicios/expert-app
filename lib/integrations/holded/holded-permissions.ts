@@ -111,3 +111,44 @@ export function forceHoldedReadOnly(
     laborPayrollsWrite: false,
   };
 }
+
+
+/**
+ * For a newly connected v2 token, respect every read toggle submitted by the
+ * owner. Older integrations without a selection default to detected read
+ * capabilities, except employee and payroll data requiring explicit consent.
+ */
+export function selectHoldedReadPermissions(
+  detected: Partial<HoldedPermissions>,
+  selected: Partial<HoldedPermissions> | null | undefined,
+): HoldedPermissions {
+  const defaults: Partial<HoldedPermissions> = {
+    ...normalizeDetectedHoldedPermissions(detected),
+    laborEmployeesRead: false,
+    laborPayrollsRead: false,
+  };
+  const desired = selected ? { ...defaults, ...selected } : defaults;
+  return intersectHoldedReadPermissions(detected, desired);
+}
+
+/** A token refresh must NOT silently restore any owner-disabled access. */
+export function refreshHoldedReadPermissions(
+  detected: Partial<HoldedPermissions>,
+  existing: Partial<HoldedPermissions> | null | undefined,
+): HoldedPermissions {
+  return intersectHoldedReadPermissions(detected, existing ?? {});
+}
+
+/** Patch only explicitly submitted read scopes; unsupported scopes are rejected. */
+export function patchHoldedReadPermissions(
+  detected: Partial<HoldedPermissions>,
+  existing: Partial<HoldedPermissions>,
+  changes: Partial<HoldedPermissions>,
+): HoldedPermissions {
+  for (const key of Object.keys(changes)) {
+    if (!(HOLDED_READ_PERMISSION_KEYS as readonly string[]).includes(key)) {
+      throw new Error('Permiso de escritura/no reconocido');
+    }
+  }
+  return intersectHoldedReadPermissions(detected, { ...existing, ...changes });
+}
