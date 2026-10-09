@@ -103,6 +103,18 @@ describe('punctual service template', () => {
     expect(publicReviews).toContain("review.status !== 'approved' && !review.review_request_id");
   });
 
+  it('translates only consented approved reviews and shows original on RU and ES pages', () => {
+    const translator = read('lib/ai/kia/kia-review-translations.ts');
+    const summary = read('components/services/ServiceRatingSummary.tsx');
+    const home = read('components/site/reviews-preview.tsx');
+    expect(translator).toContain("review.status !== 'approved'");
+    expect(translator).toContain('!review.allow_publish');
+    expect(translator).toContain('!review.comment_publishable');
+    expect(summary).toContain('review.commentTranslations?.[locale]');
+    expect(home).toContain('r.comment_translations?.[locale]');
+    expect(summary).toContain('review.comment}</p>');
+  });
+
   it('runs review moderation after the response lifecycle', () => {
     const submit = read('app/api/reviews/submit/route.ts');
     expect(submit).toContain("import { after, NextRequest, NextResponse } from 'next/server'");
