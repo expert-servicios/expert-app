@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { after, NextRequest, NextResponse } from 'next/server';
+import { translateApprovedReview } from '@/lib/ai/kia/kia-review-translations';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -92,6 +93,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { error } = await admin.from('reviews').update(update).eq('id', id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+    if (body.status === 'approved' || body.comment_publishable === true || body.published === true) {
+      after(() => translateApprovedReview(id).catch((error) => console.error('[reviews] human-approved translation failed', error)));
+    }
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[admin/resenas PATCH]', err);
