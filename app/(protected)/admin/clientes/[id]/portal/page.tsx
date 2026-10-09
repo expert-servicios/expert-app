@@ -167,9 +167,9 @@ export default function AdminClientPortalPage() {
     const contextKey = `${id}:${requestedCompanyId ?? ''}`;
     if (loadedContextRef.current === contextKey) return;
     loadedContextRef.current = contextKey;
-    setData(null);
-    setAuditEntries([]);
     void (async () => {
+      setData(null);
+      setAuditEntries([]);
       setLoading(true);
       setError('');
       try {
