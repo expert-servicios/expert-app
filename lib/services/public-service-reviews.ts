@@ -24,7 +24,7 @@ const CASE_BATCH_SIZE = 100;
 
 /**
  * Single source of truth for ratings on the public listing and detail pages.
- * Only verified, approved reviews from a case with the exact service_id count.
+ * Only verified reviews from a case with the exact service_id count. A pending TEXT moderation never blocks its verified star rating.
  * Stars are independent of permission to publish a written comment.
  *
  * Query in batches to avoid N+1 database requests on public catalog grids.
@@ -66,21 +66,21 @@ export async function getPublicServiceReviewSummaries(
       for (let offset = 0; ; offset += PAGE_SIZE) {
         const { data, error } = await admin
           .from('reviews')
-          .select('id,case_id,rating,comment,comment_publishable,allow_publish,published,created_at,featured')
+          .select('id,case_id,rating,comment,comment_publishable,allow_publish,published,created_at,featured,status,review_request_id')
           .in('case_id', batchIds)
-          .eq('status', 'approved')
+          .in('status', ['approved', 'pending'])
           .order('id', { ascending: true })
           .range(offset, offset + PAGE_SIZE - 1);
         if (error) throw error;
         for (const review of data ?? []) {
-          const slug = caseToSlug.get(review.case_id);
+          // Pending comments count only when backed by a verified, issued request.\n          // Excludes legacy/test pending records without a request.\n          if (review.status !== 'approved' && !review.review_request_id) continue;\n          const slug = caseToSlug.get(review.case_id);
           const summary = slug ? summaries[slug] : undefined;
           if (!summary) continue;
           const rating = Number(review.rating);
           if (!Number.isInteger(rating) || rating < 1 || rating > 5) continue;
           summary.count += 1;
           sums.set(slug!, (sums.get(slug!) ?? 0) + rating);
-          const comment = review.allow_publish === true &&
+          const comment = review.status === 'approved' &&\n            review.allow_publish === true &&
             review.published === true &&
             review.comment_publishable === true &&
             typeof review.comment === 'string'
