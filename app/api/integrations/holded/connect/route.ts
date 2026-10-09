@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
 
     const detectedPermissions = normalizeDetectedHoldedPermissions(testResult.permissions);
 
-    const requestedPermissions: Partial<HoldedPermissions> = permissionsEnabled ?? {
+    const requestedPermissions: Partial<HoldedPermissions> = apiVersion === 'v2' ? detectedPermissions : permissionsEnabled ?? {
       ...detectedPermissions,
       laborEmployeesRead: false,
       laborPayrollsRead: false,
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
       permissions_detected: detectedPermissions,
       permissions_enabled: enabledPermissions,
       consent_at: consentAt ?? now,
-      consent_version: consentVersion ?? '1.1',
+      consent_version: apiVersion === 'v2' ? 'client-token-v2-scopes' : (consentVersion ?? '1.1'),
       status: 'active',
       sync_mode: 'read_only',
       last_success_at: now,
