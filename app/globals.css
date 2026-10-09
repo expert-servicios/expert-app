@@ -77,3 +77,20 @@ canvas {
   background: #d4a017;
   color: #0d1b2a;
 }
+
+
+/* EXPERT Workspace V2 — shared Kiranism-inspired presentation tokens.
+   Layout-only: never used to grant or hide server permissions. */
+.expert-workspace {
+  --workspace-bg: #f8f6f1;
+  --workspace-surface: #ffffff;
+  --workspace-ink: #0d1b2a;
+  --workspace-sidebar: #07111d;
+  --workspace-accent: #d4a017;
+  --workspace-border: #e8dfd2;
+}
+.expert-workspace .workspace-nav-item-active {
+  background: color-mix(in srgb, var(--workspace-accent) 15%, transparent);
+  color: var(--workspace-accent);
+}
+.expert-workspace [data-workspace-area] { min-width: 0; }
