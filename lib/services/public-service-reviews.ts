@@ -4,6 +4,7 @@ export type PublicServiceReview = {
   id: string;
   rating: number;
   comment: string | null;
+  commentTranslations: Record<string,string> | null;
   createdAt: string;
   featured: boolean;
 };
@@ -66,7 +67,7 @@ export async function getPublicServiceReviewSummaries(
       for (let offset = 0; ; offset += PAGE_SIZE) {
         const { data, error } = await admin
           .from('reviews')
-          .select('id,case_id,rating,comment,comment_publishable,allow_publish,published,created_at,featured,status,review_request_id')
+          .select('id,case_id,rating,comment,comment_publishable,allow_publish,published,created_at,featured,status,review_request_id,comment_translations')
           .in('case_id', batchIds)
           .in('status', ['approved', 'pending'])
           .order('id', { ascending: true })
@@ -94,6 +95,7 @@ export async function getPublicServiceReviewSummaries(
             id: review.id,
             rating,
             comment,
+            commentTranslations: review.comment_translations as Record<string,string> | null,
             createdAt: review.created_at,
             featured: Boolean(review.featured),
           });
