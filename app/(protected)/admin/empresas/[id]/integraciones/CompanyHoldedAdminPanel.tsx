@@ -82,7 +82,9 @@ export function CompanyHoldedAdminPanel({ companyId }: { companyId: string }) {
           ? 'Holded conectado y credencial cifrada correctamente.'
           : payload.action === 'disconnect'
             ? 'Holded desconectado. La credencial almacenada se ha eliminado.'
-            : 'Conexión Holded verificada correctamente.',
+            : payload.action === 'enable_accounting_reads'
+              ? 'Lecturas contables habilitadas en EXPERT. Holded continúa en solo lectura.'
+              : 'Conexión Holded verificada correctamente.',
       );
       setApiKey('');
       setShowKey(false);
@@ -109,6 +111,12 @@ export function CompanyHoldedAdminPanel({ companyId }: { companyId: string }) {
 
   const integration = data?.integration ?? null;
   const company = data?.company ?? null;
+  const pendingAccountingReads = (['accountingAccounts', 'accountingPayments'] as const)
+    .filter(capability =>
+      integration?.permissions_detected?.[capability] === true
+      && integration.permissions_enabled?.[capability] !== true
+    );
+
 
   return (
     <div className="space-y-5">
@@ -178,6 +186,28 @@ export function CompanyHoldedAdminPanel({ companyId }: { companyId: string }) {
 
           {notice && <p role="status" className="mt-4 rounded-xl border border-green-200 bg-white px-4 py-3 text-sm font-semibold text-green-800">{notice}</p>}
           {integration.last_error && <p className="mt-4 rounded-xl bg-white px-4 py-3 text-sm text-red-700">Último error: {integration.last_error}</p>}
+
+          {integration.api_version === 'v2' && integration.sync_mode === 'read_only' && pendingAccountingReads.length > 0 && (
+            <div className="mt-4 rounded-xl border border-amber-300 bg-white p-4">
+              <p className="text-sm font-semibold text-amber-900">Lecturas disponibles en Holded, pendientes de autorizar en EXPERT</p>
+              <p className="mt-1 text-xs text-amber-900">
+                {pendingAccountingReads.map(scope => scope === 'accountingAccounts' ? 'Plan contable' : 'Pagos').join(' y ')}.
+                Probar conexión comprueba el token, pero no activa nuevos permisos de KIA.
+              </p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  if (window.confirm('¿Autorizar a KIA a consultar el plan contable y/o los pagos detectados, exclusivamente en esta empresa y solo en lectura? No se realizarán cambios contables en Holded.')) {
+                    void action({ action: 'enable_accounting_reads', capabilities: pendingAccountingReads, consentConfirmed: true });
+                  }
+                }}
+                className="mt-3 rounded-lg border border-amber-600 bg-white px-3 py-2 text-xs font-bold text-amber-900 disabled:opacity-60"
+              >
+                {busyAction === 'enable_accounting_reads' ? 'Autorizando lecturas…' : 'Autorizar lecturas contables (sin escritura)'}
+              </button>
+            </div>
+          )}
 
           <div className="mt-4">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-800">Permisos efectivos</p>
