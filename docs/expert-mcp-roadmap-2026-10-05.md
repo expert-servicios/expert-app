@@ -268,3 +268,38 @@ Después del piloto se habilita DGM como segunda empresa de validación, inicial
 8. Después, evaluar importación ampliada **solo si** el sandbox es legal/técnicamente seguro, existe copia de seguridad, plan de borrado y evidencia de no emisión ni envíos; nunca habilitar sincronización bidireccional hacia producción.
 
 **Criterios:** cero escrituras sobre origen; ningún dato de prueba en dashboard cliente real; cero cruces de tenant; los cambios de permisos se reflejan en KIA; toda operación queda auditada; la conexión de prueba no se confunde con la canónica. No se ha iniciado ninguna copia o importación en este anexo.
+
+
+## Aclaración de alcance aprobada 09/10/2026 — benchmark, no replicación de contabilidad
+
+**Esta sección prevalece sobre el anexo de «copia contable» y cualquier referencia anterior que la presente como requisito.** La dirección ha precisado dos conexiones **con roles independientes**, no dos conexiones a ChatGPT:
+
+1. **MCP nativo de Holded conectado aquí a ChatGPT:** cuenta de laboratorio vacía; sirve como **referencia funcional de comportamiento de sus herramientas y errores**, y para pruebas de lectura/escritura autorizadas en ese laboratorio.
+2. **EXPERT App / KIA:** conexión propia API v2 \`expert_account\` a la cuenta Holded con contabilidad original de Expert Consulting; KIA debe alcanzar **paridad funcional** con las capacidades de Holded realmente disponibles y autorizadas para esta cuenta. No debe utilizar el token de la sesión ChatGPT ni conectarse necesariamente al mismo tenant del laboratorio.
+
+**No es necesario copiar o clonar contabilidad para este objetivo.** Una importación sintética o desidentificada será, como mucho, un mecanismo opcional de pruebas de regresión si los casos reales del laboratorio son insuficientes y la operación está fiscalmente controlada. No mover cuentas, facturas, contactos, asientos ni datos personales desde Expert Consulting como paso por defecto. El laboratorio es el oráculo de contrato; la conexión KIA usa su fuente real.
+
+**Sobre «acceso completo»:** la dirección indica que el usuario de ambos entornos dispone de todos los permisos de Holded, incluidos los administrativos. Esto es una afirmación sobre las **credenciales del proveedor**, no un estado de ejecución concedido automáticamente a KIA. Al revisar Supabase el 09/10, la integración EXPERT de la cuenta real figura \`sync_mode=read_only\` con flags de escritura apagados; el gateway v2 existente implementa principalmente lecturas. La herramienta MCP nativa de esta sesión expone herramientas de escritura (contactos, estimaciones y otras), pero **no expone herramientas para enumerar/crear/editar/revocar tokens y scopes**, por lo que no se puede validar programáticamente la administración de tokens con la superficie actual. No afirmar lo contrario.
+
+### Objetivo de paridad (contratos, no replicación de tenants)
+
+- Para cada acción relevante: \`native_tool\` / nombre y contrato → servicio común \`HoldedGateway\` → herramienta KIA / EXPERT MCP → nivel de riesgo, permisos, validación y read-back.
+- Diferenciar **capacidad publicitada por el servidor**, **permiso existente en token**, **permiso consentido en EXPERT**, y **autorización de actor/operación**. Se permite diferir acciones de alto riesgo aunque el token técnicamente permita ejecutarlas.
+- Para lecturas se comparan esquemas, filtros, paginación, cobertura, divisa y tratamiento de errores; para escrituras, primero contrato unitario sin proveedor, luego ensayo en laboratorio identificado, **y sólo después** aprobación específica de la operación real en KIA.
+- Cambios de permisos desde dashboard: revocar / volver a habilitar lecturas ya concedidas al token, detectando en la próxima llamada que KIA deja de tener acceso. Si falta scope del token, KIA enlaza a los controles del proveedor, ya que no existe aquí una herramienta nativa de gestión de tokens.
+- KIA debe mostrar herramienta faltante, razón del fallo, vínculo de configuración y estado de sincronización; **sin fingir que una respuesta del chat concedió un scope externo**.
+- Las pruebas E2E autenticadas deben ser distintas: a) nativo ChatGPT en lab, b) KIA con rol de cliente/admin en su propio tenant; una prueba contra el nativo no demuestra que el backend de KIA funciona.
+
+### Pruebas read-only verificadas en la sesión del 09/10/2026
+
+El MCP nativo respondió con **0 facturas, 0 asientos del 01/10/2026 al 09/10/2026**, y reporte de uso de octubre **24/7.500** llamadas en el momento de la prueba. Esto **corrobora la disponibilidad de lecturas** de la conexión expuesta en ChatGPT, pero **no verifica identidad del tenant, permisos de escritura ni que esa cuenta esté enlazada a KIA**.
+
+### Prioridad de implementación corregida
+
+1. Completar la revisión de PR #690 y cerrar CI; el cambio de permisos ha de respetar el consentimiento sin reactivar toggles deshabilitados.
+2. Crear matriz de correspondencia MCP nativo ↔ KIA/HoldedGateway y suite de contratos con respuestas sintéticas. No requiere segundo tenant ni clonación.
+3. Añadir adaptadores write individuales sobre credenciales propias de KIA, con autorizaciones server-side, aprobación, idempotencia y auditoría. Nunca acceso global irrestricto.
+4. Validar reversibilidad de permisos con token de prueba en entorno identificado; no desconectar/revocar tokens productivos para probar un caso.
+5. Incorporar paridad en dashboards y KIA Work con despliegue gradual y verificación de actividad real.
+
+**Estado actual:** documento ajustado. No se han habilitado escrituras, cambiado tokens, clonado contabilidad ni conectado el MCP nativo de ChatGPT al backend de KIA por la modificación de este plan.
