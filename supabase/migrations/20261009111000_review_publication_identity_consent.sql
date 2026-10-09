@@ -1,6 +1,0 @@
--- Public review identity is never implied by a Google sign-in.
-alter table public.reviews add column if not exists publication_mode text not null default 'private'; alter table public.reviews add column if not exists public_name text; alter table public.reviews add column if not exists public_avatar_url text; alter table public.reviews add column if not exists avatar_consent boolean not null default false; alter table public.reviews add column if not exists publication_consent_at timestamptz;
--- Production schema already includes this compatibility migration.
-do $$ begin if not exists (select 1 from pg_constraint where conrelid='public.reviews'::regclass and conname='reviews_publication_mode_check') then alter table public.reviews add constraint reviews_publication_mode_check check (publication_mode in ('private','anonymous','profile')); end if; end $$;
-update public.reviews set publication_mode='anonymous' where allow_publish=true and published=true and comment_publishable=true and coalesce(nullif(btrim(comment),''),'')<>'' and publication_mode='private';
-create index if not exists reviews_public_comments_idx on public.reviews (created_at desc) where status='approved' and published=true and allow_publish=true and comment_publishable=true;
