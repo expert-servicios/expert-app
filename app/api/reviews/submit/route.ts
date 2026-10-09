@@ -4,6 +4,7 @@ import { checkRateLimit, getClientIp } from '@/lib/utils/spam-guard';
 import { sendEmail } from '@/lib/email/send';
 import { reviewReceived } from '@/lib/email/templates';
 import { moderateReviewByKia } from '@/lib/ai/kia/kia-review-moderation';
+import { notifyKiaAdminEscalation } from '@/lib/admin/kia-admin-escalation';
 
 const REVIEW_TOKEN_RE = /^(?:[a-f0-9]{64}|[a-f0-9-]{36})$/i;
 const MAX_COMMENT_LENGTH = 800;
@@ -108,8 +109,17 @@ export async function POST(request: NextRequest) {
     // Moderate after the response lifecycle so the client never waits on the AI provider.
     // Rating and identity are never sent to KIA.
     after(async () => {
-      await moderateReviewByKia(insertedReview.id).catch((moderationError) => {
+      await moderateReviewByKia(insertedReview.id).catch(async (moderationError) => {
         console.error('[reviews/submit] KIA moderation failed', moderationError);
+        await notifyKiaAdminEscalation({
+          title: 'Reseña sin moderación automática',
+          summary: 'La moderación de un comentario no ha podido completarse.',
+          actionTaken: 'Se mantiene el comentario oculto y la puntuación verificada disponible.',
+          interventionNeeded: 'Revisar el comentario pendiente desde el panel.',
+          url: '/admin/resenas?status=pending',
+          eventRef: `review-moderation-error/${insertedReview.id}`,
+          priority: 'high',
+        }).catch((notificationError) => console.error('[reviews/submit] escalation failed', notificationError));
       });
     });
 
