@@ -68,7 +68,8 @@ describe('punctual service template', () => {
     expect(moderation).toContain("current.allow_publish === true");
     expect(moderation).toContain("update.published = false");
     expect(publicReviews).toContain(".eq('status', 'approved')");
-    expect(publicReviews).toContain("review.allow_publish === true && review.published === true");
+    expect(publicReviews).toContain("review.allow_publish === true &&");
+    expect(publicReviews).toContain("review.published === true &&");
     expect(publicReviews).not.toContain(".eq('allow_publish', true)");
   });
 
@@ -124,7 +125,8 @@ describe('punctual service template', () => {
     expect(policy).toContain('no recibe la puntuación en estrellas');
     expect(policy).toContain('no crea reseñas ficticias');
     expect(form).toContain('/politica-de-resenas');
-    expect(form).toContain('publicar mi comentario de forma anónima');
+    expect(form).toContain('Publicar anónimamente');
+    expect(form).toContain('Publicar con mi perfil público');
   });
 
   it('does not offer routine rejection of a verified review from the admin card', () => {
