@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       const admin = getSupabaseAdmin();
       const { data: profile } = await admin
         .from('profiles')
-        .select('full_name, phone, welcome_email_sent, role, status')
+        .select('full_name, phone, avatar_url, welcome_email_sent, role, status')
         .eq('id', user.id)
         .single();
 
@@ -71,6 +71,18 @@ export async function GET(request: NextRequest) {
             .from('profiles')
             .update({ full_name: derivedFirstName })
             .eq('id', user.id);
+        }
+
+        // Google OAuth metadata can provide a photo; never publish it by default.
+        const googleIdentity = user.identities?.find((identity) => identity.provider === 'google');
+        const identityData = googleIdentity?.identity_data as Record<string, unknown> | undefined;
+        const imageCandidate = identityData?.picture ?? identityData?.avatar_url;
+        const image = typeof imageCandidate === 'string' && /^https:\/\/lh\d+\.googleusercontent\.com\//i.test(imageCandidate)
+          ? imageCandidate : null;
+        if (profile && !profile.avatar_url && image) {
+          const { error: avatarError } = await admin.from('profiles').update({ avatar_url: image })
+            .eq('id', user.id).is('avatar_url', null);
+          if (avatarError) console.error('[auth/callback] avatar sync failed:', avatarError.message);
         }
 
         const displayName = profile?.full_name ?? derivedFirstName ?? user.email.split('@')[0];
