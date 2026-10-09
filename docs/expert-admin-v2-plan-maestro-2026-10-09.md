@@ -838,3 +838,25 @@ Separar cuatro capas **sin mezclar**: (A) scopes concedidos al token por Holded;
 7. Finalmente sync financiero diario y dashboards cacheados para Admin/Cliente/KIA, con avisos diarios sin spam.
 
 **Bloqueos/limitaciones constatados:** MCP nativo ChatGPT y KIA no comparten tokens ni sesiones; no hay autorización en KIA para modificar credenciales de Holded con una respuesta de chat. La conexión interna productiva de EXPERT es read-only; no existen pruebas E2E de concesión/revocación en sesión auténtica ejecutadas hasta la fecha de este inventario. No inferir finalización a partir de merge o tests unitarios.
+
+
+### 24.5. Corrección explícita del piloto MCP por Dirección (09/10/2026, posterior al inventario)
+
+**Prevalece sobre cualquier párrafo anterior del §24 que interprete la «copia contable» como requisito.** El MCP nativo de ChatGPT ya apunta a la cuenta **laboratorio**, y KIA debe implementar una funcionalidad equivalente sobre su **propia integración a la contabilidad real** de Expert Consulting. No se pretende vincular dos cuentas a ChatGPT, ni conectar por defecto el laboratorio al dashboard productivo de EXPERT, ni hacer un clon de la contabilidad para poder comenzar.
+
+El MCP nativo es **oráculo de pruebas** (tool schemas, paginación, lectura, escritura controlada, permisos, errores); KIA/EXPERT MCP **implementación a verificar** (mismos casos de uso sobre permisos y tenant propios). Comparar resultados semánticos y comportamiento, **no** totales contables de dos cuentas diferentes.
+
+| Verificación | MCP nativo en ChatGPT/laboratorio | KIA en EXPERT/contabilidad real |
+| --- | --- | --- |
+| Lectura facturas/asientos/uso | Herramientas nativas accesibles; pruebas de lectura sin cambios | Gateway v2 disponible; comprobar respuesta desde KIA autenticada |
+| Crear/editar contacto, documento borrador | Herramientas nativas de escritura expuestas; ejecución de ensayo solo en tenant de laboratorio identificado | Falta adaptar cada operación, conceder acción específica, preview, aprobación, readback |
+| Scopes/capacidades | Herramientas con scopes declarados; no hay tools nativas de admin de tokens expuestas en esta sesión | \`client_integrations.permissions_detected/enabled\`; conexión productiva actual \`read_only\` |
+| Reactivar/revocar permiso | Cambios en dashboard Holded cuando herramienta/API de gestión no esté disponible | Propietario/Admin modifica autorización EXPERT en dashboard; KIA debe re-evaluar cada tool call |
+| Sincronización | No se usa para alimentar datos contables productivos | Sync financiero una vez/día desde conexión real, consulta cache-first |
+| Copiar contabilidad | **No necesario** | **No se hará** como requisito de paridad |
+
+Una credencial de proveedor con acceso completo **no autoriza por sí sola** a un LLM a operaciones sensibles. Las herramientas de KIA continúan sujetas a scopes activados por cliente, autorización por empresa/usuario, consentimiento por operación, prevención de duplicados, comprobación y auditoría.
+
+Pruebas MCP nativas read-only en el chat 09/10: lectura facturas sin registros, asientos 01–09/10 sin registros; get_usage periodo 2026-10 reportó 24/7.500 en el momento de consulta. No extrapolar esas cantidades a la cuenta real de Expert Consulting. La condición de prueba «con todos los permisos» es declarada por la dirección, no una evidencia de permiso efectivo de escritura ni de administración de tokens en el backend.
+
+**Cambio de prioridad:** cerrar #690; matriz de paridad; probar KIA sobre integración existente y capacidades reales; ejecutar primer write con consentimiento específico solo tras verificar tenant y readback. Evitar trabajo de clonación no imprescindible.
