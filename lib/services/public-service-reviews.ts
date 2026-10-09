@@ -73,14 +73,18 @@ export async function getPublicServiceReviewSummaries(
           .range(offset, offset + PAGE_SIZE - 1);
         if (error) throw error;
         for (const review of data ?? []) {
-          // Pending comments count only when backed by a verified, issued request.\n          // Excludes legacy/test pending records without a request.\n          if (review.status !== 'approved' && !review.review_request_id) continue;\n          const slug = caseToSlug.get(review.case_id);
+          // Pending comments count only when backed by a verified, issued request.
+          // Excludes legacy/test pending records without a request.
+          if (review.status !== 'approved' && !review.review_request_id) continue;
+          const slug = caseToSlug.get(review.case_id);
           const summary = slug ? summaries[slug] : undefined;
           if (!summary) continue;
           const rating = Number(review.rating);
           if (!Number.isInteger(rating) || rating < 1 || rating > 5) continue;
           summary.count += 1;
           sums.set(slug!, (sums.get(slug!) ?? 0) + rating);
-          const comment = review.status === 'approved' &&\n            review.allow_publish === true &&
+          const comment = review.status === 'approved' &&
+            review.allow_publish === true &&
             review.published === true &&
             review.comment_publishable === true &&
             typeof review.comment === 'string'
