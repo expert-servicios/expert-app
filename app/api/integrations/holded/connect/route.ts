@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { encryptSecret, keyLast4 } from '@/lib/security/encryption';
-import { isEncryptionConfigured, createHoldedClientFromRawKey } from '@/lib/integrations/holded/holded-client';
-import { detectHoldedLaborPermissions } from '@/lib/integrations/holded/holded-labor-permissions';
+import { isEncryptionConfigured } from '@/lib/integrations/holded/holded-client';
+import { detectHoldedPermissions } from '@/lib/integrations/holded/holded-permission-probes';
 import {
   intersectHoldedReadPermissions,
   normalizeDetectedHoldedPermissions,
@@ -31,6 +31,7 @@ const permissionsSchema = z.object({
 const bodySchema = z.object({
   apiKey: z.string().min(8).max(256).trim(),
   companyId: z.string().uuid().optional(),
+  apiVersion: z.enum(['v1','v2']).default('v2'),
   permissionsEnabled: permissionsSchema.optional(),
   consentVersion: z.string().max(20).optional().default('1.1'),
   consentAt: z.string().datetime().optional(),
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'API key o permisos inválidos' }, { status: 400 });
     }
 
-    const { apiKey, companyId: bodyCompanyId, permissionsEnabled, consentVersion, consentAt } = parsed.data;
+    const { apiKey, apiVersion, companyId: bodyCompanyId, permissionsEnabled, consentVersion, consentAt } = parsed.data;
     const admin = getSupabaseAdmin();
 
     const { data: profile } = await admin
@@ -107,26 +108,18 @@ export async function POST(request: NextRequest) {
       console.error('[holded/connect] existing integration error:', existing.error.message);
       return NextResponse.json({ error: 'No se pudo comprobar la integración actual' }, { status: 500 });
     }
-    if (existing.data && (existing.data.mode === 'advisor_managed' || existing.data.api_version === 'v2')) {
+    if (existing.data && (existing.data.mode === 'advisor_managed' || existing.data.mode === 'expert_account')) {
       return NextResponse.json(
         { error: 'Esta integración Holded v2/gestionada se administra desde EXPERT. Contacta con tu asesor para modificarla.' },
         { status: 409 },
       );
     }
 
-    const client = createHoldedClientFromRawKey(apiKey);
     let testResult;
-    let laborPermissions;
     try {
-      [testResult, laborPermissions] = await Promise.all([
-        client.testConnection(),
-        detectHoldedLaborPermissions(apiKey),
-      ]);
+      testResult = await detectHoldedPermissions(apiKey, apiVersion);
     } catch (err) {
-      return NextResponse.json(
-        { error: `No se pudo conectar con Holded: ${holdedErrorMessage(err)}` },
-        { status: 502 },
-      );
+      return NextResponse.json({ error: `No se pudo verificar Holded: ${holdedErrorMessage(err)}` }, { status: 502 });
     }
 
     if (!testResult.ok) {
@@ -136,10 +129,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const detectedPermissions = normalizeDetectedHoldedPermissions({
-      ...testResult.permissions,
-      ...laborPermissions,
-    } as Partial<HoldedPermissions>);
+    const detectedPermissions = normalizeDetectedHoldedPermissions(testResult.permissions);
 
     const requestedPermissions: Partial<HoldedPermissions> = permissionsEnabled ?? {
       ...detectedPermissions,
@@ -155,7 +145,7 @@ export async function POST(request: NextRequest) {
     const upsertPayload = {
       provider: 'holded',
       mode: 'client_account',
-      api_version: 'v1',
+      api_version: apiVersion,
       api_key_last4: last4,
       permissions_detected: detectedPermissions,
       permissions_enabled: enabledPermissions,
