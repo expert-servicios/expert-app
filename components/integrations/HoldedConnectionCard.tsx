@@ -75,7 +75,7 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'No se pudieron revisar los permisos.');
       setIntegration(previous => previous ? { ...previous,
-        permissions_detected: data.permissions,
+        permissions_detected: data.detected,
         permissions_enabled: data.permissions,
       } : previous);
       setPermissionNotice('Permisos del token revisados. KIA utiliza las capacidades efectivamente disponibles.');
