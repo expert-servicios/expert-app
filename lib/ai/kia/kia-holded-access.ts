@@ -60,7 +60,7 @@ export async function resolveKiaCompanyHoldedAccess(
   if (requiredPermission && permissionsEnabled[requiredPermission] !== true) {
     return {
       ok: false,
-      error: `No tengo permiso para consultar ${requiredPermission} en Holded de esta empresa. El propietario o administrador puede modificar el token en Holded (Configuración > Desarrolladores > Credenciales) y después pulsar «Revisar permisos del token» en EXPERT App > Integraciones > Holded. Los demás módulos autorizados siguen funcionando.`,
+      error: `No tengo permiso para consultar ${requiredPermission} en Holded de esta empresa. Revisa la guía https://expertconsulting.es/docs/actualizar-permisos-token-holded-kia y, si necesitas ese módulo, actualiza los permisos del token en Holded. El propietario puede pulsar «Revisar permisos del token» en https://expertconsulting.es/dashboard/integraciones/holded. Los demás módulos autorizados siguen funcionando.`,
     };
   }
 
