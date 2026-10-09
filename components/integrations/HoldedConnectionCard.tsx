@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, XCircle, AlertTriangle, Loader2, RefreshCw, Unplug } from 'lucide-react';
 import { HoldedPermissionStatus, type HoldedPermissions } from './HoldedPermissionStatus';
@@ -175,7 +176,7 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
           </div>
         )}
 
-        <div className="flex flex-wrap gap-3 text-xs"><a className="text-[#c88b25] underline" href="/docs/conectar-holded-kia-token-api-v2">Crear token</a><a className="text-[#c88b25] underline" href="/docs/permisos-holded-kia-lectura-escritura">Permisos necesarios</a><a className="text-[#c88b25] underline" href="/docs/actualizar-permisos-token-holded-kia">Modificar permisos</a></div>
+        <div className="flex flex-wrap gap-3 text-xs"><Link className="text-[#c88b25] underline" href="/docs/conectar-holded-kia-token-api-v2">Crear token</Link><a className="text-[#c88b25] underline" href="/docs/permisos-holded-kia-lectura-escritura">Permisos necesarios</Link><a className="text-[#c88b25] underline" href="/docs/actualizar-permisos-token-holded-kia">Modificar permisos</Link></div>
         {/* Permissions */}
         <div className="rounded-2xl border border-[#e8dfc8] bg-[#faf9f6] p-5">
           <HoldedPermissionStatus permissions={integration.permissions_enabled ?? integration.permissions_detected} />
