@@ -9,7 +9,10 @@ describe('KIA journal inbox',()=>{
  it('checks company and staff before storage operations',()=>{
   expect(api).toContain("['owner','admin'].includes(profile.role)");
   expect(api).toContain(".eq('company_id',id)");
-  expect(api).toContain("prepareKiaJournalProposal({companyId:id,...parsed.data})");
+  expect(api).toContain("saveKiaJournalInboxProposal(ctx.admin,ctx.userId,{companyId:id,...parsed.data})");
+  const saveService=load('lib/ai/kia/kia-journal-inbox-save.ts');
+  expect(saveService).toContain('prepareKiaJournalProposal(input)');
+  expect(saveService).toContain(".eq('company_id',p.companyId)");
  });
  it('accepts only transitions from pending and has immutable audit trail',()=>{
   expect(api).toContain(".eq('status','pending_review')");
