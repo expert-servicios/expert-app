@@ -17,6 +17,7 @@ export type KiaAccountingToolName =
   | 'get_accounts_payable'
   | 'get_overdue_invoices'
   | 'get_unreconciled_transactions'
+  | 'get_bank_payment_evidence'
   | 'prepare_payment_reminder'
   | 'prepare_credit_note_proposal'
   | 'prepare_journal_entry_proposal';
@@ -26,6 +27,7 @@ export const ACCOUNTING_TOOL_NAMES = new Set<KiaAccountingToolName>([
   'get_accounts_payable',
   'get_overdue_invoices',
   'get_unreconciled_transactions',
+  'get_bank_payment_evidence',
   'prepare_payment_reminder',
   'prepare_credit_note_proposal',
   'prepare_journal_entry_proposal',
@@ -471,6 +473,56 @@ export async function executeKiaAccountingTool(
       totalsByCurrency: totalsByCurrency(rows),
       documents: rows,
     });
+  }
+
+  if (toolName === 'get_bank_payment_evidence') {
+    if (!context.actor?.isStaff || !['admin', 'owner'].includes(context.actor.role ?? '')) {
+      return fail(toolName, 'Acceso bancario limitado a Admin/Owner.');
+    }
+    const startDate = String(args.startDate ?? '');
+    const endDate = String(args.endDate ?? '');
+    const from = Date.parse(startDate + 'T00:00:00Z');
+    const to = Date.parse(endDate + 'T00:00:00Z');
+    if (!Number.isFinite(from) || !Number.isFinite(to) || to < from || to - from > 366 * 86400000) {
+      return fail(toolName, 'Periodo bancario invalido.');
+    }
+    const terms = Array.isArray(args.terms) ? args.terms
+      .filter((term): term is string => typeof term === 'string')
+      .map((term) => term.trim().toLowerCase()).filter(Boolean).slice(0, 8) : [];
+    if (!terms.length) return fail(toolName, 'Proveedor no indicado.');
+    const resolved = await resolveAccountingGateway(context, 'bankMovements');
+    if (!resolved.ok) return fail(toolName, resolved.error);
+    try {
+      const accounts = await listHoldedBankAccounts(resolved.gateway, 20);
+      const scans = await Promise.all(accounts.map(async account => {
+        try {
+          const movements = await listHoldedBankMovements(resolved.gateway, account.id, {
+            startDate, endDate, pendingOnly: false, maxItems: 400,
+          });
+          return { account, movements, failed: false };
+        } catch {
+          return { account, movements: [] as Awaited<ReturnType<typeof listHoldedBankMovements>>, failed: true };
+        }
+      }));
+      const matches = scans.flatMap(({ account, movements }) => movements
+        .filter(m => terms.some(term => m.description.toLowerCase().includes(term)))
+        .map(m => ({
+          accountName: account.name, date: m.date, description: m.description,
+          amount: m.amount, currency: m.currency, reconciliationStatus: m.status,
+          reconciledAmount: m.reconciledAmount,
+        }))).sort((a, b) => b.date.localeCompare(a.date));
+      const limit = Math.max(1, Math.min(100, Number(args.limit ?? 40)));
+      return ok(toolName, {
+        source, companyId: context.company?.id,
+        accountsScanned: scans.length,
+        movementsScanned: scans.reduce((n, scan) => n + scan.movements.length, 0),
+        incomplete: scans.some(scan => scan.failed || scan.movements.length >= 400),
+        matchingCount: matches.length, matches: matches.slice(0, limit),
+        invoicePaymentConfirmed: false, reconciliationChanged: false,
+      });
+    } catch {
+      return fail(toolName, 'Error de lectura bancaria Holded.');
+    }
   }
 
   if (toolName === 'get_unreconciled_transactions') {
