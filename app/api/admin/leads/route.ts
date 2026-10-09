@@ -6,6 +6,7 @@ const LIFECYCLE_STAGES = ['lead', 'prospect', 'customer', 'former_customer'] as 
 const STRIPE_ACTIVITIES = ['no_activity', 'abandoned', 'paid', 'subscribed'] as const;
 const MARKETING_STATUSES = ['unknown', 'consented', 'unsubscribed', 'blocked'] as const;
 const ATTRIBUTION_LOCALES = ['es', 'ru', 'en'] as const;
+const CRM_SEGMENTS = ['all', 'attention', 'stripe_history', 'mentorday-projects', 'stripe_customer', 'stripe_imported', 'stripe_abandoned', 'mentorday_directory', 'mentoring_followup', 'actionable', 'needs_review', 'spam_review', 'internal_test', 'system_notice'] as const;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function positiveInt(raw: string | null, fallback: number, max: number) {
@@ -79,6 +80,9 @@ export async function GET(request: NextRequest) {
     const marketing = url.searchParams.get('marketing');
     const locale = localeFilter(url.searchParams.get('locale'));
     const segment = url.searchParams.get('segment');
+    if (segment && !CRM_SEGMENTS.includes(segment as (typeof CRM_SEGMENTS)[number])) {
+      return NextResponse.json({ error: 'Segmento CRM no válido' }, { status: 400 });
+    }
     const search = sanitizeSearch(url.searchParams.get('q') ?? '');
     const focus = url.searchParams.get('focus');
     if (focus && !UUID_PATTERN.test(focus)) {
@@ -109,6 +113,12 @@ export async function GET(request: NextRequest) {
     }
     if (segment === 'mentorday-projects') {
       query = query.contains('metadata', { source_group: 'mentorday', program: 'Mentor Tips / Speed Mentoring' });
+    } else if (segment === 'attention') {
+      query = query.contains('metadata', { crm_needs_attention: true });
+    } else if (segment === 'stripe_history') {
+      query = query.eq('source', 'stripe_sync');
+    } else if (segment && segment !== 'all') {
+      query = query.contains('metadata', { crm_segment: segment });
     }
     if (search) {
       query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
@@ -136,6 +146,7 @@ export async function GET(request: NextRequest) {
       ruCustomersResult,
       ruPaidResult,
       ruSubscribedResult,
+      attentionResult,
     ] = await Promise.all([
       query,
       admin.from('leads').select('id', { count: 'exact', head: true }),
@@ -153,6 +164,7 @@ export async function GET(request: NextRequest) {
       ruBase().eq('lifecycle_stage', 'customer'),
       ruBase().eq('stripe_activity', 'paid'),
       ruBase().eq('stripe_activity', 'subscribed'),
+      admin.from('leads').select('id', { count: 'exact', head: true }).contains('metadata', { crm_needs_attention: true }),
     ]);
 
     if (listResult.error) throw listResult.error;
@@ -173,6 +185,7 @@ export async function GET(request: NextRequest) {
       ruCustomersResult,
       ruPaidResult,
       ruSubscribedResult,
+      attentionResult,
     ];
     const statsError = statsResults.find((result) => result.error)?.error;
     if (statsError) throw statsError;
@@ -226,6 +239,8 @@ export async function GET(request: NextRequest) {
         attribution: attributionFromMetadata(lead.metadata),
         latest_interaction: latestInteractionFromMetadata(lead.metadata),
         project_profile: projectProfileFromMetadata(lead.metadata),
+        crm_segment: typeof (lead.metadata as Record<string, unknown> | null)?.crm_segment === 'string' ? (lead.metadata as Record<string, string>).crm_segment : null,
+        crm_summary: typeof (lead.metadata as Record<string, unknown> | null)?.crm_summary === 'string' ? (lead.metadata as Record<string, string>).crm_summary : null,
         stripe_summary: summaries.get(lead.id) ?? {
           customer_count: 0,
           active_subscription: false,
@@ -244,6 +259,7 @@ export async function GET(request: NextRequest) {
       },
       stats: {
         total: totalResult.count ?? 0,
+        attention: attentionResult.count ?? 0,
         leads: leadsResult.count ?? 0,
         prospects: prospectsResult.count ?? 0,
         customers: customersResult.count ?? 0,
