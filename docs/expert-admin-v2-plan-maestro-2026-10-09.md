@@ -775,3 +775,66 @@ Generar **un artefacto diario por ámbito** (Admin/global autorizado o Cliente+e
 ### Historial de esta decisión
 
 - 09/10/2026 (Holded daily-cache): **una sincronización financiera por empresa y día**, datos canónicos en EXPERT, KIA/dashboard local-first y resúmenes diarios diferenciados Admin/Cliente; activar por piloto tras comprobaciones. No confundir el cron previo de facturas con el nuevo importador.
+
+
+---
+
+## 24. Inventario consolidado 09/10/2026 y permisos conversacionales KIA–Holded
+
+**Fuentes inspeccionadas:** historial de sesiones de la dirección, PR #672, #679–#682, #685–#690, #692; `client_integrations`, `client_registry_*`, `accounting_*`, `audit_logs`; rutas API actuales. Distinguir siempre PR fusionada, PR abierta, esquema presente y función operativa: no son sinónimos.
+
+### 24.1. Estado por frente
+
+| Frente | Hecho comprobado | Hueco real |
+| --- | --- | --- |
+| Workspace visual | #685 plan fusionado, auditoría soporte #686 fusionada | #687 ventana KIA abierta; desplegar/verificar nueva experiencia Admin/Cliente |
+| KIA Work | #688 contrato de propuestas fusionado; #672 propuestas contables fusionada | Ejecutores confirmables e idempotentes permanecen desactivados |
+| Inbox 360/push | Bandeja y push existentes | Correlación + dedupe fiable + tareas/citas y resúmenes E2E |
+| Holded API v2 | #679 tenant boundary, #680 bancos, #681 detección scopes fusionados | #690 selección/revocación scopes pendiente, CI con tests de contrato que comprobar |
+| MCP EXPERT | Código en `apps/holded-mcp`, #682 CI fusionada | OAuth EXPERT bridge apagado, no conectado de forma general a KIA |
+| Doble cuenta Holded EXPERT | Una entidad fiscal canónica, integración producción API v2 activa/read-only; sandbox MCP ChatGPT separado | Identificación y onboarding de sandbox para KIA con scope explícito; no confundir tokens |
+| Datos contables | `client_accounting_records`, `accounting_period_snapshots`, `accounting_anomalies` existentes | Al verificar el 09/10 esas tablas estaban vacías; falta importador financiero y snapshots diarios |
+| Hojas registrales | `client_registry_instructions/events/facts` y editores existentes | Resolver instrucciones por ámbito/versión en cada tool de KIA; probar no-escalación |
+| Holded dashboard | Lecturas directas y reportes existentes | Cache-first + Admin/Cliente/KIA misma fuente y P&L verificado |
+| Plan piloto MCP | #692 documenta dataset desidentificado y paridad | Ningún clon contable ni escritura sandbox ejecutados |
+
+### 24.2. Modelo de autorización para permisos de Holded
+
+Separar cuatro capas **sin mezclar**: (A) scopes concedidos al token por Holded; (B) scopes detectados mediante prueba segura; (C) permisos que el titular habilita para EXPERT/KIA en `permissions_enabled`; (D) capacidades de rol/empresa/acción realmente disponibles al actor KIA. Efectivo = intersección de las cuatro, más estado activo de conexión y reglas de riesgo; datos de `permissions_detected` no conceden permiso por sí solos.
+
+- **Retirar permisos en EXPERT** es inmediato en backend: toda tool o nuevo paso consulta nuevamente permisos de empresa/conexión, sin guardar grants obsoletos en prompts o sesión. Cancelar o bloquear aprobaciones y trabajos pendientes que dependan del permiso revocado.
+- **Retirar scopes en Holded** invalida acceso aunque EXPERT aún muestre los últimos permisos; la petición debe fallar cerrada, ofrecer guía y refrescar. El refresco nunca reenciende un scope que el titular desactivó en EXPERT.
+- **Añadir permisos** requiere que el token verdaderamente los conceda y el titular dé consentimiento específico en EXPERT. Si no está en el token, mostrar el botón «Abrir Holded»/instrucciones para ajustar scopes, y luego «Volver a comprobar». No afirmar que KIA puede modificar scopes de OAuth/credenciales de Holded por chat.
+- **Acción conversacional:** ejemplo «KIA, consulta movimientos bancarios» cuando no existe `bankMovements`: KIA contesta cuál permiso falta y por qué, y ofrece un enlace contextual a `/dashboard/integraciones/holded` para el propietario/admin. Una confirmación de chat no altera permisos. Si el token ya tiene alcance, el propietario puede cambiar `permissions_enabled` desde la pantalla mediante backend autorizado y auditado. Para scopes ausentes, el cambio se hace primero en Holded.
+- **Usuario distinto de propietario:** solo estado y guía de solicitud al titular; nunca activar permisos vía suplantación.
+- **Empresa gestionada por EXPERT (`expert_account`/`advisor_managed`):** cliente ve estado y guía; no puede cambiar token ni permisos. EXPERT Admin gestiona según autorización documental.
+- **Escrituras:** prohibidas en conexión real en fase piloto; en sandbox, herramienta individual + aprobación transaccional + readback. Ni «acceso completo» ni master toggle habilitan operaciones destructivas o fiscales.
+- **Auditoría:** guardar actor real, empresa, integración, permisos antes/después sin secretos, origen KIA/dashboard, consentimiento/revisión, resultado y error. Correlacionar chat action id, idempotency key y `integration_sync_events`.
+
+### 24.3. Matriz de pruebas de revocación y recuperación
+
+| Escenario | Resultado exigido |
+| --- | --- |
+| Read scope concedido y habilitado | KIA lee en empresa autorizada, con fuente/fecha |
+| Desactivar scope en panel | Siguiente consulta KIA denegada, sin llamada Holded |
+| Reconectar/refrescar token después de desactivar | Nunca reactivar automáticamente el permiso elegido como OFF |
+| Intentar activar scope no detectado | Rechazar y guiar a Holded |
+| Reactivar scope detectado siendo titular | Nueva consulta KIA funciona sin rehacer conversación |
+| Cliente sin rol owner/admin | No puede cambiar scopes, sí recibir la explicación |
+| Cambiar empresa durante conversación | No leer datos del tenant anterior |
+| Revocar token o Holded devuelve 401/403 | Fail-closed, conservar otros módulos válidos; no inventar números |
+| Rate-limit 429/5xx | Mantener estado previo, avisar que comprobación no ha concluido; no revocar masivamente |
+| Sandbox write R1 | Solo preview + aprobación concreta + verify + audit; nunca escribir en producción |
+| Reintento o doble clic | No duplicar registros ni notificaciones |
+
+### 24.4. Priorización y criterios de salida
+
+1. Completar CI de #690 y corregir pruebas afectadas por nuevo helper de consentimiento; comprobar Vercel y fusionar si verde.
+2. Fusionar #692 (documentación) cuando verde y alinear este plan maestro con roadmap EXPERT MCP. Revisar #687 de manera independiente.
+3. Probar permisos **sin modificar contabilidad**: toggles para token de prueba autogestionado, confirmación server-side por estado, invocación KIA real, desconexión/revocación y readback de la autorización. No tocar `expert_account` productiva.
+4. Incorporar KIA «solicitar permiso» como **enlace contextual al panel** y CTA «Revisar permisos del token»; lectura de permisos efectivos justo antes de ejecutar. Desambiguar empresa y modo.
+5. Después integrar sandbox Holded en KIA (sin duplicar CIF) y probar lecturas en paridad con MCP oficial.
+6. Solo después habilitar primera tool write R1 con aprobación, idempotencia y readback en sandbox desidentificado; importar más datos solo si hay verificación de consecuencias fiscales y privacidad.
+7. Finalmente sync financiero diario y dashboards cacheados para Admin/Cliente/KIA, con avisos diarios sin spam.
+
+**Bloqueos/limitaciones constatados:** MCP nativo ChatGPT y KIA no comparten tokens ni sesiones; no hay autorización en KIA para modificar credenciales de Holded con una respuesta de chat. La conexión interna productiva de EXPERT es read-only; no existen pruebas E2E de concesión/revocación en sesión auténtica ejecutadas hasta la fecha de este inventario. No inferir finalización a partir de merge o tests unitarios.
