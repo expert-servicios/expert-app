@@ -7,6 +7,10 @@ interface Review {
   comment: string | null;
   service_name: string | null;
   created_at: string;
+  publication_mode: string;
+  public_name: string | null;
+  public_avatar_url: string | null;
+  avatar_consent: boolean;
 }
 
 async function fetchPublicReviews(): Promise<Review[]> {
@@ -14,8 +18,9 @@ async function fetchPublicReviews(): Promise<Review[]> {
     const admin = getSupabaseAdmin();
     const { data } = await admin
       .from('reviews')
-      .select('id,rating,comment,service_name,created_at')
+      .select('id,rating,comment,service_name,created_at,publication_mode,public_name,public_avatar_url,avatar_consent')
       .eq('status', 'approved')
+      .neq('publication_mode','private')
       .eq('allow_publish', true)
       .eq('published', true)
       .eq('comment_publishable', true)
@@ -70,6 +75,9 @@ export async function ReviewsPreview() {
                 {r.comment}
               </p>
               <div className="mt-5 border-t border-white/10 pt-4 text-xs text-white/50">
+                <span className="font-semibold text-white">{r.publication_mode === 'profile' && r.public_name ? r.public_name : 'Cliente EXPERT'}</span>
+                {r.publication_mode === 'profile' && r.avatar_consent && r.public_avatar_url && /^https:\/\/lh\d+\.googleusercontent\.com\//i.test(r.public_avatar_url) && <img src={r.public_avatar_url} alt="Foto de perfil autorizada" width={36} height={36} referrerPolicy="no-referrer" className="mt-2 h-9 w-9 rounded-full object-cover" />}
+
                 {r.service_name && <span className="font-semibold text-[#D4A017]/80">{r.service_name} · </span>}
                 {new Date(r.created_at).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
               </div>
