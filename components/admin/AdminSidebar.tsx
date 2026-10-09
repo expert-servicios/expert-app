@@ -236,25 +236,16 @@ function SidebarContent({
       {/* Nav items for active tab */}
       <nav className="flex-1 overflow-y-auto px-3 pb-2 space-y-0.5">
         {activeGroup.items.map((item) => (
-          <Link
+          <WorkspaceNavLink
             key={item.href}
             href={item.href}
+            label={item.label}
+            icon={activeGroup.icon}
+            active={isActive(item.href)}
             onClick={onCloseMobile}
-            className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
-              isActive(item.href)
-                ? "bg-[#D4A017]/12 font-semibold text-[#D4A017]"
-                : "text-white/65 hover:bg-white/5 hover:text-white"
-            }`}
-          >
-            {item.label}
-            {item.badge ? (
-              <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#D4A017]/20 px-1.5 text-[10px] font-bold text-[#D4A017]">
-                {item.badge}
-              </span>
-            ) : null}
-          </Link>
-        ))}
-      </nav>
+            suffix={item.badge ? <span className="rounded-full bg-[#D4A017]/20 px-1.5 text-[10px] text-[#D4A017]">{item.badge}</span> : undefined}
+          />
+        ))}      </nav>
 
       {/* Footer — user avatar + actions */}
       <div className="border-t border-white/8 px-3 py-3">
