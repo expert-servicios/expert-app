@@ -3,6 +3,14 @@
 import { type ReactNode } from 'react';
 import { trackAcademyEvent, type AcademyAnalyticsEvent, type AcademyAnalyticsProps } from '@/lib/utils/analytics';
 
+// Other legacy widgets still use the Cal.com global until their migration is complete.
+// The booking link itself does not depend on this script.
+declare global {
+  interface Window {
+    Cal?: (action: string, opts?: Record<string, unknown>) => void;
+  }
+}
+
 interface Props {
   url: string | null;
   title?: string;
