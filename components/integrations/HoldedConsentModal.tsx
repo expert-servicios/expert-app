@@ -177,6 +177,7 @@ export function HoldedConsentModal({
     try {
       const body: Record<string, unknown> = {
         apiKey,
+        apiVersion: 'v2',
         permissionsEnabled,
         consentVersion: CONSENT_VERSION,
         consentAt     : new Date().toISOString(),
