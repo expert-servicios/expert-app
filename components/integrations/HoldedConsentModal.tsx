@@ -301,18 +301,18 @@ export function HoldedConsentModal({
               <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#7a6e5f]">
                 Permisos adicionales
               </p>
-              <span className="text-[10px] text-[#a89880]">(bancos y facturas se cambian en Holded; las lecturas laborales requieren consentimiento expreso)</span>
+              <span className="text-[10px] text-[#a89880]">(solo puedes habilitar permisos disponibles en el token; las lecturas laborales requieren consentimiento expreso)</span>
             </div>
             <ul className="space-y-2">
               {optional.map((def) => {
                 const detected  = detectedPermissions[def.key];
-                const isEnabled = def.key === 'laborEmployeesRead' || def.key === 'laborPayrollsRead' ? enabled[def.key] : Boolean(detected);
+                const isEnabled = Boolean(enabled[def.key]);
                 return (
                   <li key={def.key} className="flex items-start gap-3">
                     <button
                       type="button"
                       onClick={() => toggleOptional(def.key)}
-                      disabled={!detected || (def.key !== 'laborEmployeesRead' && def.key !== 'laborPayrollsRead')}
+                      disabled={!detected}
                       aria-label={isEnabled ? `Desactivar ${def.label}` : `Activar ${def.label}`}
                       className={`mt-0.5 flex h-5 w-9 shrink-0 items-center rounded-full px-0.5 transition-colors ${
                         !detected
