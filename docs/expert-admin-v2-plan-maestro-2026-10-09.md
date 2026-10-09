@@ -3,7 +3,7 @@
 **Fecha:** 09/10/2026  
 **Decisión:** Aprobado el diseño objetivo y su ejecución por fases. **Este documento es especificación; no supone un despliegue ni una migración de datos.**  
 **Propietario de producto:** Dirección EXPERT  
-**Alcance:** Admin EXPERT, KIA, Contactos 360, operaciones, comunicaciones, agenda, facturación, contenido y administración.  
+**Alcance:** diseño transversal EXPERT Workspace con **Panel Admin** y **Portal Cliente** separados; KIA, Contactos 360, operaciones, comunicaciones, agenda, facturación, contenido y administración. Se documenta además la compatibilidad con el panel específico de administradores de tenant.  
 **Estado:** LISTO PARA INICIAR FASE 0. Implementación bajo PRs independientes, CI, seguridad y verificación de producción.  
 **Plan rector:** este documento prevalece sobre los borradores visuales anteriores; conserva sus requisitos operativos válidos.
 
@@ -37,6 +37,108 @@ Hallazgos:
 7. CRM ya guarda en metadata crm_segment, crm_summary, crm_review y crm_needs_attention; evitar crear otro etiquetado incompatible.
 
 Instantánea del 09/10/2026 (revalidar al comenzar Fase 0): 811 filas leads, 7 profiles, 7 companies, 86 internal_tasks; al menos 4 coincidencias de email entre leads y perfiles. **No sumar estas filas como personas únicas**, ni fusionar identidades de forma automática.
+
+## 2 bis. Dos aplicaciones de trabajo, un solo sistema de diseño (ampliación 09/10/2026)
+
+**Decisión aprobada:** reutilizar la plantilla Kiranism y los tokens/componentes visuales para **dos shells independientes**: EXPERT Admin Workspace (`/admin`) y EXPERT Client Workspace (`/dashboard`). No compartir una navegación con botones ocultos según rol ni basar autorización en un `isAdmin` del navegador. Los productos deben parecer parte de la misma marca, pero tener objetivos, jerarquías y acciones distintas.
+
+### 2 bis.1. Arquitectura de superficies
+
+| Área | Audiencia | Ruta base | Propósito |
+| --- | --- | --- | --- |
+| Admin Workspace | owner/admin, personal autorizado | `/admin` | Operación global, CRM, inbox omnicanal, marketing, contenidos, facturación, equipo, integraciones y auditoría |
+| Client Workspace | cliente/autónomo, representante de empresas vinculadas | `/dashboard` | Sus expedientes, documentos, mensajes, empresas, servicios, calendario fiscal, citas, facturas, suscripciones y acceso a KIA |
+| Delegación desde Admin | administrador real que revisa un cliente | `/admin/clientes/[id]/portal` (mientras dure la transición) | Vista del contexto cliente **sin suplantación de sesión**, con banner «Modo Admin», auditoría de actor real y alcance de lectura correcto |
+| Tenant/partner (existente, fuera de rediseño MVP) | tenant_admin | `/tenant/dashboard` | Administración limitada al tenant; tercera configuración posible sobre los mismos tokens, nunca reutilizar permisos globales del Admin EXPERT |
+
+Los layouts ya existentes (`app/(protected)/admin/layout.tsx`, `app/(protected)/dashboard/layout.tsx`, `app/(protected)/tenant/layout.tsx`) respaldan esta separación. El nuevo diseño **no** convierte el Client Workspace en una subsección visual del Admin.
+
+**Capas propuestas:**
+
+```text
+EXPERT Design System (tokens EXPERT, tablas, formularios, dialogs, filtros, encabezados)
+   ├── AdminWorkspaceShell     /admin       (navigation schema + admin guard + admin context)
+   ├── ClientWorkspaceShell    /dashboard   (navigation schema + client guard + active company)
+   └── TenantWorkspaceShell    /tenant      (futuro; tenant-scoped)
+          │
+          └── Feature components compartidos SOLO en presentación;
+              los servicios/consultas/mutaciones permanecen autorizados por superficie y empresa.
+```
+
+### 2 bis.2. Un mismo diseño, distintas experiencias
+
+**Panel Admin:**
+- Inicio «Mi jornada» con pendientes, citas, errores de KIA, solicitudes humanas, cobros y expedientes bloqueados.
+- **Contactos** único de personas, empresas, leads, clientes, antiguas relaciones comerciales, suscripciones e identidades con acceso. Tabla y filtros globales; CRM `crm_segment` visible.
+- Agenda y tareas de todos los contextos autorizados; expedientes/documentos; Inbox 360 y correo humano; Facturación/Stripe/Holded por empresa; Marketing editorial, blog, reseñas, campañas, SEO, mentorías y Academy; Sistema, equipo, seguridad, autorizaciones e integraciones.
+- KIA opera como **asistente de back-office**: búsquedas transversales limitadas por permisos, resúmenes, preparación de emails/publicaciones, clasificación y tareas. Acciones sensibles requieren confirmación; nunca usa una credencial global indistinta para bancario/contable.
+- Las métricas deben mostrar lo que requiere una acción, no limitarse a tarjetas de ingresos.
+
+**Portal Cliente:**
+- Inicio «Mi EXPERT» mostrando próximo paso, estado de expedientes, documentos pendientes, citas, notificaciones y facturas propias.
+- Menú **más simple**: (1) Mi inicio; (2) Mis empresas/datos; (3) Mis expedientes y documentos; (4) Mensajes y citas; (5) Presupuestos y servicios; (6) Facturación y suscripción; (7) Informes e impuestos cuando correspondan; (8) Perfil y ayuda. Academy puede mostrarse por entitlement, no como sección universal. Ordenar por frecuencia de uso; en móvil priorizar «Inicio, Trámites, Mensajes, Facturación, Más».
+- Selección explícita de empresa activa; una persona puede gestionar varias entidades autorizadas, y cada expediente, documento, suscripción, pago y conexión Holded corresponde a su empresa. Cuando no existe empresa, ofrecer estado personal y onboarding sin bloquear servicios para personas físicas.
+- Cliente puede: solicitar servicio, aprobar presupuesto, completar datos, adjuntar documentos, consultar expediente, reservar/cambiar cita dentro de reglas, descargar facturas y acceder a su portal de pagos; no puede gestionar terceros, bandeja global, campañas o publicaciones.
+- KIA actúa como **asistente del cliente**: ayuda sobre trámites y estado que realmente puede leer, presenta guías verificadas y pide autorización antes de compartir datos, solicitar servicios o cambiar registros. No puede conocer el motivo de contacto sin expediente o contexto real.
+- Priorizar guía progresiva y mensajes claros frente a densidad profesional. Tabla compacta cuando aporte valor (documentos, facturas); cards/resumen solo para acciones personales.
+
+### 2 bis.3. Matriz de componentes compartidos y componentes exclusivos
+
+| Componente | Compartir código de UI | Datos y permisos |
+| --- | --- | --- |
+| Color, tipografía, botones, inputs, select, tablas, modals/drawers, estados y toasts | **Sí**: paquete interno `components/workspace/ui` y tokens únicos | No contienen permisos |
+| Shell, menú, buscador y navegación móvil | **Base visual compartida; configuración distinta** (`AdminWorkspaceShell`, `ClientWorkspaceShell`) | Menús resueltos por rol/capacidad en servidor |
+| Contact card y ficha 360 | Compartir piezas de presentación, no el directorio Admin completo | Admin ve relaciones autorizadas; cliente únicamente su identidad/entidades |
+| Expediente, documento, calendario, presupuesto, suscripción y factura | Compartir status, filas y editor de visualización | Endpoints separados o guardas explícitas, campos/acciones adaptados a actor |
+| KIA Dock / Chat UI | Compartir interfaz de chat, voz, adjuntos y citas | **Agentes/herramientas/contexto distintos**, cada uno con policy server-side |
+| Inbox / correspondencia | Compartir visor de hilo cuando proceda | Admin omnicanal; cliente solo su conversación |
+| Marketing, campañas, publicación, conciliación, equipo, auditoría | **Solo Admin** | Nunca incluir API pública/cliente para su gestión |
+| Conexiones Holded / Stripe | Compartir indicadores de estado y formularios permitidos | Autoridad/tenant y permisos de escritura por empresa, no globales |
+
+**Definición de reutilización:** plantilla y primitives visuales compartidos; **shells, navegación, loaders, API y políticas separados**. No confundir el hecho de reutilizar React components con autorizar el acceso a los mismos registros.
+
+### 2 bis.4. Hallazgos específicos del portal actual y deuda a resolver
+
+1. `components/dashboard/DashboardNav.tsx` tiene once entradas; puede compactarse por tareas reales. `MobileNav.tsx` tiene una selección distinta: definir una taxonomía semántica coherente escritorio/móvil.
+2. `app/(protected)/dashboard/page.tsx` usa banners, KPI y flujos de onboarding; simplificar sin perder los «próximos pasos» automáticos (documentos pendientes, presupuestos, empresa).
+3. Ya existe `CompanySwitcher` que actualiza empresa activa y limpia contexto visible de KIA; conservar esa barrera e introducir pruebas contra referencias de otra empresa.
+4. La vista delegada de `/admin/clientes/[id]/portal` es deliberadamente **Admin**, con banda explícita y endpoints Admin; no usarla como sustituto literal del verdadero `/dashboard` del cliente.
+5. `app/(protected)/layout.tsx` monta `KiaCopilotWidget` global y el layout Admin monta adicionalmente `AdminRightPanel` con su propio widget KIA: auditar **riesgo de dos interfaces/estados KIA** y elegir un dock por superficie. No asumir que ambas monturas son visibles hasta verificarlo en navegador.
+6. Existe `/tenant/dashboard` protegido para tenant_admin: conservarlo estable, revisar sus rutas y guards en inventario, y evaluar adaptación visual después de estabilizar Admin y Cliente.
+7. **No** migrar autenticación, suscripciones, facturación ni roles por imitar la plantilla.
+
+### 2 bis.5. Autorización y navegación entre superficies
+
+- `/admin` comprueba owner/admin habilitado; `/dashboard` aplica cliente y membresía de empresa; `/tenant` se limita a tenant_admin. Verificación obligatoria en cada API, no solo layout.
+- Personal Admin puede acceder a su propio portal como usuario autorizado, pero un botón «Ver portal del cliente» debe abrir **vista delegada administrativamente auditada**. Nunca producir token/sesión del cliente ni suplantar identidad.
+- Cada superficie tiene namespace de UI, caché, selección de entidad y permisos; invalidar datos/contexto al cambiar empresa o cerrar sesión. No heredar la empresa «seleccionada en Admin» dentro del portal cliente por accidente.
+- Una empresa creada en `companies` puede no tener `auth.users`; no fabricar credenciales para mostrarla.
+- Errores de autorización muestran rechazo verificable; no exponer datos en HTML o payload previo a ocultar un botón. Pruebas BOLA/IDOR y RLS obligatorias.
+
+### 2 bis.6. Ampliación de fases y entregables
+
+**Diseño base:** dos rutas con feature flags independientes `admin_v2` y `client_v2` (configuración segura server-side). Ambos usan `EXPERTWorkspaceTokens` y la biblioteca visual, no comparten navegación ni endpoints.
+
+- **Fase 0 — inventario doble:** ruta, datos, acciones y permisos tanto de Admin como de Cliente; mapear `tenant_admin` y estado de KIA global; mapa comparativo de navegación y prototipos de escritorio/móvil de las dos superficies.
+- **Fase 1 — Design System compartido:** tokens, layouts base, tablas, formularios, drawers, estados, accesibilidad, identidad de marca y licencia MIT; PR propia, sin tocar datos ni auth.
+- **Fase 2A — Admin Shell + Contactos** (manteniendo el cronograma Admin del plan original).
+- **Fase 2B — Client Shell + «Mi inicio»** con navigation simplificada, selector de empresa, notificaciones propias, KIA client-scoped y flujos de onboarding/borrador de presupuestos, con flag separado. No bloquear Admin por Client ni viceversa.
+- **Fases funcionales restantes:** reutilizar por feature componentes del sistema de diseño, pero integrar cada flujo y permiso según superficie; pruebas y publicación independientes.
+- **Cutover:** Admin y Cliente tienen checklist, métricas, rollback y aceptación **separados**; no sustituir `/admin` y `/dashboard` simultáneamente.
+
+**Nuevas pruebas obligatorias:**
+1. Cliente autenticado que solicita `/admin/contactos`, API Admin, campañas, mailing, cuentas de otros y herramientas KIA Admin ⇒ denegado, sin fuga de registros.
+2. Admin que abre vista cliente delegada conserva sesión de Admin y todo envío/modificación queda auditado como Admin.
+3. Usuario con dos empresas: cambiar empresa afecta exclusivamente al contexto autorizado y resetea KIA; documentos, facturas, pagos, Holded y reuniones no cruzan entidad.
+4. Cliente sin empresa puede usar consultas/servicios personales sin crear una SL ficticia; empresa sin usuario es visible en Admin con derechos apropiados.
+5. Mobile de ambas superficies: navegación y KIA sin solapamientos; prueba de lectura, subida de archivos, citas, pagos, ES/RU.
+6. Cliente ve su próximo paso y estado correcto; Admin ve tarea global y canal de origen sin exponer datos ajenos.
+7. Banner de delegación siempre visible en Admin cuando se consulta contexto de cliente; nunca aparece en sesión real de cliente.
+8. Rollback `admin_v2` no desactiva `client_v2`, ni viceversa; las funciones compartidas permanecen compatibles.
+
+**Decisión de alcance:** EXPERT Admin V2 sigue siendo prioridad operativa. El rediseño cliente no debe quedar fuera del diseño maestro; implementar la biblioteca visual una sola vez y planificar las dos superficies en paralelo sin despliegues acoplados.
+
+---
 
 ## 3. Objetivos y reglas no negociables
 
@@ -300,4 +402,5 @@ Para declarar una pantalla lista deben estar completos: UI responsive, datos rea
 ### Historial de decisiones
 
 - 09/10/2026: elegir **Kiranism adaptado a EXPERT**; una sola entrada **Contactos**; nuevo shell integral, datos canónicos conservados y migración segura por fases.
+- 09/10/2026 (ampliación): definir **dos productos con un design system común** (Admin Workspace y Client Workspace), shells, navegación, KIA y permisos específicos; preservar vista cliente delegada y tercera superficie tenant.
 - EXPERT MCP continúa **aplazado** y fuera de alcance de este plan hasta decisión explícita.
