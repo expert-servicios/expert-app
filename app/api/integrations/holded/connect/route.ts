@@ -131,7 +131,11 @@ export async function POST(request: NextRequest) {
 
     const detectedPermissions = normalizeDetectedHoldedPermissions(testResult.permissions);
 
-    const requestedPermissions: Partial<HoldedPermissions> = apiVersion === 'v2' ? detectedPermissions : permissionsEnabled ?? {
+    const requestedPermissions: Partial<HoldedPermissions> = apiVersion === 'v2' ? {
+      ...detectedPermissions,
+      laborEmployeesRead: permissionsEnabled?.laborEmployeesRead === true,
+      laborPayrollsRead: permissionsEnabled?.laborPayrollsRead === true,
+    } : permissionsEnabled ?? {
       ...detectedPermissions,
       laborEmployeesRead: false,
       laborPayrollsRead: false,
