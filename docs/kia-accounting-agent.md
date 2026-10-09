@@ -274,3 +274,14 @@ La herramienta `prepare_journal_entry_proposal` devuelve un resultado `pending_h
 
 ### Siguiente desarrollo
 Añadir a Company 360 una acción explícita \`Guardar propuesta preparada\` con confirmación visible por Admin (mostrando fecha, empresas, líneas, importe y justificantes). La acción debe llamar al POST autenticado, no a un tool autónomo de KIA, y permitir revisar/rechazar antes de una fase separada de contabilización supervisada.
+
+## Piloto de propuestas internas: ALVILS ESP (09/10/2026)
+
+- La empresa elegida para la **validación con cliente real** es ALVILS ESP, S.L.U., siempre desde su ficha Company 360 y su contexto autorizado; no reutilizar el tenant de DGM ni la clave global de EXPERT.
+- Primera etapa: consultas contables permitidas, validación y guardado de propuestas para **revisión interna**. Ningún asiento de prueba debe llegar a Holded.
+- La ficha Admin incorpora la acción `Guardar una propuesta preparada por KIA`: el operador pega el JSON, lo previsualiza y confirma explícitamente el guardado. La empresa se toma de la URL del panel, no de contenido generado por IA. El servidor vuelve a validar fecha, soporte, importe y cuadre, con deduplicación.
+- No existe todavía transferencia automática del objeto preparado por KIA al formulario: el operador debe copiar el JSON de la respuesta. La integración directa exige un contrato de entrega estructurada verificable.
+- No utilizar un justificante ficticio como soporte de asientos reales. Durante las pruebas de interfaz se permiten exclusivamente propuestas marcadas como simulación, nunca aprobarlas como operaciones contables definitivas.
+- Para el piloto ALVILS: confirmar manualmente sociedad correcta, autorización del operador, perímetro del ejercicio y fuentes; revisar que el guardado no ejecuta operaciones mutadoras Holded, que la cola de revisión es visible y que la segunda presentación de la misma propuesta no crea otra.
+- Antes de admitir operaciones reales: prueba de integración autenticada en Admin, revisión profesional del soporte documental y verificación de que el proceso sigue limitado a EXPERT. No habilitar permisos de escritura Holded por este hito.
+- DGM mantiene intacto el modo `read_only` y su bloqueo operacional. **ALVILS no sustituye a DGM para los cierres contables históricos.**

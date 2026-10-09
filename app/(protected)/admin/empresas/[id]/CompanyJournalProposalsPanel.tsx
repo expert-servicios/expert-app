@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
+import { JournalProposalSaveForm } from './JournalProposalSaveForm';
 
 type Proposal = {
  id:string;entry_date:string;reason:string;evidence_refs:string[];lines:Array<{account:string;debitCents:number;creditCents:number;explanation?:string}>;
@@ -31,6 +32,7 @@ export function CompanyJournalProposalsPanel({companyId}:{companyId:string}) {
  return <section className="rounded-xl border border-slate-200 bg-white p-4" aria-label="Propuestas contables">
   <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 className="font-semibold">Propuestas contables KIA</h2><button type="button" onClick={()=>void load()} className="rounded border px-3 py-1 text-sm">Actualizar</button></div>
   <p className="mb-4 text-xs text-slate-600">Bandeja de revisión interna. Aprobar una propuesta NO crea un asiento en Holded.</p>
+  <JournalProposalSaveForm companyId={companyId} onSaved={load} />
   {error&&<p role="alert" className="mb-3 text-sm text-red-700">{error}</p>}
   {loading?<p className="text-sm">Cargando…</p>:items.length===0?<p className="text-sm text-slate-500">No hay propuestas contables registradas.</p>:<div className="space-y-3">
    {items.map(p=><article key={p.id} className="rounded-lg border p-3 text-sm">
