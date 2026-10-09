@@ -127,6 +127,7 @@ function providerCooldownMs(error: string): number {
   if (/HTTP\s+402\b|billing_error|insufficient[_\s-]?quota|quota exceeded|credit(?:s)? exhausted|credit balance is too low|billing.*limit/i.test(error)) {
     return 15 * 60_000;
   }
+  if (/anthropic-workspace-id|not scoped to a workspace/i.test(error)) return 5 * 60_000;
   if (/HTTP\s+429\b|rate[_\s-]?limit/i.test(error)) return 60_000;
   if (/HTTP\s+5\d\d\b|timeout|timed out|ECONNRESET|fetch failed/i.test(error)) return 30_000;
   return 0;
@@ -554,6 +555,18 @@ async function callGateway(
   };
 }
 
+/**
+ * Retry only on a model-specific problem, billing tier or transient 503.
+ * Do not hide generic HTTP 400 schema errors or authentication failures.
+ */
+export function shouldTryGeminiFallbackModel(model: string, error: string): boolean {
+  return model !== GEMINI_DIRECT_FREE_FALLBACK_MODEL && (
+    /HTTP\s+(402|503)\b/i.test(error)
+    || /payment required|billing|high demand|temporarily overloaded/i.test(error)
+    || /HTTP\s+(400|404)\b[^\n]*(?:model[^\n]*(?:not found|unavailable|not supported)|unknown model)/i.test(error)
+  );
+}
+
 async function callGoogle(
   provider: ProviderConfig,
   request: KiaProviderRequest,
@@ -562,14 +575,10 @@ async function callGoogle(
     return await callOpenAiCompatible(provider, request, GEMINI_OPENAI_COMPAT_URL, "google");
   } catch (error) {
     const message = safeErrorMessage(error);
-    const shouldRetryFreeTier =
-      provider.model !== GEMINI_DIRECT_FREE_FALLBACK_MODEL
-      && /HTTP\s+402\b|payment required|billing/i.test(message);
-
-    if (!shouldRetryFreeTier) throw error;
+    if (!shouldTryGeminiFallbackModel(provider.model, message)) throw error;
 
     console.warn(
-      "[Kia provider router] Gemini paid-tier model unavailable; retrying free-tier model",
+      "[Kia provider router] Gemini primary model unavailable; retrying alternative model",
       redactJson({
         fromModel: provider.model,
         toModel: GEMINI_DIRECT_FREE_FALLBACK_MODEL,
