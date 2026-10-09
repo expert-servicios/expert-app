@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import {
   Building2,
   CalendarClock,
@@ -15,6 +15,7 @@ import {
   Plug,
   ReceiptText,
   ShieldCheck,
+  History,
   UserRound,
 } from 'lucide-react';
 
@@ -46,6 +47,41 @@ type ClientData = {
   emailEvents: Array<{ id: string; subject: string | null; status: string }>;
   integrations: Array<{ id: string; provider: string; status: string; company_id: string | null; last_error: string | null }>;
 };
+
+type SupportAuditEntry = {
+  id: string;
+  actorId: string;
+  actorName: string;
+  action: string;
+  companyId: string | null;
+  platform: string;
+  browser: string;
+  createdAt: string;
+};
+
+async function recordSupportAccess(
+  clientId: string,
+  event: 'entered' | 'company_switched' | 'exited',
+  companyId: string | null,
+): Promise<void> {
+  const response = await fetch(`/api/admin/clientes/${clientId}/support-access`, {
+    method: 'POST',
+    cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event, companyId }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error ?? 'No se pudo registrar el acceso');
+  }
+}
+
+async function fetchSupportHistory(clientId: string): Promise<SupportAuditEntry[]> {
+  const response = await fetch(`/api/admin/clientes/${clientId}/support-access`, { cache: 'no-store' });
+  if (!response.ok) throw new Error('No se pudo cargar el historial');
+  const body = await response.json() as { events?: SupportAuditEntry[] };
+  return body.events ?? [];
+}
 
 function scoped<T extends { company_id: string | null }>(rows: T[], companyId: string | null): T[] {
   if (!companyId) return rows;
@@ -82,13 +118,58 @@ function StatCard({
 export default function AdminClientPortalPage() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [data, setData] = useState<ClientData | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(searchParams.get('companyId'));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [auditError, setAuditError] = useState('');
+  const [auditing, setAuditing] = useState(false);
+  const [auditEntries, setAuditEntries] = useState<SupportAuditEntry[]>([]);
+  const loadedContextRef = useRef<string | null>(null);
+  const requestedCompanyId = searchParams.get('companyId');
+
+  async function changeCompany(nextCompanyId: string | null) {
+    if (!data || auditing || nextCompanyId === companyId) return;
+    setAuditing(true);
+    setAuditError('');
+    try {
+      // The server validates membership before the UI changes context.
+      await recordSupportAccess(id, 'company_switched', nextCompanyId);
+      setCompanyId(nextCompanyId);
+      try {
+        setAuditEntries(await fetchSupportHistory(id));
+      } catch {
+        setAuditError('El cambio se ha registrado, pero no se pudo actualizar el historial.');
+      }
+    } catch (err) {
+      setAuditError(err instanceof Error ? err.message : 'No se pudo cambiar de entidad');
+    } finally {
+      setAuditing(false);
+    }
+  }
+
+  async function exitSupport() {
+    if (auditing) return;
+    setAuditing(true);
+    setAuditError('');
+    try {
+      await recordSupportAccess(id, 'exited', companyId);
+      router.push(`/admin/clientes/${id}`);
+    } catch (err) {
+      setAuditError(err instanceof Error ? err.message : 'No se pudo registrar la salida');
+      setAuditing(false);
+    }
+  }
 
   useEffect(() => {
+    // Avoid duplicate audit events from React dev strict-effects remounts.
+    const contextKey = `${id}:${requestedCompanyId ?? ''}`;
+    if (loadedContextRef.current === contextKey) return;
+    loadedContextRef.current = contextKey;
     void (async () => {
+      setData(null);
+      setAuditEntries([]);
       setLoading(true);
       setError('');
       try {
@@ -96,15 +177,26 @@ export default function AdminClientPortalPage() {
         const json = await response.json();
         if (!response.ok) throw new Error(json.error ?? 'No se pudo cargar el cliente');
         const next = json as ClientData;
+        const initialCompanyId = requestedCompanyId && next.companies.some((company) => company.id === requestedCompanyId)
+          ? requestedCompanyId
+          : (next.profile.active_company_id && next.companies.some((company) => company.id === next.profile.active_company_id))
+            ? next.profile.active_company_id : next.companies[0]?.id ?? null;
+        // Do not display the delegated portal until the real administrator's entry is recorded.
+        await recordSupportAccess(id, 'entered', initialCompanyId);
+        setCompanyId(initialCompanyId);
         setData(next);
-        setCompanyId((current) => current || next.profile.active_company_id || next.companies[0]?.id || null);
+        try {
+          setAuditEntries(await fetchSupportHistory(id));
+        } catch {
+          setAuditError('Se registró el acceso, pero no se pudo cargar el historial.');
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error de conexión');
       } finally {
         setLoading(false);
       }
     })();
-  }, [id]);
+  }, [id, requestedCompanyId]);
 
   const view = useMemo(() => {
     if (!data) return null;
@@ -155,6 +247,10 @@ export default function AdminClientPortalPage() {
           </div>
         </section>
 
+        {auditError && (
+          <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{auditError}</div>
+        )}
+
         <section className="rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-start gap-3">
@@ -165,9 +261,15 @@ export default function AdminClientPortalPage() {
                 <p className="mt-1 text-sm text-[#52606d]">{data.profile.email}</p>
               </div>
             </div>
-            <Link href={`/admin/clientes/${id}`} className="inline-flex items-center gap-1.5 rounded-xl border border-[#d8cbb5] px-4 py-2 text-xs font-bold text-[#29384a]">
-              <Eye className="h-3.5 w-3.5" /> Volver a Cliente 360
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link href={`/admin/clientes/${id}`} className="inline-flex items-center gap-1.5 rounded-xl border border-[#d8cbb5] px-4 py-2 text-xs font-bold text-[#29384a]">
+                <Eye className="h-3.5 w-3.5" /> Cliente 360
+              </Link>
+              <button type="button" onClick={() => void exitSupport()} disabled={auditing}
+                className="rounded-xl bg-[#07111d] px-4 py-2 text-xs font-bold text-white disabled:opacity-50">
+                Salir del modo soporte
+              </button>
+            </div>
           </div>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto]">
@@ -175,8 +277,9 @@ export default function AdminClientPortalPage() {
               <label className="text-xs font-bold uppercase tracking-wide text-[#8a9aab]">Entidad de trabajo</label>
               <select
                 value={companyId ?? ''}
-                onChange={(event) => setCompanyId(event.target.value || null)}
-                className="mt-2 w-full rounded-xl border border-[#d8cbb5] bg-white px-3 py-3 text-sm"
+                onChange={(event) => void changeCompany(event.target.value || null)}
+                disabled={auditing}
+                className="mt-2 w-full rounded-xl border border-[#d8cbb5] bg-white px-3 py-3 text-sm disabled:opacity-50"
               >
                 <option value="">Todas / contexto personal</option>
                 {data.companies.map((company) => (
@@ -246,6 +349,25 @@ export default function AdminClientPortalPage() {
                 <p className="mt-2 text-sm font-bold text-[#07111d]">{label}</p>
                 <p className="mt-1 text-xs leading-5 text-[#52606d]">{detail}</p>
               </Link>
+            ))}
+          </div>
+        </section>
+        <section className="rounded-2xl border border-[#d8cbb5] bg-white p-5">
+          <h2 className="flex items-center gap-2 text-sm font-bold text-[#07111d]">
+            <History className="h-4 w-4" /> Historial de modo soporte
+          </h2>
+          <p className="mt-1 text-xs text-[#52606d]">Últimos 40 eventos auditados. El dispositivo es una estimación del navegador, no una identidad verificada.</p>
+          <div className="mt-3 divide-y divide-[#e6dfd2]">
+            {auditEntries.length === 0 && <p className="py-3 text-sm text-[#52606d]">Sin eventos disponibles.</p>}
+            {auditEntries.map((entry) => (
+              <div key={entry.id} className="flex flex-wrap justify-between gap-2 py-2 text-xs">
+                <span className="font-semibold text-[#29384a]">
+                  {entry.action === 'workspace.support.entered' ? 'Acceso' :
+                    entry.action === 'workspace.support.exited' ? 'Salida' : 'Cambio de entidad'}
+                  {entry.companyId ? ` · ${data.companies.find((company) => company.id === entry.companyId)?.name ?? entry.companyId}` : ' · Personal'}
+                </span>
+                <span className="text-[#52606d]">Por {entry.actorName} · {entry.browser} / {entry.platform} · {new Date(entry.createdAt).toLocaleString('es-ES')}</span>
+              </div>
             ))}
           </div>
         </section>
