@@ -5,7 +5,7 @@ import { encryptSecret, keyLast4 } from '@/lib/security/encryption';
 import { isEncryptionConfigured } from '@/lib/integrations/holded/holded-client';
 import { detectHoldedPermissions } from '@/lib/integrations/holded/holded-permission-probes';
 import {
-  intersectHoldedReadPermissions,
+  selectHoldedReadPermissions,
   normalizeDetectedHoldedPermissions,
   type HoldedPermissions,
 } from '@/lib/integrations/holded/holded-permissions';
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
       laborEmployeesRead: false,
       laborPayrollsRead: false,
     };
-    const enabledPermissions = intersectHoldedReadPermissions(detectedPermissions, requestedPermissions);
+    const enabledPermissions = selectHoldedReadPermissions(detectedPermissions, permissionsEnabled ?? requestedPermissions);
 
     const encryptedApiKey = encryptSecret(apiKey);
     const last4 = keyLast4(apiKey);
