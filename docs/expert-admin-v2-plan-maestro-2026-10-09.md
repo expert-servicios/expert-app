@@ -7,6 +7,8 @@
 **Estado:** LISTO PARA INICIAR FASE 0. Implementación bajo PRs independientes, CI, seguridad y verificación de producción.  
 **Plan rector:** este documento prevalece sobre los borradores visuales anteriores; conserva sus requisitos operativos válidos.
 
+**Ampliación aprobada 09/10/2026 — KIA Work + Inbox 360 + Finanzas Holded + Hoja Registral:** requisitos vinculantes en §§17–22. Se completa **primero la planificación y validación**, antes de activar nuevos ejecutores, automatizaciones o métricas financieras. La implementación no está declarada operativa por el mero hecho de documentarla.
+
 ## 1. Decisión de diseño: EXPERT Workspace
 
 Diseño seleccionado: **Kiranism / Next Shadcn Dashboard Starter**, repositorio público MIT:
@@ -504,3 +506,272 @@ Para declarar una pantalla lista deben estar completos: UI responsive, datos rea
 - 09/10/2026 (ampliación): definir **dos productos con un design system común** (Admin Workspace y Client Workspace), shells, navegación, KIA y permisos específicos; preservar vista cliente delegada y tercera superficie tenant.
 - 09/10/2026 (modo soporte): la configuración cotidiana se realizará desde **Portal del cliente en modo soporte** por Admin autorizado, reutilizando la UI Cliente y APIs Admin, con actor real y trazabilidad, evitando desarrollar formularios duplicados.
 - EXPERT MCP continúa **aplazado** y fuera de alcance de este plan hasta decisión explícita.
+
+
+---
+
+## 17. Decisión transversal: KIA Work, Inbox 360, Holded y Hoja Registral (ampliación 09/10/2026)
+
+**Orden de ejecución solicitado por Dirección:** actualizar y consolidar este plan maestro **antes** de iniciar los nuevos desarrollos funcionales. La creación de este documento no habilita escrituras, notificaciones masivas, reuniones automáticas ni sincronizaciones adicionales. Mantener las PR #686 (auditoría de soporte), #687 (KIA dock) y #688 (contrato fail-closed de acciones) como incrementos separados sujetos a CI y aceptación; este plan les da encaje transversal sin introducir cambios de API.
+
+**Decisiones de producto:**
+
+1. Un **único EXPERT Workspace** con shells de Admin y Cliente diferenciados, design system común y KIA Copiloto en panel contextual persistente, replegable y responsive. La interfaz KIA se reutiliza; no duplicar conversación ni instancia por superficie.
+2. **Operations 360 / Inbox 360** en /admin/inbox es la bandeja omnicanal canónica. «Vox» es el nombre mencionado en la conversación, **no** justifica crear una segunda bandeja, esquema ni ruta. Verificar internamente si existe denominación comercial Vox antes de renombrar elementos.
+3. KIA podrá **leer, razonar, proponer, solicitar aprobación, ejecutar una capacidad autorizada, verificar y auditar** desde chat Admin o chat Cliente, según sus permisos. Un mensaje no otorga privilegios especiales ni equivale siempre a consentimiento suficiente.
+4. La **Hoja Registral v2** es el contexto persistente por cliente/persona, empresa y expediente; contiene hechos confirmados, eventos y **reglas de trabajo/instrucciones operativas**, con procedencia y versiones. No crear un campo de texto descontrolado que se inyecte como «system prompt».
+5. Holded permanece **fuente contable** de cada empresa; EXPERT centraliza un **servicio de métricas autorizado** que consumen exactamente los mismos componentes de Admin, Cliente y KIA, filtrado por empresa, periodo y derechos.
+6. **Un motor KIA compartido, perfiles virtuales distintos por entidad**, no una instancia desplegada de IA por cliente. Contexto e instrucciones se resuelven en el servidor por sujeto canónico, compañía y expediente. Los subagentes profesionales actuales se pueden reutilizar, sin crear copias por cliente.
+
+**Inventario real contrastado antes de esta decisión:**
+
+- Bandeja y orquestación: app/api/admin/inbox/route.ts, lib/admin/operations-360-inbox.ts, /api/admin/inbox/control, /reply, /reassign, /escalate y /timeline; canal Telegram con takeover humano.
+- Notificaciones: lib/integrations/push.ts, public/sw.js, push_subscriptions, lib/admin/case-admin-notifications.ts y app/api/cron/email-sync/route.ts; existen rutas que ya generan avisos, por lo que integrar una capa de deduplicación sin doble envío.
+- KIA: app/api/ai/kia/route.ts, kia-tool-definitions, kia-tool-registry, kia-policy-profiles, kia-actor-capability-resolver y kia-workspace-actions/contract.ts (si se fusiona #688). «client_dashboard» y «admin_copilot» siguen principalmente en lectura R1.
+- Holded: lib/integrations/holded/holded-gateway.ts, lib/holded/quarter-data.ts, lib/reports/report-generator.ts, /dashboard/estado-empresa y componentes dashboard/company-status; hay lecturas e informes reales, **no un estado contable universal de pérdidas y ganancias validado**.
+- Hoja Registral: docs/kia-client-ledger.md, docs/kia-2-strategy.md, tablas client_registry_subjects/events/facts/instructions/period_summaries, endpoint app/api/admin/empresas/[id]/registro/route.ts y editor CompanyRegistryPanel. Las instrucciones confirmadas tienen scope, priority, source_ref, vigencia y sustitución.
+
+## 18. Inbox 360 como centro de operaciones KIA
+
+### 18.1. Flujo canónico único y trazable
+
+Evento entrante (correo, Telegram, formulario, webchat, chat portal, Meta/Google/LinkedIn solo si hay conector operativo autorizado)
+→ ingestión y deduplicación
+→ resolver identidad sin uniones automáticas débiles
+→ vincular lead/cliente/empresa/expediente si existe evidencia suficiente
+→ cargar hoja registral e instrucciones válidas
+→ clasificar intención, urgencia, necesidad humana y consentimiento
+→ actualizar **el hilo existente** Inbox 360
+→ generar resumen, propuesta de respuesta y *next best action*
+→ materializar tarea interna idempotente cuando exista obligación operativa
+→ programar/solicitar cita según política
+→ emitir notificación apropiada
+→ registrar evidencias, entregas, error/reintento y estados.
+
+**Fuente canónica:** email_threads/email_inbox_cache, kia_conversations, leads, internal_tasks, appointments y eventos KIA. «Vista Inbox» es una proyección de estas fuentes, no nuevo sistema de mensajería. Se debe evitar que un correo se cuente como un lead nuevo cada vez que se sincroniza. Mantener origen de captación (artículo/formulario/campaña/red social) y vínculo a expediente. Cualquier conflicto de identidad produce elemento pendiente de revisión, no contacto unido automáticamente.
+
+### 18.2. Reglas de automatización e intervención
+
+| Evento o condición | KIA puede automatizar | Revisión/aprobación requerida |
+| --- | --- | --- |
+| Mensaje humano entrante nuevo y verificable | Registrar, clasificar, enlazar y resumir; propuesta de respuesta; badge de actividad | Respuesta externa cuando sea sensible, ambigua, regulada o requiera consentimiento |
+| Solicitud de trámite/documentación | Detectar siguiente paso, crear tarea de back-office con owner y prioridad si policy lo permite | Pedir documentación al cliente solo si es pertinente y proporcional; sin asumir motivo de contacto |
+| Mensaje con cita expresamente solicitada | Consultar disponibilidad; proponer slots/Meet; generar propuesta de reserva | No confirmar cita con terceros ni invitación externa sin fecha/hora y consentimiento verificables |
+| Trabajo interno que requiere una reunión | Crear borrador/recordatorio o bloqueo interno conforme a reglas aprobadas | Convocatoria externa, cambios o cancelaciones importantes requieren confirmación |
+| Respuesta automática de KIA o sincronización repetida | Actualizar hilo y log sin reabrir oportunidad | No disparar un push de «mensaje humano nuevo» ni crear tarea duplicada |
+| Requerimiento administrativo, banco, cobros, conflicto legal | Clasificar como riesgo/fecha límite y escalar con prioridad alta | Sin respuesta jurídica concluyente ni actuaciones irreversibles automáticas |
+
+**Notificaciones push:** reutilizar PushApp VAPID y las suscripciones existentes; emitir *un solo aviso relevante* por nuevo mensaje humano, lead nuevo o tarea que requiera acción. Añadir correlación event_id/source_key, destinatario/rol, dedupe, cooldown por conversación, preferencias y agrupación; proteger PII en el texto de push. Notificar especialmente errores silenciosos de KIA, escalaciones, tareas críticas y reuniones confirmadas. No avisar por cada respuesta automática KIA, lectura, polling o renovación de sync. Mostrar notificaciones en «Mi jornada» y badge Inbox incluso si el navegador deniega push; registrar delivery_state y enlaces profundos con comprobación de permisos al abrir. Integrar con notificación por correo/Telegram únicamente cuando esté configurada, sin duplicidad no deseada.
+
+**Tareas:** ID correlacionado con mensaje/hilo/expediente, responsable, vencimiento, prioridad, motivo y reglas de dependencia. Dedupe por intención + origen/periodo, no solo hash del texto. Distinguir tarea propuesta, aprobada, abierta, bloqueada, finalizada; no cerrar por una mera respuesta del modelo. El propio Workspace mostrará agenda diaria combinando tareas y citas.
+
+**Reuniones:** usar el proveedor de calendario conectado como única autoridad para disponibilidad, timezone Europe/Madrid, idempotencia de reserva y confirmación real de Calendar/Meet/correos. «Cita creada» solo después de verificar ID proveedor y hora. Al cancelar o cambiar, actualizar la misma referencia y enviar notificaciones correctas. Si no existe permiso de escritura, preparar borrador con botón «Confirmar» o derivar a persona.
+
+**Cierre de fase:** recorridos E2E correo, Telegram y web → Inbox → KIA → tarea/aviso/cita; mensaje duplicado y webhook repetido no multiplican push/tareas; takeover manual desactiva el envío automático KIA; permisos cross-client fail-closed. No promocionar como «todos los canales activos» los conectores que no estén operativos.
+
+## 19. Finanzas Holded: fuente única para Admin, Cliente y KIA
+
+### 19.1. Separar producto y métricas
+
+**No crear dos pipelines contables.** Implementar un servicio interno, por ejemplo \`lib/finance/company-metrics\`, sobre el gateway Holded e informes actuales. El servicio expone lecturas autorizadas de una **empresa concreta** y periodo (mes, trimestre, año), agregando solo en vistas Admin cuando sea lícito y solicitado. Una empresa puede estar vinculada a varias personas y usar tenant Holded exclusivo; nunca escoger tenant por coincidencia de nombre/CIF ni por último token utilizado.
+
+**Tres consumidores con datos y permisos distintos:**
+
+- **Admin / Operación financiera:** selector de empresa, ventas, compras, cobros/pagos, tesorería accesible, incidencias, conciliación, conectividad y evolución. La rentabilidad de **EXPERT propia** se obtiene únicamente de su empresa contable correcta; los totales de cartera de clientes se etiquetan «cartera gestionada», **nunca ingresos de EXPERT**.
+- **Cliente / Mi empresa:** solo entidades vinculadas que tenga derecho a consultar, indicadores del periodo, gráfica, deudores/pagos si autorizado, pendientes y fecha de actualización. Sin exponer sueldos/PII laboral ni información bancaria por defecto. Si no tiene contrato/capability o conexión autorizada, estado sin datos y acción adecuada; no forzar suscripción mensual abolida del catálogo comercial.
+- **KIA / Tool de métricas:** leer exactamente el mismo resultado normalizado y autorizado por empresa/periodo; incluir fecha, origen, completeness y notas de cálculo; responder sin inventar números ni crear datos en Holded. No recoger métricas raspando DOM ni confiar en un cálculo generado libremente por el LLM.
+
+### 19.2. Definiciones contables explícitas
+
+| Indicador | Cálculo/fuente aceptada | Presentación |
+| --- | --- | --- |
+| Ventas / ingresos facturados | Documentos emitidos válidos del periodo, separación base imponible, impuestos, abonos, moneda, fechas y estados | Facturación documental, no cobros |
+| Compras / gastos facturados | Documentos recibidos válidos, excluyendo anulados, con su tratamiento contable y clasificación | Gastos documentados; no coste total de la empresa |
+| Cobrado/pendiente | Vencimientos y conciliación de cobros de la fuente autorizada | Separado del devengo; no sumar dos veces |
+| IVA repercutido/soportado | Importes verificados de documentos, con exclusiones/ajustes pertinentes | Indicativo, no Modelo 303 definitivo |
+| Tesorería | Saldo de cuentas habilitadas según fecha y permisos de Holded | Con marca de cobertura, no deducir «beneficio» |
+| Diferencial simple | Ventas documentadas menos compras documentadas a igual base y periodo | Etiqueta «diferencial documental», **nunca «beneficio»** |
+| Resultado contable / beneficio | Pérdidas y ganancias o mayor verificado y conciliado: ingresos, gastos reales, personal, amortizaciones, ajustes, periodificaciones y otros conceptos aplicables | Mostrar «resultado provisional» solo si cobertura suficiente; si no, «No disponible» |
+| Margen, evolución y tendencia | Fórmulas explícitas sobre series comparables | Indicar límites y origen; sin pronósticos presentados como hechos |
+
+**Riesgos a evitar:** cifras con IVA frente a netas; signo de rectificativas; borradores, duplicados, créditos; compras que no son gastos; gasto salarial/amortizaciones no documentadas como facturas; saldo ≠ beneficio; moneda no EUR; empresa patrimonial con arrendamientos y amortización; periodos contables cerrados; informes P&L incompletos. Un fallo de Holded parcial no equivale a cero. No sobrescribir contabilidad ni históricos para «hacer cuadrar» el dashboard.
+
+### 19.3. Contrato de datos, cache y UI
+
+Propuesta \`CompanyFinancialSnapshot\`: companyId, integrationId (no token), periodo/inicio/fin, timezone, currency, basis (invoice/ledger/pnl), salesNet, purchasesNet, cashReceived, cashPaid, receivables, payables, vatBalances, bankBalance, accountingProfit *nullable*, profitQuality (verified/provisional/unavailable), completeness, warnings, lastSuccessfulSyncAt, generatedAt, sourceRefs y provenanceVersion.
+
+Implementar adaptadores separados \`HoldedDocumentsAdapter\` y \`HoldedAccountingAdapter\`; reconciliar datos comparables con calidad por campo. Snapshots/cache **company_id + integration_id + periodo + versión**, TTL documentado, sincronización segura incremental y reintento acotado. Panel muestra «última actualización», diferencia entre dato cacheado y refrescado y error parcial. Reusar las gráficas actuales (SalesPurchasesChart, informes trimestrales) y construir nuevos componentes compartidos de métricas; Admin/Cliente con columnas y permisos distintos. No habilitar automáticamente scope de labor/bancos.
+
+**Seguridad de acceso:** servidor comprueba actor, pertenencia/representación, tenant, contrato/entitlement efectivo, permisos Holded **habilitados** (no meramente detectados), RLS y secrets server-side. No exponer dataset bruto a KIA ni a un rol sin capability. Pruebas negativas multiempresa incluyendo distintas conexiones Holded bajo un mismo usuario. Controles de coste/cupo, paginación de documentos, sincronización de varias divisas y errores con estado recuperable.
+
+## 20. Hoja Registral como «manual vivo» de KIA por cliente, empresa y expediente
+
+**Decisión:** la «hoja registral que contiene el prompt de trabajo» se modela como **instrucciones operativas versionadas**, no como un prompt total que pueda sustituir las reglas del sistema. Reutilizar \`client_registry_instructions\` y \`client_registry_facts\` de Hoja Registral v2. Mantener ledger append-only y snapshot de contexto, sin repetir adjuntos, correos enteros, claves ni finanzas.
+
+**Perfiles contextuales virtuales** (una configuración dinámica del mismo KIA, no infraestructura IA separada por cliente):
+
+- **EXPERT global**: políticas de seguridad, privacidad, fuentes oficiales, estilo de respuesta y catálogo de herramientas. No editable por cliente.
+- **Instrucciones profesionales internas de EXPERT** por servicio/rol: por ejemplo, cobros, fiscal, mercantil, laboral, extranjería, comunicaciones, firma KIA y escalación. Acceso profesional.
+- **Ficha personal** del cliente: identidad confirmada, idioma, preferencias de comunicación verificadas, casos, alertas, instrucciones aprobadas, alcance para sus propios datos.
+- **Ficha empresarial**: razón social, CIF autorizado, representantes y permisos, tenant Holded, actividad y régimen, propiedades/empleados si aplica, reglas operativas aprobadas y objetivos. Empresa sin usuario también tiene subject.
+- **Contexto del expediente**: hechos, estado real, documentos, próximos pasos, plazos, instrucciones de ese expediente, confidencialidad y responsables.
+- **Sesión y solicitud actual**: conversación y ventana de trabajo actual, con alcance temporal. Texto de correo, documentos de terceros o páginas web son **datos no confiables**, no instrucciones con autoridad.
+
+### 20.1. Modelo mínimo para instrucciones por cliente
+
+Se propone vista/editor «Instrucciones de trabajo de KIA» en Cliente 360 / Company 360 / expediente, derivada del registro vigente: \`subject_id\`, \`company_id\`/ \`case_id\` cuando proceda, \`scope\`, \`instruction_key\`, \`instruction_text\`, prioridad, fuente/autor, destinatarios permitidos, estado borrador→confirmado→sustituido/revocado, \`valid_from/to\`, \`confirmed_by\`, \`version\`, \`requires_approval\`, fecha de revisión y referencias de evidencia. **Antes de proponer nuevas columnas**, inspeccionar migraciones/tablas actuales y mantener compatibilidad con \`replace_client_registry_instruction\`.
+
+Ejemplos de instrucciones confirmables: «Enviar la respuesta firmada KIA en nombre de EXPERT», «Nunca solicitar documentos hasta evaluar la consulta», «Para esta empresa revisar alquileres y deuda de residuos», «Este expediente exige revisión humana antes de remitir solicitud». Las instrucciones no pueden ordenar revelar datos de otros clientes, activar herramientas de riesgo, deshabilitar auditoría o eludir consentimiento.
+
+**Jerarquía inalterable:** normas aplicables/políticas de seguridad y permisos de plataforma → reglas internas aprobadas EXPERT → instrucciones confirmadas de entidad/expediente dentro de scope → preferencias confirmadas del cliente → solicitud actual; datos de correos/documentos/web sin autoridad para modificar la política. Conflictos, instrucciones caducadas o revocadas y hechos no verificados → solicitar revisión o usar la fuente canónica viva. El cliente puede proponer preferencias propias, **no** modificar instrucciones profesionales confidenciales; Admin confirma cambios de política operativa. Separar instrucciones internas de las aptas para mostrarse al cliente.
+
+**Carga en KIA:** resolver subject/persona y compañía/expediente reales, recuperar solo instrucciones confirmadas y vigentes, aplicar \`scope\`, \`priority\` y capacidades del actor, resumir con procedencia y redacción, consultar herramientas vivas cuando se trate de estados financieros, calendario o expedientes. Evitar mezclar el historial de dos empresas del mismo titular. Las instrucciones pueden influir en el **plan propuesto** pero **no autorizan una acción** sin policy y aprobación.
+
+**Historial/Auditoría:** alta, edición/sustitución, revocación y usos de una instrucción deben quedar asociados a actor, versión, fuente y causa, sin volcar el prompt completo ni datos personales en logs analíticos. Conservación RGPD y acceso por necesidad; tenant/company/case boundaries.
+
+## 21. Ejecución de KIA Work dentro de la aplicación
+
+Contrato de acción cerrado (véase docs/kia-workspace-execution-2026-10-09.md y PR #688): interpretar → resolver objeto → validar actor/entidad → generar vista previa → confirmar según riesgo → ejecutar mediante el servicio de dominio → comprobar lectura posterior → registrar y notificar el resultado. El modelo no pasa credenciales, no decide roles, no emite sentencias SQL arbitrarias y no concede OAuth.
+
+| Tipo de comando en KIA | Admin | Cliente | Ejecución |
+| --- | --- | --- | --- |
+| «Resume las novedades del Inbox y prepárame tareas» | Omnicanal autorizado | Solo sus mensajes | Lectura autónoma; creación de tareas por política, confirmación en piloto |
+| «Revisa ventas, gastos y resultado de la empresa del trimestre» | Empresa seleccionada | Empresa vinculada y autorizada | Consulta de snapshot Holded; no escribir |
+| «Cambia este dato de contacto» | Soporte con actor real | Datos propios editables | Vista previa y confirmación; luego POST/PATCH autorizado |
+| «Reserva una reunión con X» | Calendario autorizado | Cita propia dentro de reglas | Confirmación de destinatario, fecha/hora y proveedor; no inventar envío |
+| «Envía este correo» | Hilo/cuenta autorizados | Solo mensaje propio donde esté previsto | Borrador visible + aprobación explícita antes de envío |
+| «Rectifica factura/reconcilia banco/presenta modelo» | Solo profesional con capacidad concreta | No | Preparar propuesta y evidencias; sin autonomía irrestricta |
+
+Distinguir actividades sincrónicas (lectura y cambios simples) de procesos duraderos (varios servicios, proveedor externo, reintentos): para estos últimos registrar job/step, tiempo/coste, idempotencia, comprobación y reanudación. No simular trabajo en segundo plano ni declarar operaciones finalizadas mientras no haya comprobación de proveedor.
+
+**Guardas:** approval vinculada a actor, tenant, empresa, objeto, diff, caducidad, hash y versión; riesgo por herramienta; owner/rol/membresía por llamada; no elevar permisos por instrucción registral; bloqueo ante cambio de empresa; no actuar por texto de terceros; toda escritura auditable. Para modo soporte, el actor registrado es el Admin real, nunca el cliente. Verificar acciones de alta, edición, correo, reuniones y Holded en escenarios positivos y denegados.
+
+## 22. Secuencia revisada, dependencias y criterios de aceptación
+
+Esta ampliación **reordena prioridades**, pero no sustituye la Fase 0–7 del rediseño visual ni invalida las PR abiertas. No iniciar otras nuevas superficies de bandeja, informes financieros o memoria. Cada vertical implementa servicio de dominio + API/guardas + UI compartida + tests y despliegue independiente.
+
+| Prioridad | Incremento / entregable concreto | Dependencias | Criterio de salida |
+| --- | --- | --- | --- |
+| P0 | Congelar este plan + mapa de módulos existentes y gap analysis; revisar PR #686/#687/#688 | Plan aprobado | Un único roadmap canónico; ninguna escritura prematura |
+| P1 | Instrumentar Inbox 360: evento normalizado + dedupe + correlación a registro/empresa + notificaciones relevantes | Idempotencia, fuente, reglas de push, takeover | E2E desde correo/Telegram/web, un evento→una tarea/aviso |
+| P2 | Primer ejecutor supervisado KIA: crear tarea Admin; después editar perfil propio | Catálogo acciones y guardas; audit_logs | Vista previa/aprobación/ejecución/verificación sin IDOR ni duplicados |
+| P3 | Hoja Registral como instrucciones operativas efectivas en KIA y editor por ámbito | Registry v2 confirmado, jerarquía de instrucciones | KIA respeta reglas vigentes de A sin aplicar reglas de B; versiones y revocación |
+| P4 | Sincronización **financiera diaria** Holded por empresa + snapshot canónico y test contable | Gateway company-scoped, presupuesto API, incremental con reconciliación y cron separado de facturación | Una captura diaria por integración autorizada, sin llamadas Holded por pregunta KIA; datos completos o error explícito; rentabilidad correcta o «No disponible» |
+| P5 | Nuevos KPIs financieros compartidos en Admin y Cliente | Snapshots y entitlements | Dashboard de ambas superficies coincide en cifras para la misma empresa/periodo autorizado |
+| P6 | Tool KIA financiera **cache-first**, resumen diario Admin/Cliente, agenda/reuniones e Inbox actions | Snapshots confirmados, alertas y preferencias, meeting operator | Resúmenes de hechos confirmados; cero Holded API calls en chat normal; avisos sin duplicados y reuniones solo tras confirmación |
+| P7 | Integración end-to-end, mobile, observabilidad, rollout controlado | Todos los módulos | Tests, seguridad, cutover independiente, rollback medido |
+
+**Reglas de aceptación adicionales obligatorias:**
+
+1. Inbox único: cero bandejas paralelas, hilos duplicados por polling o nuevos leads por sincronizaciones repetidas.
+2. Push con deep link correcto, destinatario correcto y control de deduplicación. La respuesta automática de KIA no genera push de entrada humana.
+3. Tarea automática no se duplica por retry; notificación y tarea reflejan el mismo hilo/origen; escalación visible en «Mi jornada».
+4. La fecha y hora de una reunión se verifican en Calendar/Meet; error de proveedor deja estado recuperable, no reunión ficticia.
+5. Finanzas por company_id e integration_id; Admin ve empresa autorizada y Cliente solo las propias; un admin con varias conexiones Holded no cruza contabilidad.
+6. Ventas, compras y diferenciales documentales **nunca** se etiquetan como beneficio contable sin P&L conciliado; incluir fecha y cobertura de fuente. Comparar EUR vs EUR y periodos homogéneos.
+7. KIA responde usando el mismo snapshot financiero que las gráficas, y puede citar periodo/actualización; no fabrica saldo ni resultado.
+8. Una empresa sin Holded o sin capacidad autorizada ve un vacío honesto y guía de conexión; no datos de empresa vecina.
+9. Instrucción registral específica no salta política superior ni puede dar acceso a otro tenant; cambios quedan versionados; campos profesionales internos no se exponen en Cliente.
+10. Cliente pide cambio en su propia ficha y nunca puede alterar nota profesional, perfil ajeno ni calendario de otra empresa.
+11. En modo soporte, toda acción conserva identidad y permisos de Admin, con trazabilidad de actor real y objetivo delegado.
+12. Se mantienen las funciones existentes de KIA Copiloto, Inbox y Dashboard mientras se introducen flags por incrementos; sin regresión de mobile, ES/RU ni adjuntos.
+13. CI completo, control de seguridad/RLS, test de origen autorizado, UAT humano sobre empresas piloto, despliegues app/ksenia-expert y prueba de rollback antes de fusionar.
+
+### Decisiones registradas en esta ampliación
+
+- 09/10/2026 (KIA Work): **KIA como ejecutor supervisado**, no solo chatbot; un único catálogo central de herramientas y aprobaciones.
+- 09/10/2026 (Inbox): **Operations 360** existente es canónico; automatizar clasificación, tareas, citas y avisos sobre sus hilos.
+- 09/10/2026 (Holded): reutilizar integración y reportes; un solo servicio de métricas Admin/Cliente/KIA, sin llamar beneficio al diferencial de facturas.
+- 09/10/2026 (Hoja Registral): personalizar KIA por cliente/empresa/expediente con instrucciones confirmadas, trazables y de menor autoridad que permisos/ley; sin agentes desplegados por cada cliente.
+- 09/10/2026 (procedimiento): **planificar y revisar primero**, implementar después en incrementos seguros.
+
+**Documentos complementarios que permanecen vigentes:** docs/kia-client-ledger.md, docs/kia-2-strategy.md, docs/kia-workspace-execution-2026-10-09.md (pendiente PR #688), docs/client-company-status-dashboard.md, docs/holded-sync-action-plan.md y docs/telegram-operations360-e2e-runbook.md. Ante contradicciones de prioridades o nomenclatura, aplicar este plan maestro; para requisitos de seguridad específicos, mantener el control más estricto.
+
+
+---
+
+## 23. Decisión operativa — sincronización financiera Holded una vez al día y resúmenes KIA (09/10/2026)
+
+**Decisión de Dirección:** cada empresa con conexión y consentimiento válidos sincronizará automáticamente sus datos financieros de Holded **una vez al día como frecuencia ordinaria**, los guardará en EXPERT y ofrecerá las mismas cifras a Dashboard Admin, Dashboard Cliente y KIA. **KIA no debe llamar a Holded por cada pregunta** ni cada visita al dashboard. Los informes y avisos diarios se derivarán de los datos locales y de Operations 360.
+
+### 23.1. Estado verificado y límite de lo existente
+
+Inspección del código y esquema de Supabase el 09/10/2026:
+
+- Existe \`public.client_accounting_records\` con \`integration_id\`, \`company_id\`, \`record_type\`, \`external_id\`, \`record_date\`, \`amount\`, \`currency\`, \`status\`, \`data\` y \`synced_at\`.
+- Existe \`public.accounting_period_snapshots\` con resúmenes trimestrales por empresa, ventas, compras, IVA, conteos y datos mensuales; existe \`accounting_anomalies\`. **Las tres tablas estaban vacías (0 filas) al comprobarlas**; las migraciones son estructura, no prueba de sincronización financiera activa.
+- El cron activo \`expert-holded-sync\` en Supabase pg_cron está programado \`15 7 * * *\`, pero **\`/api/cron/holded-sync\` procesa jobs de pedidos/suscripciones/facturación**, no obtiene diariamente el libro financiero de cada integración para snapshots. **No reutilizar su nombre como si fuera el nuevo importador financiero**.
+- También existe \`.github/workflows/holded-sync.yml\` con disparo cada 15 minutos al **mismo endpoint**. Antes de añadir programaciones, verificar qué rutas/disparadores están efectivamente activos para no duplicar llamadas ni alterar la cola financiera de facturas. El cron de pagos/órdenes debe seguir atendiendo reintentos; la frecuencia de lectura financiera se gestiona por separado.
+- El cron \`expert-daily-summary\` se programa a \`30 8 * * *\` y ya envía resumen administrativo; **extender/fusionar su contenido con el nuevo brief**, evitando un segundo correo/push equivalente. No presentar resúmenes diarios de clientes como ya implementados.
+- \`lib/holded/quarter-data.ts\`, \`lib/reports/report-generator.ts\` y tools KIA ya hacen lecturas directas al proveedor en determinados flujos; una vez validada la capa local, migrar esas lecturas a snapshots para consultas rutinarias, conservando únicamente refresh excepcional autorizado.
+- Documentación oficial Holded (consultada 09/10/2026): límites por minuto y cuota mensual por plan, compartidos por cuenta entre API keys; HTTP 429 y \`Retry-After\` / \`X-RateLimit-Remaining\`. La cuota comercial concreta de cada tenant debe verificarse, nunca suponerse ilimitada: https://www.holded.com/es/desarrolladores/limite-de-tasa y https://help.holded.com/es/articles/6896051-como-generar-y-usar-la-api-de-holded.
+
+**Importante:** ninguna tabla fue modificada y no se programó un cron nuevo en esta ampliación de documentación.
+
+### 23.2. Flujo de sincronización financiera diaria
+
+\`\`\`text
+pg_cron/worker (una ventana diaria, horario Europe/Madrid)
+  -> identificar integraciones Holded activas + consentimiento y scopes
+  -> claim idempotente POR (integration_id, company_id, fecha local, versión del sync)
+  -> presupuesto API por cuenta + control de concurrencia
+  -> leer cambios autorizados de Holded (cursor/paginación)
+  -> normalizar registros y verificar divisa, estado y completitud
+  -> upsert idempotente en client_accounting_records / staging validado
+  -> reconstruir accounting_period_snapshots + anomalies afectadas
+  -> comparar versión anterior y nueva para detectar hechos materiales
+  -> publicar snapshot completo de forma atómica, o conservar el anterior y marcar error
+  -> crear hechos de digest / alertas correlacionadas al batch
+  -> Admin + Cliente + KIA leen la MISMA capa local, cada uno filtrado por permisos
+\`\`\`
+
+- **Frecuencia normal:** una vez por día e integración autorizada; planificador separado de \`holded-sync\` (cola de facturación). Ventana configurable en madrugada/mañana de Madrid; calcular verano/invierno correctamente en vez de asumir que UTC y Madrid tienen siempre el mismo desfase. Priorizar que la sincronización esté finalizada antes del resumen matinal; si excede ventana, resumen marca pendiente y no declara datos actualizados.
+- **Integridad:** primera incorporación con backfill **único y acotado** según historial permitido; sincronizaciones posteriores incrementales cuando el endpoint lo soporte. Revisar una ventana retrospectiva configurable para facturas rectificadas, cobros tardíos y documentos que cambian de estado; reconciliación más amplia periódica, no descargar toda la historia diariamente. Registrar cursor/último corte por integración y tipo.
+- **No confundir publicación con fecha del hecho:** algo detectado hoy puede ser una factura antigua modificada. Los informes dirán «detectado en la sincronización de [fecha]» y mostrarán fechas documentales reales.
+- **Estados:** \`not_connected\`, \`permission_missing\`, \`queued\`, \`running\`, \`success\`, \`partial\`, \`failed\`, \`rate_limited\`, \`stale\`, \`unchanged\`. No sustituir un snapshot bueno por ceros tras fallo, cuota agotada o respuesta parcial. Registrar calidad/procedencia por métrica y \`last_success_at\` frente a \`last_attempt_at\`.
+- **Contratación y seguridad:** la conexión/consentimiento de Holded y el permiso de lectura del usuario son requisitos separados; no sincronizar datos bancarios o laborales sin autorización específica. Aislamiento por \`company_id + integration_id\` y por proveedor/cuenta; un token global de EXPERT no puede hacer que dos clientes compartan datos.
+- **Presupuesto API:** contabilizar peticiones por cuenta/proveedor/mes y por sync, fijar umbral de seguridad y colas limitadas. Respetar cabeceras Holded \`429\`/\`Retry-After\`, cuotas mensuales, backoff y jitter; limitar páginas y paralelismo. Reintentos de error técnico pueden añadir llamadas extraordinarias, pero el ciclo ordinario es único al día. Un sync manual excepcional requiere privilegio, auditoría, protección anti-repetición y advertencia de consumo de cuota.
+- **Scheduler escalable:** un cron desencadena la cola; los workers procesan integraciones por lotes, con lock/claim atómico, idempotencia e información sobre avance; nunca una petición HTTP que intente extraer todos los datos de todas las empresas en un único timeout. Elegir entre la infraestructura de colas existente y workflow durable después de verificar límites/operación; no añadir cron paralelo sin limpiar solapamientos.
+
+### 23.3. Política obligatoria: lectura cache-first en KIA y dashboards
+
+**Admin, Cliente y KIA usan un único servicio de lectura financiera interno** (véase §19), con fechas e indicadores normalizados; sin llamadas al API Holded en GET de dashboard ni en las tools KIA de consultas rutinarias. Una pregunta como «¿Cuánto hemos vendido este mes?» lee el snapshot más reciente y comunica periodo, moneda, \`as_of\`, cobertura y posible retraso. Si la pregunta pide «ahora mismo» y solo existe la captura de ayer, responder con honestidad («última actualización [fecha]»), sin inventar tiempo real.
+
+- Mostrar estado de frescura claro: \`fresh\` (sync diario correcto), \`stale\` (se superó ventana), \`partial\` (algunos datos faltan), \`unavailable\` (sin fuente autorizada). Umbrales exactos calibrados en piloto, no horas supuestas.
+- No confundir compras/facturas y resultado contable; beneficio real solo si existen datos P&L suficientemente completos y conciliados, conforme §19.2.
+- Separar histórico guardado de eventos operativos en tiempo real. Inbox/citas/tareas actualizan su estado cuando llegan; los indicadores Holded se actualizan al cierre de cada batch. Un usuario no debe creer que «ventas de hoy» están sincronizadas antes del siguiente batch.
+- Los productos que impliquen *escritura* en Holded siguen usando adaptadores autorizados, confirmación y auditoría; la política cache-first solo cubre consultas.
+- Entitlements/clientes sin conexión: sin cifras; no recuperar accidentalmente otras entidades por enlaces heredados.
+
+### 23.4. Resumen diario KIA — dos perspectivas, un mismo origen
+
+Generar **un artefacto diario por ámbito** (Admin/global autorizado o Cliente+empresa) a partir de snapshots publicados y eventos canónicos de Inbox 360, tareas, citas, expediente y auditorías relevantes. KIA aporta redacción/explicación, **no inventa hechos**. Distinguir explícitamente qué novedades son de la jornada operativa, qué diferencias financieras se **detectaron** respecto del sync previo, y qué requieren acción.
+
+| Vista | Contenido | Notificación |
+| --- | --- | --- |
+| **Admin «Mi jornada»** | Resumen multicliente permitido: mensajes humanos, leads, citas, tareas abiertas/vencidas, escalaciones, errores de sincronización y anomalías Holded por empresa; diferencias operativas desde el último cierre | Bandeja de avisos / resumen matinal consolidado; **push inmediato solo de novedades importantes**, no por cada respuesta KIA o cada factura |
+| **Cliente «Mi empresa»** | Por empresa vinculada: facturación, compras, cobros/pendientes si autorizados, cambios detectados desde última sync, documentos, citas, obligaciones, tareas y advertencias propias; sin datos internos de otros clientes | Resumen en dashboard siempre visible; push/email diario configurable por preferencias y base legítima de comunicación |
+| **KIA Copiloto** | Mismas cifras locales, explicaciones y capacidad de responder «¿qué cambió desde ayer?» con evidencia y marca temporal | No genera notificación espontánea por cada consulta; propone acción/tarea si reglas y permisos lo permiten |
+
+- **Ventana temporal:** por defecto, informe matinal de «jornada anterior + novedades disponibles del sync finalizado»; un sync matinal no permite afirmar conocer la evolución completa del mismo día aún en curso. Para avisos urgentes de correo, citas y trámites, utilizar eventos operativos en tiempo cercano al real, no esperar al sync financiero.
+- **Detección de relevancia:** reglas deterministas antes del LLM: nueva factura/abono, vencimiento o retraso, variaciones materiales por empresa, pago conciliado, error de conexión, saldo pendiente significativo, incumplimiento o fecha límite; umbrales configurables y sin inferir beneficio a partir de facturas. No insertar avisos de marketing ni deducir fraude de simples anomalías.
+- **Entrega:** un resumen por fecha/actor/scope con idempotency key; notificación push consolidada o crítica con deep link, delivery/retry y preferencias; no duplicar los avisos ya emitidos por Inbox 360 o \`daily-summary\`. Si no hay novedades, mostrar «sin cambios significativos» en Workspace y evitar push innecesario.
+- **Protección de datos:** cualquier texto de push muestra solo información apropiada para pantalla bloqueada; cifras o datos confidenciales requieren autenticación al abrir. Mantener variantes ES/RU y acceso por empresa. Guardar base/evidencia/estado del digest y qué hechos lo sustentan para corregir errores.
+- **Punto de envío:** tras confirmarse publicación de snapshots y completar el cálculo de diferencias; si Holded falla, enviar aviso de fallo a Admin y estado de «sin actualizar» al Cliente, sin resumen financiero falsamente actualizado.
+
+### 23.5. Orden técnico específico y pruebas
+
+**Implementar después de la aprobación de este plan**, integrándolo en P4–P6:
+
+1. **Auditoría del pipeline:** trazar invocaciones actuales Holded en KIA y dashboards; identificar todos los cron activos (pg_cron, GitHub Actions y otros), separar la cola de facturación del importador financiero y contabilizar uso API antes de cambiar lógica.
+2. **Poblar un caso piloto:** empresa autorizada con token únicamente de lectura financiera, job de importación/backfill acotado, comprobación contra documentos originales, deduplicación y protección de históricos. Las tablas vacías no acreditan éxito.
+3. **Activar ciclo diario por empresa** con estado por lote, límite de cuota, reconciliación y snapshot atómico. Probar \`429\`, expiración de credenciales, 403, pérdida de red, paginación, varias divisas y facturas/abonos rectificadas.
+4. **Migrar lecturas ordinarias:** un endpoint de métricas y tools KIA alimentados por snapshots, dos vistas Admin/Cliente con permiso propio; sin tocar compras/cobros si no hay consentimiento.
+5. **Conectar diferencias y digest:** materializar eventos financieros relevantes solo tras actualización completa, asociar a Hoja Registral cuando proceda, reutilizar \`daily-summary\` y notificaciones existentes; grupos de envío y silencio sin novedades. Evitar crear tareas financieras automáticas si solo existe una señal poco fiable.
+6. **Pruebas E2E:** 2 empresas del mismo cliente con tokens distintos; Admin con acceso delegado y cliente de solo lectura; 0 llamadas Holded en diez consultas de chat/dashboard repetidas; un sync ordinario diario por integración; fallos mantienen snapshot anterior; doble ejecución del cron no duplica datos/avisos; resultado y diferencial documental diferenciados; zona horaria Madrid y ES/RU verificados.
+
+**Definition of Done adicional:** poder contestar «últimos datos sincronizados y origen» por cada empresa; ver cuentas de API consumidas y presupuesto restante; historial de sync, errores, aviso emitido y actor; dashboard Admin y Cliente comparten fuente consistente; KIA contesta sin invocar Holded en lecturas rutinarias.
+
+### Historial de esta decisión
+
+- 09/10/2026 (Holded daily-cache): **una sincronización financiera por empresa y día**, datos canónicos en EXPERT, KIA/dashboard local-first y resúmenes diarios diferenciados Admin/Cliente; activar por piloto tras comprobaciones. No confundir el cron previo de facturas con el nuevo importador.
