@@ -1,6 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import {
-  createExpertHoldedGateway,
   createHoldedGatewayForIntegration,
   listHoldedBankAccounts,
   listHoldedBankMovements,
@@ -11,7 +10,6 @@ import {
 import { resolveKiaCompanyHoldedAccess } from './kia-holded-access';
 import type { KiaContext } from './kia-context-builder';
 import type { KiaToolResult } from './kia-tool-definitions';
-import { EXPERT_IDENTITY } from '@/config/identity';
 import { prepareKiaJournalProposal, type KiaJournalLineInput } from './kia-journal-proposals';
 
 export type KiaAccountingToolName =
@@ -35,34 +33,32 @@ export const ACCOUNTING_TOOL_NAMES = new Set<KiaAccountingToolName>([
 
 type Raw = Record<string, unknown>;
 
-export function isExpertGlobalHoldedContext(context: KiaContext): boolean {
-  return context.company?.taxId?.trim().toUpperCase() === EXPERT_IDENTITY.taxId;
-}
-
+/**
+ * The legacy global HOLDED_API_KEY is for the advisory workspace, not the
+ * accounting of EXPERT ESTUDIOS PROFESIONALES. Resolve every KIA read from the
+ * explicitly authorized Company 360 integration, including EXPERT itself.
+ */
 async function resolveAccountingGateway(
   context: KiaContext,
   requiredPermission: 'salesInvoices' | 'purchaseInvoices' | 'bankMovements',
 ): Promise<
-  | { ok: true; gateway: HoldedGateway; source: 'expert_global' | 'client_integration' }
+  | { ok: true; gateway: HoldedGateway; source: 'client_integration' }
   | { ok: false; error: string }
 > {
-  if (isExpertGlobalHoldedContext(context)) {
-    try {
-      return { ok: true, gateway: await createExpertHoldedGateway(), source: 'expert_global' };
-    } catch {
-      return { ok: false, error: 'La cuenta global de Holded de EXPERT no está configurada en este entorno.' };
-    }
-  }
-
   const admin = getSupabaseAdmin();
   const access = await resolveKiaCompanyHoldedAccess(admin, context, requiredPermission);
   if (!access.ok) return { ok: false, error: access.error };
 
-  return {
-    ok: true,
-    gateway: await createHoldedGatewayForIntegration(access.access.integrationId),
-    source: 'client_integration',
-  };
+  try {
+    const gateway = await createHoldedGatewayForIntegration(access.access.integrationId);
+    if (gateway.metadata.companyId !== access.access.companyId) {
+      return { ok: false, error: 'La conexión Holded no corresponde a la empresa autorizada.' };
+    }
+    return { ok: true, gateway, source: 'client_integration' };
+  } catch (error) {
+    console.error('[KIA accounting] Holded integration resolution failed', error);
+    return { ok: false, error: 'No se pudo abrir la conexión Holded de la empresa seleccionada.' };
+  }
 }
 
 function ok(toolName: string, result: Record<string, unknown>): KiaToolResult {
@@ -372,9 +368,7 @@ export async function executeKiaAccountingTool(
   context: KiaContext,
 ): Promise<KiaToolResult> {
   const limit = Number(args.limit ?? 20);
-  const source = isExpertGlobalHoldedContext(context)
-    ? 'holded_expert_global'
-    : 'holded_client_integration';
+  const source = 'holded_client_integration';
 
   if (toolName === 'prepare_journal_entry_proposal') {
     const companyId = context.company?.id;
