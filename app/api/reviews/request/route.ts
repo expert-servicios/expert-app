@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     const html = `<div lang="${locale}" style="font-family:Arial,sans-serif;color:#172232;line-height:1.6"><h2>${title}</h2><p>${intro}</p><p>${optional}</p><p><a href="${href}" style="background:#172232;color:#fff;padding:12px 20px;text-decoration:none;border-radius:8px;display:inline-block">${button}</a></p><p style="font-size:12px;color:#555">${locale==='ru'?'Ссылка действительна 30 дней.':'Enlace válido durante 30 días.'}</p></div>`;
     const idempotencyKey=`case/review-request/${caseId}`;
     const sent = await sendEmailOnce({
-      to:email, eventType:'case.review_request', subject:locale==='ru'?'Руслана — оцените работу EXPERT':title,
+      to:email, eventType:'case.review_request', subject:title,
       html, idempotencyKey, metadata:{caseId,case_id:caseId,client_id:caseRow.client_id,preferred_language:locale,kia_author:true,kia_contextual_cta:false},
     });
     return NextResponse.json({ok:true,sent:sent.sent,requestCreated:!existing,idempotent:!sent.sent});
