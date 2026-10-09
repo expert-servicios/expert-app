@@ -35,9 +35,21 @@ export async function GET(request: NextRequest, { params }: Params) {
       .order('created_at', { ascending: false })
       .limit(40);
     if (error) throw error;
+    const actorIds = [...new Set((data ?? []).map((row) => row.actor_id).filter((value): value is string => Boolean(value)))];
+    const actorNames = new Map<string, string>();
+    if (actorIds.length) {
+      const { data: actors, error: actorLookupError } = await ctx.admin.from('profiles')
+        .select('id,full_name,email')
+        .in('id', actorIds);
+      if (actorLookupError) throw actorLookupError;
+      for (const actor of actors ?? []) {
+        actorNames.set(actor.id, actor.full_name || actor.email || actor.id);
+      }
+    }
     const events = (data ?? []).map((row) => ({
       id: row.id,
       actorId: row.actor_id,
+      actorName: actorNames.get(row.actor_id ?? '') ?? 'Cuenta administrativa',
       action: row.action,
       companyId: (row.metadata as Record<string, unknown> | null)?.company_id ?? null,
       platform: (row.metadata as Record<string, unknown> | null)?.platform ?? 'Desconocido',
