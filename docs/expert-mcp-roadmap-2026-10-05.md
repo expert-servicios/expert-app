@@ -1,5 +1,9 @@
 # EXPERT MCP — arquitectura y roadmap
 
+## Estado de prioridad — 09/10/2026
+
+**Aplazado por decisión de dirección.** No activar el puente OAuth EXPERT, publicar nuevas herramientas, ni habilitar escrituras MCP en producción hasta retomar expresamente el proyecto. Conservar el servidor `apps/holded-mcp`, la arquitectura y la PR #682 como trabajo preparatorio sin release. Prioridad inmediata: reparación de reservas públicas (`/cita` y `/api/booking/*`).
+
 Fecha: 2026-10-05
 
 ## Visión
