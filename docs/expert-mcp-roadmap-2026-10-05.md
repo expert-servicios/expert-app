@@ -2,7 +2,7 @@
 
 ## Estado de prioridad — 09/10/2026
 
-**Aplazado por decisión de dirección.** No activar el puente OAuth EXPERT, publicar nuevas herramientas, ni habilitar escrituras MCP en producción hasta retomar expresamente el proyecto. Conservar el servidor `apps/holded-mcp`, la arquitectura y la PR #682 como trabajo preparatorio sin release. Prioridad inmediata: reparación de reservas públicas (`/cita` y `/api/booking/*`).
+**Reactivado por decisión de dirección el 09/10/2026, exclusivamente para un piloto controlado.** Reutilizar `apps/holded-mcp` y HoldedGateway; no activar puentes OAuth ni escrituras en producción sin pruebas de tenant, aprobación y rollback. La PR #682 se ha fusionado para validar el servidor MCP en CI.
 
 Fecha: 2026-10-05
 
@@ -245,3 +245,26 @@ Preparar EXPERT MCP para distribución más amplia:
 6. EXPERT MCP reutiliza HoldedGateway y no almacena credenciales Holded propias.
 
 Después del piloto se habilita DGM como segunda empresa de validación, inicialmente read-only.
+
+
+## Anexo 09/10/2026 — piloto de copia contable y paridad MCP/KIA
+
+**Escenario real:** EXPERT ESTUDIOS PROFESIONALES SLU es una sola persona jurídica. Su cuenta Holded con contabilidad real (Expert Consulting) está conectada a la aplicación EXPERT con integración API v2 `expert_account` y modo `read_only`. La cuenta Holded de asesoría prácticamente vacía está conectada mediante MCP oficial a ChatGPT, para pruebas. Estas conexiones **no comparten credenciales, tokens OAuth ni permisos**. No asumir que existen dos conectores nativos de ChatGPT.
+
+**Decisión sobre la doble integración:** mantener una única integración Holded canónica productiva en `client_integrations` para la empresa, sin duplicar filas de `companies` ni seleccionar la conexión de prueba por CIF. El entorno de pruebas es una credencial/contexto de **laboratorio separado**, solo utilizable mediante endpoints protegidos y feature flag de prueba; no permitir fallback entre conexiones ni incorporarlo al dashboard financiero oficial. Si para automatizar KIA resulta imprescindible persistir ambas conexiones en EXPERT, diseñar después un `integration_environment`/alias con restricción única (company, provider, environment), selector explícito y pruebas antes de cambiar el modelo canónico. No crear una segunda entidad fiscal.
+
+**Origen y destino:** Expert Consulting = solo lectura para extracción aprobada; cuenta Holded conectada al MCP nativo = destino sandbox. Antes de importar, comprobar identidad de ambas cuentas por una prueba de lectura no destructiva y verificar que el destino no contiene información fiscal real que pueda confundirse. El MCP propio `apps/holded-mcp` está inicialmente en modo standalone y dispone de lecturas y `create_invoice_draft` únicamente. `lib/integrations/holded/holded-v2-client.ts` es actualmente sobre todo lector. Ninguno constituye por sí solo un clonador contable.
+
+**No replicar indiscriminadamente facturas originales:** una duplicación de facturas emitidas o asientos en una cuenta real de Holded puede generar numeración, obligaciones fiscales, VeriFactu, comunicaciones o conciliaciones erróneas. Primero crear una **copia lógica anonimizada** con etiquetas TEST y sin envío/validación fiscal ni datos personales, usando entidades ficticias y borradores no aprobados. La cuenta de destino debe ser formalmente apta para estas pruebas. Si no puede garantizarse, usar fixtures locales de integración en lugar de publicar documentos.
+
+**Matriz de pruebas por etapas:**
+1. Verificar perfiles/cuentas y permisos del MCP oficial; inventariar lecturas y escrituras realmente disponibles, sin deducir permisos de la mera presencia de la tool.
+2. Leer muestra de origen (número de contactos, facturas, compras, mayor, saldos, impuestos y serie); extraer inventario/manifest con recuentos y checksums sin modificar origen.
+3. Seleccionar dataset limitado y desidentificado que ejercite contactos, compras, ventas, pagos simulados, abonos y asientos; comparar capacidad de restauración y efectos en serie y reporting.
+4. Crear primero contacto ficticio y borrador de factura por el MCP oficial (aprobación explícita) y verificar read-back. No enviar, aprobar ni contabilizar documento fiscal.
+5. Implementar los mismos **servicios de dominio versionados** en HoldedGateway; compartirlos con KIA y EXPERT MCP mediante adapters, sin realizar operaciones externas por SQL, HTTP arbitrario ni prompts.
+6. Para KIA, usar política **detected ∩ enabled ∩ actor grant ∩ environment**, con autorización en cada llamada, vista previa de diff, confirmación, idempotencia y log `integration_sync_events`. El usuario puede revocar permisos de lectura existentes; las escrituras deben permanecer desactivadas por defecto hasta añadir un catálogo supervisado por operación.
+7. Ejecutar suite comparativa con mismo fixture en MCP nativo y KIA (listado, documento, contacto, draft, invalidación de permisos, retries y errores). Medir igualdad semántica, no igualdad de IDs generados.
+8. Después, evaluar importación ampliada **solo si** el sandbox es legal/técnicamente seguro, existe copia de seguridad, plan de borrado y evidencia de no emisión ni envíos; nunca habilitar sincronización bidireccional hacia producción.
+
+**Criterios:** cero escrituras sobre origen; ningún dato de prueba en dashboard cliente real; cero cruces de tenant; los cambios de permisos se reflejan en KIA; toda operación queda auditada; la conexión de prueba no se confunde con la canónica. No se ha iniciado ninguna copia o importación en este anexo.
