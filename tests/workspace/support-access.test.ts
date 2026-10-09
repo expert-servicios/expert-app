@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   from: vi.fn(),
   stored: [] as Array<Record<string, unknown>>,
+  auditEvents: [] as Array<Record<string, unknown>>,
   actorRole: 'admin',
   actorStatus: 'active',
   subjectExists: true,
@@ -41,9 +42,11 @@ function query(table: string) {
   const chain = {
     select: (_fields?: string) => chain,
     eq: (field: string, value: string) => { if (field === 'id') id = value; return chain; },
-    in: () => chain,
+    in: () => table === 'profiles'
+      ? Promise.resolve({ data: [{ id: ACTOR, full_name: 'Operadora EXPERT', email: 'test@example.com' }], error: null })
+      : chain,
     order: () => chain,
-    limit: async () => ({ data: [], error: null }),
+    limit: async () => ({ data: mocks.auditEvents, error: null }),
     maybeSingle: async () => {
       if (table === 'profiles') {
         if (id === ACTOR) return { data: { id: ACTOR, role: mocks.actorRole, status: mocks.actorStatus }, error: null };
@@ -63,6 +66,7 @@ function query(table: string) {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.stored.length = 0;
+  mocks.auditEvents.length = 0;
   mocks.actorRole = 'admin';
   mocks.actorStatus = 'active';
   mocks.subjectExists = true;
@@ -143,6 +147,22 @@ describe('Admin delegated support API', () => {
     mocks.actorRole = 'client';
     const response = await GET(new NextRequest(`https://expertconsulting.es/api/admin/clientes/${SUBJECT}/support-access`), params);
     expect(response.status).toBe(403);
+  });
+
+  it('returns an actor-attributed and sanitized audit history', async () => {
+    mocks.auditEvents.push({
+      id: '44444444-4444-4444-8444-444444444444',
+      actor_id: ACTOR,
+      action: 'workspace.support.entered',
+      metadata: { company_id: COMPANY, browser: 'Chrome', platform: 'Windows', user_agent: 'private-hint' },
+      created_at: '2026-10-09T18:00:00Z',
+    });
+    const response = await GET(new NextRequest(`https://expertconsulting.es/api/admin/clientes/${SUBJECT}/support-access`), params);
+    expect(response.status).toBe(200);
+    const json = await response.json();
+    expect(json.events).toHaveLength(1);
+    expect(json.events[0]).toMatchObject({ actorId: ACTOR, actorName: 'Operadora EXPERT', platform: 'Windows', browser: 'Chrome' });
+    expect(json.events[0]).not.toHaveProperty('user_agent');
   });
 
   it('supports auditing personal context without a company', async () => {
