@@ -15,6 +15,7 @@ const COPY = {
     reviews: (count: number) => `${count} valoración${count === 1 ? '' : 'es'} verificadas`,
     anonymous: 'Cliente EXPERT',
     policy: 'Cómo verificamos y moderamos las reseñas',
+    translated: 'Traducción automática · Ver original',
   },
   ru: {
     heading: 'Отзывы клиентов',
@@ -22,6 +23,7 @@ const COPY = {
     reviews: (count: number) => `${count} проверенн${count === 1 ? 'ый отзыв' : 'ых отзыва'}`,
     anonymous: 'Клиент EXPERT',
     policy: 'Как мы проверяем и модерируем отзывы',
+    translated: 'Автоматический перевод · Оригинал',
   },
 } as const;
 
@@ -72,7 +74,8 @@ export async function ServiceRatingSummary({
           <div className="mt-4 space-y-3 border-t border-[#D4A017]/15 pt-4">
             {summary.reviews.map((review) => (
               <blockquote key={review.id} className="text-sm leading-6 text-[#23364D]">
-                <span aria-hidden="true">“</span>{review.comment}<span aria-hidden="true">”</span>
+                <span aria-hidden="true">“</span>{review.commentTranslations?.[locale] || review.comment}<span aria-hidden="true">”</span>
+                {review.commentTranslations?.[locale] && review.commentTranslations[locale] !== review.comment && <details className="mt-1 text-xs text-[#23364D]/65"><summary className="cursor-pointer">{copy.translated}</summary><p className="mt-1">{review.comment}</p></details>}
                 <footer className="mt-1 text-xs font-semibold text-[#0D1B2A]">
                   {copy.anonymous}
                 </footer>

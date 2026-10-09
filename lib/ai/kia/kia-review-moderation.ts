@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { notifyKiaAdminEscalation } from '@/lib/admin/kia-admin-escalation';
+import { translateApprovedReview } from './kia-review-translations';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { runKiaProviderRequest } from './kia-provider-router';
 
@@ -182,6 +184,22 @@ export async function moderateReviewByKia(reviewId: string): Promise<void> {
   if (updateError) {
     console.error('[KIA review moderation] update failed', updateError);
     return;
+  }
+
+  if (status === 'approved' && published && commentPublishable) {
+    await translateApprovedReview(reviewId).catch((e) => console.error('[reviews] translation failed', e));
+  }
+
+  if (moderationStatus === 'hold_for_review') {
+    await notifyKiaAdminEscalation({
+      title: 'Reseña pendiente de revisión',
+      summary: `Una opinión verificada necesita revisar el comentario. Motivo: ${decision.reason}`,
+      actionTaken: 'Estrellas verificadas contabilizadas; comentario oculto hasta revisión.',
+      interventionNeeded: 'Revisar el texto del comentario desde el panel de reseñas.',
+      url: '/admin/resenas?status=pending',
+      eventRef: `review-moderation/${reviewId}`,
+      priority: 'high',
+    }).catch((e) => console.error('[reviews] admin escalation failed', e));
   }
 
   await admin.from('audit_logs').insert({
