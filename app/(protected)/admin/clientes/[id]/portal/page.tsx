@@ -51,6 +51,7 @@ type ClientData = {
 type SupportAuditEntry = {
   id: string;
   actorId: string;
+  actorName: string;
   action: string;
   companyId: string | null;
   platform: string;
@@ -365,7 +366,7 @@ export default function AdminClientPortalPage() {
                     entry.action === 'workspace.support.exited' ? 'Salida' : 'Cambio de entidad'}
                   {entry.companyId ? ` · ${data.companies.find((company) => company.id === entry.companyId)?.name ?? entry.companyId}` : ' · Personal'}
                 </span>
-                <span className="text-[#52606d]">{entry.browser} / {entry.platform} · {new Date(entry.createdAt).toLocaleString('es-ES')}</span>
+                <span className="text-[#52606d]">Por {entry.actorName} · {entry.browser} / {entry.platform} · {new Date(entry.createdAt).toLocaleString('es-ES')}</span>
               </div>
             ))}
           </div>
