@@ -19,59 +19,102 @@ const EMPTY_SUMMARY: PublicServiceReviewSummary = {
   count: 0,
   reviews: [],
 };
+const PAGE_SIZE = 1000;
+const CASE_BATCH_SIZE = 100;
 
 /**
- * Counts every approved verified rating; displays comments only with explicit permission.
- * Fail-closed: public service pages must keep rendering if Supabase is unavailable.
+ * Single source of truth for ratings on the public listing and detail pages.
+ * Only verified, approved reviews from a case with the exact service_id count.
+ * Stars are independent of permission to publish a written comment.
+ *
+ * Query in batches to avoid N+1 database requests on public catalog grids.
+ * Fail closed if a batch is unavailable; never show invented ratings.
  */
+export async function getPublicServiceReviewSummaries(
+  serviceSlugs: readonly string[],
+): Promise<Record<string, PublicServiceReviewSummary>> {
+  const uniqueSlugs = [...new Set(serviceSlugs.filter(Boolean))];
+  const empty = () => Object.fromEntries(uniqueSlugs.map((slug) => [
+    slug, { ...EMPTY_SUMMARY, reviews: [] },
+  ])) as Record<string, PublicServiceReviewSummary>;
+  if (!uniqueSlugs.length) return {};
+
+  try {
+    const admin = getSupabaseAdmin();
+    const caseToSlug = new Map<string, string>();
+    for (let offset = 0; ; offset += PAGE_SIZE) {
+      const { data, error } = await admin
+        .from('cases')
+        .select('id,service_id')
+        .in('service_id', uniqueSlugs)
+        .order('id', { ascending: true })
+        .range(offset, offset + PAGE_SIZE - 1);
+      if (error) throw error;
+      for (const row of data ?? []) {
+        if (row.service_id && uniqueSlugs.includes(row.service_id)) {
+          caseToSlug.set(row.id, row.service_id);
+        }
+      }
+      if (!data || data.length < PAGE_SIZE) break;
+    }
+
+    const summaries = empty();
+    const sums = new Map<string, number>();
+    const caseIds = [...caseToSlug.keys()];
+    for (let start = 0; start < caseIds.length; start += CASE_BATCH_SIZE) {
+      const batchIds = caseIds.slice(start, start + CASE_BATCH_SIZE);
+      for (let offset = 0; ; offset += PAGE_SIZE) {
+        const { data, error } = await admin
+          .from('reviews')
+          .select('id,case_id,rating,comment,comment_publishable,allow_publish,published,created_at,featured')
+          .in('case_id', batchIds)
+          .eq('status', 'approved')
+          .order('id', { ascending: true })
+          .range(offset, offset + PAGE_SIZE - 1);
+        if (error) throw error;
+        for (const review of data ?? []) {
+          const slug = caseToSlug.get(review.case_id);
+          const summary = slug ? summaries[slug] : undefined;
+          if (!summary) continue;
+          const rating = Number(review.rating);
+          if (!Number.isInteger(rating) || rating < 1 || rating > 5) continue;
+          summary.count += 1;
+          sums.set(slug!, (sums.get(slug!) ?? 0) + rating);
+          const comment = review.allow_publish === true &&
+            review.published === true &&
+            review.comment_publishable === true &&
+            typeof review.comment === 'string'
+              ? review.comment.trim()
+              : '';
+          if (comment) summary.reviews.push({
+            id: review.id,
+            rating,
+            comment,
+            createdAt: review.created_at,
+            featured: Boolean(review.featured),
+          });
+        }
+        if (!data || data.length < PAGE_SIZE) break;
+      }
+    }
+
+    for (const [slug, summary] of Object.entries(summaries)) {
+      if (summary.count) summary.average = (sums.get(slug) ?? 0) / summary.count;
+      summary.reviews = summary.reviews
+        .sort((a, b) => Number(b.featured) - Number(a.featured) ||
+          b.createdAt.localeCompare(a.createdAt))
+        .slice(0, 3);
+    }
+    return summaries;
+  } catch (error) {
+    console.error('[public-service-reviews]', error);
+    return empty();
+  }
+}
+
 export async function getPublicServiceReviewSummary(
   serviceSlug: string,
 ): Promise<PublicServiceReviewSummary> {
-  try {
-    const admin = getSupabaseAdmin();
-
-    const { data: cases, error: casesError } = await admin
-      .from('cases')
-      .select('id')
-      .eq('service_id', serviceSlug)
-      .order('opened_at', { ascending: false })
-      .limit(300);
-
-    if (casesError || !cases?.length) return EMPTY_SUMMARY;
-
-    const caseIds = cases.map((item) => item.id);
-
-    const { data: reviews, error: reviewsError } = await admin
-      .from('reviews')
-      .select('id,rating,comment,comment_publishable,allow_publish,published,created_at,featured')
-      .in('case_id', caseIds)
-      .eq('status', 'approved')
-      .order('featured', { ascending: false })
-      .order('created_at', { ascending: false })
-      .limit(1000);
-
-    if (reviewsError || !reviews?.length) return EMPTY_SUMMARY;
-
-    const normalized = reviews.map((review) => ({
-      id: review.id,
-      rating: Number(review.rating),
-      comment: review.comment_publishable === true && review.allow_publish === true && review.published === true && typeof review.comment === 'string' && review.comment.trim()
-        ? review.comment.trim()
-        : null,
-      createdAt: review.created_at,
-      featured: Boolean(review.featured),
-    }));
-
-    const average =
-      normalized.reduce((total, review) => total + review.rating, 0) / normalized.length;
-
-    return {
-      average: Math.round(average * 10) / 10,
-      count: normalized.length,
-      reviews: normalized.filter((review) => review.comment).slice(0, 3),
-    };
-  } catch (error) {
-    console.error('[public-service-reviews]', error);
-    return EMPTY_SUMMARY;
-  }
+  const summaries = await getPublicServiceReviewSummaries([serviceSlug]);
+  return summaries[serviceSlug] ?? EMPTY_SUMMARY;
 }
