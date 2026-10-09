@@ -55,7 +55,7 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
   const [error, setError] = useState('');
 
   const isActive = integration?.status === 'active';
-  const isManagedByExpert = integration?.mode === 'advisor_managed' || integration?.api_version === 'v2';
+  const isManagedByExpert = integration?.mode === 'advisor_managed' || integration?.mode === 'expert_account';
   const guidance = resolveHoldedIntegrationGuidance({
     integrationStatus: integration?.status ?? null,
     phase: disconnecting ? 'disconnecting' : phase,
@@ -175,6 +175,7 @@ export function HoldedConnectionCard({ integration: initialIntegration, companyI
           </div>
         )}
 
+        <div className="flex flex-wrap gap-3 text-xs"><a className="text-[#c88b25] underline" href="/docs/conectar-holded-kia-token-api-v2">Crear token</a><a className="text-[#c88b25] underline" href="/docs/permisos-holded-kia-lectura-escritura">Permisos necesarios</a><a className="text-[#c88b25] underline" href="/docs/actualizar-permisos-token-holded-kia">Modificar permisos</a></div>
         {/* Permissions */}
         <div className="rounded-2xl border border-[#e8dfc8] bg-[#faf9f6] p-5">
           <HoldedPermissionStatus permissions={integration.permissions_enabled ?? integration.permissions_detected} />
