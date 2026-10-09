@@ -44,6 +44,21 @@ describe('KIA Accounting phase 2 authorization', () => {
   });
 });
 
+describe('KIA Admin bank evidence safety', () => {
+  it('restricts full bank reads to admins and includes already reconciled bank movements', () => {
+    const file = fs.readFileSync('lib/ai/kia/kia-accounting-tools.ts','utf8');
+    const registry = fs.readFileSync('lib/ai/kia/kia-tool-registry.ts','utf8');
+    expect(file).toContain("toolName === 'get_bank_payment_evidence'");
+    expect(file).toContain('pendingOnly: false');
+    expect(file).toContain("resolveAccountingGateway(context, 'bankMovements')");
+    expect(file).toContain('invoicePaymentConfirmed: false');
+    expect(registry).toContain('get_bank_payment_evidence:');
+    expect(getKiaToolPolicy('get_bank_payment_evidence')).toMatchObject({
+      effect: 'read', riskTier: 'R1', allowedChannels: ['admin'],
+    });
+  });
+});
+
 describe('KIA Accounting Holded document semantics', () => {
   it('preserves explicit zero pending balance and payment totals', () => {
     const paid = { status: 1, total: 121, paymentsTotal: 121, paymentsPending: 0 };
