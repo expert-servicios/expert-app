@@ -20,6 +20,60 @@ El Panel Admin debe ser un **espacio operativo único**, intuitivo para una pers
 
 ## Experiencia objetivo
 
+## Requisito transversal — interactividad completa de todas las fichas (decisión 09/10/2026)
+
+**Ninguna ficha será una pantalla informativa sin acciones.** El panel debe permitir navegar, operar y relacionar registros desde el dato que el usuario está viendo, sin regresar al menú principal ni recorrer páginas interminables. **Documentado para fase futura; no implementar ahora.**
+
+### Comportamiento de elementos y enlaces
+
+- **Nombre de cliente/persona:** abre su ficha 360 (drawer o ruta completa según complejidad) sin perder búsqueda, filtros ni entidad activa.
+- **Nombre de empresa:** abre Company 360; desde allí, acceder a personas vinculadas, expedientes, tareas, comunicaciones, documentos, facturación, bancos e integraciones.
+- **Contabilidad, libros, balances, facturas, cobros, pagos y bancos:** cada indicador o cifra enlaza directamente con la vista contable correspondiente **de la empresa seleccionada**, mostrando la fuente (Holded/Stripe/EXPERT) y las acciones permitidas; nunca mezclar tenants.
+- **Nombre de expediente, documento, correo, cita, tarea, presupuesto o factura:** abre el registro original con su contexto, historial y acciones, no una tarjeta estática.
+- **Relaciones y referencias cruzadas:** enlaces persona ↔ empresa ↔ expediente ↔ documentos ↔ contabilidad ↔ movimientos ↔ tareas ↔ comunicaciones; navegación de ida/vuelta con filtros y posición preservados.
+- **Acciones visibles:** botón o menú contextual claramente identificable en cada fila/ficha, con accesos por teclado y en móvil; evitar iconos ambiguos y enlaces que aparenten funcionar sin hacerlo.
+
+### Operaciones de gestión que deben contemplarse (CRUD y productividad)
+
+| Módulo | Acciones esperadas (según rol, estado del registro y normativa) |
+| --- | --- |
+| Personas y clientes | Crear nuevo, abrir, editar datos permitidos, activar/desactivar, vincular/desvincular empresas, ver expedientes y comunicaciones, exportar datos autorizados |
+| Empresas | Crear, abrir, editar campos autorizados, enlazar personas/servicios/tenants, ver contabilidad e impuestos, archivar bajo controles, exportar ficha o listado |
+| Expedientes | Crear, abrir, editar, asignar responsable, añadir hitos, enlazar documentos y correos, cerrar/reabrir con justificación, generar resumen, exportar |
+| Tareas y citas | Crear, editar, reasignar, reprogramar, completar con evidencia, enlazar al registro de origen, cancelar conforme a permisos y exportar |
+| Documentos | Subir, crear entregables, previsualizar, descargar, enlazar, clasificar, sustituir mediante versiones y archivar, con acceso temporal seguro |
+| Facturación/contabilidad/bancos | Abrir origen, filtrar, conciliar o preparar propuestas **solo cuando esté expresamente autorizado**, exportar Excel, acceder a facturas/asientos/justificantes; no ejecutar escrituras o borrados automáticos |
+| Integraciones | Abrir configuración y estado, probar lectura, consultar permisos y sincronizaciones, enlazar o desconectar con confirmación y auditoría |
+| Comunicaciones | Ver hilo y adjuntos, responder/reenviar si procede, crear tarea o expediente, vincular cliente/empresa, filtrar y exportar según RGPD |
+
+- Menús contextuales estándar: **Abrir, Nuevo, Editar, Modificar, Vincular, Desvincular, Duplicar cuando tenga sentido, Archivar/Eliminar cuando proceda, Compartir si está autorizado, Exportar**. Mostrar únicamente las acciones realmente implementadas y permitidas.
+- **Crear nuevo** contextual (empresa desde cliente, tarea desde expediente, documento desde empresa, etc.), heredando contexto correctamente sin inventar datos.
+- **Edición de registros individuales** en modal/drawer compacto, con validaciones, guardar/cancelar, indicador de cambios no guardados y confirmación de salida.
+- **Acciones masivas** para tablas filtradas cuando tengan sentido: selección múltiple, cambios seguros en lote, exportación filtrada y permisos diferenciados; nunca modificar otro tenant por selección accidental.
+- **Exportar a Excel (.xlsx)** como capacidad estándar de tablas y listados (personas, empresas, tareas, expedientes, documentos, facturas y bancos), exportando solo filas/columnas autorizadas y los filtros visibles. CSV opcional. Incluir encabezados, fechas/monedas en formato español, trazabilidad de la exportación y controles de privacidad.
+- La exportación debe generarse en servidor cuando el volumen sea alto; no descargar miles de registros al navegador ni exponer campos ocultos.
+
+### Seguridad y ergonomía de operaciones
+
+- **Eliminar no es siempre borrar:** registros financieros, contables, fiscales, registrales y con obligaciones de conservación deben protegerse; ofrecer anulación, archivo, rectificación, sustitución o baja lógica según reglas. Históricos nunca se reescriben silenciosamente.
+- Confirmación explícita para eliminar, desactivar, desvincular, enviar comunicaciones, escrituras contables, conciliaciones y acciones no reversibles; vista previa de consecuencias, impacto sobre relaciones y auditoría de quién/cuándo/qué cambió.
+- Proteger NIF/CIF y demás datos oficiales verificados; mostrar fuente y mecanismo de rectificación en lugar de edición libre.
+- RBAC y permisos por empresa, rol y acción aplicados **en servidor** (no solo deshabilitando botones). Acciones no autorizadas se ocultan o explican, nunca ejecutan.
+- **KIA puede abrir la ficha o preparar una propuesta** desde el contexto seleccionado; necesita confirmación humana para operaciones sensibles y debe mostrar el resultado verificable.
+- Enlaces profundos coherentes con IDs canónicos; preservar contexto al cerrar panel/modal, recargar o volver. Soporte teclado, foco, estados de carga, errores recuperables y confirmación de guardado.
+
+### Pruebas de aceptación específicas
+
+1. Hacer clic en el nombre de cliente abre la ficha correcta; desde la ficha abrir su empresa y regresar sin repetir la búsqueda.
+2. Pulsar «Contabilidad» de EXPERT abre **su propio** tenant «Expert Consulting», nunca el de asesorías; DGM abre el entorno que le corresponda.
+3. Desde una fila, crear y editar un registro autorizado con guardado validado; abrir el mismo registro desde otra sección refleja el cambio.
+4. Desde un expediente, enlazar documento/correo/tarea y comprobar que la relación se ve desde ambos extremos sin duplicados.
+5. Exportar a Excel el resultado de un filtro de 500+ registros respetando permisos y columnas, con archivo legible y totales correctos.
+6. Las acciones de archivar, eliminar o desvincular muestran impacto y, cuando proceda, impiden borrar históricos financieros.
+7. KIA guía a una persona nueva hasta el módulo correcto y prepara una acción sin ejecutarla si requiere autorización.
+8. Todo botón y enlace visible funciona realmente, devuelve feedback y tiene pruebas; sin acciones decorativas, rutas rotas ni formularios que se expandan indefinidamente.
+
+
 ### 1. Directorio como punto de entrada
 
 - **Tabla compacta por defecto**, una fila por persona o empresa; opcionalmente vista de tarjetas, no predeterminada.
@@ -81,7 +135,7 @@ El Panel Admin debe ser un **espacio operativo único**, intuitivo para una pers
 - **F0 — Auditoría de UX:** inventario de rutas, capturas desktop/móvil, roles, puntos de duplicidad, métricas de tareas reales, prototipo sin migraciones.
 - **F1 — Directorio compacto:** tabla, filtros, búsqueda, acciones por fila, estados, acceso de teclado y deep links.
 - **F2 — Fichas 360 y navegación:** cabecera compacta, pestañas, drawers/modales, retorno contextual, selector multi-entidad.
-- **F3 — Edición controlada y enlaces:** editar datos administrativos, relaciones persona-empresa, enlace a expediente/banco/factura, proteger datos registrales.
+- **F3 — Fichas totalmente interactivas y operaciones controladas:** CRUD contextual, vínculos bidireccionales persona/empresa/expediente/contabilidad, edición, creación, archivo/borrado condicionado, exportación Excel y acciones por fila, con permisos y auditoría.
 - **F4 — Copiloto KIA + QA:** panel compacto, guía contextual, tareas orientadas a roles, accesibilidad y pruebas con usuario novel.
 - **F5 — Escala y observabilidad:** rendimiento con >500 entidades, errores, métricas de descubribilidad, auditoría, seguridad y pruebas de regresión.
 
@@ -89,7 +143,7 @@ El Panel Admin debe ser un **espacio operativo único**, intuitivo para una pers
 
 - **Por ahora solo documentación:** no rediseñar componentes, no tocar datos, no abrir un PR funcional por este documento.
 - Mantener intactos los trabajos en curso: PR de reseñas, integración propia Holded, conciliación y vigilancia de facturación IA.
-- Antes de implementar: cerrar una propuesta de navegación y prototipo visual, revisar permisos, seleccionar 5-8 tareas reales y aprobar criterios de aceptación.
+- Antes de implementar: cerrar una propuesta de navegación y prototipo visual, revisar permisos, seleccionar 5-8 tareas reales (incluyendo CRUD, vínculos y Excel) y aprobar criterios de aceptación.
 - Reutilizar APIs y modelos canónicos de Admin 360; evitar añadir otro CRM o otro directorio.
 - Despliegue por etapas detrás de controles seguros; typecheck, lint, tests, build, Vercel y Security Advisor cuando corresponda.
 
