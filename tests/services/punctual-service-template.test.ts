@@ -61,15 +61,16 @@ describe('punctual service template', () => {
     expect(api).toContain('cleanedComment || null');
   });
 
-  it('publishes only moderated reviews with explicit client consent', () => {
+  it('aggregates verified stars independently from consent to publish written comments', () => {
     const moderation = read('app/api/admin/resenas/[id]/route.ts');
     const publicReviews = read('lib/services/public-service-reviews.ts');
 
     expect(moderation).toContain("current.allow_publish === true");
     expect(moderation).toContain("update.published = false");
     expect(publicReviews).toContain(".eq('status', 'approved')");
-    expect(publicReviews).toContain(".eq('published', true)");
-    expect(publicReviews).toContain(".eq('allow_publish', true)");
+    expect(publicReviews).toContain("review.allow_publish === true &&");
+    expect(publicReviews).toContain("review.published === true &&");
+    expect(publicReviews).not.toContain(".eq('allow_publish', true)");
   });
 
   it('adds ratings, sharing and curated companions to the generic punctual-service page', () => {
@@ -124,7 +125,8 @@ describe('punctual service template', () => {
     expect(policy).toContain('no recibe la puntuación en estrellas');
     expect(policy).toContain('no crea reseñas ficticias');
     expect(form).toContain('/politica-de-resenas');
-    expect(form).toContain('publicar mi valoración de forma anónima');
+    expect(form).toContain('Publicar anónimamente');
+    expect(form).toContain('Publicar con mi perfil público');
   });
 
   it('does not offer routine rejection of a verified review from the admin card', () => {

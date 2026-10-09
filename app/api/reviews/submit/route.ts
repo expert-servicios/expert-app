@@ -5,7 +5,7 @@ import { sendEmail } from '@/lib/email/send';
 import { reviewReceived } from '@/lib/email/templates';
 import { moderateReviewByKia } from '@/lib/ai/kia/kia-review-moderation';
 
-const REVIEW_TOKEN_RE = /^[a-f0-9]{64}$/i;
+const REVIEW_TOKEN_RE = /^(?:[a-f0-9]{64}|[a-f0-9-]{36})$/i;
 const MAX_COMMENT_LENGTH = 800;
 
 export async function POST(request: NextRequest) {
@@ -20,6 +20,9 @@ export async function POST(request: NextRequest) {
       rating?: unknown;
       comment?: unknown;
       allow_publish?: boolean;
+      publication_mode?: 'private' | 'anonymous' | 'profile';
+      public_name?: string;
+      avatar_consent?: boolean;
     };
 
     const { token, rating, comment, allow_publish } = body;
@@ -40,11 +43,11 @@ export async function POST(request: NextRequest) {
     // Validate token
     const { data: req, error: reqErr } = await admin
       .from('review_requests')
-      .select('id,case_id,client_id,expires_at')
+      .select('id,case_id,client_id,expires_at,status')
       .eq('token', token)
       .single();
 
-    if (reqErr || !req) {
+    if (reqErr || !req || req.status !== 'pending') {
       return NextResponse.json({ error: 'Enlace inválido o ya utilizado' }, { status: 400 });
     }
 
@@ -71,17 +74,30 @@ export async function POST(request: NextRequest) {
       .eq('id', req.case_id)
       .single();
 
+    const mode = body.publication_mode === 'anonymous' || body.publication_mode === 'profile' ? body.publication_mode : 'private';
+    const publicName = typeof body.public_name === 'string' ? body.public_name.trim().slice(0,80) : '';
+    if (mode === 'profile' && (!cleanedComment || publicName.length < 2)) return NextResponse.json({error:'Nombre público y comentario requeridos'},{status:400});
+    const mayPublish = mode !== 'private' && Boolean(cleanedComment);
+    const { data: profileAvatar } = mode === 'profile' && body.avatar_consent === true ? await admin.from('profiles').select('avatar_url').eq('id',req.client_id).maybeSingle() : {data:null};
+    const trustedAvatar = profileAvatar?.avatar_url && /^https:\/\/lh\d+\.googleusercontent\.com\//i.test(profileAvatar.avatar_url) ? profileAvatar.avatar_url : null;
+
     // Insert review
     const { data: insertedReview, error: insertErr } = await admin.from('reviews').insert({
       case_id: req.case_id,
       client_id: req.client_id,
       rating: parsedRating,
       comment: cleanedComment || null,
-      allow_publish: allow_publish === true,
+      allow_publish: mayPublish,
+      publication_mode: mode,
+      public_name: mode === 'profile' ? publicName : null,
+      public_avatar_url: mode === 'profile' && body.avatar_consent === true ? trustedAvatar : null,
+      avatar_consent: mode === 'profile' && body.avatar_consent === true,
+      publication_consent_at: mayPublish ? new Date().toISOString() : null,
       service_name: caseData?.service ?? null,
       status: 'pending',
       moderation_status: 'pending',
-      comment_publishable: true,
+      comment_publishable: mayPublish,
+      review_request_id: req.id,
     }).select('id').single();
 
     if (insertErr || !insertedReview) {
@@ -97,8 +113,11 @@ export async function POST(request: NextRequest) {
       });
     });
 
-    // Invalidate token by deleting the request row
-    await admin.from('review_requests').delete().eq('id', req.id);
+    // Preserve the request history for auditing; never re-use its token.
+    const { error: completeError } = await admin.from('review_requests')
+      .update({ status: 'completed', review_id: insertedReview.id })
+      .eq('id', req.id).eq('status', 'pending');
+    if (completeError) console.error('[reviews/submit] completion update failed', completeError);
 
     // Confirm receipt to the client — best-effort, doesn't block the response.
     // profiles.email isn't reliably populated (handle_new_user() only sets

@@ -2,6 +2,8 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { ArrowRight, BookOpen, Clock, MessageCircle, Newspaper } from 'lucide-react';
+import { ServiceRatingStars } from '@/components/services/ServiceRatingStars';
+import { getPublicServiceReviewSummaries } from '@/lib/services/public-service-reviews';
 import { AddToCartButton } from '@/components/services/AddToCartButton';
 import { categories, getCategory, getServicesByCategory } from '@/lib/utils/catalog';
 import type { CategorySlug } from '@/lib/utils/catalog';
@@ -60,6 +62,7 @@ export default async function CategoriaPage({ params }: { params: Promise<{ cate
 
   const servicios = getServicesByCategory(categoria as CategorySlug);
   const categoryUrl = `https://expertconsulting.es/servicios/${categoria}`;
+  const ratingSummaries = await getPublicServiceReviewSummaries(servicios.map((item) => item.slug));
 
   const relatedDocs = getDocsForCategory(categoria as CategorySlug).slice(0, 4);
   const relatedArticles = Array.from(
@@ -154,6 +157,7 @@ export default async function CategoriaPage({ params }: { params: Promise<{ cate
                         {servicio.name}
                       </h3>
                     </Link>
+                    <div className="mt-2"><ServiceRatingStars summary={ratingSummaries[servicio.slug]} /></div>
                     <p className="mt-2 text-sm leading-6 text-[#23364D]">{servicio.shortDescription}</p>
 
                     <div className="mt-4 flex flex-wrap gap-2">

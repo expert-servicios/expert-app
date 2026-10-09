@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://expertconsulting.es/politica-de-resenas' },
 };
 
-const LAST_UPDATED = '19 de septiembre de 2026';
+const LAST_UPDATED = '9 de octubre de 2026';
 
 export default function ReviewPolicyPage() {
   return (
@@ -24,7 +24,7 @@ export default function ReviewPolicyPage() {
         <div className="space-y-10 text-sm leading-7 text-[#23364D]">
           <Section title="1. Qué consideramos una reseña verificada">
             <p>
-              EXPERT solo solicita una valoración cuando un expediente real ha sido marcado como finalizado.
+              EXPERT solicita valoraciones a clientes con un expediente real cuando termina una fase profesional verificable, como la presentación oficial, o cuando finaliza el servicio.
               El enlace se asocia internamente al cliente y al expediente correspondiente, es de un solo uso y caduca a los 30 días.
               De este modo, las reseñas identificadas como verificadas proceden de clientes que han utilizado el servicio al que se refieren.
             </p>
@@ -39,7 +39,7 @@ export default function ReviewPolicyPage() {
 
           <Section title="3. Autorización para publicar">
             <p>
-              Enviar una valoración no implica publicarla. El cliente decide expresamente si autoriza su publicación.
+              Las estrellas de las valoraciones verificadas y aprobadas se incluyen de forma anónima en la media pública del servicio, incluso si no se escribe ningún comentario. Solo se publica el comentario escrito cuando el cliente autoriza expresamente su publicación.
               Actualmente las reseñas públicas se muestran de forma anónima como «Cliente EXPERT», sin publicar nombre, email, NIF ni otros datos identificativos.
             </p>
           </Section>

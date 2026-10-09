@@ -1,4 +1,7 @@
 import type { Metadata } from 'next';
+import { categories, getServicesByCategory } from '@/lib/utils/catalog';
+import { getPublicServiceReviewSummaries } from '@/lib/services/public-service-reviews';
+import { ServiceRatingStars } from '@/components/services/ServiceRatingStars';
 import Link from 'next/link';
 import {
   Anchor,
@@ -174,7 +177,15 @@ const orientationOptions = [
   'No sé por dónde empezar'
 ] as const;
 
-export default function ServiciosPage() {
+export default async function ServiciosPage() {
+  const allServices = categories.flatMap((category) => getServicesByCategory(category.slug));
+  const ratings = await getPublicServiceReviewSummaries(allServices.map((item) => item.slug));
+  const areaRatings = Object.fromEntries(categories.map((category) => {
+    const services = getServicesByCategory(category.slug);
+    const count = services.reduce((n, item) => n + (ratings[item.slug]?.count ?? 0), 0);
+    const weighted = services.reduce((n, item) => n + (ratings[item.slug]?.average ?? 0) * (ratings[item.slug]?.count ?? 0), 0);
+    return [category.slug, { count, average: count ? weighted / count : null, reviews: [] }];
+  }));
   return (
     <main className="bg-[#F8F6F1] text-[#0D1B2A]">
       <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
@@ -232,6 +243,7 @@ export default function ServiciosPage() {
                   </div>
                 </div>
 
+                <div className="mt-3"><ServiceRatingStars summary={areaRatings[href.split('/').pop() ?? '']} /></div>
                 {services && (
                   <ul className="mt-6 grid gap-2 sm:grid-cols-2">
                     {services.map((service) => (

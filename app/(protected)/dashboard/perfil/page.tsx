@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import Image from 'next/image';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { ProfileForm } from '@/components/profile/ProfileForm';
 
@@ -55,8 +56,10 @@ export default async function ProfilePage() {
         {/* Identity card */}
         <div className="rounded-3xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#c88b25]/15 text-xl font-bold text-[#c88b25]">
-              {(profile?.full_name ?? user.email ?? '?').charAt(0).toUpperCase()}
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-[#c88b25]/15 text-xl font-bold text-[#c88b25]">
+              {profile?.avatar_url && /^https:\/\/lh\d+\.googleusercontent\.com\//i.test(profile.avatar_url)
+                ? <Image src={profile.avatar_url} alt="Foto de perfil" width={56} height={56} unoptimized className="h-14 w-14 object-cover" />
+                : (profile?.full_name ?? user.email ?? '?').charAt(0).toUpperCase()}
             </div>
             <div className="min-w-0">
               <p className="truncate font-serif text-lg font-bold text-[#07111d]">
