@@ -8,22 +8,22 @@ const STEPS = [
   {
     n: 1,
     title: 'Accede a la configuración de Holded',
-    body: 'Inicia sesión en tu cuenta de Holded y ve a Configuración → Integraciones → API.',
+    body: 'Inicia sesión en tu cuenta de Holded y ve a Configuración → Desarrolladores → Credenciales.',
   },
   {
     n: 2,
     title: 'Genera una nueva API key',
-    body: 'Haz clic en "Nueva clave API". Asigna un nombre descriptivo (ej. "EXPERT Asesoría").',
+    body: 'Haz clic en "Agregar API Token", selecciona API v2 y asigna un nombre descriptivo, por ejemplo "EXPERT KIA".',
   },
   {
     n: 3,
     title: 'Activa los permisos necesarios',
-    body: 'Marca al menos: Facturas emitidas, Facturas recibidas, Impuestos. Opcionalmente activa Bancos para conciliación.',
+    body: 'Activa solo las lecturas que necesites: facturas, contactos, contabilidad o bancos. No es obligatorio dar todos los permisos ni permisos de escritura.',
   },
   {
     n: 4,
     title: 'Copia la clave y pégala aquí',
-    body: 'La clave solo se muestra una vez en Holded. Pégala en el campo de abajo y haz clic en "Verificar y Conectar".',
+    body: 'Copia la clave al formulario seguro y pulsa Verificar conexión. No envíes el token a KIA por chat.',
   },
 ];
 
@@ -42,6 +42,7 @@ export function HoldedConnectionGuide() {
         </a>
       </p>
 
+      <div className="flex flex-wrap gap-3 text-sm"><a className="font-medium text-[#c88b25] underline" href="/docs/conectar-holded-kia-token-api-v2">Guía paso a paso</a><a className="font-medium text-[#c88b25] underline" href="/docs/permisos-holded-kia-lectura-escritura">Qué permisos conceder</a><a className="font-medium text-[#c88b25] underline" href="/docs/actualizar-permisos-token-holded-kia">Cambiar permisos</a></div>
       <ol className="space-y-3">
         {STEPS.map((s) => (
           <li key={s.n} className="flex gap-3">
