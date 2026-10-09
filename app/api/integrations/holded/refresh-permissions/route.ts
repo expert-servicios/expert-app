@@ -54,5 +54,5 @@ export async function POST(request: NextRequest) {
     actor_id:user.id, action:'holded.client_permissions_refreshed',entity:'companies',entity_id:companyId,
     metadata:{ integration_id:integration.id, changed:JSON.stringify(old)!==JSON.stringify(effective) },
   });
-  return NextResponse.json({ ok:true, permissions:effective, warnings:result.warnings });
+  return NextResponse.json({ ok:true, permissions:effective, detected:result.permissions, warnings:result.warnings });
 }
