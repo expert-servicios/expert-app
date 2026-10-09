@@ -656,9 +656,9 @@ Esta ampliación **reordena prioridades**, pero no sustituye la Fase 0–7 del r
 | P1 | Instrumentar Inbox 360: evento normalizado + dedupe + correlación a registro/empresa + notificaciones relevantes | Idempotencia, fuente, reglas de push, takeover | E2E desde correo/Telegram/web, un evento→una tarea/aviso |
 | P2 | Primer ejecutor supervisado KIA: crear tarea Admin; después editar perfil propio | Catálogo acciones y guardas; audit_logs | Vista previa/aprobación/ejecución/verificación sin IDOR ni duplicados |
 | P3 | Hoja Registral como instrucciones operativas efectivas en KIA y editor por ámbito | Registry v2 confirmado, jerarquía de instrucciones | KIA respeta reglas vigentes de A sin aplicar reglas de B; versiones y revocación |
-| P4 | Servicio único de snapshot Holded y test de calidad contable | Gateway company-scoped, fuentes libro P&L | Ventas/compras/resultado expresados correctamente, trazabilidad y «No disponible» si falta |
+| P4 | Sincronización **financiera diaria** Holded por empresa + snapshot canónico y test contable | Gateway company-scoped, presupuesto API, incremental con reconciliación y cron separado de facturación | Una captura diaria por integración autorizada, sin llamadas Holded por pregunta KIA; datos completos o error explícito; rentabilidad correcta o «No disponible» |
 | P5 | Nuevos KPIs financieros compartidos en Admin y Cliente | Snapshots y entitlements | Dashboard de ambas superficies coincide en cifras para la misma empresa/periodo autorizado |
-| P6 | Tool KIA financiera + agenda/reuniones e Inbox actions | Métricas, meeting operator, consentimientos | KIA consulta cifras verificables y crea reuniones solo tras confirmación |
+| P6 | Tool KIA financiera **cache-first**, resumen diario Admin/Cliente, agenda/reuniones e Inbox actions | Snapshots confirmados, alertas y preferencias, meeting operator | Resúmenes de hechos confirmados; cero Holded API calls en chat normal; avisos sin duplicados y reuniones solo tras confirmación |
 | P7 | Integración end-to-end, mobile, observabilidad, rollout controlado | Todos los módulos | Tests, seguridad, cutover independiente, rollback medido |
 
 **Reglas de aceptación adicionales obligatorias:**
@@ -686,3 +686,92 @@ Esta ampliación **reordena prioridades**, pero no sustituye la Fase 0–7 del r
 - 09/10/2026 (procedimiento): **planificar y revisar primero**, implementar después en incrementos seguros.
 
 **Documentos complementarios que permanecen vigentes:** docs/kia-client-ledger.md, docs/kia-2-strategy.md, docs/kia-workspace-execution-2026-10-09.md (pendiente PR #688), docs/client-company-status-dashboard.md, docs/holded-sync-action-plan.md y docs/telegram-operations360-e2e-runbook.md. Ante contradicciones de prioridades o nomenclatura, aplicar este plan maestro; para requisitos de seguridad específicos, mantener el control más estricto.
+
+
+---
+
+## 23. Decisión operativa — sincronización financiera Holded una vez al día y resúmenes KIA (09/10/2026)
+
+**Decisión de Dirección:** cada empresa con conexión y consentimiento válidos sincronizará automáticamente sus datos financieros de Holded **una vez al día como frecuencia ordinaria**, los guardará en EXPERT y ofrecerá las mismas cifras a Dashboard Admin, Dashboard Cliente y KIA. **KIA no debe llamar a Holded por cada pregunta** ni cada visita al dashboard. Los informes y avisos diarios se derivarán de los datos locales y de Operations 360.
+
+### 23.1. Estado verificado y límite de lo existente
+
+Inspección del código y esquema de Supabase el 09/10/2026:
+
+- Existe \`public.client_accounting_records\` con \`integration_id\`, \`company_id\`, \`record_type\`, \`external_id\`, \`record_date\`, \`amount\`, \`currency\`, \`status\`, \`data\` y \`synced_at\`.
+- Existe \`public.accounting_period_snapshots\` con resúmenes trimestrales por empresa, ventas, compras, IVA, conteos y datos mensuales; existe \`accounting_anomalies\`. **Las tres tablas estaban vacías (0 filas) al comprobarlas**; las migraciones son estructura, no prueba de sincronización financiera activa.
+- El cron activo \`expert-holded-sync\` en Supabase pg_cron está programado \`15 7 * * *\`, pero **\`/api/cron/holded-sync\` procesa jobs de pedidos/suscripciones/facturación**, no obtiene diariamente el libro financiero de cada integración para snapshots. **No reutilizar su nombre como si fuera el nuevo importador financiero**.
+- También existe \`.github/workflows/holded-sync.yml\` con disparo cada 15 minutos al **mismo endpoint**. Antes de añadir programaciones, verificar qué rutas/disparadores están efectivamente activos para no duplicar llamadas ni alterar la cola financiera de facturas. El cron de pagos/órdenes debe seguir atendiendo reintentos; la frecuencia de lectura financiera se gestiona por separado.
+- El cron \`expert-daily-summary\` se programa a \`30 8 * * *\` y ya envía resumen administrativo; **extender/fusionar su contenido con el nuevo brief**, evitando un segundo correo/push equivalente. No presentar resúmenes diarios de clientes como ya implementados.
+- \`lib/holded/quarter-data.ts\`, \`lib/reports/report-generator.ts\` y tools KIA ya hacen lecturas directas al proveedor en determinados flujos; una vez validada la capa local, migrar esas lecturas a snapshots para consultas rutinarias, conservando únicamente refresh excepcional autorizado.
+- Documentación oficial Holded (consultada 09/10/2026): límites por minuto y cuota mensual por plan, compartidos por cuenta entre API keys; HTTP 429 y \`Retry-After\` / \`X-RateLimit-Remaining\`. La cuota comercial concreta de cada tenant debe verificarse, nunca suponerse ilimitada: https://www.holded.com/es/desarrolladores/limite-de-tasa y https://help.holded.com/es/articles/6896051-como-generar-y-usar-la-api-de-holded.
+
+**Importante:** ninguna tabla fue modificada y no se programó un cron nuevo en esta ampliación de documentación.
+
+### 23.2. Flujo de sincronización financiera diaria
+
+\`\`\`text
+pg_cron/worker (una ventana diaria, horario Europe/Madrid)
+  -> identificar integraciones Holded activas + consentimiento y scopes
+  -> claim idempotente POR (integration_id, company_id, fecha local, versión del sync)
+  -> presupuesto API por cuenta + control de concurrencia
+  -> leer cambios autorizados de Holded (cursor/paginación)
+  -> normalizar registros y verificar divisa, estado y completitud
+  -> upsert idempotente en client_accounting_records / staging validado
+  -> reconstruir accounting_period_snapshots + anomalies afectadas
+  -> comparar versión anterior y nueva para detectar hechos materiales
+  -> publicar snapshot completo de forma atómica, o conservar el anterior y marcar error
+  -> crear hechos de digest / alertas correlacionadas al batch
+  -> Admin + Cliente + KIA leen la MISMA capa local, cada uno filtrado por permisos
+\`\`\`
+
+- **Frecuencia normal:** una vez por día e integración autorizada; planificador separado de \`holded-sync\` (cola de facturación). Ventana configurable en madrugada/mañana de Madrid; calcular verano/invierno correctamente en vez de asumir que UTC y Madrid tienen siempre el mismo desfase. Priorizar que la sincronización esté finalizada antes del resumen matinal; si excede ventana, resumen marca pendiente y no declara datos actualizados.
+- **Integridad:** primera incorporación con backfill **único y acotado** según historial permitido; sincronizaciones posteriores incrementales cuando el endpoint lo soporte. Revisar una ventana retrospectiva configurable para facturas rectificadas, cobros tardíos y documentos que cambian de estado; reconciliación más amplia periódica, no descargar toda la historia diariamente. Registrar cursor/último corte por integración y tipo.
+- **No confundir publicación con fecha del hecho:** algo detectado hoy puede ser una factura antigua modificada. Los informes dirán «detectado en la sincronización de [fecha]» y mostrarán fechas documentales reales.
+- **Estados:** \`not_connected\`, \`permission_missing\`, \`queued\`, \`running\`, \`success\`, \`partial\`, \`failed\`, \`rate_limited\`, \`stale\`, \`unchanged\`. No sustituir un snapshot bueno por ceros tras fallo, cuota agotada o respuesta parcial. Registrar calidad/procedencia por métrica y \`last_success_at\` frente a \`last_attempt_at\`.
+- **Contratación y seguridad:** la conexión/consentimiento de Holded y el permiso de lectura del usuario son requisitos separados; no sincronizar datos bancarios o laborales sin autorización específica. Aislamiento por \`company_id + integration_id\` y por proveedor/cuenta; un token global de EXPERT no puede hacer que dos clientes compartan datos.
+- **Presupuesto API:** contabilizar peticiones por cuenta/proveedor/mes y por sync, fijar umbral de seguridad y colas limitadas. Respetar cabeceras Holded \`429\`/\`Retry-After\`, cuotas mensuales, backoff y jitter; limitar páginas y paralelismo. Reintentos de error técnico pueden añadir llamadas extraordinarias, pero el ciclo ordinario es único al día. Un sync manual excepcional requiere privilegio, auditoría, protección anti-repetición y advertencia de consumo de cuota.
+- **Scheduler escalable:** un cron desencadena la cola; los workers procesan integraciones por lotes, con lock/claim atómico, idempotencia e información sobre avance; nunca una petición HTTP que intente extraer todos los datos de todas las empresas en un único timeout. Elegir entre la infraestructura de colas existente y workflow durable después de verificar límites/operación; no añadir cron paralelo sin limpiar solapamientos.
+
+### 23.3. Política obligatoria: lectura cache-first en KIA y dashboards
+
+**Admin, Cliente y KIA usan un único servicio de lectura financiera interno** (véase §19), con fechas e indicadores normalizados; sin llamadas al API Holded en GET de dashboard ni en las tools KIA de consultas rutinarias. Una pregunta como «¿Cuánto hemos vendido este mes?» lee el snapshot más reciente y comunica periodo, moneda, \`as_of\`, cobertura y posible retraso. Si la pregunta pide «ahora mismo» y solo existe la captura de ayer, responder con honestidad («última actualización [fecha]»), sin inventar tiempo real.
+
+- Mostrar estado de frescura claro: \`fresh\` (sync diario correcto), \`stale\` (se superó ventana), \`partial\` (algunos datos faltan), \`unavailable\` (sin fuente autorizada). Umbrales exactos calibrados en piloto, no horas supuestas.
+- No confundir compras/facturas y resultado contable; beneficio real solo si existen datos P&L suficientemente completos y conciliados, conforme §19.2.
+- Separar histórico guardado de eventos operativos en tiempo real. Inbox/citas/tareas actualizan su estado cuando llegan; los indicadores Holded se actualizan al cierre de cada batch. Un usuario no debe creer que «ventas de hoy» están sincronizadas antes del siguiente batch.
+- Los productos que impliquen *escritura* en Holded siguen usando adaptadores autorizados, confirmación y auditoría; la política cache-first solo cubre consultas.
+- Entitlements/clientes sin conexión: sin cifras; no recuperar accidentalmente otras entidades por enlaces heredados.
+
+### 23.4. Resumen diario KIA — dos perspectivas, un mismo origen
+
+Generar **un artefacto diario por ámbito** (Admin/global autorizado o Cliente+empresa) a partir de snapshots publicados y eventos canónicos de Inbox 360, tareas, citas, expediente y auditorías relevantes. KIA aporta redacción/explicación, **no inventa hechos**. Distinguir explícitamente qué novedades son de la jornada operativa, qué diferencias financieras se **detectaron** respecto del sync previo, y qué requieren acción.
+
+| Vista | Contenido | Notificación |
+| --- | --- | --- |
+| **Admin «Mi jornada»** | Resumen multicliente permitido: mensajes humanos, leads, citas, tareas abiertas/vencidas, escalaciones, errores de sincronización y anomalías Holded por empresa; diferencias operativas desde el último cierre | Bandeja de avisos / resumen matinal consolidado; **push inmediato solo de novedades importantes**, no por cada respuesta KIA o cada factura |
+| **Cliente «Mi empresa»** | Por empresa vinculada: facturación, compras, cobros/pendientes si autorizados, cambios detectados desde última sync, documentos, citas, obligaciones, tareas y advertencias propias; sin datos internos de otros clientes | Resumen en dashboard siempre visible; push/email diario configurable por preferencias y base legítima de comunicación |
+| **KIA Copiloto** | Mismas cifras locales, explicaciones y capacidad de responder «¿qué cambió desde ayer?» con evidencia y marca temporal | No genera notificación espontánea por cada consulta; propone acción/tarea si reglas y permisos lo permiten |
+
+- **Ventana temporal:** por defecto, informe matinal de «jornada anterior + novedades disponibles del sync finalizado»; un sync matinal no permite afirmar conocer la evolución completa del mismo día aún en curso. Para avisos urgentes de correo, citas y trámites, utilizar eventos operativos en tiempo cercano al real, no esperar al sync financiero.
+- **Detección de relevancia:** reglas deterministas antes del LLM: nueva factura/abono, vencimiento o retraso, variaciones materiales por empresa, pago conciliado, error de conexión, saldo pendiente significativo, incumplimiento o fecha límite; umbrales configurables y sin inferir beneficio a partir de facturas. No insertar avisos de marketing ni deducir fraude de simples anomalías.
+- **Entrega:** un resumen por fecha/actor/scope con idempotency key; notificación push consolidada o crítica con deep link, delivery/retry y preferencias; no duplicar los avisos ya emitidos por Inbox 360 o \`daily-summary\`. Si no hay novedades, mostrar «sin cambios significativos» en Workspace y evitar push innecesario.
+- **Protección de datos:** cualquier texto de push muestra solo información apropiada para pantalla bloqueada; cifras o datos confidenciales requieren autenticación al abrir. Mantener variantes ES/RU y acceso por empresa. Guardar base/evidencia/estado del digest y qué hechos lo sustentan para corregir errores.
+- **Punto de envío:** tras confirmarse publicación de snapshots y completar el cálculo de diferencias; si Holded falla, enviar aviso de fallo a Admin y estado de «sin actualizar» al Cliente, sin resumen financiero falsamente actualizado.
+
+### 23.5. Orden técnico específico y pruebas
+
+**Implementar después de la aprobación de este plan**, integrándolo en P4–P6:
+
+1. **Auditoría del pipeline:** trazar invocaciones actuales Holded en KIA y dashboards; identificar todos los cron activos (pg_cron, GitHub Actions y otros), separar la cola de facturación del importador financiero y contabilizar uso API antes de cambiar lógica.
+2. **Poblar un caso piloto:** empresa autorizada con token únicamente de lectura financiera, job de importación/backfill acotado, comprobación contra documentos originales, deduplicación y protección de históricos. Las tablas vacías no acreditan éxito.
+3. **Activar ciclo diario por empresa** con estado por lote, límite de cuota, reconciliación y snapshot atómico. Probar \`429\`, expiración de credenciales, 403, pérdida de red, paginación, varias divisas y facturas/abonos rectificadas.
+4. **Migrar lecturas ordinarias:** un endpoint de métricas y tools KIA alimentados por snapshots, dos vistas Admin/Cliente con permiso propio; sin tocar compras/cobros si no hay consentimiento.
+5. **Conectar diferencias y digest:** materializar eventos financieros relevantes solo tras actualización completa, asociar a Hoja Registral cuando proceda, reutilizar \`daily-summary\` y notificaciones existentes; grupos de envío y silencio sin novedades. Evitar crear tareas financieras automáticas si solo existe una señal poco fiable.
+6. **Pruebas E2E:** 2 empresas del mismo cliente con tokens distintos; Admin con acceso delegado y cliente de solo lectura; 0 llamadas Holded en diez consultas de chat/dashboard repetidas; un sync ordinario diario por integración; fallos mantienen snapshot anterior; doble ejecución del cron no duplica datos/avisos; resultado y diferencial documental diferenciados; zona horaria Madrid y ES/RU verificados.
+
+**Definition of Done adicional:** poder contestar «últimos datos sincronizados y origen» por cada empresa; ver cuentas de API consumidas y presupuesto restante; historial de sync, errores, aviso emitido y actor; dashboard Admin y Cliente comparten fuente consistente; KIA contesta sin invocar Holded en lecturas rutinarias.
+
+### Historial de esta decisión
+
+- 09/10/2026 (Holded daily-cache): **una sincronización financiera por empresa y día**, datos canónicos en EXPERT, KIA/dashboard local-first y resúmenes diarios diferenciados Admin/Cliente; activar por piloto tras comprobaciones. No confundir el cron previo de facturas con el nuevo importador.
