@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
   }
   const { data: integration, error: integrationError } = await admin.from('client_integrations')
-    .select('id,mode,permissions_detected,permissions_enabled')
+    .select('id,mode,permissions_detected,permissions_enabled,updated_at')
     .eq('company_id',companyId).eq('provider','holded').eq('status','active')
     .order('created_at',{ascending:false}).limit(1).maybeSingle();
   if (integrationError) return NextResponse.json({ error: 'Error consultando integración' }, { status: 500 });
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   const { data: updated, error: updateError } = await admin.from('client_integrations')
     .update({ permissions_enabled: permissions, updated_at: new Date().toISOString() })
     .eq('id',integration.id).eq('company_id',companyId).eq('status','active')
-    .eq('permissions_enabled',integration.permissions_enabled).select('id').maybeSingle();
+    .eq('updated_at',integration.updated_at).select('id').maybeSingle();
   if (updateError || !updated) return NextResponse.json({ error: 'Conflicto de permisos. Recarga e inténtalo de nuevo.' }, { status: 409 });
   await admin.from('audit_logs').insert({
     actor_id: user.id, action: 'holded.client_permissions_updated', entity: 'companies', entity_id: companyId,
