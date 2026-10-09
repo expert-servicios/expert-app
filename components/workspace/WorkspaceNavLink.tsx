@@ -1,11 +1,10 @@
 import Link from 'next/link';
-import type { ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { ElementType, ReactNode } from 'react';
 
 export interface WorkspaceNavLinkProps {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: ElementType;
   active: boolean;
   compact?: boolean;
   onClick?: () => void;
