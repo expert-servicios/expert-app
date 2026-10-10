@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { PUBLIC_KIA_SESSION_COOKIE } from '@/lib/ai/kia/kia-public-session';
+import { publicWebPersistenceEnabled, resolvePublicWebSession, appendPublicWebTurn, readPublicWebReply } from '@/lib/ai/kia/kia-public-web-persistence';
 import { z } from 'zod';
 import { runKiaProviderRequest } from '@/lib/ai/kia/kia-provider-router';
 import { checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
@@ -39,6 +42,7 @@ const requestSchema = z.object({
   history: z.array(historyItemSchema).max(6).default([]),
   attachment: attachmentSchema.optional(),
   recaptchaToken: z.string().max(4096),
+  messageId: z.string().uuid().optional(),
 }).strict();
 
 const MEETING_REQUEST_RE = /\b(cita|reuni[oó]n|llamada|hablar con ksenia|reuni[oó]n informativa)\b/i;
@@ -124,10 +128,46 @@ export async function POST(request: NextRequest) {
     }, { status: 403 });
   }
 
+  // A flagged-on request must be tied to a signed, active web session.
+  // Untrusted browser-supplied history is ignored in persistent mode.
+  let persisted: { admin: ReturnType<typeof getSupabaseAdmin>; sessionId: string; messageId: string } | null = null;
+  if (publicWebPersistenceEnabled()) {
+    if (!parsed.data.messageId) return NextResponse.json({ error: 'message_id_required' }, { status: 400 });
+    try {
+      const admin = getSupabaseAdmin();
+      const sessionId = await resolvePublicWebSession(admin, request.cookies.get(PUBLIC_KIA_SESSION_COOKIE)?.value);
+      if (!sessionId) return NextResponse.json({ error: 'session_required' }, { status: 401 });
+      const previousReply = await readPublicWebReply(admin, sessionId, parsed.data.messageId);
+      if (previousReply) return NextResponse.json({ reply: previousReply, replayed: true });
+      const userTurn = await appendPublicWebTurn(admin, {
+        sessionId, messageId: parsed.data.messageId, role: 'user', body: parsed.data.message,
+      });
+      if (!userTurn.inserted) return NextResponse.json({ error: 'turn_in_progress' }, { status: 409 });
+      persisted = { admin, sessionId, messageId: parsed.data.messageId };
+    } catch (error) {
+      console.error('[KIA public chat] session persistence failed', safeErrorMessage(error));
+      return NextResponse.json({ error: 'session_unavailable' }, { status: 503 });
+    }
+  }
+  const respond = async (body: { reply: string; [key: string]: unknown }) => {
+    if (persisted) {
+      try {
+        await appendPublicWebTurn(persisted.admin, {
+          sessionId: persisted.sessionId, messageId: persisted.messageId,
+          role: 'assistant', body: body.reply,
+        });
+      } catch (error) {
+        console.error('[KIA public chat] reply persistence failed', safeErrorMessage(error));
+        return NextResponse.json({ error: 'response_unavailable' }, { status: 503 });
+      }
+    }
+    return NextResponse.json(body);
+  };
+
   try {
     if (!parsed.data.attachment) {
       if (isCategoryNavigationMessage(parsed.data.message)) {
-        return NextResponse.json({
+        return respond({
           reply: 'Estas son las áreas de servicios de EXPERT. Selecciona una para ver las opciones disponibles.',
           quickReplies: getPublicCategoryQuickReplies(),
           intent: 'service_discovery',
@@ -141,7 +181,7 @@ export async function POST(request: NextRequest) {
 
       const selectedCategory = findSelectedCategory(parsed.data.message);
       if (selectedCategory) {
-        return NextResponse.json({
+        return respond({
           reply: categoryResponse(selectedCategory.slug),
           quickReplies: getServiceQuickRepliesForCategory(selectedCategory.slug),
           intent: 'service_discovery',
@@ -155,7 +195,7 @@ export async function POST(request: NextRequest) {
 
       const selectedService = findSelectedService(parsed.data.message);
       if (selectedService) {
-        return NextResponse.json({
+        return respond({
           reply: serviceResponse(selectedService),
           quickReplies: getServiceSelectionQuickReplies(selectedService),
           intent: 'service_discovery',
@@ -168,7 +208,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (isCommercialMessage(parsed.data.message) && !isOtherCaseMessage(parsed.data.message)) {
-        return NextResponse.json({
+        return respond({
           reply: 'Para orientarte más rápido, selecciona el área que mejor encaje con lo que necesitas.',
           quickReplies: getPublicCategoryQuickReplies(),
           intent: 'service_discovery',
@@ -208,7 +248,7 @@ export async function POST(request: NextRequest) {
     ].filter(Boolean).join('\n\n');
 
     const messages = [
-      ...parsed.data.history.map((item) => ({
+      ...(persisted ? [] : parsed.data.history).map((item) => ({
         role: item.role,
         content: item.text,
       })),
@@ -250,7 +290,7 @@ export async function POST(request: NextRequest) {
       meetingRequested,
     });
 
-    return NextResponse.json({
+    return respond({
       reply: providerResult.rawText.trim(),
       quickReplies: serviceMentionQuickReplies(providerResult.rawText.trim()).length
         ? serviceMentionQuickReplies(providerResult.rawText.trim())
