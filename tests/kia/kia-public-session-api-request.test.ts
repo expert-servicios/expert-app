@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 const m = vi.hoisted(() => ({
   enabled: vi.fn(() => true),
   rate: vi.fn(() => true),
-  captcha: vi.fn(async () => ({ ok: true, action: 'kia_public_chat' })),
+  captcha: vi.fn(async (): Promise<{ ok: boolean; action?: string; skipped?: boolean }> => ({ ok: true, action: 'kia_public_chat' })),
   ensure: vi.fn(async () => ({ sessionId: 'session-1', setCookie: 'signed-token', cookieMaxAge: 3600 })),
   history: vi.fn(async () => [{ id: 'turn-1', role: 'user', body: 'hola', created_at: '2026-10-10T10:00:00Z' }]),
   admin: vi.fn(() => ({ from: vi.fn() })),
