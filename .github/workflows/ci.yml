@@ -180,6 +180,12 @@ jobs:
           set -euo pipefail
           psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261010102630_kia_public_web_sessions_messages.sql
 
+      - name: Apply and verify KIA turn recovery migration
+        run: |
+          set -euo pipefail
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261010113900_kia_web_turn_recovery.sql
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f tests/db/kia_public_web_turn_recovery_integration.sql
+
       - name: Validate isolation, RLS, grants, idempotency and cascade
         run: |
           set -euo pipefail
