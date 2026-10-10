@@ -33,6 +33,12 @@ Dirección EXPERT autoriza la ejecución progresiva del ecosistema aprobado, **E
 - El código de tarea es estable: `E#-M#-NN`. No renumerar después de comenzar. En cada PR incluir `fase/módulo/tareas`, cambios, evidencias, riesgos, aprobación y estado posterior.
 - No se permite abrir `E(n+1)` si hay P0/P1 funcional, privacidad, acceso, contabilidad o prueba obligatoria sin resolver en `E(n)`.
 
+### Anexo oficial de ideas V3 (sin permiso de ejecución)
+
+Por petición de Dirección el 10/10/2026, las ideas que **sí** supongan nuevo alcance se registran exclusivamente en el documento independiente **[EXPERT KIA V3 — Banco de ideas y validación futura](expert-kia-v3-ideas-and-validation-backlog-2026-10-10.md)**. Se admiten propuestas de Dirección y del asistente, con ID, evidencia, reutilización, coste/riesgo hipotéticos, dependencias y criterios de validación.
+
+**Regla de prioridad:** se permite **documentar y depurar ideas V3 durante E0–E6** pero se prohíbe ejecutarlas, abrir PR de runtime V3, activar integraciones, cambiar condiciones comerciales o adelantar fases. La aprobación anterior de *congelación de alcance* se mantiene íntegra. V3 se revisará **solo después del acta E6 COMPLETADA** y necesitará nueva decisión expresa de Dirección. Los defectos P0/P1 y mejoras ya comprendidas en E0–E6 deben resolverse en el Plan Maestro, no posponerse a V3.
+
 ## 1. Objetivo, arquitectura y límites del producto
 
 **Objetivo:** un recorrido coherente **descubrimiento → consulta → solicitud → colaboración → tramitación → seguimiento → historial → automatización supervisada** sin fracturas entre web, cliente, Admin y KIA.
@@ -254,6 +260,12 @@ Resultado y siguiente tarea autorizada:
 - **Mejoras propuestas dentro del alcance:** P1 procedencia empresarial de servidor, P1 comprobación de usuario activo en APIs mutadoras, P2 deduplicación CIF sin filtros limitados ni divulgar IDs; ampliar cobertura de pruebas negativas y matriz de evidencias.
 - **Decisión:** no cerrar E0 ni iniciar E1 mientras P1 sin pruebas/corrección; no modificar producción, Holded, RLS, facturación ni flags sin gate.
 - **Siguiente paso:** completar inventario de endpoints por actor, diseñar cambios mínimos y tests de seguridad; verificar última CI/preview de PR #710; documentar cierre únicamente con evidencia real.
+
+### 2026-10-10 — Banco de ideas de evolución V3, sin afectar a E0
+
+- Documento creado: [V3 — ideas y validación futura](expert-kia-v3-ideas-and-validation-backlog-2026-10-10.md), commit `ba8aa940d794538e5e6d3d3c19ad56fd20ae51df`.
+- 22 propuestas hipotéticas V3 documentadas (inteligencia, operaciones, integraciones y calidad). No están aprobadas ni activas. Toda nueva propuesta se añade ahí con ID y evidencia, **sin sustituir ni acelerar ninguna fase E0–E6**.
+- Se confirma congelación E0–E6, E0 sigue siendo única fase activa. Próximo paso continúa siendo auditoría de autorización/procedencia y sus pruebas.
 
 ### Actas de cierre
 
