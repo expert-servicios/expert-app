@@ -5,6 +5,8 @@ describe('Anonymous web session API security contract',()=>{
  it('remains disabled by default and never leaks history from arbitrary session IDs',()=>{
   expect(route.match(/if \(!publicWebPersistenceEnabled\(\)\) return blocked\(\);/g)).toHaveLength(2);
   expect(route).toContain('request.cookies.get(PUBLIC_KIA_SESSION_COOKIE)?.value');
+  expect(route).toContain('sameOriginRead(request)');
+  expect(route).toContain("site === 'same-origin'");
   expect(route).toContain('readPublicWebHistory(getSupabaseAdmin(), token)');
   expect(route).not.toContain('leadId');
  });
