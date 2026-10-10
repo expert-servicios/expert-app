@@ -89,6 +89,8 @@ describe('Support access event validation', () => {
     const result = describeClientDevice('Mozilla/5.0 (Linux; Android 14) Chrome/124.0');
     expect(result.platform).toBe('Android');
     expect(result.browser).toBe('Chrome');
+    expect(describeClientDevice('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) CriOS/124.0 Mobile Safari/604.1').browser).toBe('Chrome');
+    expect(describeClientDevice('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) FxiOS/124.0 Mobile Safari/604.1').browser).toBe('Firefox');
     expect(describeClientDevice('x'.repeat(1000)).userAgent.length).toBe(300);
   });
 });
