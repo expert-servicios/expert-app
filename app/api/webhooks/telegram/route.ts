@@ -472,7 +472,8 @@ async function handleTelegramUpdate(request: NextRequest) {
       });
 
       // Persist only verified Telegram sender references, never inferred email/name.
-      const leadConversationId = await getOrCreateKiaLeadConversation({
+      try {
+        const leadConversationId = await getOrCreateKiaLeadConversation({
         admin,
         leadId: lead.leadId,
         channel: 'telegram',
@@ -480,7 +481,7 @@ async function handleTelegramUpdate(request: NextRequest) {
         topic: 'Consulta pública Telegram',
         metadata: { telegram_user_id: inbound.userId, telegram_chat_id: inbound.chatId },
       });
-      await appendKiaConversationMessage({
+        await appendKiaConversationMessage({
         admin, conversationId: leadConversationId, role: 'user',
         body: inbound.text.trim(),
         metadata: { telegram_update_id: inbound.updateId, delivery_state: 'received' },
@@ -490,6 +491,10 @@ async function handleTelegramUpdate(request: NextRequest) {
         body: result.userMessage,
         metadata: { telegram_update_id: inbound.updateId, delivery_state: 'sent' },
       });
+      } catch (persistenceError) {
+        // The Telegram reply was already delivered; never send a second error reply.
+        console.error('[Telegram prospect] conversation persistence failed:', safeErrorMessage(persistenceError));
+      }
 
       const publicOperationalCategory = resolveKiaOperationalCategory({
         detectedIntent: result.decision.intent,
