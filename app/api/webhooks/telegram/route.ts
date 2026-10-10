@@ -34,7 +34,7 @@ import { executeKiaToolCall } from '@/lib/ai/kia/kia-tool-executor';
 import { resolveKiaQuickActionCase } from '@/lib/ai/kia/kia-quick-action-case';
 import { recordKiaVisibleReply } from '@/lib/ai/kia/kia-visible-decision-log';
 import { resolveKiaOperationalCategory } from '@/lib/ai/kia/kia-operational-routing';
-import { appendKiaConversationMessage, getKiaConversationControlMode, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
+import { appendKiaConversationMessage, getKiaConversationControlMode, getOrCreateKiaLeadConversation, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import { resolveTelegramContentOrigin } from '@/lib/marketing/telegram-content-origin-server';
 import { transcribeKiaAudio } from '@/lib/ai/kia/kia-audio';
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
@@ -469,6 +469,26 @@ async function handleTelegramUpdate(request: NextRequest) {
       await sendTelegramMessage({
         chatId: inbound.chatId,
         text: escapeTelegramHtml(result.userMessage),
+      });
+
+      // Persist only verified Telegram sender references, never inferred email/name.
+      const leadConversationId = await getOrCreateKiaLeadConversation({
+        admin,
+        leadId: lead.leadId,
+        channel: 'telegram',
+        originRef: `telegram:${inbound.userId}`,
+        topic: 'Consulta pública Telegram',
+        metadata: { telegram_user_id: inbound.userId, telegram_chat_id: inbound.chatId },
+      });
+      await appendKiaConversationMessage({
+        admin, conversationId: leadConversationId, role: 'user',
+        body: inbound.text.trim(),
+        metadata: { telegram_update_id: inbound.updateId, delivery_state: 'received' },
+      });
+      await appendKiaConversationMessage({
+        admin, conversationId: leadConversationId, role: 'assistant',
+        body: result.userMessage,
+        metadata: { telegram_update_id: inbound.updateId, delivery_state: 'sent' },
       });
 
       const publicOperationalCategory = resolveKiaOperationalCategory({
