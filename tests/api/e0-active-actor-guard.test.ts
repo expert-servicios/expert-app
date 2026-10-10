@@ -24,6 +24,9 @@ vi.mock('@/lib/integrations/supabase', () => ({
 }));
 
 import { requireActiveActor } from '@/lib/auth/active-actor';
+import { PATCH as patchCase } from '@/app/api/cases/[id]/route';
+import { PATCH as patchCompany } from '@/app/api/companies/[id]/route';
+import { POST as createAdminCompany } from '@/app/api/admin/companies/route';
 
 const req = () => new NextRequest('http://localhost/api/companies/id', { method: 'PATCH' });
 
@@ -64,5 +67,28 @@ describe('E0 active actor gate', () => {
   it('rejects unauthenticated callers', async () => {
     getUser.mockResolvedValue({ data: { user: null }, error: null });
     await expect(requireActiveActor(req())).resolves.toBeNull();
+  });
+
+  it('blocks inactive users at each privileged HTTP mutation before service-role writes', async () => {
+    profileResult.current = { data: { role: 'admin', status: 'inactive', tenant_id: null }, error: null };
+
+    const caseResponse = await patchCase(
+      new NextRequest('http://localhost/api/cases/test-case', { method: 'PATCH', body: JSON.stringify({ admin_note: 'blocked' }) }),
+      { params: Promise.resolve({ id: 'test-case' }) },
+    );
+    expect(caseResponse.status).toBe(403);
+
+    const companyResponse = await patchCompany(
+      new NextRequest('http://localhost/api/companies/test-company', { method: 'PATCH', body: JSON.stringify({ nombre_comercial: 'blocked' }) }),
+      { params: Promise.resolve({ id: 'test-company' }) },
+    );
+    expect(companyResponse.status).toBe(403);
+
+    const adminResponse = await createAdminCompany(
+      new NextRequest('http://localhost/api/admin/companies', { method: 'POST', body: JSON.stringify({ razon_social: 'Blocked SL' }) }),
+    );
+    expect(adminResponse.status).toBe(403);
+    expect(adminFrom).toHaveBeenCalledTimes(3);
+    expect(adminFrom.mock.calls.every(([table]) => table === 'profiles')).toBe(true);
   });
 });
