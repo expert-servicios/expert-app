@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 const m = vi.hoisted(() => ({
   enabled: vi.fn(() => true),
   admin: vi.fn(() => ({})),
-  session: vi.fn(async () => 'server-session-1'),
+  session: vi.fn(async (): Promise<string | null> => 'server-session-1'),
   claim: vi.fn(async (): Promise<Record<string, unknown>> => ({ outcome: 'acquired' })),
   complete: vi.fn(async () => ({
     outcome: 'complete', payload: { reply: 'respuesta', intent: 'book_call', quickReplies: [] },
@@ -14,7 +14,7 @@ const m = vi.hoisted(() => ({
   history: vi.fn(async () => [
     { id: 'earlier', role: 'user', body: 'contexto verificado', client_message_id: 'old-id' },
   ]),
-  provider: vi.fn(async () => ({ rawText: 'respuesta', provider: 'test', model: 'test', error: null })),
+  provider: vi.fn(async (_input?: unknown) => ({ rawText: 'respuesta', provider: 'test', model: 'test', error: null })),
   usage: vi.fn(async () => undefined),
   captcha: vi.fn(async () => ({ ok: true, action: 'kia_public_chat' })),
 }));
