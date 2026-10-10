@@ -177,6 +177,30 @@ Código que ya sirve de base: lib/ai/kia/kia-copilot-artifacts.ts define los tip
 
 Señales para promoción: complejidad > umbral, errores por contexto insuficiente, necesidad verificable de aislamiento/contexto, acciones por etapas, mejora demostrada en evals. No convertir a agentes autónomos marketing/contabilidad solo porque hay prompt especializado.
 
+## 4A. Cron mensual de vigilancia tecnológica — 10/10/2026
+
+**Decisión de producto:** cerrar la planificación de KIA Intelligence y pasar el foco a EXPERT Admin/Client Workspace. No añadir por ahora más proveedores, prompts o agentes a producción.
+
+**Cadencia:** primer día de cada mes, por la mañana (Europe/Madrid). Se ha creado un recordatorio automatizado de investigación, valoración y entrega de informe. Para una ejecución **dentro de EXPERT**, la implementación de un job backend real queda documentada como opción posterior; no afirmar que ya existe un cron KIA desplegado por el simple hecho de tener este recordatorio.
+
+**Fuentes oficiales obligatorias:**
+- OpenAI: changelogs y documentación de modelos, Responses API, Agents SDK/API, archivos/artefactos, herramientas, seguridad y precios.
+- Anthropic: novedades de Claude API, Managed Agents, Agent Skills, MCP, herramientas, modelos, retención y costes.
+- Google: Gemini API, AI Studio, Google ADK, Grounding/Search, código, multimodal, documentación, cuotas y precios.
+
+**Salida mensual obligatoria:**
+1. Matriz de novedades con nombre/capacidad, URL oficial, fecha de anuncio, disponibilidad real (GA/beta/región), versión, coste y deprecaciones.
+2. Impacto concreto en KIA (caso de uso, componente del repositorio implicado, ROI, complejidad, comparación con el sistema actual).
+3. Matriz de riesgos (seguridad, RGPD, localización, aislamiento multitenant, prompts, uso de datos, licencia, límites y API vs producto).
+4. Decisión `adoptar` / `piloto` / `aplazar` / `descartar` y evidencia de las pruebas necesarias.
+5. Actualización documental o propuesta de PR **solo sobre rama aislada**. No habilitar features, migrar tablas, fusionar, instalar dependencias de alto riesgo ni tocar producción sin CI, revisión de seguridad, aceptación y autorización explícita.
+
+**Control de ruido:** evitar repetir una recomendación ya registrada sin cambio material; registrar fecha de revisión, enlaces, estado de decisión y razones. Si no hay novedades relevantes, emitir resumen breve. No generar tareas diarias ni alertas de marketing por una actualización menor. **Primera revisión ordinaria: noviembre 2026**.
+
+**Vinculación con el dashboard:** el seguimiento se incluirá en el backlog técnico/hoja registral administrativa cuando haya implementación autorizada del inbox/agenda; no crear una segunda interfaz ni bloquear el rediseño por el cron.
+
+---
+
 ## 5. Backlog priorizado, con ownership
 
 | Orden | Entregable | Dueño de trabajo | Gate |
