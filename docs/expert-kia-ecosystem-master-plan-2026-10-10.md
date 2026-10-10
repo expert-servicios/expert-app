@@ -267,6 +267,12 @@ Resultado y siguiente tarea autorizada:
 - 22 propuestas hipotéticas V3 documentadas (inteligencia, operaciones, integraciones y calidad). No están aprobadas ni activas. Toda nueva propuesta se añade ahí con ID y evidencia, **sin sustituir ni acelerar ninguna fase E0–E6**.
 - Se confirma congelación E0–E6, E0 sigue siendo única fase activa. Próximo paso continúa siendo auditoría de autorización/procedencia y sus pruebas.
 
+### 2026-10-10 — Cierre acotado #711 y comienzo del segundo bloqueo #712
+
+- **PR #711 fusionada** con commit `f15b859db65b3aa82b8b79ec75bbc74c4203f19e`. CI y ambas previews verdes en último HEAD previo a la fusión; se añadió `requireActiveActor` y pruebas negativas de usuario inactivo para endpoints de empresas/expedientes. **La auditoría del resto de APIs y aislamiento de entidades permanece abierta**; no declarar resuelto E0-M3-06 integralmente.
+- **PR #712 en borrador**: mitigación fail-safe del origen registral: no aceptar aserciones `_registryOfficial` ni nombres de fuentes enviados por el navegador como certificación; no crear bloqueos automáticos desde sugerencias y no modificar datos existentes. **Pruebas y CI pendientes**. La verificación positiva server-side de procedencia y la auditoría histórica de registros aún son necesarias antes de cerrar E0-M3-05.
+- **Siguiente paso inequívoco:** CI/QA y tests negativos #712; revisar proveedor/flujo para atestación server-side sin confiar en `company_data_suggestions` editable por usuario; continuar E0-M1-03/M3-05/M3-06; mantener E1/V3 bloqueadas.
+
 ### Actas de cierre
 
 | Fase | Fecha | Commit/PR | Tests, QA, seguridad, despliegue | Conclusión |
