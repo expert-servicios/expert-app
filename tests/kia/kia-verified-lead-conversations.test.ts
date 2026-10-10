@@ -10,6 +10,15 @@ describe('KIA verified lead conversation persistence', () => {
     expect(store).toContain(".eq('origin_ref', input.originRef)");
     expect(store).toContain('origin_type: input.channel');
   });
+  it('deduplicates concurrent first messages without mixing senders', () => {
+    expect(store).toContain("createHash('sha256')");
+    expect(store).toContain('stableLeadConversationId({');
+    expect(store).toContain('id: canonicalId');
+    expect(store).toContain("error?.code === '23505'");
+    expect(store).toContain('lead_conversation_race_scope_changed');
+    expect(store).toContain('raced.origin_ref === input.originRef');
+  });
+
   it('stores public Telegram turns after obtaining a canonical lead', () => {
     expect(telegram).toContain("getOrCreateKiaLeadConversation({");
     expect(telegram).toContain("channel: 'telegram'");
