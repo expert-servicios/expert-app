@@ -10,15 +10,17 @@ describe('KIA web persisted turns: release gates',()=>{
     expect(api).toContain('resolvePublicWebSession(admin, request.cookies.get(PUBLIC_KIA_SESSION_COOKIE)?.value)');
   });
   it('does not trust client supplied history and avoids duplicate paid calls',()=>{
-    expect(api).toContain('...(persisted ? [] : parsed.data.history)');
-    expect(api).toContain('readPublicWebReply(admin, sessionId, parsed.data.messageId)');
+    expect(api).toContain('readPublicWebHistory(persisted.admin');
+    expect(api).toContain('claimPublicWebTurn(admin, {');
     expect(api).toContain("error: 'turn_in_progress'");
+    expect(api).toContain('replayed: true');
+    expect(api).toContain('failPublicWebTurn(persisted.admin');
     expect(store).toContain(".eq('client_message_id', messageId)");
     expect(store).toContain(".eq('role', 'assistant')");
   });
   it('persists assistant replies only server-side',()=>{
     expect(api).toContain('const respond = async');
-    expect(api).toContain("role: 'assistant', body: body.reply");
+    expect(api).toContain('completePublicWebTurn(persisted.admin, {');
     expect(api).toContain("error: 'response_unavailable'");
   });
 });
