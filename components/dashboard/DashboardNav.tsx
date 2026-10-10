@@ -2,6 +2,7 @@
 
 import { WorkspaceBrand } from '@/components/workspace/WorkspaceBrand';
 import { WorkspaceNavLink } from '@/components/workspace/WorkspaceNavLink';
+import { isWorkspaceRouteActive } from '@/components/workspace/workspaceRouteMatch';
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -44,7 +45,7 @@ export function DashboardNav({ companies, activeCompanyId, userName, userEmail, 
   const displayName = userName ?? userEmail.split('@')[0];
 
   const isActive = (href: string, exact: boolean) =>
-    exact ? pathname === href : pathname.startsWith(href);
+    isWorkspaceRouteActive(pathname, href, exact);
 
   const handleLogout = async () => {
     const supabase = createBrowserClient(
