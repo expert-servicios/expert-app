@@ -180,8 +180,9 @@ describe('native booking public flow', () => {
     expect(route).toContain('admin_notes');
   });
 
-  it('honors provider rollback URL in the floating badge', () => {
-    expect(badge).toContain('getBookingProvider');
-    expect(badge).toContain("window.location.assign(CAL_URL ?? '/cita?tipo=consulta-inicial')");
+  it('honors provider rollback URL with a native link in the floating badge', () => {
+    expect(badge).toContain('getCalMeetingUrl');
+    expect(badge).toContain("href={BOOKING_URL ?? '/cita?tipo=consulta-inicial'}");
+    expect(badge).not.toContain('window.location.assign');
   });
 });
