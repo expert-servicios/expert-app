@@ -24,5 +24,6 @@ describe('Lead timeline explicit attribution', () => {
     expect(page).toContain('role="status"');
     expect(page).toContain('Object.values(data.limited).some(Boolean)');
     expect(readFileSync('app/(protected)/admin/directorio/page.tsx','utf8')).toContain('/timeline');
+    expect(readFileSync('app/(protected)/admin/leads/page.tsx','utf8')).toContain('Ver historial verificado');
   });
 });
