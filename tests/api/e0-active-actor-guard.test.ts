@@ -13,7 +13,7 @@ const { getUser, profileQuery, adminFrom, profileResult } = vi.hoisted(() => {
   return {
     getUser: vi.fn<() => Promise<{ data: { user: { id: string } | null }; error: null }>>(async () => ({ data: { user: { id: 'actor-id' } }, error: null })),
     profileQuery: query,
-    adminFrom: vi.fn(() => query),
+    adminFrom: vi.fn((_table: string) => query),
     profileResult,
   };
 });
