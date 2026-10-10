@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 import { z } from 'zod';
 
 function normalizeTaxId(value: string | null | undefined): string | null {
@@ -10,12 +11,8 @@ function normalizeTaxId(value: string | null | undefined): string | null {
 const LEGAL_FORMS = ['autonomo', 'sl', 'sa', 'slne', 'cb', 'cooperativa', 'fundacion', 'otra'] as const;
 
 async function requireAdmin(request: NextRequest) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return null;
-  const admin = getSupabaseAdmin();
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-  return (profile?.role === 'admin' || profile?.role === 'owner') ? { admin, userId: user.id } : null;
+  const actor = await requireActiveActor(request, ['admin', 'owner']);
+  return actor ? { admin: getSupabaseAdmin(), userId: actor.userId } : null;
 }
 
 // GET /api/admin/companies — list all companies with member count
