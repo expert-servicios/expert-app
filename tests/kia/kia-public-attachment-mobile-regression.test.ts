@@ -36,7 +36,9 @@ describe('KIA public attachment + mobile composer regression', () => {
   });
 
   it('keeps the analyzed attachment in the chat request and retries Gemini billing failures safely', () => {
-    expect(widget).toContain('}, [attachment, history, loading]);');
+    expect(widget).toContain('}, [attachment, ensurePublicSession, history, loading]);');
+    expect(widget).toContain('messageId,');
+    expect(widget).toContain('history: persistent ? [] : history');
     expect(widget).toContain('attachment: attachment ?? undefined');
     expect(providerRouter).toContain('GEMINI_DIRECT_FREE_FALLBACK_MODEL');
     expect(providerRouter).toContain('HTTP\\s+402');
