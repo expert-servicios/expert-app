@@ -336,6 +336,9 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
                           </div>
                           <div className="min-w-0">
                             <p className="font-semibold text-[#07111d]">{lead.name}</p>
+                            <Link href={`/admin/leads/${lead.id}/timeline`} className="mt-1 inline-block text-xs font-semibold text-[#8a6111] hover:underline">
+                              Ver historial verificado →
+                            </Link>
                             {lead.email && <a href={`mailto:${lead.email}`} className="mt-1 flex items-center gap-1 text-xs text-[#526171] hover:underline"><Mail className="h-3 w-3" />{lead.email}</a>}
                             {lead.phone && <a href={`tel:${lead.phone}`} className="mt-1 flex items-center gap-1 text-xs text-[#526171] hover:underline"><Phone className="h-3 w-3" />{lead.phone}</a>}
                           </div>
