@@ -3,7 +3,7 @@ import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '
 
 type DirectoryItem = {
   id: string;
-  kind: 'person' | 'company';
+  kind: 'person' | 'company' | 'lead';
   name: string;
   subtitle: string;
   identifier: string | null;
@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
       casesRes,
       subscriptionsRes,
       integrationsRes,
+      leadsRes,
       authUsers,
     ] = await Promise.all([
       admin
@@ -82,6 +83,10 @@ export async function GET(request: NextRequest) {
         .select('client_id,company_id,provider,status')
         .eq('provider', 'holded')
         .eq('status', 'active'),
+      admin.from('leads')
+        .select('id,name,email,phone,source,state,lifecycle_stage,created_at')
+        .order('created_at', { ascending: false })
+        .limit(200),
       listAllAuthUsers(),
     ]);
 
@@ -92,6 +97,7 @@ export async function GET(request: NextRequest) {
       casesRes.error,
       subscriptionsRes.error,
       integrationsRes.error,
+      leadsRes.error,
     ].find(Boolean);
     if (firstError) {
       return NextResponse.json({ error: firstError.message }, { status: 500 });
@@ -103,6 +109,7 @@ export async function GET(request: NextRequest) {
     const cases = casesRes.data ?? [];
     const subscriptions = subscriptionsRes.data ?? [];
     const integrations = integrationsRes.data ?? [];
+    const leads = leadsRes.data ?? [];
 
     const authEmailById = new Map(authUsers.map((user) => [user.id, user.email ?? null]));
     const authUserIds = new Set(authUsers.map((user) => user.id));
@@ -216,12 +223,43 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // Leads remain their own records. A matching email does not establish identity.
+    // The dedicated CRM provides full pagination and history; this directory preview
+    // deliberately shows the 200 newest leads without creating auth users.
+    for (const lead of leads) {
+      items.push({
+        id: lead.id,
+        kind: 'lead',
+        name: lead.name || lead.email || lead.id,
+        subtitle: lead.source ? `Lead / ${lead.source}` : 'Lead / origen no registrado',
+        identifier: null,
+        email: lead.email ?? null,
+        phone: lead.phone ?? null,
+        status: lead.state ?? 'new',
+        role: null,
+        isClient: false,
+        hasPortalAccess: false,
+        linkedCompanies: 0,
+        linkedPeople: 0,
+        activeCases: 0,
+        activeSubscription: null,
+        holdedConnected: false,
+        activeCompanyId: null,
+        href: `/admin/leads?focus=${encodeURIComponent(lead.id)}`,
+        portalHref: null,
+        holdedHref: null,
+        createdAt: lead.created_at ?? null,
+      });
+    }
+
     return NextResponse.json({
       items,
       summary: {
         total: items.length,
         people: items.filter((item) => item.kind === 'person').length,
         companies: items.filter((item) => item.kind === 'company').length,
+        leadsPreview: leads.length,
+        leadsPreviewLimited: leads.length === 200,
         clients: items.filter((item) => item.isClient).length,
         portalUsers: items.filter((item) => item.kind === 'person' && item.hasPortalAccess).length,
         unlinkedCompanies: items.filter((item) => item.kind === 'company' && item.linkedPeople === 0).length,

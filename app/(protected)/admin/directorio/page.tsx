@@ -16,7 +16,7 @@ import {
 
 type DirectoryItem = {
   id: string;
-  kind: 'person' | 'company';
+  kind: 'person' | 'company' | 'lead';
   name: string;
   subtitle: string;
   identifier: string | null;
@@ -42,6 +42,8 @@ type DirectoryResponse = {
     total: number;
     people: number;
     companies: number;
+    leadsPreview: number;
+    leadsPreviewLimited: boolean;
     clients: number;
     portalUsers: number;
     unlinkedCompanies: number;
@@ -49,12 +51,14 @@ type DirectoryResponse = {
   };
 };
 
-type Filter = 'all' | 'clients' | 'users' | 'companies' | 'unlinked' | 'holded';
+type Filter = 'all' | 'leads' | 'clients' | 'users' | 'companies' | 'unlinked' | 'holded';
 
 const EMPTY_SUMMARY: DirectoryResponse['summary'] = {
   total: 0,
   people: 0,
   companies: 0,
+  leadsPreview: 0,
+  leadsPreviewLimited: false,
   clients: 0,
   portalUsers: 0,
   unlinkedCompanies: 0,
@@ -92,6 +96,7 @@ export default function AdminDirectoryPage() {
     return data.items.filter((item) => {
       const filterMatch =
         filter === 'all' ||
+        (filter === 'leads' && item.kind === 'lead') ||
         (filter === 'clients' && item.isClient) ||
         (filter === 'users' && item.kind === 'person' && item.hasPortalAccess) ||
         (filter === 'companies' && item.kind === 'company') ||
@@ -113,6 +118,7 @@ export default function AdminDirectoryPage() {
 
   const filters: Array<{ key: Filter; label: string; count: number }> = [
     { key: 'all', label: 'Todos', count: data.summary.total },
+    { key: 'leads', label: 'Leads recientes', count: data.summary.leadsPreview },
     { key: 'clients', label: 'Clientes', count: data.summary.clients },
     { key: 'users', label: 'Usuarios con acceso', count: data.summary.portalUsers },
     { key: 'companies', label: 'Empresas', count: data.summary.companies },
@@ -142,7 +148,7 @@ export default function AdminDirectoryPage() {
 
           <Contactos360Navigation section="directory" />
 
-          <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:grid-cols-7">
             {filters.map((item) => (
               <button
                 key={item.key}
@@ -174,6 +180,10 @@ export default function AdminDirectoryPage() {
             />
           </div>
         </div>
+
+        {data.summary.leadsPreviewLimited && (
+          <p role="status" className="text-xs text-[#6f665b]">Leads: vista limitada a los 200 registros más recientes. Para buscar en todo el histórico, abre <Link className="font-semibold underline" href="/admin/leads?segment=all">Solicitudes y leads</Link>.</p>
+        )}
 
         {error && (
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
@@ -207,6 +217,7 @@ export default function AdminDirectoryPage() {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-1.5">
+                  {item.kind === 'lead' && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-800">Lead · sin acceso al portal</span>}
                   {item.isClient && <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700">Cliente</span>}
                   {item.hasPortalAccess && <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-700">Acceso portal</span>}
                   {item.kind === 'company' && item.linkedPeople === 0 && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-800">Sin persona vinculada</span>}
@@ -217,12 +228,12 @@ export default function AdminDirectoryPage() {
 
                 <div className="mt-4 grid gap-2 rounded-xl bg-[#fbf8f2] p-3 sm:grid-cols-2">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-[#8a9aab]">{item.kind === 'person' ? 'Entidades vinculadas' : 'Personas vinculadas'}</p>
-                    <p className="mt-1 text-sm font-bold text-[#07111d]">{item.kind === 'person' ? item.linkedCompanies : item.linkedPeople}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-[#8a9aab]">{item.kind === 'person' ? 'Entidades vinculadas' : item.kind === 'company' ? 'Personas vinculadas' : 'Tipo de registro'}</p>
+                    <p className="mt-1 text-sm font-bold text-[#07111d]">{item.kind === 'person' ? item.linkedCompanies : item.kind === 'company' ? item.linkedPeople : 'Lead'}</p>
                   </div>
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-wide text-[#8a9aab]">Portal</p>
-                    <p className="mt-1 text-sm font-bold text-[#07111d]">{item.kind === 'person' ? (item.hasPortalAccess ? 'Sí' : 'No') : 'Por vínculo'}</p>
+                    <p className="mt-1 text-sm font-bold text-[#07111d]">{item.kind === 'person' ? (item.hasPortalAccess ? 'Sí' : 'No') : item.kind === 'lead' ? 'No' : 'Por vínculo'}</p>
                   </div>
                 </div>
 
