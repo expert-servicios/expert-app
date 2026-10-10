@@ -267,9 +267,10 @@ export async function POST(request: NextRequest) {
 
     // Keep the fenced claim alive during slow provider requests. Never renew a
     // different worker's claim; SQL verifies the exact owner token.
-    const renewal = persisted ? setInterval(() => {
-      void renewPublicWebTurn(persisted.admin, {
-        sessionId: persisted.sessionId, messageId: persisted.messageId, claim: persisted.claim,
+    const claimedTurn = persisted;
+    const renewal = claimedTurn ? setInterval(() => {
+      void renewPublicWebTurn(claimedTurn.admin, {
+        sessionId: claimedTurn.sessionId, messageId: claimedTurn.messageId, claim: claimedTurn.claim,
       }).catch(() => undefined);
     }, 30_000) : null;
     let providerResult: Awaited<ReturnType<typeof runKiaProviderRequest>>;
