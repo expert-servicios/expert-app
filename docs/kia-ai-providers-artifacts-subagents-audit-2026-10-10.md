@@ -109,6 +109,37 @@ Fuentes:
 
 ---
 
+## 2B. Más novedades utilizables: tools on-demand, documentos, voz y trámites
+
+### 1. Descubrimiento selectivo de herramientas
+Anthropic **Tool Search** (BM25/regex) permite cargar definiciones de herramientas bajo demanda y reducir el contexto al crecer el catálogo, con restricciones y compatibilidad de modelo documentadas. Como KIA tiene numerosas tools Holded, CRM, calendario y administración, es **mejora P1** pero no sustituto de grants. Implementar primero en el router EXPERT un índice seguro de metadatos **sobre el subconjunto previamente autorizado**: buscar tools no puede enumerar secretos, nombres de clientes, métodos write no permitidos ni herramientas de otros tenants. Benchmark de precisión, latencia y ahorro; valorar la opción nativa Anthropic solo en su adaptador.
+
+Fuente: https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool
+
+### 2. Análisis documental multimodal
+Gemini **Document Understanding** procesará PDFs como documento visual (texto, tablas, diagramas; límites según modelo), pero otros formatos pueden degradarse a texto plano sin estilos, gráficos o disposición. **No basta con enviar un DOCX o XLSX como mime arbitrario**: usar parsers propios verificables para DOCX/XLSX/PPTX, extraer estructura de hojas/fórmulas y conservar proveniencia, y procesar PDF visual solo cuando añade valor. Complementar con Gemini Code Execution (Python) en tareas donde hay resultados verificables, sin confiar el cálculo fiscal legal únicamente al LLM.
+
+Fuente: https://ai.google.dev/gemini-api/docs/document-processing
+
+### 3. Voz ES/RU
+OpenAI **Realtime API** soporta sesiones speech-to-speech, voz configurable y llamadas a funciones. Como KIA ya tiene dictado y reproducción de voz en ambos chats, tratar Realtime como **alternativa opt-in para conversaciones orales fluidas** (no requisito previo de unificación), conservando autorizaciones tool server-side y registros minimizados. Comparar calidad ES/RU, coste, latencia, permisos micrófono, reconexión, interrupción, accesibilidad y cancelación. No convertir audio en autorización implícita de trámites.
+
+Fuente: https://developers.openai.com/api/docs/guides/realtime-conversations
+
+### 4. Automatización de sedes electrónicas y Computer Use
+La **Computer Use API** de OpenAI permite controlar browser/desktop mediante entorno alojado por EXPERT; se deben aplicar allowlist de sitios/acciones, sandbox aislado, confirmaciones, límites de pasos, evidencias y readback. Es un candidato P3 para guías de trámites **con revisión humana**, nunca inicio autónomo de pagos/presentaciones/firmas ni credenciales de cliente sin mandato, consentimiento y secreto gestionado. No confundir capacidades de ChatGPT Work/Agents API con permiso operacional de KIA.
+
+Fuente: https://developers.openai.com/api/docs/guides/tools-computer-use
+
+### Priorización revisada
+- **P0:** núcleo único, permisos, subagentes actuales y seguridad; no migrar a nuevo framework.
+- **P1:** tool discovery autorizado, grounded answer con fuentes oficiales, adjuntos/Document Studio y Artifact Studio tipado.
+- **P2:** Claude Office Skills en sandbox y benchmark, trazas/evals entre proveedores, voz conversacional opt-in.
+- **P3:** Computer Use en sedes y managed-agent orchestration solo con revisión RGPD, autorización por acto y piloto desidentificado.
+- **Revisión temporal:** comprobar APIs, versiones, costes, disponibilidad regional y términos en cada inicio de fase: son capacidades con cambios frecuentes, no contratos fijados para siempre.
+
+---
+
 ## 3. Artifact Studio común: plan ampliado
 
 No confundir **artefacto** con adjunto ni con un texto de chat. KIA dispondrá de:
