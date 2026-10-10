@@ -77,6 +77,16 @@ Añadir al registro de skills, **sin abrir agentes autónomos por defecto**, inv
 - **Google:** ADK coordinador y grafos/flujos secuenciales/paralelos, Gemini function calling, búsqueda con citas Google Search, Code Execution y caching. Gemini Canvas tampoco es API embebible.
 - **No acoplar el contrato KIA a un proveedor**: evaluar latencia/calidad/ES-RU/coste/privacidad, usar renderers y fuente de verdad propios y habilitar mediante capability detection y feature flags.
 
+### Innovaciones integradas en el roadmap
+- **Selección dinámica de herramientas autorizadas:** indexar solo metadatos de tools ya permitidas, inspirada en Anthropic Tool Search; medir ahorro de contexto/precisión.
+- **Investigación con citas verificables:** comparar Gemini Google Search Grounding, OpenAI web_search y corpus oficial EXPERT; no aceptar citas inventadas ni normativa desactualizada.
+- **Documentos y escaneados:** Gemini Document Understanding analiza visualmente PDF, pero Office exige parser propio para preservar estructura, celdas y gráficos.
+- **Voz conversacional ES/RU:** evaluar OpenAI Realtime como segunda capa opcional sobre la voz actual, no bloquear la unificación por ello.
+- **Computer Use en sedes:** explorar solo en fase posterior, sandbox y autorización concreta, lectura/guías antes de escribir/firmar/presentar.
+- **Privacy gate proveedor:** la Agents API gestionada de OpenAI actualmente solo ofrece residencia de datos de EE. UU. y no ZDR; usar únicamente datos sintéticos en piloto hasta autorización contractual y análisis RGPD. Managed Agents Anthropic es beta y comparte sandbox/credenciales; verificar aislamiento antes de procesar expedientes reales.
+
+El detalle y las fuentes oficiales verificadas están en [auditoría IA, subagentes y artefactos](kia-ai-providers-artifacts-subagents-audit-2026-10-10.md).
+
 ### Nuevos gates
 Exigir pruebas de artefactos por formato y permisos, citación verificable y fecha normativa, aislamiento multi-tenant, inyección por documento, importación/exportación Office, preview sandbox, no exposición de credenciales, límites de tokens/tiempo/costes y Telegram end-to-end. No publicar un formato/capacidad sin prueba real. Mantener desactivados despliegues multiagente generalizados hasta superar comparativa sobre casos reales anonimizados.
 
