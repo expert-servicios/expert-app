@@ -899,7 +899,7 @@ export default function KiaCopilotWidget({ embedded = false, active = true }: { 
                       : { background: '#f5f1eb', color: '#07111d', borderBottomLeftRadius: '4px' }
                   }
                 >
-                  <KiaReadableMessage text={msg.text} />
+                  {msg.role === 'assistant' ? <KiaReadableMessage text={msg.text} /> : <span className="whitespace-pre-wrap break-words">{msg.text}</span>}
                 </div>
                 {msg.role === 'assistant' && msg.artifacts?.length ? (
                   <KiaMessageArtifacts artifacts={msg.artifacts} />
