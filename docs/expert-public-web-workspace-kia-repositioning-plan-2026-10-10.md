@@ -132,3 +132,11 @@ Código auditado en main: app/(public)/page.tsx, /planes/page.tsx, /servicios/pa
 Páginas indexadas: https://expertconsulting.es/, https://expertconsulting.es/planes, https://expertconsulting.es/holded, https://expertconsulting.es/para-asesorias, https://expertconsulting.es/condiciones. **No se han probado clicks, pagos, reservas ni autenticación de producción de extremo a extremo**. Distinguir fuentes indexadas de versión compilada. Los dominios alternativos no accesibles externamente quedan fuera de afirmaciones operativas hasta validación.
 
 **Esta PR sólo crea un plan:** no cambia copy publicado, ofertas contratadas, campañas activas, datos de clientes, pipelines KIA ni política de contratos.
+
+## 11. Ampliación 10/10/2026 — planes por consumo IA y reorganización editorial
+
+**Anexo vinculante de diseño (aún no operativo):** [Navegación pública, Blog/Docs, taxonomía y créditos KIA](expert-web-v2-navigation-knowledge-ai-credit-plans-2026-10-10.md).
+
+La Dirección valora **modalidades Workspace con créditos KIA incluidos y recargas opcionales**. Esta hipótesis no revive automáticamente los contratos antiguos 49/99/199 €/mes ni modifica la decisión previa sobre servicios puntuales. El nuevo modelo separa prestaciones profesionales, acceso a Workspace, permisos y créditos de uso. Un solo cerebro KIA, distinto presupuesto/funcionalidad según rol y capacidad autorizada; el pago no eleva accesos. Antes de fijar €/crédito: benchmark ES/RU, costes de modelos y herramientas, carga de archivos, soporte, ley de consumo, IVA, retención, ledger, Stripe e idempotencia. Prefiero bolsas prepagadas a cargos de exceso inesperados.
+
+La web se reestructura aprovechando los componentes actuales: nuevo header compacto Soluciones · Servicios · Plataforma · Recursos · Contacto, acceso y KIA; Blog = actualidad/análisis, Docs = guía evergreen normativa, /categoria = hub temático combinando ambos y servicios. Mantener URLs existentes y mapeo SEO/hreflang ES/RU, buscador y gobierno de contenidos con revisión profesional y fuentes oficiales. Rediseñar home, página KIA, Workspace y contabilidad colaborativa con información verificable y evitando promesas adelantadas. Los trabajos editoriales y el estudio de precios se hacen en paralelo sin habilitar nuevas suscripciones ni herramientas de cobro en producción.
