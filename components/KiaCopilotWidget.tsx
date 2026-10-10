@@ -14,6 +14,7 @@ import Image from 'next/image';
 import { X, Send, Loader2, ChevronDown, ExternalLink, ThumbsUp, ThumbsDown, Mic, Square, Volume2 } from 'lucide-react';
 import { KiaAvatar } from '@/components/kia/KiaAvatar';
 import { KiaReadableMessage } from '@/components/kia/KiaReadableMessage';
+import { kiaVoiceLocale } from '@/lib/ai/kia/kia-voice-presentation';
 import type { KiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 import type { KiaCopilotArtifact } from '@/lib/ai/kia/kia-copilot-artifacts';
 import { kiaFriendlyError } from '@/lib/ai/kia/kia-error-copy';
@@ -724,7 +725,7 @@ export default function KiaCopilotWidget({ embedded = false, active = true }: { 
       const response = await fetch('/api/ai/kia/voice/speech', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, locale: uiLocale }),
+        body: JSON.stringify({ text, locale: kiaVoiceLocale(text, uiLocale) }),
         signal: controller.signal,
       });
       if (!response.ok) throw new Error('speech_unavailable');
