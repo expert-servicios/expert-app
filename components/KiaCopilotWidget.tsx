@@ -13,6 +13,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { X, Send, Loader2, ChevronDown, ExternalLink, ThumbsUp, ThumbsDown, Mic, Square, Volume2 } from 'lucide-react';
 import { KiaAvatar } from '@/components/kia/KiaAvatar';
+import { KiaReadableMessage } from '@/components/kia/KiaReadableMessage';
 import type { KiaAvatarState } from '@/lib/ai/kia/kia-avatar-state';
 import type { KiaCopilotArtifact } from '@/lib/ai/kia/kia-copilot-artifacts';
 import { kiaFriendlyError } from '@/lib/ai/kia/kia-error-copy';
@@ -897,7 +898,7 @@ export default function KiaCopilotWidget({ embedded = false, active = true }: { 
                       : { background: '#f5f1eb', color: '#07111d', borderBottomLeftRadius: '4px' }
                   }
                 >
-                  {msg.text}
+                  <KiaReadableMessage text={msg.text} />
                 </div>
                 {msg.role === 'assistant' && msg.artifacts?.length ? (
                   <KiaMessageArtifacts artifacts={msg.artifacts} />
