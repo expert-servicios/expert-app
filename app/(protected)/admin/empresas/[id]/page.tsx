@@ -144,6 +144,14 @@ export default function Company360Page() {
     void load();
   }, [load]);
 
+  // Company 360 loads asynchronously: the #personas anchor does not exist
+  // when the browser first resolves the URL. Scroll after the data is rendered.
+  useEffect(() => {
+    if (data && window.location.hash === '#personas') {
+      document.getElementById('personas')?.scrollIntoView({ block: 'start' });
+    }
+  }, [data]);
+
   const searchPeople = useCallback(async () => {
     const q = peopleSearch.trim();
     if (q.length < 2) {
@@ -277,7 +285,7 @@ export default function Company360Page() {
         </div>
 
         <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-          <section className="rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
+          <section id="personas" className="scroll-mt-20 rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-[#c88b25]" />
               <h2 className="font-serif text-xl font-bold text-[#07111d]">Personas vinculadas</h2>
