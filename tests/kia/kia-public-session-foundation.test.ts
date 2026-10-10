@@ -12,7 +12,7 @@ describe('KIA web anonymous session foundation', () => {
       expect(a.id).not.toBe(b.id);
       expect(verifyPublicKiaSession(a.token, now)).toBe(a.id);
       expect(verifyPublicKiaSession(a.token, now + 8 * 86400 * 1000)).toBeNull();
-      expect(verifyPublicKiaSession(a.token.replace(/.$/, '0'), now)).toBeNull();
+      expect(verifyPublicKiaSession(a.token.slice(0, -1) + (a.token.endsWith('0') ? '1' : '0'), now)).toBeNull();
       expect(verifyPublicKiaSession(b.token, now)).toBe(b.id);
     } finally {
       if (previous === undefined) delete process.env.KIA_PUBLIC_SESSION_SECRET;
