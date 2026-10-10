@@ -122,8 +122,6 @@ export default function AdminClientPortalPage() {
   const [data, setData] = useState<ClientData | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(searchParams.get('companyId'));
   const [loading, setLoading] = useState(true);
-  const [auditReady, setAuditReady] = useState(false);
-  const [auditError, setAuditError] = useState('');
   const [error, setError] = useState('');
   const [auditError, setAuditError] = useState('');
   const [auditing, setAuditing] = useState(false);
@@ -200,19 +198,6 @@ export default function AdminClientPortalPage() {
     })();
   }, [id, requestedCompanyId]);
 
-  useEffect(() => {
-    if (!data) return;
-    let canceled = false;
-    void fetch('/api/admin/support/access', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientId: id, companyId: null, action: 'support_open' }),
-    }).then(async (res) => {
-      if (!res.ok) throw new Error('No se pudo registrar el acceso de soporte');
-      if (!canceled) setAuditReady(true);
-    }).catch(() => { if (!canceled) setAuditError('No se pudo registrar el acceso. Modo soporte bloqueado hasta reintentar.'); });
-    return () => { canceled = true; };
-  }, [data, id]);
-
   const view = useMemo(() => {
     if (!data) return null;
     const company = data.companies.find((item) => item.id === companyId) ?? null;
@@ -244,15 +229,6 @@ export default function AdminClientPortalPage() {
   if (error || !data || !view) {
     return <div className="mx-auto max-w-5xl px-6 py-8"><div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error || 'Cliente no disponible'}</div></div>;
   }
-
-  if (!auditReady) return (
-    <main className="mx-auto max-w-4xl p-8">
-      <div role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-900">
-        {auditError || 'Registrando acceso administrativo al portal…'}
-      </div>
-      {auditError && <button type="button" className="mt-3 rounded bg-[#07111d] px-4 py-2 text-white" onClick={() => window.location.reload()}>Reintentar</button>}
-    </main>
-  );
 
   const companyQuery = companyId ? `?companyId=${companyId}` : '';
 
