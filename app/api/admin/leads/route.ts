@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminClient } from '@/lib/auth/require-admin';
 import { attributionFromMetadata } from '@/lib/marketing/server-attribution';
+import { CRM_ATTENTION_FILTER, CRM_STRIPE_HISTORY_FILTER, combineCrmOrFilters } from '@/lib/crm/lead-segment-filters';
 
 const LIFECYCLE_STAGES = ['lead', 'prospect', 'customer', 'former_customer'] as const;
 const STRIPE_ACTIVITIES = ['no_activity', 'abandoned', 'paid', 'subscribed'] as const;
@@ -111,18 +112,21 @@ export async function GET(request: NextRequest) {
     if (locale) {
       query = query.contains('metadata', { acquisition: { locale } });
     }
+    let segmentOr: string | null = null;
     if (segment === 'mentorday-projects') {
       query = query.contains('metadata', { source_group: 'mentorday', program: 'Mentor Tips / Speed Mentoring' });
     } else if (segment === 'attention') {
-      query = query.contains('metadata', { crm_needs_attention: true });
+      segmentOr = CRM_ATTENTION_FILTER;
     } else if (segment === 'stripe_history') {
-      query = query.eq('source', 'stripe_sync');
+      segmentOr = CRM_STRIPE_HISTORY_FILTER;
     } else if (segment && segment !== 'all') {
       query = query.contains('metadata', { crm_segment: segment });
     }
-    if (search) {
-      query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
-    }
+    // Compose search and CRM segments in a single PostgREST OR parameter.
+    // Two successive .or() calls can overwrite the first and leak other segments.
+    const searchOr = search ? `name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%` : null;
+    const combinedOr = combineCrmOrFilters(segmentOr, searchOr);
+    if (combinedOr) query = query.or(combinedOr);
     if (focus) {
       query = query.eq('id', focus);
     }
@@ -164,7 +168,7 @@ export async function GET(request: NextRequest) {
       ruBase().eq('lifecycle_stage', 'customer'),
       ruBase().eq('stripe_activity', 'paid'),
       ruBase().eq('stripe_activity', 'subscribed'),
-      admin.from('leads').select('id', { count: 'exact', head: true }).contains('metadata', { crm_needs_attention: true }),
+      admin.from('leads').select('id', { count: 'exact', head: true }).or(CRM_ATTENTION_FILTER),
     ]);
 
     if (listResult.error) throw listResult.error;
