@@ -142,3 +142,45 @@ jobs:
           restored_hash="$(psql "$DB_URL" -Atc "select md5(coalesce(array_to_string(statements,E'\\n'),'')) from supabase_migrations.schema_migrations where version='20990101000000'")"
           test "$restored_hash" = "$statement_hash"
           test "$(psql "$DB_URL" -Atc "select to_regclass('public.repair_probe_contract') is null")" = "t"
+
+  kia-web-persistence-db:
+    name: KIA web persistence PostgreSQL integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DB_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable
+    steps:
+      - name: Checkout migration and integration tests
+        uses: actions/checkout@v7
+
+      - name: Prepare isolated Supabase-compatible roles and leads
+        run: |
+          set -euo pipefail
+          psql "$DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          create role anon nologin;
+          create role authenticated nologin;
+          create role service_role nologin bypassrls;
+          create table public.leads (id uuid primary key);
+          SQL
+
+      - name: Apply actual KIA web schema migration
+        run: |
+          set -euo pipefail
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261010102630_kia_public_web_sessions_messages.sql
+
+      - name: Validate isolation, RLS, grants, idempotency and cascade
+        run: |
+          set -euo pipefail
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f tests/db/kia_public_web_persistence_integration.sql
