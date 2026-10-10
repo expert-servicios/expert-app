@@ -65,9 +65,11 @@ export async function POST(request: NextRequest,{params}:{params:Promise<{id:str
     .eq('company_id',id).eq('provider',provider).eq('status','active').maybeSingle();
   if(existing) return NextResponse.json({error:'Ya existe destino; no se permite sobrescribirlo durante la migración'},{status:409});
   const now=new Date().toISOString();
+  const {error:auditError}=await admin.from('audit_logs').insert({actor_id:actorId,action:'holded.migration_destination_stage_requested',entity:'companies',entity_id:id,metadata:{source_integration_id:source.id,read_only:true}});
+  if(auditError) return NextResponse.json({error:'No se pudo registrar auditoría'},{status:503});
   const {data:row,error:createError}=await admin.from('client_integrations').insert({
     company_id:id,client_id:null,provider,mode:'advisor_managed',api_version:'v2',
-    api_key_last4:keyLast4(raw),status:'active',sync_mode:'read_only',
+    api_key_last4:keyLast4(raw),status:'pending',sync_mode:'read_only',
     permissions_detected:{accountingEntries:true,accountingAccounts:true},
     permissions_enabled:{accountingEntries:true,accountingAccounts:true},
     last_success_at:now,connected_by:actorId,consent_at:now,consent_version:'admin-migration-staging-v1',
@@ -81,6 +83,8 @@ export async function POST(request: NextRequest,{params}:{params:Promise<{id:str
     await admin.from('client_integrations').delete().eq('id',row.id).eq('provider',provider);
     return NextResponse.json({error:'No se pudo almacenar el destino cifrado'},{status:500});
   }
+  const {error:activateError}=await admin.from('client_integrations').update({status:'active'}).eq('id',row.id).eq('company_id',id).eq('provider',provider);
+  if(activateError) return NextResponse.json({error:'Token cifrado registrado, pero la activación está pendiente de revisión'},{status:503});
   await admin.from('audit_logs').insert({actor_id:actorId,action:'holded.migration_destination_staged',
     entity:'companies',entity_id:id,metadata:{destination_integration_id:row.id,read_only:true,source_preserved:true}});
   return NextResponse.json({ok:true,last4:keyLast4(raw),sourcePreserved:true,cutoverPerformed:false},
