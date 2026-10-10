@@ -47,7 +47,7 @@ export async function PATCH(
       .eq('profile_id', actor.userId)
       .single();
 
-    if (membership?.role !== 'owner' && actor.role !== 'admin' && actor.role !== 'owner') {
+    if (membership?.role !== 'owner' && actor.role !== 'admin') {
       return NextResponse.json({ error: 'Sin permisos' }, { status: 403 });
     }
 
