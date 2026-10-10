@@ -432,7 +432,7 @@ export function KiaPublicWidget() {
                   ? 'rounded-br-md bg-[#0D1B2A] text-white'
                   : 'rounded-bl-md bg-[#f5f1eb] text-[#0D1B2A]'}`}
               >
-                <KiaReadableMessage text={message.text} />
+                {message.role === 'assistant' ? <KiaReadableMessage text={message.text} /> : <span className="whitespace-pre-wrap break-words">{message.text}</span>}
                 {message.role === 'assistant' && message.id !== 'welcome' ? (
                   <button type="button" onClick={() => speakReply(message.id, message.text)}
                     aria-label={speakingId === message.id ? 'Detener lectura' : 'Escuchar respuesta'}
