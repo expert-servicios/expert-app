@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Contactos360Navigation } from '@/components/admin/Contactos360Navigation';
 import { AlertTriangle, ArrowLeft, Mail, Phone, Search, ShieldCheck, UserRound, Users } from 'lucide-react';
 import { fetchWithCookies } from '@/lib/utils/server-fetch';
 import { LeadLifecycleSelect } from '@/components/admin/LeadLifecycleSelect';
@@ -192,6 +193,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
               ))}
             </div>
           </div>
+          <Contactos360Navigation section="leads" />
         </div>
       </div>
 
