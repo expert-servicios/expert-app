@@ -100,7 +100,7 @@ export async function appendKiaConversationMessage(input: {
 export async function getOrCreateKiaLeadConversation(input: {
   admin: AdminClient;
   leadId: string;
-  channel: 'meta';
+  channel: 'meta' | 'telegram';
   originRef: string;
   topic?: string | null;
   metadata?: Record<string, unknown>;
@@ -110,6 +110,7 @@ export async function getOrCreateKiaLeadConversation(input: {
     .select('id,metadata,status')
     .eq('lead_id', input.leadId)
     .eq('channel', input.channel)
+    .eq('origin_ref', input.originRef)
     .eq('status', 'active')
     .order('updated_at', { ascending: false })
     .limit(1)
@@ -147,7 +148,7 @@ export async function getOrCreateKiaLeadConversation(input: {
       service_slug: null,
       topic: input.topic ?? null,
       status: 'active',
-      origin_type: 'meta',
+      origin_type: input.channel,
       origin_ref: input.originRef,
       metadata: input.metadata ?? {},
       last_message_at: new Date().toISOString(),
