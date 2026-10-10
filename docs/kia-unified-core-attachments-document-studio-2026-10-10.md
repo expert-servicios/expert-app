@@ -123,3 +123,11 @@ Exigir pruebas de artefactos por formato y permisos, citación verificable y fec
 
 ## 8. Estado de este documento
 Esta es una **especificación de implementación**, no activación de nuevas herramientas ni habilitación de subida múltiple o conversión general. Los informes de empresa DOCX/XLSX/PDF son el único caso de generación multi-formato verificado actualmente. Mantener esta distinción visible en UI, comunicaciones y hoja registral.
+
+## 9. Cierre de planificación y radar mensual (10/10/2026)
+
+**Decisión de dirección:** plan de inteligencia KIA documentado y congelado como roadmap; no iniciar las fases nuevas durante el ciclo inmediato de rediseño de paneles EXPERT. Mantener PR #707 en borrador como referencia hasta que proceda su revisión documental.
+
+**Radar mensual activo:** automatización externa de revisión de OpenAI, Anthropic y Gemini el día 1 de cada mes por la mañana (Europe/Madrid). Primera revisión ordinaria: 01/11/2026. Evaluar APIs/modelos, agentes, herramientas, RAG/grounding, voz, documentos, artefactos, novedades regionales, precios y riesgos de RGPD. Entregar propuesta fundada en fuentes oficiales con decisión adoptar/probar/descartar. Los hallazgos se proponen al backlog; **ningún cron debe cambiar automáticamente código, permisos, credenciales, migraciones o producción sin las verificaciones y autorizaciones correspondientes**.
+
+**Siguiente frente prioritario:** `docs/expert-admin-v2-plan-maestro-2026-10-09.md` — Admin y cliente con plantilla compartida, permisos distintos, modo soporte y auditoría; retomar implementación por fases y cerrar incidencias abiertas #683/#705 siguiendo CI/seguridad antes de fusionar.
