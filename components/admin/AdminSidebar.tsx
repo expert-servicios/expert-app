@@ -1,7 +1,7 @@
-import { WorkspaceBrand } from '@/components/workspace/WorkspaceBrand';
-import { WorkspaceNavLink } from '@/components/workspace/WorkspaceNavLink';
 "use client";
 
+import { WorkspaceBrand } from '@/components/workspace/WorkspaceBrand';
+import { WorkspaceNavLink } from '@/components/workspace/WorkspaceNavLink';
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
