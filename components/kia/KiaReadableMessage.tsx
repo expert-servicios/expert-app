@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 function inline(text: string): ReactNode[] {
   const result: ReactNode[] = [];
-  const pattern = /(\*\*([^*\n]+)\*\*|\*([^*\n]+)\*|`([^`\n]+)`)/g;
+  const pattern = /(\*\*([^*\n]+)\*\*|(?<![\w*])\*([^*\n\s](?:[^*\n]*?[^*\n\s])?)\*(?![\w*])|`([^`\n]+)`)/g;
   let offset = 0;
   for (const m of text.matchAll(pattern)) {
     const index = m.index ?? 0;
@@ -24,7 +24,7 @@ export function KiaReadableMessage({ text }: { text: string }) {
   const lines = text.replace(/\r\n?/g, '\n').split('\n');
   const blocks: ReactNode[] = [];
   let paragraphs: string[] = [];
-  let listItems: { ordered: boolean; content: string }[] = [];
+  let listItems: { ordered: boolean; content: string; number?: number }[] = [];
   const flushParagraph = () => {
     if (!paragraphs.length) return;
     blocks.push(<p key={`p-${blocks.length}`} className="whitespace-pre-line leading-relaxed">{inline(paragraphs.join('\n'))}</p>);
@@ -33,19 +33,19 @@ export function KiaReadableMessage({ text }: { text: string }) {
   const flushList = () => {
     if (!listItems.length) return;
     const ordered = listItems[0].ordered;
-    const children = listItems.map((x, i) => <li key={i} className="pl-0.5">{inline(x.content)}</li>);
+    const children = listItems.map((x, i) => <li key={i} value={ordered ? x.number : undefined} className="pl-0.5">{inline(x.content)}</li>);
     blocks.push(ordered
       ? <ol key={`l-${blocks.length}`} className="list-decimal space-y-1 pl-5">{children}</ol>
       : <ul key={`l-${blocks.length}`} className="list-disc space-y-1 pl-5">{children}</ul>);
     listItems = [];
   };
   for (const line of lines) {
-    const match = /^\s*(?:([-•])\s+|(\d+)[.)]\s+)(.+)$/.exec(line);
+    const match = /^\s*(?:([-•])\s+|([1-9]\d?)[.)]\s+)(.+)$/.exec(line);
     if (match) {
       flushParagraph();
       const ordered = Boolean(match[2]);
       if (listItems.length && listItems[0].ordered !== ordered) flushList();
-      listItems.push({ ordered, content: match[3] });
+      listItems.push({ ordered, content: match[3], number: ordered ? Number(match[2]) : undefined });
     } else if (!line.trim()) {
       flushParagraph();
       flushList();
