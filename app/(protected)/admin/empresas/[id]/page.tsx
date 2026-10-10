@@ -144,6 +144,14 @@ export default function Company360Page() {
     void load();
   }, [load]);
 
+  // Company 360 loads asynchronously: the #personas anchor does not exist
+  // when the browser first resolves the URL. Scroll after the data is rendered.
+  useEffect(() => {
+    if (data && window.location.hash === '#personas') {
+      document.getElementById('personas')?.scrollIntoView({ block: 'start' });
+    }
+  }, [data]);
+
   const searchPeople = useCallback(async () => {
     const q = peopleSearch.trim();
     if (q.length < 2) {
