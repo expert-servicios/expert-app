@@ -67,3 +67,39 @@ Cada actuación debe producir un registro estructurado de `case_id`/company_id, 
 **No crear nuevas filas `companies` para ninguno de estos cinco sujetos:** ya existen y están identificados por CIF/NIF y company_id. Si surge nueva entidad, primero buscar por NIF normalizado y resolver relaciones reales. No deducir que "acceso completo a contabilidad" está efectivamente otorgado sin lectura autenticada en cada integración.
 
 **Fuentes funcionales:** Supabase EXPERT (`companies`, `client_integrations`, `profile_companies`, consulta interna al 10/10/2026); `docs/admin-improvement-plan.md` (caso multi-entidad Josep); `docs/admin-360-compact-redesign-backlog-2026-10-09.md` (tenant EXPERT propio versus EXPERT Asesorías); `docs/kia-pilot-rollout.md` (pilotos contextuales, distinto objetivo); `docs/clients/dgm-accounting-rebuild-2025-2026.md`; piloto ALVILS PR #713.
+
+## Actualización de cohorte y suscripciones legacy — 10/10/2026
+
+**La cohorte tiene ahora SEIS sujetos contables piloto.** La sección inicial que enumera cinco corresponde a la primera versión y queda complementada por esta ampliación. No añadir una séptima ficha para EXPERT Asesorías, que es el entorno/plataforma.
+
+### Sexto sujeto: INVERSIONES PASO SEGURO, S.L.U.
+
+- EXPERT company_id: `79086162-f1db-4b7b-846e-8143fb3529fe`; CIF `B54920509`.
+- Empresa de hostelería, 11 empleados según Dirección, considerable facturación y muchos movimientos.
+- Holded integrado **V2**, estado **active**, modalidad `client_account`, `read_only`, con permisos declarados de lectura de `accountingEntries`, `accountingAccounts`, ventas, compras, bancos, empleados y nóminas. Estos permisos **no sustituyen una lectura e inventario real**, que está pendiente.
+- Objetivo KIA: contabilidad de alto volumen, conciliaciones bancarias, facturación, gestión de nóminas, convenios, retenciones, cierre y seguimiento histórico. Sin escritura automática ni extracción indiscriminada.
+- Sin cuota mensual para EXPERT, tal como confirmó Dirección; el listado completo de suscripciones de Stripe no mostró una suscripción para su customer `cus_OQkYuIkz8n5FYB`.
+
+### Facturación recurrente legacy: no modificar contratos ni precios
+
+Cuenta Stripe conectada en vivo: **Expert Consulting**, `acct_1N94D0LeYwwgvux4`; consulta de todas las suscripciones con `status=all`, cinco resultados, `has_more=false`.
+
+| Entidad | Stripe customer | Stripe subscription | Precio preexistente | Base / mes | Estado al revisar |
+|---|---|---|---|---:|---|
+| DISEÑO GLOBAL MERIDIANO, S.L. | `cus_ScM8g6rygeBPsr` | `sub_1SF8fqLeYwwgvux4isW6jM5X` | `price_1S28QoLeYwwgvux4skv4SnID` | 1.000,00 EUR + IVA según Dirección | `past_due` |
+| ALVILS ESP, S.L.U. (dictado «Audios/Adels ESP») | `cus_SwAQzEZGfhlP5S` | `sub_1S0IA7LeYwwgvux4vE1VB7DK` | `price_1S0I8FLeYwwgvux4wThjvUNU` | 150,00 EUR + IVA según Dirección | `past_due` |
+
+**LEGACY significa:** conservar de forma indefinida las tarifas/planes existentes mientras sigan los contratos; excluir las dos suscripciones del alta/catálogo de planes nuevos; no crear `product`, `price`, `customer`, `subscription`, `invoice` o `payment_link` duplicados; no cambiar ciclos, cuantías, impuestos, método de cobro ni cancelar. Cambios de billing solamente con autorización específica.
+
+**Incidencias constatadas:**
+1. `public.subscriptions` en EXPERT no tiene filas para ALVILS ni DGM; `public.company_stripe_customers` tampoco registra vínculo para ellas. **La sincronización/mapeo a Company 360 está pendiente**, aunque los objetos reales EXISTEN en Stripe. Resolver por identificación jurídica, con lectura, doble comprobación e idempotencia; no inventar una suscripción local ni afirmar sincronización completada.
+2. Los objetos Stripe de ambas suscripciones muestran `past_due`, modalidad `send_invoice`; comprobar facturas y pagos posteriores/externos antes de concluir importes realmente pendientes. No enviar requerimientos ni cobrar automáticamente.
+3. En la ficha de INVERSIONES PASO SEGURO existe mapeo primario Stripe verificado manualmente; comparte datos de contacto con ALVILS. **No asociar por correo o teléfono**. Vincular por empresa jurídica/CIF y evidencia auditada.
+4. Los importes anteriores son **base recurrente registrada** de 100000 y 15000 céntimos de euro; el tratamiento real del IVA debe comprobarse en facturas Stripe, nunca asumirse por el precio solo.
+
+### Puertas adicionales de KIA para seis pilotos
+
+- Probar segregación de empresa seleccionada en el panel EXPERT Asesorías vs contabilidad propia Expert Consulting, y dos identidades fiscales vinculadas a Josep.
+- Para INVERSIONES PASO SEGURO, leer una muestra acotada de diario y nóminas, verificar empresa y alcance, y anonimizar los casos de prueba. Evitar volcar datos personales de empleados a repositorio o prompts.
+- Para DGM y ALVILS, reparar primero el mapeo Stripe→company_id y registrar estado legacy sin afectar estado de facturación en Stripe.
+- Mantener el programa subordinado al Plan Maestro EXPERT KIA fase E0: la documentación piloto no habilita herramientas nuevas ni altera secuencia E0→E6.
