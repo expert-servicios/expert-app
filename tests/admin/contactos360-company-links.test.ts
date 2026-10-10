@@ -9,6 +9,7 @@ describe('Explicit identity/company linkage entry point', () => {
     expect(directory).toContain("item.kind === 'company'");
     expect(directory).toContain('href={`${item.href}#personas`}');
     expect(company).toContain('id="personas"');
+    expect(company).toContain("window.location.hash === '#personas'");
     expect(company).toContain('/personas');
     expect(api).toContain(".from('profile_companies')");
     expect(api).toContain("['admin', 'owner'].includes(profile.role)");
