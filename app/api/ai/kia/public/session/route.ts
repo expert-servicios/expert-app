@@ -77,7 +77,10 @@ export async function POST(request: NextRequest) {
   const captcha = await verifyRecaptchaToken({
     token: input.data.recaptchaToken, action: 'kia_public_chat', minScore: 0.4,
   });
-  if (!captcha.ok) return noStore(NextResponse.json({ error: 'verification_failed' }, { status: 403 }));
+  // A development-mode CAPTCHA bypass or missing/wrong action must never mint a session.
+  if (!captcha.ok || captcha.skipped || captcha.action !== 'kia_public_chat') {
+    return noStore(NextResponse.json({ error: 'verification_failed' }, { status: 403 }));
+  }
   try {
     const session = await ensurePublicWebSession(
       getSupabaseAdmin(), request.cookies.get(PUBLIC_KIA_SESSION_COOKIE)?.value,
