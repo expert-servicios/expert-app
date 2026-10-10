@@ -131,3 +131,16 @@ Esta es una **especificación de implementación**, no activación de nuevas her
 **Radar mensual activo:** automatización externa de revisión de OpenAI, Anthropic y Gemini el día 1 de cada mes por la mañana (Europe/Madrid). Primera revisión ordinaria: 01/11/2026. Evaluar APIs/modelos, agentes, herramientas, RAG/grounding, voz, documentos, artefactos, novedades regionales, precios y riesgos de RGPD. Entregar propuesta fundada en fuentes oficiales con decisión adoptar/probar/descartar. Los hallazgos se proponen al backlog; **ningún cron debe cambiar automáticamente código, permisos, credenciales, migraciones o producción sin las verificaciones y autorizaciones correspondientes**.
 
 **Siguiente frente prioritario:** `docs/expert-admin-v2-plan-maestro-2026-10-09.md` — Admin y cliente con plantilla compartida, permisos distintos, modo soporte y auditoría; retomar implementación por fases y cerrar incidencias abiertas #683/#705 siguiendo CI/seguridad antes de fusionar.
+
+## 10. Integración transversal con EXPERT Workspace V2 (ratificación 10/10/2026)
+
+**Cambio de criterio respecto a la pausa de desarrollos:** la ampliación de inteligencia profunda, adjuntos, Artifact Studio y nuevos proveedores permanece documentada; **la integración del único Copilot en ambos paneles y su contexto proactivo sí se implementará en paralelo con Workspace V2** porque condiciona layout, rutas y contrato de eventos. No iniciar una segunda infraestructura IA.
+
+**Contrato compartido documentado en la rama Admin V2:** [Workspace V2 × KIA — dock único, eventos de actividad, proactividad y entregas I0–I6](https://github.com/expert-servicios/expert-app/blob/docs/admin-v2-delegated-client-operations-20261010/docs/workspace-v2-kia-copilot-parallel-integration-2026-10-10.md).
+
+**KIA Intelligence es responsable de:** motor/cerebro único, selección de especialista y tool autorizada, contexto validado, generación de sugerencias con evidencia, deduplicación, costes/tracing, conversación ES/RU y futuras herramientas documentales. **Workspace V2 es responsable de:** layout a toda altura derecha, controles responsive de KIA, contexto declarativo de rutas/pestañas/selecciones y confirmaciones. Admin, Cliente y Soporte deben montar exactamente una instancia del dock, con identidad/empresa/caso reales y políticas server-side diferentes.
+
+**Estado verificable en main:** WorkspaceFrame tiene rightPanel; Admin lo usa; Cliente todavía utiliza widget flotante del layout protegido. Este último también se monta sobre Admin y debe eliminarse o desactivarse para esas superficies durante cutover. Hay evento expert:kia-page-context usado en algunos módulos, revisión proactiva Admin con LLM tras cambio de pestaña y chips de sugerencias genéricas Cliente, pero **no** un sistema uniforme ni seguro de proactividad. Diseñar primero contrato tipado, resolver contexto por servidor y limitar IA a acciones con valor, no por cada navegación.
+
+**Gates de integración:** dos sujetos/dos empresas, cambio de contexto que invalida mensajes/adjuntos, soporte Admin auditado, ausencia de expediente sin alucinación, permisos de tools, avisos sin spam, acceso a documentos sólo autorizado, QA 1280/1440/1920, tablet/móvil, accesibilidad y Vercel/CI verdes. Las PR de planificación #707 y #708 no habilitan ningún comportamiento de runtime.
+
