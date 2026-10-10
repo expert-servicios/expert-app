@@ -241,6 +241,11 @@ export default function AdminDirectoryPage() {
                   <Link href={item.href} className="inline-flex items-center gap-1.5 rounded-lg bg-[#07111d] px-3 py-2 text-xs font-bold text-white">
                     <ExternalLink className="h-3.5 w-3.5" /> Abrir
                   </Link>
+                  {item.kind === 'company' && (
+                    <Link href={item.href} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] px-3 py-2 text-xs font-bold text-[#29384a]">
+                      <Users className="h-3.5 w-3.5" /> Gestionar vínculos
+                    </Link>
+                  )}
                   {item.portalHref && (
                     <Link href={item.portalHref} className="inline-flex items-center gap-1.5 rounded-lg border border-[#d8cbb5] px-3 py-2 text-xs font-bold text-[#29384a]">
                       <Users className="h-3.5 w-3.5" /> Vista cliente
