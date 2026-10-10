@@ -1,10 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { isWorkspaceRouteActive } from '../../components/workspace/workspaceRouteMatch';
 
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
 
 describe('Kiranism-inspired shared EXPERT Workspace shell', () => {
+  it('selects exactly one active nav item for similar routes', () => {
+    expect(isWorkspaceRouteActive('/admin/kia-health', '/admin/kia')).toBe(false);
+    expect(isWorkspaceRouteActive('/admin/kia-health', '/admin/kia-health')).toBe(true);
+    expect(isWorkspaceRouteActive('/admin/kia-health/details', '/admin/kia-health')).toBe(true);
+    expect(isWorkspaceRouteActive('/dashboard', '/dashboard', true)).toBe(true);
+    expect(isWorkspaceRouteActive('/dashboard/servicios', '/dashboard', true)).toBe(false);
+    expect(isWorkspaceRouteActive('/dashboard/servicios-extra', '/dashboard/servicios')).toBe(false);
+  });
+
   it('keeps client component directives before imports to avoid Next.js build failures', () => {
     const adminNav = source('components/admin/AdminSidebar.tsx');
     const clientNav = source('components/dashboard/DashboardNav.tsx');
