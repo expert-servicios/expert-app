@@ -154,3 +154,24 @@ export async function appendPublicWebTurn(
 export function newPublicWebMessageId() {
   return randomUUID();
 }
+
+
+export async function claimPublicWebTurn(admin: Admin, input: {sessionId:string; messageId:string; body:string; claim:string}) {
+  const {data,error}=await admin.rpc('kia_web_claim_turn',{p_session_id:input.sessionId,p_message_id:input.messageId,p_body:input.body,p_claim:input.claim});
+  if(error)throw error;
+  return data as {outcome:'acquired'|'replay'|'busy'|'mismatch'|'invalid'|'invalid_session';reply?:string};
+}
+export async function completePublicWebTurn(admin: Admin,input:{sessionId:string;messageId:string;claim:string;reply:string}) {
+  const {data,error}=await admin.rpc('kia_web_complete_turn',{p_session_id:input.sessionId,p_message_id:input.messageId,p_claim:input.claim,p_reply:input.reply});
+  if(error)throw error;
+  return data as {outcome:string;reply?:string};
+}
+export async function failPublicWebTurn(admin:Admin,input:{sessionId:string;messageId:string;claim:string}) {
+  const {error}=await admin.rpc('kia_web_fail_turn',{p_session_id:input.sessionId,p_message_id:input.messageId,p_claim:input.claim});
+  if(error)throw error;
+}
+export async function renewPublicWebTurn(admin:Admin,input:{sessionId:string;messageId:string;claim:string}) {
+  const {data,error}=await admin.rpc('kia_web_renew_turn',{p_session_id:input.sessionId,p_message_id:input.messageId,p_claim:input.claim});
+  if(error)throw error;
+  return data===true;
+}
