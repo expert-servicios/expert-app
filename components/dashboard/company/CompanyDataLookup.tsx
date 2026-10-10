@@ -284,7 +284,7 @@ export default function CompanyDataLookup({ onFill, className }: Props) {
       source: suggestion.source,
       sourceUrl: suggestion.sourceUrl,
       retrievedAt: suggestion.retrievedAt,
-      officialRegistry: suggestion.source === 'registradores_opendata' || suggestion.source === 'boe_borme',
+      officialRegistry: false,
       snapshot: suggestion,
     });
     setUsedId(suggestionId ?? suggestion.taxId ?? suggestion.name ?? '?');
@@ -297,7 +297,7 @@ export default function CompanyDataLookup({ onFill, className }: Props) {
       </p>
       <p className="mb-3 text-xs text-[#6b7280]">
         Introduce el nombre o CIF de la empresa para recuperar datos de fuentes públicas y oficiales.
-        Cuando el dato procede de Registradores o BOE/BORME, EXPERT lo conserva como dato registral de solo lectura.
+        Las sugerencias de fuentes externas requieren comprobación profesional antes de considerarse datos registrales verificados.
       </p>
 
       {/* Search input */}
@@ -324,7 +324,7 @@ export default function CompanyDataLookup({ onFill, className }: Props) {
       {usedId && (
         <div className="mt-3 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-700">
           <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-          Datos precargados. Los campos procedentes de una fuente registral oficial quedarán bloqueados después de guardar.
+          Datos sugeridos precargados: revísalos y confirma su exactitud antes de guardar.
         </div>
       )}
 
@@ -366,7 +366,7 @@ export default function CompanyDataLookup({ onFill, className }: Props) {
                 />
               ))}
               <p className="text-[10px] text-[#9ca3af]">
-                EXPERT conserva la fuente y fecha de consulta. Los datos oficiales de Registradores/BOE-BORME se guardan como solo lectura.
+                EXPERT muestra la fuente y fecha de consulta como referencia; una sugerencia no equivale a una certificación registral.
                 Fuente consultada: {new Date(result.meta?.queriedAt ?? '').toLocaleString('es-ES')}.
               </p>
             </div>
