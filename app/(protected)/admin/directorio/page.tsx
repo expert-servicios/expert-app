@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { Contactos360Navigation } from '@/components/admin/Contactos360Navigation';
 import {
   Building2,
   ExternalLink,
@@ -138,6 +139,8 @@ export default function AdminDirectoryPage() {
               Alta / onboarding
             </Link>
           </div>
+
+          <Contactos360Navigation section="directory" />
 
           <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
             {filters.map((item) => (
