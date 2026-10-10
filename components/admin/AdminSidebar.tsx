@@ -42,7 +42,7 @@ const NAV_GROUPS: NavGroup[] = [
     short: "Clientes",
     icon: Users,
     items: [
-      { label: "Directorio 360", href: "/admin/directorio" },
+      { label: "Contactos 360", href: "/admin/directorio" },
       { label: "Onboarding", href: "/admin/onboarding" },
       { label: "Calendario", href: "/admin/calendario-fiscal" },
     ],
