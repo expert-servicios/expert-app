@@ -20,7 +20,7 @@ describe('Admin 360 unified directory and delegated client workspace', () => {
 
   it('makes Directory 360 the canonical sidebar entry without deleting legacy routes', () => {
     const sidebar = source('components/admin/AdminSidebar.tsx');
-    expect(sidebar).toContain('{ label: "Directorio 360", href: "/admin/directorio" }');
+    expect(sidebar).toContain('{ label: "Contactos 360", href: "/admin/directorio" }');
     expect(sidebar).not.toContain('{ label: "Clientes", href: "/admin/clientes" }');
     expect(sidebar).not.toContain('{ label: "Usuarios", href: "/admin/usuarios" }');
     expect(sidebar).not.toContain('{ label: "Empresas", href: "/admin/empresas" }');
