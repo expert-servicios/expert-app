@@ -74,6 +74,41 @@ Fuentes:
 - https://ai.google.dev/gemini-api/docs/code-execution
 - https://ai.google.dev/gemini-api/docs/caching
 
+## 2A. Restricciones verificadas y decisiones por proveedor (10/10/2026)
+
+**Hallazgo relevante para privacidad europea:** la documentación oficial de OpenAI indica que **Agents API hoy solo admite residencia de datos en Estados Unidos y no es compatible con Zero Data Retention (ZDR)**. Los entornos autohospedados de Agents API no hacen elegible a esa API para ZDR. **No enviar expedientes reales, nóminas, datos fiscales, bancarios ni documentos identificables a Agents API gestionada mientras no se aprueben región, DPA, transferencias, retención, subencargados, autorización contractual y finalidad.** Evaluarla únicamente con datos sintéticos/desidentificados durante el piloto. Esto NO prueba que todas las demás APIs de OpenAI tengan las mismas condiciones; evaluar servicio por servicio.
+
+**OpenAI Agents SDK** se ejecuta en la infraestructura propia del producto y permite conservar backend, autorización y persistencia de EXPERT. Es candidato para un *prototipo aislado* de handoffs/tracing sin cambiar de proveedor toda la plataforma; sigue sujeto a las condiciones de tratamiento de los modelos/API invocados. **Agents API artefactos**: ficheros de `openai_hosted` publicados desde `/workspace/outputs`; hay que descargarlos a EXPERT, verificar contenido/MIME y aplicar retención propia. Un entorno `self_hosted` no publica ficheros mediante esa API: se recuperan del almacenamiento administrado por el anfitrión.
+
+**Anthropic Managed Agents** está etiquetado Beta; los especialistas ejecutan hilos separados, pero comparten *sandbox/filesystem y credenciales vault*, por lo que la separación de prompts no da aislamiento de secretos o clientes. Adoptar solo si scope de credenciales, ubicación del procesamiento, retención y logs cumplen la política EXPERT. Las Agent Skills prediseñadas Word, Excel, PDF y PowerPoint **sí** figuran en documentación de Claude API; deben invocarse con code execution e integrarse/descargarse los archivos, no asumirse como controles del entorno Claude.ai.
+
+**Google ADK** dispone de flujos coordinator/dispatcher y agentes workflow en TypeScript; los grafos de ADK 2.0 actualmente están documentados para Python y Go, por lo que **no** proponer adopción inmediata de grafos ADK 2.0 TypeScript sin comprobar compatibilidad real. Gemini Code Execution ejecuta **Python**, no un motor Office nativo: admite análisis de archivos/gráficos según modelo. Su búsqueda con Google Search ofrece anotaciones de cita y genera coste por consulta según modelo y número de búsquedas; mostrar y verificar las referencias al responder sobre normativa española.
+
+**Fuentes oficiales de estas restricciones:**
+- OpenAI Agents API residencia, ZDR y entorno: https://developers.openai.com/api/docs/guides/agents-api/overview
+- OpenAI ficheros/artefactos publicados: https://developers.openai.com/api/docs/guides/agents-api/environments/files
+- OpenAI SDK y control backend: https://developers.openai.com/api/docs/guides/agents/sdk
+- Anthropic Managed Agents multiagente: https://platform.claude.com/docs/en/managed-agents/multi-agent
+- Anthropic Skills: https://platform.claude.com/docs/es/agents-and-tools/agent-skills/overview
+- ADK workflow: https://adk.dev/agents/workflow-agents/ y https://adk.dev/workflows/patterns/
+- Gemini Code Execution: https://ai.google.dev/gemini-api/docs/code-execution
+- Gemini Google Search/citaciones: https://ai.google.dev/gemini-api/docs/google-search/
+
+### Matriz de decisión para pruebas piloto
+
+| Caso KIA | Primera ruta a probar | Por qué | Validaciones antes de producción |
+|---|---|---|---|
+| Consulta pública con BOE/AEAT | Core existente + retrieval oficial; Gemini grounding u OpenAI web_search como complemento | Factualidad y fuentes actuales | Citas con fecha y comparación oficial; coste por búsqueda |
+| Borrador DOCX/XLSX/PDF cliente | Renderizador determinista EXPERT; Claude Skills en sandbox sintético como benchmark | Control documental; proveedor optativo | Fuentes, fórmula, estilos ES/RU, acceso tenant, retención |
+| Revisión de 5 adjuntos | Core + ingestor independiente + verificador; especialistas como tools | Trazabilidad y mínima exposición de ficheros | Tipos/idiomas, reintentos, inyección, permisos y costes |
+| Subagentes fiscal/laboral | Routing ya implementado + evaluator/handoff TS opcional | No duplicar sistemas | Casos difíciles, tiempo p95, mejora de precisión |
+| Campaña comercial | skill Growth + CRM de borradores, sin envío automático | Consentimiento y autorización | Identidad, marketing_status, aprobación y auditoría |
+| Proceso administrativo duradero | Workflow persistente EXPERT con jobs, no solo prompt de agente | Control de estados / aprobaciones / reintentos | Idempotencia y rollback; nunca simular una tarea background |
+
+**Regla de cierre:** benchmark contra el orquestador actual antes de incorporar frameworks nuevos. Un modelo con más prestaciones no mejora por sí solo calidad, control y coste para KIA.
+
+---
+
 ## 3. Artifact Studio común: plan ampliado
 
 No confundir **artefacto** con adjunto ni con un texto de chat. KIA dispondrá de:
