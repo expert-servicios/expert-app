@@ -253,8 +253,8 @@ export async function POST(request: NextRequest) {
 
     const verifiedHistory = persisted
       ? (await readPublicWebHistory(persisted.admin, request.cookies.get(PUBLIC_KIA_SESSION_COOKIE)?.value))
-          .filter((item) => item.role === 'assistant' || item.id !== '')
-          .slice(-13, -1)
+          .filter((item) => item.client_message_id !== persisted.messageId)
+          .slice(-6)
           .map((item) => ({ role: item.role, text: item.body.slice(0, 1200) }))
       : parsed.data.history;
     const messages = [
