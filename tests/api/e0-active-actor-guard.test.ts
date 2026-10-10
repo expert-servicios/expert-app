@@ -11,7 +11,7 @@ const { getUser, profileQuery, adminFrom, profileResult } = vi.hoisted(() => {
   query.select.mockReturnValue(query);
   query.eq.mockReturnValue(query);
   return {
-    getUser: vi.fn(async () => ({ data: { user: { id: 'actor-id' } }, error: null })),
+    getUser: vi.fn<() => Promise<{ data: { user: { id: string } | null }; error: null }>>(async () => ({ data: { user: { id: 'actor-id' } }, error: null })),
     profileQuery: query,
     adminFrom: vi.fn(() => query),
     profileResult,
