@@ -28,9 +28,9 @@ export function describeClientDevice(userAgent: string | null) {
     : /windows/i.test(ua) ? 'Windows'
     : /macintosh|mac os/i.test(ua) ? 'macOS'
     : /linux/i.test(ua) ? 'Linux' : 'Desconocido';
-  const browser = /edg\//i.test(ua) ? 'Edge'
-    : /firefox\//i.test(ua) ? 'Firefox'
-    : /chrome\//i.test(ua) ? 'Chrome'
+  const browser = /edg(?:ios|a|e)?\//i.test(ua) ? 'Edge'
+    : /(?:firefox|fxios)\//i.test(ua) ? 'Firefox'
+    : /(?:chrome|crios)\//i.test(ua) ? 'Chrome'
     : /safari\//i.test(ua) ? 'Safari' : 'Desconocido';
   return { platform, browser, userAgent: ua };
 }
