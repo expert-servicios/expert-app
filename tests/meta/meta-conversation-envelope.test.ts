@@ -23,7 +23,8 @@ describe('Meta canonical conversation envelope', () => {
     expect(store).toContain('getOrCreateKiaLeadConversation');
     expect(store).toContain('profile_id: null');
     expect(store).toContain('lead_id: input.leadId');
-    expect(store).toContain("origin_type: 'meta'");
+    expect(store).toContain('origin_type: input.channel');
+    expect(store).toContain("channel: 'meta' | 'telegram'");
   });
 
   it('persists one canonical Meta thread and honors manual takeover before KIA', () => {
