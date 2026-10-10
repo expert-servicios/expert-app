@@ -11,6 +11,7 @@ export type PublicWebTurn = {
   body: string;
   created_at: string;
   client_message_id: string;
+  response_payload?: Record<string, unknown> | null;
 };
 
 /**
@@ -99,7 +100,7 @@ export async function readPublicWebHistory(admin: Admin, token: string | undefin
   if (!session) return [];
   const { data, error } = await admin
     .from('kia_public_web_messages')
-    .select('id,role,body,created_at,client_message_id')
+    .select('id,role,body,created_at,client_message_id,response_payload')
     .eq('session_id', session.id)
     .order('created_at', { ascending: false })
     .limit(60);
