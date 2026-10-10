@@ -2,6 +2,7 @@
 
 import { WorkspaceBrand } from '@/components/workspace/WorkspaceBrand';
 import { WorkspaceNavLink } from '@/components/workspace/WorkspaceNavLink';
+import { isWorkspaceRouteActive } from '@/components/workspace/workspaceRouteMatch';
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -285,7 +286,7 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
   // Auto-select tab based on current route
   useEffect(() => {
     const match = NAV_GROUPS.find((g) =>
-      g.items.some((i) => pathname.startsWith(i.href)),
+      g.items.some((i) => isWorkspaceRouteActive(pathname, i.href)),
     );
     if (match) setActiveTab(match.label); // eslint-disable-line react-hooks/set-state-in-effect
   }, [pathname]);
@@ -295,7 +296,7 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
     const saved = localStorage.getItem("adminSidebarTab");
     if (saved && NAV_GROUPS.some((g) => g.label === saved)) {
       const routeMatch = NAV_GROUPS.find((g) =>
-        g.items.some((i) => pathname.startsWith(i.href)),
+        g.items.some((i) => isWorkspaceRouteActive(pathname, i.href)),
       );
       if (!routeMatch) setActiveTab(saved); // eslint-disable-line react-hooks/set-state-in-effect
     }
@@ -307,7 +308,7 @@ export function AdminSidebar({ userName, userEmail, urgentCount = 0 }: Props) {
   };
 
   const isActive = (href: string) =>
-    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+    isWorkspaceRouteActive(pathname, href);
 
   const displayName = userName ?? userEmail.split("@")[0];
   const activeGroup =
