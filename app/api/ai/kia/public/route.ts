@@ -1,7 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { PUBLIC_KIA_SESSION_COOKIE } from '@/lib/ai/kia/kia-public-session';
-import { publicWebPersistenceEnabled, resolvePublicWebSession, appendPublicWebTurn, readPublicWebReply } from '@/lib/ai/kia/kia-public-web-persistence';
+import { publicWebPersistenceEnabled, resolvePublicWebSession, claimPublicWebTurn, completePublicWebTurn, failPublicWebTurn, readPublicWebHistory } from '@/lib/ai/kia/kia-public-web-persistence';
 import { z } from 'zod';
 import { runKiaProviderRequest } from '@/lib/ai/kia/kia-provider-router';
 import { checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
@@ -130,20 +131,21 @@ export async function POST(request: NextRequest) {
 
   // A flagged-on request must be tied to a signed, active web session.
   // Untrusted browser-supplied history is ignored in persistent mode.
-  let persisted: { admin: ReturnType<typeof getSupabaseAdmin>; sessionId: string; messageId: string } | null = null;
+  let persisted: { admin: ReturnType<typeof getSupabaseAdmin>; sessionId: string; messageId: string; claim: string } | null = null;
   if (publicWebPersistenceEnabled()) {
     if (!parsed.data.messageId) return NextResponse.json({ error: 'message_id_required' }, { status: 400 });
     try {
       const admin = getSupabaseAdmin();
       const sessionId = await resolvePublicWebSession(admin, request.cookies.get(PUBLIC_KIA_SESSION_COOKIE)?.value);
       if (!sessionId) return NextResponse.json({ error: 'session_required' }, { status: 401 });
-      const previousReply = await readPublicWebReply(admin, sessionId, parsed.data.messageId);
-      if (previousReply) return NextResponse.json({ reply: previousReply, replayed: true });
-      const userTurn = await appendPublicWebTurn(admin, {
-        sessionId, messageId: parsed.data.messageId, role: 'user', body: parsed.data.message,
+      const claim = randomUUID();
+      const turn = await claimPublicWebTurn(admin, {
+        sessionId, messageId: parsed.data.messageId, body: parsed.data.message, claim,
       });
-      if (!userTurn.inserted) return NextResponse.json({ error: 'turn_in_progress' }, { status: 409 });
-      persisted = { admin, sessionId, messageId: parsed.data.messageId };
+      if (turn.outcome === 'replay') return NextResponse.json({ ...turn.payload, reply: turn.reply, replayed: true });
+      if (turn.outcome === 'busy') return NextResponse.json({ error: 'turn_in_progress' }, { status: 409, headers: { 'Retry-After': '5' } });
+      if (turn.outcome !== 'acquired') return NextResponse.json({ error: 'invalid_turn' }, { status: 409 });
+      persisted = { admin, sessionId, messageId: parsed.data.messageId, claim };
     } catch (error) {
       console.error('[KIA public chat] session persistence failed', safeErrorMessage(error));
       return NextResponse.json({ error: 'session_unavailable' }, { status: 503 });
@@ -152,12 +154,14 @@ export async function POST(request: NextRequest) {
   const respond = async (body: { reply: string; [key: string]: unknown }) => {
     if (persisted) {
       try {
-        await appendPublicWebTurn(persisted.admin, {
+        const completed = await completePublicWebTurn(persisted.admin, {
           sessionId: persisted.sessionId, messageId: persisted.messageId,
-          role: 'assistant', body: body.reply,
+          claim: persisted.claim, reply: body.reply, payload: body,
         });
+        if (completed.outcome !== 'complete') return NextResponse.json({ error: 'turn_conflict' }, { status: 409 });
+        return NextResponse.json(completed.payload ?? body);
       } catch (error) {
-        console.error('[KIA public chat] reply persistence failed', safeErrorMessage(error));
+        console.error('[KIA public chat] response persistence failed', safeErrorMessage(error));
         return NextResponse.json({ error: 'response_unavailable' }, { status: 503 });
       }
     }
@@ -247,8 +251,14 @@ export async function POST(request: NextRequest) {
       attachmentContext,
     ].filter(Boolean).join('\n\n');
 
+    const verifiedHistory = persisted
+      ? (await readPublicWebHistory(persisted.admin, request.cookies.get(PUBLIC_KIA_SESSION_COOKIE)?.value))
+          .filter((item) => item.role === 'assistant' || item.id !== '')
+          .slice(-13, -1)
+          .map((item) => ({ role: item.role, text: item.body.slice(0, 1200) }))
+      : parsed.data.history;
     const messages = [
-      ...(persisted ? [] : parsed.data.history).map((item) => ({
+      ...verifiedHistory.map((item) => ({
         role: item.role,
         content: item.text,
       })),
@@ -304,6 +314,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('[KIA public chat] failed', safeErrorMessage(error));
+    if (persisted) await failPublicWebTurn(persisted.admin, persisted).catch(() => undefined);
     return NextResponse.json({
       error: 'kia_unavailable',
       reply: localizedPublicError(publicLocale),
