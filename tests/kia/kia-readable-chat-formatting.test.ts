@@ -20,7 +20,7 @@ describe('KIA chat readable text', () => {
     expect(html).toContain('&lt;script&gt;');
   });
   it('preserves arithmetic asterisks and ordered list numbering', () => {
-    const html = render('2 * 3 * 4 = 24\\n\\n3. Tercer paso\\n4. Cuarto paso');
+    const html = render('2 * 3 * 4 = 24\n\n3. Tercer paso\n4. Cuarto paso');
     expect(html).toContain('2 * 3 * 4 = 24');
     expect(html).toContain('value="3"');
     expect(html).toContain('value="4"');
