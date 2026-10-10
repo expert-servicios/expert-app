@@ -92,6 +92,7 @@ Este documento **prevalece en orden, límites, bloqueos y estado de ejecución**
 - [x] `E0-M1-01` Confirmar repositorio canónico `expert-servicios/expert-app` y `main`. Evidencia: consulta GitHub del 10/10/2026.
 - [x] `E0-M1-02` Identificar y comparar fuentes relevantes: Admin V2, KIA 2.0, Client Ledger, Workspace Work, roadmap histórico y PR #705/#707/#708/#709/#683. Evidencia: documentos y metadatos citados en §2.
 - [ ] `E0-M1-03` Auditar exhaustivamente contratos de código y determinar qué es ya operativo, parcial o exclusivamente plan (rutas, datos, grants y UX).
+  - **Avance 10/10:** primera y segunda pasadas guardadas en [inventario de auditoría E0](expert-kia-ecosystem-e0-audit-inventory-2026-10-10.md); hallazgos P1 de procedencia registral y control de usuarios inactivos en APIs. **NO marcar completada hasta pruebas y corrección.**
 - [ ] `E0-M1-04` Registrar matriz de dependencias con cada PR abierta: fusionar después de gates, detener o trasladar a su fase, **sin código paralelo**.
 - [ ] `E0-M1-05` Conciliar **cinco clientes Holded declarados** con filas técnicas de integración (cuatro activas/una revocada en la fotografía del 10/10), asignar empresa/tenant y dependencias; redactar protocolo reversible de desconexión/reconexión **sin ejecutarlo en E0**.
 
@@ -105,6 +106,9 @@ Este documento **prevalece en orden, límites, bloqueos y estado de ejecución**
 **Módulo E0-M3 — Auditoría y cierre de fase**
 - [ ] `E0-M3-01` Actualizar y cruzar PR #707/#708/#709 con las decisiones canónicas, sin ampliar alcance.
 - [ ] `E0-M3-02` Revisión crítica independiente de coherencia, riesgos, dependencias, privacidad, autorización y definición de pruebas.
+- [ ] `E0-M3-05` Cerrar P1 de procedencia registral no atestada en servidor en altas de empresa (rutas `/api/companies` y `/api/company/associate`), mediante patch mínimo, tests negativos y validación sin modificar históricos.
+- [ ] `E0-M3-06` Cerrar P1 de rutas mutadoras con `getSupabaseAdmin()` sin `profiles.status` activo ni scope por objeto; comprobar por rol/tenant/empresa/expediente, HTTP y RLS en entorno de prueba.
+- [ ] `E0-M3-07` Evaluar P2 del lookup CIF limitado y divulgación de identificadores ajenos; corregir sin duplicar entidad ni adelantar módulos.
 - [ ] `E0-M3-03` Verificar CI, lint Markdown/enlaces/estructura (si disponible), revisión de PR y previews del último SHA.
 - [ ] `E0-M3-04` Acta E0: lista de artefactos, evidencia de QA, cero bloqueos P0/P1, commit de cierre y cambio explícito del checkpoint a E1.
 
@@ -243,6 +247,13 @@ Resultado y siguiente tarea autorizada:
 - Inventario técnico previo: cinco **filas de integración** (cuatro activas y una revocada). No afirmar que correspondan una a una a cinco clientes sin conciliar identidad y empresa.
 - **Decisión de riesgo:** no bloquear arquitectura para preservar tokens/conexiones; sí preservar datos y fiscalidad en Holded, permisos, consentimientos, históricos, tareas y trazabilidad. Probar con simulación antes de intervenir en conexiones reales.
 - **Siguiente paso E0:** avanzar E0-M1-03 (auditoría endpoints, capacidades y dependencias) y E0-M1-05 (conciliación técnica). No activar ni desconectar servicios ahora.
+
+### 2026-10-10 — Segunda pasada de seguridad y eficiencia E0
+
+- Registro objetivo: [auditoría E0 del código, esquema y propuestas](expert-kia-ecosystem-e0-audit-inventory-2026-10-10.md), actualizada en commit `c3797fe423b0c410e38999101b54417c9bb2959f`.
+- **Mejoras propuestas dentro del alcance:** P1 procedencia empresarial de servidor, P1 comprobación de usuario activo en APIs mutadoras, P2 deduplicación CIF sin filtros limitados ni divulgar IDs; ampliar cobertura de pruebas negativas y matriz de evidencias.
+- **Decisión:** no cerrar E0 ni iniciar E1 mientras P1 sin pruebas/corrección; no modificar producción, Holded, RLS, facturación ni flags sin gate.
+- **Siguiente paso:** completar inventario de endpoints por actor, diseñar cambios mínimos y tests de seguridad; verificar última CI/preview de PR #710; documentar cierre únicamente con evidencia real.
 
 ### Actas de cierre
 
