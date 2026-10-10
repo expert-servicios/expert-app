@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 import { blockedRegistryUpdates } from '@/lib/companies/registry-locks';
 
 const FORMA_JURIDICA = ['autonomo','sl','sa','slne','cb','cooperativa','fundacion','otra'] as const;
@@ -27,9 +28,8 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const supabase = createServerSupabaseClient(request);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    const actor = await requireActiveActor(request);
+    if (!actor) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
     const body = await request.json();
     const parse = updateSchema.safeParse(body);
@@ -44,16 +44,10 @@ export async function PATCH(
       .from('profile_companies')
       .select('role')
       .eq('company_id', id)
-      .eq('profile_id', user.id)
+      .eq('profile_id', actor.userId)
       .single();
 
-    const { data: adminProfile } = await admin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (membership?.role !== 'owner' && adminProfile?.role !== 'admin') {
+    if (membership?.role !== 'owner' && actor.role !== 'admin' && actor.role !== 'owner') {
       return NextResponse.json({ error: 'Sin permisos' }, { status: 403 });
     }
 
