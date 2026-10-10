@@ -198,8 +198,7 @@ export function KiaPublicWidget() {
           setPendingTurn({ id: last.client_message_id, message: last.body });
           setChatNotice('Tu último mensaje quedó pendiente. Puedes recuperar su respuesta sin enviarlo de nuevo.');
         }
-        const answer = [...stored].reverse().find((entry) => entry.role === 'assistant');
-        const payload = answer?.response_payload;
+        const payload = last.role === 'assistant' ? last.response_payload : undefined;
         if (payload) {
           setQuickReplies((payload.quickReplies ?? []).slice(0, 12));
           setArtifacts((payload.artifacts ?? []).filter((item) => item.type === 'link').slice(0, 4));
@@ -257,12 +256,18 @@ export function KiaPublicWidget() {
           message: clean,
           messageId,
           currentPage: window.location.pathname,
-          history: persistent ? [] : history,
+          // A live feature-flag rollback must preserve recent context.
+          // In persistent mode the server deliberately ignores this history.
+          history,
           attachment: attachment ?? undefined,
           recaptchaToken,
         }),
       });
       const data = await response.json().catch(() => ({})) as PublicKiaResponse;
+      if (response.status === 401 && persistent && data.error === 'session_required') {
+        sessionReadyRef.current = false;
+        persistenceModeRef.current = 'unknown';
+      }
       if (!response.ok) throw new Error(data.error ?? 'kia_unavailable');
       if (!data.reply?.trim()) throw new Error('missing_reply');
 
