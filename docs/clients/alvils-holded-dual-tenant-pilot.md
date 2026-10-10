@@ -25,3 +25,14 @@ Estado: procedimiento aprobado por administradora, **no ejecutado**. Fuente cont
 ## Reglas que KIA debe aplicar siempre
 
 Cuando respondas sobre contabilidad de ALVILS, identifica el tenant y devuelve fuente, ejercicio, fechas, número de registros y si la consulta fue paginada de forma exhaustiva. Nunca equipares una prueba de scopes con revisión de asientos. Distingue fuente Holded real, declaración oficial presentada, documentación probatoria e información histórica no fiable. Toda anomalía requiere referencia a asientos reales y justificación antes de sugerir una corrección. No escribas, no canceles y no anuncies migración terminada sin prueba posterior verificable.
+
+## Auditoría de huecos 10/10/2026 (obligatorios antes de fusionar PR #713)
+
+- **Identidad del destino:** un token válido diferente del origen no identifica legalmente el tenant. Exigir comprobación independiente del NIF y aprobación explícita de empresa destino.
+- **Destino vacío:** probar solo permisos de lectura no verifica ausencia de facturas o diario; inspeccionar y paginar periodos, ventas, compras y contactos; rechazar presencia de actividad previa y documentar límites API.
+- **Atomicidad:** creación de integración, secreto cifrado, activación y auditoría pueden fallar a medias. Implementar transición idempotente y compensación, impedir reintentos concurrentes; nunca sobrescribir origen.
+- **Auditoría:** registrar resultado de cada fase sin credenciales. Si el registro de auditoría falla, bloquear antes de escribir.
+- **Fuente del diario:** comprobación de scope no equivale a obtener asientos. Fuente única: Holded activo de ALVILS. Validar cursores, número de registros, saldos de apertura y líneas Debe/Haber antes de concluir.
+- **KIA en EXPERT:** el runbook en GitHub no es por sí solo conocimiento recuperable en producción. Enlazar fuentes de Drive, hoja registral, prompts y herramientas reales; probar recuperación contextual y permisos por empresa.
+- **Documentación fiscal:** obtener el Modelo 200 efectivamente presentado de ALVILS y justificante 303 3T 2026; no usar documentos de DGM ni los Excel de trabajo previo como base contable.
+- **No fusionar ni poner token:** hasta revisión de seguridad, CI sobre HEAD, ambos despliegues, evaluación de condiciones fiscales y verificación de la interfaz de producción.
