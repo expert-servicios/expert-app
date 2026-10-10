@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 const initSchema = z.object({ recaptchaToken: z.string().min(1).max(4096) }).strict();
 
 function blocked() {
-  return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  return noStore(NextResponse.json({ error: 'not_found' }, { status: 404 }));
 }
 
 function noStore(response: NextResponse) {
@@ -32,14 +32,28 @@ function sameOrigin(request: NextRequest) {
     && (!fetchSite || fetchSite === 'same-origin'));
 }
 
+/**
+ * Browsers sending Fetch Metadata must originate from the same origin.
+ * Old clients without Fetch Metadata must supply a matching Origin.
+ * This also rejects cross-site top-level GET navigations which may carry
+ * SameSite=Lax cookies.
+ */
+function sameOriginRead(request: NextRequest) {
+  const site = request.headers.get('sec-fetch-site');
+  const origin = request.headers.get('origin');
+  if (site) return site === 'same-origin' && (!origin || origin === request.nextUrl.origin);
+  return origin === request.nextUrl.origin;
+}
+
 /** Read an existing verified session only. GET must never mint a cookie. */
 export async function GET(request: NextRequest) {
   if (!publicWebPersistenceEnabled()) return blocked();
-  const token = request.cookies.get(PUBLIC_KIA_SESSION_COOKIE)?.value;
-  if (!token) return noStore(NextResponse.json({ messages: [] }));
+  if (!sameOriginRead(request)) return noStore(NextResponse.json({ error: 'invalid_origin' }, { status: 403 }));
   if (!checkKiaMessageRateLimit(`web-history:${getClientIp(request.headers)}`)) {
     return noStore(NextResponse.json({ error: 'rate_limited' }, { status: 429 }));
   }
+  const token = request.cookies.get(PUBLIC_KIA_SESSION_COOKIE)?.value;
+  if (!token) return noStore(NextResponse.json({ messages: [] }));
   try {
     const messages = await readPublicWebHistory(getSupabaseAdmin(), token);
     return noStore(NextResponse.json({ messages }));
