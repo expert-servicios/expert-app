@@ -125,6 +125,7 @@ export default function AdminClientPortalPage() {
   const [auditReady, setAuditReady] = useState(false);
   const [auditError, setAuditError] = useState('');
   const [error, setError] = useState('');
+  const [supportAuditError, setSupportAuditError] = useState('');
   const [auditError, setAuditError] = useState('');
   const [auditing, setAuditing] = useState(false);
   const [auditEntries, setAuditEntries] = useState<SupportAuditEntry[]>([]);
@@ -256,9 +257,32 @@ export default function AdminClientPortalPage() {
 
   const companyQuery = companyId ? `?companyId=${companyId}` : '';
 
+  async function recordSupportAccess(action: 'support_open' | 'support_company_select', selectedCompanyId: string | null) {
+    try {
+      const response = await fetch('/api/admin/support/access', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: id, companyId: selectedCompanyId, action }),
+      });
+      if (!response.ok) setSupportAuditError('No se pudo registrar este acceso de soporte.');
+      else setSupportAuditError('');
+    } catch {
+      setSupportAuditError('No se pudo registrar este acceso de soporte.');
+    }
+  }
+
+  useEffect(() => {
+    if (!data) return;
+    void recordSupportAccess('support_open', null);
+    // Audit initial access only, not subsequent company changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, Boolean(data)]);
+
+
   return (
     <main className="min-h-screen bg-[#f8f4eb] px-6 py-7">
       <div className="mx-auto max-w-7xl space-y-5">
+        {supportAuditError && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">{supportAuditError}</p>}
         <section className="rounded-2xl border border-amber-300 bg-amber-50 p-5">
           <div className="flex items-start gap-3">
             <ShieldCheck className="mt-0.5 h-5 w-5 text-amber-800" />
