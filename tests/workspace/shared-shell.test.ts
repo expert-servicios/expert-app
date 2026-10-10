@@ -5,6 +5,13 @@ import { resolve } from 'node:path';
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
 
 describe('Kiranism-inspired shared EXPERT Workspace shell', () => {
+  it('keeps client component directives before imports to avoid Next.js build failures', () => {
+    const adminNav = source('components/admin/AdminSidebar.tsx');
+    const clientNav = source('components/dashboard/DashboardNav.tsx');
+    expect(adminNav.trimStart().startsWith('"use client";')).toBe(true);
+    expect(clientNav.trimStart().startsWith("'use client';")).toBe(true);
+  });
+
   it('uses the same frame for Admin and Client but distinct auth and data loaders', () => {
     const admin = source('app/(protected)/admin/layout.tsx');
     const client = source('app/(protected)/dashboard/layout.tsx');
