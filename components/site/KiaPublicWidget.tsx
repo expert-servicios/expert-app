@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ExternalLink, FileText, Loader2, MessageCircle, Mic, Paperclip, Send, Square, X } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 import { KiaAvatar } from '@/components/kia/KiaAvatar';
+import { KiaReadableMessage } from '@/components/kia/KiaReadableMessage';
 import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 
 type ChatMessage = {
@@ -412,7 +413,7 @@ export function KiaPublicWidget() {
                   ? 'rounded-br-md bg-[#0D1B2A] text-white'
                   : 'rounded-bl-md bg-[#f5f1eb] text-[#0D1B2A]'}`}
               >
-                {message.text}
+                <KiaReadableMessage text={message.text} />
               </div>
             </div>
           ))}
