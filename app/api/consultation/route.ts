@@ -102,6 +102,7 @@ export async function POST(request: NextRequest) {
         updated_at: new Date().toISOString(),
         metadata: {
           ...existingMetadata,
+          crm_needs_attention: true,
           consultation: interaction,
           last_acquisition: interaction,
           inquiries: [...previousInteractions, interaction],
@@ -125,6 +126,7 @@ export async function POST(request: NextRequest) {
         source_key: `consultation:${crypto.randomUUID()}`,
         metadata: {
           ...attribution.metadata,
+          crm_needs_attention: true,
           consultation: interaction,
           last_acquisition: interaction,
           inquiries: [interaction],
