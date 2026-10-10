@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { recordClientRegistryEvent } from './kia-client-ledger';
 
@@ -97,10 +98,23 @@ export async function appendKiaConversationMessage(input: {
 }
 
 
+/** A stable RFC 9562 version-8 UUID: concurrent inserts share the same primary key.
+ * Do not use email, phone or name as identity. The archived parent permits a new
+ * canonical conversation after an explicitly closed thread.
+ */
+function stableLeadConversationId(input: {
+  leadId: string; channel: 'meta' | 'telegram'; originRef: string; previousClosedId?: string;
+}): string {
+  const hex = createHash('sha256')
+    .update(JSON.stringify(['kia-lead-thread-v1', input.leadId, input.channel, input.originRef, input.previousClosedId ?? null]))
+    .digest('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-8${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+
 export async function getOrCreateKiaLeadConversation(input: {
   admin: AdminClient;
   leadId: string;
-  channel: 'meta';
+  channel: 'meta' | 'telegram';
   originRef: string;
   topic?: string | null;
   metadata?: Record<string, unknown>;
@@ -110,6 +124,7 @@ export async function getOrCreateKiaLeadConversation(input: {
     .select('id,metadata,status')
     .eq('lead_id', input.leadId)
     .eq('channel', input.channel)
+    .eq('origin_ref', input.originRef)
     .eq('status', 'active')
     .order('updated_at', { ascending: false })
     .limit(1)
@@ -136,9 +151,28 @@ export async function getOrCreateKiaLeadConversation(input: {
     return existing.id;
   }
 
+  // The primary key provides atomic first-writer-wins behavior across workers.
+  // If a previous thread was closed, use its id as a generation marker.
+  const { data: lastThread, error: lastThreadError } = await input.admin
+    .from('kia_conversations')
+    .select('id,status')
+    .eq('lead_id', input.leadId)
+    .eq('channel', input.channel)
+    .eq('origin_ref', input.originRef)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (lastThreadError) throw lastThreadError;
+  // A concurrent request may have inserted a live thread since our first read.
+  if (lastThread?.status === 'active') return lastThread.id;
+  const canonicalId = stableLeadConversationId({
+    leadId: input.leadId, channel: input.channel, originRef: input.originRef,
+    previousClosedId: lastThread?.id,
+  });
   const { data: created, error } = await input.admin
     .from('kia_conversations')
     .insert({
+      id: canonicalId,
       profile_id: null,
       lead_id: input.leadId,
       channel: input.channel,
@@ -147,13 +181,24 @@ export async function getOrCreateKiaLeadConversation(input: {
       service_slug: null,
       topic: input.topic ?? null,
       status: 'active',
-      origin_type: 'meta',
+      origin_type: input.channel,
       origin_ref: input.originRef,
       metadata: input.metadata ?? {},
       last_message_at: new Date().toISOString(),
     })
     .select('id')
     .single();
+  if (error?.code === '23505') {
+    const { data: raced, error: racedError } = await input.admin
+      .from('kia_conversations')
+      .select('id,lead_id,channel,origin_ref,status')
+      .eq('id', canonicalId)
+      .maybeSingle();
+    if (racedError) throw racedError;
+    if (raced?.status === 'active' && raced.lead_id === input.leadId
+      && raced.channel === input.channel && raced.origin_ref === input.originRef) return raced.id;
+    throw new Error('lead_conversation_race_scope_changed');
+  }
   if (error) throw error;
   return created.id;
 }

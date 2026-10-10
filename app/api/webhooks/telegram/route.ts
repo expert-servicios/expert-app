@@ -34,7 +34,7 @@ import { executeKiaToolCall } from '@/lib/ai/kia/kia-tool-executor';
 import { resolveKiaQuickActionCase } from '@/lib/ai/kia/kia-quick-action-case';
 import { recordKiaVisibleReply } from '@/lib/ai/kia/kia-visible-decision-log';
 import { resolveKiaOperationalCategory } from '@/lib/ai/kia/kia-operational-routing';
-import { appendKiaConversationMessage, getKiaConversationControlMode, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
+import { appendKiaConversationMessage, getKiaConversationControlMode, getOrCreateKiaLeadConversation, persistKiaConversationTurn } from '@/lib/ai/kia/kia-conversation-store';
 import { resolveTelegramContentOrigin } from '@/lib/marketing/telegram-content-origin-server';
 import { transcribeKiaAudio } from '@/lib/ai/kia/kia-audio';
 import { runKiaDecision } from '@/lib/ai/kia/kia-decision-engine';
@@ -432,6 +432,56 @@ async function handleTelegramUpdate(request: NextRequest) {
       }).catch(() => {});
     }
 
+    // Resolve the canonical Telegram sender/lead pair before any automated reply.
+    // Human takeover must also apply to public leads, not just registered clients.
+    let leadConversationId: string;
+    try {
+      leadConversationId = await getOrCreateKiaLeadConversation({
+        admin,
+        leadId: lead.leadId,
+        channel: 'telegram',
+        originRef: `telegram:${inbound.userId}`,
+        topic: 'Consulta pública Telegram',
+        metadata: { telegram_user_id: inbound.userId, telegram_chat_id: inbound.chatId },
+      });
+      const { data: leadConversation, error: controlError } = await admin
+        .from('kia_conversations')
+        .select('metadata,status')
+        .eq('id', leadConversationId)
+        .eq('lead_id', lead.leadId)
+        .maybeSingle();
+      if (controlError) throw controlError;
+      if (!leadConversation || leadConversation.status !== 'active') throw new Error('telegram_lead_conversation_not_active');
+
+      await appendKiaConversationMessage({
+        admin, conversationId: leadConversationId, role: 'user',
+        body: inbound.text.trim(),
+        metadata: { telegram_update_id: inbound.updateId, delivery_state: 'received' },
+      });
+      if (getKiaConversationControlMode(leadConversation.metadata) === 'manual') {
+        await notifyAdmins({
+          title: 'Telegram: conversación bajo control humano',
+          body: 'Nuevo mensaje de lead pendiente de respuesta manual.',
+          url: '/admin/inbox',
+          tag: `telegram-manual-${inbound.updateId}`,
+        }).catch(() => {});
+        return NextResponse.json({
+          ok: true, identityLinked: false, routed: false,
+          publicProspect: true, leadId: lead.leadId, reason: 'manual_control',
+        });
+      }
+    } catch (conversationError) {
+      console.error('[Telegram prospect] conversation setup failed:', safeErrorMessage(conversationError));
+      await sendTelegramMessage({
+        chatId: inbound.chatId,
+        text: 'He registrado tu consulta, pero no puedo continuar automáticamente. El equipo de EXPERT la revisará.',
+      });
+      return NextResponse.json({
+        ok: true, identityLinked: false, routed: false,
+        publicProspect: true, leadId: lead.leadId, reason: 'conversation_persistence_failed',
+      });
+    }
+
     if (!checkKiaMessageRateLimit(`telegram-public:${inbound.userId}`)) {
       await sendTelegramMessage({
         chatId: inbound.chatId,
@@ -470,6 +520,18 @@ async function handleTelegramUpdate(request: NextRequest) {
         chatId: inbound.chatId,
         text: escapeTelegramHtml(result.userMessage),
       });
+
+      // The reply has already been delivered; only the assistant turn is new.
+      try {
+        await appendKiaConversationMessage({
+          admin, conversationId: leadConversationId, role: 'assistant',
+          body: result.userMessage,
+          metadata: { telegram_update_id: inbound.updateId, delivery_state: 'sent' },
+        });
+      } catch (persistenceError) {
+        // Never send a second customer-facing reply after confirmed delivery.
+        console.error('[Telegram prospect] assistant turn persistence failed:', safeErrorMessage(persistenceError));
+      }
 
       const publicOperationalCategory = resolveKiaOperationalCategory({
         detectedIntent: result.decision.intent,
