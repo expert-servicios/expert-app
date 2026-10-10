@@ -7,6 +7,10 @@
 **Estado:** LISTO PARA INICIAR FASE 0. Implementación bajo PRs independientes, CI, seguridad y verificación de producción.  
 **Plan rector:** este documento prevalece sobre los borradores visuales anteriores; conserva sus requisitos operativos válidos.
 
+**Ampliación incorporada 10/10/2026 — enriquecimiento empresarial y profesional (§26):** KIA podrá proponer búsquedas **acotadas y lícitas** de empresas y actividades profesionales en fuentes oficiales/públicas pertinentes al alta o al lead, distinguir coincidencias de identidad, mostrar evidencias y no atribuir perfiles homónimos ni etiquetar competidores automáticamente. Definición de privacidad, permisos, revisión humana y despliegue por fases; **aún no implementado**.
+
+**Ampliación incorporada 10/10/2026 — adquisición y registro verificables (§25):** primera/última procedencia, contenido y CTA, paso por OAuth, historial técnico de sesiones, notificaciones de altas y solicitudes, vistas Admin/Cliente diferenciadas y privacidad. El caso Alberto Bouza es una prueba negativa de atribución: acceso Google no prueba Google orgánico. **Pendiente de desarrollo, no operativo aún.**
+
 **Ampliación aprobada 09/10/2026 — KIA Work + Inbox 360 + Finanzas Holded + Hoja Registral:** requisitos vinculantes en §§17–22. Se completa **primero la planificación y validación**, antes de activar nuevos ejecutores, automatizaciones o métricas financieras. La implementación no está declarada operativa por el mero hecho de documentarla.
 
 ## 1. Decisión de diseño: EXPERT Workspace
@@ -860,3 +864,268 @@ Una credencial de proveedor con acceso completo **no autoriza por sí sola** a u
 Pruebas MCP nativas read-only en el chat 09/10: lectura facturas sin registros, asientos 01–09/10 sin registros; get_usage periodo 2026-10 reportó 24/7.500 en el momento de consulta. No extrapolar esas cantidades a la cuenta real de Expert Consulting. La condición de prueba «con todos los permisos» es declarada por la dirección, no una evidencia de permiso efectivo de escritura ni de administración de tokens en el backend.
 
 **Cambio de prioridad:** cerrar #690; matriz de paridad; probar KIA sobre integración existente y capacidades reales; ejecutar primer write con consentimiento específico solo tras verificar tenant y readback. Evitar trabajo de clonación no imprescindible.
+
+---
+
+## 25. Trazabilidad de adquisición y alta de usuarios en EXPERT Workspace V2 (decisión 10/10/2026)
+
+**Objetivo vinculante:** en el nuevo Admin, responder desde la ficha de cualquier persona **cómo llegó, qué le llevó a registrarse, qué acción realizó y qué actividad posterior existe**, sin confundir el método de autenticación (Google) con la fuente de captación (Google Search, social, email, referido, directo u origen desconocido). El Portal Cliente comparte plantilla y eventos de cuenta, pero **no** muestra datos comerciales internos, segmentos ni trazas de otros usuarios. Esta ampliación se integra en Contactos, Inbox 360, Marketing, Inicio y Sistema del mismo EXPERT Workspace; **no propone un tercer dashboard ni otro CRM**.
+
+**Estado de la decisión:** aprobado como alcance del plan y pendiente de implementación/verificación. No declarar operativa ninguna captura, vista, push o métrica hasta comprobar eventos reales en producción. PR #693, actualmente abierto, cubre la base visual Admin/Cliente y no sustituye estas fases de trazabilidad.
+
+### 25.1. Caso de control: registro de Alberto Bouza (hechos observados)
+
+- **Identidad en Auth:** Alberto Bouza, correo `albbouza@gmail.com`, ID de usuario `b6d17c9b-3d43-43f3-8d3f-ff4079e518f6`.
+- **Alta:** 09/10/2026 a las 21:36:33 UTC (23:36:33, Europe/Madrid); autenticación con **proveedor Google** por flujo OAuth/PKCE.
+- **Dominio confirmado:** `expertconsulting.es`. Los logs de inicio muestran Safari en iPhone.
+- **Redirección de autenticación:** `/auth/callback?next=%2Fdashboard%3Fkia%3Dopen`; confirma que el flujo conducía al dashboard con KIA abierta, **no** que sepamos desde qué página hizo clic ni que conversara efectivamente con KIA.
+- **Origen comercial:** **NO DETERMINADO**. Los logs de autenticación no acreditan primera página visitada, referrer externo, búsqueda orgánica, campaña ni UTM. No etiquetar como «Google orgánico» por usar Google OAuth. No convertir un `Referer: expertconsulting.es` del callback en adquisición externa.
+- **Dispositivo:** un user-agent del evento es evidencia técnica puntual, no identidad inequívoca del terminal ni garantía de ubicación. Evitar deducir residencia, IP del usuario o fuente de marketing de proxies/saltos de red.
+
+**Resultado exigido para este registro:** ficha Admin debe mostrar «Captación: no determinada», «Alta: web EXPERT», «Acceso: Google», «Continuación: KIA», «Dispositivo observado: iPhone/Safari», hora y nivel de evidencia; las dimensiones aún no conocidas permanecen desconocidas. **No rellenar retroactivamente fuentes inventadas** ni transformar el alta de Auth por sí sola en una solicitud profesional.
+
+### 25.2. Reutilización de lo existente y diagnóstico de brechas
+
+Código ya presente que debe aprovecharse:
+- `lib/marketing/client-attribution.ts`: `captureClientAttribution()`, `readClientAttribution()`, `ACQUISITION_STORAGE_KEY` y cookie first-party `expert_acquisition`; captación **solo tras consentimiento de cookies**, primera ruta `originPath`, UTM y clasificación parcial de canal.
+- `lib/marketing/server-attribution.ts`: `readRequestAttribution()`, `buildLeadAttributionFields()`; lectura validada de cookie para ciertas entradas comerciales.
+- `lib/marketing/acquisition-taxonomy.ts`: enum `LeadSource`, esquema y `LeadAttribution`; se amplían con compatibilidad, no crear taxonomías incompatibles.
+- `components/content/ArticleIntentCTA.tsx`: identificador `origen=blog:slug` o `docs:slug` en CTA, enlaces para consulta gratuita, servicio, cita y `/dashboard?kia=open`; tracking de clics de contenido.
+- `leads.source`, `leads.source_key`, `leads.metadata.acquisition` e Inbox/KIA ya contienen parte de la trazabilidad comercial; `profiles` y `auth.users` son identidades, no sinónimos de lead.
+
+**Hueco central:** el consentimiento/captura en visita o formulario, el CTA, la redirección OAuth, el alta en `auth.users`, el `profile`, la conversación KIA y el nuevo registro en Contactos **no constituyen hoy una cadena probada end-to-end**. Específicamente no hay evidencia confirmada de persistencia de first-touch + last-touch vinculada al perfil después del OAuth. Revisar integridad de `origen` al pasar por el callback y los redirects. No confundir un clic en CTA con una consulta iniciada.
+
+### 25.3. Modelo canónico de procedencia y evidencias
+
+**Diseñar un contrato tipado de adquisición**, guardando campos y eventos separados; la siguiente estructura es lógica, **no una orden para crear tablas sin inventario y Security Advisor**:
+
+| Dimensión | Campo semántico | Regla |
+| --- | --- | --- |
+| Identidad | `profile_id`, `lead_id`, `company_id`, `tenant_id` | Referencias autorizadas, relaciones explícitas; jamás unificar por nombre/email solamente. |
+| Primera procedencia | `first_touch_source`, `first_touch_medium`, `first_touch_at`, `first_landing_path` | Primera evidencia válida, inmutable salvo corrección auditada. |
+| Último contacto previo al alta | `last_touch_source`, `last_touch_medium`, `last_touch_at`, `last_landing_path` | Actualiza en la ventana definida; no sustituye primera procedencia. |
+| Campaña | `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`, `campaign_id` | Lista permitida, longitud máxima, saneamiento y procedencia. No aceptar datos como hechos verificados por venir de query string. |
+| Referencia de entrada | `referrer_hostname`, `landing_path`, `origin_type`, `origin_ref`, `content_slug`, `cta_id` | Separar referrer externo, ruta interna y artículo/guía/servicio concreto; conservar enlaces funcionales sin parámetros sensibles. |
+| Contexto KIA | `kia_entry_surface`, `conversation_id`, `chat_started_at` | «Abrir KIA» no es lo mismo que «mensaje enviado» o «necesidad profesional detectada». |
+| Autenticación | `auth_provider`, `signup_at`, `signup_entry_path`, `auth_flow_id` | Google OAuth es **método de login**, nunca `lead_source=google`. |
+| Nivel de prueba | `evidence_type`, `confidence`, `captured_at`, `consent_state` | Distinguir `explicit_cta`, `utm`, `referrer`, `inferred`, `unknown`; no usar una clasificación inferida como certeza. |
+| Seguridad de sesión | `session_id`, `first_seen_at`, `last_seen_at`, `device_label`, `browser`, `os` | Registro técnico limitado, administrado por Auth; no atribuir actividad de proxies a un dispositivo real. |
+
+**Vocabulario obligatorio:** `direct` = ausencia de referencia detectable en condiciones instrumentadas; `unknown` / «no determinado» = evidencia insuficiente, rechazo de consentimiento o pérdida de datos. Nunca asignar automáticamente `direct` por fallo de tracking o ausencia de permiso. Mantener `organic_search`, `paid_search`, `social`, `referral`, `telegram`, `email`, `partner`, `other` del contrato actual.
+
+**Causalidad y jerarquía:** mostrar **first-touch** y **last-touch** independientes y la **acción inmediata antes de registrarse** (CTA/servicio), indicando fuente de cada hecho. Un referrer sin UTM no prueba siempre una búsqueda orgánica; `google.com` puede ser redirect de autenticación. En caso de conflicto, mostrar ambas evidencias o «por verificar» y conservar raw event sanitizado, nunca sobrescribir la primera entrada.
+
+**Persistencia propuesta:** reusar `leads.metadata.acquisition` y `profiles` con una vista/compositor server-side de Contactos 360; evaluar un registro de eventos de adquisición de solo inserción con IDs tipados, marcas temporales y expiración si el inventario lo necesita. Toda migración futura exige diseño mínimo, índice, RLS, retención y tests; los eventos no deben alojar secretos, tokens OAuth, URLs con credenciales, IP en claro ni texto libre confidencial.
+
+### 25.4. Embudo completo de visita a trabajo profesional
+
+1. **Primera visita pública:** capturar landing interna (sin query sensible), referrer de dominio externo, UTM y consentimiento aplicable; conservar el primer toque permitido, sin forzar cookies de marketing si no consiente.
+2. **Navegación y CTA:** instrumentar `content_view` cuando legalmente proceda, `cta_clicked` con `blog:slug`, `docs:slug`, `service:slug`, `form:slug`, `kia_widget`, cita o Telegram. El contexto funcional `origen` viaja por la acción hasta su objeto, sin registrar navegación adicional no consentida.
+3. **Inicio de autenticación:** vincular **estado firmado/validado, de un solo uso y caducidad breve**, a la acción legítima antes del OAuth; no poner datos personales en la URL ni confiar en parámetros editables. El callback recupera contexto permitido y evita open redirects.
+4. **Alta o acceso repetido:** asociar a `profile_id` solo tras validar sesión e identidad. Evento `account_registered` **solo para alta nueva**, `account_logged_in` separado, `auth_provider` independiente. La falta de consentimiento para analítica **no impide registrarse**.
+5. **Actividad posterior:** `kia_chat_started` solo cuando exista primer mensaje/hilo; `lead_requested` con necesidad explícita; `service_requested`, `quote_created`, `meeting_booked`, `checkout_started`, `payment_completed` cada uno tras persistencia/confirmación real, no al hacer clic.
+6. **CRM:** añadir contacto de portal a directorio unificado con estado **«Registrado · sin solicitud»** si no pidió servicio. Un lead profesional se activa al registrar una petición real o señal comercial verificable, sin duplicar contacto, crear empresa ficticia ni confundir usuarios Auth con clientes.
+7. **Comunicaciones:** Inbox 360 y KIA heredan solo el contexto autorizado del origen para atender la petición; si no hay conversación/expediente, no inventar motivo de contacto. Notificaciones y tareas por eventos comerciales o incidentes definidos, no por cada autenticación/turno de chat.
+
+**Tráfico multicanal:** Telegram, formulario, email, redes, publicaciones y Google deben converger en Contactos, pero una identidad externa solo se vincula al `profile_id` mediante vínculo verificado. Conservar `origen` en redirecciones ES/RU, selector de idioma, calculadoras, enlaces a reserva, deep-links Telegram y cambio de dispositivo cuando exista evidencia de vinculación; si se pierde el rastro, mostrar «no determinado» sin rellenar.
+
+### 25.5. Pantallas a incluir en los dos dashboards
+
+**Admin Workspace — Inicio / Contactos / Marketing / Sistema**
+- Tarjeta compacta de **«Nuevas altas de portal»** con nombre, fecha, acción siguiente y origen conocido/no determinado; distinguir altas de leads que requieren respuesta.
+- En **Contactos 360**, pestaña **«Origen y recorrido»** con línea temporal verificada: primera visita conocida → página/contenido → CTA → login → primer mensaje KIA → solicitud → cita/presupuesto/compra. Cada nodo enlaza a evento/objeto existente y muestra origen, fecha, método, evidencia y consentimiento.
+- Filtros combinables por canal, landing, `blog:slug`/`docs:slug`, campaña, CTA, registro por Google/email, estado de solicitud y `unknown`; no confundir `login_provider` y `lead_source`.
+- En **Marketing**, embudo por fuente y contenido: visita consentida → CTA → registro → conversación → solicitud → presupuesto → contratación; cohortes y conversiones sobre personas/objetos **deduplicados**, y aviso de cobertura incompleta por consentimiento/adblock. No presentar ratios brutos como certeza estadística.
+- En **Inbox 360**, mostrar badge de origen trazable en nueva comunicación, sin inferir intención; **«abrir ficha»** y «crear tarea» reutilizan objetos existentes.
+- En **Sistema > Auditoría/Seguridad**, historial de accesos y cambios: operador real, entidad, fecha, acción, resultado, origen, navegador/dispositivo aproximado cuando exista base jurídica; diferenciar eventos de autenticación de operaciones administrativas y de sesiones delegadas.
+
+**Client Workspace — Mi EXPERT / Perfil y seguridad**
+- Mantener el **mismo design system Kiranism** que Admin, pero sus accesos, navegación, endpoints y filtros continúan cliente/empresa-scoped.
+- En **Mi perfil > Seguridad y sesiones**, mostrar únicamente dispositivos/sesiones propias disponibles, fecha de acceso y, cuando Auth lo permita, cerrar sesión/revocar. Mostrar claramente qué detalles son aproximados y si el historial no existe. No inventar datos históricos.
+- Preservar en el flujo de KIA únicamente contexto de página/servicio y empresa autorizada; ninguna vista de campañas, segmentación, UTM de otras personas o analítica global en Client.
+- **Modo soporte Admin:** consultar la parte operativa del portal sin suplantar al cliente; acceso a su historial de eventos sujeto a permiso y finalidad; registrar entrada/salida/acciones con actor Admin. Nunca ver tokens, cookies, atributos privados innecesarios ni sesiones activas como credenciales reutilizables.
+
+### 25.6. Avisos, consentimiento, retención y antifraude
+
+- **Notificar a Dirección/Admin:** alta nueva de portal como aviso informativo compacto con enlace a ficha y procedencia si existe; notificación **prioritaria/push** cuando llega una consulta humana, nueva solicitud de servicio, reserva o incidente de onboarding/KIA. Deduplicación por `event_id` + tipo; preferencia configurable, agrupación y silencio nocturno salvo urgencia, con acuse, reintentos y estado de entrega. No enviar un push por cada mensaje o respuesta de KIA.
+- **Entrega:** canal push admin existente como preferencia; fallback por email/agenda según configuración real. **No afirmar que ha llegado** sin prueba de envío/entrega. Contador y feed de avisos coherentes con Inbox y Contactos.
+- **RGPD/ePrivacy:** distinguir almacenamiento estrictamente necesario para iniciar sesión/atender una petición de **analítica/marketing no esencial**, sujeto al consentimiento o base jurídica evaluada. Si rechaza cookies, no usar localStorage, cookies de campaña o identificadores alternativos para reconstruir navegación; respetar revocación y expiración. El `origen` que el propio usuario envía al pedir un servicio puede conservarse como contexto transaccional cuando resulte necesario, no como consentimiento de marketing.
+- **Minimización:** no incluir PII en eventos de analítica, no exponer email/teléfono en UTM; no fingerprinting, geolocalización por IP ni inferencias de identidad. Política de retención diferenciada: metadata de campaña transitoria, audit de seguridad por plazo justificado y expediente según obligación legal; documentar periodos concretos con revisión RGPD antes de activar.
+- **Seguridad:** allowlist de campos/rutas/eventos, comprobación de firma y anti replay del estado de login, mismos límites tenant/empresa y RLS que Contactos, filtrado anti-bot, llamadas idempotentes y bloqueo de URL inyectada. **No enviar datos de origen comercial a KIA como instrucción confiable**.
+- **Auditoría:** cada corrección manual de fuente o vinculación de identidades conserva dato anterior, autor, motivo, fecha, evidencia y permiso; nunca completar `unknown` por intuición humana sin marcar la corrección como manual.
+
+### 25.7. PRs y dependencias; respetar la secuencia de Workspace V2
+
+| Orden | Entrega acotada | Dependencia / resultado verificable |
+| --- | --- | --- |
+| A0 | Inventario de puntos de captura, callback OAuth, click CTA, cookie consent, eventos en leads/profiles, observabilidad Vercel/Supabase | Informe de brechas y pruebas existentes; **no crear tablas todavía**. |
+| A1 | Contrato de adquisición y propagación segura por CTA/login, first/last touch, `unknown`, prueba de consentimiento | Tests unitarios de clasificación y flujo ES/RU; sin persistir PII en URL. |
+| A2 | Asociación idempotente del alta Auth al perfil/contacto, `account_registered` distinto de login y solicitud; timeline de evidencias | E2E Google OAuth, callback y regreso a KIA; no duplicar leads. |
+| A3 | Contactos 360 «Origen y recorrido», filtros, badge Inbox, feed nuevas altas + alertas push | Admin-only API paginada; permisos, dedupe, pruebas mobile y escritorio. |
+| A4 | Embudo Marketing con cobertura y tasas correctamente denominadas + sesiones propias del cliente + modo soporte auditado | Misma fuente de datos, capas RBAC/RLS distintas y ninguna fuga de tracking comercial. |
+| A5 | Validación con datos reales, métricas de ingestión y alertas, retención/consentimiento, rollback por flag | Prueba contra los casos de aceptación; despliegue por superficie, sin alterar históricos. |
+
+A0–A2 pueden avanzar en paralelo con la implementación visual PR #693 cuando no toquen los mismos archivos; A3–A5 se montan sobre `AdminWorkspaceShell` y `ClientWorkspaceShell` compartidos. Mantener la regla general de cambios por PR pequeña, typecheck/lint/tests/Vercel, migración revisada y rollback independiente. **No** añadir nuevas herramientas externas para duplicar Supabase, ni otro tablero comercial.
+
+### 25.8. Criterios de aceptación y pruebas E2E obligatorias
+
+1. **Alberto Bouza (histórico real):** alta Google en web EXPERT y salto a KIA acreditados; origen comercial «No determinado». Nunca mostrar «Google orgánico» sin evidencia.
+2. **Búsqueda orgánica con referrer verificable y consentimiento:** registra ruta y canal apropiados si existe evidencia válida; Google OAuth posterior no altera `first_touch`.
+3. **Campaña etiquetada:** conserva `utm_source/medium/campaign/content/term`, landing y CTA a través de redirección al login y vuelta a `/dashboard?kia=open`; diferencia first/last touch.
+4. **Artículo `blog:slug` / guía `docs:slug`:** consulta, servicio, reserva y KIA retienen el CTA de origen; no basta contabilizar visualización.
+5. **Cookie rechazada o revocada:** login, KIA pública y contratación siguen funcionando; no se instala rastreo de campaña alternativo; fuente desconocida donde falten evidencias.
+6. **Registro vs login:** un usuario recurrente no dispara nueva alta, alerta ni lead; segundo clic en CTA no crea dos conversiones.
+7. **KIA sin mensaje:** el botón abierto no se registra como conversación o lead; `kia_chat_started` exige conversación real.
+8. **Persona multientidad / lead previo por Stripe o email:** una identidad puede estar relacionada con varios objetos sin fusionar por email ni mezclar empresa, tenant o histórico contable.
+9. **Push y tarea:** una nueva solicitud humana genera un aviso único y trabajo vinculable; el simple registro informa según preferencias sin crear tarea profesional ficticia; auditar fallos de entrega.
+10. **Dos superficies:** un cliente no puede acceder a /admin ni consultar fuentes/embudos globales; un admin en modo soporte queda identificado y auditado.
+11. **Sesiones:** cliente solo ve las suyas y no puede consultar/revocar las de otro; datos de navegador son aproximados; no se expone IP completa ni token.
+12. **Reconstrucción incompleta:** una fuente perdida se muestra `unknown`; informe de calidad indica cobertura y no calcula una conversión falsa.
+13. **Dispositivos e idiomas:** Safari iPhone, Android, desktop, ES/RU, redirecciones y viewport móvil; KIA no tapa el panel ni corta botones de recorrido.
+14. **Auditoría y rollback:** rastro de cambios con autor, resultado y trazabilidad; con feature flag OFF, registro/autenticación siguen operativos sin errores ni alteración de fuentes históricas.
+
+**Definition of Done:** se puede responder «¿de dónde vino este usuario?» desde Admin mostrando **hechos verificables y los huecos de información**, con enlace a la evidencia disponible, alertas funcionando y controles de privacidad. No declarar completado el punto hasta pasar la prueba con un registro nuevo, al menos un origen externo consentido y el caso histórico Alberto.
+
+---
+
+## 26. Enriquecimiento profesional y empresarial verificable en Contactos 360 (decisión 10/10/2026)
+
+**Decisión:** ampliar EXPERT Workspace V2 para que un **lead que llega por web, correo, formulario, Telegram, cita u otros canales**, y también **un usuario que se registra sin solicitar servicio**, disponga de una **evaluación de enriquecimiento** en la ficha Contactos 360. KIA buscará de manera proporcional **información empresarial y profesional relacionada con la finalidad de la relación**, cuando dispongamos de identificadores y base jurídica adecuados. Buscar no significa afirmar que un resultado pertenece a esa persona. **El registro por sí solo no acredita actividad profesional, necesidad comercial ni condición de competidor.**
+
+**Estado:** especificación aprobada, **no hay buscador automático activado ni verificación de identidad de terceros completada por esta decisión**. Este bloque extiende el §25 (adquisición y altas), el §7.2 (Contactos), §7.5 (Inbox 360), §7.7 (Marketing), §2 ter (modo soporte) y el Design System Admin/Cliente compartido; **no** inaugura un CRM paralelo, una plataforma OSINT ni un menú adicional en el portal cliente.
+
+### 26.1. Objetivos y casos de uso
+
+- **Empresa conocida:** si un lead o usuario facilita voluntariamente razón social, **NIF/CIF** o dominio corporativo, KIA localiza datos corporativos pertinentes para asesoramiento: denominación, actividad pública, CNAE cuando conste, web corporativa, actos registrales y representantes cuando sean necesarios y legalmente accesibles. Los datos oficiales quedan sujetos a su propia vigencia y posibles discrepancias.
+- **Profesional conocido:** si la persona aporta empresa, profesión o URL profesional, KIA puede contrastar **esa vinculación concreta**, consultando solo información profesional pertinente y accesible legalmente. Si solo hay un nombre común o email personal, **no debe iniciar una búsqueda indiscriminada de identidad o redes sociales**: estado «Datos insuficientes para vincular actividad profesional».
+- **Usuario recién registrado sin consulta:** se registra el evento de alta, se crea/actualiza su identidad y se muestra «Registrado · sin solicitud»; el evaluador puede ejecutar comprobaciones **no intrusivas** sobre empresa aportada, si se cumplen permisos, y marcar el resto «No investigado — falta dato/base habilitante». No crear automáticamente un lead profesional o tarea comercial.
+- **Lead comercial entrante:** si existe finalidad clara, usar el enriquecimiento verificado para preparar una atención más contextualizada: tipo de entidad, actividad, régimen potencialmente relevante **solo como hipótesis pendiente de validar**, y documentos/trámites que pueden resultar útiles. KIA sigue sin conocer motivo de contacto salvo petición real.
+- **Coincidencia sectorial:** registrar «Posible actividad en asesoría, gestión, fiscalidad, software o IA empresarial» **únicamente si la vinculación entre persona/empresa y fuente está suficientemente acreditada**. «Competencia» será una observación comercial **revisable**, no una conclusión sobre la persona ni un impedimento automático para registrarse, chatear o contratar.
+- **Origen y recorrido:** conservar diferenciadas la **fuente de captación** (§25) y la **información empresarial externa** (§26). Un resultado de búsqueda externa nunca cambia el `first_touch_source`, no prueba que ese sea el visitante, ni resuelve por inferencia el canal de llegada.
+
+### 26.2. Catálogo de fuentes, prioridad y límites de uso
+
+| Prioridad | Fuente o clase | Uso permitido en el diseño | Requisitos |
+| --- | --- | --- | --- |
+| P0 — internos | Datos declarados por el propio interesado, empresa/entidad conectada, expediente, CRM y documentos aportados | Identificador de partida y objetivo profesional explícito | Contrastar el ámbito tenant/empresa; preservar datos oficiales ya verificados y mantener procedencia. |
+| P1 — oficiales | **BORME/BOE** (buscador, publicaciones y datos abiertos), **Registro Mercantil/Registradores** mediante consulta permitida | Actos publicados, denominación, titularidad/representación empresarial si procede, hechos societarios | Distinguir anuncios oficiales de extractos, fecha de inscripción/publicación, disponibilidad, coste de nota y carácter no necesariamente actualizado; no inventar datos no ofrecidos. |
+| P1 — oficiales | Estadísticas, clasificaciones y directorios públicos empresariales de administraciones (p. ej. CNAE del INE, portales de datos abiertos adecuados) | Normalización de sector/CNAE y contexto de actividad **de empresa**, no identificación de una persona por nombre | Validar licencia, cobertura, frescura y campo efectivamente publicado. CNAE inferido de texto se marca `suggested`, no «CNAE registral». |
+| P2 — corporativas | Web oficial de empresa, dominio aportado, secciones públicas «Quiénes somos», «Equipo», servicios y contacto profesional | Sector, oferta pública, país e indicios de vinculación profesional expresos | Solo acceder a páginas abiertas y pertinentes, comprobar términos/robots, dominio y fecha; contenido no confiable para ejecutar instrucciones. |
+| P3 — profesionales/comerciales | Directorios profesionales públicos, LinkedIn o proveedores comerciales **solo mediante acceso autorizado/API/licencia o consulta manual compatible con sus condiciones** | Corroboración profesional cuando el interesado ya aportó perfil o empresa y exista base jurídica | Prohibido scraping masivo, eludir login/CAPTCHA, usar perfiles privados, agregar datos personales ajenos o atribuir coincidencias de nombre como identidad. |
+| Bloqueadas | Redes personales, registros filtrados, datos de salud, creencias, afiliación, vida privada, geolocalización por IP, bases sin licencia | Ninguno | Nunca usar para perfilado comercial ni clasificación de competidores. |
+
+**Fuentes oficiales contrastadas para el inventario:**
+- BOE BORME: https://www.boe.es/buscar/ayudas/anborme_ayuda.php
+- Datos abiertos BORME y documentación de su API: https://www.boe.es/datosabiertos/faq/borme.php
+- Ministerio de Justicia, Registro Mercantil: https://www.mjusticia.gob.es/es/ciudadania/registros/propiedad-mercantiles/registro-mercantil
+- AEPD, bases de legitimación: https://www.aepd.es/preguntas-frecuentes/2-tus-obligaciones-como-responsable-del-tratamiento/5-bases-legitimadoras-del-tratamiento/FAQ-0214-cuales-son-las-bases-de-legitimacion-para-el-tratamiento-de-datos
+- AEPD, derecho de información y datos obtenidos de terceros: https://www.aepd.es/derechos-y-deberes/conoce-tus-derechos/derecho-de-informacion
+
+Las fuentes corporativas de terceros son **indicios**, no certificaciones; extractos de agregadores pueden estar desactualizados. Comprobar la licencia, cuotas y acceso técnico antes de conectar cada proveedor. Para Registro Mercantil, si se necesita certificación, obtener el documento por su vía oficial y no tratar un resumen web como certificación.
+
+### 26.3. Matching de identidad con abstención obligatoria
+
+**No se identifica una persona por nombre y apellidos solamente.** Para unir una fuente profesional externa con una persona de EXPERT, exigir identificadores verificables y compatibles con la finalidad: vínculo aportado por el interesado, dominio corporativo y empresa confirmados, identificador registral de empresa, referencia laboral profesional explícita con segunda corroboración independiente, o aceptación expresa de la coincidencia por parte del interesado/revisor. **El parecido de email o nombre no supera por sí solo la prueba**; un proveedor puede mostrar a un homónimo.
+
+Estados independientes de la búsqueda:
+1. `not_eligible` — falta base jurídica o vínculo profesional suficiente.
+2. `queued` / `in_progress` — búsqueda permitida iniciada, con control de cuota.
+3. `no_verified_match` — se han encontrado 0 o más resultados pero ninguno atribuible.
+4. `candidate_unverified` — candidato en cola de revisión; **no adjuntarlo como hecho confirmado**.
+5. `company_verified` — sociedad/actividad verificadas con identificador corporativo.
+6. `professional_link_verified` — vínculo profesional confirmado con evidencia suficiente.
+7. `needs_human_review` / `rejected` / `stale` / `error` — diferentes estados de control, no sobreescribir con «sin actividad».
+ 
+**Política de abstención:** cuando existan varios Alberto Bouza u otros homónimos, presentar solo «Coincidencias públicas no verificadas», sin asociarlas al perfil real, sin extraer su correo/vida privada y sin sugerir que sean la misma persona. **El caso Alberto Bouza es el test principal de falso positivo**: registro Google con origen comercial desconocido, ningún mensaje KIA registrado, ningún dato empresarial/profesional corroborado; el sistema no puede asociarle empresas ni identificarlo como competencia por coincidencias nominales.
+
+### 26.4. Contrato de datos, provenance, revisión y retención
+
+**Modelo lógico — decidir persistencia después de inventario, sin migración prematura**:
+ 
+| Objeto/campo | Semántica / seguridad |
+| --- | --- |
+| `enrichment_assessment` | `subject_type` persona/empresa, `subject_id` del resolutor Contactos, `tenant_id`, `trigger_event_id`, `eligibility_reason`, `lawful_basis_id`, `status`, `attempts`, `created_at/updated_at`, `expires_at`. |
+| `enrichment_source` | `source_kind`, `source_url` **canónica y saneada**, `issuer`, `published_at`, `retrieved_at`, `access_mode`, `licence`, `evidence_excerpt` mínimo (no copiar páginas completas), `source_hash`. |
+| `enrichment_finding` | Tipo company/profession/sector/CNAE, valor y **si es dato confirmado, inferido o no vinculado**, `verification_level`, `matched_identifiers` redactados, `company_id` explícito; `review_status`. |
+| `enrichment_review` | Actor real admin, campo revisado, evidencia, decisión aceptar/rechazar/corregir, justificación, fecha y diff; append-only/auditable. |
+| `enrichment_usage` | Ejecuciones, proveedor, coste/cuota, caché, errores, reintentos, nivel de uso y `source_policy_version`, sin credenciales ni datos personales en logs. |
+
+**Fuente de verdad y separación:** no modificar `auth.users`, datos oficiales de `companies` o `client_registry_facts` por una búsqueda web. Guardar **sugerencias** anexas y exigir `confirm/save` auditado antes de insertar un dato verificado en la ficha/Hoja Registral. La revisión conserva la fuente original, la corrección y la fecha. Si se rechaza una coincidencia, evitar que reaparezca como confirmada en el siguiente cron. No fusionar leads/perfiles/empresas por coincidencias automatizadas.
+
+**Límites de almacenamiento y costes:** caché por entidad verificada + fuente, con TTL ajustado a cada clase; cache negativa, deduplicación por ID del evento y sujeto, una sola evaluación inicial por alta/lead y reconsulta solo ante **nuevos datos profesionales, cambio material o revisión expresa**. No reintentos perpetuos ni scraping programado de personas. Valorar retención corta de resultados no verificados y eliminación segura, conforme a la política RGPD documentada. No enviar cuerpos completos, PII innecesaria ni secretos al modelo de IA.
+
+### 26.5. Orquestación KIA — flujo de entrada no bloqueante
+
+```text
+Alta Auth / lead validado / nueva empresa declarada
+  → normalizar identidad dentro del tenant (sin join automático por email)
+  → evaluar finalidad, base jurídica, permisos, identificadores y política fuente
+  → NO elegible: estado justificado «sin búsqueda» y finaliza
+  → SÍ elegible: encolar job idempotente en infraestructura actual
+      → conectar fuentes permitidas (oficial → web corporativa → otras autorizadas)
+      → extraer hechos corporativos/profesionales pertinentes + fecha + URL
+      → resolver duplicados y matching conservador
+      → no verificado: abstenerse y ofrecer revisión (sin asociar homónimos)
+      → verificado: crear hallazgos y propuesta de actualización
+      → revisión humana cuando vincula persona/afecta perfil comercial
+      → publicar en Contactos 360, conservar auditoría y estado de última revisión
+```
+
+- Activación única por `registration.created` o `lead.created` con evento persistido; la visita anónima o el login repetido no produce una investigación nueva. Un formulario empresarial con CIF validado puede habilitar la ruta corporativa; un alta solo con email personal **termina como no elegible**. No hacer que el alta espere la respuesta de buscadores.
+- KIA clasifica necesidad de negocio solo a partir de solicitud/expediente/consentimiento; la información encontrada puede **contextualizar** una respuesta, nunca decidirla por el cliente ni forzar oferta.
+- Servicios de búsqueda/IA exponen únicamente tools de **lectura de fuentes autorizadas** en esta fase. Separación entre datos fuente no confiables, razonamiento IA y escritura al CRM; URL/HTML externo no son instrucciones ejecutables. Revisión de prompt injection/SSRF, acceso a host permitido, rate limit y cuotas.
+- Integrar con `internal_tasks`, `next_best_actions`, Inbox 360 y `client_registry_events` solo si existe una acción humana real. Sin coincidencia, no crear tarea, lead duplicado, incidencia ni aviso intrusivo.
+- No usar un único valor de `confidence` para simular certeza: guardar evidencia explícita y método; el umbral de vinculación no reemplaza la comprobación humana requerida.
+
+### 26.6. UX: misma plantilla Admin/Cliente, permisos distintos
+
+**Admin → Contactos → Ficha 360**, dentro de la misma plantilla Kiranism:
+- Añadir bloque o pestaña **«Empresa y actividad · Fuentes verificadas»** conectado a «Origen y recorrido» (§25) pero conceptualmente separado.
+- Encabezado compacto: `Empresa identificada / Pendiente / Datos insuficientes`; actividad, web corporativa y sector solo si verificados; botón `Ver fuente` con tipo, fecha y licencia; advertencia de posible dato obsoleto.
+- Botones `Revisar coincidencias`, `Corregir`, `Descartar` y `Actualizar datos` (si la política de fuente permite refresco), con confirmación y rastro de cambios; control `No buscar` cuando haya oposición o falta de finalidad.
+- En **Inicio Admin**, incluir métrica accionable «Hallazgos corporativos pendientes de revisar» **sin mezclar con leads calientes**. Una alta informativa sigue sin tarea profesional automática.
+- Filtros del directorio por `Actividad verificada`, `Sector/CNAE`, `Empresa vinculada`, `Fuente`, `Estado de revisión`; permitir búsquedas combinadas **server-side** sin exponer PII a visitantes.
+- En Marketing, análisis **agregado por sectores de entidades verificadas** y cobertura de enriquecimiento con denominadores correctos; «solapamiento sectorial» no significa competidor confirmado. Prohibido enviar campañas a personas por inferencias no validadas o sin base habilitante para comunicaciones comerciales.
+
+**Cliente → Mi EXPERT:** los componentes de empresa que se muestren al titular pueden incorporar **información registral/publicada con cita y fecha**, marcar sugerencias para su rectificación y permitir aportar/confirmar empresa; nunca publicar evaluaciones internas de interés comercial, anotaciones de competencia, búsquedas internas o coincidencias de otras personas. En **Modo soporte**, el Admin ve el mismo contexto operativo del cliente, y cualquier confirmación queda firmada como actor Admin real.
+
+### 26.7. Privacidad, transparencia y condiciones de activación
+
+**Puerta de activación obligatoria antes de ejecutar búsquedas sistemáticas sobre personas:**
+- Mantener registro de actividades, finalidad definida y **base de legitimación por tipo de fuente/objeto**, con documentación de ponderación si se utiliza interés legítimo; evaluar necesidad de EIPD cuando concurran los criterios. Que algo esté publicado en Internet **no significa que pueda reutilizarse indiscriminadamente para elaborar perfiles comerciales**.
+- Actualizar aviso de privacidad de alta, formulario, chat y comunicaciones para indicar enriquecimiento empresarial de fuentes públicas, categorías, procedencia, usos y derechos. Cuando haya datos no recabados del interesado, cumplir las obligaciones de información del art. 14 RGPD y excepciones solo si son legalmente aplicables. Registrar oposición y supresión conforme a obligaciones, bloqueando nueva búsqueda.
+- Separar búsqueda corporativa para prestar servicio, búsqueda profesional de una persona y prospección/segmentación marketing: **pueden requerir bases y garantías distintas**. Una alta de cuenta sin solicitud no autoriza por defecto prospectar por perfiles personales. No usar consentimiento de cookies como base universal ni deducir consentimiento comercial por registrarse.
+- **Excluir expresamente** datos personales sensibles, redes de ocio, direcciones particulares, familia, patrones de actividad y búsquedas por correo personal en Internet. Prohibidos enriquecimientos inferenciales sobre reputación, solvencia personal, ideología, religión, salud, orientación, etc.
+- No tomar decisiones exclusivamente automatizadas que restrinjan acceso, condiciones, prestación de servicio o trato comercial por «perfil de competencia»; acceso de cliente no condicionado a la ficha enriquecida.
+- Garantizar acceso Admin con finalidad y rol, separación tenant/empresa, cifrado y minimización; proveedores y transferencias revisados. Retención concreta y política de borrado a aprobar por responsable RGPD antes del despliegue.
+
+**Evidencia normativa y operativa:** AEPD explica bases legitimadoras y necesidad de documentarlas; el deber de información comprende también la procedencia de datos obtenidos de terceros y perfiles. Referencias verificadas arriba en §26.2.
+
+### 26.8. Implementación por PRs compatibles con §25 / workspace compartido
+
+| Orden | Entrega | Validación |
+| --- | --- | --- |
+| E0 | Inventario: fuentes existentes `companies`, `profiles`, leads, datos registrales, KIA, proveedor LLM, RGPD y capacidades de APIs oficiales; clasificación de identificadores y autorización. | Matriz real de campos disponibles, costes, condiciones de uso y decisión documentada de base jurídica por supuesto. |
+| E1 | Contratos tipados `eligibility`, `match`, `finding`, `source`; reglas de abstención, cache/idempotencia, pipeline solo lectura con fuentes oficiales/corporativas permitidas. | Unit tests homónimos, emails privados, CIF y URLs malformados, inyección en contenidos, error de fuente y `no_match`. |
+| E2 | Persistencia mínima de sugerencias/evidencias y revisión humana con RLS, auditable, sin escribir automáticamente fuente oficial de empresas. | Migración si procede, Security Advisor, aislamiento por tenant y prohibición de joins por nombre/email; test reconexión/cambio de empresa. |
+| E3 | Contactos 360 bloque de actividad, fuentes y revisión; búsqueda y filtros autorizados; lectura empresa propia en Cliente. | UX de las dos superficies sobre componentes compartidos, mobile ES/RU, modo soporte con actor real, accesibilidad. |
+| E4 | Eventos de entrada + jobs idempotentes y observabilidad: alta, lead, nueva empresa; alertas **solo** por hallazgo revisable relevante o error repetido. | Reintento sin dobles búsquedas/avisos, fallos sin bloquear alta/KIA, cuotas, log de coste y última actualización. |
+| E5 | Piloto sin escritura automática en CRM y revisión RGPD; despliegue gradual por flag independiente de `admin_v2`/`client_v2`. | Aprobación de privacidad, fuentes habilitadas/licencias y pruebas reales; rollback que no impide registrarse ni usar KIA. |
+
+**Priorización:** primero el §25 (atribución fiable), luego E0/E1 del §26 en paralelo al diseño visual #693; no retrasar el acceso a KIA ni la finalización del Admin/Cliente por un módulo de enriquecimiento. Evitar implantar plataformas de terceros mientras BORME, fuentes públicas y estructuras EXPERT cubran el piloto.
+
+### 26.9. Criterios de aceptación clave
+
+1. **Alberto Bouza:** ante homónimos encontrados en Internet, el sistema se abstiene; **ninguna empresa/sector/competencia atribuida** ni búsqueda personal automatizada si solo consta nombre y email privado. Mostrar «Empresa/actividad no verificada»; cuenta funcional y sin tarea de ventas forzada.
+2. **Lead SL con CIF y razón social:** buscar entidad correcta, dar evidencias con URL, publicación y fecha; distinguir CNAE oficial de actividad sugerida. Rechazar sociedad homónima con distinto CIF.
+3. **Autónomo sin empresa ni dato profesional explícito:** no buscar redes personales; ofrecer que aporte sector/actividad si necesita asesoramiento. Mantener estado `not_eligible`.
+4. **Profesional con perfil aportado:** consulta según permiso/base jurídica, exige vínculo acreditado y revisión antes de adherir el hecho a su ficha.
+5. **Identidad ambigua:** candidatos externos permanecen aislados como posibles coincidencias, sin enlazarse ni mostrarse como hechos; rechazo queda guardado y prevalece en reintentos.
+6. **Competencia:** coincidir en CNAE/servicio no determina condición competitiva; comentario interno revisable, nunca segmentación negativa ni trato diferencial automático.
+7. **Cliente y staff no autorizado:** no pueden consultar evidencias privadas ajenas ni el ranking interno; tenant_admin jamás recibe acceso global.
+8. **Oposición/borrado/cambio de base:** no se generan nuevas consultas; se aplica conservación/supresión conforme a política; auditoría necesaria no filtra datos prohibidos.
+9. **Autorización y recursos:** ningún token secreto expuesto, scraping bloqueado, APIs respetan límites, origen de cada hallazgo visible, caché y facturación de llamadas contabilizadas.
+10. **Trazabilidad de la operación:** tiempo de alta no aumenta por enriquecimiento; eventos repetidos no duplican datos, tareas ni notificaciones; fallo de proveedor no cambia `first_touch_source`, Auth, expedientes ni KIA.
+11. **Cierre:** reporte de precisión de matching manual y tasa de abstención; no declarar el módulo operativo hasta probar 1 empresa con identificador confirmado, 1 profesional explícito, 1 homónimo, 1 oposición y permisos entre dos tenants.
+
+**Definition of Done:** cualquier alta/lead tiene un **estado explícito de elegibilidad de enriquecimiento**, y cuando exista información pertinente **verificada** puede verse desde Contactos 360 con fuente, fecha, grado de vinculación, revisión y derecho de corrección. «No elegible», «sin coincidencia» y «fuente no disponible» son resultados válidos; ninguno permite completar identidades, profesiones o necesidades comerciales inventadas.
