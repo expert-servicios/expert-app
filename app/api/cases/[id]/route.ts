@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 
 const LEGACY_STATES = [
   'nuevo',
@@ -26,23 +27,9 @@ const caseUpdateSchema = z.object({
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const sessionSupabase = createServerSupabaseClient(request);
-    const { data: { user }, error: authError } = await sessionSupabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-    }
-
+    const actor = await requireActiveActor(request, ['admin', 'owner']);
+    if (!actor) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     const admin = getSupabaseAdmin();
-    const { data: profile, error: profileError } = await admin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (profileError || (profile?.role !== 'admin' && profile?.role !== 'owner')) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    }
 
     const parseResult = caseUpdateSchema.safeParse(await request.json());
     if (!parseResult.success) {
@@ -87,7 +74,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     await admin.from('audit_logs').insert({
-      actor_id: user.id,
+      actor_id: actor.userId,
       action: 'case.metadata_updated',
       entity: 'cases',
       entity_id: id,
