@@ -2,7 +2,8 @@
 -- Runs only server-side with service_role. Feature flag remains off.
 alter table public.kia_public_web_messages
   add column processing_claim uuid,
-  add column claim_expires_at timestamptz;
+  add column claim_expires_at timestamptz,
+  add column response_payload jsonb;
 
 create index kia_web_claim_expiry_idx
   on public.kia_public_web_messages(claim_expires_at)
@@ -20,6 +21,7 @@ declare
   v_state text;
   v_expiry timestamptz;
   v_reply text;
+  v_payload jsonb;
 begin
   if p_claim is null or p_body is null or length(btrim(p_body)) not between 1 and 4000 then
     return jsonb_build_object('outcome','invalid');
@@ -43,9 +45,11 @@ begin
   if v_id is null then return jsonb_build_object('outcome','busy'); end if;
   if v_body <> btrim(p_body) then return jsonb_build_object('outcome','mismatch'); end if;
 
-  select body into v_reply from public.kia_public_web_messages
+  select body,response_payload into v_reply,v_payload from public.kia_public_web_messages
     where session_id=p_session_id and client_message_id=p_message_id and role='assistant';
-  if v_reply is not null then return jsonb_build_object('outcome','replay','reply',v_reply); end if;
+  if v_reply is not null then
+    return jsonb_build_object('outcome','replay','reply',v_reply,'payload',coalesce(v_payload,jsonb_build_object('reply',v_reply)));
+  end if;
 
   if v_state='failed' or (v_state='received' and (v_expiry is null or v_expiry < now())) then
     update public.kia_public_web_messages
@@ -74,7 +78,7 @@ end;
 $$;
 
 create or replace function public.kia_web_complete_turn(
-  p_session_id uuid,p_message_id uuid,p_claim uuid,p_reply text
+  p_session_id uuid,p_message_id uuid,p_claim uuid,p_reply text,p_payload jsonb
 ) returns jsonb
 language plpgsql security invoker
 set search_path = pg_catalog, public
@@ -82,7 +86,13 @@ as $$
 declare
   v_user uuid;
   v_reply text;
+  v_payload jsonb;
 begin
+  if p_payload is null or jsonb_typeof(p_payload) <> 'object'
+    or p_payload->>'reply' IS DISTINCT FROM btrim(p_reply)
+    or length(p_payload::text) > 16000 then
+    return jsonb_build_object('outcome','invalid_payload');
+  end if;
   if p_reply is null or length(btrim(p_reply)) not between 1 and 4000 then
     return jsonb_build_object('outcome','invalid_reply');
   end if;
@@ -97,15 +107,15 @@ begin
   if v_user is null then return jsonb_build_object('outcome','lost_claim'); end if;
 
   insert into public.kia_public_web_messages
-    (session_id,client_message_id,role,body,delivery_state)
-  values(p_session_id,p_message_id,'assistant',btrim(p_reply),'sent')
+    (session_id,client_message_id,role,body,delivery_state,response_payload)
+  values(p_session_id,p_message_id,'assistant',btrim(p_reply),'sent',p_payload)
     on conflict on constraint kia_public_web_messages_turn_dedupe do nothing;
-  select body into v_reply from public.kia_public_web_messages
+  select body,response_payload into v_reply,v_payload from public.kia_public_web_messages
     where session_id=p_session_id and client_message_id=p_message_id and role='assistant';
 
   update public.kia_public_web_messages set delivery_state='sent',
     claim_expires_at=null,processing_claim=null where id=v_user;
-  return jsonb_build_object('outcome','complete','reply',v_reply);
+  return jsonb_build_object('outcome','complete','reply',v_reply,'payload',coalesce(v_payload,jsonb_build_object('reply',v_reply)));
 end;
 $$;
 
@@ -127,9 +137,9 @@ $$;
 -- Functions in exposed public schema are NOT browser callable.
 revoke all on function public.kia_web_claim_turn(uuid,uuid,text,uuid) from public,anon,authenticated;
 revoke all on function public.kia_web_renew_turn(uuid,uuid,uuid) from public,anon,authenticated;
-revoke all on function public.kia_web_complete_turn(uuid,uuid,uuid,text) from public,anon,authenticated;
+revoke all on function public.kia_web_complete_turn(uuid,uuid,uuid,text,jsonb) from public,anon,authenticated;
 revoke all on function public.kia_web_fail_turn(uuid,uuid,uuid) from public,anon,authenticated;
 grant execute on function public.kia_web_claim_turn(uuid,uuid,text,uuid) to service_role;
 grant execute on function public.kia_web_renew_turn(uuid,uuid,uuid) to service_role;
-grant execute on function public.kia_web_complete_turn(uuid,uuid,uuid,text) to service_role;
+grant execute on function public.kia_web_complete_turn(uuid,uuid,uuid,text,jsonb) to service_role;
 grant execute on function public.kia_web_fail_turn(uuid,uuid,uuid) to service_role;
