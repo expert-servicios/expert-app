@@ -184,11 +184,15 @@ export function KiaPublicWidget() {
       sessionReadyRef.current = true;
       const stored = Array.isArray(snapshot.messages) ? snapshot.messages : [];
       if (stored.length) {
-        setMessages((current) => [
-          current[0],
-          ...stored.filter((entry) => (entry.role === 'user' || entry.role === 'assistant') && typeof entry.body === 'string')
-            .map((entry) => ({ id: entry.id, role: entry.role, text: entry.body })),
-        ]);
+        setMessages((current) => {
+          const restored = stored.filter((entry) =>
+            (entry.role === 'user' || entry.role === 'assistant') && typeof entry.body === 'string',
+          ).map((entry) => ({ id: entry.id, role: entry.role, text: entry.body }));
+          const restoredIds = new Set(restored.map((entry) => entry.id));
+          // Preserve messages sent while bootstrap was running.
+          const local = current.filter((entry) => entry.id !== 'welcome' && !restoredIds.has(entry.id));
+          return [current[0], ...restored, ...local];
+        });
         const last = stored[stored.length - 1];
         if (last.role === 'user' && last.client_message_id) {
           setPendingTurn({ id: last.client_message_id, message: last.body });
@@ -235,7 +239,6 @@ export function KiaPublicWidget() {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), PUBLIC_CHAT_TIMEOUT_MS);
     let persistent = false;
-    let requestStarted = false;
     try {
       persistent = await ensurePublicSession();
       const recaptchaToken = await getRecaptchaToken('kia_public_chat');
@@ -246,7 +249,6 @@ export function KiaPublicWidget() {
       timers.push(window.setTimeout(() => setThinkingStage('composing'), isRegulatory ? 5_500 : 3_500));
       timers.push(window.setTimeout(() => setThinkingStage('slow'), isRegulatory ? 12_000 : 9_000));
 
-      requestStarted = true;
       const response = await fetch('/api/ai/kia/public', {
         method: 'POST', credentials: 'same-origin',
         signal: controller.signal,
@@ -271,7 +273,7 @@ export function KiaPublicWidget() {
       setAttachment(null);
       setPendingTurn(null);
     } catch (error) {
-      if (persistent && requestStarted) {
+      if (persistent) {
         // Never generate another id for an interrupted turn. A fresh CAPTCHA is
         // obtained on each manual retry; the server replays finished responses.
         setPendingTurn({ id: messageId, message: clean, displayText });
