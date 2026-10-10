@@ -33,6 +33,8 @@ type Lead = {
   phone: string | null;
   source: string | null;
   source_key?: string | null;
+  crm_segment: string | null;
+  crm_summary: string | null;
   category: string | null;
   service: string | null;
   message: string | null;
@@ -66,6 +68,7 @@ type ApiResponse = {
   pagination: { page: number; limit: number; total: number; pages: number };
   stats: {
     total: number;
+    attention: number;
     leads: number;
     prospects: number;
     customers: number;
@@ -137,7 +140,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
   const activity = one(params.activity);
   const marketing = one(params.marketing);
   const locale = one(params.locale);
-  const segment = one(params.segment);
+  const segment = one(params.segment) || (one(params.q) || one(params.focus) ? 'all' : 'attention');
   const focus = one(params.focus);
   const page = Math.max(1, Number(one(params.page)) || 1);
 
@@ -154,7 +157,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
   const loadFailed = data === null;
   const leads = data?.leads ?? [];
   const stats = data?.stats ?? {
-    total: 0, leads: 0, prospects: 0, customers: 0, former_customers: 0,
+    total: 0, attention: 0, leads: 0, prospects: 0, customers: 0, former_customers: 0,
     subscribed: 0, paid: 0, abandoned: 0, marketing_consented: 0, marketing_unknown: 0,
     ru_funnel: { total: 0, prospects: 0, customers: 0, paid: 0, subscribed: 0 },
   };
@@ -172,7 +175,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#c88b25]">CRM EXPERT</p>
               <h1 className="mt-1 font-serif text-3xl font-bold text-[#07111d]">Contactos y leads</h1>
               <p className="mt-1 text-sm text-[#526171]">
-                Leads operativos, atribución comercial, historial Stripe y elegibilidad de marketing.
+                Solicitudes accionables primero; contactos históricos conservados con origen y resumen. Campañas solo con base jurídica verificada.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -237,8 +240,20 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
               <option value="en">EN</option>
             </select>
             <select name="segment" defaultValue={segment} className="rounded-xl border border-[#d8cbb5] bg-[#fffdf8] px-3 py-2.5 text-sm">
-              <option value="">Todos los orígenes</option>
+              <option value="attention">Requieren atención</option>
+              <option value="all">Todos los contactos</option>
+              <option value="actionable">Solicitudes reales</option>
+              <option value="stripe_history">Histórico Stripe completo</option>
+              <option value="stripe_imported">Stripe · antiguos sin pagos</option>
+              <option value="stripe_customer">Stripe · clientes con actividad</option>
+              <option value="stripe_abandoned">Stripe · abandonados</option>
+              <option value="mentorday_directory">MentorDay · directorio</option>
               <option value="mentorday-projects">MentorDay · proyectos 2026</option>
+              <option value="mentoring_followup">Mentoring · seguimiento</option>
+              <option value="needs_review">Pendientes de revisión</option>
+              <option value="spam_review">Spam probable</option>
+              <option value="internal_test">Pruebas internas</option>
+              <option value="system_notice">Notificaciones automáticas</option>
             </select>
             <button className="rounded-xl bg-[#07111d] px-4 py-2.5 text-sm font-bold text-white">Filtrar</button>
           </form>
@@ -246,7 +261,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
 
         <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           {[
-            ['Leads', stats.leads, 'Pendientes de cualificación'],
+            ['Por atender', stats.attention, 'Solicitudes que necesitan intervención'],
             ['Prospectos', stats.prospects, `${stats.abandoned} con checkout/pago abandonado`],
             ['Clientes', stats.customers, `${stats.paid} con actividad pagada`],
             ['Antiguos', stats.former_customers, 'Marcados manualmente'],
@@ -366,6 +381,11 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
                               {lead.message}
                             </p>
                           </details>
+                        ) : lead.crm_summary ? (
+                          <div className="mt-2 max-w-md rounded-lg border border-[#e4d8c6] bg-[#fffdf8] p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-[#8a6111]">Resumen CRM verificado</p>
+                            <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-[#29384a]">{lead.crm_summary}</p>
+                          </div>
                         ) : (
                           <p className="mt-2 text-xs text-[#8b8174]">Sin consulta registrada.</p>
                         )}
@@ -398,6 +418,7 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
                             </span>
                           )}
                           <p className="text-xs font-semibold text-[#29384a]">{lead.source ?? 'manual/web'}</p>
+                          {lead.crm_segment && <span className="rounded-full bg-[#f2e8d7] px-2 py-0.5 text-[10px] font-medium text-[#57452e]">{lead.crm_segment.replace(/_/g, ' ')}</span>}
                         </div>
                         {lead.attribution?.campaign && <p className="mt-1 text-[11px] text-[#6f665b]">Campaña: {lead.attribution.campaign}</p>}
                         {lead.attribution?.intent && <p className="mt-1 text-[11px] text-[#6f665b]">Intención: {intentLabels[lead.attribution.intent] ?? lead.attribution.intent}</p>}
