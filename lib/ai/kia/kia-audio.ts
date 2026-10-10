@@ -1,3 +1,4 @@
+import { KIA_DEFAULT_VOICE, kiaTextForSpeech } from '@/lib/ai/kia/kia-voice-presentation';
 const TRANSCRIPTION_URL = 'https://api.openai.com/v1/audio/transcriptions';
 const SPEECH_URL = 'https://api.openai.com/v1/audio/speech';
 const GEMINI_INTERACTIONS_URL = 'https://generativelanguage.googleapis.com/v1beta/interactions';
@@ -119,11 +120,10 @@ export async function synthesizeKiaSpeech(input: {
   text: string;
   locale: 'es' | 'ru';
 }): Promise<{ audio: ArrayBuffer; contentType: string; model: string; voice: string }> {
-  const text = input.text.trim().slice(0, 4000);
+  const text = kiaTextForSpeech(input.text).slice(0, 4000);
   if (!text) throw new Error('empty_speech_text');
   const model = process.env.OPENAI_TTS_MODEL?.trim() || 'gpt-4o-mini-tts';
-  const voice = process.env.OPENAI_TTS_VOICE?.trim();
-  if (!voice) throw new Error('openai_tts_not_configured');
+  const voice = process.env.OPENAI_TTS_VOICE?.trim() || KIA_DEFAULT_VOICE;
 
   const response = await fetch(SPEECH_URL, {
     method: 'POST',
