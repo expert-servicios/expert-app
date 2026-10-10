@@ -100,7 +100,6 @@ export async function POST(request: NextRequest, { params }: Params) {
         source: 'admin_client_portal',
         platform: device.platform,
         browser: device.browser,
-        user_agent: device.userAgent,
         device_source: 'unverified_user_agent',
       },
     }).select('id,created_at').single();
