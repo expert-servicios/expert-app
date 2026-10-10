@@ -20,6 +20,9 @@ Dirección EXPERT autoriza la ejecución progresiva del ecosistema aprobado, **E
 6. **Sin cambios de datos de producción por defecto.** Las migraciones Supabase son forward-only, con preflight del ledger, aprobación de dependencias, plan de recuperación, aislamiento, RLS/grants y readback; conservar historial financiero y no ejecutar escrituras Holded sin permiso efectivo y aprobación/confirmación según riesgo.
 7. **Feature flags apagadas** hasta el gate específico de activación (incluye privacidad, consentimiento, retención, seguridad, smoke en entorno autorizado y rollback ensayado). Merge de código ≠ migración ≠ activación ≠ entrega a usuarios.
 8. Cada sesión de trabajo inicia leyendo **Checkpoint** y **Bitácora** de este archivo y comparándolos con la realidad de `main`, PRs y CI. Actualizar los estados **en el mismo PR o inmediatamente después de comprobar un resultado**. Nunca marcar completada una tarea sin evidencia enlazada.
+
+**Aclaración operativa de Dirección (10/10/2026) — conexiones Holded de clientes de la asesoría:** Dirección confirma que ha configurado personalmente las conexiones Holded de sus cinco clientes y que no exige conservar ininterrumpidamente esas vinculaciones durante la recomposición. **Se permite contemplar desconexión y posterior reconexión cuando sea realmente necesaria para probar la arquitectura**, sin tratar la continuidad de las conexiones como bloqueo del proyecto. No implica orden de desconexión inmediata, ni autorización para borrar contabilidades, clientes, empresas, documentos o históricos, ni para operar con cuentas cruzadas. Antes de una desconexión real: (i) mapear cliente/empresa/tenant/conexión y diferenciar las filas actuales (cuatro activas y una revocada en la fotografía inicial) de los cinco clientes declarados; (ii) documentar permisos, identificadores no secretos, dependencias, sincronizaciones/automatizaciones y efectos; (iii) verificar que se puede volver a autenticar y que los datos de Holded permanecen íntegros; (iv) elegir ventana de pruebas y coordinación con Dirección si hay impacto operativo; (v) registrar evento, detener procesos dependientes, realizar desconexión acotada y probar posterior reconexión/readback; (vi) no eliminar históricos ni exponer tokens en la bitácora. Si basta simular una desconexión en pruebas, preferirlo. Aplicar gates E5 y seguridad E0; no alterar integraciones productivas en la fase E0.
+
 9. Cerrar cada módulo con pruebas y resultados; cerrar la fase tras auditoría transversal, QA funcional ES/RU y móvil cuando corresponda, documentación, seguridad, regresiones, deploy, rollback y bitácora de cierre. **La fase cerrada se identifica por commit/PR y fecha.**
 10. No sustituir la identidad humana ni prometer capacidades no operativas. KIA puede preparar, proponer y ejecutar solo lo que su actor y conector permiten; en actuaciones críticas requiere supervisión y trazabilidad.
 
@@ -90,6 +93,7 @@ Este documento **prevalece en orden, límites, bloqueos y estado de ejecución**
 - [x] `E0-M1-02` Identificar y comparar fuentes relevantes: Admin V2, KIA 2.0, Client Ledger, Workspace Work, roadmap histórico y PR #705/#707/#708/#709/#683. Evidencia: documentos y metadatos citados en §2.
 - [ ] `E0-M1-03` Auditar exhaustivamente contratos de código y determinar qué es ya operativo, parcial o exclusivamente plan (rutas, datos, grants y UX).
 - [ ] `E0-M1-04` Registrar matriz de dependencias con cada PR abierta: fusionar después de gates, detener o trasladar a su fase, **sin código paralelo**.
+- [ ] `E0-M1-05` Conciliar **cinco clientes Holded declarados** con filas técnicas de integración (cuatro activas/una revocada en la fotografía del 10/10), asignar empresa/tenant y dependencias; redactar protocolo reversible de desconexión/reconexión **sin ejecutarlo en E0**.
 
 **Módulo E0-M2 — Decisiones arquitectónicas**
 - [ ] `E0-M2-01` Congelar mapa de actores (visitante, lead, cliente, operador, Admin, soporte), scopes y matriz read/draft/write por canal.
@@ -178,6 +182,7 @@ Este documento **prevalece en orden, límites, bloqueos y estado de ejecución**
 
 **Módulo E5-M1 — Integraciones autorizadas**
 - [ ] `E5-M1-01` Holded company-scoped: lectura, capability discovery, paridad efectiva de operaciones autorizadas, límites explícitos.
+- [ ] `E5-M1-04` Si una prueba exige reset de integración, ejecutar desconexión/reconexión **selectiva y reversible** por cliente, con revisión de efectos, control de tareas/sync, coordinación operativa, trazabilidad y readback; no sacrificar históricos financieros.
 - [ ] `E5-M1-02` Correo/Inbox 360, calendario, citas/Meet y Telegram enlazados a identidad real y tareas.
 - [ ] `E5-M1-03` Documentos, expedientes, artefactos y borradores sin automatizar escrituras externas sin aprobación.
 
@@ -231,6 +236,13 @@ Resultado y siguiente tarea autorizada:
 - **Estado real:** E0-M1-01 y E0-M1-02 verificados. Todo lo demás permanece pendiente hasta auditoría. Ningún cambio de feature flag, migración o producción autorizado por este documento.
 - **Siguiente paso inequívoco:** `E0-M1-03` — auditar realidad de código, UI, fuentes y permisos; después `E0-M1-04` — registrar disposición de PRs abiertas y dependencias. **No comenzar E1.**
 - **Regla de recuperación:** en cualquier nueva sesión: abrir este archivo desde `main` (o PR activa si no fusionada), leer cabecera y bitácora, validar estado GitHub/CI/Deploy contra último SHA, continuar con «Siguiente paso», actualizar lista y esta bitácora. Si hay contradicción, detener transición y resolverla dentro de E0.
+
+### 2026-10-10 — Aclaración de Holded en auditoría E0
+
+- Dirección confirma **cinco clientes de asesoría** con conexiones Holded configuradas por ella y acepta desconexión temporal/revinculación **cuando sea necesario** para integración y pruebas. Es una instrucción de flexibilidad operativa, no una solicitud de desconexión inmediata.
+- Inventario técnico previo: cinco **filas de integración** (cuatro activas y una revocada). No afirmar que correspondan una a una a cinco clientes sin conciliar identidad y empresa.
+- **Decisión de riesgo:** no bloquear arquitectura para preservar tokens/conexiones; sí preservar datos y fiscalidad en Holded, permisos, consentimientos, históricos, tareas y trazabilidad. Probar con simulación antes de intervenir en conexiones reales.
+- **Siguiente paso E0:** avanzar E0-M1-03 (auditoría endpoints, capacidades y dependencias) y E0-M1-05 (conciliación técnica). No activar ni desconectar servicios ahora.
 
 ### Actas de cierre
 
