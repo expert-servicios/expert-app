@@ -19,6 +19,17 @@ describe('KIA chat readable text', () => {
     expect(html).not.toContain('<a ');
     expect(html).toContain('&lt;script&gt;');
   });
+  it('preserves arithmetic asterisks and ordered list numbering', () => {
+    const html = render('2 * 3 * 4 = 24\\n\\n3. Tercer paso\\n4. Cuarto paso');
+    expect(html).toContain('2 * 3 * 4 = 24');
+    expect(html).toContain('value="3"');
+    expect(html).toContain('value="4"');
+  });
+  it('does not mistake tax form numbers for steps', () => {
+    const html = render('303. Declaración trimestral');
+    expect(html).toContain('303. Declaración trimestral');
+    expect(html).not.toContain('<ol');
+  });
   it('renders existing plain responses unchanged as text', () => {
     expect(render('Una consulta normal sin marcas')).toContain('Una consulta normal sin marcas');
   });
