@@ -282,7 +282,9 @@ export function KiaPublicWidget() {
         const reason = error instanceof Error ? error.message : '';
         const text = reason === 'recaptcha_unavailable'
           ? 'No he podido completar la verificación segura del chat. Recarga la página o abre KIA en Telegram.'
-          : 'Ahora mismo no puedo conectar con el motor de KIA. Puedes abrir KIA en Telegram o volver a intentarlo en unos minutos.';
+          : error instanceof DOMException && error.name === 'AbortError'
+            ? 'La respuesta está tardando demasiado. Puedes intentarlo de nuevo o continuar ahora mismo en Telegram.'
+            : 'Ahora mismo no puedo conectar con el motor de KIA. Puedes abrir KIA en Telegram o volver a intentarlo en unos minutos.';
         setChatNotice(text);
       }
     } finally {
