@@ -473,6 +473,18 @@ Preservar /admin/clientes/[id], /admin/empresas/[id] y rutas subordinadas hasta 
 
 **PR #684:** reutilizar su lectura de crm_segment y filtros, **pero no consolidar otra pantalla de Leads como destino definitivo**; adaptar funcionalidad al directorio unificado antes de jubilar rutas.
 
+## 11 bis. Integración transversal KIA Copiloto en EXPERT Workspace V2 (10/10/2026)
+
+**Decisión ratificada:** Admin, Cliente y Modo soporte comparten un KIA Copiloto único ocupando el **lateral derecho completo** en escritorio amplio, colapsable/expandible y responsive. Es parte estructural de Workspace V2, no un widget flotante aparte. KIA y el panel se desarrollan en líneas coordinadas mediante contrato compartido y PRs incrementales.
+
+**Contrato técnico y distribución de responsables:** [Workspace V2 × KIA — integración paralela, contexto de pantalla, ayuda proactiva y gates](workspace-v2-kia-copilot-parallel-integration-2026-10-10.md). Coordinación explícita con plan Intelligence [PR #707](https://github.com/expert-servicios/expert-app/pull/707); plan Admin/Cliente [PR #708](https://github.com/expert-servicios/expert-app/pull/708).
+
+**Hallazgos de main:** WorkspaceFrame ya acepta rightPanel; AdminRightPanel lo monta, Client Layout no. El layout protegido monta otro widget flotante y genera riesgo de duplicar chat en Admin. Existe contexto de pantalla básico (currentPage/currentTask/pageData/evento expert:kia-page-context) y una revisión proactiva Admin que hace llamada al modelo tras cambio de página; no es aún la ayuda proactiva consolidada ni se considera autorizada a efectuar operaciones. En Cliente hay sugerencias genéricas sin detección semántica completa de tarea.
+
+**Implementación transversal:** un KiaDock compartido en WorkspaceFrame, montado exactamente una vez por superficie; tres zonas visibles en desktop amplio (menú/área central/KIA) con altura completa, ancho adaptable y contraíble; overlay en viewport reducido, panel completo en móvil. Contexto de actividad explícito y tipado por módulo, sin extraer formularios/documentos del DOM ni confiar en IDs del navegador. KIA resuelve permisos y evidencias en servidor y puede proponer ayudas limitadas y útiles sin spamear, con opt-out, antideduplicación y costes controlados. La navegación/selección no concede permisos ni autoriza escritura; en soporte se preserva actor Admin real y empresa explícita.
+
+**Orden integrado:** I0 inventario y contrato → I1 dock único → I2 eventos contextuales → I3 sugerencias con evidencia → I4 confirmaciones/tools → I5 Document/Artifact Studio → I6 rollout y QA. Mantener feature flags por superficie y rollback independiente. Este documento describe arquitectura; no implica desplegar la funcionalidad ahora.
+
 ## 12. Plan de implementación por fases, con PRs pequeñas
 
 | Fase | Entregable | Riesgo / dependencia | Salida exigida |
