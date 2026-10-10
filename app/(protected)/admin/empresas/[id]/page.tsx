@@ -277,7 +277,7 @@ export default function Company360Page() {
         </div>
 
         <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-          <section className="rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
+          <section id="personas" className="scroll-mt-20 rounded-2xl border border-[#d8cbb5] bg-white p-6 shadow-sm">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-[#c88b25]" />
               <h2 className="font-serif text-xl font-bold text-[#07111d]">Personas vinculadas</h2>
