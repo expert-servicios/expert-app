@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ExternalLink, FileText, Loader2, MessageCircle, Mic, Paperclip, Send, Square, X } from 'lucide-react';
+import { ExternalLink, FileText, Loader2, MessageCircle, Mic, Paperclip, Send, Square, Volume2, X } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 import { KiaAvatar } from '@/components/kia/KiaAvatar';
+import { KiaReadableMessage } from '@/components/kia/KiaReadableMessage';
+import { chooseKiaBrowserVoice, kiaTextForSpeech, kiaVoiceLocale } from '@/lib/ai/kia/kia-voice-presentation';
 import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
 
 type ChatMessage = {
@@ -93,6 +95,7 @@ export function KiaPublicWidget() {
   const [thinkingStage, setThinkingStage] = useState<ThinkingStage>('verifying');
   const [telegramLoading, setTelegramLoading] = useState(false);
   const [voiceRecording, setVoiceRecording] = useState(false);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [voiceTranscribing, setVoiceTranscribing] = useState(false);
   const [attachmentLoading, setAttachmentLoading] = useState(false);
   const [attachment, setAttachment] = useState<PublicAttachment | null>(null);
@@ -134,6 +137,7 @@ export function KiaPublicWidget() {
 
   useEffect(() => {
     return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) window.speechSynthesis.cancel();
       if (voiceTimeoutRef.current) window.clearTimeout(voiceTimeoutRef.current);
       discardRecordingRef.current = true;
       voiceChunksRef.current = [];
@@ -359,6 +363,22 @@ export function KiaPublicWidget() {
     }
   }, [input]);
 
+  const speakReply = useCallback((id: string, text: string) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    if (speakingId === id) { setSpeakingId(null); return; }
+    const utterance = new SpeechSynthesisUtterance(kiaTextForSpeech(text).slice(0, 4000));
+    const locale = kiaVoiceLocale(text);
+    utterance.lang = locale === 'ru' ? 'ru-RU' : 'es-ES';
+    const voice = chooseKiaBrowserVoice(window.speechSynthesis.getVoices(), locale);
+    if (voice) utterance.voice = voice;
+    utterance.rate = 0.95;
+    utterance.onend = () => setSpeakingId(current => current === id ? null : current);
+    utterance.onerror = () => setSpeakingId(current => current === id ? null : current);
+    setSpeakingId(id);
+    window.speechSynthesis.speak(utterance);
+  }, [speakingId]);
+
   const openTelegram = useCallback(async () => {
     if (telegramLoading) return;
     if (!loggedIn) {
@@ -412,7 +432,15 @@ export function KiaPublicWidget() {
                   ? 'rounded-br-md bg-[#0D1B2A] text-white'
                   : 'rounded-bl-md bg-[#f5f1eb] text-[#0D1B2A]'}`}
               >
-                {message.text}
+                {message.role === 'assistant' ? <KiaReadableMessage text={message.text} /> : <span className="whitespace-pre-wrap break-words">{message.text}</span>}
+                {message.role === 'assistant' && message.id !== 'welcome' ? (
+                  <button type="button" onClick={() => speakReply(message.id, message.text)}
+                    aria-label={speakingId === message.id ? 'Detener lectura' : 'Escuchar respuesta'}
+                    className="mt-1.5 flex items-center gap-1 text-xs opacity-75 hover:opacity-100">
+                    {speakingId === message.id ? <Square size={13} /> : <Volume2 size={13} />}
+                    <span>{speakingId === message.id ? 'Detener' : 'Escuchar'}</span>
+                  </button>
+                ) : null}
               </div>
             </div>
           ))}

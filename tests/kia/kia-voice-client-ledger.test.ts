@@ -30,7 +30,7 @@ describe('KIA voice and durable client registry', () => {
     expect(transcribe).toContain('supabase.auth.getUser()');
     expect(transcribe).toContain("status: 413");
     expect(speech).toContain('supabase.auth.getUser()');
-    expect(audio).toContain("throw new Error('openai_tts_not_configured')");
+    expect(audio).toContain("process.env.OPENAI_TTS_VOICE?.trim() || KIA_DEFAULT_VOICE");
     expect(widget).not.toContain('OPENAI_API_KEY');
   });
 
