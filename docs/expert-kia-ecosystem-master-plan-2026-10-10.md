@@ -4,7 +4,7 @@
 **Estado global:** EN EJECUCIÓN · **ÚNICA FASE ACTIVA: E0** · **Última fase cerrada:** ninguna · **Transición a E1:** BLOQUEADA · **Congelación de alcance:** ACTIVA.  
 **Naturaleza de este documento:** fuente canónica de orden de trabajo, definición de entregables, criterios de cierre y bitácora. No certifica funcionalidades en producción.
 
-<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0.04 closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
+<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-05-registry-HTTP-QA closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
 
 ## 0. Mandato aprobado y reglas innegociables
 
@@ -272,6 +272,14 @@ Resultado y siguiente tarea autorizada:
 - **PR #711 fusionada** con commit `f15b859db65b3aa82b8b79ec75bbc74c4203f19e`. CI y ambas previews verdes en último HEAD previo a la fusión; se añadió `requireActiveActor` y pruebas negativas de usuario inactivo para endpoints de empresas/expedientes. **La auditoría del resto de APIs y aislamiento de entidades permanece abierta**; no declarar resuelto E0-M3-06 integralmente.
 - **PR #712 en borrador**: mitigación fail-safe del origen registral: no aceptar aserciones `_registryOfficial` ni nombres de fuentes enviados por el navegador como certificación; no crear bloqueos automáticos desde sugerencias y no modificar datos existentes. **Pruebas y CI pendientes**. La verificación positiva server-side de procedencia y la auditoría histórica de registros aún son necesarias antes de cerrar E0-M3-05.
 - **Siguiente paso inequívoco:** CI/QA y tests negativos #712; revisar proveedor/flujo para atestación server-side sin confiar en `company_data_suggestions` editable por usuario; continuar E0-M1-03/M3-05/M3-06; mantener E1/V3 bloqueadas.
+
+### 2026-10-10 — Continuidad fuera del chat y estado de PR #712
+
+- Se verificó acceso al repositorio y estado de #712 en el último HEAD `491a98e5e11841bd6df50792a1605357c1df052e`: **CI GitHub Actions completo success; Vercel app y ksenia-expert success**, sin hilos/reviews pendientes. **Permanece DRAFT/NO MERGED**, porque las pruebas añadidas son principalmente inspecciones estáticas: falta QA HTTP negativa con payload falsificado y flujo real de alta, revisión del comportamiento UI, y criterio de tratamiento de datos registrales marcados previamente.
+- Revisión de código: tanto `/api/companies` como `/api/company/associate` establecen un fail-safe `registryOfficial = false`, evitando crear nueva verificación o bloqueo registral a partir de claims de navegador. El flujo conserva precarga manual; la atestación server-only genuina aún no está diseñada/validada. No se modificaron datos ni permisos productivos en esta revisión.
+- **Seguimiento fuera del chat:** hay tarea recurrente de ChatGPT `Ejecución EXPERT KIA` **habilitada**, diaria aproximadamente a las 08:00 Europe/Madrid, que toma este checkpoint como fuente; **no equivale** a un controlador de ejecución continua en GitHub ni garantiza que los conectores permanezcan disponibles. La tarea no ha tenido todavía ninguna ejecución y sus avisos push/email aparecen deshabilitados en la configuración actual; no prometer notificaciones hasta que se activen desde ajustes.
+- **No se necesita mantener el chat abierto.** No se ejecuta nada fuera de las sesiones salvo las tareas programadas reales. Toda continuación debe dejar evidencia en GitHub antes de declarar cambios hechos; producción, migraciones, Holded y E1–E6 permanecen protegidos por sus gates.
+- **Siguiente acción concreta:** pruebas HTTP de #712 (no solo tests que leen archivos), pruebas de flujo manual y sugerencia, revisar registros históricos ya marcados, y completar gates antes de fusionar; continuar E0-M1-03/E0-M3-05. No pasar a E1 ni abrir V3.
 
 ### Actas de cierre
 
