@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { PUBLIC_KIA_SESSION_COOKIE } from '@/lib/ai/kia/kia-public-session';
-import { publicWebPersistenceEnabled, resolvePublicWebSession, claimPublicWebTurn, completePublicWebTurn, failPublicWebTurn, readPublicWebHistory } from '@/lib/ai/kia/kia-public-web-persistence';
+import { publicWebPersistenceEnabled, resolvePublicWebSession, claimPublicWebTurn, completePublicWebTurn, failPublicWebTurn, renewPublicWebTurn, readPublicWebHistory } from '@/lib/ai/kia/kia-public-web-persistence';
 import { z } from 'zod';
 import { runKiaProviderRequest } from '@/lib/ai/kia/kia-provider-router';
 import { checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
@@ -265,14 +265,26 @@ export async function POST(request: NextRequest) {
       { role: 'user' as const, content: currentContent },
     ];
 
-    const providerResult = await runKiaProviderRequest({
-      taskType: 'chat_reply',
-      systemPrompt: publicSystemPrompt(publicLocale),
-      messages,
-      effort: 'low',
-      maxTokens: 700,
-      temperature: 0.25,
-    });
+    // Keep the fenced claim alive during slow provider requests. Never renew a
+    // different worker's claim; SQL verifies the exact owner token.
+    const renewal = persisted ? setInterval(() => {
+      void renewPublicWebTurn(persisted.admin, {
+        sessionId: persisted.sessionId, messageId: persisted.messageId, claim: persisted.claim,
+      }).catch(() => undefined);
+    }, 30_000) : null;
+    let providerResult: Awaited<ReturnType<typeof runKiaProviderRequest>>;
+    try {
+      providerResult = await runKiaProviderRequest({
+        taskType: 'chat_reply',
+        systemPrompt: publicSystemPrompt(publicLocale),
+        messages,
+        effort: 'low',
+        maxTokens: 700,
+        temperature: 0.25,
+      });
+    } finally {
+      if (renewal) clearInterval(renewal);
+    }
 
     if (providerResult.error || !providerResult.rawText?.trim()) {
       throw new Error(providerResult.error || 'empty_public_reply');
