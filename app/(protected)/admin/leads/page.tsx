@@ -381,6 +381,11 @@ export default async function AdminLeadsPage({ searchParams }: { searchParams: S
                               {lead.message}
                             </p>
                           </details>
+                        ) : lead.crm_summary ? (
+                          <div className="mt-2 max-w-md rounded-lg border border-[#e4d8c6] bg-[#fffdf8] p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-[#8a6111]">Resumen CRM verificado</p>
+                            <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-[#29384a]">{lead.crm_summary}</p>
+                          </div>
                         ) : (
                           <p className="mt-2 text-xs text-[#8b8174]">Sin consulta registrada.</p>
                         )}
