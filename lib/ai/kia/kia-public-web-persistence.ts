@@ -44,6 +44,30 @@ async function findSession(admin: Admin, token: string | undefined | null): Prom
   return data as SessionRow | null;
 }
 
+/** Resolve a signed cookie to an active database session; never trust client session IDs. */
+export async function resolvePublicWebSession(
+  admin: Admin,
+  token: string | undefined | null,
+): Promise<string | null> {
+  return (await findSession(admin, token))?.id ?? null;
+}
+
+/** Recover an existing assistant response for a retried turn without invoking AI twice. */
+export async function readPublicWebReply(
+  admin: Admin,
+  sessionId: string,
+  messageId: string,
+): Promise<string | null> {
+  const { data, error } = await admin.from('kia_public_web_messages')
+    .select('body')
+    .eq('session_id', sessionId)
+    .eq('client_message_id', messageId)
+    .eq('role', 'assistant')
+    .maybeSingle();
+  if (error) throw error;
+  return data?.body ?? null;
+}
+
 /** Only the server may create the session and return the signed HttpOnly cookie. */
 export async function ensurePublicWebSession(
   admin: Admin,
