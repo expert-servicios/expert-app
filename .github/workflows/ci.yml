@@ -184,3 +184,10 @@ jobs:
         run: |
           set -euo pipefail
           psql "$DB_URL" -v ON_ERROR_STOP=1 -f tests/db/kia_public_web_persistence_integration.sql
+
+      - name: Apply and verify KIA turn recovery migration
+        run: |
+          set -euo pipefail
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261010113900_kia_web_turn_recovery.sql
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f tests/db/kia_public_web_turn_recovery_integration.sql
+

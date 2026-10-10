@@ -47,6 +47,9 @@ type PublicKiaResponse = {
   error?: string;
 };
 
+type StoredPublicTurn = { id: string; role: 'user' | 'assistant'; body: string; client_message_id: string; response_payload?: PublicKiaResponse | null };
+type PendingPublicTurn = { id: string; message: string; displayText?: string };
+
 const TELEGRAM_URL = 'https://t.me/kia_expert_bot';
 const PUBLIC_CHAT_TIMEOUT_MS = 45_000;
 const REGULATORY_QUERY_RE = /\b(aeat|hacienda|impuesto|iva|irpf|renta|modelo\s*\d+|seguridad social|tgss|inss|reta|aut[oó]nom|extranjer[ií]a|nacionalidad|dgt|tr[aá]fico|registro|boe|normativa|ley|plazo|requisito|verifactu)\b/i;
@@ -114,6 +117,8 @@ export function KiaPublicWidget() {
   ]);
   const [artifacts, setArtifacts] = useState<LinkArtifact[]>([]);
   const [actionCta, setActionCta] = useState<{ href: string; label: string } | null>(null);
+  const [chatNotice, setChatNotice] = useState<string | null>(null);
+  const [pendingTurn, setPendingTurn] = useState<PendingPublicTurn | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -121,6 +126,9 @@ export function KiaPublicWidget() {
   const voiceChunksRef = useRef<BlobPart[]>([]);
   const voiceTimeoutRef = useRef<number | null>(null);
   const discardRecordingRef = useRef(false);
+  const persistenceModeRef = useRef<'unknown' | 'enabled' | 'disabled'>('unknown');
+  const sessionReadyRef = useRef(false);
+  const bootstrapRef = useRef<Promise<boolean> | null>(null);
 
   useEffect(() => {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -152,27 +160,92 @@ export function KiaPublicWidget() {
     [messages],
   );
 
-  const sendMessage = useCallback(async (message: string, displayText?: string) => {
+  // Feature detection is server-owned: 404 retains the existing ephemeral chat.
+  // Bootstrap and history are only available with the guarded server-side flag.
+  const ensurePublicSession = useCallback(async (): Promise<boolean> => {
+    if (persistenceModeRef.current === 'disabled') return false;
+    if (sessionReadyRef.current) return true;
+    if (bootstrapRef.current) return bootstrapRef.current;
+    const task = (async () => {
+      const historyResponse = await fetch('/api/ai/kia/public/session', {
+        method: 'GET', credentials: 'same-origin', cache: 'no-store',
+      });
+      if (historyResponse.status === 404) {
+        persistenceModeRef.current = 'disabled';
+        return false;
+      }
+      if (!historyResponse.ok) throw new Error('session_unavailable');
+      persistenceModeRef.current = 'enabled';
+      const snapshot = await historyResponse.json() as { messages?: StoredPublicTurn[] };
+      const recaptchaToken = await getRecaptchaToken('kia_public_chat');
+      if (!recaptchaToken) throw new Error('recaptcha_unavailable');
+      const initialized = await fetch('/api/ai/kia/public/session', {
+        method: 'POST', credentials: 'same-origin', cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recaptchaToken }),
+      });
+      if (!initialized.ok) throw new Error('session_unavailable');
+      sessionReadyRef.current = true;
+      const stored = Array.isArray(snapshot.messages) ? snapshot.messages : [];
+      if (stored.length) {
+        setMessages((current) => {
+          const restored = stored.filter((entry) =>
+            (entry.role === 'user' || entry.role === 'assistant') && typeof entry.body === 'string',
+          ).map((entry) => ({ id: entry.id, role: entry.role, text: entry.body }));
+          const restoredIds = new Set(restored.map((entry) => entry.id));
+          // Preserve messages sent while bootstrap was running.
+          const local = current.filter((entry) => entry.id !== 'welcome' && !restoredIds.has(entry.id));
+          return [current[0], ...restored, ...local];
+        });
+        const last = stored[stored.length - 1];
+        if (last.role === 'user' && last.client_message_id) {
+          setPendingTurn({ id: last.client_message_id, message: last.body });
+          setChatNotice('Tu último mensaje quedó pendiente. Puedes recuperar su respuesta sin enviarlo de nuevo.');
+        }
+        const payload = last.role === 'assistant' ? last.response_payload : undefined;
+        if (payload) {
+          setQuickReplies((payload.quickReplies ?? []).slice(0, 12));
+          setArtifacts((payload.artifacts ?? []).filter((item) => item.type === 'link').slice(0, 4));
+          setActionCta(commercialCta(payload));
+        }
+      }
+      return true;
+    })();
+    bootstrapRef.current = task;
+    try { return await task; }
+    finally { bootstrapRef.current = null; }
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    void ensurePublicSession().catch(() => {
+      setChatNotice('El historial seguro no está disponible. No enviaremos mensajes sin verificar la sesión.');
+    });
+  }, [open, ensurePublicSession]);
+
+  const sendMessage = useCallback(async (message: string, displayText?: string, existingId?: string) => {
     const clean = message.trim();
     if (!clean || loading) return;
-
+    const messageId = existingId ?? crypto.randomUUID();
     setInput('');
     setLoading(true);
     setThinkingStage('verifying');
+    setChatNotice(null);
     setQuickReplies([]);
     setArtifacts([]);
     setActionCta(null);
-    setMessages((current) => [...current, { id: crypto.randomUUID(), role: 'user', text: displayText?.trim() || clean }]);
+    if (!existingId) {
+      setMessages((current) => [...current, { id: messageId, role: 'user', text: displayText?.trim() || clean }]);
+    }
 
     const timers: number[] = [];
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), PUBLIC_CHAT_TIMEOUT_MS);
-
+    let persistent = false;
     try {
+      persistent = await ensurePublicSession();
       const recaptchaToken = await getRecaptchaToken('kia_public_chat');
-      if (!recaptchaToken) {
-        throw new Error('recaptcha_unavailable');
-      }
+      if (!recaptchaToken) throw new Error('recaptcha_unavailable');
 
       setThinkingStage('searching');
       const isRegulatory = REGULATORY_QUERY_RE.test(clean);
@@ -180,45 +253,55 @@ export function KiaPublicWidget() {
       timers.push(window.setTimeout(() => setThinkingStage('slow'), isRegulatory ? 12_000 : 9_000));
 
       const response = await fetch('/api/ai/kia/public', {
-        method: 'POST',
+        method: 'POST', credentials: 'same-origin',
         signal: controller.signal,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: clean,
+          messageId,
           currentPage: window.location.pathname,
+          // A live feature-flag rollback must preserve recent context.
+          // In persistent mode the server deliberately ignores this history.
           history,
           attachment: attachment ?? undefined,
           recaptchaToken,
         }),
       });
       const data = await response.json().catch(() => ({})) as PublicKiaResponse;
-      const reply = data.reply?.trim()
-        || 'Ahora mismo no he podido completar la respuesta. Puedes intentarlo de nuevo o abrir KIA en Telegram.';
+      if (response.status === 401 && persistent && data.error === 'session_required') {
+        sessionReadyRef.current = false;
+        persistenceModeRef.current = 'unknown';
+      }
+      if (!response.ok) throw new Error(data.error ?? 'kia_unavailable');
+      if (!data.reply?.trim()) throw new Error('missing_reply');
 
-      setMessages((current) => [...current, { id: crypto.randomUUID(), role: 'assistant', text: reply }]);
+      setMessages((current) => [...current, { id: crypto.randomUUID(), role: 'assistant', text: data.reply!.trim() }]);
       setQuickReplies((data.quickReplies ?? []).slice(0, 12));
       setArtifacts((data.artifacts ?? []).filter((artifact) => artifact.type === 'link').slice(0, 4));
       setActionCta(commercialCta(data));
       setAttachment(null);
+      setPendingTurn(null);
     } catch (error) {
-      const reason = error instanceof Error ? error.message : '';
-      const text = reason === 'recaptcha_unavailable'
-        ? 'No he podido completar la verificación segura del chat. Recarga la página o abre KIA en Telegram.'
-        : error instanceof DOMException && error.name === 'AbortError'
-          ? 'La respuesta está tardando demasiado. Puedes intentarlo de nuevo o continuar ahora mismo en Telegram.'
-          : 'Ahora mismo no puedo conectar con el motor de KIA. Puedes abrir KIA en Telegram o volver a intentarlo en unos minutos.';
-
-      setMessages((current) => [...current, {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        text,
-      }]);
+      if (persistent) {
+        // Never generate another id for an interrupted turn. A fresh CAPTCHA is
+        // obtained on each manual retry; the server replays finished responses.
+        setPendingTurn({ id: messageId, message: clean, displayText });
+        setChatNotice('La respuesta no se ha confirmado. Puedes recuperarla con el mismo mensaje, sin duplicar la consulta.');
+      } else {
+        const reason = error instanceof Error ? error.message : '';
+        const text = reason === 'recaptcha_unavailable'
+          ? 'No he podido completar la verificación segura del chat. Recarga la página o abre KIA en Telegram.'
+          : error instanceof DOMException && error.name === 'AbortError'
+            ? 'La respuesta está tardando demasiado. Puedes intentarlo de nuevo o continuar ahora mismo en Telegram.'
+            : 'Ahora mismo no puedo conectar con el motor de KIA. Puedes abrir KIA en Telegram o volver a intentarlo en unos minutos.';
+        setChatNotice(text);
+      }
     } finally {
       clearTimeout(timeout);
       timers.forEach((timer) => clearTimeout(timer));
       setLoading(false);
     }
-  }, [attachment, history, loading]);
+  }, [attachment, ensurePublicSession, history, loading]);
 
   const transcribeRecordedAudio = useCallback(async (blob: Blob) => {
     if (!blob.size) return;
@@ -444,6 +527,16 @@ export function KiaPublicWidget() {
               </div>
             </div>
           ))}
+
+          {chatNotice ? (
+            <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-[#704c12]">{chatNotice}</p>
+          ) : null}
+          {!loading && pendingTurn ? (
+            <button type="button" onClick={() => void sendMessage(pendingTurn.message, pendingTurn.displayText, pendingTurn.id)}
+              className="rounded-lg border border-[#D4A017] px-3 py-2 text-xs font-semibold text-[#0D1B2A]">
+              Recuperar respuesta pendiente
+            </button>
+          ) : null}
 
           {loading ? (
             <div role="status" aria-live="polite" className="flex justify-start">
