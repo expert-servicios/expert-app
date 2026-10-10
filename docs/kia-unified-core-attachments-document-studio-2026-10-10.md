@@ -1,5 +1,6 @@
 # KIA — Núcleo único, adjuntos y estudio documental
 **Decisión de producto:** 10/10/2026 · **Estado:** diseño aprobado conceptualmente / ejecución pendiente de gates.  
+**Ampliación 10/10/2026:** [proveedores de IA, subagentes y artefactos](kia-ai-providers-artifacts-subagents-audit-2026-10-10.md).  
 **Referencias canónicas:** [KIA 2.0](kia-2-strategy.md), [Admin/Cliente v2](expert-admin-v2-plan-maestro-2026-10-09.md), [Google Workspace roadmap](google-workspace-api-roadmap.md).
 
 ## 1. Decisión vinculante
@@ -51,6 +52,36 @@ Mantener un API canónico interno que **no acepte rol, tenant ni autorización d
 - Para documentos fiscales, laborales, mercantiles o jurídicos: citas a fuentes oficiales y fecha, advertencia de revisión profesional cuando proceda, NO inventar datos/leyes/firmas, casillas marcadas cuando falten datos; nunca presentar borradores como documentos oficiales emitidos.
 - Un modelo no debe generar binarios arbitrarios ni ejecutar macros/código suministrado por usuarios: renderizadores deterministas construyen el archivo desde estructuras validadas.
 
+## 5A. Artifact Studio y especialistas — ampliación confirmada el 10/10/2026
+
+**Documento técnico de investigación y backlog:** [Auditoría de OpenAI, Anthropic, Gemini, subagentes y artefactos](kia-ai-providers-artifacts-subagents-audit-2026-10-10.md).
+
+### Artefactos (además de archivos Office)
+Incorporar **una única API interna de artefactos** reutilizable por web público, Copilot cliente, Admin y Telegram: documento DOCX/PDF, Excel/CSV, PPTX, tabla, gráfico, dashboard, infografía, diagrama, cronología, calculadora con reglas deterministas, formulario/checklist y código *solo previsualizado en sandbox*. Separar KiaArtifactSpec (spec validada), KiaArtifactEntity (propietario, empresa/expediente, versionado, fuentes, hash, coste, retención) y renderers/exportadores/adaptadores por canal.
+
+Ya existen KiaCopilotArtifact (report/table/link/image) y exportadores de informes; evolucionar **sin romper esos cuatro tipos**. Los componentes interactivos se crean desde una DSL validada y componentes permitidos, **no** ejecutando JS/HTML arbitrario del modelo en la web de EXPERT. Telegram entrega archivos/fotos y enlaces o Mini App segura para interacción; su integración en main todavía requiere una acción sendDocument y controles de autorización.
+
+### Subagentes: conservar, no duplicar
+La revisión de kia-sub-agent-router.ts, kia-skill-registry.ts, kia-orchestrator.ts y kia-skill-execution.ts confirma perfiles assistant, fiscal, immigration, holded, accounting, labor, case, con ocho skills habilitadas en el **registro de código** y trazabilidad. No confundir perfiles/prompt con agentes autónomos ejecutándose en paralelo. Conservar estos módulos como el núcleo y mejorar:
+
+- **Nivel normal:** selección de un especialista y herramientas para la tarea; sin crear procesos independientes.
+- **Handoff acotado:** un especialista como tool con entradas mínimas y salida estructurada cuando mejora la resolución.
+- **Paralelo excepcional:** hasta dos especialistas para tareas de análisis independientes; coordinador KIA consolida, presupuesto/timeout/consentimiento fijados.
+- **Operaciones duraderas:** únicamente con cola real, reintento/idempotencia, autorizaciones y auditoría; nunca prometer ejecución continua sin infraestructura.
+
+Añadir al registro de skills, **sin abrir agentes autónomos por defecto**, investigación normativa/fuentes oficiales, Document/Artifact Studio, Growth (comercial/marketing), QA de cálculos/citas y asistencia omnicanal. Mantener especialización fiscal, extranjería, laboral, contabilidad y Holded existente.
+
+### Proveedores y novedades API verificadas
+- **OpenAI:** Agents SDK (handoffs, guardrails, tracing), Agents API (subagentes/sandboxes/archivos publicados), Responses API web_search/file_search y Code Interpreter. Comparar antes de adoptar un runtime gestionado.
+- **Anthropic:** Managed Agents multiagent beta, memoria gestionada beta, Agent Skills oficiales DOCX/XLSX/PDF/PPTX por API con code execution y Files API, prompt caching. Claude Artifacts de claude.ai no es un renderer embebible directamente.
+- **Google:** ADK coordinador y grafos/flujos secuenciales/paralelos, Gemini function calling, búsqueda con citas Google Search, Code Execution y caching. Gemini Canvas tampoco es API embebible.
+- **No acoplar el contrato KIA a un proveedor**: evaluar latencia/calidad/ES-RU/coste/privacidad, usar renderers y fuente de verdad propios y habilitar mediante capability detection y feature flags.
+
+### Nuevos gates
+Exigir pruebas de artefactos por formato y permisos, citación verificable y fecha normativa, aislamiento multi-tenant, inyección por documento, importación/exportación Office, preview sandbox, no exposición de credenciales, límites de tokens/tiempo/costes y Telegram end-to-end. No publicar un formato/capacidad sin prueba real. Mantener desactivados despliegues multiagente generalizados hasta superar comparativa sobre casos reales anonimizados.
+
+---
+
 ## 6. Orden de ejecución / gates
 **Bloque de higiene en curso (NO saltar):**
 0. Cerrar PR #683 de reservas si CI/review/Vercel verdes; auditar y corregir PR #705 P1/P2 y su esquema, sin activar producción ni migraciones prematuras.
@@ -68,6 +99,7 @@ Mantener un API canónico interno que **no acepte rol, tenant ni autorización d
 6. Hacer visibles y utilizables los exports Word/Excel/PDF de informes existentes cuando el actor tenga autorización. Confirmar que el enlace a informe expone la barra de exportación y no filtra IDs privados.
 7. Crear `DocumentIntent`/`Draft`/`Render` compartidos; plantillas piloto **carta Word**, **presupuesto Excel** y **guía PDF**, con descargas y revisión previa; las herramientas no crean expedientes ni envían documentos sin consentimiento.
 8. Añadir PPTX de propuestas/reuniones, versionado, plantillas, exportación PDF; integrar Google Slides API como **opción** de edición externa, no dependencia central.
+8A. Implementar Artifact Studio tipado con previsualización segura de tablas, gráficos, dashboards, simuladores y formularios; adaptadores web/Telegram, sin HTML/JS arbitrario.
 9. Instrumentar métricas de éxito de descarga, errores, costes, tiempo, correcciones, satisfacción, uso de modelos y privacidad. Revisión humana antes de puesta en producción de plantillas jurídicas/fiscales.
 
 ## 7. Criterios de aceptación
