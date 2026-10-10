@@ -1,3 +1,4 @@
+import { WorkspaceFrame } from '@/components/workspace/WorkspaceFrame';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import type { ReactNode } from 'react';
@@ -61,15 +62,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const emailUnreadCount = Number(emailUnreadRaw?.data?.value ?? 0);
 
   return (
-    <div className="flex min-h-screen bg-[#f8f4eb]">
-      <AdminSidebar userName={enrichedProfile.full_name ?? null} userEmail={enrichedProfile.email} urgentCount={urgentCount} />
-      <div className="flex min-w-0 flex-1 flex-col pt-[53px] pb-20 lg:pt-0 lg:pb-0">
-        <AdminBackBar />
-        {children}
-      </div>
-      <AdminRightPanel emailUnreadCount={emailUnreadCount} />
-      <AdminMobileNav urgentCount={urgentCount} />
-      <GlobalSearch />
-    </div>
+    <WorkspaceFrame
+      area="admin"
+      navigation={<AdminSidebar userName={enrichedProfile.full_name ?? null} userEmail={enrichedProfile.email} urgentCount={urgentCount} />}
+      topContent={<AdminBackBar />}
+      rightPanel={<AdminRightPanel emailUnreadCount={emailUnreadCount} />}
+      mobileNavigation={<AdminMobileNav urgentCount={urgentCount} />}
+      overlays={<GlobalSearch />}
+    >
+      {children}
+    </WorkspaceFrame>
   );
 }
