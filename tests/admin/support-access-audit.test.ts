@@ -1,27 +1,32 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 
-const api=readFileSync('app/api/admin/support/access/route.ts','utf8');
-const portal=readFileSync('app/(protected)/admin/clientes/[id]/portal/page.tsx','utf8');
+const portal = readFileSync('app/(protected)/admin/clientes/[id]/portal/page.tsx', 'utf8');
+const handler = readFileSync('app/api/admin/clientes/[id]/support-access/route.ts', 'utf8');
 
-describe('admin delegated support audit',()=>{
-  it('enforces authenticated admin and client company membership on server',()=>{
-    expect(api).toContain('supabase.auth.getUser()');
-    expect(api).toContain("['owner','admin'].includes(actor.role)");
-    expect(api).toContain(".eq('profile_id',clientId).eq('company_id',companyId)");
-    expect(api).toContain("return NextResponse.json({ error:'Empresa ajena al cliente' }, { status:403 })");
+describe('delegated support audit route contract', () => {
+  it('uses the existing single guarded audit endpoint, not a parallel endpoint', () => {
+    expect(portal).toContain("await recordSupportAccess(id, 'entered', initialCompanyId)");
+    expect(portal).toContain("await recordSupportAccess(id, 'company_switched', nextCompanyId)");
+    expect(portal).toContain("await recordSupportAccess(id, 'exited', companyId)");
+    expect(portal).toContain("`/api/admin/clientes/${clientId}/support-access`");
+    expect(portal).not.toContain("'/api/admin/support/access'");
+    expect(portal).not.toContain('auditReady');
   });
-  it('records actor and privacy-minimal device context, never secrets',()=>{
-    expect(api).toContain("admin.from('audit_logs').insert");
-    expect(api).toContain("actor_id:user.id");
-    expect(api).toContain('device_category:deviceCategory(agent)');
-    expect(api).toContain('browser_family:browserFamily(agent)');
-    expect(api).not.toContain("request.headers.get('x-forwarded-for')");
-    expect(api).not.toContain("metadata: { user_agent:");
+
+  it('requires an authenticated active admin and checks company membership', () => {
+    expect(handler).toContain('supabase.auth.getUser()');
+    expect(handler).toContain("actor.status !== 'active'");
+    expect(handler).toContain("['admin', 'owner'].includes(actor.role)");
+    expect(handler).toContain(".eq('profile_id', id)");
+    expect(handler).toContain(".eq('company_id', companyId)");
   });
-  it('fails closed if recording access fails',()=>{
-    expect(api).toContain("status:503");
-    expect(portal).toContain("if (!auditReady) return");
-    expect(portal).toContain("action: 'support_open'");
+
+  it('fails closed on audit insertion failure and restricts browser origins', () => {
+    expect(handler).toContain("new URL(origin).host !== request.nextUrl.host");
+    expect(handler).toContain("if (error) throw error");
+    expect(handler).toContain("status: 500");
+    expect(handler).toContain("device_source: 'unverified_user_agent'");
+    expect(handler).not.toContain('user_agent: device.userAgent');
   });
 });
