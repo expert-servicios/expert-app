@@ -33,7 +33,7 @@ describe('financial report access boundary', () => {
   it('does not trust client-provided generatedBy metadata', () => {
     const route = source('app/api/reports/generate/route.ts');
     const panel = source('components/dashboard/reports/GenerateReportPanel.tsx');
-    expect(route).toContain("generatedBy: adminClientId && adminClientId !== user.id ? 'admin' : 'user'");
+    expect(route).toContain("generatedBy: adminClientId && adminClientId !== actor.userId ? 'admin' : 'user'");
     expect(panel).not.toContain("generatedBy: 'user'");
   });
 });
