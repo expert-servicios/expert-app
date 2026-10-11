@@ -11,7 +11,7 @@ describe('KIA Admin Copilot mode', () => {
     const resolved = resolveKiaPolicyProfile('admin_copilot', {
       role: ROLES.ADMIN,
       planCapabilities: [],
-      scopes: ['kia:staff:read'],
+      scopes: ['kia:authenticated', 'kia:staff:read'],
       featureFlags: [],
     });
 

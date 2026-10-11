@@ -19,6 +19,25 @@ describe('KIA policy profiles', () => {
     }
   });
 
+  it.each(['client_dashboard', 'admin_copilot', 'shadow_read_only'] as const)(
+    'requires authenticated active scope for %s',
+    (name) => {
+      const role = name === 'admin_copilot' ? ROLES.ADMIN : ROLES.CLIENT;
+      expect(resolveKiaPolicyProfile(name, {
+        role,
+        planCapabilities: [],
+        scopes: [],
+        featureFlags: [],
+      })).toMatchObject({ ok: false, reason: 'missing_scope' });
+      expect(resolveKiaPolicyProfile(name, {
+        role,
+        planCapabilities: [],
+        scopes: ['kia:authenticated'],
+        featureFlags: [],
+      }).ok).toBe(true);
+    },
+  );
+
   it('requires role, plan capability, scope and feature flag for professional operator', () => {
     expect(resolveKiaPolicyProfile('professional_operator', {
       role: ROLES.CLIENT,

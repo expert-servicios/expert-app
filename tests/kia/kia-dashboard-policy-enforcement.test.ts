@@ -11,6 +11,15 @@ describe('KIA dashboard policy enforcement wiring', () => {
     expect(route).toContain("runPolicyEnforcedKiaDecision(copilotPolicyProfile, actor");
   });
 
+  it('rejects non-active profiles before cost, context or object-scope service-role reads', () => {
+    const activeGuard = route.indexOf("if (!profile || profile.status !== 'active')");
+    expect(activeGuard).toBeGreaterThan(-1);
+    expect(activeGuard).toBeLessThan(route.indexOf('checkKiaDailyCostCap(user.id)'));
+    expect(activeGuard).toBeLessThan(route.indexOf('if (contextToken)'));
+    expect(activeGuard).toBeLessThan(route.indexOf('const adminCopilotMode'));
+    expect(route).not.toContain("profile.status !== 'inactive'");
+  });
+
   it('removes the legacy static dashboard tool allowlist', () => {
     expect(route).not.toContain('LEGACY_DASHBOARD_SAFE_TOOLS');
     expect(route).not.toContain('allowedToolNames: [...LEGACY_DASHBOARD_SAFE_TOOLS]');
