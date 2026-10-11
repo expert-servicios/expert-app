@@ -80,7 +80,11 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
   const actor = await requireActiveActor(request);
-  if (!actor || actor.userId !== user.id || (actor.role === 'tenant_admin' && !actor.tenantId)) {
+  if (
+    !actor
+    || actor.userId !== user.id
+    || (['client', 'tenant_admin'].includes(actor.role) && !actor.tenantId)
+  ) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
   }
 
