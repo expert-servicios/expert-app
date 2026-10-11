@@ -72,6 +72,20 @@ export async function resolveKiaActorCapabilities(input: {
     .maybeSingle();
   if (profileError) throw profileError;
 
+  if (profile?.status !== 'active') {
+    return deriveKiaActorCapabilities({
+      userId: input.userId,
+      clientId: input.clientId,
+      profile,
+      companyId: input.companyId,
+      membership: null,
+      coverage: null,
+      featureFlags: input.featureFlags,
+      explicitGrants: input.explicitGrants,
+      now: input.now,
+    });
+  }
+
   let membership: { company_id?: string | null; role?: string | null } | null = null;
   if (input.companyId) {
     const { data, error } = await input.admin
@@ -89,14 +103,12 @@ export async function resolveKiaActorCapabilities(input: {
     coverage = await resolveCompanyCommercialCoverage(input.admin, input.clientId, input.companyId);
   }
 
-  const authoritativeGrants = input.explicitGrants ?? (profile?.status === 'active'
-    ? await loadKiaAuthoritativeGrants({
-        admin: input.admin,
-        userId: input.userId,
-        tenantId: profile.tenant_id ?? null,
-        companyId: input.companyId ?? null,
-      })
-    : []);
+  const authoritativeGrants = input.explicitGrants ?? await loadKiaAuthoritativeGrants({
+    admin: input.admin,
+    userId: input.userId,
+    tenantId: profile.tenant_id ?? null,
+    companyId: input.companyId ?? null,
+  });
 
   return deriveKiaActorCapabilities({
     userId: input.userId,
