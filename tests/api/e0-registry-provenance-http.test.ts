@@ -52,6 +52,12 @@ vi.mock('@/lib/integrations/supabase', () => ({
   }),
 }));
 
+vi.mock('@/lib/auth/active-actor', () => ({
+  requireActiveActor: async () => mocks.actorPresent
+    ? { userId: 'e0-actor', role: 'client', tenantId: 'tenant-A' }
+    : null,
+}));
+
 vi.mock('@/lib/integrations/company-data-resolver', () => ({
   validateSpanishTaxIdFormat: () => ({ valid: true, type: 'cif', normalized: 'B12345678' }),
 }));
@@ -128,6 +134,7 @@ describe('E0-M3-05 behavioral request tests: registry provenance is server-only'
     }));
     expect(response.status).toBe(200);
     expect(insertedCompany()).toMatchObject({
+      tenant_id: 'tenant-A',
       razon_social: 'USER CONFIRMED ENTITY SL',
       direccion: 'User corrected street',
       registry_source: null,
