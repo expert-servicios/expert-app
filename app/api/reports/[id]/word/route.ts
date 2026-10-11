@@ -8,6 +8,7 @@ import {
   HeadingLevel, AlignmentType, ShadingType,
 } from 'docx';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 import { canAccessFinancialReport } from '@/lib/reports/report-access';
 import type { ReportData, InvoiceSummaryItem } from '@/lib/reports/report-generator';
 
@@ -173,6 +174,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const supabase = createServerSupabaseClient(request);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+  const actor = await requireActiveActor(request);
+  if (!actor || actor.userId !== user.id) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  }
 
   const { id } = await params;
   const admin = getSupabaseAdmin();
