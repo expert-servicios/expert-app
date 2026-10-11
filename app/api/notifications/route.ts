@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { urgencyLevel } from '@/lib/utils/fiscal-calendar';
 
@@ -6,6 +7,11 @@ export async function GET(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return NextResponse.json({ notifications: [], count: 0 });
+
+  const actor = await requireActiveActor(request);
+  if (!actor || actor.userId !== user.id) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
 
   const admin = getSupabaseAdmin();
   const { data: obligations } = await admin
