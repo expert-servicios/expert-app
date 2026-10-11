@@ -15,6 +15,7 @@ export async function requireAdminClient(request: NextRequest): Promise<Supabase
     .eq('id', user.id)
     .single();
 
-  if (profile?.status === 'inactive') return null;
+  // Fail closed for pending, suspended, inactive, missing or unknown profile states.
+  if (profile?.status !== 'active') return null;
   return profile?.role === 'admin' || profile?.role === 'owner' ? admin : null;
 }
