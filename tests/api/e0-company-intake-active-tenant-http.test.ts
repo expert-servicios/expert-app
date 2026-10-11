@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => {
     membership: true,
     companyTenant: 'tenant-A',
     tables: [] as string[],
+    upserts: [] as Array<Record<string, unknown>>,
+    auditEntries: [] as Array<Record<string, unknown>>,
   };
   return { state };
 });
@@ -23,6 +25,9 @@ vi.mock('@/lib/integrations/supabase', () => ({
       const query = {
         select() { return query; },
         eq() { return query; },
+        upsert(values: Record<string, unknown>) { mocks.state.upserts.push(values); return query; },
+        single: async () => ({ data: { company_id: 'company-A', status: 'draft', payload: { cnae: '6201' }, completion_percent: 11, last_saved_at: '2026-10-11T00:00:00Z' }, error: null }),
+        insert: async (values: Record<string, unknown>) => { mocks.state.auditEntries.push(values); return { error: null }; },
         maybeSingle: async () => ({
           data: table === 'profile_companies'
             ? (mocks.state.membership ? { role: 'owner' } : null)
@@ -50,6 +55,8 @@ describe('E0 Company 360 intake authorization HTTP boundaries', () => {
     mocks.state.membership = true;
     mocks.state.companyTenant = 'tenant-A';
     mocks.state.tables.length = 0;
+    mocks.state.upserts.length = 0;
+    mocks.state.auditEntries.length = 0;
   });
 
   it('denies revoked, suspended or unauthenticated actor before service-role queries', async () => {
@@ -85,4 +92,29 @@ describe('E0 Company 360 intake authorization HTTP boundaries', () => {
     expect((await GET(getReq(), ctx)).status).toBe(200);
     expect(mocks.state.tables).toEqual(['profile_companies', 'companies', 'company_intake_profiles']);
   });
+  it('preserves legitimate active-client intake autosave', async () => {
+    const response = await PATCH(patchReq(), ctx);
+    expect(response.status).toBe(200);
+    expect(mocks.state.upserts).toHaveLength(1);
+    expect(mocks.state.upserts[0]).toEqual(expect.objectContaining({
+      company_id: 'company-A',
+      client_id: 'user-A',
+      payload: { cnae: '6201' },
+    }));
+    expect(mocks.state.auditEntries).toHaveLength(1);
+  });
+
+  it('allows internal active staff without a company membership', async () => {
+    mocks.state.actor = { userId: 'staff-A', role: 'admin', tenantId: null };
+    mocks.state.membership = false;
+    expect((await GET(getReq(), ctx)).status).toBe(200);
+    expect(mocks.state.tables).toEqual(['company_intake_profiles']);
+  });
+
+  it('allows tenant staff with a matching membership and canonical tenant', async () => {
+    mocks.state.actor = { userId: 'tenant-A', role: 'tenant_admin', tenantId: 'tenant-A' };
+    expect((await GET(getReq(), ctx)).status).toBe(200);
+    expect(mocks.state.tables).toEqual(['profile_companies', 'companies', 'company_intake_profiles']);
+  });
+
 });
