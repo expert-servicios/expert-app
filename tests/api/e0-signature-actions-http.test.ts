@@ -115,14 +115,14 @@ describe('E0 signature action HTTP boundaries', () => {
     });
 
     expect(response.status).toBe(200);
-    expect(mocks.eqCalls).toContainEqual(['cases', 'id', 'case-A']);
-    expect(mocks.eqCalls).toContainEqual(['administrative_actions', 'case_id', 'case-A']);
-    expect(mocks.eqCalls).toContainEqual([
+    expect(mocks.state.eqCalls).toContainEqual(['cases', 'id', 'case-A']);
+    expect(mocks.state.eqCalls).toContainEqual(['administrative_actions', 'case_id', 'case-A']);
+    expect(mocks.state.eqCalls).toContainEqual([
       'administrative_actions',
       'capability',
       'documents.signature',
     ]);
-    expect(mocks.eqCalls).toContainEqual([
+    expect(mocks.state.eqCalls).toContainEqual([
       'administrative_actions',
       'action_type',
       'google_esignature',
