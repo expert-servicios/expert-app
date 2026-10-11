@@ -120,6 +120,13 @@ describe('E0 Company 360 intake authorization HTTP boundaries', () => {
     expect(mocks.state.tables).not.toContain('company_intake_profiles');
   });
 
+  it('denies a client without canonical tenant before service-role queries', async () => {
+    mocks.state.actor = { userId: 'user-A', role: 'client', tenantId: null };
+    expect((await GET(getReq(), ctx)).status).toBe(403);
+    expect((await PATCH(patchReq(), ctx)).status).toBe(403);
+    expect(mocks.state.tables).toEqual([]);
+  });
+
   it('denies tenant administrator without tenant context', async () => {
     mocks.state.actor = { userId: 'user-A', role: 'tenant_admin', tenantId: null };
     expect((await GET(getReq(), ctx)).status).toBe(403);
