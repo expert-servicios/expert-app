@@ -12,7 +12,8 @@ describe('Explicit identity/company linkage entry point', () => {
     expect(company).toContain("window.location.hash === '#personas'");
     expect(company).toContain('/personas');
     expect(api).toContain(".from('profile_companies')");
-    expect(api).toContain("['admin', 'owner'].includes(profile.role)");
+    expect(api).toContain("import { requireActiveActor } from '@/lib/auth/active-actor'");
+    expect(api).toContain("requireActiveActor(request, ['admin', 'owner'])");
     expect(api).toContain('company.admin_person_linked');
     expect(directory).not.toContain('auth.admin.createUser');
   });

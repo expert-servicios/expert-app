@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 import { sendEmailOnce } from '@/lib/email/send';
 import { includedEntityOnboardingInvitationEmail } from '@/lib/email/onboarding-templates';
 import { getCalOnboardingUrl } from '@/lib/utils/cal';
@@ -9,19 +10,9 @@ const BENEFIT_TYPES = ['included_entity', 'discount_percent', 'discount_amount',
 const COVERAGE_SCOPES = ['recurring_management', 'subscription_fee', 'custom'] as const;
 
 async function requireAdmin(request: NextRequest) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return null;
-
-  const admin = getSupabaseAdmin();
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('role,status')
-    .eq('id', user.id)
-    .single();
-
-  if (profile?.status === 'inactive' || !['admin', 'owner'].includes(profile?.role ?? '')) return null;
-  return { admin, actorId: user.id };
+  const actor = await requireActiveActor(request, ['admin', 'owner']);
+  if (!actor) return null;
+  return { admin: getSupabaseAdmin(), actorId: actor.userId };
 }
 
 function companyName(company: { razon_social: string | null; nombre_comercial: string | null; id: string }) {
