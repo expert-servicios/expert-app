@@ -46,7 +46,7 @@ async function requireStaff(request: NextRequest) {
     .eq('id', user.id)
     .single();
 
-  if (!profile || profile.status === 'inactive' || !isStaffRole(profile.role)) return null;
+  if (!profile || profile.status !== 'active' || !isStaffRole(profile.role)) return null;
   return { admin, actorId: user.id, actorRole: profile.role };
 }
 
