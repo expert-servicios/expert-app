@@ -114,7 +114,7 @@ Este documento **prevalece en orden, límites, bloqueos y estado de ejecución**
 - [ ] `E0-M3-02` Revisión crítica independiente de coherencia, riesgos, dependencias, privacidad, autorización y definición de pruebas.
 - [x] `E0-M3-05` Cerrar P1 de procedencia registral no atestada en servidor en altas de empresa (rutas `/api/companies` y `/api/company/associate`), mediante patch mínimo, tests negativos y validación sin modificar históricos. Evidencia: PR #712 / merge `a72f8795b153441b23eed40d5154f71550800b8e`, CI #3480, ambas previews Vercel y auditoría agregada de producción del 11/10/2026 (7 empresas; 0 fuentes, 0 verificaciones, 0 snapshots y 0 bloqueos registrales).
 - [ ] `E0-M3-06` Cerrar P1 de rutas mutadoras con `getSupabaseAdmin()` sin `profiles.status` activo ni scope por objeto; comprobar por rol/tenant/empresa/expediente, HTTP y RLS en entorno de prueba.
-  - **Avance parcial 11/10/2026:** PR #715 cerró cuatro rutas administrativas y 11 handlers con el guard compartido `requireActiveActor`; CI/Vercel y pruebas negativas verdes. La tarea permanece abierta hasta completar el inventario restante y la matriz de scope por objeto.
+  - **Avance parcial 11/10/2026:** PR #715 cerró cuatro rutas administrativas y 11 handlers; PR #716 cerró cuatro mutaciones de Operations 360. Ambos lotes reutilizan el guard compartido `requireActiveActor` y pasaron CI/Vercel y pruebas negativas. La tarea permanece abierta hasta completar el inventario restante y la matriz de scope por objeto.
 - [ ] `E0-M3-07` Evaluar P2 del lookup CIF limitado y divulgación de identificadores ajenos; corregir sin duplicar entidad ni adelantar módulos.
 - [ ] `E0-M3-03` Verificar CI, lint Markdown/enlaces/estructura (si disponible), revisión de PR y previews del último SHA.
 - [ ] `E0-M3-04` Acta E0: lista de artefactos, evidencia de QA, cero bloqueos P0/P1, commit de cierre y cambio explícito del checkpoint a E1.
@@ -317,6 +317,15 @@ Resultado y siguiente tarea autorizada:
 - Previews exactas verdes: [app](https://vercel.com/expertapp/app/B43Mi58vpg1ezs6xGPjvmx26rRPC) y [ksenia-expert](https://vercel.com/expertapp/ksenia-expert/6ao9FHUkb1H5qBTG8yK6E5V6ZcAA). Sin hilos de revisión pendientes.
 - No se ejecutaron migraciones, despliegues manuales, escrituras financieras, desconexiones ni cambios de configuración de producción.
 - **Estado:** avance parcial; `E0-M3-06` permanece EN CURSO. Siguiente acción concreta: completar el inventario de rutas privilegiadas/mutadoras y cubrir scope por rol/tenant/empresa/expediente con pruebas HTTP/RLS. E1–E6 y V3 continúan bloqueadas.
+
+### 2026-10-11 — Segundo lote de rutas privilegiadas E0-M3-06
+
+- [PR #716](https://github.com/expert-servicios/expert-app/pull/716) **fusionada** con commit `fd793ec0ef06e320f80f32decd94c47e24951783` mediante squash y lease sobre HEAD `60cda89299d5e593f1ab36733ddfe654a716d02d`, sin desfase respecto de `main`.
+- El cambio reutiliza `requireActiveActor(request, ['admin', 'owner'])` en cuatro mutaciones de Operations 360: control de conversación, control de email, respuesta manual Telegram y reasignación de contexto. Conserva las comprobaciones existentes de conversación, identidad, cliente, empresa y expediente.
+- Evidencia: CI [#3492](https://github.com/expert-servicios/expert-app/actions/runs/38128783323) success (typecheck, lint, build, MCP, baseline, 412 archivos/2.258 tests, KIA evals, integración PostgreSQL/RLS y contrato de reparación de migraciones); pruebas HTTP negativas para estados no activos, rol cliente y llamada no autenticada.
+- Previews exactas verdes: [app](https://vercel.com/expertapp/app/9Jsk4R1wfyhGznvkAzSbNw6Db4gF) y [ksenia-expert](https://vercel.com/expertapp/ksenia-expert/7a4uqLVKYKp2FAckK3RBHz8RJFcY). Sin hilos o reviews pendientes.
+- La primera ejecución de CI detectó una función local de normalización absorbida por la refactorización; se restauró en `60cda892...` y se repitieron todos los gates. No se ejecutaron mensajes Telegram, migraciones, flags, credenciales ni escrituras productivas.
+- **Estado:** avance parcial; `E0-M3-06` permanece EN CURSO. Siguiente acción concreta: continuar el inventario de rutas privilegiadas/mutadoras, priorizando documentos, firmas, propuestas contables y facturación, y completar scope por rol/tenant/empresa/expediente con pruebas HTTP/RLS. E1–E6 y V3 siguen bloqueadas.
 
 ### Actas de cierre
 
