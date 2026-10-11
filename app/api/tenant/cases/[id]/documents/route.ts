@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 import {
   buildClientDocumentStoragePath,
   TENANT_DOCUMENT_MAX_BYTES,
@@ -12,29 +13,21 @@ export async function POST(
 ) {
   try {
     const { id: caseId } = await params;
-    const supabase = createServerSupabaseClient(request);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-
-    const admin = getSupabaseAdmin();
-
-    const { data: adminProfile } = await admin
-      .from('profiles')
-      .select('role, tenant_id')
-      .eq('id', user.id)
-      .single();
-
-    if (adminProfile?.role !== 'tenant_admin' || !adminProfile.tenant_id) {
+    const actor = await requireActiveActor(request, ['tenant_admin']);
+    if (!actor || !actor.tenantId) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
+    const admin = getSupabaseAdmin();
 
     const { data: caseData } = await admin
       .from('cases')
-      .select('id, client_id, company_id, service')
+      .select('id, client_id, company_id, tenant_id, service')
       .eq('id', caseId)
       .single();
 
-    if (!caseData) return NextResponse.json({ error: 'Expediente no encontrado' }, { status: 404 });
+    if (!caseData || caseData.tenant_id !== actor.tenantId) {
+      return NextResponse.json({ error: 'Expediente no encontrado' }, { status: 404 });
+    }
 
     const { data: clientProfile } = await admin
       .from('profiles')
@@ -42,7 +35,7 @@ export async function POST(
       .eq('id', caseData.client_id)
       .single();
 
-    if (clientProfile?.tenant_id !== adminProfile.tenant_id) {
+    if (clientProfile?.tenant_id !== actor.tenantId) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
