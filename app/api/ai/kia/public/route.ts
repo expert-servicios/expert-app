@@ -1,4 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { PUBLIC_KIA_SESSION_COOKIE } from '@/lib/ai/kia/kia-public-session';
+import { publicWebPersistenceEnabled, resolvePublicWebSession, claimPublicWebTurn, completePublicWebTurn, failPublicWebTurn, renewPublicWebTurn, readPublicWebHistory } from '@/lib/ai/kia/kia-public-web-persistence';
 import { z } from 'zod';
 import { runKiaProviderRequest } from '@/lib/ai/kia/kia-provider-router';
 import { checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
@@ -39,6 +43,7 @@ const requestSchema = z.object({
   history: z.array(historyItemSchema).max(6).default([]),
   attachment: attachmentSchema.optional(),
   recaptchaToken: z.string().max(4096),
+  messageId: z.string().uuid().optional(),
 }).strict();
 
 const MEETING_REQUEST_RE = /\b(cita|reuni[oó]n|llamada|hablar con ksenia|reuni[oó]n informativa)\b/i;
@@ -125,10 +130,49 @@ export async function POST(request: NextRequest) {
     }, { status: 403 });
   }
 
+  // A flagged-on request must be tied to a signed, active web session.
+  // Untrusted browser-supplied history is ignored in persistent mode.
+  let persisted: { admin: ReturnType<typeof getSupabaseAdmin>; sessionId: string; messageId: string; claim: string } | null = null;
+  if (publicWebPersistenceEnabled()) {
+    if (!parsed.data.messageId) return NextResponse.json({ error: 'message_id_required' }, { status: 400 });
+    try {
+      const admin = getSupabaseAdmin();
+      const sessionId = await resolvePublicWebSession(admin, request.cookies.get(PUBLIC_KIA_SESSION_COOKIE)?.value);
+      if (!sessionId) return NextResponse.json({ error: 'session_required' }, { status: 401 });
+      const claim = randomUUID();
+      const turn = await claimPublicWebTurn(admin, {
+        sessionId, messageId: parsed.data.messageId, body: parsed.data.message, claim,
+      });
+      if (turn.outcome === 'replay') return NextResponse.json({ ...turn.payload, reply: turn.reply, replayed: true });
+      if (turn.outcome === 'busy') return NextResponse.json({ error: 'turn_in_progress' }, { status: 409, headers: { 'Retry-After': '5' } });
+      if (turn.outcome !== 'acquired') return NextResponse.json({ error: 'invalid_turn' }, { status: 409 });
+      persisted = { admin, sessionId, messageId: parsed.data.messageId, claim };
+    } catch (error) {
+      console.error('[KIA public chat] session persistence failed', safeErrorMessage(error));
+      return NextResponse.json({ error: 'session_unavailable' }, { status: 503 });
+    }
+  }
+  const respond = async (body: { reply: string; [key: string]: unknown }) => {
+    if (persisted) {
+      try {
+        const completed = await completePublicWebTurn(persisted.admin, {
+          sessionId: persisted.sessionId, messageId: persisted.messageId,
+          claim: persisted.claim, reply: body.reply, payload: body,
+        });
+        if (completed.outcome !== 'complete') return NextResponse.json({ error: 'turn_conflict' }, { status: 409 });
+        return NextResponse.json(completed.payload ?? body);
+      } catch (error) {
+        console.error('[KIA public chat] response persistence failed', safeErrorMessage(error));
+        return NextResponse.json({ error: 'response_unavailable' }, { status: 503 });
+      }
+    }
+    return NextResponse.json(body);
+  };
+
   try {
     if (!parsed.data.attachment) {
       if (isCategoryNavigationMessage(parsed.data.message)) {
-        return NextResponse.json({
+        return respond({
           reply: 'Estas son las áreas de servicios de EXPERT. Selecciona una para ver las opciones disponibles.',
           quickReplies: getPublicCategoryQuickReplies(),
           intent: 'service_discovery',
@@ -142,7 +186,7 @@ export async function POST(request: NextRequest) {
 
       const selectedCategory = findSelectedCategory(parsed.data.message);
       if (selectedCategory) {
-        return NextResponse.json({
+        return respond({
           reply: categoryResponse(selectedCategory.slug),
           quickReplies: getServiceQuickRepliesForCategory(selectedCategory.slug),
           intent: 'service_discovery',
@@ -156,7 +200,7 @@ export async function POST(request: NextRequest) {
 
       const selectedService = findSelectedService(parsed.data.message);
       if (selectedService) {
-        return NextResponse.json({
+        return respond({
           reply: serviceResponse(selectedService),
           quickReplies: getServiceSelectionQuickReplies(selectedService),
           intent: 'service_discovery',
@@ -169,7 +213,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (isCommercialMessage(parsed.data.message) && !isOtherCaseMessage(parsed.data.message)) {
-        return NextResponse.json({
+        return respond({
           reply: 'Para orientarte más rápido, selecciona el área que mejor encaje con lo que necesitas.',
           quickReplies: getPublicCategoryQuickReplies(),
           intent: 'service_discovery',
@@ -208,22 +252,41 @@ export async function POST(request: NextRequest) {
       attachmentContext,
     ].filter(Boolean).join('\n\n');
 
+    const verifiedHistory = persisted
+      ? (await readPublicWebHistory(persisted.admin, request.cookies.get(PUBLIC_KIA_SESSION_COOKIE)?.value))
+          .filter((item) => item.client_message_id !== persisted.messageId)
+          .slice(-6)
+          .map((item) => ({ role: item.role, text: item.body.slice(0, 1200) }))
+      : parsed.data.history;
     const messages = [
-      ...parsed.data.history.map((item) => ({
+      ...verifiedHistory.map((item) => ({
         role: item.role,
         content: item.text,
       })),
       { role: 'user' as const, content: currentContent },
     ];
 
-    const providerResult = await runKiaProviderRequest({
-      taskType: 'chat_reply',
-      systemPrompt: publicSystemPrompt(publicLocale),
-      messages,
-      effort: 'low',
-      maxTokens: 700,
-      temperature: 0.25,
-    });
+    // Keep the fenced claim alive during slow provider requests. Never renew a
+    // different worker's claim; SQL verifies the exact owner token.
+    const claimedTurn = persisted;
+    const renewal = claimedTurn ? setInterval(() => {
+      void renewPublicWebTurn(claimedTurn.admin, {
+        sessionId: claimedTurn.sessionId, messageId: claimedTurn.messageId, claim: claimedTurn.claim,
+      }).catch(() => undefined);
+    }, 30_000) : null;
+    let providerResult: Awaited<ReturnType<typeof runKiaProviderRequest>>;
+    try {
+      providerResult = await runKiaProviderRequest({
+        taskType: 'chat_reply',
+        systemPrompt: publicSystemPrompt(publicLocale),
+        messages,
+        effort: 'low',
+        maxTokens: 700,
+        temperature: 0.25,
+      });
+    } finally {
+      if (renewal) clearInterval(renewal);
+    }
 
     if (providerResult.error || !providerResult.rawText?.trim()) {
       throw new Error(providerResult.error || 'empty_public_reply');
@@ -251,7 +314,7 @@ export async function POST(request: NextRequest) {
       meetingRequested,
     });
 
-    return NextResponse.json({
+    return respond({
       reply: providerResult.rawText.trim(),
       quickReplies: serviceMentionQuickReplies(providerResult.rawText.trim()).length
         ? serviceMentionQuickReplies(providerResult.rawText.trim())
@@ -265,6 +328,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('[KIA public chat] failed', safeErrorMessage(error));
+    if (persisted) await failPublicWebTurn(persisted.admin, persisted).catch(() => undefined);
     return NextResponse.json({
       error: 'kia_unavailable',
       reply: localizedPublicError(publicLocale),

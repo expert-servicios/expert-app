@@ -10,6 +10,8 @@ export type PublicWebTurn = {
   role: 'user' | 'assistant';
   body: string;
   created_at: string;
+  client_message_id: string;
+  response_payload?: Record<string, unknown> | null;
 };
 
 /**
@@ -44,6 +46,30 @@ async function findSession(admin: Admin, token: string | undefined | null): Prom
   return data as SessionRow | null;
 }
 
+/** Resolve a signed cookie to an active database session; never trust client session IDs. */
+export async function resolvePublicWebSession(
+  admin: Admin,
+  token: string | undefined | null,
+): Promise<string | null> {
+  return (await findSession(admin, token))?.id ?? null;
+}
+
+/** Recover an existing assistant response for a retried turn without invoking AI twice. */
+export async function readPublicWebReply(
+  admin: Admin,
+  sessionId: string,
+  messageId: string,
+): Promise<string | null> {
+  const { data, error } = await admin.from('kia_public_web_messages')
+    .select('body')
+    .eq('session_id', sessionId)
+    .eq('client_message_id', messageId)
+    .eq('role', 'assistant')
+    .maybeSingle();
+  if (error) throw error;
+  return data?.body ?? null;
+}
+
 /** Only the server may create the session and return the signed HttpOnly cookie. */
 export async function ensurePublicWebSession(
   admin: Admin,
@@ -74,7 +100,7 @@ export async function readPublicWebHistory(admin: Admin, token: string | undefin
   if (!session) return [];
   const { data, error } = await admin
     .from('kia_public_web_messages')
-    .select('id,role,body,created_at')
+    .select('id,role,body,created_at,client_message_id,response_payload')
     .eq('session_id', session.id)
     .order('created_at', { ascending: false })
     .limit(60);
@@ -129,4 +155,25 @@ export async function appendPublicWebTurn(
 
 export function newPublicWebMessageId() {
   return randomUUID();
+}
+
+
+export async function claimPublicWebTurn(admin: Admin, input: {sessionId:string; messageId:string; body:string; claim:string}) {
+  const {data,error}=await admin.rpc('kia_web_claim_turn',{p_session_id:input.sessionId,p_message_id:input.messageId,p_body:input.body,p_claim:input.claim});
+  if(error)throw error;
+  return data as {outcome:'acquired'|'replay'|'busy'|'mismatch'|'invalid'|'invalid_session';reply?:string;payload?:Record<string,unknown>};
+}
+export async function completePublicWebTurn(admin: Admin,input:{sessionId:string;messageId:string;claim:string;reply:string;payload:Record<string,unknown>}) {
+  const {data,error}=await admin.rpc('kia_web_complete_turn',{p_session_id:input.sessionId,p_message_id:input.messageId,p_claim:input.claim,p_reply:input.reply,p_payload:input.payload});
+  if(error)throw error;
+  return data as {outcome:string;reply?:string;payload?:Record<string,unknown>};
+}
+export async function failPublicWebTurn(admin:Admin,input:{sessionId:string;messageId:string;claim:string}) {
+  const {error}=await admin.rpc('kia_web_fail_turn',{p_session_id:input.sessionId,p_message_id:input.messageId,p_claim:input.claim});
+  if(error)throw error;
+}
+export async function renewPublicWebTurn(admin:Admin,input:{sessionId:string;messageId:string;claim:string}) {
+  const {data,error}=await admin.rpc('kia_web_renew_turn',{p_session_id:input.sessionId,p_message_id:input.messageId,p_claim:input.claim});
+  if(error)throw error;
+  return data===true;
 }
