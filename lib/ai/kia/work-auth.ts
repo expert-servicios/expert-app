@@ -11,12 +11,22 @@ export const workEnabled = () => process.env.KIA_WORK_CONNECTOR_ENABLED === 'tru
 export type WorkAdmin = ReturnType<typeof getSupabaseAdmin>;
 
 export async function authorizeWorkCase(admin: WorkAdmin, actorId: string, caseId: string) {
-  const [{ data: profile, error: pError }, { data: caseRow, error: cError }] = await Promise.all([
-    admin.from('profiles').select('id,role,status,tenant_id').eq('id', actorId).maybeSingle(),
-    admin.from('cases').select('id,client_id,company_id,tenant_id,state,status,next_action,service,closed_at').eq('id', caseId).maybeSingle(),
-  ]);
-  if (pError || cError) throw new WorkError('authorization_unavailable', 503);
-  if (!profile || profile.status === 'inactive' || !caseRow || caseRow.closed_at) throw new WorkError('forbidden', 403);
+  const { data: profile, error: profileError } = await admin
+    .from('profiles')
+    .select('id,role,status,tenant_id')
+    .eq('id', actorId)
+    .maybeSingle();
+  if (profileError) throw new WorkError('authorization_unavailable', 503);
+  if (!profile || profile.status !== 'active') throw new WorkError('forbidden', 403);
+
+  const { data: caseRow, error: caseError } = await admin
+    .from('cases')
+    .select('id,client_id,company_id,tenant_id,state,status,next_action,service,closed_at')
+    .eq('id', caseId)
+    .maybeSingle();
+  if (caseError) throw new WorkError('authorization_unavailable', 503);
+  if (!caseRow || caseRow.closed_at) throw new WorkError('forbidden', 403);
+
   const tenantAccess = isTenantAdmin(profile.role) && Boolean(profile.tenant_id) && profile.tenant_id === caseRow.tenant_id;
   if (!isStaffRole(profile.role) && !tenantAccess) throw new WorkError('forbidden', 403);
   return { profile, caseRow };
