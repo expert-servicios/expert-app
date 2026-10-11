@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 import { SERVICES } from '@/lib/integrations/kia-engine';
 
 const bodySchema = z.object({
@@ -15,6 +16,10 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+    const actor = await requireActiveActor(request);
+    if (!actor || actor.userId !== user.id) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
     const body = await request.json().catch(() => null);
