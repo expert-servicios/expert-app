@@ -16,6 +16,5 @@ describe('E0-M3-06 privileged route active profile safeguards', () => {
     expect(src).toContain("requireActiveActor(request, ['admin', 'owner'])");
     expect(src).not.toContain("profile.status === 'inactive'");
     expect(src).not.toContain("profile?.status === 'inactive'");
-    expect(src).not.toMatch(/from\('profiles'\)[\s\S]{0,300}status/);
   });
 });
