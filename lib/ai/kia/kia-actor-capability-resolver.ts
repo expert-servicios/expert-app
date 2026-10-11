@@ -89,7 +89,7 @@ export async function resolveKiaActorCapabilities(input: {
     coverage = await resolveCompanyCommercialCoverage(input.admin, input.clientId, input.companyId);
   }
 
-  const authoritativeGrants = input.explicitGrants ?? (profile
+  const authoritativeGrants = input.explicitGrants ?? (profile?.status === 'active'
     ? await loadKiaAuthoritativeGrants({
         admin: input.admin,
         userId: input.userId,
@@ -113,10 +113,10 @@ export async function resolveKiaActorCapabilities(input: {
 
 export function deriveKiaActorCapabilities(input: DeriveActorCapabilityInput): KiaActorCapabilitySnapshot {
   const role = normalizeKiaActorRole(input.profile?.role);
-  const active = Boolean(input.profile) && input.profile?.status !== 'inactive';
+  const active = input.profile?.status === 'active';
   const tenantId = input.profile?.tenant_id ?? null;
   const companyId = input.companyId ?? null;
-  const companyMember = Boolean(companyId && input.membership && input.membership.company_id === companyId);
+  const companyMember = Boolean(active && companyId && input.membership && input.membership.company_id === companyId);
   const coverage = companyMember ? input.coverage ?? null : null;
   const planCapabilities = new Set<string>();
   const scopes = new Set<string>();
