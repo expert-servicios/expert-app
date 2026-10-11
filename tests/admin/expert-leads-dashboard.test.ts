@@ -15,7 +15,7 @@ describe('EXPERT leads admin dashboard', () => {
     expect(api).toContain("import { requireAdminClient } from '@/lib/auth/require-admin'");
     expect(api).toContain('await requireAdminClient(request)');
     expect(api).not.toContain('async function requireAdmin(');
-    expect(requireAdmin).toContain("profile?.status === 'inactive'");
+    expect(requireAdmin).toContain("profile?.status !== 'active'");
     expect(requireAdmin).toContain("profile?.role === 'admin' || profile?.role === 'owner'");
   });
 
