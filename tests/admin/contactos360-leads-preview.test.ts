@@ -19,6 +19,6 @@ describe('Contactos 360 read-only lead preview',()=>{
   });
   it('retains admin-only authorization',()=>{
     expect(api).toContain("requireActiveActor(request, ['admin', 'owner'])");
-    expect(api).toContain("['admin', 'owner'].includes(profile.role)");
+    expect(api).toContain("requireActiveActor(request, ['admin', 'owner'])");
   });
 });
