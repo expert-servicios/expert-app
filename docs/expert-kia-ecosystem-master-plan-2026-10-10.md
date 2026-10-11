@@ -114,6 +114,7 @@ Este documento **prevalece en orden, límites, bloqueos y estado de ejecución**
 - [ ] `E0-M3-02` Revisión crítica independiente de coherencia, riesgos, dependencias, privacidad, autorización y definición de pruebas.
 - [x] `E0-M3-05` Cerrar P1 de procedencia registral no atestada en servidor en altas de empresa (rutas `/api/companies` y `/api/company/associate`), mediante patch mínimo, tests negativos y validación sin modificar históricos. Evidencia: PR #712 / merge `a72f8795b153441b23eed40d5154f71550800b8e`, CI #3480, ambas previews Vercel y auditoría agregada de producción del 11/10/2026 (7 empresas; 0 fuentes, 0 verificaciones, 0 snapshots y 0 bloqueos registrales).
 - [ ] `E0-M3-06` Cerrar P1 de rutas mutadoras con `getSupabaseAdmin()` sin `profiles.status` activo ni scope por objeto; comprobar por rol/tenant/empresa/expediente, HTTP y RLS en entorno de prueba.
+  - **Avance parcial 11/10/2026:** PR #715 cerró cuatro rutas administrativas y 11 handlers con el guard compartido `requireActiveActor`; CI/Vercel y pruebas negativas verdes. La tarea permanece abierta hasta completar el inventario restante y la matriz de scope por objeto.
 - [ ] `E0-M3-07` Evaluar P2 del lookup CIF limitado y divulgación de identificadores ajenos; corregir sin duplicar entidad ni adelantar módulos.
 - [ ] `E0-M3-03` Verificar CI, lint Markdown/enlaces/estructura (si disponible), revisión de PR y previews del último SHA.
 - [ ] `E0-M3-04` Acta E0: lista de artefactos, evidencia de QA, cero bloqueos P0/P1, commit de cierre y cambio explícito del checkpoint a E1.
@@ -307,6 +308,15 @@ Resultado y siguiente tarea autorizada:
 - **E0-M3-05 permanece EN CURSO**: mitigación de falsa autoridad implementada, pero atestación positiva exclusivamente server-side y QA real/browser/roles requieren evidencia adicional; no certificar datos del resolver solo por nombre de fuente.
 - **E0-M3-06 permanece EN CURSO**: hay rutas admin que rechazan `inactive` en vez de exigir `status === 'active'`; auditar y parchear sistemáticamente sin ampliar funcionalidades.
 - E0 continúa única fase activa; E1–E6 bloqueadas, sin cambios de flags o migraciones de datos.
+
+### 2026-10-11 — Primer lote de rutas privilegiadas E0-M3-06
+
+- [PR #715](https://github.com/expert-servicios/expert-app/pull/715) **fusionada** con commit `ca94386279f858bde0db3f8adf10d79c608a15a2` mediante squash y lease sobre HEAD `1644a96a5c9d4bb611a38eca1d287b480ceda19a`, sin desfase respecto de `main`.
+- El cambio reutiliza `requireActiveActor(request, ['admin', 'owner'])` en Holded, hoja registral, personas vinculadas y beneficios de suscripción; elimina cuatro guardas locales que solo rechazaban `inactive`.
+- Evidencia: CI [#3488](https://github.com/expert-servicios/expert-app/actions/runs/38128025458) success (typecheck, lint, build, MCP, baseline, 411 archivos/2.248 tests, KIA evals, integración PostgreSQL/RLS y contrato de reparación de migraciones); pruebas HTTP negativas sobre 11 handlers para estados no activos, rol cliente y llamada no autenticada.
+- Previews exactas verdes: [app](https://vercel.com/expertapp/app/B43Mi58vpg1ezs6xGPjvmx26rRPC) y [ksenia-expert](https://vercel.com/expertapp/ksenia-expert/6ao9FHUkb1H5qBTG8yK6E5V6ZcAA). Sin hilos de revisión pendientes.
+- No se ejecutaron migraciones, despliegues manuales, escrituras financieras, desconexiones ni cambios de configuración de producción.
+- **Estado:** avance parcial; `E0-M3-06` permanece EN CURSO. Siguiente acción concreta: completar el inventario de rutas privilegiadas/mutadoras y cubrir scope por rol/tenant/empresa/expediente con pruebas HTTP/RLS. E1–E6 y V3 continúan bloqueadas.
 
 ### Actas de cierre
 
