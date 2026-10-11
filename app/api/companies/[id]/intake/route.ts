@@ -47,8 +47,8 @@ async function authorize(request: NextRequest, companyId: string) {
   const staff = actor.role === 'admin' || actor.role === 'owner';
 
   if (!staff) {
-    // A tenant administrator must have a canonical tenant before using service-role data.
-    if (actor.role === 'tenant_admin' && !actor.tenantId) return null;
+    // Tenant-bound actors need a canonical tenant before using service-role data.
+    if (['client', 'tenant_admin'].includes(actor.role) && !actor.tenantId) return null;
 
     const { data: membership, error: membershipError } = await admin
       .from('profile_companies')
