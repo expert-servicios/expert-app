@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 
 export async function GET(request: NextRequest) {
   try {
@@ -7,6 +8,10 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+    const actor = await requireActiveActor(request);
+    if (!actor || actor.userId !== user.id) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
     const admin = getSupabaseAdmin();
@@ -37,6 +42,10 @@ export async function DELETE(request: NextRequest) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    }
+    const actor = await requireActiveActor(request);
+    if (!actor || actor.userId !== user.id) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
