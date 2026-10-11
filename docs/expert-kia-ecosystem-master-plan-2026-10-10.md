@@ -4,7 +4,7 @@
 **Estado global:** EN EJECUCIÓN · **ÚNICA FASE ACTIVA: E0** · **Última fase cerrada:** ninguna · **Transición a E1:** BLOQUEADA · **Congelación de alcance:** ACTIVA.  
 **Naturaleza de este documento:** fuente canónica de orden de trabajo, definición de entregables, criterios de cierre y bitácora. No certifica funcionalidades en producción.
 
-<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0.04 closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
+<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-05-server-attestation-and-historical-audit closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
 
 ## 0. Mandato aprobado y reglas innegociables
 
@@ -266,6 +266,29 @@ Resultado y siguiente tarea autorizada:
 - Documento creado: [V3 — ideas y validación futura](expert-kia-v3-ideas-and-validation-backlog-2026-10-10.md), commit `ba8aa940d794538e5e6d3d3c19ad56fd20ae51df`.
 - 22 propuestas hipotéticas V3 documentadas (inteligencia, operaciones, integraciones y calidad). No están aprobadas ni activas. Toda nueva propuesta se añade ahí con ID y evidencia, **sin sustituir ni acelerar ninguna fase E0–E6**.
 - Se confirma congelación E0–E6, E0 sigue siendo única fase activa. Próximo paso continúa siendo auditoría de autorización/procedencia y sus pruebas.
+
+### 2026-10-10 — Cierre acotado #711 y comienzo del segundo bloqueo #712
+
+- **PR #711 fusionada** con commit `f15b859db65b3aa82b8b79ec75bbc74c4203f19e`. CI y ambas previews verdes en último HEAD previo a la fusión; se añadió `requireActiveActor` y pruebas negativas de usuario inactivo para endpoints de empresas/expedientes. **La auditoría del resto de APIs y aislamiento de entidades permanece abierta**; no declarar resuelto E0-M3-06 integralmente.
+- **PR #712 en borrador**: mitigación fail-safe del origen registral: no aceptar aserciones `_registryOfficial` ni nombres de fuentes enviados por el navegador como certificación; no crear bloqueos automáticos desde sugerencias y no modificar datos existentes. **Pruebas y CI pendientes**. La verificación positiva server-side de procedencia y la auditoría histórica de registros aún son necesarias antes de cerrar E0-M3-05.
+- **Siguiente paso inequívoco:** CI/QA y tests negativos #712; revisar proveedor/flujo para atestación server-side sin confiar en `company_data_suggestions` editable por usuario; continuar E0-M1-03/M3-05/M3-06; mantener E1/V3 bloqueadas.
+
+### 2026-10-10 — Continuidad fuera del chat y estado de PR #712
+
+- Se verificó acceso al repositorio y estado de #712 en el último HEAD `491a98e5e11841bd6df50792a1605357c1df052e`: **CI GitHub Actions completo success; Vercel app y ksenia-expert success**, sin hilos/reviews pendientes. **Permanece DRAFT/NO MERGED**, porque las pruebas añadidas son principalmente inspecciones estáticas: falta QA HTTP negativa con payload falsificado y flujo real de alta, revisión del comportamiento UI, y criterio de tratamiento de datos registrales marcados previamente.
+- Revisión de código: tanto `/api/companies` como `/api/company/associate` establecen un fail-safe `registryOfficial = false`, evitando crear nueva verificación o bloqueo registral a partir de claims de navegador. El flujo conserva precarga manual; la atestación server-only genuina aún no está diseñada/validada. No se modificaron datos ni permisos productivos en esta revisión.
+- **Seguimiento fuera del chat:** hay tarea recurrente de ChatGPT `Ejecución EXPERT KIA` **habilitada**, diaria aproximadamente a las 08:00 Europe/Madrid, que toma este checkpoint como fuente; **no equivale** a un controlador de ejecución continua en GitHub ni garantiza que los conectores permanezcan disponibles. La tarea no ha tenido todavía ninguna ejecución y sus avisos push/email aparecen deshabilitados en la configuración actual; no prometer notificaciones hasta que se activen desde ajustes.
+- **No se necesita mantener el chat abierto.** No se ejecuta nada fuera de las sesiones salvo las tareas programadas reales. Toda continuación debe dejar evidencia en GitHub antes de declarar cambios hechos; producción, migraciones, Holded y E1–E6 permanecen protegidos por sus gates.
+- **Siguiente acción concreta:** pruebas HTTP de #712 (no solo tests que leen archivos), pruebas de flujo manual y sugerencia, revisar registros históricos ya marcados, y completar gates antes de fusionar; continuar E0-M1-03/E0-M3-05. No pasar a E1 ni abrir V3.
+
+### 2026-10-11 — QA HTTP y actualización de base de PR #712
+
+- Revisión sobre HEAD `f8928f9538d4a0d7f4560578d0432d76003fb2b7`: el patch continúa siendo fail-safe y acotado; impide que claims `_registryOfficial`, snapshots o nombres de fuente controlados por navegador creen verificación/bloqueos registrales. No contiene migraciones ni escrituras sobre datos existentes.
+- Evidencia automática: workflow CI [#3474](https://github.com/expert-servicios/expert-app/actions/runs/38118745467) completado correctamente en el HEAD citado: typecheck, lint, build, tests, MCP, baseline Supabase, KIA evals e integraciones PostgreSQL. Las nuevas pruebas ejecutan ambos handlers HTTP con Supabase sintético y cubren 401 sin escritura, claim oficial falsificado, alta manual, falta de confirmación, fuentes manipuladas y reutilización de empresa realmente vinculada.
+- Evidencia de despliegue: ambos estados del mismo HEAD son success — [app](https://vercel.com/expertapp/app/BLa7rozwZtRz76FgXr7EGdPkrU3s) y [ksenia-expert](https://vercel.com/expertapp/ksenia-expert/HW7jxzvPKQ5iJQ1WaCHMjb5hAfsR). Sin reviews ni hilos pendientes en el momento de la revisión.
+- La rama estaba dos commits por detrás de `main`, ambos documentales sobre este Plan Maestro; se integra la base actual antes de solicitar nuevo CI/Vercel. No fusionar #712 hasta verificar el nuevo HEAD exacto.
+- **Alcance pendiente de E0-M3-05:** el merge de la mitigación no certifica atestación registral positiva. Sigue pendiente diseñar/validar evidencia server-side no escribible por usuario y auditar el tratamiento de filas históricas ya marcadas, sin limpieza masiva ni modificación productiva. E0-M3-05 continúa EN CURSO y E1 permanece bloqueada.
+- **Siguiente acción concreta:** verificar CI y ambos Vercel tras la actualización de base; si están verdes y el diff no cambia materialmente, fusionar la mitigación con lease sobre el HEAD. Después continuar la atestación server-side/auditoría histórica y E0-M3-06; no abrir E1 ni V3.
 
 ### Actas de cierre
 
