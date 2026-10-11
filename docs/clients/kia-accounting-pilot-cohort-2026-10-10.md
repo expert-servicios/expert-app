@@ -7,12 +7,13 @@
 
 ## 1. Identidades canónicas verificadas en EXPERT (Supabase, 10/10/2026)
 
-Cinco **sujetos contables**, no seis: EXPERT Asesorías es la plataforma/entorno de servicio; Expert Consulting es el tenant usado para la contabilidad de la empresa propia. Nunca mezclar ambos aunque compartan personal o marca.
+Seis **sujetos contables**, no siete: EXPERT Asesorías es la plataforma/entorno de servicio; Expert Consulting es el tenant usado para la contabilidad de la empresa propia. Nunca mezclar ambos aunque compartan personal o marca.
 
 | Sujeto piloto | company_id | NIF/CIF | Perfil | Integración de lectura verificada en EXPERT | Caso de uso |
 |---|---|---|---|---|---|
 | DISEÑO GLOBAL MERIDIANO, S.L. (DGM) | `188a1871-0ea8-4b11-adac-c9acc41c4a4b` | `B42700427` | Sociedad patrimonial con alquileres | Holded V2 activo y `read_only`; `accountingEntries=true`, `accountingAccounts=false` | Arrendamientos, documentos, reconstrucción contable y conciliación por ejercicio; `docs/clients/dgm-accounting-rebuild-2025-2026.md` |
 | ALVILS ESP, S.L.U. | `445d6b1b-6970-409c-a0b8-574ae5b3b345` | `B56305501` | Sociedad patrimonial, alquiler de local | Holded V2 activo en lectura; diario y cuentas autorizados | Migración de tenant con origen y destino diferenciados; `docs/clients/alvils-holded-dual-tenant-pilot.md` en PR #713, no fusionada |
+| INVERSIONES PASO SEGURO, S.L.U. | `79086162-f1db-4b7b-846e-8143fb3529fe` | `B54920509` | Hostelería, 11 empleados; movimiento contable y laboral elevado | Holded V2 activo y lectura autorizada de diario, cuentas, bancos, empleados y nóminas; faltan consultas reales | Piloto para facturación de volumen, conciliación bancaria, nóminas, costes y retenciones; sin mensualidad |
 | EXPERT ESTUDIOS PROFESIONALES, S.L.U. (marca EXPERT; tenant propio Expert Consulting) | `9382c1ad-2b82-4fca-8473-a77af66d3263` | `B44991776` | Asesoría propia | Holded V2 activo, `expert_account`, lectura contable autorizada | Operativa de despacho, facturas, proveedores, cobranzas, conciliación e historial de asistencia KIA |
 | SIGMAKNOT, S.L. (nombre social identificado para «Sit Magnet») | `a97decd7-2008-4354-a8dc-122956dc2b49` | `B93871473` | Sociedad asociada al perfil de Josep | Conexión Holded activa `client_account`, **API sin versión V2 confirmada**; permisos detectados insuficientes (no inferir acceso al diario) | Contabilidad de sociedad comercial, asesoría al cliente y organización documental |
 | Josep Sánchez Sánchez, empresario individual | `baf3aad3-2f84-4357-b4ac-d23a55c8d724` | NIF fiscal verificado en ficha EXPERT (no reproducido aquí) | Persona física con actividad propia | **Sin integración Holded activa encontrada** en `client_integrations` | IRPF/IVA del autónomo, facturas y separación de actividad personal/societaria |
@@ -36,10 +37,11 @@ Al 10/10/2026 todos los pilotos están `registered`; su estado de integración c
 
 1. **DGM:** alquileres, facturas, morosidad, acuerdos, retenciones e inmuebles; separar actores arrendatarios y titulares.
 2. **ALVILS:** primera apertura y diario reales de Holded; dual-tenant origen/destino, inventario completo, conciliación, reversibilidad y no sustitución de secreto origen. Excel manual anterior excluido.
-3. **EXPERT propio:** gastos operativos, ingresos de servicios, facturación y pagos propios; probar que nunca consulta bancos o contabilidad de DGM/ALVILS desde su tenant propio.
-4. **SIGMAKNOT:** determinar versión API, identidad del tenant y permisos reales. Solo después diseñar inventario/documentación contable y ejercicios correspondientes.
-5. **Josep autónomo:** validar conexión individual y consentimiento; consultas y declaraciones propias separadas de SIGMAKNOT pese a perfil de propietario común.
-6. **Prueba transversal de aislamiento:** usuario con dos empresas vinculadas, cambio explícito de empresa activa, revocación, autorización, operaciones admin, historial y no filtrado de credenciales entre tenants.
+3. **INVERSIONES PASO SEGURO:** contabilización de volumen, ingresos, bancos, costes laborales y plantilla; pruebas anonimizadas sin modificar nóminas.
+4. **EXPERT propio:** gastos operativos, ingresos de servicios, facturación y pagos propios; probar que nunca consulta bancos o contabilidad de DGM/ALVILS desde su tenant propio.
+5. **SIGMAKNOT:** determinar versión API, identidad del tenant y permisos reales. Solo después diseñar inventario/documentación contable y ejercicios correspondientes.
+6. **Josep autónomo:** validar conexión individual y consentimiento; consultas y declaraciones propias separadas de SIGMAKNOT pese a perfil de propietario común.
+7. **Prueba transversal de aislamiento:** usuario con dos empresas vinculadas, cambio explícito de empresa activa, revocación, autorización, operaciones admin, historial y no filtrado de credenciales entre tenants.
 
 ## 4. Bucle de aprendizaje para KIA
 
@@ -64,13 +66,13 @@ Cada actuación debe producir un registro estructurado de `case_id`/company_id, 
 | P1 | Diseñar pruebas E2E de KIA con datos representativos y sanitizados; regresiones multiempresa | Pendiente |
 | P2 | Promocionar únicamente aprendizajes de procedimiento validados a la guía transversal KIA | Pendiente |
 
-**No crear nuevas filas `companies` para ninguno de estos cinco sujetos:** ya existen y están identificados por CIF/NIF y company_id. Si surge nueva entidad, primero buscar por NIF normalizado y resolver relaciones reales. No deducir que "acceso completo a contabilidad" está efectivamente otorgado sin lectura autenticada en cada integración.
+**No crear nuevas filas `companies` para ninguno de estos seis sujetos:** ya existen y están identificados por CIF/NIF y company_id. Si surge nueva entidad, primero buscar por NIF normalizado y resolver relaciones reales. No deducir que "acceso completo a contabilidad" está efectivamente otorgado sin lectura autenticada en cada integración.
 
 **Fuentes funcionales:** Supabase EXPERT (`companies`, `client_integrations`, `profile_companies`, consulta interna al 10/10/2026); `docs/admin-improvement-plan.md` (caso multi-entidad Josep); `docs/admin-360-compact-redesign-backlog-2026-10-09.md` (tenant EXPERT propio versus EXPERT Asesorías); `docs/kia-pilot-rollout.md` (pilotos contextuales, distinto objetivo); `docs/clients/dgm-accounting-rebuild-2025-2026.md`; piloto ALVILS PR #713.
 
 ## Actualización de cohorte y suscripciones legacy — 10/10/2026
 
-**La cohorte tiene ahora SEIS sujetos contables piloto.** La sección inicial que enumera cinco corresponde a la primera versión y queda complementada por esta ampliación. No añadir una séptima ficha para EXPERT Asesorías, que es el entorno/plataforma.
+**La cohorte comprende seis sujetos contables piloto**, integrados en el cuadro principal. Este apartado registra las decisiones y evidencias incorporadas después de la primera versión. No añadir una séptima ficha para EXPERT Asesorías, que es el entorno/plataforma.
 
 ### Sexto sujeto: INVERSIONES PASO SEGURO, S.L.U.
 
@@ -78,16 +80,16 @@ Cada actuación debe producir un registro estructurado de `case_id`/company_id, 
 - Empresa de hostelería, 11 empleados según Dirección, considerable facturación y muchos movimientos.
 - Holded integrado **V2**, estado **active**, modalidad `client_account`, `read_only`, con permisos declarados de lectura de `accountingEntries`, `accountingAccounts`, ventas, compras, bancos, empleados y nóminas. Estos permisos **no sustituyen una lectura e inventario real**, que está pendiente.
 - Objetivo KIA: contabilidad de alto volumen, conciliaciones bancarias, facturación, gestión de nóminas, convenios, retenciones, cierre y seguimiento histórico. Sin escritura automática ni extracción indiscriminada.
-- Sin cuota mensual para EXPERT, tal como confirmó Dirección; el listado completo de suscripciones de Stripe no mostró una suscripción para su customer `cus_OQkYuIkz8n5FYB`.
+- Sin cuota mensual para EXPERT, tal como confirmó Dirección; el listado completo de suscripciones de Stripe no mostró una suscripción para su customer `[customer ID: consultar en Stripe]`.
 
 ### Facturación recurrente legacy: no modificar contratos ni precios
 
-Cuenta Stripe conectada en vivo: **Expert Consulting**, `acct_1N94D0LeYwwgvux4`; consulta de todas las suscripciones con `status=all`, cinco resultados, `has_more=false`.
+Cuenta Stripe conectada en vivo: **Expert Consulting**, `[account ID: consultar en Stripe]`; consulta de todas las suscripciones con `status=all`, cinco resultados, `has_more=false`.
 
 | Entidad | Stripe customer | Stripe subscription | Precio preexistente | Base / mes | Estado al revisar |
 |---|---|---|---|---:|---|
-| DISEÑO GLOBAL MERIDIANO, S.L. | `cus_ScM8g6rygeBPsr` | `sub_1SF8fqLeYwwgvux4isW6jM5X` | `price_1S28QoLeYwwgvux4skv4SnID` | 1.000,00 EUR + IVA según Dirección | `past_due` |
-| ALVILS ESP, S.L.U. (dictado «Audios/Adels ESP») | `cus_SwAQzEZGfhlP5S` | `sub_1S0IA7LeYwwgvux4vE1VB7DK` | `price_1S0I8FLeYwwgvux4wThjvUNU` | 150,00 EUR + IVA según Dirección | `past_due` |
+| DISEÑO GLOBAL MERIDIANO, S.L. | `[customer ID: consultar en Stripe]` | `[subscription ID: consultar en Stripe]` | `[price ID: consultar en Stripe]` | 1.000,00 EUR + IVA según Dirección | `past_due` |
+| ALVILS ESP, S.L.U. (dictado «Audios/Adels ESP») | `[customer ID: consultar en Stripe]` | `[subscription ID: consultar en Stripe]` | `[price ID: consultar en Stripe]` | 150,00 EUR + IVA según Dirección | `past_due` |
 
 **LEGACY significa:** conservar de forma indefinida las tarifas/planes existentes mientras sigan los contratos; excluir las dos suscripciones del alta/catálogo de planes nuevos; no crear `product`, `price`, `customer`, `subscription`, `invoice` o `payment_link` duplicados; no cambiar ciclos, cuantías, impuestos, método de cobro ni cancelar. Cambios de billing solamente con autorización específica.
 
