@@ -65,7 +65,26 @@ async function authorize(request: NextRequest, companyId: string) {
         .select('tenant_id')
         .eq('id', companyId)
         .maybeSingle();
-      if (companyError || !company || company.tenant_id !== actor.tenantId) return null;
+      if (companyError || !company) return null;
+      if (company.tenant_id !== actor.tenantId) {
+        // Legacy rows with a null tenant are permitted only when every recorded
+        // owner belongs to this actor's tenant. Membership alone is insufficient.
+        if (company.tenant_id !== null) return null;
+        const { data: owners, error: ownersError } = await admin
+          .from('profile_companies')
+          .select('profile_id')
+          .eq('company_id', companyId)
+          .eq('role', 'owner');
+        if (ownersError || !owners?.length) return null;
+        const ownerIds = [...new Set(owners.map((owner) => owner.profile_id).filter(Boolean))];
+        if (ownerIds.length !== owners.length) return null;
+        const { data: ownerProfiles, error: profilesError } = await admin
+          .from('profiles')
+          .select('id,tenant_id')
+          .in('id', ownerIds);
+        if (profilesError || !ownerProfiles || ownerProfiles.length !== ownerIds.length) return null;
+        if (ownerProfiles.some((profile) => profile.tenant_id !== actor.tenantId)) return null;
+      }
     }
   }
 
