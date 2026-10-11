@@ -44,12 +44,43 @@ async function getUser(request: NextRequest) {
   return user;
 }
 
+async function matchesActorTenant(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  company: Record<string, unknown>,
+  tenantId: string,
+): Promise<boolean> {
+  if (company.tenant_id === tenantId) return true;
+  if (company.tenant_id !== null || typeof company.id !== 'string') return false;
+
+  const { data: owners, error: ownersError } = await admin
+    .from('profile_companies')
+    .select('profile_id')
+    .eq('company_id', company.id)
+    .eq('role', 'owner');
+  if (ownersError || !owners?.length) return false;
+
+  const ownerIds = [...new Set(owners.map((owner) => owner.profile_id).filter(Boolean))];
+  if (ownerIds.length !== owners.length) return false;
+
+  const { data: ownerProfiles, error: profilesError } = await admin
+    .from('profiles')
+    .select('id,tenant_id')
+    .in('id', ownerIds);
+  return !profilesError
+    && ownerProfiles?.length === ownerIds.length
+    && ownerProfiles.every((profile) => profile.tenant_id === tenantId);
+}
+
 export async function GET(request: NextRequest) {
   try {
     const user = await getUser(request);
     if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     const actor = await requireActiveActor(request);
-    if (!actor || actor.userId !== user.id) {
+    if (
+      !actor
+      || actor.userId !== user.id
+      || (['client', 'tenant_admin'].includes(actor.role) && !actor.tenantId)
+    ) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
@@ -71,6 +102,15 @@ export async function GET(request: NextRequest) {
         return company ? { ...company, role: row.role } : null;
       })
       .filter((company): company is Record<string, unknown> & { role: string } => company !== null);
+
+    if (actor.role === 'client' || actor.role === 'tenant_admin') {
+      const decisions = await Promise.all(
+        companies.map((company) => matchesActorTenant(admin, company, actor.tenantId as string)),
+      );
+      return NextResponse.json({
+        companies: companies.filter((_, index) => decisions[index]),
+      });
+    }
 
     return NextResponse.json({ companies });
   } catch (err) {
