@@ -75,11 +75,22 @@ describe('E0 admin stats: active actor before privileged aggregate reads', () =>
     expect(mocks.getAdmin).not.toHaveBeenCalled();
   });
 
-  it('keeps active admin aggregate reads scoped to four expected tables', async () => {
-    const res = await GET(request());
-    expect(res.status).toBe(200);
-    expect(mocks.gate).toHaveBeenCalledWith(['admin', 'owner']);
-    expect(mocks.state.tables).toEqual(['profiles', 'quotes', 'orders', 'cases']);
-    expect(await res.json()).toEqual({ totalUsers: 2, pendingQuotes: 2, activeCases: 0, totalRevenue: 45 });
-  });
+  it.each(['admin', 'owner'] as const)(
+    'keeps active %s aggregate reads scoped to four expected tables',
+    async (role) => {
+      mocks.state.actor = { userId: 'staff-A', role, tenantId: null };
+
+      const res = await GET(request());
+
+      expect(res.status).toBe(200);
+      expect(mocks.gate).toHaveBeenCalledWith(['admin', 'owner']);
+      expect(mocks.state.tables).toEqual(['profiles', 'quotes', 'orders', 'cases']);
+      expect(await res.json()).toEqual({
+        totalUsers: 2,
+        pendingQuotes: 2,
+        activeCases: 0,
+        totalRevenue: 45,
+      });
+    },
+  );
 });
