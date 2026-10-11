@@ -281,6 +281,12 @@ Resultado y siguiente tarea autorizada:
 - **No se necesita mantener el chat abierto.** No se ejecuta nada fuera de las sesiones salvo las tareas programadas reales. Toda continuación debe dejar evidencia en GitHub antes de declarar cambios hechos; producción, migraciones, Holded y E1–E6 permanecen protegidos por sus gates.
 - **Siguiente acción concreta:** pruebas HTTP de #712 (no solo tests que leen archivos), pruebas de flujo manual y sugerencia, revisar registros históricos ya marcados, y completar gates antes de fusionar; continuar E0-M1-03/E0-M3-05. No pasar a E1 ni abrir V3.
 
+### 2026-10-11 — Continuidad Workspace V2: integración documental de pilotos
+
+- Se fusionó [PR #714](https://github.com/expert-servicios/expert-app/pull/714), exclusivamente documental, con commit `773dde979895a3fdf1add3fa34da191b7d7c75d7`. El HEAD aprobado `20f6dbb525423420268a56fdfd1d79d67d8da77f` pasó CI (run 38125582044) y ambas previews Vercel; se corrigió la prueba de higiene `public-docs-no-production-stripe-ids` eliminando IDs Stripe de la documentación. Seis pilotos documentados, sin crear conexiones, mover datos contables ni modificar facturación.
+- E0 sigue **EN CURSO**: no se han satisfecho los requisitos de cierre E0-M3-05/E0-M3-06 ni existe acta de salida a E1; E2 Workspace V2 permanece bloqueada por diseño secuencial. Esta fusión no cambia fase, flags ni nivel de madurez de KIA.
+- Siguiente paso de implementación dentro del alcance vigente: terminar QA HTTP de [PR #712](https://github.com/expert-servicios/expert-app/pull/712), contrastar casos negativos de atribución oficial falsa, verificar readback e historial de registros, cerrar auditoría de APIs privilegiadas, adjuntar evidencia por SHA y decidir fusión. No publicar nuevas funcionalidades E2 antes del acta E0 y la finalización E1.
+
 ### Actas de cierre
 
 | Fase | Fecha | Commit/PR | Tests, QA, seguridad, despliegue | Conclusión |
