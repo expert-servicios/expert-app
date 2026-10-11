@@ -9,6 +9,10 @@ async function requireAdminContext(request: NextRequest) {
   return { admin: getSupabaseAdmin(), user: { id: actor.userId } };
 }
 
+function normalizeEmail(value: unknown) {
+  return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
 export async function POST(request: NextRequest) {
   try {
     const ctx = await requireAdminContext(request);
