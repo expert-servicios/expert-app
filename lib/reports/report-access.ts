@@ -8,17 +8,12 @@ export async function canAccessFinancialReport(
   userId: string,
   reportClientId: string,
 ): Promise<boolean> {
-  if (userId === reportClientId) return true;
-
-  const { data: profile } = await admin
+  const { data: profile, error } = await admin
     .from('profiles')
     .select('role,status')
     .eq('id', userId)
     .maybeSingle();
 
-  return Boolean(
-    profile
-    && profile.status !== 'inactive'
-    && isStaffRole(profile.role),
-  );
+  if (error || !profile || profile.status !== 'active') return false;
+  return userId === reportClientId || isStaffRole(profile.role);
 }

@@ -9,7 +9,8 @@ describe('financial report access boundary', () => {
     const access = source('lib/reports/report-access.ts');
     expect(access).toContain('userId === reportClientId');
     expect(access).toContain('isStaffRole(profile.role)');
-    expect(access).toContain("profile.status !== 'inactive'");
+    expect(access).toContain("profile.status !== 'active'");
+    expect(access).toContain('if (error || !profile');
   });
 
   it('lets internal staff open and export a client report through the same guard', () => {
@@ -32,7 +33,7 @@ describe('financial report access boundary', () => {
   it('does not trust client-provided generatedBy metadata', () => {
     const route = source('app/api/reports/generate/route.ts');
     const panel = source('components/dashboard/reports/GenerateReportPanel.tsx');
-    expect(route).toContain("generatedBy: adminClientId && adminClientId !== user.id ? 'admin' : 'user'");
+    expect(route).toContain("generatedBy: adminClientId && adminClientId !== actor.userId ? 'admin' : 'user'");
     expect(panel).not.toContain("generatedBy: 'user'");
   });
 });
