@@ -4,7 +4,7 @@
 **Estado global:** EN EJECUCIÓN · **ÚNICA FASE ACTIVA: E0** · **Última fase cerrada:** ninguna · **Transición a E1:** BLOQUEADA · **Congelación de alcance:** ACTIVA.  
 **Naturaleza de este documento:** fuente canónica de orden de trabajo, definición de entregables, criterios de cierre y bitácora. No certifica funcionalidades en producción.
 
-<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-05-server-attestation-and-historical-audit closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
+<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-06-privileged-routes-and-object-scope-audit closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
 
 ## 0. Mandato aprobado y reglas innegociables
 
@@ -112,7 +112,7 @@ Este documento **prevalece en orden, límites, bloqueos y estado de ejecución**
 **Módulo E0-M3 — Auditoría y cierre de fase**
 - [ ] `E0-M3-01` Actualizar y cruzar PR #707/#708/#709 con las decisiones canónicas, sin ampliar alcance.
 - [ ] `E0-M3-02` Revisión crítica independiente de coherencia, riesgos, dependencias, privacidad, autorización y definición de pruebas.
-- [ ] `E0-M3-05` Cerrar P1 de procedencia registral no atestada en servidor en altas de empresa (rutas `/api/companies` y `/api/company/associate`), mediante patch mínimo, tests negativos y validación sin modificar históricos.
+- [x] `E0-M3-05` Cerrar P1 de procedencia registral no atestada en servidor en altas de empresa (rutas `/api/companies` y `/api/company/associate`), mediante patch mínimo, tests negativos y validación sin modificar históricos. Evidencia: PR #712 / merge `a72f8795b153441b23eed40d5154f71550800b8e`, CI #3480, ambas previews Vercel y auditoría agregada de producción del 11/10/2026 (7 empresas; 0 fuentes, 0 verificaciones, 0 snapshots y 0 bloqueos registrales).
 - [ ] `E0-M3-06` Cerrar P1 de rutas mutadoras con `getSupabaseAdmin()` sin `profiles.status` activo ni scope por objeto; comprobar por rol/tenant/empresa/expediente, HTTP y RLS en entorno de prueba.
 - [ ] `E0-M3-07` Evaluar P2 del lookup CIF limitado y divulgación de identificadores ajenos; corregir sin duplicar entidad ni adelantar módulos.
 - [ ] `E0-M3-03` Verificar CI, lint Markdown/enlaces/estructura (si disponible), revisión de PR y previews del último SHA.
@@ -296,7 +296,9 @@ Resultado y siguiente tarea autorizada:
 - **Alcance pendiente de E0-M3-05:** el merge de la mitigación no certifica atestación registral positiva. Sigue pendiente diseñar/validar evidencia server-side no escribible por usuario y auditar el tratamiento de filas históricas ya marcadas, sin limpieza masiva ni modificación productiva. E0-M3-05 continúa EN CURSO y E1 permanece bloqueada.
 - **Gate final y fusión:** el HEAD `9662db251fcb177abe912bf79911ed1102873b9a` pasó CI [#3480](https://github.com/expert-servicios/expert-app/actions/runs/38126757411) completo (typecheck, lint, build, tests, KIA evals y jobs PostgreSQL/Supabase) y ambas previews Vercel: [app](https://vercel.com/expertapp/app/3sUifxBrmn3BU1j139GQnuhxikPM) y [ksenia-expert](https://vercel.com/expertapp/ksenia-expert/5vBV47gX5fRxsCzENpXX3p8FNsB9). La rama estaba actualizada, sin hilos y el merge usó lease sobre ese SHA.
 - [PR #712](https://github.com/expert-servicios/expert-app/pull/712) fusionada en `main` con commit `a72f8795b153441b23eed40d5154f71550800b8e`. Queda cerrada la vía de creación de nuevas marcas/bloqueos registrales desde claims de navegador; no se ejecutaron migraciones, cambios de flags ni escrituras sobre registros productivos.
-- **Siguiente acción concreta:** continuar E0-M3-05 con diseño/validación de atestación server-side y auditoría no destructiva de filas históricas; después completar E0-M3-06. E0 sigue EN CURSO; no abrir E1 ni V3.
+- **Auditoría histórica no destructiva:** consulta agregada de solo lectura del 11/10/2026 sobre `public.companies`: 7 filas; 0 con `registry_source`, 0 con `registry_verified_at`, 0 con snapshot no vacío y 0 con campos bloqueados. No se extrajeron identificadores ni se ejecutaron escrituras.
+- **Decisión de cierre E0-M3-05:** el contrato actual de `company-data-resolver` clasifica expresamente todas las salidas como sugerencias y ningún proveedor integrado aporta hoy una atestación registral positiva con evidencia server-only. Se mantiene la verificación positiva deshabilitada por diseño. Cualquier futura habilitación exigirá contrato de proveedor, evidencia no escribible por usuario, RLS/grants, migración y gate explícito; no se presupone en E0.
+- **Siguiente acción concreta:** E0-M3-06 — completar inventario de rutas privilegiadas/mutadoras, estado activo y scope por objeto con pruebas HTTP/RLS. E0 sigue EN CURSO; no abrir E1 ni V3.
 
 ### 2026-10-11 — Merge de mitigación registral #712 y continuación E0
 
