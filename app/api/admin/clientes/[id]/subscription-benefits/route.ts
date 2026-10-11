@@ -20,7 +20,7 @@ async function requireAdmin(request: NextRequest) {
     .eq('id', user.id)
     .single();
 
-  if (profile?.status === 'inactive' || !['admin', 'owner'].includes(profile?.role ?? '')) return null;
+  if (profile?.status !== 'active' || !['admin', 'owner'].includes(profile?.role ?? '')) return null;
   return { admin, actorId: user.id };
 }
 
