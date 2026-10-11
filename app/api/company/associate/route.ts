@@ -21,7 +21,7 @@ import {
   getSupabaseAdmin,
 }                                    from '@/lib/integrations/supabase';
 import { validateSpanishTaxIdFormat } from '@/lib/integrations/company-data-resolver';
-import { isOfficialRegistrySource, lockedRegistryFields } from '@/lib/companies/registry-locks';
+import { lockedRegistryFields } from '@/lib/companies/registry-locks';
 
 // ── Request schema ────────────────────────────────────────────────────────────
 
@@ -122,7 +122,8 @@ export async function POST(request: NextRequest) {
     normalizedTaxId = validation.normalized ?? taxIdRaw;
   }
 
-  const officialRegistry = isOfficialRegistrySource(normalizedPayload.source);
+  // Source names in a user-controlled payload are not proof of registry verification.
+  const officialRegistry = false;
   const razonSocial = officialRegistry
     ? normalizedPayload.name
     : overrides?.razon_social ?? normalizedPayload.name;

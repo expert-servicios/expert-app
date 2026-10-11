@@ -4,7 +4,7 @@
 **Estado global:** EN EJECUCIÓN · **ÚNICA FASE ACTIVA: E0** · **Última fase cerrada:** ninguna · **Transición a E1:** BLOQUEADA · **Congelación de alcance:** ACTIVA.  
 **Naturaleza de este documento:** fuente canónica de orden de trabajo, definición de entregables, criterios de cierre y bitácora. No certifica funcionalidades en producción.
 
-<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-05-registry-HTTP-QA closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
+<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-05-server-attestation-and-historical-audit closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
 
 ## 0. Mandato aprobado y reglas innegociables
 
@@ -286,6 +286,15 @@ Resultado y siguiente tarea autorizada:
 - Se fusionó [PR #714](https://github.com/expert-servicios/expert-app/pull/714), exclusivamente documental, con commit `773dde979895a3fdf1add3fa34da191b7d7c75d7`. El HEAD aprobado `20f6dbb525423420268a56fdfd1d79d67d8da77f` pasó CI (run 38125582044) y ambas previews Vercel; se corrigió la prueba de higiene `public-docs-no-production-stripe-ids` eliminando IDs Stripe de la documentación. Seis pilotos documentados, sin crear conexiones, mover datos contables ni modificar facturación.
 - E0 sigue **EN CURSO**: no se han satisfecho los requisitos de cierre E0-M3-05/E0-M3-06 ni existe acta de salida a E1; E2 Workspace V2 permanece bloqueada por diseño secuencial. Esta fusión no cambia fase, flags ni nivel de madurez de KIA.
 - Siguiente paso de implementación dentro del alcance vigente: terminar QA HTTP de [PR #712](https://github.com/expert-servicios/expert-app/pull/712), contrastar casos negativos de atribución oficial falsa, verificar readback e historial de registros, cerrar auditoría de APIs privilegiadas, adjuntar evidencia por SHA y decidir fusión. No publicar nuevas funcionalidades E2 antes del acta E0 y la finalización E1.
+
+### 2026-10-11 — QA HTTP y actualización de base de PR #712
+
+- Revisión sobre HEAD `f8928f9538d4a0d7f4560578d0432d76003fb2b7`: el patch continúa siendo fail-safe y acotado; impide que claims `_registryOfficial`, snapshots o nombres de fuente controlados por navegador creen verificación/bloqueos registrales. No contiene migraciones ni escrituras sobre datos existentes.
+- Evidencia automática: workflow CI [#3474](https://github.com/expert-servicios/expert-app/actions/runs/38118745467) completado correctamente en el HEAD citado: typecheck, lint, build, tests, MCP, baseline Supabase, KIA evals e integraciones PostgreSQL. Las nuevas pruebas ejecutan ambos handlers HTTP con Supabase sintético y cubren 401 sin escritura, claim oficial falsificado, alta manual, falta de confirmación, fuentes manipuladas y reutilización de empresa realmente vinculada.
+- La rama se actualizó sobre `main`; tras el merge de base, el HEAD `b7431de3d28e6fc5d5076e50012a5b1fad22dfaa` pasó CI [#3476](https://github.com/expert-servicios/expert-app/actions/runs/38126269400) completo y ambas previews Vercel: [app](https://vercel.com/expertapp/app/HU8ofEN2Rdc6hEEEiEZh2Zr8dM2Y) y [ksenia-expert](https://vercel.com/expertapp/ksenia-expert/39by9xzvjJqsXrD3R1shUuqQUSWh). Sin hilos de revisión pendientes.
+- Mientras corrían los gates, `main` avanzó con la PR documental #714 y su checkpoint; se integra de nuevo esa base sin alterar el runtime de #712 y se exige otro CI/Vercel sobre el nuevo HEAD exacto antes de fusionar.
+- **Alcance pendiente de E0-M3-05:** el merge de la mitigación no certifica atestación registral positiva. Sigue pendiente diseñar/validar evidencia server-side no escribible por usuario y auditar el tratamiento de filas históricas ya marcadas, sin limpieza masiva ni modificación productiva. E0-M3-05 continúa EN CURSO y E1 permanece bloqueada.
+- **Siguiente acción concreta:** verificar CI y ambos Vercel tras la segunda actualización de base; si están verdes y el diff no cambia materialmente, fusionar la mitigación con lease sobre el HEAD. Después continuar la atestación server-side/auditoría histórica y E0-M3-06; no abrir E1 ni V3.
 
 ### Actas de cierre
 

@@ -86,7 +86,8 @@ export async function POST(request: NextRequest) {
 
     const admin = getSupabaseAdmin();
     const d = parse.data;
-    const registryOfficial = Boolean(d._registryOfficial && d._registrySource);
+    // Provenance supplied by a browser is a suggestion, never a server attestation.
+    const registryOfficial = false;
     const snapshot = d._registrySnapshot ?? {};
     const officialValue = (key: string) =>
       registryOfficial && typeof snapshot[key] === 'string' && String(snapshot[key]).trim()
