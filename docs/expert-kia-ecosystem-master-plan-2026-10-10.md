@@ -114,7 +114,7 @@ Este documento **prevalece en orden, límites, bloqueos y estado de ejecución**
 - [ ] `E0-M3-02` Revisión crítica independiente de coherencia, riesgos, dependencias, privacidad, autorización y definición de pruebas.
 - [x] `E0-M3-05` Cerrar P1 de procedencia registral no atestada en servidor en altas de empresa (rutas `/api/companies` y `/api/company/associate`), mediante patch mínimo, tests negativos y validación sin modificar históricos. Evidencia: PR #712 / merge `a72f8795b153441b23eed40d5154f71550800b8e`, CI #3480, ambas previews Vercel y auditoría agregada de producción del 11/10/2026 (7 empresas; 0 fuentes, 0 verificaciones, 0 snapshots y 0 bloqueos registrales).
 - [ ] `E0-M3-06` Cerrar P1 de rutas mutadoras con `getSupabaseAdmin()` sin `profiles.status` activo ni scope por objeto; comprobar por rol/tenant/empresa/expediente, HTTP y RLS en entorno de prueba.
-  - **Avance parcial 11/10/2026:** PR #715 cerró cuatro rutas administrativas y 11 handlers; PR #716, cuatro mutaciones de Operations 360; PR #717, Team/Directorio/Company 360; PR #718, subida documental aislada por `cases.tenant_id`; PR #719, lectura y ciclo de vida de acciones de firma con actor activo y pruebas HTTP de scope expediente/acción. Los lotes reutilizan `requireActiveActor` y pasaron CI/Vercel y pruebas negativas. La tarea permanece abierta hasta completar el inventario restante y la matriz de scope por objeto.
+  - **Avance parcial 11/10/2026:** PR #715 cerró cuatro rutas administrativas y 11 handlers; PR #716, cuatro mutaciones de Operations 360; PR #717, Team/Directorio/Company 360; PR #718, subida documental aislada por `cases.tenant_id`; PR #719, lectura y ciclo de vida de acciones de firma; PR #720, intake empresarial e informes financieros; PR #721, capacidades KIA, perfiles de política y dashboard cerrados por defecto para perfiles no exactamente activos antes de lecturas privilegiadas. Los lotes reutilizan controles existentes y pasaron CI/Vercel y pruebas negativas. La tarea permanece abierta hasta completar el inventario restante y la matriz de scope por objeto.
 - [ ] `E0-M3-07` Evaluar P2 del lookup CIF limitado y divulgación de identificadores ajenos; corregir sin duplicar entidad ni adelantar módulos.
 - [ ] `E0-M3-03` Verificar CI, lint Markdown/enlaces/estructura (si disponible), revisión de PR y previews del último SHA.
 - [ ] `E0-M3-04` Acta E0: lista de artefactos, evidencia de QA, cero bloqueos P0/P1, commit de cierre y cambio explícito del checkpoint a E1.
@@ -344,6 +344,27 @@ Resultado y siguiente tarea autorizada:
 - Previews exactas verdes: [app](https://vercel.com/expertapp/app/3Xtme5PdfkAgL8juD6o1C2hP7iyM) y [ksenia-expert](https://vercel.com/expertapp/ksenia-expert/4C9Dsev31PLUpXa4xd2RQN6fPNoW). El primer preview del commit de prueba detectó una referencia TypeScript incorrecta dentro del test; se corrigió y se repitieron todos los gates sobre el HEAD final. Sin hilos o reviews pendientes.
 - No se ejecutaron migraciones, acciones de firma reales, despliegues manuales, escrituras financieras, cambios de configuración ni credenciales de producción.
 - **Estado:** `E0-M3-06` permanece EN CURSO. Siguiente acción concreta: continuar el inventario restante de rutas privilegiadas/mutadoras, priorizando propuestas contables y facturación, y completar la matriz de scope por rol/tenant/empresa/expediente con pruebas HTTP/RLS. E1–E6 y V3 continúan bloqueadas.
+
+
+### 2026-10-11 — Sexto lote de rutas privilegiadas E0-M3-06
+
+- [PR #720](https://github.com/expert-servicios/expert-app/pull/720) **fusionada** con commit `4255bc9fb28c63c8f733cc36f932e0617268bf77` mediante squash y lease sobre HEAD `694baa226ad9674a8d5d622d3f52d634ca661268`, con base exacta `3b8dcfb8d6d962a94b890fcbed0917d9d39c9e11`.
+- Company 360 intake exige actor exactamente activo, pertenencia a la empresa y coincidencia de `companies.tenant_id` cuando hay tenant; un `tenant_admin` sin tenant queda denegado antes de leer o escribir con `service_role`.
+- La generación, lectura y exportación de informes financieros rechaza perfiles no activos; un cliente activo solo opera sobre sí mismo y únicamente `admin`/`owner` internos activos pueden actuar sobre otro cliente.
+- Evidencia: CI [#3516](https://github.com/expert-servicios/expert-app/actions/runs/38138913709) success (typecheck, lint, build, MCP, baseline Supabase, 419 archivos/2.287 tests, 182 evaluaciones KIA, integración PostgreSQL/RLS y contrato de reparación); pruebas HTTP/unitarias para actor no activo, membresía ausente, tenant ajeno, `tenant_admin` sin tenant, cliente ajeno y flujos legítimos.
+- Previews exactas verdes: [app](https://vercel.com/expertapp/app/BjJDyDfXTF93MkC855nAADwfN4oe) y [ksenia-expert](https://vercel.com/expertapp/ksenia-expert/HWSkiDsJdZvdJmkgGTvdivoc6iSm). Sin hilos o reviews pendientes.
+- No se ejecutaron migraciones, generación real de informes, escrituras financieras, despliegues manuales, cambios de configuración, flags ni credenciales productivas.
+- **Estado:** `E0-M3-06` permanece EN CURSO. Siguiente lote en secuencia: revisar y actualizar la PR #721 sobre capacidades KIA de perfiles activos contra el nuevo `main`, repetir tests/CI/Vercel y continuar la matriz de scope. E1–E6 y V3 permanecen bloqueadas.
+
+### 2026-10-11 — Séptimo lote de rutas privilegiadas E0-M3-06
+
+- [PR #721](https://github.com/expert-servicios/expert-app/pull/721) **fusionada** con commit `428c171586a32368208e1466abcfbd8f7fdc02fe` mediante squash y lease sobre HEAD `7f504e41561cdff8247c6e01e64f4f2a553342dd`, con base exacta `e7101c920e5ee508a61727fd1c083ed535ee8ff4`.
+- El resolvedor de capacidades KIA corta tras la lectura canónica de `profiles`: estados `inactive`, `pending`, `suspended` o perfil ausente no consultan membresías, cobertura comercial ni grants privilegiados y no reciben capacidades o scopes.
+- Las políticas `client_dashboard`, `admin_copilot` y `shadow_read_only` exigen `kia:authenticated`; `POST /api/ai/kia` deniega perfiles no activos antes del límite de coste, tokens de contexto, modo Admin y lecturas de empresa/expediente.
+- Evidencia: CI [#3529](https://github.com/expert-servicios/expert-app/actions/runs/38144081214) success (typecheck, lint, build, MCP, baseline Supabase, 421 archivos/2.303 tests, 182 evaluaciones KIA, integración PostgreSQL/RLS y contrato de reparación); pruebas unitarias, de contrato y HTTP negativas para los cuatro estados no activos.
+- Previews exactas verdes: [app](https://vercel.com/expertapp/app/6ioRrwZqxLCZh5LGu9nNGah1mjYG) y [ksenia-expert](https://vercel.com/expertapp/ksenia-expert/8dR8Nggyjm83xcLdpLVepwpsig57). Sin hilos o reviews pendientes.
+- La primera ejecución CI del lote detectó una aserción estática obsoleta; se corrigió en el mismo branch y la repetición completa quedó verde. No se ejecutaron migraciones, escrituras financieras, despliegues manuales, cambios de configuración, flags ni credenciales productivas.
+- **Estado:** `E0-M3-06` permanece EN CURSO. Siguiente lote en secuencia: revisar la PR #722 sobre revocación exact-active de KIA Work, incluida su migración/RLS/rollback solo en entorno de prueba; no aplicar migraciones en producción. E1–E6 y V3 permanecen bloqueadas.
 
 ### Actas de cierre
 

@@ -94,13 +94,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  if (!checkKiaMessageRateLimit(user.id)) {
-    return NextResponse.json({ error: 'rate_limited', reply: kiaFriendlyError('rate_limited', 'es'), avatarState: 'aviso', artifacts: [] }, { status: 429 });
-  }
-  const costCap = await checkKiaDailyCostCap(user.id);
-  if (!costCap.ok) {
-    return NextResponse.json({ error: 'daily_cost_cap_reached', reply: kiaFriendlyError('daily_cost_cap_reached', 'es'), avatarState: 'aviso', artifacts: [] }, { status: 429 });
-  }
 
   let body: unknown;
   try {
@@ -125,6 +118,17 @@ export async function POST(request: NextRequest) {
   if (profileError) {
     console.error('[KiaCopilot] profile lookup failed:', profileError.message);
     return NextResponse.json({ error: 'profile_lookup_failed', reply: kiaFriendlyError('profile_lookup_failed', 'es'), avatarState: 'aviso', artifacts: [] }, { status: 500 });
+  }
+  if (!profile || profile.status !== 'active') {
+    return NextResponse.json({ error: 'account_inactive', reply: kiaFriendlyError('account_inactive', 'es'), avatarState: 'aviso', artifacts: [] }, { status: 403 });
+  }
+
+  if (!checkKiaMessageRateLimit(user.id)) {
+    return NextResponse.json({ error: 'rate_limited', reply: kiaFriendlyError('rate_limited', 'es'), avatarState: 'aviso', artifacts: [] }, { status: 429 });
+  }
+  const costCap = await checkKiaDailyCostCap(user.id);
+  if (!costCap.ok) {
+    return NextResponse.json({ error: 'daily_cost_cap_reached', reply: kiaFriendlyError('daily_cost_cap_reached', 'es'), avatarState: 'aviso', artifacts: [] }, { status: 429 });
   }
 
   let contextualCaseId: string | undefined;
@@ -178,7 +182,7 @@ export async function POST(request: NextRequest) {
     !staffPreview
     && profile
     && isStaffRole(profile.role)
-    && profile.status !== 'inactive'
+    && profile.status === 'active'
     && currentPage?.startsWith('/admin'),
   );
   const adminClientPageMatch = adminCopilotMode
@@ -220,7 +224,7 @@ export async function POST(request: NextRequest) {
     ? profileLocale
     : resolveKiaLocale({ latestMessage: message, preferredLanguage: profileLocale });
 
-  const staffCompanyScope = Boolean(companyId && profile && isStaffRole(profile.role) && profile.status !== 'inactive');
+  const staffCompanyScope = Boolean(companyId && profile && isStaffRole(profile.role) && profile.status === 'active');
   const copilotPolicyProfile = adminCopilotMode ? 'admin_copilot' as const : 'client_dashboard' as const;
 
   if (resolvedCompanyId && !staffPreview) {
