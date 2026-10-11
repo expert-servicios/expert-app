@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,13 +10,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    const adminSupabase = getSupabaseAdmin();
-    const { data: profile } = await adminSupabase
-      .from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin' && profile?.role !== 'owner') {
+    // A valid session can survive a profile revocation. Revalidate the
+    // current staff role before any service-role aggregate reads.
+    const actor = await requireActiveActor(request, ['admin', 'owner']);
+    if (!actor || actor.userId !== user.id) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
+    const adminSupabase = getSupabaseAdmin();
     const [
       ordersResult,
       casesResult,
