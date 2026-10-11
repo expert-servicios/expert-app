@@ -18,6 +18,14 @@ vi.mock('@/lib/integrations/supabase', () => ({
   getSupabaseAdmin: () => ({ from: state.adminFrom }),
 }));
 
+vi.mock('@/lib/auth/active-actor', () => ({
+  requireActiveActor: async () => ({
+    userId: '11111111-1111-4111-8111-111111111111',
+    role: 'client',
+    tenantId: 'tenant-A',
+  }),
+}));
+
 vi.mock('@/lib/integrations/company-data-resolver', () => ({
   validateSpanishTaxIdFormat: (input: string) => ({
     valid: true, normalized: input.replace(/[^A-Z0-9]/gi, '').toUpperCase(), type: 'cif',
@@ -106,6 +114,7 @@ const companyInsert = () => {
 };
 
 function expectUnverified(row: Record<string, unknown>) {
+  expect(row.tenant_id).toBe('tenant-A');
   expect(row.registry_source).toBeNull();
   expect(row.registry_source_url).toBeNull();
   expect(row.registry_verified_at).toBeNull();

@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 
 const mocks = vi.hoisted(() => ({
   actorPresent: true,
+  actorTenant: 'tenant-A' as string | null,
   writes: [] as Array<{ table: string; operation: string; payload: Record<string, unknown> }>,
   calls: [] as string[],
 }));
@@ -52,6 +53,12 @@ vi.mock('@/lib/integrations/supabase', () => ({
   }),
 }));
 
+vi.mock('@/lib/auth/active-actor', () => ({
+  requireActiveActor: async () => mocks.actorPresent
+    ? { userId: 'e0-actor', role: 'client', tenantId: mocks.actorTenant }
+    : null,
+}));
+
 vi.mock('@/lib/integrations/company-data-resolver', () => ({
   validateSpanishTaxIdFormat: () => ({ valid: true, type: 'cif', normalized: 'B12345678' }),
 }));
@@ -78,6 +85,7 @@ describe('E0-M3-05 behavioral request tests: registry provenance is server-only'
     mocks.writes.length = 0;
     mocks.calls.length = 0;
     mocks.actorPresent = true;
+    mocks.actorTenant = 'tenant-A';
   });
 
   it('does not accept browser claimed official verification, snapshot overrides, or locks on company POST', async () => {
@@ -128,6 +136,7 @@ describe('E0-M3-05 behavioral request tests: registry provenance is server-only'
     }));
     expect(response.status).toBe(200);
     expect(insertedCompany()).toMatchObject({
+      tenant_id: 'tenant-A',
       razon_social: 'USER CONFIRMED ENTITY SL',
       direccion: 'User corrected street',
       registry_source: null,
@@ -144,6 +153,20 @@ describe('E0-M3-05 behavioral request tests: registry provenance is server-only'
       normalizedPayload: { name: 'FAKE SL', source: 'boe_borme', confidence: 'high' },
     }));
     expect(response.status).toBe(400);
+    expect(mocks.writes).toHaveLength(0);
+  });
+
+  it('rejects authenticated clients without a canonical tenant before writes', async () => {
+    mocks.actorTenant = null;
+    const a = await createCompany(request('/api/companies', {
+      razon_social: 'NO TENANT SL', forma_juridica: 'sl',
+    }));
+    const b = await associateCompany(request('/api/company/associate', {
+      userConfirmed: true,
+      normalizedPayload: { name: 'NO TENANT SL', source: 'boe_borme', confidence: 'high' },
+    }));
+    expect(a.status).toBe(403);
+    expect(b.status).toBe(403);
     expect(mocks.writes).toHaveLength(0);
   });
 

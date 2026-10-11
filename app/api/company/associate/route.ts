@@ -22,6 +22,7 @@ import {
 }                                    from '@/lib/integrations/supabase';
 import { validateSpanishTaxIdFormat } from '@/lib/integrations/company-data-resolver';
 import { lockedRegistryFields } from '@/lib/companies/registry-locks';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 
 // ── Request schema ────────────────────────────────────────────────────────────
 
@@ -78,6 +79,14 @@ export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+  const actor = await requireActiveActor(request);
+  if (
+    !actor
+    || actor.userId !== user.id
+    || (['client', 'tenant_admin'].includes(actor.role) && !actor.tenantId)
+  ) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  }
 
   let body: unknown;
   try {
@@ -129,6 +138,7 @@ export async function POST(request: NextRequest) {
     : overrides?.razon_social ?? normalizedPayload.name;
 
   const companyRow = {
+    tenant_id       : actor.tenantId,
     razon_social    : razonSocial,
     nombre_comercial: overrides?.nombre_comercial ?? null,
     cif_nif         : normalizedTaxId ?? null,
