@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 
 const payloadSchema = z.object({
   cnae: z.string().trim().max(20).optional().nullable(),
@@ -39,19 +40,36 @@ function completionPercent(payload: Payload): number {
 }
 
 async function authorize(request: NextRequest, companyId: string) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return null;
+  const actor = await requireActiveActor(request);
+  if (!actor) return null;
 
   const admin = getSupabaseAdmin();
-  const [{ data: membership }, { data: profile }] = await Promise.all([
-    admin.from('profile_companies').select('role').eq('profile_id', user.id).eq('company_id', companyId).maybeSingle(),
-    admin.from('profiles').select('role,status').eq('id', user.id).maybeSingle(),
-  ]);
+  const staff = actor.role === 'admin' || actor.role === 'owner';
 
-  const staff = profile?.status !== 'inactive' && ['admin', 'owner'].includes(profile?.role ?? '');
-  if (!membership && !staff) return null;
-  return { admin, userId: user.id, staff };
+  if (!staff) {
+    // A tenant administrator must have a canonical tenant before using service-role data.
+    if (actor.role === 'tenant_admin' && !actor.tenantId) return null;
+
+    const { data: membership, error: membershipError } = await admin
+      .from('profile_companies')
+      .select('role')
+      .eq('profile_id', actor.userId)
+      .eq('company_id', companyId)
+      .maybeSingle();
+    if (membershipError || !membership) return null;
+
+    // A membership alone must not allow a cross-tenant company lookup or update.
+    if (actor.tenantId) {
+      const { data: company, error: companyError } = await admin
+        .from('companies')
+        .select('tenant_id')
+        .eq('id', companyId)
+        .maybeSingle();
+      if (companyError || !company || company.tenant_id !== actor.tenantId) return null;
+    }
+  }
+
+  return { admin, userId: actor.userId, staff };
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
