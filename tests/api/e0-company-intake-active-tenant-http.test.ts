@@ -7,7 +7,10 @@ const mocks = vi.hoisted(() => {
       userId: string; role: string; tenantId: string | null;
     } | null,
     membership: true,
-    companyTenant: 'tenant-A',
+    companyTenant: 'tenant-A' as string | null,
+    legacyOwnerIds: ['user-A'] as string[],
+    legacyOwnerTenants: ['tenant-A'] as (string | null)[],
+    legacyOwnerReadError: false,
     tables: [] as string[],
     upserts: [] as Array<Record<string, unknown>>,
     auditEntries: [] as Array<Record<string, unknown>>,
@@ -25,6 +28,15 @@ vi.mock('@/lib/integrations/supabase', () => ({
       const query = {
         select() { return query; },
         eq() { return query; },
+        then(onFulfilled: (result: { data: unknown; error: unknown }) => unknown, onRejected?: (error: unknown) => unknown) {
+          const result = table === 'profile_companies'
+            ? { data: mocks.state.legacyOwnerIds.map((profile_id) => ({ profile_id })), error: mocks.state.legacyOwnerReadError ? { message: 'owner lookup failed' } : null }
+            : table === 'profiles'
+              ? { data: mocks.state.legacyOwnerIds.map((id, i) => ({ id, tenant_id: mocks.state.legacyOwnerTenants[i] })), error: null }
+              : { data: null, error: null };
+          return Promise.resolve(result).then(onFulfilled, onRejected);
+        },
+        in() { return query; },
         upsert(values: Record<string, unknown>) { mocks.state.upserts.push(values); return query; },
         single: async () => ({ data: { company_id: 'company-A', status: 'draft', payload: { cnae: '6201' }, completion_percent: 11, last_saved_at: '2026-10-11T00:00:00Z' }, error: null }),
         insert: async (values: Record<string, unknown>) => { mocks.state.auditEntries.push(values); return { error: null }; },
@@ -54,6 +66,9 @@ describe('E0 Company 360 intake authorization HTTP boundaries', () => {
     mocks.state.actor = { userId: 'user-A', role: 'client', tenantId: 'tenant-A' };
     mocks.state.membership = true;
     mocks.state.companyTenant = 'tenant-A';
+    mocks.state.legacyOwnerIds = ['user-A'];
+    mocks.state.legacyOwnerTenants = ['tenant-A'];
+    mocks.state.legacyOwnerReadError = false;
     mocks.state.tables.length = 0;
     mocks.state.upserts.length = 0;
     mocks.state.auditEntries.length = 0;
@@ -80,6 +95,29 @@ describe('E0 Company 360 intake authorization HTTP boundaries', () => {
       'profile_companies', 'companies',
       'profile_companies', 'companies',
     ]);
+  });
+
+  it('allows a legacy null-tenant company only if its recorded owners all belong to the actor tenant', async () => {
+    mocks.state.companyTenant = null;
+    expect((await GET(getReq(), ctx)).status).toBe(200);
+    expect((await PATCH(patchReq(), ctx)).status).toBe(200);
+    expect(mocks.state.tables).toContain('profiles');
+  });
+
+  it('rejects legacy company with an owner belonging to a foreign tenant', async () => {
+    mocks.state.companyTenant = null;
+    mocks.state.legacyOwnerIds = ['user-A', 'user-B'];
+    mocks.state.legacyOwnerTenants = ['tenant-A', 'tenant-B'];
+    expect((await GET(getReq(), ctx)).status).toBe(403);
+    expect((await PATCH(patchReq(), ctx)).status).toBe(403);
+    expect(mocks.state.tables).not.toContain('company_intake_profiles');
+  });
+
+  it('fails closed when legacy company ownership cannot be verified', async () => {
+    mocks.state.companyTenant = null;
+    mocks.state.legacyOwnerReadError = true;
+    expect((await GET(getReq(), ctx)).status).toBe(403);
+    expect(mocks.state.tables).not.toContain('company_intake_profiles');
   });
 
   it('denies tenant administrator without tenant context', async () => {
