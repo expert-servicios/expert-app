@@ -33,6 +33,10 @@ describe('Work credentials', () => {
     fixture.rows.profiles = { role: 'tenant_admin', status: 'active', tenant_id: 'other' };
     await expect(requireWorkConnection(request())).rejects.toThrow('forbidden');
   });
+  it.each(['inactive', 'pending', 'suspended'])('revokes Work access for %s actors', async (status) => {
+    fixture.rows.profiles = { id: 'staff', role: 'owner', status, tenant_id: null };
+    await expect(requireWorkConnection(request())).rejects.toThrow('forbidden');
+  });
   it('rejects changed case ownership and revoked credentials', async () => {
     Object.assign(fixture.rows.cases as object, { client_id: 'other' });
     await expect(requireWorkConnection(request())).rejects.toThrow('scope_changed');
