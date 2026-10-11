@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { storeKiaFeedback } from '@/lib/ai/kia/kia-feedback-store';
 
@@ -13,6 +14,11 @@ export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+
+  const actor = await requireActiveActor(request);
+  if (!actor || actor.userId !== user.id) {
+    return NextResponse.json({ error: 'feedback_forbidden' }, { status: 403 });
+  }
 
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
