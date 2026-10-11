@@ -296,6 +296,14 @@ Resultado y siguiente tarea autorizada:
 - **Alcance pendiente de E0-M3-05:** el merge de la mitigación no certifica atestación registral positiva. Sigue pendiente diseñar/validar evidencia server-side no escribible por usuario y auditar el tratamiento de filas históricas ya marcadas, sin limpieza masiva ni modificación productiva. E0-M3-05 continúa EN CURSO y E1 permanece bloqueada.
 - **Siguiente acción concreta:** verificar CI y ambos Vercel tras la segunda actualización de base; si están verdes y el diff no cambia materialmente, fusionar la mitigación con lease sobre el HEAD. Después continuar la atestación server-side/auditoría histórica y E0-M3-06; no abrir E1 ni V3.
 
+### 2026-10-11 — Merge de mitigación registral #712 y continuación E0
+
+- PR [#712](https://github.com/expert-servicios/expert-app/pull/712) **fusionada** con commit `a72f8795b153441b23eed40d5154f71550800b8e` tras CI [#3480](https://github.com/expert-servicios/expert-app/actions/runs/38126757411) success para HEAD `9662db251fcb177abe912bf79911ed1102873b9a` (typecheck, lint, build, tests, KIA eval, integración PostgreSQL y migraciones); Vercel app y ksenia-expert success; sin hilos de revisión pendientes. La suite añadió pruebas de petición con mocks para rechazo de claims registrales de navegador, alta manual, confirmación humana y autenticación.
+- Inspección read-only de Supabase: 7 empresas, 0 registros con `registry_verified_at`, 0 bloqueos registrales, 0 snapshots no vacíos; `company_data_suggestions` vacía. No se corrigieron ni eliminaron filas.
+- **E0-M3-05 permanece EN CURSO**: mitigación de falsa autoridad implementada, pero atestación positiva exclusivamente server-side y QA real/browser/roles requieren evidencia adicional; no certificar datos del resolver solo por nombre de fuente.
+- **E0-M3-06 permanece EN CURSO**: hay rutas admin que rechazan `inactive` en vez de exigir `status === 'active'`; auditar y parchear sistemáticamente sin ampliar funcionalidades.
+- E0 continúa única fase activa; E1–E6 bloqueadas, sin cambios de flags o migraciones de datos.
+
 ### Actas de cierre
 
 | Fase | Fecha | Commit/PR | Tests, QA, seguridad, despliegue | Conclusión |
