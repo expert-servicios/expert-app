@@ -75,8 +75,8 @@ describe('KIA Google eSignature clean lifecycle', () => {
 
   it('keeps all Admin lifecycle routes server-scoped to the requested case', () => {
     expect(listRoute).toContain(".eq('case_id', caseId)");
-    expect(listRoute).toContain("['admin', 'owner'].includes(profile.role)");
-    expect(lifecycleRoute).toContain("['admin', 'owner'].includes(profile.role)");
+    expect(listRoute).toContain("requireActiveActor(request, ['admin', 'owner'])");
+    expect(lifecycleRoute).toContain("requireActiveActor(request, ['admin', 'owner'])");
     expect(workflow).toContain('action.case_id !== input.caseId');
   });
 
