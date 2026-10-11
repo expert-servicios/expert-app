@@ -9,7 +9,8 @@ describe('financial report access boundary', () => {
     const access = source('lib/reports/report-access.ts');
     expect(access).toContain('userId === reportClientId');
     expect(access).toContain('isStaffRole(profile.role)');
-    expect(access).toContain("profile.status !== 'inactive'");
+    expect(access).toContain("profile.status !== 'active'");
+    expect(access).toContain('if (error || !profile');
   });
 
   it('lets internal staff open and export a client report through the same guard', () => {
