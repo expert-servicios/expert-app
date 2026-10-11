@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 import { createTenant } from '@/lib/auth/tenant';
 
 async function assertAdmin(request: NextRequest) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const admin = getSupabaseAdmin();
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-  if (!['admin', 'owner'].includes(profile?.role ?? '')) return null;
-  return user;
+  // Revalidate the active profile before privileged tenant listing or creation.
+  return requireActiveActor(request, ['admin', 'owner']);
 }
 
 export async function GET(request: NextRequest) {
