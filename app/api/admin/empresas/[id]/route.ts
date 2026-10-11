@@ -1,20 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 
 async function requireStaff(request: NextRequest) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return null;
-
-  const admin = getSupabaseAdmin();
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('role,status')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile || profile.status === 'inactive' || !['admin', 'owner'].includes(profile.role)) return null;
-  return { admin, actorId: user.id };
+  const actor = await requireActiveActor(request, ['admin', 'owner']);
+  if (!actor) return null;
+  return { admin: getSupabaseAdmin(), actorId: actor.userId };
 }
 
 export async function GET(

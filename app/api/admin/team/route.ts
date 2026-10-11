@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 import { absoluteAppUrl } from '@/lib/utils/app-url';
 import { isOwner, isStaffRole, ROLES } from '@/lib/auth/roles';
 
@@ -11,18 +12,9 @@ function isTeamRole(role: unknown): role is TeamRole {
 }
 
 async function assertStaff(request: NextRequest) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data: profile } = await getSupabaseAdmin()
-    .from('profiles')
-    .select('role,status')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile || profile.status === 'inactive' || !isStaffRole(profile.role)) return null;
-  return { user, role: profile.role };
+  const actor = await requireActiveActor(request, ['admin', 'owner']);
+  if (!actor) return null;
+  return { user: { id: actor.userId }, role: actor.role };
 }
 
 function redirectForRole(role: TeamRole) {

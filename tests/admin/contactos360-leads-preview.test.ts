@@ -18,7 +18,7 @@ describe('Contactos 360 read-only lead preview',()=>{
     expect(page).toContain("filter === 'leads'");
   });
   it('retains admin-only authorization',()=>{
-    expect(api).toContain('supabase.auth.getUser()');
-    expect(api).toContain("['admin', 'owner'].includes(profile.role)");
+    expect(api).toContain("requireActiveActor(request, ['admin', 'owner'])");
+    expect(api).toContain("requireActiveActor(request, ['admin', 'owner'])");
   });
 });

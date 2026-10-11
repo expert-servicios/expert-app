@@ -14,8 +14,8 @@ describe('Contactos 360 navigation consolidation', () => {
   });
   it('keeps server authorization and distinct person/company data stores', () => {
     const directory = read('app/api/admin/directorio/route.ts');
-    expect(directory).toContain('supabase.auth.getUser()');
-    expect(directory).toContain("['admin', 'owner'].includes(profile.role)");
+    expect(directory).toContain("requireActiveActor(request, ['admin', 'owner'])");
+    expect(directory).toContain("requireActiveActor(request, ['admin', 'owner'])");
     expect(directory).toContain(".from('profiles')");
     expect(directory).toContain(".from('companies')");
     expect(directory).toContain(".from('profile_companies')");

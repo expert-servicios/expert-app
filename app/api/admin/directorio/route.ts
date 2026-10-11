@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 
 type DirectoryItem = {
   id: string;
@@ -26,20 +27,9 @@ type DirectoryItem = {
 };
 
 async function requireStaff(request: NextRequest) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return null;
-
-  const admin = getSupabaseAdmin();
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('role,status')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile || profile.status === 'inactive') return null;
-  if (!['admin', 'owner'].includes(profile.role)) return null;
-  return admin;
+  const actor = await requireActiveActor(request, ['admin', 'owner']);
+  if (!actor) return null;
+  return getSupabaseAdmin();
 }
 
 export async function GET(request: NextRequest) {
