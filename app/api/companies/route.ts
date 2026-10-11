@@ -48,6 +48,10 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getUser(request);
     if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    const actor = await requireActiveActor(request);
+    if (!actor || actor.userId !== user.id) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
 
     const admin = getSupabaseAdmin();
     const { data, error } = await admin
@@ -80,7 +84,11 @@ export async function POST(request: NextRequest) {
     const user = await getUser(request);
     if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     const actor = await requireActiveActor(request);
-    if (!actor || actor.userId !== user.id || (actor.role === 'tenant_admin' && !actor.tenantId)) {
+    if (
+      !actor
+      || actor.userId !== user.id
+      || (['client', 'tenant_admin'].includes(actor.role) && !actor.tenantId)
+    ) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
