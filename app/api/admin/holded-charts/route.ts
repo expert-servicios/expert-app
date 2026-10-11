@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { createServerSupabaseClient } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 
 const HOLDED_BASE = 'https://api.holded.com/api/invoicing/v1';
 
@@ -73,9 +74,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
     }
 
-    const { data: profile } = await getSupabaseAdmin()
-      .from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin' && profile?.role !== 'owner') {
+    const actor = await requireActiveActor(request, ['admin', 'owner']);
+    if (!actor || actor.userId !== user.id) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
 
