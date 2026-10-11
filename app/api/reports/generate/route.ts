@@ -4,9 +4,10 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { generateCompanyReport } from '@/lib/reports/report-generator';
 import { isStaffRole } from '@/lib/auth/roles';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 
 const bodySchema = z.object({
   period     : z.string().trim().regex(/^Q[1-4]\s+\d{4}$/i, 'Periodo inválido')
@@ -21,9 +22,8 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+  const actor = await requireActiveActor(request);
+  if (!actor) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   let body: unknown;
   try { body = await request.json(); } catch { body = {}; }
@@ -34,19 +34,13 @@ export async function POST(request: NextRequest) {
   const { period, lang, clientId: adminClientId } = parsed.data;
   const admin = getSupabaseAdmin();
 
-  if (adminClientId && adminClientId !== user.id) {
-    const { data: actorProfile } = await admin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (!isStaffRole(actorProfile?.role)) {
+  if (adminClientId && adminClientId !== actor.userId) {
+    if (!isStaffRole(actor.role)) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
     }
   }
 
-  const clientId = adminClientId ?? user.id;
+  const clientId = adminClientId ?? actor.userId;
 
   // Resolve company
   const { data: profile } = await admin
@@ -93,7 +87,7 @@ export async function POST(request: NextRequest) {
       integrationId: intRow.id,
       period,
       lang,
-      generatedBy: adminClientId && adminClientId !== user.id ? 'admin' : 'user',
+      generatedBy: adminClientId && adminClientId !== actor.userId ? 'admin' : 'user',
     });
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
