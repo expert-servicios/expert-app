@@ -26,6 +26,7 @@ vi.mock('@/lib/integrations/supabase', () => ({
         select() { return this; },
         eq() { return this; },
         single: async () => ({ data: { status: mocks.status, role: mocks.role }, error: null }),
+        maybeSingle: async () => ({ data: { status: mocks.status, role: mocks.role, tenant_id: null }, error: null }),
       };
     },
   }),

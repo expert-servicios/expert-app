@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { isStaffRole } from '@/lib/auth/roles';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 import { encryptSecret, decryptSecret, keyLast4 } from '@/lib/security/encryption';
 import { createHoldedClientFromRawKey, isEncryptionConfigured } from '@/lib/integrations/holded/holded-client';
 import { createHoldedV2ClientFromRawKey } from '@/lib/integrations/holded/holded-v2-client';
@@ -35,19 +35,9 @@ const bodySchema = z.discriminatedUnion('action', [
 const SAFE_COLUMNS = 'id,client_id,company_id,provider,mode,api_version,api_key_last4,permissions_detected,permissions_enabled,status,sync_mode,last_sync_at,last_success_at,last_error,consent_at,consent_version,created_at,updated_at,channel';
 
 async function requireStaff(request: NextRequest) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return null;
-
-  const admin = getSupabaseAdmin();
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('role,status')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile || profile.status !== 'active' || !isStaffRole(profile.role)) return null;
-  return { admin, actorId: user.id, actorRole: profile.role };
+  const actor = await requireActiveActor(request, ['admin', 'owner']);
+  if (!actor) return null;
+  return { admin: getSupabaseAdmin(), actorId: actor.userId, actorRole: actor.role };
 }
 
 async function getCompany(admin: ReturnType<typeof getSupabaseAdmin>, companyId: string) {

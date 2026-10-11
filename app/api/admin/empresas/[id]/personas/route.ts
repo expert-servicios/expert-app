@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 
 const mutationSchema = z.object({
   profileId: z.string().uuid(),
@@ -8,19 +9,9 @@ const mutationSchema = z.object({
 }).strict();
 
 async function requireStaff(request: NextRequest) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) return null;
-
-  const admin = getSupabaseAdmin();
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('role,status')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile || profile.status !== 'active' || !['admin', 'owner'].includes(profile.role)) return null;
-  return { admin, actorId: user.id };
+  const actor = await requireActiveActor(request, ['admin', 'owner']);
+  if (!actor) return null;
+  return { admin: getSupabaseAdmin(), actorId: actor.userId };
 }
 
 async function assertCompany(admin: ReturnType<typeof getSupabaseAdmin>, companyId: string) {

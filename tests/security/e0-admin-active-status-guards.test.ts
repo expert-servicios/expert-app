@@ -10,10 +10,12 @@ const protectedRoutes = [
 ];
 
 describe('E0-M3-06 privileged route active profile safeguards', () => {
-  it.each(protectedRoutes)('%s rejects all non-active profiles', (path) => {
+  it.each(protectedRoutes)('%s delegates status and role checks to the shared server gate', (path) => {
     const src = readFileSync(resolve(process.cwd(), path), 'utf8');
-    expect(src).toMatch(/profile\??\.status\s*!==\s*'active'/);
+    expect(src).toContain("import { requireActiveActor } from '@/lib/auth/active-actor'");
+    expect(src).toContain("requireActiveActor(request, ['admin', 'owner'])");
     expect(src).not.toContain("profile.status === 'inactive'");
     expect(src).not.toContain("profile?.status === 'inactive'");
+    expect(src).not.toMatch(/from\('profiles'\)[\s\S]{0,300}status/);
   });
 });
