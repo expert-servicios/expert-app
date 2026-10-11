@@ -53,7 +53,7 @@ const POLICY_PROFILES: Record<KiaPolicyProfileName, KiaPolicyProfileDefinition> 
     allowedEffects: ['read'],
     autonomousOnly: true,
     requiredPlanCapabilities: [],
-    requiredScopes: [],
+    requiredScopes: ['kia:authenticated'],
     requiredFeatureFlags: [],
   },
   admin_copilot: {
@@ -65,7 +65,7 @@ const POLICY_PROFILES: Record<KiaPolicyProfileName, KiaPolicyProfileDefinition> 
     allowedEffects: ['read'],
     autonomousOnly: true,
     requiredPlanCapabilities: [],
-    requiredScopes: [],
+    requiredScopes: ['kia:authenticated'],
     requiredFeatureFlags: [],
   },
   telegram_verified: {
@@ -89,7 +89,7 @@ const POLICY_PROFILES: Record<KiaPolicyProfileName, KiaPolicyProfileDefinition> 
     allowedEffects: ['read'],
     autonomousOnly: true,
     requiredPlanCapabilities: [],
-    requiredScopes: [],
+    requiredScopes: ['kia:authenticated'],
     requiredFeatureFlags: [],
   },
   professional_operator: {

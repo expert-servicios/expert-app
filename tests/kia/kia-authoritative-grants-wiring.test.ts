@@ -16,8 +16,8 @@ describe('KIA authoritative grants wiring', () => {
     expect(loader).toContain("value: 'kia.operator'");
 
     expect(loader).toContain(".from('kia_access_grants')");
-    expect(loader).toContain("kind: row.grant_kind");
-    expect(loader).toContain("value: row.grant_value");
+    expect(loader).toContain('kind: row.grant_kind');
+    expect(loader).toContain('value: row.grant_value');
     expect(loader).not.toContain("grant_value: 'kia.operator'");
   });
 
@@ -36,10 +36,15 @@ describe('KIA authoritative grants wiring', () => {
     expect(migration).toContain('revoke all on table public.kia_access_grants from anon, authenticated');
   });
 
-  it('loads authoritative grants automatically unless tests explicitly inject grants', () => {
+  it('loads authoritative grants only after the exact-active guard unless tests inject grants', () => {
     const resolver = source('lib/ai/kia/kia-actor-capability-resolver.ts');
-    expect(resolver).toContain('input.explicitGrants ?? (profile');
-    expect(resolver).toContain('await loadKiaAuthoritativeGrants({');
+    const activeGuardIndex = resolver.indexOf("if (profile?.status !== 'active')");
+    const grantLoadIndex = resolver.indexOf(
+      'const authoritativeGrants = input.explicitGrants ?? await loadKiaAuthoritativeGrants({',
+    );
+
+    expect(activeGuardIndex).toBeGreaterThanOrEqual(0);
+    expect(grantLoadIndex).toBeGreaterThan(activeGuardIndex);
     expect(resolver).toContain('explicitGrants: authoritativeGrants');
   });
 });

@@ -121,7 +121,7 @@ export async function buildKiaContext(input: KiaContextInput): Promise<KiaContex
   if (actorProfile.error) throw actorProfile.error;
   const actorRole = actorProfile.data?.role ?? null;
   const actorTenantId = actorProfile.data?.tenant_id ?? null;
-  const actorIsStaff = actorProfile.data?.status !== 'inactive' && isStaffRole(actorRole);
+  const actorIsStaff = actorProfile.data?.status === 'active' && isStaffRole(actorRole);
   let resolvedCompanyId: string | null;
   if (input.caseId && clientId) {
     const { data: scopedCase, error } = await admin.from('cases').select('company_id')
@@ -303,7 +303,7 @@ async function resolveAuthorizedCompanyId(
       admin.from('profiles').select('role,status').eq('id', clientId).maybeSingle(),
       admin.from('companies').select('id').eq('id', requestedCompanyId).maybeSingle(),
     ]);
-    if (profile && profile.status !== 'inactive' && isStaffRole(profile.role) && company?.id) {
+    if (profile && profile.status === 'active' && isStaffRole(profile.role) && company?.id) {
       return requestedCompanyId;
     }
     return null;

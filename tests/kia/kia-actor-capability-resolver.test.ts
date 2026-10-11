@@ -93,6 +93,25 @@ describe('KIA actor capability resolver', () => {
     expect(resolved.reason).toBe('missing_plan_capability');
   });
 
+  it.each(['inactive', 'pending', 'suspended', null])(
+    'denies capabilities, coverage and membership to profile status %s',
+    (status) => {
+      const snapshot = deriveKiaActorCapabilities({
+        userId: 'user-1',
+        clientId: 'user-1',
+        profile: { role: ROLES.CLIENT, status, tenant_id: 'tenant-1' },
+        companyId: 'company-1',
+        membership: { company_id: 'company-1', role: 'owner' },
+        coverage: COVERAGE,
+      });
+      expect(snapshot.active).toBe(false);
+      expect(snapshot.companyMember).toBe(false);
+      expect(snapshot.coverage).toBeNull();
+      expect(snapshot.planCapabilities).toEqual([]);
+      expect(snapshot.scopes).toEqual([]);
+    },
+  );
+
   it('maps only explicit environment flags', () => {
     expect(getEnabledKiaPolicyFeatureFlags({
       KIA_OPERATOR_MODE_ENABLED: 'true',
