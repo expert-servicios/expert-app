@@ -114,7 +114,7 @@ Este documento **prevalece en orden, límites, bloqueos y estado de ejecución**
 - [ ] `E0-M3-02` Revisión crítica independiente de coherencia, riesgos, dependencias, privacidad, autorización y definición de pruebas.
 - [x] `E0-M3-05` Cerrar P1 de procedencia registral no atestada en servidor en altas de empresa (rutas `/api/companies` y `/api/company/associate`), mediante patch mínimo, tests negativos y validación sin modificar históricos. Evidencia: PR #712 / merge `a72f8795b153441b23eed40d5154f71550800b8e`, CI #3480, ambas previews Vercel y auditoría agregada de producción del 11/10/2026 (7 empresas; 0 fuentes, 0 verificaciones, 0 snapshots y 0 bloqueos registrales).
 - [ ] `E0-M3-06` Cerrar P1 de rutas mutadoras con `getSupabaseAdmin()` sin `profiles.status` activo ni scope por objeto; comprobar por rol/tenant/empresa/expediente, HTTP y RLS en entorno de prueba.
-  - **Avance parcial 11/10/2026:** PR #715 cerró cuatro rutas administrativas y 11 handlers; PR #716 cerró cuatro mutaciones de Operations 360. Ambos lotes reutilizan el guard compartido `requireActiveActor` y pasaron CI/Vercel y pruebas negativas. La tarea permanece abierta hasta completar el inventario restante y la matriz de scope por objeto.
+  - **Avance parcial 11/10/2026:** PR #715 cerró cuatro rutas administrativas y 11 handlers; PR #716, cuatro mutaciones de Operations 360; PR #717, Team/Directorio/Company 360; PR #718, subida documental aislada por `cases.tenant_id`. Los lotes reutilizan `requireActiveActor` y pasaron CI/Vercel y pruebas negativas. La tarea permanece abierta hasta completar el inventario restante y la matriz de scope por objeto.
 - [ ] `E0-M3-07` Evaluar P2 del lookup CIF limitado y divulgación de identificadores ajenos; corregir sin duplicar entidad ni adelantar módulos.
 - [ ] `E0-M3-03` Verificar CI, lint Markdown/enlaces/estructura (si disponible), revisión de PR y previews del último SHA.
 - [ ] `E0-M3-04` Acta E0: lista de artefactos, evidencia de QA, cero bloqueos P0/P1, commit de cierre y cambio explícito del checkpoint a E1.
@@ -326,6 +326,15 @@ Resultado y siguiente tarea autorizada:
 - Previews exactas verdes: [app](https://vercel.com/expertapp/app/9Jsk4R1wfyhGznvkAzSbNw6Db4gF) y [ksenia-expert](https://vercel.com/expertapp/ksenia-expert/7a4uqLVKYKp2FAckK3RBHz8RJFcY). Sin hilos o reviews pendientes.
 - La primera ejecución de CI detectó una función local de normalización absorbida por la refactorización; se restauró en `60cda892...` y se repitieron todos los gates. No se ejecutaron mensajes Telegram, migraciones, flags, credenciales ni escrituras productivas.
 - **Estado:** avance parcial; `E0-M3-06` permanece EN CURSO. Siguiente acción concreta: continuar el inventario de rutas privilegiadas/mutadoras, priorizando documentos, firmas, propuestas contables y facturación, y completar scope por rol/tenant/empresa/expediente con pruebas HTTP/RLS. E1–E6 y V3 siguen bloqueadas.
+
+### 2026-10-11 — Tercer y cuarto lote de rutas privilegiadas E0-M3-06
+
+- [PR #717](https://github.com/expert-servicios/expert-app/pull/717) **fusionada** con commit `1cef1be4455b99878993f5696952dca2e166e9e7` tras validar HEAD `87eb2e220939b71889edb540f17c1d3f5011470e`: guard compartido de actor activo para Team, Directorio y Company 360. CI [#3499](https://github.com/expert-servicios/expert-app/actions/runs/38129629840) success (413 archivos/2.261 tests) y previews [app](https://vercel.com/expertapp/app/52ojRZWXbpCXFnWv7NeCuZ2Y3rjF) / [ksenia-expert](https://vercel.com/expertapp/ksenia-expert/7qeN1s13yq9jpyQTodYuqGKeWzNp) Ready; sin hilos pendientes.
+- [PR #718](https://github.com/expert-servicios/expert-app/pull/718) **fusionada** con commit `99c6d36f9a6a4687564395c595104afb27651ee3` mediante squash y lease sobre HEAD `26f244247986c162d2737bb7f35a419836f6e3db`, 0 commits detrás de `main`.
+- #718 exige actor activo `tenant_admin` y valida `cases.tenant_id` antes de leer el perfil cliente, el formulario multipart o Storage; conserva la segunda comprobación del tenant del cliente. Casos ajenos devuelven 404 para no revelar existencia.
+- Evidencia #718: CI [#3501](https://github.com/expert-servicios/expert-app/actions/runs/38129972663) success (typecheck, lint, build, MCP, baseline, 414 archivos/2.264 tests, KIA evals, integración PostgreSQL/RLS y contrato de reparación de migraciones); previews [app](https://vercel.com/expertapp/app/6Tbn8J3TNaQtXjrLCwR9QXiDidzw) y [ksenia-expert](https://vercel.com/expertapp/ksenia-expert/He9GE9raWgoeRqN1x57PcVCMymCJ) Ready.
+- No se ejecutaron migraciones, cargas reales a Storage, despliegues manuales, flags, credenciales ni escrituras productivas.
+- **Estado:** `E0-M3-06` permanece EN CURSO. Siguiente acción concreta: continuar el inventario de rutas privilegiadas/mutadoras, priorizando documentos, firmas, propuestas contables y facturación, y verificar scope por rol/tenant/empresa/expediente con pruebas HTTP/RLS. E1–E6 y V3 siguen bloqueadas.
 
 ### Actas de cierre
 
