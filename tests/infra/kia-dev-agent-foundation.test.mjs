@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loadPolicy, selectTask, assertActivation, composePrompt, run } from '../../scripts/kia-dev-agent.mjs';
+import { loadPolicy, selectTask, assertActivation, composePrompt, run, validateCandidatePatch } from '../../scripts/kia-dev-agent.mjs';
 
 describe('KIA Dev Agent disabled foundation', () => {
   const policy = loadPolicy();
@@ -20,6 +20,26 @@ describe('KIA Dev Agent disabled foundation', () => {
     expect(() => assertActivation(policy, {KIA_DEV_AGENT_ENABLED:'true',GITHUB_REF:'refs/heads/main'})).toThrow();
     expect(() => assertActivation({...policy,executionEnabled:true},{KIA_DEV_AGENT_ENABLED:'false',GITHUB_REF:'refs/heads/main'})).toThrow();
     expect(() => assertActivation({...policy,executionEnabled:true},{KIA_DEV_AGENT_ENABLED:'true',GITHUB_REF:'refs/heads/feature'})).toThrow();
+  });
+  it('rejects unapproved or mismatched patch paths, duplicates and unsafe modes', () => {
+    const task = selectTask(policy,'E0-M3-06-DOCINDEX');
+    const a = task.allowedPaths[0];
+    const valid = (file) => [
+      'diff --git a/' + file + ' b/' + file,
+      'index 1234567..abcdef0 100644',
+      '--- a/' + file,
+      '+++ b/' + file,
+      '@@ -1 +1 @@',
+      '-old',
+      '+new',
+      '',
+    ].join('\n');
+    expect(validateCandidatePatch(task, policy, valid(a)).paths).toEqual([a]);
+    expect(() => validateCandidatePatch(task, policy, valid('app/api/secrets/route.ts'))).toThrow();
+    expect(() => validateCandidatePatch(task, policy, valid(a).replace('+++ b/' + a,'+++ b/app/api/secrets/route.ts'))).toThrow();
+    expect(() => validateCandidatePatch(task, policy, valid(a) + valid(a))).toThrow();
+    expect(() => validateCandidatePatch(task, policy, valid(a).replace('index 1234567..abcdef0 100644', 'new file mode 120000'))).toThrow();
+    expect(() => validateCandidatePatch(task, policy, valid(a) + String.fromCharCode(0))).toThrow();
   });
   it('provides audit-only validation without invoking an LLM', () => {
     expect(run('validate','E0-M3-06-DOCINDEX')).toMatchObject({enabled:false,eligible:true});
