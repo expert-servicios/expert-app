@@ -11,6 +11,7 @@ describe('KIA Google eSignature clean lifecycle', () => {
   const executor = source('lib/ai/kia/kia-tool-executor.ts');
   const lifecycleRoute = source('app/api/admin/cases/[id]/signature-actions/[actionId]/route.ts');
   const listRoute = source('app/api/admin/cases/[id]/signature-actions/route.ts');
+  const scope = source('app/api/admin/cases/[id]/signature-actions/scope.ts');
   const panel = source('components/admin/CaseSignaturePanel.tsx');
   const casePage = source('app/(protected)/admin/expedientes/[id]/page.tsx');
 
@@ -74,9 +75,15 @@ describe('KIA Google eSignature clean lifecycle', () => {
   });
 
   it('keeps all Admin lifecycle routes server-scoped to the requested case', () => {
-    expect(listRoute).toContain(".eq('case_id', caseId)");
+    expect(listRoute).toContain(".eq('case_id', scopedCase.id)");
+    expect(listRoute).toContain('getScopedAdminCase(admin, caseId, actor.tenantId)');
+    expect(lifecycleRoute).toContain('getScopedAdminCase(admin, caseId, actor.tenantId)');
+    expect(lifecycleRoute).toContain(".eq('id', actionId)");
+    expect(lifecycleRoute).toContain(".eq('case_id', scopedCase.id)");
     expect(listRoute).toContain("requireActiveActor(request, ['admin', 'owner'])");
     expect(lifecycleRoute).toContain("requireActiveActor(request, ['admin', 'owner'])");
+    expect(scope).toContain(".eq('tenant_id', actorTenantId)");
+    expect(scope).toContain(".from('profile_companies')");
     expect(workflow).toContain('action.case_id !== input.caseId');
   });
 
