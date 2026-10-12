@@ -35,6 +35,44 @@ This foundation is **not yet integrated into KIA chat, Telegram or an autonomous
 - A disabled run can be validated locally with `node scripts/kia-dev-agent.mjs validate E0-M3-06-DOCINDEX`.
 - The checker fails closed after the canonical checkpoint advances beyond this task.
 
+## KIA supervisor + Codex / Claude / Gemini — approved agent architecture (2026-10-12)
+
+**Canonical decision:** KIA is the **single orchestrator and supervisor** of the development-agent lifecycle. The implementation executor is **Codex**. **Claude** and **Gemini** are *separate technical auditors* (model-independent from Codex, not human-independent). This arrangement refines the already-approved **safe Dev Agent scope exception**, not a second KIA, a new E0–E6 phase, an active autonomous system, or consent to a production release. See [Plan Maestro E0–E6](expert-kia-ecosystem-master-plan-2026-10-10.md) (adenda proposed in [PR #744](https://github.com/expert-servicios/expert-app/pull/744)) and [durable queue design](kia-dev-agent-durable-queue-design-2026-10-12.md). Until the draft PRs are reviewed/merged, documentation in either PR is **proposed, not live**.
+
+### Responsibility and authority matrix
+
+| Participant | Allowed work (only after future activation gates) | Explicitly prohibited |
+| --- | --- | --- |
+| **KIA supervisor** | Read canonical plan/checkpoint, select approved scoped task, coordinate the stage transitions, collect reports, request an authorized retry, pause on uncertainty, present status/blockers to Admin | Invent tasks, create approval identities, call unrestricted GitHub dispatch, bypass independent review, merge or deploy |
+| **Codex worker** | Generate a constrained candidate patch in an isolated, credential-minimal sandbox within the manifest file allowlist | Self-certify, directly push to `main`, merge, run migrations, change financial/customer data, read operational secrets |
+| **Claude reviewer** | Technical read-only review of authorization, secrets, threat model, access scopes, supply-chain and implementation correctness | Run changed PR code with secrets, modify patches, grant approval on behalf of a person |
+| **Gemini reviewer** | Independent model-based read-only review of requirements, edge cases, regression/test coverage, ES/RU and cross-module behavior | Rewrite submitted evidence, vote as a human GitHub reviewer, override failed deterministic tests |
+| **CI + Vercel** | Execute deterministic tests in isolated context, check both preview deployments at the exact HEAD SHA | Substitute historical success for current SHA, automatically release |
+| **Human governance** | Direction's functional authorization and separate real-person review where policy requires; only an explicitly authorized maintainer can later decide to merge | Use a second GitHub account owned by the same person or either model as an “independent human” |
+
+**Operating sequence, target architecture (not yet functioning):** KIA reads the active E0 task + approved manifest -> authenticated Owner/Admin creates a draft request -> policy/approval gate locks digest, HEAD, scope, budget and checkpoint -> a restricted broker dispatches the isolated Codex worker once -> an independent patch inspector denies forbidden changes -> CI runs on the candidate -> Claude and Gemini review the same immutable patch/head and produce structured reports -> KIA consolidates blockers, routes narrowly scoped fixes back to Codex only after authorization and within retry/quota limits -> all gates verified -> restricted broker may create a **draft** GitHub PR in a later approved increment -> KIA notifies Admin via the dedicated DevOps Telegram channel -> human governance reviews; **no autonomous merge, migration, activation or production deployment**. A draft-only review request is not dispatch authorization.
+
+### Multi-model review contract / binding
+
+- The proposed reviewer jobs are **read-only**. Run only on trusted repository workflow code in an isolated runner; no checkout or execution of untrusted PR HEAD alongside API credentials. Retrieve a minimum redacted diff through a read-only API; a PR's text/diff is **untrusted data**, never tool instructions.
+- Use **Vercel AI Gateway** with a dedicated **GitHub Actions** credential `AI_GATEWAY_API_KEY`, stored in a restricted secret/environment, expiring and spend-capped. Do not copy production provider keys into CI. App-side `VERCEL_OIDC_TOKEN` does not automatically authenticate GitHub Actions. `KIA_PR_REVIEW_VERCEL_TOKEN` checks deployments only, not model inference.
+- Pin reviewer **provider/model IDs from the live Gateway catalog** when implementing; configure Claude and Gemini independently (no substitution of one failed reviewer by the same model/provider). Run **two minimal approved smoke calls** and inspect Gateway Logs, provider/model, cost and permissions before trusting their reports.
+- Reports must include `task_id`, `request_digest`, `candidate_patch_sha256`, `base_sha`, `head_sha` (when a PR exists), `provider`, `model_id`, `model_version` if available, `reviewed_paths`, `risk_level`, `findings` (file/line/evidence/severity), `verdict`, `timestamp`, `cost` and `tool_run_id`. Verdicts: `PASS`, `CHANGES_REQUIRED`, `INCONCLUSIVE` (never auto-promote `INCONCLUSIVE`).
+- If candidate content/digest or HEAD changes, **both AI reports and relevant CI/preview evidence become stale**; invalidate verdicts and rerun. A valid PASS from both auditors is an **additional technical gate**, never proof of independent human approval.
+- Threat tests must cover malicious instructions inside code comments/diffs (prompt injection), hidden secrets/PII, very large diffs, wrong SHA, impersonation, fork PRs, non-private chat, revoked/stale approvals, duplicate events, expense limit, missing/invalid API keys, provider 401/402/429/timeouts and unexpected model output.
+- **Fail closed:** any P0/P1, unverified reviewer report, missing CI, unavailable Gateway/provider, quota breach, stale checkpoint or pending human review must block promotion. Never publish raw model input, full diffs containing secrets, sensitive user data or credentials in notifications/logs.
+
+### Delivery increments and validation (none activated by this document)
+
+1. Finish existing #742 sandbox/manifest/security tests and #743 Telegram test defects before introducing an additional privileged executor.
+2. Build two **offline/mock review fixtures** and typed report validation; compare both reports to the immutable patch and exact HEAD without adding credentials.
+3. Verify dedicated CI Gateway credentials exist (names only), model catalog, budgets and approved test data; conduct individual Claude/Gemini live smokes **only after explicit spend/data approval**.
+4. Add a separately reviewed **manual/opt-in** read-only AI review workflow, with protected environment and all negative security tests. Start with #742 and #743; record model responses and exact SHAs.
+5. Integrate the two reviewer results into KIA Admin's **read-only status**, then into the future durable queue/approval broker **only after** server-side actor checks, RLS, durable idempotency and callback signature verification. KIA chat or Telegram must never directly authorize execution.
+6. Consider restricted draft-PR creation, bounded remediation retries and optional notifications under separate gates. Re-review any changed patch; human approval remains necessary.
+
+**Live state at decision time:** #742/#743/#744 are draft PRs. Existing Dev Agent tools only offer read-only previews; task execution remains `executionEnabled: false`, initial task suspended. No Gemini/Claude auditing job, Gateway key smoke, automatic KIA orchestration, persistent queue, Telegram delivery or PR broker has been verified live.
+
 ## Next engineering increments (separate approval gates)
 
 1. Validate the foundation and pin external action versions.
