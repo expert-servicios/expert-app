@@ -1,9 +1,7 @@
 name: KIA Codex One-Time Smoke (manual authorization only)
 
 on:
-  pull_request:
-    types: [labeled]
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,7 +13,7 @@ concurrency:
 jobs:
   codex:
     name: Run one isolated read-only Codex request
-    if: ${{ github.event.action == 'labeled' && github.event.label.name == 'kia-codex-smoke' && github.event.pull_request.number == 742 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feat/kia-dev-agent-sandbox-foundation-20261012' && github.event.pull_request.head.sha == vars.KIA_CODEX_SMOKE_APPROVED_SHA && vars.KIA_CODEX_SMOKE_ENABLED == 'true' }}
+    if: ${{ github.ref == 'refs/heads/main' && github.sha == vars.KIA_CODEX_SMOKE_APPROVED_SHA && vars.KIA_CODEX_SMOKE_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 8
     environment: kia-codex-smoke
