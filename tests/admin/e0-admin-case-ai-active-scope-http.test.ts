@@ -12,14 +12,14 @@ const mocks = vi.hoisted(() => ({
   actor: {
     userId: 'staff-A',
     role: 'admin',
-    tenantId: TENANT_ID,
+    tenantId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   } as { userId: string; role: 'admin' | 'owner'; tenantId: string | null } | null,
   caseRow: {
-    id: CASE_ID,
+    id: '33333333-3333-4333-8333-333333333333',
     service: 'Certificado digital',
-    client_id: CLIENT_ID,
-    company_id: COMPANY_ID,
-    tenant_id: TENANT_ID,
+    client_id: '11111111-1111-4111-8111-111111111111',
+    company_id: '22222222-2222-4222-8222-222222222222',
+    tenant_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   } as {
     id: string;
     service: string;
