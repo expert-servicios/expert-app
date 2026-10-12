@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { requireActiveActor } from '@/lib/auth/active-actor';
-import { recordKiaSignatureLifecycle } from '@/lib/ai/kia/kia-signature-workflow';
+import {
+  KIA_SIGNATURE_ACTION_TYPE,
+  KIA_SIGNATURE_CAPABILITY,
+  recordKiaSignatureLifecycle,
+} from '@/lib/ai/kia/kia-signature-workflow';
+import { getScopedAdminCase } from '../scope';
 
 const signerSchema = z.object({
   id: z.string().max(200).optional().nullable(),
@@ -17,38 +22,57 @@ const bodySchema = z.object({
   finalDocumentId: z.string().uuid().optional().nullable(),
 }).strict();
 
-async function requireStaff(request: NextRequest) {
-  const actor = await requireActiveActor(request, ['admin', 'owner']);
-  if (!actor) return null;
-  return { admin: getSupabaseAdmin(), actorId: actor.userId };
-}
-
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; actionId: string }> },
 ) {
-  const ctx = await requireStaff(request);
-  if (!ctx) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-
-  const { id: caseId, actionId } = await params;
-  const parsed = bodySchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) {
-    return NextResponse.json({ error: 'Payload inválido', details: parsed.error.flatten() }, { status: 400 });
-  }
-
-  const { data: scopedCase, error: caseError } = await ctx.admin
-    .from('cases')
-    .select('id')
-    .eq('id', caseId)
-    .maybeSingle();
-  if (caseError) return NextResponse.json({ error: caseError.message }, { status: 500 });
-  if (!scopedCase) return NextResponse.json({ error: 'Expediente no encontrado' }, { status: 404 });
-
   try {
-    const result = await recordKiaSignatureLifecycle(ctx.admin, {
+    const actor = await requireActiveActor(request, ['admin', 'owner']);
+    if (!actor) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+
+    const { id: caseId, actionId } = await params;
+    const admin = getSupabaseAdmin();
+    const scopedCase = await getScopedAdminCase(admin, caseId, actor.tenantId);
+    if (!scopedCase) {
+      return NextResponse.json({ error: 'Expediente no encontrado' }, { status: 404 });
+    }
+
+    let actionQuery = admin
+      .from('administrative_actions')
+      .select('id')
+      .eq('id', actionId)
+      .eq('case_id', scopedCase.id)
+      .eq('capability', KIA_SIGNATURE_CAPABILITY)
+      .eq('action_type', KIA_SIGNATURE_ACTION_TYPE);
+
+    actionQuery = scopedCase.tenant_id
+      ? actionQuery.eq('tenant_id', scopedCase.tenant_id)
+      : actionQuery.is('tenant_id', null);
+    actionQuery = scopedCase.company_id
+      ? actionQuery.eq('company_id', scopedCase.company_id)
+      : actionQuery.is('company_id', null);
+
+    const { data: scopedAction, error: actionError } = await actionQuery.maybeSingle();
+    if (actionError) throw actionError;
+    if (!scopedAction) {
+      return NextResponse.json(
+        { error: 'Solicitud de firma no encontrada en el expediente.' },
+        { status: 404 },
+      );
+    }
+
+    const parsed = bodySchema.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Payload inválido', details: parsed.error.flatten() },
+        { status: 400 },
+      );
+    }
+
+    const result = await recordKiaSignatureLifecycle(admin, {
       actionId,
-      caseId,
-      actorId: ctx.actorId,
+      caseId: scopedCase.id,
+      actorId: actor.userId,
       lifecycle: parsed.data.lifecycle,
       signers: parsed.data.signers,
       finalDocumentId: parsed.data.finalDocumentId,
