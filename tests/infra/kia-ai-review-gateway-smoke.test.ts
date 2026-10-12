@@ -32,6 +32,8 @@ const httpMock = [
   '        assert body["model"] in (claude, gemini)',
   '        if scenario == "wrong_response": return mocked_http_response({"choices": [{"message": {"content": "WRONG"}}], "model": body["model"]})',
   '        if scenario == "wrong_model": return mocked_http_response({"choices": [{"message": {"content": "KIA_REVIEW_SMOKE_OK"}}], "model": "other/model"})',
+  '        if scenario == "missing_response_model": return mocked_http_response({"choices": [{"message": {"content": "KIA_REVIEW_SMOKE_OK"}}]})',
+  '        if scenario == "prefix_model": return mocked_http_response({"choices": [{"message": {"content": "KIA_REVIEW_SMOKE_OK"}}], "model": body["model"] + "-other"})',
   '        return mocked_http_response({"choices": [{"message": {"content": "KIA_REVIEW_SMOKE_OK"}}], "model": body["model"]})',
   '    raise AssertionError("Unexpected URL")',
   'urllib.request.urlopen = urlopen',
@@ -95,7 +97,7 @@ describe('KIA AI Gateway isolated provider checks', () => {
   });
 
   it('fails closed on quota, invalid response and model substitution', () => {
-    for (const scenario of ['gateway_failure', 'wrong_response', 'wrong_model']) {
+    for (const scenario of ['gateway_failure', 'wrong_response', 'wrong_model', 'missing_response_model', 'prefix_model']) {
       const result = run(1, scenario);
       expect(result.status, result.output).not.toBe(0);
       expect(result.output).not.toContain('TWO_PROVIDER_SMOKE_OK');
