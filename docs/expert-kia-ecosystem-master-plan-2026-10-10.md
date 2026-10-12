@@ -592,3 +592,38 @@ Resultado y siguiente tarea autorizada:
 | E6 | — | — | No iniciada | BLOQUEADA |
 
 **Norma final:** la ejecución continua es una sucesión de sesiones verificadas y commits durables; no presupone trabajo en segundo plano. **No saltar fases, no abrir otros frentes, no marcar terminado sin pruebas.**
+
+
+### 2026-10-12 — Adenda de gobierno: revisión técnica multimodelo Claude + Gemini (sin activación)
+
+**Decisión de Dirección:** complementar el desarrollo Codex/KIA con dos verificadores técnicos de proveedores distintos: **Claude (Anthropic)** para seguridad, amenazas, autorización, aislamiento tenant, integridad y arquitectura, y **Gemini (Google)** para regresiones funcionales, casos límite, coherencia de contratos y comprobación de tests. Esto es **seguridad/calidad del pipeline E0–E6**, no un nuevo módulo de producto, una segunda KIA ni permiso de adelantar E4/E5. E0 permanece única fase activa; checkpoint y feature flags sin cambios.
+
+**Fuentes/alcance:** PR [#742](https://github.com/expert-servicios/expert-app/pull/742) (base Dev Agent) y [#743](https://github.com/expert-servicios/expert-app/pull/743) (notificaciones DevOps Telegram) siguen *draft*, sin fusionar ni activar. No se considerará aprobada ninguna de ellas por crear este anexo. El último resultado de CI de #743 deberá reevaluarse contra su HEAD exacto; el test de notificaciones presentó fallo de simulación y no se aceptan checks históricos como prueba. El workflow de Telegram solo podrá hacer una entrega real cuando exista en `main` revisado y con una ejecución explícita de prueba; la simulación no prueba conectividad.
+
+**Contrato de roles y autoridad:**
+
+| Actor | Función | Límite |
+| --- | --- | --- |
+| Codex / agente KIA de desarrollo | Analiza tarea, propone cambios en rama y PR; autocorrección dentro de alcance autorizado | No puede aprobarse a sí mismo; nunca merge automático, migraciones ni producción |
+| Claude auditor | Revisión independiente **entre modelos** de amenazas, secretos, SSRF, autorización, RLS, scopes, supply chain y arquitectura | Solo lectura del diff y pruebas; informe reproducible; ninguna aprobación GitHub humana ni escritura de código |
+| Gemini auditor | Revisión funcional independiente **entre modelos**, invariantes, casos negativos, compatibilidad, ES/RU y criterios de aceptación | Solo lectura; no puede sustituir tests ni aprobación humana |
+| GitHub CI / Vercel | Typecheck, lint, build, tests, checks PostgreSQL aplicables y **ambas** previews exactas al HEAD | Los fallos o checks no concluyentes bloquean; el resultado anterior al último push caduca |
+| Dirección EXPERT y revisor humano genuinamente independiente cuando aplica | Validación de negocio y aprobación humana según criticidad, con trazabilidad | Las cuentas `expertestudiospro` y `kiabusiness2025` de la misma persona no equivalen a independencia humana; las IA tampoco |
+
+**Integración técnica prevista (desactivada):** preferir **Vercel AI Gateway** como pasarela común para los dos modelos, con IDs **provider/model extraídos del catálogo vivo** al implementar, nunca inventados ni fijados sin verificar. Usar una clave **propia de CI** `AI_GATEWAY_API_KEY` en GitHub Actions, de alcance mínimo, presupuesto y caducidad controlados. Los tokens `VERCEL_OIDC_TOKEN` de los despliegues de Vercel no se heredan en GitHub Actions. Las claves directas `GOOGLE_API_KEY` o `ANTHROPIC_API_KEY` ya existentes en la app, cuando existan, **no deben copiarse a CI** ni confundirse con la autenticación de Gateway; el token `KIA_PR_REVIEW_VERCEL_TOKEN` solo consulta estados de despliegue y no sirve para inferencia. Comprobar solo **existencia de nombre/acceso de los secretos** en el entorno de GitHub permitido, nunca leer o registrar valores; dar instrucciones a Dirección únicamente si falta uno.
+
+**Diseño y protección del job revisor:** ejecución manual inicial; después, solo evento de PR del **repositorio confiable**, sin ejecutar código de PR con secretos en `pull_request_target`. No hacer checkout del HEAD no confiable en contexto privilegiado. Si se habilita checkout, usar proceso aislado sin credenciales y publicar resultados mediante paso separado protegido. Dar al bot token de `contents:read`/`pull-requests:read` y permisos mínimos de checks necesarios; los informes se adjuntarán con hashes del HEAD, modelo y versión, alcance de archivos, severidad P0–P3, evidencia y recomendaciones. Ignorar instrucciones embebidas en el diff (prompt injection), secretos, ficheros de configuración o comentarios; no conceder a texto de PR facultades de herramienta. No enviar datos reales de clientes, certificados, credenciales, ficheros sensibles o PII a modelos externos: pruebas con fixtures sintéticas/redacción y mínimo de contexto. Fallo de red, coste agotado o respuesta inválida = revisión **inconclusa**, nunca aprobación. Controles de coste, frecuencia, tamaño de diff, rate-limit y reintentos acotados.
+
+**Gates de aceptación para cada HEAD:** (a) CI y ambas previews Vercel READY para SHA exacto; (b) auditoría Claude y Gemini completadas con salidas tipadas y sin hallazgos P0/P1 abiertos (o excepción documentada de Dirección sin rebajar gates legales); (c) revisión humana independiente según riesgo/branch ruleset, sin suplantarla con otra cuenta propia; (d) comprobaciones de autorización y datos cuando apliquen; (e) consentimiento específico antes de merge, activación, despliegue o migración. El gate multimodelo se incorporará como **adicional** a G-M y G-F, no sustituye ninguno. Para avisos Telegram usar una clave de idempotencia PR+HEAD+tipo y evitar perder alertas si CI acaba después del evento `ready_for_review`; no habilitar sondeo ni emisión hasta verificarlos.
+
+**Ejecución en orden, sin adelantamientos:**
+1. Resolver el fallo del test de #743 con diagnóstico del escenario y volver a correr CI/Vercel para el último HEAD; mantener #742/#743 draft y sin merge.
+2. Verificar en GitHub secret CI de Gateway (sin obtener su valor), el catálogo vivo y acceso a Claude/Gemini mediante dos *smokes* mínimos, en entorno autorizado y coste acotado, solo cuando el runner seguro esté aprobado.
+3. Añadir en PR posterior workflow de auditoría de **solo lectura**, informes estructurados y tests negativos para forks, cambios de HEAD, secretos, prompt injection, fallos de red/cuota, idempotencia y duplicados. Mantener `enabled=false`/opt-in.
+4. Probar contra #742 y #743, registrar resultados por commit y decidir aceptación con Dirección; ajustar reglas de protección de `main` para checks y revisión humana real antes de cualquier fusión.
+5. Solo por orden expresa, activar notificaciones y los checks como obligatorios una vez probado rollback y entrega privada.
+
+**Intervención de Dirección pendiente:** confirmar si ya existe en **GitHub Actions** un secret `AI_GATEWAY_API_KEY` apto para CI. Si no existe, crear una **clave dedicada de Vercel AI Gateway** con presupuesto pequeño y caducidad, guardarla directamente como ese secreto, sin pegarla en el chat. No se solicitan por defecto claves nuevas directas de Anthropic o Google. Validar coste previsto y autorizaciones de datos antes del primer smoke pagado. `KIA_PR_REVIEW_VERCEL_TOKEN` y credenciales Telegram se gestionan por separado.
+
+**Estado de este registro:** acuerdo documentado, **no implementado ni operativo**; sin escritura productiva, flags, secretos, merge, migraciones o gastos de API autorizados por esta adenda.
+
