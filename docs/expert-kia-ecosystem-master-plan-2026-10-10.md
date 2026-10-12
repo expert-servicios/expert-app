@@ -4,7 +4,7 @@
 **Estado global:** EN EJECUCIÓN · **ÚNICA FASE ACTIVA: E0** · **Última fase cerrada:** ninguna · **Transición a E1:** BLOQUEADA · **Congelación de alcance:** ACTIVA.  
 **Naturaleza de este documento:** fuente canónica de orden de trabajo, definición de entregables, criterios de cierre y bitácora. No certifica funcionalidades en producción.
 
-<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-06-admin-search-exact-active-audit closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
+<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-06-admin-cases-exact-active-object-scope-audit closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
 
 ## 0. Mandato aprobado y reglas innegociables
 
@@ -485,6 +485,16 @@ Resultado y siguiente tarea autorizada:
 - Previews exactas verdes: [app](https://vercel.com/expertapp/app/8ittqcfpcngi7xSRKHWXpgfNkPnK) y [ksenia-expert](https://vercel.com/expertapp/ksenia-expert/E1VPdawKuVkRzHyAL2k4ravCaE4Z).
 - No se ejecutaron lecturas ni escrituras productivas, DML financiero, migraciones, cambios de RLS/grants, despliegues manuales, configuración, flags o credenciales. El cambio de grants de Supabase anunciado para el 30/10/2026 no afecta este lote porque no crea tablas ni altera permisos.
 - **Estado:** `E0-M3-06` permanece EN CURSO. Siguiente lote en secuencia: auditar y corregir de forma acotada `GET /api/admin/search`, que valida rol pero no estado exact-active antes de agregar perfiles, usuarios Auth, empresas, expedientes, citas, presupuestos y documentos; conservar el contrato de búsqueda y demostrar revocación antes de cualquier lectura privilegiada. E1–E6 y V3 permanecen bloqueadas.
+
+### 2026-10-12 — Vigésimo lote de rutas privilegiadas E0-M3-06
+
+- [PR #734](https://github.com/expert-servicios/expert-app/pull/734) **fusionada** con commit `7ce3445a48206731b63f1712cbe772a240f0bd44` mediante squash y lease sobre HEAD `d3ecd30a5f364e7be6703366b32858d718054525`, con base exacta `adce9870c1ac0815986c0abedec50b360d3fbea7` y 0 commits de desfase.
+- `GET /api/admin/search` exige actor exactamente activo con rol `admin` u `owner` y coincidencia con la sesión antes de instanciar `service_role`, enumerar usuarios Auth o leer perfiles, empresas, expedientes, citas, presupuestos y documentos. Las consultas de menos de dos caracteres tampoco abren esos clientes privilegiados. Se conservan el `403` existente, la respuesta vacía y la forma de resultados.
+- La cobertura HTTP verifica seis casos: sesión ausente, actor revocado/no aprobado, actor discordante, consulta corta sin lecturas privilegiadas y positivos `admin`/`owner`; además limita las consultas positivas a los seis orígenes previstos.
+- Evidencia de PR: CI [#3583](https://github.com/expert-servicios/expert-app/actions/runs/38191467715) success (typecheck, lint, build, MCP, baseline Supabase, tests, 182 evaluaciones KIA y tres gates PostgreSQL/RLS); revisión de seguridad completada sobre el HEAD exacto sin problemas importantes ni hilos abiertos. Evidencia posterior a fusión: CI de `main` [#3584](https://github.com/expert-servicios/expert-app/actions/runs/38191710417) success.
+- Verificaciones Vercel exactas de `main@7ce3445a48206731b63f1712cbe772a240f0bd44`: [app](https://vercel.com/expertapp/app/FArvwDf4QLhJLqKANHXxsimcUh7r) READY y [ksenia-expert](https://vercel.com/expertapp/ksenia-expert/2mM477UwNp5r42QEUoJWBZbi2cLZ) READY.
+- No se realizaron consultas ni escrituras productivas, DML financiero, migraciones, cambios de RLS/grants, configuración, flags, credenciales o despliegues manuales. Los despliegues automáticos vinculados a la fusión completaron READY sin intervención de configuración. El cambio de grants de Supabase anunciado para el 30/10/2026 no afecta este lote porque no crea tablas ni altera permisos.
+- **Estado:** `E0-M3-06` permanece EN CURSO. Siguiente lote en secuencia: auditar y corregir de forma acotada `GET/POST /api/admin/cases`, cuya guardia compartida valida rol pero no estado exact-active antes de lecturas PII, alta de expediente y sincronización externa. Exigir coincidencia de sesión, comprobar el alcance cliente/empresa/objeto y simular por completo Supabase/Holded en pruebas; no ejecutar altas, sincronizaciones ni escrituras reales. E1–E6 y V3 permanecen bloqueadas.
 
 ### Actas de cierre
 
