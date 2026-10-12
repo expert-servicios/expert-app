@@ -43,6 +43,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
           DELIVERY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'check_pr' }}
           TRIGGER_ACTOR: ${{ github.actor }}
+          VERCEL_READ_TOKEN: ${{ secrets.KIA_PR_REVIEW_VERCEL_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -53,6 +54,7 @@ jobs:
           import re
           import sys
           import urllib.request
+          import urllib.parse
 
           repo = os.getenv("REPOSITORY", "")
           number = os.getenv("PR_NUMBER", "")
@@ -63,6 +65,7 @@ jobs:
           expected = "expert-servicios/expert-app"
           mode = os.getenv("DELIVERY_MODE", "check_pr")
           actor = os.getenv("TRIGGER_ACTOR", "")
+          vercel_token = os.getenv("VERCEL_READ_TOKEN", "")
 
           def skip(reason):
               print("Review alert not sent: " + reason)
@@ -151,9 +154,41 @@ jobs:
           for status in statuses:
               label = status.get("context", "").lower().replace("–", "-").replace("—", "-")
               latest.setdefault(label, status.get("state"))
-          if (latest.get("vercel - app") != "success"
-                  or latest.get("vercel - ksenia-expert") != "success"):
-              skip("both Vercel previews not yet successful for current HEAD")
+          vercel_statuses_ok = (latest.get("vercel - app") == "success"
+                               and latest.get("vercel - ksenia-expert") == "success")
+          if not vercel_statuses_ok:
+              if not vercel_token:
+                  skip("Vercel GitHub statuses absent; dedicated Vercel read token not configured")
+              project_ids = (
+                  "prj_8QaCDKDrAsLQ1c3nr4ueRVLXtYsD",
+                  "prj_UscIRsCiaqY051PTrRVncEfNyquJ",
+              )
+              for project_id in project_ids:
+                  query = urllib.parse.urlencode({
+                      "teamId": "team_QODXAs9vgrvXQjz7q4G7WKTl",
+                      "projectId": project_id,
+                      "sha": head,
+                      "limit": "20",
+                  })
+                  request = urllib.request.Request(
+                      "https://api.vercel.com/v6/deployments?" + query,
+                      headers={"Authorization": "Bearer " + vercel_token,
+                               "User-Agent": "KIA-PR-Review-Gate"})
+                  try:
+                      with urllib.request.urlopen(request, timeout=15) as response:
+                          result = json.load(response)
+                  except Exception:
+                      raise SystemExit("Vercel status verification unavailable; fail closed.") from None
+                  deployments = result.get("deployments", [])
+                  if not any(
+                      d.get("state") == "READY"
+                      and d.get("target") is None
+                      and d.get("meta", {}).get("githubCommitSha") == head
+                      and d.get("meta", {}).get("githubRepo") == "expert-app"
+                      and d.get("meta", {}).get("githubOrg") == "expert-servicios"
+                      for d in deployments
+                  ):
+                      skip("no READY Vercel preview matching exact SHA and project")
 
           reviews = gh("/pulls/" + number + "/reviews?per_page=100")
           if any(r.get("user", {}).get("login", "").lower() == reviewer
