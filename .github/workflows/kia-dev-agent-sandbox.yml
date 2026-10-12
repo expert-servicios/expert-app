@@ -37,7 +37,7 @@ jobs:
       - name: Verify task and checkpoint
         env:
           KIA_TASK_ID: ${{ inputs.task_id }}
-        run: node scripts/kia-dev-agent.mjs lint-policy
+        run: node scripts/kia-dev-agent.mjs audit-policy
 
   patch:
     name: Propose patch only (requires separate activation)
