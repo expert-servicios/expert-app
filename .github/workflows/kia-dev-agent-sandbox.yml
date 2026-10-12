@@ -59,7 +59,7 @@ jobs:
         run: |
           node -e '
             const value = process.env.CODEX_VERSION;
-            if (!/^\\d+\\.\\d+\\.\\d+$/.test(value || "")) process.exit(1);
+            if (!/^[0-9]+[.][0-9]+[.][0-9]+$/.test(value || "")) process.exit(1);
             const [major, minor] = value.split(".").map(Number);
             if (major === 0 && minor < 138) process.exit(1);
           '
