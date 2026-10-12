@@ -8,7 +8,7 @@
       "id": "E0-M3-06-DOCINDEX",
       "phase": "E0",
       "requiredCheckpoint": "E0-M3-06-admin-company-documents-index-scope-audit",
-      "status": "sandbox-approved",
+      "status": "suspended",
       "title": "Comprobar y corregir aislamiento del indice documental de empresas",
       "objective": "En GET/POST del indice documental empresarial, exigir perfil exact-active, empresa y membresia dentro del tenant verificado antes de consultas service-role y de Google Drive. Reutilizar controles de autorizacion existentes y preservar compatibilidad legitima con owner global/legado.",
       "allowedPaths": [
