@@ -24,11 +24,11 @@ env:
 jobs:
   catalog:
     name: Check catalog (no secrets or billable calls)
-    if: \${{ github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && github.sha == vars.KIA_AI_REVIEW_SMOKE_APPROVED_SHA && vars.KIA_AI_REVIEW_SMOKE_ENABLED == 'true' && (github.actor == 'expertestudiospro' || github.actor == 'kiabusiness2025') }}
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && github.sha == vars.KIA_AI_REVIEW_SMOKE_APPROVED_SHA && vars.KIA_AI_REVIEW_SMOKE_ENABLED == 'true' && (github.actor == 'expertestudiospro' || github.actor == 'kiabusiness2025') }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
     outputs:
-      verified: \${{ steps.catalog.outputs.verified }}
+      verified: ${{ steps.catalog.outputs.verified }}
     steps:
       - name: Validate exact Anthropic and Google models against live catalog
         id: catalog
@@ -67,7 +67,7 @@ jobs:
   smoke:
     name: Two tiny provider requests (protected secret)
     needs: catalog
-    if: \${{ inputs.mode == 'smoke' && needs.catalog.outputs.verified == 'true' }}
+    if: ${{ inputs.mode == 'smoke' && needs.catalog.outputs.verified == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
     environment: kia-ai-review-smoke
@@ -75,7 +75,7 @@ jobs:
       - name: Verify both providers with a single synthetic prompt
         shell: bash
         env:
-          AI_GATEWAY_API_KEY: \${{ secrets.AI_GATEWAY_API_KEY }}
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
