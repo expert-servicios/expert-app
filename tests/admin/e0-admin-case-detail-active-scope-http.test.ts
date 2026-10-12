@@ -39,6 +39,9 @@ const mocks = vi.hoisted(() => ({
     google_calendar_event_id: null,
   } as Record<string, unknown> | null,
   membership: { company_id: '22222222-2222-4222-8222-222222222222' } as Record<string, unknown> | null,
+  clientScope: { id: '11111111-1111-4111-8111-111111111111' } as Record<string, unknown> | null,
+  companyScope: { id: '22222222-2222-4222-8222-222222222222' } as Record<string, unknown> | null,
+  statusUpdateMatched: true,
   docs: [{
     id: 'doc-A',
     original_name: 'modelo.pdf',
@@ -78,14 +81,22 @@ function makeQuery(table: string) {
 
   const result = () => {
     if (table === 'cases') {
-      return updating
-        ? { data: selected ? mocks.updatedCase : null, error: null }
-        : { data: mocks.caseRow, error: null };
+      if (!updating) return { data: mocks.caseRow, error: null };
+      if (selected === 'id') {
+        return {
+          data: mocks.statusUpdateMatched ? { id: '33333333-3333-4333-8333-333333333333' } : null,
+          error: null,
+        };
+      }
+      return { data: selected ? mocks.updatedCase : null, error: null };
     }
     if (table === 'profile_companies') return { data: mocks.membership, error: null };
+    if (table === 'companies') return { data: mocks.companyScope, error: null };
     if (table === 'documents') return { data: mocks.docs, error: null };
     if (table === 'case_document_notes') return { data: mocks.notes, error: null };
-    if (table === 'profiles') return { data: mocks.profile, error: null };
+    if (table === 'profiles') {
+      return { data: selected === 'id' ? mocks.clientScope : mocks.profile, error: null };
+    }
     if (table === 'automation_settings') return { data: [], error: null };
     return { data: null, error: null };
   };
@@ -96,6 +107,10 @@ function makeQuery(table: string) {
       return query;
     }),
     eq: vi.fn((column: string, value: unknown) => {
+      mocks.eqs.push({ table, column, value });
+      return query;
+    }),
+    is: vi.fn((column: string, value: unknown) => {
       mocks.eqs.push({ table, column, value });
       return query;
     }),
@@ -224,6 +239,9 @@ describe('E0 admin case detail: exact-active and object scope before reads or ef
       google_calendar_event_id: null,
     };
     mocks.membership = { company_id: COMPANY_ID };
+    mocks.clientScope = { id: CLIENT_ID };
+    mocks.companyScope = { id: COMPANY_ID };
+    mocks.statusUpdateMatched = true;
     mocks.authLookup.mockResolvedValue({
       data: { user: { id: CLIENT_ID, email: 'client@example.test' } },
       error: null,
@@ -281,13 +299,35 @@ describe('E0 admin case detail: exact-active and object scope before reads or ef
     expect(mocks.authLookup).not.toHaveBeenCalled();
   });
 
+  it('denies a case whose client is outside the case tenant', async () => {
+    mocks.clientScope = null;
+
+    const response = await GET(getRequest(), context);
+
+    expect(response.status).toBe(404);
+    expect(mocks.eqs).toContainEqual({ table: 'profiles', column: 'tenant_id', value: 'tenant-A' });
+    expect(mocks.tables).toEqual(['cases', 'profiles', 'companies']);
+    expect(mocks.signedUrl).not.toHaveBeenCalled();
+  });
+
+  it('denies a case whose company is outside the case tenant', async () => {
+    mocks.companyScope = null;
+
+    const response = await GET(getRequest(), context);
+
+    expect(response.status).toBe(404);
+    expect(mocks.eqs).toContainEqual({ table: 'companies', column: 'tenant_id', value: 'tenant-A' });
+    expect(mocks.tables).toEqual(['cases', 'profiles', 'companies']);
+    expect(mocks.signedUrl).not.toHaveBeenCalled();
+  });
+
   it('denies a case whose company is outside the case client membership', async () => {
     mocks.membership = null;
 
     const response = await GET(getRequest(), context);
 
     expect(response.status).toBe(404);
-    expect(mocks.tables).toEqual(['cases', 'profile_companies']);
+    expect(mocks.tables).toEqual(['cases', 'profiles', 'companies', 'profile_companies']);
     expect(mocks.eqs).toContainEqual({ table: 'profile_companies', column: 'profile_id', value: CLIENT_ID });
     expect(mocks.eqs).toContainEqual({ table: 'profile_companies', column: 'company_id', value: COMPANY_ID });
     expect(mocks.signedUrl).not.toHaveBeenCalled();
@@ -319,6 +359,11 @@ describe('E0 admin case detail: exact-active and object scope before reads or ef
           downloadUrl: 'https://signed.example.test/modelo.pdf',
         }),
       ]);
+      expect(mocks.eqs).toEqual(expect.arrayContaining([
+        { table: 'documents', column: 'case_id', value: CASE_ID },
+        { table: 'documents', column: 'client_id', value: CLIENT_ID },
+        { table: 'documents', column: 'company_id', value: COMPANY_ID },
+      ]));
       expect(mocks.signedUrl).toHaveBeenCalledWith('client/case/modelo.pdf', 3600);
     },
   );
@@ -357,6 +402,22 @@ describe('E0 admin case detail: exact-active and object scope before reads or ef
     expect(mocks.sendEmail).not.toHaveBeenCalled();
     expect(mocks.push).not.toHaveBeenCalled();
     expect(mocks.calendar).not.toHaveBeenCalled();
+  });
+
+  it('does not emit effects when the scoped status update matches no row', async () => {
+    mocks.statusUpdateMatched = false;
+
+    const response = await PATCH(patchRequest({ status: 'en_revision' }), context);
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: 'El expediente cambió durante la actualización',
+    });
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
+    expect(mocks.push).not.toHaveBeenCalled();
+    expect(mocks.profitability).not.toHaveBeenCalled();
+    expect(mocks.snapshot).not.toHaveBeenCalled();
+    expect(mocks.adminNotify).not.toHaveBeenCalled();
   });
 
   it('attributes a valid status transition to the exact active actor', async () => {
