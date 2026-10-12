@@ -211,3 +211,47 @@ jobs:
         run: |
           set -euo pipefail
           psql "$DB_URL" -v ON_ERROR_STOP=1 -f tests/db/kia_work_active_scope_integration.sql
+
+  kia-dev-agent-queue-draft-db:
+    name: KIA Dev Agent draft schema PostgreSQL contract (isolated)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DB_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres?sslmode=disable
+    steps:
+      - name: Checkout design files only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Create isolated Supabase-compatible fixture
+        run: |
+          set -euo pipefail
+          psql "$DB_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          create role anon nologin;
+          create role authenticated nologin;
+          create role service_role nologin bypassrls;
+          create table public.profiles(id uuid primary key);
+          SQL
+      - name: Apply design DDL to disposable PostgreSQL only
+        run: |
+          set -euo pipefail
+          test ! -f supabase/migrations/kia_dev_agent_queue_draft.sql
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f docs/design/kia-dev-agent-queue-draft.sql
+      - name: Validate draft constraints ACL RLS idempotency and audit immutability
+        run: |
+          set -euo pipefail
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f tests/db/kia_dev_agent_queue_draft_contract.sql
