@@ -7,7 +7,7 @@ describe('KIA Dev Agent disabled foundation', () => {
     expect(policy.executionEnabled).toBe(false);
     expect(policy.maxChangedFiles).toBeLessThanOrEqual(3);
     expect(policy.maxPatchBytes).toBeLessThanOrEqual(80000);
-    const task = selectTask(policy, 'E0-M3-06-DOCINDEX');
+    const task = selectTask({...policy,tasks:[{...policy.tasks[0],status:'sandbox-approved'}]}, 'E0-M3-06-DOCINDEX', '<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-06-admin-company-documents-index-scope-audit scope_frozen=true -->');
     expect(task.allowedPaths).toHaveLength(2);
     expect(task.allowedPaths.every((p) => !p.includes('..'))).toBe(true);
   });
@@ -22,7 +22,7 @@ describe('KIA Dev Agent disabled foundation', () => {
     expect(() => assertActivation({...policy,executionEnabled:true},{KIA_DEV_AGENT_ENABLED:'true',GITHUB_REF:'refs/heads/feature'})).toThrow();
   });
   it('rejects unapproved or mismatched patch paths, duplicates and unsafe modes', () => {
-    const task = selectTask(policy,'E0-M3-06-DOCINDEX');
+    const task = selectTask({...policy,tasks:[{...policy.tasks[0],status:'sandbox-approved'}]},'E0-M3-06-DOCINDEX', '<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-06-admin-company-documents-index-scope-audit scope_frozen=true -->');
     const a = task.allowedPaths[0];
     const valid = (file) => [
       'diff --git a/' + file + ' b/' + file,
@@ -42,9 +42,10 @@ describe('KIA Dev Agent disabled foundation', () => {
     expect(() => validateCandidatePatch(task, policy, valid(a) + String.fromCharCode(0))).toThrow();
   });
   it('provides audit-only validation without invoking an LLM', () => {
-    expect(run('validate','E0-M3-06-DOCINDEX')).toMatchObject({enabled:false,eligible:true});
+    expect(run('lint-policy')).toMatchObject({disabled:true,taskCount:1});
+    expect(() => run('validate','E0-M3-06-DOCINDEX')).toThrow();
     expect(() => run('prepare','E0-M3-06-DOCINDEX')).toThrow();
-    const prompt = composePrompt(selectTask(policy,'E0-M3-06-DOCINDEX'));
+    const prompt = composePrompt(selectTask({...policy,tasks:[{...policy.tasks[0],status:'sandbox-approved'}]},'E0-M3-06-DOCINDEX', '<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-06-admin-company-documents-index-scope-audit scope_frozen=true -->'));
     expect(prompt).toContain('Never merge, deploy');
     expect(prompt).toContain('ALLOWED EDIT PATHS');
   });
