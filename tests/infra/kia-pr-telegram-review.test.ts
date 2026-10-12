@@ -19,6 +19,9 @@ describe('KIA DevOps Telegram review notification gate', () => {
     expect(workflow).toContain('secrets.KIA_PR_REVIEW_TELEGRAM_CHAT_ID');
     expect(workflow).toContain("inputs.mode == 'test_delivery'");
     expect(workflow).toContain('send_message(message)');
+    expect(workflow).toContain('/getChat?chat_id=');
+    expect(workflow).toContain('!= "private"');
+    expect(workflow).toContain('secrets.KIA_PR_REVIEW_VERCEL_TOKEN');
     expect(workflow).not.toContain('TELEGRAM_BOT_TOKEN:');
     expect(protocol).toContain('@expert_devops_bot');
   });
@@ -28,6 +31,9 @@ describe('KIA DevOps Telegram review notification gate', () => {
     }
     expect(workflow).toContain('if pr.get("state") != "open" or pr.get("draft") or pr.get("merged")');
     expect(workflow).toContain('if mode == "test_delivery"');
+    expect(workflow).toContain('api.vercel.com/v6/deployments?');
+    expect(workflow).toContain('githubCommitSha');
+    expect(workflow).toContain('projectId');
     expect(protocol).toContain('revisión humana independiente');
   });
 });
