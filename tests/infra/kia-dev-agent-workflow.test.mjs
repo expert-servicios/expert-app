@@ -107,10 +107,10 @@ describe('KIA Dev Agent workflow CI contract', () => {
       '-const ok = false;',
       '+const ok = true;',
       '',
-    ].join('\\n');
+    ].join('\n');
     try {
       mkdirSync(join(sandboxDir, 'tests/api'), { recursive: true });
-      writeFileSync(target, 'const ok = false;\\n');
+      writeFileSync(target, 'const ok = false;\n');
       execFileSync('git', ['init', '-q'], { cwd: sandboxDir });
       expect(validateCandidatePatch(task, policy, patch).paths).toEqual([relative]);
       expect(() => validateCandidatePatch(task, policy, patch.replace('+++ b/' + relative, '+++ b/config/secret.ts'))).toThrow();
@@ -119,7 +119,7 @@ describe('KIA Dev Agent workflow CI contract', () => {
       writeFileSync(patchFile, patch);
       execFileSync('git', ['apply', '--check', '--', patchFile], { cwd: sandboxDir });
       execFileSync('git', ['apply', '--', patchFile], { cwd: sandboxDir });
-      expect(readFileSync(target, 'utf8')).toBe('const ok = true;\\n');
+      expect(readFileSync(target, 'utf8')).toBe('const ok = true;\n');
     } finally {
       rmSync(sandboxDir, { recursive: true, force: true });
     }
