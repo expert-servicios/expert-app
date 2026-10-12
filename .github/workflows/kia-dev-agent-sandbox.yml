@@ -55,12 +55,14 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - name: Require explicit reviewed version
+      - name: Require compatible exact Codex CLI version
         run: |
-          case "$CODEX_VERSION" in
-            *[!0-9.]*|"") echo "Version must be an exact numeric semver" >&2; exit 1 ;;
-          esac
-          echo "$CODEX_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
+          node -e '
+            const value = process.env.CODEX_VERSION;
+            if (!/^\\d+\\.\\d+\\.\\d+$/.test(value || "")) process.exit(1);
+            const [major, minor] = value.split(".").map(Number);
+            if (major === 0 && minor < 138) process.exit(1);
+          '
       - name: Validate task and construct constrained prompt
         run: node scripts/kia-dev-agent.mjs prepare "$KIA_TASK_ID"
       - name: Generate candidate code in isolated workspace
