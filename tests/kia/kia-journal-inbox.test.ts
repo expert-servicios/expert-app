@@ -17,7 +17,7 @@ describe('KIA journal inbox',()=>{
   expect(saveService).toContain(".eq('company_id',p.companyId)");
  });
  it('accepts only transitions from pending and has immutable audit trail',()=>{
-  expect(api).toContain(".eq('status','pending_review')");
+  expect(api).toContain(".eq('status', 'pending_review')");
   expect(migration).toContain("new.status not in ('approved','rejected')");
   expect(migration).toContain('create table if not exists public.kia_journal_proposal_events');
   expect(migration).toContain('enable row level security');
@@ -26,6 +26,6 @@ describe('KIA journal inbox',()=>{
  it('is independent from Holded mutations',()=>{
   expect(api).not.toMatch(/createLedgerEntry|deleteLedgerEntry|createHoldedGateway/);
   expect(ui).toContain('NO crea un asiento en Holded');
-  expect(api).toContain('holdedMutated:false');
+  expect(api).toContain('holdedMutated: false');
  });
 });
