@@ -20,7 +20,7 @@ export function loadPolicy() {
   return policy;
 }
 
-export function selectTask(policy, taskId) {
+export function selectTask(policy, taskId, planText = readFileSync(checkpointPath, 'utf8')) {
   if (!/^[A-Z0-9-]{5,90}$/.test(taskId ?? '')) throw new Error('Invalid task id');
   const task = policy.tasks.find((t) => t.id === taskId && t.status === 'sandbox-approved');
   if (!task || !Array.isArray(task.allowedPaths) || !task.allowedPaths.length) {
@@ -28,21 +28,22 @@ export function selectTask(policy, taskId) {
   }
   if (!task.allowedPaths.every((p) =>
     typeof p === 'string' && p.length > 0 && !p.startsWith('/') &&
-    !p.includes('..') && !p.includes('\\') && !p.includes('\n') &&
+    !p.includes('..') && !p.includes('\\') && !/[\x00-\x1f\x7f]/.test(p) &&
     (p.startsWith('app/api/') || p.startsWith('tests/api/')))) {
     throw new Error('Unsafe task path allowlist');
   }
   if (new Set(task.allowedPaths).size !== task.allowedPaths.length) throw new Error('Duplicate task paths');
-  const plan = readFileSync(checkpointPath, 'utf8');
-  const checkpoint = plan.match(/<!-- ECOSYSTEM_CHECKPOINT ([^\n]*?) -->/)?.[1] ?? '';
-  if (!checkpoint.includes('phase=E0') || !checkpoint.includes('phase_status=IN_PROGRESS') ||
-      !checkpoint.includes('scope_frozen=true') ||
-      !checkpoint.includes('next=' + task.requiredCheckpoint)) {
+  const marker = planText.match(/<!-- ECOSYSTEM_CHECKPOINT ([^\n]*?) -->/)?.[1];
+  if (!marker) throw new Error('Missing canonical checkpoint');
+  const checkpoint = Object.fromEntries(marker.split(/\s+/).map((token) => token.split('=')));
+  if (checkpoint.phase !== 'E0' || checkpoint.phase_status !== 'IN_PROGRESS' ||
+      checkpoint.scope_frozen !== 'true' || checkpoint.next !== task.requiredCheckpoint) {
     throw new Error('Checkpoint changed; refuse stale task');
   }
   if (task.phase !== 'E0') throw new Error('Out-of-phase task');
   return task;
 }
+
 
 export function assertActivation(policy, environment = process.env) {
   if (policy.executionEnabled !== true ||
@@ -155,6 +156,13 @@ export function inspectPatch(task, policy) {
 
 export function run(command, taskId) {
   const policy = loadPolicy();
+  if (command === 'lint-policy') {
+    if (policy.executionEnabled !== false) throw new Error('Disabled foundation must remain off');
+    if (policy.tasks.some((task) => task.status === 'sandbox-approved')) {
+      throw new Error('Foundation tasks must be explicitly suspended');
+    }
+    return { disabled: true, taskCount: policy.tasks.length };
+  }
   const task = selectTask(policy, taskId);
   if (command === 'validate') {
     return { taskId: task.id, phase: task.phase, enabled: policy.executionEnabled === true, eligible: true };
