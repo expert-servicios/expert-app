@@ -95,7 +95,7 @@ jobs:
           if mode == "test_delivery":
               if actor not in ("expertestudiospro", "kiabusiness2025"):
                   skip("only authorized maintainer can request a manual delivery test")
-              send_message("<b>EXPERT DevOps · Prueba de conexión</b>\\nCanal privado confirmado. Ninguna PR ha sido aprobada ni fusionada.")
+              send_message("<b>EXPERT DevOps · Prueba de conexión</b>\nCanal privado confirmado. Ninguna PR ha sido aprobada ni fusionada.")
               print("Private Telegram delivery test accepted.")
               sys.exit(0)
 
