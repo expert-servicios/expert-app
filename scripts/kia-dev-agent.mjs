@@ -126,6 +126,9 @@ export function validateCandidatePatch(task, policy, patch) {
     if (/^(?:old mode |new mode |deleted file mode |rename |copy |similarity index |GIT binary patch|Binary files )/m.test(chunk)) {
       throw new Error('Patch includes forbidden metadata');
     }
+    if ([...chunk.matchAll(/^index [^\n]* ([0-9]{6})$/gm)].some((m) => m[1] !== '100644')) {
+      throw new Error('Non-regular file patch rejected');
+    }
     if (/^new file mode /m.test(chunk) && !chunk.includes('new file mode 100644\n')) {
       throw new Error('Unexpected new file mode');
     }

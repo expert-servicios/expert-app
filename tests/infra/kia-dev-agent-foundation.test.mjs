@@ -39,6 +39,7 @@ describe('KIA Dev Agent disabled foundation', () => {
     expect(() => validateCandidatePatch(task, policy, valid(a).replace('+++ b/' + a,'+++ b/app/api/secrets/route.ts'))).toThrow();
     expect(() => validateCandidatePatch(task, policy, valid(a) + valid(a))).toThrow();
     expect(() => validateCandidatePatch(task, policy, valid(a).replace('index 1234567..abcdef0 100644', 'new file mode 120000'))).toThrow();
+    expect(() => validateCandidatePatch(task, policy, valid(a).replace('100644', '120000'))).toThrow();
     expect(() => validateCandidatePatch(task, policy, valid(a) + String.fromCharCode(0))).toThrow();
   });
   it('provides audit-only validation without invoking an LLM', () => {

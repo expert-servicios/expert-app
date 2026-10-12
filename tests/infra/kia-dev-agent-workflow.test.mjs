@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { validateCandidatePatch } from '../../scripts/kia-dev-agent.mjs';
 
 const require = createRequire(import.meta.url);
 const yaml = require('js-yaml');
@@ -64,4 +67,62 @@ describe('KIA Dev Agent workflow CI contract', () => {
     expect(applyIdx).toBeGreaterThan(inspectIdx);
     expect(steps.some((s) => String(s.run ?? '').includes('kia-dev-agent.mjs verify'))).toBe(true);
   });
+  it('rejects suspended tasks and validates selected task, not just manifest', () => {
+    const doc = load(sandbox);
+    expect(doc.on.workflow_dispatch.inputs.mode.default).toBe('audit');
+    expect(doc.on.workflow_dispatch.inputs.mode.options).toEqual(['audit', 'validate', 'patch']);
+    const checks = doc.jobs.validate.steps.map((step) => step.run ?? '');
+    expect(checks).toContain('node scripts/kia-dev-agent.mjs audit-policy');
+    expect(checks.some((step) => step.includes('kia-dev-agent.mjs validate "$KIA_TASK_ID"'))).toBe(true);
+    const eligibility = doc.jobs.validate.steps.find((step) => String(step.run ?? '').includes('kia-dev-agent.mjs validate'));
+    expect(eligibility.if).toContain("inputs.mode == 'patch'");
+    expect(eligibility.if).toContain("inputs.mode == 'validate'");
+  });
+  it('exercises the exact Codex version gate with valid and invalid values', () => {
+    const step = load(sandbox).jobs.patch.steps.find((item) => item.name === 'Require compatible exact Codex CLI version');
+    expect(step).toBeDefined();
+    const check = (version) => execFileSync('bash', ['-e', '-c', step.run], {
+      env: { ...process.env, CODEX_VERSION: version },
+      stdio: 'pipe',
+    });
+    expect(() => check('0.138.0')).not.toThrow();
+    expect(() => check('0.139.5')).not.toThrow();
+    expect(() => check('1.0.0')).not.toThrow();
+    for (const bad of ['', '0.137.9', '0.138.0-beta', 'latest', '0.138.0; echo unsafe']) {
+      expect(() => check(bad)).toThrow();
+    }
+  });
+  it('simulates a safe patch from generation to git apply without secrets', () => {
+    const sandboxDir = mkdtempSync(join(tmpdir(), 'kia-patch-contract-'));
+    const relative = 'tests/api/dry-run.ts';
+    const target = join(sandboxDir, relative);
+    const policy = { maxChangedFiles: 3, maxPatchBytes: 80000 };
+    const task = { allowedPaths: [relative] };
+    const patch = [
+      'diff --git a/' + relative + ' b/' + relative,
+      'index 0123456..9876543 100644',
+      '--- a/' + relative,
+      '+++ b/' + relative,
+      '@@ -1 +1 @@',
+      '-const ok = false;',
+      '+const ok = true;',
+      '',
+    ].join('\\n');
+    try {
+      mkdirSync(join(sandboxDir, 'tests/api'), { recursive: true });
+      writeFileSync(target, 'const ok = false;\\n');
+      execFileSync('git', ['init', '-q'], { cwd: sandboxDir });
+      expect(validateCandidatePatch(task, policy, patch).paths).toEqual([relative]);
+      expect(() => validateCandidatePatch(task, policy, patch.replace('+++ b/' + relative, '+++ b/config/secret.ts'))).toThrow();
+      expect(() => validateCandidatePatch(task, policy, patch.replace('100644', '120000'))).toThrow();
+      const patchFile = join(sandboxDir, 'candidate.patch');
+      writeFileSync(patchFile, patch);
+      execFileSync('git', ['apply', '--check', '--', patchFile], { cwd: sandboxDir });
+      execFileSync('git', ['apply', '--', patchFile], { cwd: sandboxDir });
+      expect(readFileSync(target, 'utf8')).toBe('const ok = true;\\n');
+    } finally {
+      rmSync(sandboxDir, { recursive: true, force: true });
+    }
+  });
+
 });

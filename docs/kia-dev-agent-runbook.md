@@ -44,3 +44,12 @@ This foundation is **not yet integrated into KIA chat, Telegram or an autonomous
 5. Connect push/Telegram alerts for blockers; follow the Plan Maestro QA Workspace V2 once safe development workflows are validated.
 
 **No unattended execution is enabled by this PR.**
+
+## Verification / release of the foundation (2026-10-12)
+
+- Canonical Plan Maestro is synchronized from protected main; its active checkpoint is **E0-M3-06-admin-users-tenant-object-scope-audit**, not the historic document-index task. The old `E0-M3-06-DOCINDEX` task remains **suspended**. It cannot be executed.
+- Manual mode `audit` checks the disabled manifest without any API key or code execution. Mode `validate` checks the chosen task and exact checkpoint, rejecting suspended or stale tasks. Mode `patch` is separately gated and unavailable while the manifest is disabled.
+- An offline patch-flow integration test verifies path restrictions, file-mode restrictions and `git apply --check` in a temporary repository. This does **not** prove that real Codex ran.
+- GitHub CI and both Vercel previews must pass on the **same final HEAD**. Vercel `git_info_fail` is a Git source retrieval error; check Vercel logs and integration before changing application code.
+- GitHub environment `kia-dev-agent` must be restricted to protected `main`, require independent reviewers and must hold only the dedicated Codex key. Repository admins must set an external API spend limit before activation. GitHub's 15-minute workflow timeout is **not** a monetary cap; the workflow cannot enforce account-level spending limits by itself.
+- KIA has **no active integration** with this workflow yet. The KIA admin-only dispatch bridge, durable work queue and draft-PR broker are separate later work with independent security review.

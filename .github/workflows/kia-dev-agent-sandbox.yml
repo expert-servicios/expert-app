@@ -13,8 +13,9 @@ on:
         description: 'validate is read-only; patch requires separate authorization'
         type: choice
         required: true
-        default: validate
+        default: audit
         options:
+          - audit
           - validate
           - patch
 
@@ -38,6 +39,11 @@ jobs:
         env:
           KIA_TASK_ID: ${{ inputs.task_id }}
         run: node scripts/kia-dev-agent.mjs audit-policy
+      - name: Validate selected task ID and checkpoint (deny suspended tasks)
+        if: ${{ inputs.mode == 'validate' || inputs.mode == 'patch' }}
+        env:
+          KIA_TASK_ID: ${{ inputs.task_id }}
+        run: node scripts/kia-dev-agent.mjs validate "$KIA_TASK_ID"
 
   patch:
     name: Propose patch only (requires separate activation)
