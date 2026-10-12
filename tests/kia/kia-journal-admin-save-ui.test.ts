@@ -22,7 +22,8 @@ describe('Admin confirmation before journal proposal storage',()=>{
  });
  it('does not trust model-selected company id',()=>{
   expect(ui).toContain('La empresa procede de esta ficha');
-  expect(api).toContain('saveKiaJournalInboxProposal(ctx.admin,ctx.userId,{companyId:id,...parsed.data})');
+  expect(api).toContain('companyId: ctx.companyId');
+  expect(api).toContain("requireActiveActor(request, ['admin', 'owner'])");
  });
  it('performs no Holded writes',()=>{
   expect(ui).not.toMatch(/createHoldedV2Client|createLedgerEntry|deleteLedgerEntry/);
