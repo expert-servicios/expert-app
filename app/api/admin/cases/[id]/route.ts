@@ -184,6 +184,29 @@ async function getScopedCase(
   const { data: caseData, error } = await query.maybeSingle();
   if (error || !caseData) return null;
 
+  const scopeTenantId = actorTenantId ?? caseData.tenant_id;
+  if (scopeTenantId) {
+    const [clientScope, companyScope] = await Promise.all([
+      admin
+        .from('profiles')
+        .select('id')
+        .eq('id', caseData.client_id)
+        .eq('tenant_id', scopeTenantId)
+        .maybeSingle(),
+      caseData.company_id
+        ? admin
+            .from('companies')
+            .select('id')
+            .eq('id', caseData.company_id)
+            .eq('tenant_id', scopeTenantId)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+
+    if (clientScope.error || !clientScope.data) return null;
+    if (caseData.company_id && (companyScope.error || !companyScope.data)) return null;
+  }
+
   if (caseData.company_id) {
     const { data: membership, error: membershipError } = await admin
       .from('profile_companies')
@@ -213,8 +236,17 @@ export async function GET(
       return NextResponse.json({ error: 'Expediente no encontrado' }, { status: 404 });
     }
 
+    let documentsQuery = admin
+      .from('documents')
+      .select('id,original_name,state,created_at,file_path,uploaded_by_role,client_id,company_id')
+      .eq('case_id', id)
+      .eq('client_id', rawCaseData.client_id);
+    documentsQuery = rawCaseData.company_id
+      ? documentsQuery.eq('company_id', rawCaseData.company_id)
+      : documentsQuery.is('company_id', null);
+
     const [docsResult, notesResult] = await Promise.all([
-      admin.from('documents').select('id,original_name,state,created_at,file_path,uploaded_by_role').eq('case_id', id).order('created_at', { ascending: false }),
+      documentsQuery.order('created_at', { ascending: false }),
       admin
         .from('case_document_notes')
         .select('id,item_key,item_label,comment,updated_at,updated_by')
@@ -313,11 +345,21 @@ export async function PATCH(
         .update(updatePayload)
         .eq('id', id)
         .eq('client_id', current.client_id);
-      if (current.company_id) statusUpdate = statusUpdate.eq('company_id', current.company_id);
-      if (actor.tenantId) statusUpdate = statusUpdate.eq('tenant_id', actor.tenantId);
+      statusUpdate = current.company_id
+        ? statusUpdate.eq('company_id', current.company_id)
+        : statusUpdate.is('company_id', null);
+      if (current.tenant_id) statusUpdate = statusUpdate.eq('tenant_id', current.tenant_id);
 
-      const { error: updateErr } = await statusUpdate;
+      const { data: updatedStatusCase, error: updateErr } = await statusUpdate
+        .select('id')
+        .maybeSingle();
       if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      if (!updatedStatusCase) {
+        return NextResponse.json(
+          { error: 'El expediente cambió durante la actualización' },
+          { status: 409 },
+        );
+      }
 
       // Send client notification email (fire-and-forget — never blocks the response)
       if (body.status !== fromStatus) {
@@ -441,8 +483,10 @@ export async function PATCH(
       .update(updatePayload)
       .eq('id', id)
       .eq('client_id', current.client_id);
-    if (current.company_id) caseUpdate = caseUpdate.eq('company_id', current.company_id);
-    if (actor.tenantId) caseUpdate = caseUpdate.eq('tenant_id', actor.tenantId);
+    caseUpdate = current.company_id
+      ? caseUpdate.eq('company_id', current.company_id)
+      : caseUpdate.is('company_id', null);
+    if (current.tenant_id) caseUpdate = caseUpdate.eq('tenant_id', current.tenant_id);
 
     const { data: updatedCase, error: updateErr } = await caseUpdate
       .select('service, category, client_id, google_calendar_event_id')
@@ -488,8 +532,10 @@ export async function PATCH(
             .update({ google_calendar_event_id: eventId })
             .eq('id', id)
             .eq('client_id', current.client_id);
-          if (current.company_id) calendarUpdate = calendarUpdate.eq('company_id', current.company_id);
-          if (actor.tenantId) calendarUpdate = calendarUpdate.eq('tenant_id', actor.tenantId);
+          calendarUpdate = current.company_id
+            ? calendarUpdate.eq('company_id', current.company_id)
+            : calendarUpdate.is('company_id', null);
+          if (current.tenant_id) calendarUpdate = calendarUpdate.eq('tenant_id', current.tenant_id);
           calendarUpdate.then(() => null, () => null);
         }
       }).catch((e) => console.error('[cases PATCH] calendar sync:', e));
