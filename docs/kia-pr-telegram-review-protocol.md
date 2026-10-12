@@ -23,7 +23,7 @@ Estado: preparado en una PR independiente; no activo en main hasta fusión y act
 
 Workflow: .github/workflows/kia-pr-review-telegram.yml
 
-- Se dispara únicamente al pasar una PR a ready_for_review en main. Se admite reintento manual workflow_dispatch indicando número de PR desde main.
+- Se dispara al pasar una PR a ready_for_review en main, solo con la variable de activación verdadera. Se admite reintento manual `workflow_dispatch` con modo `check_pr` y número de PR desde main.
 - No usa checkout ni ejecuta código de la PR. En pull_request_target únicamente consulta API GitHub con permisos de lectura.
 - Comprueba PR abierta, no draft, rama y repositorio confiables, HEAD exacto, cuatro jobs CI conocidos correctos y **ambos** estados Vercel correctos.
 - Si falta alguna verificación, **no avisa**. En ese caso, ejecutar la comprobación manual cuando hayan acabado los jobs (no existe sondeo automático).
@@ -36,10 +36,10 @@ Workflow: .github/workflows/kia-pr-review-telegram.yml
 
 En https://github.com/expert-servicios/expert-app/settings/secrets/actions :
 
-- Crear secret KIA_PR_REVIEW_TELEGRAM_BOT_TOKEN con el token del bot privado EXPERT KIA existente (@kia_expert_bot), **no** del bot Radha.
+- Crear secret KIA_PR_REVIEW_TELEGRAM_BOT_TOKEN con el token del bot exclusivo **@expert_devops_bot**, no del bot KIA de clientes ni del bot Radha.
 - Crear secret KIA_PR_REVIEW_TELEGRAM_CHAT_ID con el ID del chat privado del administrador. Verificar primero que el bot puede enviar mensajes y que se trata del chat correcto; no usar grupos.
 - En https://github.com/expert-servicios/expert-app/settings/variables/actions establecer KIA_PR_REVIEW_TELEGRAM_ENABLED=false hasta completar validación.
-- Una vez el workflow esté en main, el bot y chat estén comprobados, hacer un envío de prueba usando workflow_dispatch con una PR real abierta, ready y checks verdes. Activar la variable solo en el momento autorizado; no activar otros workflows.
+- Una vez el workflow esté en main, realizar una prueba aislada `workflow_dispatch` con modo `test_delivery`, desde `expertestudiospro` o `kiabusiness2025`; prueba la entrega sin necesitar PR elegible y sin activar la variable general. Cuando se reciba el mensaje correcto en el chat privado, activar la variable de avisos solo mediante autorización expresa. No activar otros workflows.
 - Restringir acceso a secretos/variables y registrar quién realizó la activación; rotar credenciales si se sospecha exposición.
 - Configurar en Settings > Branches / Rulesets la protección de main con los checks requeridos, al menos una aprobación de **otra persona** y bloqueo de merges sin revisión. Este workflow de avisos no impone la protección de rama por sí solo.
 
@@ -51,4 +51,8 @@ Autor: expertestudiospro. Sigue siendo una PR draft en la última comprobación 
 
 ## Límites y seguimiento
 
-El canal Telegram existente en EXPERT usa TELEGRAM_BOT_TOKEN y TELEGRAM_ADMIN_CHAT_ID en la app, pero los secretos de GitHub Actions son diferentes y **no** se copian de forma automática desde Vercel. Se necesitan acciones humanas en GitHub para conectar el bot sin revelar las credenciales a ChatGPT. Ninguna aprobación por Telegram implica permiso para crear PR, activar Codex, ejecutar SQL o desplegar a producción.
+El canal Telegram existente en EXPERT usa TELEGRAM_BOT_TOKEN y TELEGRAM_ADMIN_CHAT_ID en la app, pero los secretos de GitHub Actions son diferentes y **no** se copian de forma automática desde Vercel. Se necesitan acciones humanas en GitHub para conectar el bot sin revelar las credenciales a ChatGPT. Para este workflow no se necesita configurar el token en Vercel. Ninguna aprobación por Telegram implica permiso para crear PR, activar Codex, ejecutar SQL o desplegar a producción.
+
+## Configuración confirmada (2026-10-12)
+
+La administradora ha creado `@expert_devops_bot`. Se usa en exclusiva para supervisión de desarrollo. El bot EXPERT de atención al cliente conserva sus credenciales sin cambios. Las credenciales DevOps quedan sin configurar hasta introducirlas en GitHub Actions UI. El job de prueba manual de entrega está restringido a las identidades GitHub permitidas y no accede a PR ni ejecuta operaciones de escritura.
