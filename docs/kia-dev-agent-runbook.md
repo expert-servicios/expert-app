@@ -53,3 +53,11 @@ This foundation is **not yet integrated into KIA chat, Telegram or an autonomous
 - GitHub CI and both Vercel previews must pass on the **same final HEAD**. Vercel `git_info_fail` is a Git source retrieval error; check Vercel logs and integration before changing application code.
 - GitHub environment `kia-dev-agent` must be restricted to protected `main`, require independent reviewers and must hold only the dedicated Codex key. Repository admins must set an external API spend limit before activation. GitHub's 15-minute workflow timeout is **not** a monetary cap; the workflow cannot enforce account-level spending limits by itself.
 - KIA has **no active integration** with this workflow yet. The KIA admin-only dispatch bridge, durable work queue and draft-PR broker are separate later work with independent security review.
+
+## KIA Admin read-only integration (PR #742)
+
+The authenticated KIA Admin/Owner policy now exposes `get_admin_dev_agent_status` and `preview_admin_dev_agent_task` through the existing `kia-admin-office-tools` registry. Both are **R1 read only**, restricted to the Admin channel and staff roles; the existing Office scope gate additionally checks `context.actor.isStaff`. They return only versioned manifest metadata, never a GitHub token, OpenAI secret, real-time run state, or a dispatch request. Tenant admins and clients are denied.
+
+The real Codex isolated smoke completed successfully on 2026-10-12: https://github.com/expert-servicios/kia-codex-lab/actions/runs/38239318166 (single response, read-only, unchanged workspace). Lab variable `KIA_CODEX_SMOKE_ENABLED` was reportedly set to `false` by its operator; revocation of its API key remains a separate operator action. Neither the lab nor this Admin read model creates a production execution grant.
+
+Any future durable queue, GitHub dispatch token, protected environment and draft-PR broker must be reviewed and delivered separately. **No autonomous execution, migrations, rollout or merge is authorized** by these read tools.
