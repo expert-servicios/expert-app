@@ -25,7 +25,7 @@ jobs:
       - name: Validate policy and fixed checkpoint without agent execution
         env:
           KIA_TASK_ID: ${{ inputs.task_id }}
-        run: node scripts/kia-dev-agent.mjs validate "$KIA_TASK_ID"
+        run: node scripts/kia-dev-agent.mjs lint-policy
       - name: Assert execution remains disabled
         run: |
           node -e "const p=require('./config/kia-dev-agent-tasks.json');if(p.executionEnabled !== false) process.exit(1)"
