@@ -16,9 +16,10 @@ describe('KIA journal proposal persistence review gate', () => {
     expect(executor).not.toContain("toolName === 'save_journal_entry_proposal'");
   });
   it('requires authenticated admin API and server-side company scope', () => {
-    expect(api).toContain("['owner','admin'].includes(profile.role)");
-    expect(api).toContain("const ctx = await authorize(request,id)");
-    expect(api).toContain("saveKiaJournalInboxProposal(ctx.admin,ctx.userId,{companyId:id,...parsed.data})");
+    expect(api).toContain("requireActiveActor(request, ['admin', 'owner'])");
+    expect(api).toContain("const ctx = await authorize(request, id)");
+    expect(api).toContain(".from('profile_companies')");
+    expect(api).toContain('companyId: ctx.companyId');
   });
   it('deduplicates and validates before storage without contacting Holded', () => {
     expect(service).toContain('prepareKiaJournalProposal(input)');
