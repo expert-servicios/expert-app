@@ -112,7 +112,7 @@ jobs:
               text = ((choices[0].get("message") or {}).get("content") or "").strip() if choices else ""
               if text != "KIA_REVIEW_SMOKE_OK":
                   raise SystemExit(name + " failed exact response contract")
-              if result.get("model") and not str(result["model"]).startswith(model):
+              if result.get("model") != model:
                   raise SystemExit(name + " unexpected response model")
               print(name + ": SMOKE_OK")
           print("TWO_PROVIDER_SMOKE_OK (no code or production changes)")
