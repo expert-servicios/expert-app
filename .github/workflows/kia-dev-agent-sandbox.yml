@@ -60,7 +60,7 @@ jobs:
           case "$CODEX_VERSION" in
             *[!0-9.]*|"") echo "Version must be an exact numeric semver" >&2; exit 1 ;;
           esac
-          echo "$CODEX_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+      - name: Validate task and construct constrained prompt
+          echo "$CODEX_VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+
         run: node scripts/kia-dev-agent.mjs prepare "$KIA_TASK_ID"
       - name: Generate candidate code in isolated workspace
         uses: openai/codex-action@bdf19a4a223ec2549a3e2274a0cf61556bc07675 # v1 pinned
