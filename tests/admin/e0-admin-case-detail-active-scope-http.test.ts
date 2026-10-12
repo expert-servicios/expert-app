@@ -363,6 +363,8 @@ describe('E0 admin case detail: exact-active and object scope before reads or ef
         { table: 'documents', column: 'case_id', value: CASE_ID },
         { table: 'documents', column: 'client_id', value: CLIENT_ID },
         { table: 'documents', column: 'company_id', value: COMPANY_ID },
+        { table: 'case_document_notes', column: 'case_id', value: CASE_ID },
+        { table: 'case_document_notes', column: 'client_id', value: CLIENT_ID },
       ]));
       expect(mocks.signedUrl).toHaveBeenCalledWith('client/case/modelo.pdf', 3600);
     },
@@ -402,6 +404,17 @@ describe('E0 admin case detail: exact-active and object scope before reads or ef
     expect(mocks.sendEmail).not.toHaveBeenCalled();
     expect(mocks.push).not.toHaveBeenCalled();
     expect(mocks.calendar).not.toHaveBeenCalled();
+  });
+
+  it('preserves a null tenant predicate during non-status updates', async () => {
+    mocks.caseRow = { ...mocks.caseRow!, tenant_id: null };
+
+    const response = await PATCH(patchRequest({ priority: 'alta' }), context);
+
+    expect(response.status).toBe(200);
+    expect(mocks.eqs).toContainEqual({ table: 'cases', column: 'tenant_id', value: null });
+    expect(mocks.sendEmail).not.toHaveBeenCalled();
+    expect(mocks.push).not.toHaveBeenCalled();
   });
 
   it('does not emit effects when the scoped status update matches no row', async () => {
