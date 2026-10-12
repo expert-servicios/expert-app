@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "executionEnabled": false,
+  "maxChangedFiles": 3,
+  "maxPatchBytes": 80000,
+  "tasks": [
+    {
+      "id": "E0-M3-06-DOCINDEX",
+      "phase": "E0",
+      "requiredCheckpoint": "E0-M3-06-admin-company-documents-index-scope-audit",
+      "status": "sandbox-approved",
+      "title": "Comprobar y corregir aislamiento del indice documental de empresas",
+      "objective": "En GET/POST del indice documental empresarial, exigir perfil exact-active, empresa y membresia dentro del tenant verificado antes de consultas service-role y de Google Drive. Reutilizar controles de autorizacion existentes y preservar compatibilidad legitima con owner global/legado.",
+      "allowedPaths": [
+        "app/api/admin/empresas/[id]/documents/index/route.ts",
+        "tests/api/e0-company-documents-index-scope-http.test.ts"
+      ],
+      "acceptance": [
+        "HTTP 403 para actor no activo, empresa de otro tenant y membresia ausente o ajena.",
+        "Sin lecturas del indice ni acceso Google Drive para actores no autorizados.",
+        "Acceso legitimo GET/POST preservado y tests aislados; no llamadas externas reales.",
+        "El diff no modifica datos, migraciones, workflows, credenciales ni servicios externos."
+      ]
+    }
+  ]
+}
