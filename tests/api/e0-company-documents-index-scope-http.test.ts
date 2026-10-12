@@ -33,6 +33,16 @@ vi.mock('@/lib/integrations/supabase', () => ({
             filters.some(([k,v]) => k === 'tenant_id' && v !== mocks.state.company?.tenant_id) ? null : mocks.state.company
           ) : {provider:'google'}, error:null,
         }),
+        then<TResult1 = unknown, TResult2 = never>(
+          resolve?: ((value: { data: Array<{profile_id:string}>; error: null }) => TResult1 | PromiseLike<TResult1>) | null,
+          reject?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
+        ) {
+          const response = {
+            data: table === 'profile_companies' && mocks.state.member ? [{ profile_id: 'client-A' }] : [],
+            error: null,
+          };
+          return Promise.resolve(response).then(resolve, reject);
+        },
         insert: async () => ({error:null}),
       };
       return query;
