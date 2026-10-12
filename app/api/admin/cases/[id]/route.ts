@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
-import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 import { registerProfitabilityEvent } from '@/lib/profitability/register-event';
 import { generateCaseSnapshot } from '@/lib/profitability/generate-snapshot';
 import { canTransition, caseStatusToVisualState, resolveEffectiveCaseStatus } from '@/lib/cases/case-status';
@@ -141,44 +142,118 @@ async function getClientInfo(
   return { email, name: profileResult.data?.full_name ?? email.split('@')[0] };
 }
 
+type AdminClient = ReturnType<typeof getSupabaseAdmin>;
+
+type ScopedCase = {
+  id: string;
+  category: string | null;
+  service: string | null;
+  service_id: string | null;
+  state: string | null;
+  status: string | null;
+  priority: string | null;
+  next_action: string | null;
+  due_date: string | null;
+  order_id: string | null;
+  opened_at: string | null;
+  closed_at: string | null;
+  client_id: string;
+  company_id: string | null;
+  tenant_id: string | null;
+  admin_note: string | null;
+  docs_checklist: unknown;
+  checklist_json: unknown;
+  assigned_to: string | null;
+  google_calendar_event_id: string | null;
+};
+
+async function getScopedCase(
+  admin: AdminClient,
+  caseId: string,
+  actorTenantId: string | null,
+): Promise<ScopedCase | null> {
+  let query = admin
+    .from('cases')
+    .select(
+      'id,category,service,service_id,state,status,priority,next_action,due_date,order_id,opened_at,closed_at,client_id,company_id,tenant_id,admin_note,docs_checklist,checklist_json,assigned_to,google_calendar_event_id',
+    )
+    .eq('id', caseId);
+
+  if (actorTenantId) query = query.eq('tenant_id', actorTenantId);
+
+  const { data: caseData, error } = await query.maybeSingle();
+  if (error || !caseData) return null;
+
+  const scopeTenantId = actorTenantId ?? caseData.tenant_id;
+  if (scopeTenantId) {
+    const [clientScope, companyScope] = await Promise.all([
+      admin
+        .from('profiles')
+        .select('id')
+        .eq('id', caseData.client_id)
+        .eq('tenant_id', scopeTenantId)
+        .maybeSingle(),
+      caseData.company_id
+        ? admin
+            .from('companies')
+            .select('id')
+            .eq('id', caseData.company_id)
+            .eq('tenant_id', scopeTenantId)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+
+    if (clientScope.error || !clientScope.data) return null;
+    if (caseData.company_id && (companyScope.error || !companyScope.data)) return null;
+  }
+
+  if (caseData.company_id) {
+    const { data: membership, error: membershipError } = await admin
+      .from('profile_companies')
+      .select('company_id')
+      .eq('profile_id', caseData.client_id)
+      .eq('company_id', caseData.company_id)
+      .maybeSingle();
+
+    if (membershipError || !membership) return null;
+  }
+
+  return caseData as ScopedCase;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const supabase = createServerSupabaseClient(request);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-    }
+    const actor = await requireActiveActor(request, ['admin', 'owner']);
+    if (!actor) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
     const admin = getSupabaseAdmin();
-    const { data: profile } = await admin
-      .from('profiles').select('role').eq('id', user.id).single();
-    if (!['admin', 'owner'].includes(profile?.role ?? '')) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    }
-
-    const [caseResult, docsResult, notesResult] = await Promise.all([
-      admin
-        .from('cases')
-        .select('id,category,service,service_id,state,status,priority,next_action,due_date,order_id,opened_at,closed_at,client_id,admin_note,docs_checklist,checklist_json,assigned_to')
-        .eq('id', id)
-        .single(),
-      admin.from('documents').select('id,original_name,state,created_at,file_path,uploaded_by_role').eq('case_id', id).order('created_at', { ascending: false }),
-      admin
-        .from('case_document_notes')
-        .select('id,item_key,item_label,comment,updated_at,updated_by')
-        .eq('case_id', id)
-        .order('updated_at', { ascending: false }),
-    ]);
-
-    if (caseResult.error || !caseResult.data) {
+    const rawCaseData = await getScopedCase(admin, id, actor.tenantId);
+    if (!rawCaseData) {
       return NextResponse.json({ error: 'Expediente no encontrado' }, { status: 404 });
     }
 
-    const rawCaseData = caseResult.data;
+    let documentsQuery = admin
+      .from('documents')
+      .select('id,original_name,state,created_at,file_path,uploaded_by_role,client_id,company_id')
+      .eq('case_id', id)
+      .eq('client_id', rawCaseData.client_id);
+    documentsQuery = rawCaseData.company_id
+      ? documentsQuery.eq('company_id', rawCaseData.company_id)
+      : documentsQuery.is('company_id', null);
+
+    const [docsResult, notesResult] = await Promise.all([
+      documentsQuery.order('created_at', { ascending: false }),
+      admin
+        .from('case_document_notes')
+        .select('id,item_key,item_label,comment,updated_at,updated_by,client_id')
+        .eq('case_id', id)
+        .eq('client_id', rawCaseData.client_id)
+        .order('updated_at', { ascending: false }),
+    ]);
     const effectiveStatus = resolveEffectiveCaseStatus(rawCaseData.status, rawCaseData.state);
     const caseData = {
       ...rawCaseData,
@@ -230,16 +305,12 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const supabase = createServerSupabaseClient(request);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
+    const actor = await requireActiveActor(request, ['admin', 'owner']);
+    if (!actor) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
     const admin = getSupabaseAdmin();
-    const { data: profile } = await admin
-      .from('profiles').select('role').eq('id', user.id).single();
-    if (!['admin', 'owner'].includes(profile?.role ?? '')) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
-    }
+    const current = await getScopedCase(admin, id, actor.tenantId);
+    if (!current) return NextResponse.json({ error: 'Expediente no encontrado' }, { status: 404 });
 
     const body = await request.json() as {
       status?: CaseStatus;
@@ -252,11 +323,6 @@ export async function PATCH(
 
     // Validate status transition if status is being updated
     if (body.status) {
-      const { data: current } = await admin
-        .from('cases').select('state,status, service_id, client_id, service, admin_note').eq('id', id).single();
-
-      if (!current) return NextResponse.json({ error: 'Expediente no encontrado' }, { status: 404 });
-
       const fromStatus = resolveEffectiveCaseStatus(current.status, current.state);
       if (fromStatus !== body.status && !canTransition(fromStatus, body.status)) {
         return NextResponse.json(
@@ -275,8 +341,28 @@ export async function PATCH(
       if (body.assigned_to !== undefined) updatePayload.assigned_to = body.assigned_to;
       if (body.status === 'finalizado')  updatePayload.closed_at   = new Date().toISOString();
 
-      const { error: updateErr } = await admin.from('cases').update(updatePayload).eq('id', id);
+      let statusUpdate = admin
+        .from('cases')
+        .update(updatePayload)
+        .eq('id', id)
+        .eq('client_id', current.client_id);
+      statusUpdate = current.company_id
+        ? statusUpdate.eq('company_id', current.company_id)
+        : statusUpdate.is('company_id', null);
+      statusUpdate = current.tenant_id
+        ? statusUpdate.eq('tenant_id', current.tenant_id)
+        : statusUpdate.is('tenant_id', null);
+
+      const { data: updatedStatusCase, error: updateErr } = await statusUpdate
+        .select('id')
+        .maybeSingle();
       if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      if (!updatedStatusCase) {
+        return NextResponse.json(
+          { error: 'El expediente cambió durante la actualización' },
+          { status: 409 },
+        );
+      }
 
       // Send client notification email (fire-and-forget — never blocks the response)
       if (body.status !== fromStatus) {
@@ -371,7 +457,7 @@ export async function PATCH(
         eventType: 'case_status_changed',
         source:    'manual',
         operator:  'admin',
-        metadata:  { from: fromStatus, to: body.status, changed_by: user.id },
+        metadata:  { from: fromStatus, to: body.status, changed_by: actor.userId },
       }).catch(() => {});
 
       // On finalizado: generate case-level profitability snapshot
@@ -395,10 +481,19 @@ export async function PATCH(
       return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 });
     }
 
-    const { data: updatedCase, error: updateErr } = await admin
+    let caseUpdate = admin
       .from('cases')
       .update(updatePayload)
       .eq('id', id)
+      .eq('client_id', current.client_id);
+    caseUpdate = current.company_id
+      ? caseUpdate.eq('company_id', current.company_id)
+      : caseUpdate.is('company_id', null);
+    caseUpdate = current.tenant_id
+      ? caseUpdate.eq('tenant_id', current.tenant_id)
+      : caseUpdate.is('tenant_id', null);
+
+    const { data: updatedCase, error: updateErr } = await caseUpdate
       .select('service, category, client_id, google_calendar_event_id')
       .single();
     if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });
@@ -437,8 +532,18 @@ export async function PATCH(
         (updatedCase.google_calendar_event_id as string | null) ?? undefined
       ).then((eventId) => {
         if (eventId) {
-          admin.from('cases').update({ google_calendar_event_id: eventId }).eq('id', id)
-            .then(() => null, () => null);
+          let calendarUpdate = admin
+            .from('cases')
+            .update({ google_calendar_event_id: eventId })
+            .eq('id', id)
+            .eq('client_id', current.client_id);
+          calendarUpdate = current.company_id
+            ? calendarUpdate.eq('company_id', current.company_id)
+            : calendarUpdate.is('company_id', null);
+          calendarUpdate = current.tenant_id
+            ? calendarUpdate.eq('tenant_id', current.tenant_id)
+            : calendarUpdate.is('tenant_id', null);
+          calendarUpdate.then(() => null, () => null);
         }
       }).catch((e) => console.error('[cases PATCH] calendar sync:', e));
     }
