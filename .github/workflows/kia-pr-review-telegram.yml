@@ -1,0 +1,147 @@
+name: KIA PR review Telegram (opt-in)
+
+on:
+  pull_request_target:
+    types: [ready_for_review]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Open PR number to evaluate on main'
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  pull-requests: read
+  checks: read
+  statuses: read
+
+concurrency:
+  group: kia-pr-review-telegram-${{ github.event.pull_request.number || inputs.pr_number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    # Never run arbitrary PR code or on a non-default ref. This switch defaults to OFF.
+    if: ${{ github.ref == 'refs/heads/main' && vars.KIA_PR_REVIEW_TELEGRAM_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check verified human review gate and notify private Telegram
+        env:
+          GH_READ_TOKEN: ${{ github.token }}
+          TG_BOT_TOKEN: ${{ secrets.KIA_PR_REVIEW_TELEGRAM_BOT_TOKEN }}
+          TG_PRIVATE_CHAT_ID: ${{ secrets.KIA_PR_REVIEW_TELEGRAM_CHAT_ID }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import html
+          import json
+          import os
+          import re
+          import sys
+          import urllib.error
+          import urllib.request
+
+          repo = os.getenv("REPOSITORY", "")
+          number = os.getenv("PR_NUMBER", "")
+          token = os.getenv("GH_READ_TOKEN", "")
+          tg_token = os.getenv("TG_BOT_TOKEN", "")
+          chat_id = os.getenv("TG_PRIVATE_CHAT_ID", "")
+          reviewer = "kiabusiness2025"
+          expected = "expert-servicios/expert-app"
+
+          def skip(reason):
+              print("Review alert not sent: " + reason)
+              sys.exit(0)
+
+          if repo != expected or not re.fullmatch(r"[1-9][0-9]*", number):
+              skip("unexpected repository or PR number")
+          if not token or not tg_token or not chat_id:
+              raise SystemExit("Review Telegram configuration incomplete; add GitHub Actions secrets.")
+
+          def gh(path):
+              request = urllib.request.Request(
+                  "https://api.github.com/repos/" + repo + path,
+                  headers={
+                      "Accept": "application/vnd.github+json",
+                      "Authorization": "Bearer " + token,
+                      "X-GitHub-Api-Version": "2022-11-28",
+                      "User-Agent": "KIA-PR-Review-Gate"
+                  })
+              with urllib.request.urlopen(request, timeout=15) as response:
+                  return json.load(response)
+
+          pr = gh("/pulls/" + number)
+          if pr.get("state") != "open" or pr.get("draft") or pr.get("merged"):
+              skip("PR not open and ready")
+          if pr.get("base", {}).get("ref") != "main":
+              skip("not targeting main")
+          if pr.get("head", {}).get("repo", {}).get("full_name") != expected:
+              skip("untrusted fork")
+          if pr.get("user", {}).get("login", "").lower() == reviewer:
+              skip("business reviewer is the author")
+
+          head = pr["head"]["sha"]
+          checks = gh("/commits/" + head + "/check-runs?per_page=100").get("check_runs", [])
+          required = {
+              "Typecheck · Lint · Test",
+              "Supabase migration repair contract",
+              "KIA web persistence PostgreSQL integration",
+              "KIA Work PostgreSQL active-scope integration",
+          }
+          ci = {c.get("name"): c for c in checks
+                if c.get("app", {}).get("slug") == "github-actions"}
+          if any(name not in ci or ci[name].get("status") != "completed"
+                 or ci[name].get("conclusion") != "success" for name in required):
+              skip("GitHub CI incomplete or not successful for current HEAD")
+
+          statuses = gh("/commits/" + head + "/status").get("statuses", [])
+          latest = {}
+          for status in statuses:
+              label = status.get("context", "").lower().replace("–", "-").replace("—", "-")
+              latest.setdefault(label, status.get("state"))
+          if (latest.get("vercel - app") != "success"
+                  or latest.get("vercel - ksenia-expert") != "success"):
+              skip("both Vercel previews not yet successful for current HEAD")
+
+          reviews = gh("/pulls/" + number + "/reviews?per_page=100")
+          if any(r.get("user", {}).get("login", "").lower() == reviewer
+                 and r.get("state") == "APPROVED"
+                 and r.get("commit_id") == head for r in reviews):
+              skip("business sign-off already registered for current HEAD")
+
+          title = html.escape(pr.get("title", "")[:180], quote=False)
+          url = "https://github.com/" + repo + "/pull/" + number
+          message = "\n".join([
+              "<b>EXPERT KIA · Revisión humana requerida</b>",
+              "PR #" + number + ": " + title,
+              "CI: correcta · Vercel app y ksenia-expert: correctas (mismo commit).",
+              "Validación de negocio: cuenta " + reviewer + ".",
+              "Importante: una segunda cuenta de la misma persona NO sustituye la revisión humana independiente.",
+              "Revisar en GitHub: " + url,
+              "No se ha autorizado fusión, migración ni despliegue a producción."
+          ])
+          body = json.dumps({
+              "chat_id": chat_id,
+              "text": message,
+              "parse_mode": "HTML",
+              "disable_web_page_preview": True,
+          }).encode("utf-8")
+          request = urllib.request.Request(
+              "https://api.telegram.org/bot" + tg_token + "/sendMessage",
+              data=body, headers={"Content-Type": "application/json"},
+              method="POST")
+          try:
+              with urllib.request.urlopen(request, timeout=15) as response:
+                  sent = json.load(response)
+              if sent.get("ok") is not True:
+                  raise RuntimeError()
+          except Exception:
+              raise SystemExit("Telegram notification failed; check bot and private chat access.") from None
+          print("Private Telegram review notification accepted for PR #" + number)
+          PY
