@@ -100,6 +100,30 @@ export function verifyPatch(task, policy) {
   return { taskId: task.id, paths: all, patchBytes: bytes, patchPath: destination, requiresReview: true };
 }
 
+export function inspectPatch(task, policy) {
+  const path = join(workdir(), 'candidate.patch');
+  const patch = readFileSync(path);
+  if (!patch.length || patch.length > policy.maxPatchBytes) throw new Error('Patch exceeds size bound');
+  const source = patch.toString('utf8');
+  if (Buffer.byteLength(source, 'utf8') !== patch.length || source.includes('\u0000')) {
+    throw new Error('Binary candidate rejected');
+  }
+  const headers = [...source.matchAll(/^diff --git a\/([^\n]+) b\/([^\n]+)$/gm)];
+  if (!headers.length || headers.length > policy.maxChangedFiles) throw new Error('Invalid patch file count');
+  const filenames = headers.map((m) => {
+    if (m[1] !== m[2] || !task.allowedPaths.includes(m[1])) throw new Error('Patch path not permitted');
+    return m[1];
+  });
+  if (new Set(filenames).size !== filenames.length) throw new Error('Duplicate patch paths');
+  if (/^(?:new file mode 120000|old mode |new mode |deleted file mode |rename |copy |GIT binary patch|Binary files )/m.test(source)) {
+    throw new Error('Patch includes forbidden metadata');
+  }
+  const output = execFileSync('git', ['apply', '--check', '--', path], {
+    cwd: root, encoding: 'utf8', maxBuffer: 5_000_000,
+  });
+  return { taskId: task.id, paths: filenames, patchBytes: patch.length, valid: true, message: output };
+}
+
 export function run(command, taskId) {
   const policy = loadPolicy();
   const task = selectTask(policy, taskId);
@@ -113,6 +137,7 @@ export function run(command, taskId) {
     return { taskId: task.id, promptPath: path, enabled: true };
   }
   if (command === 'verify') return verifyPatch(task, policy);
+  if (command === 'inspect') return inspectPatch(task, policy);
   throw new Error('Unknown command');
 }
 
