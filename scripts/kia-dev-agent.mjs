@@ -28,7 +28,7 @@ export function selectTask(policy, taskId) {
   }
   if (!task.allowedPaths.every((p) =>
     typeof p === 'string' && p.length > 0 && !p.startsWith('/') &&
-    !p.includes('..') && !p.includes('\\') &&
+    !p.includes('..') && !p.includes('\\') && !p.includes('\n') &&
     (p.startsWith('app/api/') || p.startsWith('tests/api/')))) {
     throw new Error('Unsafe task path allowlist');
   }
