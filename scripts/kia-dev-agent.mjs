@@ -100,28 +100,57 @@ export function verifyPatch(task, policy) {
   return { taskId: task.id, paths: all, patchBytes: bytes, patchPath: destination, requiresReview: true };
 }
 
-export function inspectPatch(task, policy) {
-  const path = join(workdir(), 'candidate.patch');
-  const patch = readFileSync(path);
-  if (!patch.length || patch.length > policy.maxPatchBytes) throw new Error('Patch exceeds size bound');
-  const source = patch.toString('utf8');
-  if (Buffer.byteLength(source, 'utf8') !== patch.length || source.includes('\u0000')) {
+/**
+ * Enforce exact, text-only file boundaries before git apply can interpret a
+ * Codex-generated artifact. Checking 'diff --git' alone is insufficient: the
+ * ---/+++ paths can disagree with the display header.
+ */
+export function validateCandidatePatch(task, policy, patch) {
+  const bytes = Buffer.isBuffer(patch) ? patch : Buffer.from(patch, 'utf8');
+  if (!bytes.length || bytes.length > policy.maxPatchBytes) throw new Error('Patch exceeds size bound');
+  const source = bytes.toString('utf8');
+  if (Buffer.byteLength(source, 'utf8') !== bytes.length || source.includes(String.fromCharCode(0))) {
     throw new Error('Binary candidate rejected');
   }
-  const headers = [...source.matchAll(/^diff --git a\/([^\n]+) b\/([^\n]+)$/gm)];
-  if (!headers.length || headers.length > policy.maxChangedFiles) throw new Error('Invalid patch file count');
-  const filenames = headers.map((m) => {
-    if (m[1] !== m[2] || !task.allowedPaths.includes(m[1])) throw new Error('Patch path not permitted');
-    return m[1];
+  if (!source.startsWith('diff --git ')) throw new Error('Unexpected patch prefix');
+
+  const chunks = source.split(/(?=^diff --git )/m).filter(Boolean);
+  if (!chunks.length || chunks.length > policy.maxChangedFiles) throw new Error('Invalid patch file count');
+  const filenames = chunks.map((chunk) => {
+    const header = chunk.match(/^diff --git a\/([^\n]+) b\/([^\n]+)\n/);
+    if (!header || header[1] !== header[2] || !task.allowedPaths.includes(header[1])) {
+      throw new Error('Patch path not permitted');
+    }
+    const filename = header[1];
+    if (/^(?:old mode |new mode |deleted file mode |rename |copy |similarity index |GIT binary patch|Binary files )/m.test(chunk)) {
+      throw new Error('Patch includes forbidden metadata');
+    }
+    if (/^new file mode /m.test(chunk) && !chunk.includes('new file mode 100644\n')) {
+      throw new Error('Unexpected new file mode');
+    }
+    const original = chunk.match(/^--- (.+)$/m)?.[1];
+    const revised = chunk.match(/^\+\+\+ (.+)$/m)?.[1];
+    if ((original !== 'a/' + filename && original !== '/dev/null') ||
+        revised !== 'b/' + filename) {
+      throw new Error('Patch edit paths do not match allowlist');
+    }
+    if (original === '/dev/null' && !chunk.includes('new file mode 100644\n')) {
+      throw new Error('New files must use regular file mode');
+    }
+    if (!/^@@ /m.test(chunk)) throw new Error('Patch without edit hunks');
+    return filename;
   });
   if (new Set(filenames).size !== filenames.length) throw new Error('Duplicate patch paths');
-  if (/^(?:new file mode 120000|old mode |new mode |deleted file mode |rename |copy |GIT binary patch|Binary files )/m.test(source)) {
-    throw new Error('Patch includes forbidden metadata');
-  }
-  const output = execFileSync('git', ['apply', '--check', '--', path], {
+  return { paths: filenames, patchBytes: bytes.length };
+}
+
+export function inspectPatch(task, policy) {
+  const path = join(workdir(), 'candidate.patch');
+  const { paths, patchBytes } = validateCandidatePatch(task, policy, readFileSync(path));
+  execFileSync('git', ['apply', '--check', '--', path], {
     cwd: root, encoding: 'utf8', maxBuffer: 5_000_000,
   });
-  return { taskId: task.id, paths: filenames, patchBytes: patch.length, valid: true, message: output };
+  return { taskId: task.id, paths, patchBytes, valid: true };
 }
 
 export function run(command, taskId) {
