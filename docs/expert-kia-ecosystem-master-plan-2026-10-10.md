@@ -4,7 +4,7 @@
 **Estado global:** EN EJECUCIÓN · **ÚNICA FASE ACTIVA: E0** · **Última fase cerrada:** ninguna · **Transición a E1:** BLOQUEADA · **Congelación de alcance:** ACTIVA.  
 **Naturaleza de este documento:** fuente canónica de orden de trabajo, definición de entregables, criterios de cierre y bitácora. No certifica funcionalidades en producción.
 
-<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-06-admin-case-ai-exact-active-object-scope-audit closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
+<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-06-admin-case-drive-files-exact-active-object-scope-audit closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
 
 ## 0. Mandato aprobado y reglas innegociables
 
@@ -518,6 +518,19 @@ Resultado y siguiente tarea autorizada:
 - **Gates posfusión:** CI #3594 (`38198950303`) verde 4/4 sobre `8b6c6c6ba55402258e497b66567509a61abd4104`; Vercel `app` `dpl_JDUotqEjYN1LCVgtyjnqHvYth1gP` y `ksenia-expert` `dpl_2MnFNF1FiScGVmVt5RNs1Hd58Ddd`, ambos `READY` y ligados al mismo SHA.
 - **Producción:** no se ejecutaron consultas ni DML de producción, migraciones, escrituras financieras, cambios RLS/grants, configuración, flags, credenciales ni despliegues manuales. El cambio anunciado por Supabase para el 30-10-2026 sobre grants implícitos no afecta a este lote, que no modifica esquema ni grants.
 - **Estado y secuencia:** E0-M3-06 permanece `IN_PROGRESS`. Siguiente tarea exacta: auditar `POST /api/admin/cases/[id]/ai` para exigir actor exacto activo y alcance de objeto antes de service role y proveedores AI, con proveedores simulados y sin llamadas/escrituras reales. E1-E6 y V3 siguen bloqueadas.
+
+
+### 2026-10-12 — Vigesimotercer lote de rutas privilegiadas E0-M3-06
+
+- **Entrega:** PR [#737](https://github.com/expert-servicios/expert-app/pull/737) fusionada por squash en `main` como `57c7b0ce5904f7b1108fdb5e103311f50589d4dd`. La rama partió de `33190ee2ca733afa155f5fa2e22f59b4ec17bf17`; el HEAD revisado `29916f8a54638bea00ef2cff8d31e981ef76750c` quedó 3 commits por delante y 0 por detrás, con 2 archivos.
+- **Alcance autorizado:** `POST /api/admin/cases/[id]/ai` sustituyó el control local de rol por `requireActiveActor` para admin/owner exactos activos. Antes de parsear la acción o invocar cualquier helper AI, resuelve el expediente dentro del tenant efectivo, valida tenant de cliente y empresa y confirma `profile_companies`.
+- **Comportamiento preservado:** continúan las acciones `summary`, `missing-docs` y `draft` sin nueva funcionalidad. Los helpers reciben únicamente el ID del expediente ya autorizado y, cuando corresponde, el servicio o el objetivo validado.
+- **Pruebas:** 12 casos HTTP cubren actor revocado, expediente de otro tenant, cliente/empresa fuera de tenant, membresía ausente, acción inválida tras el scope, tres caminos positivos, draft sin objetivo, owner global y expediente heredado sin tenant. Supabase y los tres helpers AI están simulados; no hubo lecturas, escrituras ni llamadas reales a proveedores.
+- **Revisión:** revisión inicial y revisión de seguridad manual completadas sobre `29916f8a54638bea00ef2cff8d31e981ef76750c` sin hallazgos importantes; 0 conversaciones abiertas.
+- **Gates de PR:** CI #3596 (`38201829248`) verde 4/4; Vercel `app` `dpl_JUq465WRoetYcKf5yHALuXtafVJ2` y `ksenia-expert` `dpl_EENGRHPp6FBFQRJRjoMaVgckNMPU`, ambos `READY` y ligados al HEAD revisado.
+- **Gates posfusión:** CI #3597 (`38202447069`) verde 4/4 sobre `57c7b0ce5904f7b1108fdb5e103311f50589d4dd`; Vercel `app` `dpl_BaG1upsihyp7yxjgvbmd939yBppm` y `ksenia-expert` `dpl_FUSy669EARqHw8sHCBoyNgPCt4XN`, ambos `READY` y ligados al mismo SHA.
+- **Producción:** no se ejecutaron consultas ni DML de producción, migraciones, escrituras financieras, cambios RLS/grants, configuración, flags, credenciales ni despliegues manuales. El cambio anunciado por Supabase para el 30-10-2026 sobre grants implícitos no afecta este lote, que no modifica esquema ni permisos.
+- **Estado y secuencia:** E0-M3-06 permanece `IN_PROGRESS`. Siguiente tarea exacta: auditar `GET /api/admin/cases/[id]/drive-files`, que aún usa control de rol local y consulta perfil/Auth/Google Drive sin alcance tenant/cliente/empresa; exigir actor exacto activo y objeto autorizado antes del acceso externo, con Drive/Auth simulados. E1-E6 y V3 siguen bloqueadas.
 
 ### Actas de cierre
 
