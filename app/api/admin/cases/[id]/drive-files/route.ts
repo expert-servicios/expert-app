@@ -105,7 +105,7 @@ export async function GET(
     return NextResponse.json({
       files,
       clientName,
-      service: caseRow.service,
+      serviceName: caseRow.service,
     });
   } catch (err) {
     console.error('[admin/cases/[id]/drive-files] GET error:', err);
