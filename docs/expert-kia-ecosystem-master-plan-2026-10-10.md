@@ -4,7 +4,7 @@
 **Estado global:** EN EJECUCIÓN · **ÚNICA FASE ACTIVA: E0** · **Última fase cerrada:** ninguna · **Transición a E1:** BLOQUEADA · **Congelación de alcance:** ACTIVA.  
 **Naturaleza de este documento:** fuente canónica de orden de trabajo, definición de entregables, criterios de cierre y bitácora. No certifica funcionalidades en producción.
 
-<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-06-admin-case-drive-files-exact-active-object-scope-audit closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
+<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-06-admin-case-signature-actions-object-scope-audit closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
 
 ## 0. Mandato aprobado y reglas innegociables
 
@@ -531,6 +531,19 @@ Resultado y siguiente tarea autorizada:
 - **Gates posfusión:** CI #3597 (`38202447069`) verde 4/4 sobre `57c7b0ce5904f7b1108fdb5e103311f50589d4dd`; Vercel `app` `dpl_BaG1upsihyp7yxjgvbmd939yBppm` y `ksenia-expert` `dpl_FUSy669EARqHw8sHCBoyNgPCt4XN`, ambos `READY` y ligados al mismo SHA.
 - **Producción:** no se ejecutaron consultas ni DML de producción, migraciones, escrituras financieras, cambios RLS/grants, configuración, flags, credenciales ni despliegues manuales. El cambio anunciado por Supabase para el 30-10-2026 sobre grants implícitos no afecta este lote, que no modifica esquema ni permisos.
 - **Estado y secuencia:** E0-M3-06 permanece `IN_PROGRESS`. Siguiente tarea exacta: auditar `GET /api/admin/cases/[id]/drive-files`, que aún usa control de rol local y consulta perfil/Auth/Google Drive sin alcance tenant/cliente/empresa; exigir actor exacto activo y objeto autorizado antes del acceso externo, con Drive/Auth simulados. E1-E6 y V3 siguen bloqueadas.
+
+
+### 2026-10-12 — Vigesimocuarto lote de rutas privilegiadas E0-M3-06
+
+- **Entrega:** PR [#738](https://github.com/expert-servicios/expert-app/pull/738) fusionada por squash en `main` como `a5948df1e44e1563d2c23baa0352af337c6811d2`. La rama partió de `2eda06fa7e5a6fcd1e0d2db9961204f5f1bbb3eb`; el HEAD revisado `8c88e9e015599e9f65dacbbd95e0bd38be2958fe` quedó 7 commits por delante y 0 por detrás, con 2 archivos.
+- **Alcance autorizado:** `GET /api/admin/cases/[id]/drive-files` sustituyó el control local de rol por `requireActiveActor` para admin/owner exactos activos. Antes de consultar Supabase Auth o Google Drive resuelve el expediente dentro del tenant efectivo, valida tenant de cliente y empresa y confirma `profile_companies`.
+- **Comportamiento preservado:** se conservan el campo HTTP histórico `serviceName`, el fallback de identidad perfil → prefijo de email → `Cliente` y la consulta de solo lectura a Drive. No se añadió funcionalidad. Un cambio intermedio del fixture que rompía TypeScript se detectó en Vercel, se corrigió antes de fusionar y toda evidencia anterior quedó descartada.
+- **Pruebas:** 11 casos HTTP cubren actor revocado, expediente de otro tenant, cliente/empresa fuera de tenant, membresía ausente, éxito y contrato de respuesta, fallback de email, owner global, expediente heredado sin tenant, expediente sin empresa y sanitización de errores. Supabase Auth y Google Drive están simulados; no hubo lecturas, escrituras ni llamadas reales.
+- **Revisión:** revisión de seguridad manual completada sobre `8c88e9e015599e9f65dacbbd95e0bd38be2958fe` sin hallazgos; 0 conversaciones abiertas.
+- **Gates de PR:** CI [#3604](https://github.com/expert-servicios/expert-app/actions/runs/38205293466) verde 4/4; Vercel `app` `dpl_D7zyvGy3ergzWhZbkBXxuKNTRai2` y `ksenia-expert` `dpl_53Y427X3pgXDGxoubLHZzfXi4zZm`, ambos `READY` y ligados al HEAD revisado.
+- **Gates posfusión:** CI [#3605](https://github.com/expert-servicios/expert-app/actions/runs/38205570699) verde 4/4 sobre `a5948df1e44e1563d2c23baa0352af337c6811d2`; Vercel `app` `dpl_6usYnpPMvdVeuYVXdQPo2Tw7euXm` y `ksenia-expert` `dpl_ZsLejCYzkPbS2nYtG1E4iEpRkFdC`, ambos `READY` y ligados al mismo SHA.
+- **Producción:** no se ejecutaron consultas ni DML de producción, migraciones, escrituras financieras, cambios RLS/grants, configuración, flags, credenciales ni despliegues manuales. Los despliegues automáticos vinculados a Git completaron sin cambios manuales de configuración. El cambio anunciado por Supabase para el 30-10-2026 sobre grants implícitos no afecta este lote, que no modifica esquema ni permisos.
+- **Estado y secuencia:** E0-M3-06 permanece `IN_PROGRESS`. Siguiente tarea exacta: auditar conjuntamente `GET /api/admin/cases/[id]/signature-actions` y `PATCH /api/admin/cases/[id]/signature-actions/[actionId]`. Ambas rutas ya exigen actor exacto activo, pero resuelven el expediente solo por ID; deben aplicar tenant/cliente/empresa/membresía antes de leer acciones/eventos o mutar el ciclo de firma, vincular `actionId` al expediente autorizado y validar objeto antes del payload/efectos. Supabase y el helper de firma deberán quedar simulados; E1-E6 y V3 siguen bloqueadas.
 
 ### Actas de cierre
 
