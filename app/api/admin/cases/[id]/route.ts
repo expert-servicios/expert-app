@@ -249,8 +249,9 @@ export async function GET(
       documentsQuery.order('created_at', { ascending: false }),
       admin
         .from('case_document_notes')
-        .select('id,item_key,item_label,comment,updated_at,updated_by')
+        .select('id,item_key,item_label,comment,updated_at,updated_by,client_id')
         .eq('case_id', id)
+        .eq('client_id', rawCaseData.client_id)
         .order('updated_at', { ascending: false }),
     ]);
     const effectiveStatus = resolveEffectiveCaseStatus(rawCaseData.status, rawCaseData.state);
@@ -348,7 +349,9 @@ export async function PATCH(
       statusUpdate = current.company_id
         ? statusUpdate.eq('company_id', current.company_id)
         : statusUpdate.is('company_id', null);
-      if (current.tenant_id) statusUpdate = statusUpdate.eq('tenant_id', current.tenant_id);
+      statusUpdate = current.tenant_id
+        ? statusUpdate.eq('tenant_id', current.tenant_id)
+        : statusUpdate.is('tenant_id', null);
 
       const { data: updatedStatusCase, error: updateErr } = await statusUpdate
         .select('id')
@@ -486,7 +489,9 @@ export async function PATCH(
     caseUpdate = current.company_id
       ? caseUpdate.eq('company_id', current.company_id)
       : caseUpdate.is('company_id', null);
-    if (current.tenant_id) caseUpdate = caseUpdate.eq('tenant_id', current.tenant_id);
+    caseUpdate = current.tenant_id
+      ? caseUpdate.eq('tenant_id', current.tenant_id)
+      : caseUpdate.is('tenant_id', null);
 
     const { data: updatedCase, error: updateErr } = await caseUpdate
       .select('service, category, client_id, google_calendar_event_id')
@@ -535,7 +540,9 @@ export async function PATCH(
           calendarUpdate = current.company_id
             ? calendarUpdate.eq('company_id', current.company_id)
             : calendarUpdate.is('company_id', null);
-          if (current.tenant_id) calendarUpdate = calendarUpdate.eq('tenant_id', current.tenant_id);
+          calendarUpdate = current.tenant_id
+            ? calendarUpdate.eq('tenant_id', current.tenant_id)
+            : calendarUpdate.is('tenant_id', null);
           calendarUpdate.then(() => null, () => null);
         }
       }).catch((e) => console.error('[cases PATCH] calendar sync:', e));
