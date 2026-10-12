@@ -1,5 +1,7 @@
 // Read-only KIA Admin adapter. Never import a GitHub client or call the Codex runner here.
 import manifest from '@/config/kia-dev-agent-tasks.json';
+import { buildKiaDevAgentRequestPreview } from './kia-dev-agent-request-contract';
+import type { KiaContext } from './kia-context-builder';
 
 type AgentTask = (typeof manifest.tasks)[number];
 const SMOKE_RUN = 'https://github.com/expert-servicios/kia-codex-lab/actions/runs/38239318166';
@@ -40,7 +42,7 @@ export function getKiaDevAgentStatus() {
 }
 
 /** Preview only: an LLM must not turn this answer into permission to execute. */
-export function previewKiaDevAgentTask(taskId: string) {
+export function previewKiaDevAgentTask(taskId: string, actor?: KiaContext['actor']) {
   const task = manifest.tasks.find((item) => item.id === taskId);
   const deniedReason = !task
     ? 'task_not_in_manifest'
@@ -57,6 +59,7 @@ export function previewKiaDevAgentTask(taskId: string) {
     eligibleForDispatch: false,
     dispatched: false,
     draftOnly: true,
+    requestReview: buildKiaDevAgentRequestPreview({ taskId, actor }),
     deniedReason,
     nextAction: 'Revisar el checkpoint canonico, manifest, permisos, revision de seguridad y aprobacion humana independiente.',
   };

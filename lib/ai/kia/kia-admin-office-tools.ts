@@ -383,7 +383,7 @@ export async function executeKiaAdminOfficeTool(
       return ok(toolName, getKiaDevAgentStatus());
     }
     if (toolName === 'preview_admin_dev_agent_task') {
-      return ok(toolName, previewKiaDevAgentTask(String(args.taskId)));
+      return ok(toolName, previewKiaDevAgentTask(String(args.taskId), context.actor));
     }
     if (toolName === 'get_admin_inbox_summary') {
       const result = await loadInbox(admin, context, args);

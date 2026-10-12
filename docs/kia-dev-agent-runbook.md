@@ -61,3 +61,9 @@ The authenticated KIA Admin/Owner policy now exposes `get_admin_dev_agent_status
 The real Codex isolated smoke completed successfully on 2026-10-12: https://github.com/expert-servicios/kia-codex-lab/actions/runs/38239318166 (single response, read-only, unchanged workspace). Lab variable `KIA_CODEX_SMOKE_ENABLED` was reportedly set to `false` by its operator; revocation of its API key remains a separate operator action. Neither the lab nor this Admin read model creates a production execution grant.
 
 Any future durable queue, GitHub dispatch token, protected environment and draft-PR broker must be reviewed and delivered separately. **No autonomous execution, migrations, rollout or merge is authorized** by these read tools.
+
+## Request review contract — not a working queue
+
+The pure `kia-dev-agent-request-contract.ts` prepares a **blocked review preview** bound to the authenticated KIA Admin/Owner actor and the exact manifest task ID. A SHA-256 fingerprint helps reviewers correlate identical proposals, but is **not** a durable idempotency constraint. The preview includes an explicit `queued=false`, `persisted=false`, `canDispatch=false`, `approvalState=not_requested` and does not include raw actor IDs, account credentials, customer documents or arbitrary prompt text. A suspended, unknown, unapproved, or disabled task remains blocked. The Admin read tool attaches this preflight record after Office staff authorization.
+
+Later, a durable queue requires its own schema, actor/tenant/role checks on each operation, uniqueness enforced in the database, replay protection, status/audit history, an approved execution broker, and independent security review. **No migrations or persistent tasks are created by this commit.**
