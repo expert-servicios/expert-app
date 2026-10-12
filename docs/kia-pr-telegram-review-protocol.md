@@ -25,10 +25,10 @@ Workflow: .github/workflows/kia-pr-review-telegram.yml
 
 - Se dispara al pasar una PR a ready_for_review en main, solo con la variable de activación verdadera. Se admite reintento manual `workflow_dispatch` con modo `check_pr` y número de PR desde main.
 - No usa checkout ni ejecuta código de la PR. En pull_request_target únicamente consulta API GitHub con permisos de lectura.
-- Comprueba PR abierta, no draft, rama y repositorio confiables, HEAD exacto, cuatro jobs CI conocidos correctos y **ambos** estados Vercel correctos.
+- Comprueba PR abierta, no draft, rama y repositorio confiables, HEAD exacto, cuatro jobs CI conocidos correctos y **ambas** previews Vercel correctas. Si GitHub no expone estados Vercel, realiza consulta directa autenticada a Vercel con token de lectura opcional. Para cada proyecto se exige despliegue preview READY con commit SHA exacto, organización y repositorio coincidentes; si la verificación falla, no envía aviso.
 - Si falta alguna verificación, **no avisa**. En ese caso, ejecutar la comprobación manual cuando hayan acabado los jobs (no existe sondeo automático).
 - Si ya consta APPROVED de kiabusiness2025 sobre el HEAD, no repite el aviso de validación funcional.
-- Notificación de texto y enlace exclusivamente a un chat privado configurado. Sin botones de aprobación, ni credenciales visibles.
+- Notificación de texto y enlace exclusivamente a un chat privado configurado. Exige un ID numérico de usuario y verifica con Telegram getChat que el tipo sea private antes de enviar. Sin botones de aprobación, ni credenciales visibles.
 - No se añade cron, webhook público, GitHub write token, envío desde la app o despliegue de producción.
 - Solo envía cuando la variable de repositorio KIA_PR_REVIEW_TELEGRAM_ENABLED es exactamente true (por defecto ausente o false).
 
@@ -38,6 +38,7 @@ En https://github.com/expert-servicios/expert-app/settings/secrets/actions :
 
 - Crear secret KIA_PR_REVIEW_TELEGRAM_BOT_TOKEN con el token del bot exclusivo **@expert_devops_bot**, no del bot KIA de clientes ni del bot Radha.
 - Crear secret KIA_PR_REVIEW_TELEGRAM_CHAT_ID con el ID del chat privado del administrador. Verificar primero que el bot puede enviar mensajes y que se trata del chat correcto; no usar grupos.
+- Para cuando GitHub no publique los estados de Vercel, crear secret KIA_PR_REVIEW_VERCEL_TOKEN con token Vercel de alcance mínimo para consultar solo despliegues de los proyectos `app` y `ksenia-expert` del equipo `expertapp`; nunca usar un token con más permisos de los necesarios.
 - En https://github.com/expert-servicios/expert-app/settings/variables/actions establecer KIA_PR_REVIEW_TELEGRAM_ENABLED=false hasta completar validación.
 - Una vez el workflow esté en main, realizar una prueba aislada `workflow_dispatch` con modo `test_delivery`, desde `expertestudiospro` o `kiabusiness2025`; prueba la entrega sin necesitar PR elegible y sin activar la variable general. Cuando se reciba el mensaje correcto en el chat privado, activar la variable de avisos solo mediante autorización expresa. No activar otros workflows.
 - Restringir acceso a secretos/variables y registrar quién realizó la activación; rotar credenciales si se sospecha exposición.
@@ -56,3 +57,7 @@ El canal Telegram existente en EXPERT usa TELEGRAM_BOT_TOKEN y TELEGRAM_ADMIN_CH
 ## Configuración confirmada (2026-10-12)
 
 La administradora ha creado `@expert_devops_bot`. Se usa en exclusiva para supervisión de desarrollo. El bot EXPERT de atención al cliente conserva sus credenciales sin cambios. Las credenciales DevOps quedan sin configurar hasta introducirlas en GitHub Actions UI. El job de prueba manual de entrega está restringido a las identidades GitHub permitidas y no accede a PR ni ejecuta operaciones de escritura.
+
+## Auditoría de corrección 2026-10-12
+
+La integración usa `getChat` para verificar tipo `private` antes de cualquier envío. El fallback de Vercel consulta ambos proyectos por SHA y valida proyecto, repo, org y despliegue READY de preview sin activar producción. No hay autorización de fusión. GitHub y Vercel deben pasar de nuevo en el HEAD de estas correcciones antes de solicitar revisión.
