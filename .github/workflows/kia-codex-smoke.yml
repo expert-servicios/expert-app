@@ -1,0 +1,61 @@
+name: KIA Codex One-Time Smoke (manual authorization only)
+
+on:
+  pull_request:
+    types: [labeled]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kia-codex-smoke-pr-742
+  cancel-in-progress: false
+
+jobs:
+  codex:
+    name: Run one isolated read-only Codex request
+    if: ${{ github.event.action == 'labeled' && github.event.label.name == 'kia-codex-smoke' && github.event.pull_request.number == 742 && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'feat/kia-dev-agent-sandbox-foundation-20261012' && github.event.pull_request.head.sha == vars.KIA_CODEX_SMOKE_APPROVED_SHA && vars.KIA_CODEX_SMOKE_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    environment: kia-codex-smoke
+    outputs:
+      final: ${{ steps.codex.outputs.final-message }}
+    steps:
+      - name: Checkout unprivileged repository view
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: One read-only Codex invocation (no files changed)
+        id: codex
+        uses: openai/codex-action@bdf19a4a223ec2549a3e2274a0cf61556bc07675 # verified immutable commit
+        with:
+          openai-api-key: ${{ secrets.KIA_DEV_AGENT_OPENAI_API_KEY }}
+          codex-version: '0.138.0'
+          permission-profile: ':read-only'
+          safety-strategy: drop-sudo
+          effort: low
+          prompt: |
+            Isolated EXPERT KIA smoke test. Do not read repository files, use tools,
+            execute commands, browse, create or modify files, or access external URLs.
+            Your entire final response must contain exactly this one line:
+            EXPERT_KIA_CODEX_SMOKE_OK
+
+  verify:
+    name: Confirm actual Codex response without provider secrets
+    needs: codex
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    env:
+      CODEX_FINAL_MESSAGE: ${{ needs.codex.outputs.final }}
+    steps:
+      - name: Validate non-empty exact response from Codex Action
+        run: |
+          node -e '
+            const result = (process.env.CODEX_FINAL_MESSAGE || "").trim();
+            if (result !== "EXPERT_KIA_CODEX_SMOKE_OK") {
+              process.stderr.write("Codex smoke response not verified\n");
+              process.exit(1);
+            }
+            process.stdout.write("Codex smoke response verified\n");
+          '
