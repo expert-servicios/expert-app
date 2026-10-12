@@ -6,9 +6,15 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
-      pr_number:
-        description: 'Open PR number to evaluate on main'
+      mode:
+        description: 'Recheck an eligible PR, or manually test private bot delivery'
         required: true
+        default: check_pr
+        type: choice
+        options: [check_pr, test_delivery]
+      pr_number:
+        description: 'Open PR number (required for check_pr)'
+        required: false
         type: number
 
 permissions:
@@ -24,7 +30,7 @@ concurrency:
 jobs:
   notify:
     # Never run arbitrary PR code or on a non-default ref. This switch defaults to OFF.
-    if: ${{ github.ref == 'refs/heads/main' && vars.KIA_PR_REVIEW_TELEGRAM_ENABLED == 'true' }}
+    if: ${{ github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.mode == 'test_delivery' && (github.actor == 'expertestudiospro' || github.actor == 'kiabusiness2025')) || (vars.KIA_PR_REVIEW_TELEGRAM_ENABLED == 'true' && (github.event_name == 'pull_request_target' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'check_pr')))) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -35,6 +41,8 @@ jobs:
           TG_PRIVATE_CHAT_ID: ${{ secrets.KIA_PR_REVIEW_TELEGRAM_CHAT_ID }}
           REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          DELIVERY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'check_pr' }}
+          TRIGGER_ACTOR: ${{ github.actor }}
         shell: bash
         run: |
           set -euo pipefail
@@ -44,7 +52,6 @@ jobs:
           import os
           import re
           import sys
-          import urllib.error
           import urllib.request
 
           repo = os.getenv("REPOSITORY", "")
@@ -54,15 +61,48 @@ jobs:
           chat_id = os.getenv("TG_PRIVATE_CHAT_ID", "")
           reviewer = "kiabusiness2025"
           expected = "expert-servicios/expert-app"
+          mode = os.getenv("DELIVERY_MODE", "check_pr")
+          actor = os.getenv("TRIGGER_ACTOR", "")
 
           def skip(reason):
               print("Review alert not sent: " + reason)
               sys.exit(0)
 
-          if repo != expected or not re.fullmatch(r"[1-9][0-9]*", number):
-              skip("unexpected repository or PR number")
-          if not token or not tg_token or not chat_id:
-              raise SystemExit("Review Telegram configuration incomplete; add GitHub Actions secrets.")
+          if repo != expected:
+              skip("unexpected repository")
+          if not tg_token or not chat_id:
+              raise SystemExit("Private bot configuration incomplete; configure GitHub Actions secrets.")
+
+          def send_message(message):
+              body = json.dumps({
+                  "chat_id": chat_id,
+                  "text": message,
+                  "parse_mode": "HTML",
+                  "disable_web_page_preview": True,
+              }).encode("utf-8")
+              request = urllib.request.Request(
+                  "https://api.telegram.org/bot" + tg_token + "/sendMessage",
+                  data=body, headers={"Content-Type": "application/json"},
+                  method="POST")
+              try:
+                  with urllib.request.urlopen(request, timeout=15) as response:
+                      sent = json.load(response)
+                  if sent.get("ok") is not True:
+                      raise RuntimeError("Telegram did not accept this message")
+              except Exception:
+                  raise SystemExit("Private Telegram delivery failed; verify bot/chat access.") from None
+
+          if mode == "test_delivery":
+              if actor not in ("expertestudiospro", "kiabusiness2025"):
+                  skip("only authorized maintainer can request a manual delivery test")
+              send_message("<b>EXPERT DevOps · Prueba de conexión</b>\\nCanal privado confirmado. Ninguna PR ha sido aprobada ni fusionada.")
+              print("Private Telegram delivery test accepted.")
+              sys.exit(0)
+
+          if mode != "check_pr" or not re.fullmatch(r"[1-9][0-9]*", number):
+              skip("no eligible pull request number")
+          if not token:
+              raise SystemExit("Read-only GitHub API token unavailable.")
 
           def gh(path):
               request = urllib.request.Request(
@@ -99,6 +139,10 @@ jobs:
           if any(name not in ci or ci[name].get("status") != "completed"
                  or ci[name].get("conclusion") != "success" for name in required):
               skip("GitHub CI incomplete or not successful for current HEAD")
+          if any(c.get("status") != "completed"
+                 or c.get("conclusion") not in ("success", "neutral", "skipped")
+                 for c in ci.values()):
+              skip("other GitHub Actions checks incomplete or failed")
 
           statuses = gh("/commits/" + head + "/status").get("statuses", [])
           latest = {}
@@ -126,22 +170,6 @@ jobs:
               "Revisar en GitHub: " + url,
               "No se ha autorizado fusión, migración ni despliegue a producción."
           ])
-          body = json.dumps({
-              "chat_id": chat_id,
-              "text": message,
-              "parse_mode": "HTML",
-              "disable_web_page_preview": True,
-          }).encode("utf-8")
-          request = urllib.request.Request(
-              "https://api.telegram.org/bot" + tg_token + "/sendMessage",
-              data=body, headers={"Content-Type": "application/json"},
-              method="POST")
-          try:
-              with urllib.request.urlopen(request, timeout=15) as response:
-                  sent = json.load(response)
-              if sent.get("ok") is not True:
-                  raise RuntimeError()
-          except Exception:
-              raise SystemExit("Telegram notification failed; check bot and private chat access.") from None
+          send_message(message)
           print("Private Telegram review notification accepted for PR #" + number)
           PY
