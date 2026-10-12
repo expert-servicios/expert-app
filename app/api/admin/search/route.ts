@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
 
 interface SearchResult {
@@ -9,23 +10,21 @@ interface SearchResult {
   href: string;
 }
 
-async function requireAdmin(request: NextRequest) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const admin = getSupabaseAdmin();
-  const { data: p } = await admin.from('profiles').select('role').eq('id', user.id).single();
-  return (p?.role === 'admin' || p?.role === 'owner') ? admin : null;
-}
-
 export async function GET(request: NextRequest) {
-  const admin = await requireAdmin(request);
-  if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  const session = createServerSupabaseClient(request);
+  const { data: { user }, error } = await session.auth.getUser();
+  if (error || !user) return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+
+  const actor = await requireActiveActor(request, ['admin', 'owner']);
+  if (!actor || actor.userId !== user.id) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+  }
 
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q')?.trim() ?? '';
   if (q.length < 2) return NextResponse.json({ results: [] });
 
+  const admin = getSupabaseAdmin();
   const lq = q.toLowerCase();
   const results: SearchResult[] = [];
 
@@ -78,7 +77,7 @@ export async function GET(request: NextRequest) {
       .limit(5),
   ]);
 
-  const authEmailById = new Map(authUsersRes.map((user) => [user.id, user.email ?? '']));
+  const authEmailById = new Map(authUsersRes.map((authUser) => [authUser.id, authUser.email ?? '']));
 
   for (const profile of profilesRes.data ?? []) {
     const email = profile.email ?? authEmailById.get(profile.id) ?? '';
