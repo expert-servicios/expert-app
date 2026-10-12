@@ -257,14 +257,14 @@ describe('E0 admin case drive-files exact-active and object scope', () => {
     });
   });
 
-  it('uses auth metadata only after scope when the profile name is absent', async () => {
+  it('uses the auth email only after scope when the profile name is absent', async () => {
     mocks.clientFullName = null;
 
     const response = await GET(request(), context());
 
     expect(response.status).toBe(200);
     expect(mocks.getAuthUser).toHaveBeenCalledWith(CLIENT_ID);
-    expect(mocks.listFiles).toHaveBeenCalledWith('Nombre Auth', 'Certificado digital');
+    expect(mocks.listFiles).toHaveBeenCalledWith('cliente', 'Certificado digital');
   });
 
   it('uses the scoped case tenant for a global owner', async () => {
