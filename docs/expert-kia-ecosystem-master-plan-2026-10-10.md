@@ -4,7 +4,7 @@
 **Estado global:** EN EJECUCIÓN · **ÚNICA FASE ACTIVA: E0** · **Última fase cerrada:** ninguna · **Transición a E1:** BLOQUEADA · **Congelación de alcance:** ACTIVA.  
 **Naturaleza de este documento:** fuente canónica de orden de trabajo, definición de entregables, criterios de cierre y bitácora. No certifica funcionalidades en producción.
 
-<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-06-admin-cases-exact-active-object-scope-audit closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
+<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-06-admin-case-detail-exact-active-object-scope-audit closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
 
 ## 0. Mandato aprobado y reglas innegociables
 
@@ -495,6 +495,16 @@ Resultado y siguiente tarea autorizada:
 - Verificaciones Vercel exactas de `main@7ce3445a48206731b63f1712cbe772a240f0bd44`: [app](https://vercel.com/expertapp/app/FArvwDf4QLhJLqKANHXxsimcUh7r) READY y [ksenia-expert](https://vercel.com/expertapp/ksenia-expert/2mM477UwNp5r42QEUoJWBZbi2cLZ) READY.
 - No se realizaron consultas ni escrituras productivas, DML financiero, migraciones, cambios de RLS/grants, configuración, flags, credenciales o despliegues manuales. Los despliegues automáticos vinculados a la fusión completaron READY sin intervención de configuración. El cambio de grants de Supabase anunciado para el 30/10/2026 no afecta este lote porque no crea tablas ni altera permisos.
 - **Estado:** `E0-M3-06` permanece EN CURSO. Siguiente lote en secuencia: auditar y corregir de forma acotada `GET/POST /api/admin/cases`, cuya guardia compartida valida rol pero no estado exact-active antes de lecturas PII, alta de expediente y sincronización externa. Exigir coincidencia de sesión, comprobar el alcance cliente/empresa/objeto y simular por completo Supabase/Holded en pruebas; no ejecutar altas, sincronizaciones ni escrituras reales. E1–E6 y V3 permanecen bloqueadas.
+
+### 2026-10-12 — Vigesimoprimer lote de rutas privilegiadas E0-M3-06
+
+- [PR #735](https://github.com/expert-servicios/expert-app/pull/735) **fusionada** por squash con commit `60589aa49192f8e0c204eebc202ed4b2ffbbbdea`, usando lease sobre HEAD exacto `c6bdde314033c05219c2565bf6f5ac13df9f206f`; base `70bac3036c352237c69a93725f26f02c2741db1c`, 3 commits por delante, 0 por detrás y dos archivos acotados.
+- `GET/POST /api/admin/cases` exige ahora sesión válida y actor exacto activo `admin`/`owner`, con coincidencia de identidad, antes de instanciar `service_role`. `POST` valida además que el destino sea un perfil `client` activo y que la empresa pertenezca a ese cliente antes del alta o de cualquier sincronización Holded.
+- La cobertura HTTP añade diez casos: ausencia de sesión, revocación, discordancia actor/sesión, contratos positivos `admin`/`owner`, cliente ausente/inactivo/no cliente, empresa fuera de alcance y altas válidas. Supabase y Holded se simularon por completo; no se realizaron altas ni sincronizaciones reales.
+- Gates del HEAD de PR: CI #3586 / run `38196105855` con 4/4 jobs `success`; revisión Codex completada sin incidencias importantes y 0 hilos abiertos; Vercel `app` `dpl_EN5pAfTXWbuj9gAXd527GHJ4QG5S` y `ksenia-expert` `dpl_HGURRF5xP9gx8fVCs7Y4vFVyyW3v`, ambos `READY` y ligados a `c6bdde314033c05219c2565bf6f5ac13df9f206f`.
+- Gates postfusión de `main`: CI push #3587 / run `38196492452` con 4/4 jobs `success`; Vercel `app` `dpl_ExFxGYw2iPyJJDLUoN1tbk5uRqqg` y `ksenia-expert` `dpl_ChJJvU7Jz52n17ViV37XrESJgmR9`, ambos `READY` y ligados a `60589aa49192f8e0c204eebc202ed4b2ffbbbdea`.
+- No se ejecutaron consultas o escrituras productivas, DML financiero, migraciones, cambios de RLS/grants, configuración, flags, credenciales ni despliegues manuales. El cambio de grants de Supabase anunciado para el 30/10/2026 no afecta este lote porque no crea tablas ni altera permisos.
+- **Estado:** `E0-M3-06` permanece EN CURSO. Siguiente frontera demostrada: auditar y corregir de forma acotada `GET/PATCH /api/admin/cases/[id]`, que hoy valida rol pero no estado exact-active antes de leer PII, documentos y URLs firmadas o de mutar expedientes y activar notificaciones/integraciones. Exigir coincidencia de sesión y scope por expediente/cliente/empresa/tenant antes de efectos; simular íntegramente correo, push, calendario y persistencia. E1–E6 y V3 permanecen bloqueadas.
 
 ### Actas de cierre
 
