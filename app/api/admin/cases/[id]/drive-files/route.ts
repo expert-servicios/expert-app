@@ -96,8 +96,7 @@ export async function GET(
     const { data: authUser } = await admin.auth.admin.getUserById(caseRow.client_id);
     const clientName =
       clientFullName ||
-      authUser.user?.user_metadata?.full_name ||
-      authUser.user?.email?.split('@')[0] ||
+      authUser?.user?.email?.split('@')[0] ||
       'Cliente';
 
     const files = await listDriveFilesForClient(clientName, caseRow.service);
