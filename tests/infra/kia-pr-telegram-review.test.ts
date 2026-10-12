@@ -61,7 +61,7 @@ urllib.request.urlopen = fake_urlopen
 function run(scenario: string, mode = 'check_pr', overrides: Record<string,string> = {}) {
   const p = spawnSync('python3', ['-c', mock + '\n' + python], {
     encoding: 'utf8', timeout: 8000,
-    env: { PATH: process.env.PATH ?? '/usr/bin:/bin', MOCK_SCENARIO: scenario,
+    env: { NODE_ENV: 'test', PATH: process.env.PATH ?? '/usr/bin:/bin', MOCK_SCENARIO: scenario,
       REPOSITORY: 'expert-servicios/expert-app', PR_NUMBER: '743',
       GH_READ_TOKEN: 'mock-only', TG_BOT_TOKEN: 'mock-only', TG_PRIVATE_CHAT_ID: '123456789',
       VERCEL_READ_TOKEN: 'mock-only', DELIVERY_MODE: mode,
