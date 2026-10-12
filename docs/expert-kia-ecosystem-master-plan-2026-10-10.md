@@ -4,7 +4,7 @@
 **Estado global:** EN EJECUCIÓN · **ÚNICA FASE ACTIVA: E0** · **Última fase cerrada:** ninguna · **Transición a E1:** BLOQUEADA · **Congelación de alcance:** ACTIVA.  
 **Naturaleza de este documento:** fuente canónica de orden de trabajo, definición de entregables, criterios de cierre y bitácora. No certifica funcionalidades en producción.
 
-<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-06-admin-case-detail-exact-active-object-scope-audit closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
+<!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-06-admin-case-ai-exact-active-object-scope-audit closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
 
 ## 0. Mandato aprobado y reglas innegociables
 
@@ -505,6 +505,19 @@ Resultado y siguiente tarea autorizada:
 - Gates postfusión de `main`: CI push #3587 / run `38196492452` con 4/4 jobs `success`; Vercel `app` `dpl_ExFxGYw2iPyJJDLUoN1tbk5uRqqg` y `ksenia-expert` `dpl_ChJJvU7Jz52n17ViV37XrESJgmR9`, ambos `READY` y ligados a `60589aa49192f8e0c204eebc202ed4b2ffbbbdea`.
 - No se ejecutaron consultas o escrituras productivas, DML financiero, migraciones, cambios de RLS/grants, configuración, flags, credenciales ni despliegues manuales. El cambio de grants de Supabase anunciado para el 30/10/2026 no afecta este lote porque no crea tablas ni altera permisos.
 - **Estado:** `E0-M3-06` permanece EN CURSO. Siguiente frontera demostrada: auditar y corregir de forma acotada `GET/PATCH /api/admin/cases/[id]`, que hoy valida rol pero no estado exact-active antes de leer PII, documentos y URLs firmadas o de mutar expedientes y activar notificaciones/integraciones. Exigir coincidencia de sesión y scope por expediente/cliente/empresa/tenant antes de efectos; simular íntegramente correo, push, calendario y persistencia. E1–E6 y V3 permanecen bloqueadas.
+
+
+### 2026-10-12 — Vigesimosegundo lote de rutas privilegiadas E0-M3-06
+
+- **Entrega:** PR [#736](https://github.com/expert-servicios/expert-app/pull/736) fusionada por squash en `main` como `8b6c6c6ba55402258e497b66567509a61abd4104`. La rama partió de `50fc9a9cabb7a6fd9334e73ad88953482f67dd67`; el último HEAD revisado fue `16b23e5211a31e14b930c674139ed857bca14fc4` (6 commits por delante, 0 por detrás, 2 archivos).
+- **Alcance autorizado:** `GET/PATCH /api/admin/cases/[id]` exige actor admin/owner exacto activo antes de acceso privilegiado; resuelve el expediente dentro de `tenant/client/company`, valida pertenencia cliente-empresa y acota documentos/notas antes de PII, Auth, Storage o URLs firmadas. Las mutaciones reaplican todos los predicados, incluido `tenant_id IS NULL` para filas heredadas.
+- **Efectos seguros:** una transición de estado confirma que una fila fue actualizada antes de correo, push, calendario, notificaciones, rentabilidad o snapshot; cero filas devuelve conflicto y no ejecuta efectos. La atribución usa el actor exacto validado.
+- **Pruebas:** 11 casos HTTP cubren revocación, cruces de tenant/cliente/empresa, pertenencia, GET admin/owner, alcance de documentos/notas, PATCH bloqueado, mutación no-status, tenant heredado nulo, carrera de cero filas y transición válida. Supabase/Auth/Storage y todos los proveedores de efectos están simulados; no hubo lecturas, escrituras ni llamadas reales.
+- **Revisión:** tres rondas de revisión de seguridad. Se corrigieron cinco hallazgos concretos (tenant de cliente/empresa, documentos, confirmación de fila actualizada, preservación de tenant nulo y notas); la ronda final no detectó incidencias importantes y quedaron 0 conversaciones abiertas.
+- **Gates de PR:** CI #3593 (`38198488244`) verde 4/4; Vercel `app` `dpl_4Jh8b5PsMmqrkZzi5kmNCERNPSRc` y `ksenia-expert` `dpl_5NzCdEpSH3AhJsvBKunF99YLXHif`, ambos `READY` y ligados al HEAD revisado.
+- **Gates posfusión:** CI #3594 (`38198950303`) verde 4/4 sobre `8b6c6c6ba55402258e497b66567509a61abd4104`; Vercel `app` `dpl_JDUotqEjYN1LCVgtyjnqHvYth1gP` y `ksenia-expert` `dpl_2MnFNF1FiScGVmVt5RNs1Hd58Ddd`, ambos `READY` y ligados al mismo SHA.
+- **Producción:** no se ejecutaron consultas ni DML de producción, migraciones, escrituras financieras, cambios RLS/grants, configuración, flags, credenciales ni despliegues manuales. El cambio anunciado por Supabase para el 30-10-2026 sobre grants implícitos no afecta a este lote, que no modifica esquema ni grants.
+- **Estado y secuencia:** E0-M3-06 permanece `IN_PROGRESS`. Siguiente tarea exacta: auditar `POST /api/admin/cases/[id]/ai` para exigir actor exacto activo y alcance de objeto antes de service role y proveedores AI, con proveedores simulados y sin llamadas/escrituras reales. E1-E6 y V3 siguen bloqueadas.
 
 ### Actas de cierre
 
