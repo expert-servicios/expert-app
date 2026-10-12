@@ -8,7 +8,7 @@ const CLIENT_ID = '11111111-1111-4111-8111-111111111111';
 const PROPOSAL_ID = '33333333-3333-4333-8333-333333333333';
 
 type Filter = {
-  op: 'eq';
+  op: 'eq' | 'in';
   column: string;
   value: unknown;
 };
@@ -31,6 +31,7 @@ const mocks = vi.hoisted(() => {
     membershipOk: true,
     memberScopeOk: true,
     proposalFound: true,
+    proposalError: false,
     proposals: [] as Array<Record<string, unknown>>,
     updatedProposal: {
       id: '33333333-3333-4333-8333-333333333333',
@@ -78,7 +79,7 @@ const mocks = vi.hoisted(() => {
       const tenantFilter = filters.find((filter) => filter.column === 'tenant_id');
       const matchesTenant = !tenantFilter || tenantFilter.value === TENANT_ID;
       return {
-        data: state.memberScopeOk && matchesTenant ? { id: CLIENT_ID } : null,
+        data: state.memberScopeOk && matchesTenant ? [{ id: CLIENT_ID }] : [],
         error: null,
       };
     }
@@ -98,7 +99,9 @@ const mocks = vi.hoisted(() => {
                 status: 'pending_review',
               }
             : null,
-          error: null,
+          error: state.proposalError
+            ? { message: 'temporary database failure' }
+            : null,
         };
       }
 
@@ -123,6 +126,10 @@ const mocks = vi.hoisted(() => {
         },
         eq(column: string, value: unknown) {
           filters.push({ op: 'eq', column, value });
+          return query;
+        },
+        in(column: string, value: unknown) {
+          filters.push({ op: 'in', column, value });
           return query;
         },
         order() {
@@ -241,6 +248,7 @@ describe('E0 company journal proposal HTTP boundaries', () => {
     mocks.state.membershipOk = true;
     mocks.state.memberScopeOk = true;
     mocks.state.proposalFound = true;
+    mocks.state.proposalError = false;
     mocks.state.proposals = [];
     mocks.state.updatedProposal = {
       id: PROPOSAL_ID,
@@ -307,7 +315,7 @@ describe('E0 company journal proposal HTTP boundaries', () => {
 
     expect(response.status).toBe(403);
     expect(queriesFor('profiles')[0].filters).toEqual([
-      { op: 'eq', column: 'id', value: CLIENT_ID },
+      { op: 'in', column: 'id', value: [CLIENT_ID] },
       { op: 'eq', column: 'tenant_id', value: TENANT_ID },
     ]);
     expectNoProposalAccess();
@@ -370,6 +378,19 @@ describe('E0 company journal proposal HTTP boundaries', () => {
       { op: 'eq', column: 'company_id', value: COMPANY_ID },
       { op: 'eq', column: 'status', value: 'pending_review' },
     ]);
+    expect(mocks.state.updatePayload).toBeNull();
+  });
+
+  it('returns a server error when proposal preflight fails', async () => {
+    mocks.state.proposalFound = false;
+    mocks.state.proposalError = true;
+
+    const response = await PATCH(patchRequest(validDecision), context());
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({
+      error: 'No se pudo comprobar la propuesta',
+    });
     expect(mocks.state.updatePayload).toBeNull();
   });
 
@@ -440,7 +461,7 @@ describe('E0 company journal proposal HTTP boundaries', () => {
 
     expect(response.status).toBe(200);
     expect(queriesFor('profiles')[0].filters).toEqual([
-      { op: 'eq', column: 'id', value: CLIENT_ID },
+      { op: 'in', column: 'id', value: [CLIENT_ID] },
     ]);
   });
 });
