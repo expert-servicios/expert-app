@@ -19,39 +19,40 @@ import urllib.parse
 
 scenario = os.getenv("MOCK_SCENARIO", "")
 sha = "a" * 40
-def response(value):
+def mock_response(value):
     return io.BytesIO(json.dumps(value).encode("utf-8"))
 def fake_urlopen(req, timeout=None):
     url = req.full_url if hasattr(req, "full_url") else str(req)
     if "/getChat?" in url:
-        return response({"ok": True, "result": {"type": "supergroup" if scenario == "group" else "private"}})
+        return mock_response({"ok": True, "result": {"type": "supergroup" if scenario == "group" else "private"}})
     if "/sendMessage" in url:
         print("TELEGRAM_SENT")
-        return response({"ok": True, "result": {"message_id": 1}})
+        return mock_response({"ok": True, "result": {"message_id": 1}})
     if "/pulls/743/reviews" in url:
-        return response([])
+        return mock_response([])
     if "/pulls/743" in url:
-        return response({"state": "open", "draft": scenario == "draft", "merged": False,
+        return mock_response({"state": "open", "draft": scenario == "draft", "merged": False,
             "base": {"ref": "main"}, "head": {"repo": {"full_name": "expert-servicios/expert-app"}, "sha": sha},
             "user": {"login": "expertestudiospro"}, "title": "Test notification"})
     if "/check-runs?" in url:
         names = ("Typecheck · Lint · Test", "Supabase migration repair contract",
             "KIA web persistence PostgreSQL integration", "KIA Work PostgreSQL active-scope integration")
-        return response({"check_runs": [{"name": n, "status": "completed",
+        return mock_response({"check_runs": [{"name": n, "status": "completed",
             "conclusion": "failure" if scenario == "bad_ci" and i == 0 else "success",
             "app": {"slug": "github-actions"}} for i, n in enumerate(names)]})
     if url.endswith("/status"):
         statuses = [{"context": "Vercel – app", "state": "success"},
                     {"context": "Vercel – ksenia-expert", "state": "success"}]
-        return response({"statuses": statuses if scenario == "github_ok" else []})
+        return mock_response({"statuses": statuses if scenario == "github_ok" else []})
     if "/v6/deployments?" in url:
         q = urllib.parse.parse_qs(urllib.parse.urlparse(url).query)
         project = q.get("projectId", [""])[0]
+        print("MOCK_VERCEL_PROJECT:" + project)
         good = q.get("sha") == [sha] and project in (
             "prj_8QaCDKDrAsLQ1c3nr4ueRVLXtYsD", "prj_UscIRsCiaqY051PTrRVncEfNyquJ")
         state = "READY" if good and not (scenario == "bad_vercel"
             and project == "prj_UscIRsCiaqY051PTrRVncEfNyquJ") else "ERROR"
-        return response({"deployments": [{"state": state, "target": None,
+        return mock_response({"deployments": [{"state": state, "target": None,
             "meta": {"githubCommitSha": "b"*40 if scenario == "wrong_sha" else sha,
                      "githubOrg": "expert-servicios", "githubRepo": "expert-app"}}]})
     raise AssertionError("Unexpected HTTP endpoint")
@@ -105,12 +106,17 @@ describe('KIA DevOps Telegram review - offline functional tests', () => {
       const r = run(scenario);
       expect(r.exit, `Scenario ${scenario} failed: ${r.output}`).toBe(0);
       expect(r.output).toContain('TELEGRAM_SENT');
+      if (scenario === 'vercel_ok') {
+        expect(r.output).toContain('MOCK_VERCEL_PROJECT:prj_8QaCDKDrAsLQ1c3nr4ueRVLXtYsD');
+        expect(r.output).toContain('MOCK_VERCEL_PROJECT:prj_UscIRsCiaqY051PTrRVncEfNyquJ');
+      }
     }
   });
   it('fails closed on Vercel mismatch, unsuccessful project or absent auth', () => {
     for (const scenario of ['wrong_sha','bad_vercel']) {
       const r = run(scenario);
       expect(r.output).not.toContain('TELEGRAM_SENT');
+      expect(r.output).toContain('no READY Vercel preview matching exact SHA and project');
     }
     const withoutToken = run('vercel_ok', 'check_pr', {VERCEL_READ_TOKEN: ''});
     expect(withoutToken.output).not.toContain('TELEGRAM_SENT');
