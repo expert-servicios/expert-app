@@ -48,20 +48,19 @@ async function authorize(request: NextRequest, companyId: string) {
   const { data: memberships, error: membershipError } = await admin
     .from('profile_companies')
     .select('profile_id')
-    .eq('company_id', companyId)
-    .limit(1);
+    .eq('company_id', companyId);
 
-  const memberProfileId = memberships?.[0]?.profile_id;
-  if (membershipError || !memberProfileId) return null;
+  const memberProfileIds = (memberships ?? []).map((row) => row.profile_id);
+  if (membershipError || memberProfileIds.length === 0) return null;
 
   let memberQuery = admin
     .from('profiles')
     .select('id')
-    .eq('id', memberProfileId);
+    .in('id', memberProfileIds);
   if (scopeTenantId) memberQuery = memberQuery.eq('tenant_id', scopeTenantId);
 
-  const { data: member, error: memberError } = await memberQuery.maybeSingle();
-  if (memberError || !member) return null;
+  const { data: members, error: memberError } = await memberQuery.limit(1);
+  if (memberError || !members?.[0]) return null;
 
   return {
     admin,
@@ -76,16 +75,13 @@ async function getPendingProposal(
   companyId: string,
   proposalId: string,
 ) {
-  const { data, error } = await admin
+  return admin
     .from('kia_journal_proposals')
     .select('id,company_id,status')
     .eq('id', proposalId)
     .eq('company_id', companyId)
     .eq('status', 'pending_review')
     .maybeSingle();
-
-  if (error || !data) return null;
-  return data;
 }
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
@@ -143,11 +139,17 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const parsedId = decisionId.safeParse(raw);
   if (!parsedId.success) return NextResponse.json({ error: 'Decisión inválida' }, { status: 400 });
 
-  const pendingProposal = await getPendingProposal(
+  const { data: pendingProposal, error: proposalError } = await getPendingProposal(
     ctx.admin,
     ctx.companyId,
     parsedId.data.id,
   );
+  if (proposalError) {
+    return NextResponse.json(
+      { error: 'No se pudo comprobar la propuesta' },
+      { status: 500 },
+    );
+  }
   if (!pendingProposal) {
     return NextResponse.json(
       { error: 'Propuesta inexistente o ya revisada' },
