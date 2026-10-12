@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { z } from 'zod';
 import { syncProjectToHolded } from '@/lib/integrations/holded';
 import { caseStatusToVisualState, resolveEffectiveCaseStatus } from '@/lib/cases/case-status';
 
 async function requireAdmin(request: NextRequest) {
-  const supabase = createServerSupabaseClient(request);
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const admin = getSupabaseAdmin();
-  const { data: profile } = await admin.from('profiles').select('role').eq('id', user.id).single();
-  return (profile?.role === 'admin' || profile?.role === 'owner') ? admin : null;
+  const session = createServerSupabaseClient(request);
+  const { data: { user }, error } = await session.auth.getUser();
+  if (error || !user) return null;
+
+  const actor = await requireActiveActor(request, ['admin', 'owner']);
+  if (!actor || actor.userId !== user.id) return null;
+
+  return getSupabaseAdmin();
 }
 
 export async function GET(request: NextRequest) {
@@ -96,6 +99,22 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: 'Datos inválidos' }, { status: 400 });
 
     const { client_id, company_id, service, category } = parsed.data;
+
+    const { data: clientProfile, error: clientProfileError } = await admin
+      .from('profiles')
+      .select('id')
+      .eq('id', client_id)
+      .eq('role', 'client')
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (clientProfileError) {
+      console.error('[admin/cases POST] client scope:', clientProfileError);
+      return NextResponse.json({ error: 'No se pudo validar el cliente' }, { status: 500 });
+    }
+    if (!clientProfile) {
+      return NextResponse.json({ error: 'El cliente indicado no está activo' }, { status: 400 });
+    }
 
     if (company_id) {
       const { data: membership, error: membershipError } = await admin
