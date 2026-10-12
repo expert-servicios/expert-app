@@ -23,7 +23,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Validate policy and fixed checkpoint without agent execution
-        run: node scripts/kia-dev-agent.mjs validate "${{ inputs.task_id }}"
+        env:
+          KIA_TASK_ID: ${{ inputs.task_id }}
+        run: node scripts/kia-dev-agent.mjs validate "$KIA_TASK_ID"
       - name: Assert execution remains disabled
         run: |
           node -e "const p=require('./config/kia-dev-agent-tasks.json');if(p.executionEnabled !== false) process.exit(1)"
