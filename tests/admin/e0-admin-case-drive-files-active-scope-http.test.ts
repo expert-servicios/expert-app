@@ -123,7 +123,7 @@ describe('E0 admin case drive-files exact-active and object scope', () => {
     };
     mocks.caseRow = {
       id: CASE_ID,
-      serviceName: 'Certificado digital',
+      service: 'Certificado digital',
       client_id: CLIENT_ID,
       company_id: COMPANY_ID,
       tenant_id: TENANT_ID,
@@ -253,7 +253,7 @@ describe('E0 admin case drive-files exact-active and object scope', () => {
     expect(body).toEqual({
       files: [{ id: 'file-1', name: 'documento.pdf' }],
       clientName: 'Cliente Verificado',
-      service: 'Certificado digital',
+      serviceName: 'Certificado digital',
     });
   });
 
