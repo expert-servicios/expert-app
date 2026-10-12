@@ -123,7 +123,7 @@ describe('E0 admin case drive-files exact-active and object scope', () => {
     };
     mocks.caseRow = {
       id: CASE_ID,
-      service: 'Certificado digital',
+      serviceName: 'Certificado digital',
       client_id: CLIENT_ID,
       company_id: COMPANY_ID,
       tenant_id: TENANT_ID,
