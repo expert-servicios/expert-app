@@ -79,6 +79,15 @@ jobs:
           def send_message(message):
               if not re.fullmatch(r"[1-9][0-9]{4,15}", chat_id):
                   raise SystemExit("Telegram destination is not a private user ID.")
+              verify = urllib.request.Request(
+                  "https://api.telegram.org/bot" + tg_token + "/getChat?chat_id=" + chat_id)
+              try:
+                  with urllib.request.urlopen(verify, timeout=15) as response:
+                      meta = json.load(response)
+                  if not meta.get("ok") or meta.get("result", {}).get("type") != "private":
+                      raise ValueError("not a private chat")
+              except Exception:
+                  raise SystemExit("Telegram destination could not be verified private.") from None
               body = json.dumps({
                   "chat_id": chat_id,
                   "text": message,
