@@ -103,7 +103,7 @@ describe('KIA DevOps Telegram review - offline functional tests', () => {
   it('notifies for GitHub Vercel statuses and correctly matched Vercel API fallback', () => {
     for (const scenario of ['github_ok', 'vercel_ok']) {
       const r = run(scenario);
-      expect(r.exit).toBe(0);
+      expect(r.exit, `Scenario ${scenario} failed: ${r.output}`).toBe(0);
       expect(r.output).toContain('TELEGRAM_SENT');
     }
   });
