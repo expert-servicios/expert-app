@@ -156,12 +156,27 @@ export function inspectPatch(task, policy) {
 
 export function run(command, taskId) {
   const policy = loadPolicy();
-  if (command === 'lint-policy') {
-    if (policy.executionEnabled !== false) throw new Error('Disabled foundation must remain off');
-    if (policy.tasks.some((task) => task.status === 'sandbox-approved')) {
-      throw new Error('Foundation tasks must be explicitly suspended');
+  if (command === 'audit-policy' || command === 'lint-policy') {
+    if (policy.tasks.some((task) =>
+      !/^[A-Z0-9-]{5,90}$/.test(task.id) ||
+      !['suspended', 'sandbox-approved'].includes(task.status) ||
+      task.phase !== 'E0' ||
+      !Array.isArray(task.allowedPaths) || !task.allowedPaths.length ||
+      task.allowedPaths.some((path) =>
+        typeof path !== 'string' ||
+        !/^(app\/api|tests\/api)\/[a-zA-Z0-9_.\[\]/-]+$/.test(path) ||
+        path.includes('..'))
+    )) throw new Error('Unsafe or malformed task registry');
+    if (new Set(policy.tasks.map((task) => task.id)).size !== policy.tasks.length) {
+      throw new Error('Duplicate task ID');
     }
-    return { disabled: true, taskCount: policy.tasks.length };
+    if (policy.executionEnabled !== true && policy.tasks.some((task) => task.status === 'sandbox-approved')) {
+      throw new Error('Enabled task while agent is disabled');
+    }
+    if (command === 'lint-policy' && policy.executionEnabled !== false) {
+      throw new Error('Disabled foundation must remain off');
+    }
+    return { disabled: policy.executionEnabled === false, taskCount: policy.tasks.length };
   }
   const task = selectTask(policy, taskId);
   if (command === 'validate') {
