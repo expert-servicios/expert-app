@@ -74,6 +74,8 @@ jobs:
               raise SystemExit("Private bot configuration incomplete; configure GitHub Actions secrets.")
 
           def send_message(message):
+              if not re.fullmatch(r"[1-9][0-9]{4,15}", chat_id):
+                  raise SystemExit("Telegram destination is not a private user ID.")
               body = json.dumps({
                   "chat_id": chat_id,
                   "text": message,
