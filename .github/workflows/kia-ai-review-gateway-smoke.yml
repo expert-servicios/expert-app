@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Catalog validation or two provider tests'
+        description: 'Validate catalog without key, or test two providers'
         required: true
         default: catalog
         type: choice
@@ -17,83 +17,103 @@ concurrency:
   group: kia-ai-review-smoke
   cancel-in-progress: false
 
+env:
+  CLAUDE_MODEL: anthropic/claude-haiku-4.5
+  GEMINI_MODEL: google/gemini-2.5-flash-lite
+
 jobs:
-  isolated:
-    if: ${{ github.ref == 'refs/heads/main' && vars.KIA_AI_REVIEW_SMOKE_ENABLED == 'true' && github.sha == vars.KIA_AI_REVIEW_SMOKE_APPROVED_SHA && (github.actor == 'expertestudiospro' || github.actor == 'kiabusiness2025') }}
+  catalog:
+    name: Check catalog (no secrets or billable calls)
+    if: \${{ github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && github.sha == vars.KIA_AI_REVIEW_SMOKE_APPROVED_SHA && vars.KIA_AI_REVIEW_SMOKE_ENABLED == 'true' && (github.actor == 'expertestudiospro' || github.actor == 'kiabusiness2025') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 4
-    environment: kia-ai-review-smoke
+    timeout-minutes: 3
+    outputs:
+      verified: \${{ steps.catalog.outputs.verified }}
     steps:
-      - name: Validate live catalog and call two distinct models only if explicitly requested
+      - name: Validate exact Anthropic and Google models against live catalog
+        id: catalog
         shell: bash
-        env:
-          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
-          SMOKE_MODE: ${{ inputs.mode }}
-          CLAUDE_MODEL: ${{ vars.KIA_REVIEW_CLAUDE_MODEL }}
-          GEMINI_MODEL: ${{ vars.KIA_REVIEW_GEMINI_MODEL }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
           import json
           import os
           import sys
+          import urllib.request
+
+          try:
+              with urllib.request.urlopen(
+                  urllib.request.Request("https://ai-gateway.vercel.sh/v1/models",
+                                         headers={"User-Agent": "EXPERT-KIA-Review-Smoke/1"}), timeout=20) as response:
+                  data = json.load(response)
+          except Exception:
+              raise SystemExit("Catalog request failed, no smoke permitted") from None
+
+          known = {item.get("id") for item in data.get("data", []) if isinstance(item, dict)
+                   and item.get("type") == "language"}
+          claude = os.environ.get("CLAUDE_MODEL", "")
+          gemini = os.environ.get("GEMINI_MODEL", "")
+          if not claude.startswith("anthropic/") or claude not in known:
+              raise SystemExit("Claude model not in the live catalog")
+          if not gemini.startswith("google/") or gemini not in known:
+              raise SystemExit("Gemini model not in the live catalog")
+          if claude == gemini:
+              raise SystemExit("Review providers must be different")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("verified=true\n")
+          print("CATALOG_OK: Claude and Gemini models verified, no secret used")
+          PY
+
+  smoke:
+    name: Two tiny provider requests (protected secret)
+    needs: catalog
+    if: \${{ inputs.mode == 'smoke' && needs.catalog.outputs.verified == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    environment: kia-ai-review-smoke
+    steps:
+      - name: Verify both providers with a single synthetic prompt
+        shell: bash
+        env:
+          AI_GATEWAY_API_KEY: \${{ secrets.AI_GATEWAY_API_KEY }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
           import urllib.error
           import urllib.request
 
-          mode = os.environ["SMOKE_MODE"]
-          if mode not in ("catalog", "smoke"):
-              raise SystemExit("Unsupported smoke mode")
-
-          def fetch(url, *, token="", body=None):
-              headers = {"User-Agent": "EXPERT-KIA-Review-Smoke/1"}
-              if token:
-                  headers["Authorization"] = "Bearer " + token
-              if body is not None:
-                  headers["Content-Type"] = "application/json"
-              req = urllib.request.Request(
-                  url, headers=headers, data=(json.dumps(body).encode() if body is not None else None),
-                  method=("POST" if body is not None else "GET"))
-              try:
-                  with urllib.request.urlopen(req, timeout=25) as response:
-                      return json.load(response)
-              except urllib.error.HTTPError as exc:
-                  # No response body or headers: providers sometimes return sensitive diagnostics.
-                  raise SystemExit("Gateway request failed with HTTP " + str(exc.code)) from None
-              except Exception:
-                  raise SystemExit("Gateway request failed before receiving a valid response") from None
-
-          models = fetch("https://ai-gateway.vercel.sh/v1/models").get("data", [])
-          known = {item.get("id") for item in models if isinstance(item, dict)}
-          claude = os.environ.get("CLAUDE_MODEL", "").strip()
-          gemini = os.environ.get("GEMINI_MODEL", "").strip()
-          if not claude.startswith("anthropic/") or claude not in known:
-              raise SystemExit("Claude model variable missing or not present in live catalog")
-          if not gemini.startswith("google/") or gemini not in known:
-              raise SystemExit("Gemini model variable missing or not present in live catalog")
-          if claude == gemini:
-              raise SystemExit("Independent reviewer providers must differ")
-          print("Catalog verified: Anthropic and Google model IDs both available")
-
-          if mode == "catalog":
-              print("CATALOG_OK: no secret needed or model generation performed")
-              sys.exit(0)
-
-          token = os.environ.get("AI_GATEWAY_API_KEY", "")
-          if not token:
-              raise SystemExit("AI Gateway secret not available to protected environment")
-          for label, model in (("Claude", claude), ("Gemini", gemini)):
+          key = os.environ.get("AI_GATEWAY_API_KEY", "")
+          if not key:
+              raise SystemExit("AI Gateway secret unavailable")
+          for name, model in (("Claude", os.environ["CLAUDE_MODEL"]),
+                              ("Gemini", os.environ["GEMINI_MODEL"])):
               payload = {
                   "model": model,
-                  "messages": [{"role": "user", "content": "Reply with exactly: KIA_REVIEW_SMOKE_OK"}],
-                  "temperature": 0,
+                  "messages": [{"role": "user", "content": "Reply with exactly KIA_REVIEW_SMOKE_OK"}],
                   "max_tokens": 32,
               }
-              output = fetch("https://ai-gateway.vercel.sh/v1/chat/completions",
-                             token=token, body=payload)
-              choices = output.get("choices") or []
-              response = ((choices[0].get("message") or {}).get("content") or "").strip() if choices else ""
-              if response != "KIA_REVIEW_SMOKE_OK":
-                  raise SystemExit(label + " responded but did not meet the exact smoke contract")
-              print(label + ": SMOKE_OK (model response verified)")
-          print("TWO_PROVIDER_SMOKE_OK: no code, data, PR or production changed")
+              request = urllib.request.Request(
+                  "https://ai-gateway.vercel.sh/v1/chat/completions",
+                  data=json.dumps(payload).encode("utf-8"),
+                  method="POST",
+                  headers={"Authorization": "Bearer " + key,
+                           "Content-Type": "application/json",
+                           "User-Agent": "EXPERT-KIA-Review-Smoke/1"})
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      result = json.load(response)
+              except urllib.error.HTTPError as error:
+                  raise SystemExit(name + " gateway HTTP " + str(error.code)) from None
+              except Exception:
+                  raise SystemExit(name + " gateway request failed") from None
+              choices = result.get("choices") or []
+              text = ((choices[0].get("message") or {}).get("content") or "").strip() if choices else ""
+              if text != "KIA_REVIEW_SMOKE_OK":
+                  raise SystemExit(name + " failed exact response contract")
+              if result.get("model") and not str(result["model"]).startswith(model):
+                  raise SystemExit(name + " unexpected response model")
+              print(name + ": SMOKE_OK")
+          print("TWO_PROVIDER_SMOKE_OK (no code or production changes)")
           PY
