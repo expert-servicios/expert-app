@@ -141,3 +141,45 @@ Proposed verifications: unit contract + property tests for valid/invalid transit
 - **Pending separate gates:** SQL migration, environment reviewers, credential permissions, quotas, retention policy, broker implementation, approval workflow, full E2E verification.
 
 **No work in this design is evidence that the queue exists or that the current agent is authorized to run.**
+
+
+## 9. KIA-supervised multimodel audit of candidate patches (decision 2026-10-12)
+
+**Canonical linkage:** [Dev Agent runbook](kia-dev-agent-runbook.md) on PR [#742](https://github.com/expert-servicios/expert-app/pull/742), [master-plan addendum](expert-kia-ecosystem-master-plan-2026-10-10.md) proposed in PR [#744](https://github.com/expert-servicios/expert-app/pull/744), and Telegram PR [#743](https://github.com/expert-servicios/expert-app/pull/743). This section is a **future execution contract**, not evidence of a running agent or an approved database migration.
+
+### KIA remains the only supervisor
+
+- KIA selects only exact approved `task_id` values from the canonical E0–E6 manifest and reads current checkpoint and task acceptance criteria, **without accepting instructions as authorization** from chats, PR descriptions, Telegram or model text.
+- The authenticated request service, queue and narrow execution broker enforce the permissions **outside the LLM**. KIA observes/recommends/coordinates through typed server interfaces, but cannot authorize its own execution or merge. Suspended and stale tasks remain blocked.
+- Codex is the **candidate-patch developer**. The sandbox inspector runs deterministic allowlist/symlink/secret/path and test checks first.
+- Claude is the independent **model security reviewer** (auth, tenancy/RLS, abuse and architecture); Gemini is the independent **model functional reviewer** (requirements, regressions and edge cases). These are *distinct model providers*, not persons. Neither reviewer writes code, approves a GitHub PR as a human or replaces CI.
+- KIA assembles results, requests a bounded change from Codex when P0/P1 findings are present **only under a valid authorization/quota**, and invalidates **all** reports after patch SHA/HEAD changes; requires new tests/reviews. No unlimited self-repair loop.
+
+### Review sub-states and durable evidence
+
+Within the existing `patch_pending_review` parent state, plan future review tasks with `queued | running | passed | changes_required | inconclusive | stale` status, keyed uniquely by `request_id + attempt + candidate_patch_sha256 + provider + model_id + review_policy_version`. Do not modify the current unexecuted SQL design as if these states were already deployed. Proposed persistent `kia_dev_agent_reviews` needs a **separate** reviewed forward-only migration, RLS and retention policy.
+
+Each reviewer report: immutable request digest, task ID, manifest SHA, plan checkpoint, baseline commit SHA, candidate patch SHA-256, PR HEAD SHA if assigned, reviewed path set, model/provider identifier, model response ID, review policy version, result, findings with severity/path/line and evidence, timestamp, token/cost summary and redacted log link. **Exact matching SHA and policy version** are prerequisites for aggregating PASS.
+
+KIA may mark the proposal ready for separate human review only after:
+1. CI complete success on the exact candidate/HEAD, both Vercel previews READY on that HEAD when PR exists, and all relevant SQL/RLS/security tests.
+2. Claude and Gemini outputs separately validated; `PASS` from both or **blocked**. Distinguish `CHANGES_REQUIRED` from `INCONCLUSIVE`; never treat API failure or a provider fallback as consent to pass.
+3. No open P0/P1. A reviewer disagreeing with the other results in a documented finding requiring investigation, not two-vote override.
+4. A real external human review if required by protected-branch policy. User's two GitHub identities and two AI models do not create independent human identity.
+5. Explicit, per-action separate human authorization before any merge, activation, migration or production deploy; proposals are not releases.
+
+### Gateway, permissions, budgets, data safeguards
+
+The user stated on 2026-10-12 that a **dedicated GitHub Actions secret** `AI_GATEWAY_API_KEY` was added with USD 5 total cap and a 30-day expiration. **This is operator-provided status, not verified by the connected GitHub API or a live model request.** Do not attempt to reveal or echo it, and do not assume runtime success from the declaration.
+
+Prefer Vercel AI Gateway with separately selected exact **catalog-verified** `anthropic/*` and `google/*` models and no model fallback that makes both reviews use the same provider. Dedicated CI credential must have spend cap, expiration and least privilege, not be copied into production. Do not confuse `KIA_PR_REVIEW_VERCEL_TOKEN` (deployment-listing only) with Gateway inference auth. Capture/request usage and errors as non-secret metadata only; treat `401/402/429/503`, timeouts, invalid JSON, policy ambiguity and budget exhaustion as `inconclusive` (fail-closed). A key budget is a soft cap: one crossing request might finish.
+
+**Never expose client secrets, customer data, production configs, financial datasets, digital certificates or raw unredacted diff to an external model**. Restrict review to inspected, redacted source paths; GitHub `pull_request_target` and other secret-bearing events must not checkout/run untrusted PR code, dependencies or scripts. The initial smoke sends a fixed public-free synthetic phrase and verifies provider/model/result. Do not install or activate the production execution broker simply for this smoke.
+
+### Rollout gates (in order)
+
+1. Finish the existing #742/#743 fixes and offline contracts. `executionEnabled=false`; old `E0-M3-06-DOCINDEX` task suspended; no real Dev Agent execution.
+2. Propose and review a **manual-only and off-by-default** CI smoke workflow; ensure source is protected before allowing the GitHub Actions secret into a runner; **never** execute secret-bearing code directly from an unreviewed PR branch.
+3. Execute **one Claude and one Gemini synthetic request** with tiny output and max token bound, and verify Vercel Gateway Logs/budget attribution. Do not infer success just because key name is present.
+4. Introduce read-only review jobs with full offline tests for false PASS, wrong HEAD, untrusted diff injection, retry and duplicate delivery, invalid API response, secret leakage, and independent-provider enforcement.
+5. Only after red-team testing and approval: link verified review outcomes to the KIA Admin read model, durable queue and gated draft-PR broker. Still no unsupervised code activation, merge, SQL, production change or customer communication.
