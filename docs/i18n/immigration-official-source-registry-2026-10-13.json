@@ -1,0 +1,183 @@
+{
+  "schemaVersion": "1.0",
+  "lastAuditDate": "2026-10-13",
+  "policy": "A new detected update must be verified and reviewed before it modifies ES/RU legal assertions. A source content change is not automatically a law change.",
+  "sources": [
+    {
+      "id": "boe-rd1155-consolidated",
+      "url": "https://www.boe.es/buscar/act.php?id=BOE-A-2024-24099",
+      "type": "consolidated_law",
+      "publishedOn": "2024-11-20",
+      "effectiveOn": "2025-05-20",
+      "lastKnownConsolidatedChangeOn": "2026-09-22",
+      "checkedOn": "2026-10-13",
+      "affectedTopics": [
+        "arraigo",
+        "initial-residence",
+        "renewal",
+        "long-term-residence"
+      ],
+      "priority": "critical"
+    },
+    {
+      "id": "rd316-2026",
+      "url": "https://www.boe.es/buscar/doc.php?id=BOE-A-2026-8284",
+      "type": "amending_law",
+      "publishedOn": "2026-04-15",
+      "effectiveOn": "2026-04-16",
+      "checkedOn": "2026-10-13",
+      "affectedTopics": [
+        "extraordinary-arraigo",
+        "family-residence"
+      ],
+      "priority": "critical"
+    },
+    {
+      "id": "ts-2026-19632",
+      "url": "https://www.boe.es/buscar/doc.php?id=BOE-A-2026-19632",
+      "type": "judgment",
+      "publishedOn": "2026-09-22",
+      "effectiveOn": null,
+      "checkedOn": "2026-10-13",
+      "affectedTopics": [
+        "foreigners-regulation"
+      ],
+      "priority": "critical"
+    },
+    {
+      "id": "ts-2026-19633",
+      "url": "https://www.boe.es/buscar/doc.php?id=BOE-A-2026-19633",
+      "type": "judgment",
+      "publishedOn": "2026-09-22",
+      "effectiveOn": null,
+      "checkedOn": "2026-10-13",
+      "affectedTopics": [
+        "foreigners-regulation"
+      ],
+      "priority": "critical"
+    },
+    {
+      "id": "hoja28-social",
+      "url": "https://www.inclusion.gob.es/web/migraciones/w/autorizacion-residencia-temporal-por-circunstancias-excepcionales.-arraigo-social",
+      "type": "guidance",
+      "lastEditorialRevision": "2026-04",
+      "checkedOn": "2026-10-13",
+      "affectedTopics": [
+        "arraigo-social"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "hoja29-sociolaboral",
+      "url": "https://www.inclusion.gob.es/es/web/migraciones/w/29.-autorizacion-de-residencia-temporal-por-circunstancias-excepcionales.-arraigo-sociolaboral.",
+      "type": "guidance",
+      "lastEditorialRevision": "2026-04",
+      "checkedOn": "2026-10-13",
+      "affectedTopics": [
+        "arraigo-sociolaboral"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "hoja13-renewal",
+      "url": "https://www.inclusion.gob.es/web/migraciones/w/renovacion-de-la-autorizacion-de-residencia-temporal-y-trabajo-por-cuenta-ajena",
+      "type": "guidance",
+      "lastEditorialRevision": null,
+      "checkedOn": "2026-10-13",
+      "affectedTopics": [
+        "renewal-employee"
+      ],
+      "priority": "high"
+    },
+    {
+      "id": "hoja49-longterm",
+      "url": "https://bibliovirtual.inclusion.gob.es/web/migraciones/w/49.-autorizacion-de-residencia-de-larga-duracion-nacional",
+      "type": "guidance",
+      "lastEditorialRevision": "2025-05",
+      "checkedOn": "2026-10-13",
+      "affectedTopics": [
+        "long-term-residence",
+        "TIE"
+      ],
+      "priority": "high"
+    }
+  ],
+  "changeEvents": [
+    {
+      "eventId": "rd1155-start-2025",
+      "type": "law_effective",
+      "publishedOn": "2024-11-20",
+      "effectiveOn": "2025-05-20",
+      "observedOn": "2026-10-13",
+      "sourceId": "boe-rd1155-consolidated",
+      "affectedArticles": [
+        "permiso-residencia-inicial-vias-y-documentos",
+        "renovacion-residencia-temporal-y-larga-duracion"
+      ],
+      "reviewStatus": "reflected_in_reviewed_guides"
+    },
+    {
+      "eventId": "rd316-2026",
+      "type": "normative_amendment",
+      "publishedOn": "2026-04-15",
+      "effectiveOn": "2026-04-16",
+      "observedOn": "2026-10-13",
+      "sourceId": "rd316-2026",
+      "affectedArticles": [
+        "permiso-residencia-inicial-vias-y-documentos"
+      ],
+      "reviewStatus": "reflected_in_reviewed_guides"
+    },
+    {
+      "eventId": "ts-2026-19632",
+      "type": "court_judgment_publication",
+      "publishedOn": "2026-09-22",
+      "effectiveOn": null,
+      "observedOn": "2026-10-13",
+      "sourceId": "ts-2026-19632",
+      "affectedArticles": [
+        "permiso-residencia-inicial-vias-y-documentos"
+      ],
+      "reviewStatus": "requires_scope_specific_legal_review"
+    },
+    {
+      "eventId": "ts-2026-19633",
+      "type": "court_judgment_publication",
+      "publishedOn": "2026-09-22",
+      "effectiveOn": null,
+      "observedOn": "2026-10-13",
+      "sourceId": "ts-2026-19633",
+      "affectedArticles": [
+        "permiso-residencia-inicial-vias-y-documentos"
+      ],
+      "reviewStatus": "requires_scope_specific_legal_review"
+    }
+  ],
+  "reviewedDocs": [
+    {
+      "slug": "permiso-residencia-inicial-vias-y-documentos",
+      "localePair": "/ru/docs/pervichnoe-razreshenie-na-prozhivanie-ispaniya",
+      "reviewedOn": "2026-10-13",
+      "originSourceIds": [
+        "boe-rd1155-consolidated",
+        "rd316-2026",
+        "hoja28-social",
+        "hoja29-sociolaboral"
+      ],
+      "owner": "EXPERT editorial/legal",
+      "nextCheckOn": "2026-11-13"
+    },
+    {
+      "slug": "renovacion-residencia-temporal-y-larga-duracion",
+      "localePair": "/ru/docs/prodlenie-rezidencii-dolgosrochnaya",
+      "reviewedOn": "2026-10-13",
+      "originSourceIds": [
+        "boe-rd1155-consolidated",
+        "hoja13-renewal",
+        "hoja49-longterm"
+      ],
+      "owner": "EXPERT editorial/legal",
+      "nextCheckOn": "2026-11-13"
+    }
+  ]
+}
