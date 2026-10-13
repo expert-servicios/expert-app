@@ -1,4 +1,5 @@
 import { getGeneratedBatch1BlogArticles } from '@/lib/services/service-generated-content';
+import { laborEsBlogArticles } from '@/lib/content/labor-bilingual-2026';
 import { proteccionDatosBlogArticles } from '@/lib/content/proteccion-datos-blog';
 import { fiscal2026BlogArticles } from '@/lib/content/fiscal-2026-blog';
 import { russianResidentBankingBlogArticles } from '@/lib/content/russian-resident-banking-blog';
@@ -16,6 +17,7 @@ export type Article = {
 };
 
 export const articles: Article[] = [
+  ...laborEsBlogArticles,
   ...getGeneratedBatch1BlogArticles(),
   ...proteccionDatosBlogArticles,
   ...russianResidentBankingBlogArticles,
