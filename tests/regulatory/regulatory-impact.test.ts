@@ -101,7 +101,7 @@ describe('Human legal approval enforcement', () => {
   it('accepts ISO date syntax and exposes legal approval state in Admin', async () => {
     const {readFileSync} = await import('node:fs');
     const values=readFileSync('lib/regulatory/regulatory-values.ts','utf8');
-    expect(values).toContain(String.raw`/^\\d{4}-\\d{2}-\\d{2}$/`);
+    expect(values).toContain(String.raw`/^\d{4}-\d{2}-\d{2}$/`);
     expect(values).toContain('values_applied_at,resolution_evidence,created_at');
   });
 
