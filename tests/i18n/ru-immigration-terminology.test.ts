@@ -19,6 +19,14 @@ describe('immigration ES terms explained on RU Ukraine long-term pages',()=>{
   }
   expect(source).toContain("paths[isRu ? 'es' : 'ru'][kind]");
  });
+ it('matches ES and RU article section counts by content kind',()=>{
+  const es=source.slice(source.indexOf('  es: {\\n    service: {'),source.indexOf('\\n};\\n\\nexport default'));
+  const ru=source.slice(source.indexOf('  ru: {\\n    service: {'),source.indexOf('  es: {\\n    service: {'));
+  const count=(text:string,kind:string,next:string)=>{const start=text.indexOf('    '+kind+': {');const end=next?text.indexOf('    '+next+': {',start+10):text.length;return (text.slice(start,end).match(/\\{ title: /g)||[]).length;};
+  for(const [kind,next] of [['service','overview'],['overview','guide'],['guide','']] ){
+   expect(count(es,kind,next)).toBe(count(ru,kind,next));
+  }
+ });
  it('keeps source and ES/RU page pairs',()=>{
   expect(source).toContain('Instrucciones SEM 2/2026');
   expect(source).toContain('/blog/proteccion-temporal-ucrania-larga-duracion-2026');
