@@ -41,7 +41,6 @@ export function requiresRegulatoryHumanReview(input: {
   // never accepted solely on a model's optional approval flag.
   return input.relevant
     && input.authority === 'BOE'
-    && input.severity !== 'info'
     && input.changeType !== 'irrelevant'
     && input.changeType !== 'informational';
 }
