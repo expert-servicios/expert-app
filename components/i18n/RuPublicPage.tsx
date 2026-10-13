@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Hero } from '@/components/site/Hero';
 import { ArrowRight, CheckCircle2, ExternalLink, ShieldCheck } from 'lucide-react';
 import { EXPERT_IDENTITY } from '@/config/identity';
 import { LanguageSwitcher } from '@/components/i18n/LanguageSwitcher';
@@ -65,6 +66,7 @@ export function RuPublicPage({
       </header>
 
       <main>
+        {routeKey === 'home' ? <Hero locale="ru" /> : (
         <section className="border-b border-[#D4A017]/20 bg-[#0D1B2A] px-5 py-20 text-[#F8F6F1] sm:px-8 md:py-28">
           <div className="mx-auto max-w-5xl">
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#D4A017]">{content.eyebrow}</p>
@@ -84,6 +86,7 @@ export function RuPublicPage({
             </div>
           </div>
         </section>
+        )}
 
         <section className="border-b border-[#D4A017]/20 bg-[#FFFDF8] px-5 py-5 sm:px-8">
           <div className="mx-auto flex max-w-5xl flex-wrap gap-x-6 gap-y-3 text-xs font-semibold text-[#4D5A68]">
