@@ -6,6 +6,7 @@ import { NewsletterForm } from '@/components/site/NewsletterForm';
 import { ArticleIntentCTA } from '@/components/content/ArticleIntentCTA';
 import { blogArticles, getArticle } from '@/lib/utils/blog';
 import { getDocRedirectTarget } from '@/lib/utils/docs';
+import { laborRuArticles } from '@/lib/content/labor-bilingual-2026';
 import { services } from '@/lib/utils/catalog';
 
 export function generateStaticParams() {
@@ -34,12 +35,18 @@ export async function generateMetadata({
   const title = `${article.title} | EXPERT Blog`;
   const canonicalUrl = `https://expertconsulting.es/blog/${slug}`;
   const image = '/branding/expert%20servicios.png';
+  const russianTranslation = laborRuArticles.find((item) => item.esSlug === slug);
 
   return {
     title,
     description: article.excerpt,
     alternates: {
-      canonical: canonicalUrl
+      canonical: canonicalUrl,
+      ...(russianTranslation ? { languages: {
+        'es-ES': canonicalUrl,
+        'ru-RU': `https://expertconsulting.es/ru/blog/${russianTranslation.slug}`,
+        'x-default': canonicalUrl,
+      } } : {}),
     },
     openGraph: {
       title,
@@ -74,6 +81,7 @@ export default async function BlogArticlePage({
     ? services.find((service) => service.slug === article.relatedServiceSlugs?.[0]) ?? null
     : null;
   const canonicalUrl = `https://expertconsulting.es/blog/${article.slug}`;
+  const russianTranslation = laborRuArticles.find((item) => item.esSlug === article.slug);
   const isHoldedArticle =
     article.category.toLowerCase() === 'holded' ||
     article.tags.some((tag) => tag.toLowerCase().includes('holded')) ||
@@ -149,6 +157,11 @@ export default async function BlogArticlePage({
           </div>
           <h1 className="mt-4 font-serif text-2xl font-bold leading-tight md:text-4xl">{article.title}</h1>
           <p className="mt-4 text-sm leading-7 text-[#9CA3AF] md:text-base">{article.excerpt}</p>
+          {russianTranslation && (
+            <Link href={`/ru/blog/${russianTranslation.slug}`} className="mt-5 inline-flex min-h-10 items-center text-sm font-semibold text-[#D4A017] underline underline-offset-4">
+              Читать по-русски · Русский
+            </Link>
+          )}
         </div>
       </div>
 
