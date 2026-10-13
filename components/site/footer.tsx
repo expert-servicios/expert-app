@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { localizePublicShellHref as hrefFor, localizePublicShellText as labelFor, type PublicShellLocale } from '@/lib/i18n/public-shell-copy';
 import Link from 'next/link';
 import { Mail, MapPin, MessageCircle, Calendar } from 'lucide-react';
 import { CalButton } from '@/components/site/CalButton';
@@ -74,12 +75,14 @@ const socialLinks = [
   }
 ] as const;
 
-export function Footer() {
+export function Footer({ locale = 'es' }: { locale?: PublicShellLocale }) {
+  const href = (value: string) => hrefFor(locale, value);
+  const label = (value: string) => labelFor(locale, value);
   return (
     <footer className="bg-[#0D1B2A] py-10 text-[#F8F6F1]">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-9 px-6 md:grid-cols-2 lg:grid-cols-[1.15fr_0.72fr_0.95fr_0.95fr_1fr]">
         <div>
-          <Link href="/" className="inline-block">
+          <Link href={href("/")} className="inline-block">
             <Image
               src="/logos/EXPERT_logo/expert-logo-light-clean.png"
               alt="Logo EXPERT"
@@ -104,12 +107,12 @@ export function Footer() {
         </div>
 
         <div>
-          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]">Navegación</h3>
+          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]">{label('Navegación')}</h3>
           <ul className="space-y-2 text-sm text-[#9CA3AF]">
             {quickLinks.map((link) => (
               <li key={link.href}>
-                <Link href={link.href} className="transition hover:text-[#D4A017]">
-                  {link.label}
+                <Link href={href(link.href)} className="transition hover:text-[#D4A017]">
+                  {label(link.label)}
                 </Link>
               </li>
             ))}
@@ -117,12 +120,12 @@ export function Footer() {
         </div>
 
         <div>
-          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]">Servicios</h3>
+          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]">{label('Servicios')}</h3>
           <ul className="space-y-2 text-sm text-[#9CA3AF]">
             {serviceLinks.map((link) => (
               <li key={link.href}>
-                <Link href={link.href} className="transition hover:text-[#D4A017]">
-                  {link.label}
+                <Link href={href(link.href)} className="transition hover:text-[#D4A017]">
+                  {label(link.label)}
                 </Link>
               </li>
             ))}
@@ -130,12 +133,12 @@ export function Footer() {
         </div>
 
         <div>
-          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]">Guías</h3>
+          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]">{label('Guías')}</h3>
           <ul className="space-y-2 text-sm text-[#9CA3AF]">
             {resourceLinks.map((link) => (
               <li key={link.href}>
-                <Link href={link.href} className="transition hover:text-[#D4A017]">
-                  {link.label}
+                <Link href={href(link.href)} className="transition hover:text-[#D4A017]">
+                  {label(link.label)}
                 </Link>
               </li>
             ))}
@@ -143,7 +146,7 @@ export function Footer() {
         </div>
 
         <div>
-          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]">Contacto</h3>
+          <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-[#F8F6F1]">{label('Contacto')}</h3>
           <ul className="space-y-3 text-sm text-[#9CA3AF]">
             <li className="flex gap-3">
               <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A017]" />
@@ -155,7 +158,7 @@ export function Footer() {
             </li>
             <li className="flex gap-3">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#D4A017]" />
-              <span>España</span>
+              <span>{label('España')}</span>
             </li>
           </ul>
 
@@ -176,14 +179,14 @@ export function Footer() {
 
           <CalButton
             url={CAL_REUNION_URL}
-            fallbackHref="/cita?tipo=consulta-inicial"
+            fallbackHref={href("/cita?tipo=consulta-inicial")}
             className="mt-5 flex w-full items-center justify-center gap-2 rounded-md border border-[#D4A017]/50 px-4 py-2.5 text-sm font-semibold text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017]/10"
           >
             <Calendar className="h-4 w-4 shrink-0" />
             Consulta gratuita · 15 min
           </CalButton>
           <Link
-            href="/cita?tipo=demo-holded"
+            href={href("/cita?tipo=demo-holded")}
             className="mt-2 flex w-full items-center justify-center gap-2 rounded-md border border-white/15 px-4 py-2.5 text-sm font-semibold text-[#F8F6F1] transition hover:border-[#D4A017] hover:text-[#D4A017]"
           >
             <Calendar className="h-4 w-4 shrink-0" />
@@ -194,21 +197,21 @@ export function Footer() {
 
       <div className="mx-auto mt-8 flex max-w-6xl flex-col justify-between gap-4 border-t border-[#D4A017]/30 px-6 pt-5 text-xs text-[#9CA3AF] md:flex-row">
         <p>
-          © 2026 EXPERT | Todos los derechos reservados.{' '}
+          © 2026 EXPERT | {label('Todos los derechos reservados.')} {' '}
           <span className="opacity-60">
             Protegido por reCAPTCHA —{' '}
-            <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-[#D4A017] transition">Privacidad</a>
+            <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-[#D4A017] transition">{label('Privacidad')}</a>
             {' '}·{' '}
-            <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="hover:text-[#D4A017] transition">Términos</a>
+            <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="hover:text-[#D4A017] transition">{label('Términos')}</a>
           </span>
         </p>
         <div className="flex flex-wrap gap-4">
-          <Link href="/aviso-legal" className="transition hover:text-[#D4A017]">Aviso legal</Link>
-          <Link href="/privacidad" className="transition hover:text-[#D4A017]">Privacidad</Link>
-          <Link href="/terminos" className="transition hover:text-[#D4A017]">Términos</Link>
-          <Link href="/cookies" className="transition hover:text-[#D4A017]">Cookies</Link>
+          <Link href="/aviso-legal" className="transition hover:text-[#D4A017]">{label('Aviso legal')}</Link>
+          <Link href="/privacidad" className="transition hover:text-[#D4A017]">{label('Privacidad')}</Link>
+          <Link href="/terminos" className="transition hover:text-[#D4A017]">{label('Términos')}</Link>
+          <Link href="/cookies" className="transition hover:text-[#D4A017]">{label('Cookies')}</Link>
           <CookieSettingsButton />
-          <Link href="/condiciones" className="transition hover:text-[#D4A017]">Condiciones</Link>
+          <Link href="/condiciones" className="transition hover:text-[#D4A017]">{label('Condiciones')}</Link>
         </div>
       </div>
     </footer>
