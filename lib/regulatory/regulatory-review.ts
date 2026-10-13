@@ -5,6 +5,7 @@ import { notifyAdminsTelegram, escapeTelegramHtml } from '@/lib/integrations/tel
 import { createRegulatoryProposalPullRequest } from './regulatory-github';
 import { isRulesetSchemaUnavailable } from './regulatory-schema-compat';
 import { selectConfirmedRegulatoryImpacts, requiresRegulatoryHumanReview } from './regulatory-impact';
+import { notifyDevOpsRegulatoryHumanReview } from './regulatory-devops-telegram';
 
 const reviewSchema = z.object({
   relevant: z.boolean(),
@@ -328,6 +329,23 @@ async function classifyOne(change: ChangeRow) {
       `Dependencias afectadas: ${affectedDependencies.length}`,
       pullRequest?.url ? `PR de revisión: ${escapeTelegramHtml(pullRequest.url)}` : 'PR automático: no configurado o no disponible',
     ].filter(Boolean).join('\n'));
+  }
+
+  if (humanReviewRequired && parsed.relevant) {
+    // Legal review is notification-only. An outage cannot mark the legal
+    // decision as approved or interrupt the pending review state.
+    await notifyDevOpsRegulatoryHumanReview({
+      changeId: change.id,
+      authority: source.authority,
+      title: source.title,
+      sourceUrl: source.url,
+      summary: parsed.summary,
+      severity: parsed.severity,
+      effectiveDate: parsed.effectiveDate,
+      proposalUrl: pullRequest?.url ?? null,
+    }).catch(() => {
+      console.warn('[Regulatory DevOps] legal review alert unavailable');
+    });
   }
 
   return {
