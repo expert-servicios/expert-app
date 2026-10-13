@@ -3,6 +3,7 @@ import { getGeneratedBatch1KnowledgeDocs } from '@/lib/services/service-generate
 import { proteccionDatosKnowledgeDocs } from '@/lib/content/proteccion-datos-docs';
 import { fiscal2026KnowledgeDocs } from '@/lib/content/fiscal-2026-docs';
 import { holdedIntegrationDocs } from '@/lib/content/holded-integration-docs';
+import { reviewedImmigrationEsDocs } from '@/lib/content/immigration-reviewed-docs';
 
 export type DocCategorySlug = 'extranjeria-nacionalidad' | 'fiscalidad' | 'empresas' | 'proteccion-datos' | 'tramites' | 'holded';
 
@@ -31,6 +32,7 @@ export const docCategories: { slug: DocCategorySlug; name: string }[] = [
 ];
 
 export const docs: KnowledgeDoc[] = [
+  ...reviewedImmigrationEsDocs,
   {
     slug: 'firmar-solicitud-nacionalidad-menor-progenitores',
     category: 'extranjeria-nacionalidad',
@@ -1069,153 +1071,6 @@ Antes de solicitarlo:
     `
   },
 
-  {
-    slug: 'permiso-residencia-inicial-vias-y-documentos',
-    category: 'extranjeria-nacionalidad',
-    title: 'Permiso inicial de residencia: vías disponibles y documentación',
-    excerpt: 'Análisis de las principales vías para obtener el primer permiso de residencia en España, con los documentos necesarios para cada una y los plazos reales.',
-    tags: ['permiso de residencia', 'arraigo', 'reagrupación familiar', 'TIE', 'EX-10', 'extranjería'],
-    updatedAt: '18 may 2026',
-    readTime: '11 min',
-    relatedServiceSlugs: ['permiso-residencia-inicial'],
-    relatedServiceCategories: ['extranjeria-nacionalidad'],
-    seoTitle: 'Permiso inicial de residencia en España: vías y documentos',
-    seoDescription: 'Guía completa sobre las vías para obtener el primer permiso de residencia en España: arraigo, reagrupación, trabajo y circunstancias excepcionales.',
-    body: `
-## ¿Qué es el permiso inicial de residencia?
-
-El permiso inicial de residencia —también llamado autorización de residencia temporal— es el primer documento que permite vivir legalmente en España durante un período determinado.
-
-Sin este permiso, la estancia más allá de 90 días (para quienes lo necesiten) es irregular y puede generar sanciones, expulsión y prohibición de entrada.
-
-## Principales vías de acceso
-
-### Arraigo social
-Con carácter general, exige **2 años de permanencia continuada** en España y acreditar vínculos familiares con medios económicos suficientes o, si no concurren esos vínculos, un informe favorable de integración social.
-
-### Arraigo laboral
-Requiere acreditar **2 años de estancia irregular** y una relación laboral no declarada de al menos 6 meses. El empresario debe regularizar el contrato.
-
-### Arraigo familiar
-Para personas con vínculo de primer grado con ciudadanos españoles o con menores españoles. No requiere tiempo mínimo de estancia.
-
-### Reagrupación familiar
-Cuando un familiar con residencia legal en España solicita la reunificación.
-
-### Residencia por circunstancias excepcionales
-Incluye colaboración con autoridades, protección internacional, trata de seres humanos, violencia de género.
-
-### Visado de larga duración
-Tramitado desde el consulado del país de origen: trabajo, estudios, nómada digital, inversión.
-
-## Documentación base para el arraigo social (vía más común)
-
-- Modelo EX-10 cumplimentado.
-- Pasaporte en vigor (copia de todas las páginas).
-- Fotografía reciente.
-- Tasa modelo 790 código 052.
-- Documentación que acredite al menos 2 años de permanencia continuada.
-- Antecedentes penales de España.
-- Antecedentes penales del país de origen (apostillados + traducción jurada).
-- Documentación de vínculos familiares y medios económicos o informe favorable de integración social, según la vía.
-
-## La tasa administrativa
-
-Para la mayoría de autorizaciones de residencia temporal, la tasa se paga mediante el **modelo 790 código 052**. El importe varía según el tipo de autorización. El justificante debe conservarse y aportarse junto con la solicitud.
-
-## Plazos reales
-
-El plazo legal de resolución es de **3 meses** desde la presentación. En la práctica, los tiempos varían mucho por provincia: algunas oficinas resuelven en 6–8 semanas, otras tardan 4–6 meses por acumulación de expedientes.
-
-Si la Administración no resuelve en 3 meses, opera el **silencio administrativo negativo**. Esto no significa denegación automática: la solicitud sigue en tramitación, pero abre la vía de recurso si fuera necesario.
-
-## El TIE: el paso final
-
-Una vez resuelta favorablemente la solicitud, hay **30 días hábiles** para solicitar la Tarjeta de Identidad de Extranjero (TIE) en la comisaría de Policía.
-
-Para el TIE se necesita:
-- Resolución favorable de Extranjería.
-- Pasaporte original.
-- Fotografía en color.
-- Tasa modelo 790 código 012.
-- Cita previa.
-
-El TIE se entrega habitualmente en 30–45 días desde la solicitud.
-
-## Errores más frecuentes
-
-1. Pasaporte caducado o próximo a caducar.
-2. Antecedentes del país de origen sin apostillar o sin traducción jurada.
-3. Empadronamiento que no refleja 3 años continuados.
-4. Contrato de trabajo que no cumple las horas mínimas.
-5. Solicitar en la oficina de la provincia incorrecta.
-    `
-  },
-  {
-    slug: 'renovacion-residencia-temporal-y-larga-duracion',
-    category: 'extranjeria-nacionalidad',
-    title: 'Renovación de residencia: plazos, documentos y paso a larga duración',
-    excerpt: 'Cuándo y cómo renovar el permiso de residencia temporal, qué documentos necesitas y cómo acceder a la residencia de larga duración tras 5 años.',
-    tags: ['renovación residencia', 'larga duración', 'TIE', 'extranjería', 'vida laboral'],
-    updatedAt: '18 may 2026',
-    readTime: '8 min',
-    relatedServiceSlugs: ['renovacion-residencia'],
-    relatedServiceCategories: ['extranjeria-nacionalidad'],
-    seoTitle: 'Renovación de residencia en España: plazos y documentación',
-    seoDescription: 'Guía sobre cómo renovar el permiso de residencia en España, cuándo hacerlo, qué documentos necesitas y cómo pasar a la residencia de larga duración.',
-    body: `
-## Cuándo presentar la renovación
-
-La renovación puede presentarse dentro de los **60 días previos** a la caducidad del permiso actual. También se acepta hasta **90 días después** de la caducidad, aunque esto puede conllevar sanción leve.
-
-Lo recomendable es iniciar la reunión de documentación **3–4 meses antes** de la fecha de caducidad para evitar imprevistos.
-
-## ¿Qué pasa si caduca mientras espero resolución?
-
-Si presentaste la solicitud en plazo y la Administración no ha resuelto cuando caduca tu permiso actual, tu situación sigue siendo **regular**: el resguardo de presentación de la solicitud lo acredita. Esta prórroga es automática y no requiere trámite adicional.
-
-## Documentación habitual para la renovación
-
-Los documentos más frecuentemente solicitados son:
-
-- **Pasaporte en vigor** con copia de todas las páginas.
-- **Certificado de empadronamiento** actualizado.
-- **Informe de vida laboral** (TGSS).
-- **Nóminas de los últimos 3–6 meses** o documentación de medios económicos.
-- **Contrato de trabajo en vigor** o alta como autónomo.
-- **Tasa modelo 790 código 052**.
-- En algunos casos, certificado de antecedentes penales (si ha transcurrido mucho tiempo desde el anterior).
-
-## De la residencia temporal a la larga duración
-
-Tras **5 años de residencia legal y continuada** en España se puede solicitar la **autorización de residencia de larga duración**. Esta autorización:
-
-- Se concede por tiempo indefinido.
-- Permite trabajar por cuenta propia o ajena sin autorización laboral específica.
-- Es renovable cada 5 años sin riesgo de denegación si se mantienen los requisitos.
-
-### Requisitos para la larga duración nacional
-
-1. Haber residido legalmente y de forma continuada en España durante los 5 años previos, salvo los demás supuestos específicos previstos por la normativa.
-2. Cumplir los requisitos generales del procedimiento (antecedentes, orden público y demás condiciones aplicables al supuesto).
-
-No debe añadirse un requisito general del 150 % del IPREM ni de seguro médico: esos requisitos pertenecen a otras autorizaciones y no forman parte de la regla general de la larga duración nacional.
-
-## Períodos de desempleo y la renovación
-
-Haber estado en situación de desempleo y haber percibido prestación **no impide renovar**. La prestación por desempleo se considera una situación cotizada. Lo importante es demostrar actividad económica legal durante el período de vigencia del permiso anterior.
-
-## Qué pasa si no se renueva a tiempo
-
-- **Multa** por estancia irregular.
-- Posible expediente sancionador.
-- Pérdida de continuidad del cómputo de años de residencia, lo que puede retrasar la larga duración o la nacionalidad.
-
-## Consejo práctico
-
-Lleva un control activo de las fechas de caducidad. Una renovación presentada con antelación y bien documentada se resuelve sin sobresaltos. Una renovación urgente o tardía genera estrés, posibles sanciones y, en el peor caso, irregularidad sobrevenida.
-    `
-  },
 
   // ── Fiscalidad ─────────────────────────────────────────────────────────────
   {
