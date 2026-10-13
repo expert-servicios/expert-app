@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { runKiaProviderRequest } from '@/lib/ai/kia/kia-provider-router';
-import { notifyAdminsTelegram, escapeTelegramHtml } from '@/lib/integrations/telegram';
 import { createRegulatoryProposalPullRequest } from './regulatory-github';
 import { isRulesetSchemaUnavailable } from './regulatory-schema-compat';
 import { selectConfirmedRegulatoryImpacts, requiresRegulatoryHumanReview } from './regulatory-impact';
@@ -312,23 +311,18 @@ async function classifyOne(change: ChangeRow) {
     });
 
     if (pullRequest?.url || pullRequest?.number) {
-      await admin.from('regulatory_changes').update({
-        status: 'proposal_ready',
+      const { error: proposalSaveError } = await admin.from('regulatory_changes').update({
+        // A proposal PR is NOT a legal decision. Do not bypass needs_review.
+        status: humanReviewRequired ? 'needs_review' : 'proposal_ready',
         proposal_pr_number: pullRequest.number ?? null,
         proposal_pr_url: pullRequest.url ?? null,
       }).eq('id', change.id);
+      if (proposalSaveError) throw new Error(proposalSaveError.message);
     }
 
-    await notifyAdminsTelegram([
-      '<b>KIA Regulatory Pulse</b>',
-      `Severidad: <b>${escapeTelegramHtml(parsed.severity.toUpperCase())}</b>`,
-      `Fuente: ${escapeTelegramHtml(source.authority)} · ${escapeTelegramHtml(source.title)}`,
-      escapeTelegramHtml(parsed.summary),
-      parsed.effectiveDate ? `Vigencia: ${escapeTelegramHtml(parsed.effectiveDate)}` : '',
-      `Dependencias conocidas: ${dependencies?.length ?? 0}`,
-      `Dependencias afectadas: ${affectedDependencies.length}`,
-      pullRequest?.url ? `PR de revisión: ${escapeTelegramHtml(pullRequest.url)}` : 'PR automático: no configurado o no disponible',
-    ].filter(Boolean).join('\n'));
+    // The former KIA customer/admin bot must never receive these legal review
+    // notifications. The isolated Expert DevOps channel below is opt-in.
+
   }
 
   if (humanReviewRequired && parsed.relevant) {
