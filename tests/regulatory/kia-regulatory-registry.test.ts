@@ -95,6 +95,39 @@ describe('KIA Regulatory Registry', () => {
     expect(first.fingerprint).toBe(second.fingerprint);
   });
 
+  it('ignores RSS channel pubDate churn but preserves item publication dates', async () => {
+    const head = '<rss><channel>';
+    const tail = '</channel></rss>';
+    const item = (date: string) =>
+      '<item><title>Normativa de ejemplo</title><pubDate>' + date + '</pubDate></item>';
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(head + '<pubDate>Wed, 7 Oct 2026 12:13:40 +0200</pubDate>' +
+        item('Wed, 7 Oct 2026 09:00:00 +0200') + tail, { status: 200 }))
+      .mockResolvedValueOnce(new Response(head + '<pubDate>Tue, 13 Oct 2026 15:37:18 +0200</pubDate>' +
+        item('Wed, 7 Oct 2026 09:00:00 +0200') + tail, { status: 200 }))
+      .mockResolvedValueOnce(new Response(head + '<pubDate>Tue, 13 Oct 2026 15:37:18 +0200</pubDate>' +
+        item('Tue, 13 Oct 2026 09:00:00 +0200') + tail, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const rssSource = source({ fetch_strategy: 'rss' });
+    const baseline = await fetchRegulatorySource(rssSource);
+    const metadataOnly = await fetchRegulatorySource(rssSource);
+    const articleUpdated = await fetchRegulatorySource(rssSource);
+    expect(baseline.fingerprint).toBe(metadataOnly.fingerprint);
+    expect(baseline.fingerprint).not.toBe(articleUpdated.fingerprint);
+  });
+
+  it('ignores volatile RSS channel dates when no entries exist', async () => {
+    const mk = (date: string) => '<rss><channel><title>Fuentes oficiales</title><pubDate>' + date + '</pubDate></channel></rss>';
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(mk('Tue, 13 Oct 2026 08:00:00 GMT'), { status: 200 }))
+      .mockResolvedValueOnce(new Response(mk('Tue, 13 Oct 2026 17:00:00 GMT'), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const baseline = await fetchRegulatorySource(source({ fetch_strategy: 'rss' }));
+    const sameEntries = await fetchRegulatorySource(source({ fetch_strategy: 'rss' }));
+    expect(baseline.fingerprint).toBe(sameEntries.fingerprint);
+  });
+
   it('compacts BOE daily JSON and prioritizes EXPERT-relevant provisions in evidence', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
       data: {
@@ -153,6 +186,74 @@ describe('KIA Regulatory Registry', () => {
     }))).rejects.toThrow('host not allowed');
 
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('allows only the explicitly registered government hosts for immigration evidence', async () => {
+    const fetchMock = vi.fn(async () => new Response('<html><body>Official guidance</body></html>', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    for (const host of [
+      'ciudadaniaexterior.inclusion.gob.es',
+      'www.policia.es',
+      'eur-lex.europa.eu',
+      'www.interior.gob.es',
+    ]) {
+      const result = await fetchRegulatorySource(source({
+        fetch_url: `https://${host}/official-source`,
+      }));
+      expect(result.excerpt).toContain('Official guidance');
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('rejects redirects to non-allowlisted hosts BEFORE fetching the redirect target', async () => {
+    const fetchMock = vi.fn(async () => new Response(null, {
+      status: 302,
+      headers: { location: 'https://untrusted.example/ssrf' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchRegulatorySource(source())).rejects.toThrow('redirect host not allowed');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith('https://www.boe.es/test', expect.objectContaining({ redirect: 'manual' }));
+  });
+
+  it('supports a validated redirect to an official host and rejects non-HTTPS redirects', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(null, {
+        status: 302,
+        headers: { location: 'https://www.interior.gob.es/official-guidance' },
+      }))
+      .mockResolvedValueOnce(new Response('Official update', { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, {
+        status: 301,
+        headers: { location: 'http://www.boe.es/insecure' },
+      }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await fetchRegulatorySource(source());
+    expect(result.excerpt).toContain('Official update');
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://www.interior.gob.es/official-guidance', expect.objectContaining({
+      redirect: 'manual',
+    }));
+    await expect(fetchRegulatorySource(source())).rejects.toThrow('redirect host not allowed');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('rejects excess redirects without requesting the seventh location', async () => {
+    const fetchMock = vi.fn(async () => new Response(null, {
+      status: 302,
+      headers: { location: '/redirect-again' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchRegulatorySource(source())).rejects.toThrow('redirect limit exceeded');
+    expect(fetchMock).toHaveBeenCalledTimes(6);
+  });
+
+  it('does not bypass HTTP 403 returned by government portals', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('Forbidden', { status: 403 })));
+    await expect(fetchRegulatorySource(source())).rejects.toThrow('HTTP 403');
   });
 
   it('keeps GitHub proposal PR creation fail-closed without a dedicated token', async () => {

@@ -43,6 +43,11 @@ const ALLOWED_HOSTS = new Set([
   'paeelectronico.es',
   'revista.dgt.es',
   'sede.transportes.gob.es',
+  // Exact official source hosts used by the 2026 immigration/civil registry registry.
+  'ciudadaniaexterior.inclusion.gob.es',
+  'www.policia.es',
+  'eur-lex.europa.eu',
+  'www.interior.gob.es',
 ]);
 
 const MAX_SOURCE_BYTES = 2_000_000;
@@ -199,6 +204,20 @@ function decodeEntities(value: string) {
 function normalizePayload(raw: string, strategy: RegulatorySourceRow['fetch_strategy']) {
   let value = strategy === 'boe_daily' ? normalizeBoeDailyPayload(raw) : raw;
 
+  if (strategy === 'rss') {
+    // A channel-level publication timestamp may change even when all article
+    // entries are identical. Do not remove item-level dates: those are evidence.
+    const firstItem = value.search(/<item(?:\s|>)/i);
+    // Empty but otherwise valid RSS channels must not churn fingerprints when
+    // only the channel's pubDate changes.
+    const channelEnd = value.search(/<\/channel\s*>/i);
+    const headerEnd = firstItem >= 0 ? firstItem : channelEnd;
+    if (headerEnd >= 0) {
+      value = value.slice(0, headerEnd)
+        .replace(/<pubDate\b[^>]*>[\s\S]*?<\/pubDate>/gi, ' ') + value.slice(headerEnd);
+    }
+  }
+
   if (strategy === 'rss' || strategy === 'xml') {
     value = value
       .replace(/<lastBuildDate\b[^>]*>[\s\S]*?<\/lastBuildDate>/gi, ' ')
@@ -231,15 +250,37 @@ async function fetchWithLimits(
   const timeout = setTimeout(() => controller.abort(), 12_000);
 
   try {
-    const response = await fetch(url, {
-      headers: {
-        accept: 'application/json, application/xml, text/xml, text/html;q=0.9, */*;q=0.5',
-        'user-agent': 'EXPERT-KIA-Regulatory-Monitor/1.0 (+https://expertconsulting.es)',
-      },
-      cache: 'no-store',
-      redirect: 'follow',
-      signal: controller.signal,
-    });
+    // Validate each redirect BEFORE requesting the next address. Built-in
+    // redirect: 'follow' only exposes the final URL and can make an SSRF
+    // request before a post-fetch host check gets a chance to reject it.
+    let currentUrl = url;
+    let response: Response | null = null;
+    for (let redirectCount = 0; redirectCount <= 5; redirectCount += 1) {
+      response = await fetch(currentUrl, {
+        headers: {
+          accept: 'application/json, application/xml, text/xml, text/html;q=0.9, */*;q=0.5',
+          'user-agent': 'EXPERT-KIA-Regulatory-Monitor/1.0 (+https://expertconsulting.es)',
+        },
+        cache: 'no-store',
+        redirect: 'manual',
+        signal: controller.signal,
+      });
+
+      if (![301, 302, 303, 307, 308].includes(response.status)) break;
+      // Manual redirects can carry streaming bodies. Explicitly close each
+      // discarded body before following or rejecting its Location header.
+      await response.body?.cancel();
+      if (redirectCount === 5) throw new Error('Regulatory redirect limit exceeded');
+
+      const location = response.headers.get('location');
+      if (!location) throw new Error('Regulatory redirect has no location');
+      const nextUrl = new URL(location, currentUrl);
+      if (nextUrl.protocol !== 'https:' || !ALLOWED_HOSTS.has(nextUrl.hostname)) {
+        throw new Error(`Regulatory redirect host not allowed: ${nextUrl.hostname}`);
+      }
+      currentUrl = nextUrl.toString();
+    }
+    if (!response) throw new Error('Regulatory source returned no response');
 
     if (response.status === 404 && allowNotFound) {
       return {
@@ -250,7 +291,7 @@ async function fetchWithLimits(
     }
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    const finalUrl = new URL(response.url || url);
+    const finalUrl = new URL(response.url || currentUrl);
     if (finalUrl.protocol !== 'https:' || !ALLOWED_HOSTS.has(finalUrl.hostname)) {
       throw new Error(`Regulatory redirect host not allowed: ${finalUrl.hostname}`);
     }
