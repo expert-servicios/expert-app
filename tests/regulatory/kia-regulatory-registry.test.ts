@@ -182,7 +182,7 @@ describe('KIA Regulatory Registry', () => {
 
     await expect(fetchRegulatorySource(source())).rejects.toThrow('redirect host not allowed');
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock.mock.calls[0]?.[1]?.redirect).toBe('manual');
+    expect(fetchMock).toHaveBeenCalledWith('https://www.boe.es/test', expect.objectContaining({ redirect: 'manual' }));
   });
 
   it('supports a validated redirect to an official host and rejects non-HTTPS redirects', async () => {
