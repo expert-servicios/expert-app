@@ -105,4 +105,13 @@ describe('Human legal approval enforcement', () => {
     expect(values).toContain('values_applied_at,resolution_evidence,created_at');
   });
 
+  it('blocks resolving pending reviews without persisted human approval', async () => {
+    const {readFileSync}=await import('node:fs');
+    const values=readFileSync('lib/regulatory/regulatory-values.ts','utf8');
+    expect(values).toContain("change.requires_human_review === true || change.status === 'needs_review'");
+    expect(values).toContain("legalApproval?.status !== 'approved'");
+    expect(values).toContain('delete additionalEvidence.legal_approval');
+    expect(values).toContain("snapshot?.fingerprint !== legalApproval.reviewed_fingerprint");
+  });
+
 });
