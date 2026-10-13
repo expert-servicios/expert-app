@@ -15,6 +15,6 @@ describe('Existing regulatory pulse + immigration ES/RU registry',()=>{
    expect(sql).toContain(d.localePair.split('/').at(-1));
   }
   expect(sql).toContain("AND NOT active");
-  expect(sql).toContain('ON CONFLICT(source_id,dependency_type,dependency_key)');
+  expect(sql).toContain('ON CONFLICT(source_id,dependency_type,dependency_key) WHERE source_id IS NOT NULL');
  });
 });
