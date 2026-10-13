@@ -123,7 +123,10 @@ export async function approveRegulatoryLegalReview(input: {
   const {data:updated,error:updateError} = await admin.from('regulatory_changes').update({
     resolution_evidence:{...evidence,legal_approval:approval},
   }).eq('id',input.changeId).eq('current_snapshot_id',change.current_snapshot_id)
-    .eq('status',change.status).select('id').maybeSingle();
+    .eq('status',change.status)
+    // Atomic compare-and-set: concurrent reviewers must not replace an existing verdict.
+    .is('resolution_evidence->legal_approval', null)
+    .select('id').maybeSingle();
   if(updateError || !updated) throw new Error(updateError?.message ?? 'Cambio de versión concurrente; repetir revisión');
   return {changeId:input.changeId,approved:true};
 }
