@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Hero } from '@/components/site/Hero';
+import { SharedHomeServices, SharedHomeFeaturedServices, SharedHomeAcademy } from '@/components/site/SharedHomeServicesAcademy';
 import { SharedServiceProcess } from '@/components/site/SharedServiceProcess';
 import { ReviewsPreview } from '@/components/site/reviews-preview';
 import { ArrowRight, CheckCircle2, ExternalLink, ShieldCheck } from 'lucide-react';
@@ -86,7 +87,10 @@ export function RuPublicPage({
           </div>
         </section>
 
+        {routeKey === 'home' && <SharedHomeServices locale="ru" />}
+        {routeKey === 'home' && <SharedHomeFeaturedServices locale="ru" />}
         {routeKey === 'home' && <SharedServiceProcess locale="ru" />}
+        {routeKey === 'home' && <SharedHomeAcademy locale="ru" />}
         {commercial?.offers && commercial.offers.length > 0 && (
           <section className="border-y border-[#0D1B2A]/10 bg-white px-5 py-16 sm:px-8 md:py-20">
             <div className="mx-auto max-w-6xl">
