@@ -57,13 +57,13 @@ export function Hero({ locale = 'es' }: { locale?: 'es' | 'ru' }) {
               href={ru ? "/ru/konsultatsiya" : "/cita?tipo=consulta-inicial"}
               className="inline-flex min-h-12 items-center justify-center rounded-md bg-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#F2C14E]"
             >
-              Consulta gratuita · 15 min
+              {ru ? 'Бесплатная консультация · 15 мин' : 'Consulta gratuita · 15 min'}
             </Link>
             <Link
               href={ru ? "/ru/plany" : "/planes"}
               className="inline-flex min-h-12 items-center justify-center rounded-md border border-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
             >
-              Ver cómo funcionan los planes
+              {ru ? 'Как организована работа' : 'Ver cómo funcionan los planes'}
             </Link>
           </div>
 
