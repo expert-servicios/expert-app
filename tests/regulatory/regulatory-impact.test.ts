@@ -42,6 +42,13 @@ describe('Regulatory impact QA', () => {
     })).toBe(false);
   });
 
+  it('does not let BOE content updates bypass review with severity info', () => {
+    expect(requiresRegulatoryHumanReview({
+      authority: 'BOE', relevant: true, severity: 'info',
+      changeType: 'content_update', modelRequestsReview: false,
+    })).toBe(true);
+  });
+
   it('always reviews critical changes or explicit human-review requests', () => {
     expect(requiresRegulatoryHumanReview({
       authority: 'AEAT', relevant: true, severity: 'critical',
