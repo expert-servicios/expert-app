@@ -13,6 +13,15 @@ describe('bilingual labor editorial release gate',()=>{
   expect(x).toContain('Sistema RED');
   expect(x).not.toContain('Holded автоматически отправляет');
  });
+ it('ensures reciprocal hreflang and language switch without leaving an article',()=>{
+  const es=readFileSync('app/(public)/blog/[slug]/page.tsx','utf8');
+  const switcher=readFileSync('components/i18n/LanguageSwitcher.tsx','utf8');
+  const ruIndex=readFileSync('app/(localized)/ru/blog/page.tsx','utf8');
+  expect(es).toContain("'ru-RU'");
+  expect(es).toContain('russianTranslation.slug');
+  expect(switcher).toContain('laborRuArticles.find');
+  expect(ruIndex).toContain('RU_NATIONALITY_RESOURCES');
+ });
  it('shows ES articles in canonical blog and has distinct Russian routes',()=>{
   const blog=readFileSync('lib/utils/blog.ts','utf8');
   expect(blog).toContain('...laborEsBlogArticles');
