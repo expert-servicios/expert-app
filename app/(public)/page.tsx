@@ -28,6 +28,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { Hero } from '@/components/site/Hero';
+import { SharedHomeServices, SharedHomeFeaturedServices, SharedHomeAcademy } from '@/components/site/SharedHomeServicesAcademy';
 import { SharedServiceProcess } from '@/components/site/SharedServiceProcess';
 import { ReviewsPreview } from '@/components/site/reviews-preview';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
@@ -63,86 +64,6 @@ export const metadata: Metadata = {
 type IconItem = {
   Icon: LucideIcon;
 };
-
-const serviceAreas: Array<
-  IconItem & {
-    title: string;
-    text: string;
-    href: string;
-    items: string[];
-  }
-> = [
-  {
-    title: 'Fiscalidad',
-    text: 'Declaraciones fiscales para residentes, no residentes y contribuyentes con patrimonio o rentas internacionales.',
-    href: '/servicios/declaraciones-impuestos',
-    items: ['IRPF', 'Modelo 151', 'Modelo 720'],
-    Icon: FileText
-  },
-  {
-    title: 'Extranjería y nacionalidad',
-    text: 'Acompañamiento documental y fiscal para residir o establecerse en España.',
-    href: '/servicios/extranjeria-nacionalidad',
-    items: ['Nacionalidad', 'Residencias', 'Renovaciones'],
-    Icon: Globe2
-  },
-  {
-    title: 'Empresas y autónomos',
-    text: 'Alta de actividad, constitución de sociedades, gestión mensual con Holded y trámites mercantiles.',
-    href: '/servicios/empresas-autonomos',
-    items: ['Alta autónomos', 'Sociedades', 'Planes mensuales'],
-    Icon: Briefcase
-  },
-  {
-    title: 'Holded',
-    text: 'Implantación, migración y formación práctica para trabajar con datos ordenados y procesos claros.',
-    href: '/holded',
-    items: ['Pack Starter', 'Migración', 'Formación Holded'],
-    Icon: MonitorCheck
-  },
-  {
-    title: 'Certificado digital',
-    text: 'Certificados digitales para personas físicas, entidades mercantiles y entidades sin ánimo de lucro.',
-    href: '/servicios/certificado-digital',
-    items: ['Persona física', 'Entidad mercantil', 'Sin ánimo de lucro'],
-    Icon: FileCheck
-  },
-  {
-    title: 'Tráfico y marítima',
-    text: 'Gestiones administrativas de vehículos, embarcaciones y documentación.',
-    href: '/servicios/trafico-capitania-maritima',
-    items: ['Transferencias', 'Matriculaciones', 'Náutica'],
-    Icon: Anchor
-  },
-  {
-    title: 'Notaría y propiedades',
-    text: 'Soporte documental en compraventas, escrituras y operaciones patrimoniales.',
-    href: '/servicios/notaria-propiedades',
-    items: ['Compraventas', 'Escrituras', 'Propiedades'],
-    Icon: Home
-  },
-];
-
-const featuredServices: Array<IconItem & { title: string; text: string; href: string }> = [
-  {
-    title: 'Declaración de la Renta',
-    text: 'Revisión fiscal, preparación documental y presentación del IRPF con criterio profesional.',
-    href: '/servicios/declaraciones-impuestos',
-    Icon: Calculator
-  },
-  {
-    title: 'Modelo 151',
-    text: 'Tributación para profesionales, trabajadores e inversores desplazados a España.',
-    href: '/servicios/declaraciones-impuestos',
-    Icon: FileCheck
-  },
-  {
-    title: 'Nacionalidad española',
-    text: 'Preparación y seguimiento del expediente con control de requisitos y documentación.',
-    href: '/servicios/extranjeria-nacionalidad',
-    Icon: ShieldCheck
-  }
-];
 
 const processSteps: Array<IconItem & { title: string; text: string }> = [
   {
@@ -319,13 +240,13 @@ export default async function HomePage({
       <div className="h-[3px] w-full bg-gradient-to-r from-transparent via-[#D4A017] to-transparent" />
       <ModeloResponsable />
       <AdvisorSaasTeaser />
-      <Services />
+      <SharedHomeServices />
       <Authority />
-      <FeaturedServices />
+      <SharedHomeFeaturedServices />
       <SharedServiceProcess />
       <ClientPortal />
       <HoldedMigration />
-      <Formacion />
+      <SharedHomeAcademy />
       <Operations />
       <BlogPreview />
       <DocsPreview />
@@ -375,75 +296,6 @@ function ModeloResponsable() {
   );
 }
 
-function Services() {
-  return (
-    <section className="px-6 py-16 md:py-20">
-      <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
-        <div>
-          <SectionTitle
-            eyebrow="Servicios"
-            title="Una asesoría para resolver, no para complicar."
-            text="Fiscalidad, legal, extranjería y gestión administrativa en una experiencia digital, ordenada y cercana."
-          />
-          <Link
-            href="/servicios"
-            className="mt-7 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#D4A017] transition hover:text-[#F2C14E]"
-          >
-            Ver todos los servicios
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          {serviceAreas.map(({ Icon, title, text, href, items }) => (
-            <Link
-              href={href}
-              key={title}
-              className="group border border-[#D4A017]/25 bg-[#F8F6F1] p-6 shadow-[0_10px_28px_rgba(13,27,42,0.07)] transition hover:-translate-y-0.5 hover:border-[#D4A017] hover:shadow-[0_18px_40px_rgba(13,27,42,0.11)]"
-            >
-              <div className="flex items-start gap-4">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center border border-[#D4A017]/25 bg-[#0D1B2A] text-[#D4A017]">
-                  <Icon className="h-6 w-6" />
-                </span>
-                <div>
-                  <h3 className="font-serif text-xl font-bold leading-tight text-[#0D1B2A]">{title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#23364D]">{text}</p>
-                </div>
-              </div>
-              <div className="mt-5 flex flex-wrap gap-2">
-                {items.map((item) => (
-                  <span key={item} className="border border-[#D4A017]/25 px-2.5 py-1 text-xs font-semibold text-[#23364D]">
-                    {item}
-                  </span>
-                ))}
-              </div>
-              <p className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#D4A017]">
-                Consultar área
-                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-              </p>
-            </Link>
-          ))}
-
-          <Link
-            href="/servicios"
-            className="group flex flex-col justify-center border border-[#D4A017]/40 bg-[#0D1B2A] p-6 text-[#F8F6F1] transition hover:-translate-y-0.5 hover:border-[#D4A017]"
-          >
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center border border-[#D4A017]/40 bg-[#D4A017]/10 text-[#D4A017]">
-              <ArrowRight className="h-6 w-6" />
-            </span>
-            <h3 className="mt-5 font-serif text-xl font-bold leading-tight">Ver todos los servicios</h3>
-            <p className="mt-2 text-sm leading-6 text-[#9CA3AF]">Explora el catálogo completo, organizado por categoría.</p>
-            <p className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#D4A017]">
-              Explorar
-              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-            </p>
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function Authority() {
   return (
     <section className="brand-blue-bg px-6 py-16 text-[#F8F6F1] md:py-20">
@@ -466,38 +318,6 @@ function Authority() {
               <p className="mt-4 font-serif text-lg font-bold text-[#F8F6F1]">{title}</p>
               <p className="mt-2 text-sm leading-6 text-[#9CA3AF]">{text}</p>
             </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FeaturedServices() {
-  return (
-    <section className="px-6 py-16 md:py-20">
-      <div className="mx-auto max-w-7xl">
-        <SectionTitle
-          eyebrow="Servicios destacados"
-          title="Los trámites más solicitados, listos para empezar online."
-          text="Cada servicio se orienta a un resultado concreto: documentación revisada, trámite presentado y seguimiento claro."
-        />
-
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {featuredServices.map(({ Icon, title, text, href }) => (
-            <Link
-              href={href}
-              key={title}
-              className="group border border-[#D4A017]/25 bg-[#F8F6F1] p-7 shadow-[0_10px_28px_rgba(13,27,42,0.07)] transition hover:-translate-y-0.5 hover:border-[#D4A017] hover:shadow-[0_18px_40px_rgba(13,27,42,0.11)]"
-            >
-              <Icon className="h-9 w-9 stroke-[#D4A017]" strokeWidth={1.7} />
-              <h3 className="mt-6 font-serif text-2xl font-bold text-[#0D1B2A]">{title}</h3>
-              <p className="mt-4 min-h-24 text-sm leading-7 text-[#23364D]">{text}</p>
-              <p className="mt-5 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-[0.14em] text-[#D4A017]">
-                Empezar
-                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-              </p>
-            </Link>
           ))}
         </div>
       </div>
@@ -629,71 +449,6 @@ function HoldedMigration() {
               </p>
             </Link>
           ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Formacion() {
-  const calAcademyUrl = getCalAcademyUrl();
-
-  return (
-    <section className="px-6 py-16 md:py-20">
-      <div className="mx-auto max-w-7xl">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <SectionTitle
-            eyebrow="Formación"
-            title="Que tu equipo entienda los números, no solo los introduzca."
-            text="Programas prácticos de EXPERT Business Academy para trabajar la gestión empresarial y laboral con criterio, no a ciegas."
-          />
-          <Link
-            href="/academy"
-            className="inline-flex shrink-0 items-center gap-2 text-sm font-bold uppercase tracking-[0.16em] text-[#D4A017] transition hover:text-[#F2C14E]"
-          >
-            Ver todos los programas
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-
-        <div className="mt-10 grid gap-5 md:grid-cols-2">
-          {academyPrograms.map((program) => (
-            <Link
-              href={program.slug === academyPrograms[0].slug ? '/academy' : `/academy/${program.slug}`}
-              key={program.slug}
-              className="group border border-[#D4A017]/25 bg-[#F8F6F1] p-7 shadow-[0_10px_28px_rgba(13,27,42,0.07)] transition hover:-translate-y-0.5 hover:border-[#D4A017] hover:shadow-[0_18px_40px_rgba(13,27,42,0.11)]"
-            >
-              <span className="flex h-11 w-11 items-center justify-center border border-[#D4A017]/25 bg-[#0D1B2A] text-[#D4A017]">
-                <GraduationCap className="h-5 w-5" />
-              </span>
-              <h3 className="mt-5 font-serif text-xl font-bold leading-tight text-[#0D1B2A]">{program.name}</h3>
-              <p className="mt-2 text-sm leading-6 text-[#23364D]">{program.tagline}</p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <span className="inline-flex items-center gap-1.5 border border-[#D4A017]/25 px-2.5 py-1 text-xs font-semibold text-[#23364D]">
-                  <Clock className="h-3.5 w-3.5 text-[#D4A017]" />
-                  {program.hoursTraining}h + {program.hoursInternship || program.hoursTutoring || 0}h {program.hoursInternship ? 'prácticas' : 'tutoría'}
-                </span>
-                <span className="inline-flex items-center gap-1.5 border border-[#D4A017]/25 px-2.5 py-1 text-xs font-semibold text-[#23364D]">
-                  <Award className="h-3.5 w-3.5 text-[#D4A017]" />
-                  {program.price}
-                </span>
-              </div>
-              <p className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#D4A017]">
-                Ver programa
-                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-              </p>
-            </Link>
-          ))}
-        </div>
-
-        <div className="mt-8">
-          <CalButton
-            url={calAcademyUrl}
-            fallbackHref="/cita?tipo=academy-admision"
-            className="inline-flex min-h-12 items-center justify-center gap-2 border border-[#D4A017]/60 px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0D1B2A] transition hover:bg-[#D4A017]/10"
-          >
-            Reservar entrevista de admisión
-          </CalButton>
         </div>
       </div>
     </section>
