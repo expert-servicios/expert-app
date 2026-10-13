@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { Hero } from '@/components/site/Hero';
 import { ArrowRight, CheckCircle2, ExternalLink, ShieldCheck } from 'lucide-react';
 import { EXPERT_IDENTITY } from '@/config/identity';
-import { LanguageSwitcher } from '@/components/i18n/LanguageSwitcher';
 import { RU_PUBLIC_CONTENT } from '@/lib/i18n/ru-public-content';
 import { RU_COMMERCIAL_DATA } from '@/lib/i18n/ru-commercial-data';
 import { getMessages } from '@/lib/i18n/messages';
@@ -10,15 +9,6 @@ import {
   getLocalizedPublicHref,
   type PublicRouteKey,
 } from '@/lib/i18n/public-routes';
-
-const NAV: Array<{ route: PublicRouteKey; label: string }> = [
-  { route: 'home', label: 'Главная' },
-  { route: 'services', label: 'Услуги' },
-  { route: 'holded', label: 'Holded' },
-  { route: 'plans', label: 'Форматы' },
-  { route: 'academy', label: 'Academy' },
-  { route: 'consultation', label: 'Консультация' },
-];
 
 const RU_MESSAGES = getMessages('ru');
 
@@ -49,21 +39,6 @@ export function RuPublicPage({
 
   return (
     <div className="min-h-screen bg-[#F8F6F1] text-[#0D1B2A]">
-      <header className="border-b border-white/10 bg-[#0D1B2A] text-[#F8F6F1]">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-5 sm:px-8">
-          <Link href="/ru" className="font-serif text-2xl font-bold tracking-[0.14em]">
-            EXPERT
-          </Link>
-          <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[#F8F6F1]/85" aria-label="Навигация">
-            {NAV.map((item) => (
-              <Link key={item.route} href={getLocalizedPublicHref(item.route, 'ru')} className="transition hover:text-[#D4A017]">
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <LanguageSwitcher ruEnabled={ruEnabled} enEnabled={enEnabled} compact />
-        </div>
-      </header>
 
       <main>
         {routeKey === 'home' ? <Hero locale="ru" /> : (
