@@ -26,13 +26,13 @@ const sourceLinks = [
 const content: Record<Locale, Record<Kind, { title: string; intro: string; sections: Section[] }>> = {
   ru: {
     service: {
-      title: 'Residencia de larga duración nacional после protección temporal',
-      intro: 'Оформление EX-11 в Испании для обладателей protección temporal из Украины. Профессиональные услуги EXPERT: 290,00 € + IVA (350,90 €). Государственные tasas оплачиваются отдельно.',
+      title: 'Долгосрочный вид на жительство в Испании (residencia de larga duración nacional) после временной защиты (protección temporal)',
+      intro: 'Оформление заявления EX-11 в Испании для обладателей временной защиты (protección temporal) из Украины. Профессиональные услуги EXPERT: 290,00 € + IVA (350,90 €). Государственные tasas оплачиваются отдельно.',
       sections: [
-        { title: 'Кому подходит', paragraphs: ['Обычно требуется пять лет residencia legal y continuada. Согласно Instrucciones SEM 2/2026 (SEXTA) в срок для residencia de larga duración nacional учитывается период владения autorización de residencia по protección temporal. Другие условия рассматриваются индивидуально.'], bullets: ['Проверяем исходную resolución de concesión, а не только дату NIE или TIE.', 'Проверяем непрерывность проживания и возможные выезды.', 'Не обещаем автоматического одобрения expediente.'] },
-        { title: 'Что входит в стоимость', bullets: ['Первичная проверка права и даты подачи.', 'Перечень и проверка документов.', 'Заполнение EX-11 и электронная подача через допустимый канал.', 'Отслеживание requerimientos и resolución; разъяснение дальнейших шагов по TIE.'] },
-        { title: 'Что оплачивается отдельно', paragraphs: ['Tasas administrativas 790-052 и 790-012/TIE, traducciones juradas, legalizaciones, recursos, получение документов третьих лиц и нестандартные дополнительные процедуры.'] },
-        { title: 'Когда отказаться от protección temporal', paragraphs: ['Не отказывайтесь от неё заранее. Пункт SÉPTIMA Instrucciones SEM 2/2026 предусматривает renuncia expresa после получения новой autorización.'] },
+        { title: 'Кому подходит', paragraphs: ['Обычно требуется пять лет законного непрерывного проживания (residencia legal y continuada). Согласно Instrucciones SEM 2/2026 (SEXTA) в срок для residencia de larga duración nacional учитывается период владения autorización de residencia по protección temporal. Другие условия рассматриваются индивидуально.'], bullets: ['Проверяем первоначальное решение о предоставлении разрешения (resolución de concesión), а не только дату NIE или TIE.', 'Проверяем непрерывность проживания и возможные выезды.', 'Не обещаем автоматического одобрения административного дела (expediente).'] },
+        { title: 'Что входит в стоимость', bullets: ['Первичная проверка права и даты подачи.', 'Перечень и проверка документов.', 'Заполнение EX-11 и электронная подача через допустимый канал.', 'Отслеживание официальных запросов документов (requerimientos) и решений (resolución); разъяснение дальнейших шагов по TIE.'] },
+        { title: 'Что оплачивается отдельно', paragraphs: ['Государственные пошлины (tasas) 790-052 и 790-012/TIE, присяжные переводы (traducciones juradas), легализация документов (legalización) и обжалования (recursos), получение документов третьих лиц и нестандартные дополнительные процедуры.'] },
+        { title: 'Когда отказаться от временной защиты (protección temporal)', paragraphs: ['Не отказывайтесь от неё заранее. Пункт SÉPTIMA Instrucciones SEM 2/2026 предусматривает официальный отказ (renuncia expresa) после получения нового разрешения (autorización).'] },
         { title: 'Как начать', paragraphs: ['Перейдите к запросу услуги и укажите «Residencia de larga duración nacional — protección temporal». После предварительной проверки мы подтвердим перечень документов и порядок оформления.'] },
       ],
     },
@@ -51,7 +51,7 @@ const content: Record<Locale, Record<Kind, { title: string; intro: string; secti
       title: 'Инструкция EX-11: подача на residencia de larga duración nacional',
       intro: 'Пять шагов: проверка requisitos, подготовка документов, подача, контроль expediente и оформление TIE после положительной resolución.',
       sections: [
-        { title: '1. Проверить requisitos', paragraphs: ['Определите, подходит ли residencia de larga duración nacional; проверьте пять лет residencia legal y continuada, начальную autorización и выезды. Для защиты украинцев учитывается SEM 2/2026.'] },
+        { title: '1. Проверить requisitos', paragraphs: ['Определите, подходит ли residencia de larga duración nacional; проверьте пять лет законного непрерывного проживания (residencia legal y continuada), начальную autorización и выезды. Для защиты украинцев учитывается SEM 2/2026.'] },
         { title: '2. Подготовить документы', bullets: ['EX-11, паспорт в полном объёме.', 'Первоначальная resolución de concesión и текущая TIE.', 'Документы о непрерывности residencia и иные доказательства по конкретному делу.', 'Дополнительные документы только по реальной необходимости.'] },
         { title: '3. Подать expediente', paragraphs: ['Подача возможна через Oficina de Extranjería или систему Mercurio в предусмотренных случаях. Сохраните justificante и номер expediente.'] },
         { title: '4. Tasas и seguimiento', paragraphs: ['Проверьте актуальный размер tasa 790-052 на официальном портале при оплате; дальнейшая TIE имеет отдельную tasa. Hoja 49 указывает общий срок решения три месяца и правовые последствия silencio administrativo, которые следует проверять для конкретного expediente.'] },
@@ -62,33 +62,35 @@ const content: Record<Locale, Record<Kind, { title: string; intro: string; secti
   es: {
     service: {
       title: 'Residencia de larga duración nacional desde protección temporal de Ucrania',
-      intro: 'Tramitación individual EX-11 en España. Honorarios profesionales de EXPERT: 290,00 € + IVA (350,90 €). Tasas oficiales aparte.',
+      intro: 'Tramitación individual EX-11 en España para titulares de protección temporal. Honorarios profesionales de EXPERT: 290,00 € + IVA (350,90 €). Tasas oficiales aparte.',
       sections: [
-        { title: 'Requisitos', paragraphs: ['La regla general exige cinco años de residencia legal y continuada. SEM 2/2026 SEXTA permite computar el período como titular de autorización por protección temporal para larga duración nacional, con las demás condiciones legales.'], bullets: ['Revisamos la resolución inicial y fechas de vigencia.', 'Comprobamos continuidad y ausencias.', 'La concesión no es automática.'] },
-        { title: 'Incluye', bullets: ['Análisis de viabilidad y documentación.', 'Preparación y presentación de EX-11.', 'Seguimiento ordinario hasta resolución.', 'Indicaciones sobre TIE y renuncia posterior a la protección temporal.'] },
-        { title: 'Exclusiones', paragraphs: ['Tasas 790-052 y 790-012, traducciones, apostillas, recursos y actuaciones extraordinarias.'] },
-        { title: 'Solicitud', paragraphs: ['Envíanos una solicitud indicando residencia de larga duración nacional desde protección temporal para revisar el expediente y confirmar documentación.'] },
+        { title: 'Requisitos y viabilidad', paragraphs: ['La regla general exige cinco años de residencia legal y continuada. Según el punto SEXTO de las Instrucciones SEM 2/2026 se computa el período como titular de autorización de residencia por protección temporal para la larga duración nacional. Las demás condiciones se revisan individualmente.'], bullets: ['Verificamos la resolución inicial de concesión y sus fechas, no solo la expedición del NIE o la TIE.', 'Comprobamos continuidad de residencia y eventuales ausencias.', 'La concesión no es automática y depende de la resolución del expediente.'] },
+        { title: 'Qué incluye', bullets: ['Comprobación inicial de viabilidad y momento de presentación.', 'Revisión y listado individualizado de documentación.', 'Preparación del formulario EX-11 y presentación electrónica por el canal habilitado.', 'Seguimiento ordinario de requerimientos y resolución; instrucciones sobre la posterior TIE.'] },
+        { title: 'Qué se abona aparte', paragraphs: ['Tasas oficiales 790-052 y 790-012/TIE, traducciones juradas, legalizaciones o apostillas, recursos, obtención de documentos de terceros y actuaciones extraordinarias.'] },
+        { title: 'Cuándo renunciar a protección temporal', paragraphs: ['No formalices la renuncia de forma anticipada. El punto SÉPTIMO de las Instrucciones SEM 2/2026 sitúa la renuncia expresa después de obtener la nueva autorización.'] },
+        { title: 'Cómo solicitarlo', paragraphs: ['Indica «residencia de larga duración nacional desde protección temporal». Tras la revisión inicial confirmaremos los documentos necesarios y el canal de presentación.'] },
       ],
     },
     overview: {
       title: 'Protección temporal de Ucrania y larga duración nacional en 2026',
-      intro: 'Qué cambió con SEM 2/2026, cuándo cuentan los años de protección temporal y qué comprobar antes de presentar EX-11.',
+      intro: 'El tiempo en España con protección temporal puede contar para la residencia de larga duración nacional; es importante acreditar la fecha inicial de la autorización de residencia.',
       sections: [
-        { title: 'Cómputo del tiempo', paragraphs: ['SEM 2/2026 SEXTA contempla el cómputo íntegro de los períodos como titular de autorización de residencia de protección temporal para larga duración nacional. No implica concesión automática, ni se extrapola a larga duración-UE o nacionalidad.'] },
-        { title: 'Fecha inicial', paragraphs: ['Verifica resolución y fecha efectiva de autorización; el NIE o la TIE pueden haberse expedido en fechas distintas. También se analizan ausencias.'] },
-        { title: 'No renunciar anticipadamente', paragraphs: ['La instrucción SÉPTIMA sitúa la renuncia a protección temporal después de obtener la nueva autorización.'] },
-        { title: 'Gestión con EXPERT', paragraphs: ['Revisión y preparación de EX-11 por 290,00 € + IVA, tasas excluidas.'] },
+        { title: 'Qué establece SEM 2/2026', paragraphs: ['Su punto SEXTO contempla el cómputo de los períodos como titular de autorización de residencia por protección temporal para larga duración nacional. No implica concesión automática ni puede extrapolarse sin comprobar requisitos a larga duración-UE o nacionalidad española.'] },
+        { title: 'Desde qué fecha se computa', paragraphs: ['Comprueba la resolución de concesión inicial, las fechas de vigencia y la continuidad de residencia. El NIE, la fecha de entrada en España, el empadronamiento y la emisión de la tarjeta TIE no bastan por sí solos para fijar el inicio del período.'] },
+        { title: '¿Conviene cambiar de estatus ahora?', paragraphs: ['Depende del período acumulado, de la vigencia de la autorización, de la continuidad y de las necesidades individuales. Para las personas que cumplen sus condiciones, la protección temporal está prorrogada en la UE hasta el 4 de marzo de 2028. Conviene comparar los riesgos y ventajas antes de tramitar una modificación.'] },
+        { title: 'Renuncia posterior, nunca anticipada', paragraphs: ['El punto SÉPTIMO de SEM 2/2026 prevé la renuncia expresa a protección temporal una vez obtenida la nueva autorización; no la formalices antes de la resolución correspondiente.'] },
+        { title: 'Cómo ayuda EXPERT', paragraphs: ['Revisamos la viabilidad, preparamos EX-11 y acompañamos el expediente. Honorarios: 290,00 € + IVA por solicitante, con tasas oficiales aparte.'] },
       ],
     },
     guide: {
       title: 'Guía EX-11: residencia de larga duración nacional paso a paso',
-      intro: 'Requisitos, documentos, presentación, tasas y TIE para solicitar la larga duración nacional.',
+      intro: 'Cinco pasos: comprobar requisitos, reunir documentos, presentar EX-11, seguir expediente y tasas, y obtener la nueva TIE tras la concesión.',
       sections: [
-        { title: '1. Requisitos', paragraphs: ['Comprueba la residencia legal y continuada y el supuesto concreto. Para titulares de protección temporal consulta SEM 2/2026.'] },
-        { title: '2. Documentación', paragraphs: ['Formulario EX-11, pasaporte, resolución y tarjeta de residencia, pruebas de continuidad y otros documentos que exija el caso.'] },
-        { title: '3. Presentación', paragraphs: ['Oficina de Extranjería o sistema Mercurio si procede. Conserva el justificante.'] },
-        { title: '4. Tasas y plazo', paragraphs: ['Modelo 790-052 según cuantía vigente al pago; seguimiento de notificaciones y plazo general de tres meses previsto en Hoja 49, con el régimen jurídico de silencio que corresponda.'] },
-        { title: '5. Nueva TIE', paragraphs: ['Después de la concesión, tramita TIE. La renuncia a protección temporal se formaliza posteriormente.'] },
+        { title: '1. Comprobar requisitos', paragraphs: ['Comprueba que proceda la residencia de larga duración nacional, el período general de cinco años de residencia legal y continuada, la autorización inicial y las ausencias. Para titulares de protección temporal de Ucrania, comprueba las Instrucciones SEM 2/2026.'] },
+        { title: '2. Preparar los documentos', bullets: ['Formulario EX-11 y pasaporte completo.', 'Resolución inicial de concesión y tarjeta TIE actual.', 'Documentación acreditativa de continuidad de residencia y demás pruebas pertinentes.', 'Solo documentos adicionales que realmente requiera el caso.'] },
+        { title: '3. Presentar la solicitud', paragraphs: ['La presentación puede realizarse ante la Oficina de Extranjería o mediante Mercurio en los casos habilitados. Conserva el justificante y el número de expediente.'] },
+        { title: '4. Tasas y seguimiento', paragraphs: ['Consulta la cuantía vigente de la tasa 790-052 en la sede oficial al realizar el pago; la expedición de TIE lleva su propia tasa. La Hoja 49 informa sobre un plazo general de resolución de tres meses y los efectos legales del silencio administrativo, que deben comprobarse para el expediente concreto.'] },
+        { title: '5. Después de una resolución favorable', paragraphs: ['Tramita la nueva tarjeta TIE en el procedimiento correspondiente. Para titulares de protección temporal, la renuncia expresa se formaliza después de obtener la nueva autorización, conforme al punto SÉPTIMO de SEM 2/2026.'] },
       ],
     },
   },
@@ -103,6 +105,7 @@ export default function UkraineLongTermPage({ locale, kind }: { locale: Locale; 
     <main className="min-h-screen bg-[#F8F6F1] px-5 py-12 text-[#0D1B2A]">
       <article className="mx-auto max-w-3xl space-y-8">
         <nav className="flex flex-wrap gap-3 text-sm">
+          <Link className="font-semibold underline" href={paths[isRu ? 'es' : 'ru'][kind]}>{isRu ? 'Español' : 'Русский'}</Link>
           <Link className="underline" href={links.service}>{isRu ? 'Оформить услугу' : 'Servicio'}</Link>
           <Link className="underline" href={links.overview}>{isRu ? 'Правила 2026' : 'Requisitos 2026'}</Link>
           <Link className="underline" href={links.guide}>{isRu ? 'Инструкция EX-11' : 'Guía EX-11'}</Link>
