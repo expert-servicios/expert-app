@@ -58,7 +58,7 @@ describe('Regulatory impact QA', () => {
 describe('Targeted regulatory data repair', () => {
   it('only retracts the two documented negative immigration links', async () => {
     const { readFileSync } = await import('node:fs');
-    const sql = readFileSync('supabase/migrations/20261013170000_regulatory_positive_impact_qa_cleanup.sql', 'utf8');
+    const sql = readFileSync('supabase/migrations/20261013180000_regulatory_positive_impact_qa_cleanup.sql', 'utf8');
     expect(sql).toContain('17e6667f-9c87-47c9-ba50-dff5046bec71');
     expect(sql).toContain('2b86f3d0-eadd-4598-8e17-b97ce1df9fa6');
     expect(sql).toContain('8f5637c4-f894-4ae5-b904-083c6f05ed7d');
