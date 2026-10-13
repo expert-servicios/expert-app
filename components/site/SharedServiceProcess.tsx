@@ -4,7 +4,7 @@ const steps = [
   { Icon: Check, es: ['Contratas online', 'Elige el servicio o solicita presupuesto según tu caso.'], ru: ['Заказываете онлайн', 'Выбираете услугу или запрашиваете индивидуальное предложение.'] },
   { Icon: Upload, es: ['Subes documentos', 'Envías la documentación necesaria desde un canal seguro.'], ru: ['Передаёте документы', 'Загружаете необходимые документы через защищённый канал.'] },
   { Icon: Search, es: ['Revisamos tu caso', 'Analizamos la información y gestionamos el trámite completo.'], ru: ['Мы проверяем дело', 'Анализируем документы и сопровождаем процедуру.'] },
-  { Icon: FileCheck, es: ['Recibes resultado', 'Te entregamos justificantes, resolución o documentación final.'], ru: ['Получаете результат', 'Передаём подтверждения подачи, resolución или итоговые документы.'] },
+  { Icon: FileCheck, es: ['Recibes resultado', 'Te entregamos justificantes, resolución o documentación final.'], ru: ['Получаете результат', 'Передаём подтверждение подачи, официальное решение (resolución) или итоговые документы.'] },
 ] as const;
 
 export function SharedServiceProcess({ locale = 'es' }: { locale?: 'es' | 'ru' }) {
