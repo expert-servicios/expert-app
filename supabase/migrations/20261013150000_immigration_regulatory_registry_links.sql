@@ -24,4 +24,4 @@ WITH linkage(source_key,doc_key,locale) AS (VALUES
 INSERT INTO public.regulatory_dependencies(source_id,dependency_type,dependency_key,topic,criticality,metadata)
 SELECT s.id,'knowledge',l.doc_key,'immigration','high',jsonb_build_object('locale',l.locale,'review_required',true,'registry','docs/i18n/immigration-official-source-registry-2026-10-13.json')
 FROM linkage l JOIN public.regulatory_sources s USING(source_key)
-ON CONFLICT(source_id,dependency_type,dependency_key) DO UPDATE SET metadata=public.regulatory_dependencies.metadata || EXCLUDED.metadata,active=true;
+ON CONFLICT(source_id,dependency_type,dependency_key) WHERE source_id IS NOT NULL DO UPDATE SET metadata=public.regulatory_dependencies.metadata || EXCLUDED.metadata,active=true;
