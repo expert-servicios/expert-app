@@ -208,9 +208,13 @@ function normalizePayload(raw: string, strategy: RegulatorySourceRow['fetch_stra
     // A channel-level publication timestamp may change even when all article
     // entries are identical. Do not remove item-level dates: those are evidence.
     const firstItem = value.search(/<item(?:\s|>)/i);
-    if (firstItem >= 0) {
-      value = value.slice(0, firstItem)
-        .replace(/<pubDate\b[^>]*>[\s\S]*?<\/pubDate>/gi, ' ') + value.slice(firstItem);
+    // Empty but otherwise valid RSS channels must not churn fingerprints when
+    // only the channel's pubDate changes.
+    const channelEnd = value.search(/<\/channel\s*>/i);
+    const headerEnd = firstItem >= 0 ? firstItem : channelEnd;
+    if (headerEnd >= 0) {
+      value = value.slice(0, headerEnd)
+        .replace(/<pubDate\b[^>]*>[\s\S]*?<\/pubDate>/gi, ' ') + value.slice(headerEnd);
     }
   }
 
@@ -263,6 +267,9 @@ async function fetchWithLimits(
       });
 
       if (![301, 302, 303, 307, 308].includes(response.status)) break;
+      // Manual redirects can carry streaming bodies. Explicitly close each
+      // discarded body before following or rejecting its Location header.
+      await response.body?.cancel();
       if (redirectCount === 5) throw new Error('Regulatory redirect limit exceeded');
 
       const location = response.headers.get('location');
