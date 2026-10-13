@@ -247,5 +247,8 @@ export function toImmigrationGuideBody(id:ImmigrationGuideId,locale:ImmigrationL
  const sources=article.sourceIds.map(sourceId=>IMMIGRATION_REVIEWED_SOURCES.find(s=>s.id===sourceId)!).filter(Boolean);
  const sourceTitle=locale==='es'?'Fuentes oficiales y fecha de revisión':'Официальные источники и дата проверки';
  const sourceText=sources.map(s=>'- ['+s.name+']('+s.url+')').join('\n');
- return sections+'\n\n## '+sourceTitle+'\n\n'+sourceText+'\n\n'+(locale==='es'?'Revisado: ':'Проверено: ')+article.revised+'. La norma aplicable es la vigente en la fecha de presentación.';
+ const dateAndLegalWarning = locale === 'es'
+   ? 'Revisado: '+article.revised+'. La norma aplicable es la vigente en la fecha de presentación.'
+   : 'Проверено: '+article.revised+'. Применимые требования определяются законодательством, действующим на дату подачи заявления.';
+ return sections+'\n\n## '+sourceTitle+'\n\n'+sourceText+'\n\n'+dateAndLegalWarning;
 }
