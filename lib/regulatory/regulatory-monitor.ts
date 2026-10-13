@@ -204,6 +204,16 @@ function decodeEntities(value: string) {
 function normalizePayload(raw: string, strategy: RegulatorySourceRow['fetch_strategy']) {
   let value = strategy === 'boe_daily' ? normalizeBoeDailyPayload(raw) : raw;
 
+  if (strategy === 'rss') {
+    // A channel-level publication timestamp may change even when all article
+    // entries are identical. Do not remove item-level dates: those are evidence.
+    const firstItem = value.search(/<item(?:\\s|>)/i);
+    if (firstItem >= 0) {
+      value = value.slice(0, firstItem)
+        .replace(/<pubDate\\b[^>]*>[\\s\\S]*?<\\/pubDate>/gi, ' ') + value.slice(firstItem);
+    }
+  }
+
   if (strategy === 'rss' || strategy === 'xml') {
     value = value
       .replace(/<lastBuildDate\b[^>]*>[\s\S]*?<\/lastBuildDate>/gi, ' ')
