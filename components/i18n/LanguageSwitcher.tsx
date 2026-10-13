@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n/config';
+import { laborRuArticles } from '@/lib/content/labor-bilingual-2026';
 import {
   getLocalizedPublicHref,
   inferPublicRouteKey,
@@ -50,7 +51,12 @@ export function LanguageSwitcher({
       });
       if (!response.ok) throw new Error('language_preference_failed');
 
-      const href = getLocalizedPublicHref(routeKey, locale);
+      const paired = laborRuArticles.find((article) =>
+        pathname === '/blog/' + article.esSlug || pathname === '/ru/blog/' + article.slug
+      );
+      const href = paired && (locale === 'es' || locale === 'ru')
+        ? (locale === 'es' ? '/blog/' + paired.esSlug : '/ru/blog/' + paired.slug)
+        : getLocalizedPublicHref(routeKey, locale);
       if (href === pathname) {
         router.refresh();
       } else {
