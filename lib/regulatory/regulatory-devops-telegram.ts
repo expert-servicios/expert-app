@@ -19,6 +19,7 @@ async function telegramRequest<T>(
   token: string,
   method: string,
   payload?: Record<string, unknown>,
+  timeoutMs = 1200,
 ): Promise<T> {
   const response = await fetch(
     'https://api.telegram.org/bot' + token + '/' + method,
@@ -26,7 +27,7 @@ async function telegramRequest<T>(
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(payload ?? {}),
-      signal: AbortSignal.timeout(12_000),
+      signal: AbortSignal.timeout(timeoutMs),
       cache: 'no-store',
     },
   );
@@ -83,20 +84,23 @@ export async function notifyDevOpsRegulatoryHumanReview(
   if (!token || !chatId) throw new Error('devops_telegram_not_configured');
   if (!/^[1-9]\d{4,15}$/.test(chatId)) throw new Error('devops_telegram_private_chat_required');
 
-  const bot = await telegramRequest<{ username?: string }>(token, 'getMe');
+  // Strict aggregate deadline: Telegram never holds up the regulatory worker for 36s.
+  const deadline = Date.now() + 3800;
+  const remaining = () => Math.max(1, Math.min(1200, deadline - Date.now()));
+  const bot = await telegramRequest<{ username?: string }>(token, 'getMe', undefined, remaining());
   if (bot.username?.toLowerCase() !== VERIFIED_BOT_USERNAME) {
     throw new Error('devops_telegram_wrong_bot_identity');
   }
 
   const chat = await telegramRequest<{ id: number | string; type: string }>(
-    token, 'getChat', { chat_id: chatId },
+    token, 'getChat', { chat_id: chatId }, remaining(),
   );
   if (chat.type !== 'private' || String(chat.id) !== chatId) {
     throw new Error('devops_telegram_private_chat_required');
   }
 
   const reviewUrl = absoluteAppUrl(
-    '/admin/regulatory#change-' + encodeURIComponent(input.changeId),
+    '/admin/regulatory?changeId=' + encodeURIComponent(input.changeId),
   );
   if (!reviewUrl.startsWith('https://')) throw new Error('devops_telegram_review_url_invalid');
 
@@ -120,6 +124,7 @@ export async function notifyDevOpsRegulatoryHumanReview(
       disable_web_page_preview: true,
       reply_markup: { inline_keyboard: buttons },
     },
+    remaining(),
   );
   if (!Number.isSafeInteger(sent.message_id)) throw new Error('devops_telegram_send_unconfirmed');
   return 'sent';
