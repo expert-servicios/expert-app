@@ -86,7 +86,7 @@ export async function approveRegulatoryLegalReview(input: {
 }) {
   const admin = getSupabaseAdmin();
   if (input.note.trim().length < 30) throw new Error('El dictamen jurídico debe incluir al menos 30 caracteres');
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(input.checkedAt)) throw new Error('Fecha de verificación inválida');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.checkedAt)) throw new Error('Fecha de verificación inválida');
   const date = new Date(input.checkedAt + 'T00:00:00Z');
   if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0,10) !== input.checkedAt ||
       input.checkedAt > new Date().toISOString().slice(0,10)) throw new Error('Fecha de verificación inválida');
