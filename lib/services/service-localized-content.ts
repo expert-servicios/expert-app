@@ -15,6 +15,9 @@ export type LocalizedServicePresentation = {
 };
 
 const RU_SERVICE_PRESENTATIONS: Record<string, LocalizedServicePresentation> = {
+  'modelo-151': { serviceSlug: 'modelo-151', locale: 'ru', path: '/ru/uslugi/modelo-151-regimen-beckham', title: 'Modelo 151 — специальный налоговый режим', summary: 'Проверка требований impatriados, Modelo 149 и ежегодная декларация Modelo 151.', indexable: false },
+  'impuesto-patrimonio': { serviceSlug: 'impuesto-patrimonio', locale: 'ru', path: '/ru/uslugi/impuesto-patrimonio-modelo-714', title: 'Impuesto sobre el Patrimonio — Modelo 714', summary: 'Проверка обязанности, оценка активов и подготовка декларации Modelo 714.', indexable: false },
+  'impuesto-sociedades': { serviceSlug: 'impuesto-sociedades', locale: 'ru', path: '/ru/uslugi/impuesto-sociedades-modelo-200', title: 'Impuesto sobre Sociedades — Modelo 200', summary: 'Закрытие периода, налоговые корректировки и подача Modelo 200.', indexable: false },
   'certificado-digital-persona-fisica': {
     serviceSlug: 'certificado-digital-persona-fisica',
     locale: 'ru',
