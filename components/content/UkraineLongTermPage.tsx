@@ -103,6 +103,7 @@ export default function UkraineLongTermPage({ locale, kind }: { locale: Locale; 
     <main className="min-h-screen bg-[#F8F6F1] px-5 py-12 text-[#0D1B2A]">
       <article className="mx-auto max-w-3xl space-y-8">
         <nav className="flex flex-wrap gap-3 text-sm">
+          <Link className="font-semibold underline" href={paths[isRu ? 'es' : 'ru'][kind]}>{isRu ? 'Español' : 'Русский'}</Link>
           <Link className="underline" href={links.service}>{isRu ? 'Оформить услугу' : 'Servicio'}</Link>
           <Link className="underline" href={links.overview}>{isRu ? 'Правила 2026' : 'Requisitos 2026'}</Link>
           <Link className="underline" href={links.guide}>{isRu ? 'Инструкция EX-11' : 'Guía EX-11'}</Link>
