@@ -155,6 +155,74 @@ describe('KIA Regulatory Registry', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  it('allows only the explicitly registered government hosts for immigration evidence', async () => {
+    const fetchMock = vi.fn(async () => new Response('<html><body>Official guidance</body></html>', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    for (const host of [
+      'ciudadaniaexterior.inclusion.gob.es',
+      'www.policia.es',
+      'eur-lex.europa.eu',
+      'www.interior.gob.es',
+    ]) {
+      const result = await fetchRegulatorySource(source({
+        fetch_url: `https://${host}/official-source`,
+      }));
+      expect(result.excerpt).toContain('Official guidance');
+    }
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it('rejects redirects to non-allowlisted hosts BEFORE fetching the redirect target', async () => {
+    const fetchMock = vi.fn(async () => new Response(null, {
+      status: 302,
+      headers: { location: 'https://untrusted.example/ssrf' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchRegulatorySource(source())).rejects.toThrow('redirect host not allowed');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[1]?.redirect).toBe('manual');
+  });
+
+  it('supports a validated redirect to an official host and rejects non-HTTPS redirects', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(null, {
+        status: 302,
+        headers: { location: 'https://www.interior.gob.es/official-guidance' },
+      }))
+      .mockResolvedValueOnce(new Response('Official update', { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, {
+        status: 301,
+        headers: { location: 'http://www.boe.es/insecure' },
+      }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await fetchRegulatorySource(source());
+    expect(result.excerpt).toContain('Official update');
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://www.interior.gob.es/official-guidance', expect.objectContaining({
+      redirect: 'manual',
+    }));
+    await expect(fetchRegulatorySource(source())).rejects.toThrow('redirect host not allowed');
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('rejects excess redirects without requesting the seventh location', async () => {
+    const fetchMock = vi.fn(async () => new Response(null, {
+      status: 302,
+      headers: { location: '/redirect-again' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(fetchRegulatorySource(source())).rejects.toThrow('redirect limit exceeded');
+    expect(fetchMock).toHaveBeenCalledTimes(6);
+  });
+
+  it('does not bypass HTTP 403 returned by government portals', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('Forbidden', { status: 403 })));
+    await expect(fetchRegulatorySource(source())).rejects.toThrow('HTTP 403');
+  });
+
   it('keeps GitHub proposal PR creation fail-closed without a dedicated token', async () => {
     delete process.env.REGULATORY_GITHUB_TOKEN;
     await expect(createRegulatoryProposalPullRequest({
