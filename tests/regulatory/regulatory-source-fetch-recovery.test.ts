@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 const migration = readFileSync(
-  'supabase/migrations/20261013163000_regulatory_source_fetch_recovery.sql',
+  'supabase/migrations/20261013173037_regulatory_source_fetch_recovery.sql',
   'utf8',
 );
 
