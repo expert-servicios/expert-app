@@ -52,7 +52,7 @@ describe('Expert DevOps Bot · legal review notification', () => {
     expect(await notifyDevOpsRegulatoryHumanReview(input)).toBe('sent');
     expect(fetcher).toHaveBeenCalledTimes(3);
     const body = JSON.parse(String(fetcher.mock.calls[2]?.[1]?.body));
-    expect(body.reply_markup.inline_keyboard[0][0].url).toContain('/admin/regulatory#change-');
+    expect(body.reply_markup.inline_keyboard[0][0].url).toContain('/admin/regulatory?changeId=');
     expect(JSON.stringify(body)).not.toContain('callback_data');
   });
 
