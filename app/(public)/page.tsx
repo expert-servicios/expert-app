@@ -29,7 +29,6 @@ import {
 } from 'lucide-react';
 import { Hero } from '@/components/site/Hero';
 import { SharedHomeServices, SharedHomeFeaturedServices, SharedHomeAcademy } from '@/components/site/SharedHomeServicesAcademy';
-import { SharedHomeServices, SharedHomeFeaturedServices, SharedHomeAcademy } from '@/components/site/SharedHomeServicesAcademy';
 import { SharedServiceProcess } from '@/components/site/SharedServiceProcess';
 import { ReviewsPreview } from '@/components/site/reviews-preview';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
