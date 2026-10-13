@@ -81,10 +81,12 @@ export default function RegulatoryPulsePage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/regulatory', { cache: 'no-store' });
+      const selectedId = new URLSearchParams(window.location.search).get('changeId');
+      const response = await fetch('/api/admin/regulatory' + (selectedId ? '?changeId=' + encodeURIComponent(selectedId) : ''), { cache: 'no-store' });
       if (!response.ok) throw new Error('No se pudo cargar Regulatory Pulse');
       const payload = await response.json() as { summary: Summary; health: HealthAudit };
       setSummary(payload.summary);
+      if (selectedId) requestAnimationFrame(() => document.getElementById('change-' + selectedId)?.scrollIntoView({block:'center'}));
       setHealth(payload.health);
     } finally {
       setLoading(false);
@@ -258,7 +260,7 @@ export default function RegulatoryPulsePage() {
             ) : summary.pendingChanges.map((change) => {
               const source = Array.isArray(change.source) ? change.source[0] : change.source;
               return (
-                <div key={change.id} className="p-5">
+                <div key={change.id} id={`change-${change.id}`} className="p-5 scroll-mt-20">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">{source?.authority ?? 'Fuente'}</span>
                     <span className="rounded-full bg-[#f8f4eb] px-2 py-1 text-xs">{change.severity ?? 'pending'}</span>
