@@ -45,6 +45,7 @@ type Summary = {
     proposal_pr_number: number | null;
     proposal_pr_url: string | null;
     values_applied_at: string | null;
+    resolution_evidence?: {legal_approval?: {status?:string;approved_at?:string;reviewer_id?:string}} | null;
     created_at: string;
     source: { source_key: string; authority: string; title: string } | Array<{ source_key: string; authority: string; title: string }> | null;
   }>;
@@ -91,6 +92,28 @@ export default function RegulatoryPulsePage() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  const approveLegal = async (changeId: string) => {
+    const officialSourceUrl = window.prompt('URL de fuente oficial verificada (HTTPS):');
+    if (!officialSourceUrl) return;
+    const checkedAt = window.prompt('Fecha de comprobación oficial (AAAA-MM-DD):',new Date().toISOString().slice(0,10));
+    if (!checkedAt) return;
+    const legalNote = window.prompt('Dictamen jurídico (mínimo 30 caracteres): norma, vigencia y efectos comprobados.');
+    if (!legalNote || legalNote.trim().length < 30) return;
+    if (!window.confirm('¿Confirmas que has revisado personalmente la fuente y apruebas esta versión normativa?')) return;
+    setAction(`approve:${changeId}`);
+    try {
+      const response = await fetch('/api/admin/regulatory',{
+        method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({action:'approve_legal',changeId,officialSourceUrl,checkedAt,legalNote}),
+      });
+      const result = await response.json() as {error?:string};
+      if(!response.ok) throw new Error(result.error ?? 'No se pudo registrar el dictamen jurídico');
+      await load();
+    } catch(error) {
+      window.alert(error instanceof Error ? error.message : 'No se pudo registrar el dictamen');
+    } finally {setAction(null);}
+  };
 
   const applyValues = async (changeId: string) => {
     if (!window.confirm('Aplicar los valores propuestos al registro canónico después de haber revisado la fuente oficial?')) return;
@@ -252,6 +275,20 @@ export default function RegulatoryPulsePage() {
                       Revisar PR #{change.proposal_pr_number ?? '—'}
                     </a>
                   ) : null}
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-semibold">
+                      {change.resolution_evidence?.legal_approval?.status === 'approved'
+                        ? 'Dictamen jurídico registrado'
+                        : 'Sin aprobación jurídica documentada'}
+                    </span>
+                    {change.resolution_evidence?.legal_approval?.status !== 'approved' && change.severity !== null ? (
+                      <button type="button" disabled={Boolean(action)}
+                        onClick={() => void approveLegal(change.id)}
+                        className="rounded-lg border border-[#c88b25] px-3 py-2 text-xs font-semibold disabled:opacity-50">
+                        {action === `approve:${change.id}` ? 'Registrando…' : 'Registrar aprobación jurídica'}
+                      </button>
+                    ) : null}
+                  </div>
                   {Array.isArray(change.value_updates) && change.value_updates.length > 0 ? (
                     <div className="mt-4 rounded-xl border border-[#e6d7bb] bg-[#f8f4eb] p-4">
                       <p className="text-xs font-bold uppercase tracking-wide text-[#6b7280]">Valores propuestos · revisión humana obligatoria</p>
@@ -265,7 +302,7 @@ export default function RegulatoryPulsePage() {
                       </div>
                       <button
                         type="button"
-                        disabled={Boolean(action)}
+                        disabled={Boolean(action) || change.resolution_evidence?.legal_approval?.status !== 'approved'}
                         onClick={() => void applyValues(change.id)}
                         className="mt-3 rounded-lg bg-[#07111d] px-3 py-2 text-xs font-semibold text-[#d7a33a] disabled:opacity-50"
                       >
