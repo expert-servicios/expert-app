@@ -6,6 +6,7 @@ import { NewsletterForm } from '@/components/site/NewsletterForm';
 import { ArticleIntentCTA } from '@/components/content/ArticleIntentCTA';
 import { categories, services } from '@/lib/utils/catalog';
 import { docs, getDoc, getDocCategory } from '@/lib/utils/docs';
+import { IMMIGRATION_REVIEWED_GUIDES } from '@/lib/content/immigration-reviewed-2026';
 
 export function generateStaticParams() {
   return docs.map((doc) => ({ slug: doc.slug }));
@@ -23,13 +24,15 @@ export async function generateMetadata({
   const title = doc.seoTitle ?? `${doc.title} | EXPERT Docs`;
   const description = doc.seoDescription ?? doc.excerpt;
   const canonicalUrl = `https://expertconsulting.es/docs/${slug}`;
+  const pairedGuide = IMMIGRATION_REVIEWED_GUIDES.find(g => g.esSlug === slug);
 
   return {
     title,
     description,
     keywords: doc.tags,
     alternates: {
-      canonical: canonicalUrl
+      canonical: canonicalUrl,
+      ...(pairedGuide ? {languages:{'es-ES':canonicalUrl,'ru-RU':'https://expertconsulting.es/ru/docs/'+pairedGuide.ruSlug,'x-default':canonicalUrl}} : {})
     },
     openGraph: {
       title,
