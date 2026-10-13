@@ -16,7 +16,7 @@ export function ReviewedRussianImmigrationDoc({id}:{id:ImmigrationGuideId}){
    </div></header>
    <article className="mx-auto max-w-4xl space-y-9 px-6 py-12">
     {guide.sections.map(s=><section key={s.id}><h2 className="font-serif text-2xl font-bold">{s.ru}</h2><p className="mt-4 leading-8">{s.pRu}</p></section>)}
-    <section><h2 className="font-serif text-2xl font-bold">Официальные источники</h2><ul className="mt-4 space-y-3">{sources.map(s=><li key={s.id}><a href={s.url} target="_blank" rel="noopener noreferrer" className="underline">{s.name}</a>{s.lastEditorialRevision&&<span className="ml-2 text-xs text-gray-600">Редакция: {s.lastEditorialRevision}</span>}</li>)}</ul></section>
+    <section><h2 className="font-serif text-2xl font-bold">Официальные источники</h2><ul className="mt-4 space-y-3">{sources.map(s=><li key={s.id}><a href={s.url} target="_blank" rel="noopener noreferrer" className="underline">{s.name}</a>{'lastEditorialRevision' in s && s.lastEditorialRevision && <span className="ml-2 text-xs text-gray-600">Редакция: {s.lastEditorialRevision}</span>}</li>)}</ul></section>
     <aside className="border border-[#D4A017]/30 bg-white p-6"><p className="font-semibold">Нужна консультация по вашему делу?</p><div className="mt-4 flex flex-wrap gap-4">
      <Link className="bg-[#D4A017] px-5 py-3 font-semibold" href={'/solicitar-presupuesto?origen='+encodeURIComponent(origin)}>Запросить услугу</Link>
      <Link className="border border-[#D4A017] px-5 py-3" href={'/consulta-gratuita?origen='+encodeURIComponent(origin)}>Задать бесплатный вопрос (форма на испанском)</Link>
