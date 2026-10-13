@@ -95,6 +95,28 @@ describe('KIA Regulatory Registry', () => {
     expect(first.fingerprint).toBe(second.fingerprint);
   });
 
+  it('ignores RSS channel pubDate churn but preserves item publication dates', async () => {
+    const head = '<rss><channel>';
+    const tail = '</channel></rss>';
+    const item = (date: string) =>
+      '<item><title>Normativa de ejemplo</title><pubDate>' + date + '</pubDate></item>';
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(head + '<pubDate>Wed, 7 Oct 2026 12:13:40 +0200</pubDate>' +
+        item('Wed, 7 Oct 2026 09:00:00 +0200') + tail, { status: 200 }))
+      .mockResolvedValueOnce(new Response(head + '<pubDate>Tue, 13 Oct 2026 15:37:18 +0200</pubDate>' +
+        item('Wed, 7 Oct 2026 09:00:00 +0200') + tail, { status: 200 }))
+      .mockResolvedValueOnce(new Response(head + '<pubDate>Tue, 13 Oct 2026 15:37:18 +0200</pubDate>' +
+        item('Tue, 13 Oct 2026 09:00:00 +0200') + tail, { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const rssSource = source({ fetch_strategy: 'rss' });
+    const baseline = await fetchRegulatorySource(rssSource);
+    const metadataOnly = await fetchRegulatorySource(rssSource);
+    const articleUpdated = await fetchRegulatorySource(rssSource);
+    expect(baseline.fingerprint).toBe(metadataOnly.fingerprint);
+    expect(baseline.fingerprint).not.toBe(articleUpdated.fingerprint);
+  });
+
   it('compacts BOE daily JSON and prioritizes EXPERT-relevant provisions in evidence', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
       data: {
