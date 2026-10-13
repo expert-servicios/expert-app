@@ -4,6 +4,7 @@ import {
   applyReviewedRegulatoryValueUpdates,
   approveRegulatoryLegalReview,
   getRegulatoryPulseSummary,
+  getRegulatoryChangeForAdmin,
   resolveReviewedRegulatoryChange,
 } from '@/lib/regulatory/regulatory-values';
 import { runRegulatoryPulse } from '@/lib/regulatory/regulatory-monitor';
@@ -38,6 +39,11 @@ export async function GET(request: NextRequest) {
     getRegulatoryPulseSummary(),
     runRegulatoryHealthAudit(),
   ]);
+  const id = new URL(request.url).searchParams.get('changeId');
+  if (id) {
+    const selected = await getRegulatoryChangeForAdmin(id);
+    if (selected && !summary.pendingChanges.some(row => row.id === selected.id)) summary.pendingChanges.unshift(selected);
+  }
   return NextResponse.json({ ok: true, summary, health });
 }
 
