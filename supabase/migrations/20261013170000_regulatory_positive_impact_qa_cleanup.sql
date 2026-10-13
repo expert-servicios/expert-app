@@ -19,7 +19,7 @@ WHERE impact.change_id = event.id
     (dependency.dependency_type = 'telegram' AND dependency.dependency_key = 'batch1-immigration')
     OR (dependency.dependency_type = 'kia_prompt' AND dependency.dependency_key = 'immigration')
   )
-  AND impact.impact_reason ILIKE '%no immigration%';
+  AND (impact.impact_reason ILIKE '%no immigration%' OR impact.impact_reason ILIKE '%no updates required for immigration%');
 
 -- BOE medium content update must not bypass legal/editorial human review.
 UPDATE public.regulatory_changes AS event
