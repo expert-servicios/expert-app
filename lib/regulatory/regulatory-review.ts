@@ -4,6 +4,7 @@ import { runKiaProviderRequest } from '@/lib/ai/kia/kia-provider-router';
 import { notifyAdminsTelegram, escapeTelegramHtml } from '@/lib/integrations/telegram';
 import { createRegulatoryProposalPullRequest } from './regulatory-github';
 import { isRulesetSchemaUnavailable } from './regulatory-schema-compat';
+import { selectConfirmedRegulatoryImpacts, requiresRegulatoryHumanReview } from './regulatory-impact';
 
 const reviewSchema = z.object({
   relevant: z.boolean(),
@@ -36,6 +37,7 @@ const reviewSchema = z.object({
     type: z.string().min(1),
     key: z.string().min(1),
     reason: z.string().min(1).max(500),
+    impacted: z.boolean(),
   })).max(30),
   proposedFiles: z.array(z.string()).max(40),
 });
@@ -84,11 +86,12 @@ const REVIEW_JSON_SCHEMA = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['type','key','reason'],
+        required: ['type','key','reason','impacted'],
         properties: {
           type: { type: 'string' },
           key: { type: 'string' },
           reason: { type: 'string' },
+          impacted: { type: 'boolean' },
         },
       },
     },
@@ -109,7 +112,8 @@ const SYSTEM_PROMPT = [
   'medium: contenido/criterio útil con impacto limitado.',
   'low/info: cambio informativo o editorial.',
   'Los valueUpdates son PROPUESTAS: solo inclúyelos cuando el nuevo valor esté explícitamente visible en la evidencia.',
-  'Para cada dependencia conocida realmente afectada, usa dependencyHints con EXACTAMENTE el mismo type y key recibido.',
+  'Para cada dependencia conocida realmente afectada, usa dependencyHints con EXACTAMENTE el mismo type y key recibido y impacted=true.',
+  'Si mencionas una dependencia que NO resulta afectada, usa impacted=false; una relación temática o ausencia de novedades NUNCA significa impacto.',
   'No marques dependencias por similitud temática si la evidencia no demuestra impacto; en caso de duda exige revisión humana.',
   'Devuelve únicamente JSON conforme al schema.',
 ].join('\n');
@@ -234,11 +238,16 @@ async function classifyOne(change: ChangeRow) {
   }
 
   const parsed = reviewSchema.parse(result.parsedJson);
+  const humanReviewRequired = requiresRegulatoryHumanReview({
+    authority: source.authority,
+    relevant: parsed.relevant,
+    severity: parsed.severity,
+    changeType: parsed.changeType,
+    modelRequestsReview: parsed.requiresHumanReview,
+  });
   const status = !parsed.relevant
     ? 'ignored'
-    : parsed.requiresHumanReview || parsed.severity === 'critical'
-      ? 'needs_review'
-      : 'classified';
+    : humanReviewRequired ? 'needs_review' : 'classified';
 
   const { error: updateError } = await admin.from('regulatory_changes').update({
     status,
@@ -247,7 +256,7 @@ async function classifyOne(change: ChangeRow) {
     change_type: parsed.changeType,
     summary: parsed.summary,
     effective_date: parsed.effectiveDate,
-    requires_human_review: parsed.requiresHumanReview || parsed.severity === 'critical',
+    requires_human_review: humanReviewRequired,
     classification_confidence: parsed.confidence,
     classified_by: 'kia',
     classification_model: result.model,
@@ -259,16 +268,14 @@ async function classifyOne(change: ChangeRow) {
 
   if (updateError) throw new Error(updateError.message);
 
-  const sourceMetadata = (source.metadata ?? {}) as Record<string, unknown>;
   const knownDependencies = dependencies ?? [];
+  const positiveHints = parsed.dependencyHints.filter((hint) => hint.impacted);
   const hinted = new Map(
-    parsed.dependencyHints.map((hint) => [`${hint.type}::${hint.key}`, hint.reason]),
+    positiveHints.map((hint) => [`${hint.type}::${hint.key}`, hint.reason]),
   );
-  const affectedDependencies = sourceMetadata.service_specific === true
-    ? knownDependencies
-    : knownDependencies.filter((dependency) =>
-        hinted.has(`${dependency.dependency_type}::${dependency.dependency_key}`),
-      );
+  const affectedDependencies = selectConfirmedRegulatoryImpacts(
+    knownDependencies, parsed.dependencyHints, parsed.relevant,
+  );
 
   if (affectedDependencies.length > 0) {
     const { error: impactError } = await admin.from('regulatory_change_dependencies').upsert(
