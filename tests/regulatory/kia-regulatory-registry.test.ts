@@ -117,6 +117,17 @@ describe('KIA Regulatory Registry', () => {
     expect(baseline.fingerprint).not.toBe(articleUpdated.fingerprint);
   });
 
+  it('ignores volatile RSS channel dates when no entries exist', async () => {
+    const mk = (date: string) => '<rss><channel><pubDate>' + date + '</pubDate></channel></rss>';
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(mk('Tue, 13 Oct 2026 08:00:00 GMT'), { status: 200 }))
+      .mockResolvedValueOnce(new Response(mk('Tue, 13 Oct 2026 17:00:00 GMT'), { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const baseline = await fetchRegulatorySource(source({ fetch_strategy: 'rss' }));
+    const sameEntries = await fetchRegulatorySource(source({ fetch_strategy: 'rss' }));
+    expect(baseline.fingerprint).toBe(sameEntries.fingerprint);
+  });
+
   it('compacts BOE daily JSON and prioritizes EXPERT-relevant provisions in evidence', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
       data: {
