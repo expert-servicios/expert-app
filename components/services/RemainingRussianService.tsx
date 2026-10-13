@@ -3,42 +3,42 @@ import { getCatalogService } from '@/lib/utils/catalog';
 export const RU_REMAINING_SERVICES = {
   "baja-cese-actividad": {
     "path": "/ru/uslugi/baja-deyatelnosti",
-    "title": "Закрытие деятельности",
-    "intro": "Прекращение деятельности autónomo или компании, документы для Hacienda и RETA."
+    "title": "Прекращение деятельности (baja y cese de actividad)",
+    "intro": "Прекращение деятельности самозанятого предпринимателя (autónomo) или компании; оформление снятия с учёта в налоговом ведомстве (Hacienda) и системе социального страхования для предпринимателей (RETA)."
   },
   "cuentas-anuales": {
     "path": "/ru/uslugi/godovye-scheta",
-    "title": "Годовая отчётность Cuentas Anuales",
-    "intro": "Подготовка, утверждение и подача отчётности в Registro Mercantil."
+    "title": "Годовая отчётность компании (Cuentas Anuales)",
+    "intro": "Подготовка, утверждение и подача годовой отчётности в торговый реестр компаний (Registro Mercantil)."
   },
   "apoderamientos-mercantiles": {
     "path": "/ru/uslugi/korporativnye-doverennosti",
-    "title": "Корпоративные доверенности и изменения",
+    "title": "Корпоративные доверенности и изменения (apoderamientos mercantiles)",
     "intro": "Корпоративные решения, нотариальные полномочия и регистрация изменений."
   },
   "matriculacion": {
     "path": "/ru/uslugi/registratsiya-avtomobilya",
-    "title": "Регистрация автомобиля",
+    "title": "Регистрация автомобиля (matriculación)",
     "intro": "Первичная регистрация и импорт, проверка документов, налогов и DGT."
   },
   "tramites-embarcaciones": {
     "path": "/ru/uslugi/registratsiya-sudna",
-    "title": "Документы на прогулочные суда",
+    "title": "Оформление прогулочных судов (trámites de embarcaciones)",
     "intro": "Регистрация, изменение владельца и документы Capitanía Marítima."
   },
   "compraventa-inmueble": {
     "path": "/ru/uslugi/pokupka-prodazha-nedvizhimosti",
-    "title": "Купля-продажа недвижимости",
+    "title": "Купля-продажа недвижимости (compraventa de inmueble)",
     "intro": "Проверка договора arras, налогов, нотариальных документов и регистрации."
   },
   "herencia": {
     "path": "/ru/uslugi/nasledstvo-v-ispanii",
-    "title": "Наследство в Испании",
+    "title": "Наследство в Испании (herencia)",
     "intro": "Документы наследников, имущество и налог Impuesto sobre Sucesiones."
   },
   "donacion": {
     "path": "/ru/uslugi/darstvennaya-imushchestva",
-    "title": "Дарение имущества",
+    "title": "Дарение имущества (donación)",
     "intro": "Налог на дарение, нотариальные документы и регистрация имущества."
   }
 } as const;
@@ -46,7 +46,7 @@ export type RuRemainingServiceSlug = keyof typeof RU_REMAINING_SERVICES;
 const RU_SERVICE_INCLUDES: Record<RuRemainingServiceSlug, readonly string[]> = {
   "baja-cese-actividad": [
     "Снятие с учёта в Hacienda (Modelo 036)",
-    "Снятие с учёта в RETA",
+    "Снятие с учёта в режиме социального страхования предпринимателей (RETA)",
     "Подача оставшихся налоговых деклараций",
     "Для компаний: решение о ликвидации, нотариальные документы и регистрация"
   ],
@@ -54,19 +54,19 @@ const RU_SERVICE_INCLUDES: Record<RuRemainingServiceSlug, readonly string[]> = {
     "Подготовка баланса и отчёта о прибылях и убытках",
     "Подготовка годовой пояснительной записки (memoria)",
     "Согласование утверждения на общем собрании",
-    "Подача в Registro Mercantil",
+    "Подача в торговый реестр компаний (Registro Mercantil)",
     "Подтверждение подачи"
   ],
   "apoderamientos-mercantiles": [
     "Подготовка решения общего собрания или администратора",
     "Нотариальное оформление решения",
-    "Регистрация в Registro Mercantil, когда требуется",
+    "Регистрация в торговом реестре компаний (Registro Mercantil), когда требуется",
     "Уведомление Hacienda, если необходимо",
     "Подтверждение регистрации"
   ],
   "matriculacion": [
     "Проверка технических документов",
-    "Расчёт и уплата IEDMT",
+    "Расчёт и уплата специального налога на определённые транспортные средства (IEDMT), когда применим",
     "Оформление регистрации в DGT",
     "Получение номерных знаков и permiso de circulación"
   ],
@@ -77,16 +77,16 @@ const RU_SERVICE_INCLUDES: Record<RuRemainingServiceSlug, readonly string[]> = {
     "Снятие с регистрационного учёта"
   ],
   "compraventa-inmueble": [
-    "Проверка договора arras или предварительного договора",
-    "Расчёт ITP или IVA+AJD в зависимости от сделки",
+    "Проверка договора задатка (contrato de arras) или предварительного договора",
+    "Расчёт налога на передачу имущества (ITP) либо налога на добавленную стоимость (IVA) и налога на юридические акты (AJD) — по типу сделки",
     "Сопровождение нотариального оформления",
     "Уплата налогов в автономном сообществе",
-    "Регистрация в Registro de la Propiedad"
+    "Регистрация в реестре прав на недвижимость (Registro de la Propiedad)"
   ],
   "herencia": [
     "Получение сертификата последних волеизъявлений и сведений о страховании жизни",
     "Инвентаризация наследственного имущества",
-    "Расчёт и уплата Impuesto de Sucesiones y Donaciones",
+    "Расчёт и уплата налога на наследство и дарение (Impuesto sobre Sucesiones y Donaciones)",
     "Нотариальный акт распределения наследства",
     "Регистрация прав собственности и сопутствующие действия"
   ],
