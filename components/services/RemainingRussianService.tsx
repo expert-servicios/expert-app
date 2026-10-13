@@ -43,6 +43,60 @@ export const RU_REMAINING_SERVICES = {
   }
 } as const;
 export type RuRemainingServiceSlug = keyof typeof RU_REMAINING_SERVICES;
+const RU_SERVICE_INCLUDES: Record<RuRemainingServiceSlug, readonly string[]> = {
+  "baja-cese-actividad": [
+    "Снятие с учёта в Hacienda (Modelo 036)",
+    "Снятие с учёта в RETA",
+    "Подача оставшихся налоговых деклараций",
+    "Для компаний: решение о ликвидации, нотариальные документы и регистрация"
+  ],
+  "cuentas-anuales": [
+    "Подготовка баланса и отчёта о прибылях и убытках",
+    "Подготовка годовой пояснительной записки (memoria)",
+    "Согласование утверждения на общем собрании",
+    "Подача в Registro Mercantil",
+    "Подтверждение подачи"
+  ],
+  "apoderamientos-mercantiles": [
+    "Подготовка решения общего собрания или администратора",
+    "Нотариальное оформление решения",
+    "Регистрация в Registro Mercantil, когда требуется",
+    "Уведомление Hacienda, если необходимо",
+    "Подтверждение регистрации"
+  ],
+  "matriculacion": [
+    "Проверка технических документов",
+    "Расчёт и уплата IEDMT",
+    "Оформление регистрации в DGT",
+    "Получение номерных знаков и permiso de circulación"
+  ],
+  "tramites-embarcaciones": [
+    "Регистрация судов",
+    "Оформление смены владельца",
+    "Оформление флага и необходимых разрешений",
+    "Снятие с регистрационного учёта"
+  ],
+  "compraventa-inmueble": [
+    "Проверка договора arras или предварительного договора",
+    "Расчёт ITP или IVA+AJD в зависимости от сделки",
+    "Сопровождение нотариального оформления",
+    "Уплата налогов в автономном сообществе",
+    "Регистрация в Registro de la Propiedad"
+  ],
+  "herencia": [
+    "Получение сертификата последних волеизъявлений и сведений о страховании жизни",
+    "Инвентаризация наследственного имущества",
+    "Расчёт и уплата Impuesto de Sucesiones y Donaciones",
+    "Нотариальный акт распределения наследства",
+    "Регистрация прав собственности и сопутствующие действия"
+  ],
+  "donacion": [
+    "Расчёт налога на дарение",
+    "Нотариальный акт дарения",
+    "Уплата налога",
+    "Регистрация прав на недвижимость при необходимости"
+  ]
+};
 export function RemainingRussianService({slug}:{slug:RuRemainingServiceSlug}) {
  const ru=RU_REMAINING_SERVICES[slug]; const service=getCatalogService(slug);
  if(!service) throw Error('Missing canonical service: '+slug);
@@ -56,7 +110,7 @@ export function RemainingRussianService({slug}:{slug:RuRemainingServiceSlug}) {
    <p className="mt-6 text-xl font-semibold text-[#D4A017]">{service.price==='Consultar'?'Стоимость по запросу':service.price==='Precio variable'?'Индивидуальный расчёт':service.price}</p>
    <div className="mt-8 flex flex-wrap gap-4"><Link href={budget} className="bg-[#D4A017] px-6 py-3 font-bold text-[#0D1B2A]">Запросить предложение</Link><Link href={esPath} className="border border-[#D4A017] px-6 py-3">Español</Link></div>
   </div></section>
-  <section className="mx-auto max-w-5xl px-6 py-16"><h2 className="font-serif text-2xl">Что входит в услугу</h2><ul className="mt-6 grid gap-4 sm:grid-cols-2">{service.includes.map(item=><li className="border border-[#D4A017]/25 bg-white p-5" key={item}>{item}</li>)}</ul>
-  <p className="mt-8 border-l-4 border-[#D4A017] bg-white p-5 text-sm">Объём работ и стоимость уточняются по конкретному случаю. Официальные описания включённых работ приведены на испанском языке.</p></section>
+  <section className="mx-auto max-w-5xl px-6 py-16"><h2 className="font-serif text-2xl">Что входит в услугу</h2><ul className="mt-6 grid gap-4 sm:grid-cols-2">{RU_SERVICE_INCLUDES[slug].map(item=><li className="border border-[#D4A017]/25 bg-white p-5" key={item}>{item}</li>)}</ul>
+  <p className="mt-8 border-l-4 border-[#D4A017] bg-white p-5 text-sm">Точный объём услуг и стоимость подтверждаются после проверки документов. Оригинальное описание и договорные условия доступны также на испанском языке.</p></section>
  </main>;
 }
