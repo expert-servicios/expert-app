@@ -15,6 +15,14 @@ export type LocalizedServicePresentation = {
 };
 
 const RU_SERVICE_PRESENTATIONS: Record<string, LocalizedServicePresentation> = {
+  'baja-cese-actividad': {serviceSlug:'baja-cese-actividad',locale:'ru',path:'/ru/uslugi/baja-deyatelnosti',title:'Закрытие деятельности',summary:'Прекращение деятельности autónomo или компании, документы для Hacienda и RETA.',indexable:false},
+  'cuentas-anuales': {serviceSlug:'cuentas-anuales',locale:'ru',path:'/ru/uslugi/godovye-scheta',title:'Годовая отчётность Cuentas Anuales',summary:'Подготовка, утверждение и подача отчётности в Registro Mercantil.',indexable:false},
+  'apoderamientos-mercantiles': {serviceSlug:'apoderamientos-mercantiles',locale:'ru',path:'/ru/uslugi/korporativnye-doverennosti',title:'Корпоративные доверенности и изменения',summary:'Корпоративные решения, нотариальные полномочия и регистрация изменений.',indexable:false},
+  'matriculacion': {serviceSlug:'matriculacion',locale:'ru',path:'/ru/uslugi/registratsiya-avtomobilya',title:'Регистрация автомобиля',summary:'Первичная регистрация и импорт, проверка документов, налогов и DGT.',indexable:false},
+  'tramites-embarcaciones': {serviceSlug:'tramites-embarcaciones',locale:'ru',path:'/ru/uslugi/registratsiya-sudna',title:'Документы на прогулочные суда',summary:'Регистрация, изменение владельца и документы Capitanía Marítima.',indexable:false},
+  'compraventa-inmueble': {serviceSlug:'compraventa-inmueble',locale:'ru',path:'/ru/uslugi/pokupka-prodazha-nedvizhimosti',title:'Купля-продажа недвижимости',summary:'Проверка договора arras, налогов, нотариальных документов и регистрации.',indexable:false},
+  'herencia': {serviceSlug:'herencia',locale:'ru',path:'/ru/uslugi/nasledstvo-v-ispanii',title:'Наследство в Испании',summary:'Документы наследников, имущество и налог Impuesto sobre Sucesiones.',indexable:false},
+  'donacion': {serviceSlug:'donacion',locale:'ru',path:'/ru/uslugi/darstvennaya-imushchestva',title:'Дарение имущества',summary:'Налог на дарение, нотариальные документы и регистрация имущества.',indexable:false},
   'modelo-151': { serviceSlug: 'modelo-151', locale: 'ru', path: '/ru/uslugi/modelo-151-regimen-beckham', title: 'Modelo 151 — специальный налоговый режим', summary: 'Проверка требований impatriados, Modelo 149 и ежегодная декларация Modelo 151.', indexable: false },
   'impuesto-patrimonio': { serviceSlug: 'impuesto-patrimonio', locale: 'ru', path: '/ru/uslugi/impuesto-patrimonio-modelo-714', title: 'Impuesto sobre el Patrimonio — Modelo 714', summary: 'Проверка обязанности, оценка активов и подготовка декларации Modelo 714.', indexable: false },
   'impuesto-sociedades': { serviceSlug: 'impuesto-sociedades', locale: 'ru', path: '/ru/uslugi/impuesto-sociedades-modelo-200', title: 'Impuesto sobre Sociedades — Modelo 200', summary: 'Закрытие периода, налоговые корректировки и подача Modelo 200.', indexable: false },
