@@ -98,7 +98,9 @@ describe('RU release gate', () => {
     expect(ruFooter).toContain("import { EXPERT_IDENTITY } from '@/config/identity'");
     expect(ruFooter).toContain('EXPERT_IDENTITY.publicEmail');
     expect(ruFooter).toContain('EXPERT_IDENTITY.phoneDisplay');
-    expect(ruLayout).toContain('<RuSiteFooter />');
+    expect(ruLayout).toContain('<Footer locale="ru" />');
+    expect(ruLayout).toContain('<Header locale="ru" />');
+    expect(ruLayout).toContain('<KiaPublicWidget />');
   });
 
   it('keeps Academy private/non-regulated and SIF terminology explicit', () => {

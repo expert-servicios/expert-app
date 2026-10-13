@@ -7,6 +7,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, LockKeyhole, Menu, X } from 'lucide-react';
 import { categories } from '@/lib/utils/catalog';
 import { CartIcon } from '@/components/cart/CartIcon';
+import { localizePublicShellHref as hrefFor, localizePublicShellText as labelFor, type PublicShellLocale } from '@/lib/i18n/public-shell-copy';
 
 const navLinks = [
   { label: 'Para asesorías', href: '/para-asesorias', highlight: true },
@@ -43,7 +44,9 @@ const formacionLinks = [
   { label: 'Gestión Laboral Integral — 1.200 €', href: '/academy/gestion-laboral-integral' },
 ];
 
-export function Header() {
+export function Header({ locale = 'es' }: { locale?: PublicShellLocale }) {
+  const href = (value: string) => hrefFor(locale, value);
+  const label = (value: string) => labelFor(locale, value);
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
@@ -143,7 +146,7 @@ export function Header() {
     <header className={`sticky top-0 border-b border-white/10 bg-[#0D1B2A] text-[#F8F6F1] shadow-lg shadow-[#0D1B2A]/20 ${mobileOpen ? 'z-[120]' : 'z-50'}`}>
       <div className="mx-auto flex h-[74px] max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Logo */}
-        <Link href="/" onClick={closeMobile} className="flex min-w-0 items-center gap-3">
+        <Link href={href("/")} onClick={closeMobile} className="flex min-w-0 items-center gap-3">
           <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden">
             <Image
               src="/logos/EXPERT_logo/expert-mark-light-clean.png"
@@ -164,7 +167,7 @@ export function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-5 text-sm font-semibold text-[#F8F6F1]/88 lg:flex xl:gap-7">
-          <Link href="/" className="transition hover:text-[#D4A017]">Inicio</Link>
+          <Link href={href("/")} className="transition hover:text-[#D4A017]">{label('Inicio')}</Link>
 
           {/* Servicios dropdown */}
           <div className="relative" ref={dropdownRef}>
@@ -181,7 +184,7 @@ export function Header() {
             {servicesOpen && (
               <div className="absolute left-0 top-full z-50 mt-2 w-72 border border-white/10 bg-[#0D1B2A] shadow-2xl shadow-black/40">
                 <Link
-                  href="/servicios"
+                  href={href("/servicios")}
                   onClick={() => setServicesOpen(false)}
                   className="block border-b border-white/10 px-4 py-3 text-xs font-bold uppercase tracking-widest text-[#D4A017] hover:bg-[#23364D]"
                 >
@@ -190,11 +193,11 @@ export function Header() {
                 {categories.map((cat) => (
                   <Link
                     key={cat.slug}
-                    href={cat.slug === 'holded' ? '/holded' : `/servicios/${cat.slug}`}
+                    href={href(cat.slug === 'holded' ? '/holded' : `/servicios/${cat.slug}`)}
                     onClick={() => setServicesOpen(false)}
                     className="block px-4 py-2.5 text-sm text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
                   >
-                    {cat.name}
+                    {label(cat.name)}
                   </Link>
                 ))}
               </div>
@@ -216,7 +219,7 @@ export function Header() {
             {holdedOpen && (
               <div className="absolute left-0 top-full z-50 mt-2 w-72 border border-white/10 bg-[#0D1B2A] shadow-2xl shadow-black/40">
                 <Link
-                  href="/planes/gratuito"
+                  href={href("/planes/gratuito")}
                   onClick={() => setHoldedOpen(false)}
                   className="block border-b border-white/10 px-4 py-3 text-xs font-bold uppercase tracking-widest text-[#D4A017] hover:bg-[#23364D]"
                 >
@@ -225,14 +228,14 @@ export function Header() {
                 {holdedLinks.map((link) => (
                   <Link
                     key={link.href}
-                    href={link.href}
+                    href={href(link.href)}
                     onClick={() => setHoldedOpen(false)}
                     className={link.highlight
                       ? 'block px-4 py-2.5 text-sm font-bold text-[#D4A017] transition hover:bg-[#23364D]'
                       : 'block px-4 py-2.5 text-sm text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]'
                     }
                   >
-                    {link.label}
+                    {label(link.label)}
                   </Link>
                 ))}
               </div>
@@ -256,14 +259,14 @@ export function Header() {
                 {planesLinks.map((link) => (
                   <Link
                     key={link.href}
-                    href={link.href}
+                    href={href(link.href)}
                     onClick={() => setPlanesOpen(false)}
                     className={link.highlight
                       ? 'block border-b border-white/10 px-4 py-3 text-xs font-bold uppercase tracking-widest text-[#D4A017] hover:bg-[#23364D]'
                       : 'block px-4 py-2.5 text-sm text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]'
                     }
                   >
-                    {link.highlight ? `${link.label} →` : link.label}
+                    {link.highlight ? `${label(link.label)} →` : link.label}
                   </Link>
                 ))}
               </div>
@@ -287,14 +290,14 @@ export function Header() {
                 {formacionLinks.map((link) => (
                   <Link
                     key={link.href}
-                    href={link.href}
+                    href={href(link.href)}
                     onClick={() => setFormacionOpen(false)}
                     className={link.highlight
                       ? 'block border-b border-white/10 px-4 py-3 text-sm font-bold text-[#D4A017] transition hover:bg-[#23364D]'
                       : 'block px-4 py-2.5 text-sm text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]'
                     }
                   >
-                    {link.label}
+                    {label(link.label)}
                   </Link>
                 ))}
               </div>
@@ -318,11 +321,11 @@ export function Header() {
                 {recursosLinks.map((link) => (
                   <Link
                     key={link.href}
-                    href={link.href}
+                    href={href(link.href)}
                     onClick={() => setRecursosOpen(false)}
                     className="block px-4 py-2.5 text-sm text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
                   >
-                    {link.label}
+                    {label(link.label)}
                   </Link>
                 ))}
               </div>
@@ -332,14 +335,14 @@ export function Header() {
           {navLinks.map((link) => (
             <Link
               key={link.href}
-              href={link.href}
+              href={href(link.href)}
               className={'highlight' in link && link.highlight
                 ? 'rounded-md bg-[#D4A017]/12 px-3 py-1.5 text-[#D4A017] font-bold transition hover:bg-[#D4A017]/20'
                 : link.href === '/cita'
                   ? 'rounded-md border border-[#D4A017]/50 px-3 py-1.5 text-[#D4A017] transition hover:border-[#D4A017] hover:bg-[#D4A017]/10'
                   : 'transition hover:text-[#D4A017]'}
             >
-              {link.label}
+              {label(link.label)}
             </Link>
           ))}
         </nav>
@@ -348,11 +351,11 @@ export function Header() {
         <div className="flex items-center gap-1.5 sm:gap-2">
           <CartIcon />
           <Link
-            href="/auth/login"
+            href={href("/auth/login")}
             className="inline-flex min-h-10 items-center gap-2 rounded-md bg-[#D4A017] px-3 text-sm font-bold text-[#0D1B2A] shadow-lg shadow-[#0D1B2A]/25 transition hover:bg-[#F2C14E] sm:px-5"
           >
             <LockKeyhole className="h-4 w-4" />
-            <span className="hidden sm:inline">Acceder</span>
+            <span className="hidden sm:inline">{label('Acceder')}</span>
           </Link>
 
           {/* Hamburger */}
@@ -360,7 +363,7 @@ export function Header() {
             type="button"
             onClick={toggleMobile}
             className="flex h-11 w-11 items-center justify-center rounded-md border border-white/20 text-[#F8F6F1]/80 transition hover:border-[#D4A017] hover:text-[#D4A017] lg:hidden"
-            aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
+            aria-label={label(mobileOpen ? 'Cerrar menú' : 'Abrir menú')}
             aria-controls="mobile-site-menu"
             aria-expanded={mobileOpen}
           >
@@ -374,13 +377,13 @@ export function Header() {
         <div id="mobile-site-menu" className="fixed inset-x-0 bottom-0 top-[74px] z-[120] lg:hidden">
           <button
             type="button"
-            aria-label="Cerrar menu movil"
+            aria-label={label('Cerrar menu movil')}
             onClick={closeMobile}
             className="absolute inset-0 bg-[#07111D]/70 backdrop-blur-sm"
           />
           <div className="relative ml-auto flex h-full w-full max-w-md flex-col overflow-y-auto border-t border-white/10 bg-[#0D1B2A] px-4 pb-28 pt-3 shadow-2xl shadow-black/50">
             <Link
-              href="/"
+              href={href("/")}
               onClick={closeMobile}
               className="block rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]"
             >
@@ -407,7 +410,7 @@ export function Header() {
               {servicesOpen && (
                 <div className="ml-3 border-l border-[#D4A017]/30 pl-3">
                   <Link
-                    href="/servicios"
+                    href={href("/servicios")}
                     onClick={closeMobile}
                     className="block py-2 text-xs font-bold uppercase tracking-widest text-[#D4A017]"
                   >
@@ -416,11 +419,11 @@ export function Header() {
                   {categories.map((cat) => (
                     <Link
                       key={cat.slug}
-                      href={cat.slug === 'holded' ? '/holded' : `/servicios/${cat.slug}`}
+                      href={href(cat.slug === 'holded' ? '/holded' : `/servicios/${cat.slug}`)}
                       onClick={closeMobile}
                       className="block py-2 text-sm text-[#F8F6F1]/70 transition hover:text-[#D4A017]"
                     >
-                      {cat.name}
+                      {label(cat.name)}
                     </Link>
                   ))}
                 </div>
@@ -447,7 +450,7 @@ export function Header() {
               {holdedOpen && (
                 <div className="ml-3 border-l border-[#D4A017]/30 pl-3">
                   <Link
-                    href="/planes/gratuito"
+                    href={href("/planes/gratuito")}
                     onClick={closeMobile}
                     className="block py-2 text-xs font-bold uppercase tracking-widest text-[#D4A017]"
                   >
@@ -456,14 +459,14 @@ export function Header() {
                   {holdedLinks.map((link) => (
                     <Link
                       key={link.href}
-                      href={link.href}
+                      href={href(link.href)}
                       onClick={closeMobile}
                       className={link.highlight
                         ? 'block py-2 text-xs font-bold uppercase tracking-widest text-[#D4A017]'
                         : 'block py-2 text-sm text-[#F8F6F1]/70 transition hover:text-[#D4A017]'
                       }
                     >
-                      {link.label}
+                      {label(link.label)}
                     </Link>
                   ))}
                 </div>
@@ -492,14 +495,14 @@ export function Header() {
                   {planesLinks.map((link) => (
                     <Link
                       key={link.href}
-                      href={link.href}
+                      href={href(link.href)}
                       onClick={closeMobile}
                       className={link.highlight
                         ? 'block py-2 text-xs font-bold uppercase tracking-widest text-[#D4A017]'
                         : 'block py-2 text-sm text-[#F8F6F1]/70 transition hover:text-[#D4A017]'
                       }
                     >
-                      {link.label}
+                      {label(link.label)}
                     </Link>
                   ))}
                 </div>
@@ -528,14 +531,14 @@ export function Header() {
                   {formacionLinks.map((link) => (
                     <Link
                       key={link.href}
-                      href={link.href}
+                      href={href(link.href)}
                       onClick={closeMobile}
                       className={link.highlight
                         ? 'block py-2 text-xs font-bold uppercase tracking-widest text-[#D4A017]'
                         : 'block py-2 text-sm text-[#F8F6F1]/70 transition hover:text-[#D4A017]'
                       }
                     >
-                      {link.label}
+                      {label(link.label)}
                     </Link>
                   ))}
                 </div>
@@ -564,11 +567,11 @@ export function Header() {
                   {recursosLinks.map((link) => (
                     <Link
                       key={link.href}
-                      href={link.href}
+                      href={href(link.href)}
                       onClick={closeMobile}
                       className="block py-2 text-sm text-[#F8F6F1]/70 transition hover:text-[#D4A017]"
                     >
-                      {link.label}
+                      {label(link.label)}
                     </Link>
                   ))}
                 </div>
@@ -578,20 +581,20 @@ export function Header() {
             {navLinks.map((link) => (
               <Link
                 key={link.href}
-                href={link.href}
+                href={href(link.href)}
                 onClick={closeMobile}
                 className={'highlight' in link && link.highlight
                   ? 'block rounded-md bg-[#D4A017]/12 px-3 py-3 text-sm font-bold text-[#D4A017] transition hover:bg-[#D4A017]/20'
                   : 'block rounded-md px-3 py-3 text-sm font-semibold text-[#F8F6F1]/80 transition hover:bg-[#23364D] hover:text-[#D4A017]'}
               >
-                {link.label}
+                {label(link.label)}
               </Link>
             ))}
 
             {/* Acceder button in mobile menu */}
             <div className="mt-3 border-t border-white/10 pt-3">
               <Link
-                href="/auth/login"
+                href={href("/auth/login")}
                 onClick={closeMobile}
                 className="flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-[#D4A017] px-4 text-sm font-bold text-[#0D1B2A] transition hover:bg-[#F2C14E]"
               >
