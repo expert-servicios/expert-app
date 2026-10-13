@@ -17,6 +17,8 @@
 | Cola de cambios regulatorios | 57 `needs_review`, 4 `classified`, 7 `ignored`; 56 `needs_review` tienen severidad nula | Diferenciar históricos pendientes de clasificación fallida y cambios realmente normativos. No resolver en bloque. Revisión humana trazable |
 | Lectura regulatoria | Pulso 13/10 14:09 UTC: 46 fuentes, cuatro cambios, 12 fallos; worker 14:37 UTC clasificó cuatro | Validar lectura después de PR #763; evitar impacto falso con #764; comprobar actualización de datos y canales de notificación antes de publicar |
 
+**Diagnóstico ampliado de la cola:** 56 de las 57 entradas `needs_review` presentan exactamente el texto de error «La clasificación automática falló; revisión humana obligatoria.», con severidad NULL y `evidence_complete=false`. El worker actual consulta solo `status='detected'`, por lo que **no reintentará** esos 56 eventos por sí mismo. Se exige una recuperación posterior limitada y trazable: validar causa de fallo y presupuesto/modelos, proponer revisión individual o lote acotado con idempotencia, conservar snapshots y errores originales, y reclasificar solo tras evidencia. Nunca marcar los 56 como `ignored` o `resolved` en bloque, ni confundir «falló IA» con «no hubo cambio legal».
+
 **Observación:** el informe histórico `docs/kia-regulatory-coverage-audit-v13.md` que declara `catalog_services` y `services` vacíos refleja una fotografía anterior (20/09/2026) y **no puede utilizarse como inventario actual**. No modificar su trazabilidad; enlazar este informe actualizado.
 
 ## 2. Prioridad editorial por grupos
