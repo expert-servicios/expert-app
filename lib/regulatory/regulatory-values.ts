@@ -73,6 +73,17 @@ export async function getRegulatoryPulseSummary() {
 }
 
 
+export async function getRegulatoryChangeForAdmin(changeId: string) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(changeId)) {
+    throw new Error('ID de cambio inválido');
+  }
+  const admin = getSupabaseAdmin();
+  const { data: change } = await admin.from('regulatory_changes')
+    .select('id,status,severity,change_type,summary,effective_date,value_updates,proposal_pr_number,proposal_pr_url,values_applied_at,resolution_evidence,created_at,source:regulatory_sources(source_key,authority,title)')
+    .eq('id', changeId).maybeSingle();
+  return change ?? null;
+}
+
 /**
  * A legal sign-off is distinct from automatic KIA classification and from
  * closing an issue. Approval must be tied to the exact source snapshot.
