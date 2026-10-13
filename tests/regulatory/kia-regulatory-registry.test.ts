@@ -118,7 +118,7 @@ describe('KIA Regulatory Registry', () => {
   });
 
   it('ignores volatile RSS channel dates when no entries exist', async () => {
-    const mk = (date: string) => '<rss><channel><pubDate>' + date + '</pubDate></channel></rss>';
+    const mk = (date: string) => '<rss><channel><title>Fuentes oficiales</title><pubDate>' + date + '</pubDate></channel></rss>';
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(mk('Tue, 13 Oct 2026 08:00:00 GMT'), { status: 200 }))
       .mockResolvedValueOnce(new Response(mk('Tue, 13 Oct 2026 17:00:00 GMT'), { status: 200 }));
