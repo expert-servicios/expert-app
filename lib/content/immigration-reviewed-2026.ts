@@ -157,8 +157,8 @@ export const IMMIGRATION_REVIEWED_GUIDES = [
         "id": "extraordinary",
         "es": "Arraigo extraordinario: vía incorporada en 2026",
         "ru": "Особое укоренение 2026 года (arraigo extraordinario)",
-        "pEs": "El RD 316/2026 introdujo supuestos extraordinarios con condiciones propias, desarrollados en la Hoja 28 Ter. No deben mezclarse con los requisitos de arraigo social o sociolaboral. Verifica especialmente el marco temporal, documentación y el régimen aplicable al supuesto antes de aconsejar solicitarlo.",
-        "pRu": "RD 316/2026 предусмотрел специальные основания (arraigo extraordinario), изложенные в Hoja 28 Ter, со своими условиями. Нельзя автоматически применять к ним требования arraigo social или arraigo sociolaboral. Важно отдельно проверить даты, основания и документы."
+        "pEs": "El RD 316/2026 estableció vías extraordinarias con condiciones propias, distintas del arraigo social y sociolaboral. Sus disposiciones adicionales vigésima y vigesimoprimera fijaron el 30 de junio de 2026 como último día para presentar solicitudes. A fecha de revisión (13 de octubre de 2026), no debe ofrecerse la presentación de una solicitud nueva por esas vías sin acreditar una prórroga o nueva habilitación normativa posterior. Para expedientes presentados dentro de plazo, comprobar el procedimiento y sus efectos en la fuente oficial y en el caso concreto.",
+        "pRu": "RD 316/2026 предусмотрел особые процедуры (arraigo extraordinario), отличные от arraigo social и arraigo sociolaboral. Дополнительные положения 20 и 21 установили последний день подачи заявления (presentación de solicitud) — 30 июня 2026 года. На дату проверки (13 октября 2026 года) нельзя предлагать новую подачу по этим основаниям без подтверждённого продления срока или нового нормативного основания. По заявлениям, поданным вовремя, следует проверить процессуальный статус (estado del expediente) и действующие правила в официальном источнике."
       },
       {
         "id": "documents",
