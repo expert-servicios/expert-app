@@ -32,12 +32,12 @@ export const RU_CATCHALL_ROUTES = new Set([
 ]);
 
 export function normalizePageRoute(file, root) {
-  const prefix = root.replaceAll('\\', '/').replace(/\\/$/, '');
+  const prefix = root.replaceAll('\\', '/').replace(/\/$/, '');
   const normalized = file.replaceAll('\\', '/');
   if (!normalized.startsWith(prefix + '/') || !normalized.endsWith('/page.tsx')) return null;
   const segment = normalized.slice(prefix.length + 1, -'/page.tsx'.length);
   if (segment === '' || segment === 'page.tsx') return '/';
-  return '/' + segment.split('/').filter((s) => !/^\\(.*\\)$/.test(s)).join('/');
+  return '/' + segment.split('/').filter((s) => !/^\(.*\)$/.test(s)).join('/');
 }
 
 function walkPages(abs, root = ROOT) {
@@ -59,7 +59,7 @@ export function auditRouteParity(esPaths, ruPaths) {
   const pairs = [];
   for (const es of [...esRoutes].sort()) {
     const expected = ROUTE_PAIRS[es] ?? null;
-    const dynamic = /\\[(?:\\[)?[^/]+/.test(es);
+    const dynamic = /\[(?:\[)?[^/]+/.test(es);
     const direct = expected && ruRoutes.has(expected);
     const catchall = expected && RU_CATCHALL_ROUTES.has(expected);
     const kind = direct ? 'direct' : catchall ? 'catchall' : dynamic ? 'dynamic_unverified' : 'unmapped';
@@ -104,6 +104,6 @@ export function buildParityReport(root = ROOT) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const report = buildParityReport();
-  process.stdout.write(JSON.stringify(report, null, 2) + '\\n');
+  process.stdout.write(JSON.stringify(report, null, 2) + '\n');
   if (process.argv.includes('--strict') && (report.routes.counts.unmapped > 0 || report.shellDifferences.length)) process.exitCode = 1;
 }
