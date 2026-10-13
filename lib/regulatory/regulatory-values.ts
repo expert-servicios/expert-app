@@ -262,7 +262,7 @@ export async function resolveReviewedRegulatoryChange(
 
   const { data: change, error } = await admin
     .from('regulatory_changes')
-    .select('id,status,relevant,summary,resolution_evidence')
+    .select('id,status,relevant,summary,resolution_evidence,requires_human_review,current_snapshot_id')
     .eq('id', changeId)
     .maybeSingle();
 
@@ -272,18 +272,41 @@ export async function resolveReviewedRegulatoryChange(
     throw new Error('El cambio no está en un estado que pueda resolverse manualmente');
   }
 
-  const { error: updateError } = await admin.from('regulatory_changes').update({
+  const storedEvidence = (change.resolution_evidence ?? {}) as Record<string, unknown>;
+  const legalApproval = storedEvidence.legal_approval as Record<string, unknown> | undefined;
+  if (change.requires_human_review === true || change.status === 'needs_review') {
+    if (change.relevant !== true) {
+      throw new Error('Primero debe completarse la clasificación del cambio; no se puede cerrar un fallo automático');
+    }
+    if (legalApproval?.status !== 'approved' || !legalApproval.reviewer_id ||
+        legalApproval.reviewed_snapshot_id !== change.current_snapshot_id ||
+        typeof legalApproval.reviewed_fingerprint !== 'string' ||
+        typeof legalApproval.note !== 'string') {
+      throw new Error('La resolución exige una aprobación jurídica humana documentada para este snapshot');
+    }
+    const { data: snapshot, error: snapshotError } = await admin
+      .from('regulatory_snapshots').select('fingerprint')
+      .eq('id', change.current_snapshot_id).single();
+    if (snapshotError || snapshot?.fingerprint !== legalApproval.reviewed_fingerprint) {
+      throw new Error('La huella normativa ha cambiado desde el dictamen jurídico');
+    }
+  }
+  // A client-supplied evidence object can enrich the record, never impersonate
+  // or replace the server-stored legal approval.
+  const additionalEvidence = { ...(resolutionEvidence ?? {}) };
+  delete additionalEvidence.legal_approval;
+
+  const { data: resolved, error: updateError } = await admin.from('regulatory_changes').update({
     status: 'resolved',
     resolved_at: new Date().toISOString(),
     resolved_by: resolvedBy ?? null,
     resolution_note: note,
     // Resolving a case must not erase the already recorded legal approval.
-    resolution_evidence: {
-      ...((change as { resolution_evidence?: Record<string, unknown> }).resolution_evidence ?? {}),
-      ...(resolutionEvidence ?? {}),
-    },
-  }).eq('id', changeId);
+    resolution_evidence: { ...storedEvidence, ...additionalEvidence },
+  }).eq('id', changeId).eq('status', change.status)
+    .eq('current_snapshot_id', change.current_snapshot_id)
+    .select('id').maybeSingle();
 
-  if (updateError) throw new Error(updateError.message);
+  if (updateError || !resolved) throw new Error(updateError?.message ?? 'Cambio concurrente; revisar antes de resolver');
   return { changeId, resolved: true };
 }
