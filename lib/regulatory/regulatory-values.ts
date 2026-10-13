@@ -262,7 +262,7 @@ export async function resolveReviewedRegulatoryChange(
 
   const { data: change, error } = await admin
     .from('regulatory_changes')
-    .select('id,status,relevant,summary')
+    .select('id,status,relevant,summary,resolution_evidence')
     .eq('id', changeId)
     .maybeSingle();
 
@@ -277,7 +277,11 @@ export async function resolveReviewedRegulatoryChange(
     resolved_at: new Date().toISOString(),
     resolved_by: resolvedBy ?? null,
     resolution_note: note,
-    resolution_evidence: resolutionEvidence ?? {},
+    // Resolving a case must not erase the already recorded legal approval.
+    resolution_evidence: {
+      ...((change as { resolution_evidence?: Record<string, unknown> }).resolution_evidence ?? {}),
+      ...(resolutionEvidence ?? {}),
+    },
   }).eq('id', changeId);
 
   if (updateError) throw new Error(updateError.message);
