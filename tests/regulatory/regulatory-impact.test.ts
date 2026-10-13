@@ -76,3 +76,26 @@ describe('Targeted regulatory data repair', () => {
     expect(worker).toContain('requiresRegulatoryHumanReview(');
   });
 });
+
+describe('Human legal approval enforcement', () => {
+  it('requires snapshot-specific approval before applying canonical regulatory values', async () => {
+    const {readFileSync} = await import('node:fs');
+    const values = readFileSync('lib/regulatory/regulatory-values.ts','utf8');
+    const route = readFileSync('app/api/admin/regulatory/route.ts','utf8');
+    const panel = readFileSync('app/(protected)/admin/regulatory/page.tsx','utf8');
+    expect(values).toContain('approveRegulatoryLegalReview');
+    expect(values).toContain("approval?.status !== 'approved'");
+    expect(values).toContain("approval.reviewed_snapshot_id !== change.current_snapshot_id");
+    expect(values).toContain("approvedSnapshot?.fingerprint !== approval.reviewed_fingerprint");
+    expect(route).toContain("body.action === 'approve_legal'");
+    expect(panel).toContain("Registrar aprobación jurídica");
+  });
+
+  it('prevents review PR creation from silently clearing needs_review status', async () => {
+    const {readFileSync} = await import('node:fs');
+    const worker = readFileSync('lib/regulatory/regulatory-review.ts','utf8');
+    expect(worker).toContain("status: humanReviewRequired ? 'needs_review' : 'proposal_ready'");
+    expect(worker).not.toContain('notifyAdminsTelegram');
+    expect(worker).toContain('notifyDevOpsRegulatoryHumanReview');
+  });
+});
