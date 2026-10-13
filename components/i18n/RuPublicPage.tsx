@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { Hero } from '@/components/site/Hero';
+import { SharedServiceProcess } from '@/components/site/SharedServiceProcess';
+import { ReviewsPreview } from '@/components/site/reviews-preview';
 import { ArrowRight, CheckCircle2, ExternalLink, ShieldCheck } from 'lucide-react';
 import { EXPERT_IDENTITY } from '@/config/identity';
 import { RU_PUBLIC_CONTENT } from '@/lib/i18n/ru-public-content';
@@ -84,6 +86,7 @@ export function RuPublicPage({
           </div>
         </section>
 
+        {routeKey === 'home' && <SharedServiceProcess locale="ru" />}
         {commercial?.offers && commercial.offers.length > 0 && (
           <section className="border-y border-[#0D1B2A]/10 bg-white px-5 py-16 sm:px-8 md:py-20">
             <div className="mx-auto max-w-6xl">
@@ -141,6 +144,7 @@ export function RuPublicPage({
           </section>
         )}
 
+        {routeKey === 'home' && <ReviewsPreview locale="ru" />}
         <section className="px-5 pb-14 sm:px-8 md:pb-20">
           <p className="mx-auto max-w-5xl border-t border-[#0D1B2A]/10 pt-8 text-sm leading-6 text-[#5F6B78]">
             Информация относится к сопровождению и услугам EXPERT в Испании. Язык страницы не определяет гражданство, налоговое резидентство или применимое право клиента.

@@ -28,6 +28,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { Hero } from '@/components/site/Hero';
+import { SharedServiceProcess } from '@/components/site/SharedServiceProcess';
 import { ReviewsPreview } from '@/components/site/reviews-preview';
 import { NewsletterForm } from '@/components/site/NewsletterForm';
 import { JulyCampaignBanner } from '@/components/site/JulyCampaignBanner';
@@ -321,7 +322,7 @@ export default async function HomePage({
       <Services />
       <Authority />
       <FeaturedServices />
-      <HowItWorks />
+      <SharedServiceProcess />
       <ClientPortal />
       <HoldedMigration />
       <Formacion />
