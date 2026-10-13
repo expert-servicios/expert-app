@@ -112,6 +112,20 @@ describe('Human legal approval enforcement', () => {
     expect(values).toContain('values_applied_at,resolution_evidence,created_at');
   });
 
+  it('uses atomic legal verdict gate and supports deep links to old changes', async () => {
+    const {readFileSync}=await import('node:fs');
+    const values=readFileSync('lib/regulatory/regulatory-values.ts','utf8');
+    const route=readFileSync('app/api/admin/regulatory/route.ts','utf8');
+    const panel=readFileSync('app/(protected)/admin/regulatory/page.tsx','utf8');
+    const telegram=readFileSync('lib/regulatory/regulatory-devops-telegram.ts','utf8');
+    expect(values).toContain(".is('resolution_evidence->legal_approval', null)");
+    expect(values).toContain('getRegulatoryChangeForAdmin');
+    expect(route).toContain("searchParams.get('changeId')");
+    expect(panel).toContain('id={`change-${change.id}`}');
+    expect(telegram).toContain('/admin/regulatory?changeId=');
+    expect(telegram).toContain('deadline = Date.now() + 3800');
+  });
+
   it('blocks resolving pending reviews without persisted human approval', async () => {
     const {readFileSync}=await import('node:fs');
     const values=readFileSync('lib/regulatory/regulatory-values.ts','utf8');
