@@ -4,6 +4,7 @@ import { runKiaProviderRequest } from '@/lib/ai/kia/kia-provider-router';
 import { createRegulatoryProposalPullRequest } from './regulatory-github';
 import { isRulesetSchemaUnavailable } from './regulatory-schema-compat';
 import { selectConfirmedRegulatoryImpacts, requiresRegulatoryHumanReview } from './regulatory-impact';
+import { enqueueRegulatoryDevOpsReview } from './regulatory-devops-outbox';
 
 const reviewSchema = z.object({
   relevant: z.boolean(),
@@ -324,9 +325,16 @@ async function classifyOne(change: ChangeRow) {
 
   }
 
-  // Classification persists its legal-review requirement before returning.
-  // Telegram delivery must not run synchronously inside the regulatory worker.
-  // Until a separate, idempotent outbox is installed, notifications stay off.
+  // Write only a durable outbox intent. No Telegram HTTP request is made
+  // within classification, and an unavailable queue never changes the legal status.
+  if (humanReviewRequired && parsed.relevant) {
+    await enqueueRegulatoryDevOpsReview({
+      changeId: change.id,
+      snapshotId: change.current_snapshot_id,
+    }).catch(() => {
+      console.warn('[Regulatory DevOps] notification outbox unavailable; human review remains pending');
+    });
+  }
 
   return {
     changeId: change.id,
