@@ -29,6 +29,15 @@ describe('KIA Google Meet note discovery', () => {
     ]);
     expect(result).toHaveLength(1);
   });
+  it('recognizes genuine Gemini Calendar links even without fileId or with tracking query', () => {
+    const actual = normalizeGoogleMeetingAttachments(EVENT_ID, [{
+      mimeType: 'application/vnd.google-apps.document',
+      fileUrl: 'https://docs.google.com/document/d/' + FILE_ID + '/edit?usp=meet_tnfm_calendar',
+      title: 'Notas de Gemini',
+    }]);
+    expect(actual).toHaveLength(1);
+    expect(actual[0].fileId).toBe(FILE_ID);
+  });
   it('does not accept cancelled or unbound arbitrary event ids in the route', () => {
     const route = readFileSync(resolve(process.cwd(), 'app/api/admin/kia/meeting-notes/discover/route.ts'), 'utf8');
     expect(route).toContain("['admin', 'owner']");
