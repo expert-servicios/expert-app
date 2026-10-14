@@ -40,3 +40,12 @@ P3: tests E2E con fixtures anonimizados, evaluador QA, telemetría.
 P4: contenido KB, FAQ y blog (SEO ES, ruso automático solo tras QA).
 
 Pendiente: implementación real del webhook/orquestador y permisos de Google Drive adjuntos nativos; no afirmar automatización viva hasta CI, despliegue y E2E aprobado.
+
+## Decisión de dirección 14/10: NO convertir notas en tareas definitivas
+- Toda cuestión debatible queda `pendiente_revision`, aun cuando el profesional la expresó con seguridad. Las notas NO son una autorización de ejecución.
+- Clasificar `hecho_verificado`, `acuerdo_ratificado`, `pendiente_revision`, `revocado`. El resumen automático no constituye evidencia externa.
+- Para `pendiente_revision`: pregunta, segmento de notas, motivo de incertidumbre, fuente oficial a consultar, responsable de contraste, fecha solo si conocida, y enlace a próxima reunión.
+- KIA no ejecuta modificaciones de Holded, AEAT, correos ni crea compromisos con cliente antes de revisión humana. Tampoco interpreta una duda como tarea acordada.
+- Si llega corrección posterior, prevalece sobre el acta y el registro histórico queda trazable.
+- QA tests: afirmación categórica sin norma verificada => `pendiente_revision`; propuesta de mover factura revocada => no tarea de mover; pregunta debatida sin responsable => no asignar arbitrariamente; reunión con certeza falsa => abrir verificación normativa, no repetir respuesta.
+- Lección operativa creada en `kia_operator_lessons`: `meeting_notes_uncertainty_review_first_20261014`, prioridad 100.
