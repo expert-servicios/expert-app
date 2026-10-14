@@ -61,7 +61,7 @@ export async function PATCH(request:NextRequest){
  if(!input.success) return respond({error:'Decisión inválida'},400);
  const admin=getSupabaseAdmin(),v=input.data;
  const {data,error}=await admin.from('kia_meeting_review_items').update({
-  status:v.decision,review_note:v.note,reviewed_by:actor.user.id,
+  status:v.decision,review_note:v.note,reviewed_by:actor.userId,
   reviewed_at:new Date().toISOString(),version:v.version+1
  }).eq('id',v.itemId).eq('status','pending_review').eq('version',v.version)
  .select('id,status,version').maybeSingle();
