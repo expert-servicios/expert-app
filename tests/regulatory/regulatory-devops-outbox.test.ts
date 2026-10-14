@@ -4,7 +4,7 @@ afterEach(()=>vi.unstubAllEnvs());
 describe('regulatory outbox schema contract',()=>{
  it('enforces private ACL, version dedupe, and no ambiguous claim retries',async()=>{
   const {readFileSync}=await import('node:fs');
-  const sql=readFileSync('supabase/migrations/20261014083000_regulatory_devops_outbox.sql','utf8');
+  const sql=readFileSync('supabase/migrations/20261014065405_regulatory_devops_outbox.sql','utf8');
   expect(sql).toContain('unique(change_id,snapshot_id,channel)');
   expect(sql).toContain('enable row level security');
   expect(sql).toContain('for update skip locked');
