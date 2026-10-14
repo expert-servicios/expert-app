@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       mimeType: 'text/plain',
     }, { responseType: 'text' });
     const raw = exported.data;
-    if (typeof raw !== 'string' || raw.length > 96_000) {
+    if (typeof raw !== 'string' || raw.length > 300_000) {
       return reply({ error: 'Notas demasiado extensas o no disponibles' }, 413);
     }
     const candidates = extractMeetingReviewCandidates(raw);
