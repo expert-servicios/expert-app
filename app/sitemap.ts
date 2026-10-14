@@ -1,3 +1,4 @@
+import { sl2026Pairs } from '@/lib/content/sl-company-bilingual-2026';
 import type { MetadataRoute } from 'next';
 import { categories, services } from '@/lib/utils/catalog';
 import { blogArticles } from '@/lib/utils/blog';
@@ -152,6 +153,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     ...staticRoutes,
+    ...(shouldIndexLocale('ru') ? sl2026Pairs.map(p => ({url: `${BASE}/ru/${p.kind}/${p.ru}`,lastModified:new Date('2026-10-14T00:00:00Z'),changeFrequency:'monthly' as const,priority:0.65,alternates:{languages:{'es-ES':`${BASE}/${p.kind==='blog'?'blog':'docs'}/${p.es}`,'ru-RU':`${BASE}/ru/${p.kind}/${p.ru}`}}})) : []),
     ...russianServiceRoutes,
     ...russianRoutes,
     ...categoryRoutes,

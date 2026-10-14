@@ -1,3 +1,4 @@
+import { sl2026BlogArticles } from '@/lib/content/sl-company-bilingual-2026';
 import { getGeneratedBatch1BlogArticles } from '@/lib/services/service-generated-content';
 import { laborEsBlogArticles } from '@/lib/content/labor-bilingual-2026';
 import { proteccionDatosBlogArticles } from '@/lib/content/proteccion-datos-blog';
@@ -17,6 +18,7 @@ export type Article = {
 };
 
 export const articles: Article[] = [
+  ...sl2026BlogArticles,
   ...laborEsBlogArticles,
   ...getGeneratedBatch1BlogArticles(),
   ...proteccionDatosBlogArticles,

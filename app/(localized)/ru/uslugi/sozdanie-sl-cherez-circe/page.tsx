@@ -1,3 +1,4 @@
+import { getApprovedSlFaqs } from '@/lib/services/sl-faq-bilingual';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Check, CheckCircle2, Clock, GraduationCap, ListChecks } from 'lucide-react';
@@ -73,16 +74,7 @@ const deliveryOptions = [
   },
 ];
 
-const faqs = [
-  {
-    q: 'В чём разница между двумя форматами?',
-    a: 'При полном сопровождении EXPERT выполняет и координирует весь трамит. При guided-обучении мы учим вас подготовить и провести его самостоятельно; мы не подаём документы от вашего имени.',
-  },
-  {
-    q: 'Можно ли использовать CIRCE, если среди партнёров есть иностранцы?',
-    a: 'Да, при условии что у них есть необходимая налоговая идентификация. Если у кого-то из партнёров нет NIF/NIE, этот вопрос нужно решить заранее.',
-  },
-];
+const faqs = getApprovedSlFaqs('constitucion-sl-circe', 'ru');
 
 export const metadata: Metadata = {
   title: 'Создание SL через CIRCE | EXPERT',

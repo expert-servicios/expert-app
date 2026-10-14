@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { isSl2026RuSlug } from '@/lib/content/sl-company-bilingual-2026';
+import { shouldIndexLocale } from '@/lib/i18n/feature-flags';
 import { notFound } from 'next/navigation';
 import { RuNationalityResourcePage } from '@/components/i18n/RuNationalityResourcePage';
 import { RU_NATIONALITY_RESOURCES, getRuNationalityResource } from '@/lib/i18n/ru-nationality-resources';
@@ -21,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       canonical: `${BASE_URL}${ruPath}`,
       languages: { 'es-ES': `${BASE_URL}${resource.esPath}`, 'ru-RU': `${BASE_URL}${ruPath}`, 'x-default': `${BASE_URL}${resource.esPath}` },
     },
-    robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
+    robots: { index: shouldIndexLocale('ru') && isSl2026RuSlug('blog', slug), follow: true },
     openGraph: { type: 'article', locale: 'ru_RU', title: `${resource.title} | EXPERT`, description: resource.description, url: `${BASE_URL}${ruPath}` },
   };
 }

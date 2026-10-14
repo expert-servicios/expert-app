@@ -1,3 +1,4 @@
+import { getApprovedSlFaqs } from '@/lib/services/sl-faq-bilingual';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Check, Clock } from 'lucide-react';
@@ -74,16 +75,7 @@ const includes = [
   'Получение окончательного NIF',
 ];
 
-const faqs = [
-  {
-    q: 'Какой минимальный уставный капитал нужен?',
-    a: 'От 1 евро, хотя на практике обычно вносят начальный капитал 3 000 €.',
-  },
-  {
-    q: 'Можно ли учредить SL в одиночку?',
-    a: 'Да, можно учредить SL с единственным участником (sociedad unipersonal).',
-  },
-];
+const faqs = getApprovedSlFaqs('constitucion-sl', 'ru');
 
 export default function RuConstitucionSlPage() {
   const serviceJsonLd = {

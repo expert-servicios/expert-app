@@ -1,3 +1,4 @@
+import { sl2026KnowledgeDocs } from '@/lib/content/sl-company-bilingual-2026';
 import type { CategorySlug } from './catalog';
 import { getGeneratedBatch1KnowledgeDocs } from '@/lib/services/service-generated-content';
 import { proteccionDatosKnowledgeDocs } from '@/lib/content/proteccion-datos-docs';
@@ -32,6 +33,7 @@ export const docCategories: { slug: DocCategorySlug; name: string }[] = [
 ];
 
 export const docs: KnowledgeDoc[] = [
+  ...sl2026KnowledgeDocs,
   ...reviewedImmigrationEsDocs,
   {
     slug: 'firmar-solicitud-nacionalidad-menor-progenitores',

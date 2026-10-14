@@ -1,3 +1,4 @@
+import { sl2026RuResources } from '@/lib/content/sl-company-bilingual-2026';
 export type RuResourceKind = 'docs' | 'blog';
 
 export type RuResource = {
@@ -14,6 +15,7 @@ export type RuResource = {
 };
 
 export const RU_NATIONALITY_RESOURCES: RuResource[] = [
+  ...sl2026RuResources,
   {
     kind: 'docs',
     slug: 'grazhdanstvo-ispanii-rebenok-rozhdennyy-v-ispanii',
