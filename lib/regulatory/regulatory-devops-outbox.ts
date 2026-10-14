@@ -2,7 +2,6 @@ import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { notifyDevOpsRegulatoryHumanReview } from './regulatory-devops-telegram';
 
 const CHANNEL = 'expert_devops_telegram';
-const MAX_ATTEMPTS = 5;
 
 export function regulatoryDevOpsNotificationsEnabled() {
   // Two independent gates: an administrator must activate the Telegram feature
@@ -116,16 +115,14 @@ export async function dispatchRegulatoryDevOpsReviews(limit = 2) {
       // Provider acknowledgement can be lost on any sendMessage error. As the
       // adapter does not expose whether sendMessage was reached, ALL failures
       // stay manual/uncertain; no automated resend can be proved safe.
-      const ambiguous = true;
-      const final = job.attempts >= MAX_ATTEMPTS;
       await update({
-        status: ambiguous ? 'delivery_uncertain' : final ? 'dead' : 'retry',
+        status: 'delivery_uncertain',
         last_error: code,
         locked_until: null,
         next_attempt_at: new Date(Date.now() +
           Math.min(24 * 60, 2 ** Math.min(job.attempts, 8) * 5) * 60_000).toISOString(),
       });
-      if (ambiguous) uncertain++; else retry++;
+      uncertain++;
     }
   }
   return { disabled: false, claimed: jobs.length, sent, uncertain, retry };
