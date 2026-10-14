@@ -69,3 +69,7 @@ revoke all on public.kia_meeting_review_items from public,anon,authenticated;
 revoke all on public.kia_meeting_review_events from public,anon,authenticated;
 grant select,insert,update on public.kia_meeting_review_items to service_role;
 grant select,insert on public.kia_meeting_review_events to service_role;
+
+-- Restrict inherited default service-role privileges to the API's actual needs.
+revoke delete, truncate, references, trigger on table public.kia_meeting_review_items from service_role;
+revoke delete, update, truncate, references, trigger on table public.kia_meeting_review_events from service_role;
