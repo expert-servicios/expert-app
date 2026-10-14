@@ -24,7 +24,8 @@ describe('Lead email history', () => {
     expect(agent).toContain('ensureEmailLead');
     expect(agent).toContain("source: 'email'");
     expect(agent).toContain('const wasKnownContact = Boolean(identity.clientId || identity.leadId)');
-    expect(agent).toContain('wasKnownContact ? KNOWN_CONTACT_TOOLS : PUBLIC_PROSPECT_TOOLS');
+    expect(agent).toContain('mayUsePrivateKiaEmailTools(contactGroup) ? KNOWN_CONTACT_TOOLS : PUBLIC_PROSPECT_TOOLS');
+    expect(agent).toContain('const contactGroup = resolveKiaContactGroup(identity)');
   });
 
   it('exposes lead communications and related tasks by lead id', () => {
