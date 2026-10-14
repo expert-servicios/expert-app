@@ -79,7 +79,7 @@ export async function POST(request:NextRequest){
   source_key:x.sourceKey,appointment_id:input.appointmentId,company_id:input.companyId,
   subject_id:subject.id,file_id:input.fileId,source_url:attachment.sourceUrl,
   notes_version:input.notesVersion,title:x.title,
-  kind:input.items.find(y=>y.sourceKey===x.sourceKey)?.kind===x.kind ? x.kind : x.kind,
+  kind:x.kind,
   status:'pending_review'
  }));
  const {error:insertError}=await admin.from('kia_meeting_review_items')
