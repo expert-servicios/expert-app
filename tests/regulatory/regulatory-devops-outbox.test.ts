@@ -11,6 +11,12 @@ describe('regulatory outbox schema contract',()=>{
   expect(sql).toContain("status in ('pending','retry')");
   expect(sql).not.toContain("status in ('processing'");
   expect(sql).toContain('revoke all on public.regulatory_devops_notification_outbox from public, anon, authenticated');
+  expect(sql).toContain('grant select,insert,update on public.regulatory_devops_notification_outbox to service_role');
+  expect(sql).toContain('security invoker');
+  expect(sql).toContain('revoke all on function public.claim_regulatory_devops_notification_batch(integer) from public,anon,authenticated');
+  expect(sql).toContain('grant execute on function public.claim_regulatory_devops_notification_batch(integer) to service_role');
+  expect(sql).not.toMatch(/cron\\.schedule\\s*\\(|net\\.http_post\\s*\\(/i);
+
  });
 });
 
