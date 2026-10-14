@@ -1,0 +1,71 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { requireActiveActor } from '@/lib/auth/active-actor';
+import { getSupabaseAdmin } from '@/lib/integrations/supabase';
+
+const saveSchema = z.object({
+ appointmentId:z.string().uuid(), companyId:z.string().uuid(), subjectId:z.string().uuid(),
+ fileId:z.string().regex(/^[A-Za-z0-9_-]{15,128}$/),
+ notesVersion:z.string().min(1).max(120),
+ sourceUrl:z.string().url().startsWith('https://docs.google.com/document/d/'),
+ items:z.array(z.object({
+  sourceKey:z.string().min(10).max(600), title:z.string().min(3).max(300),
+  kind:z.enum(['fact','question','proposed_action','legal_or_tax_opinion','census_attribute'])
+ }).strict()).min(1).max(40)
+}).strict();
+const decisionSchema=z.object({
+ itemId:z.string().uuid(), version:z.number().int().positive(),
+ decision:z.enum(['investigate','confirmed','dismissed']), note:z.string().trim().min(3).max(2000)
+}).strict();
+const respond=(body:object,status=200)=>NextResponse.json(body,{status,headers:{'Cache-Control':'private, no-store'}});
+async function access(request:NextRequest){return requireActiveActor(request,['admin','owner']);}
+
+export async function GET(request:NextRequest){
+ if(!await access(request)) return respond({error:'No autorizado'},403);
+ const admin=getSupabaseAdmin();
+ const {data,error}=await admin.from('kia_meeting_review_items')
+ .select('id,source_key,appointment_id,company_id,subject_id,file_id,source_url,notes_version,title,kind,status,review_note,version,created_at,reviewed_at')
+ .order('created_at',{ascending:false}).limit(100);
+ if(error) return respond({error:'No se pudo cargar la bandeja'},503);
+ return respond({items:data??[],count:data?.length??0});
+}
+
+export async function POST(request:NextRequest){
+ if(!await access(request)) return respond({error:'No autorizado'},403);
+ const body=saveSchema.safeParse(await request.json().catch(()=>null));
+ if(!body.success) return respond({error:'Solicitud inválida'},400);
+ const input=body.data, admin=getSupabaseAdmin();
+ const {data:appointment,error:e}=await admin.from('appointments')
+ .select('id,company_id,google_event_id,booking_provider,appointment_end,status')
+ .eq('id',input.appointmentId).maybeSingle();
+ if(e||!appointment||appointment.company_id!==input.companyId||
+ appointment.booking_provider!=='google_native'||!appointment.google_event_id||
+ appointment.status==='cancelled'||Date.parse(appointment.appointment_end??'')>Date.now()||
+ !Number.isFinite(Date.parse(appointment.appointment_end??''))) return respond({error:'Cita no verificada'},409);
+ const {data:subject,error:s}=await admin.from('client_registry_subjects')
+ .select('id,company_id,merged_into_subject_id').eq('id',input.subjectId).maybeSingle();
+ if(s||!subject||subject.company_id!==input.companyId||subject.merged_into_subject_id) return respond({error:'Entidad incorrecta'},409);
+ const {discoverCalendarMeetingNoteCandidates}=await import('@/lib/integrations/google-meeting-notes');
+ const discovery=await discoverCalendarMeetingNoteCandidates(appointment.google_event_id);
+ const attachment=discovery.candidates.find(x=>x.fileId===input.fileId&&x.sourceUrl===input.sourceUrl);
+ if(!attachment) return respond({error:'Documento no vinculado'},403);
+ // Do not trust client-provided claims for persistent storage. The server
+ // must recompute them from the authorized document before the insert.
+ return respond({error:'Importación persistente requiere extracción verificada por el servidor',previewOnly:true},409);
+}
+
+export async function PATCH(request:NextRequest){
+ const actor=await access(request);
+ if(!actor) return respond({error:'No autorizado'},403);
+ const input=decisionSchema.safeParse(await request.json().catch(()=>null));
+ if(!input.success) return respond({error:'Decisión inválida'},400);
+ const admin=getSupabaseAdmin(),v=input.data;
+ const {data,error}=await admin.from('kia_meeting_review_items').update({
+  status:v.decision,review_note:v.note,reviewed_by:actor.user.id,
+  reviewed_at:new Date().toISOString(),version:v.version+1
+ }).eq('id',v.itemId).eq('status','pending_review').eq('version',v.version)
+ .select('id,status,version').maybeSingle();
+ if(error) return respond({error:'Error al guardar decisión'},503);
+ if(!data) return respond({error:'La revisión ya ha cambiado; actualiza la bandeja'},409);
+ return respond({item:data,writesPerformed:'review_decision_only',externalActions:false});
+}
