@@ -1042,8 +1042,12 @@ export const services: Service[] = [
       'Obtención del NIF definitivo'
     ],
     faqs: [
-      { q: '¿Cuánto capital mínimo se necesita?', a: 'Desde 1 euro, aunque lo habitual es un capital inicial de 3.000 €.' },
-      { q: '¿Puedo constituir una SL yo solo?', a: 'Sí, se puede constituir una SL unipersonal con un único socio.' }
+      { q: '¿Cuánto capital mínimo se necesita?', a: 'Desde 1 euro. Si el capital y la reserva legal no llegan a 3.000 €, se aplican reglas especiales de reserva y responsabilidad en liquidación conforme al artículo 4 de la Ley de Sociedades de Capital.' },
+      { q: '¿Puedo constituir una SL yo solo?', a: 'Sí. Es posible constituir una sociedad limitada unipersonal (SLU).' },
+      { q: '¿Es lo mismo un autónomo y un empresario individual?', a: 'No exactamente: empresario individual describe la forma de ejercer como persona física; autónomo suele referirse al trabajo por cuenta propia o al encuadramiento en RETA. Una SL es una persona jurídica distinta.' },
+      { q: '¿Qué impuestos paga una SL?', a: 'La SL puede tributar por Impuesto sobre Sociedades, IVA y retenciones según su actividad. El tipo del IS y las posibles ventajas para entidades nuevas requieren comprobar los requisitos; los pagos al socio tienen su propia fiscalidad.' },
+      { q: '¿Qué diferencia hay entre IAE, CNAE y objeto social?', a: 'Objeto social: actividades previstas en estatutos; IAE: clasificación fiscal de actividades efectivas; CNAE-2025: clasificación nacional estadística y administrativa. No son sinónimos y pueden requerirse varios códigos.' },
+      { q: '¿Los socios administradores siempre cotizan como autónomos?', a: 'No. Depende de funciones reales, trabajo, participación y control efectivo, según artículo 305 LGSS.' }
     ]
   },
   {
