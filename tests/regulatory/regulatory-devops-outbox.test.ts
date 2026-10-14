@@ -1,6 +1,19 @@
 import {describe,expect,it,vi,afterEach} from 'vitest';
 import {regulatoryDevOpsNotificationsEnabled,enqueueRegulatoryDevOpsReview,dispatchRegulatoryDevOpsReviews} from '@/lib/regulatory/regulatory-devops-outbox';
 afterEach(()=>vi.unstubAllEnvs());
+describe('regulatory outbox schema contract',()=>{
+ it('enforces private ACL, version dedupe, and no ambiguous claim retries',async()=>{
+  const {readFileSync}=await import('node:fs');
+  const sql=readFileSync('supabase/migrations/20261014083000_regulatory_devops_outbox.sql','utf8');
+  expect(sql).toContain('unique(change_id,snapshot_id,channel)');
+  expect(sql).toContain('enable row level security');
+  expect(sql).toContain('for update skip locked');
+  expect(sql).toContain("status in ('pending','retry')");
+  expect(sql).not.toContain("status in ('processing'");
+  expect(sql).toContain('revoke all on public.regulatory_devops_notification_outbox from public, anon, authenticated');
+ });
+});
+
 describe('regulatory legal Telegram outbox safety',()=>{
  it('requires both independent feature gates',()=>{
   vi.stubEnv('KIA_REGULATORY_DEVOPS_TELEGRAM_ENABLED','true');
