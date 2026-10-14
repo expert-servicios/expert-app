@@ -103,7 +103,8 @@ describe('Human legal approval enforcement', () => {
     const worker = readFileSync('lib/regulatory/regulatory-review.ts','utf8');
     expect(worker).toContain("status: humanReviewRequired ? 'needs_review' : 'proposal_ready'");
     expect(worker).not.toContain('notifyAdminsTelegram');
-    expect(worker).toContain('notifyDevOpsRegulatoryHumanReview');
+    expect(worker).not.toContain('notifyDevOpsRegulatoryHumanReview');
+    expect(worker).toContain('Telegram delivery must not run synchronously');
   });
   it('accepts ISO date syntax and exposes legal approval state in Admin', async () => {
     const {readFileSync} = await import('node:fs');
