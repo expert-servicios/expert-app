@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
       previewOnly: true,
       appointmentId: appointment.id,
       companyId: company.id,
+      subjectId: subject.id,
       fileId: candidate.fileId,
       notesVersion: file.data.modifiedTime ?? null,
       results: status,
