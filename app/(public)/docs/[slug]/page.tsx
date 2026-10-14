@@ -6,6 +6,7 @@ import { NewsletterForm } from '@/components/site/NewsletterForm';
 import { ArticleIntentCTA } from '@/components/content/ArticleIntentCTA';
 import { categories, services } from '@/lib/utils/catalog';
 import { docs, getDoc, getDocCategory } from '@/lib/utils/docs';
+import { sl2026Pairs } from '@/lib/content/sl-company-bilingual-2026';
 import { IMMIGRATION_REVIEWED_GUIDES } from '@/lib/content/immigration-reviewed-2026';
 
 export function generateStaticParams() {
@@ -24,7 +25,7 @@ export async function generateMetadata({
   const title = doc.seoTitle ?? `${doc.title} | EXPERT Docs`;
   const description = doc.seoDescription ?? doc.excerpt;
   const canonicalUrl = `https://expertconsulting.es/docs/${slug}`;
-  const pairedGuide = IMMIGRATION_REVIEWED_GUIDES.find(g => g.esSlug === slug);
+  const pairedGuide = IMMIGRATION_REVIEWED_GUIDES.find(g => g.esSlug === slug) ?? sl2026Pairs.filter(p => p.kind === 'docs').map(p => ({ esSlug: p.es, ruSlug: p.ru })).find(p => p.esSlug === slug);
 
   return {
     title,
