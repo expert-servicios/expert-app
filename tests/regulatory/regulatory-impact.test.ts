@@ -104,7 +104,8 @@ describe('Human legal approval enforcement', () => {
     expect(worker).toContain("status: humanReviewRequired ? 'needs_review' : 'proposal_ready'");
     expect(worker).not.toContain('notifyAdminsTelegram');
     expect(worker).not.toContain('notifyDevOpsRegulatoryHumanReview');
-    expect(worker).toContain('Telegram delivery must not run synchronously');
+    expect(worker).toContain('enqueueRegulatoryDevOpsReview(');
+    expect(worker).toContain('No Telegram HTTP request is made');
   });
   it('accepts ISO date syntax and exposes legal approval state in Admin', async () => {
     const {readFileSync} = await import('node:fs');
