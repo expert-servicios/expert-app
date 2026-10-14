@@ -6,6 +6,7 @@ import { NewsletterForm } from '@/components/site/NewsletterForm';
 import { ArticleIntentCTA } from '@/components/content/ArticleIntentCTA';
 import { blogArticles, getArticle } from '@/lib/utils/blog';
 import { getDocRedirectTarget } from '@/lib/utils/docs';
+import { sl2026Pairs } from '@/lib/content/sl-company-bilingual-2026';
 import { laborRuArticles } from '@/lib/content/labor-bilingual-2026';
 import { services } from '@/lib/utils/catalog';
 
@@ -35,7 +36,7 @@ export async function generateMetadata({
   const title = `${article.title} | EXPERT Blog`;
   const canonicalUrl = `https://expertconsulting.es/blog/${slug}`;
   const image = '/branding/expert%20servicios.png';
-  const russianTranslation = laborRuArticles.find((item) => item.esSlug === slug);
+  const russianTranslation = laborRuArticles.find((item) => item.esSlug === slug) ?? sl2026Pairs.filter(p => p.kind === 'blog').map(p => ({ esSlug: p.es, slug: p.ru })).find(item => item.esSlug === slug);
 
   return {
     title,
@@ -81,7 +82,7 @@ export default async function BlogArticlePage({
     ? services.find((service) => service.slug === article.relatedServiceSlugs?.[0]) ?? null
     : null;
   const canonicalUrl = `https://expertconsulting.es/blog/${article.slug}`;
-  const russianTranslation = laborRuArticles.find((item) => item.esSlug === article.slug);
+  const russianTranslation = laborRuArticles.find((item) => item.esSlug === article.slug) ?? sl2026Pairs.filter(p => p.kind === 'blog').map(p => ({ esSlug: p.es, slug: p.ru })).find(item => item.esSlug === article.slug);
   const isHoldedArticle =
     article.category.toLowerCase() === 'holded' ||
     article.tags.some((tag) => tag.toLowerCase().includes('holded')) ||
