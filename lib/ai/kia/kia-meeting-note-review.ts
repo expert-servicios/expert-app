@@ -61,6 +61,7 @@ export interface ReviewedMeetingStatement {
   sourceKey: string;
   status: MeetingReviewState;
   title: string;
+  kind: MeetingAssertionKind;
   legalEntityScope: MeetingStatementCandidate['legalEntityScope'];
   companyId: string | null;
   sourceRef: string;
@@ -143,6 +144,7 @@ export function classifyMeetingStatement(candidate: MeetingStatementCandidate): 
     sourceKey: ['meeting.notes_review', meetingId, notesVersion, subjectId, claimId].join(':'),
     status,
     title,
+    kind: candidate.kind,
     legalEntityScope: candidate.legalEntityScope,
     companyId: candidate.companyId ?? null,
     sourceRef: meetingNotesRef,
