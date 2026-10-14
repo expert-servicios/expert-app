@@ -86,6 +86,15 @@ const serviceAreas: ServiceArea[] = [
     ]
   },
   {
+    title: 'Protección de datos RGPD y documentación legal',
+    description: 'Herramienta gratuita de autoimplantación y adaptación profesional de políticas de privacidad, formularios, condiciones de plataformas, tratamientos y proveedores.',
+    href: '/servicios/proteccion-datos',
+    ctaLabel: 'Ver servicios RGPD',
+    Icon: FileCheck,
+    services: ['Política de privacidad adaptada', 'Implantación RGPD y revisión de riesgos', 'Condiciones legales para plataformas', 'Herramienta gratuita de autoimplantación'],
+    auxiliaryActions: [{ label: 'Cuestionario RGPD gratuito', href: '/herramientas/rgpd' }],
+  },
+  {
     title: 'Empresas y Autónomos',
     description:
       'Alta de actividad, constitución de sociedades, gestión mensual con Holded y trámites mercantiles para mantener tu empresa al día.',
