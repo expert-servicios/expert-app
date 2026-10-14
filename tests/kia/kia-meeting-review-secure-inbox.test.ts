@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const src=(file:string)=>readFileSync(resolve(process.cwd(),file),'utf8');
-const sql=src('supabase/migrations/20261014204700_kia_meeting_review_secure_inbox.sql');
+const sql=src('supabase/migrations/20261014211855_kia_meeting_review_secure_inbox.sql');
 const api=src('app/api/admin/kia/meeting-notes/inbox/route.ts');
 
 describe('meeting inbox security contract',()=>{
