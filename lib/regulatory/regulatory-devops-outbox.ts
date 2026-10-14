@@ -5,7 +5,10 @@ const CHANNEL = 'expert_devops_telegram';
 const MAX_ATTEMPTS = 5;
 
 export function regulatoryDevOpsNotificationsEnabled() {
-  return process.env.KIA_REGULATORY_DEVOPS_TELEGRAM_ENABLED === 'true';
+  // Two independent gates: an administrator must activate the Telegram feature
+  // AND explicitly confirm that the reviewed outbox migration is installed.
+  return process.env.KIA_REGULATORY_DEVOPS_TELEGRAM_ENABLED === 'true'
+    && process.env.KIA_REGULATORY_DEVOPS_OUTBOX_READY === 'true';
 }
 
 /**
@@ -42,7 +45,7 @@ function cleanError(error: unknown) {
 }
 
 export async function dispatchRegulatoryDevOpsReviews(limit = 2) {
-  if (!regulatoryDevOpsNotificationsEnabled()) return { disabled: true, claimed: 0, sent: 0 };
+  if (!regulatoryDevOpsNotificationsEnabled()) return { disabled: true, claimed: 0, sent: 0, uncertain: 0, retry: 0 };
   const admin = getSupabaseAdmin();
   const { data, error } = await admin.rpc('claim_regulatory_devops_notification_batch', {
     p_limit: Math.min(3, Math.max(1, Math.trunc(limit))),
@@ -110,7 +113,10 @@ export async function dispatchRegulatoryDevOpsReviews(limit = 2) {
       if (code === 'regulatory_devops_ack_unavailable') throw failure;
       // A timed-out or unsuccessful sendMessage might nevertheless have reached
       // Telegram. Require manual reconciliation instead of risking duplicates.
-      const ambiguous = code === 'devops_telegram_delivery_uncertain';
+      // Provider acknowledgement can be lost on any sendMessage error. As the
+      // adapter does not expose whether sendMessage was reached, ALL failures
+      // stay manual/uncertain; no automated resend can be proved safe.
+      const ambiguous = true;
       const final = job.attempts >= MAX_ATTEMPTS;
       await update({
         status: ambiguous ? 'delivery_uncertain' : final ? 'dead' : 'retry',
