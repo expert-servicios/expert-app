@@ -62,7 +62,7 @@ export async function POST(request:NextRequest){
    return respond({error:'Documento inválido'},409);
  if(file.data.modifiedTime!==input.notesVersion)return respond({error:'Las notas han cambiado; vuelve a extraerlas'},409);
  const doc=await drive.files.export({fileId:input.fileId,mimeType:'text/plain'},{responseType:'text'});
- if(typeof doc.data!=='string'||doc.data.length>96000)return respond({error:'Contenido inválido'},413);
+ if(typeof doc.data!=='string'||doc.data.length>300000)return respond({error:'Contenido inválido'},413);
  const {extractMeetingReviewCandidates}=await import('@/lib/ai/kia/kia-meeting-notes-extract');
  const {reviewMeetingStatements}=await import('@/lib/ai/kia/kia-meeting-note-review');
  const derived=reviewMeetingStatements(extractMeetingReviewCandidates(doc.data).map(c=>({
