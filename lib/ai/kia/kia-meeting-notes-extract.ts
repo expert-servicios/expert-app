@@ -13,7 +13,6 @@ export interface MeetingNotesExtractedCandidate {
   lineNumber: number;
 }
 
-const MAX_DOCUMENT_CHARS = 96_000;
 const MAX_LINE_CHARS = 600;
 const MAX_ITEMS = 40;
 const BULLET = /^(?:[-*•‣]|\d{1,2}[.)])\s+/u;
@@ -23,9 +22,18 @@ const CENSUS = /(?:\bCNAE\b|\bIAE\b|ep[ií]grafe|actividad censal|modelo\s*036|m
 const TAX = /(?:\bIVA\b|\bIRPF\b|\bAEAT\b|\bTJUE\b|deducib|factura|constituci[oó]n|capitalizaci[oó]n|modelo\s*(?:111|130|303|349)|impuesto|jurisprudencia|fiscal)/i;
 const ACTION = /(?:\b(?:solicitar|enviar|preparar|separar|mover|presentar|realizar|cambiar|modificar|trasladar|pedir|registrar|agendar|reservar|actualizar|archivar|subir|crear)\b|(?:debe|tiene que|hay que|vamos a)\s+\w+)/i;
 
+/** Gemini documents may append a long transcript. Process summary/decisions only. */
+export function extractMeetingNotesSection(documentText: string): string {
+  const normalized = documentText.replace(/\r\n?/g, '\n');
+  const marker = normalized.search(/^Transcripci[oó]n\s*$/mi);
+  const notes = marker >= 0 ? normalized.slice(0, marker) : normalized;
+  if (notes.length > 96_000) throw new Error('meeting_notes_document_too_large');
+  return notes;
+}
+
 export function extractMeetingReviewCandidates(documentText: string): MeetingNotesExtractedCandidate[] {
-  if (documentText.length > MAX_DOCUMENT_CHARS) throw new Error('meeting_notes_document_too_large');
-  const lines = documentText.replace(/\r\n?/g, '\n').split('\n');
+  const notes = extractMeetingNotesSection(documentText);
+  const lines = notes.split('\n');
   const items: MeetingNotesExtractedCandidate[] = [];
   const seen = new Set<string>();
 
