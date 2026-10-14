@@ -40,8 +40,8 @@ export function normalizeGoogleMeetingAttachments(
   const candidates: GoogleMeetingNotesCandidate[] = [];
 
   for (const item of attachments.slice(0, 50)) {
-    const fileId = item.fileId?.trim() ?? '';
-    if (!SAFE_FILE_ID.test(fileId) || item.mimeType !== DRIVE_DOC_MIME || seen.has(fileId)) continue;
+    const directId = item.fileId?.trim() ?? '';
+    if (item.mimeType !== DRIVE_DOC_MIME) continue;
 
     // A Calendar attachment does not prove the doc contains Gemini notes.
     // We do not read, classify or act on its contents here.
@@ -51,8 +51,10 @@ export function normalizeGoogleMeetingAttachments(
     } catch {
       continue;
     }
-    if (url.protocol !== 'https:' || url.hostname !== 'docs.google.com'
-      || url.pathname !== '/document/d/' + fileId + '/edit') continue;
+    const match = url.pathname.match(/^\/document\/d\/([a-zA-Z0-9_-]{15,128})\/edit$/);
+    if (url.protocol !== 'https:' || url.hostname !== 'docs.google.com' || !match) continue;
+    const fileId = match[1];
+    if (!SAFE_FILE_ID.test(fileId) || (directId && directId !== fileId) || seen.has(fileId)) continue;
 
     seen.add(fileId);
     candidates.push({
