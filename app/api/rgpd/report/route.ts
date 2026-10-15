@@ -41,7 +41,9 @@ export async function POST(request:NextRequest){
   // Russian font embedding is a QA gate: until a supported Cyrillic font is bundled, prevent corrupt PDF output.
   if(d.locale==='ru')return NextResponse.json({error:'russian_pdf_pending_font_qa'},{status:503});
   const issuedOn=new Date().toLocaleDateString('es-ES',{timeZone:'Europe/Madrid'});
-  const bytes=await pdf(createElement(RgpdReportPdf,{data:{name:d.name,locale:d.locale,date:issuedOn,primary:rec.primary,toolTitle:AEPD_TOOLS[rec.primary].title,toolUrl:AEPD_TOOLS[rec.primary].url,topics,extraReview:rec.needsProfessionalReview}})).toBuffer();
+  const document=createElement(RgpdReportPdf,{data:{name:d.name,locale:d.locale,date:issuedOn,primary:rec.primary,toolTitle:AEPD_TOOLS[rec.primary].title,toolUrl:AEPD_TOOLS[rec.primary].url,topics,extraReview:rec.needsProfessionalReview}}) as unknown as Parameters<typeof pdf>[0];
+  const blob=await pdf(document).toBlob();
+  const bytes=Buffer.from(await blob.arrayBuffer());
   if(!bytes||bytes.length<200)return NextResponse.json({error:'render_failed'},{status:500});
   // Only contact and provenance are stored, never questionnaire responses or health-risk flags.
   const lead=await ensureInboundLead({
