@@ -116,3 +116,70 @@ describe('RGPD lead integration with isolated in-memory records', () => {
     expect(state.metadata.inquiries).toHaveLength(2);
   });
 });
+
+
+function concurrentInsertionFixture() {
+  let saved: { id: string; email: string | null } | null = null;
+  let actualInserts = 0;
+  const from = vi.fn(() => ({
+    select: (columns: string) => {
+      if (columns === 'id,email') {
+        return {
+          eq: () => ({
+            eq: () => ({
+              limit: async () => ({ data: [], error: null }),
+              maybeSingle: async () => ({ data: saved, error: null }),
+            }),
+          }),
+        };
+      }
+      if (columns === 'id') {
+        return { ilike: () => ({ limit: async () => ({ data: [], error: null }) }) };
+      }
+      throw new Error('Unexpected projection: ' + columns);
+    },
+    insert: (payload: { email: string | null }) => ({
+      select: () => ({
+        single: async () => {
+          if (saved) return { data: null, error: { code: '23505', message: 'source key already exists' } };
+          actualInserts += 1;
+          saved = { id: 'new-inbound-lead', email: payload.email };
+          return { data: { id: saved.id }, error: null };
+        },
+      }),
+    }),
+  }));
+  return {
+    admin: { from } as unknown as Parameters<typeof ensureInboundLead>[0]['admin'],
+    inserted: () => actualInserts,
+  };
+}
+
+describe('RGPD concurrent request race in an isolated uniqueness simulator', () => {
+  it('creates one lead for simultaneous retries of the same request', async () => {
+    const { admin, inserted } = concurrentInsertionFixture();
+    const results = await Promise.all([
+      ensureInboundLead(request(admin)),
+      ensureInboundLead(request(admin)),
+    ]);
+    expect(results).toHaveLength(2);
+    expect(results.map((result) => result.leadId)).toEqual(['new-inbound-lead', 'new-inbound-lead']);
+    expect(inserted()).toBe(1);
+  });
+
+  it('refuses to reuse a concurrent request key with a different email', async () => {
+    const { admin, inserted } = concurrentInsertionFixture();
+    const results = await Promise.allSettled([
+      ensureInboundLead(request(admin)),
+      ensureInboundLead({ ...request(admin), email: 'other@example.test' }),
+    ]);
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1);
+    const rejected = results.find((result) => result.status === 'rejected');
+    expect(rejected).toMatchObject({
+      status: 'rejected',
+      reason: expect.objectContaining({ message: 'inbound_source_key_identity_conflict' }),
+    });
+    expect(inserted()).toBe(1);
+  });
+});
