@@ -39,18 +39,22 @@ export async function ensureInboundLead(input: {
     ...(input.preserveExistingClassification && input.metadata ? { details: input.metadata } : {}),
   };
 
-  // Replays of a source key must resolve to the same lead, never a new contact.
-  const { data: repeated, error: repeatedError } = await input.admin
-    .from('leads')
-    .select('id,email')
-    .eq('source', input.source)
-    .eq('source_key', input.sourceKey)
-    .limit(2);
-  if (repeatedError) throw repeatedError;
-  if ((repeated ?? []).length > 1) throw new Error('inbound_source_key_ambiguous');
-  if (repeated?.[0]) {
-    if (email && repeated[0].email?.toLowerCase() !== email) throw new Error('inbound_source_key_identity_conflict');
-    return { leadId: repeated[0].id, created: false };
+  // Only one-off informational requests have event-idempotent source keys.
+  // Other callers (e.g. Telegram) deliberately use a stable conversation key,
+  // and MUST still append every new inbound interaction.
+  if (input.preserveExistingClassification) {
+    const { data: repeated, error: repeatedError } = await input.admin
+      .from('leads')
+      .select('id,email')
+      .eq('source', input.source)
+      .eq('source_key', input.sourceKey)
+      .limit(2);
+    if (repeatedError) throw repeatedError;
+    if ((repeated ?? []).length > 1) throw new Error('inbound_source_key_ambiguous');
+    if (repeated?.[0]) {
+      if (email && repeated[0].email?.toLowerCase() !== email) throw new Error('inbound_source_key_identity_conflict');
+      return { leadId: repeated[0].id, created: false };
+    }
   }
 
   const candidateIds = new Set<string>();
@@ -105,7 +109,7 @@ export async function ensureInboundLead(input: {
         : {};
       const previous = Array.isArray(metadata.inquiries) ? metadata.inquiries.slice(-29) : [];
       // Preserve the original lead if this logical request has already been recorded.
-      if (previous.some((item: unknown) =>
+      if (input.preserveExistingClassification && previous.some((item: unknown) =>
         item && typeof item === 'object' &&
         (item as { source_key?: unknown }).source_key === input.sourceKey
       )) return { leadId, created: false };
@@ -127,7 +131,7 @@ export async function ensureInboundLead(input: {
           metadata: {
             ...metadata,
             ...(!input.preserveExistingClassification ? input.metadata : {}),
-            last_acquisition: interaction,
+            ...(!input.preserveExistingClassification ? { last_acquisition: interaction } : {}),
             inquiries: [...previous, interaction],
           },
         })
