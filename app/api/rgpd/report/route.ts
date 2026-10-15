@@ -24,6 +24,8 @@ const dataSchema=z.object({
 }).strict();
 
 export async function POST(request:NextRequest){
+ // Disabled by default until legal, end-to-end and delivery validation.
+ if (process.env.RGPD_REPORT_ENABLED !== 'true') return NextResponse.json({error:'feature_unavailable'},{status:503});
  try{
   if(!checkRateLimit(getClientIp(request.headers)))return NextResponse.json({error:'rate_limited'},{status:429});
   const raw=await request.text();
