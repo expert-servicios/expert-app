@@ -1,6 +1,7 @@
 export const proteccionDatosKnowledgeDocs = [
   {
     slug: 'checklist-rgpd-autonomos-pymes',
+    relatedServiceSlugs: ['formacion-rgpd-aepd'],
     category: 'proteccion-datos' as const,
     title: 'Checklist RGPD para autónomos y pymes',
     excerpt:
@@ -206,6 +207,7 @@ La AEPD dispone de un listado orientativo de entidades obligadas.
   },
   {
     slug: 'registro-actividades-tratamiento-rat-pymes',
+    relatedServiceSlugs: ['formacion-rgpd-aepd'],
     category: 'proteccion-datos' as const,
     title: 'Cómo preparar el Registro de Actividades de Tratamiento (RAT)',
     excerpt:
@@ -356,6 +358,7 @@ Para cada tratamiento crea una ficha con:
   },
   {
     slug: 'privacidad-formularios-cookies-web',
+    relatedServiceSlugs: ['formacion-rgpd-aepd'],
     category: 'proteccion-datos' as const,
     title: 'Checklist de privacidad para web, formularios y cookies',
     excerpt:
@@ -510,6 +513,7 @@ Repite la auditoría cuando:
   },
   {
     slug: 'protocolo-brechas-datos-personales-72-horas',
+    relatedServiceSlugs: ['formacion-rgpd-aepd'],
     category: 'proteccion-datos' as const,
     title: 'Protocolo de brechas de datos: primeras 72 horas',
     excerpt:
@@ -643,6 +647,7 @@ No cierres el expediente únicamente porque el acceso dejó de estar expuesto.
   },
   {
     slug: 'alta-inscripcion-aepd-tramites-empresa',
+    relatedServiceSlugs: ['formacion-rgpd-aepd'],
     category: 'proteccion-datos' as const,
     title: '¿Hay que darse de alta en la AEPD? Trámites reales para empresas',
     excerpt:
