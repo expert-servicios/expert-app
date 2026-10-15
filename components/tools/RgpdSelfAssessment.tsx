@@ -329,7 +329,7 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
               </div>
             )}
 
-            <RgpdReportLeadForm answers={answers} />
+            {process.env.NEXT_PUBLIC_RGPD_REPORT_ENABLED === 'true' && <RgpdReportLeadForm answers={answers} />}
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               {result.level === 'low' ? (
