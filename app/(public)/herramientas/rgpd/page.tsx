@@ -33,7 +33,29 @@ export default function RgpdToolPage() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-6xl gap-8 px-6 py-12 lg:grid-cols-[1fr_340px] lg:items-start">
+      <nav aria-label="Contenido de la herramienta RGPD" className="border-b border-[#D4A017]/25 bg-white px-6 py-4">
+        <div className="mx-auto flex max-w-6xl flex-wrap gap-3 text-sm font-semibold">
+          <a href="#evaluacion" className="rounded border border-[#D4A017]/35 px-4 py-2 hover:bg-[#D4A017]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A017]">1. Hacer el cuestionario gratuito</a>
+          <a href="#recursos" className="rounded border border-[#D4A017]/35 px-4 py-2 hover:bg-[#D4A017]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A017]">2. Leer artículos y guías</a>
+          <a href="#ayuda" className="rounded border border-[#D4A017]/35 px-4 py-2 hover:bg-[#D4A017]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A017]">3. Formación o revisión</a>
+          <a href="#preguntas-frecuentes" className="rounded border border-[#D4A017]/35 px-4 py-2 hover:bg-[#D4A017]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D4A017]">Preguntas frecuentes</a>
+        </div>
+      </nav>
+
+      <section aria-labelledby="rgpd-como-empezar" className="bg-white px-6 py-8">
+        <div className="mx-auto max-w-6xl">
+          <h2 id="rgpd-como-empezar" className="font-serif text-2xl font-bold">¿Por dónde empiezo si no entiendo de protección de datos?</h2>
+          <p className="mt-3 max-w-4xl text-sm leading-7 text-[#23364D]">Empieza con el cuestionario de EXPERT. Verás los temas que conviene revisar, ejemplos de qué hacer y enlaces a documentación gratuita. Después podrás abrir la herramienta oficial de la AEPD más apropiada para tu actividad o pedir ayuda. No necesitamos que nos envíes contratos, currículums ni datos de tus usuarios para obtener esta orientación inicial.</p>
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <div className="rounded border border-[#D4A017]/25 bg-[#F8F6F1] p-4"><strong>1. Contesta</strong><p className="mt-1 text-sm">Elige opciones sencillas; puedes indicar «No lo sé».</p></div>
+            <div className="rounded border border-[#D4A017]/25 bg-[#F8F6F1] p-4"><strong>2. Entiende tu resultado</strong><p className="mt-1 text-sm">Recibirás primeros pasos, temas por aclarar y enlaces explicativos.</p></div>
+            <div className="rounded border border-[#D4A017]/25 bg-[#F8F6F1] p-4"><strong>3. Decide cómo continuar</strong><p className="mt-1 text-sm">Utiliza los recursos AEPD gratis o aprende con EXPERT en una sesión guiada.</p></div>
+          </div>
+          <a href="#evaluacion" className="mt-5 inline-flex min-h-12 items-center bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A] focus-visible:outline-2 focus-visible:outline-offset-2">Comenzar evaluación gratuita ↓</a>
+        </div>
+      </section>
+
+      <section id="evaluacion" aria-label="Cuestionario RGPD gratuito" className="mx-auto grid max-w-6xl gap-8 px-6 py-12 lg:grid-cols-[1fr_340px] lg:items-start">
         <div className="space-y-5"><div className="border border-[#D4A017]/40 bg-white p-5"><p className="font-bold">Aprende a utilizar las herramientas oficiales de la AEPD</p><p className="mt-2 text-sm">Formación online guiada de 2 horas con EXPERT: Facilita RGPD, Facilita EMPRENDE y Gestiona RGPD. Precio fijo 180 € + IVA. No equivale a una certificación de cumplimiento.</p><Link href="/servicios/empresas-autonomos/formacion-rgpd-aepd" className="mt-3 inline-block font-semibold underline">Ver la formación RGPD de 2 horas →</Link></div><RgpdSelfAssessment hourlyRateEur={hourlyRateEur} /></div>
 
         <aside className="space-y-5">
@@ -67,7 +89,7 @@ export default function RgpdToolPage() {
         </aside>
       </section>
 
-      <section className="border-t border-[#D4A017]/20 bg-[#F8F6F1] px-6 py-12">
+      <section id="recursos" className="border-t border-[#D4A017]/20 bg-[#F8F6F1] px-6 py-12">
         <div className="mx-auto max-w-6xl space-y-9">
           <div><p className="text-xs font-bold uppercase tracking-widest text-[#B38C13]">Sigue aprendiendo con EXPERT</p><h2 className="mt-2 font-serif text-3xl font-bold">Guías, artículos y formación recomendados</h2><p className="mt-2 text-sm">Explora recursos gratuitos y decide si necesitas una sesión práctica o una revisión profesional.</p></div>
           <div className="grid gap-5 md:grid-cols-3">
@@ -97,7 +119,7 @@ export default function RgpdToolPage() {
               ].map(item => <Link key={item.href} href={item.href} className="block border bg-white px-4 py-3 text-sm font-semibold hover:border-[#D4A017]">{item.title} →</Link>)}
             </div></div>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div id="ayuda" className="grid gap-4 md:grid-cols-2">
             <Link href="/servicios/empresas-autonomos/formacion-rgpd-aepd" className="border border-[#D4A017] bg-white p-6"><p className="text-xs font-bold uppercase text-[#977316]">Acompañamiento en directo</p><h3 className="mt-2 font-serif text-xl font-bold">Formación RGPD de 2 horas · 180 € + IVA</h3><p className="mt-2 text-sm">Aprende a utilizar las herramientas de la AEPD con un profesional. No es una certificación.</p><span className="mt-4 block font-bold underline">Ver formación →</span></Link>
             <Link href="/solicitar-presupuesto?servicio=proteccion-datos-rgpd&origen=herramienta-rgpd" className="border bg-white p-6"><p className="text-xs font-bold uppercase text-[#977316]">Revisión profesional</p><h3 className="mt-2 font-serif text-xl font-bold">Evaluación de adecuación e implantación RGPD</h3><p className="mt-2 text-sm">Cuando hay mayor complejidad, solicita un alcance y presupuesto personalizados.</p><span className="mt-4 block font-bold underline">Solicitar revisión →</span></Link>
           </div>
@@ -105,7 +127,7 @@ export default function RgpdToolPage() {
         </div>
       </section>
 
-      <section className="border-t border-[#D4A017]/20 bg-white px-6 py-10">
+      <section id="preguntas-frecuentes" className="border-t border-[#D4A017]/20 bg-white px-6 py-10">
         <div className="mx-auto max-w-5xl">
           <h2 className="font-serif text-2xl font-bold">Preguntas frecuentes sobre tus resultados</h2>
           <div className="mt-6 space-y-3">
