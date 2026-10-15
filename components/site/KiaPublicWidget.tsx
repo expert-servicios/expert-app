@@ -137,6 +137,7 @@ export function KiaPublicWidget() {
         'rgpd-help': 'Necesito ayuda para entender los pasos de protección de datos de mi negocio.',
         'rgpd-guided': 'Quiero hacer un cuestionario RGPD guiado. Hazme una pregunta sencilla cada vez y recomiéndame una herramienta oficial de la AEPD.',
         'rgpd-training': 'Explícame qué incluye la formación RGPD online de EXPERT de dos horas por 180 euros más IVA.',
+        'rgpd-guided-ru': 'Помоги мне пройти предварительную оценку RGPD для бизнеса в Испании. Задавай по одному простому вопросу на русском языке.',
       };
       setOpen(true);
       const prompt = detail?.topic ? prompts[detail.topic] : undefined;
