@@ -1,5 +1,5 @@
 # PLAN MAESTRO — CIRCE / Constitución de SL en autoservicio y acompañamiento EXPERT
-**Versión:** 1.0 · **Fecha:** 15/10/2026 · **Estado:** plan de trabajo, sin cambios comerciales publicados
+**Versión:** 1.1 · **Fecha:** 15/10/2026 · **Estado:** plan de trabajo, sin cambios comerciales publicados
 **Rama:** `plan/circe-autogestion-contenidos-20261015`
 **Ámbito:** expertconsulting.es, fichas ES/RU, recursos gratuitos, KIA, adquisición orgánica y seguimiento del caso piloto Comfi App.
 **Separación:** no mezclar con PR #782, cuyos informes RGPD/lead/email siguen sujetos a validaciones.
@@ -8,7 +8,7 @@
 - Correo inicial localizado en Outlook: «Comfi App — seguimiento de la reunión y herramientas de protección de datos», enviado el 15/10/2026 05:16 UTC a Rafael Corvillo, CC Isabela Pallarés.
 - Contenía enlace a /herramientas/rgpd, enlace al servicio /servicios/empresas-autonomos/constitucion-sl y mensaje de que la decisión de crear una SL está pendiente.
 - **No reenviar el 15/10.** Revisar si hay respuesta al primer correo antes de cualquier segundo contacto; no presumir que han visitado la página o abierto el mensaje.
-- Preparar respuesta en el **mismo hilo** cuando existan guías CIRCE realmente publicadas y verificadas, preferiblemente sin demorar la oferta profesional si el interesado pregunta antes. Redacción breve: nuevos materiales gratuitos, advertencia de que el trámite sigue requiriendo notaría, y opciones de formación de dos horas o servicio completo. Sin envío automático ni campañas.
+- Preparar respuesta en el **mismo hilo** tras verificar una novedad útil (idealmente guía CIRCE publicada). **Añadir expresamente que el 15/10/2026 se amplió la herramienta RGPD** después del envío del primer correo: cuestionario bilingüe, explicaciones sobre Facilita/EMPRENDE/Gestiona, artículos, FAQ y consultas con KIA; invitar a revisarla de nuevo, sin asumir que antes entraron. Puede enviarse antes un breve aviso sobre RGPD si la guía CIRCE se retrasa, siempre con revisión humana previa. No reenviar el 15/10, no enviar automáticamente ni iniciar campañas.
 - Usar identidad corporativa `info@expertconsulting.es` o alias EXPERT validado, corrigiendo el `soy@kseniailicheva.com` del mensaje inicial en comunicaciones futuras cuando el sistema de correo lo permita sin perder el hilo.
 
 ## 1. Inventario y conflicto de precios (P0)
@@ -96,5 +96,57 @@ Importes IVA incluido a 21 %: formación 217,80 €; servicio completo 592,90 �
 - Prompts KIA PAE contienen reglas rígidas («certificado para todos los socios», «sin certificado CIRCE no viable») que deben alinearse con el acceso Cl@ve o certificado y la participación de PAE; verificar el mecanismo de firma.
 - Página RU CIRCE: limpiar mezcla español/ruso y limitar afirmaciones absolutas sobre plazos/costos.
 - Comfi App: no afirmar que ya revisaron la página, que respondieron ni que necesitan constituir; mantener decisión abierta.
+
+
+## 9. Estrategia transversal EXPERT: plataforma de conocimiento y herramientas gratuitas primero (decisión 15/10/2026)
+
+### Posicionamiento
+EXPERT debe presentarse prioritariamente como **centro práctico y abierto para entender y resolver trámites en España**, no como catálogo de gestoría. Promesa al visitante: «Entiende qué necesitas, aprende a hacerlo, utiliza recursos oficiales y decide libremente si quieres ayuda». El conocimiento gratuito es un producto principal, no un anuncio encubierto.
+
+### Principios de experiencia y confianza
+- **Sin registro obligatorio** para consultar artículos, guías, mapas, FAQ, calculadoras, comparativas, glosarios y resultados básicos de los cuestionarios.
+- **KIA chat gratuito** con respuestas trazables y límites técnicos razonables ante abuso; explicar cuándo contesta IA, alcance y posibilidad de revisión humana; no pedir datos de terceros para orientación general. Auditar coste/modelo/errores antes de anunciar gratuidad ilimitada.
+- Ofrecer **consultas iniciales gratuitas** delimitadas (p. ej. orientación 15 min sujeta a agenda): no equiparar consulta breve gratuita con representación profesional, auditoría ni dictamen completo.
+- La vía «hacerlo por tu cuenta» debe ser la principal en la interfaz. Formación y gestión profesional, **alternativas voluntarias**, visibles sin popups, urgencias fingidas, obligatoriedad de consentimiento comercial ni paywall del resumen.
+- Cada contenido ha de citar fuente oficial, revisión vigente, escenarios donde no aplica, responsabilidades y señales de derivación a profesional. Estándar ES/RU con traducción revisada, accesibilidad, móvil y lenguaje claro.
+- Evitar automatizar la publicación masiva de artículos repetidos o no contrastados. La cobertura temática será amplia, pero cada material debe aportar un paso concreto, una checklist o una herramienta útil, no solo texto SEO.
+
+### Arquitectura y biblioteca creciente (no limitada a CIRCE)
+**Puerta 1: Aprender** → artículos, guías prácticas, recursos AEPD/AEAT/TGSS/CIRCE/Registro, FAQ, glosario, mapas y cursos abiertos.
+**Puerta 2: Comprobar** → cuestionarios locales y calculadoras orientativas sin enviar datos por defecto.
+**Puerta 3: Hacerlo** → enlace directo al trámite oficial, checklist y explicación paso a paso con capturas revisadas cuando exista autorización; descarga libre de guía no personalizada.
+**Puerta 4: Preguntar** → KIA gratuito en web y Telegram, y consulta inicial gratuita si el caso necesita atención humana.
+**Puerta 5: Acompañamiento opcional** → 2h formación práctica, servicio completo o presupuesto individual, sin presión comercial.
+
+Extender después de RGPD y CIRCE a: alta de autónomos, certificados digitales, obligaciones periódicas básicas, facturación/VeriFactu, registros/notaría y trámites administrativos. Priorización por consultas repetidas, coste de producir/actualizar, riesgo legal y utilidad. Mantener índice editorial único de fuente, propietario, fecha, idioma, estado de verificación y próximas revisiones.
+
+### Audiencia, datos y comunicaciones
+- **Distinguir visitante anónimo, suscriptor voluntario, usuario del chat, lead que solicita ayuda y cliente**; entrar a una web, utilizar KIA o descargar una guía gratuita **no implica alta en un listado publicitario**.
+- Formularios con finalidades independientes: (a) respuesta o entrega solicitada; (b) envío periódico de novedades; (c) comunicaciones comerciales de servicios. Marcar consentimientos opcionales, separados y por defecto desmarcados, versionados con fecha, fuente, canal, retirada y supresión.
+- Antes de cualquier campaña, segmentación comercial o nutrición por email/Telegram, verificar base legal y consentimientos. La LSSI normalmente exige autorización previa para publicidad por correo, salvo supuestos legalmente previstos para clientes con relación contractual previa y servicios similares; una simple visita, un lead por guía o un chat no constituyen esa excepción.
+- Recogida mínima y retención limitada: no guardar respuestas completas de cuestionarios ni transcripciones en ficha comercial sin finalidad y base válida, no usar datos privados para entrenamiento ni inferir el motivo de contacto de visitantes sin expediente.
+- Servicio informativo gratuito y atención a solicitudes **no condicionados** a aceptar publicidad. Descarga genérica libre, y PDF personalizado opcional solo cuando PR #782 supere privacidad/E2E.
+- Enviar notificaciones al administrador por una solicitud humana o reunión con relevancia operativa, no por cada mensaje de KIA.
+
+### Conversión no intrusiva y métricas
+- Medir **utilidad real**: recursos leídos/completados, cuestionarios iniciados y terminados, enlaces oficiales utilizados, guía descargada, preguntas resueltas, satisfacción, consultas solicitadas, retorno voluntario y calidad de fuentes.
+- Medir conversión a newsletter solo con opt-in, a formación/servicio completo por petición genuina; no maximizar el número bruto de emails capturados.
+- Establecer presupuestos mensuales para IA, límites de abuso, FAQ determinista antes de invocar modelos caros, caché de contenidos no personales, ruta humana de escalado; evaluar costo por sesión resuelta y capacidad de consulta gratuita.
+- SEO: arquitectura `/herramientas`, `/guias`/`/docs`, `/blog`, `/servicios`, enlazado por intención del usuario; contenidos para personas antes que producción masiva para buscadores. Revisión normativa en cron y aviso de material desactualizado.
+
+### Lotes adaptados a la prioridad gratuita
+1. **Gratis primero:** guías CIRCE completas, flujos, FAQ, mapamundi de trámites (diagrama, no geolocalización), comparativa autónomo/SL y orientación KIA contextual, todo sin login. Pulir RGPD ya publicado, fuentes y ES/RU.
+2. **Aprendizaje asistido:** videotutoriales explicativos y listas descargables, buscador y asistente KIA con citas; consulta gratuita con agenda y límites transparentes.
+3. **Comunidad voluntaria:** suscripción específica a novedades educativas, editorial mensual de cambios normativos y canal opt-in; control de permisos y retirada.
+4. **Servicios bajo demanda:** botón discreto de formación por 180 € + IVA y gestión estándar por 490 € + IVA, tras conciliación de precio 499 € CIRCE y checkout.
+
+### Entregables de control
+- Matriz global de contenidos por servicio, formato, idioma, fuente, fecha revisión, CTA, estado y cobertura KIA.
+- Contrato de UI de gratuidad y controles de consentimiento.
+- Medición de utilidad y coste antes de aumentar la publicación automática.
+- Plan editorial por fases, QA y checklists de mantenimiento oficial.
+- Novedades enviadas a Comfi App solo dentro del seguimiento del hilo, con enlace real a RGPD actualizado y a CIRCE cuando esté publicado.
+
+Fuentes de referencia: AEPD consentimiento https://www.aepd.es/preguntas-frecuentes/2-tus-obligaciones-como-responsable-del-tratamiento/5-bases-legitimadoras-del-tratamiento/FAQ-0211-segun-el-rgpd-como-debe-solicitarse-el-consentimiento-de-los-interesados-para-tratar-sus-datos-personales ; LSSI comunicaciones comerciales https://lssi.digital.gob.es/lssi/la-ley/aspectos-basicos/publicidad-en-internet ; Google Search Central https://developers.google.com/search/docs/fundamentals/creating-helpful-content .
 
 **No publicación / No envíos automáticos con este documento.**
