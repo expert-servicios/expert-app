@@ -1,6 +1,7 @@
 export const proteccionDatosBlogArticles = [
   {
     slug: 'rgpd-autonomos-pymes-espana-2026',
+    relatedServiceSlugs: ['formacion-rgpd-aepd'],
     category: 'Protección de datos',
     title: 'RGPD para autónomos y pymes en España: qué debes tener realmente en 2026',
     excerpt:
@@ -135,6 +136,7 @@ Puedes seguir nuestro [checklist RGPD para autónomos y pymes](https://expertcon
   },
   {
     slug: 'web-formularios-cookies-rgpd-lssi-espana',
+    relatedServiceSlugs: ['formacion-rgpd-aepd'],
     category: 'Protección de datos',
     title: 'Web, formularios y cookies: cómo cumplir RGPD y LSSI en España',
     excerpt:
@@ -247,6 +249,7 @@ Comprueba que existen y son coherentes:
   },
   {
     slug: 'proveedores-cloud-ia-rgpd-encargados-tratamiento',
+    relatedServiceSlugs: ['formacion-rgpd-aepd'],
     category: 'Protección de datos',
     title: 'CRM, cloud, gestoría e IA: qué revisar antes de dar datos de clientes a un proveedor',
     excerpt:
@@ -361,6 +364,7 @@ Este inventario debe coordinarse con el RAT y con el análisis de riesgos.
   },
   {
     slug: 'brecha-datos-personales-72-horas-aepd',
+    relatedServiceSlugs: ['formacion-rgpd-aepd'],
     category: 'Protección de datos',
     title: 'Brecha de datos personales: qué hacer durante las primeras 72 horas',
     excerpt:
@@ -475,6 +479,7 @@ El objetivo es reducir la probabilidad de repetición y dejar evidencia de las m
   },
   {
     slug: 'no-hay-que-inscribir-empresa-aepd-rgpd',
+    relatedServiceSlugs: ['formacion-rgpd-aepd'],
     category: 'Protección de datos',
     title: 'No tienes que “dar de alta” tu empresa en la AEPD: qué cambió con el RGPD',
     excerpt:
