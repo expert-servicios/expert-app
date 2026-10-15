@@ -115,6 +115,19 @@ describe('RGPD report delivery HTTP contract: isolated, no real DB or email', ()
     expect(Buffer.from(email.attachments[0].content, 'base64').subarray(0, 4).toString()).toBe('%PDF');
   });
 
+  it('falls back to a private PDF if the email provider fails without retrying lead creation', async () => {
+    process.env.RGPD_REPORT_ENABLED = 'true';
+    mocks.email.mockRejectedValueOnce(new Error('synthetic provider failure'));
+    const response = await POST(request());
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Type')).toBe('application/pdf');
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(response.headers.get('X-RGPD-Delivery')).toBe('email-failed-download');
+    expect(Buffer.from(await response.arrayBuffer()).subarray(0,4).toString()).toBe('%PDF');
+    expect(mocks.lead).toHaveBeenCalledTimes(1);
+    expect(mocks.email).toHaveBeenCalledTimes(1);
+  });
+
   it('offers a private no-store download without sending any email', async () => {
     process.env.RGPD_REPORT_ENABLED = 'true';
     const response = await POST(request({ method: 'download' }));
