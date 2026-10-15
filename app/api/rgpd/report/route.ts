@@ -57,13 +57,20 @@ export async function POST(request:NextRequest){
    channel:'rgpd_report',origin:'herramienta-rgpd',preserveExistingClassification:true,metadata:{report_requested_at:new Date().toISOString(),delivery_method:d.method,language:d.locale,marketing_consent:d.marketingConsent,marketing_consent_origin:d.marketingConsent?'rgpd_report_form':null,privacy_notice_version:'rgpd-report-2026-10-15',privacy_notice_acknowledged:true,privacy_notice_acknowledged_at:new Date().toISOString(),marketing_choice_recorded_at:new Date().toISOString()},
   });
   if(d.method==='email'){
-    await sendEmail({
+    try {
+      await sendEmail({
       to:d.email.toLowerCase(),eventType:'rgpd.report.delivered',idempotencyKey:`rgpd/report/${d.requestId}`,subject:d.locale==='ru'?'Ваша памятка RGPD · EXPERT':'Tu guía RGPD personalizada · EXPERT',
       html:d.locale==='ru'?`<p>Здравствуйте, ${d.name.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}!</p><p>Во вложении ваша информационная памятка RGPD. Это не сертификат соблюдения законодательства.</p><p>EXPERT Consulting</p>`:`<p>Hola, ${d.name.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}:</p><p>Adjuntamos tu guía inicial RGPD solicitada. Incluye temas para revisar y enlaces oficiales de la AEPD. No es un certificado de cumplimiento.</p><p>Si quieres aprender a utilizar estas herramientas, puedes consultar la <a href="https://expertconsulting.es/servicios/empresas-autonomos/formacion-rgpd-aepd">formación de dos horas por 180 € + IVA</a>.</p><p>EXPERT Consulting</p>`,
       attachments:[{filename:'guia-rgpd-expert.pdf',content:Buffer.from(bytes).toString('base64'),type:'application/pdf'}],
       metadata:{lead_id:lead.leadId,source:'herramienta-rgpd'}
-    });
-    return NextResponse.json({ok:true,delivery:'email'});
+      });
+      return NextResponse.json({ok:true,delivery:'email'});
+    } catch {
+      // Report creation has succeeded. Email-provider failure must not strand
+      // the user or register another lead on the fallback download.
+      console.error('[rgpd-report] transactional delivery unavailable');
+      return new NextResponse(new Uint8Array(bytes),{status:200,headers:{'Content-Type':'application/pdf','Content-Disposition':'attachment; filename="guia-rgpd-expert.pdf"','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','X-RGPD-Delivery':'email-failed-download'}});
+    }
   }
   return new NextResponse(new Uint8Array(bytes),{status:200,headers:{'Content-Type':'application/pdf','Content-Disposition':'attachment; filename="guia-rgpd-expert.pdf"','Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
  }catch(e){console.error('[rgpd-report] failed',e instanceof Error?e.message:'unknown');return NextResponse.json({error:'generation_failed'},{status:500});}
