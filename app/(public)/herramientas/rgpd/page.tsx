@@ -106,6 +106,22 @@ export default function RgpdToolPage() {
       </section>
 
       <section className="border-t border-[#D4A017]/20 bg-white px-6 py-10">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="font-serif text-2xl font-bold">Preguntas frecuentes sobre tus resultados</h2>
+          <div className="mt-6 space-y-3">
+            {[
+              {q:'¿Los temas del resultado son incumplimientos?',a:'No. Son áreas que conviene comprobar. La herramienta no inspecciona tus sistemas ni puede saber si ya tienes cada medida correctamente implantada.'},
+              {q:'¿Tengo que completar todos los puntos hoy?',a:'No necesariamente. Empieza por identificar qué datos utilizas, con qué fin y en qué herramientas; revisa primero las incidencias urgentes y los tratamientos de mayor riesgo.'},
+              {q:'¿Cómo sé exactamente qué tengo que hacer?',a:'Cada tema incluye una explicación sencilla, una primera acción y una guía relacionada. Puedes empezar gratis y solicitar ayuda para trabajar con las herramientas oficiales.'},
+              {q:'¿Puedo rellenar Facilita RGPD o Gestiona RGPD acompañado?',a:'Sí. EXPERT ofrece una formación online individual de dos horas por 180 € + IVA. Durante la sesión utilizamos las herramientas oficiales adecuadas, sin pedir datos personales de terceros.'},
+              {q:'¿Terminar el cuestionario garantiza que cumplo el RGPD?',a:'No. La empresa debe implantar las medidas aplicables y poder demostrarlo. Las herramientas ayudan a organizar el trabajo, pero no son certificaciones oficiales.'}
+            ].map(item=><details key={item.q} className="border bg-[#F8F6F1] p-4"><summary className="cursor-pointer font-semibold">{item.q}</summary><p className="mt-3 text-sm leading-6">{item.a}</p></details>)}
+          </div>
+          <Link href="/servicios/empresas-autonomos/formacion-rgpd-aepd" className="mt-5 inline-block font-bold underline">Formación RGPD guiada 2 horas · 180 € + IVA →</Link>
+        </div>
+      </section>
+
+      <section className="border-t border-[#D4A017]/20 bg-white px-6 py-10">
         <div className="mx-auto max-w-5xl text-sm leading-7 text-[#23364D]">
           <p className="font-bold text-[#0D1B2A]">Base de la metodología</p>
           <p className="mt-2">
