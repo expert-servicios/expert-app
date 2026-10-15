@@ -186,8 +186,83 @@ function processorChecklist() {
   ].join('\n');
 }
 
+
+function extendedPrivacyPolicy() {
+  const p = profile();
+  const treatments = readJson('expert-rgpd-treatments-v1') ?? {};
+  const providers = readJson('expert-rgpd-provider-inventory-v1') ?? {};
+  const retention = readJson('expert-rgpd-retention-matrix-v1') ?? [];
+  const selected: string[] = Array.isArray(treatments.selectedIds) ? treatments.selectedIds : [];
+  const custom: Record<string, unknown>[] = Array.isArray(treatments.customTreatments) ? treatments.customTreatments : [];
+  const providerIds: string[] = Array.isArray(providers.selectedIds) ? providers.selectedIds : [];
+  const customProviders: Record<string, unknown>[] = Array.isArray(providers.custom) ? providers.custom : [];
+
+  const purposes = custom
+    .map((t) => [t.name, t.purpose, t.legalBasis].map((v) => typeof v === 'string' && v.trim() ? v.trim() : '[por completar]').join(' | '))
+    .filter(Boolean);
+
+  return [
+    ...baseHeader('Borrador ampliado de política de privacidad para publicar tras revisión', p),
+    '**NO PUBLICAR SIN REVISIÓN:** Esta plantilla requiere completar y validar cada apartado para los tratamientos reales. No equivale a asesoramiento jurídico ni certifica cumplimiento.',
+    '',
+    '## 1. Responsable del tratamiento',
+    '- Identidad: ' + (p.legalName || '[nombre y apellidos o denominación social]'),
+    '- NIF/CIF: ' + (p.taxId || '[pendiente]'),
+    '- Domicilio y otros datos de contacto: [completar]',
+    '- Contacto para privacidad: ' + (p.contactEmail || '[pendiente]'),
+    '- Delegado de Protección de Datos, si corresponde: [identificar o explicar no aplicabilidad]',
+    '',
+    '## 2. Categorías de datos, procedencia y personas interesadas',
+    '- Categorías de datos tratados: [completar por tipo de usuario y servicio]',
+    '- Categorías de personas: [usuarios, clientes, personal, proveedores u otras según actividad real]',
+    '- Procedencia (si los datos no se obtienen del interesado): [describir fuentes reales]',
+    '- Tratamientos preseleccionados en la herramienta: ' + (selected.length ? selected.join(', ') : '[ninguno: revisar]'),
+    '',
+    '## 3. Finalidades y bases jurídicas de cada tratamiento',
+    purposes.length
+      ? purposes.map((x) => '- Tratamiento | Finalidad | Base jurídica: ' + x).join('\n')
+      : '- [Enumerar cada finalidad e identificar su base jurídica: contrato, obligación legal, consentimiento u otra aplicable]',
+    '- Si se invoca interés legítimo: [describir el interés concreto y su ponderación]',
+    '- Publicidad y comunicaciones: [separar comunicaciones operativas del marketing y documentar la base aplicable]',
+    '',
+    '## 4. Destinatarios y encargados',
+    '- Proveedores preseleccionados: ' + (providerIds.length ? providerIds.join(', ') : '[ninguno registrado]'),
+    '- Otros proveedores: ' + (customProviders.length ? customProviders.map((x) => String(x.name ?? '[nombre pendiente]') + ' (' + String(x.role ?? 'rol por revisar') + ')').join(', ') : '[ninguno registrado]'),
+    '- [Distinguir encargados, responsables independientes y comunicaciones legales; verificar contratos art. 28 RGPD]',
+    '',
+    '## 5. Transferencias internacionales',
+    '- [Indicar si existen accesos o transferencias fuera del EEE, países, decisión de adecuación y garantías, o ausencia verificada]',
+    '',
+    '## 6. Plazos de conservación',
+    '- Matriz local: ' + (Array.isArray(retention) && retention.length ? String(retention.length) + ' categorías registradas; verificar plazos específicos' : '[no completada]'),
+    '- [Indicar el plazo o criterios por finalidad, bloqueo y supresión; no asignar un plazo uniforme sin fundamento]',
+    '',
+    '## 7. Derechos de las personas',
+    '- Acceso, rectificación, supresión, oposición, limitación y portabilidad cuando procedan.',
+    '- Retirar el consentimiento en cualquier momento cuando este sea la base, sin afectar la licitud anterior.',
+    '- Ejercicio de derechos a través de: ' + (p.contactEmail || '[correo de privacidad]'),
+    '- Reclamaciones ante la Agencia Española de Protección de Datos: https://www.aepd.es',
+    '',
+    '## 8. Obligatoriedad de los datos',
+    '- [Explicar qué datos son obligatorios por ley o contrato y las consecuencias de no aportarlos]',
+    '',
+    '## 9. Decisiones automatizadas y elaboración de perfiles',
+    '- [Indicar si existen; si procede art. 22, explicar lógica significativa, importancia, consecuencias y garantías]',
+    '',
+    '## 10. Seguridad y revisión',
+    '- [Resumen comprensible de medidas proporcionales, sin revelar información técnica sensible]',
+    '- Fecha de revisión de esta política: [pendiente]',
+    '- Verificar también la información básica en el punto de recogida (primera capa), cookies y demás avisos específicos.',
+    '',
+    'Fuentes para revisión: arts. 12–14 RGPD: https://eur-lex.europa.eu/eli/reg/2016/679/oj/spa',
+    'Guía AEPD del deber de informar: https://www.aepd.es/derechos-y-deberes/conoce-tus-derechos/derecho-de-informacion',
+    '',
+  ].join('\n');
+}
+
 const DOCS = [
   ['clausula-informativa-rgpd-borrador.md', 'Cláusula informativa', privacyNotice],
+  ['politica-privacidad-ampliada-borrador.md', 'Política de privacidad (borrador)', extendedPrivacyPolicy],
   ['procedimiento-derechos-rgpd.md', 'Procedimiento de derechos', rightsProcedure],
   ['registro-brechas-rgpd.md', 'Registro de brechas', breachRegister],
   ['checklist-encargados-rgpd.md', 'Encargados y transferencias', processorChecklist],

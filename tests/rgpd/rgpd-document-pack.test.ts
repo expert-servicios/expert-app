@@ -22,6 +22,15 @@ describe('RGPD local document pack', () => {
     expect(pack).toContain('Encargados y transferencias');
   });
 
+  it('offers an extended draft privacy policy without inventing legal bases or DPO details', () => {
+    expect(pack).toContain('politica-privacidad-ampliada-borrador.md');
+    expect(pack).toContain('extendedPrivacyPolicy');
+    expect(pack).toContain('NO PUBLICAR SIN REVISIÓN');
+    expect(pack).toContain('Decisiones automatizadas y elaboración de perfiles');
+    expect(pack).toContain('Delegado de Protección de Datos');
+    expect(pack).toContain('https://www.aepd.es/derechos-y-deberes/conoce-tus-derechos/derecho-de-informacion');
+  });
+
   it('keeps an explicit draft/review warning and is connected to the flow', () => {
     expect(pack).toContain('Borrador generado por la herramienta gratuita EXPERT');
     expect(pack).toContain('Antes de utilizarlos deben revisarse');
