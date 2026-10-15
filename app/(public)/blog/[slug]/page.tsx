@@ -1,3 +1,4 @@
+import { resolveRgpdPairedPath } from '@/lib/i18n/rgpd-routes';
 import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -36,13 +37,14 @@ export async function generateMetadata({
   const canonicalUrl = `https://expertconsulting.es/blog/${slug}`;
   const image = '/branding/expert%20servicios.png';
   const russianTranslation = laborRuArticles.find((item) => item.esSlug === slug);
+  const rgpdRuPath = resolveRgpdPairedPath('/blog/'+slug, 'ru');
 
   return {
     title,
     description: article.excerpt,
     alternates: {
       canonical: canonicalUrl,
-      ...(russianTranslation ? { languages: {
+      ...(rgpdRuPath ? { languages: { 'es-ES': canonicalUrl, 'ru-RU': 'https://expertconsulting.es'+rgpdRuPath, 'x-default': canonicalUrl } } : russianTranslation ? { languages: {
         'es-ES': canonicalUrl,
         'ru-RU': `https://expertconsulting.es/ru/blog/${russianTranslation.slug}`,
         'x-default': canonicalUrl,
