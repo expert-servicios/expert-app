@@ -1,6 +1,6 @@
 import { Document, Page, Text, View, Link, StyleSheet, Font } from '@react-pdf/renderer';
 // OFL Noto Sans supports Cyrillic. Original repository: google/fonts, ofl/notosans.
-Font.register({family:'ExpertNotoSans',src:'https://raw.githubusercontent.com/google/fonts/main/ofl/notosans/NotoSans%5Bwdth%2Cwght%5D.ttf'});
+Font.register({family:'ExpertNotoSans',fonts:[{src:'https://raw.githubusercontent.com/googlefonts/noto-fonts/bf20559450ec75aec7a646b208343540a4496262/phaseIII_only/hinted/ttf/NotoSans/NotoSans-Regular.ttf',fontWeight:'normal'},{src:'https://raw.githubusercontent.com/googlefonts/noto-fonts/bf20559450ec75aec7a646b208343540a4496262/phaseIII_only/hinted/ttf/NotoSans/NotoSans-Bold.ttf',fontWeight:'bold'}]});
 import type { AepdToolId } from '@/lib/rgpd/aepd-tool-recommendation';
 
 const styles=StyleSheet.create({
