@@ -12,6 +12,7 @@ import { RgpdFinalReview } from '@/components/tools/RgpdFinalReview';
 import { RgpdAccountSave } from '@/components/tools/RgpdAccountSave';
 import { AEPD_TOOLS, recommendAepdTools } from '@/lib/rgpd/aepd-tool-recommendation';
 import { RGPD_MODULE_TOPICS, RGPD_SIGNAL_TOPICS } from '@/lib/rgpd/plain-language-review-topics';
+import { RgpdReportLeadForm } from '@/components/tools/RgpdReportLeadForm';
 
 type Answer = boolean | 'none' | 'basic' | 'advanced' | 'unknown' | 'ordinary' | 'startup' | 'multiple';
 
@@ -334,6 +335,8 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
                 </ul>
               </div>
             )}
+
+            <RgpdReportLeadForm answers={answers} />
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               {result.level === 'low' ? (
