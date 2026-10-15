@@ -56,7 +56,7 @@ export function RgpdAssessmentRu() {
      <div className="flex items-center justify-between gap-3"><button type="button" disabled={step===0} onClick={()=>setStep(v=>v-1)} className="min-h-11 px-3 disabled:opacity-40">← Назад</button><button type="button" disabled={answers[current.id]===undefined} onClick={()=>setStep(v=>v+1)} className="min-h-11 rounded bg-[#D4A017] px-5 font-bold disabled:opacity-40">{step===QUESTIONS.length-1?'Показать рекомендации':'Далее →'}</button></div>
    </div> : <div className="space-y-6">
      <h2 className="font-serif text-2xl font-bold">Ваш первоначальный план действий</h2>
-     <p className="text-sm leading-6">Это ориентир, а не проверка соблюдения закона. Вопросы не доказывают нарушение. Ответы не передаются в EXPERT.</p>
+     <p className="text-sm leading-6">Это ориентир, а не проверка соблюдения закона. Вопросы не доказывают нарушение. Ответы обрабатываются в браузере. При заказе персонального отчёта необходимые категории ответов будут отправлены для его подготовки.</p>
      <section className="border border-[#D4A017]/30 bg-[#F8F6F1] p-4">
        <h3 className="font-bold">С чего начать: {TOOLS_RU[recommendation.primary]}</h3>
        <p className="mt-2 text-sm">{recommendation.primary==='facilita-emprende'?'Ваша деятельность похожа на технологический стартап. Официальная анкета поможет подготовить документы, которые затем нужно проверить и адаптировать.':recommendation.primary==='facilita-rgpd'?'Для обычных обработок с низким риском можно начать с облегчённого инструмента, но сначала убедиться в условиях его применимости.':'Для нескольких обработок или при неопределённости сначала составьте перечень операций и оцените риски.'}</p>
