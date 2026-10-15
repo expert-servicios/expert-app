@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   }
 };
 
-const LAST_UPDATED = '8 de mayo de 2026';
+const LAST_UPDATED = '15 de octubre de 2026';
 
 export default function PrivacidadPage() {
   return (
@@ -44,6 +44,13 @@ export default function PrivacidadPage() {
               <div>
                 <h3 className="font-semibold text-[#0D1B2A]">2.1 Formularios de contacto y solicitud de servicios</h3>
                 <p>Cuando envías un formulario (contacto, solicitud de presupuesto, prueba Holded o formulario B2B) recogemos nombre, dirección de correo electrónico, teléfono y la información que incluyes en el mensaje. Estos datos se usan para responder a tu solicitud, preparar presupuestos y gestionar la prestación del servicio contratado.</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-[#0D1B2A]">2.1 bis. Guía RGPD personalizada opcional</h3>
+                <p>Cuando solicitas una guía RGPD en PDF recogemos nombre, correo electrónico, fecha, idioma, modalidad de entrega y procedencia para generarla, entregarla y registrar la petición. Las respuestas individuales del cuestionario se utilizan para elaborar el documento y no se incorporan al registro de contactos. El resultado básico sigue disponible sin identificación.</p>
+                <p className="mt-2">La solicitud de la guía no autoriza el envío de publicidad. Las comunicaciones comerciales requieren una elección afirmativa, separada y revocable. Como base para atender la solicitud voluntaria se prevé el artículo 6.1.b RGPD, sujeto a revisión de necesidad y adecuación jurídica antes de activar este flujo.</p>
+                <p className="mt-2">Regla de conservación propuesta: 12 meses desde cada solicitud informativa sin relación posterior. Transcurrido ese tiempo se revisará la supresión selectiva de sus datos e interacciones, sin eliminar expedientes de otros servicios ni pruebas de consentimiento o datos sujetos a conservación o bloqueo legal. Los datos se podrán suprimir antes si procede ejercer el derecho de supresión. La conservación de pruebas comerciales se limitará al tiempo necesario para acreditarlas o atender responsabilidades aplicables.</p>
+                <p className="mt-2">La generación y entrega utiliza proveedores de infraestructura, base de datos y correo identificados en el apartado 6. Puedes ejercer tus derechos escribiendo a info@expertconsulting.es y reclamar ante la AEPD.</p>
               </div>
               <div>
                 <h3 className="font-semibold text-[#0D1B2A]">2.2 Cuenta de usuario (área privada)</h3>
@@ -181,7 +188,7 @@ export default function PrivacidadPage() {
                 <li><strong>Oposición:</strong> oponerte al tratamiento basado en interés legítimo.</li>
                 <li><strong>Retirar el consentimiento</strong> en cualquier momento, sin que afecte a la licitud del tratamiento previo.</li>
               </ul>
-              <p className="mt-2">Para ejercitar cualquiera de estos derechos, escribe a <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a> indicando el derecho que deseas ejercitar y adjuntando una copia de tu DNI o documento identificativo equivalente. Responderemos en el plazo máximo de 30 días.</p>
+              <p className="mt-2">Para ejercitar cualquiera de estos derechos, escribe a <a href="mailto:info@expertconsulting.es" className="text-[#D4A017] underline underline-offset-4">info@expertconsulting.es</a> indicando el derecho que deseas ejercitar. Solo solicitaremos acreditación adicional de identidad si existen dudas razonables, evitando recopilar documentos innecesarios. Responderemos sin dilación indebida y, por regla general, en el plazo de un mes, con las ampliaciones que permita la normativa.</p>
               <p>Si consideras que el tratamiento de tus datos no es conforme a la normativa, puedes presentar una reclamación ante la <a href="https://www.aepd.es" target="_blank" rel="noopener noreferrer" className="text-[#D4A017] underline underline-offset-4">Agencia Española de Protección de Datos (AEPD)</a>.</p>
             </div>
           </section>
