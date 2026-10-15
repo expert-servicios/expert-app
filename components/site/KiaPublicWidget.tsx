@@ -131,6 +131,22 @@ export function KiaPublicWidget() {
   }, []);
 
   useEffect(() => {
+    const onOpen = (event: Event) => {
+      const detail = (event as CustomEvent<{ topic?: string }>).detail;
+      const prompts: Record<string, string> = {
+        'rgpd-help': 'Necesito ayuda para entender los pasos de protección de datos de mi negocio.',
+        'rgpd-guided': 'Quiero hacer un cuestionario RGPD guiado. Hazme una pregunta sencilla cada vez y recomiéndame una herramienta oficial de la AEPD.',
+        'rgpd-training': 'Explícame qué incluye la formación RGPD online de EXPERT de dos horas por 180 euros más IVA.',
+      };
+      setOpen(true);
+      const prompt = detail?.topic ? prompts[detail.topic] : undefined;
+      if (prompt) setInput(prompt);
+    };
+    window.addEventListener('expert:kia-open', onOpen);
+    return () => window.removeEventListener('expert:kia-open', onOpen);
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, loading, open]);
