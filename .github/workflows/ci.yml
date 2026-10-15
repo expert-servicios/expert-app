@@ -43,6 +43,9 @@ jobs:
       - name: Production build
         run: npm run build
 
+      - name: RGPD isolated real HTTP smoke (flags forced OFF)
+        run: node scripts/rgpd-isolated-http-smoke.mjs
+
       - name: Install MCP server dependencies
         run: npm ci --prefix apps/holded-mcp
 
