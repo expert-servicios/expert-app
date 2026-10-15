@@ -5,27 +5,10 @@ import Link from 'next/link';
 import { AEPD_TOOLS, recommendAepdTools } from '@/lib/rgpd/aepd-tool-recommendation';
 import { KiaRgpdAction } from '@/components/tools/KiaRgpdAction';
 import { RgpdReportLeadForm } from '@/components/tools/RgpdReportLeadForm';
+import { RGPD_QUESTIONS, getRgpdQuestion, type RgpdAnswer } from '@/lib/rgpd/assessment-contract';
 
-type Answer = boolean | 'unknown' | 'ordinary' | 'startup' | 'multiple' | 'none' | 'basic' | 'advanced';
-type Question = {
-  id: string; title: string; options: { value: Answer; text: string }[];
-};
-const YES_NO = [{ value: true, text: 'Да' }, { value: false, text: 'Нет' }, { value: 'unknown', text: 'Не знаю' }] as Question['options'];
-const QUESTIONS: Question[] = [
- { id:'businessType',title:'Какой у вас бизнес?',options:[{value:'ordinary',text:'Autónomo или небольшая компания'},{value:'startup',text:'Стартап, приложение или онлайн-платформа'},{value:'multiple',text:'Много видов деятельности и процессов'},{value:'unknown',text:'Пока не знаю'}] },
- { id:'employees',title:'У работников или подрядчиков есть доступ к персональным данным?',options:YES_NO },
- { id:'website',title:'Сайт собирает данные через формы, записи, рассылки или личные кабинеты?',options:YES_NO },
- { id:'cookies',title:'Какие технологии используются на сайте?',options:[{value:'none',text:'Нет аналитики, рекламы и необязательных cookies'},{value:'basic',text:'Аналитика посещений'},{value:'advanced',text:'Реклама, пиксели или персонализация'},{value:'unknown',text:'Не знаю'}] },
- { id:'processors',title:'Используются сервисы с доступом к данным (облако, CRM, email, подрядчики)?',options:YES_NO },
- { id:'international',title:'Могут ли поставщики обрабатывать данные вне Европейской экономической зоны?',options:YES_NO },
- { id:'special',title:'Обрабатываются ли данные о здоровье или иные особые категории?',options:YES_NO },
- { id:'minors',title:'Обрабатываются ли данные несовершеннолетних?',options:YES_NO },
- { id:'profiling',title:'Создаёте ли вы профили, рейтинги людей или автоматизированные решения?',options:YES_NO },
- { id:'location',title:'Используются ли геолокация, систематическое наблюдение или видеоконтроль?',options:YES_NO },
- { id:'largeScale',title:'Обрабатываются ли данные большого количества людей?',options:YES_NO },
- { id:'innovative',title:'Используется ли ИИ для классификации или прогнозов о людях?',options:YES_NO },
- { id:'breach',title:'Есть ли сейчас нерешённый случай утечки или потери персональных данных?',options:YES_NO },
-];
+type Answer = RgpdAnswer;
+const QUESTIONS = RGPD_QUESTIONS;
 const GUIDES = [
  {id:'rat',title:'Составить перечень операций с данными',why:'Нужно знать, зачем вы собираете сведения о клиентах, работниках и пользователях.',action:'Запишите основные процессы, цель и виды данных.'},
  {id:'privacy',title:'Понятно объяснить, как используются данные',why:'Пользователь должен понимать, кто и зачем обрабатывает сведения.',action:'Проверьте формы, уведомления и политику конфиденциальности.'},
@@ -46,13 +29,13 @@ export function RgpdAssessmentRu() {
  const riskIds=['special','minors','profiling','location','largeScale','innovative','breach'];
  const riskConcern=riskIds.some(id=>answers[id]===true||answers[id]==='unknown')||answers.businessType==='unknown'||answers.international==='unknown';
  const moduleIds=['rat','privacy',...(answers.processors===true||answers.international===true?['processors']:[]),'security','rights','breaches','retention',...(answers.website===true||answers.cookies==='basic'||answers.cookies==='advanced'?['web']:[])];
- const current=QUESTIONS[step];
+ const current=getRgpdQuestion(step,'ru');
  return <div className="border border-[#D4A017]/30 bg-white p-5 text-[#0D1B2A] md:p-8">
    <div className="mb-5 flex items-center justify-between gap-3"><span className="text-sm font-bold">Бесплатная предварительная оценка</span><span className="text-xs">{done?'Результат':`${step+1} из ${QUESTIONS.length}`}</span></div>
    {!done ? <div className="space-y-5">
      <div className="h-2 w-full bg-[#E9E2D6]"><div className="h-2 bg-[#D4A017]" style={{width:`${100*step/QUESTIONS.length}%`}} /></div>
      <h2 className="font-serif text-xl font-bold">{current.title}</h2>
-     <div className="grid gap-3">{current.options.map(o=><button key={String(o.value)} type="button" onClick={()=>setAnswers(p=>({...p,[current.id]:o.value}))} aria-pressed={answers[current.id]===o.value} className={`min-h-12 rounded border px-4 py-3 text-left text-sm focus-visible:outline-2 focus-visible:outline-[#D4A017] ${answers[current.id]===o.value?'border-[#D4A017] bg-[#FFF4D4] font-bold':'border-[#D4A017]/30'}`}>{o.text}</button>)}</div>
+     <div className="grid gap-3">{current.options.map(o=><button key={String(o.value)} type="button" onClick={()=>setAnswers(p=>({...p,[current.id]:o.value}))} aria-pressed={answers[current.id]===o.value} className={`min-h-12 rounded border px-4 py-3 text-left text-sm focus-visible:outline-2 focus-visible:outline-[#D4A017] ${answers[current.id]===o.value?'border-[#D4A017] bg-[#FFF4D4] font-bold':'border-[#D4A017]/30'}`}>{o.label}</button>)}</div>
      <div className="flex items-center justify-between gap-3"><button type="button" disabled={step===0} onClick={()=>setStep(v=>v-1)} className="min-h-11 px-3 disabled:opacity-40">← Назад</button><button type="button" disabled={answers[current.id]===undefined} onClick={()=>setStep(v=>v+1)} className="min-h-11 rounded bg-[#D4A017] px-5 font-bold disabled:opacity-40">{step===QUESTIONS.length-1?'Показать рекомендации':'Далее →'}</button></div>
    </div> : <div className="space-y-6">
      <h2 className="font-serif text-2xl font-bold">Ваш первоначальный план действий</h2>
