@@ -34,6 +34,9 @@ export async function POST(request:NextRequest){
   const input=dataSchema.safeParse(JSON.parse(raw));
   if(!input.success)return NextResponse.json({error:'invalid_input'},{status:400});
   const d=input.data;
+  // RU rendering still uses externally hosted Noto fonts. Fail closed until
+  // glyph extraction, asset availability and mobile PDF QA are approved.
+  if(d.locale==='ru' && process.env.RGPD_RU_REPORT_ENABLED !== 'true')return NextResponse.json({error:'russian_pdf_pending_font_qa'},{status:503});
   if(d.hp_url)return NextResponse.json({error:'invalid_input'},{status:400});
   const captcha=await verifyRecaptchaToken({token:d.recaptchaToken,action:'rgpd_report'});
   if(!captcha.ok)return NextResponse.json({error:'verification_failed'},{status:400});
