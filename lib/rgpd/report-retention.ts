@@ -71,15 +71,17 @@ export function planRgpdReportRetention(input: {
     return { action: 'review_delete_lead', expired: old.length, reason: 'source_key_orphan_risk' };
   }
 
-  const expiredKeys = new Set(old.map(item => String(item.source_key)));
+  // Filter by the *individual event timestamp*, not source_key: a reused
+  // key must never cause deletion of a newer interaction with the same key.
+  const nextInquiries = metadata.inquiries.filter((item: unknown) =>
+    !isRgpdReportInteraction(item) || (expiresAt(item.at) ?? Infinity) > input.now.valueOf());
   return {
     action: 'prune_interactions',
     expired: old.length,
     reason: 'expired_informational_history_only',
     nextMetadata: {
       ...metadata,
-      inquiries: metadata.inquiries.filter((item: unknown) =>
-        !isRgpdReportInteraction(item) || !expiredKeys.has(String(item.source_key))),
+      inquiries: nextInquiries,
     },
   };
 }
