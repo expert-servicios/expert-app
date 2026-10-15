@@ -33,7 +33,7 @@ Una plataforma que conecta profesionales con centros puede almacenar CV, fotogra
 
 ## Formación guiada
 
-Si prefieres trabajar estas herramientas acompañado, EXPERT ofrece [formación online de 2 horas por 180 € + IVA](/servicios/empresas-autonomos/formacion-rgpd-aepd). No equivale a una certificación ni incluye implantación integral.
+Si prefieres trabajar estas herramientas acompañado, EXPERT ofrece [formación online de 2 horas por 180 € + IVA](https://expertconsulting.es/servicios/empresas-autonomos/formacion-rgpd-aepd). No equivale a una certificación ni incluye implantación integral.
 
 ## Fuentes oficiales
 - [AEPD — Herramientas](https://www.aepd.es/guias-y-herramientas/herramientas)
@@ -73,8 +73,8 @@ No. La sociedad puede responder como persona jurídica, pero la responsabilidad 
 Depende de las características y riesgos del tratamiento; el perfilado, las decisiones automatizadas, datos especiales y escala pueden ser factores relevantes. Debe documentarse la evaluación en lugar de asumir que todas las plataformas necesitan EIPD o ninguna la necesita.
 
 ## Recursos
-- [Herramienta EXPERT de prediagnóstico RGPD](/herramientas/rgpd)
-- [Formación RGPD guiada de dos horas](/servicios/empresas-autonomos/formacion-rgpd-aepd)
+- [Herramienta EXPERT de prediagnóstico RGPD](https://expertconsulting.es/herramientas/rgpd)
+- [Formación RGPD guiada de dos horas](https://expertconsulting.es/servicios/empresas-autonomos/formacion-rgpd-aepd)
 - [RGPD: artículos 5, 6, 9, 22, 24, 26, 28, 35](https://eur-lex.europa.eu/eli/reg/2016/679/oj/spa)
 - [LOPDGDD](https://www.boe.es/buscar/act.php?id=BOE-A-2018-16673)
 - [Ley de Sociedades de Capital](https://www.boe.es/buscar/act.php?id=BOE-A-2010-10544)
