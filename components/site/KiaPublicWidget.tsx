@@ -8,6 +8,7 @@ import { KiaAvatar } from '@/components/kia/KiaAvatar';
 import { KiaReadableMessage } from '@/components/kia/KiaReadableMessage';
 import { chooseKiaBrowserVoice, kiaTextForSpeech, kiaVoiceLocale } from '@/lib/ai/kia/kia-voice-presentation';
 import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
+import { KiaRgpdGuidedPanel } from '@/components/tools/KiaRgpdGuidedPanel';
 
 type ChatMessage = {
   id: string;
@@ -91,6 +92,7 @@ function commercialCta(data: PublicKiaResponse): { href: string; label: string }
 export function KiaPublicWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
+  const [rgpdGuidedLocale,setRgpdGuidedLocale] = useState<'es'|'ru'|null>(null);
   const [loading, setLoading] = useState(false);
   const [thinkingStage, setThinkingStage] = useState<ThinkingStage>('verifying');
   const [telegramLoading, setTelegramLoading] = useState(false);
@@ -140,6 +142,11 @@ export function KiaPublicWidget() {
         'rgpd-guided-ru': 'Помоги мне пройти предварительную оценку RGPD для бизнеса в Испании. Задавай по одному простому вопросу на русском языке.',
       };
       setOpen(true);
+      if(detail?.topic === 'rgpd-guided' || detail?.topic === 'rgpd-guided-ru') {
+        setRgpdGuidedLocale(detail.topic === 'rgpd-guided-ru'?'ru':'es');
+        setInput('');
+        return;
+      }
       const prompt = detail?.topic ? prompts[detail.topic] : undefined;
       if (prompt) setInput(prompt);
     };
@@ -470,6 +477,8 @@ export function KiaPublicWidget() {
               </div>
             </div>
           ) : null}
+
+          {rgpdGuidedLocale && <KiaRgpdGuidedPanel locale={rgpdGuidedLocale} onClose={()=>setRgpdGuidedLocale(null)} />}
 
           {!loading && quickReplies.length ? (
             <div className="flex flex-wrap gap-1.5">
