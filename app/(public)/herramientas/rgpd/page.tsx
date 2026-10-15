@@ -67,6 +67,44 @@ export default function RgpdToolPage() {
         </aside>
       </section>
 
+      <section className="border-t border-[#D4A017]/20 bg-[#F8F6F1] px-6 py-12">
+        <div className="mx-auto max-w-6xl space-y-9">
+          <div><p className="text-xs font-bold uppercase tracking-widest text-[#B38C13]">Sigue aprendiendo con EXPERT</p><h2 className="mt-2 font-serif text-3xl font-bold">Guías, artículos y formación recomendados</h2><p className="mt-2 text-sm">Explora recursos gratuitos y decide si necesitas una sesión práctica o una revisión profesional.</p></div>
+          <div className="grid gap-5 md:grid-cols-3">
+            {[
+              {title:'Facilita RGPD',desc:'Documentación inicial para tratamientos habituales de bajo riesgo.',href:'https://www.aepd.es/guias-y-herramientas/herramientas/facilita-rgpd'},
+              {title:'Facilita EMPRENDE',desc:'Ayuda a startups, apps y modelos de negocio innovadores.',href:'https://www.aepd.es/guias-y-herramientas/herramientas/facilita-emprende'},
+              {title:'Gestiona RGPD',desc:'Organiza tratamientos y factores de riesgo; no sustituye una EIPD.',href:'https://gestiona2.aepd.es/'}
+            ].map(item => <a key={item.title} href={item.href} target="_blank" rel="noopener noreferrer" className="border bg-white p-5 hover:border-[#D4A017]"><strong>{item.title} ↗</strong><p className="mt-2 text-sm text-[#23364D]">{item.desc}</p></a>)}
+          </div>
+          <div className="grid gap-7 lg:grid-cols-2">
+            <div><h3 className="mb-3 font-serif text-2xl font-bold">Artículos recomendados</h3><div className="space-y-2">
+              {[
+                {title:'Facilita RGPD vs. Facilita EMPRENDE vs. Gestiona RGPD',href:'/blog/facilita-rgpd-facilita-emprende-gestiona-rgpd-diferencias'},
+                {title:'RGPD en marketplaces y plataformas de empleo',href:'/blog/rgpd-marketplaces-candidatos-datos-sensibles-responsabilidad'},
+                {title:'RGPD para autónomos y pymes en España',href:'/blog/rgpd-autonomos-pymes-espana-2026'},
+                {title:'Web, formularios y cookies: obligaciones RGPD',href:'/blog/web-formularios-cookies-rgpd-lssi-espana'},
+                {title:'Proveedores cloud e IA: contratos y encargados',href:'/blog/proveedores-cloud-ia-rgpd-encargados-tratamiento'}
+              ].map(item => <Link key={item.href} href={item.href} className="block border bg-white px-4 py-3 text-sm font-semibold hover:border-[#D4A017]">{item.title} →</Link>)}
+            </div></div>
+            <div><h3 className="mb-3 font-serif text-2xl font-bold">Base de conocimiento</h3><div className="space-y-2">
+              {[
+                {title:'Cómo verificar el cumplimiento RGPD',href:'/docs/formacion-rgpd-criterios-cumplimiento-y-evidencias'},
+                {title:'Qué herramienta AEPD elegir según tu empresa',href:'/docs/rgpd-aepd-ruta-decisiones-para-startups'},
+                {title:'Checklist RGPD para autónomos y pymes',href:'/docs/checklist-rgpd-autonomos-pymes'},
+                {title:'Registro de Actividades de Tratamiento (RAT)',href:'/docs/registro-actividades-tratamiento-rat-pymes'},
+                {title:'Privacidad, formularios y cookies',href:'/docs/privacidad-formularios-cookies-web'}
+              ].map(item => <Link key={item.href} href={item.href} className="block border bg-white px-4 py-3 text-sm font-semibold hover:border-[#D4A017]">{item.title} →</Link>)}
+            </div></div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Link href="/servicios/empresas-autonomos/formacion-rgpd-aepd" className="border border-[#D4A017] bg-white p-6"><p className="text-xs font-bold uppercase text-[#977316]">Acompañamiento en directo</p><h3 className="mt-2 font-serif text-xl font-bold">Formación RGPD de 2 horas · 180 € + IVA</h3><p className="mt-2 text-sm">Aprende a utilizar las herramientas de la AEPD con un profesional. No es una certificación.</p><span className="mt-4 block font-bold underline">Ver formación →</span></Link>
+            <Link href="/solicitar-presupuesto?servicio=proteccion-datos-rgpd&origen=herramienta-rgpd" className="border bg-white p-6"><p className="text-xs font-bold uppercase text-[#977316]">Revisión profesional</p><h3 className="mt-2 font-serif text-xl font-bold">Evaluación de adecuación e implantación RGPD</h3><p className="mt-2 text-sm">Cuando hay mayor complejidad, solicita un alcance y presupuesto personalizados.</p><span className="mt-4 block font-bold underline">Solicitar revisión →</span></Link>
+          </div>
+          <p className="text-xs text-slate-600">Los recursos oficiales orientan y ayudan a documentar; el responsable debe adoptar medidas adecuadas y demostrar su cumplimiento. Ninguna herramienta constituye una certificación automática.</p>
+        </div>
+      </section>
+
       <section className="border-t border-[#D4A017]/20 bg-white px-6 py-10">
         <div className="mx-auto max-w-5xl text-sm leading-7 text-[#23364D]">
           <p className="font-bold text-[#0D1B2A]">Base de la metodología</p>
