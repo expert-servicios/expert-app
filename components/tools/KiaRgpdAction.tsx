@@ -1,6 +1,6 @@
 'use client';
 
-type Topic = 'rgpd-help' | 'rgpd-guided' | 'rgpd-training';
+type Topic = 'rgpd-help' | 'rgpd-guided' | 'rgpd-training' | 'rgpd-guided-ru';
 
 export function KiaRgpdAction({ topic, children }: { topic: Topic; children: React.ReactNode }) {
   return <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('expert:kia-open', { detail: { topic } }))}
