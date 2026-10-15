@@ -12,6 +12,7 @@ import { sendEmail } from '@/lib/email/send';
 import { getClientIp,checkRateLimit,checkSpam } from '@/lib/utils/spam-guard';
 import { verifyRecaptchaToken } from '@/lib/utils/recaptcha';
 const dataSchema=z.object({
+ requestId:z.uuid(),
  name:z.string().trim().min(2).max(80),
  email:z.email().max(160),
  locale:z.enum(['es','ru']),
@@ -48,14 +49,14 @@ export async function POST(request:NextRequest){
   if(!bytes||bytes.length<200)return NextResponse.json({error:'render_failed'},{status:500});
   // Only contact and provenance are stored, never questionnaire responses or health-risk flags.
   const lead=await ensureInboundLead({
-   admin:getSupabaseAdmin(),name:d.name,email:d.email.trim().toLowerCase(),source:'website',sourceKey:`rgpd-report:${crypto.randomUUID()}`,
+   admin:getSupabaseAdmin(),name:d.name,email:d.email.trim().toLowerCase(),source:'website',sourceKey:`rgpd-report:${d.requestId}`,
    category:'Recurso gratuito',service:'rgpd-informe-gratuito',message:'Solicitó guía RGPD personalizada (sin venta ni presupuesto).',
-   channel:'rgpd_report',origin:'herramienta-rgpd',metadata:{report_requested_at:new Date().toISOString(),delivery_method:d.method,language:d.locale,marketing_consent:d.marketingConsent,marketing_consent_origin:d.marketingConsent?'rgpd_report_form':null},
+   channel:'rgpd_report',origin:'herramienta-rgpd',preserveExistingClassification:true,metadata:{report_requested_at:new Date().toISOString(),delivery_method:d.method,language:d.locale,marketing_consent:d.marketingConsent,marketing_consent_origin:d.marketingConsent?'rgpd_report_form':null},
   });
   if(d.method==='email'){
     await sendEmail({
-      to:d.email.toLowerCase(),eventType:'rgpd.report.delivered',subject:d.locale==='ru'?'Ваша памятка RGPD · EXPERT':'Tu guía RGPD personalizada · EXPERT',
-      html:`<p>Hola, ${d.name.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}:</p><p>Adjuntamos tu guía inicial RGPD solicitada. Incluye temas para revisar y enlaces oficiales de la AEPD. No es un certificado de cumplimiento.</p><p>Si quieres aprender a utilizar estas herramientas, puedes consultar la <a href="https://expertconsulting.es/servicios/empresas-autonomos/formacion-rgpd-aepd">formación de dos horas por 180 € + IVA</a>.</p><p>EXPERT Consulting</p>`,
+      to:d.email.toLowerCase(),eventType:'rgpd.report.delivered',idempotencyKey:`rgpd/report/${d.requestId}`,subject:d.locale==='ru'?'Ваша памятка RGPD · EXPERT':'Tu guía RGPD personalizada · EXPERT',
+      html:d.locale==='ru'?`<p>Здравствуйте, ${d.name.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}!</p><p>Во вложении ваша информационная памятка RGPD. Это не сертификат соблюдения законодательства.</p><p>EXPERT Consulting</p>`:`<p>Hola, ${d.name.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}:</p><p>Adjuntamos tu guía inicial RGPD solicitada. Incluye temas para revisar y enlaces oficiales de la AEPD. No es un certificado de cumplimiento.</p><p>Si quieres aprender a utilizar estas herramientas, puedes consultar la <a href="https://expertconsulting.es/servicios/empresas-autonomos/formacion-rgpd-aepd">formación de dos horas por 180 € + IVA</a>.</p><p>EXPERT Consulting</p>`,
       attachments:[{filename:'guia-rgpd-expert.pdf',content:Buffer.from(bytes).toString('base64'),type:'application/pdf'}],
       metadata:{lead_id:lead.leadId,source:'herramienta-rgpd'}
     });
