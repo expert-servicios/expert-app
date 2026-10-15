@@ -262,18 +262,11 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
             </div>
 
             <div className="mt-5 border border-[#D4A017]/20 bg-white p-4">
-              <p className="text-xs font-bold uppercase tracking-widest text-[#6B7280]">Esfuerzo profesional estimado</p>
-              <p className="mt-1 text-lg font-bold">
-                {result.estimatedHours.min === 0
-                  ? 'Autoimplantación gratuita · revisión opcional hasta 2 h'
-                  : `${result.estimatedHours.min}–${result.estimatedHours.max} h`}
-              </p>
-              {result.estimatedPrice && result.estimatedHours.min > 0 && (
-                <p className="mt-1 text-sm text-[#23364D]">
-                  Estimación económica: <strong>{result.estimatedPrice.min.toLocaleString('es-ES')}–{result.estimatedPrice.max.toLocaleString('es-ES')} € + IVA</strong>.
-                  El presupuesto final depende del alcance validado.
-                </p>
-              )}
+              <p className="text-xs font-bold uppercase tracking-widest text-[#6B7280]">¿Necesitas ayuda para aplicar las recomendaciones?</p>
+              <p className="mt-2 font-serif text-lg font-bold">Formación online guiada · 2 horas · 180 € + IVA</p>
+              <p className="mt-2 text-sm leading-6">Te enseñamos a utilizar las herramientas gratuitas de la AEPD con ejemplos de tu negocio. No es una auditoría ni una certificación oficial.</p>
+              <p className="mt-2 text-sm">Si necesitas revisión jurídica o implantación profesional completa, prepararemos un presupuesto independiente según el alcance.</p>
+              <Link href="/servicios/empresas-autonomos/formacion-rgpd-aepd" className="mt-3 inline-block font-bold underline">Ver programa de formación y precio →</Link>
             </div>
 
             <div className="mt-7 grid gap-5 md:grid-cols-2">
