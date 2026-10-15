@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { RgpdSelfAssessment } from '@/components/tools/RgpdSelfAssessment';
+import { KiaRgpdAction } from '@/components/tools/KiaRgpdAction';
 
 export const metadata: Metadata = {
   title: 'Autoimplantación RGPD para pymes | Herramienta gratuita EXPERT',
@@ -51,6 +52,7 @@ export default function RgpdToolPage() {
             <div className="rounded border border-[#D4A017]/25 bg-[#F8F6F1] p-4"><strong>2. Entiende tu resultado</strong><p className="mt-1 text-sm">Recibirás primeros pasos, temas por aclarar y enlaces explicativos.</p></div>
             <div className="rounded border border-[#D4A017]/25 bg-[#F8F6F1] p-4"><strong>3. Decide cómo continuar</strong><p className="mt-1 text-sm">Utiliza los recursos AEPD gratis o aprende con EXPERT en una sesión guiada.</p></div>
           </div>
+          <div className="mt-5 flex flex-wrap gap-3"><KiaRgpdAction topic="rgpd-help">Preguntar a KIA sobre privacidad</KiaRgpdAction><KiaRgpdAction topic="rgpd-guided">Hacer preguntas guiadas con KIA</KiaRgpdAction></div>
           <a href="#evaluacion" className="mt-5 inline-flex min-h-12 items-center bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A] focus-visible:outline-2 focus-visible:outline-offset-2">Comenzar evaluación gratuita ↓</a>
         </div>
       </section>
@@ -119,6 +121,7 @@ export default function RgpdToolPage() {
               ].map(item => <Link key={item.href} href={item.href} className="block border bg-white px-4 py-3 text-sm font-semibold hover:border-[#D4A017]">{item.title} →</Link>)}
             </div></div>
           </div>
+          <div className="mb-5 flex flex-wrap gap-3"><KiaRgpdAction topic="rgpd-training">Consultar a KIA sobre la formación de 180 €</KiaRgpdAction><a href="https://t.me/kia_expert_bot" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-lg border px-4 py-3 text-sm font-semibold">Continuar con KIA en Telegram ↗</a></div>
           <div id="ayuda" className="grid gap-4 md:grid-cols-2">
             <Link href="/servicios/empresas-autonomos/formacion-rgpd-aepd" className="border border-[#D4A017] bg-white p-6"><p className="text-xs font-bold uppercase text-[#977316]">Acompañamiento en directo</p><h3 className="mt-2 font-serif text-xl font-bold">Formación RGPD de 2 horas · 180 € + IVA</h3><p className="mt-2 text-sm">Aprende a utilizar las herramientas de la AEPD con un profesional. No es una certificación.</p><span className="mt-4 block font-bold underline">Ver formación →</span></Link>
             <Link href="/solicitar-presupuesto?servicio=proteccion-datos-rgpd&origen=herramienta-rgpd" className="border bg-white p-6"><p className="text-xs font-bold uppercase text-[#977316]">Revisión profesional</p><h3 className="mt-2 font-serif text-xl font-bold">Evaluación de adecuación e implantación RGPD</h3><p className="mt-2 text-sm">Cuando hay mayor complejidad, solicita un alcance y presupuesto personalizados.</p><span className="mt-4 block font-bold underline">Solicitar revisión →</span></Link>
