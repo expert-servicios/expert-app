@@ -57,6 +57,7 @@ export default async function DocDetailPage({
   const doc = getDoc(slug);
   if (!doc) return notFound();
 
+  const isRgpdDoc = doc.category === 'proteccion-datos';
   const category = getDocCategory(doc.category);
   const relatedServices = services.filter((service) => doc.relatedServiceSlugs?.includes(service.slug));
   const relatedDocs = docs
@@ -233,6 +234,13 @@ export default async function DocDetailPage({
               </Link>
             </div>
           )}
+
+          {isRgpdDoc && <div className="border border-[#D4A017]/40 bg-white p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#B38C13]">¿Necesitas acompañamiento?</p>
+            <h3 className="mt-2 font-serif text-lg font-bold">Formación RGPD AEPD · 2 horas</h3>
+            <p className="mt-2 text-sm">Trabaja los formularios de las herramientas oficiales en directo con EXPERT por 180 € + IVA. No incluye auditoría ni certificación.</p>
+            <Link href="/servicios/empresas-autonomos/formacion-rgpd-aepd" className="mt-3 inline-block font-bold underline">Ver formación →</Link>
+          </div>}
 
           <div className="border border-[#D4A017]/25 bg-white p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-[#23364D]">Novedades</p>
