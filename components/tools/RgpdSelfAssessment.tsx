@@ -86,7 +86,7 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
     let level: 'low' | 'medium' | 'high' = 'low';
     let message = 'Tu perfil encaja, a priori, con un recorrido guiado de bajo riesgo. La herramienta puede ayudarte a ordenar la documentación y tareas, pero no certifica cumplimiento.';
 
-    if (hardFlags.length > 0 || score >= 8) {
+    if (hardFlags.length > 0 || score >= 8 || QUESTIONS.some(q => q.hardRisk && answers[q.id] === 'unknown')) {
       tier = 'Revisión profesional recomendada';
       level = 'high';
       message = 'Hay señales que requieren analizar el tratamiento con más detalle. No conviene cerrar la implantación únicamente con un asistente automático.';
