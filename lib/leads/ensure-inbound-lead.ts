@@ -9,6 +9,7 @@ type InboundInteraction = {
   source_key: string;
   service?: string | null;
   subject?: string | null;
+  details?: Record<string, unknown>;
 };
 
 export async function ensureInboundLead(input: {
@@ -24,6 +25,8 @@ export async function ensureInboundLead(input: {
   channel: string;
   origin: string;
   metadata?: Record<string, unknown>;
+  /** Keep existing lead classification untouched for informational report requests. */
+  preserveExistingClassification?: boolean;
 }): Promise<{ leadId: string; created: boolean }> {
   const email = input.email?.trim().toLowerCase() || null;
   const phone = input.phone?.trim() || null;
@@ -33,7 +36,22 @@ export async function ensureInboundLead(input: {
     origin: input.origin,
     source_key: input.sourceKey,
     service: input.service || null,
+    ...(input.preserveExistingClassification && input.metadata ? { details: input.metadata } : {}),
   };
+
+  // Replays of a source key must resolve to the same lead, never a new contact.
+  const { data: repeated, error: repeatedError } = await input.admin
+    .from('leads')
+    .select('id,email')
+    .eq('source', input.source)
+    .eq('source_key', input.sourceKey)
+    .limit(2);
+  if (repeatedError) throw repeatedError;
+  if ((repeated ?? []).length > 1) throw new Error('inbound_source_key_ambiguous');
+  if (repeated?.[0]) {
+    if (email && repeated[0].email?.toLowerCase() !== email) throw new Error('inbound_source_key_identity_conflict');
+    return { leadId: repeated[0].id, created: false };
+  }
 
   const candidateIds = new Set<string>();
 
@@ -86,22 +104,29 @@ export async function ensureInboundLead(input: {
         ? current.metadata as Record<string, unknown>
         : {};
       const previous = Array.isArray(metadata.inquiries) ? metadata.inquiries.slice(-29) : [];
+      // Preserve the original lead if this logical request has already been recorded.
+      if (previous.some((item: unknown) =>
+        item && typeof item === 'object' &&
+        (item as { source_key?: unknown }).source_key === input.sourceKey
+      )) return { leadId, created: false };
       const previousMessage = typeof current.message === 'string' ? current.message.trim() : '';
       const nextUpdatedAt = new Date().toISOString();
 
       let updateQuery = input.admin
         .from('leads')
         .update({
-          name: input.name,
-          ...(email ? { email } : {}),
-          ...(phone ? { phone } : {}),
-          category: input.category,
-          service: input.service,
-          message: [previousMessage, input.message].filter(Boolean).join('\n\n').slice(-12000),
+          ...(!input.preserveExistingClassification ? {
+            name: input.name,
+            ...(email ? { email } : {}),
+            ...(phone ? { phone } : {}),
+            category: input.category,
+            service: input.service,
+            message: [previousMessage, input.message].filter(Boolean).join('\n\n').slice(-12000),
+          } : {}),
           updated_at: nextUpdatedAt,
           metadata: {
             ...metadata,
-            ...input.metadata,
+            ...(!input.preserveExistingClassification ? input.metadata : {}),
             last_acquisition: interaction,
             inquiries: [...previous, interaction],
           },
