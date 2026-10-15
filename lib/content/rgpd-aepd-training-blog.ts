@@ -82,4 +82,4 @@ Depende de las características y riesgos del tratamiento; el perfilado, las dec
 **Revisado:** 15/10/2026. Ejemplos anonimizados, sin referencia a clientes.
 `
   }
-] as const;
+] ;
