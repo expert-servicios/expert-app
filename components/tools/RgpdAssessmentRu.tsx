@@ -65,7 +65,7 @@ export function RgpdAssessmentRu() {
      </section>
      {riskConcern&&<div className="border-l-4 border-amber-600 bg-amber-50 p-4 text-sm"><strong>Требуется дополнительная проверка.</strong><p className="mt-1">Есть сложные или неуточнённые обработки. Возможно, необходимы анализ рисков и оценка воздействия (EIPD), но это нельзя автоматически определить по ответам.</p>{answers.breach===true&&<p className="mt-2 font-semibold">Если утечка происходит сейчас, не откладывайте проверку обязательств по уведомлению.</p>}</div>}
      <section><h3 className="font-serif text-xl font-bold">Что проверить на практике</h3><div className="mt-3 grid gap-3">{GUIDES.filter(g=>moduleIds.includes(g.id)).map((g,i)=><div key={g.id} className="border border-[#D4A017]/20 p-4"><h4 className="font-bold">{i+1}. {g.title}</h4><p className="mt-1 text-sm">{g.why}</p><p className="mt-2 text-sm"><strong>Первый шаг:</strong> {g.action}</p><Link href="/ru/instrumenty/rgpd#resursy" className="mt-2 inline-block text-sm font-semibold underline">Материалы и ссылки →</Link></div>)}</div></section>
-     <RgpdReportLeadForm answers={answers} locale="ru" />
+     {process.env.NEXT_PUBLIC_RGPD_REPORT_ENABLED === 'true' && <RgpdReportLeadForm answers={answers} locale="ru" />}
      <div className="flex flex-wrap gap-3"><Link href="/ru/uslugi/obuchenie-rgpd" className="inline-flex min-h-11 items-center rounded bg-[#D4A017] px-4 font-bold">Обучение 2 часа — 180 € + НДС</Link><KiaRgpdAction topic="rgpd-guided-ru">Спросить KIA</KiaRgpdAction><button type="button" onClick={()=>{setAnswers({});setStep(0)}} className="min-h-11 px-4 underline">Начать заново</button></div>
    </div>}
  </div>;
