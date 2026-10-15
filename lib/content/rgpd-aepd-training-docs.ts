@@ -73,4 +73,4 @@ Si hay datos especiales, decisiones exclusivamente automatizadas con efectos sig
 Fuentes: [AEPD Herramientas](https://www.aepd.es/guias-y-herramientas/herramientas); [RGPD](https://eur-lex.europa.eu/eli/reg/2016/679/oj/spa). Actualizado 15/10/2026.
 `
   }
-] as const;
+] ;
