@@ -5,6 +5,7 @@ import { createElement } from 'react';
 import { RgpdReportPdf, type RgpdReportTopic } from '@/components/tools/RgpdReportPdf';
 import { AEPD_TOOLS, recommendAepdTools } from '@/lib/rgpd/aepd-tool-recommendation';
 import { RGPD_MODULE_TOPICS } from '@/lib/rgpd/plain-language-review-topics';
+import { rgpdRuReportTopic } from '@/lib/rgpd/ru-report-topics';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { ensureInboundLead } from '@/lib/leads/ensure-inbound-lead';
 import { sendEmail } from '@/lib/email/send';
@@ -37,9 +38,7 @@ export async function POST(request:NextRequest){
   // The server recalculates all recommendations. Client text, score, URLs and claims are never trusted.
   const rec=recommendAepdTools(d.answers);
   const ids=['rat','privacy',...(d.answers.processors===true||d.answers.international===true?['processors']:[]),'security','rights','breaches','retention',...(d.answers.website===true||d.answers.cookies==='basic'||d.answers.cookies==='advanced'?['web']:[])];
-  const topics:RgpdReportTopic[]=ids.slice(0,8).map(id=>{const t=RGPD_MODULE_TOPICS[id];return {title:t.title,why:t.why,action:t.action,guideUrl:'https://expertconsulting.es'+t.guide};});
-  // Russian font embedding is a QA gate: until a supported Cyrillic font is bundled, prevent corrupt PDF output.
-  if(d.locale==='ru')return NextResponse.json({error:'russian_pdf_pending_font_qa'},{status:503});
+  const topics:RgpdReportTopic[]=ids.slice(0,8).map(id=>{const t=RGPD_MODULE_TOPICS[id];const guideUrl='https://expertconsulting.es'+t.guide;return d.locale==='ru'?(rgpdRuReportTopic(id,guideUrl)??{title:t.title,why:t.why,action:t.action,guideUrl}):{title:t.title,why:t.why,action:t.action,guideUrl};});
   const issuedOn=new Date().toLocaleDateString('es-ES',{timeZone:'Europe/Madrid'});
   const document=createElement(RgpdReportPdf,{data:{name:d.name,locale:d.locale,date:issuedOn,primary:rec.primary,toolTitle:AEPD_TOOLS[rec.primary].title,toolUrl:AEPD_TOOLS[rec.primary].url,topics,extraReview:rec.needsProfessionalReview}}) as unknown as Parameters<typeof pdf>[0];
   const blob=await pdf(document).toBlob();
@@ -53,7 +52,7 @@ export async function POST(request:NextRequest){
   });
   if(d.method==='email'){
     await sendEmail({
-      to:d.email.toLowerCase(),eventType:'rgpd.report.delivered',subject:'Tu guía RGPD personalizada · EXPERT',
+      to:d.email.toLowerCase(),eventType:'rgpd.report.delivered',subject:d.locale==='ru'?'Ваша памятка RGPD · EXPERT':'Tu guía RGPD personalizada · EXPERT',
       html:`<p>Hola, ${d.name.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')}:</p><p>Adjuntamos tu guía inicial RGPD solicitada. Incluye temas para revisar y enlaces oficiales de la AEPD. No es un certificado de cumplimiento.</p><p>Si quieres aprender a utilizar estas herramientas, puedes consultar la <a href="https://expertconsulting.es/servicios/empresas-autonomos/formacion-rgpd-aepd">formación de dos horas por 180 € + IVA</a>.</p><p>EXPERT Consulting</p>`,
       attachments:[{filename:'guia-rgpd-expert.pdf',content:Buffer.from(bytes).toString('base64'),type:'application/pdf'}],
       metadata:{lead_id:lead.leadId,source:'herramienta-rgpd'}
