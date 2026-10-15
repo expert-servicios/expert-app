@@ -355,7 +355,12 @@ function Section({ heading, content }: { heading: string; content: string }) {
 function renderInline(text: string): string {
   return escapeInlineHtml(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`(.+?)`/g, '<code class="rounded bg-[#0D1B2A]/8 px-1 py-0.5 text-xs font-mono">$1</code>');
+    .replace(/`(.+?)`/g, '<code class="rounded bg-[#0D1B2A]/8 px-1 py-0.5 text-xs font-mono">$1</code>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_match, label: string, url: string) => {
+      const safeUrl = url.replace(/&amp;/g, '&');
+      const target = safeUrl.startsWith('https://expertconsulting.es/') ? '' : ' target="_blank" rel="noopener noreferrer"';
+      return `<a href="${safeUrl}"${target} class="underline text-[#8a6611]">${label}</a>`;
+    });
 }
 
 function escapeInlineHtml(text: string): string {
