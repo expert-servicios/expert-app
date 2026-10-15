@@ -81,3 +81,13 @@ Pantalla final opcional después de **mostrar gratuitamente todo el resumen bás
 - https://gestiona2.aepd.es/
 - https://eur-lex.europa.eu/eli/reg/2016/679/oj/spa
 - https://www.aepd.es/derechos-y-deberes/conoce-tus-derechos/derecho-de-informacion
+
+## Fase KIA: orientación conversacional RGPD y derivación segura (incorporada 15/10)
+- **Widget ya existente**: `components/site/KiaPublicWidget.tsx` aparece globalmente en el layout público. No crear un segundo chat.
+- **Accesos contextuales**: botón «Preguntar a KIA sobre privacidad», «Hacer preguntas guiadas con KIA» y «Consultar a KIA sobre formación», más enlace Telegram. Abren el widget mediante `expert:kia-open` y muestran una pregunta precargada, que el visitante decide si quiere enviar; el cuestionario actual del navegador no se transmite.
+- **Conocimiento compartido**: `lib/ai/kia/prompts/kia-rgpd-knowledge.ts` centraliza enlaces, tres herramientas AEPD, límites, dudas frecuentes, precio y reglas de escalado. Se activa en la API pública por tema RGPD o página `/herramientas/rgpd`; el copiloto interno debe integrarse con este módulo en una fase posterior.
+- **Preguntas de una en una**: actividad (autónomo/pyme, startup, empresa compleja), formularios, proveedores, datos especiales, perfilado y menores, con «No lo sé». Explicación final orientativa con 1–3 acciones, enlaces AEPD, guía y opción de formación 2 horas / 180 € + IVA.
+- **NO hacer**: afirmar que KIA ha rellenado Facilita/Gestiona en el sitio de la AEPD sin integración autorizada; declarar conformidad, pedir datos personales de candidatos, guardar respuestas en el lead por defecto, obligar a comprar formación o generar tareas al iniciar una conversación.
+- **Ruta futura**: extracción del cuestionario a un esquema común tipado para uso tanto web como conversación; continuar entre canales solo con elección informada y autenticación; no permitir que la IA modifique directamente los resultados del motor determinista.
+- **Pruebas de aceptación**: abrir chat con teclado/móvil, prompt precargado sin envío automático, guía en 3 herramientas con citas, respuesta a caso ambiguo/alto riesgo, no contaminación de otras páginas, límite de datos y ausencia de venta forzada.
+- **Estado**: código de accesos y prompt preparado en esta rama; no publicado, pendiente CI, QA real y validación legal.
