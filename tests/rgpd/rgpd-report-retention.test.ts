@@ -16,5 +16,11 @@ describe('RGPD selective retention planner: no writes',()=>{
  expect(planRgpdReportRetention({now,metadata:{inquiries:[old],legal_hold:true}}).action).toBe('manual_review');
  expect(planRgpdReportRetention({now,metadata:{inquiries:[{...old,at:'not-a-date'}]}}).action).toBe('manual_review');
  });
+ it('keeps a newer interaction even if its source key matches an expired event',()=>{
+ const reused={...current,source_key:old.source_key};
+ const p=planRgpdReportRetention({now,metadata:{inquiries:[old,reused,other]},sourceKey:'telegram:conversation'});
+ expect(p.action).toBe('prune_interactions');
+ if(p.action==='prune_interactions')expect(p.nextMetadata.inquiries).toEqual([reused,other]);
+ });
  it('does not expire newer reports',()=>{expect(planRgpdReportRetention({now,metadata:{inquiries:[current]}}).action).toBe('none')});
 });
