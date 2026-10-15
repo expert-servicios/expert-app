@@ -91,3 +91,25 @@ Pantalla final opcional después de **mostrar gratuitamente todo el resumen bás
 - **Ruta futura**: extracción del cuestionario a un esquema común tipado para uso tanto web como conversación; continuar entre canales solo con elección informada y autenticación; no permitir que la IA modifique directamente los resultados del motor determinista.
 - **Pruebas de aceptación**: abrir chat con teclado/móvil, prompt precargado sin envío automático, guía en 3 herramientas con citas, respuesta a caso ambiguo/alto riesgo, no contaminación de otras páginas, límite de datos y ausencia de venta forzada.
 - **Estado**: código de accesos y prompt preparado en esta rama; no publicado, pendiente CI, QA real y validación legal.
+
+## Implementación en rama 15/10/2026 (no publicar hasta QA)
+**Código realizado:**
+- Landing ES: `/herramientas/rgpd` desde PR #779 y flujo guiado, recursos/FAQ, KIA desde #781.
+- Landing RU real: `/ru/instrumenty/rgpd` con 13 preguntas, resultados temáticos y herramienta AEPD orientativa; página de formación `/ru/uslugi/obuchenie-rgpd`, 2 artículos y 2 guías RU.
+- Cambio de idioma enlaza rutas ES/RU emparejadas (`lib/i18n/rgpd-routes.ts`).
+- KIA pública e interna reciben instrucciones del mismo módulo `kia-rgpd-knowledge.ts` cuando el contexto es RGPD. Acceso web con pregunta precargada; sin enviar cuestionario al chat automáticamente.
+- PDF PDFKit/React PDF:`components/tools/RgpdReportPdf.tsx` y endpoint `/api/rgpd/report`; en ES y RU se pide nombre/email y se ofrece descarga o correo. Fuente estática Noto Sans para cirílico procedente de Noto fonts (OFL) por URL; **QA de descarga y de disponibilidad del recurso todavía obligatorio**.
+- Captación: `ensureInboundLead` con email y origen; categorías del cuestionario solo para generar PDF, **no almacenadas en lead**. Protección antiabuso reCAPTCHA, rate limit, honeypot, longitud de cargas y deduplicación. Opt-in de novedades separado.
+- Formulario: `components/tools/RgpdReportLeadForm.tsx`; la información básica sigue disponible sin identificación.
+- Tests de render PDF ES/RU, reglas y enrutamiento KIA; resultados de CI y Vercel del último SHA pendientes.
+
+**Gates de publicación estrictos:**
+1. CI de PR #781 y ambas previews Vercel VERDE **en el mismo SHA**.
+2. Test servidor PDF ES/RU con fuentes cirílicas, extracto de texto legible y enlaces clicables; verificar que el PDF se puede abrir en Android.
+3. Revisión técnica de disponibilidad e integridad de los archivos estáticos de fuente Noto Sans antes de activar el endpoint en producción. Si falla, servir error controlado o desactivar la opción RU, no distribuir PDFs corruptos.
+4. QA E2E y privacidad: probar fake lead únicamente en staging aislado con DB aislada; nunca ensuciar leads reales; verificar email, adjuntos, reintentos, consentimiento, políticas y supresión.
+5. Verificar que la sección de política de privacidad del sitio describe esta captación específica; no basta con casilla genérica; marketing opt-in revisado.
+6. Confirmar fuentes jurídicas y fechas, textos y SEO, accesibilidad, 404 y traductor ES/RU.
+7. No fusionar ni desplegar hasta cumplir todo y aprobar cambios de escritura de leads; el código por sí solo no prueba comportamiento operacional.
+
+**Dependencias:** PR #779 (CI verde en último control), PR #781 (rama integrada dirigida a main para ejecutar CI), issues #778 y #780. La web actualmente publicada no dispone de estos cambios todavía.
