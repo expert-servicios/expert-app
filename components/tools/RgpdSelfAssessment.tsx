@@ -143,7 +143,7 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4A017]">Herramienta gratuita</p>
-            <p className="mt-1 text-sm text-white/70">Las respuestas se calculan localmente en tu navegador. No se envían a EXPERT.</p>
+            <p className="mt-1 text-sm text-white/70">Las respuestas se procesan aquí, en tu navegador. Solo enviaremos las categorías necesarias si solicitas expresamente un informe personalizado.</p>
           </div>
           <ShieldCheck className="h-7 w-7 shrink-0 text-[#D4A017]" />
         </div>
