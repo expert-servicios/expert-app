@@ -32,7 +32,7 @@ export function RgpdAssessmentRu() {
  const current=getRgpdQuestion(step,'ru');
  return <div className="border border-[#D4A017]/30 bg-white p-5 text-[#0D1B2A] md:p-8">
    <div className="mb-5 flex items-center justify-between gap-3"><span className="text-sm font-bold">Бесплатная предварительная оценка</span><span className="text-xs">{done?'Результат':`${step+1} из ${QUESTIONS.length}`}</span></div>
-   {!done ? <div className="space-y-5">
+   {!done && current ? <div className="space-y-5">
      <div className="h-2 w-full bg-[#E9E2D6]"><div className="h-2 bg-[#D4A017]" style={{width:`${100*step/QUESTIONS.length}%`}} /></div>
      <h2 className="font-serif text-xl font-bold">{current.title}</h2>
      <div className="grid gap-3">{current.options.map(o=><button key={String(o.value)} type="button" onClick={()=>setAnswers(p=>({...p,[current.id]:o.value}))} aria-pressed={answers[current.id]===o.value} className={`min-h-12 rounded border px-4 py-3 text-left text-sm focus-visible:outline-2 focus-visible:outline-[#D4A017] ${answers[current.id]===o.value?'border-[#D4A017] bg-[#FFF4D4] font-bold':'border-[#D4A017]/30'}`}>{o.label}</button>)}</div>
