@@ -1,3 +1,4 @@
+import { recommendAepdTools } from '@/lib/rgpd/aepd-tool-recommendation';
 /** Single audited RGPD assessment contract used by ES/RU web and KIA.
  * Contains only categorical answers; no personal information or documents.
  */
@@ -55,16 +56,16 @@ export function evaluateRgpdAssessment(answers: RgpdAnswers, hourlyRateEur?: num
  }
  const modules=['rat','privacy','security','rights','breaches','retention'];
  if(answers.processors===true || answers.international===true || answers.innovative===true)modules.push('processors');
- if(answers.website===true || answers.cookies==='basic' || answers.cookies==='advanced')modules.push('web');
+ if(answers.website===true || answers.cookies==='basic' || answers.cookies==='advanced' || answers.cookies==='unknown')modules.push('web');
  const moduleIds=RGPD_MODULES.filter(([id])=>modules.includes(id)).map(([id])=>id);
  const moduleLabels=RGPD_MODULES.filter(([id])=>modules.includes(id)).map(([,label])=>label);
  let tier='Autoimplantación guiada';
  let level:'low'|'medium'|'high'='low';
  let message='Tu perfil encaja, a priori, con un recorrido guiado de bajo riesgo. La herramienta puede ayudarte a ordenar la documentación y tareas, pero no certifica cumplimiento.';
- if(hardFlags.length>0 || uncertainHardFlags.length>0 || score>=8){
+ if(hardFlags.length>0 || uncertainHardFlags.length>0 || score>=8 || recommendAepdTools(answers).needsProfessionalReview){
   tier='Revisión profesional recomendada';level='high';
   message='Hay señales que requieren analizar el tratamiento con más detalle. No conviene cerrar la implantación únicamente con un asistente automático.';
- }else if(score>=4){
+ }else if(score>=4 || answers.cookies==='unknown'){
   tier='Autoimplantación + revisión final';level='medium';
   message='Puedes completar gran parte del trabajo con la herramienta, pero recomendamos una revisión final de coherencia, proveedores, web y medidas de seguridad.';
  }
