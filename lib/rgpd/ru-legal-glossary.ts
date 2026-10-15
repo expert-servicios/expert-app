@@ -3,6 +3,8 @@
  * Spanish labels follow standard RGPD / LOPDGDD terminology.
  * Russian explanations are interpretative translations, not separate legal categories.
  */
+import { RU_ES_LEGAL_TERMS } from '@/lib/i18n/ru-es-legal-glossary';
+
 export const RGPD_RU_GLOSSARY = [
   { id: 'personal-data', ru: 'Персональные данные', es: 'datos personales', hint: 'Сведения, по которым можно определить человека прямо или косвенно.' },
   { id: 'processing', ru: 'Обработка персональных данных', es: 'tratamiento de datos personales', hint: 'Сбор, хранение, передача, просмотр и удаление информации.' },
@@ -33,6 +35,7 @@ export function rgpdRuWithEs(id: typeof RGPD_RU_GLOSSARY[number]['id']): string 
 }
 
 /** Unified terminology supplied to both public KIA and internal Copilot. */
-export const RGPD_RU_KIA_GLOSSARY = RGPD_RU_GLOSSARY
-  .map(({ ru, es, hint }) => `- ${ru} (${es}): ${hint}`)
+export const RGPD_RU_KIA_GLOSSARY = RU_ES_LEGAL_TERMS
+  .filter(term => 'domain' in term && term.domain === 'rgpd')
+  .map(term => `- ${term.ru} (${term.es}): ${term.note}`)
   .join('\n');
