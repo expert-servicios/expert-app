@@ -1,0 +1,83 @@
+# PLAN MAESTRO — EXPERT RGPD Hub + KIA · página pública, captación y PDF
+Fecha de revisión: 15/10/2026 · Estado: PROPUESTA DE DESARROLLO, NO PUBLICADO.
+Rama: `feat/rgpd-hub-leads-report-plan-20261015` (parte de `feat/rgpd-formacion-aepd-comfiqa-20261015`, PR #779; dependencia explícita).
+Página canónica: https://expertconsulting.es/herramientas/rgpd
+Caso piloto de origen: reunión con un proyecto emprendedor de marketplace, 14/10/2026. **Anonimizar todos los ejemplos públicos**. No hacer visibles los expedientes, nombres ni las respuestas particulares.
+
+## Propósito comercial y ético
+Convertir la URL de la herramienta gratuita **ya enviada a posibles clientes** en un centro de ayuda real:
+- Ofrecer **valor gratuito visible sin iniciar sesión**: autoevaluación orientativa con respuesta inmediata en el navegador, herramienta AEPD recomendada con explicación, primeros pasos, FAQ, contenidos y recursos.
+- Permitir elegir de forma transparente entre (1) aprendizaje gratuito, (2) formación online de **2 horas por 180 € + IVA**, (3) revisión profesional con presupuesto individual.
+- Ofrecer **informe PDF opcional** personalizado, para descarga o envío por correo, registrando un lead con los mínimos datos si la persona lo solicita. No condicionar los recursos básicos a dejar un email ni condicionar el PDF a recibir publicidad.
+- Diferenciar herramienta gratuita, formación y auditoría. **No prometer ni «certificar» cumplimiento RGPD** con formularios o IA.
+
+## Inventario verificado y NO duplicar
+- Página actual de `main`: breve formulario y guías laterales; **aún no incluye** las mejoras de la PR #779.
+- PR #779 (borrador): herramienta orientadora entre Facilita RGPD, Facilita EMPRENDE y Gestiona RGPD; resultados con temas en lenguaje claro; enlaces a 5 artículos y 5 guías; ficha `formacion-rgpd-aepd`, precio, FAQ y CTA; SEO y contenidos.
+- `components/tools/RgpdSelfAssessment.tsx`: cuestionario local y resultados básicos, sin lead; `components/tools/RgpdAccountSave.tsx` exige inicio de sesión y consentimiento explícito solo para persistir el expediente completo.
+- `@react-pdf/renderer` ya disponible; `lib/leads/ensure-inbound-lead.ts` identifica leads por email con tratamiento de ambiguos; `lib/email/send.ts` registra correos; `lib/utils/spam-guard.ts` y `lib/utils/recaptcha.ts` protegen formularios.
+- Issues #778 (datos en URL) y #780 (PDF + captación) ya abiertos. Relación con #776 y PR #777 (QA KIA postreunión). No reutilizar `/api/quotes` para descarga: crearía una propuesta comercial sin solicitarla.
+- Fuente pública AEPD: las tres herramientas solo ayudan; *obtener sus documentos no implica cumplimiento automático*.
+
+## Fase 0: visita inmediata y fácil de comprender — prioridad P0
+1. Encabezado: «Comprueba por dónde empezar con la protección de datos»; subtítulo sin promesa de certificación.
+2. Rutas en 3 pasos enlazadas con anclas: «1. Haz el cuestionario», «2. Entiende tus temas pendientes», «3. Elige cómo continuar».
+3. Verificación de enlaces: ninguno roto; nombres legibles; accesibles con teclado y en móvil; externos AEPD claramente identificados.
+4. Sección «¿Qué voy a conseguir?» con vista previa de las recomendaciones, sin pedir nombre/email.
+5. Bloques visibles de 3 herramientas AEPD con descripciones no intercambiables, enlaces oficiales, comparación; Facilita EMPRENDE para startup; Gestiona RGPD para inventario/riesgos; Facilita RGPD solo bajo riesgo.
+6. Bloques de 5 artículos, 5 guías KB y 8 FAQ sin duplicación masiva de textos; diseño mobile-first, acordeón FAQ y enlaces contextuales.
+7. CTA primaria **«Hacer evaluación gratuita»**; secundaria **«Formación guiada 2 h · 180 € + IVA»**; terciaria **«Solicitar revisión profesional»**. No interferir con el uso gratuito ni mostrar popups.
+8. Rutas de las fichas/guías verificadas en CI y metadatos `canonical`, OpenGraph, `FAQPage` cuando corresponda. ES y RU como requisito para publicación en ambas lenguas, sin hreflang a páginas inexistentes.
+9. Si existen problemas de CI en PR #779, no publicar ninguna dependencia antes de corregirlos.
+
+## Fase 1: guía PDF descargable con solicitud transparente — prioridad P1, issue #780
+Pantalla final opcional después de **mostrar gratuitamente todo el resumen básico**:
+- «Quiero mi guía personalizada PDF» y elección «Descargar» / «Enviarla a mi correo». Campos mínimos nombre y correo, sin NIF, teléfono, razón social, documentos, fotos ni datos de clientes.
+- Información básica RGPD clara con enlace a política de privacidad, identificación del responsable, finalidad, base jurídica documentada por revisión legal, conservación y derechos.
+- Casilla SEPARADA y desmarcada para comunicaciones comerciales; no exigirla para informe ni incluir publicidad en la entrega sin fundamento.
+- Si no quiere identificarse, puede seguir leyendo, consultar enlaces y utilizar resultados básicos gratuitamente. Evaluar alternativa de descarga anónima de versión genérica sin lead para no introducir captación engañosa.
+- Servidor revalida la carga limitada y tipada (categorías cerradas); sin texto libre ni adjuntos, longitud limitada; no URL/query, no localStorage no necesario, no analytics de respuestas sensibles.
+- Generación PDF con `@react-pdf/renderer` y conocimiento estático verificado primero. KIA solo podrá personalizar redacción cuando existan fuentes oficiales y barreras de salida: nunca declarar cumplimiento ni que una EIPD no es necesaria automáticamente.
+- PDF: portada EXPERT + KIA; destinatario y fecha; alcance metodológico; herramienta AEPD recomendada y por qué; 3–8 temas «qué significa / primer paso / guía»; prioridades; urgencias; referencias oficiales; formación y revisión profesional; aviso no certificación; fecha de revisión normativa.
+- `Content-Disposition: attachment` en descarga, `Cache-Control: private, no-store`. PDF no público, ni vínculo permanente con respuestas personales en URL. Confirmar que el resultado se renderiza en Android y desktop.
+
+## Fase 2: registro y entrega por correo — prioridad P2, issue #780
+- Nuevo endpoint dedicado `/api/rgpd/report-lead`, protegido con rate limit, captcha/honeypot, tamaños máximos, normalización de correo y límites de reintento. Evitar credenciales y URL de acceso.
+- Idempotencia/dedupe: intentar actualizar lead inequívoco por email mediante `ensureInboundLead`; si ambiguo, abrir revisión, nunca fusionar identidades sin evidencia.
+- Registrar solo nombre, email, fecha, origen `herramienta-rgpd`, tipo de informe y señal de interés general (formación / revisión), consentimiento comercial separado y versionado; nunca almacenar respuestas individuales salvo nueva finalidad informada con consentimiento/base verificada.
+- Email transaccional EXPERT: asunto claro, archivo PDF adjunto, instrucciones para continuar, enlace formación 180 € + IVA. Respetar opt-in marketing separado, registrar estado envío, retry seguro.
+- Notificación administradores solo para lead nuevo/solicitud relevante, evitando duplicados y reportes de cada respuesta KIA.
+- Política de conservación/supresión, roles, accesos y ejercicio de derechos definidos antes de habilitar en producción.
+- Métricas agregadas anónimas de uso: inicio/completado/elección AEPD/click enlaces/click formación/solicitud informe/descarga/email/solicitud cita (sin guardar respuestas ni emails en eventos analíticos).
+
+## Fase 3: experimentación y aprendizajes KIA
+- Oportunidades: detectar temas más consultados de forma agregada; sugerir a administración nuevos artículos KB o mejoras FAQ en bandeja QA, nunca publicarlos automáticamente ni explotar historiales personales sin autorización.
+- Piloto Comfi App: aplicar evaluación simulada con perfil de plataforma y datos ficticios, demostrar que no exige formularios ni detalles privados; revisar orientación, links, seguimiento. No recopilar ni divulgar el contenido del acta.
+- Separar campañas con consentimiento del email de entrega. Leads no invitados automáticamente a portal; acceso externo requiere política de permisos.
+- Enlaces y CTA contextuales en todos los artículos/guías RGPD, no duplicar 4 veces la misma oferta en una sola pantalla.
+
+## QA de publicación / no-regresión
+1. CI lint/tsc/tests + Vercel preview para app y ksenia-expert correctos.
+2. Enlaces internos sin 404 y oficiales HTTPS actuales; control de rutas dinámicas/blog/docs/catálogo y documentos legales.
+3. Semántica HTML, contraste, focus visible, teclado, formularios con labels/errores, responsive 320–390px, legibilidad 200 %.
+4. Resumen orientativo disponible sin cuenta/correo; resultado sin «cumple» o «certificado».
+5. Foco en experiencia del lector que acaba de recibir el enlace; fuente clara y ayuda para no expertos.
+6. No se filtra score, respuestas, nombre o email en URL, logs, analytics o excepciones.
+7. Spam, abuso, repetición de solicitudes, consentimiento de marketing, borrado y reenvío probados E2E.
+8. PDF ES correcto, fuentes embebidas con licencia, enlaces activos; RU solo si traducción comprobada, de lo contrario publicar ES sin promesa RU.
+9. CI de dependencia PR #779 y coordinación con cambios de #777; no sobrescribir producción ni fusionar PRs sin puertas de calidad.
+10. AEPD/BOE/EUR-Lex contrastados y fecha de última revisión en contenidos.
+
+## Dependencias, orden y gobernanza
+- Etapa A (esta rama): plan + mejor navegación y recursos públicos; **sin persistencia, sin correo, sin PDF**.
+- Etapa B (sub-PR / issue #780): PDF y flujo opt-in + API validada.
+- Etapa C: piloto UX y publicación con QA y despliegues correctos. Una rama basada en #779 no estará en producción hasta fusionar y desplegar la rama base y esta rama.
+- Responsable final de criterio RGPD: profesional de EXPERT; KIA puede proponer y resumir, nunca certificar.
+- Cualquier dato comercial captado debe reflejar su procedencia en hoja registral y trazabilidad, sin generar expedientes o tareas automáticamente por una simple visita.
+
+## Fuentes oficiales
+- https://www.aepd.es/guias-y-herramientas/herramientas/facilita-rgpd
+- https://www.aepd.es/guias-y-herramientas/herramientas/facilita-emprende
+- https://gestiona2.aepd.es/
+- https://eur-lex.europa.eu/eli/reg/2016/679/oj/spa
+- https://www.aepd.es/derechos-y-deberes/conoce-tus-derechos/derecho-de-informacion
