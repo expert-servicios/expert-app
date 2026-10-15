@@ -53,7 +53,8 @@ REGLA DE HONESTIDAD: recursos de EXPERT pendientes de despliegue podrían no est
 `.trim();
 
 export function isRgpdKiaTopic(message: string, currentPage = ''): boolean {
-  if (currentPage === '/herramientas/rgpd'
+  if (currentPage === '/herramientas/rgpd' || currentPage === '/ru/instrumenty/rgpd'
+    || currentPage.startsWith('/ru/uslugi/obuchenie-rgpd')
     || currentPage.startsWith('/servicios/empresas-autonomos/formacion-rgpd-aepd')) return true;
   return /\b(?:rgpd|lopdgdd|aepd|privacidad|datos personales|cookies|facilita emprende|facilita rgpd|gestiona rgpd|protecci[oó]n de datos|tratamiento de datos)\b/i.test(message);
 }
