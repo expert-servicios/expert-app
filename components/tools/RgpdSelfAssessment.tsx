@@ -10,19 +10,21 @@ import { RgpdRetentionMatrix } from '@/components/tools/RgpdRetentionMatrix';
 import { RgpdDocumentPack } from '@/components/tools/RgpdDocumentPack';
 import { RgpdFinalReview } from '@/components/tools/RgpdFinalReview';
 import { RgpdAccountSave } from '@/components/tools/RgpdAccountSave';
+import { AEPD_TOOLS, recommendAepdTools } from '@/lib/rgpd/aepd-tool-recommendation';
 
-type Answer = boolean | 'none' | 'basic' | 'advanced';
+type Answer = boolean | 'none' | 'basic' | 'advanced' | 'unknown' | 'ordinary' | 'startup' | 'multiple';
 
 type Question = {
   id: string;
   title: string;
   description?: string;
-  kind?: 'boolean' | 'cookies';
+  kind?: 'boolean' | 'cookies' | 'business';
   hardRisk?: boolean;
   weight?: number;
 };
 
 const QUESTIONS: Question[] = [
+  { id: 'businessType', title: '¿Qué tipo de actividad describe mejor tu negocio?', kind: 'business', description: 'Esta respuesta nos ayuda a elegir entre las herramientas gratuitas oficiales de la AEPD.' },
   { id: 'employees', title: '¿Tienes empleados o colaboradores con acceso a datos personales?', weight: 1 },
   { id: 'website', title: '¿Tu web recoge datos mediante formularios, reservas, newsletter o cuentas de usuario?', weight: 1 },
   { id: 'cookies', title: '¿Utilizas analítica, publicidad, píxeles o cookies no necesarias?', kind: 'cookies', weight: 1 },
@@ -48,27 +50,9 @@ const MODULES = [
   ['web', 'Web, formularios, cookies y comunicaciones'],
 ] as const;
 
-function buildQuoteHref(params: {
-  tier: string;
-  score: number;
-  modules: string[];
-  hardFlags: string[];
-}) {
-  const summary = [
-    `Resultado herramienta RGPD: ${params.tier}.`,
-    `Puntuación orientativa: ${params.score}.`,
-    `Módulos detectados: ${params.modules.join(', ')}.`,
-    params.hardFlags.length ? `Señales de revisión profesional: ${params.hardFlags.join(', ')}.` : '',
-    'Origen: herramienta pública de autoimplantación RGPD.',
-  ].filter(Boolean).join(' ');
-
-  const qs = new URLSearchParams({
-    servicio: 'proteccion-datos-rgpd',
-    origen: 'rgpd-autoimplantacion',
-    tipo: 'caso-complejo',
-    resumen: summary,
-  });
-  return `/solicitar-presupuesto?${qs.toString()}`;
+function buildQuoteHref() {
+  // No scores, answers, warning flags or notes in URL/query strings.
+  return '/solicitar-presupuesto?servicio=proteccion-datos-rgpd&origen=rgpd-autoimplantacion';
 }
 
 export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }) {
@@ -131,6 +115,7 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
     return { score, hardFlags, moduleIds, moduleLabels, tier, level, message, estimatedHours, estimatedPrice };
   }, [answers, hourlyRateEur]);
 
+  const aepdRecommendation = useMemo(() => recommendAepdTools(answers), [answers]);
   const isResult = step >= QUESTIONS.length;
 
   const setAnswer = (value: Answer) => {
@@ -178,12 +163,17 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
             {current.description && <p className="mt-2 text-sm text-[#23364D]">{current.description}</p>}
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {current.kind === 'cookies' ? (
+              {current.kind === 'business' ? (
+                <>
+                  {([['ordinary','Autónomo o pyme con tratamientos habituales'],['startup','Startup, app o plataforma digital'],['multiple','Empresa con muchos procesos o tratamientos diferentes'],['unknown','No estoy seguro']] as const).map(([value,label]) => <button key={value} type="button" onClick={() => setAnswer(value)} className={`min-h-12 border px-4 py-3 text-left text-sm font-semibold ${answers[current.id] === value ? 'border-[#D4A017] bg-[#D4A017]/10' : 'border-[#D4A017]/25'}`}>{label}</button>)}
+                </>
+              ) : current.kind === 'cookies' ? (
                 <>
                   {[
                     ['none', 'No / solo técnicas'],
                     ['basic', 'Analítica básica'],
                     ['advanced', 'Publicidad, píxeles o personalización'],
+                    ['unknown','No lo sé'],
                   ].map(([value, label]) => (
                     <button
                       key={value}
@@ -212,6 +202,11 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
                   >
                     Sí
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setAnswer('unknown')}
+                    className={`min-h-12 border px-4 py-3 text-sm font-semibold transition ${answers[current.id] === 'unknown' ? 'border-[#D4A017] bg-[#D4A017]/10' : 'border-[#D4A017]/25 hover:border-[#D4A017]'}`}
+                  >No lo sé</button>
                   <button
                     type="button"
                     onClick={() => setAnswer(false)}
@@ -251,6 +246,17 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
                 <h2 className="mt-1 font-serif text-2xl font-bold">{result.tier}</h2>
                 <p className="mt-3 text-sm leading-7 text-[#23364D]">{result.message}</p>
               </div>
+            </div>
+
+            <div className="mt-6 border-2 border-[#D4A017]/40 bg-[#F8F6F1] p-5">
+              <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">Orientación gratuita · herramientas oficiales AEPD</p>
+              <h3 className="mt-2 font-serif text-xl font-bold">Herramienta inicial recomendada: {AEPD_TOOLS[aepdRecommendation.primary].title}</h3>
+              <p className="mt-2 text-sm leading-6">{aepdRecommendation.rationale}</p>
+              <a href={AEPD_TOOLS[aepdRecommendation.primary].url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex font-bold underline">Abrir {AEPD_TOOLS[aepdRecommendation.primary].title} (AEPD) ↗</a>
+              {aepdRecommendation.complementary.length > 0 && <p className="mt-3 text-sm">Como complemento: {aepdRecommendation.complementary.map(id => <a key={id} href={AEPD_TOOLS[id].url} target="_blank" rel="noopener noreferrer" className="mr-2 underline">{AEPD_TOOLS[id].title} ↗</a>)}</p>}
+              {aepdRecommendation.cautions.map((warning,i)=><p key={i} className="mt-2 text-sm font-medium text-amber-900">{warning}</p>)}
+              <p className="mt-3 text-xs text-slate-600">Esta sugerencia no acredita un nivel de riesgo ni certifica cumplimiento. La elección definitiva depende de los tratamientos reales.</p>
+              <Link href="/servicios/empresas-autonomos/formacion-rgpd-aepd" className="mt-4 inline-flex font-semibold underline">Formación guiada 2 h · 180 € + IVA →</Link>
             </div>
 
             <div className="mt-5 border border-[#D4A017]/20 bg-white p-4">
@@ -320,12 +326,7 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
                 </Link>
               ) : (
                 <Link
-                  href={buildQuoteHref({
-                    tier: result.tier,
-                    score: result.score,
-                    modules: result.moduleLabels,
-                    hardFlags: result.hardFlags,
-                  })}
+                  href={buildQuoteHref()}
                   className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-5 text-sm font-bold text-[#0D1B2A]"
                 >
                   Solicitar presupuesto <ArrowRight className="h-4 w-4" />
