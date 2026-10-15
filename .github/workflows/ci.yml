@@ -188,6 +188,9 @@ jobs:
           set -euo pipefail
           psql "$DB_URL" -v ON_ERROR_STOP=1 -f tests/db/kia_public_web_persistence_integration.sql
 
+      - name: RGPD source-key PostgreSQL concurrency race
+        run: bash tests/db/rgpd_source_key_race_integration.sh
+
   kia-work-active-scope-db:
     name: KIA Work PostgreSQL active-scope integration
     runs-on: ubuntu-latest
