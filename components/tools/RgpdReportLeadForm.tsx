@@ -16,6 +16,11 @@ export function RgpdReportLeadForm({answers,locale='es'}:{answers:Record<string,
     if(!requestId)setRequestId(stableRequestId);
     const r=await fetch('/api/rgpd/report',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({requestId:stableRequestId,name,email,method,locale,marketingConsent:marketing,informed,answers,recaptchaToken:token})});
     if(!r.ok){const data=await r.json().catch(()=>({}));setMessage(data.error==='russian_pdf_pending_font_qa'?'PDF на русском языке пока проходит техническую проверку. Бесплатные рекомендации доступны выше.':(ru?'Не удалось создать отчёт. Попробуйте позже.':'No se pudo generar el informe. Puedes consultar gratis el resultado anterior.'));return;}
+    if(method==='email' && r.headers.get('Content-Type')?.includes('application/pdf')) {
+      const blob=await r.blob();const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='guia-rgpd-expert.pdf';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);setRequestId(null);
+      setMessage(ru?'Не удалось отправить письмо. Памятка загружена напрямую.':'No se pudo entregar el correo. El PDF se ha descargado directamente.');
+      return;
+    }
     if(method==='email'){setRequestId(null);setMessage(ru?'Письмо отправлено на указанную почту.':'Hemos enviado el informe al correo indicado.');return;}
     const blob=await r.blob();const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='guia-rgpd-expert.pdf';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);setRequestId(null);setMessage(ru?'Файл сформирован.':'Informe generado para descarga.');
   }catch{setMessage(ru?'Ошибка подключения.':'No hay conexión. Vuelve a intentarlo.');}finally{setPending(false);}
