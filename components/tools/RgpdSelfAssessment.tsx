@@ -11,6 +11,7 @@ import { RgpdDocumentPack } from '@/components/tools/RgpdDocumentPack';
 import { RgpdFinalReview } from '@/components/tools/RgpdFinalReview';
 import { RgpdAccountSave } from '@/components/tools/RgpdAccountSave';
 import { AEPD_TOOLS, recommendAepdTools } from '@/lib/rgpd/aepd-tool-recommendation';
+import { RGPD_MODULE_TOPICS, RGPD_SIGNAL_TOPICS } from '@/lib/rgpd/plain-language-review-topics';
 
 type Answer = boolean | 'none' | 'basic' | 'advanced' | 'unknown' | 'ordinary' | 'startup' | 'multiple';
 
@@ -276,11 +277,18 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
 
             <div className="mt-7 grid gap-5 md:grid-cols-2">
               <div className="border border-[#D4A017]/20 bg-[#F8F6F1] p-5">
-                <h3 className="font-bold">Bloques que deberías implantar</h3>
+                <h3 className="font-serif text-xl font-bold">Tu plan de acción explicado paso a paso</h3>
+                <p className="mt-2 text-sm">Son temas que conviene comprobar; no significa que estén incumplidos.</p>
                 <ul className="mt-3 space-y-2 text-sm text-[#23364D]">
-                  {result.moduleLabels.map((item) => (
-                    <li key={item} className="flex gap-2"><span className="text-[#D4A017]">•</span>{item}</li>
-                  ))}
+                  {result.moduleIds.map((id, index) => {
+                    const topic = RGPD_MODULE_TOPICS[id];
+                    return topic ? <li key={id} className="border-b border-[#D4A017]/15 pb-4 last:border-0">
+                      <p className="font-bold">{index + 1}. {topic.title}</p>
+                      <p className="mt-1"><strong>¿Por qué importa?</strong> {topic.why}</p>
+                      <p className="mt-2"><strong>Qué puedes hacer:</strong> {topic.action}</p>
+                      <Link href={topic.guide} className="mt-2 inline-block font-semibold text-[#94700A] underline">{topic.guideTitle} →</Link>
+                    </li> : null;
+                  })}
                 </ul>
               </div>
 
@@ -310,11 +318,19 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
               </>
             )}
 
-            {result.hardFlags.length > 0 && (
+            {QUESTIONS.some(q => q.hardRisk && (answers[q.id] === true || answers[q.id] === 'unknown')) && (
               <div className="mt-5 border-l-4 border-[#D4A017] bg-[#D4A017]/8 p-4">
-                <p className="text-sm font-bold">Señales que requieren revisión</p>
+                <p className="text-base font-bold">Temas que conviene aclarar antes de seguir</p>
                 <ul className="mt-2 space-y-1 text-sm text-[#23364D]">
-                  {result.hardFlags.map((flag) => <li key={flag}>• {flag}</li>)}
+                  {QUESTIONS.filter(q => q.hardRisk && (answers[q.id] === true || answers[q.id] === 'unknown')).map(q => {
+                    const topic = RGPD_SIGNAL_TOPICS[q.id];
+                    return topic ? <li key={q.id} className="mb-4 border-b border-[#D4A017]/15 pb-3 last:border-0">
+                      <p className="font-bold">{topic.title}{answers[q.id] === 'unknown' ? ' · Por aclarar' : ''}</p>
+                      <p className="mt-1">{topic.why}</p>
+                      <p className="mt-2"><strong>Qué revisar:</strong> {topic.action}</p>
+                      <Link href={topic.guide} className="mt-2 inline-block font-semibold underline">{topic.guideTitle} →</Link>
+                    </li> : null;
+                  })}
                 </ul>
               </div>
             )}
