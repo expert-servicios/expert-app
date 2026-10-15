@@ -186,12 +186,17 @@ export async function ensureInboundLead(input: {
   if (createError?.code === '23505') {
     const { data: raced, error: racedError } = await input.admin
       .from('leads')
-      .select('id')
+      .select('id,email')
       .eq('source', input.source)
       .eq('source_key', input.sourceKey)
       .maybeSingle();
     if (racedError) throw racedError;
-    if (raced?.id) return { leadId: raced.id, created: false };
+    if (raced?.id) {
+      if (input.preserveExistingClassification && email && raced.email?.toLowerCase() !== email) {
+        throw new Error('inbound_source_key_identity_conflict');
+      }
+      return { leadId: raced.id, created: false };
+    }
   }
 
   throw createError ?? new Error('Could not create inbound lead');
