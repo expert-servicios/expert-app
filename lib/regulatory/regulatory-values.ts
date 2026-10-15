@@ -50,7 +50,7 @@ export async function getRegulatoryPulseSummary() {
       .limit(1)
       .maybeSingle(),
     admin.from('regulatory_changes')
-      .select('id,status,severity,change_type,summary,effective_date,value_updates,proposal_pr_number,proposal_pr_url,values_applied_at,created_at,source:regulatory_sources(source_key,authority,title)')
+      .select('id,status,severity,change_type,summary,effective_date,value_updates,proposal_pr_number,proposal_pr_url,values_applied_at,resolution_evidence,created_at,source:regulatory_sources(source_key,authority,title)')
       .in('status', ['detected','classified','needs_review','proposal_ready'])
       .order('created_at', { ascending: false })
       .limit(20),
@@ -73,6 +73,75 @@ export async function getRegulatoryPulseSummary() {
 }
 
 
+export async function getRegulatoryChangeForAdmin(changeId: string) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(changeId)) {
+    throw new Error('ID de cambio inválido');
+  }
+  const admin = getSupabaseAdmin();
+  const { data: change } = await admin.from('regulatory_changes')
+    .select('id,status,severity,change_type,summary,effective_date,value_updates,proposal_pr_number,proposal_pr_url,values_applied_at,resolution_evidence,created_at,source:regulatory_sources(source_key,authority,title)')
+    .eq('id', changeId).maybeSingle();
+  return change ?? null;
+}
+
+/**
+ * A legal sign-off is distinct from automatic KIA classification and from
+ * closing an issue. Approval must be tied to the exact source snapshot.
+ */
+export async function approveRegulatoryLegalReview(input: {
+  changeId: string;
+  reviewerId: string;
+  note: string;
+  officialSourceUrl: string;
+  checkedAt: string;
+}) {
+  const admin = getSupabaseAdmin();
+  if (input.note.trim().length < 30) throw new Error('El dictamen jurídico debe incluir al menos 30 caracteres');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.checkedAt)) throw new Error('Fecha de verificación inválida');
+  const date = new Date(input.checkedAt + 'T00:00:00Z');
+  if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0,10) !== input.checkedAt ||
+      input.checkedAt > new Date().toISOString().slice(0,10)) throw new Error('Fecha de verificación inválida');
+  let sourceUrl: URL;
+  try { sourceUrl = new URL(input.officialSourceUrl); } catch { throw new Error('URL oficial inválida'); }
+  if (sourceUrl.protocol !== 'https:' || sourceUrl.username || sourceUrl.password)
+    throw new Error('La evidencia exige una URL HTTPS válida');
+
+  const { data: change, error: changeError } = await admin.from('regulatory_changes')
+    .select('id,status,relevant,source_id,current_snapshot_id,resolution_evidence')
+    .eq('id', input.changeId).maybeSingle();
+  if (changeError) throw new Error(changeError.message);
+  if (!change || !['classified','needs_review','proposal_ready'].includes(change.status))
+    throw new Error('Cambio no disponible para revisión');
+  if (change.relevant !== true) throw new Error('El cambio no es relevante');
+  const [{data: snapshot,error: snapshotError},{data: source,error: sourceError}] = await Promise.all([
+    admin.from('regulatory_snapshots').select('fingerprint').eq('id',change.current_snapshot_id).single(),
+    admin.from('regulatory_sources').select('url,fetch_url').eq('id',change.source_id).single(),
+  ]);
+  if (snapshotError || !snapshot?.fingerprint || sourceError || !source) throw new Error('Falta evidencia de fuente/version');
+  const allowed = [source.url,source.fetch_url].filter(Boolean).some((value) => {
+    try {return new URL(value).hostname === sourceUrl.hostname;} catch {return false;}
+  });
+  if (!allowed) throw new Error('La URL aportada no corresponde al organismo de la fuente');
+  const evidence = (change.resolution_evidence ?? {}) as Record<string, unknown>;
+  const existing = evidence.legal_approval as Record<string,unknown> | undefined;
+  if (existing?.status === 'approved') throw new Error('Ya existe una aprobación: debe auditarse antes de sustituirla');
+  const approval = {
+    status:'approved', reviewer_id:input.reviewerId,
+    approved_at:new Date().toISOString(), checked_at:input.checkedAt,
+    official_source_url:sourceUrl.toString(), reviewed_snapshot_id:change.current_snapshot_id,
+    reviewed_fingerprint:snapshot.fingerprint, note:input.note.trim(),
+  };
+  const {data:updated,error:updateError} = await admin.from('regulatory_changes').update({
+    resolution_evidence:{...evidence,legal_approval:approval},
+  }).eq('id',input.changeId).eq('current_snapshot_id',change.current_snapshot_id)
+    .eq('status',change.status)
+    // Atomic compare-and-set: concurrent reviewers must not replace an existing verdict.
+    .is('resolution_evidence->legal_approval', null)
+    .select('id').maybeSingle();
+  if(updateError || !updated) throw new Error(updateError?.message ?? 'Cambio de versión concurrente; repetir revisión');
+  return {changeId:input.changeId,approved:true};
+}
+
 type ProposedValueUpdate = {
   valueKey?: unknown;
   numericValue?: unknown;
@@ -94,13 +163,27 @@ export async function applyReviewedRegulatoryValueUpdates(changeId: string, appr
 
   const { data: change, error: changeError } = await admin
     .from('regulatory_changes')
-    .select('id,source_id,status,relevant,value_updates')
+    .select('id,source_id,status,relevant,value_updates,current_snapshot_id,resolution_evidence')
     .eq('id', changeId)
     .maybeSingle();
 
   if (changeError) throw new Error(changeError.message);
   if (!change) throw new Error('Cambio regulatorio no encontrado');
   if (change.relevant !== true) throw new Error('No se pueden aplicar valores desde un cambio marcado como no relevante');
+  const approval = ((change.resolution_evidence ?? {}) as Record<string,unknown>).legal_approval as
+    Record<string,unknown> | undefined;
+  if (approval?.status !== 'approved' || !approval.reviewer_id ||
+      approval.reviewed_snapshot_id !== change.current_snapshot_id ||
+      typeof approval.reviewed_fingerprint !== 'string' ||
+      typeof approval.official_source_url !== 'string' ||
+      typeof approval.note !== 'string') {
+    throw new Error('Antes de aplicar valores se requiere aprobación jurídica documentada y vigente');
+  }
+  const {data: approvedSnapshot,error:approvedSnapshotError} = await admin.from('regulatory_snapshots')
+    .select('fingerprint').eq('id',change.current_snapshot_id).single();
+  if (approvedSnapshotError || approvedSnapshot?.fingerprint !== approval.reviewed_fingerprint)
+    throw new Error('La fuente ha cambiado desde la aprobación jurídica');
+
   if (!['classified','needs_review','proposal_ready'].includes(change.status)) {
     throw new Error('El cambio no está en un estado revisable');
   }
@@ -193,7 +276,7 @@ export async function resolveReviewedRegulatoryChange(
 
   const { data: change, error } = await admin
     .from('regulatory_changes')
-    .select('id,status,relevant,summary')
+    .select('id,status,relevant,summary,resolution_evidence,requires_human_review,current_snapshot_id')
     .eq('id', changeId)
     .maybeSingle();
 
@@ -203,14 +286,41 @@ export async function resolveReviewedRegulatoryChange(
     throw new Error('El cambio no está en un estado que pueda resolverse manualmente');
   }
 
-  const { error: updateError } = await admin.from('regulatory_changes').update({
+  const storedEvidence = (change.resolution_evidence ?? {}) as Record<string, unknown>;
+  const legalApproval = storedEvidence.legal_approval as Record<string, unknown> | undefined;
+  if (change.requires_human_review === true || change.status === 'needs_review') {
+    if (change.relevant !== true) {
+      throw new Error('Primero debe completarse la clasificación del cambio; no se puede cerrar un fallo automático');
+    }
+    if (legalApproval?.status !== 'approved' || !legalApproval.reviewer_id ||
+        legalApproval.reviewed_snapshot_id !== change.current_snapshot_id ||
+        typeof legalApproval.reviewed_fingerprint !== 'string' ||
+        typeof legalApproval.note !== 'string') {
+      throw new Error('La resolución exige una aprobación jurídica humana documentada para este snapshot');
+    }
+    const { data: snapshot, error: snapshotError } = await admin
+      .from('regulatory_snapshots').select('fingerprint')
+      .eq('id', change.current_snapshot_id).single();
+    if (snapshotError || snapshot?.fingerprint !== legalApproval.reviewed_fingerprint) {
+      throw new Error('La huella normativa ha cambiado desde el dictamen jurídico');
+    }
+  }
+  // A client-supplied evidence object can enrich the record, never impersonate
+  // or replace the server-stored legal approval.
+  const additionalEvidence = { ...(resolutionEvidence ?? {}) };
+  delete additionalEvidence.legal_approval;
+
+  const { data: resolved, error: updateError } = await admin.from('regulatory_changes').update({
     status: 'resolved',
     resolved_at: new Date().toISOString(),
     resolved_by: resolvedBy ?? null,
     resolution_note: note,
-    resolution_evidence: resolutionEvidence ?? {},
-  }).eq('id', changeId);
+    // Resolving a case must not erase the already recorded legal approval.
+    resolution_evidence: { ...storedEvidence, ...additionalEvidence },
+  }).eq('id', changeId).eq('status', change.status)
+    .eq('current_snapshot_id', change.current_snapshot_id)
+    .select('id').maybeSingle();
 
-  if (updateError) throw new Error(updateError.message);
+  if (updateError || !resolved) throw new Error(updateError?.message ?? 'Cambio concurrente; revisar antes de resolver');
   return { changeId, resolved: true };
 }
