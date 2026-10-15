@@ -32,7 +32,7 @@ El asesoramiento ordinario no exige acreditación general como consultora ante l
 
 [Facilita RGPD](https://www.aepd.es/guias-y-herramientas/herramientas/facilita-rgpd), [Facilita EMPRENDE](https://www.aepd.es/guias-y-herramientas/herramientas/facilita-emprende) y [Gestiona RGPD](https://gestiona2.aepd.es/) son ayudas para organizar trabajo y documentación. Ninguna sustituye la verificación de la realidad empresarial.
 
-[Formación online EXPERT de 2 horas](/servicios/empresas-autonomos/formacion-rgpd-aepd).
+[Formación online EXPERT de 2 horas](https://expertconsulting.es/servicios/empresas-autonomos/formacion-rgpd-aepd).
 
 Fuente normativa: [Reglamento (UE) 2016/679](https://eur-lex.europa.eu/eli/reg/2016/679/oj/spa). Revisado 15/10/2026.
 `
@@ -68,7 +68,7 @@ No se necesitan CV, historiales, contratos nominativos ni fotografías de tercer
 
 Si hay datos especiales, decisiones exclusivamente automatizadas con efectos significativos, tratamiento a gran escala o tratamiento con probabilidad de alto riesgo, marcar revisión especializada y valorar EIPD conforme a artículos 22 y 35 RGPD.
 
-[Formación guiada 2 h](/servicios/empresas-autonomos/formacion-rgpd-aepd) · [Herramienta propia](https://expertconsulting.es/herramientas/rgpd).
+[Formación guiada 2 h](https://expertconsulting.es/servicios/empresas-autonomos/formacion-rgpd-aepd) · [Herramienta propia](https://expertconsulting.es/herramientas/rgpd).
 
 Fuentes: [AEPD Herramientas](https://www.aepd.es/guias-y-herramientas/herramientas); [RGPD](https://eur-lex.europa.eu/eli/reg/2016/679/oj/spa). Actualizado 15/10/2026.
 `
