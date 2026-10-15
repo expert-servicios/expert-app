@@ -113,3 +113,15 @@ Pantalla final opcional después de **mostrar gratuitamente todo el resumen bás
 7. No fusionar ni desplegar hasta cumplir todo y aprobar cambios de escritura de leads; el código por sí solo no prueba comportamiento operacional.
 
 **Dependencias:** PR #779 (CI verde en último control), PR #781 (rama integrada dirigida a main para ejecutar CI), issues #778 y #780. La web actualmente publicada no dispone de estos cambios todavía.
+
+## Auditoría prepublicación RGPD / ES-RU — 15/10/2026
+- **Criterio comercial confirmado**: Para AMBAS opciones, descargar PDF y recibir por email, recoger obligatoriamente nombre y correo. El resultado básico gratuito permanece sin registro.
+- **Hallazgo BLOQUEANTE**: política pública de privacidad (fecha indicada 08/05/2026) no explica expresamente informe RGPD/lead/retención. Debe revisarse legalmente antes de habilitar.
+- **Hallazgo BLOQUEANTE**: `ensureInboundLead` en coincidencia por email sobrescribe `category`, `service`, `message` y `name` de contacto existente: para un informe informativo no debe sustituir clasificación/servicio de un lead ya cualificado. Implementar evento vinculado no destructivo.
+- **Hallazgo BLOQUEANTE**: origen generado con `crypto.randomUUID()` no es idempotente por solicitud. Añadir request_id generado en cliente y aceptado bajo reglas antirrepetición, conservación de evidencias y clave email estable; no confundir deduplicación por email con idempotencia de evento.
+- **Hallazgo BLOQUEANTE**: tests de PDF ES/RU prueban estructura de archivo pero no legibilidad del cirílico, enlaces, envío real y adjunto; además la fuente PDF no debe depender en producción de URL remota no controlada.
+- **Hallazgo BLOQUEANTE**: prueba funcional segura de endpoint en staging y validación RGPD del tratamiento de respuestas categóricas, contratos, consentimiento comercial y plazos; no probar con leads reales sin aislamiento.
+- **Hallazgo ES/RU**: contenido email RU parcialmente en ES, KIA chat UI mayormente ES, muchas guías RU no existen. Revisar comportamiento del selector, enlaces y las traducciones ES/RU de la política de privacidad.
+- **Medida implantada inmediata**: flags dobles por defecto OFF `RGPD_REPORT_ENABLED` (servidor) y `NEXT_PUBLIC_RGPD_REPORT_ENABLED` (UI). Exigir activación explícita de ambas solo tras QA legal, UI, E2E, seguridad y entrega. No almacenar datos desde la funcionalidad apagada.
+- **Alcance KIA**: Chat y copiloto comparten prompt especializado según tema/página; esto no demuestra respuestas de IA reales ni garantiza que preguntas y fuentes oficiales se apliquen. Realizar pruebas conversacionales en ruso y español, con casos de perfilado, discapacidad, Google Tag Manager, brecha y responsabilidad administrador.
+- **Decisión de fusión**: NO habilitar los flags ni fusionar/publicar la rama integrada hasta resolver gates. La PR #779 ha pasado CI, pero fusión GitHub fue bloqueada por controles de seguridad de plataforma en la sesión anterior.
