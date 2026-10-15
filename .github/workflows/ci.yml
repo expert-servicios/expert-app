@@ -55,6 +55,9 @@ jobs:
       - name: Supabase migration baseline check
         run: npm run check:supabase-migrations
 
+      - name: Install Poppler for PDF text and font validation
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends poppler-utils
+
       - name: Tests
         run: npm test
 
