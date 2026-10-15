@@ -1,5 +1,5 @@
 # PLAN MAESTRO — CIRCE / Constitución de SL en autoservicio y acompañamiento EXPERT
-**Versión:** 1.2 · **Fecha:** 15/10/2026 · **Estado:** plan de trabajo, sin cambios comerciales publicados
+**Versión:** 1.3 · **Fecha:** 15/10/2026 · **Estado:** SOLO DOCUMENTACIÓN / congelado hasta cierre RGPD; sin cambios comerciales publicados
 **Rama:** `plan/circe-autogestion-contenidos-20261015`
 **Ámbito:** expertconsulting.es, fichas ES/RU, recursos gratuitos, KIA, adquisición orgánica y seguimiento del caso piloto Comfi App.
 **Separación:** no mezclar con PR #782, cuyos informes RGPD/lead/email siguen sujetos a validaciones.
@@ -135,7 +135,7 @@ Extender después de RGPD y CIRCE a: alta de autónomos, certificados digitales,
 - SEO: arquitectura `/herramientas`, `/guias`/`/docs`, `/blog`, `/servicios`, enlazado por intención del usuario; contenidos para personas antes que producción masiva para buscadores. Revisión normativa en cron y aviso de material desactualizado.
 
 ### Lotes adaptados a la prioridad gratuita
-1. **Gratis primero:** guías CIRCE completas, flujos, FAQ, mapamundi de trámites (diagrama, no geolocalización), comparativa autónomo/SL y orientación KIA contextual, todo sin login. Pulir RGPD ya publicado, fuentes y ES/RU.
+1. **Gratis primero:** guías CIRCE completas, flujos, FAQ, mapa visual de trámites (diagrama de proceso, no geolocalización), comparativa autónomo/SL y orientación KIA contextual, todo sin login. Pulir RGPD ya publicado, fuentes y ES/RU.
 2. **Aprendizaje asistido:** videotutoriales explicativos y listas descargables, buscador y asistente KIA con citas; consulta gratuita con agenda y límites transparentes.
 3. **Comunidad voluntaria:** suscripción específica a novedades educativas, editorial mensual de cambios normativos y canal opt-in; control de permisos y retirada.
 4. **Servicios bajo demanda:** botón discreto de formación por 180 € + IVA y gestión estándar por 490 € + IVA, tras conciliación de precio 499 € CIRCE y checkout.
@@ -217,7 +217,7 @@ Fuentes de referencia: AEPD consentimiento https://www.aepd.es/preguntas-frecuen
 3. **Proponer en bandeja interna QA** un objeto tipado con tema canónico, necesidad detectada, contenido sugerido (FAQ, artículo, guía, manual, calculadora, curso, servicio), enlace a fuente oficial, fecha verificación, ES/RU, alcance, gravedad y necesidad de revisión humana. Deduplicar por tema+norma+versión; nunca por email/nombre/identificador de conversación.
 4. **Priorizar ayuda gratuita**: FAQ/guía y enlace oficial antes de formación o servicio; medir recurrencia de preguntas por tema agregado, no seguimientos individualizados ni segmentaciones publicitarias sin base legal.
 5. **Gates:** ninguna sugerencia inventa una norma, acusa a un tercero, declara reclamación fundada, crea lead, tarea comercial, campaña, email o artículo público por sí misma. Una persona valida hecho, fuente, fecha, IVA/arancel, ES/RU y publicabilidad.
-6. La función determinista inicial detecta **candidatos de contenidos sin persistencia**, con pruebas que aseguran no leer ni retornar texto de usuario, PII ni fechas individuales. La integración a bandeja QA/cron/catálogo y publicación son fases posteriores con permisos y auditoría.
+6. **Idea/prototipo diferido (NO implementado ni integrado)**: detector determinista de candidatos sin persistencia, nunca debe retornar texto de usuario, PII ni fechas individuales. Especificación y casos de prueba previstos en sección 12; cualquier integración a KIA, bandeja QA, cron, catálogo o publicación requiere nueva autorización y validación de permisos y privacidad.
 
 Fuentes verificadas:
 - Ley 14/2013 arts. 15-16 (consolidado): https://www.boe.es/eli/es/l/2013/09/27/14/con
@@ -232,5 +232,47 @@ Fuentes verificadas:
 - Memoria Justicia 2017 Sistema Registral (p. ~2385): https://www.mjusticia.gob.es/es/AreaTematica/DocumentacionPublicaciones/Documents/DGRN-2017-SISTREG.pdf
 
 **Notas de publicación:** distinguir cuidadosamente reglas actuales de las históricas y reclamaciones alegadas de irregularidades declaradas. Este anexo no ejecuta trámites ni autoriza publicidad automatizada.
+
+
+## 12. Segunda revisión integral y congelación hasta cierre RGPD — 15/10/2026
+
+**DECISIÓN EXPRESA:** la PR #783 queda documental y en borrador. No desarrollar nuevas páginas, artículos, guías, recursos PDF, tests de producto, servicios, conectores, clasificadores KIA ni automatizaciones comerciales en esta fase. No fusionar #783 por superar CI: CI de documentación no acredita calidad editorial ni desarrollo futuro. Los archivos de prototipo del detector, creados en borrador, deben retirarse del árbol final de esta PR; se conservan aquí sus requisitos funcionales para implementarlos cuando se autorice.
+
+### A. Estado confirmado de entregables y precios
+| Objeto | Estado real el 15/10/2026 | Intervención futura |
+| --- | --- | --- |
+| /servicios/empresas-autonomos/constitucion-sl | Publicada, servicio general 490 € + IVA | Revisar alcance, gastos excluidos, afirmaciones sobre certificado bancario/ITP |
+| /servicios/empresas-autonomos/constitucion-sl-circe | Publicada, gestión CIRCE 499 € + IVA y formación 180 € + IVA | Converger precio y alcance sin variar Stripe automáticamente |
+| /ru/uslugi/sozdanie-sl-cherez-circe | Publicada con mezcla RU/ES, 499 € y 180 € | Traducción natural, hreflang/canonical/FAQ revisados |
+| Blog /blog/constitucion-sociedad-limitada-espana | Publicado, información resumida y anterior | Auditar afirmación de obligación universal de depósito bancario y liquidación ITP |
+| Centro gratis «Crear tu SL» + mapas y calculadoras | Solo definido en plan | No construido, no enlazar como URL pública |
+| Detector de oportunidades de contenidos KIA | Idea/prototipo no integrado; retirada del árbol final de PR #783 | Especificación funcional, privacidad y pruebas pendientes |
+| RGPD #781 público ES/RU | Ya publicado de forma independiente | Mantener disponible |
+| RGPD informe/lead/correo #782 | PR independiente en borrador, CI #3952 verde | E2E y revisión de privacidad ANTES de merge o activación |
+
+### B. Matriz normativa de publicación: hechos confirmados y límites
+1. **Capital SL desde 1 € (LSC art. 4):** mientras no alcance 3.000 €, el 20 % de beneficios se destina a reserva legal hasta el umbral legal; en liquidación insuficiente existe responsabilidad solidaria adicional por diferencia entre capital suscrito y 3.000 €. No promocionar «SL por 1 €» como equivalente a ausencia de responsabilidades.
+2. **Aranceles fijos 60/40 y 150/100 (RD 1612/2011, RDL 13/2010 art. 5):** solo con los requisitos concurrentes de telemática, capital máximo, socios personas físicas, modelo de órgano de administración y, para 60/40, estatutos tipo y capital hasta 3.100 €. Fijados «por todos los conceptos» para los actos arancelados que cubre el supuesto; comprobar minuta, actuaciones adicionales efectivas, tributos y suplidos individualmente. **No añadir costes genéricos sobre el fijo sin fundamentación**. La referencia 30.000 € no es el importe de la factura sino el límite de capital del supuesto reducido.
+3. **Plazos (Ley 14/2013 arts. 15-16):** 6h hábiles RMC, 12h hábiles para fecha de otorgamiento, 6h hábiles de inscripción en régimen correspondiente desde recepción documental; inscripción inicial en supuestos sin estatutos tipo no es inscripción definitiva de todos los extremos. Indicar qué acto y momento inician cada cómputo y no presentar tiempos como promesa de puesta en marcha completa.
+4. **Historia legal:** los antiguos plazos del RDL 13/2010 (1, 3 días, 7 horas) están derogados para el procedimiento descrito. Instrucción DGRN 18/05/2011 y resoluciones antiguas **solo antecedentes históricos/interpretativos**. Antes de reutilizarlos en una guía vigente, validar supervivencia del criterio frente a legislación posterior.
+5. **DUE y autenticación:** el PAE Virtual permite identificarse con Cl@ve o certificado electrónico. No afirmar «certificado obligatorio de todos los socios» como condición universal, ni «hacerlo online» como ausencia de otorgamiento notarial; la firma notarial sigue su cauce legal. Fuente PAE: https://paeelectronico.es/es-es/Paginas/Home.aspx .
+6. **Copia electrónica y CSV:** art. 31 Ley del Notariado prevé CSV para copia autorizada electrónica; no convierte en copia autorizada cualquier PDF/copia simple/traslado informativo. Art. 15.4.d Ley 14/2013: los fundadores pueden pedir **copia simple electrónica sin coste adicional** dentro de ese procedimiento. Distinta de otros servicios notariales, de expedición de copias autorizadas y del coste del papel si se solicitara. No exigir CSV como condición universal de validez de la escritura.
+7. **ITP/Operaciones societarias:** revisar y corregir el artículo previo: no escribir «liquidar ITP/TPO» como paso obligatorio ni confundir exención con presentación obligatoria del modelo. La instrucción DGRN 18/05/2011 afirma que, para inscripción de constitución exenta, no hace falta presentar autoliquidación acreditativa de exención. Validar las particularidades autonómicas y exigencias vigentes antes del texto final.
+8. **Depósito de capital:** la ficha/blog viejo describe certificado bancario en todos los casos; comprobar las excepciones legales a la acreditación de aportaciones dinerarias en SL, las declaraciones alternativas en escritura y la práctica actual antes de la reescritura.
+9. **Recursos y quejas:** no confundir impugnación de minuta del registrador, impugnación del arancel del notario, recurso contra calificación registral y reclamación por demora. Las fuentes oficiales de Justicia identifican cauces diferentes. Los antecedentes no son prueba de incumplimiento sistemático de terceros.
+10. **Verificación de antecedentes:** la referencia BOE-A-2017-15649 y el PDF de memoria DGRN 2017 requieren relectura íntegra antes de usarse como ejemplos concretos de reclamaciones. Durante esta auditoría no se ha confirmado el texto completo; clasificar **pendiente de contraste**, no «caso probado» ni evidencia de sobreprecio real.
+
+### C. Futuras pruebas del detector KIA (solo especificación)
+- Inputs: temas **previamente anonimizados**, longitud limitada, fechas no individualizadas, sin minutas, número de protocolo, correo, móvil ni CSV del usuario.
+- Categorías: aranceles notariales, aranceles registrales, plazos CIRCE, copia electrónica/CSV, reclamaciones y constitución SL.
+- Output: temas y recursos estáticos, enlace oficial validado, etiqueta «propuesta sin publicar», motivo, fecha de verificación, revisión humana obligatoria.
+- Controles técnicos a implementar posteriormente: normalización ES/RU (en JS `\\b` no delimita correctamente palabras cirílicas); no asumir que un regex detecta fundamento de reclamación; rechazo de documentos y mensajes sin anonimización; pruebas ES/RU, límites, fuentes, duplicación, exclusión de PII y CTA gratuito.
+- **Prohibido:** publicar solo por frecuencia, enviar correos comerciales, crear lead, interpretar gastos reales, acceder a expedientes, modificar fuentes/normas o declarar incumplimiento automáticamente.
+- Bandeja de sugerencias: diseño pendiente, no conectada. El prototipo retirado se puede reconstruir de cero tras la fase RGPD, con test real y revisión de seguridad.
+
+### D. Orden bloqueante de ejecución
+**Puerta RGPD:** cerrar informe PDF ES/RU, fuentes cirílicas locales, privacidad/consentimiento y retención, email y PDF real en staging independiente, concurrencia sin manipular leads reales, prueba móvil, CI/previews mismo SHA. Decidir de forma diferenciada si es posible fusionar funcionalidad protegida por flags OFF; activación pública solo tras E2E y aprobación.
+**Puerta CIRCE:** cuando RGPD esté cerrado, comprobar datos oficiales y tarifas del momento; reconciliar precios 490/499 y Stripe; entonces aprobar contenido gratuito, ES/RU, y desarrollar por lotes, con las guías de autoservicio antes de cualquier captación opcional.
+**Comfi App:** no mandar de momento otro correo, no suponer aperturas ni respuestas, no enlazar guías aún no publicadas. El último borrador contempla avisar de la ampliación de RGPD cuando realmente tenga sentido el seguimiento.
 
 **No publicación / No envíos automáticos con este documento.**
