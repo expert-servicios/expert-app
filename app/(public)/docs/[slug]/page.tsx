@@ -1,3 +1,4 @@
+import { resolveRgpdPairedPath } from '@/lib/i18n/rgpd-routes';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -25,6 +26,7 @@ export async function generateMetadata({
   const description = doc.seoDescription ?? doc.excerpt;
   const canonicalUrl = `https://expertconsulting.es/docs/${slug}`;
   const pairedGuide = IMMIGRATION_REVIEWED_GUIDES.find(g => g.esSlug === slug);
+  const rgpdRuPath = resolveRgpdPairedPath('/docs/'+slug, 'ru');
 
   return {
     title,
@@ -32,7 +34,7 @@ export async function generateMetadata({
     keywords: doc.tags,
     alternates: {
       canonical: canonicalUrl,
-      ...(pairedGuide ? {languages:{'es-ES':canonicalUrl,'ru-RU':'https://expertconsulting.es/ru/docs/'+pairedGuide.ruSlug,'x-default':canonicalUrl}} : {})
+      ...(rgpdRuPath ? {languages:{'es-ES':canonicalUrl,'ru-RU':'https://expertconsulting.es'+rgpdRuPath,'x-default':canonicalUrl}} : pairedGuide ? {languages:{'es-ES':canonicalUrl,'ru-RU':'https://expertconsulting.es/ru/docs/'+pairedGuide.ruSlug,'x-default':canonicalUrl}} : {})
     },
     openGraph: {
       title,
