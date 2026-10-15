@@ -34,7 +34,7 @@ export default function RgpdToolPage() {
       </section>
 
       <section className="mx-auto grid max-w-6xl gap-8 px-6 py-12 lg:grid-cols-[1fr_340px] lg:items-start">
-        <RgpdSelfAssessment hourlyRateEur={hourlyRateEur} />
+        <div className="space-y-5"><div className="border border-[#D4A017]/40 bg-white p-5"><p className="font-bold">Aprende a utilizar las herramientas oficiales de la AEPD</p><p className="mt-2 text-sm">Formación online guiada de 2 horas con EXPERT: Facilita RGPD, Facilita EMPRENDE y Gestiona RGPD. Precio fijo 180 € + IVA. No equivale a una certificación de cumplimiento.</p><Link href="/servicios/empresas-autonomos/formacion-rgpd-aepd" className="mt-3 inline-block font-semibold underline">Ver la formación RGPD de 2 horas →</Link></div><RgpdSelfAssessment hourlyRateEur={hourlyRateEur} /></div>
 
         <aside className="space-y-5">
           <div className="border border-[#D4A017]/25 bg-white p-5">
