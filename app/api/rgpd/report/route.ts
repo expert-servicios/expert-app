@@ -51,7 +51,7 @@ export async function POST(request:NextRequest){
   const lead=await ensureInboundLead({
    admin:getSupabaseAdmin(),name:d.name,email:d.email.trim().toLowerCase(),source:'website',sourceKey:`rgpd-report:${d.requestId}`,
    category:'Recurso gratuito',service:'rgpd-informe-gratuito',message:'Solicitó guía RGPD personalizada (sin venta ni presupuesto).',
-   channel:'rgpd_report',origin:'herramienta-rgpd',preserveExistingClassification:true,metadata:{report_requested_at:new Date().toISOString(),delivery_method:d.method,language:d.locale,marketing_consent:d.marketingConsent,marketing_consent_origin:d.marketingConsent?'rgpd_report_form':null},
+   channel:'rgpd_report',origin:'herramienta-rgpd',preserveExistingClassification:true,metadata:{report_requested_at:new Date().toISOString(),delivery_method:d.method,language:d.locale,marketing_consent:d.marketingConsent,marketing_consent_origin:d.marketingConsent?'rgpd_report_form':null,privacy_notice_version:'rgpd-report-2026-10-15',privacy_notice_acknowledged:true,privacy_notice_acknowledged_at:new Date().toISOString(),marketing_choice_recorded_at:new Date().toISOString()},
   });
   if(d.method==='email'){
     await sendEmail({
