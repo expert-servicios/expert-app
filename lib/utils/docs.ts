@@ -1,6 +1,7 @@
 import type { CategorySlug } from './catalog';
 import { getGeneratedBatch1KnowledgeDocs } from '@/lib/services/service-generated-content';
 import { proteccionDatosKnowledgeDocs } from '@/lib/content/proteccion-datos-docs';
+import { rgpdAepdTrainingDocs } from '@/lib/content/rgpd-aepd-training-docs';
 import { fiscal2026KnowledgeDocs } from '@/lib/content/fiscal-2026-docs';
 import { holdedIntegrationDocs } from '@/lib/content/holded-integration-docs';
 import { reviewedImmigrationEsDocs } from '@/lib/content/immigration-reviewed-docs';
@@ -55,6 +56,7 @@ Consulta la guía completa en esta misma URL. Incluye la diferencia entre repres
   },
   ...getGeneratedBatch1KnowledgeDocs(),
   ...proteccionDatosKnowledgeDocs,
+  ...rgpdAepdTrainingDocs,
   ...fiscal2026KnowledgeDocs,
   ...holdedIntegrationDocs,
   {
