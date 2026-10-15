@@ -180,6 +180,147 @@ export const RU_ES_LEGAL_TERMS = [
     "es": "solicitud de presupuesto",
     "note": "Не означает заключение договора."
   }
+,
+  {
+    "key": "datos personales",
+    "ru": "Персональные данные",
+    "es": "datos personales",
+    "note": "Сведения, по которым можно определить человека прямо или косвенно.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "tratamiento de datos personales",
+    "ru": "Обработка персональных данных",
+    "es": "tratamiento de datos personales",
+    "note": "Сбор, хранение, передача, просмотр и удаление информации.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "responsable del tratamiento",
+    "ru": "Ответственный за обработку данных",
+    "es": "responsable del tratamiento",
+    "note": "Тот, кто определяет цели и основные способы обработки.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "encargado del tratamiento",
+    "ru": "Обработчик данных по поручению",
+    "es": "encargado del tratamiento",
+    "note": "Поставщик, обрабатывающий данные по поручению ответственного.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "RAT",
+    "ru": "Реестр операций обработки",
+    "es": "registro de actividades de tratamiento (RAT)",
+    "note": "Перечень операций, их целей, категорий данных и других обязательных сведений.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "base jurídica del tratamiento",
+    "ru": "Правовое основание обработки",
+    "es": "base jurídica del tratamiento",
+    "note": "Обоснование обработки по статье 6 RGPD; согласие — лишь одно из оснований.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "consentimiento",
+    "ru": "Согласие",
+    "es": "consentimiento",
+    "note": "Добровольное, конкретное, информированное и однозначное согласие, когда оно требуется.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "política de privacidad",
+    "ru": "Политика конфиденциальности",
+    "es": "política de privacidad",
+    "note": "Информация пользователям о том, как и зачем используются данные.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "deber de información",
+    "ru": "Обязанность информирования",
+    "es": "deber de información",
+    "note": "Необходимая информация предоставляется человеку при сборе данных.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "categorías especiales de datos personales",
+    "ru": "Особые категории персональных данных",
+    "es": "categorías especiales de datos personales",
+    "note": "Например, данные о здоровье, для которых действуют дополнительные правила.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "elaboración de perfiles",
+    "ru": "Профилирование",
+    "es": "elaboración de perfiles",
+    "note": "Автоматизированная оценка личных аспектов человека.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "decisiones individuales automatizadas",
+    "ru": "Индивидуальные автоматизированные решения",
+    "es": "decisiones individuales automatizadas",
+    "note": "Решения без значимого участия человека, подпадающие под специальные правила в установленных случаях.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "EIPD",
+    "ru": "Оценка воздействия на защиту данных",
+    "es": "evaluación de impacto relativa a la protección de datos (EIPD)",
+    "note": "Специальный анализ, когда обработка может создавать высокий риск.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "medidas de seguridad",
+    "ru": "Меры безопасности",
+    "es": "medidas de seguridad",
+    "note": "Организационные и технические меры, пропорциональные риску.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "violación de seguridad de los datos personales",
+    "ru": "Нарушение безопасности персональных данных",
+    "es": "violación de seguridad de los datos personales",
+    "note": "Утрата, раскрытие, изменение данных или несанкционированный доступ.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "plazo de conservación",
+    "ru": "Срок хранения данных",
+    "es": "plazo de conservación",
+    "note": "Период хранения, ограниченный целями и обязательствами закона.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "derechos de los interesados",
+    "ru": "Права субъектов данных",
+    "es": "derechos de los interesados",
+    "note": "Например, доступ, исправление и удаление данных при наличии условий.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "transferencia internacional de datos",
+    "ru": "Международная передача данных",
+    "es": "transferencia internacional de datos",
+    "note": "Передача данных в третьи страны, для которой могут требоваться гарантии.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "DPD",
+    "ru": "Специалист по защите данных",
+    "es": "delegado de protección de datos (DPD)",
+    "note": "Назначаемый в предусмотренных случаях специалист, консультирующий и контролирующий.",
+    "domain": "rgpd"
+  },
+  {
+    "key": "sociedad limitada",
+    "ru": "Общество с ограниченной ответственностью",
+    "es": "sociedad limitada (SL)",
+    "note": "Юридическое лицо; регистрация сама по себе не снимает обязанности RGPD.",
+    "domain": "rgpd"
+  }
 ] as const;
 export type RuEsLegalTerm = (typeof RU_ES_LEGAL_TERMS)[number];
 export function formatRuEsTerm(key:string):string {

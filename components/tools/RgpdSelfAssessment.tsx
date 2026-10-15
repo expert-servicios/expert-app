@@ -10,65 +10,17 @@ import { RgpdRetentionMatrix } from '@/components/tools/RgpdRetentionMatrix';
 import { RgpdDocumentPack } from '@/components/tools/RgpdDocumentPack';
 import { RgpdFinalReview } from '@/components/tools/RgpdFinalReview';
 import { RgpdAccountSave } from '@/components/tools/RgpdAccountSave';
+import { AEPD_TOOLS, recommendAepdTools } from '@/lib/rgpd/aepd-tool-recommendation';
+import { RGPD_MODULE_TOPICS, RGPD_SIGNAL_TOPICS } from '@/lib/rgpd/plain-language-review-topics';
+import { RgpdReportLeadForm } from '@/components/tools/RgpdReportLeadForm';
+import { RGPD_QUESTIONS, evaluateRgpdAssessment, getRgpdQuestion, type RgpdAnswer } from '@/lib/rgpd/assessment-contract';
 
-type Answer = boolean | 'none' | 'basic' | 'advanced';
+type Answer = RgpdAnswer;
+const QUESTIONS = RGPD_QUESTIONS.map(q => ({...q, title:q.title.es}));
 
-type Question = {
-  id: string;
-  title: string;
-  description?: string;
-  kind?: 'boolean' | 'cookies';
-  hardRisk?: boolean;
-  weight?: number;
-};
-
-const QUESTIONS: Question[] = [
-  { id: 'employees', title: '¿Tienes empleados o colaboradores con acceso a datos personales?', weight: 1 },
-  { id: 'website', title: '¿Tu web recoge datos mediante formularios, reservas, newsletter o cuentas de usuario?', weight: 1 },
-  { id: 'cookies', title: '¿Utilizas analítica, publicidad, píxeles o cookies no necesarias?', kind: 'cookies', weight: 1 },
-  { id: 'processors', title: '¿Usas proveedores que acceden a datos (gestoría, CRM, cloud, email marketing, soporte, IA)?', weight: 1 },
-  { id: 'international', title: '¿Algún proveedor o subencargado trata datos fuera del EEE?', weight: 2 },
-  { id: 'special', title: '¿Tratas datos de salud u otras categorías especiales del artículo 9 RGPD?', hardRisk: true, weight: 4 },
-  { id: 'minors', title: '¿Tratas datos de menores de forma relevante para el servicio?', hardRisk: true, weight: 4 },
-  { id: 'profiling', title: '¿Realizas perfiles, scoring, decisiones automatizadas o publicidad basada en comportamiento individual?', hardRisk: true, weight: 4 },
-  { id: 'location', title: '¿Recoges geolocalización, monitorización sistemática, audio o videovigilancia avanzada?', hardRisk: true, weight: 4 },
-  { id: 'largeScale', title: '¿Tratas datos a gran escala o de un número muy elevado de personas?', hardRisk: true, weight: 4 },
-  { id: 'innovative', title: '¿Tu producto usa IA u otra tecnología innovadora para inferir, clasificar o predecir información sobre personas?', hardRisk: true, weight: 4 },
-  { id: 'breach', title: '¿Tienes ahora una brecha o incidente de datos personales sin cerrar?', hardRisk: true, weight: 5 },
-];
-
-const MODULES = [
-  ['rat', 'Registro de Actividades de Tratamiento (RAT)'],
-  ['privacy', 'Cláusulas informativas y política de privacidad'],
-  ['processors', 'Contratos y revisión de encargados'],
-  ['security', 'Medidas de seguridad y control de accesos'],
-  ['rights', 'Procedimiento para ejercicio de derechos'],
-  ['breaches', 'Registro y protocolo de brechas'],
-  ['retention', 'Conservación, bloqueo y supresión'],
-  ['web', 'Web, formularios, cookies y comunicaciones'],
-] as const;
-
-function buildQuoteHref(params: {
-  tier: string;
-  score: number;
-  modules: string[];
-  hardFlags: string[];
-}) {
-  const summary = [
-    `Resultado herramienta RGPD: ${params.tier}.`,
-    `Puntuación orientativa: ${params.score}.`,
-    `Módulos detectados: ${params.modules.join(', ')}.`,
-    params.hardFlags.length ? `Señales de revisión profesional: ${params.hardFlags.join(', ')}.` : '',
-    'Origen: herramienta pública de autoimplantación RGPD.',
-  ].filter(Boolean).join(' ');
-
-  const qs = new URLSearchParams({
-    servicio: 'proteccion-datos-rgpd',
-    origen: 'rgpd-autoimplantacion',
-    tipo: 'caso-complejo',
-    resumen: summary,
-  });
-  return `/solicitar-presupuesto?${qs.toString()}`;
+function buildQuoteHref() {
+  // No scores, answers, warning flags or notes in URL/query strings.
+  return '/solicitar-presupuesto?servicio=proteccion-datos-rgpd&origen=rgpd-autoimplantacion';
 }
 
 export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }) {
@@ -78,59 +30,9 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
   const current = QUESTIONS[step];
   const answered = current ? answers[current.id] !== undefined : true;
 
-  const result = useMemo(() => {
-    let score = 0;
-    const hardFlags: string[] = [];
+  const result = useMemo(() => evaluateRgpdAssessment(answers, hourlyRateEur), [answers, hourlyRateEur]);
 
-    for (const q of QUESTIONS) {
-      const answer = answers[q.id];
-      const positive = answer === true || answer === 'advanced';
-      if (positive) {
-        score += q.weight ?? 1;
-        if (q.hardRisk) hardFlags.push(q.title);
-      }
-    }
-
-    const modules = ['rat', 'privacy', 'security', 'rights', 'breaches', 'retention'];
-    if (answers.processors === true || answers.international === true || answers.innovative === true) modules.push('processors');
-    if (answers.website === true || answers.cookies === 'basic' || answers.cookies === 'advanced') modules.push('web');
-
-    const moduleIds = MODULES.filter(([id]) => modules.includes(id)).map(([id]) => id);
-    const moduleLabels = MODULES.filter(([id]) => modules.includes(id)).map(([, label]) => label);
-
-    let tier = 'Autoimplantación guiada';
-    let level: 'low' | 'medium' | 'high' = 'low';
-    let message = 'Tu perfil encaja, a priori, con un recorrido guiado de bajo riesgo. La herramienta puede ayudarte a ordenar la documentación y tareas, pero no certifica cumplimiento.';
-
-    if (hardFlags.length > 0 || score >= 8) {
-      tier = 'Revisión profesional recomendada';
-      level = 'high';
-      message = 'Hay señales que requieren analizar el tratamiento con más detalle. No conviene cerrar la implantación únicamente con un asistente automático.';
-    } else if (score >= 4) {
-      tier = 'Autoimplantación + revisión final';
-      level = 'medium';
-      message = 'Puedes completar gran parte del trabajo con la herramienta, pero recomendamos una revisión final de coherencia, proveedores, web y medidas de seguridad.';
-    }
-
-    const estimatedHours =
-      level === 'low'
-        ? { min: 0, max: 2 }
-        : level === 'medium'
-          ? { min: 3, max: 5 }
-          : hardFlags.length >= 3 || score >= 14
-            ? { min: 8, max: 12 }
-            : { min: 5, max: 8 };
-
-    const estimatedPrice = hourlyRateEur && hourlyRateEur > 0
-      ? {
-          min: estimatedHours.min * hourlyRateEur,
-          max: estimatedHours.max * hourlyRateEur,
-        }
-      : null;
-
-    return { score, hardFlags, moduleIds, moduleLabels, tier, level, message, estimatedHours, estimatedPrice };
-  }, [answers, hourlyRateEur]);
-
+  const aepdRecommendation = useMemo(() => recommendAepdTools(answers), [answers]);
   const isResult = step >= QUESTIONS.length;
 
   const setAnswer = (value: Answer) => {
@@ -156,7 +58,7 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4A017]">Herramienta gratuita</p>
-            <p className="mt-1 text-sm text-white/70">Las respuestas se calculan localmente en tu navegador. No se envían a EXPERT.</p>
+            <p className="mt-1 text-sm text-white/70">Las respuestas se procesan aquí, en tu navegador. Solo enviaremos las categorías necesarias si solicitas expresamente un informe personalizado.</p>
           </div>
           <ShieldCheck className="h-7 w-7 shrink-0 text-[#D4A017]" />
         </div>
@@ -175,56 +77,15 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
               Pregunta {step + 1} de {QUESTIONS.length}
             </p>
             <h2 className="mt-3 font-serif text-2xl font-bold leading-tight">{current.title}</h2>
-            {current.description && <p className="mt-2 text-sm text-[#23364D]">{current.description}</p>}
-
+            
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {current.kind === 'cookies' ? (
-                <>
-                  {[
-                    ['none', 'No / solo técnicas'],
-                    ['basic', 'Analítica básica'],
-                    ['advanced', 'Publicidad, píxeles o personalización'],
-                  ].map(([value, label]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setAnswer(value as Answer)}
-                      className={`min-h-12 border px-4 py-3 text-left text-sm font-semibold transition ${
-                        answers[current.id] === value
-                          ? 'border-[#D4A017] bg-[#D4A017]/10 text-[#0D1B2A]'
-                          : 'border-[#D4A017]/25 hover:border-[#D4A017]'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setAnswer(true)}
-                    className={`min-h-12 border px-4 py-3 text-sm font-semibold transition ${
-                      answers[current.id] === true
-                        ? 'border-[#D4A017] bg-[#D4A017]/10'
-                        : 'border-[#D4A017]/25 hover:border-[#D4A017]'
-                    }`}
-                  >
-                    Sí
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAnswer(false)}
-                    className={`min-h-12 border px-4 py-3 text-sm font-semibold transition ${
-                      answers[current.id] === false
-                        ? 'border-[#D4A017] bg-[#D4A017]/10'
-                        : 'border-[#D4A017]/25 hover:border-[#D4A017]'
-                    }`}
-                  >
-                    No
-                  </button>
-                </>
-              )}
+              {getRgpdQuestion(step,'es')?.options.map(option=><button
+                key={String(option.value)}
+                type="button"
+                onClick={()=>setAnswer(option.value)}
+                aria-pressed={answers[current.id] === option.value}
+                className={`min-h-12 border px-4 py-3 text-left text-sm font-semibold transition ${answers[current.id] === option.value?'border-[#D4A017] bg-[#D4A017]/10':'border-[#D4A017]/25 hover:border-[#D4A017]'}`}
+              >{option.label}</button>)}
             </div>
 
             <div className="mt-7 flex items-center justify-between gap-3">
@@ -253,28 +114,39 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
               </div>
             </div>
 
+            <div className="mt-6 border-2 border-[#D4A017]/40 bg-[#F8F6F1] p-5">
+              <p className="text-xs font-bold uppercase tracking-widest text-[#D4A017]">Orientación gratuita · herramientas oficiales AEPD</p>
+              <h3 className="mt-2 font-serif text-xl font-bold">Herramienta inicial recomendada: {AEPD_TOOLS[aepdRecommendation.primary].title}</h3>
+              <p className="mt-2 text-sm leading-6">{aepdRecommendation.rationale}</p>
+              <a href={AEPD_TOOLS[aepdRecommendation.primary].url} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex font-bold underline">Abrir {AEPD_TOOLS[aepdRecommendation.primary].title} (AEPD) ↗</a>
+              {aepdRecommendation.complementary.length > 0 && <p className="mt-3 text-sm">Como complemento: {aepdRecommendation.complementary.map(id => <a key={id} href={AEPD_TOOLS[id].url} target="_blank" rel="noopener noreferrer" className="mr-2 underline">{AEPD_TOOLS[id].title} ↗</a>)}</p>}
+              {aepdRecommendation.cautions.map((warning,i)=><p key={i} className="mt-2 text-sm font-medium text-amber-900">{warning}</p>)}
+              <p className="mt-3 text-xs text-slate-600">Esta sugerencia no acredita un nivel de riesgo ni certifica cumplimiento. La elección definitiva depende de los tratamientos reales.</p>
+              <Link href="/servicios/empresas-autonomos/formacion-rgpd-aepd" className="mt-4 inline-flex font-semibold underline">Formación guiada 2 h · 180 € + IVA →</Link>
+            </div>
+
             <div className="mt-5 border border-[#D4A017]/20 bg-white p-4">
-              <p className="text-xs font-bold uppercase tracking-widest text-[#6B7280]">Esfuerzo profesional estimado</p>
-              <p className="mt-1 text-lg font-bold">
-                {result.estimatedHours.min === 0
-                  ? 'Autoimplantación gratuita · revisión opcional hasta 2 h'
-                  : `${result.estimatedHours.min}–${result.estimatedHours.max} h`}
-              </p>
-              {result.estimatedPrice && result.estimatedHours.min > 0 && (
-                <p className="mt-1 text-sm text-[#23364D]">
-                  Estimación económica: <strong>{result.estimatedPrice.min.toLocaleString('es-ES')}–{result.estimatedPrice.max.toLocaleString('es-ES')} € + IVA</strong>.
-                  El presupuesto final depende del alcance validado.
-                </p>
-              )}
+              <p className="text-xs font-bold uppercase tracking-widest text-[#6B7280]">¿Necesitas ayuda para aplicar las recomendaciones?</p>
+              <p className="mt-2 font-serif text-lg font-bold">Formación online guiada · 2 horas · 180 € + IVA</p>
+              <p className="mt-2 text-sm leading-6">Te enseñamos a utilizar las herramientas gratuitas de la AEPD con ejemplos de tu negocio. No es una auditoría ni una certificación oficial.</p>
+              <p className="mt-2 text-sm">Si necesitas revisión jurídica o implantación profesional completa, prepararemos un presupuesto independiente según el alcance.</p>
+              <Link href="/servicios/empresas-autonomos/formacion-rgpd-aepd" className="mt-3 inline-block font-bold underline">Ver programa de formación y precio →</Link>
             </div>
 
             <div className="mt-7 grid gap-5 md:grid-cols-2">
               <div className="border border-[#D4A017]/20 bg-[#F8F6F1] p-5">
-                <h3 className="font-bold">Bloques que deberías implantar</h3>
+                <h3 className="font-serif text-xl font-bold">Tu plan de acción explicado paso a paso</h3>
+                <p className="mt-2 text-sm">Son temas que conviene comprobar; no significa que estén incumplidos.</p>
                 <ul className="mt-3 space-y-2 text-sm text-[#23364D]">
-                  {result.moduleLabels.map((item) => (
-                    <li key={item} className="flex gap-2"><span className="text-[#D4A017]">•</span>{item}</li>
-                  ))}
+                  {result.moduleIds.map((id, index) => {
+                    const topic = RGPD_MODULE_TOPICS[id];
+                    return topic ? <li key={id} className="border-b border-[#D4A017]/15 pb-4 last:border-0">
+                      <p className="font-bold">{index + 1}. {topic.title}</p>
+                      <p className="mt-1"><strong>¿Por qué importa?</strong> {topic.why}</p>
+                      <p className="mt-2"><strong>Qué puedes hacer:</strong> {topic.action}</p>
+                      <Link href={topic.guide} className="mt-2 inline-block font-semibold text-[#94700A] underline">{topic.guideTitle} →</Link>
+                    </li> : null;
+                  })}
                 </ul>
               </div>
 
@@ -304,14 +176,24 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
               </>
             )}
 
-            {result.hardFlags.length > 0 && (
+            {QUESTIONS.some(q => q.hardRisk && (answers[q.id] === true || answers[q.id] === 'unknown')) && (
               <div className="mt-5 border-l-4 border-[#D4A017] bg-[#D4A017]/8 p-4">
-                <p className="text-sm font-bold">Señales que requieren revisión</p>
+                <p className="text-base font-bold">Temas que conviene aclarar antes de seguir</p>
                 <ul className="mt-2 space-y-1 text-sm text-[#23364D]">
-                  {result.hardFlags.map((flag) => <li key={flag}>• {flag}</li>)}
+                  {QUESTIONS.filter(q => q.hardRisk && (answers[q.id] === true || answers[q.id] === 'unknown')).map(q => {
+                    const topic = RGPD_SIGNAL_TOPICS[q.id];
+                    return topic ? <li key={q.id} className="mb-4 border-b border-[#D4A017]/15 pb-3 last:border-0">
+                      <p className="font-bold">{topic.title}{answers[q.id] === 'unknown' ? ' · Por aclarar' : ''}</p>
+                      <p className="mt-1">{topic.why}</p>
+                      <p className="mt-2"><strong>Qué revisar:</strong> {topic.action}</p>
+                      <Link href={topic.guide} className="mt-2 inline-block font-semibold underline">{topic.guideTitle} →</Link>
+                    </li> : null;
+                  })}
                 </ul>
               </div>
             )}
+
+            {process.env.NEXT_PUBLIC_RGPD_REPORT_ENABLED === 'true' && <RgpdReportLeadForm answers={answers} />}
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               {result.level === 'low' ? (
@@ -320,12 +202,7 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
                 </Link>
               ) : (
                 <Link
-                  href={buildQuoteHref({
-                    tier: result.tier,
-                    score: result.score,
-                    modules: result.moduleLabels,
-                    hardFlags: result.hardFlags,
-                  })}
+                  href={buildQuoteHref()}
                   className="inline-flex min-h-12 items-center justify-center gap-2 bg-[#D4A017] px-5 text-sm font-bold text-[#0D1B2A]"
                 >
                   Solicitar presupuesto <ArrowRight className="h-4 w-4" />

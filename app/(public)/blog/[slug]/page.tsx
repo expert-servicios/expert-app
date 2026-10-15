@@ -1,3 +1,4 @@
+import { resolveRgpdPairedPath } from '@/lib/i18n/rgpd-routes';
 import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -36,13 +37,14 @@ export async function generateMetadata({
   const canonicalUrl = `https://expertconsulting.es/blog/${slug}`;
   const image = '/branding/expert%20servicios.png';
   const russianTranslation = laborRuArticles.find((item) => item.esSlug === slug);
+  const rgpdRuPath = resolveRgpdPairedPath('/blog/'+slug, 'ru');
 
   return {
     title,
     description: article.excerpt,
     alternates: {
       canonical: canonicalUrl,
-      ...(russianTranslation ? { languages: {
+      ...(rgpdRuPath ? { languages: { 'es-ES': canonicalUrl, 'ru-RU': 'https://expertconsulting.es'+rgpdRuPath, 'x-default': canonicalUrl } } : russianTranslation ? { languages: {
         'es-ES': canonicalUrl,
         'ru-RU': `https://expertconsulting.es/ru/blog/${russianTranslation.slug}`,
         'x-default': canonicalUrl,
@@ -80,6 +82,7 @@ export default async function BlogArticlePage({
   const primaryService = article.relatedServiceSlugs?.[0]
     ? services.find((service) => service.slug === article.relatedServiceSlugs?.[0]) ?? null
     : null;
+  const isRgpdArticle = article.category.toLowerCase() === 'protección de datos';
   const canonicalUrl = `https://expertconsulting.es/blog/${article.slug}`;
   const russianTranslation = laborRuArticles.find((item) => item.esSlug === article.slug);
   const isHoldedArticle =
@@ -253,6 +256,13 @@ export default async function BlogArticlePage({
                 </Link>
               </div>
             )}
+
+            {isRgpdArticle && <div className="border border-[#D4A017]/40 bg-white p-5">
+              <p className="text-xs font-bold uppercase tracking-widest text-[#B38C13]">Ayuda práctica con el RGPD</p>
+              <h3 className="mt-2 font-serif text-lg font-bold">Formación guiada AEPD · 2 horas</h3>
+              <p className="mt-2 text-sm leading-6 text-[#23364D]">Aprende a utilizar Facilita RGPD, Facilita EMPRENDE y Gestiona RGPD con una sesión online individual. Precio fijo 180 € + IVA; no es certificación ni auditoría.</p>
+              <Link href="/servicios/empresas-autonomos/formacion-rgpd-aepd" className="mt-3 inline-block text-sm font-bold underline">Conocer la formación →</Link>
+            </div>}
 
             <div className="border border-[#D4A017]/25 bg-white p-5">
               <p className="text-xs font-bold uppercase tracking-widest text-[#23364D]">Novedades</p>

@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { SupportedLocale } from '@/lib/i18n/config';
 import { laborRuArticles } from '@/lib/content/labor-bilingual-2026';
+import { resolveRgpdPairedPath } from '@/lib/i18n/rgpd-routes';
 import {
   getLocalizedPublicHref,
   inferPublicRouteKey,
@@ -54,9 +55,10 @@ export function LanguageSwitcher({
       const paired = laborRuArticles.find((article) =>
         pathname === '/blog/' + article.esSlug || pathname === '/ru/blog/' + article.slug
       );
-      const href = paired && (locale === 'es' || locale === 'ru')
+      const rgpdPaired = resolveRgpdPairedPath(pathname,locale);
+      const href = rgpdPaired ?? (paired && (locale === 'es' || locale === 'ru')
         ? (locale === 'es' ? '/blog/' + paired.esSlug : '/ru/blog/' + paired.slug)
-        : getLocalizedPublicHref(routeKey, locale);
+        : getLocalizedPublicHref(routeKey, locale));
       if (href === pathname) {
         router.refresh();
       } else {

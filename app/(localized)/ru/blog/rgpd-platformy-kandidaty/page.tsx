@@ -1,0 +1,19 @@
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { isLocalePubliclyEnabled, shouldIndexLocale } from '@/lib/i18n/feature-flags';
+import { KiaRgpdAction } from '@/components/tools/KiaRgpdAction';
+
+export const metadata: Metadata={
+ title:"RGPD для цифровой платформы: анкеты, кандидаты, фотографии и поставщики | EXPERT",description:"Что нужно продумать стартапу, который объединяет специалистов, компании или соискателей.",
+ alternates:{canonical:'https://expertconsulting.es/ru/blog/rgpd-platformy-kandidaty',languages:{'es-ES':'https://expertconsulting.es/blog/rgpd-marketplaces-candidatos-datos-sensibles-responsabilidad','ru-RU':'https://expertconsulting.es/ru/blog/rgpd-platformy-kandidaty'}},
+ robots:{index:shouldIndexLocale('ru'),follow:shouldIndexLocale('ru')}
+};
+export default function RuRgpdResourcePage(){
+ if(!isLocalePubliclyEnabled('ru'))notFound();
+ return <main className="bg-[#F8F6F1] text-[#0D1B2A]"><article className="mx-auto max-w-4xl space-y-7 px-6 py-12"><div><p className="text-sm font-bold text-[#94700A]">EXPERT · Статья · проверено 15.10.2026</p><h1 className="mt-3 font-serif text-3xl font-bold md:text-4xl">RGPD для цифровой платформы: анкеты, кандидаты, фотографии и поставщики</h1><p className="mt-4 leading-7">Что нужно продумать стартапу, который объединяет специалистов, компании или соискателей.</p></div><section><h2 className="font-serif text-2xl font-bold">Анкеты и чувствительные сведения</h2><p className="mt-3 leading-7">Не существует общего запрета спрашивать пол. Однако данные о здоровье, в том числе некоторые сведения об инвалидности, могут относиться к особым категориям статьи 9 RGPD. Нужно проверить необходимость, основание, доступ и риски.</p></section>
+<section><h2 className="font-serif text-2xl font-bold">Ответственность платформы</h2><p className="mt-3 leading-7">Правила сообщества сами по себе не освобождают оператора от обязанностей. Нужно определить, кто решает, зачем и как используются данные: оператор, участники или несколько ответственных.</p></section>
+<section><h2 className="font-serif text-2xl font-bold">Аналитика и внешние сервисы</h2><p className="mt-3 leading-7">Google Tag Manager и другие сервисы требуют анализа конкретных функций, cookies, договоров обработки, международных передач и реального доступа к информации.</p></section>
+<section><h2 className="font-serif text-2xl font-bold">Компания или физическое лицо</h2><p className="mt-3 leading-7">Обязанности RGPD возникают при фактической обработке персональных данных. Регистрация SL не означает автоматического освобождения администратора от любой персональной ответственности.</p></section>
+<section><h2 className="font-serif text-2xl font-bold">Что делать вначале</h2><p className="mt-3 leading-7">Описание категорий данных и целей, минимизация полей, проверка приватности форм, поставщиков, сроков хранения, рисков и прав пользователей.</p></section><section className="border border-[#D4A017]/30 bg-white p-6"><h2 className="font-serif text-xl font-bold">Бесплатные материалы и помощь EXPERT</h2><p className="mt-2 text-sm">Информация носит ориентировочный характер. Использование инструментов не подтверждает полное соблюдение RGPD. Правовая основа: Регламент (ЕС) 2016/679 (статьи 5, 6, 9, 24, 28, 35).</p><div className="mt-4 flex flex-wrap gap-3"><Link href="/ru/instrumenty/rgpd" className="rounded border px-4 py-3 font-semibold">Бесплатная анкета RGPD</Link><Link href="/ru/uslugi/obuchenie-rgpd" className="rounded bg-[#D4A017] px-4 py-3 font-bold">Обучение 2 часа · 180 € + НДС</Link><KiaRgpdAction topic="rgpd-guided-ru">Спросить KIA</KiaRgpdAction></div><a href="https://eur-lex.europa.eu/eli/reg/2016/679/oj/rus" target="_blank" rel="noopener noreferrer" className="mt-5 inline-block text-sm underline">Регламент (ЕС) 2016/679 →</a></section></article></main>;
+}

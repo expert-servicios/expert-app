@@ -514,7 +514,18 @@ export default async function ServicioDetallePage({
               </section>
             )}
 
-            {!service.deliveryOptions?.length && (
+            {service.slug === 'formacion-rgpd-aepd' && (
+              <section className="bg-[#0D1B2A] p-6 text-white md:p-7">
+                <h2 className="font-serif text-2xl font-bold">Formación práctica RGPD con la AEPD</h2>
+                <p className="mt-3 text-sm leading-6">2 horas online por 180 € + IVA (217,80 € con IVA). Aprende con un profesional a utilizar Facilita RGPD, Facilita EMPRENDE y Gestiona RGPD. No equivale a una auditoría ni a una certificación.</p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Link href={budgetHref} className="inline-flex min-h-11 items-center bg-[#D4A017] px-5 text-sm font-bold text-[#0D1B2A]">Solicitar formación RGPD</Link>
+                  <FreeMeetingButton origin={serviceOrigin} className="inline-flex min-h-11 items-center border border-white/40 px-5 text-sm font-semibold text-white">Consulta previa de 15 minutos</FreeMeetingButton>
+                </div>
+              </section>
+            )}
+
+            {!service.deliveryOptions?.length && service.slug !== 'formacion-rgpd-aepd' && (
             <section className="bg-[#0D1B2A] p-6 text-white md:p-7">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#D4A017]">Elegir vía</p>
               <h2 className="mt-3 font-serif text-2xl font-bold">Servicio completo, presupuesto complejo, formación o reunión gratuita</h2>

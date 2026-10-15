@@ -1,3 +1,4 @@
+import { resolveRgpdPairedPath } from '@/lib/i18n/rgpd-routes';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -25,6 +26,7 @@ export async function generateMetadata({
   const description = doc.seoDescription ?? doc.excerpt;
   const canonicalUrl = `https://expertconsulting.es/docs/${slug}`;
   const pairedGuide = IMMIGRATION_REVIEWED_GUIDES.find(g => g.esSlug === slug);
+  const rgpdRuPath = resolveRgpdPairedPath('/docs/'+slug, 'ru');
 
   return {
     title,
@@ -32,7 +34,7 @@ export async function generateMetadata({
     keywords: doc.tags,
     alternates: {
       canonical: canonicalUrl,
-      ...(pairedGuide ? {languages:{'es-ES':canonicalUrl,'ru-RU':'https://expertconsulting.es/ru/docs/'+pairedGuide.ruSlug,'x-default':canonicalUrl}} : {})
+      ...(rgpdRuPath ? {languages:{'es-ES':canonicalUrl,'ru-RU':'https://expertconsulting.es'+rgpdRuPath,'x-default':canonicalUrl}} : pairedGuide ? {languages:{'es-ES':canonicalUrl,'ru-RU':'https://expertconsulting.es/ru/docs/'+pairedGuide.ruSlug,'x-default':canonicalUrl}} : {})
     },
     openGraph: {
       title,
@@ -57,6 +59,7 @@ export default async function DocDetailPage({
   const doc = getDoc(slug);
   if (!doc) return notFound();
 
+  const isRgpdDoc = doc.category === 'proteccion-datos';
   const category = getDocCategory(doc.category);
   const relatedServices = services.filter((service) => doc.relatedServiceSlugs?.includes(service.slug));
   const relatedDocs = docs
@@ -234,6 +237,13 @@ export default async function DocDetailPage({
             </div>
           )}
 
+          {isRgpdDoc && <div className="border border-[#D4A017]/40 bg-white p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#B38C13]">¿Necesitas acompañamiento?</p>
+            <h3 className="mt-2 font-serif text-lg font-bold">Formación RGPD AEPD · 2 horas</h3>
+            <p className="mt-2 text-sm">Trabaja los formularios de las herramientas oficiales en directo con EXPERT por 180 € + IVA. No incluye auditoría ni certificación.</p>
+            <Link href="/servicios/empresas-autonomos/formacion-rgpd-aepd" className="mt-3 inline-block font-bold underline">Ver formación →</Link>
+          </div>}
+
           <div className="border border-[#D4A017]/25 bg-white p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-[#23364D]">Novedades</p>
             <p className="mt-2 text-sm leading-6 text-[#23364D]">Recibe nuevas guías y avisos prácticos.</p>
@@ -345,7 +355,12 @@ function Section({ heading, content }: { heading: string; content: string }) {
 function renderInline(text: string): string {
   return escapeInlineHtml(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`(.+?)`/g, '<code class="rounded bg-[#0D1B2A]/8 px-1 py-0.5 text-xs font-mono">$1</code>');
+    .replace(/`(.+?)`/g, '<code class="rounded bg-[#0D1B2A]/8 px-1 py-0.5 text-xs font-mono">$1</code>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_match, label: string, url: string) => {
+      const safeUrl = url.replace(/&amp;/g, '&');
+      const target = safeUrl.startsWith('https://expertconsulting.es/') ? '' : ' target="_blank" rel="noopener noreferrer"';
+      return `<a href="${safeUrl}"${target} class="underline text-[#8a6611]">${label}</a>`;
+    });
 }
 
 function escapeInlineHtml(text: string): string {

@@ -50,7 +50,8 @@ const serviceCategories = [
     id: 'proteccion-datos',
     title: 'Protección de datos',
     services: [
-      { id: 'proteccion-datos-rgpd', name: 'RGPD / LOPDGDD — revisión e implantación', description: 'Revisión personalizada de tratamientos, documentación, proveedores, web y riesgos' }
+      { id: 'formacion-rgpd-aepd', name: 'Formación RGPD AEPD — 2 horas / 180 € + IVA', description: 'Sesión guiada sobre Facilita RGPD, Facilita EMPRENDE y Gestiona RGPD' },
+      { id: 'proteccion-datos-rgpd', name: 'RGPD / LOPDGDD — revisión e implantación', description: 'Revisión personalizada, servicio independiente sujeto a presupuesto' }
     ]
   },
   {

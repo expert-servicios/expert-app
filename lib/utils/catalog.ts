@@ -1864,6 +1864,59 @@ export const services: Service[] = [
 
   // ── Formación ──────────────────────────────────────────────────────────────
   {
+    slug: 'formacion-rgpd-aepd',
+    categoria: 'empresas-autonomos',
+    name: 'Formación RGPD con herramientas oficiales de la AEPD — 2 horas online',
+    shortDescription: 'Sesión práctica de 2 horas por 180 € + IVA: aprende a utilizar Facilita RGPD, Facilita EMPRENDE y Gestiona RGPD según los tratamientos de tu negocio.',
+    description: 'Formación individual en directo mediante Google Meet para emprendedores, autónomos y pequeñas empresas. Identificamos los tipos generales de tratamiento sin pedir datos de terceros, elegimos la herramienta oficial de la AEPD adecuada y completamos conjuntamente un primer recorrido. Explicamos la responsabilidad proactiva, los límites de los modelos generados, los riesgos, los encargados de tratamiento y cuándo conviene revisión especializada. No es una auditoría, certificación, EIPD ni implantación integral.',
+    metaTitle: 'Formación RGPD online con herramientas AEPD | 2 horas | EXPERT',
+    metaDescription: 'Formación guiada RGPD de 2 horas online por 180 € + IVA. Aprende Facilita RGPD, Facilita EMPRENDE y Gestiona RGPD con un caso práctico y sin compartir datos reales de usuarios.',
+    price: '180 € + IVA',
+    duration: '2 horas online en directo',
+    servicePriceDetail: 'Precio fijo de la formación: 180 € + IVA (217,80 € IVA incluido). Evaluaciones, adecuación y auditorías posteriores no incluidas.',
+    includes: [
+      'Dos horas de formación guiada por Google Meet',
+      'Comparación y elección entre Facilita RGPD, Facilita EMPRENDE y Gestiona RGPD',
+      'Realización conjunta de un primer recorrido con ejemplos y categorías, sin datos personales de terceros',
+      'Explicación de la responsabilidad del titular y de la diferencia entre formación, revisión y certificación',
+      'Resumen de cuestiones pendientes y recursos oficiales para continuar'
+    ],
+    notIncluded: [
+      'Certificación oficial RGPD ni declaración de cumplimiento integral',
+      'Auditoría legal o técnica y evaluación de impacto completas',
+      'Redacción o implantación integral de todas las políticas y contratos',
+      'Presentación de trámites ni representación frente a la AEPD'
+    ],
+    requirements: [
+      'Disponer de ordenador y conexión a internet para compartir pantalla',
+      'Conocer a grandes rasgos la actividad y los tratamientos del negocio',
+      'No remitir datos de usuarios finales, historiales médicos ni documentos sensibles'
+    ],
+    keyPoints: [
+      { title: 'Facilita RGPD', text: 'Herramienta para tratamientos habituales de bajo riesgo. Sirve para orientar y generar documentación inicial, no para certificar.' },
+      { title: 'Facilita EMPRENDE', text: 'Orientación inicial para proyectos innovadores y plataformas digitales. Si hay mayor riesgo, se necesitan comprobaciones adicionales.' },
+      { title: 'Gestiona RGPD', text: 'Apoya la organización del registro de actividades, factores de riesgo y medidas. No sustituye una gestión de riesgos o EIPD completa.' },
+      { title: 'Responsabilidad proactiva', text: 'La organización debe implantar y poder acreditar medidas adecuadas. Una consultora puede revisar y asistir, sin emitir por ello certificados oficiales.' }
+    ],
+    process: [
+      { title: '0–20 minutos: contexto', text: 'Identificar actividad y categorías generales de datos, sin solicitar información identificativa de usuarios.' },
+      { title: '20–50 minutos: elegir herramienta', text: 'Diferenciar los usos de Facilita RGPD, Facilita EMPRENDE y Gestiona RGPD y revisar los límites de cada una.' },
+      { title: '50–100 minutos: práctica conjunta', text: 'Completar preguntas y configurar un primer registro orientativo o lista de medidas, con ejemplos anónimos.' },
+      { title: '100–120 minutos: próximos pasos', text: 'Comprobar riesgos pendientes, responsabilidades, documentos por completar y casos que requieren especialistas.' }
+    ],
+    finalCta: { title: 'Aprende a organizar el RGPD de tu negocio', text: 'Reserva una formación guiada de 2 horas por 180 € + IVA. El trabajo de adecuación posterior se presupuestará por separado solo si lo necesitas.' },
+    faqs: [
+      { q: '¿Qué cuesta la formación?', a: '180 € más el 21 % de IVA (217,80 € en total) por una sesión online individual de dos horas.' },
+      { q: '¿Saldré con un certificado de cumplimiento RGPD?', a: 'No. La formación enseña a utilizar las herramientas y preparar documentación inicial; ninguna de las tres herramientas acredita por sí sola el cumplimiento de toda la organización.' },
+      { q: '¿Qué herramienta AEPD utilizaré?', a: 'Facilita RGPD para tratamientos ordinarios de bajo riesgo, Facilita EMPRENDE para emprendedores tecnológicos y Gestiona RGPD para organizar actividades y factores de riesgo. Elegiremos según tu caso y los límites de uso.' },
+      { q: '¿Una empresa necesita una consultora acreditada para cumplir el RGPD?', a: 'No existe un requisito general de acreditación para el asesoramiento ordinario RGPD. La certificación formal de tratamientos bajo los artículos 42 y 43 del RGPD es otra actividad.' },
+      { q: '¿Tengo que compartir datos de mis clientes?', a: 'No. Trabajaremos con tipos de datos, categorías y ejemplos anónimos; no solicitaremos datos personales de terceros para la formación.' },
+      { q: '¿Quién responde ante una infracción?', a: 'El responsable del tratamiento debe cumplir y poder demostrarlo. En una SL, la responsabilidad de la sociedad no excluye todos los posibles supuestos de responsabilidad personal de sus administradores.' },
+      { q: '¿Puedo utilizar Facilita EMPRENDE si mi aplicación tiene perfiles y candidaturas?', a: 'Puede ser una herramienta de partida, pero hay que evaluar bases jurídicas, selección de personal, servicios externos, posibles categorías especiales y riesgos antes de concluir que la documentación es suficiente.' },
+      { q: '¿El precio incluye una auditoría o EIPD?', a: 'No; cualquier análisis o implantación profesional adicional se valora y presupuesta por separado.' }
+    ]
+  },
+  {
     slug: 'formacion-fiscal-contable',
     categoria: 'formacion',
     name: 'Formación Fiscal y Contable',

@@ -1,5 +1,6 @@
 ﻿import type { KiaChannel, KiaTaskType } from "./kia-output-schema";
 import { KIA_CORE_POLICY_PROMPT } from "./prompts/kia-core-policy";
+import { KIA_RGPD_KNOWLEDGE_PROMPT, isRgpdKiaTopic } from "./prompts/kia-rgpd-knowledge";
 import { KIA_LEAD_FLOW_PROMPT } from "./prompts/kia-lead-flow";
 import { KIA_CLIENT_FLOW_PROMPT } from "./prompts/kia-client-flow";
 import { KIA_ACCOUNTING_FLOW_PROMPT } from "./prompts/kia-accounting-flow";
@@ -166,6 +167,7 @@ Captar, orientar, clasificar, gestionar, explicar, resumir, detectar anomalias y
 ${KIA_CORE_POLICY_PROMPT}
 
 ${KIA_SERVICES_CATALOG_PROMPT}
+${isRgpdKiaTopic(params.currentTask ?? '', params.currentPage ?? '') ? KIA_RGPD_KNOWLEDGE_PROMPT : ''}
 
 <expert_sources_of_truth>
 - EXPERT manda en clientes, expedientes, documentos, comunicaciones y tareas.

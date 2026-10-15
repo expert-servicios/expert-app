@@ -8,6 +8,7 @@ import { KiaAvatar } from '@/components/kia/KiaAvatar';
 import { KiaReadableMessage } from '@/components/kia/KiaReadableMessage';
 import { chooseKiaBrowserVoice, kiaTextForSpeech, kiaVoiceLocale } from '@/lib/ai/kia/kia-voice-presentation';
 import { getRecaptchaToken } from '@/lib/utils/recaptcha-client';
+import { KiaRgpdGuidedPanel } from '@/components/tools/KiaRgpdGuidedPanel';
 
 type ChatMessage = {
   id: string;
@@ -91,6 +92,7 @@ function commercialCta(data: PublicKiaResponse): { href: string; label: string }
 export function KiaPublicWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
+  const [rgpdGuidedLocale,setRgpdGuidedLocale] = useState<'es'|'ru'|null>(null);
   const [loading, setLoading] = useState(false);
   const [thinkingStage, setThinkingStage] = useState<ThinkingStage>('verifying');
   const [telegramLoading, setTelegramLoading] = useState(false);
@@ -128,6 +130,28 @@ export function KiaPublicWidget() {
     if (!url || !key) return;
     const supabase = createBrowserClient(url, key);
     void supabase.auth.getSession().then(({ data }) => setLoggedIn(Boolean(data.session)));
+  }, []);
+
+  useEffect(() => {
+    const onOpen = (event: Event) => {
+      const detail = (event as CustomEvent<{ topic?: string }>).detail;
+      const prompts: Record<string, string> = {
+        'rgpd-help': 'Necesito ayuda para entender los pasos de protección de datos de mi negocio.',
+        'rgpd-guided': 'Quiero hacer un cuestionario RGPD guiado. Hazme una pregunta sencilla cada vez y recomiéndame una herramienta oficial de la AEPD.',
+        'rgpd-training': 'Explícame qué incluye la formación RGPD online de EXPERT de dos horas por 180 euros más IVA.',
+        'rgpd-guided-ru': 'Помоги мне пройти предварительную оценку RGPD для бизнеса в Испании. Задавай по одному простому вопросу на русском языке.',
+      };
+      setOpen(true);
+      if(detail?.topic === 'rgpd-guided' || detail?.topic === 'rgpd-guided-ru') {
+        setRgpdGuidedLocale(detail.topic === 'rgpd-guided-ru'?'ru':'es');
+        setInput('');
+        return;
+      }
+      const prompt = detail?.topic ? prompts[detail.topic] : undefined;
+      if (prompt) setInput(prompt);
+    };
+    window.addEventListener('expert:kia-open', onOpen);
+    return () => window.removeEventListener('expert:kia-open', onOpen);
   }, []);
 
   useEffect(() => {
@@ -453,6 +477,8 @@ export function KiaPublicWidget() {
               </div>
             </div>
           ) : null}
+
+          {rgpdGuidedLocale && <KiaRgpdGuidedPanel locale={rgpdGuidedLocale} onClose={()=>setRgpdGuidedLocale(null)} />}
 
           {!loading && quickReplies.length ? (
             <div className="flex flex-wrap gap-1.5">
