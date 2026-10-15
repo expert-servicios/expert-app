@@ -1,5 +1,5 @@
 # PLAN MAESTRO — CIRCE / Constitución de SL en autoservicio y acompañamiento EXPERT
-**Versión:** 1.1 · **Fecha:** 15/10/2026 · **Estado:** plan de trabajo, sin cambios comerciales publicados
+**Versión:** 1.2 · **Fecha:** 15/10/2026 · **Estado:** plan de trabajo, sin cambios comerciales publicados
 **Rama:** `plan/circe-autogestion-contenidos-20261015`
 **Ámbito:** expertconsulting.es, fichas ES/RU, recursos gratuitos, KIA, adquisición orgánica y seguimiento del caso piloto Comfi App.
 **Separación:** no mezclar con PR #782, cuyos informes RGPD/lead/email siguen sujetos a validaciones.
@@ -178,5 +178,59 @@ Fuentes de referencia: AEPD consentimiento https://www.aepd.es/preguntas-frecuen
 - Resolución DGSJFP 25/04/2025 sobre firma cualificada y CSV: https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-10253
 
 **Publicación:** mostrar tabla doble «arancel especial orientativo si reúne condiciones» y «precio real a confirmar por notaría/Registro», con nota «costes de terceros no incluidos en honorarios EXPERT». Actualizar la FAQ de CIRCE ES/RU, artículo de costes y KIA solo tras pruebas de fuentes y revisión humana.
+
+
+## 11. Investigación de reclamaciones, plazos y oportunidades KIA — 15/10/2026
+
+### Jerarquía de fuentes y actualización normativa
+- Comprobar **normas consolidadas**, no solo extractos históricos. Especialmente importante: el art. 5 del RDL 13/2010 mantiene las reglas arancelarias 150/100 y 60/40, pero las antiguas letras de procedimiento con plazos de 1 día, 3 días y 7 horas fueron **derogadas**. Las guías actuales deben utilizar la Ley 14/2013, artículos 15 y 16.
+- RD 1612/2011 incorporó al arancel notarial RD 1426/1989 n.º 1.1.g y al arancel mercantil Decreto 757/1973 n.º 5, bajo condiciones concurrentes (vía telemática, capital, composición de socios y administración, estatutos tipo para 60/40). Esos importes no son el total de todas las actuaciones imaginables ni una tarifa fija para cualquier SL.
+- En el procedimiento CIRCE con **estatutos tipo** del art. 15 Ley 14/2013:
+  - RMC: reserva de denominación dentro de **6 horas hábiles** desde su solicitud.
+  - Cita/fecha de otorgamiento de escritura: **no superior a 12 horas hábiles** desde el inicio del trámite electrónico, con antecedentes suficientes.
+  - Notaría: remisión electrónica inmediata a CIRCE para NIF provisional y copia autorizada al RM; **copia simple electrónica a petición de los otorgantes, sin coste adicional**, disponible en PAE.
+  - RM: **6 horas hábiles** de calificación e inscripción desde recepción de copia electrónica con NIF provisional y justificación correspondiente; certificación al CIRCE **el mismo día**.
+  - NIF definitivo se transmite electrónicamente después de inscripción, sin prometer que todo el circuito concluye dentro de 6 o 12 horas. Las **horas hábiles registrales** son las del horario de apertura del Registro, no reloj natural ni días hábiles completos.
+- Art. 16 Ley 14/2013 **sin estatutos tipo**: inscripción inicial en **6 horas hábiles** desde copia electrónica con alcance limitado a ciertos datos; **no confundir** con calificación/inscripción definitiva del contenido completo. Confirmar trámites subsiguientes.
+- No existe en estas normas una obligación general de «entregar toda escritura autorizada con CSV en X horas» aplicable a cualquier negocio: describir el derecho a copia simple electrónica gratuita en el supuesto art. 15 y los mecanismos de copia autorizada electrónica según la Ley del Notariado; los plazos dependen del acto concreto y requisitos de expedición.
+- Cualquier «retraso» debe analizarse con trazas de recepción y documentos completos, si hubo incidencias/subsanación, qué actuación estaba pendiente y cuál era el régimen legal; KIA no declarará infracción automáticamente.
+
+### Evidencia documental de reclamaciones y procedimientos
+**No atribuir a todas las notarías cobros irregulares.** Se han localizado reclamaciones/recursos documentados y canales oficiales; la existencia de un recurso o diferencia de factura **no acredita por sí misma una infracción**.
+1. **Resolución DGRN de 5/12/2017 (BOE-A-2017-15649):** en un recurso sobre calificación del Registro Mercantil, el recurrente planteaba honorarios. La DGRN recordó que la vía de calificación **no resuelve impugnaciones de honorarios**; éstas usan el expediente arancelario propio. Caso verificado como problema de cauce procesal, no como cobro excesivo probado.
+2. **Memoria DGRN 2017, expediente de sociedad O Mazo de Ferreiravella SRL:** recoge inadmisión de una impugnación de minuta mercantil por extemporaneidad. La doctrina allí expuesta señala **15 días hábiles** desde notificación/entrega para el recurso ordinario y revisión extraordinaria restringida a errores materiales/aritméticos o defectos formales. Validar la regulación y plazo de cada caso antes de asesoramiento individual; señalar en la ficha «actúa pronto; no ignores la fecha de entrega».
+3. **Ministerio de Justicia:** existe trámite oficial de **recurso contra minutas de registradores mercantiles y de bienes muebles**. La factura/minuta debe desglosar arancel, bases, conceptos, suplidos y vías y plazos de impugnación (Decreto 757/1973 y RD 1612/2011).
+4. **Colegio Notarial de Valencia:** Servicio de Atención al Usuario gratuito con oficina en Alicante para consultas sobre facturas y trato, sin sustituir la vía de impugnación; la Junta Directiva tramita asuntos arancelarios. El Ministerio tiene trámite de **apelación contra resoluciones del Colegio Notarial relativas a minutas**. Verificar el plazo de la impugnación notarial en el documento entregado: no trasladar sin más los 15 días mercantiles a notarios.
+5. **Documentación electrónica:** art. 31 Ley del Notariado; la **copia autorizada electrónica** incorpora CSV verificable y autenticación legal. No equiparar traslado informativo/copia simple a copia autorizada; el CSV no es requisito universal de validez de toda escritura. Art. 15.4.d Ley 14/2013 respalda la copia simple electrónica gratuita si la solicitan fundadores en el procedimiento correspondiente.
+
+### Módulos públicos prioritarios
+- **Comprobador orientativo de arancel reducido**: capital social (bandas: hasta 3.100 €, hasta 30.000 €, superior), socios personas físicas/jurídicas, tipo de administración, estatutos tipo, vía telemática. Salida: «potencial 60/40», «potencial 150/100» o «no determinado — revisar arancel ordinario», con requisitos y fuente; nunca afirmar cobro ilegal basándose solo en importe final. Datos locales en navegador; no subir minuta por defecto.
+- **Reloj de plazos CIRCE**: mapa de eventos (DUE iniciado → RMC solicitado → cita notarial → firma → remisión de escritura/NIF → recepción RM → inscripción → certificación → NIF definitivo). Identificar los hitos que activan cada plazo y que son horas hábiles. Sin promesa de ETA exacta, sin lectura de expedientes oficiales por parte de KIA.
+- **Asistente «¿Cómo reviso mi factura?»**: procedimiento público de comprobación minuta, desglose, IVA, actuaciones y copias adicionales; ruta diferenciada notario/registrador, recurso de honorarios/calificación, modelos orientativos y conservación de justificantes.
+- **Asistente «¿Por qué tarda?»**: pedir solo fechas de hitos y naturaleza del estado, no DNI, datos completos de escritura, CSV personal, nº de protocolo ni NIF por chat. Ofrecer actuación formal y revisión humana si existen dudas.
+- **Guías PDF y mapas**: «Constituir una SL y conocer tus derechos»; «Copia electrónica y CSV»; «Recurso arancelario mercantil»; «Queja notarial y documentación»; «Primeros 90 días» y FAQ ES/RU con anclas a normativa.
+- **Consulta gratuita orientativa (15 minutos)** para identificar si la controversia es de arancel, trámite, plazo, copia o calificación, **sin prometer dictamen/reclamación**. Formación de 2 h por 180 € + IVA opcional; eventual servicio puntual de revisión de minuta/reclamación sujeto a alcance, catalogación y presupuesto, **no inventar precio**.
+
+### KIA: detección de oportunidades controlada, sin automatizar publicaciones
+1. **Entradas autorizadas:** dudas anónimas ya redactadas, actualizaciones oficiales verificadas o incidencias previamente revisadas y desidentificadas. No usar en bruto expedientes privados, chat ni correos de clientes como banco de ejemplos; no enviar minutas a proveedores de IA por defecto.
+2. **Detectar señal**: sobrecoste notarial, facturación mercantil, demora CIRCE, discrepancia de certificado/CSV, problema de estatutos/capital, queja y recursos, pregunta repetida sin respuesta, nueva norma.
+3. **Proponer en bandeja interna QA** un objeto tipado con tema canónico, necesidad detectada, contenido sugerido (FAQ, artículo, guía, manual, calculadora, curso, servicio), enlace a fuente oficial, fecha verificación, ES/RU, alcance, gravedad y necesidad de revisión humana. Deduplicar por tema+norma+versión; nunca por email/nombre/identificador de conversación.
+4. **Priorizar ayuda gratuita**: FAQ/guía y enlace oficial antes de formación o servicio; medir recurrencia de preguntas por tema agregado, no seguimientos individualizados ni segmentaciones publicitarias sin base legal.
+5. **Gates:** ninguna sugerencia inventa una norma, acusa a un tercero, declara reclamación fundada, crea lead, tarea comercial, campaña, email o artículo público por sí misma. Una persona valida hecho, fuente, fecha, IVA/arancel, ES/RU y publicabilidad.
+6. La función determinista inicial detecta **candidatos de contenidos sin persistencia**, con pruebas que aseguran no leer ni retornar texto de usuario, PII ni fechas individuales. La integración a bandeja QA/cron/catálogo y publicación son fases posteriores con permisos y auditoría.
+
+Fuentes verificadas:
+- Ley 14/2013 arts. 15-16 (consolidado): https://www.boe.es/eli/es/l/2013/09/27/14/con
+- RDL 13/2010 art. 5 (consolidado): https://www.boe.es/eli/es/rdl/2010/12/03/13/con
+- Arancel Notarios RD 1426/1989: https://www.boe.es/buscar/act.php?id=BOE-A-1989-28111
+- Arancel RM Decreto 757/1973: https://www.boe.es/buscar/act.php?id=BOE-A-1973-561
+- RD 1612/2011: https://www.boe.es/buscar/doc.php?id=BOE-A-2011-17962
+- Recurso RM: https://www.mjusticia.gob.es/es/ciudadania/tramites/recurso-contra-minutas
+- Apelación de honorarios notariales: https://www.mjusticia.gob.es/es/ciudadania/tramites/recurso-apelacion-honorarios1
+- Colegio Notarial Alicante/Valencia, SAU: https://valencia.notariado.org/portal/sau
+- BOE 2017-15649: https://www.boe.es/diario_boe/txt.php?id=BOE-A-2017-15649
+- Memoria Justicia 2017 Sistema Registral (p. ~2385): https://www.mjusticia.gob.es/es/AreaTematica/DocumentacionPublicaciones/Documents/DGRN-2017-SISTREG.pdf
+
+**Notas de publicación:** distinguir cuidadosamente reglas actuales de las históricas y reclamaciones alegadas de irregularidades declaradas. Este anexo no ejecuta trámites ni autoriza publicidad automatizada.
 
 **No publicación / No envíos automáticos con este documento.**
