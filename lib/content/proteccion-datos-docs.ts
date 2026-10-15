@@ -1,5 +1,16 @@
 export const proteccionDatosKnowledgeDocs = [
   {
+    slug: "politica-privacidad-plataformas-checklist",
+    category: "proteccion-datos" as const,
+    title: "Guía para adaptar una política de privacidad a una plataforma digital",
+    excerpt: "Checklist para documentar roles, finalidades, información por capas, encargados y derechos en plataformas de profesionales y centros.",
+    updatedAt: "14 oct 2026",
+    readTime: "10 min",
+    tags: ["RGPD","plataformas","política de privacidad","checklist","cookies"],
+    relatedServiceSlugs: [],
+    body: "## 1. Identificar a la entidad responsable\n\nConfirmar quién determina las finalidades y medios del tratamiento hoy; no atribuir automáticamente el papel a una SL todavía no constituida. Indicar identidad, NIF, domicilio y contacto de privacidad. Diferenciar operaciones realizadas por centros u otros participantes.\n\n## 2. Describir cada flujo\n\nRegistro de cuentas; portafolios y fotografías; publicación de ofertas; candidaturas; mensajes; pagos futuros; soporte; cookies; analítica; IA y automatizaciones, si realmente existen.\n\n## 3. Construir la matriz legal\n\nPara cada operación: personas, categorías de datos, finalidad, base jurídica, destinatarios, encargados, transferencias internacionales, conservación y medidas. Evitar poner «consentimiento» de forma genérica a todo el servicio.\n\n## 4. Información y consentimiento\n\nRedactar política completa e información de primera capa por formulario. Separar comunicaciones necesarias y marketing; revisar cookies y su consentimiento si procede. Registrar las opciones técnicas que efectivamente utilizan.\n\n## 5. Contratos y condiciones\n\nComprobar contratos del artículo 28 con proveedores; reglas de acceso y eliminación; condiciones de uso; licencias de contenido y fotos; solicitudes de derechos; registro de brechas y análisis de riesgos. La EIPD se analiza por riesgo real, no por el mero hecho de ser una startup.\n\n## 6. Control final antes de publicar\n\nComparar textos con pantallas de registro y políticas reales, verificar enlaces y buzón de privacidad, revisar transferencias y plazos, asignar responsable interno y fecha de revisión. El generador gratuito de EXPERT entrega borradores, no una certificación.\n\n## Preguntas frecuentes\n\n**¿Quién es el responsable?** Quien determina las finalidades y medios de cada tratamiento, no necesariamente quien aloja técnicamente la información.\n\n**¿Necesitamos contrato de encargado con todos?** Solo con quienes actúan realmente como encargados; algunos terceros pueden ser responsables independientes.\n\n**¿Basta una política de privacidad?** No. También hay obligaciones organizativas, contractuales y de seguridad.\n\n## Fuentes oficiales\n\n- [RGPD, artículos 12-14, 26, 28, 30 y 35](https://eur-lex.europa.eu/eli/reg/2016/679/oj/spa)\n- [LOPDGDD](https://www.boe.es/buscar/act.php?id=BOE-A-2018-16673)\n- [AEPD: pymes](https://www.aepd.es/derechos-y-deberes/cumple-tus-deberes/directrices-de-aplicacion/pymes)\n- [LSSI](https://www.boe.es/buscar/act.php?id=BOE-A-2002-13758)\n\nRevisado el 14/10/2026."
+  },
+  {
     slug: 'checklist-rgpd-autonomos-pymes',
     relatedServiceSlugs: ['formacion-rgpd-aepd'],
     category: 'proteccion-datos' as const,
