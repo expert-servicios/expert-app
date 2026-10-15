@@ -149,4 +149,34 @@ Extender después de RGPD y CIRCE a: alta de autónomos, certificados digitales,
 
 Fuentes de referencia: AEPD consentimiento https://www.aepd.es/preguntas-frecuentes/2-tus-obligaciones-como-responsable-del-tratamiento/5-bases-legitimadoras-del-tratamiento/FAQ-0211-segun-el-rgpd-como-debe-solicitarse-el-consentimiento-de-los-interesados-para-tratar-sus-datos-personales ; LSSI comunicaciones comerciales https://lssi.digital.gob.es/lssi/la-ley/aspectos-basicos/publicidad-en-internet ; Google Search Central https://developers.google.com/search/docs/fundamentals/creating-helpful-content .
 
+
+## 10. Gastos notariales, registrales y documentación electrónica (control jurídico 15/10/2026)
+
+**Separar expresamente los honorarios de EXPERT (490 € + IVA para el servicio estándar tras conciliación comercial) de los aranceles notariales, registrales y de denominación, que liquida cada tercero. No incluir esos gastos en el precio de formación 180 € + IVA, ni dar por hecho que cualquier factura superior al arancel especial es incorrecta.**
+
+### Normativa y escenarios; no confundir 2010 con 2013
+- La referencia específica para el arancel especial es **artículo 5 del Real Decreto-ley 13/2010**, desarrollado en los aranceles por el **Real Decreto 1612/2011**, no una supuesta regla del «BOE 10/2013». La Ley 14/2013 establece el circuito CIRCE/DUE, pero no debe citarse como fuente de los importes de 60/40.
+- En la tramitación que cumple condiciones especiales (SL **capital no superior a 3.100 €**, **estatutos tipo** y restantes requisitos aplicables), referencia normativa: **60 € notario y 40 € registrador**.
+- En el supuesto de constitución telemática sujeto al tramo general reducido del art. 5.1: **150 € notario y 100 € registrador**, si se cumplen las condiciones aplicables. Para supuestos fuera de tales condiciones habrá que calcular los aranceles ordinarios según normativa; no afirmar que 150 € aplica automáticamente «a partir de 60.000 €».
+- Verificar con normativa vigente y factura desglosada antes de afirmar que un caso concreto entra en uno de los aranceles: estatutos, socios personas físicas o jurídicas, administración, capital, canal real de tramitación y conceptos efectivamente facturados.
+- **Gastos adicionales**: certificación de denominación, copias solicitadas, suplidos y otras actuaciones posibles requieren identificación individual y fundamento arancelario/factura. No atribuir a EXPERT los precios de terceros ni prometer importe final cerrado sin revisar supuesto.
+- Práctica comunicada por EXPERT: se observan escrituras de alrededor de 100–150 €, pero ese dato **no es tarifa legal verificada ni demuestra por sí mismo incumplimiento**. Cuando el coste exceda del especial, pedir **minuta/factura desglosada**, revisar el encaje normativo y ofrecer consulta/impugnación arancelaria si procede. Incorporar herramienta gratuita «¿Me corresponde el arancel reducido?» con explicación y advertencia.
+
+### Escritura/copia electrónica y CSV: precisión esencial
+- **La escritura pública puede otorgarse y conservarse válidamente por los cauces legalmente previstos**; la presencia de CSV **no es requisito universal para la validez de todas las escrituras**.
+- Para la **copia autorizada electrónica expedida al interesado**, el artículo 31 de la Ley del Notariado prevé **código seguro de verificación (CSV)** verificable en la sede electrónica notarial, junto con **firma electrónica cualificada del notario**. El CSV por sí solo, en un traslado informativo, **no convierte un PDF en copia autorizada**. Verificar firma, integridad y CSV cuando se necesiten efectos jurídicos plenos.
+- La tramitación CIRCE implica transmisión electrónica por los canales habilitados; **evitar obligar al usuario a recoger copias impresas** cuando el uso previsto admite la copia electrónica. Si pide copias en papel o actuaciones adicionales, solicitar presupuesto desglosado.
+- Recomendar en checklist de entrega: (a) justificante DUE; (b) escritura/copia autorizada electrónica legalmente verificable, cuando corresponda y accesible por el canal habilitado; (c) datos de inscripción Registro Mercantil; (d) NIF; (e) facturas de notaría/registro separadas. Si es un simple traslado informativo, identificarlo correctamente y no ofrecerlo como copia autorizada.
+- Preparar FAQ «¿Es obligatorio recoger la escritura en papel?», «¿Qué diferencia hay entre copia simple electrónica, copia autorizada electrónica y traslado informativo con CSV?», «¿Cuánto cobra legalmente la notaría según mi capital y estatutos?», «¿Qué hago si mi factura supera el arancel reducido?».
+
+### Fuentes oficiales y pruebas
+- RDL 13/2010, artículo 5: https://www.boe.es/buscar/act.php?id=BOE-A-2010-18651
+- RD 1612/2011, aranceles: https://www.boe.es/buscar/doc.php?id=BOE-A-2011-17962
+- Instrucción DGRN 18/05/2011 sobre aranceles/procedimiento: https://www.boe.es/buscar/doc.php?id=BOE-A-2011-9085
+- Ley 14/2013, arts. 15-16: https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074
+- Ley del Notariado, art. 31 y 17 bis: https://www.boe.es/buscar/act.php?id=BOE-A-1862-4073
+- Resolución DGSJFP 25/04/2025 sobre firma cualificada y CSV: https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-10253
+
+**Publicación:** mostrar tabla doble «arancel especial orientativo si reúne condiciones» y «precio real a confirmar por notaría/Registro», con nota «costes de terceros no incluidos en honorarios EXPERT». Actualizar la FAQ de CIRCE ES/RU, artículo de costes y KIA solo tras pruebas de fuentes y revisión humana.
+
 **No publicación / No envíos automáticos con este documento.**
