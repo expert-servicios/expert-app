@@ -16,6 +16,7 @@ describe('Contactos 360 read-only lead preview',()=>{
     expect(page).toContain('data.summary.leadsPreviewLimited');
     expect(page).toContain('/admin/leads?segment=all');
     expect(page).toContain("filter === 'leads'");
+    expect(page).toContain('KIA · guías y seguimiento, sin datos privados');
   });
   it('retains admin-only authorization',()=>{
     expect(api).toContain("requireActiveActor(request, ['admin', 'owner'])");

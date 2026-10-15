@@ -20,6 +20,7 @@ import { notifyKiaAdminEscalation } from '@/lib/admin/kia-admin-escalation';
 import { resolveKiaOperationalCategory, type KiaOperationalCategory } from '@/lib/ai/kia/kia-operational-routing';
 import { getEmailManualLock } from '@/lib/admin/operations-360-email-control';
 import { materializeKiaOperationalTask } from '@/lib/admin/kia-operational-task';
+import { canAutoReplyToKiaContact, mayUsePrivateKiaEmailTools, resolveKiaContactGroup } from '@/lib/ai/kia/kia-contact-groups';
 
 export const maxDuration = 60;
 
@@ -691,6 +692,9 @@ export async function GET(request: NextRequest) {
       const replyToMismatch = replyRecipient !== senderEmail;
       let identity = await resolveIdentity(admin, senderEmail, row.case_id ?? null, authUsers);
       const wasKnownContact = Boolean(identity.clientId || identity.leadId);
+      // Freeze the group before creating a first-contact lead: recording a lead
+      // must not grant stronger permissions to that same inbound request.
+      const contactGroup = resolveKiaContactGroup(identity);
       const safeUnknownProspect = !wasKnownContact && !row.case_id
         && isSafeUnknownProspect(latest.subject, latestReply);
       if (!wasKnownContact && !row.case_id) {
@@ -767,7 +771,7 @@ export async function GET(request: NextRequest) {
       }));
 
       const hasAttachments = latest.attachments.some((attachment) => !attachment.inline);
-      const confidenceFloor = wasKnownContact ? minConfidence : prospectMinConfidence;
+      const confidenceFloor = mayUsePrivateKiaEmailTools(contactGroup) ? minConfidence : prospectMinConfidence;
       const { data: companyOperationalControls, error: companyOperationalControlsError } = identity.companyId
         ? await admin.from('company_operational_controls')
             .select('external_communication_blocked')
@@ -778,14 +782,16 @@ export async function GET(request: NextRequest) {
       const externalCommunicationBlocked = Boolean(companyOperationalControls?.external_communication_blocked);
       const externalActionPreEligible = autoSend
         && health.ok
-        && (wasKnownContact || (safeUnknownProspect && newLeadAutoSend))
+        && canAutoReplyToKiaContact({ group: contactGroup, safeUnknownProspect, newLeadAutoSend })
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
         && !externalCommunicationBlocked
         && envelope.recipientPurpose !== 'noreply'
         && !hasAttachments;
-      const baseAllowedTools = wasKnownContact ? KNOWN_CONTACT_TOOLS : PUBLIC_PROSPECT_TOOLS;
+      // A lead with a matching email is NOT a verified client. Only client
+      // identities can access cases, Holded, documents and operational reads.
+      const baseAllowedTools = mayUsePrivateKiaEmailTools(contactGroup) ? KNOWN_CONTACT_TOOLS : PUBLIC_PROSPECT_TOOLS;
       const allowedTools = baseAllowedTools.filter(
         (toolName) => toolName !== 'create_booking_meeting' || externalActionPreEligible,
       );
@@ -883,7 +889,7 @@ export async function GET(request: NextRequest) {
       const canAutoSend = autoSend
         && health.ok
         && !result.executionTrace.lateClassificationFailClosed
-        && (wasKnownContact || (safeUnknownProspect && newLeadAutoSend))
+        && canAutoReplyToKiaContact({ group: contactGroup, safeUnknownProspect, newLeadAutoSend })
         && !identity.ambiguousCase
         && !identity.linkedCaseSenderMismatch
         && !replyToMismatch
@@ -1025,7 +1031,7 @@ export async function GET(request: NextRequest) {
         else if (!autoSend) blockReason = 'auto_send_disabled';
         else if (!health.ok) blockReason = health.reason;
         else if (!wasKnownContact && !safeUnknownProspect) blockReason = 'unknown_contact_not_safe_prospect';
-        else if (!wasKnownContact && safeUnknownProspect && !newLeadAutoSend) blockReason = 'new_lead_approval_required';
+        else if (contactGroup !== 'verified_client' && !newLeadAutoSend) blockReason = 'new_lead_approval_required';
         else if (identity.ambiguousCase) blockReason = 'ambiguous_case';
         else if (identity.linkedCaseSenderMismatch) blockReason = 'linked_case_sender_mismatch';
         else if (externalCommunicationBlocked) blockReason = 'company_external_communication_blocked';

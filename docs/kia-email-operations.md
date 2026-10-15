@@ -28,6 +28,22 @@ Estas direcciones deben crearse como aliases/send-as válidos en Google Workspac
 
 La clasificación operativa necesita el scope OAuth `gmail.modify` para crear y aplicar etiquetas. Añadir el scope al código **no amplía** un refresh token emitido anteriormente: si la conexión Gmail Admin se autorizó antes de incorporar `gmail.modify`, debe reconectarse/reautorizarse antes de considerar el etiquetado operativo. Una conexión antigua puede seguir leyendo y enviando correo pero fallar al modificar etiquetas.
 
+## Grupos de contactos y permisos de KIA (14/10/2026)
+
+Contactos 360 distingue **visitante**, **lead** y **cliente con identidad asociada**. No se añade un rol a `auth.users` ni se fabrica una cuenta para la persona que envía un formulario.
+
+| Grupo | Origen | Asistencia permitida | Acceso a datos privados |
+| --- | --- | --- | --- |
+| Visitante | Consulta pública sin identidad previa | Información, guías oficiales y servicios; respuestas solo si el mensaje es un prospecto seguro | Nunca |
+| Lead | Registro en `leads` identificado por dirección de correo | Continuidad del hilo Gmail, historial comercial del lead, catálogo, guías y reuniones permitidas | Nunca por conocer el email |
+| Cliente con identidad asociada | `client_id` resuelto por los controles vigentes | Ayuda sobre sus servicios y herramientas sujetas a autorización | Solo conforme a la política de cliente y titularidad |
+
+La pertenencia a `leads` **no es autorización de cliente**. El agente de email resuelve el grupo antes de crear un lead de primer contacto, y solo habilita `KNOWN_CONTACT_TOOLS` cuando hay `client_id` validado por el mecanismo existente; para leads usa `PUBLIC_PROSPECT_TOOLS`. El autoinicio de envío a leads depende de `kia.email_new_lead_auto_send`, el control de confianza más restrictivo y el chequeo anti-duplicados del hilo.
+
+**Ejemplo anonimizado:** una persona que escribe por recuperación de un certificado digital y responde a tres preguntas conserva su historia en el hilo Gmail, pero KIA no le muestra documentos, expedientes, Holded ni facturación privada. Cuando la identidad se compruebe mediante los procedimientos oficiales de la aplicación, se puede completar el alta y asociar permisos explícitos. La inscripción del lead jamás otorga acceso al portal por sí sola.
+
+Esta mejora es de aplicación y pruebas; no requiere nueva tabla ni migración SQL porque `leads`, `profiles` y Directorio 360 ya separan esos conceptos. La vinculación contextual entre chat/Telegram y leads no autenticados requiere un flujo seguro adicional, no se habilita por este cambio.
+
 ## Clasificación
 
 KIA asigna cada mensaje a una de estas clases:
