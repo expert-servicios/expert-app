@@ -13,44 +13,10 @@ import { RgpdAccountSave } from '@/components/tools/RgpdAccountSave';
 import { AEPD_TOOLS, recommendAepdTools } from '@/lib/rgpd/aepd-tool-recommendation';
 import { RGPD_MODULE_TOPICS, RGPD_SIGNAL_TOPICS } from '@/lib/rgpd/plain-language-review-topics';
 import { RgpdReportLeadForm } from '@/components/tools/RgpdReportLeadForm';
+import { RGPD_QUESTIONS, evaluateRgpdAssessment, getRgpdQuestion, type RgpdAnswer } from '@/lib/rgpd/assessment-contract';
 
-type Answer = boolean | 'none' | 'basic' | 'advanced' | 'unknown' | 'ordinary' | 'startup' | 'multiple';
-
-type Question = {
-  id: string;
-  title: string;
-  description?: string;
-  kind?: 'boolean' | 'cookies' | 'business';
-  hardRisk?: boolean;
-  weight?: number;
-};
-
-const QUESTIONS: Question[] = [
-  { id: 'businessType', title: '¿Qué tipo de actividad describe mejor tu negocio?', kind: 'business', description: 'Esta respuesta nos ayuda a elegir entre las herramientas gratuitas oficiales de la AEPD.' },
-  { id: 'employees', title: '¿Tienes empleados o colaboradores con acceso a datos personales?', weight: 1 },
-  { id: 'website', title: '¿Tu web recoge datos mediante formularios, reservas, newsletter o cuentas de usuario?', weight: 1 },
-  { id: 'cookies', title: '¿Utilizas analítica, publicidad, píxeles o cookies no necesarias?', kind: 'cookies', weight: 1 },
-  { id: 'processors', title: '¿Usas proveedores que acceden a datos (gestoría, CRM, cloud, email marketing, soporte, IA)?', weight: 1 },
-  { id: 'international', title: '¿Algún proveedor o subencargado trata datos fuera del EEE?', weight: 2 },
-  { id: 'special', title: '¿Tratas datos de salud u otras categorías especiales del artículo 9 RGPD?', hardRisk: true, weight: 4 },
-  { id: 'minors', title: '¿Tratas datos de menores de forma relevante para el servicio?', hardRisk: true, weight: 4 },
-  { id: 'profiling', title: '¿Realizas perfiles, scoring, decisiones automatizadas o publicidad basada en comportamiento individual?', hardRisk: true, weight: 4 },
-  { id: 'location', title: '¿Recoges geolocalización, monitorización sistemática, audio o videovigilancia avanzada?', hardRisk: true, weight: 4 },
-  { id: 'largeScale', title: '¿Tratas datos a gran escala o de un número muy elevado de personas?', hardRisk: true, weight: 4 },
-  { id: 'innovative', title: '¿Tu producto usa IA u otra tecnología innovadora para inferir, clasificar o predecir información sobre personas?', hardRisk: true, weight: 4 },
-  { id: 'breach', title: '¿Tienes ahora una brecha o incidente de datos personales sin cerrar?', hardRisk: true, weight: 5 },
-];
-
-const MODULES = [
-  ['rat', 'Registro de Actividades de Tratamiento (RAT)'],
-  ['privacy', 'Cláusulas informativas y política de privacidad'],
-  ['processors', 'Contratos y revisión de encargados'],
-  ['security', 'Medidas de seguridad y control de accesos'],
-  ['rights', 'Procedimiento para ejercicio de derechos'],
-  ['breaches', 'Registro y protocolo de brechas'],
-  ['retention', 'Conservación, bloqueo y supresión'],
-  ['web', 'Web, formularios, cookies y comunicaciones'],
-] as const;
+type Answer = RgpdAnswer;
+const QUESTIONS = RGPD_QUESTIONS.map(q => ({...q, title:q.title.es}));
 
 function buildQuoteHref() {
   // No scores, answers, warning flags or notes in URL/query strings.
@@ -64,58 +30,7 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
   const current = QUESTIONS[step];
   const answered = current ? answers[current.id] !== undefined : true;
 
-  const result = useMemo(() => {
-    let score = 0;
-    const hardFlags: string[] = [];
-
-    for (const q of QUESTIONS) {
-      const answer = answers[q.id];
-      const positive = answer === true || answer === 'advanced';
-      if (positive) {
-        score += q.weight ?? 1;
-        if (q.hardRisk) hardFlags.push(q.title);
-      }
-    }
-
-    const modules = ['rat', 'privacy', 'security', 'rights', 'breaches', 'retention'];
-    if (answers.processors === true || answers.international === true || answers.innovative === true) modules.push('processors');
-    if (answers.website === true || answers.cookies === 'basic' || answers.cookies === 'advanced') modules.push('web');
-
-    const moduleIds = MODULES.filter(([id]) => modules.includes(id)).map(([id]) => id);
-    const moduleLabels = MODULES.filter(([id]) => modules.includes(id)).map(([, label]) => label);
-
-    let tier = 'Autoimplantación guiada';
-    let level: 'low' | 'medium' | 'high' = 'low';
-    let message = 'Tu perfil encaja, a priori, con un recorrido guiado de bajo riesgo. La herramienta puede ayudarte a ordenar la documentación y tareas, pero no certifica cumplimiento.';
-
-    if (hardFlags.length > 0 || score >= 8 || QUESTIONS.some(q => q.hardRisk && answers[q.id] === 'unknown')) {
-      tier = 'Revisión profesional recomendada';
-      level = 'high';
-      message = 'Hay señales que requieren analizar el tratamiento con más detalle. No conviene cerrar la implantación únicamente con un asistente automático.';
-    } else if (score >= 4) {
-      tier = 'Autoimplantación + revisión final';
-      level = 'medium';
-      message = 'Puedes completar gran parte del trabajo con la herramienta, pero recomendamos una revisión final de coherencia, proveedores, web y medidas de seguridad.';
-    }
-
-    const estimatedHours =
-      level === 'low'
-        ? { min: 0, max: 2 }
-        : level === 'medium'
-          ? { min: 3, max: 5 }
-          : hardFlags.length >= 3 || score >= 14
-            ? { min: 8, max: 12 }
-            : { min: 5, max: 8 };
-
-    const estimatedPrice = hourlyRateEur && hourlyRateEur > 0
-      ? {
-          min: estimatedHours.min * hourlyRateEur,
-          max: estimatedHours.max * hourlyRateEur,
-        }
-      : null;
-
-    return { score, hardFlags, moduleIds, moduleLabels, tier, level, message, estimatedHours, estimatedPrice };
-  }, [answers, hourlyRateEur]);
+  const result = useMemo(() => evaluateRgpdAssessment(answers, hourlyRateEur), [answers, hourlyRateEur]);
 
   const aepdRecommendation = useMemo(() => recommendAepdTools(answers), [answers]);
   const isResult = step >= QUESTIONS.length;
@@ -162,66 +77,15 @@ export function RgpdSelfAssessment({ hourlyRateEur }: { hourlyRateEur?: number }
               Pregunta {step + 1} de {QUESTIONS.length}
             </p>
             <h2 className="mt-3 font-serif text-2xl font-bold leading-tight">{current.title}</h2>
-            {current.description && <p className="mt-2 text-sm text-[#23364D]">{current.description}</p>}
-
+            
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {current.kind === 'business' ? (
-                <>
-                  {([['ordinary','Autónomo o pyme con tratamientos habituales'],['startup','Startup, app o plataforma digital'],['multiple','Empresa con muchos procesos o tratamientos diferentes'],['unknown','No estoy seguro']] as const).map(([value,label]) => <button key={value} type="button" onClick={() => setAnswer(value)} className={`min-h-12 border px-4 py-3 text-left text-sm font-semibold ${answers[current.id] === value ? 'border-[#D4A017] bg-[#D4A017]/10' : 'border-[#D4A017]/25'}`}>{label}</button>)}
-                </>
-              ) : current.kind === 'cookies' ? (
-                <>
-                  {[
-                    ['none', 'No / solo técnicas'],
-                    ['basic', 'Analítica básica'],
-                    ['advanced', 'Publicidad, píxeles o personalización'],
-                    ['unknown','No lo sé'],
-                  ].map(([value, label]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setAnswer(value as Answer)}
-                      className={`min-h-12 border px-4 py-3 text-left text-sm font-semibold transition ${
-                        answers[current.id] === value
-                          ? 'border-[#D4A017] bg-[#D4A017]/10 text-[#0D1B2A]'
-                          : 'border-[#D4A017]/25 hover:border-[#D4A017]'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setAnswer(true)}
-                    className={`min-h-12 border px-4 py-3 text-sm font-semibold transition ${
-                      answers[current.id] === true
-                        ? 'border-[#D4A017] bg-[#D4A017]/10'
-                        : 'border-[#D4A017]/25 hover:border-[#D4A017]'
-                    }`}
-                  >
-                    Sí
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAnswer('unknown')}
-                    className={`min-h-12 border px-4 py-3 text-sm font-semibold transition ${answers[current.id] === 'unknown' ? 'border-[#D4A017] bg-[#D4A017]/10' : 'border-[#D4A017]/25 hover:border-[#D4A017]'}`}
-                  >No lo sé</button>
-                  <button
-                    type="button"
-                    onClick={() => setAnswer(false)}
-                    className={`min-h-12 border px-4 py-3 text-sm font-semibold transition ${
-                      answers[current.id] === false
-                        ? 'border-[#D4A017] bg-[#D4A017]/10'
-                        : 'border-[#D4A017]/25 hover:border-[#D4A017]'
-                    }`}
-                  >
-                    No
-                  </button>
-                </>
-              )}
+              {getRgpdQuestion(step,'es')?.options.map(option=><button
+                key={String(option.value)}
+                type="button"
+                onClick={()=>setAnswer(option.value)}
+                aria-pressed={answers[current.id] === option.value}
+                className={`min-h-12 border px-4 py-3 text-left text-sm font-semibold transition ${answers[current.id] === option.value?'border-[#D4A017] bg-[#D4A017]/10':'border-[#D4A017]/25 hover:border-[#D4A017]'}`}
+              >{option.label}</button>)}
             </div>
 
             <div className="mt-7 flex items-center justify-between gap-3">
