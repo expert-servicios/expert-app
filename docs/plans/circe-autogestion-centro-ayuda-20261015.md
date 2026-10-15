@@ -1,5 +1,5 @@
 # PLAN MAESTRO — CIRCE / Constitución de SL en autoservicio y acompañamiento EXPERT
-**Versión:** 1.3 · **Fecha:** 15/10/2026 · **Estado:** SOLO DOCUMENTACIÓN / congelado hasta cierre RGPD; sin cambios comerciales publicados
+**Versión:** 1.4 · **Fecha:** 15/10/2026 · **Estado:** SOLO DOCUMENTACIÓN / congelado hasta cierre RGPD; sin cambios comerciales publicados
 **Rama:** `plan/circe-autogestion-contenidos-20261015`
 **Ámbito:** expertconsulting.es, fichas ES/RU, recursos gratuitos, KIA, adquisición orgánica y seguimiento del caso piloto Comfi App.
 **Separación:** no mezclar con PR #782, cuyos informes RGPD/lead/email siguen sujetos a validaciones.
@@ -274,5 +274,65 @@ Fuentes verificadas:
 **Puerta RGPD:** cerrar informe PDF ES/RU, fuentes cirílicas locales, privacidad/consentimiento y retención, email y PDF real en staging independiente, concurrencia sin manipular leads reales, prueba móvil, CI/previews mismo SHA. Decidir de forma diferenciada si es posible fusionar funcionalidad protegida por flags OFF; activación pública solo tras E2E y aprobación.
 **Puerta CIRCE:** cuando RGPD esté cerrado, comprobar datos oficiales y tarifas del momento; reconciliar precios 490/499 y Stripe; entonces aprobar contenido gratuito, ES/RU, y desarrollar por lotes, con las guías de autoservicio antes de cualquier captación opcional.
 **Comfi App:** no mandar de momento otro correo, no suponer aperturas ni respuestas, no enlazar guías aún no publicadas. El último borrador contempla avisar de la ampliación de RGPD cuando realmente tenga sentido el seguimiento.
+
+
+## 13. Anexo de actualización normativa: Crea y Crece, Startups, SL online y obligaciones 2026 — revisión 15/10/2026
+
+**Alcance**: investigación y planificación editorial; ninguna implementación, habilitación KIA, correo ni cambios de precios. Se han contrastado normas principales en el BOE a 15/10/2026. La revisión no asegura una búsqueda exhaustiva de todas las resoluciones autonómicas o modificaciones futuras; cada ficha debe revalidarse antes de salir a producción.
+
+### 13.1 Matriz de normativa aplicable y consecuencias para la guía
+
+| Referencia oficial | Norma y contenido aplicable | Traducción futura a herramienta/guía |
+| --- | --- | --- |
+| BOE-A-2022-15818, arts. 2 a 5 | **Ley 18/2022 «Crea y Crece»**. SL capital mínimo 1 €; mientras sea < 3.000 €, destinar al menos 20 % del beneficio a reserva legal hasta llegar al umbral y responsabilidad solidaria de socios por la diferencia en liquidación insuficiente. Obliga a notarios/intermediarios a informar de ventajas, costes y plazos PAE/CIRCE; todos los notarios han de estar disponibles en Agenda Electrónica Notarial, salvo rechazo justificado comunicado. Modifica arts. 15 y 16 Ley 14/2013, aclara DUE y circuitos; suprime la antigua SL Nueva Empresa. | Comparador SL 1 €/3.000 €, FAQ «derecho a información sobre CIRCE», comprobador de agenda y demora, no confundir «SL nueva empresa» derogada con SL ordinaria actual. |
+| BOE-A-2013-10074 consolidada (tras Ley 18/2022) | **Ley 14/2013 arts. 13–16**. PAE/CIRCE DUE como ventanilla; para constitución estandarizada con estatutos tipo prevé 6h hábiles RMC, 12h hábiles para fecha de escritura y 6h hábiles de calificación/inscripción al recibir documentación del supuesto. Art. 16 regula inscripción inicial de supuestos sin estatutos tipo; no confundir inscripción inicial y definitiva. | Línea de tiempo por hitos con condiciones de inicio, horas hábiles registrales y seguimiento posterior. |
+| BOE-A-2022-21739, arts. 3–5 y 7–13 | **Ley 28/2022 «Startups»**. Régimen de **empresa emergente**, no aplicable por ser nueva o tecnológica sin más; exige requisitos y certificación ENISA/constancia registral. Art. 11: inscripción y actos societarios en 5 días hábiles para empresas emergentes; 6h hábiles con estatutos tipo desde recepción telemática. Art. 12: 60 € notario y 40 € registrador si estatutos tipo adaptados, CIRCE y capital < 3.100 €, más exención de tasas de publicación BORME de esos actos; pactos socios inscribibles con condiciones. Art. 9 facilita NIF a inversores extranjeros no residentes, sin exigir NIE **para esa identificación inversora**, no para cualquier supuesto migratorio. Incentivos fiscales específicos 15 % de IS (primer ejercicio positivo y tres siguientes si conserva condición) y aplazamientos según requisitos. | Crear rama separada «¿Mi SL puede ser empresa emergente certificada?»; checklist ENISA y beneficios; no equiparar «SL con capital 1 €» a «startup»; no prometer régimen 15 % a toda SL nueva. |
+| BOE-A-2023-16817 | **Orden PCM/825/2023**. Criterios y procedimiento ENISA de certificación, documentación, seguimiento y pérdida del estatus; plazo máximo de 3 meses para resolver según art. 6. | Guía «Solicitud ENISA», indicadores y revisión de requisitos; no generar una falsa certificación desde KIA. |
+| BOE-A-2023-11022, reforma LSC arts. 22 bis y 40 bis–40 quinquies | **Ley 11/2023 digitalización notarial y registral**. SL puede constituirse **íntegramente en línea**; sigue habiendo escritura notarial (posible otorgamiento electrónico), salvo excepcional requerimiento presencial motivado para identificar al otorgante o verificar capacidad/representación. **Excluye aportaciones no dinerarias** de procedimiento íntegramente online. Art. 40 ter: aportaciones dinerarias documentadas electrónicamente y alternativa de no acreditar depósito si los fundadores asumen responsabilidad solidaria según LSC art. 62.2. Art. 40 quater: inscripción 6h hábiles en escritura estandarizada con estatutos tipo, en otros supuestos de constitución online máximo 5 días laborables, con cómputo desde asiento de presentación/devolución. | Tres caminos visibles: CIRCE con visita notarial, CIRCE con comparecencia online cuando proceda, y constitución notarial ordinaria; campo «aportación dineraria o no dineraria». **Revisar contenido anterior que afirmaba obligatoriedad de abrir cuenta y depositar capital en todos los casos**. No garantizar identidad online sin verificación. |
+| BOE-A-2023-14043 | **RD 442/2023**, reforma Reglamento Registro Mercantil: identificador único europeo **EUID**, interconexión registral UE, información y sucursales transfronterizas digitales. **No** es la norma básica del DUE ni sustituye la autorización notarial. | Guía explicativa EUID/consulta mercantil europea (P1/P2), información societaria digital y sucursales; no mezclarla con trámite de alta SL estándar. |
+| BOE-A-2015-6520 y Orden JUS/1840/2015 | **RD 421/2015 y escritura pública estandarizada/campos codificados**, estatutos tipo, Bolsa de denominaciones, Agenda Electrónica Notarial, normas instrumentales de CIRCE. Revisar vigencia y modificaciones reglamentarias. | Guía de campos DUE y estatutos tipo, estructura de sociedad, capacidad de elección de notario; captura de pantallas solo tras comprobar versión actual. |
+| BOE-A-2026-7295 + BOE-A-2026-20587 | **RD 238/2026 y Orden HAC/1028/2026 de 2 de octubre**: reglamento/solución pública de **facturación electrónica obligatoria entre empresas y profesionales**, desarrollo del mandato de Crea y Crece. Orden publicada el 05/10/2026, entrada en vigor 06/10/2026; aplicación RD a partir de **12 meses** para volumen de operaciones >8 millones € año anterior y **24 meses** para resto: fechas indicativas **06/10/2027** y **06/10/2028**, siempre sujetas a verificación de calendario/transitorias y posteriores cambios. **No es un requisito constitutivo ni equivale a VeriFactu**. | «Primeros 90 días y obligaciones futuras»: información sobre alta fiscal/facturación B2B, fecha efectiva y diferencia con reglamento de sistemas informáticos de facturación; vincular con contenidos separados actualizables. |
+
+### 13.2 Correcciones obligatorias del material heredado
+- **Importante: CIRCE y notaría presencial**: textos previos a Ley 11/2023 que dicen «la constitución CIRCE siempre requiere presencia física ante notario» han quedado desactualizados. Mantener la necesidad de escritura pública, pero distinguir **modalidad de otorgamiento** y excepciones legales (identidad, capacidad, representación). La opción telemática exige disponibilidad real del canal notarial y el cumplimiento del supuesto.
+- **Capital de 1 €**: nunca presentarlo sin reserva del 20 % y regla de responsabilidad en liquidación; estas salvaguardas no son el régimen general de toda SL con 3.000 € o más.
+- **Empresa emergente**: no etiquetar startup certificada a una SL simplemente por innovadora, nueva o por operar en una aplicación. Verificar ENISA, inscripción y mantenimiento de condiciones; la formación y gestión de alta estándar NO incluyen certificación por defecto.
+- **Plazos**: Ley 14/2013 (CIRCE con/sin tipo), Ley 28/2022 (startup certificada), Ley 11/2023/LSC art. 40 quater (constitución íntegramente online) tienen supuestos distintos. El reloj debe seleccionar **un régimen**, no elegir siempre el más breve. Confirmar inicio: recepción escritura, NIF y liquidación/exención cuando legalmente se exija, asiento de presentación o inicio DUE según artículo. Hora hábil no es hora natural.
+- **Aranceles**: Ley Startups art. 12 conserva caso 60/40 con condiciones; otras SL se analizan conforme a RDL 13/2010, RD 1612/2011 y aranceles ordinarios. La sola calidad de empresa emergente no prueba que una minuta notarial exceda el arancel.
+- **Denominación**: derecho a información sobre Bolsa/Reserva/alternativas, sin afirmar precios únicos ni validez universal de un certificado desactualizado.
+- **Documentos digitales**: firma cualificada, copias autorizadas y CSV según normas notariales; un PDF sin firma/CSV no es necesariamente copia autorizada, y la escritura no deja de ser escritura porque no se entregue en papel.
+- **PAE y servicios gratuitos**: convenios BOE 2025–2026 analizados contemplan prestación gratuita de servicio básico de tramitación CIRCE por el PAE correspondiente; examinar alcance concreto en cada convenio. Diferenciar ese apoyo público de los honorarios de servicios profesionales opcionales de EXPERT.
+- **Fiscalidad y factura B2B**: separar constitución, NIF y epígrafes de obligaciones futuras; la fecha operativa de facturación electrónica es normativamente específica y distinta de sistemas VeriFactu. No aplicar plazos sin verificar sector/sujeto y normas transitorias.
+
+### 13.3 Árbol de decisión para la futura guía (documentación, sin código)
+A) ¿Es una SL o un alta de autónomo? Si no es SL, elegir guía propia.
+B) ¿Socios persona física/jurídica y nacionales/extranjeros? Comprobar identificación, representación y NIF; las facilidades de inversor extranjero de Ley Startups no son generales.
+C) ¿Capital dinerario? Si **no**, procedimiento de constitución íntegramente online excluido conforme LSC 22 bis; revisar cauces alternativos.
+D) ¿Estatutos tipo/escritura codificada? Aplicar rama de plazos y aranceles específica con condiciones, o pasar a estatutos personalizados.
+E) ¿Constitución por CIRCE con comparecencia física o tramitación plenamente electrónica? Confirmar disponibilidad, requisitos de identidad, control notarial y motivos de cita presencial.
+F) ¿Está **certificada por ENISA** como empresa emergente? Si aún no, explicar certificación como proceso distinto, sin aplicar anticipadamente incentivos/reglas especiales.
+G) Resultado: pasos oficiales y coste de terceros, enlace a recurso público gratuito, alertas de exclusión y consulta humana sólo si se solicita.
+
+### 13.4 Próximas guías y automatización normativa KIA (pendiente de aprobación)
+- Comparativas «SL ordinaria / SL online / empresa emergente certificada», «Crea y Crece vs Startups vs Ley 11/2023» y «VeriFactu vs factura electrónica B2B».
+- Calendario de obligaciones con fuente de entrada en vigor y hito sujeto a fecha; no alimentar automáticamente respuestas definitivas a KIA desde borradores.
+- Alertas de cambios normativos BOE/AEAT/PAE/ENISA: registro versionado de norma/artículo, fecha publicación, fecha entrada en vigor, versión consolidada, estado (publicada/vigente/derogada/pendiente), alcance, ES/RU, revisión humana.
+- QA editorial: ejemplos (capital 1 €, 3.000 €; socios extranjeros; aportación no dineraria; estatutos tipo vs a medida; empresa innovadora sin ENISA; presencialidad excepcional), con rutas y salidas esperadas.
+- **Freeze**: KIA, blog, fichas, catálogo y páginas públicas NO se modifican en esta fase. Retomar sólo después de cerrar PR #782 RGPD.
+
+### 13.5 Fuentes oficiales verificadas y fecha de consulta
+- Ley 18/2022 Crea y Crece: https://www.boe.es/eli/es/l/2022/09/28/18/con
+- Ley 28/2022 Startups: https://www.boe.es/eli/es/l/2022/12/21/28/con
+- Ley 11/2023: https://www.boe.es/buscar/act.php?id=BOE-A-2023-11022
+- RD 442/2023: https://www.boe.es/buscar/act.php?id=BOE-A-2023-14043
+- Orden PCM/825/2023 ENISA: https://www.boe.es/eli/es/o/2023/07/20/pcm825/con
+- LSC consolidada, art. 22 bis y 40 bis–40 quinquies: https://www.boe.es/buscar/act.php?id=BOE-A-2010-10544
+- Ley 14/2013 CIRCE: https://www.boe.es/buscar/act.php?id=BOE-A-2013-10074
+- RD 421/2015 estatutos/agenda: https://www.boe.es/buscar/act.php?id=BOE-A-2015-6520
+- RD 238/2026 factura B2B: https://www.boe.es/buscar/act.php?id=BOE-A-2026-7295
+- Orden HAC/1028/2026 solución pública factura: https://www.boe.es/buscar/act.php?id=BOE-A-2026-20587
+- Convenio PAE de 2026, carácter gratuito por alcance: https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-16629
+
+**Nota QA**: este anexo da prioridad a leyes y reglamentos publicados/consolidados hasta 15/10/2026. Las fechas de implantación futura de factura B2B han de recalcularse tras cualquier cambio normativo. No atribuir a Ley Crea y Crece la regulación íntegra del otorgamiento notarial online: deriva de Ley 11/2023. No afirmar que todos los procedimientos online son idénticos.
 
 **No publicación / No envíos automáticos con este documento.**
