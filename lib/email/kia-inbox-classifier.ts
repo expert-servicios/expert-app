@@ -228,10 +228,7 @@ export function shouldNotifyEmailSyncFallback(mail: GmailSummary): boolean {
     bodyType: 'text',
     unread: mail.unread,
     attachments: mail.hasAttachment ? [{ id: 'summary', name: '', mimeType: '', size: 0, inline: false }] : [],
-    labelIds: mail.labelIds ?? [],
-    autoSubmitted: mail.autoSubmitted,
-    precedence: mail.precedence,
-    listUnsubscribe: mail.listUnsubscribe,
+    labelIds: [],
   });
   return classification.kind === 'human' || classification.requiresAttention;
 }
