@@ -890,6 +890,7 @@ export async function GET(request: NextRequest) {
         && !externalCommunicationBlocked
         && envelope.recipientPurpose !== 'noreply'
         && !hasAttachments
+        && !envelope.requiresAttention
         && !result.usedFallback
         && !result.decision.requiresManualReview
         && result.decision.nextAction !== 'needs_review'
@@ -1032,6 +1033,7 @@ export async function GET(request: NextRequest) {
         else if (replyToMismatch) blockReason = 'reply_to_requires_review';
         else if (envelope.recipientPurpose === 'noreply') blockReason = 'noreply_recipient';
         else if (hasAttachments) blockReason = 'attachment_requires_review';
+        else if (envelope.requiresAttention) blockReason = 'formal_notice_requires_review';
         else if (result.usedFallback) blockReason = 'provider_fallback';
         else if (result.decision.requiresManualReview) blockReason = 'manual_review';
         else if (result.decision.nextAction === 'needs_review') blockReason = 'needs_review';
@@ -1054,7 +1056,7 @@ export async function GET(request: NextRequest) {
         createdTask: Boolean(createdTask),
         sent: sentNow,
       });
-      const interventionRequired = result.decision.requiresManualReview
+      const interventionRequired = envelope.requiresAttention || result.decision.requiresManualReview
         || result.decision.nextAction === 'needs_review'
         || ['orchestration_requires_review', 'ambiguous_case', 'linked_case_sender_mismatch', 'reply_to_requires_review', 'attachment_requires_review', 'provider_fallback']
           .includes(blockReason ?? '');
