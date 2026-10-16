@@ -1,4 +1,4 @@
-import type { GmailMessage } from '@/lib/integrations/gmail';
+import type { GmailMessage, GmailSummary } from '@/lib/integrations/gmail';
 
 export type KiaInboxKind =
   | 'human'
@@ -19,11 +19,15 @@ export interface KiaInboxClassification {
   reasons: string[];
 }
 
-const OFFICIAL_DOMAIN = /(?:^|\.)(?:mjusticia\.es|agenciatributaria\.gob\.es|aeat\.es|seg-social\.es|dgt\.es|boe\.es|administracion\.gob\.es|notificaciones\.060\.es|registradores\.org)$/i;
+const OFFICIAL_DOMAIN = /(?:^|\.)(?:mjusticia\.es|agenciatributaria\.gob\.es|aeat\.es|seg-social\.es|dgt\.es|boe\.es|administracion\.gob\.es|notificaciones\.060\.es|registradores\.org|gva\.es|hacienda\.gob\.es)$/i;
 const PROVIDER_DOMAIN = /(?:^|\.)(?:stripe\.com|revolut\.com|google\.com|github\.com|vercel\.com|docusign\.com|holded\.com|resend\.com|supabase\.com|openai\.com|anthropic\.com|microsoft\.com|einforma\.com)$/i;
 
 const URGENT_SIGNAL = /\b(?:acción requerida|accion requerida|action required|requerimiento|subsanaci[oó]n|caducidad|caduca|plazo|deadline|vence|vencimiento|suspensi[oó]n|bloquead[oa]|payment failed|pago fallido|chargeback|dispute|contracargo|incumplimiento|security alert|alerta de seguridad|suspicious|inicio de sesi[oó]n sospechoso)\b/i;
 const CRITICAL_OFFICIAL_SIGNAL = /\b(?:requerimiento|subsanaci[oó]n|caducidad|caduca|plazo|notificaci[oó]n electr[oó]nica|comparecencia|sanci[oó]n|embargo)\b/i;
+// A notice forwarded by a client is still a formal notice, even when the sender is not an authority.
+// Spanish and Russian subjects are common in EXPERT's correspondence.
+const FORMAL_NOTICE_SIGNAL = /(?:\b(?:requerimiento|subsanaci[oó]n|liquidaci[oó]n provisional|propuesta de liquidaci[oó]n|procedimiento de comprobaci[oó]n|notificaci[oó]n electr[oó]nica|acta de inspecci[oó]n|plazo de alegaciones)\b|запрос\s+(?:из\s+)?налогов|налогов[а-яё]*\s+запрос|требовани[ея]\s+налогов|уведомлени[ея]\s+налогов)/i;
+const STRONG_RISK_SIGNAL = /\b(?:security alert|account compromised|suspicious sign.in|vulnerability alert|payment failed|chargeback|dispute|contracargo|suspensi[oó]n|pago fallido|alerta de seguridad)\b/i;
 const TECHNICAL_SIGNAL = /\b(?:build|deploy|deployment|commit|pull request|github|vercel|ci|workflow|cron|webhook|api|release)\b/i;
 
 function normalizedSignalBody(body: string): string {
@@ -81,7 +85,29 @@ export function classifyInboundEnvelope(message: GmailMessage): KiaInboxClassifi
   const knownOfficial = OFFICIAL_DOMAIN.test(domain);
   const knownProvider = PROVIDER_DOMAIN.test(domain);
   const urgentSignal = URGENT_SIGNAL.test(signal);
-  const criticalOfficial = knownOfficial && CRITICAL_OFFICIAL_SIGNAL.test(signal);
+  const formalNotice = FORMAL_NOTICE_SIGNAL.test(signal);
+  const criticalOfficial = knownOfficial && (CRITICAL_OFFICIAL_SIGNAL.test(signal) || formalNotice);
+  const marketing =
+    labels.has('SPAM')
+    || Boolean(message.listUnsubscribe)
+    || /^(bulk|list|junk)$/i.test(message.precedence?.trim() ?? '')
+    || labels.has('CATEGORY_PROMOTIONS')
+    || labels.has('CATEGORY_SOCIAL')
+    || labels.has('CATEGORY_FORUMS');
+
+  // Lists and automated PR/CI traffic must not trigger urgent alerts just
+  // because they quote an official deadline or say 'action required'.
+  if (marketing && !(knownOfficial && formalNotice) && !STRONG_RISK_SIGNAL.test(signal)) {
+    return {
+      kind: 'marketing',
+      priority: 'low',
+      gmailLabel: '92 Marketing y Newsletters',
+      requiresAttention: false,
+      recipientPurpose,
+      reasons: ['bulk_or_marketing'],
+    };
+  }
+  const routineGithub = domain === 'github.com' && !STRONG_RISK_SIGNAL.test(signal);
 
   if (knownOfficial && (criticalOfficial || urgentSignal || hasActionableAttachment)) {
     reasons.push('official_sender');
@@ -98,7 +124,7 @@ export function classifyInboundEnvelope(message: GmailMessage): KiaInboxClassifi
     };
   }
 
-  if (knownProvider && urgentSignal) {
+  if (knownProvider && urgentSignal && !routineGithub) {
     reasons.push('known_provider', 'action_signal');
     return {
       kind: 'provider',
@@ -107,24 +133,6 @@ export function classifyInboundEnvelope(message: GmailMessage): KiaInboxClassifi
       requiresAttention: true,
       recipientPurpose,
       reasons,
-    };
-  }
-
-  const marketing =
-    Boolean(message.listUnsubscribe)
-    || /^(bulk|list|junk)$/i.test(message.precedence?.trim() ?? '')
-    || labels.has('CATEGORY_PROMOTIONS')
-    || labels.has('CATEGORY_SOCIAL')
-    || labels.has('CATEGORY_FORUMS');
-
-  if (marketing) {
-    return {
-      kind: 'marketing',
-      priority: 'low',
-      gmailLabel: '92 Marketing y Newsletters',
-      requiresAttention: false,
-      recipientPurpose,
-      reasons: ['bulk_or_marketing'],
     };
   }
 
@@ -146,7 +154,7 @@ export function classifyInboundEnvelope(message: GmailMessage): KiaInboxClassifi
   }
 
   if (knownProvider || noReply) {
-    const urgent = URGENT_SIGNAL.test(signal);
+    const urgent = URGENT_SIGNAL.test(signal) && !routineGithub;
     reasons.push(knownProvider ? 'known_provider' : 'automated_sender');
     if (urgent) reasons.push('action_signal');
     return {
@@ -156,6 +164,19 @@ export function classifyInboundEnvelope(message: GmailMessage): KiaInboxClassifi
       requiresAttention: urgent,
       recipientPurpose,
       reasons,
+    };
+  }
+
+  // Tax and administrative notices often arrive forwarded by the human client.
+  // Never silently treat them as routine or grant autonomous send permission.
+  if (formalNotice) {
+    return {
+      kind: 'human',
+      priority: 'critical',
+      gmailLabel: '00 KIA/URGENTE',
+      requiresAttention: true,
+      recipientPurpose,
+      reasons: ['human_forwarded_formal_notice'],
     };
   }
 
@@ -190,4 +211,27 @@ export function humanPriority(input: {
   if (input.safeProspect || input.knownLead || input.createdTask) return 'high';
   if (input.knownClient && input.sent) return 'normal';
   return 'normal';
+}
+
+/** Coarse Gmail-sync alert when the full KIA agent is unhealthy. Never notify for bulk/no-reply/CI traffic. */
+export function shouldNotifyEmailSyncFallback(mail: GmailSummary): boolean {
+  if (!mail.unread) return false;
+  const classification = classifyInboundEnvelope({
+    id: mail.id,
+    conversationId: mail.conversationId,
+    subject: mail.subject,
+    from: mail.from,
+    fromEmail: mail.fromEmail,
+    to: 'info@expertconsulting.es',
+    date: mail.date,
+    body: mail.snippet,
+    bodyType: 'text',
+    unread: mail.unread,
+    attachments: mail.hasAttachment ? [{ id: 'summary', name: '', mimeType: '', size: 0, inline: false }] : [],
+    labelIds: mail.labelIds ?? [],
+    autoSubmitted: mail.autoSubmitted,
+    precedence: mail.precedence,
+    listUnsubscribe: mail.listUnsubscribe,
+  });
+  return classification.kind === 'human' || classification.requiresAttention;
 }
