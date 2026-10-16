@@ -6,6 +6,7 @@ import { notifyAdmins } from '@/lib/integrations/push';
 import { verifyCronRequest } from '@/lib/security/cron';
 import { shouldNotifyEmailSyncFallback } from '@/lib/email/kia-inbox-classifier';
 import { notifyAdminCaseActivity } from '@/lib/admin/case-admin-notifications';
+import { shouldNotifyEmailSyncFallback } from '@/lib/email/kia-inbox-classifier';
 
 // Vercel Cron: operational Gmail inbox sync.
 // Prefers the EXPERT service account when healthy, but falls back to the admin OAuth
@@ -110,7 +111,7 @@ export async function GET(request: NextRequest) {
       .select('value')
       .eq('key', 'email_unread_count')
       .maybeSingle();
-    const prevUnread = Number(prevKv?.value ?? 0);
+    void prevKv;
 
     const unreadCount = inbox.unread;
     await admin
@@ -194,16 +195,28 @@ export async function GET(request: NextRequest) {
 
     // An aggregate unread-count increase is not proof of a useful new email:
     // promotions, bulk CI alerts and stale unread counters must remain silent.
-    if (!kiaEmailHealthy && unreadCount > prevUnread) {
-      const recentRelevant = mails.filter(shouldNotifyEmailSyncFallback)
-        .filter((mail) => Date.now() - new Date(mail.date).getTime() < 15 * 60_000);
-      if (recentRelevant.length > 0) {
+    // Never use unread-count deltas as a push trigger: these may be CI/newsletter traffic.
+    // Deduplicate by provider message ID. Keep the inbox counter for the UI only.
+    if (!kiaEmailHealthy) {
+      const fresh = mails.filter((mail) => mail.unread && shouldNotifyEmailSyncFallback(mail));
+      const keys = fresh.map((mail) => `kia_email_fallback_seen:${mail.id}`);
+      const { data: existing } = keys.length
+        ? await admin.from('system_kv').select('key').in('key', keys)
+        : { data: [] as Array<{ key: string }> };
+      const seen = new Set((existing ?? []).map((item) => item.key));
+      const actionable = fresh.filter((mail) => !seen.has(`kia_email_fallback_seen:${mail.id}`));
+      if (actionable.length) {
         await notifyAdmins({
-          title: 'KIA correo: mensajes que necesitan revisión',
-          body: `${recentRelevant.length} correo(s) reciente(s) potencialmente relevantes. El agente no está saludable; revisa la bandeja.`,
+          title: `${actionable.length} correo(s) importante(s)`,
+          body: actionable.slice(0, 3).map((mail) => mail.subject).join(' · ').slice(0, 240),
           url: '/admin/correo',
-          tag: 'email-relevant-fallback',
-        }).catch(() => {});
+          tag: 'email-unread-fallback',
+        });
+        await admin.from('system_kv').upsert(actionable.map((mail) => ({
+          key: `kia_email_fallback_seen:${mail.id}`,
+          value: { notified_at: new Date().toISOString() },
+          updated_at: new Date().toISOString(),
+        })), { onConflict: 'key' });
       }
     }
 
