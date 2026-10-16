@@ -567,6 +567,18 @@ export async function GET(request: NextRequest) {
     if ((page ?? []).length < pageSize) break;
   }
 
+  // Prioritize potentially actionable messages before spending the fixed live-read
+  // budget. Otherwise hundreds of GitHub CI messages can hide a tax notice.
+  const pendingRelevance = (row: (typeof inbox)[number]) => {
+    const subject = (row.subject ?? '').toLowerCase();
+    const sender = (row.from_email ?? '').toLowerCase();
+    const legal = /(?:requerimiento|subsanaci[oó]n|notificaci[oó]n|alegaciones|hacienda|agencia tributaria|налогов|налогов[а-яё]*|требовани[ея])/i.test(subject);
+    const providerNoise = /@(?:github\.com|vercel\.com|resend\.com)$/i.test(sender);
+    return legal ? 3 : row.case_id ? 2 : providerNoise ? 0 : 1;
+  };
+  inbox.sort((left, right) => pendingRelevance(right) - pendingRelevance(left) ||
+    Date.parse(right.date) - Date.parse(left.date));
+
   let evaluated = 0;
   let sent = 0;
   let skipped = 0;
