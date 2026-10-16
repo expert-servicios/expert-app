@@ -4,6 +4,7 @@ import { listGmailMailsSA, hasGmailSA, getGmailUnreadCountSA, listGmailMails } f
 import type { GmailTokens, GmailSummary } from '@/lib/integrations/gmail';
 import { notifyAdmins } from '@/lib/integrations/push';
 import { verifyCronRequest } from '@/lib/security/cron';
+import { shouldNotifyEmailSyncFallback } from '@/lib/email/kia-inbox-classifier';
 import { notifyAdminCaseActivity } from '@/lib/admin/case-admin-notifications';
 
 // Vercel Cron: operational Gmail inbox sync.
@@ -191,14 +192,19 @@ export async function GET(request: NextRequest) {
       && heartbeatValue?.status === 'ok'
       && heartbeatAgeMs <= 20 * 60_000;
 
+    // An aggregate unread-count increase is not proof of a useful new email:
+    // promotions, bulk CI alerts and stale unread counters must remain silent.
     if (!kiaEmailHealthy && unreadCount > prevUnread) {
-      const newCount = unreadCount - prevUnread;
-      notifyAdmins({
-        title: `📧 ${newCount} correo${newCount !== 1 ? 's' : ''} nuevo${newCount !== 1 ? 's' : ''}`,
-        body : 'KIA de correo no está confirmada como saludable. Revisa la bandeja de entrada.',
-        url  : '/admin/correo',
-        tag  : 'email-unread-fallback',
-      }).catch(() => {});
+      const recentRelevant = mails.filter(shouldNotifyEmailSyncFallback)
+        .filter((mail) => Date.now() - new Date(mail.date).getTime() < 15 * 60_000);
+      if (recentRelevant.length > 0) {
+        await notifyAdmins({
+          title: 'KIA correo: mensajes que necesitan revisión',
+          body: `${recentRelevant.length} correo(s) reciente(s) potencialmente relevantes. El agente no está saludable; revisa la bandeja.`,
+          url: '/admin/correo',
+          tag: 'email-relevant-fallback',
+        }).catch(() => {});
+      }
     }
 
     return NextResponse.json({
