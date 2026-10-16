@@ -123,6 +123,10 @@ export interface GmailSummary {
   date: string;
   unread: boolean;
   hasAttachment: boolean;
+  labelIds?: string[];
+  autoSubmitted?: string | null;
+  precedence?: string | null;
+  listUnsubscribe?: string | null;
 }
 
 export interface GmailAttachment {
@@ -239,7 +243,7 @@ async function _listThreads(
       userId: 'me',
       id: thread.id,
       format: 'metadata',
-      metadataHeaders: ['From', 'Subject', 'Date'],
+      metadataHeaders: ['From', 'Subject', 'Date', 'Auto-Submitted', 'Precedence', 'List-Unsubscribe'],
     });
 
     const messages: AnyGoogle[] = threadRes.data.messages ?? [];
@@ -265,6 +269,10 @@ async function _listThreads(
         : dateRaw ? new Date(dateRaw).toISOString() : new Date().toISOString(),
       unread,
       hasAttachment,
+      labelIds: last.labelIds ?? [],
+      autoSubmitted: hdr(headers, 'Auto-Submitted') || null,
+      precedence: hdr(headers, 'Precedence') || null,
+      listUnsubscribe: hdr(headers, 'List-Unsubscribe') || null,
     });
   }
 

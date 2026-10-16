@@ -14,6 +14,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
+  // Avoid redirecting to Microsoft with an undefined application ID.
+  // Registration and consent must be completed by the mailbox owner.
+  if (!process.env.MS365_CLIENT_ID || !process.env.MS365_CLIENT_SECRET) {
+    return NextResponse.redirect(new URL('/admin/integraciones?error=ms365_not_configured', request.url));
+  }
+
   const oauthState = await createOAuthState({
     provider: 'ms365',
     userId: user.id,
