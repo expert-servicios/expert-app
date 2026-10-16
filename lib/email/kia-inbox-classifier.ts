@@ -87,8 +87,9 @@ export function classifyInboundEnvelope(message: GmailMessage): KiaInboxClassifi
   const urgentSignal = URGENT_SIGNAL.test(signal);
   const formalNotice = FORMAL_NOTICE_SIGNAL.test(signal);
   const criticalOfficial = knownOfficial && (CRITICAL_OFFICIAL_SIGNAL.test(signal) || formalNotice);
+  const isSpam = labels.has('SPAM') || labels.has('TRASH');
   const marketing =
-    labels.has('SPAM')
+    isSpam
     || Boolean(message.listUnsubscribe)
     || /^(bulk|list|junk)$/i.test(message.precedence?.trim() ?? '')
     || labels.has('CATEGORY_PROMOTIONS')
@@ -97,7 +98,7 @@ export function classifyInboundEnvelope(message: GmailMessage): KiaInboxClassifi
 
   // Lists and automated PR/CI traffic must not trigger urgent alerts just
   // because they quote an official deadline or say 'action required'.
-  if (marketing && !(knownOfficial && formalNotice) && !STRONG_RISK_SIGNAL.test(signal)) {
+  if (isSpam || (marketing && !(knownOfficial && formalNotice) && !STRONG_RISK_SIGNAL.test(signal))) {
     return {
       kind: 'marketing',
       priority: 'low',
