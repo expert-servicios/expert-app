@@ -46,3 +46,9 @@ Este documento es un protocolo general; NO contiene datos privados, adjuntos ni 
 - Repetición del mismo mensaje y reinicio cron → cero duplicados.
 - 30 hilos técnicos antes del mensaje importante → el mensaje importante no debe quedar fuera del muestreo de inspección.
 - En respuesta humana ya enviada, respetar historial y no enviar segunda respuesta.
+
+## Activación Microsoft 365 Admin — bloqueo verificado 16/10/2026
+
+La tabla `ms365_tokens` no tiene fila Admin y las variables `MS365_CLIENT_ID` / `MS365_CLIENT_SECRET` no están configuradas en el proyecto Vercel `app` consultado. El botón actual `/api/auth/ms365` no puede completar OAuth hasta registrar la aplicación en Microsoft Entra, configurar credenciales en el proyecto que sirve `/api/auth/ms365`, y autorizar la cuenta real de Outlook desde una sesión Admin. El ChatGPT connector no sustituye este consentimiento.
+
+**Redirect URI** calculada actualmente por `absoluteAppUrl`: `https://expertconsulting.es/api/auth/ms365/callback` cuando `NEXT_PUBLIC_APP_URL` no existe. Verificar que la URL sirve realmente el callback en producción antes de registrar la URI; el dominio `expertconsulting.es` figura asociado al proyecto `ksenia-expert` y el proyecto `app` tiene otro dominio. No asumir que ambos comparten configuración. Tras el consentimiento, comprobar correo de `ms365_tokens`, leer mensajes, asegurar que KIA procesa provider `ms365` (actualmente el cron KIA solo procesa `gmail`) y ejecutar prueba de alerta controlada. No activar envío automático de escritos jurídicos ni presentar requerimientos.
