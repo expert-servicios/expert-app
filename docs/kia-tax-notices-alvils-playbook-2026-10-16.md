@@ -45,3 +45,14 @@ El procedimiento seguro fue:
 7. Pruebas unitarias, E2E, typecheck, lint, CI, despliegues app + ksenia-expert; no fusionar sin controles.
 
 **Estado**: guía de entrenamiento y hardening inicial en PR, no flujo integral de presentación electrónica autónoma.
+
+
+## Revisión documental adicional 16/10/2026 — inscripción turística y libro de inversiones
+- Cuando el vendedor era operador de hostal, una resolución de inscripción turística anterior a la venta puede acreditar actividad previa; **NO** es equivalente al libro registro de bienes de inversión del vendedor, y se cita con su denominación exacta.
+- Distinguir siempre: registro histórico del vendedor anterior a transmisión, registro de facturas recibidas y contabilidad del comprador, y libro de bienes de inversión del comprador en ejercicios posteriores.
+- El art. 65 del Reglamento del IVA supedita el libro específico a regularizaciones de deducciones por inversión; no presumir que el transmitente debía tener un libro si no era sujeto a regularización. Exigir comprobación de prorrata y período de regularización antes de marcar un anexo como obligatorio.
+- La plantilla AEAT LSIJ revisada corresponde al **diseño de 2026**, no a un libro 2023 ya llevado. Un fichero cumplimentado hoy debe señalarse de forma inequívoca como **reconstrucción documental** y contener únicamente campos contrastados; dejar deducibilidad/prorrata/regularización sin cumplimentar si no hay modelo 303 o evidencia suficiente.
+- El inmueble de caso se desglosaba contablemente como suelo 49 % / construcción 51 % y venta con inversión del sujeto pasivo. No equiparar la cuota devengada por ISP con cuota efectivamente deducida sin cotejar el 303 original.
+- Antes de remitir a la administración: verificar documento auténtico de notificación, plazo efectivo, representante actual, anexos y confirmación expresa del cliente. No presentar de forma autónoma.
+
+Fuentes normativas generales: https://sede.agenciatributaria.gob.es/Sede/iva/facturacion-registro/libros-registro-iva/libro-registro-bienes-inversion.html y https://sede.agenciatributaria.gob.es/Sede/iva/facturacion-registro/preguntas-frecuentes/libro-registro-bienes-inversion-iva-irpf.html
