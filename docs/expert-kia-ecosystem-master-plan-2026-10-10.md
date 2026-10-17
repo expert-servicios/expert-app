@@ -640,3 +640,92 @@ Resultado y siguiente tarea autorizada:
 **Configuración declarada por Dirección (12/10/2026):** `AI_GATEWAY_API_KEY` dedicada ya creada en GitHub Actions, con presupuesto máximo 5 USD y caducidad de 30 días. Esta declaración no acredita acceso por un job ni autoriza inferencia; nunca leer, copiar o registrar el valor. No se solicitan por defecto claves nuevas directas de Anthropic o Google. Validar coste previsto y autorizaciones de datos antes del primer smoke pagado. `KIA_PR_REVIEW_VERCEL_TOKEN` y credenciales Telegram se gestionan por separado.
 
 **Estado de este registro:** acuerdo documentado, **no implementado ni operativo**; sin escritura productiva, flags, secretos, merge, migraciones o gastos de API autorizados por esta adenda.
+
+
+---
+
+## ANEXO 17/10/2026 — Plan unificado de herramientas gratuitas, sitemap, SEO y oportunidades KIA
+
+**Estado:** planificación consolidada y PR #798 en BORRADOR. Sigue activa la congelación de alcance E0–E6: este anexo no abre una fase ni autoriza fusionar, publicar, activar IA, recoger datos nuevos o ampliar producción. **Fuente rectora:** este mismo Plan Maestro; los issues son listas de trabajo relacionadas, no planes alternativos. Siguiente checkpoint E0 no cambia.
+
+### Rama H1 — Catálogo público de herramientas (PR #798; #796)
+
+**Inventario validado contra rutas reales, no solo definiciones de catálogo (17/10/2026):**
+
+| Recurso | Disponibilidad / ruta de destino | Estado sitemap |
+| --- | --- | --- |
+| Autoevaluación RGPD | `/herramientas/rgpd` en `main` | URL individual incluida en PR #798; falta aprobación y comprobación en preview |
+| Calculadora de honorarios IRPF | `/servicios/declaraciones-impuestos/irpf#calculadora-honorarios` | Página de servicio ya proyectada por `serviceRoutes` |
+| Calculadora de honorarios IRNR | `/servicios/declaraciones-impuestos/no-residentes#calculadora-honorarios` | Página de servicio ya proyectada |
+| Calculadora de honorarios Patrimonio | `/servicios/declaraciones-impuestos/impuesto-patrimonio#calculadora-honorarios` | Página de servicio ya proyectada |
+| Calculadora honorarios NIF socio extranjero | `/servicios/empresas-autonomos/nif-socio-extranjero#calculadora-honorarios` | Página de servicio ya proyectada |
+| Calculadora migración laboral Holded | **`/holded/migracion-laboral#calculadora-honorarios`** (ruta autónoma; no usar `/servicios/holded/holded-migracion-laboral`, que redirige) | Página autónoma ya proyectada en rutas estáticas |
+| Calculadora formación Holded | `UnitPriceCalculator` definida en `lib/utils/catalog.ts` para `formacion-holded`, pero ruta `/servicios/formacion/formacion-holded` redirige a `/holded#formacion`, donde no se ha verificado calculadora equivalente | **NO DISPONIBLE como enlace directo a calculadora; retirada de la lista activa de #798**. Requiere página o montaje funcional validado antes de anunciar |
+
+**Conclusión corregida:** PR #798 centraliza inicialmente **6 herramientas utilizables verificadas** (RGPD + IRPF + IRNR + Patrimonio + NIF + migración laboral Holded). La calculadora de formación es reutilizable en código pero no publicable como herramienta accesible hasta solucionar la redirección. No contar «calculadoras integradas en componentes» como páginas separadas para sitemap; URL canónica del servicio/landing es la que se indexa, el fragmento `#calculadora-honorarios` sirve para navegación, no constituye otra URL rastreable.
+
+**Alcance PR #798:** nueva `/herramientas` agrupada por protección de datos, fiscalidad, empresas y Holded; inventario tipado `lib/tools/public-tools.ts`, enlaces a rutas reales y anclas, CTA relacionados desde fichas de servicio y `ArticleIntentCTA` de Blog/Docs, navegación y footer, metadatos SEO y JSON-LD verídico. `/herramientas` y `/herramientas/rgpd` añadidas al sitemap en la rama; no en `main` hasta merge. Requiere confirmar acceso HTTP 200/robots/canonical, enlaces y UX móvil en preview y una segunda revisión de coherencia de llamadas CTA.
+
+**Checklist H1 (para revisión de PR):**
+- [x] Catalogar rutas conocidas y diferenciar precio de honorarios de cálculo de impuesto
+- [x] Crear página/hub ES y fichas por categorías en PR draft
+- [x] Incorporar rutas del hub y RGPD a sitemap de la PR
+- [x] Poner enlaces desde header, footer, servicios, blog/Docs cuando exista relación
+- [x] Corregir enlace migración laboral al landing autónomo y su ancla; retirar formación Holded de lista de herramientas activas
+- [ ] CI SHA exacto: typecheck, lint, tests, build; pruebas de enlaces/anclas reales
+- [ ] Vercel app + ksenia-expert previews READY para HEAD final y revisión visual responsive
+- [ ] Aprobación expresa de Dirección y del gate del Plan Maestro para merge/deploy
+
+### Rama H2 — Integridad global de indexación (issue #796)
+
+Inventario realizado sobre árbol `main` (238 `page.tsx`, 139 páginas/plantillas públicas ES/RU). La ausencia de una ruta en el generador no es defecto si es `noindex`, privada, redirección o transaccional. Distinguir **indexación real GSC**, **candidatura sitemap**, **CMS publicado**, **rutas resolubles** y **código aún no publicado**.
+
+- [ ] Reconciliar 3 artículos fiscales 2026 que constan en `lib/content/fiscal-2026-blog.ts` pero no en `blogArticles` servido.
+- [ ] Reconciliar 5 artículos `blog_posts.estado=publicado` de Supabase que no figuran en `blogArticles`; no indexar antes de confirmar página pública 200.
+- [ ] Completar `/categoria` y sus 6 rutas `/categoria/[tema]` si todas son indexables.
+- [ ] Incluir guías independientes indexables (AutoFirma) que están fuera de `docs`, sin duplicar la guía de nacionalidad que sí está catalogada.
+- [ ] Revisar `/servicios/extranjeria-nacionalidad/renovacion-residencia-inversor` y otros landings autónomos indexables.
+- [ ] Revisar `/consulta-gratuita` y `/presupuesto/aclaraciones` según valor SEO y privacidad; no incluir automáticamente páginas de formulario.
+- [ ] Corregir incoherencia de 4 servicios RU con `indexable:true` sin `shouldIndexLocale('ru')` y añadir blog/docs/herramientas RU solo tras gate y QA de traducción.
+- [ ] Definir condición de publicación para 2 guías laborales Academy `access=public, status=review`; mantener 14 privadas `student` fuera.
+- [ ] Usar fechas reales de revisión/publicación en `lastModified`, nunca «ahora» indiscriminado.
+- [ ] Auditar canonical, robots, hreflang recíproco, enlaces internos, metadatos, imágenes sociales, URLs 200/301/404, HTML renderizado, sitemap desplegado y GSC antes de afirmar indexación o resultados.
+- [ ] Añadir tests de manifest completo de URLs indexables (static + CMS + archivos independientes + locales) y exclusión negativa automática.
+
+### Rama H3 — Nuevas herramientas y protección de datos (issues #795, #780)
+
+- [ ] Especificar diagnóstico laboral gratuito fase cuestionario SIN datos nominales de empleados, conclusiones preliminares con fuentes oficiales actualizadas.
+- [ ] Mostrar resultado básico gratis antes de identificarse; ofrecer **descargar PDF** o **recibir por correo**, con nombre/email para solicitar el informe personalizado e información transparente sobre creación del lead; no condicionar a marketing.
+- [ ] Captar origen, idioma, consentimiento opcional específico y eventos mínimos, con idempotencia, antiabuso y conservación aprobada.
+- [ ] Reutilizar registro/leads/pdf/email ya diseñados en #780; no crear canales paralelos.
+- [ ] Condicionar fase documental (nóminas/contratos, posibles datos de terceros) a evaluación RGPD, roles responsables/encargados, medidas técnicas, acuerdos de proveedores de IA, seguridad RLS/tenants y aprobación humana.
+- [ ] Crear página o montaje realmente operativo de calculadora formación Holded, solo si se autoriza y se comprueba que no redirige; registrar su URL canónica/sitemap y enlaces.
+
+### Rama H4 — Generación de conocimientos KIA y SEO de contenidos (issues #797, #768, #785)
+
+- [ ] Convertir hallazgos de auditorías privadas en **patrones desidentificados** (nunca publicar empresa/empleados/nominas/expedientes), con deduplicación contra Blog, Docs, Academy y CMS.
+- [ ] Proponer artículos, guías, FAQs y oportunidades de servicio ES/RU, con norma y vigencia real, enlaces oficiales, intención de búsqueda, propietario editorial, fuente y CTA al servicio/herramienta adecuada.
+- [ ] Crear/editar solo borradores con revisión jurídica/editorial/comercial; no autopublicar ni inventar importes o normativas.
+- [ ] Tras publicar páginas aprobadas, pasar obligatoriamente test SEO/sitemap y actualizar interlinking.
+
+### Rama H5 — Agente autónomo de desarrollo seguro (issue #791)
+
+- [ ] Al crear/modificar ruta pública, calcular manifest de URLs **indexables** y actualizar sitemap en la misma PR. No añadir por el mero hecho de existir `page.tsx`.
+- [ ] Excluir `noindex`, drafts, noindex RU, auth, dashboards, recibos, rutas con token, redirecciones y documentos privados.
+- [ ] Verificar sitemap, metadata/robots, canonicals, hreflang, fechas, respuesta HTTP, enlaces y cobertura de páginas CMS servidas; si hay discrepancia **bloquear PR**.
+- [ ] Cambios en rama aislada y PR draft, con CI determinista, previews del SHA exacto, revisión humana y aprobación de Dirección; ninguna fusión o deploy autónomos.
+
+### Dependencias y orden autorizado
+
+| Secuencia propuesta | Dependencias | Responsable funcional | Salida validable |
+| --- | --- | --- | --- |
+| 0. Continuar E0 original | Plan Maestro vigente; no desplazar checkpoint | Dirección / equipo EXPERT | Fase E0 conforme a sus propios gates |
+| 1. Validación pasiva de #798 | Excepción de alcance si se decide fusionar durante E0 | Desarrollo / QA | Informe de CI + preview + URL manifest |
+| 2. Catálogo gratuito ES | Aprobación de PR #798 y despliegue explícito | Producto + SEO | Ruta pública, enlaces funcionales, sitemap 200 |
+| 3. Corregir brechas SEO | Inventario #796, revisión editorial y locales | SEO + desarrollo | Cobertura sin rutas privadas, GSC verificada |
+| 4. Leads/PDF RGPD/laboral | RGPD, antiabuso, #780, #795, KIA | Privacidad + desarrollo | Pruebas sintéticas E2E y aceptación Dirección |
+| 5. KIA editorial y agente autónomo | #797 y #791, gates E0–E6, pruebas seguridad | KIA / producto | Propuestas desidentificadas y PRs supervisadas |
+
+### Regla de gobierno
+
+Este anexo **unifica las ramas y las listas de aceptación**, sin crear otro plan rector y sin sustituir prioridades E0–E6. Los issues #780, #791, #795, #796, #797 y PR #798 son las trazas de ejecución. Ningún cambio de producto/SEO queda «publicado» hasta fusión, despliegue, pruebas de HTTP e indexabilidad; y estar en sitemap no garantiza indexación ni posiciones en Google.
