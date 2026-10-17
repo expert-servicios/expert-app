@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { CalendarDays, FileQuestion, Send, MessageCircle } from 'lucide-react';
 import { trackPublicContentIntent } from '@/lib/utils/analytics';
 import { buildTelegramContentPayload } from '@/lib/marketing/telegram-content-origin';
+import { getPublicToolsForService } from '@/lib/tools/public-tools';
 
 const ServicePriceCalculator = dynamic(
   () => import('@/components/services/ServicePriceCalculator').then((module) => module.ServicePriceCalculator),
@@ -41,6 +42,7 @@ type Props = {
 export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs = [], service = null }: Props) {
   const primaryServiceSlug = service?.slug ?? relatedServiceSlugs[0] ?? null;
   const origin = `${sourceKind}:${sourceSlug}`;
+  const relatedTools = primaryServiceSlug ? getPublicToolsForService(primaryServiceSlug) : [];
   const serviceHref = service?.hasCheckout
     ? `/servicios/${service.categoria}/${service.slug}?origen=${encodeURIComponent(origin)}`
     : service
@@ -59,6 +61,17 @@ export function ArticleIntentCTA({ sourceKind, sourceSlug, relatedServiceSlugs =
         Puedes resolver una duda sin compromiso, solicitar directamente el servicio o hablar 15 minutos con EXPERT antes de decidir.
       </p>
 
+      {relatedTools.length > 0 && (
+        <div className="mt-5 rounded border border-[#D4A017]/25 bg-[#F8F6F1] p-4">
+          <p className="text-sm font-semibold text-[#0D1B2A]">Herramienta gratuita relacionada</p>
+          <div className="mt-2 flex flex-wrap gap-3">
+            {relatedTools.map((tool) => (
+              <Link key={tool.id} href={tool.href} className="text-sm font-semibold text-[#8A6611] underline underline-offset-4">{tool.title} →</Link>
+            ))}
+          </div>
+          <Link href="/herramientas" className="mt-3 inline-block text-xs text-[#52606D] underline">Ver todas las herramientas</Link>
+        </div>
+      )}
       {service?.priceCalculator && (
         <div className="mt-6">
           <ServicePriceCalculator kind={service.priceCalculator} compact origin={origin} />

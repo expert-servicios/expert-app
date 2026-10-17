@@ -15,6 +15,7 @@ const quickLinks = [
   { label: 'Holded', href: '/holded' },
   { label: 'Sobre mí', href: '/sobre-mi' },
   { label: 'Blog', href: '/blog' },
+  { label: 'Herramientas gratuitas', href: '/herramientas' },
   { label: 'Contacto', href: '/contacto' },
   { label: 'Para asesorías', href: '/para-asesorias' }
 ] as const;

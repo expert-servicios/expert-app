@@ -215,6 +215,7 @@ export default function MigracionLaboralPage() {
         </div>
       </section>
 
+      <div id="calculadora-honorarios" className="scroll-mt-28" />
       <section className="px-6 pb-4 pt-10">
         <div className="mx-auto max-w-4xl">
           <UnitPriceCalculator
