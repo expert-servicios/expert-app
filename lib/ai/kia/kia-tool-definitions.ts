@@ -298,6 +298,10 @@ export const kiaToolValidators = {
   get_admin_attention_queue: z.object({
     limitPerSection: z.number().int().min(1).max(10).default(5),
   }).strict(),
+  get_admin_dev_agent_status: emptyObjectSchema,
+  preview_admin_dev_agent_task: z.object({
+    taskId: z.string().regex(/^[A-Z0-9-]{5,90}$/),
+  }).strict(),
   create_booking_meeting: z.object({
     serviceKey: z.enum(['consulta-inicial', 'demo-holded', 'academy-admision']),
     startIso: z.string().datetime({ offset: true }),
@@ -403,6 +407,8 @@ const TOOL_DESCRIPTIONS: Record<ToolName, string> = {
   get_admin_agenda: 'Admin-only read tool for upcoming EXPERT appointments, scoped to the current client/company when present.',
   get_admin_pending_tasks: 'Admin-only read tool for pending, upcoming and overdue EXPERT internal tasks, scoped to the current client/company when present.',
   get_admin_attention_queue: 'Admin-only read tool that combines unread email, upcoming appointments and pending tasks into a compact attention queue.',
+  get_admin_dev_agent_status: 'Admin/Owner only. Read the disabled KIA development-agent manifest and verified isolated Codex smoke evidence. Does not dispatch jobs, expose secrets, or claim autonomous execution.',
+  preview_admin_dev_agent_task: 'Admin/Owner only. Inspect whether an exact development task is present and blocked or approved in the static manifest. Never schedule, execute, merge, or modify code.',
   create_booking_meeting: 'Create a public EXPERT meeting only after the user explicitly confirms the exact numeric date and time in their latest message. Backend rechecks availability and confirmation before writing Calendar/Meet.',
   upsert_recurring_meeting_series: 'Admin-only: create or update an EXPERT recurring meeting series and materialize the future appointment horizon in Calendar/Meet with individual reschedule links.',
 };
