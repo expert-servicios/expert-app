@@ -750,6 +750,10 @@ Inventario realizado sobre árbol `main` (238 `page.tsx`, 139 páginas/plantilla
 | 4. Leads/PDF RGPD/laboral | RGPD, antiabuso, #780, #795, KIA | Privacidad + desarrollo | Pruebas sintéticas E2E y aceptación Dirección |
 | 5. KIA editorial y agente autónomo | #797 y #791, gates E0–E6, pruebas seguridad | KIA / producto | Propuestas desidentificadas y PRs supervisadas |
 
+### Ampliación documental H4 — matriz operativa laboral y SEO (17/10/2026)
+
+Se conserva como documento auxiliar la [matriz de oportunidades laborales, aprendizaje KIA y validación SEO](plans/kia-labor-editorial-seo-opportunity-matrix-2026-10-17.md): LAB-01 a LAB-10, clasificación editorial/servicios/herramientas, deduplicación ES/RU, fuentes primarias, SEO técnico y pruebas sintéticas. Su contenido **no autoriza ejecución ni publicación**, no abre una nueva fase y no crea un segundo motor de oportunidades. Documento subordinado al Plan Maestro; E0 permanece en curso y su checkpoint no cambia.
+
 ### Regla de gobierno
 
 Este anexo **unifica las ramas y las listas de aceptación**, sin crear otro plan rector y sin sustituir prioridades E0–E6. Los issues #780, #791, #795, #796, #797 y PR #798 son las trazas de ejecución. Ningún cambio de producto/SEO queda «publicado» hasta fusión, despliegue, pruebas de HTTP e indexabilidad; y estar en sitemap no garantiza indexación ni posiciones en Google.
