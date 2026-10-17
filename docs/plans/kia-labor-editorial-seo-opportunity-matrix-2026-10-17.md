@@ -129,6 +129,10 @@ Recorrido de referencia (no operativo como automatización nueva): consulta org�
 **Decisión actual solicitada a Dirección: solo conservar esta matriz como documento vivo enlazado al Plan Maestro.** La publicación, creación de productos, precios, campañas, cambios de código, cambios de sitemap, escrituras de leads, conexiones a proveedores y activación de automatismos permanecen no autorizados por este anexo.
 
 
+### Complemento transversal — vigilancia normativa → contenidos → servicios
+
+El flujo entre cambios normativos, recursos dependientes y propuestas editoriales o comerciales se detalla en el [documento auxiliar de propagación de impacto normativo](kia-regulatory-to-editorial-commercial-impact-2026-10-17.md). Reutiliza el registro oficial y el motor editorial existentes, sin crear un segundo monitor ni permitir publicación automática.
+
 ## 10. Arquitectura conceptual de automatización SEO — futura, sin activación
 
 ### 10.1 Principio rector
