@@ -64,6 +64,15 @@
 **Orden integrado:** I0 inventario y contrato → I1 dock único → I2 eventos contextuales → I3 sugerencias con evidencia → I4 confirmaciones/tools → I5 Document/Artifact Studio → I6 rollout y QA. Mantener feature flags por superficie y rollback independiente. Este documento describe arquitectura; no implica desplegar la funcionalidad ahora.
 
 
-## 3. Precedencia
+## 3. Ajustes de las fases de Admin V2 conservados de la PR #708
+
+Estas dos modificaciones de alcance complementan la tabla de fases del Plan Admin V2, sin autorizar su desarrollo:
+
+| Fase | Especificación añadida | Control | Resultado futuro esperado |
+| --- | --- | --- | --- |
+| 1A. Modo soporte cliente | Reutilizar `ClientWorkspaceShell`, formularios y servicios de dominio con `AdminSupportAdapter`; contexto de cliente/empresa y auditoría | Actor Admin real, permisos server-side, no suplantación, flag `support_mode_v1` | Admin navega y configura en el mismo portal sin duplicar pantallas; cliente no recibe permisos Admin |
+| 5. Finanzas | Planes/pagos Holded/Stripe y contabilidad en vista real de cliente y modo soporte; configuración por empresa y piloto posterior de operaciones contables autorizadas | Integridad, mandato, lectura/escritura diferenciadas, permisos efectivos Holded y confirmación | Cero cruce de tenants; Admin opera una empresa explícita, escrituras piloto solo con previsualización, aprobación, idempotencia y verificación posterior |
+
+## 4. Precedencia
 
 Este complemento conserva el alcance de S0–S4 y I0–I6 de PR #708; la secuencia E0–E6 es la única autorización de ejecución. Cualquier diferencia con el plan Admin V2 vigente debe verificarse y aplicarse por revisión humana antes de implementar.
