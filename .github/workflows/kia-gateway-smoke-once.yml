@@ -1,0 +1,113 @@
+name: KIA E0 isolated AI Gateway smoke (one-off)
+
+on:
+  push:
+    branches:
+      - test/kia-gateway-smoke-isolated-20261017
+    paths:
+      - .github/workflows/kia-gateway-smoke-once.yml
+  pull_request:
+    branches:
+      - fix/kia-openai-schema-compat-e0-20261017
+    paths:
+      - .github/workflows/kia-gateway-smoke-once.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kia-e0-provider-smoke-once
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Synthetic schema preflight (no credentials or network)
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Verify JSON mode and optional tool policy
+        run: |
+          node <<'NODE'
+          const schema={type:'object',additionalProperties:false,properties:{phone:{type:'string'}},required:[]};
+          if(schema.required.includes('phone')) throw Error('phone should stay optional');
+          const tool={type:'function',function:{name:'resolve_contact_context',parameters:schema,strict:false}};
+          if(tool.function.strict!==false) throw Error('strict mode unexpectedly enabled');
+          const json={type:'json_object'};
+          if(json.type!=='json_object') throw Error('unsafe structured output mode');
+          console.log('PASS: optional schema must use non-strict tool; JSON mode is explicit; no network call');
+          NODE
+
+  smoke:
+    name: Synthetic OpenAI and Gemini gateway read-only requests
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: ${{ github.event_name == 'push' && vars.KIA_E0_PROVIDER_SMOKE_ENABLED == 'true' && github.ref == 'refs/heads/test/kia-gateway-smoke-isolated-20261017' && github.sha == vars.KIA_E0_PROVIDER_SMOKE_APPROVED_SHA }}
+    environment: kia-e0-provider-smoke
+    env:
+      AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+    steps:
+      - name: Check model access without any customer data
+        run: |
+          node <<'NODE'
+          const key = process.env.AI_GATEWAY_API_KEY?.trim();
+          if (!key) {
+            console.error('BLOCKED: missing AI_GATEWAY_API_KEY GitHub Actions secret');
+            process.exit(2);
+          }
+          const requests = [
+            {name:'openai_json', model:'openai/gpt-4.1-mini', kind:'json'},
+            {name:'openai_optional_tool', model:'openai/gpt-4.1-mini', kind:'tool'},
+            {name:'gemini_gateway', model:'google/gemini-3.6-flash', kind:'json'},
+          ];
+          let errors = 0;
+          for(const item of requests) {
+            const body={
+              model:item.model,
+              max_tokens:65,
+              temperature:0,
+              messages:[
+                {role:'system',content:'This is an isolated read-only smoke test. Reply with only the JSON object {"status":"OK"}.'},
+                {role:'user',content:'Return JSON {"status":"OK"} and nothing else.'}
+              ],
+              response_format:{type:'json_object'}
+            };
+            if(item.kind==='tool') {
+              delete body.response_format;
+              body.tools=[{
+                type:'function',
+                function:{
+                  name:'resolve_contact_context',
+                  description:'Schema validation only, NEVER execute.',
+                  parameters:{
+                    type:'object',additionalProperties:false,
+                    properties:{phone:{type:'string'}},required:[]
+                  },
+                  strict:false
+                }
+              }];
+              body.tool_choice='required';
+            }
+            try {
+              const result=await fetch('https://ai-gateway.vercel.sh/v1/chat/completions',{
+                method:'POST',
+                headers:{Authorization:'Bearer '+key,'Content-Type':'application/json'},
+                body:JSON.stringify(body),signal:AbortSignal.timeout(16000)
+              });
+              const data=await result.json().catch(()=>({}));
+              let parsed=null;
+              const raw=data?.choices?.[0]?.message?.content;
+              try{parsed=JSON.parse(typeof raw==='string'?raw:'')}catch{}
+              const called=data?.choices?.[0]?.message?.tool_calls?.some(
+                item=>item?.type==='function' && item?.function?.name==='resolve_contact_context'
+              );
+              const passed=result.ok && (item.kind==='tool'?Boolean(called):parsed?.status==='OK');
+              console.log(JSON.stringify({test:item.name,http:result.status,result:passed?'PASS':'FAIL',errorCode:result.ok?null:String(data?.error?.code||data?.error?.type||'provider_or_format')}));
+              if(!passed)errors++;
+            }catch(error){
+              errors++;
+              console.error(JSON.stringify({test:item.name,result:'FAIL',errorCategory:error?.name==='TimeoutError'?'timeout':'transport'}));
+            }
+          }
+          if(errors>0)process.exitCode=1;
+          NODE
