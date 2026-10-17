@@ -18,13 +18,16 @@ export function isStrictOpenAiSchema(value: unknown, depth = 0): boolean {
       value.then !== undefined || value.else !== undefined) return false;
 
   if (value.type === 'object') {
+    const properties = value.properties;
+    const required = value.required;
     if (value.additionalProperties !== false ||
-        !record(value.properties) || !Array.isArray(value.required)) return false;
-    const fields = Object.keys(value.properties);
-    if (value.required.length !== fields.length ||
-        new Set(value.required).size !== fields.length ||
-        fields.some((key) => !value.required.includes(key))) return false;
-    return fields.every((key) => isStrictOpenAiSchema(value.properties[key], depth + 1));
+        !record(properties) || !Array.isArray(required)) return false;
+    const fields = Object.keys(properties);
+    if (!required.every((key) => typeof key === 'string') ||
+        required.length !== fields.length ||
+        new Set(required).size !== fields.length ||
+        fields.some((key) => !required.includes(key))) return false;
+    return fields.every((key) => isStrictOpenAiSchema(properties[key], depth + 1));
   }
 
   if (value.type === 'array') return isStrictOpenAiSchema(value.items, depth + 1);
