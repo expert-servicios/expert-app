@@ -750,6 +750,18 @@ Inventario realizado sobre árbol `main` (238 `page.tsx`, 139 páginas/plantilla
 | 4. Leads/PDF RGPD/laboral | RGPD, antiabuso, #780, #795, KIA | Privacidad + desarrollo | Pruebas sintéticas E2E y aceptación Dirección |
 | 5. KIA editorial y agente autónomo | #797 y #791, gates E0–E6, pruebas seguridad | KIA / producto | Propuestas desidentificadas y PRs supervisadas |
 
+### Ampliación documental H4 — matriz operativa laboral y SEO (17/10/2026)
+
+Se conserva como documento auxiliar la [matriz de oportunidades laborales, aprendizaje KIA y validación SEO](plans/kia-labor-editorial-seo-opportunity-matrix-2026-10-17.md): LAB-01 a LAB-10, clasificación editorial/servicios/herramientas, deduplicación ES/RU, fuentes primarias, SEO técnico y pruebas sintéticas. Su contenido **no autoriza ejecución ni publicación**, no abre una nueva fase y no crea un segundo motor de oportunidades. Documento subordinado al Plan Maestro; E0 permanece en curso y su checkpoint no cambia.
+
+### Ampliación H4 — bandeja de oportunidades en Admin (17/10/2026)
+
+Diseño futuro de una [bandeja unificada de oportunidades KIA](plans/kia-admin-opportunities-queue-spec-2026-10-17.md), como proyección de Editorial Hub, Regulatory Pulse y los módulos existentes. Define filtros, trazabilidad, revisión profesional por destino, privacidad, permisos y pruebas de transiciones prohibidas. **Solo documentación**: no existe aún la nueva interfaz ni se han creado endpoints, tablas o publicaciones; E0-M3-06 no cambia.
+
+### Consolidación de planes documentales históricos (17/10/2026)
+
+Se preservan como **documentos auxiliares históricos** los planes de [CIRCE](plans/circe-autogestion-centro-ayuda-20261015.md), [Crea y Crece y facturación](plans/crea-crece-facturacion-oportunidades-kia-20261015.md), [auditoría editorial/Academy Holded](editorial/blog-docs-holded-links-cta-consultation-audit-2026-10-13.md), [reposicionamiento web](expert-public-web-workspace-kia-repositioning-plan-2026-10-10.md), [navegación y futuros créditos](expert-web-v2-navigation-knowledge-ai-credit-plans-2026-10-10.md), [auditoría de proveedores y subagentes](kia-ai-providers-artifacts-subagents-audit-2026-10-10.md), [KIA y Document Studio](kia-unified-core-attachments-document-studio-2026-10-10.md) y [Workspace/KIA](workspace-v2-kia-copilot-parallel-integration-2026-10-10.md). Las propuestas de #707, #708, #709, #760 y #783 quedan preservadas sin fusionar sus ramas antiguas ni alterar la prelación E0–E6. El [suplemento Admin V2 de soporte y KIA](plans/admin-v2-support-and-kia-contract-pr708-consolidated-2026-10-17.md) preserva las ratificaciones de #708 sin sustituir el Plan Admin canónico. La adenda de #744 ya está integrada en el Plan Maestro. **No adoptar precios, planes por créditos, fechas, claims ni despliegues de esos borradores sin validación actual y aprobación de Dirección.**
+
 ### Regla de gobierno
 
 Este anexo **unifica las ramas y las listas de aceptación**, sin crear otro plan rector y sin sustituir prioridades E0–E6. Los issues #780, #791, #795, #796, #797 y PR #798 son las trazas de ejecución. Ningún cambio de producto/SEO queda «publicado» hasta fusión, despliegue, pruebas de HTTP e indexabilidad; y estar en sitemap no garantiza indexación ni posiciones en Google.
