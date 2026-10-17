@@ -766,3 +766,89 @@ Se preservan como **documentos auxiliares históricos** los planes de [CIRCE](pl
 
 Este anexo **unifica las ramas y las listas de aceptación**, sin crear otro plan rector y sin sustituir prioridades E0–E6. Los issues #780, #791, #795, #796, #797 y PR #798 son las trazas de ejecución. Ningún cambio de producto/SEO queda «publicado» hasta fusión, despliegue, pruebas de HTTP e indexabilidad; y estar en sitemap no garantiza indexación ni posiciones en Google.
 
+
+
+## Gobierno documental único — Auditoría y limpieza del 17/10/2026
+
+**Decisión de Dirección:** **este archivo es el único Plan Maestro activo de EXPERT/KIA**. Toda nueva rama, requisito, prioridad, modificación, decisión, checkpoint y cierre se registra primero aquí, mediante PR documental con SHA, fecha, owner y gate. No crear otros ficheros que se atribuyan autoridad de «plan maestro», «roadmap vigente» o «backlog ejecutable» independiente. Los documentos auxiliares son **referencia histórica o técnica**, nunca permiso de ejecución. E0 permanece `IN_PROGRESS`; checkpoint `E0-M3-06-admin-users-tenant-object-scope-audit`; E1–E6 y V3 continúan bloqueados según gates existentes.
+
+### Regla de conservación, archivo y revisión
+
+1. **ARCHIVADO:** el contenido histórico se ha copiado sin alterarlo a `docs/archive/plans/2026-10-17/`; su ruta original se conserva como marcador de lectura con referencia a este Plan Maestro y al archivo para evitar enlaces rotos. La copia no equivale a contenido vigente. No aplicar instrucciones comerciales, WhatsApp/WABA, automatismos, credenciales ni precios históricos.
+2. **INTEGRAR tras revisión:** candidato a extraer requisitos verificables a esta misma rama temática, sin ejecutarlos. Contrastar código, normas, duplicados y fuentes; abrir propuesta al Plan Maestro por su PR de documentación. Solo tras confirmación se marca integrada y puede archivarse su archivo auxiliar.
+3. **REVISAR:** pendiente de decisión sobre mantener o descartar; no iniciar tareas de implementación. Necesita comprobación técnica o normativa actual, dueño y resolución motivada.
+4. **CONSERVAR técnico:** runbooks, protocolos, pruebas y normativa mantienen detalle consultable. Pueden permanecer como referencias, pero nunca fijan prioridades o estados frente al Maestro.
+5. **SEPARAR de planificación:** material de clientes o casos privados debe permanecer en CRM/expediente conforme a permisos, no como fuente general del roadmap ni contenido reutilizable identificable.
+6. **Versiones y referencias:** la documentación histórica forma parte del registro de evidencias; no modificar ni eliminar historiales financieros o migraciones SQL. Al mover un archivo auxiliar en el futuro, dejar compatibilidad en su ruta y revisar los enlaces entrantes.
+7. **Actualización única:** cada PR futura añade/edita el bloque pertinente **aquí**, incluyendo oportunidad/requisito, impacto, prioridad, fase, dependencias, riesgo, responsables, alcance, aceptación, estado `IDEA / VERIFICAR / APROBADA / EN CURSO / CERRADA / DESCARTADA`, prueba de CI y fecha. **Nunca dos planes rectores**. Ni `APROBADA` implica despliegue ni `CERRADA` equivale a producción sin readback.
+
+### Registro documental revisado — 54 documentos de planificación
+
+La decisión de esta tabla es una **clasificación de gobernanza**, no un dictamen de ejecución. No se da por comprobada la vigencia normativa ni funcional de los documentos aún en revisión.
+
+| Ruta documental | Decisión de gobierno | Motivo y acción siguiente |
+| --- | --- | --- |
+| `docs/admin-360-compact-redesign-backlog-2026-10-09.md` | **INTEGRAR tras revisión** | UX compacta de Admin 360; contrastar con Workspace V2 y gates E0 |
+| `docs/admin-360-unified-directory-plan.md` | **INTEGRAR tras revisión** | Modelo persona/empresa/lead sin identidades ficticias; deduplicar Admin V2 |
+| `docs/admin-improvement-plan.md` | **ARCHIVADO** | Segundo plan de mejoras fechado en septiembre; requiere solo consulta histórica. |
+| `docs/admin-meta-catalog-manager-plan-2026-10-03.md` | **REVISAR** | Estado Meta, inventario y consentimientos requieren comprobación actual |
+| `docs/audit-2026-07-01-plan.md` | **ARCHIVADO** | Remediación de julio y decisiones antiguas MCP/WABA, no vigente. |
+| `docs/business-academy-implementation-plan.md` | **ARCHIVADO** | Plan anterior con claims formativos y precios que requieren validación. |
+| `docs/compliance/rgpd-expert-estudios-profesionales-implantacion.md` | **CONSERVAR técnico** | Guía o prueba especializada; conservar como referencia, no como plan de desarrollo. |
+| `docs/editorial/marketing-execution-roadmap-2026-10-02.md` | **REVISAR** | Calendario de campañas antiguo; no asumir autorización de publicar |
+| `docs/editorial/social-content-strategy.md` | **INTEGRAR tras revisión** | Reglas editoriales y opt-in sin duplicar motor Editorial Hub |
+| `docs/expert-admin-v2-plan-maestro-2026-10-09.md` | **INTEGRAR tras revisión** | Especificación extensa Admin/Cliente; E0–E6 prevalece sin fase paralela |
+| `docs/expert-kia-ecosystem-master-plan-2026-10-10.md` | **MAESTRO** | Única fuente de estado, prioridades y decisiones E0–E6. |
+| `docs/expert-kia-v3-ideas-and-validation-backlog-2026-10-10.md` | **INTEGRAR tras revisión** | Ideas V3-23/24 en rama de ideas del Plan Maestro; ejecución solo pos-E6 |
+| `docs/expert-mcp-roadmap-2026-10-05.md` | **REVISAR** | Permisos MCP y Holded sujetos a control E0 y autorizaciones |
+| `docs/expert-os-roadmap.md` | **ARCHIVADO** | Roadmap de mayo con supuestos de clientes y planes mensuales superados. |
+| `docs/expert-public-web-workspace-kia-repositioning-plan-2026-10-10.md` | **INTEGRAR tras revisión** | Mensajes de producto y SEO sin prometer capacidades futuras |
+| `docs/expert-web-v2-navigation-knowledge-ai-credit-plans-2026-10-10.md` | **REVISAR** | Créditos y planes de IA no aprobados; validar modelo comercial |
+| `docs/google-workspace-api-roadmap.md` | **REVISAR** | APIs y scopes dependen de uso real, permisos y coste |
+| `docs/holded-banking-reconciliation-all-clients-backlog-2026-10-09.md` | **INTEGRAR tras revisión** | Conciliación por empresa, sin escrituras antes de gates |
+| `docs/holded-company-billing-contact-plan.md` | **CONSERVAR contrato técnico** | Identidad fiscal de facturación multiempresa; no roadmap activo |
+| `docs/holded-labor-v2-plan.md` | **REVISAR** | Capacidades Holded v2 laborales deben verificarse con API efectiva |
+| `docs/holded-official-mcp-sandbox-test-plan-2026-10-05.md` | **CONSERVAR técnico** | Guía o prueba especializada; conservar como referencia, no como plan de desarrollo. |
+| `docs/holded-ru-academy-strategy.md` | **REVISAR** | Estrategia RU/Academy extensa; comprobar precios y contenido vigente |
+| `docs/holded-sync-action-plan.md` | **REVISAR** | Sincronización y cobros históricos; riesgo de duplicados |
+| `docs/implementation-plan.md` | **ARCHIVADO** | Fases históricas, WABA y suscripciones de alcance anterior. |
+| `docs/improvement-plan.md` | **ARCHIVADO** | Plan vivo de julio sustituido por el registro de ejecución E0–E6. |
+| `docs/kia-2-strategy.md` | **INTEGRAR tras revisión** | Arquitectura y políticas de herramientas KIA; resolver doble canonicidad |
+| `docs/kia-ai-evaluation-plan.md` | **CONSERVAR QA** | Fixtures/evaluación técnica, no priorización ejecutiva |
+| `docs/kia-contextual-conversations-roadmap.md` | **INTEGRAR tras revisión** | Mensajería contextual Work y KIA; deduplicar comunicaciones |
+| `docs/kia-e2e-test-plan-2026-09-25.md` | **CONSERVAR técnico** | Guía o prueba especializada; conservar como referencia, no como plan de desarrollo. |
+| `docs/kia-implementation-progress.md` | **ARCHIVADO** | Bitácora histórica de mayo-julio, no informe vigente de despliegue. |
+| `docs/kia-segmented-newsletter-plan.md` | **REVISAR** | Necesita RGPD, opt-in y validación de canales |
+| `docs/kia-supabase-admin-future-plan.md` | **ARCHIVADO** | Hipótesis y fallos de junio de entorno Supabase ya reestudiados. |
+| `docs/kia-web-anonymous-sessions-phase-plan-2026-10-10.md` | **CONSERVAR contrato técnico** | Seguridad de sesión anónima sin nuevas fases |
+| `docs/kia-work-implementation-progress.md` | **ARCHIVADO** | Fotografía de septiembre sobre PR antiguas. |
+| `docs/master-checklist.md` | **ARCHIVADO** | Checklist de mayo con estados que no reflejan gates actuales. |
+| `docs/mentoring/mentorday-operating-and-publication-plan.md` | **CONSERVAR técnico** | Guía o prueba especializada; conservar como referencia, no como plan de desarrollo. |
+| `docs/migration-history/production-ledger-transition-plan-2026-09-12.md` | **CONSERVAR técnico** | Guía o prueba especializada; conservar como referencia, no como plan de desarrollo. |
+| `docs/monthly-plan-holded-requirements.md` | **ARCHIVADO** | Política de suscripción mensual obsoleta frente al catálogo de servicios puntuales. |
+| `docs/multi-entity-stripe-reconciliation-plan-2026-09-07.md` | **INTEGRAR tras revisión** | Identidad fiscal Stripe, aislamiento y conciliación verificables |
+| `docs/p0-implementation-subplan.md` | **ARCHIVADO** | Subplan P0 antiguo que no sustituye el nuevo gate E0. |
+| `docs/plans/admin-v2-support-and-kia-contract-pr708-consolidated-2026-10-17.md` | **INTEGRAR tras revisión** | Requisitos de soporte Admin/KIA, sin suplantación ni doble Workspace |
+| `docs/plans/circe-autogestion-centro-ayuda-20261015.md` | **REVISAR** | Validar fuentes y precios; no publicar antecedentes sin contraste |
+| `docs/plans/crea-crece-facturacion-oportunidades-kia-20261015.md` | **REVISAR** | Validar legislación y vigencia; distinguir B2B de VeriFactu |
+| `docs/plans/kia-admin-opportunities-queue-spec-2026-10-17.md` | **INTEGRAR tras revisión** | Vista de propuestas en Admin con gates y revisión humana |
+| `docs/plans/kia-comfiapp-rgpd-content-qa-20261015.md` | **SEPARAR de planificación** | Caso privado: revisar retirada hacia CRM y minimización de PII; no copiar al Maestro |
+| `docs/plans/kia-labor-editorial-seo-opportunity-matrix-2026-10-17.md` | **INTEGRAR tras revisión** | LAB-01…10, SEO, desidentificación y control jurídico |
+| `docs/plans/kia-post-e6-subagents-audit-and-parity-2026-10-17.md` | **INTEGRAR tras revisión** | Subagentes existentes y propuestas solo posteriores a E6 |
+| `docs/plans/kia-regulatory-to-editorial-commercial-impact-2026-10-17.md` | **INTEGRAR tras revisión** | Propagación de impacto y propuestas, sin segunda vigilancia |
+| `docs/plans/rgpd-hub-lead-pdf-rollout-20261015.md` | **REVISAR** | Herramienta RGPD y leads bloqueados hasta control privacidad |
+| `docs/qa/planes-page-supervision-plan-qa.md` | **CONSERVAR técnico** | Guía o prueba especializada; conservar como referencia, no como plan de desarrollo. |
+| `docs/roadmap.md` | **ARCHIVADO** | Antiguo «roadmap maestro» de septiembre desplazado por E0–E6. |
+| `docs/ru-technical-backlog.md` | **REVISAR** | RU/i18n con QA y fechas anteriores; evitar ejecución paralela |
+| `docs/service-catalog-scale-roadmap.md` | **REVISAR** | Crecimiento de catálogo sin objetivos arbitrarios ni suscripciones retiradas |
+| `docs/supabase-migration-ledger-recovery-plan-2026-09-08.md` | **CONSERVAR técnico** | Guía o prueba especializada; conservar como referencia, no como plan de desarrollo. |
+
+### Orden de revisión de las 33 referencias no archivadas ni técnicas
+
+**Bloque 1 — Alta prioridad de coherencia:** Admin V2 / KIA 2.0 / banco V3; verificar que sus secciones no establecen un segundo plan rector ni abren fases y capturar requisitos no repetidos. El caso privado RGPD se deriva a su expediente, sin exportar datos a este Plan.
+
+**Bloque 2 — Revisión profesional y normativa:** CIRCE, Crea y Crece, RGPD, laboral/Holded, formación/Academy, contabilidad/Stripe/MCP y traducciones RU. Exigir normas con vigencia y fecha, permisos y titularidad de cada acto. Precios, calendarios y prestaciones no se aprueban por copiar un plan antiguo.
+
+**Bloque 3 — Diseño y comunicación:** web pública, créditos IA, catálogo/Marketing, newsletter, SEO, bandeja de oportunidades y supervisión de agentes. Capturar solo diferencias útiles, desduplicar y reservar propuestas fuera de alcance para después de E6.
+
+**Criterio para cerrar cada fila:** registrar `fecha + resultado + fundamento + evidencia GitHub/fuente oficial + decisión Dirección cuando corresponda + sección del Plan Maestro actualizada`. La limpieza documental **no modifica software**, ni activa automatismos, ni valida contenido público.

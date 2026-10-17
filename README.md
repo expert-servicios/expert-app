@@ -52,7 +52,7 @@ La fuente de verdad de estos datos de identidad esta en `config/identity.ts`.
 - `lib/integrations`: adaptadores de Supabase, Stripe, Resend, Holded y WhatsApp.
 - `lib/schemas`: validaciones Zod.
 - `supabase/migrations`: schema SQL, RLS y buckets.
-- `docs/roadmap.md`: roadmap maestro.
+- `docs/expert-kia-ecosystem-master-plan-2026-10-10.md`: **único Plan Maestro rector EXPERT/KIA**. Los antiguos planes son históricos o propuestas en revisión; nunca prevalecen sobre E0–E6.
 - `docs/master-checklist.md`: checklist de cumplimiento.
 - `docs/architecture.md`: arquitectura operativa.
 - `docs/document-archive-runbook.md`: modelo de archivo privado, autoridad documental y continuidad de la asociación con EXPERT/Kia.
