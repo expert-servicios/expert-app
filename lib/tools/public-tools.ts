@@ -97,19 +97,9 @@ export const publicTools: PublicTool[] = [
     description: 'Calcula los honorarios orientativos de migración por empleado, conforme al mínimo de unidades del servicio. No es una auditoría laboral automática.',
     category: 'holded',
     type: 'calculadora',
-    href: '/servicios/holded/holded-migracion-laboral#calculadora-honorarios',
+    href: '/holded/migracion-laboral#calculadora-honorarios',
     action: 'Calcular migración',
     relatedServiceSlugs: ['holded-migracion-laboral'],
-  },
-  {
-    id: 'formacion-holded',
-    title: 'Calculadora de formación en Holded',
-    description: 'Estima el coste de la formación según el número de bloques de dos horas.',
-    category: 'holded',
-    type: 'calculadora',
-    href: '/servicios/formacion/formacion-holded#calculadora-honorarios',
-    action: 'Calcular formación',
-    relatedServiceSlugs: ['formacion-holded'],
   },
 ];
 
