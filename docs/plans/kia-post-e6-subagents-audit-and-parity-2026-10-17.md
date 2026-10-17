@@ -79,11 +79,11 @@ Los siete perfiles comparten el contrato, pero no la misma lista de herramientas
 
 ## 6. Referencias e interdependencias
 
-- [Plan Maestro E0–E6](expert-kia-ecosystem-master-plan-2026-10-10.md): única secuencia autorizada actualmente.
-- [V3 ideas](expert-kia-v3-ideas-and-validation-backlog-2026-10-10.md): propuestas futuras sin ejecución.
+- [Plan Maestro E0–E6](../expert-kia-ecosystem-master-plan-2026-10-10.md): única secuencia autorizada actualmente.
+- [V3 ideas](../expert-kia-v3-ideas-and-validation-backlog-2026-10-10.md): propuestas futuras sin ejecución.
 - [#785 auditoría laboral](https://github.com/expert-servicios/expert-app/issues/785) y convenio/registro normativo.
 - [#786 archivo documental inteligente](https://github.com/expert-servicios/expert-app/issues/786), V3-23 / PR #787.
-- [#768 oportunidades de aprendizaje](https://github.com/expert-servicios/expert-app/issues/768); [motor editorial](kia-commercial-editorial-opportunity-engine-2026-10-13.md).
+- [#768 oportunidades de aprendizaje](https://github.com/expert-servicios/expert-app/issues/768); [motor editorial](../kia-commercial-editorial-opportunity-engine-2026-10-13.md).
 - [PR #788 V3-24](https://github.com/expert-servicios/expert-app/pull/788) coste laboral/nóminas.
 
 **No ejecutar:** nuevo runtime, migraciones, herramientas con permisos elevados, conexión a sedes, manipulación contable/laboral, publicación, envíos, pruebas con datos reales ni despliegue desde este plan. La recuperación del Plan Maestro detenido se diagnostica y resuelve en su **fase E0**, de manera separada.
