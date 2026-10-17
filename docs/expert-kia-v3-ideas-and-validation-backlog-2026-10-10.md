@@ -87,6 +87,44 @@ Para cada propuesta utilizar:
 | **V3-21** | **Centro de calidad de conocimiento** donde el profesional reporta referencias desactualizadas, propone revisión y compara la respuesta anterior/actual de KIA sin contaminar el corpus automático. | `regulatory_sources`, `kia_feedback`, `kia_auditor_reviews`, KIA knowledge. | Procedencia, revisión editorial de fuentes oficiales, trazas, versionado, prueba antes de publicar y control de quién puede corregir. |
 | **V3-22** | **Asistente de migración desde herramientas antiguas**: importación guiada con mapeos y reporte de discrepancias para alta de asesorías (sin sobrescribir libros contables). | Migraciones Holded, `external_mappings`, `company_data_resolver`, documentos, onboarding. | Contratos de importadores, validación contable, rollback y consentimiento de exportación por proveedor. Es más que la conexión inicial E5. |
 
+### V3-F — Costes empresariales y nóminas (oportunidad separada del motor de diagnóstico)
+
+| ID | Propuesta y valor hipotético | Base existente para reutilizar | Condiciones de validación posterior a E6 |
+| --- | --- | --- | --- |
+| **V3-24** | **Simulador laboral de contratación y coste empresarial + posible preparación supervisada de nóminas**. Escenarios de coste mensual/anual con salario de convenio, jornada, tipos de contrato, cotización, extras y pluses. Segunda etapa opcional: previsualización/borrador de nómina y comprobaciones, preferiblemente usando el motor de Holded donde exista, no sustituyéndolo inicialmente. | Subagente `labor` y skill `labor.payroll_diagnostics` (solo lectura), cliente Holded v2, `total_company_cost` en nóminas consultadas, `regulatory_values`/fuentes BOE, convenio aplicable y plantillas EXPERT. **Solapamiento con V3-02:** aquel simula tesorería/impacto financiero general; V3-24 especifica motor jurídico-laboral de salario, cotización y borrador. | Fuentes/versiones por ejercicio, convenio/nivel/centro, pruebas sintéticas contra cálculos independientes y Holded, cobertura de casos especiales y segregación entre estimación orientativa, borrador, aprobación y liquidación definitiva. No ejecutar ni aprobar nóminas sin permisos, revisión, trazas y viabilidad técnica confirmada. |
+
+#### V3-24 — Ficha técnica de oportunidad (capturada 17/10/2026, no autorizada)
+
+**Contexto:** Dirección solicita evaluar una herramienta de cálculo de **coste laboral empresarial** y hasta **elaboración de nóminas**, vinculada al aprendizaje del especialista laboral KIA. Reutilizar lo existente; no iniciar otro motor de IA ni un segundo ERP.
+
+**Situación comprobada en el código de EXPERT:** `get_holded_payslips` expone `totalCompanyCost`; `run_labor_payroll_diagnostics` contrasta nóminas ya calculadas, pero no las recalcula jurídicamente desde cero. El cliente Holded v2 actual se diseñó para GET/read-only y `permissions_enabled` de escrituras laborales se mantienen desactivados. No consta en `main` un motor propio general de coste previo a contratación ni un generador jurídico de recibos salariales definitivos. Holded ofrece su propia gema de Nóminas, con cálculo de bases/IRPF y PDF/borradores según cuenta y configuración; el alcance de automatización **vía API** debe verificarse con el proveedor antes de diseñar escritura.
+
+**Entrega A — Calculadora de coste de contratación (propuesta de primer producto):**
+- **Entradas:** ejercicio y período; régimen de Seguridad Social (primera entrega RG general ordinario); centro/municipio, convenio aplicable, nivel, jornada y distribución, antigüedad; contrato indefinido/temporal/fijo discontinuo y particularidades; salario pactado o de convenio; extras devengadas/prorrateadas y complementos, festivos/domingo/noches y variables aplicables; cotización por AT/EP y ocupación cuando proceda, incentivos legalmente acreditados.
+- **Desglose:** bruto anual, base(s) de cotización por conceptos, aportación empresarial (contingencias comunes, AT/EP, desempleo, formación profesional, FOGASA, MEI y solidaridad cuando proceda), aportación del trabajador **separada**, estimación IRPF si se aportan datos lícitos suficientes, neto estimado, coste mensual y anual, coste por hora efectiva, escenarios de jornada/plus/bonificación y presupuesto por plantilla. Seguros obligatorios de convenio, absentismo, indemnizaciones esperadas u otros costes **aparte y como hipótesis**, no confundir con cuota de SS ni salario devengado.
+- **Reglas:** salarios mínimos y tablas vigentes, bases mínimas/máximas, cotización por parcialidad, condiciones especiales, redondeos, periodos de vigencia, topes y compatibilidad de bonificaciones. **No aplicar un porcentaje empresarial fijo universal**, no atribuir FOGASA al trabajador ni confundir 30 unidades de salario mensual con jornadas y horas trabajadas.
+- **Salida:** simulación ES/RU con supuestos visibles, resumen coste empresa vs líquido a percibir, desglose, fuente por cifra, versión y fecha; exportación orientativa y sin persistir datos personales innecesarios. Si faltan convenio o parámetros determinantes, mostrar intervalo/pendiente y no cifra definitiva.
+
+**Entrega B — Vista previa de nómina (ampliación futura, condicionada):**
+- Capturar mes, variaciones, horas, festivos compensados, vacaciones, IT, anticipos/embargos, prorrateos y datos de IRPF autorizados; confrontar contrato y convenio.
+- Usar preferentemente flujo de **borrador de Holded**, si su licencia, API y control de permisos lo permiten. Si no existe API de creación autorizada, preparar ficha de incidencias y valores de entrada para revisión manual; no prometer automatización desde EXPERT.
+- Si en el futuro se evalúa un **motor jurídico propio**, tratarlo como proyecto separado de alto riesgo: modelo oficial de recibo individual de salarios, tablas/tipos versionados, límites y redondeos, IRPF AEAT (cálculo/regularización), vacaciones, IT, atrasos, bases, recargos, bonificaciones, contratos especiales, rectificativas y pruebas de validación.
+- Gate obligatorio por cada documento: `simulation` → `draft` → `professional_review` → `approved` → `delivered`. Contabilización, envío, remesa y comunicación a TGSS/SEPE son operaciones **distintas** y no se infieren por la aprobación de un PDF. Revisión humana y readback antes de cualquier efecto.
+
+**QA previo a eventual aprobación:**
+- Ejemplos sintéticos: salario mensual/grupo 10; parcialidad y horas complementarias; fijo discontinuo; festivo trabajado con/sin descanso; 2 centros/fiestas locales; 3 pagas extra y prorrateo legal; IRPF variable/regularización; AT/EP diferente; MEI/solidaridad; ingreso/baja a mitad de mes; mes 28/30/31 días; IT; atrasos; complementos; convenio modificado durante el año; año siguiente sin tablas publicadas (falla seguro).
+- Comparación contra 2 fuentes/cálculos independientes; identificar diferencia por concepto, redondeo y fecha; no presentar `total_company_cost` de Holded como prueba suficiente de corrección jurídica.
+- Seguridad: datos de empleados y familiares/IRPF minimizados, RLS y scopes company+actor+case; no divulgar nóminas entre empleados/tenants, no almacenar simulaciones con datos privados en GitHub, no enviar/empezar pagos automáticamente; costes de uso y consentimiento.
+- Métrica: tasa de coincidencia por concepto con casos de referencia y número de escenarios cubiertos; error tolerable fijado antes de piloto, no afirmar exactitud sin medición. Sin precio comercial comprometido.
+
+**Fuentes a mantener versionadas y revisar (no copiar automáticamente contenido de buscadores):**
+- BOE, Orden PJC/297/2026: https://www.boe.es/buscar/act.php?id=BOE-A-2026-7296
+- Estatuto Trabajadores: https://www.boe.es/buscar/act.php?id=BOE-A-2015-11430
+- Modelo recibo salarial, Orden ESS/2098/2014: https://www.boe.es/buscar/doc.php?id=BOE-A-2014-11637
+- Ayudas AEAT para retenciones de trabajo por período y tablas de convenios oficiales; prestaciones y excepciones SS vigentes; información funcional del proveedor: https://help.holded.com/es/articles/13938214-preguntas-frecuentes-sobre-la-gema-de-nominas
+
+**Gobierno y posición:** `CAPTURADA`, **NO APROBADA**, **IMPLEMENTACIÓN BLOQUEADA** mientras el Plan Maestro E0–E6 siga en ejecución. V3-24 se evalúa tras acta E6 COMPLETADA, auditoría de capacidades existentes y aprobación explícita de Dirección; V3-02 sigue como simulador de impactos financieros general. Cualquier defecto P0/P1 en el diagnóstico laboral actual se corrige dentro de la fase aprobada, no por adelantar V3-24.
+
 ## 3. Distinguir lo ya aprobado de una propuesta verdaderamente V3
 
 | Tema detectado durante auditoría | ¿Dónde debe vivir? | Regla para evitar duplicidades |
@@ -98,6 +136,7 @@ Para cada propuesta utilizar:
 | KIA única, skills, fuentes oficiales, voz y adjuntos existentes, ES/RU | **E4** | V3-03/05/16/17 añaden productos/estudios de carácter avanzado. |
 | Integrar Holded, correo, Calendar/Meet, Telegram, Docs y acciones supervisadas | **E5** | V3-01/12/13/22 van más allá de la paridad o integración base. |
 | Consumo IA, gobierno de gasto, seguridad multi-tenant, piloto, acceso/precios aprobados | **E6** | V3-14/15/16/19 son nuevas líneas de producto, no exigencias del cierre. |
+| Diagnóstico de nóminas existentes y lectura de Holded, sin escritura | **E4–E5**, según los entregables aprobados | V3-24 añade simulación jurídica previa a contratar y potencial preparación/creación de nóminas; no es una corrección del diagnóstico base. |
 | Revisión de documentación o propuestas de PR #707/#708/#709 | **E0–E6 según módulo** | No duplicar como «nuevo proyecto V3» lo que ya está comprometido. |
 
 ## 4. Protocolo de captura continua (sin desviar la ejecución)
@@ -131,11 +170,17 @@ Cada vez que aparezca una idea:
 
 ## 5. Índice de estado y bitácora V3
 
-- **Propuestas iniciales:** V3-01 … V3-22 (22). **Todas `CAPTURADAS`, ninguna autorizada para desarrollo.** Al registrar una nueva usar V3-23 en adelante sin renumerar las existentes.
+- **Propuestas iniciales:** V3-01 … V3-22 (22). **Capturas posteriores:** V3-23 archivo documental (PR documental #787) y V3-24 coste laboral/nóminas (esta propuesta). **Todas `CAPTURADAS`, ninguna autorizada para desarrollo.** Mantener sus PR documentales en borrador hasta revisión; no renumerar.
 - **Duplicados absorbidos en el plan activo:** no marcados todavía; revisar solo al cierre de E6 o si una comparación objetiva demuestra solapamiento exacto.
 - **Ideas descartadas:** ninguna.
 - **Siguiente acción en este documento:** **solo registrar nuevas oportunidades con su evidencia**; ninguna validación/implementación V3 en fase E0.
 - **Siguiente acción del proyecto principal (NO cambia):** continuar E0-M1-03 (auditoría y P1 de permisos/procedencia), luego E0-M1-04/05 y gates hasta E0 cerrado.
+
+### 2026-10-17 — Captura de V3-24 (simulador laboral y nóminas)
+
+- Dirección plantea oportunidad de calcular costes de contratación y, en fase posterior, preparar nóminas. Separar V3-02 (simulación financiera genérica) de la lógica jurídico-laboral específica.
+- Revisión técnica: Holded ya expone coste y genera nóminas en su producto, mientras EXPERT tiene diagnóstico read-only, no un motor salarial propio. Evaluación y validación de API antes de cualquier desarrollo.
+- **Solo documentación**: sin cambios en runtime, permisos, integraciones, cotizaciones, nóminas reales o empresa piloto. Tras E6 se requiere nueva aprobación expresa.
 
 ### 2026-10-10 — Apertura documental V3
 
