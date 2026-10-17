@@ -19,6 +19,8 @@ jobs:
     name: Synthetic OpenAI and Gemini gateway read-only requests
     runs-on: ubuntu-latest
     timeout-minutes: 3
+    if: ${{ vars.KIA_E0_PROVIDER_SMOKE_ENABLED == 'true' && github.ref == 'refs/heads/test/kia-gateway-smoke-isolated-20261017' && github.sha == vars.KIA_E0_PROVIDER_SMOKE_APPROVED_SHA }}
+    environment: kia-e0-provider-smoke
     env:
       AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
     steps:
