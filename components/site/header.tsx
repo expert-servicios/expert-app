@@ -33,6 +33,7 @@ const planesLinks = [
 ];
 
 const recursosLinks = [
+  { label: 'Herramientas gratuitas', href: '/herramientas' },
   { label: 'Mentorías', href: '/mentorias' },
   { label: 'Blog', href: '/blog' },
   { label: 'Base de conocimientos', href: '/docs' },
