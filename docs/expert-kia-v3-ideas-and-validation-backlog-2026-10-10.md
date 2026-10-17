@@ -87,6 +87,65 @@ Para cada propuesta utilizar:
 | **V3-21** | **Centro de calidad de conocimiento** donde el profesional reporta referencias desactualizadas, propone revisión y compara la respuesta anterior/actual de KIA sin contaminar el corpus automático. | `regulatory_sources`, `kia_feedback`, `kia_auditor_reviews`, KIA knowledge. | Procedencia, revisión editorial de fuentes oficiales, trazas, versionado, prueba antes de publicar y control de quién puede corregir. |
 | **V3-22** | **Asistente de migración desde herramientas antiguas**: importación guiada con mapeos y reporte de discrepancias para alta de asesorías (sin sobrescribir libros contables). | Migraciones Holded, `external_mappings`, `company_data_resolver`, documentos, onboarding. | Contratos de importadores, validación contable, rollback y consentimiento de exportación por proveedor. Es más que la conexión inicial E5. |
 
+### V3-E — Archivo documental inteligente, consulta autorizada y artefactos
+
+| ID | Propuesta y valor hipotético | Base existente para reutilizar | Condiciones de validación posterior a E6 |
+| --- | --- | --- | --- |
+| **V3-23** | **Archivo documental inteligente de EXPERT para KIA**: un usuario identificado puede encontrar archivos propios autorizados por persona/empresa/expediente, abrirlos, leer y resumir contenido con referencias, comparar versiones y preparar nuevos documentos, listas, informes y dashboards basados en evidencias. | `documents` + Storage privado, `company_document_roots/index`, `get_case_documents`, índice Drive, clasificación documental, informes existentes de Holded, expediente/hoja registral y núcleo único KIA. | Demostrar autorización por archivo y acción; aislamiento multiempresa; recuperación del texto real de PDF/DOCX/hojas/imágenes; citas de origen; deduplicación, versiones y exclusión de archivos internos/secretos; revisión humana de informes y QA de privacidad y costes. **No es paridad documental básica E5; es análisis multiarchivo, búsqueda semántica y creación de artefactos avanzados.** |
+
+#### Ficha de captura V3-23 (propuesta de Dirección, 17/10/2026)
+
+- **Origen y evidencia:** solicitud de Dirección de búsqueda, extracción, resúmenes, nuevos documentos, listas, informes y dashboards desde carpetas de clientes. [Issue de referencia #786](https://github.com/expert-servicios/expert-app/issues/786). El caso piloto de auditoría laboral se documenta por separado en #785; NO implementar V3 para desbloquear #785 si bastan las capacidades aprobadas de E0–E6.
+- **Estado:** `CAPTURADA · NO APROBADA · IMPLEMENTACIÓN BLOQUEADA`. Solo planificación; sin fecha de entrega, presupuesto aprobado, rama de runtime, integración activa ni autorización de acceso nuevo a archivos.
+- **Beneficiarios:** clientes autenticados, representantes con permiso efectivo por tipo documental y equipo profesional EXPERT; el nombre de una empresa, NIF, correo o mención en el chat NO acredita autorización.
+- **Modelo canónico:** los documentos operativos tienen autoridad en `documents` y el repositorio privado `client-documents`. Google Drive, OneDrive y SharePoint son fuentes externas o espejos; indexar una carpeta no convierte cada archivo en documento canónico ni lo publica para clientes. Respetar `docs/document-archive-runbook.md`; evitar reatribuir documentos por inferencia o copiar originales sin necesidad.
+- **Etapa A — Descubrimiento autorizado:** inventario unificado por identidad y scope de tenant/cliente/empresa/expediente; filtro explícito de versiones vigentes y `replaced_by`, metadatos, checksums, fuente y permisos de lectura/descarga; acceso denegado por defecto a `kind=internal`, certificados, claves, datos laborales no autorizados y terceros.
+- **Etapa B — Lectura y conocimiento:** lectura segura de contenido con verificaciones de permisos **en cada archivo**; extracción según formato (PDF, DOCX, hojas, imágenes/OCR) con límites, validación y origen; búsqueda textual/semántica únicamente en corpus autorizado; fuentes con archivo, versión, página/fragmento, confianza y fecha. Tratamiento de prompt injection como datos, no instrucciones.
+- **Etapa C — Resultados y artefactos:** respuesta documental con citas y enlaces firmados temporales; resúmenes y comparativas, listas y matrices, borradores DOCX/PDF/XLSX y paneles con métricas sustentadas. Guardar vínculo a evidencias y expediente, estado, versión, aprobación, actor y bitácora. No crear informes definitivos ni enviar documentos sin consentimiento y controles de revisión.
+- **Etapa D — QA y despliegue eventual:** pruebas sintéticas de acceso autorizado/denegado, varios clientes/empresas, rol representante vs empleado, persona sin verificar en Telegram, archivo interno, documento reemplazado, carpetas no indexadas, enlaces caducados, fallos de OCR, confusión de fuentes y prompt injection; CI, RLS/grants, retención/RGPD, gasto, observabilidad, rollback y aprobación de Dirección.
+- **Criterios de aceptación posteriores:** localizar un documento específico sin fuga entre entidades; resumirlo citando el pasaje; combinar varios documentos con una discrepancia declarada; producir borradores exportables con fuentes, procedencia y control de permisos; negarse cuando falte identidad/evidencia/permisos; registrar la operación sin exponer contenido privado en logs.
+- **Riesgos/coste:** privacidad y datos laborales de terceros (alto), exactitud documental/jurídica (alto), búsqueda multiarchivo y embeddings (por estudiar), OCR y procesamiento de archivos grandes (por estudiar), costes y residencia de datos de proveedores (por estudiar).
+- **Dependencias y desbloqueo:** respetar estrictamente el Plan Maestro E0→E6, completar gates y el acta **E6 COMPLETADA**, auditoría posterior de capacidades realmente entregadas y **nueva aprobación expresa** de Dirección antes de dar a V3-23 estado `APROBADA` o empezar cualquier desarrollo. Si una incidencia afecta seguridad/función ya comprometida, resolverla en su módulo E0–E6, no a través de V3-23.
+- **Seguimiento:** mantener #786 como ficha documental no ejecutable; no crear tareas hijas de implementación, no desplegar endpoints ni crear migraciones por esta propuesta durante E0–E6.
+
+### V3-F — Costes empresariales y nóminas (oportunidad separada del motor de diagnóstico)
+
+| ID | Propuesta y valor hipotético | Base existente para reutilizar | Condiciones de validación posterior a E6 |
+| --- | --- | --- | --- |
+| **V3-24** | **Simulador laboral de contratación y coste empresarial + posible preparación supervisada de nóminas**. Escenarios de coste mensual/anual con salario de convenio, jornada, tipos de contrato, cotización, extras y pluses. Segunda etapa opcional: previsualización/borrador de nómina y comprobaciones, preferiblemente usando el motor de Holded donde exista, no sustituyéndolo inicialmente. | Subagente `labor` y skill `labor.payroll_diagnostics` (solo lectura), cliente Holded v2, `total_company_cost` en nóminas consultadas, `regulatory_values`/fuentes BOE, convenio aplicable y plantillas EXPERT. **Solapamiento con V3-02:** aquel simula tesorería/impacto financiero general; V3-24 especifica motor jurídico-laboral de salario, cotización y borrador. | Fuentes/versiones por ejercicio, convenio/nivel/centro, pruebas sintéticas contra cálculos independientes y Holded, cobertura de casos especiales y segregación entre estimación orientativa, borrador, aprobación y liquidación definitiva. No ejecutar ni aprobar nóminas sin permisos, revisión, trazas y viabilidad técnica confirmada. |
+
+#### V3-24 — Ficha técnica de oportunidad (capturada 17/10/2026, no autorizada)
+
+**Contexto:** Dirección solicita evaluar una herramienta de cálculo de **coste laboral empresarial** y hasta **elaboración de nóminas**, vinculada al aprendizaje del especialista laboral KIA. Reutilizar lo existente; no iniciar otro motor de IA ni un segundo ERP.
+
+**Situación comprobada en el código de EXPERT:** `get_holded_payslips` expone `totalCompanyCost`; `run_labor_payroll_diagnostics` contrasta nóminas ya calculadas, pero no las recalcula jurídicamente desde cero. El cliente Holded v2 actual se diseñó para GET/read-only y `permissions_enabled` de escrituras laborales se mantienen desactivados. No consta en `main` un motor propio general de coste previo a contratación ni un generador jurídico de recibos salariales definitivos. Holded ofrece su propia gema de Nóminas, con cálculo de bases/IRPF y PDF/borradores según cuenta y configuración; el alcance de automatización **vía API** debe verificarse con el proveedor antes de diseñar escritura.
+
+**Entrega A — Calculadora de coste de contratación (propuesta de primer producto):**
+- **Entradas:** ejercicio y período; régimen de Seguridad Social (primera entrega RG general ordinario); centro/municipio, convenio aplicable, nivel, jornada y distribución, antigüedad; contrato indefinido/temporal/fijo discontinuo y particularidades; salario pactado o de convenio; extras devengadas/prorrateadas y complementos, festivos/domingo/noches y variables aplicables; cotización por AT/EP y ocupación cuando proceda, incentivos legalmente acreditados.
+- **Desglose:** bruto anual, base(s) de cotización por conceptos, aportación empresarial (contingencias comunes, AT/EP, desempleo, formación profesional, FOGASA, MEI y solidaridad cuando proceda), aportación del trabajador **separada**, estimación IRPF si se aportan datos lícitos suficientes, neto estimado, coste mensual y anual, coste por hora efectiva, escenarios de jornada/plus/bonificación y presupuesto por plantilla. Seguros obligatorios de convenio, absentismo, indemnizaciones esperadas u otros costes **aparte y como hipótesis**, no confundir con cuota de SS ni salario devengado.
+- **Reglas:** salarios mínimos y tablas vigentes, bases mínimas/máximas, cotización por parcialidad, condiciones especiales, redondeos, periodos de vigencia, topes y compatibilidad de bonificaciones. **No aplicar un porcentaje empresarial fijo universal**, no atribuir FOGASA al trabajador ni confundir 30 unidades de salario mensual con jornadas y horas trabajadas.
+- **Salida:** simulación ES/RU con supuestos visibles, resumen coste empresa vs líquido a percibir, desglose, fuente por cifra, versión y fecha; exportación orientativa y sin persistir datos personales innecesarios. Si faltan convenio o parámetros determinantes, mostrar intervalo/pendiente y no cifra definitiva.
+
+**Entrega B — Vista previa de nómina (ampliación futura, condicionada):**
+- Capturar mes, variaciones, horas, festivos compensados, vacaciones, IT, anticipos/embargos, prorrateos y datos de IRPF autorizados; confrontar contrato y convenio.
+- Usar preferentemente flujo de **borrador de Holded**, si su licencia, API y control de permisos lo permiten. Si no existe API de creación autorizada, preparar ficha de incidencias y valores de entrada para revisión manual; no prometer automatización desde EXPERT.
+- Si en el futuro se evalúa un **motor jurídico propio**, tratarlo como proyecto separado de alto riesgo: modelo oficial de recibo individual de salarios, tablas/tipos versionados, límites y redondeos, IRPF AEAT (cálculo/regularización), vacaciones, IT, atrasos, bases, recargos, bonificaciones, contratos especiales, rectificativas y pruebas de validación.
+- Gate obligatorio por cada documento: `simulation` → `draft` → `professional_review` → `approved` → `delivered`. Contabilización, envío, remesa y comunicación a TGSS/SEPE son operaciones **distintas** y no se infieren por la aprobación de un PDF. Revisión humana y readback antes de cualquier efecto.
+
+**QA previo a eventual aprobación:**
+- Ejemplos sintéticos: salario mensual/grupo 10; parcialidad y horas complementarias; fijo discontinuo; festivo trabajado con/sin descanso; 2 centros/fiestas locales; 3 pagas extra y prorrateo legal; IRPF variable/regularización; AT/EP diferente; MEI/solidaridad; ingreso/baja a mitad de mes; mes 28/30/31 días; IT; atrasos; complementos; convenio modificado durante el año; año siguiente sin tablas publicadas (falla seguro).
+- Comparación contra 2 fuentes/cálculos independientes; identificar diferencia por concepto, redondeo y fecha; no presentar `total_company_cost` de Holded como prueba suficiente de corrección jurídica.
+- Seguridad: datos de empleados y familiares/IRPF minimizados, RLS y scopes company+actor+case; no divulgar nóminas entre empleados/tenants, no almacenar simulaciones con datos privados en GitHub, no enviar/empezar pagos automáticamente; costes de uso y consentimiento.
+- Métrica: tasa de coincidencia por concepto con casos de referencia y número de escenarios cubiertos; error tolerable fijado antes de piloto, no afirmar exactitud sin medición. Sin precio comercial comprometido.
+
+**Fuentes a mantener versionadas y revisar (no copiar automáticamente contenido de buscadores):**
+- BOE, Orden PJC/297/2026: https://www.boe.es/buscar/act.php?id=BOE-A-2026-7296
+- Estatuto Trabajadores: https://www.boe.es/buscar/act.php?id=BOE-A-2015-11430
+- Modelo recibo salarial, Orden ESS/2098/2014: https://www.boe.es/buscar/doc.php?id=BOE-A-2014-11637
+- Ayudas AEAT para retenciones de trabajo por período y tablas de convenios oficiales; prestaciones y excepciones SS vigentes; información funcional del proveedor: https://help.holded.com/es/articles/13938214-preguntas-frecuentes-sobre-la-gema-de-nominas
+
+**Gobierno y posición:** `CAPTURADA`, **NO APROBADA**, **IMPLEMENTACIÓN BLOQUEADA** mientras el Plan Maestro E0–E6 siga en ejecución. V3-24 se evalúa tras acta E6 COMPLETADA, auditoría de capacidades existentes y aprobación explícita de Dirección; V3-02 sigue como simulador de impactos financieros general. Cualquier defecto P0/P1 en el diagnóstico laboral actual se corrige dentro de la fase aprobada, no por adelantar V3-24.
+
 ## 3. Distinguir lo ya aprobado de una propuesta verdaderamente V3
 
 | Tema detectado durante auditoría | ¿Dónde debe vivir? | Regla para evitar duplicidades |
@@ -131,11 +190,16 @@ Cada vez que aparezca una idea:
 
 ## 5. Índice de estado y bitácora V3
 
-- **Propuestas iniciales:** V3-01 … V3-22 (22). **Todas `CAPTURADAS`, ninguna autorizada para desarrollo.** Al registrar una nueva usar V3-23 en adelante sin renumerar las existentes.
+- **Propuestas iniciales:** V3-01 … V3-22 (22). **Todas `CAPTURADAS`, ninguna autorizada para desarrollo.** V3-23 y V3-24 están capturadas a 17/10/2026; al registrar una nueva usar V3-25 en adelante sin renumerar las existentes.
 - **Duplicados absorbidos en el plan activo:** no marcados todavía; revisar solo al cierre de E6 o si una comparación objetiva demuestra solapamiento exacto.
 - **Ideas descartadas:** ninguna.
 - **Siguiente acción en este documento:** **solo registrar nuevas oportunidades con su evidencia**; ninguna validación/implementación V3 en fase E0.
-- **Siguiente acción del proyecto principal (NO cambia):** continuar E0-M1-03 (auditoría y P1 de permisos/procedencia), luego E0-M1-04/05 y gates hasta E0 cerrado.
+- **Siguiente acción del proyecto principal (NO cambia):** continuar `E0-M3-06-admin-users-tenant-object-scope-audit` (GET/PATCH/DELETE `/api/admin/users`, control de actor activo, tenant, objeto y pruebas negativas), según el checkpoint más reciente del Plan Maestro. E0 continúa `IN_PROGRESS`; E1–E6 y toda V3 permanecen bloqueadas.
+
+### 2026-10-17 — Consolidación documental V3-23/V3-24
+
+- Integradas en un solo archivo las propuestas de archivo documental inteligente y simulación de costes/nóminas. Quedan como ideas no aprobadas posteriores a E6. PR #787 y #788 se conservan como trazabilidad, evitando fusionar dos versiones divergentes de este archivo.
+- El diagnóstico laboral gratuito del issue #795 es un producto distinto del simulador V3-24 y no requiere desarrollar nóminas.
 
 ### 2026-10-10 — Apertura documental V3
 
