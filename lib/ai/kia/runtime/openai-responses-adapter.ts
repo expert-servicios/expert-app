@@ -2,6 +2,7 @@ import { extractJsonObject } from '../kia-output-schema';
 import type { KiaProviderRequest, KiaProviderResult } from '../kia-provider-router';
 import type { KiaToolCall } from '../kia-tool-definitions';
 import { safeErrorMessage } from '../kia-redaction';
+import { openAiResponsesTextFormat, useStrictOpenAiTool } from '../kia-openai-schema-compat';
 
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
 const DEFAULT_OPENAI_RESPONSES_MODEL = 'gpt-5.6-terra';
@@ -44,9 +45,11 @@ export function buildOpenAiResponsesBody(
   request: KiaProviderRequest,
   model = process.env.OPENAI_RESPONSES_MODEL?.trim() || DEFAULT_OPENAI_RESPONSES_MODEL,
 ): Record<string, unknown> {
+  const responseFormat = openAiResponsesTextFormat(request.responseSchema);
+  const schemaInstruction = responseFormat?.type === 'json_object' ? '\n\nDevuelve exclusivamente un objeto JSON válido, sin Markdown ni texto adicional.' : '';
   const body: Record<string, unknown> = {
     model,
-    instructions: request.systemPrompt,
+    instructions: request.systemPrompt + schemaInstruction,
     input: request.messages.map((message) => ({
       role: message.role,
       content: message.content,
@@ -58,16 +61,7 @@ export function buildOpenAiResponsesBody(
   const effort = normalizeEffort(request.effort);
   if (effort) body.reasoning = { effort };
 
-  if (request.responseSchema) {
-    body.text = {
-      format: {
-        type: 'json_schema',
-        name: 'kia_decision',
-        strict: true,
-        schema: request.responseSchema,
-      },
-    };
-  }
+  if (responseFormat) body.text = { format: responseFormat };
 
   if (request.tools?.length) {
     body.tools = request.tools.map((tool) => ({
@@ -75,7 +69,7 @@ export function buildOpenAiResponsesBody(
       name: tool.name,
       description: tool.description,
       parameters: tool.input_schema,
-      strict: tool.strict === true,
+      strict: useStrictOpenAiTool(tool),
     }));
     body.parallel_tool_calls = true;
   }
