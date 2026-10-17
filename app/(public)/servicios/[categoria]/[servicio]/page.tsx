@@ -16,6 +16,7 @@ import { ServiceShareActions } from '@/components/services/ServiceShareActions';
 import { ServiceRatingSummary } from '@/components/services/ServiceRatingSummary';
 import { ServicePriceCalculator } from '@/components/services/ServicePriceCalculator';
 import { UnitPriceCalculator } from '@/components/services/UnitPriceCalculator';
+import { getPublicToolsForService } from '@/lib/tools/public-tools';
 import { getCompanionServices } from '@/lib/services/service-merchandising';
 import { getRuServicePath } from '@/lib/services/service-localized-content';
 
@@ -311,6 +312,7 @@ export default async function ServicioDetallePage({
             </div>
 
 
+            {(service.priceCalculator || service.unitPriceCalculator) && <div id="calculadora-honorarios" className="scroll-mt-28" />}
             {service.priceCalculator && <ServicePriceCalculator kind={service.priceCalculator} origin={serviceOrigin} />}
             {service.unitPriceCalculator && (
               <UnitPriceCalculator
@@ -320,6 +322,9 @@ export default async function ServicioDetallePage({
               />
             )}
 
+            {getPublicToolsForService(service.slug).length > 0 && (
+              <Link href="/herramientas" className="inline-flex min-h-11 items-center gap-2 border border-[#D4A017]/30 bg-white px-5 py-3 text-sm font-semibold text-[#8A6611] hover:bg-[#F8F6F1]">Explorar otras herramientas gratuitas de EXPERT →</Link>
+            )}
             {(service.servicePriceDetail || service.officialFee) && (
               <div className="grid gap-4 md:grid-cols-2">
                 {service.servicePriceDetail && (
