@@ -194,7 +194,7 @@ Cada vez que aparezca una idea:
 - **Duplicados absorbidos en el plan activo:** no marcados todavía; revisar solo al cierre de E6 o si una comparación objetiva demuestra solapamiento exacto.
 - **Ideas descartadas:** ninguna.
 - **Siguiente acción en este documento:** **solo registrar nuevas oportunidades con su evidencia**; ninguna validación/implementación V3 en fase E0.
-- **Siguiente acción del proyecto principal (NO cambia):** continuar E0-M1-03 (auditoría y P1 de permisos/procedencia), luego E0-M1-04/05 y gates hasta E0 cerrado.
+- **Siguiente acción del proyecto principal (NO cambia):** continuar `E0-M3-06-admin-users-tenant-object-scope-audit` (GET/PATCH/DELETE `/api/admin/users`, control de actor activo, tenant, objeto y pruebas negativas), según el checkpoint más reciente del Plan Maestro. E0 continúa `IN_PROGRESS`; E1–E6 y toda V3 permanecen bloqueadas.
 
 ### 2026-10-17 — Consolidación documental V3-23/V3-24
 
