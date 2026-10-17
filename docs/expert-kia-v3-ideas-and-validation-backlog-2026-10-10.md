@@ -87,6 +87,27 @@ Para cada propuesta utilizar:
 | **V3-21** | **Centro de calidad de conocimiento** donde el profesional reporta referencias desactualizadas, propone revisión y compara la respuesta anterior/actual de KIA sin contaminar el corpus automático. | `regulatory_sources`, `kia_feedback`, `kia_auditor_reviews`, KIA knowledge. | Procedencia, revisión editorial de fuentes oficiales, trazas, versionado, prueba antes de publicar y control de quién puede corregir. |
 | **V3-22** | **Asistente de migración desde herramientas antiguas**: importación guiada con mapeos y reporte de discrepancias para alta de asesorías (sin sobrescribir libros contables). | Migraciones Holded, `external_mappings`, `company_data_resolver`, documentos, onboarding. | Contratos de importadores, validación contable, rollback y consentimiento de exportación por proveedor. Es más que la conexión inicial E5. |
 
+### V3-E — Archivo documental inteligente, consulta autorizada y artefactos
+
+| ID | Propuesta y valor hipotético | Base existente para reutilizar | Condiciones de validación posterior a E6 |
+| --- | --- | --- | --- |
+| **V3-23** | **Archivo documental inteligente de EXPERT para KIA**: un usuario identificado puede encontrar archivos propios autorizados por persona/empresa/expediente, abrirlos, leer y resumir contenido con referencias, comparar versiones y preparar nuevos documentos, listas, informes y dashboards basados en evidencias. | `documents` + Storage privado, `company_document_roots/index`, `get_case_documents`, índice Drive, clasificación documental, informes existentes de Holded, expediente/hoja registral y núcleo único KIA. | Demostrar autorización por archivo y acción; aislamiento multiempresa; recuperación del texto real de PDF/DOCX/hojas/imágenes; citas de origen; deduplicación, versiones y exclusión de archivos internos/secretos; revisión humana de informes y QA de privacidad y costes. **No es paridad documental básica E5; es análisis multiarchivo, búsqueda semántica y creación de artefactos avanzados.** |
+
+#### Ficha de captura V3-23 (propuesta de Dirección, 17/10/2026)
+
+- **Origen y evidencia:** solicitud de Dirección de búsqueda, extracción, resúmenes, nuevos documentos, listas, informes y dashboards desde carpetas de clientes. [Issue de referencia #786](https://github.com/expert-servicios/expert-app/issues/786). El caso piloto de auditoría laboral se documenta por separado en #785; NO implementar V3 para desbloquear #785 si bastan las capacidades aprobadas de E0–E6.
+- **Estado:** `CAPTURADA · NO APROBADA · IMPLEMENTACIÓN BLOQUEADA`. Solo planificación; sin fecha de entrega, presupuesto aprobado, rama de runtime, integración activa ni autorización de acceso nuevo a archivos.
+- **Beneficiarios:** clientes autenticados, representantes con permiso efectivo por tipo documental y equipo profesional EXPERT; el nombre de una empresa, NIF, correo o mención en el chat NO acredita autorización.
+- **Modelo canónico:** los documentos operativos tienen autoridad en `documents` y el repositorio privado `client-documents`. Google Drive, OneDrive y SharePoint son fuentes externas o espejos; indexar una carpeta no convierte cada archivo en documento canónico ni lo publica para clientes. Respetar `docs/document-archive-runbook.md`; evitar reatribuir documentos por inferencia o copiar originales sin necesidad.
+- **Etapa A — Descubrimiento autorizado:** inventario unificado por identidad y scope de tenant/cliente/empresa/expediente; filtro explícito de versiones vigentes y `replaced_by`, metadatos, checksums, fuente y permisos de lectura/descarga; acceso denegado por defecto a `kind=internal`, certificados, claves, datos laborales no autorizados y terceros.
+- **Etapa B — Lectura y conocimiento:** lectura segura de contenido con verificaciones de permisos **en cada archivo**; extracción según formato (PDF, DOCX, hojas, imágenes/OCR) con límites, validación y origen; búsqueda textual/semántica únicamente en corpus autorizado; fuentes con archivo, versión, página/fragmento, confianza y fecha. Tratamiento de prompt injection como datos, no instrucciones.
+- **Etapa C — Resultados y artefactos:** respuesta documental con citas y enlaces firmados temporales; resúmenes y comparativas, listas y matrices, borradores DOCX/PDF/XLSX y paneles con métricas sustentadas. Guardar vínculo a evidencias y expediente, estado, versión, aprobación, actor y bitácora. No crear informes definitivos ni enviar documentos sin consentimiento y controles de revisión.
+- **Etapa D — QA y despliegue eventual:** pruebas sintéticas de acceso autorizado/denegado, varios clientes/empresas, rol representante vs empleado, persona sin verificar en Telegram, archivo interno, documento reemplazado, carpetas no indexadas, enlaces caducados, fallos de OCR, confusión de fuentes y prompt injection; CI, RLS/grants, retención/RGPD, gasto, observabilidad, rollback y aprobación de Dirección.
+- **Criterios de aceptación posteriores:** localizar un documento específico sin fuga entre entidades; resumirlo citando el pasaje; combinar varios documentos con una discrepancia declarada; producir borradores exportables con fuentes, procedencia y control de permisos; negarse cuando falte identidad/evidencia/permisos; registrar la operación sin exponer contenido privado en logs.
+- **Riesgos/coste:** privacidad y datos laborales de terceros (alto), exactitud documental/jurídica (alto), búsqueda multiarchivo y embeddings (por estudiar), OCR y procesamiento de archivos grandes (por estudiar), costes y residencia de datos de proveedores (por estudiar).
+- **Dependencias y desbloqueo:** respetar estrictamente el Plan Maestro E0→E6, completar gates y el acta **E6 COMPLETADA**, auditoría posterior de capacidades realmente entregadas y **nueva aprobación expresa** de Dirección antes de dar a V3-23 estado `APROBADA` o empezar cualquier desarrollo. Si una incidencia afecta seguridad/función ya comprometida, resolverla en su módulo E0–E6, no a través de V3-23.
+- **Seguimiento:** mantener #786 como ficha documental no ejecutable; no crear tareas hijas de implementación, no desplegar endpoints ni crear migraciones por esta propuesta durante E0–E6.
+
 ## 3. Distinguir lo ya aprobado de una propuesta verdaderamente V3
 
 | Tema detectado durante auditoría | ¿Dónde debe vivir? | Regla para evitar duplicidades |
@@ -97,6 +118,7 @@ Para cada propuesta utilizar:
 | Hoja registral con eventos, hechos, instrucciones, snapshots, permisos y procedencia | **E3** | V3-10/20 son experiencias avanzadas sobre datos consolidados. |
 | KIA única, skills, fuentes oficiales, voz y adjuntos existentes, ES/RU | **E4** | V3-03/05/16/17 añaden productos/estudios de carácter avanzado. |
 | Integrar Holded, correo, Calendar/Meet, Telegram, Docs y acciones supervisadas | **E5** | V3-01/12/13/22 van más allá de la paridad o integración base. |
+| Documentos y descarga autorizada de expedientes, índice y conectores existentes | **E3–E5 según criterio ya aprobado** | V3-23 añade lectura multiarchivo, búsqueda semántica, análisis y nuevos artefactos; nunca adelantar este alcance para resolver un error base. |
 | Consumo IA, gobierno de gasto, seguridad multi-tenant, piloto, acceso/precios aprobados | **E6** | V3-14/15/16/19 son nuevas líneas de producto, no exigencias del cierre. |
 | Revisión de documentación o propuestas de PR #707/#708/#709 | **E0–E6 según módulo** | No duplicar como «nuevo proyecto V3» lo que ya está comprometido. |
 
@@ -131,11 +153,17 @@ Cada vez que aparezca una idea:
 
 ## 5. Índice de estado y bitácora V3
 
-- **Propuestas iniciales:** V3-01 … V3-22 (22). **Todas `CAPTURADAS`, ninguna autorizada para desarrollo.** Al registrar una nueva usar V3-23 en adelante sin renumerar las existentes.
+- **Propuestas iniciales:** V3-01 … V3-22 (22); **nueva captura:** V3-23 (17/10/2026). **Todas `CAPTURADAS`, ninguna autorizada para desarrollo.** Al registrar una nueva usar V3-23 en adelante sin renumerar las existentes.
 - **Duplicados absorbidos en el plan activo:** no marcados todavía; revisar solo al cierre de E6 o si una comparación objetiva demuestra solapamiento exacto.
 - **Ideas descartadas:** ninguna.
 - **Siguiente acción en este documento:** **solo registrar nuevas oportunidades con su evidencia**; ninguna validación/implementación V3 en fase E0.
 - **Siguiente acción del proyecto principal (NO cambia):** continuar E0-M1-03 (auditoría y P1 de permisos/procedencia), luego E0-M1-04/05 y gates hasta E0 cerrado.
+
+### 2026-10-17 — Captura documental V3-23
+
+- Dirección solicita documentar el **archivo documental inteligente de EXPERT/KIA** pero pospone explícitamente su implantación hasta terminar las tareas y gates existentes.
+- Captura V3-23 y issue #786 como diseño de futura evaluación; sin iniciar código, migraciones, pruebas productivas ni nuevas conexiones.
+- Se mantiene el checkpoint E0–E6 inalterado y el requisito de aprobación posterior al cierre E6.
 
 ### 2026-10-10 — Apertura documental V3
 
