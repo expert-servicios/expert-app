@@ -53,10 +53,10 @@ La fuente de verdad de estos datos de identidad esta en `config/identity.ts`.
 - `lib/schemas`: validaciones Zod.
 - `supabase/migrations`: schema SQL, RLS y buckets.
 - `docs/expert-kia-ecosystem-master-plan-2026-10-10.md`: **único Plan Maestro rector EXPERT/KIA**. Los antiguos planes son históricos o propuestas en revisión; nunca prevalecen sobre E0–E6.
-- `docs/master-checklist.md`: checklist de cumplimiento.
+- `docs/master-checklist.md`: **archivo histórico**, no es checklist vigente; consultar el Plan Maestro E0–E6 para checkpoints, QA y prioridades.
 - `docs/architecture.md`: arquitectura operativa.
 - `docs/document-archive-runbook.md`: modelo de archivo privado, autoridad documental y continuidad de la asociación con EXPERT/Kia.
-- `docs/improvement-plan.md`: plan vivo de mejoras tecnicas priorizadas.
+- `docs/improvement-plan.md`: **archivo histórico** del plan de mejoras previo; las propuestas actuales se revisan e incorporan exclusivamente al Plan Maestro E0–E6.
 
 ## Flujo operativo core
 
