@@ -852,3 +852,277 @@ La decisión de esta tabla es una **clasificación de gobernanza**, no un dictam
 **Bloque 3 — Diseño y comunicación:** web pública, créditos IA, catálogo/Marketing, newsletter, SEO, bandeja de oportunidades y supervisión de agentes. Capturar solo diferencias útiles, desduplicar y reservar propuestas fuera de alcance para después de E6.
 
 **Criterio para cerrar cada fila:** registrar `fecha + resultado + fundamento + evidencia GitHub/fuente oficial + decisión Dirección cuando corresponda + sección del Plan Maestro actualizada`. La limpieza documental **no modifica software**, ni activa automatismos, ni valida contenido público.
+
+## Auditoría transversal de pendientes — PR, issues, documentación e instrucciones (18/10/2026)
+
+**Naturaleza:** registro de clasificación y propuestas a revisar antes de fusionar la limpieza documental #801. **No es autorización de merge funcional, despliegue, migración, publicación, escritura a clientes ni levantamiento de E0**. Fotografía comprobada contra la API de GitHub el 18/10/2026. El estado vivo de las PR/CI puede cambiar; prevalecen los resultados del SHA consultado al ejecutar la decisión.
+
+### A. Registro de 20 PR abiertas: orden y condiciones de revisión
+
+**Regla:** solo #801 contiene limpieza documental sin runtime. Las 19 PR restantes son código, contenido publicable o pruebas/infraestructura. No usar «abierta», «no draft» o checks históricos como permiso de merge. Revisión y cierre por gate, una PR a la vez, sin fusionar ramas apiladas por separado.
+
+| PR | Clase y prioridad | Rama/dependencia observada | Decisión inmediata |
+| --- | --- | --- | --- |
+| [#801](https://github.com/expert-servicios/expert-app/pull/801) | **G0** · READY (no implica aprobación) | `docs/consolidate-single-master-20261017` | Integrar solo documentación, tras revisión de enlaces/CI/Vercel y SHA final; no adelantar ningún gate. |
+| [#798](https://github.com/expert-servicios/expert-app/pull/798) | **POS-E0** · DRAFT | `feat/public-tools-hub-es-draft-20261017` | Borrador funcional: conflicto con main y recuento descriptivo 7 vs 6; mantener separado y exigir aprobación de excepción. |
+| [#794](https://github.com/expert-servicios/expert-app/pull/794) | **DEPENDIENTE #793** · DRAFT | `test/kia-gateway-smoke-isolated-20261017` · base `fix/kia-openai-schema-compat-e0-20261017` | PR apilada sobre rama #793, no sobre main; smoke sintético sin ejecución real acreditada; no fusionar independiente. |
+| [#793](https://github.com/expert-servicios/expert-app/pull/793) | **E0/P1** · DRAFT | `fix/kia-openai-schema-compat-e0-20261017` | Validar respuestas OpenAI JSON Schema con pruebas, revisión de seguridad y dos previews antes de incorporar. |
+| [#784](https://github.com/expert-servicios/expert-app/pull/784) | **E0/P1** · DRAFT | `fix/kia-mail-notices-spam-20261016` | Revisión de avisos fiscales/email y permisos Outlook; sin autoenvíos ni tratar el caso privado en público. |
+| [#782](https://github.com/expert-servicios/expert-app/pull/782) | **RGPD/BLOQUEADO** · DRAFT | `fix/rgpd-report-leads-idempotency-20261015` | Mantener flags apagadas; idempotencia, retención, consentimiento y E2E antes de informes/leads. |
+| [#779](https://github.com/expert-servicios/expert-app/pull/779) | **COMERCIAL/BLOQUEADO** · READY (no implica aprobación) | `feat/rgpd-formacion-aepd-comfiqa-20261015` | PR no draft con conflicto; revisar precio formación, vigencia legal, RGPD y ES/RU antes de publicar. |
+| [#777](https://github.com/expert-servicios/expert-app/pull/777) | **E0/BLOQUEADO** · DRAFT | `feat/kia-qa-invoice-knowledge-20261014` | Notas de reuniones y datos sensibles; comparte dos migraciones con #764: reconciliar SQL y RLS antes de merge. |
+| [#772](https://github.com/expert-servicios/expert-app/pull/772) | **EDITORIAL/BLOQUEADO** · DRAFT | `feat/sl-autonomo-fiscal-iae-seo-es-ru-20261014` | Validar fuentes 2026, precios, CTA y paridad ES/RU; solapa lib/utils y i18n con #771. |
+| [#771](https://github.com/expert-servicios/expert-app/pull/771) | **EDITORIAL/BLOQUEADO** · DRAFT | `feat/rgpd-servicios-contenidos-es-ru-20261014` | Contenidos de servicios RGPD ES/RU; solapamiento con #772 y revisión de política/consentimiento. |
+| [#769](https://github.com/expert-servicios/expert-app/pull/769) | **RGPD/BLOQUEADO** · DRAFT | `feat/rgpd-privacy-policy-draft-20261014` | Borrador jurídico descargable; debe ser revisado por profesional y no fingir política aprobada. |
+| [#767](https://github.com/expert-servicios/expert-app/pull/767) | **E0/REVISAR** · DRAFT | `feat/kia-certificado-perdido-fnmt-camerfirma-accv-20261014` | Recuperación certificados y clasificación de contactos; separar lead/cliente y revisar privacidad, sin publicar sin QA. |
+| [#765](https://github.com/expert-servicios/expert-app/pull/765) | **LEGAL/REVISAR** · DRAFT | `fix/i18n-regulatory-editorial-gate-20261013` | Cambios de extranjería ES/RU con efectos temporales; confirmar fuentes BOE y QA jurídico antes de fusionar. |
+| [#764](https://github.com/expert-servicios/expert-app/pull/764) | **E0/P0-LEGAL** · READY (no implica aprobación) | `fix/regulatory-impact-explicit-boolean-20261013` | Falsos impactos jurídicos; reconciliar cambios correctivos y 2 migraciones compartidas con #777; preflight obligatorio. |
+| [#745](https://github.com/expert-servicios/expert-app/pull/745) | **AGENTES/BLOQUEADO** · DRAFT | `ci/kia-multimodel-gateway-smoke-20261012` | Workflow Gateway manual; secret/budget y modelo actual sin operación ni merge automático. |
+| [#743](https://github.com/expert-servicios/expert-app/pull/743) | **AGENTES/BLOQUEADO** · DRAFT | `feat/kia-pr-review-telegram-optin-20261012` | Notificación Telegram de PR desactivada; revisar secretos, privacidad y permisos. No autorizar mensajes aún. |
+| [#742](https://github.com/expert-servicios/expert-app/pull/742) | **AGENTES/BLOQUEADO** · DRAFT | `feat/kia-dev-agent-sandbox-foundation-20261012` | Infraestructura de agente de desarrollo bajo flag OFF; declarar excepción no sustituye autorización del Plan Maestro. |
+| [#713](https://github.com/expert-servicios/expert-app/pull/713) | **HOLDED/BLOQUEADO** · DRAFT | `feat/holded-migration-destination-pilot-20261010` | Token destino y piloto empresarial; revisar cifrado/tenant, origen intacto, rollback y mandato antes de activar. |
+| [#705](https://github.com/expert-servicios/expert-app/pull/705) | **E0/SEGURIDAD** · READY (no implica aprobación) | `feat/kia-web-persist-turns-20261010` | Persistencia web y migración; revisar sesión/retención/RLS/recuperación, preflight y flag OFF. |
+| [#683](https://github.com/expert-servicios/expert-app/pull/683) | **E0/P1 UX** · READY (no implica aprobación) | `fix/public-booking-links-native-20261009` | Arreglo acotado de enlaces de reservas: comparar con UI actual, comprobar pruebas y previews; posible cierre si quedó integrado. |
+
+**Dependencias y conflictos que hay que resolver antes de fusionar otras PR:**
+1. **#794 → #793:** #794 usa como base la rama de #793 y su workflow `workflow_dispatch` no sustituye CI en `main`. Primero revisión/validación de #793; después reorientar/verificar #794 con el SHA correcto, si procede. No afirmar smoke realizado.
+2. **#764 ↔ #777:** ambas incorporan `supabase/migrations/20261014065341_regulatory_positive_impact_qa_cleanup.sql` y `20261014065405_regulatory_devops_outbox.sql`. **No** fusionarlas de modo independiente sin comparar hashes y preflight de ledger; evitar migraciones divergentes/duplicadas. La #777 añade otra migración con información de reuniones y revisión humana.
+3. **#771 ↔ #772:** comparten `lib/i18n/ru-nationality-resources.ts`; #772 también usa `lib/utils/blog.ts`, `lib/utils/catalog.ts`, `lib/utils/docs.ts`, rutas y sitemap en dominios con otras PR. Consolidar recursos, revisar paridad RU y noindex antes de publicar.
+4. **#784 ↔ #767:** coinciden en `app/api/cron/kia-email-agent/route.ts` y pruebas de email; unificar clasificación, consentimiento, prioridades y permisos Outlook/Gmail.
+5. **#782 ↔ #705 ↔ #742:** comparten `.github/workflows/ci.yml` (en combinaciones); conciliar seguridad CI y migraciones de cada PR con `main` actual, sin abrir flags de captura/IA.
+6. **#798 ↔ maestro #801:** #798 cambia el mismo Plan Maestro y `app/sitemap.ts`; base antigua y conflicto. La descripción «7 utilidades» no cuadra con los 6 enlaces públicos verificables. Requiere rebase/revisión y autorización de excepción explícita a E0, no merge automático.
+7. **#779 ↔ #771/#769/#782:** misma familia RGPD pero destinos jurídicos diferentes (oferta, textos, herramienta, informe/leads). Distinguir formación, asesoramiento, privacidad, información gratuita y consentimiento; #779 está en conflicto de Git y su estado no-draft no autoriza publicar.
+8. **#713 y #705:** cualquier integración/retención o token requiere tenant/actor exactos, preflight, garantías de privacidad y despliegue separado, no aprobación documental.
+9. **#764 (normativa), #765 (fuentes extranjería), #793 (esquemas), #683 (booking):** candidatos de calidad/corrección a revisar por riesgo efectivo y pruebas. La prioridad no implica que estén validados en `main`.
+10. **#742/#743/#745:** infraestructura de agente y comunicación, por defecto sin activación. Cualquier excepción requiere decision de Dirección, presupuesto/seguridad y checkpoint E0 documentado.
+
+### B. 28 issues abiertos: relación con el Plan Maestro, sin cerrar aún
+
+No convertir issues en «planes de ejecución». La hoja de seguimiento ejecutiva es esta; los issues son evidencias y tareas **solo cuando una fase y un responsable los autoricen**. Cerrar duplicados (#775/#776 u otros) únicamente tras confrontar requisitos y dejar referencias cruzadas.
+
+| Issue | Área | Revisión/decisión que corresponde |
+| --- | --- | --- |
+| [#797](https://github.com/expert-servicios/expert-app/issues/797) | KIA LEARN | Oportunidad editorial desde auditoría desidentificada; consolidar H4, no publicar. |
+| [#796](https://github.com/expert-servicios/expert-app/issues/796) | SEO | Hub ES/RU y sitemap; PR #798 funcional bloqueada, revisar primero inventario real. |
+| [#795](https://github.com/expert-servicios/expert-app/issues/795) | LABORAL/RGPD | Diagnóstico mínimo sin PII fase A; fase documental no hasta RGPD. |
+| [#791](https://github.com/expert-servicios/expert-app/issues/791) | AGENTES | Gobierno del agente KIA pre-E0; integrar requisitos seguros, no ejecutar hasta autorización. |
+| [#789](https://github.com/expert-servicios/expert-app/issues/789) | POS-E6 | Paridad subagentes; mantener ideas y auditoría en V3 sin adelantar fase. |
+| [#786](https://github.com/expert-servicios/expert-app/issues/786) | DOCUMENTOS | Búsqueda/informe solo con permisos por tenant/caso, confirmación y trazabilidad. |
+| [#785](https://github.com/expert-servicios/expert-app/issues/785) | LABORAL | Fuentes versionadas, convenio local y evidencia; evitar inferir de nóminas de 30 días. |
+| [#780](https://github.com/expert-servicios/expert-app/issues/780) | RGPD | Informe PDF y captación; bloqueado por consentimientos, retención, datos y #782. |
+| [#778](https://github.com/expert-servicios/expert-app/issues/778) | RGPD | Prediagnóstico guiado; reconciliar alcance con #780 y herramienta gratuita. |
+| [#776](https://github.com/expert-servicios/expert-app/issues/776) | REUNIONES | Procesamiento de notas, revisión humana y tareas: comparar con #775 y #777. |
+| [#775](https://github.com/expert-servicios/expert-app/issues/775) | REUNIONES | Posible duplicación de #776, comparar criterios y consolidar issue madre antes de cerrar. |
+| [#774](https://github.com/expert-servicios/expert-app/issues/774) | REUNIONES/QA | Lecciones facturas y KIA: no divulgar casos ni llevar a asesoramiento automático. |
+| [#773](https://github.com/expert-servicios/expert-app/issues/773) | I18N | ES→RU supervisada, no activación; QA semántica y SEO por idioma. |
+| [#770](https://github.com/expert-servicios/expert-app/issues/770) | RGPD/I18N | Paridad RGPD ES/RU y herramienta, enlazar con #771/#779/#782. |
+| [#768](https://github.com/expert-servicios/expert-app/issues/768) | KIA LEARN | Oportunidades de casos reales: anonimizadas y en motor editorial existente. |
+| [#654](https://github.com/expert-servicios/expert-app/issues/654) | OPERACIONES | Inbox omnicanal con Operations 360; evitar CRM/bandeja duplicada. |
+| [#475](https://github.com/expert-servicios/expert-app/issues/475) | KIA WORK | Autopilot con actor/mandato, E0 y pruebas negativas; solapa #654/#353. |
+| [#388](https://github.com/expert-servicios/expert-app/issues/388) | SEGURIDAD | Hardening Supabase E0, preflight, RLS y security advisor; revisar gravedad vigente. |
+| [#360](https://github.com/expert-servicios/expert-app/issues/360) | I18N | Paridad de servicios, rutas RU y noindex; aprobación humana. |
+| [#353](https://github.com/expert-servicios/expert-app/issues/353) | ADMIN 360 | Épica de arquitectura Admin; requisitos útiles al maestro, no otra fase. |
+| [#352](https://github.com/expert-servicios/expert-app/issues/352) | EDITORIAL | Redes/Meta/HeyGen/LinkedIn; permisos, RGPD y publicación separada. |
+| [#279](https://github.com/expert-servicios/expert-app/issues/279) | HOLDED | Smoke company-scoped de Labor, con datos autorizados y límites de API. |
+| [#180](https://github.com/expert-servicios/expert-app/issues/180) | KIA SOPORTE | Suscripciones y onboarding históricos; reevaluar catálogo sin suscripciones periódicas. |
+| [#161](https://github.com/expert-servicios/expert-app/issues/161) | HOLDED | Factura histórica: impedir duplicado y cruce tenant antes de importación. |
+| [#135](https://github.com/expert-servicios/expert-app/issues/135) | STRIPE | Identidad de cobro por entidad, contratos y trazabilidad; coherencia de facturación. |
+| [#134](https://github.com/expert-servicios/expert-app/issues/134) | TELEGRAM | Bidireccional Operations 360, fases y privilegios; deduplicar #654. |
+| [#133](https://github.com/expert-servicios/expert-app/issues/133) | CATÁLOGO | Modalidades de servicio puntual/guiado; precios solo tras Dirección. |
+| [#64](https://github.com/expert-servicios/expert-app/issues/64) | STRIPE | Checkouts concurrentes por entidad; idempotencia, seguridad, no doble cobro. |
+
+### C. Cobertura de los 213 documentos del árbol `docs/` (fotografía anterior al archivo de #801)
+
+- **54 ficheros de planificación**: clasificación individual en la tabla del apartado «Registro documental revisado» precedente (13 archivados, 1 rector, 7 referencias técnicas conservadas y 33 en revisión). «Archivado» significa copia histórica + compatibilidad en el PR; no equivale a borrado irreversible.
+- **159 documentos adicionales**: inventariados en la tabla siguiente; esta ronda verifica **ubicación y carácter inicial**, pero NO certifica haber contrastado cada afirmación, norma jurídica, estado de implementación o enlace externo de su contenido. Por tanto no se eliminan en bloque. La PR #801 añade 13 copias de archivo, elevando los ficheros bajo `docs/` de 213 a 226 al fusionarse, precisamente para preservar evidencia.
+- Manuales, protocolos, runbooks, ADR, QA, corpus legal, código de contenido y registros SQL permanecen subordinados al Plan Maestro. La revisión de contenido se hará cuando el módulo entre en gate, con dueño, fecha y prueba, no por borrar ficheros para reducir el recuento.
+
+| Documento adicional inventariado | Tratamiento previo a su eventual integración |
+| --- | --- |
+| `docs/admin-email-folders-next.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/admin-email-folders-progress.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/admin-email-folders-security.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/admin-email-folders.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/admin-production-gaps-2026-09-06.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/adr/0001-i18n-routing-and-brand-governance.md` | EVIDENCIA · Preservar fuente y fecha; no confundir hallazgo con entrega |
+| `docs/architecture.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/audits/kia-autonomous-development-readiness-2026-10-17.md` | EVIDENCIA · Preservar fuente y fecha; no confundir hallazgo con entrega |
+| `docs/batch1-operational-automation.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/blog-drafts/renovar-residencia-inversor-inmuebles-sl-2026.md` | SENSIBLE/LEGAL · Revisar privacidad y vigencia; no borrar ni convertir en entrenamiento público |
+| `docs/bridge-endpoints-holded-claude.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/case-status-workflow.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/catalog-launch-batch-1.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/changelog.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/client-company-status-dashboard.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/client-subscription-onboarding-flow.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/clients/dgm-accounting-rebuild-2025-2026.md` | SENSIBLE/LEGAL · Revisar privacidad y vigencia; no borrar ni convertir en entrenamiento público |
+| `docs/clients/kia-accounting-pilot-cohort-2026-10-10.md` | SENSIBLE/LEGAL · Revisar privacidad y vigencia; no borrar ni convertir en entrenamiento público |
+| `docs/closure-runbook-2026-10-06.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/company-open-data-ckan-audit.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/compliance/rgpd-expert-checklist-humano.md` | CONTROL · Conservar auditoría, seguridad y ledger; ejecución solo por gate |
+| `docs/courses/gestion-laboral/CAPTURE_MANIFEST.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/courses/gestion-laboral/CAPTURE_VALIDATION_RUNBOOK.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/courses/gestion-laboral/CONTENT_AND_KNOWLEDGE_BASE.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/courses/gestion-laboral/IMPLEMENTATION_CHECKLIST.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/courses/gestion-laboral/MASTER_IMPLEMENTATION_PROMPT.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/courses/gestion-laboral/PRODUCT_SPEC.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/courses/gestion-laboral/PROGRAMACION_V2_HERRAMIENTAS.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/courses/gestion-laboral/README.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/courses/gestion-laboral/SEO_ANALYTICS_QA.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/courses/gestion-laboral/SOURCE_REGISTRY.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/courses/gestion-laboral/STRIPE_AND_CONVERSION.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/courses/gestion-laboral/TECHNICAL_ARCHITECTURE.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/deploy-holded-mcp-vercel.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/document-archive-runbook.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/document-classification-flow.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/editorial/api-first-publishing-architecture.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/editorial/blog-docs-holded-links-cta-consultation-audit-2026-10-13.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/editorial/channel-account-linking-guide.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/es-ru-service-parity-matrix.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/es-service-alignment-audit.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/executive-dashboard.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/expert-kia-ecosystem-e0-audit-inventory-2026-10-10.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/expert-os-data-model.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/extranjeria/nacionalidad-apellidos-documentacion.md` | SENSIBLE/LEGAL · Revisar privacidad y vigencia; no borrar ni convertir en entrenamiento público |
+| `docs/extranjeria/renovacion-inversor-inmuebles-persona-juridica.md` | SENSIBLE/LEGAL · Revisar privacidad y vigencia; no borrar ni convertir en entrenamiento público |
+| `docs/extranjeria/renovacion-inversor-service-implementation.md` | SENSIBLE/LEGAL · Revisar privacidad y vigencia; no borrar ni convertir en entrenamiento público |
+| `docs/extranjeria/renovacion-residencia-inversor-ley-14-2013.md` | SENSIBLE/LEGAL · Revisar privacidad y vigencia; no borrar ni convertir en entrenamiento público |
+| `docs/extranjeria/representacion-y-presentacion-2026.md` | SENSIBLE/LEGAL · Revisar privacidad y vigencia; no borrar ni convertir en entrenamiento público |
+| `docs/google-workspace-booking-meet-migration.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/holded-accounting-integration-audit.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/holded-brand-governance.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/holded-claude-mcp-integration.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/holded-credential-authority.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/holded-labor-live-readiness.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/holded-v2-kia-accounting-permission-matrix.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/i18n/es-ru-parity-and-change-protocol-2026-10-13.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/i18n/next-immigration-translation-legal-audit-2026-10-13.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/i18n/ru-es-legal-terminology-policy-2026-10-13.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/kia-accounting-agent.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-ai-architecture-audit.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-ai-architecture-qa.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-ai-architecture.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-ai-output-schemas.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-ai-providers-artifacts-subagents-audit-2026-10-10.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-ai-qa.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-ai-tool-use.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-auditor-audit.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-auditor-rules.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-auditor.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-avatar-response-sprint2-approval.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-avatar-response-sprint2.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-avatar-response-sprint3.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-avatar-response-sprint4.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-avatar-response-sprint5-trusted-signals.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-avatar-response-sprint5.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-avatar-response-system.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-checkout-call-flow-qa.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-civil-registry-nationality-corpus.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-client-ledger.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-commercial-editorial-opportunity-engine-2026-10-13.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-commercial-flow-audit.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-conversation-behavior-audit.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-copilot-holded-dashboard-audit.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-decision-logs.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-email-calendar-meetings-runbook.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-email-operations.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-f1-f8-intelligence.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-google-esignature.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-google-search.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-health-anomaly-rules.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-health-canary-tests.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-health-check.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-health-metrics.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-health-qa.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-immigration-nationality-corpus.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-internal-operator.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-labor-reconstruction-runbook.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-lead-client-thread-flow.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-lead-client-thread-qa.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-operator-learning-loop.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-pilot-rollout.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-provider-router.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-public-best-practices.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-public-widget.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-regulatory-coverage-audit-v13.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-regulatory-registry.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-regulatory-v14-fiscal-mercantil.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-regulatory-v15-property-dgt.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-shadow-sampling.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-sprint5f-post-purchase.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-sprint5g-fiscal-calendar.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-sprint5h-help-center.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-sprint5i-visual-auditor.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-unified-core-attachments-document-studio-2026-10-10.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-voice.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-web-persistence-migration-checklist-2026-10-10.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-web-persistence-proposed-schema-2026-10-10.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-work-case-orchestration.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-work-connector-runbook.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/kia-workspace-execution-2026-10-09.md` | TÉCNICO/OPERATIVO · Revisar vigencia por módulo; sin autoridad sobre E0 |
+| `docs/mcp-event-contract.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/meta-marketing-hub-c2.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/migration-history/final-fresh-validation-2026-09-12.md` | CONTROL · Conservar auditoría, seguridad y ledger; ejecución solo por gate |
+| `docs/migration-history/fresh-baseline-validation-2026-09-11.md` | CONTROL · Conservar auditoría, seguridad y ledger; ejecución solo por gate |
+| `docs/migration-history/production-ledger-checkpoint-2026-09-17.md` | CONTROL · Conservar auditoría, seguridad y ledger; ejecución solo por gate |
+| `docs/migration-history/production-ledger-checkpoint-2026-09-18.md` | CONTROL · Conservar auditoría, seguridad y ledger; ejecución solo por gate |
+| `docs/migration-history/production-ledger-cli-contract-validation-2026-09-12.md` | CONTROL · Conservar auditoría, seguridad y ledger; ejecución solo por gate |
+| `docs/migration-history/production-ledger-cli-runbook-2026-09-12.md` | CONTROL · Conservar auditoría, seguridad y ledger; ejecución solo por gate |
+| `docs/migration-history/production-ledger-cli-runbook-v2-2026-09-12.md` | CONTROL · Conservar auditoría, seguridad y ledger; ejecución solo por gate |
+| `docs/migration-history/production-ledger-repair-manifest-2026-09-18.md` | CONTROL · Conservar auditoría, seguridad y ledger; ejecución solo por gate |
+| `docs/migration-history/production-ledger-transition-amendment-2026-09-12.md` | CONTROL · Conservar auditoría, seguridad y ledger; ejecución solo por gate |
+| `docs/migration-history/recovery-phase1-2026-09-10.md` | CONTROL · Conservar auditoría, seguridad y ledger; ejecución solo por gate |
+| `docs/migration-history/recovery-phase1-checkpoint-2026-09-11.md` | CONTROL · Conservar auditoría, seguridad y ledger; ejecución solo por gate |
+| `docs/nacionalidad/nacionalidad-menor-presentacion-y-firmas.md` | SENSIBLE/LEGAL · Revisar privacidad y vigencia; no borrar ni convertir en entrenamiento público |
+| `docs/next-best-actions.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/onboarding-operations-2026-09-06.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/product-decisions-2026-09-07.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/production-gap-audit-2026-09-05.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/products/holded-migracion-laboral.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/qa/holded-migracion-con-inventario-qa.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/qa/holded-migracion-sin-inventario-qa.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/qa/holded-pack-starter-qa.md` | CONTENIDO/QA · Mantener como referencia; revisar cuando afecte el módulo |
+| `docs/regulatory-global-audit-preflight-2026-09-20.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/regulatory-immigration-pulse-integration-2026-10-13.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/rgpd-consent-architecture.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/ru-006-validation-notes.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/ru-008-content-sources.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/ru-release-checklist.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/scheduler-ownership.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/security/expert-end-to-end-security-audit-2026-06-02.md` | CONTROL · Conservar auditoría, seguridad y ledger; ejecución solo por gate |
+| `docs/service-flow-audit-2026-09-23.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/service-page-template-guidelines.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/service-production-pipeline-v1.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/service-profitability.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/supabase-no-docker-workflow.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/suplidos-checkout-expert.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/telegram-operations360-e2e-runbook.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+| `docs/workspace-v2-kia-copilot-parallel-integration-2026-10-10.md` | REFERENCIA · Conservar hasta revisión semántica; no constituye un plan activo |
+
+### D. Instrucciones y archivos de automatización revisados
+
+| Ruta | Alcance comprobado | Decisión de gobierno |
+| --- | --- | --- |
+| `README.md` | Mapa del repositorio, stack y flujo operativo descriptivo; en #801 se corrige el enlace al Maestro y las referencias a planes de archivo. | Es guía técnica, **no** tablero de ejecución ni evidencia de que WhatsApp, suscripciones o todas las integraciones estén activas. Verificar contra código/catálogo real; no seguir antiguos planes. |
+| `.github/workflows/ci.yml` | Calidad: typecheck, lint, build, MCP, baseline migraciones, tests, KIA evals; dispara en PR con base `main` y push `main`. | Exigir CI completo del último `head_sha`; las PR apiladas en otra base pueden no disparar el mismo flujo. Prohibido forzar merge con check pendiente o fallido. |
+| `.github/workflows/holded-sync.yml` | Cron cada 15 min y disparo manual del endpoint de sincronización. | Es automatización **ya definida en código**; esta auditoría no demuestra ejecuciones exitosas ni autoriza cambiarla. Cualquier efecto en clientes exige permisos y readback. |
+| `.github/workflows/supabase-ledger-preflight.yml` | Preflight solo lectura para cambios SQL y casos relevantes. | No equivale a permiso para migrar; exigir evidencia por SHA y ledger exacto, RLS/grants y rollback. |
+| `.github/workflows/supabase-production-migrations.yml` | En `push main` que toque migraciones o despacho manual, despliega SQL con entorno protegido. | **Alto impacto:** ninguna PR que incluya `supabase/migrations/**` se fusiona por limpieza; las PR #764/#777/#705 necesitan validación y autorización de despliegue real. |
+| `docs/courses/gestion-laboral/MASTER_IMPLEMENTATION_PROMPT.md` | Prompt imperativo para implementar un programa Academy; menciona alias antiguo del repositorio. | **Instrucción histórica: NO EJECUTAR**. Requiere reconciliación con producto, honorarios, contenido jurídico, licencias y gate de fase. |
+| `docs/kia-regulatory-registry.md` | Descripción de regulación, indicadores, dependencias y revisión. | Es contrato/registro de evidencias; no un plan rector ni evidencia de que todo cron esté funcionando. |
+| `docs/kia-commercial-editorial-opportunity-engine-2026-10-13.md` | Motor de oportunidades editoriales/comerciales. | Mantener solo como especificación, sin motor paralelo, autopublicación ni decisiones legales por IA. |
+| `config/`, `supabase/migrations/`, `tests/`, `app/`, `lib/` | Código, datos de configuración, migraciones y pruebas. | **Fuera de la limpieza de Markdown**; no se modifican ejecutables, credenciales ni registros productivos por esta PR. |
+
+En el árbol examinado **no se encontró** `AGENTS.md`, `CLAUDE.md` ni `.github/copilot-instructions.md` como instrucciones activas. Ello no prueba la ausencia de reglas externas en GitHub, organizaciones o servicios conectados.
+
+### E. Orden de revisión documental sin implementar capacidades
+
+1. **Gate 0:** finalizar #801 como única limpieza documental, corregir comentarios P2, validar contenido, permisos, CI y Vercel sobre el SHA final; solo después fusionar con autorización.
+2. **Gate 1:** resolver autoridad y duplicidad de Admin V2, KIA 2.0 y banco V3; conservar requisitos singulares, no importarlos todos como aprobados. Registrar decisión por documento y sección en el Maestro.
+3. **Gate 2:** agrupación de issues duplicados (#775/#776; #654/#134; y derivaciones #780/#778/#770) y dependencias de PR sin cerrar evidencias útiles.
+4. **Gate 3:** correcciones E0 de riesgo real, una por una: impacto normativo #764, compatibilidad AI #793 y smoke apilado #794, privacidad de chat #705, email #784 y UX citas #683, siempre con scope exacto.
+5. **Gate 4:** RGPD, contenidos ES/RU, captación, Academy y herramientas sin publicaciones prematuras; revisión legal, privacidad, pricing y SEO por separado.
+6. **Gate 5:** propuestas pos-E6 (subagentes/agent dev, nuevas simulaciones, nuevos canales) como ideas bloqueadas; no activar workflows ni adelantar cron.
+
+**Formato de resolución:** para cada PR/issue/documento conservar `ID + estado observado + duplicado/contradicción + motivo + propuesta de incorporar/archivar/descartar + fase del Plan Maestro + fuentes/evidencia + decisión humana cuando corresponda + validación de CI si hay código`. Este registro se actualiza **en este único Plan Maestro**; GitHub issues/PR son tickets de ejecución o evidencias, nunca un roadmap competidor.
+

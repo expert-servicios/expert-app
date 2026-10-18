@@ -58,6 +58,8 @@ La fuente de verdad de estos datos de identidad esta en `config/identity.ts`.
 - `docs/document-archive-runbook.md`: modelo de archivo privado, autoridad documental y continuidad de la asociación con EXPERT/Kia.
 - `docs/improvement-plan.md`: **archivo histórico** del plan de mejoras previo; las propuestas actuales se revisan e incorporan exclusivamente al Plan Maestro E0–E6.
 
+> **Nota de vigencia (18/10/2026):** las operaciones siguientes describen un flujo de referencia histórico y no acreditan que todas las integraciones estén desplegadas o activas. Los cron, herramientas KIA, avisos y ofertas comerciales siguen el [Plan Maestro E0–E6](docs/expert-kia-ecosystem-master-plan-2026-10-10.md), la normativa y los permisos reales; no se deduce ningún permiso de este README.
+
 ## Flujo operativo core
 
 1. Asesoria contrata EXPERT y se configura su tenant, o un cliente final contrata un servicio/plan del tenant EXPERT.
