@@ -1,5 +1,7 @@
 # EXPERT MCP — arquitectura y roadmap
 
+> **GOBIERNO DOCUMENTAL 17/10/2026 — REFERENCIA EN REVISIÓN.** Este documento no es un plan rector ni una autorización de implementación. Las fases y decisiones vigentes se registran únicamente en [Plan Maestro EXPERT/KIA E0–E6](expert-kia-ecosystem-master-plan-2026-10-10.md). Su contenido requiere conciliación y validación individual antes de incorporarlo.
+
 ## Estado de prioridad — 09/10/2026
 
 **Reactivado por decisión de dirección el 09/10/2026, exclusivamente para un piloto controlado.** Reutilizar `apps/holded-mcp` y HoldedGateway; no activar puentes OAuth ni escrituras en producción sin pruebas de tenant, aprobación y rollback. La PR #682 se ha fusionado para validar el servidor MCP en CI.

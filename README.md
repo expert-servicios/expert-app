@@ -52,11 +52,13 @@ La fuente de verdad de estos datos de identidad esta en `config/identity.ts`.
 - `lib/integrations`: adaptadores de Supabase, Stripe, Resend, Holded y WhatsApp.
 - `lib/schemas`: validaciones Zod.
 - `supabase/migrations`: schema SQL, RLS y buckets.
-- `docs/roadmap.md`: roadmap maestro.
-- `docs/master-checklist.md`: checklist de cumplimiento.
+- `docs/expert-kia-ecosystem-master-plan-2026-10-10.md`: **único Plan Maestro rector EXPERT/KIA**. Los antiguos planes son históricos o propuestas en revisión; nunca prevalecen sobre E0–E6.
+- `docs/master-checklist.md`: **archivo histórico**, no es checklist vigente; consultar el Plan Maestro E0–E6 para checkpoints, QA y prioridades.
 - `docs/architecture.md`: arquitectura operativa.
 - `docs/document-archive-runbook.md`: modelo de archivo privado, autoridad documental y continuidad de la asociación con EXPERT/Kia.
-- `docs/improvement-plan.md`: plan vivo de mejoras tecnicas priorizadas.
+- `docs/improvement-plan.md`: **archivo histórico** del plan de mejoras previo; las propuestas actuales se revisan e incorporan exclusivamente al Plan Maestro E0–E6.
+
+> **Nota de vigencia (18/10/2026):** las operaciones siguientes describen un flujo de referencia histórico y no acreditan que todas las integraciones estén desplegadas o activas. Los cron, herramientas KIA, avisos y ofertas comerciales siguen el [Plan Maestro E0–E6](docs/expert-kia-ecosystem-master-plan-2026-10-10.md), la normativa y los permisos reales; no se deduce ningún permiso de este README.
 
 ## Flujo operativo core
 

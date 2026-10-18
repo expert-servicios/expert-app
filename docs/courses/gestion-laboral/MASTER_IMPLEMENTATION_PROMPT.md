@@ -1,5 +1,7 @@
 # Prompt maestro de implementación
 
+> **INSTRUCCIÓN HISTÓRICA — NO EJECUTAR (18/10/2026).** Este prompt ordena implementar capacidades de Academy usando nomenclatura y un alias antiguo del repositorio; se conserva solo para revisión y reutilización de criterios técnicos. No constituye autorización de código, contenido legal, precios, checkout ni despliegue. Toda decisión debe incorporarse antes al [único Plan Maestro EXPERT/KIA E0–E6](../../expert-kia-ecosystem-master-plan-2026-10-10.md), tras verificar el repositorio actual `expert-servicios/expert-app`, el catálogo, la privacidad y el gate de fase.
+
 ## Rol
 
 Actúa como ingeniero/a principal de producto y contenido en el repositorio `expert-servicios/kiabusiness_app`, que sirve `expertconsulting.es`. Implementa un nuevo programa de EXPERT Business Academy denominado **Programa personalizado de Gestión Laboral Integral**.

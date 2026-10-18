@@ -1,5 +1,7 @@
 # Backlog técnico ejecutable — RU-0 y RU-1
 
+> **GOBIERNO DOCUMENTAL 17/10/2026 — REFERENCIA EN REVISIÓN.** Este documento no es un plan rector ni una autorización de implementación. Las fases y decisiones vigentes se registran únicamente en [Plan Maestro EXPERT/KIA E0–E6](expert-kia-ecosystem-master-plan-2026-10-10.md). Su contenido requiere conciliación y validación individual antes de incorporarlo.
+
 Ultima actualización: 2026-09-13
 
 Documento de ejecución para la vertical **Holded на русском** y la internacionalización de EXPERT.

@@ -1,5 +1,7 @@
 # EXPERT KIA — V3 | Banco de ideas y validación futura
 
+> **GOBIERNO DOCUMENTAL 17/10/2026 — REFERENCIA EN REVISIÓN.** Este documento no es un plan rector ni una autorización de implementación. Las fases y decisiones vigentes se registran únicamente en [Plan Maestro EXPERT/KIA E0–E6](expert-kia-ecosystem-master-plan-2026-10-10.md). Su contenido requiere conciliación y validación individual antes de incorporarlo.
+
 **Creado:** 10/10/2026 · **Clase:** propuesta de evolución posterior, **NO plan de ejecución vigente**  
 **Estado:** `CAPTURA ABIERTA · TODAS LAS IDEAS SIN APROBAR · IMPLEMENTACIÓN BLOQUEADA`  
 **Plan rector activo:** [EXPERT KIA Ecosystem E0–E6](expert-kia-ecosystem-master-plan-2026-10-10.md) · **Fase actual del producto:** E0 · **Desbloqueo V3:** después del acta **E6 COMPLETADA**, una auditoría final y **nueva validación expresa** de Dirección.  
