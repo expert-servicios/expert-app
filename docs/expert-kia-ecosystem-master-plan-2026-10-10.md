@@ -1126,3 +1126,24 @@ En el árbol examinado **no se encontró** `AGENTS.md`, `CLAUDE.md` ni `.github/
 
 **Formato de resolución:** para cada PR/issue/documento conservar `ID + estado observado + duplicado/contradicción + motivo + propuesta de incorporar/archivar/descartar + fase del Plan Maestro + fuentes/evidencia + decisión humana cuando corresponda + validación de CI si hay código`. Este registro se actualiza **en este único Plan Maestro**; GitHub issues/PR son tickets de ejecución o evidencias, nunca un roadmap competidor.
 
+
+
+## Acta de conciliación documental R1 — Admin V2, KIA 2.0 y V3 (18/10/2026)
+
+**Decisión documental, sin implementación:** el Plan Maestro E0–E6 es la única fuente de prioridad, estado de tareas, autorizaciones y cierre. Los tres documentos examinados se conservan como especificaciones o banco histórico; ninguna de sus secuencias propias reemplaza E0–E6. Esta resolución no acredita que las capacidades estén activas ni aprueba nuevas propuestas.
+
+| Fuente evaluada | Resolución | Requisitos a conservar en el único Plan Maestro | Estado de ejecución |
+| --- | --- | --- | --- |
+| `docs/expert-admin-v2-plan-maestro-2026-10-09.md` | **INTEGRAR como especificación subordinada de E2/E3**; dejar sin efecto su autoridad de «plan maestro» y la propuesta de iniciar su «fase 0» independiente. | Un solo Workspace visual con rutas, actores, autorizaciones y flags separados Admin/Cliente; soporte delegado sin suplantación; Contactos/Inbox 360; adquisición `first_touch` y `last_touch` separadas de OAuth; datos Holded por empresa/integración/período; RLS, revocación y pruebas negativas; instrucciones registrales en E3. | **E2 y E3 bloqueadas**, se conserva detalle técnico como referencia. |
+| `docs/kia-2-strategy.md` | **INTEGRAR como contrato técnico de seguridad E0/E4/E5**, no como estrategia canónica paralela. | Una KIA y una jerarquía de permisos R0–R5; `permissions_enabled` y actor exact-active por encima de permisos detectados; aislamiento empresa/expediente; acciones preview→aprobación→ejecución→readback; trazas, fuente, fallback y presupuesto IA. | Solo la auditoría de seguridad dentro de E0 puede continuar; **E4/E5 bloqueadas**. |
+| `docs/expert-kia-v3-ideas-and-validation-backlog-2026-10-10.md` | **INCORPORAR la rama V3 como banco de ideas, NO como segundo backlog activo**. Mantener los 24 IDs V3-01…V3-24 y su descripción detallada en referencia histórica. | Ideas avanzadas, entre ellas archivo multiarchivo V3-23 y simulador laboral/nóminas V3-24. No confundir funciones básicas E5 con evoluciones V3, ni diagnóstico informativo H3 con nóminas. | Todas **capturadas y no aprobadas**; ningún desarrollo antes del cierre E6 y aprobación nueva. |
+
+**Contradicciones resueltas por precedencia:** (1) «listo para iniciar fase 0» en Admin V2 y «primera implementación aprobada» no permiten saltar la fase E0 del Maestro; (2) el calificativo «estrategia canónica» de KIA 2.0 deja de determinar prioridades; (3) la propuesta V3 de mantener un documento de captura separado ya no constituye un circuito decisorio independiente. Cuando se editen documentos secundarios, sustituir esos encabezados por avisos de precedencia sin alterar hechos históricos.
+
+**Verificación:** las cifras, estados «implementado», integraciones, créditos, herramientas y proveedores descritos en esas versiones de octubre **no se consideran vigentes por inferencia**. Confirmar código/CI, permisos, expediente, fuente oficial y readback antes de pasar una propuesta a ejecución.
+
+**Privacidad:** no replicar nombres, correos, identificadores o datos de casos históricos contenidos en especificaciones anteriores. Los ejemplos de QA deben ser sintéticos o mantenerse en expedientes autorizados, no en documentación pública del Maestro.
+
+**Siguiente bloque:** reconciliar los issues #775/#776 (reuniones), #654/#134 (Inbox/Telegram) y #778/#780/#770 (RGPD). No cerrar issues, PR funcionales ni cambiar prioridades de E0 antes de comparar requisitos y evidencias.
+
+**Checkpoint inalterado:** `E0-M3-06-admin-users-tenant-object-scope-audit`; E0 `IN_PROGRESS`, E1–E6 y V3 bloqueadas.
