@@ -45,8 +45,8 @@ No reutilizar en documentación ni despliegues los nombres provisionales `202609
 
 ## Referencias operativas
 
-- Guía: [KIA–Work: conector de resultados](kia-work-connector-runbook.md)
-- Diseño: [orquestación de expedientes](kia-work-case-orchestration.md)
+- Guía: [KIA–Work: conector de resultados](../../../kia-work-connector-runbook.md)
+- Diseño: [orquestación de expedientes](../../../kia-work-case-orchestration.md)
 - Endpoint Work: `/api/kia/work`
 - Gestión profesional de conexiones: `/api/admin/kia/work-connections`
 - Cron de verificación: `/api/cron/kia-work-results`
