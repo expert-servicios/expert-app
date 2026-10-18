@@ -4,7 +4,7 @@ Ultima actualizacion: 2026-09-24 (anexo de orquestación KIA; el resto conserva 
 
 ## Prioridad operativa: KIA y Work
 
-Especificación: [KIA — tramitación, eventos y comunicaciones contextuales](kia-work-case-orchestration.md).
+Especificación: [KIA — tramitación, eventos y comunicaciones contextuales](../../../kia-work-case-orchestration.md).
 
 Alcance acordado: KIA coordina expedientes desde Work, registra evidencia, completa tareas y calcula el siguiente paso; firma sus correos como asistente IA y mantiene contexto entre correo, copiloto y Telegram. La ejecución debe reutilizar las conversaciones, permisos y acciones administrativas existentes. Supabase conserva documentos canónicos; Google/Microsoft son proveedores y copias, no expedientes paralelos.
 
@@ -301,7 +301,7 @@ Estado: arquitectura 2.0 consolidada; quedan expansiones de superficie y capacid
 
 Tipo: IA, producto, operación, automatización, escalabilidad SaaS.
 
-Referencia canónica: [KIA 2.0 — estrategia y arquitectura vigente](kia-2-strategy.md).
+Referencia canónica: [KIA 2.0 — estrategia y arquitectura vigente](../../../kia-2-strategy.md).
 
 Implementado:
 
