@@ -1,10 +1,10 @@
-# KIA 2.0 — estrategia y arquitectura vigente
+# KIA 2.0 — Referencia técnica de arquitectura (subordinada al Plan Maestro)
 
 > **GOBIERNO DOCUMENTAL 17/10/2026 — REFERENCIA EN REVISIÓN.** Este documento no es un plan rector ni una autorización de implementación. Las fases y decisiones vigentes se registran únicamente en [Plan Maestro EXPERT/KIA E0–E6](expert-kia-ecosystem-master-plan-2026-10-10.md). Su contenido requiere conciliación y validación individual antes de incorporarlo.
 
 Última actualización: 2026-10-06.
 
-Este documento es la referencia estratégica canónica de KIA. Describe lo que existe hoy en `main`, los límites de seguridad que no deben relajarse y el roadmap que todavía no debe presentarse como funcionalidad disponible.
+Este documento es una referencia técnica de KIA subordinada al Plan Maestro EXPERT/KIA E0–E6. Conserva decisiones y límites de seguridad; sus descripciones de implementación se deben comprobar frente al código y su roadmap no autoriza ejecutar ni presentar como disponibles funcionalidades pendientes.
 
 ## 1. Posición de producto
 

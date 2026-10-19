@@ -1,4 +1,4 @@
-# EXPERT Admin V2 — Plan maestro de rediseño integral
+# EXPERT Admin V2 — Especificación histórica de WORKSPACE (subordinada al Plan Maestro EXPERT/KIA)
 
 > **GOBIERNO DOCUMENTAL 17/10/2026 — REFERENCIA EN REVISIÓN.** Este documento no es un plan rector ni una autorización de implementación. Las fases y decisiones vigentes se registran únicamente en [Plan Maestro EXPERT/KIA E0–E6](expert-kia-ecosystem-master-plan-2026-10-10.md). Su contenido requiere conciliación y validación individual antes de incorporarlo.
 
@@ -6,8 +6,8 @@
 **Decisión:** Aprobado el diseño objetivo y su ejecución por fases. **Este documento es especificación; no supone un despliegue ni una migración de datos.**  
 **Propietario de producto:** Dirección EXPERT  
 **Alcance:** diseño transversal EXPERT Workspace con **Panel Admin** y **Portal Cliente** separados; KIA, Contactos 360, operaciones, comunicaciones, agenda, facturación, contenido y administración. Se documenta además la compatibilidad con el panel específico de administradores de tenant.  
-**Estado:** LISTO PARA INICIAR FASE 0. Implementación bajo PRs independientes, CI, seguridad y verificación de producción.  
-**Plan rector:** este documento prevalece sobre los borradores visuales anteriores; conserva sus requisitos operativos válidos.
+**Estado operativo revisado 19/10/2026:** documentación de referencia; **E2/WORKSPACE y sus actividades futuras siguen bloqueadas por el checkpoint E0–E6**. La antigua expresión «listo para iniciar fase 0» es histórica y no autoriza su ejecución.  
+**Autoridad:** el **único Plan Maestro rector** es `docs/expert-kia-ecosystem-master-plan-2026-10-10.md` (main). Este archivo conserva especificaciones útiles pero no establece secuencias ni permisos propios.
 
 **Ampliación incorporada 10/10/2026 — enriquecimiento empresarial y profesional (§26):** KIA podrá proponer búsquedas **acotadas y lícitas** de empresas y actividades profesionales en fuentes oficiales/públicas pertinentes al alta o al lead, distinguir coincidencias de identidad, mostrar evidencias y no atribuir perfiles homónimos ni etiquetar competidores automáticamente. Definición de privacidad, permisos, revisión humana y despliegue por fases; **aún no implementado**.
 

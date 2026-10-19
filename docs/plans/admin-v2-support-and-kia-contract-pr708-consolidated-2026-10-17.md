@@ -1,4 +1,4 @@
-# EXPERT Admin V2 — Plan maestro de rediseño integral
+# EXPERT Admin V2 — Contrato técnico subordinado de soporte delegado y KIA
 > **Consolidación 17/10/2026:** actualización auxiliar de requisitos originalmente capturados en la PR #708. El Plan Maestro E0–E6 tiene prioridad; esta ratificación **no autoriza** ejecutar fases de soporte ni escrituras en Holded. Se ha conservado la totalidad del documento canónico de Admin V2 en main; las secciones siguientes son suplementos de requisitos, no un reemplazo del plan existente.
 
 ## 1. Operación del portal real sin suplantación
