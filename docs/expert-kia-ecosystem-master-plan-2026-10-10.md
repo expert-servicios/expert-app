@@ -1942,3 +1942,73 @@ Dirección EXPERT autoriza preparar la **configuración propuesta**, pero **no a
 ### D0.5 — Revisión técnica delegada y escalado a Dirección (19/10/2026)
 
 Dirección aclara que **no debe actuar como revisora de código**: KIA coordinará pruebas deterministas y revisores técnicos independientes, y solo trasladará a Dirección decisiones funcionales/comerciales/jurídicas, presupuesto o riesgos extraordinarios en lenguaje comprensible. Objetivo futuro: **aprobación técnica automática por niveles de riesgo**, evitando intervención humana rutinaria en tareas preautorizadas y de bajo impacto. Esta preferencia **sustituye el criterio organizativo de que Dirección revise todas las PR**, pero NO habilita todavía fusiones automáticas: el gate de merge humano sigue activo mientras no se apruebe e implemente una política concreta de bajo riesgo, con protección de ramas, controles independientes y piloto sintético superado. Los cambios de identidad, RLS, dinero, datos de clientes, migraciones y producción exigen aprobación de un revisor técnico humano cualificado independiente y, cuando proceda, decisión de Dirección. Ningún agente se concede permisos ni se autoaprueba. Ver `config/kia-dev-agent-policy.proposal.json` apartado `supervisionDelegation`.
+
+
+## ANEXO L6 — Corpus laboral territorial, Seguridad Social/SEPE y evaluación QA de KIA (19/10/2026)
+
+**Origen funcional:** mentoría del 15/10/2026 con Julio César Vásquez Simoza (GIOBP–SIPCOMA COS) y propuesta de Dirección EXPERT del 19/10/2026. **Estado:** DOCUMENTADO / NO IMPLEMENTADO. **Gobierno:** una subrama de conocimiento/QA dentro de este único Plan Maestro, vinculada a E0-M2-03 (contrato de fuentes), E4-M1 (conocimiento recuperable y verificado), E4-M2 (evaluación de KIA), E5 (integraciones autorizadas) y a la matriz laboral H4. **No autoriza introducir código, crear servicios, publicar contenidos, alterar nóminas ni modificar el checkpoint E0**. Cualquier ampliación material de alcance fuera de E0–E6 se somete a la decisión V3 posterior a E6; no abrir un segundo plan rector.
+
+### L6.1 Objetivo y separación de autoridades
+
+Preparar el diseño de un **corpus de convenios colectivos y reglas laborales vigentes**, con procedencia documental y pruebas sintéticas, reutilizable por asesoría EXPERT, KIA, Academy, auditoría de nóminas y el cálculo de costes empresariales (como caso de prueba ofrecido a SIPCOMA). Separa siempre cuatro autoridades, que **no son equivalentes**:
+
+| Subcorpus | Autoridad principal | Papel y límite |
+| --- | --- | --- |
+| CONV | Convenios registrados en REGCON y **texto publicado** en BOE / diario autonómico / BOP competente | Ámbito funcional y geográfico, niveles/categorías, salarios, pagas extras, pluses, jornada, vacaciones, revisiones, atrasos y efectos temporales. REGCON ayuda a localizar; verificar la publicación jurídicamente aplicable. |
+| TGSS | BOE / Ley General de la Seguridad Social / orden de cotización, Seguridad Social, Sistema RED | Encuadramiento, regímenes, CCC, afiliación, altas/bajas, bases, tipos, contingencias, MEI, RETA, especiales, tramos y cambios normativos. **No equiparar alta técnica o simulación de nómina con confirmación de TGSS.** |
+| SEPE | BOE / Estatuto de los Trabajadores / SEPE, guía y Contrat@ | Modalidades y cláusulas de contratos, comunicaciones, desempleo, incentivos y requisitos; **no usar SEPE como fuente primaria de tablas salariales provinciales**. |
+| CALC-QA | Algoritmos versionados propios de EXPERT, con revisión profesional y documentos oficiales anteriores | Coste de empresa, bruto/neto, prorrateos, variación temporal, contraste de convenio y régimen; **nunca presentar una simulación como nómina, liquidación SILTRA o criterio oficial**. |
+
+Fuentes de arranque verificadas el 19/10/2026:
+- REGCON (consulta pública): https://preinterweb.mites.gob.es/regcon/pub/consultaPublicaEstatal?language=es
+- VII Convenio General de Construcción: https://www.boe.es/buscar/doc.php?id=BOE-A-2023-19903
+- Revisión de construcción 2025–2026, incluidas bases mínimas y actualización provincial: https://www.boe.es/diario_boe/txt.php?id=BOE-A-2025-25234
+- Cotización 2026 (Orden PJC/297/2026): https://www.boe.es/buscar/act.php?id=BOE-A-2026-7296
+- Guía de contratos SEPE (comprobar siempre fecha de edición y vigencia antes de usar): https://sepe.es/HomeSepe/que-es-el-sepe/comunicacion-institucional/publicaciones/publicaciones-oficiales/listado-pub-empleo/guia-contratos.html
+
+**Precisión territorial:** evitar el supuesto de «17 tablas autonómicas = cobertura completa». Primero identificar el convenio aplicable por actividad/CNAE, ámbito y centro de trabajo; recoger texto general estatal, provinciales/autonómicos/empresa cuando procedan, revisiones y publicación. Si no existe una tabla territorial aplicable, **no inventarla, no extrapolar de otra provincia**. Comprobar además pactos, jerarquía normativa, SMI y condiciones más favorables según caso. Un salario mínimo anual general no equivale a la tabla completa ni al coste empresarial.
+
+### L6.2 Modelo de ficha de fuente y versión
+
+Diseño lógico reutilizando \`regulatory_sources\`, \`regulatory_snapshots\`, \`regulatory_changes\`, \`regulatory_dependencies\`, \`regulatory_rulesets\` cuando corresponda, y la capa de conocimiento existente. **No crear nuevas tablas/migraciones durante E0.**
+
+Campos propuestos: \`source_key\`, \`authority\`, \`official_url\`, \`publication_id\`, \`publication_date\`, \`verified_at\`, \`fingerprint\`, \`scope_sector\`, \`scope_territory\`, \`scope_convenio_code\`, \`scope_company_if_any\`, \`professional_level\`, \`salary_concept\`, \`unit\`, \`value\`, \`currency\`, \`effective_from\`, \`effective_to\`, \`retroactive_effect\`, \`amends_or_replaces\`, \`interpretation_status\`, \`human_reviewer\`, \`dependencies\`, \`visibility\`, \`confidence_basis\`, \`qa_fixture_id\`. Registrar por separado publicación, entrada en vigor y fecha de efectos económicos. Guardar huella + pasajes normalizados/licencia y enlace, no copiar indiscriminadamente PDFs completos al motor de búsqueda. Controlar conflictos entre revisiones/ámbitos y permitir estado **PENDIENTE DE VALIDACIÓN**.
+
+### L6.3 Operaciones y oportunidades para EXPERT
+
+1. **Asesoría laboral:** identificación asistida de convenio por empresa/centro, nivel y contrato; checklist de devengos y obligaciones; conciliación nómina–jornada–calendario–cotización.
+2. **Costes de personal para obras y presupuestos:** diferencia auditable entre bruto de convenio, costes salariales efectivos y costes de empresa (cotización empresarial, complementos aplicables, pagas, festivos/turnos, sustituciones, periodos no trabajados y otros conceptos válidos). Fórmulas y supuestos visibles. Las peculiaridades del sector construcción, incluida posible contribución a plan de pensiones sectorial, requieren reglas verificadas.
+3. **Academy y contenidos ES/RU:** ejemplos anonimizados y guías con fuente/fecha, evitando convertir un convenio provincial en norma estatal o confundir TGSS y SEPE.
+4. **Vigilancia regulatoria:** detectar acuerdos y revisiones por boletín, identificar sector/territorio/categoría/fecha afectados y proponer actualización concreta tras revisión profesional; impedir autopublicación.
+5. **Aprendizaje QA:** usar el recorrido de demo de SIPCOMA (presupuesto/APU, rendimiento, mano de obra, cambios de obra, costes y trazabilidad) como inspiración de escenarios; **sin importar datos internos, credenciales ni material privado de un tercero**. La colaboración de mentoría no autoriza intercambio de datos personales de clientes/empleados ni reutilización del software ajeno.
+
+### L6.4 Matriz mínima de QA sintética
+
+| ID | Escenario | Criterio de aceptación |
+| --- | --- | --- |
+| L6-QA-01 | Misma categoría, diferentes provincias | Selecciona la tabla aplicable al centro/actividad; evidencia fuente y periodo; no mezcla importes. |
+| L6-QA-02 | Nivel profesional ambiguo | Solicita categoría/documentación; no asigna por similitud del puesto. |
+| L6-QA-03 | Norma estatal mínima vs tabla territorial | Respeta revisión aplicable y no presenta mínimo nacional como tabla provincial. |
+| L6-QA-04 | Publicación tardía con atrasos retroactivos | Diferencia fecha de publicación, eficacia y periodo salarial; sugiere revisión. |
+| L6-QA-05 | Contrato parcial y periodos distintos | Prorratea solo conceptos legalmente proporcionales, con jornada/días y justificación. |
+| L6-QA-06 | Domingos/festivos y calendario provincial | Cruza calendario + convenio + descanso compensatorio + horas efectivas; no aplica plus automático sin regla. |
+| L6-QA-07 | Pagas extras y complementos | Diferencia devengo/prorrata, extrasalariales y cotizables; sin doble contabilización. |
+| L6-QA-08 | Coste de personal vs bruto | Desglosa cuota empresarial, bases/topes, MEI y otras cargas vigentes sin tasa fija genérica. |
+| L6-QA-09 | TGSS vs SEPE y familiar de administrador | Distingue encuadramiento, comunicación de contrato y desempleo; ante incertidumbre prepara consulta a TGSS, no muta alta. |
+| L6-QA-10 | Revisión 2025/2026 y consulta en 2027 | Versiona el importe según periodo, sin arrastrar cifras obsoletas. |
+| L6-QA-11 | Fuente rota, contradicción o texto no publicado | Respuesta de abstención + aviso a profesional; ninguna cifra inventada ni publicación automática. |
+| L6-QA-12 | Aislamiento de datos y ES/RU | Ejemplos sin PII, permisos/tenant correctos, terminología y cifras verificadas en ambos idiomas. |
+
+**Métricas sugeridas:** exactitud de jurisdicción/convenio, cobertura por provincia-sector-periodo-nivel, recencia de fuente, porcentaje de respuestas con referencia + fecha, falsos positivos de alertas, exactitud aritmética en fixtures, tasa de abstención correcta y cero fuga de datos entre tenants. **No se declaran logradas**.
+
+### L6.5 Secuencia pendiente y gates
+
+- [ ] **L6-01 (documental):** inventario de fuentes y duplicados en Regulatory Registry, cursos, matriz H4, KIA y calculadoras. **No nuevo corpus en paralelo**.
+- [ ] **L6-02 (fuentes):** piloto de construcción con convenio estatal + Alicante y Madrid; verificar fuentes oficiales exactas y sus revisiones 2025/2026; después cobertura territorial según relevancia, **sin prometer 17 CCAA completas**.
+- [ ] **L6-03 (normalización):** tabla de correspondencias convenio/código/territorio/nivel/periodo, tipos de conceptos y conflictos; firma de especialista laboral.
+- [ ] **L6-04 (QA sin runtime):** fixtures sintéticos de los doce escenarios, valores esperados calculados independientemente y pruebas adversariales.
+- [ ] **L6-05 (diseño futuro):** retrieval/cálculo versionados con revisión profesional y explicación citada, integración en KIA/Academy/servicios solo en la fase autorizada y previa evaluación RGPD.
+- [ ] **L6-06 (producción, bloqueada):** integración/carga/automonitorización/uso comercial o externo solo con aprobación de alcance, derechos de reutilización, CI, QA ES/RU, permisos y gates E4/E5; ninguna escritura TGSS/SEPE/nominas sin flujo autorizado.
+
+**Gobierno y checkpoint:** Dirección EXPERT define prioridad; KIA propone/detecta; profesional laboral confirma criterios y cifras; agente de desarrollo solo opera cuando los gates técnicos y permisos aplican. Este anexo **no cambia E0-M3-06**, no implica presupuesto de desarrollo adicional aprobado, no autoriza publicar contenido, ni acepta automáticamente datos de SIPCOMA. Seguimiento posterior mediante esta misma sección y registro de evidencias en bitácora.
+
