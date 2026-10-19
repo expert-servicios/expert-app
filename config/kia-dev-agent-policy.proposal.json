@@ -1,0 +1,143 @@
+{
+  "$schemaNote": "Propuesta humana, NO vinculada a un runtime. Ningun campo de este archivo concede permisos.",
+  "schemaVersion": "kia-dev-agent-policy-proposal/1",
+  "recordedOn": "2026-10-19",
+  "approvedBy": "Direccion EXPERT (criterios de configuracion, no activacion)",
+  "lifecycle": "proposal_only",
+  "masterPlan": "docs/expert-kia-ecosystem-master-plan-2026-10-10.md",
+  "repo": "expert-servicios/expert-app",
+  "phase": "E0",
+  "requiredCheckpoint": "E0-M3-06-admin-users-tenant-object-scope-audit",
+  "featureGates": {
+    "agentEnabled": false,
+    "automaticDispatchEnabled": false,
+    "providerRequestsEnabled": false,
+    "patchGenerationEnabled": false,
+    "pullRequestCreationEnabled": false,
+    "notificationsEnabled": false,
+    "automaticMergeEnabled": false,
+    "automaticDeploymentEnabled": false,
+    "productionDataAccessEnabled": false
+  },
+  "budget": {
+    "currency": "USD",
+    "maximumTotalPerTrialPeriod": 5,
+    "trialPeriodDefinition": "one explicitly authorized pilot window (no recurring or automatic renewal)",
+    "automaticReset": false,
+    "automaticTopUp": false,
+    "requestsWithoutVerifiedRemainingBalance": "deny",
+    "budgetEnforcement": "NOT_IMPLEMENTED",
+    "requireIndependentMeterAndFailClosedGateBeforeAnyBillableExecution": true,
+    "requiresExplicitNewAuthorizationPerPeriod": true,
+    "note": "El importe documentado no establece por si solo un limite real en AI Gateway ni en proveedores."
+  },
+  "approval": {
+    "mergeRequiresExplicitHumanApproval": true,
+    "mergeApproverCannotBeAgent": true,
+    "autoApprove": false,
+    "allowAutonomousDraftPrOnlyAfterSeparateActivation": true,
+    "authorizationBoundToExactHeadShaAndPatchDigest": true,
+    "changesToCheckpointOrScopeInvalidateApproval": true,
+    "telegramChatCannotAuthorizeMergeOrDeployment": true,
+    "rationale": "La Dirección no revisa codigo; la preferencia es supervision tecnica automatica por KIA + CI + revisores independientes. Por ahora se conserva el gate humano de merge hasta aprobacion separada de delegacion de merges de bajo riesgo y superacion del piloto."
+  },
+  "notifications": {
+    "preference": "milestones_and_blockers_only",
+    "delivery": "NOT_CONFIGURED",
+    "enabled": false,
+    "allowedTypes": [
+      "pilot_passed",
+      "draft_pr_ready_for_human_review",
+      "phase_gate_passed",
+      "security_or_ci_blocker",
+      "budget_exhausted_or_guard_unavailable",
+      "human_approval_required"
+    ],
+    "everyAgentReply": false,
+    "everyToolCall": false,
+    "clientFacingChannelsAllowed": false,
+    "note": "Preferir notificacion interna/push Admin cuando se implemente. No activar Telegram cliente ni correo externo."
+  },
+  "initialPilot": {
+    "environment": "isolated_synthetic_sandbox_only",
+    "taskCount": 1,
+    "customerDataAllowed": false,
+    "productionCredentialsAllowed": false,
+    "productionWritesAllowed": false,
+    "githubPermissionIntent": "read_only_until_separately_approved_draft_pr_broker",
+    "mandatoryAcceptance": [
+      "synthetic_patch_verified",
+      "out_of_scope_file_change_rejected",
+      "prompt_injection_rejected",
+      "failed_ci_blocks",
+      "changed_head_sha_invalidates_approval",
+      "expired_approval_rejected",
+      "budget_fail_closed_verified",
+      "zero_auto_merge_and_zero_auto_deploy"
+    ]
+  },
+  "supervisionDelegation": {
+    "targetModel": "risk_tiered_supervision_by_kia",
+    "status": "DESIGNED_NOT_ACTIVE",
+    "operatorRole": "Direccion define prioridades de negocio, presupuesto, expectativas de producto y valida procesos humanos; no revisa codigo",
+    "developmentTechnicalReview": {
+      "coordinator": "KIA",
+      "mandatoryGates": [
+        "canonical_master_plan_scope",
+        "current_phase",
+        "allowed_paths",
+        "actor_permissions",
+        "exact_commit_sha",
+        "deterministic_CI_typecheck_lint_build_tests",
+        "security_checks",
+        "two_independent_model_reviews_where_applicable",
+        "vercel_app_and_ksenia_expert_checks",
+        "budget_and_audit_evidence"
+      ],
+      "aiReviewsNotAuthorityByThemselves": true,
+      "failedOrSkippedGate": "block_and_escalate",
+      "selfApprovalByExecutorAllowed": false
+    },
+    "routineExecution": {
+      "futureApproval": "automatic only for explicitly preapproved low-risk tasks after sandbox pilot and separate activation",
+      "currentApproval": "not_authorized_to_execute",
+      "allowedFutureExamples": [
+        "docs_or_knowledge_without_privacy_data",
+        "synthetic_tests_without_secrets",
+        "pure_UI_copy_without_auth_checkout_or_business_rules",
+        "isolated_read_only_code_quality_changes"
+      ],
+      "prohibitedUntilSeparateGate": [
+        "auth_roles_rls_tenant_or_company",
+        "payments_or_stripe",
+        "production_migrations",
+        "client_data",
+        "payroll_tax_legal_automation",
+        "provider_credentials_or_security",
+        "external_emails_telegram_to_clients",
+        "production_deploy"
+      ]
+    },
+    "mergers": {
+      "currentMode": "explicit_human_approval_required",
+      "futureModeProposed": "automatic_for_preapproved_low_risk_only_after_independent_policy_gates_and_separate_owner_authorization",
+      "futureLowRiskAutoMergeEnabled": false,
+      "protectedBranchRulesRemainBinding": true,
+      "highRiskRequiresQualifiedIndependentHumanTechnicalReviewer": true,
+      "directionEscalationOnlyWhenBusinessLegalFinancialOrScopeDecisionsRequired": true
+    },
+    "executiveNotifications": {
+      "executiveOnly": [
+        "new_business_decision",
+        "material_change_to_scope_or_price",
+        "legal_or_privacy_risk",
+        "budget_exceeded",
+        "pilot_proven_and_ready_for_activation",
+        "critical_blocker_or_prod_incident"
+      ],
+      "milestonesAndBlockersRetained": true,
+      "operationalTechnicalNoise": "internal_KIA_log",
+      "noClientNotifications": true
+    }
+  }
+}

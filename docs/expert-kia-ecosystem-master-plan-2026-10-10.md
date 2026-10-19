@@ -1927,3 +1927,18 @@ Prohibidos por defecto: lectura de clientes reales para entrenar/modelos de desa
 **Gate de arranque piloto:** 1 tarea sintética exitosa con parche + 1 inyección de prompt rechazada + 1 CI fallida bloqueada + 1 SHA desactualizado rechazado + 1 caducidad de aprobación + 1 intento de escritura fuera de allowlist rechazado + evidencia de gasto. Los modelos no se consideran verificados mientras smoke real no registre éxito explícito.
 
 **Siguiente cambio permitido:** PR documental de este acta; PR separada de extracción mínima A0 desde #742 con `executionEnabled:false`, sin activación ni ejecución. La limpieza y cierre de ramas originales solo después de reconciliar resultados.
+
+### D0.4 — Parámetros aprobados para propuesta piloto (19/10/2026)
+
+Dirección EXPERT autoriza preparar la **configuración propuesta**, pero **no activar** el agente, ejecutar proveedores, generar PR de forma autónoma ni iniciar cargos. Fuente de configuración: [`config/kia-dev-agent-policy.proposal.json`](../config/kia-dev-agent-policy.proposal.json) (no conectada al runtime).
+
+- Gasto máximo **5 USD por un periodo piloto autorizado expresamente**, sin renovación ni recarga automática. Antes de cualquier llamada facturable, implantar medición independiente, comprobación de saldo y denegación en caso de fallo; una declaración documental no constituye límite técnico del proveedor.
+- **Aprobación humana obligatoria antes de fusionar**; jamás auto-merge, autoaprobación ni despliegue autónomo. Futura creación de PR DRAFT solo tras gate independiente y permisos mínimos.
+- **Avisos solamente por hitos y bloqueos:** piloto completado, PR listo para revisar, fase autorizada, fallo de seguridad/CI, presupuesto agotado o solicitud de aprobación. No aviso por cada interacción de KIA, sin mensajes a clientes.
+- **Todas las banderas de ejecución, despacho, llamadas IA, generación de parches, notificaciones y escrituras permanecen en `false`.** El archivo es una propuesta auditada, no una configuración activa.
+- Siguiente entrega A0: reconciliar código de #742 con checkpoint E0 vigente, preparar pruebas sintéticas adversariales y revisar mecanismo real de presupuesto, sin credenciales ni datos de producción.
+
+
+### D0.5 — Revisión técnica delegada y escalado a Dirección (19/10/2026)
+
+Dirección aclara que **no debe actuar como revisora de código**: KIA coordinará pruebas deterministas y revisores técnicos independientes, y solo trasladará a Dirección decisiones funcionales/comerciales/jurídicas, presupuesto o riesgos extraordinarios en lenguaje comprensible. Objetivo futuro: **aprobación técnica automática por niveles de riesgo**, evitando intervención humana rutinaria en tareas preautorizadas y de bajo impacto. Esta preferencia **sustituye el criterio organizativo de que Dirección revise todas las PR**, pero NO habilita todavía fusiones automáticas: el gate de merge humano sigue activo mientras no se apruebe e implemente una política concreta de bajo riesgo, con protección de ramas, controles independientes y piloto sintético superado. Los cambios de identidad, RLS, dinero, datos de clientes, migraciones y producción exigen aprobación de un revisor técnico humano cualificado independiente y, cuando proceda, decisión de Dirección. Ningún agente se concede permisos ni se autoaprueba. Ver `config/kia-dev-agent-policy.proposal.json` apartado `supervisionDelegation`.
