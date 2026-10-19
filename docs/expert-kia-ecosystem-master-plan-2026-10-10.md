@@ -1208,3 +1208,41 @@ F. Salidas: tabla autónomo vs SL; gráfico de carga total y renta disponible (c
 **Aclaración definitiva de Dirección (19/10/2026):** no existe retirada de planes ni de suscripciones de EXPERT. El posible filtro en Meta afecta únicamente a ese canal. La publicidad de servicios profesionales es distinta de admitir una suscripción mensual en una tienda de Meta; validar por separado. Corregido también `docs/editorial/marketing-execution-roadmap-2026-10-02.md` y comentarios del exportador Meta.
 
 **Estado de #803**: página pilar ampliada, sin calculadora ni cambios de Stripe, en **DRAFT/noindex**. Requeridos CI, QA editorial, conciliación del catálogo y aprobación de Dirección para publicar.
+
+
+## ANEXO 19/10/2026 — Modelo rector de contenidos públicos EXPERT y aprendizaje KIA
+
+**Decisión de Dirección:** convertir progresivamente expertconsulting.es en plataforma pública de conocimiento, decisiones informadas, trámites y servicios. **No crear un segundo plan maestro**: este anexo es la única fuente rectora; documentos antiguos son fuentes subordinadas, no nuevos roadmaps. La congelación E0–E6 continúa vigente; las ideas posteriores al gate se documentan sin activar funciones ajenas a E0.
+
+### Modelo único de experiencia y contenido
+
+- **Enlace canónico único por intención principal**, compartible por correo y por KIA: una página pilar EXPERT que resuelve y permite elegir sin registro obligatorio.
+- **Jerarquía editorial:** `servicio/ficha` ↔ `página pilar` ↔ `guías /docs` ↔ `artículos /blog` ↔ `herramientas` ↔ `fuente oficial`. Evitar páginas redundantes, duplicación SEO y CTA que dirigen a una opción de pago cuando el usuario ha pedido autogestión.
+- **Cuatro caminos claros:** aprender gratuitamente; realizar el trámite personalmente con el organismo oficial y guía EXPERT; recibir formación guiada; encargar la gestión profesional. Mostrar precios externos, disponibilidad, alcance y límites con transparencia.
+- **Complementarios opcionales:** certificado digital, Holded y suscripciones EXPERT ACTIVAS, sin imponerlos como requisito de acceso a información. No reactivar/retirar catálogo por decisiones del canal Meta.
+- **Componentes de página:** introducción accesible, elección de modalidad, requisitos, pasos, checklist, recursos oficiales, artículos relacionados, preguntas frecuentes, costes/tasas frente a honorarios, actualización de normativa y fuente, KIA contextual y CTA neutro. Evitar prometer trámites completos sin intervención notarial o autorizaciones.
+- **Localización ES/RU:** revisión jurídico-lingüística, enlaces pertinentes, hreflang solo para páginas existentes equivalentes, fecha/fuente por idioma; no activar traducción indiscriminada que altere contenido legal.
+- **Métricas útiles y privacidad:** navegación anónima sin perfil obligatorio, medición agregada con control de consentimiento, datos de simuladores locales por defecto, origen de lead solo tras acción voluntaria, conservación y RLS definidas.
+- **Gobernanza editorial:** responsable, norma/fuente URL, fecha de publicación, fecha de comprobación, periodo de eficacia, próxima revisión, estado `borrador/revisión/aprobado/publicado/obsoleto`, trazabilidad a PR y test; la vigilancia regulatoria existente debe disparar propuesta de revisión, nunca autopublicación jurídica.
+
+### Unificación KIA: una sola fuente coherente
+
+- KIA responde directamente a la duda y ofrece un recurso de EXPERT; cuando piden un único enlace, devuelve la página pilar en lugar de una lista de organismos. Si el usuario quiere fuente oficial, debe darla.
+- **CIRCE/SL:** verificar DUE y alcance de altas AEAT/TGSS integradas, firma electrónica requerida, escritura notarial, costes de terceros, diferencias IRPF/IS, dividendos/cotizaciones, sin umbral fiscal arbitrario ni recomendación determinista.
+- **RGPD:** herramientas AEPD como ayuda y no certificación; riesgos de plataformas, datos especiales, cookies, RAT, proveedores, minimización y posibles EIPD; misma lógica de guías gratuitas/formación/servicio, sin presentar auditoría como efectuada.
+- **Rutas de KIA:** usar los prompts curados `kia-pae-knowledge.ts` y `kia-rgpd-knowledge.ts` para el chat público cuando detecte pregunta o página pertinente. En las demás interfaces utilizar el orquestador existente, con pruebas de paridad sin un modelo paralelo.
+- **RAG y recuperación:** `search_knowledge_resources` es mecanismo a validar antes de afirmar cobertura real de nuevos artículos; verificar indexación y evidencias del documento que KIA cita, aislamiento de permisos, fechas y respuesta en ES/RU.
+- **Protocolo de precisión:** respuesta → fuente/fecha → lo que incluye y no incluye → siguientes pasos → autogestión / formación / servicio a elección. No inventar accesos, sesiones, precios o estado de publicación. Si norma o documento incierto, abstenerse de conclusión categórica.
+
+### Programa priorizado de contenidos (sin saltar gates E0–E6)
+
+1. **Lote CIRCE/SL y RGPD:** PR #803, páginas y artículos ya preparados, corregir históricos, 12 FAQ en fichas, enlaces a manuales, prueba del chat público CIRCE/RGPD en rama; cierre jurídico y de seguridad antes de aprobar publicación.
+2. **Autónomos y certificados digitales:** reutilizar servicios actuales y construir páginas únicas análogas a CIRCE tras autorización y QA.
+3. **Declaraciones e impuestos, IRNR/IRPF/IS:** guías gratuitas por trámite, calendario fiscal y simuladores explicables; separar cálculos deterministas de IA.
+4. **Notaría y registros, trámites GVA/Ayuntamientos/Tráfico, laborales:** rutas con autorizaciones, representación y formularios oficiales, según prioridades y riesgos.
+5. **Herramientas:** simulador autónomo vs SL documentado anteriormente; no afirmar que está operativo hasta completar parámetros verificables, tests de cálculo, privacidad y QA humano.
+6. **Formación y conversión:** conectar Academy, Holded y planes por CTA voluntario; preservar oferta vigente, contratos, facturación, control de permisos y asesoramiento según caso.
+
+### Gate del lote #803 y estado exacto
+
+Cambios de contenidos + integración CIRCE en chat público y suite de tests quedan EN BORRADOR. Estado sólo se eleva si se comprueban TypeScript, lint, build, tests, pruebas KIA RGPD/CIRCE, validación de páginas en dispositivos, CI y ambas previews Vercel **del último SHA**, legalidad del contenido, URLs, SEO, aprobación de Dirección y ausencia de conflicto con E0. Este anexo no permite autopublicar nuevos servicios ni alterar Stripe/Supabase/RLS/consentimientos. Merge ≠ activación. No usar el checklist anterior para afirmar que KIA ya responde con precisión de extremo a extremo.
