@@ -38,7 +38,8 @@
     "allowAutonomousDraftPrOnlyAfterSeparateActivation": true,
     "authorizationBoundToExactHeadShaAndPatchDigest": true,
     "changesToCheckpointOrScopeInvalidateApproval": true,
-    "telegramChatCannotAuthorizeMergeOrDeployment": true
+    "telegramChatCannotAuthorizeMergeOrDeployment": true,
+    "rationale": "La Dirección no revisa codigo; la preferencia es supervision tecnica automatica por KIA + CI + revisores independientes. Por ahora se conserva el gate humano de merge hasta aprobacion separada de delegacion de merges de bajo riesgo y superacion del piloto."
   },
   "notifications": {
     "preference": "milestones_and_blockers_only",
@@ -74,5 +75,69 @@
       "budget_fail_closed_verified",
       "zero_auto_merge_and_zero_auto_deploy"
     ]
+  },
+  "supervisionDelegation": {
+    "targetModel": "risk_tiered_supervision_by_kia",
+    "status": "DESIGNED_NOT_ACTIVE",
+    "operatorRole": "Direccion define prioridades de negocio, presupuesto, expectativas de producto y valida procesos humanos; no revisa codigo",
+    "developmentTechnicalReview": {
+      "coordinator": "KIA",
+      "mandatoryGates": [
+        "canonical_master_plan_scope",
+        "current_phase",
+        "allowed_paths",
+        "actor_permissions",
+        "exact_commit_sha",
+        "deterministic_CI_typecheck_lint_build_tests",
+        "security_checks",
+        "two_independent_model_reviews_where_applicable",
+        "vercel_app_and_ksenia_expert_checks",
+        "budget_and_audit_evidence"
+      ],
+      "aiReviewsNotAuthorityByThemselves": true,
+      "failedOrSkippedGate": "block_and_escalate",
+      "selfApprovalByExecutorAllowed": false
+    },
+    "routineExecution": {
+      "futureApproval": "automatic only for explicitly preapproved low-risk tasks after sandbox pilot and separate activation",
+      "currentApproval": "not_authorized_to_execute",
+      "allowedFutureExamples": [
+        "docs_or_knowledge_without_privacy_data",
+        "synthetic_tests_without_secrets",
+        "pure_UI_copy_without_auth_checkout_or_business_rules",
+        "isolated_read_only_code_quality_changes"
+      ],
+      "prohibitedUntilSeparateGate": [
+        "auth_roles_rls_tenant_or_company",
+        "payments_or_stripe",
+        "production_migrations",
+        "client_data",
+        "payroll_tax_legal_automation",
+        "provider_credentials_or_security",
+        "external_emails_telegram_to_clients",
+        "production_deploy"
+      ]
+    },
+    "mergers": {
+      "currentMode": "explicit_human_approval_required",
+      "futureModeProposed": "automatic_for_preapproved_low_risk_only_after_independent_policy_gates_and_separate_owner_authorization",
+      "futureLowRiskAutoMergeEnabled": false,
+      "protectedBranchRulesRemainBinding": true,
+      "highRiskRequiresQualifiedIndependentHumanTechnicalReviewer": true,
+      "directionEscalationOnlyWhenBusinessLegalFinancialOrScopeDecisionsRequired": true
+    },
+    "executiveNotifications": {
+      "executiveOnly": [
+        "new_business_decision",
+        "material_change_to_scope_or_price",
+        "legal_or_privacy_risk",
+        "budget_exceeded",
+        "pilot_proven_and_ready_for_activation",
+        "critical_blocker_or_prod_incident"
+      ],
+      "milestonesAndBlockersRetained": true,
+      "operationalTechnicalNoise": "internal_KIA_log",
+      "noClientNotifications": true
+    }
   }
 }
