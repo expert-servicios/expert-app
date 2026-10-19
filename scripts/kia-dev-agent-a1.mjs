@@ -75,7 +75,6 @@ export function simulateA1({onSandboxCreated} = {}) {
   const patch = Buffer.from(buildSyntheticPatch(), 'utf8');
   const report = inspectSyntheticPatch(patch, manifest);
   const sandbox = mkdtempSync(join(tmpdir(), 'kia-a1-synthetic-'));
-  let successful = false;
   try {
     if (onSandboxCreated) onSandboxCreated(sandbox); // tests only; not exposed as CLI input
     const patchFile = join(sandbox, 'candidate.patch');
@@ -90,7 +89,6 @@ export function simulateA1({onSandboxCreated} = {}) {
       { timeout: 10000, stdio: 'pipe' });
     const applied = readFileSync(join(sandbox, SYNTHETIC_PATH), 'utf8');
     if (applied !== SYNTHETIC_TEXT) throw new Error('A1_READBACK_FAILED');
-    successful = true;
     return {
       status: 'synthetic_patch_verified',
       taskId: gate.taskId,
@@ -98,7 +96,6 @@ export function simulateA1({onSandboxCreated} = {}) {
       patchSha256: report.patchSha256,
       patchBytes: report.patchBytes,
       changedPaths: [report.path],
-      sandbox,
       externalModelCalls: 0,
       billableUsd: 0,
       productRepositoryWrites: 0,
@@ -106,7 +103,7 @@ export function simulateA1({onSandboxCreated} = {}) {
       mayMerge: false,
     };
   } finally {
-    if (!successful) rmSync(sandbox, { recursive: true, force: true });
+    rmSync(sandbox, { recursive: true, force: true });
   }
 }
 
