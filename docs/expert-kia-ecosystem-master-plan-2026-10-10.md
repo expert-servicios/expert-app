@@ -1126,3 +1126,581 @@ En el árbol examinado **no se encontró** `AGENTS.md`, `CLAUDE.md` ni `.github/
 
 **Formato de resolución:** para cada PR/issue/documento conservar `ID + estado observado + duplicado/contradicción + motivo + propuesta de incorporar/archivar/descartar + fase del Plan Maestro + fuentes/evidencia + decisión humana cuando corresponda + validación de CI si hay código`. Este registro se actualiza **en este único Plan Maestro**; GitHub issues/PR son tickets de ejecución o evidencias, nunca un roadmap competidor.
 
+
+
+## ANEXO E0-WEB-P — Línea paralela de contenidos, copy y arquitectura pública de autogestión (19/10/2026)
+
+**Decisión funcional de Dirección 19/10/2026.** EXPERT se posiciona como **«Tu plataforma de autogestión inteligente»**. Mensaje principal: **«Hazlo tú mismo, aprende con nosotros o contrata ayuda profesional. Tú decides.»** Propósito: reducir dependencia de gestiones externas innecesarias, reforzar control y conocimiento del propio negocio y ofrecer transparencia de costes. No afirmar «primera plataforma de España» sin prueba objetiva de exclusividad. La oferta profesional permanece disponible por elección, nunca como requisito de acceso a recursos gratuitos.
+
+**Gobierno:** este anexo forma parte del Plan Maestro único, NO es un nuevo plan rector. La rama técnica separada de documentación es \`docs/web-publica-autogestion-paralela-20261019\`. La nueva línea **WEB-P (web pública y contenido)** se prepara y ejecuta independientemente de las pantallas, RLS, roles y migraciones del **dashboard E0–E6**, sin modificar su checkpoint ni cerrar anticipadamente hitos. Actualización de alcance **propuesta por Dirección**: se autoriza planificación y diseño editorial WEB-P en paralelo; las modificaciones a código público requieren PR propios, QA jurídico/idiomas/SEO/CI y comprobación de independencia. Los módulos compartidos (KIA, autenticación, checkout, analítica, Supabase, permisos y datos privados) siguen sujetos a los gates E0–E6 y no se tocan por esta excepción. Esta regla especial deberá integrarse en la próxima revisión de la congelación de alcance del §0; hasta entonces **no implica un desbloqueo técnico general**.
+
+### A. Inventario técnico y reutilización constatada (main, 19/10/2026)
+
+- Menús ES/RU: \`components/site/header.tsx\`, \`lib/i18n/public-shell-copy.ts\`; locales de servicios mediante \`lib/services/service-localized-content.ts\`.
+- Catálogo de servicios: \`lib/utils/catalog.ts\` (7 categorías visibles: Fiscalidad, Extranjería y Nacionalidad, Empresas y Autónomos, Holded, Certificado digital, Tráfico y Capitanía Marítima, Notaría y Propiedades; Formación actualmente auxiliar/oculta).
+- Agrupación transversal ya implementada: \`lib/utils/taxonomy.ts\` (6 temas: fiscalidad, extranjería-nacionalidad, empresas, Holded, trámites, formación).
+- Contenidos: \`lib/utils/blog.ts\`, \`lib/utils/docs.ts\`; interfaces \`/blog\`, \`/docs\`, \`/categoria/[tema]\`, fichas \`/servicios/[categoria]/[servicio]\`; FAQ y enlazado de contenidos parcialmente existentes.
+- Planes EXPERT Supervisión/Avanzado/Colaborativo permanecen **contratables**: no confundir proyección del feed de Meta con disponibilidad en la web.
+- PR #803 es el **lote CIRCE y autogestión**, con instrucciones KIA/FAQ y dos artículos en revisión; no duplicar trabajo ni prometer publicación mientras esté en borrador.
+- Documentos históricos \`docs/expert-public-web-workspace-kia-repositioning-plan-2026-10-10.md\` y \`docs/expert-web-v2-navigation-knowledge-ai-credit-plans-2026-10-10.md\` quedan como referencias de inventario subordinadas a este anexo. Sus aseveraciones de retirada de suscripciones están SUPERADAS por la aclaración expresa del 19/10/2026.
+
+### B. Arquitectura editorial definitiva de navegación (no migrar URLs)
+
+**Navegación principal objetivo ES:** Inicio · Trámites · Conocimientos · Herramientas · Formación · Servicios · Planes · KIA · Acceder. Las vistas móvil/desktop pueden agrupar opciones para usabilidad, pero las mismas áreas han de ser accesibles. **Menú RU:** Главная · Процедуры · База знаний · Инструменты · Обучение · Услуги · Тарифы · KIA · Войти. English reservado como tercer locale futuro, NO publicar páginas EN sin traducción validada.
+
+**Categoría canónica = tema legal/funcional**, no formato (blog, guía, servicio). Taxonomía conceptual aprobada, a mapear sin alterar slugs existentes:
+1. **Empresas y autónomos:** formas jurídicas, creación de SL/CIRCE, altas y bajas, socios, administración, responsabilidad, gestión propia, planes empresariales.
+2. **Fiscalidad y contabilidad:** IRPF, IS, IVA, IRNR, libros, cuentas, obligaciones periódicas, calendario, calculadoras.
+3. **Laboral y Seguridad Social:** contratos, nóminas, convenio, cotizaciones, trabajadores, RETA, bajas y trámites TGSS.
+4. **Mercantil, notaría y registros:** sociedades, poderes, acuerdos, Registro Mercantil, notarías, operaciones inmobiliarias, herencias y donaciones.
+5. **Trámites administrativos y certificados:** certificados de persona física/empresa, GVA/CCAA, ayuntamientos, SUMA, Catastro, DGT, Capitanía, otros organismos.
+6. **Protección de datos y cumplimiento:** RGPD, LOPDGDD, AEPD, formularios, cookies, RAT, EIPD, proveedores y seguridad.
+7. **Extranjería y nacionalidad:** NIE, TIE, arraigo, autorizaciones, nacionalidad, Registro Civil y asuntos de residencia.
+8. **Herramientas de gestión y digitalización:** Holded, facturación, automatización, firmas, integraciones, VeriFactu y herramientas tecnológicas.
+**Formación** es una modalidad transversal (no categoría jurídico-temática exclusiva); un curso de fiscalidad pertenece también a Fiscalidad. Admitir categoría primaria y etiquetas secundarias. No transformar una categoría comercial existente en otra sin tabla de equivalencias.
+
+**Registro de contenido estructurado a implementar:** \`content_id\`, \`canonical_slug\`, \`primary_topic\`, \`secondary_topics[]\`, \`content_type\` (landing/servicio/guía/blog/FAQ/calculadora/curso/norma/fuente), \`related_service_slugs[]\`, \`official_sources[]\` con URL y fecha de eficacia, \`reviewed_at\`, \`next_review_at\`, \`editorial_owner\`, \`locale\`, \`translation_status\`, \`legal_status\`, \`publication_status\`, \`canonical_url\`, \`content_version\`. Primero contrato documental y mapeo, después migración controlada si necesaria; no duplicar persistencia.
+
+### C. Plantilla transversal de «Página pilar del trámite»
+
+Hero de lenguaje sencillo y pregunta concreta; qué resuelve; quién puede hacerlo solo; diagnóstico orientativo sin datos personales; comparativa de alternativas; preparación y checklist; pasos y enlaces a sedes oficiales; guías y artículos con explicaciones EXPERT; preguntas frecuentes; normativa con fecha/vigencia; herramientas pertinentes; formación voluntaria; gestión profesional con precio/alcance; Holded/planes si pertinentes; KIA contextual. **Ruta de decisión:** (1) informarse gratis; (2) autogestionar; (3) formación; (4) contratar ayuda o servicio. En una comunicación basta un **enlace EXPERT**, que centraliza los demás. No hacer pasar por disponibles herramientas documentadas o recursos aún no desplegados.
+
+**SEO:** conservar enlaces existentes de /blog, /docs, /servicios; relaciones internas y canonical; redirección 301 solo con inventario y prueba; schema de FAQ sin prometer resultados enriquecidos de Google; titles/metas útiles; fuentes oficiales visibles; fechas. Evitar canibalización entre página pilar (intención de decidir) y guía (paso a paso), artículo (explicación) o ficha (contratación).
+
+### D. Plan por entregas independientes y listo para ejecución controlada
+
+| ID | Entrega | Dependencias | Aceptación |
+| --- | --- | --- | --- |
+| WEB-P0 | Inventario de páginas/menús, categorías, contenidos, URLs, idiomas y CTAs; clasificar existentes, duplicados y huecos | Lectura main y #803 | Matriz revisada ES/RU, sin cambios productivos |
+| WEB-P1 | Contrato de taxonomía con mapeo de slugs actuales y jerarquía única; bocetos navegación pública desktop/móvil | WEB-P0 | No perder enlaces; menús y filtros por mismo tema |
+| WEB-P2 | Guía de estilo y copy ES/RU; home, navegación y bloque «cuatro opciones»; revisión legal de propuestas «autogestión» | WEB-P1 | Copy validado por Dirección en ambos idiomas, sin claim «primera» |
+| WEB-P3 | Biblioteca estructurada por temas: servicios/blog/docs/normativa/herramientas; plantillas y enlaces bidireccionales | WEB-P1, revisión SEO | Relación completa y sin huérfanos; 0 enlaces inexistentes |
+| WEB-P4 | Lote pilar CIRCE #803 y RGPD existente, FAQ, decisiones, Holded opcional y KIA con fuentes | Contenidos revisados y gate KIA si cambia runtime | Respuesta y navegación coherente, QA jurídico y ES/RU |
+| WEB-P5 | Publicación iterativa por categorías (autónomos, certificados, fiscalidad, trámites, laboral, registros...) | WEB-P3/4 aprobados | Release por lote con rollback y checklist documental |
+| WEB-P6 | Calculadoras y simuladores, suscripciones futuras a uso KIA con créditos | Motor determinista, privacidad, condiciones contractuales y aprobación | NO implementar ni cobrar antes de aprobar viabilidad/reglas |
+
+**Separación de ramas:** \`docs/web-publica-autogestion-paralela-20261019\` solo documentación rectora; futuras ramas \`feat/web-pN-...\` para web pública y copy, y ramas existentes de E0–E6 solo dashboard/permisos. Dependencias transversales se registran como bloqueos acotados, nunca se asume permiso para modificar KIA core, checkout o RLS desde una PR editorial. Las PR deben pasar CI/ambas previews sobre head SHA, accesibilidad, seguridad, ES/RU, fuentes, SEO y verificación de funcionalidad real. No fusionar a ciegas.
+
+### E. Idiomas, accesibilidad y protección del usuario
+
+- ES y RU tienen la misma prioridad de calidad y actualización. Traducción jurídico-administrativa nativa revisada; conservar términos de administración española con glosas en ruso. No inferir ciudadanía ni estatus de residencia por idioma.
+- EN se deja preparado a nivel de claves y contrato de contenidos, sin rutas accesibles ni hreflang hasta revisión y aprobación.
+- Explicar los costes oficiales frente a honorarios; incluir instrucciones de verificación de expedientes y advertencias sobre errores/estafas de gestión sin acusaciones contra colectivos o profesionales.
+- Guías disponibles sin registro ni pago. Al pasar a un trámite con documentos, verificar identidad, permisos y seguridad sin recopilar datos innecesarios. KIA informa y acompaña; no ejecuta trámites con efectos jurídicos sin acceso y autorización.
+- Monetización futura de acceso ampliado a KIA mediante límites/créditos: **solo hipótesis**, sin bloquear el conocimiento público básico, añadir cuotas ni crear productos Stripe ahora.
+
+### F. Próxima ejecución recomendada
+
+Primero **WEB-P0**: inventario y matriz de clasificación (sin tocar aplicación). Seguir con WEB-P1 y WEB-P2 en PRs delimitadas. En paralelo mantener el plan E0–E6 de dashboard con su checkpoint sin cambios. **Estado hoy:** anexo preparado; no afirmar que todo WEB-P está implementado, que los idiomas están traducidos o que se ha publicado en web. Separación autorizada como planificación, ejecución del código público aún condicionada a revisión del §0.
+
+
+### WEB-P0 — Inventario de contenidos y correspondencia temática (19/10/2026)
+
+**Fuente y naturaleza de la evidencia:** lectura estática del código de `main` en `lib/utils/catalog.ts`, `lib/utils/blog.ts`, `lib/utils/docs.ts`, sus módulos importados y los generadores `service-generated-content.ts` / `service-operational-blueprints.ts`. No constituye una verificación de despliegue ni prueba de vigencia jurídica. Los borradores de #803 quedan **fuera** de este corte. Los artículos con redirección de blog a docs no cuentan como artículos listados.
+
+**Fotografía contabilizada:** **52 servicios**, **108 artículos con entrada al listado de blog**, **49 guías/entradas de conocimiento**. Incluye **11 fichas operativas que originan 33 artículos y 11 guías de forma dinámica**; no cuentan como archivos fuente independientes. Clasificación editorial propuesta y reversible: no cambia ningún slug, URL, categoría original o estado publicado.
+
+| Categoría temática de destino | Servicios | Artículos blog | Guías/docs |
+| --- | ---: | ---: | ---: |
+| Empresas y autónomos | 9 | 5 | 3 |
+| Fiscalidad y contabilidad | 10 | 12 | 6 |
+| Laboral y Seguridad Social | 4 | 8 | 1 |
+| Mercantil, notaría y registros | 6 | 0 | 0 |
+| Trámites y certificados | 8 | 23 | 9 |
+| Protección de datos | 1 | 10 | 7 |
+| Extranjería y nacionalidad | 8 | 31 | 18 |
+| Herramientas de gestión | 6 | 18 | 5 |
+| Por revisar | 0 | 1 | 0 |
+
+**Inventario de slugs agrupados por categoría de destino.** Las asignaciones temáticas son propuestas de WEB-P0, no cambios en `taxonomy.ts`. En casos transversales (ej. nóminas en Holded) la categoría principal se fija por obligación predominante y la secundaria queda para WEB-P1.
+
+#### Empresas y autónomos
+
+**Servicios (9)**: `alta-autonomo`, `baja-cese-actividad`, `constitucion-sl`, `constitucion-sl-circe`, `contabilidad-mensual`, `formacion-administraciones-publicas`, `formacion-alta-autonomo-sl`, `impuestos-trimestrales`, `nif-socio-extranjero`
+
+**Artículos (5)**: `alta-autonomo-espana`, `baja-autonomo-y-cese-actividad`, `constitucion-sociedad-limitada-espana`, `impuestos-trimestrales-autonomos`, `plan-supervision-avanzado-colaborativo-comparativa`
+
+**Guías (3)**: `alta-autonomo-guia-completa`, `conectar-google-workspace-expert`, `conectar-microsoft-365-expert`
+
+#### Fiscalidad y contabilidad
+
+**Servicios (10)**: `formacion-fiscal-contable`, `formacion-planificacion-fiscal`, `impuesto-patrimonio`, `impuesto-sociedades`, `irpf`, `iva-trimestral`, `modelo-151`, `modelo-720`, `modelos-informativos`, `no-residentes`
+
+**Artículos (12)**: `declaracion-renta-expatriados`, `donaciones-fiscalidad-espana`, `impuestos-compraventa-vivienda`, `ley-antifraude-software-contable`, `modelo-151-beckham-guia`, `modelo-720-bienes-extranjero-guia`, `no-residentes-documentos-y-errores-frecuentes`, `no-residentes-proceso-paso-a-paso`, `no-residentes-requisitos-operativos-2026`, `referencia-renta-clave-paso-a-paso`, `regularizacion-fiscal-requerimientos-hacienda`, `verifactu-facturacion-electronica`
+
+**Guías (6)**: `calendario-modelo-210-irnr-2026-2027`, `checklist-irnr-inmueble-no-residente`, `declaracion-renta-irpf-guia`, `documentos-declaracion-renta-irpf`, `irnr-no-residentes-guia`, `regimen-beckham-modelo-151-guia`
+
+#### Laboral y Seguridad Social
+
+**Servicios (4)**: `arraigo-laboral`, `formacion-laboral-rrhh`, `holded-migracion-laboral`, `holded-modulo-laboral`
+
+**Artículos (8)**: `arraigo-laboral-documentos-y-errores-frecuentes`, `arraigo-laboral-proceso-paso-a-paso`, `arraigo-laboral-requisitos-operativos-2026`, `arraigo-social-vs-sociolaboral-2026`, `certificado-digital-persona-fisica-usos-aeat-seguridad-social`, `formacion-laboral-rrhh-para-no-especialistas`, `holded-nominas-limites-seguridad-social-2026`, `seguridad-social-sepe-contratos-altas-cotizaciones-2026`
+
+**Guías (1)**: `arraigo-laboral-requisitos-checklist`
+
+#### Mercantil, notaría y registros
+
+**Servicios (6)**: `apoderamientos-mercantiles`, `compraventa-inmueble`, `cuentas-anuales`, `donacion`, `herencia`, `hipoteca-cancelacion`
+
+**Artículos (0)**: sin fichas clasificadas
+
+**Guías (0)**: sin fichas clasificadas
+
+#### Trámites y certificados
+
+**Servicios (8)**: `certificado-digital-entidad`, `certificado-digital-persona-fisica`, `certificado-digital-sin-animo-lucro`, `duplicado-permiso`, `matriculacion`, `pack-certificados-digitales`, `tramites-embarcaciones`, `transferencia-vehiculo`
+
+**Artículos (23)**: `cancelacion-hipoteca-registro-propiedad`, `certificado-digital-empresas`, `certificado-digital-entidad-cambio-administrador-revocacion`, `certificado-digital-entidad-documentos-y-errores-frecuentes`, `certificado-digital-entidad-proceso-paso-a-paso`, `certificado-digital-entidad-representante-o-sello`, `certificado-digital-entidad-requisitos-operativos-2026`, `certificado-digital-persona-fisica-documentos-y-errores-frecuentes`, `certificado-digital-persona-fisica-proceso-paso-a-paso`, `certificado-digital-persona-fisica-requisitos-operativos-2026`, `certificado-digital-persona-fisica-vs-clave-dnie`, `clave-movil-app-guia`, `como-gestionar-herencia-espana`, `como-registrarse-en-clave`, `duplicados-trafico-dgt`, `matriculacion-vehiculo-espana`, `pack-certificados-digitales-documentos-y-errores-frecuentes`, `pack-certificados-digitales-persona-empresa`, `pack-certificados-digitales-proceso-paso-a-paso`, `pack-certificados-digitales-requisitos-operativos-2026`, `que-es-clave-identificacion-electronica`, `tramites-embarcaciones-capitania-maritima`, `transferencia-vehiculo-dgt`
+
+**Guías (9)**: `certificado-digital-camerfirma-guia`, `certificado-digital-entidad-documentos-representante`, `certificado-digital-entidad-requisitos-checklist`, `certificado-digital-entidad-tipos-usos-seguridad`, `certificado-digital-persona-fisica-documentacion-instalacion`, `certificado-digital-persona-fisica-requisitos-checklist`, `certificado-digital-persona-fisica-seguridad-copia-renovacion`, `pack-certificados-digitales-checklist`, `pack-certificados-digitales-requisitos-checklist`
+
+#### Protección de datos
+
+**Servicios (1)**: `formacion-rgpd-aepd`
+
+**Artículos (10)**: `brecha-datos-personales-72-horas-aepd`, `facilita-rgpd-facilita-emprende-gestiona-rgpd-diferencias`, `familias-ucranianas-espana-proteccion-temporal-residencia-estable`, `no-hay-que-inscribir-empresa-aepd-rgpd`, `proteccion-temporal-ucrania-asilo-arraigo-diferencias-2026`, `proteccion-temporal-ucranianos-cambio-residencia-espana-2026`, `proveedores-cloud-ia-rgpd-encargados-tratamiento`, `rgpd-autonomos-pymes-espana-2026`, `rgpd-marketplaces-candidatos-datos-sensibles-responsabilidad`, `web-formularios-cookies-rgpd-lssi-espana`
+
+**Guías (7)**: `alta-inscripcion-aepd-tramites-empresa`, `checklist-rgpd-autonomos-pymes`, `formacion-rgpd-criterios-cumplimiento-y-evidencias`, `privacidad-formularios-cookies-web`, `protocolo-brechas-datos-personales-72-horas`, `registro-actividades-tratamiento-rat-pymes`, `rgpd-aepd-ruta-decisiones-para-startups`
+
+#### Extranjería y nacionalidad
+
+**Servicios (8)**: `arraigo-familiar`, `arraigo-social`, `nacionalidad-espanola`, `nacionalidad-espanola-menor-nacido-en-espana`, `nie-pasaporte`, `permiso-residencia-inicial`, `reagrupacion-familiar`, `renovacion-residencia`
+
+**Artículos (31)**: `apellidos-menor-nacionalidad-espanola-registro-civil`, `arraigo-espana-reforma-2026-tipos-requisitos`, `arraigo-familiar-documentos-y-errores-frecuentes`, `arraigo-familiar-guia`, `arraigo-familiar-proceso-paso-a-paso`, `arraigo-familiar-requisitos-operativos-2026`, `arraigo-social-2025`, `arraigo-social-documentos-y-errores-frecuentes`, `arraigo-social-proceso-paso-a-paso`, `arraigo-social-requisitos-operativos-2026`, `ciudadanos-rusos-residencia-espana-sanciones-bancarias-100000`, `documentos-permiso-residencia-espana`, `nacionalidad-espanola-documentos-y-errores-frecuentes`, `nacionalidad-espanola-menor-nacido-en-espana-documentos-y-errores-frecuentes`, `nacionalidad-espanola-menor-nacido-en-espana-proceso-paso-a-paso`, `nacionalidad-espanola-menor-nacido-en-espana-requisitos-operativos-2026`, `nacionalidad-espanola-por-residencia`, `nacionalidad-espanola-proceso-paso-a-paso`, `nacionalidad-espanola-requisitos-operativos-2026`, `nuevo-reglamento-extranjeria-cambios-2026`, `permiso-residencia-inicial-guia-2025`, `permiso-residencia-inversores`, `reagrupacion-familiar-documentos-y-errores-frecuentes`, `reagrupacion-familiar-espana`, `reagrupacion-familiar-proceso-paso-a-paso`, `reagrupacion-familiar-requisitos-operativos-2026`, `renovacion-permiso-residencia-espana`, `renovacion-residencia-documentos-y-errores-frecuentes`, `renovacion-residencia-proceso-paso-a-paso`, `renovacion-residencia-requisitos-operativos-2026`, `residencia-larga-duracion-nacional-requisitos`
+
+**Guías (18)**: `apellidos-menor-nacionalidad-registro-civil`, `arraigo-familiar-requisitos-checklist`, `arraigo-social-acreditar-dos-anos`, `arraigo-social-requisitos-checklist`, `arraigo-social-requisitos-y-proceso`, `arraigo-social-vinculos-medios-e-informe-integracion`, `documentos-nacionalidad-menor-nacido-espana`, `firmar-solicitud-nacionalidad-menor-progenitores`, `nacionalidad-espanola-menor-nacido-en-espana`, `nacionalidad-espanola-menor-nacido-en-espana-requisitos-checklist`, `nacionalidad-espanola-requisitos-checklist`, `no-residentes-requisitos-checklist`, `permiso-residencia-inicial-vias-y-documentos`, `reagrupacion-familiar-requisitos-checklist`, `renovacion-residencia-requisitos-checklist`, `renovacion-residencia-temporal-y-larga-duracion`, `residencia-larga-duracion-nacional`, `residencia-legal-menor-nacido-espana-nacionalidad`
+
+#### Herramientas de gestión
+
+**Servicios (6)**: `formacion-holded`, `holded-integraciones-api`, `holded-migracion-con-inventario`, `holded-migracion-sin-inventario`, `holded-modulo-formacion`, `holded-pack-starter`
+
+**Artículos (18)**: `ahorra-horas-ia-conectada-holded`, `casos-reales-claude-holded-facturas-tesoreria-stock`, `checklist-cierre-2t-holded-julio-2026`, `como-empezar-con-holded`, `como-empezar-con-holded-paso-a-paso`, `es-seguro-conectar-ia-contabilidad-holded`, `holded-autonomos-pequenas-empresas`, `holded-autonomos-vale-la-pena`, `holded-contabilidad-pymes`, `holded-inventario-guia-completa`, `holded-migracion-sin-inventario-guia`, `holded-modulos-autonomos-pymes`, `migracion-holded-guia-practica`, `migrar-contaplus-a-holded`, `migrar-inventario-a-holded`, `modelos-303-130-111-preparar-datos-holded`, `pack-starter-holded-vs-migracion`, `pack-starter-vs-migracion-holded`
+
+**Guías (5)**: `actualizar-permisos-token-holded-kia`, `conectar-holded-kia-token-api-v2`, `holded-conector-claude-ia-que-puede-hacer`, `novedades-holded-2026-verifactu-wallet-tpv`, `permisos-holded-kia-lectura-escritura`
+
+#### Por revisar
+
+**Servicios (0)**: sin fichas clasificadas
+
+**Artículos (1)**: `formacion-fiscal-autonomos-pymes`
+
+**Guías (0)**: sin fichas clasificadas
+
+#### Arquitectura de navegación y páginas observadas
+
+- **Catálogo actual:** 7 categorías visibles y `formacion` como categoría auxiliar; 52 fichas en la colección de servicios. **Taxonomía transversal actual:** 6 temas (`fiscalidad`, `extranjeria-nacionalidad`, `empresas`, `holded`, `tramites`, `formacion`). No hay temas transversales propios de RGPD y Laboral; el tema `tramites` agrupa varios dominios diferentes.
+- **Web pública:** `/servicios`, `/blog`, `/docs`, `/categoria/[tema]`, `/planes`, `/holded`, `/academy`; `/herramientas/rgpd` es la única ruta de herramienta concreta encontrada en el directorio público de `main`. **No hay página índice `/herramientas`** en ese árbol. La página CIRCE `/herramientas/crear-sociedad-limitada` está propuesta en #803, no publicada por este inventario.
+- **ES/RU:** existe `app/(localized)/ru`, con rutas rusas para servicios, blog, docs y RGPD. `public-shell-copy.ts` mapea solo determinadas rutas: si falta equivalencia RU conserva la URL real ES. **No asumir paridad editorial ni traducciones de todas las páginas**. Inglés es solo reserva futura, sin locale/rutas liberadas.
+- **Blog:** `/blog` usa `getPublishedBlogArticles()` y los filtros propios del componente BlogExplorer. Tres slugs legacy se filtran del listado por redirección a docs: `nacionalidad-menor-nacido-espana-requisitos`, `residencia-legal-menor-nacido-espana-nacionalidad`, `documentos-nacionalidad-menor-nacido-espana`. Las categorías de artículo no comparten un ID canónico con las categorías de servicios.
+- **Base de conocimientos:** `/docs` usa los filtros de DocsExplorer, seis categorías (`extranjeria-nacionalidad`, `fiscalidad`, `empresas`, `proteccion-datos`, `tramites`, `holded`); existe además una equivalencia legacy de `nacionalidad-menor-nacido-espana-requisitos` hacia `nacionalidad-espanola-menor-nacido-en-espana`. Verificar canónicas, canonical/hreflang y redirecciones HTTP antes de cambios de índice.
+- **Hallazgo editorial verificable:** `lib/content/fiscal-2026-blog.ts` define **3 artículos** (`modelo-210-nuevo-plazo-no-residentes-inmuebles-2026-2027`, `modelo-210-alquiler-no-residente-transicion-2026`, `impuesto-patrimonio-2025-plazo-modelo-714-2026`), pero `lib/utils/blog.ts` los **importa y no los incorpora** al array `articles`. **No contarlos como publicados**; resolver en WEB-P1/P3 con verificación de contenido, redirecciones y SEO; no activar por accidente.
+- **Seguridad de clasificación:** documentar temática principal y etiquetas secundarias sin renombrar ni reescribir rutas existentes; completar revisión manual de materias ambiguas, links/fuentes, vínculos relacionados, duplicidades semánticas y caducidad normativa antes de habilitar navegación dinámica.
+
+#### Resultado WEB-P0 y siguiente paso
+
+**Inventario estático realizado; validación de navegación real, cobertura RU, SEO y enlaces en preview pendiente.** Esta matriz alimenta exclusivamente **WEB-P1**: mapa reversible de categorías, componente común de filtros, rutas del menú desktop/móvil y contenido enlazado. No tocar dashboard E0–E6, checkout/Stripe, KIA privado, migraciones, esquemas RLS o producción. Mantener #803 como lote editorial separado sin fusionar por arrastre.
+
+
+### WEB-P1 — Taxonomía y contrato de navegación (avance 19/10/2026)
+
+**Rama técnica independiente:** `feat/web-p1-taxonomia-navegacion-contract-20261019` (parte de `main` y NO depende de #803 ni del dashboard). **Todavía no cambia menús en producción.**
+
+**Contrato creado:** `lib/content/public-autogestion-taxonomy.ts`; ocho categorías estables, con etiquetas y descripciones ES/RU y mapeadores de servicios, blog y docs. No modifica `lib/utils/catalog.ts`, `blog.ts`, `docs.ts` ni los slugs existentes. Sobrescrituras temáticas controladas para Laboral, RGPD, cuentas anuales y cursos.
+
+**Menú conceptual:** Inicio · Trámites · Conocimientos · Herramientas · Formación · Servicios · Planes · Acceder, con KIA como widget/entrada destacada. En ruso: Главная · Процедуры · Материалы · Инструменты · Обучение · Услуги · Тарифы · Войти. La llegada a una categoría/menú ahora se formula como contrato de rutas existentes (sin enlaces a índices de herramientas aún inexistentes). Algunas rutas rusas redirigen a un índice general y se identifican como `broader-hub`; no declararlas traducciones exactas ni generar `hreflang` a partir de estas equivalencias.
+
+**Gates WEB-P1 posteriores:** comprobar mapeos completos con `tests/content/public-autogestion-taxonomy.test.ts`, revisar semántica de registros transversales, adaptar menús reales desktop/móvil bajo otra PR con QA visual y accesibilidad, crear los índices temáticos/idiomas que falten, verificar SEO y fuentes, evitar reintroducir canal WhatsApp. Ningún control se declara pasado por el mero hecho de crear el test.
+
+**Estado:** contrato escrito en rama técnica, inventario WEB-P0 guardado en PR #804, publicación y navegación visual NO REALIZADAS. Los cambios de E0–E6 mantienen su checkpoint y autorización.
+
+
+### WEB-P1/WEB-P2 — Dirección integral de diseño público y consultas gratuitas (19/10/2026)
+
+**Decisión de Dirección y alcance de esta revisión.** Priorizar en TODO el sitio la autogestión de trámites, guías verificadas, fuentes oficiales, biblioteca de conocimiento, herramientas y KIA. Reservar a los servicios profesionales y planes una ubicación visual secundaria: accesibles cuando el visitante los busca, pero no como primer relato ni CTA dominante. WEB-P conserva identidad EXPERT (azul marino, dorado, fondos claros), coherencia visual entre formatos y una sola KIA; no crear micrositios ni componentes de contacto duplicados. Esta sección es especificación aprobada de producto/diseño, **no prueba de publicación, ejecución o funcionamiento automático**.
+
+#### P2-A. Principios de producto, mensaje y prioridades visuales
+
+- **Posicionamiento:** «EXPERT — Tu plataforma de autogestión inteligente». Mensaje de hero propuesto: «Resuelve tus gestiones en España con ayuda de KIA. Aprende, consulta y realiza trámites con guías claras y fuentes oficiales». CTA primario: «Pregunta gratis a KIA». Secundario: «Explora las guías y trámites». Tercero discreto: «¿Prefieres ayuda profesional?».
+- **Primero resolver, luego vender:** accesos públicos sin cuenta a FAQ, guías, artículos, herramientas orientativas, fuentes oficiales y chat general; no bloquear el resultado por pago ni exigir consentimiento de marketing. Sin anuncios emergentes para contratar o presión comercial artificial.
+- **Distribución orientativa de la atención visual en la home:** KIA + preguntas/consulta 40 %, aprender/autogestión 45 %, servicios + soporte profesional 15 %. Son prioridades de jerarquía y orden, NO cuotas rígidas de píxeles o límite a obligaciones legales.
+- **Marca unificada:** tokens reutilizables (colores, sombras discretas, tipografía legible también en cirílico, elevaciones, radios, iconos, separadores), misma familia de cabeceras, breadcrumbs, tarjetas, fuentes normativas, alertas, FAQ, botones y estados. Evitar que página de trámite, blog y ficha comercial parezcan productos diferentes. No copiar el diseño del dashboard Kiranism ni mezclar permisos Admin/Cliente.
+- **Credibilidad:** cada contenido normativo declara última verificación, fuente, jurisdicción, vigencia, excepciones relevantes y naturaleza orientativa. No prometer «cumplimiento garantizado», resultados ante Hacienda, plazos absolutos o asesoramiento ilimitado sin controles.
+
+#### P1/P2-B. Arquitectura de navegación y páginas públicas
+
+**Cabecera objetivo de baja fricción (desktop):** EXPERT | Trámites | Guías y conocimiento | Herramientas | KIA (destacado) | Más (Formación, Servicios, Planes, Holded, Acerca de) | ES/RU | Acceder. **Mobile:** búsqueda/pregunta a KIA inmediatamente visible y cinco accesos accesibles por menú; nunca tapar el contenido con botones flotantes. Este menú COMPACTA el inventario más amplio de la sección B: ningún área se elimina y el mapa de 8 temas sigue presente en un explorador temático común.
+
+**Navegación por tarea, no por formato:** búsqueda transversal por palabra, tema, organismo y acción; resultados agrupados en «Guía paso a paso», «Trámite oficial», «Artículo», «Herramienta», «Pregunta frecuente», «Formación» y, al final, «Servicio EXPERT». Ocho temas de WEB-P0 compartidos por los formatos; mantener slug existente, canonical y breadcrumbs; futuras nuevas rutas solo tras inventario SEO.
+
+**Plantillas visuales del mismo sistema:**
+1. Home: hero de KIA con introducción de pregunta, acceso a chat real sin registro, temas habituales, buscador/guías populares verificadas, tarjetas de «Aprender / Tramitar / Preguntar», biblioteca por tema, mapa de cómo hacer un trámite, fuentes oficiales, contacto por correo, y bloque final pequeño de ayuda profesional.
+2. Explorador por tema: intro breve, búsqueda, objetivos del visitante, filtrado por tipo de recurso, guías y enlaces a sedes; KIA contextual y consulta escrita. Servicios solo al pie o en bloque plegable accesible.
+3. Página pilar del trámite: «Qué vas a conseguir / ¿puedes hacerlo tú? / antes de empezar / documentos / pasos numerados / enlaces oficiales / comprobación de justificantes / preguntas frecuentes / errores comunes / KIA». Citar cuando requiere notaría, identificación, representación o pago a tercero.
+4. Guía/KB: título, resumen, nivel, tiempo orientativo, fecha/fuentes, índice lateral accesible, pasos, FAQ, enlaces oficiales, contenido relacionado, KIA + consulta por email; botón de contratación nunca preponderante.
+5. Artículo: lectura fluida, explicación, fuentes y datos con fecha, enlaces a guías ejecutables y KIA; evitar que el CTA de servicio interrumpa el artículo.
+6. Herramienta/calculadora: inputs mínimos, método y supuestos, resultados orientativos sin persistir por defecto, enlace al trámite real y KIA; sin registrar a nadie automáticamente.
+7. Página KIA pública: presentación clara de capacidades actuales, ejemplos fiscal/AEAT, Seguridad Social, laboral, sociedades, extranjería, protección de datos, trámites de sedes, acciones permitidas, idiomas y límites; abrir mismo chat público, no generar un segundo asistente.
+8. Consulta gratuita: pregunta breve con opción chat inmediato O consulta escrita; entrada sin crear empresa/expediente; respuesta en el mismo idioma y canal, trazabilidad y confirmación. Revisión humana cuando la complejidad/riesgo lo requiera.
+9. Servicios y planes: mantener rutas y contratos existentes; bloque «¿puedes hacerlo por tu cuenta?» con guía gratuita primero, precios y límites visibles, contratar solo como opción voluntaria.
+
+**Identidad visual de KIA:** componente ancho e integrado en home y páginas temáticas (no solo burbuja), avatar único actual, prompt visible, sugerencias temáticas contextuales y acceso flotante discreto persistente. El chat directo y el asistente del área privada comparten orquestación pero tienen permisos diferentes. La identidad gráfica debe distinguir respuesta IA de revisión profesional sin presentarlas como intercambiables.
+
+#### P2-C. Repositorio único de CTA e intención del usuario
+
+**Hallazgos actuales sobre main comprobados 19/10:** hay CTAs redundantes en 'components/site/Hero.tsx', 'components/site/header.tsx', 'components/site/footer.tsx', 'components/content/ArticleIntentCTA.tsx', calculadoras de servicios, guías/docs, y 'app/(public)/consulta-gratuita/page.tsx'. 'components/site/KiaPublicWidget.tsx' ya existe en layout público. La tarjeta «Abrir chat» de 'ArticleIntentCTA' enlaza a '/dashboard?kia=open', que no representa inequívocamente chat público anónimo. 'app/api/consultas-gratuitas/route.ts' registra lead, envía aviso a administradores y notificación push, pero en el código inspeccionado **no** realiza respuesta automática de KIA al remitente. Corregir esas diferencias antes de anunciar atención multicanal autónoma.
+
+**Contrato canónico de CTA propuesto** (registro único reutilizable; nombres de implementación no obligatorios):
+- Intenciones: 'ask_kia_now', 'ask_by_email', 'open_guide', 'start_official_procedure', 'view_tool', 'book_free_intro', 'request_human_review', 'request_paid_service'.
+- Contexto no sensible: 'locale' (es/ru, en futuro), 'topic', 'content_id', 'source_type', 'source_slug', 'origin', 'service_slug' opcional, 'channel' (web_chat/web_form/email/telegram). Los query params NO llevan respuestas de formularios, documentos, datos íntimos ni tokens de autorización; normalización y sanitización server-side.
+- Orden visual: KIA y guía/trámite, consulta escrita en segundo lugar, reserva humana cuando aporta valor, contratación al final. Evitar triple CTA repetitivo idéntico en el mismo viewport.
+- Resolver la apertura del widget público mediante un trigger público accesible y probado (botón compartido / estado de URL controlado), sin redirigir visitantes anónimos al dashboard o forzar autenticación para una consulta general.
+- Componentes fuente reutilizables: tarjeta KIA/consulta, enlace oficial, navegación a guía, pie de artículo y página pilar. Los tres CTA críticos disponibles desde home, header, footer, blog, docs, herramientas, tema y página de trámite, con variante compacta adecuada a cada contexto.
+- Medición: 'cta_id', 'source_type', 'source_slug', 'locale', 'intent', 'channel', 'conversation/request_id' NOPII y estado ('opened'/'submitted'/'answered'/'escalated'); limitar analytics por privacidad, no registrar contenido de preguntas o identificadores personales en analítica pública; sin atribuir expediente por visitar o chatear.
+
+#### P2-D. KIA gratuita en vivo y por correo: flujos separados verificables
+
+**Principio comercial:** cualquier visitante puede solicitar orientación informativa sobre fiscalidad española, Seguridad Social, trámites administrativos, mercantil, laboral, extranjería, facturación y otras materias cubiertas por fuentes fiables. **Gratuidad del uso general** ≠ garantía de respuesta ilimitada, comprobación profesional individual, presentación oficial o cobertura total de casuística. Conservar límites de coste, disponibilidad, abuso y precisión; si KIA desconoce algo, informar y ofrecer fuente oficial o revisión humana.
+
+**Canal A — chat público (objetivo):** entrar desde cualquiera de los CTA, mantener tema/origen no sensible, responder al momento si servicio disponible, citar fuente oficial y vigencia cuando el caso lo requiera. No pedir email para responder una duda general. Sesión anónima con controles de seguridad y privacidad; los servicios privados nunca accesibles sin autenticación. Si requiere datos delicados o capacidad no disponible, formular pregunta mínima o ofrecer canal seguro y revisión.
+**Canal B — consulta escrita/email (objetivo):** usar '/consulta-gratuita' existente, capturar correo solo porque es imprescindible para devolver respuesta; mostrar finalidad, conservación, enlace privacidad y consentimiento comercial independiente (no marcado). Registrar consulta con idempotencia, confirmación clara al usuario y cola de respuesta. KIA prepara respuesta con fuentes/fecha, estado 'auto_answered' solo para orientación general segura y con QA; riesgo jurídico/fiscal alto, falta de datos, ambigüedad, información privada o acciones ante sede pasan a 'needs_review' para respuesta humana. Enviar por 'info@expertconsulting.es' conservando hilo y 'Reply-To' correcto, idempotencia, entregabilidad y opt-out de marketing separado; nunca afirmar «ya contestado» sin acuse de envío. Guardar resultado y eventos permitidos en el historial del lead, sin crear expediente porque alguien escribió.
+**Canal C — Telegram:** continuidad de consulta pública no sensible; Telegram no confiere identidad EXPERT. Vincular solo con consentimiento y autenticación, sin enviar expediente a chat no verificado.
+**Canal D — encuentro humano gratuito:** orientación inicial delimitada según agenda real, sin prometer auditoría, dictamen o trámite profesional gratis. Verificar confirmación, calendario, enlace, cancelación/cambio y notificaciones antes de mostrar la reserva como disponible.
+
+**Criterios de seguridad:** verificar normativa con fuentes oficiales, fecha y supuestos; evitar instrucciones categóricas no contrastadas; transparencia de IA, base legal y retención; evitar crear relaciones comerciales/consentimientos publicitarios implícitos; revisar RGPD/AEPD, LSSI, DSA y privacidad del canal cuando corresponda. Soportar 'needs_review' y auditoría de decisiones; bloquear escrituras en AEAT, TGSS, bancos, email de terceros, Holded, registros o archivos sin mandato y permisos. No incluir identidad personal en la base pública ni entrenar IA sobre consultas privadas sin base.
+
+**Corrección comunicacional prioritaria:** la página '/consulta-gratuita' hoy dice «KIA y el equipo revisarán» y genera lead/alerta. No presentarla como respuesta automatizada por email hasta tener cola, procesamiento, evidencias de entrega, escalado y trazabilidad desplegados y probados. No prometer plazos sin SLA aprobado. No crear un autoresponder separado si ya existe orquestación de KIA: reutilizar su motor con un adaptador de canal y autorización explícita.
+
+#### P2-E. Sistema UI y copy coordinados ES/RU, EN preparado
+
+- Tokens: navy '#0D1B2A' / oro '#D4A017' como acentos de marca actuales, base cálida '#F8F6F1', blancos y grises neutros; contrastes AA y estados accesibles. Jerarquía única H1/H2/H3, espaciado 8 pt, componentes para alertas jurídicas, origen oficial, migas, checklist, botones, tarjetas de recurso y navegación. Reducir tarjetas decorativas y secciones comerciales repetidas.
+- Cabecera sticky sobria y búsqueda; hero con KIA integrada, no imagen de asesoría genérica como dominante. Diseño responsive-first (320/375/768/1024/1440), navegación mediante teclado, foco y cierre dialog, aria-labels, paneles que no tapen CTA/campo de texto, Lighthouse CWV y rendimiento controlado.
+- ES/RU desde la misma clave semántica y fuente editorial. Traducciones jurídicas revisadas, etiquetas que no se corten en cirílico, RU auténtico y sin textos ES mezclados. EN reservado en claves, nunca hreflang de rutas inexistentes. Tests de equivalencia de rutas, CTA, accesibilidad y significado.
+- Ejemplo de microcopy ES «Pregunta a KIA — gratis», «Ver cómo hacerlo paso a paso», «Ir al trámite oficial», «Enviar consulta por correo», «¿Necesitas revisión profesional?». RU equivalentes revisados antes de publicar: «Спросить KIA бесплатно», «Пошаговая инструкция», «Перейти к официальной процедуре», «Отправить вопрос по электронной почте», «Нужна профессиональная проверка?».
+- Evitar reclamaciones comerciales no verificadas (atención ilimitada, cualquier trámite resuelto garantizado, firma automática, análisis completo sin intervención) y mensajes heredados de suscripciones como si fueran portada del producto.
+
+#### P2-F. Auditoría de deuda real y secuencia implementable
+
+| Orden | Evidencia / alcance | Acción de implementación en PR futura | Gate y aceptación |
+| --- | --- | --- | --- |
+| 0 | 'app/(public)/page.tsx' + 'Hero.tsx' priorizan planes/gestión mensual y copys antiguos; incluye 'JulyCampaignBanner'. | Retirar promoción caducada, sustituir relato de home y H1 por autogestión/KIA; conservar funcionalidad y SEO | Copys ES/RU, canonical/metas, enlaces, mobile, accesibilidad |
+| 1 | Header/footer públicos: menús Servicios/Planes/Holded protagonistas; '/herramientas' no ofrece índice coherente | Introducir IA temática + búsqueda de recursos + menú «Más» con servicios secundarios | 0 rutas rotas, 301 solo justificados, no borrar planes/contratos |
+| 2 | 'ArticleIntentCTA.tsx' envía «Abrir chat» a dashboard | Enlace/trigger real al KIA público, reutilizable en todas las plantillas | Smoke anónimo desktop/móvil ES/RU sin sesión |
+| 3 | '/consulta-gratuita' ya almacena leads y notifica Admin, pero no hay auto-respuesta de KIA al remitente | Diseñar/implementar adaptador correo bajo revisión seguridad; idempotencia, envío, estado y reply mismo hilo | Integración E2E real con cuenta de prueba, privacidad, anti-spam, SLA no asumido; gate E0 KIA/email |
+| 4 | Contenidos blog/docs/catálogo con CTA distintos y clasificaciones incompletas | Registro único de CTA + layout compartido «guía/trámite/KIA/ayuda» sin duplicar fuente ni rutas | 8 temas x 3 tipos; métricas noPII; legal/SEO |
+| 5 | Las páginas RU y ES no poseen todavía equivalencia plena | Localización visual/terminológica y pruebas de traducciones, estados de error y CTA | RU revisado, sin fallback ilegible ni rutas inventadas |
+| 6 | Servicios/planes/checkout actuales siguen operativos | Reposicionar en menú y sección final; no tocar pagos, precios o clientes por diseño | 0 regresiones de checkout y condiciones |
+| 7 | KIA chat público tiene feature flag y rate limiting | Lanzamiento con métricas de coste/resolución, escalado y fallbacks legibles | No activar flag ni exponer documentos sin seguridad y QA |
+
+**Verificación integral obligatoria antes de publicación:** test flujo visitante sin login -> guía -> sede oficial -> KIA -> pregunta -> respuesta, formulario -> lead -> respuesta por correo/humano, seguimiento del mismo hilo, privacidad/cookies, origen atribuible, 404, mobile, ES/RU, SEO, CI y previews Vercel en mismo SHA. Restringir acciones con identidad/adjuntos privados y asegurar rol real. PRs de web pública separados por alcance, con feature flags reversibles y rollback. La presente actualización **solo documenta el diseño y su backlog** en la rama de #804; no cambia aplicación, envía correos, fusiona PR o despliega.
+
+**Coordinación con el Plan Maestro E0–E6:** WEB-P1/P2 puede avanzar en diseño, taxonomía y composición editorial; los cambios en widget KIA, API de consultas, email, CRM, RLS, consentimientos o persistencia requieren el gate de E0/seguridad correspondiente, incluso si se exponen en web pública. No abrir PR de aplicación que vulnere la congelación del §0. Proteger PR #803 CIRCE, #782 RGPD y #804 documentación como ámbitos diferenciados hasta reconciliación de dependencias.
+
+
+### WEB-P2-G — Identidad contextual, reconocimiento y recorridos de KIA por usuario (19/10/2026)
+
+**Aprobación funcional:** adaptar arquitectura, diseño, CTAs, bienvenida y conversaciones según el vínculo **verificado** del interlocutor con EXPERT. Dirección solicita expresamente documentar primero y **no implementar cambios en la aplicación, activar automatizaciones, despliegues, migraciones ni mensajes salientes** durante este paso. Mantener la misma KIA y la rama documental #804, sin crear otro plan rector.
+
+#### G1. Modelo de identidad y relación; no confundir CRM con autenticación
+
+La presentación se decide mediante **dos ejes independientes**:
+
+1. **Identidad y confianza**: visitante anónimo (sesión efímera); persona que aporta voluntariamente un canal de respuesta sin autenticar; persona autenticada en EXPERT mediante sesión validada por servidor y perfil activo; canal externo vinculado y verificado (Telegram); remitente de email comprobado en hilo, sin equipararlo a sesión privada. Una cookie del chat público, una coincidencia de nombre, email sin validación, teléfono declarado o parámetros URL NO son pruebas para abrir datos de cliente.
+2. **Relación con EXPERT**: visitante sin relación; contacto/lead en CRM; usuario con cuenta EXPERT sin empresa o servicio; cliente con permisos efectivos sobre una o varias empresas/expedientes; staff EXPERT (incluido soporte delegado). Puede existir más de un vínculo: usuario registrado y lead, cliente y antiguo lead, representante de varias empresas, staff con vista cliente. Nunca clasificar «cliente» solo porque el correo aparece en 'profiles': comprobar relación y alcance vigentes.
+
+**Prioridad de autorización:** autenticación -> perfil activo -> tenant y rol -> membresía empresa/expediente, y solo después snapshot mínimo para interfaz. «Lead conocido» es un dato de CRM, no un permiso de acceso a historial o datos privados. Resolver colisiones/duplicados/homonimias con resultado 'identity_conflict'/'needs_review', sin unir fichas ni mostrar información que confirme existencia de terceros.
+
+**Observaciones técnicas verificadas en main:** 'components/site/KiaPublicWidget.tsx' solo utiliza 'supabase.auth.getSession()' para un booleano y muestra saludo genérico; 'components/KiaCopilotWidget.tsx' ya dispone de 'contextualWelcome(context)' con 'firstName' e idioma y 'app/api/ai/kia/context/route.ts' obtiene nombre del perfil verificado; 'lib/auth/active-actor.ts' usa 'auth.getUser()' y perfil activo; 'lib/ai/kia/kia-channel-identity.ts' requiere identidad Telegram activa y verificada; 'lib/ai/kia/kia-client-ledger.ts' rechaza conflictos de identidad; 'lib/ai/kia/kia-public-web-persistence.ts' distingue sesión pública de identidad. Reutilizar contratos, no duplicar reglas.
+
+#### G2. Matriz integral de experiencias públicas y privadas
+
+| Perfil / señal autorizada | Mensaje de entrada (ES, ejemplo) | Acciones iniciales | Límites explícitos |
+| --- | --- | --- | --- |
+| Anónimo sin sesión EXPERT | «Hola, soy KIA. ¿Qué necesitas resolver hoy?» | Preguntar, buscar trámite, abrir guía, consulta escrita | Nada de nombres, historias previas ni expedientes por cookie pública |
+| Anónimo con formulario enviado | «¿Quieres resolver otra duda o consultar nuestras guías?» | Nueva pregunta; continuidad por email al remitente verificado | No anunciar «he visto tu solicitud anterior» en navegador no autenticado |
+| Usuario registrado con perfil activo, sin vínculo comercial confirmado | «Hola, {nombre}. ¿En qué puedo ayudarte hoy?» | Biblioteca, preferencias elegidas, trámites, preguntas gratuitas | No presumir que es cliente o que tiene expedientes |
+| Lead reconocido **con vínculo acreditado** a sesión/canal | «Hola, {nombre}. ¿Quieres retomar tu consulta o comenzar otra?» | Retomar conversación realmente vinculada; consultar respuesta; nueva duda | Solo historial con autorización y continuidad demostrada; no cruzar hilos por email similar |
+| Cliente con relación activa verificada | «Hola, {nombre}. ¿Quieres revisar tus gestiones o consultar otra cuestión?» | Resumen autorizado, documentos pendientes, empresa seleccionada, chat, guías | Empresa y caso expresamente validados; no inferir un expediente |
+| Cliente con varias empresas | «Hola, {nombre}. ¿Sobre cuál de tus empresas quieres consultar?» | Selector de empresas autorizadas, opción general | No mezclar datos entre empresas; no elegir automáticamente si puede causar confusión |
+| Staff EXPERT / modo soporte delegado | «Hola, {nombre}. Estás en tu espacio de gestión.» | Trabajo según rol, contexto de empresa/cliente seleccionado | Mostrar indicador de soporte delegado y registrar actor real; nunca hacerse pasar por el cliente |
+| Identidad ambigua, sesión caducada o perfil inactivo | «Hola, soy KIA. Puedo ayudarte con una consulta general.» | Información pública, iniciar sesión o verificar identidad | No revelar coincidencias ni motivo de fallo interno |
+
+**Nombres:** obtener 'preferred_name' si el usuario lo define y es válido; si no, nombre de pila seguro del perfil activo. No usar apellidos completos en chat público, datos de empresa sensibles, direcciones de correo como sustituto de nombre, ni derivar el nombre del parámetro URL; si falta nombre, bienvenida neutra. Releer identidad en servidor; inicializar la interfaz con estado «comprobando identidad» breve sin parpadeo de un nombre ajeno. Tras cierre de sesión, eliminar inmediatamente de la vista cualquier mensaje/shortcut privado. No mostrar una bienvenida nominal en terminal/dispositivo público si la sesión ha vencido.
+
+**ES/RU:** ejemplo en ruso «Здравствуйте, {имя}! Чем могу помочь?»; tratamiento natural según preferencia lingüística verificada y texto real del usuario, sin transliterar automáticamente nombres propios. Mensajes contextuales localizados y revisados, sin copiar literales españoles a RU; EN preparado pero apagado. No usar tonos excesivamente familiares en asuntos administrativos.
+
+#### G3. Flujo de entrada y enrutamiento único
+
+1. **Entrada**: página origen + acción (guía, artículo, pregunta, formulario, Telegram, email, área cliente) con referencias de contenido no sensibles.
+2. **Resolución segura**: determinar canal, sesión, perfil/rol activo si existe, relación CRM solo con enlace verificable, pertenencias a empresas y ámbitos autorizados. Evitar consultas cruzadas de datos personales mediante herramientas privilegiadas.
+3. **Contexto mínimo y explicación**: KIA recibe 'identity_status', 'relationship_status', 'locale', 'capabilities', 'authorized_company_ids' y 'origin_context' tras filtrado server-side; no enviar toda la ficha CRM ni información de expediente para una bienvenida genérica.
+4. **Presentación**: saludo una sola vez por apertura de conversación, botones y preguntas iniciales **pertinentes**; «Continuar consulta anterior» únicamente si hay hilo autorizado; «Ver expedientes» solo cuando existen y están permitidos; «Preguntar gratis» visible siempre.
+5. **Respuesta**: KIA general sin autenticación; consultas privadas tras autorización; respuesta con normativa/fuentes/fechas cuando procede; si se requiere decisión jurídica/fiscal delicada o acción sensible, revisión humana.
+6. **Seguimiento**: conversación y fuente identificadas con ids no adivinables; estado 'received' / 'kia_answered' / 'awaiting_user' / 'needs_review' / 'human_answered' / 'closed', sujeto a modelo existente. Persistir lo mínimo permitido; evitar crear expediente/cliente al saludar o preguntar.
+7. **Cambio de estado**: al iniciar/cerrar sesión, completar verificación, adquirir relación de cliente, cambiar empresa, activar soporte delegado o retirar consentimiento, invalidar contexto, volver a resolver permisos y renovar acciones.
+
+**Regla UX de bienvenida:** el saludo personalizado **no debe incluir hechos privados no solicitados** («tu deuda», «tu inspección», «tus documentos», «te escribimos por X») ni presuponer objetivo del usuario. La personalización visible se limita al nombre y a opciones útiles; un mensaje contextual de un expediente solo aparece cuando el usuario lo abre expresamente en un canal autenticado. Evitar repetición del saludo en cada página.
+
+#### G4. CTA, continuidad de canal y experiencia progresiva
+
+- **CTA global primario** «Preguntar gratis a KIA»: mismo motor público para todos, sin exigir registro. En usuario autenticado, KIA puede ofrecer «Continuar con mi cuenta» y enriquecer contexto con permisos tras confirmación.
+- **CTA contextual de contenido** «Ayúdame con este trámite»: enviar únicamente identificador público de guía/página, no contenido privado ni query con PII; KIA conoce fuente, pero no asume intención comercial.
+- **CTA de consulta escrita** «Recibir respuesta por correo»: pedir email para responder, explicar finalidad, política de privacidad y opción de consentimiento comercial separada; confirmar recepción, rastrear estado sin abrir expediente automático. No incluir detalles sensibles de preguntas en la URL.
+- **CTA «Retomar conversación»** en chat/web/Telegram/email solo si hay vínculo explícito seguro y el canal tiene derecho a ese historial. Un email entrante de una dirección conocida permite responder a ese mismo hilo bajo controles, no revelar información del área privada solo por coincidencia.
+- **CTA «Ver mis gestiones»** exclusivo de cliente autenticado con permisos: selector de empresa cuando corresponda, estado verificable y acciones por rol, sin prometer acceso desde widget público.
+- **CTA profesional** discreto y contextual; no promocionar contratación al detectar a un lead o mostrar la misma oferta en todos los niveles del embudo.
+- **Handoff**: chat -> consulta por correo -> respuesta -> posible reserva o expediente, con conservación de fuente solo cuando el usuario autorice el enlace; no importar automáticamente chats anónimos a fichas personales.
+
+**Separación de funciones:** identidad web, elegibilidad para enviar email, autorización de respuesta automática y permisos de documentos son contratos distintos. Adaptador único de KIA por canal, con límites y QA; no crear motor paralelo. El flujo actual de 'app/api/consultas-gratuitas/route.ts' almacena lead y alerta al Admin, **pero no demuestra autorrespuesta por correo**; el agente email existente tiene settings de autosend y controles, pero no se debe asumir que está habilitado o enlazado al formulario.
+
+#### G5. Componentes de diseño, estados, métricas y protección de datos
+
+**Piezas a diseñar conjuntamente (no implementar hoy):** bloque KIA grande en portada, saludo contextual con skeleton, selector de contexto (General / Mi empresa), centro unificado de recursos, preguntas sugeridas por tema, barra de consulta persistente sin interferir móvil, panel de respuesta con fuentes oficiales, aviso de IA, CTA de correo y estado de respuesta, accesos a historial privado autenticado, pantalla de verificación y perfil, switch ES/RU, estados de error/offline/limite de uso.
+
+**Estados de UI:** 'anonymous', 'identity_loading', 'authenticated_profile', 'verified_lead', 'verified_client', 'support_delegated', 'conflict', 'expired' y 'fallback_public'; no exponer una etiqueta interna 'lead' al visitante por defecto. Diferenciar «te responderá KIA» (IA) de «requiere revisión» (especialista).
+
+**Privacidad por diseño:** minimización, no revelar existencia de cuentas/expedientes mediante mensajes personalizados a identidad no verificada, no vincular por cookies de analítica, no exponer datos sensibles en bienvenida o preview de notificación, evitar persistencia por defecto del chat público, no usar consulta privada para entrenamiento sin base y consentimiento aplicable. Revisar cookies, conservación, trazabilidad, finalidad y derecho de supresión antes de enlazar canales. La calidad de identidad prevalece sobre marketing personalizado.
+
+**Control de rendimiento/negocio:** medir anónimamente tiempos de aparición del chat y resolución del estado de identidad, respuesta útil, clics en guía oficial, repetición de consultas, porcentaje de respuesta autónoma segura, escalados humanos, entregabilidad y coste IA; sin logs con PII. No dar a todos los usuarios la misma «bienvenida comercial».
+
+#### G6. Secuencia documental y gates para futura implementación
+
+| Fase | Alcance documental ahora | Prueba exigida antes de implementar/publicar |
+| --- | --- | --- |
+| WEB-P2.G-01 | Contrato de identidad de dos ejes y precedencias de confianza | Tabla de casos anónimo, registrado, lead, cliente, multiempresa, staff, homónimos, sesión caducada |
+| WEB-P2.G-02 | Biblioteca de saludos y preguntas sugeridas ES/RU | Nombre solo servidor verificado, copy jurídico/privacidad revisado, sin presunción de expediente |
+| WEB-P2.G-03 | Wireframes home + KIA grande + CTA y estados móviles | Accesibilidad, foco, overlay sin tapar contenido, navegación y ES/RU |
+| WEB-P2.G-04 | Matriz de canales y continuidad: web, email, Telegram y dashboard | Flujo autorizar/desautorizar, hilo sin mezclar, historial minimizado, fallback a revisión |
+| WEB-P2.G-05 | Mapa de módulos y reutilización del stack actual | No duplicación de motores, integraciones ni clientes; gates E0 pertinentes |
+| WEB-P2.G-06 | Plan E2E y medición de calidad | 0 cruces de perfiles/tenants, sin revelar nombres anónimos, origen trazable, rollback, CI/previews |
+
+**Estado:** DISEÑO DOCUMENTADO / ejecución no autorizada. PR #804 permanece en borrador y solo debe contener la propuesta de WEB-P. Los componentes, APIs, base de datos, automatizaciones, textos publicados, flags, email real, Telegram, derechos de acceso y pagos quedan intactos. Cualquier desarrollo futuro requiere PR acotado, autorización de alcance, revisión jurídica/privacidad/idiomas/SEO, validación CI y previews, y gates del Plan Maestro E0-E6.
+
+
+## Acta de conciliación documental R1 — Admin V2, KIA 2.0 y V3 (18/10/2026)
+
+**Decisión documental, sin implementación:** el Plan Maestro E0–E6 es la única fuente de prioridad, estado de tareas, autorizaciones y cierre. Los tres documentos examinados se conservan como especificaciones o banco histórico; ninguna de sus secuencias propias reemplaza E0–E6. Esta resolución no acredita que las capacidades estén activas ni aprueba nuevas propuestas.
+
+| Fuente evaluada | Resolución | Requisitos a conservar en el único Plan Maestro | Estado de ejecución |
+| --- | --- | --- | --- |
+| `docs/expert-admin-v2-plan-maestro-2026-10-09.md` | **INTEGRAR como especificación subordinada de E2/E3**; dejar sin efecto su autoridad de «plan maestro» y la propuesta de iniciar su «fase 0» independiente. | Un solo Workspace visual con rutas, actores, autorizaciones y flags separados Admin/Cliente; soporte delegado sin suplantación; Contactos/Inbox 360; adquisición `first_touch` y `last_touch` separadas de OAuth; datos Holded por empresa/integración/período; RLS, revocación y pruebas negativas; instrucciones registrales en E3. | **E2 y E3 bloqueadas**, se conserva detalle técnico como referencia. |
+| `docs/kia-2-strategy.md` | **INTEGRAR como contrato técnico de seguridad E0/E4/E5**, no como estrategia canónica paralela. | Una KIA y una jerarquía de permisos R0–R5; `permissions_enabled` y actor exact-active por encima de permisos detectados; aislamiento empresa/expediente; acciones preview→aprobación→ejecución→readback; trazas, fuente, fallback y presupuesto IA. | Solo la auditoría de seguridad dentro de E0 puede continuar; **E4/E5 bloqueadas**. |
+| `docs/expert-kia-v3-ideas-and-validation-backlog-2026-10-10.md` | **INCORPORAR la rama V3 como banco de ideas, NO como segundo backlog activo**. Mantener los 24 IDs V3-01…V3-24 y su descripción detallada en referencia histórica. | Ideas avanzadas, entre ellas archivo multiarchivo V3-23 y simulador laboral/nóminas V3-24. No confundir funciones básicas E5 con evoluciones V3, ni diagnóstico informativo H3 con nóminas. | Todas **capturadas y no aprobadas**; ningún desarrollo antes del cierre E6 y aprobación nueva. |
+
+**Contradicciones resueltas por precedencia:** (1) «listo para iniciar fase 0» en Admin V2 y «primera implementación aprobada» no permiten saltar la fase E0 del Maestro; (2) el calificativo «estrategia canónica» de KIA 2.0 deja de determinar prioridades; (3) la propuesta V3 de mantener un documento de captura separado ya no constituye un circuito decisorio independiente. Cuando se editen documentos secundarios, sustituir esos encabezados por avisos de precedencia sin alterar hechos históricos.
+
+**Verificación:** las cifras, estados «implementado», integraciones, créditos, herramientas y proveedores descritos en esas versiones de octubre **no se consideran vigentes por inferencia**. Confirmar código/CI, permisos, expediente, fuente oficial y readback antes de pasar una propuesta a ejecución.
+
+**Privacidad:** no replicar nombres, correos, identificadores o datos de casos históricos contenidos en especificaciones anteriores. Los ejemplos de QA deben ser sintéticos o mantenerse en expedientes autorizados, no en documentación pública del Maestro.
+
+**Siguiente bloque:** reconciliar los issues #775/#776 (reuniones), #654/#134 (Inbox/Telegram) y #778/#780/#770 (RGPD). No cerrar issues, PR funcionales ni cambiar prioridades de E0 antes de comparar requisitos y evidencias.
+
+**Checkpoint inalterado:** `E0-M3-06-admin-users-tenant-object-scope-audit`; E0 `IN_PROGRESS`, E1–E6 y V3 bloqueadas.
+
+
+## ANEXO KIA-A — Tercera línea coordinada de arquitectura KIA y subagentes (19/10/2026)
+
+**Mandato de Dirección 19/10/2026 — solo documentación, SIN implementación.** Organizar la transformación integral EXPERT en **tres vías coordinadas**: (A) WEB-P para la web pública de autogestión, conocimiento y consulta gratuita; (B) WORKSPACE E0–E6 para panel Admin y Cliente, modo soporte delegado y experiencia de usuario; (C) KIA-A para la arquitectura transversal de una sola KIA, subagentes/skills, razonamiento, fuentes, adaptadores, memoria autorizada, revisión y QA. Los tres workstreams son ramas documentales/de revisión separadas, NO tres cerebros ni tres planes maestros. No alterar el checkpoint E0, congelación de alcance, permisos, datos productivos ni habilitar trabajos E4/post-E6 por esta decisión.
+
+### KIA-A.1 Repositorio y coordinación sin planes duplicados
+
+| Línea | Autoridad / rama de referencia | Lo que posee | Lo que NO puede modificar autónomamente |
+| --- | --- | --- | --- |
+| WEB-P | PR #804, 'docs/web-publica-autogestion-paralela-20261019' | Narrativa, rutas públicas, búsqueda, plantillas, CTA/entrada KIA, guía y conocimiento | Motor KIA, permisos, datos de clientes, correo, RLS, checkout |
+| WORKSPACE | Plan E0–E6 de este mismo Maestro en 'main'; los documentos Admin V2 y contrato Workspace×KIA quedan como referencias, no planes rectores | Diseño Admin/Cliente, paneles, visibilidad autorizada, soporte delegado, contexto UI | Prompts globales y herramientas no aprobadas, cron, email exterior, datos ajenos |
+| KIA-A | Rama documental 'docs/kia-architecture-subagents-parallel-20261019' | Router, subagentes/skills, matriz de capacidades, política de IA, recuperación de fuentes, QA, contratos con web y dashboard | Activar agentes nuevos, cambiar IAM/RLS sin gate, ejecutar herramientas externas ni migrar base de datos |
+
+**Único registro canónico:** 'docs/expert-kia-ecosystem-master-plan-2026-10-10.md'. La rama KIA-A mantiene un anexo separado en **este mismo archivo** para revisión; una futura fusión exige reconciliar sobre 'main' el anexo WEB-P de #804 y cualquier avance WORKSPACE. No sobrescribir una rama desde otra, evitar cherry-pick a ciegas y actualizar checkpoint únicamente con evidencia de ejecución real. Referencias existentes: 'docs/kia-2-strategy.md'; 'docs/plans/kia-post-e6-subagents-audit-and-parity-2026-10-17.md' (issue #789); 'docs/kia-unified-core-attachments-document-studio-2026-10-10.md'; 'docs/workspace-v2-kia-copilot-parallel-integration-2026-10-10.md'; 'docs/kia-accounting-agent.md'. PR #707 y #708 cerradas sin fusionar, no ramas de ejecución vigentes.
+
+### KIA-A.2 Principio de orquestación
+
+**ÚNICA KIA VISIBLE:** una interfaz conversacional coherente en web pública, dashboard Cliente, Admin, soporte delegado, email y Telegram; adaptadores de canal sin duplicar el núcleo. Flujo lógico futuro:
+
+'Entrada por canal' → 'Verificación de sesión/identidad/actor y relación' → 'Resolución de contexto y permisos efectivos' → 'Clasificación de intención y sensibilidad' → 'Plan de acción mínimo' → 'Enrutamiento a skill/subagente autorizado' → 'Consulta de datos permitidos y fuentes oficiales' → 'Evaluación/confianza/consentimiento' → 'Respuesta, borrador o propuesta de acción' → 'Confirmación humana cuando proceda' → 'Ejecución idempotente permitida' → 'Readback, auditoría, continuidad y aprendizaje supervisado'.
+
+Sin agente «autónomo» que herede credenciales superiores del Admin por pertenecer al catálogo. Los prompts describen conducta, nunca elevan privilegios ni convierten una tool ausente en herramienta disponible.
+
+### KIA-A.3 Inventario verificado de reutilización y cartera funcional
+
+Lectura de 'lib/ai/kia/kia-sub-agent-router.ts', 'lib/ai/kia/kia-skill-registry.ts' y auditoría documental 17/10/2026: hay **siete perfiles de subagente en el código** ('assistant', 'fiscal', 'immigration', 'holded', 'accounting', 'labor', 'case') y **ocho skills habilitadas en el registro de código**, incluida 'operations.next_best_action' sin perfil propio. Esto no constituye prueba de ejecución satisfactoria ni de que funcionen plenamente en producción.
+
+| Unidad actual/propuesta | Objetivo y lugar de uso | Prioridad de revisión / límite |
+| --- | --- | --- |
+| 'assistant' — Comunicación y agenda | Emails, bandeja unificada, citas, cambios de tareas, correspondencia y seguimiento para Admin/Cliente | Continuidad de hilo, idempotencia, identidad y correo saliente condicionado |
+| 'fiscal' — Fiscal y normativa | Guías públicas gratuitas, IRPF/IVA/IS, tributos, interpretación documental autorizada | Recuperación normativa y vigencia reales: la skill fiscal actual no declara 'regulatory'/'knowledge' |
+| 'immigration' — Extranjería | Recursos públicos, normativa de residencia/nacionalidad y expedientes privados | Garantía de fuentes, fecha, documentos mínimos; no revelar situaciones sensibles |
+| 'holded' — Integración ERP | Conexión, readiness, permisos, migración, diagnóstico técnico | No confundir con operaciones contables ni conceder escrituras |
+| 'accounting' — Controller contable | Facturas, cobros, pagos, conciliación, anomalías, cierre y reportes | Holded por compañía; borradores/escrituras sujetos a aprobación y readback |
+| 'labor' — Laboral y Seguridad Social | Convenios, contratos, nóminas, altas, cotizaciones, guía y diagnóstico | Fuentes oficiales/tablas temporales; skill actual centrada en lectura 'holded_hr_read' |
+| 'case' — Expedientes/documentos | Checklist, documentos, estado de solicitudes y trámites, seguimiento | No equivaler metadatos de ficheros con lectura íntegra o facultad para presentar |
+| 'operations.next_best_action' — Skill transversal | Propone qué hacer a continuación sin actuar | No contar como octavo subagente |
+| Mercantil/constitución SL/notaría/registros (propuesta) | Páginas pilar CIRCE, obligaciones sociedades, DUE, gestión registral | Analizar reutilización de fiscal + case + fuentes antes de crear agente nuevo |
+| Marketing, contenidos y SEO (propuesta) | Artículos ES/RU, FAQ, bibliotecas, enlaces, oportunidades de publicación y campañas | Human-in-the-loop, origen y revisión legal, sin autopublicación |
+| Comercial y onboarding (propuesta) | Leads, consultas gratuitas, elección de autogestión/formación/servicio | Sin upsell forzado; no confundir lead y cliente, no acceder a expedientes |
+| Dev/QA y agente de desarrollo supervisado (propuesta) | Analizar PRs, tests, planes, propuestas y riesgos de código | No ejecutar cambios, merges ni despliegues sin autorización y gates; posterior a E6 salvo auditoría defensiva ya aprobada |
+| Academy/formación y operaciones de sector (propuesta) | Tutores de contenidos fiscales, laborales, trámites, gestión de inmuebles | Primero skills reutilizables; subagente independiente solo por criterios medibles |
+
+**Criterios para crear un nuevo subagente:** (i) misión separada estable; (ii) conjunto de herramientas y permisos específicos que difiere de otros; (iii) evidencias medibles de necesidad, calidad/coste/seguridad; (iv) propietario de QA y fuentes; (v) matriz de no solapamiento. Si falla alguno, proponer skill, plantilla o herramienta del orquestador común en lugar de nuevo perfil.
+
+### KIA-A.4 Contratos con WEB-P y WORKSPACE
+
+**WEB-P → KIA-A:** entrada pública anónima, pregunta libre, fuente de la guía/tema, idioma, herramientas de consulta R0 autorizadas, orientación gratuita y fuentes oficiales, con límites antiabuso y preservación de privacidad. La web no invoca directamente tools privadas; no crea historial CRM a partir de una cookie. CTA «Pregunta gratis a KIA» debe abrir el mismo widget público; email de formulario no debe presentarse como contestado automáticamente si no lo está.
+
+**WORKSPACE → KIA-A:** identidad de actor autenticado, rol/tenant, empresa seleccionada y autorizada, contexto de la pantalla, expediente explícitamente abierto, perfil y preferencias verificadas. KIA propone y ejecuta según riesgo; el modo Admin soporte conserva actor real y alcance delegado, nunca suplanta al cliente. El mensaje inicial puede dirigirse al nombre de pila verificado en ES/RU, pero no presupone razón de visita o expediente. Cliente multiempresa exige selector antes de divulgar detalles.
+
+**KIA-A → ambas:** contratos comunes de respuesta estructurada (texto natural, fuentes, versión normativa, confidence razonada, acciones sugeridas, requiere revisión, tipo de artefacto) y eventos de telemetría sin datos personales. La capa de presentación elige tarjeta web, chat, panel lateral, email, checklist, enlace oficial o documento según canal, sin dos lógicas de decisión contradictorias.
+
+**Email/Telegram:** el canal de entrada no equivale a login web; verificación/continuidad explícita. Autorespuesta por email solo tras autorización de política, contenido acotado y QA; firma/órdenes/pagos/AEAT/TGSS/Holded se tratan como herramientas de riesgo con confirmación real. Nada de envíos sin evidencia de entrega.
+
+### KIA-A.5 Matriz de capacidades por identidad, canal, riesgo y subagente
+
+- **Público anónimo:** respuesta informativa general, conocimiento público y enlaces oficiales; sin leads privados, empresas, expedientes, documentos ni herramientas de escritura.
+- **Registrado sin relación de cliente:** saludo por nombre de sesión validada y guía/consulta gratuita; no se supone empresa o expediente.
+- **Lead vinculado mediante prueba suficiente:** referencia a solicitud previa solo dentro de hilo/sesión autorizado, sin elevar privilegios por coincidencia de email o nombre.
+- **Cliente autenticado:** lectura de sus datos **únicamente** con RLS/tenant/company/case scope y fines permitidos. Riesgo creciente para escritura, envío, presentación, firma y borrado; aprobación específica, auditoría y readback.
+- **Admin/empleado:** tools internas limitadas por rol y autorización de operaciones; soporte delegado registra identidad del operador, consentimiento/mandato y empresa.
+- **Especialistas:** capacidades efectivas resultan de la intersección 'actor × canal × empresa/expediente × skill × herramienta × riesgo'; si la intersección es vacía, explicar limitación o escalar, no forzar la herramienta.
+
+**Fuente y QA:** corpus regulatorio oficial con organismo, norma/artículo, versión, vigencia, ámbito autonómico/municipal y fecha de comprobación; citar origen. Distinguir resumen de metadata y lectura exhaustiva de documento; no afirmar cumplimiento, impuestos exactos, trámites completados o documentos procesados sin evidencia.
+
+### KIA-A.6 Tres vías, un protocolo de integración y revisión
+
+| Dependencia | Dueño de la definición | Revisión cruzada obligatoria |
+| --- | --- | --- |
+| Header, navegación, contenidos, CTA público | WEB-P | KIA-A valida trigger del chat, payload noPII, acceso anónimo y fuentes |
+| Saludos y comportamiento por tipo de usuario | KIA-A | WEB-P y WORKSPACE validan diseño/copy/idiomas, Supabase/Auth controla identidad |
+| Layout Admin/Cliente, dock KIA, selector empresa | WORKSPACE | KIA-A revisa contexto y privilegios; WEB-P no toca datos privados |
+| CRM, ciclo lead → usuario → cliente, historial | WORKSPACE/data y KIA-A como consumidores | Identificación, consentimiento, vinculación trazable, borrado y no exposición |
+| Skills, agentes, herramientas y routing | KIA-A | Políticas E0–E6 y security owner; no bypass de fase |
+| Fuentes/guías y SEO | WEB-P editorial | KIA-A valida retrieval/citas, fecha, error y conocimientos desactualizados |
+| Correo/citas/Telegram y respuestas automáticas | Integraciones E5 + KIA-A | Gate identidad, entregabilidad, antiabuso, revisión humana y auditoría |
+| Evolución contable/ERP Holded | WORKSPACE/E5 + KIA-A accounting | Mandato, operación permitida, preview/confirmación, idempotencia/readback |
+| Agent Dev y QA autónomo | KIA-A como futuro | Seguridad, sandbox, coste, CI, approvals, sin merge automático |
+
+**Cadencia de coordinación documental:** un único registro de decisiones (ADR) y dependencias en este Maestro; cada propuesta indica 'owner', 'estado', 'prerequisito', 'gate E0–E6' y 'prueba de aceptación'. Tres PRs separados pueden documentar simultáneamente; ninguna ejecuta código fuera de su gate. Para integración, una PR de contrato compartido pequeña tras consenso de las tres vías; evitar modificar las mismas líneas por tres ramas.
+
+### KIA-A.7 Backlog documental y secuencia futura bloqueada
+
+| ID | Entregable | Verificación esperada |
+| --- | --- | --- |
+| KIA-A0 | Inventario de perfiles/skills/policies/tools y mapeo con canales | Diagrama + matriz de capacidades real, casos negativos, código vs producción separado |
+| KIA-A1 | Contrato de contexto/identidad (incluye lead, registrado, cliente, multiempresa, delegado) | Sin cruces de personas/empresas, saludos personalizados autorizados ES/RU |
+| KIA-A2 | Modelo de orquestación, selección de especialistas y fallbacks por intención | Tests de routing, skills efectivamente autorizadas, casos de incertidumbre |
+| KIA-A3 | Fuentes, conocimiento, versiones y generación de informes/artefactos | Fuente oficial efectiva, trazabilidad, control de caducidad y documentos |
+| KIA-A4 | Email/chat/Telegram, seguimiento, handoff humano y notificaciones | Idempotencia, continuidad verificada, estado real de respuesta |
+| KIA-A5 | UX KIA grande en web y panel lateral de Workspace | Una KIA visible, saludo adaptado, estados claros y móvil accesible |
+| KIA-A6 | Observabilidad, presupuestos, seguridad, evaluación ES/RU y QA de subagentes | Evaluaciones de regresión, no invención, costes, alertas, RLS, red-team |
+| KIA-A7 | Revisión de candidatos a nuevos subagentes y agent dev | Decisiones basadas en evidencia; no activar nuevas capacidades antes de su gate |
+
+**Gates de ejecución:** (1) primero resolver defectos bloqueantes del E0 activo si realmente pertenecen a su alcance; (2) las mejoras aprobadas que ya aparecen en E4/E5 se ejecutarán solo cuando se abran legalmente esas fases; (3) las expansiones genuinamente post-E6 (nuevos subagentes, agentes de desarrollo, autonomía ampliada) permanecerán propuestas hasta acta E6 y aprobación de Dirección. No fusionar ramas documentales en conflicto sin rebase controlado y CI; no cambiar secretos, servicios, clientes, producción, web, DB ni condiciones comerciales desde KIA-A. Las PRs de documentación no certifican trabajo implementado.
+
+
+
+
+## ACTA DE CONCILIACIÓN Y LIMPIEZA DOCUMENTAL — 19/10/2026
+
+**Decisión y límite:** Una sola fuente de planificación y estado de ejecución: este documento. Las tres vías WEB-P, WORKSPACE E0–E6 y KIA-A son ámbitos coordinados, no tres planes rectores ni autorizaciones de desarrollo simultáneo. Esta auditoría es documental, **no** autoriza implementar, fusionar código funcional, cambiar pagos, tocar datos privados, activar IA, migrar bases ni desplegar. El checkpoint E0 sigue 'IN_PROGRESS', E1–E6 bloqueadas y congelación activa. Este anexo se preparó reconciliando íntegramente los textos de las PR documentales #802, #804 y #808, en una rama independiente que conserva todas sus decisiones previas.
+
+### C1. Alcance, método y fiabilidad del inventario
+
+**Fotografía directa de la API GitHub (19/10/2026):** 'main' tiene 26 PR abiertas y 28 issues abiertas (GET /issues devuelve 54 elementos porque incluye PR), 'docs/' presenta 170 entradas de primer nivel, 'docs/plans/' nueve archivos y 'docs/archive/plans/2026-10-17/' trece archivos archivados. Son cifras de la fotografía y **no** un recuento recursivo completo de archivos del repositorio. La auditoría previa recogida en el Maestro abarcó 213 documentos bajo 'docs/' antes de archivar planes; no transferir ese recuento a otra fecha. Se inspeccionaron listados completos de las 26 PR y 28 issues, diffs relevantes de PR de gobierno, WEB-P, E0, IA, RGPD y seguridad, títulos y contenido seleccionado de issues, y cabeceras/superficies de planificación. No se ejecutó CI ni se hizo una inspección línea por línea de cada archivo recursivo; los candidatos a archivo que carezcan de análisis de referencias quedan **EN REVISIÓN**, no declarados obsoletos definitivamente.
+
+**Limpieza acreditada:** PR #801 fusionada archivó trece planes antiguos en 'docs/archive/plans/2026-10-17' y dejó stubs en rutas originales. Verificados 'docs/roadmap.md', 'docs/master-checklist.md', 'docs/implementation-plan.md', 'docs/admin-improvement-plan.md' y 'docs/kia-implementation-progress.md'. No repetir movimiento ni borrar stubs: protegen enlaces desde README, documentación y commits anteriores.
+
+**Clases canónicas de material:** (i) este Maestro = planificación, dependencias, decisiones y checkpoint; (ii) documentos secundarios de arquitectura / especificaciones / contratos = referencias técnicas subordinadas; (iii) evidencias, QA, ADR, seguridad y runbooks = documentación operativa que se conserva; (iv) históricos = archivo de solo consulta; (v) ideas V3/post-E6 = propuestas no aprobadas, sin cola de ejecución paralela. No equiparar «un solo plan» con «un solo archivo de todo el repositorio».
+
+### C2. Autoridad de las tres vías y conciliación de planes
+
+| Vía / contenido | Fuente y resolución | Dependencia y límite |
+| --- | --- | --- |
+| WEB-P / autogestión, navegación, guías, consulta gratuita, identidad del visitante, ES/RU | Texto completo incorporado de PR #804 (WEB-P0–P6, WEB-P2 y WEB-P2-G); mantener #805 → #806 → #807 como **código borrador apilado**, no publicado | SEO, copy, privacidad, disponibilidad real KIA; no modificar datos privados ni checkout por rediseñar web |
+| WORKSPACE / Admin, Cliente, soporte delegado y gestión multiempresa | E0–E6 en este Maestro. 'docs/expert-admin-v2-plan-maestro-2026-10-09.md' y 'docs/plans/admin-v2-support-and-kia-contract-pr708-consolidated-2026-10-17.md' son especificaciones subordinadas | No iniciar E2 antes del gate E0/E1; conservar actor real y permisos, ledger autorizado y expediente |
+| KIA-A / orquestador, subagentes, skills, fuentes y QA | Texto completo de PR #808 integrado; referencias 'docs/kia-2-strategy.md' y 'docs/plans/kia-post-e6-subagents-audit-and-parity-2026-10-17.md' | Siete perfiles y ocho skills registradas en código, sin presumir operación en producción. Expandir perfiles nuevos solo en fase aprobada |
+| Precedencia Admin V2, KIA 2.0 y banco V3 | Acta R1 de PR #802 incorporada íntegra | V3 es banco de ideas bloqueadas hasta E6 completada y autorización nueva |
+| Antiguas PR documentales #707, #708, #790 | Cerradas **sin fusionar**, pero su material técnico útil se conserva en el árbol main/documentos de referencia ya identificados | No reabrir «plan maestro Admin», «plan KIA 2.0» o «plan V3» por su título antiguo |
+| WEB antigua / precio, créditos, catálogo | 'docs/expert-public-web-workspace-kia-repositioning-plan-2026-10-10.md' y 'docs/expert-web-v2-navigation-knowledge-ai-credit-plans-2026-10-10.md': contexto histórico subordinado | No anunciar créditos IA ni alterar condiciones comerciales/planes vigentes basándose en una propuesta |
+| Nueve archivos bajo 'docs/plans/' | Contratos e investigaciones para CIRCE, RGPD, fiscalidad/CREA-CRECE, laboral, impacto editorial, oportunidades, soporte y subagentes | Mantener como anexos técnicos hasta analizar dependencias; no tratarlos como planes ejecutivos |
+
+**Regla de conflictos:** checkpoint del Maestro + decisiones de Dirección fechadas y alcance del gate > hechos comprobados de código/CI/deploy y normativa vigente > documentos técnicos subordinados > ideas/históricos. Las ramas #802, #804 y #808 modificaban por separado el mismo archivo Maestro partiendo de 'main': se reconcilian **sin elegir una y descartar las otras**, evitando pérdida silenciosa.
+
+### C3. Registro de las 26 PR abiertas y acción de limpieza recomendada
+
+| PR | Programa y estado documental | Salida necesaria |
+| --- | --- | --- |
+| #808 | KIA-A; duplicación documental de edición del Maestro | Requisitos integrados; marcar como sustituida **solo después** de que esta conciliación esté fusionada y verificada |
+| #807 | WEB-P1 hubs; apilada sobre #806 | Mantener borrador hasta gates WEB-P, SEO, enlaces y ES/RU |
+| #806 | WEB-P1 navegación; apilada sobre #805 | Mantener borrador; no publicar shell sin revisión |
+| #805 | WEB-P1 taxonomía; base de pila | Contrato en revisión; no confundir archivo técnico de código con plan rector |
+| #804 | WEB-P; duplicación documental | Requisitos integrados; sustituible después del merge seguro |
+| #803 | WEB-P4 CIRCE/PAE Virtual | Borrador de contenidos; revisión normativa, fuentes oficiales, costes/notaría e indexación |
+| #802 | Precedencia documental | Acta incorporada; sustituible después del merge seguro |
+| #798 | WEB-P3 herramientas gratuitas | Borrador de hub; validar que recursos existan, licencias, costes e idiomas |
+| #794 | E0 prueba sintética AI Gateway; apilada sobre #793 | Validación aislada, sin exponer credenciales ni activar proveedor |
+| #793 | E0 compatibilidad JSON Schema IA | Diagnosticar defecto real y gates de la fase actual |
+| #784 | Comunicación / E0–E5 | Riesgo de notificaciones, requerimientos, filtro spam y privacidad |
+| #782 | RGPD / leads | QA idempotencia y privacidad, no crear fichas duplicadas |
+| #779 | RGPD / formación | Revisión comercial, normativa y traducción antes de publicación |
+| #777 | KIA QA reuniones | Depende de issues #775/#776 y evidencia de acciones autorizadas |
+| #772 | WEB-P contenido SL/autónomo ES/RU | Verificar fuentes y evitar duplicar #803 |
+| #771 | WEB-P RGPD/FAQ ES/RU | Revisar paridad, exactitud y consentimientos |
+| #769 | RGPD borrador de política | No vender plantilla como conformidad jurídica garantizada |
+| #767 | Certificados digitales | Mantener contenido y límites; nunca acceder a certificados/secretos por la web |
+| #765 | Normativa traducciones ES/RU | Vigencia jurídica y revisión humana, no publicar locales incompletos |
+| #764 | E0 normativa / impacto legal | Changes API + SQL, revisión legal y autorización estricta |
+| #745 | KIA QA multimodelo | CI/AI Gateway manual y desactivado, presupuesto/gates |
+| #743 | Telegram avisos de revisión | Feature desactivada; integrar con issue #134 e identidad |
+| #742 | Agent Dev, diseños/CI/SQL draft | Post-E6 para nuevos agentes, salvo hardening E0; sin ejecución |
+| #713 | Holded empresa piloto, migración | Integridad financiera, permisos, reversibilidad y readback |
+| #705 | Persistencia KIA anónima | E1, cookies, retención, RLS, sesión ≠ persona, revisión privacidad |
+| #683 | Botones nativos de reserva | Verificar proveedor actual, móvil, confirmación y accesibilidad |
+
+**Dos pilas de dependencias detectadas:** #805 → #806 → #807 (WEB-P1) y #793 → #794 (E0 AI Gateway). No reorientar ni fusionar ciegamente; ejecutar CI final contra SHA resultante de la integración, no checks de base intermedia. **PR #801 ya fusionada** y su archivo histórico no se repite. No cerrar PR de funcionalidad por limpieza del Maestro.
+
+### C4. Matriz de las 28 issues abiertas
+
+| Responsable del requisito | Issues | Tratamiento |
+| --- | --- | --- |
+| WEB-P / conocimiento, SEO, idioma y autogestión | #797, #796, #795, #773, #770, #360, #133 | Consolidar requisitos de visibilidad, fuentes, guías, ES/RU, diagnóstico orientativo y servicio opcional |
+| WORKSPACE / CRM, operaciones, expedientes, soporte | #353, #475, #654, #180 | Diferenciar usuario/lead/cliente, dirección de caso, comunicaciones y trazabilidad; una sola cola operativa |
+| KIA-A / meeting, aprendizaje, QA | #775, #776, #774, #768 | #775 y #776 parecen duplicar disparador 'meeting.notes_ready'; revisar criterios y evidencias antes de cerrar |
+| KIA-A / documental, subagentes, normas y futuro | #789, #786, #785, #791 | No confundir 7 perfiles registrados con 7 agentes productivos; lectura integral de documentos y Agent Dev requieren gate |
+| RGPD / datos mínimos | #780, #778 | Cuidado con indicadores sensibles en query params, pdf, retención, consentimiento y leads; #782 relacionado |
+| Telegram | #134 | Subtarea de Inbox #654, sin duplicar identidad ni canales |
+| Marketing / contenido automático | #352 | Motor editorial único con autorización humana, no publicación automática |
+| Seguridad Supabase | #388 | Password protection, actualización PostgreSQL, Security Advisor, hardening E0 |
+| Laboral Holded | #279 | Smoke company-scoped, no inferir identidad de empresa por nombre |
+| Facturación, entidades y Stripe | #161, #135, #64 | Facturas históricas, un usuario/múltiples empresas, checkout único por entidad |
+
+**Posibles solapamientos que requieren una comprobación antes de cerrar:** #775/#776; #654/#134 no son idénticos (epic vs canal), #778/#780 tratan pasos distintos de RGPD, #796/#798 son diseño vs código y #785/#786 son especialidades complementarias. No cerrar por similitud semántica ni marcar «resuelto» al registrar en el Maestro.
+
+### C5. Requisitos olvidados que deben estar en las tres vías
+
+1. **Cliente sin usuario registrado:** el contacto comercial y la autorización a datos son distintos del login (Admin 360). Empresa/persona, lead y cuenta deben tener relación comprobable; un email compartido no basta (#135/#161).
+2. **Seguridad transversal Supabase y GRC:** leaked-password protection, PostgreSQL security patching, RLS/grants y Security Advisor (#388). Ningún plan visual cancela mantenimiento prioritario E0.
+3. **Privacidad del origen de lead:** no enviar resultados de cuestionario RGPD o indicadores sensibles en URL/UTM; canal de correo gratuito con consentimiento específico y datos mínimos; sin marketing obligatorio (#778/#780).
+4. **KIA verdaderamente multicanal:** mismo motor con permisos por canal; email entrante, saliente, Telegram y chat tienen autenticaciones diferentes, deben registrar origen y estado de entrega. El formulario actual alerta a Admin pero no acredita respuesta automática por email.
+5. **Traducciones completas ES/RU:** paridad jurídica, catálogo, FAQ, navegación, KIA, notificaciones y exportables; no asumir traducción en vivo ni publicar hreflang de rutas inexistentes (#360/#773/#765).
+6. **Fuentes oficiales vivas y fechas:** CRECE y CRECE vs e-factura vs VERI*FACTU, CIRCE, convenios laborales, impuestos y otras fuentes: no inventar obligación, plazo o régimen; registro de vigencia, huella y revalidación.
+7. **Lectura documental auténtica:** metadatos del expediente no equivalen al texto completo de PDF/Word; control de permisos, hash, citas página/versión y resultados reproducibles (#786/#785).
+8. **Calidad real de subagentes:** 7 perfiles, 8 skills y permisos de herramienta distintos. Una instrucción de prompt no habilita 'regulatory' si la skill fiscal/laboral no la declara. QA multicanal/idioma y fallbacks antes de prometer cobertura total (#789).
+9. **Separación Admin/Cliente dentro de una UI común:** accesibilidad, tenant/company scope, modo soporte delegado sin suplantar la identidad, auditoría de acciones Holded y selección de empresa si varias (#353/#180).
+10. **Protección de decisiones financieras:** facturas antiguas, Stripe por entidad, cartera de clientes y contratos vigentes, reintentos/idempotencia, pagos y abonos no editables por simple rediseño (#64/#135/#161/#713).
+11. **Handoff de reuniones y notas:** deduplicar trigger Google Meet/Gemini, contrastar hechos confirmados en email posterior antes de crear tareas, nada de envíos o expedientes supuestos (#775/#776/#777).
+12. **Contenidos reutilizables con IA supervisada:** una fuente oficial verificada debe alimentar respuesta KIA/guía/FAQ/SEO/oportunidad, con distintos permisos y revisión; no crear segundo motor marketing (#352/#797).
+13. **Diseño accesible y enlaces operativos:** #805–#807 exigen keyboard, mobile, ES/RU, rutas reales, canonical/301, no romper reuniones ni acceso público (#683).
+14. **PR/branch governance:** mantener un registro de 'estado/fuente/owner/dependencia/riesgo/fase/QA'. Documentación en paralelo autorizada; desarrollos E1–E6 y capacidades post-E6 bloqueados sin gate.
+
+### C6. Plan definitivo de limpieza, con puntos de parada seguros
+
+**1. Esta PR de conciliación:** registrar en un único archivo Maestro el texto de #802 + #804 + #808 y la auditoría de 26 PR / 28 issues, sin edición de código de aplicación. Al estar basada en WEB-P #804, su diff incluye ese trabajo más las otras dos adiciones.
+
+**2. Verificación previa al merge:** comparar secciones con las tres PR origen, comprobar longitud/hash, inexistencia de borrados del Maestro, links del README, plan de archivos, docs/QA y CI. Rebase/reconciliación sobre último 'main' y uso de SHA actual. NO ejecutar la fusión mientras los gates de aprobación sigan pendientes.
+
+**3. Tras merge confirmado a main:** cerrar #802, #804, #808 como PR documentales sustituidas, con referencia a la consolidación y sin borrar ramas por defecto. Las PR de contenido/código permanecen abiertas.
+
+**4. Archivo secundario en otro lote documental:** comparar semánticamente antiguos «planes» de Admin V2, KIA 2.0, web v2 y nueve referencias de 'docs/plans/'. Mantener en main documentación técnica que contenga contratos vigentes; archivar solo planes duplicados tras asegurar enlaces/stubs, jamás los runbooks operativos o historial de seguridad.
+
+**5. Dedupe de issues uno por uno:** empezar por #775/#776, después #654/#134 y #778/#780/#770; relación canónica y confirmación de criterios antes de cerrar duplicados. Las issues de producción/seguridad no se cierran solo por estar en Maestro.
+
+**6. Futuras PR por programa:** WEB-P (público), WORKSPACE (interno), KIA-A (núcleo), todas con QA de interfaz, seguridad, fuentes oficiales, RGPD, idioma, CI y previews. Un solo checkpoint rector E0–E6.
+
+**Limitación importante:** este informe constituye una clasificación y conciliación, no certifica que todo el árbol recursivo haya sido comprobado a nivel de línea o que las PR estén listas para merge. No se han modificado datos, expedientes, cobros, clientes ni despliegues.
