@@ -80,8 +80,8 @@ Limitaciones de CIRCE / estatutos tipo:
 - El DUE integra la declaracion censal y los tramites de Seguridad Social que correspondan, ademas de coordinacion notarial y registral. No recomendar duplicar modelo 036, NIF provisional ni altas iniciales sin verificar el resultado del expediente. Las obligaciones futuras y actuaciones ajenas a CIRCE continuan.
 
 Cuanto cuesta la constitucion de SL:
-- Via CIRCE con estatutos tipo: gastos notariales reducidos (~150-300 EUR) + Registro Mercantil (~100-200 EUR) + tasa denominacion (~16 EUR).
-- Via notario tradicional con estatutos a medida: ~500-800 EUR en total (notaria + registro).
+- Puede haber aranceles reducidos de notaria y Registro solo si el expediente cumple todos sus requisitos. Revisar condiciones y arancel vigente; no dar un presupuesto universal ni sumar importes fijos de forma automatica.
+- Gastos de terceros (RMC, notaria, Registro) y honorarios EXPERT son conceptos distintos; usar el catalogo comercial vigente para precios.
 - EXPERT (svc_constitucion_sl): incluye asesoria, denominacion, estatutos, notaria y registro. Precio en https://expertconsulting.es/servicios/empresas-autonomos/constitucion-sl
 
 Cuando recomienda EXPERT en lugar de CIRCE:
@@ -94,6 +94,13 @@ Cuando recomienda EXPERT en lugar de CIRCE:
 
 <pae_kia_rules>
 REGLAS DE KIA PARA PREGUNTAS SOBRE PAE / CIRCE:
+- PREGUNTAS SOBRE LA DECISION AUTONOMO/SL: ayudar a comparar impuestos, beneficios retenidos, retribuciones, dividendos, cuotas y costes anuales. No aconsejar una SL basandose solo en facturacion o en tipo nominal IS. El simulador autonomo-SL esta DOCUMENTADO, no disponible: nunca calcular una cuota personalizada inventando circunstancias.
+- INFORMAR Y DAR OPCIONES ANTES DE VENDER: (A) explicar con la guia gratuita EXPERT; (B) realizar DUE personalmente en PAE Virtual; (C) formacion guiada voluntaria; (D) contratacion del servicio completo; (E) Holded y planes mensuales EXPERT opcionales para operativa posterior. No presentar la contratacion como paso obligatorio.
+- LINKS EN EXPERT PARA AMPLIAR: articulo autonomo o SL https://expertconsulting.es/blog/autonomo-vs-sociedad-limitada-impuestos-costes-2026 ; costes SL https://expertconsulting.es/blog/costes-constitucion-y-mantenimiento-sl-2026 ; base de conocimientos https://expertconsulting.es/docs/constituir-sl-circe-pae-virtual ; servicio https://expertconsulting.es/servicios/empresas-autonomos/constitucion-sl ; planes activos https://expertconsulting.es/planes ; Holded https://expertconsulting.es/holded . Estos recursos de la PR NO se anuncian como publicados hasta su despliegue verificado.
+- SI EL USUARIO SOLO PIDE UN ENLACE: ofrecer primero un UNICO enlace interno de EXPERT relevante en vez de un inventario de URLs oficiales. Dentro de la guia EXPERT se encuentran fuentes y la sede oficial para ejecutar el tramite. Si solicita el acceso oficial expresamente, proporcionarlo.
+- RGPD / STARTUP: la constitucion societaria NO equivale a cumplimiento del RGPD. Para politica privacidad, formularios, cookies, proveedores, candidatos o aplicaciones, enlazar herramienta gratuita https://expertconsulting.es/herramientas/rgpd y explicar riesgos y obligaciones segun la guia RGPD, sin afirmar cumplimiento automatizado ni pedir datos personales por defecto.
+- SOCIOS Y CAPITAL: verificar circunstancias, incluidos estatutos especiales, aportaciones, socios extranjeros y administrador, sin inferir que se necesitan todos los certificados digitales para el envio del DUE.
+
 - Facilitar primero guia publica de EXPERT: https://expertconsulting.es/herramientas/crear-sociedad-limitada (URL prevista; no anunciar como publicada antes de merge/QA). Para firmar el DUE de SL, certificado electronico de al menos una persona socia; puede pedirse ayuda a un PAE sin contratar gestor privado.
 - Para alta de autonomo simple (un solo epigrafe, actividad clara): Kia puede orientar a hacerlo solo via PAE si tiene certificado. Si no: svc_alta_autonomo con EXPERT.
 - Para constituir SL: explicar CIRCE y PAE Virtual, alcance del DUE, documentos, firma y costes ajenos. Ante complejidad, considerar estatutos personalizados, PAE o asesoramiento profesional opcional; no convertir falta de certificado en venta obligatoria.
@@ -102,3 +109,18 @@ REGLAS DE KIA PARA PREGUNTAS SOBRE PAE / CIRCE:
 </pae_kia_rules>
 </pae_knowledge>
 `.trim();
+
+
+/** Enrutado determinista para consulta gratuita de constitución, fiscalidad o CIRCE.
+ * Evita derivar a venta únicamente por detectar palabras como "tramitar".
+ */
+export function isCirceKiaTopic(message: string, currentPage = ''): boolean {
+  const page = currentPage.split('?')[0].replace(/\/+$/, '');
+  if (page === '/herramientas/crear-sociedad-limitada'
+    || page === '/docs/constituir-sl-circe-pae-virtual'
+    || page === '/servicios/empresas-autonomos/constitucion-sl'
+    || page === '/servicios/empresas-autonomos/constitucion-sl-circe'
+    || page === '/blog/autonomo-vs-sociedad-limitada-impuestos-costes-2026'
+    || page === '/blog/costes-constitucion-y-mantenimiento-sl-2026') return true;
+  return /(?:\b(?:circe|pae virtual|documento unico electronico|due|estatutos sociales|constituci[oó]n de (?:sociedad|sl)|crear (?:una )?(?:sociedad|sl|empresa)|montar (?:una )?(?:sl|sociedad)|sociedad limitada|aut[oó]nomo (?:o|vs|frente a) (?:una )?(?:sl|sociedad)|(?:irpf|sociedades).*(?:aut[oó]nomo|sl)|(?:sl|aut[oó]nomo).*(?:irpf|sociedades))\b)|(?:создать\s+(?:компанию|фирму)|открыть\s+(?:ооо|компанию)|общество\s+с\s+ограниченной\s+ответственностью)/i.test(message);
+}
