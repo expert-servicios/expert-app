@@ -9,6 +9,7 @@ describe('A1 synthetic sandbox, disabled by default',()=>{
   const result=simulateA1({onSandboxCreated:p=>{tmp=p;}});
   expect(result).toMatchObject({status:'synthetic_patch_verified',externalModelCalls:0,billableUsd:0,productRepositoryWrites:0,mayDispatch:false,mayMerge:false});
   expect(result.changedPaths).toEqual(['tests/fixtures/kia-dev-agent-synthetic.txt']);
+  expect(result.patchSha256).toMatch(/^[a-f0-9]{64}$/);
   expect(existsSync(tmp)).toBe(false);
  });
  it('rejects injected commands or alternative paths in patch',()=>{
