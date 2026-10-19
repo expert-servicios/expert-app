@@ -16,7 +16,8 @@ const quickLinks = [
   { label: 'Sobre mí', href: '/sobre-mi' },
   { label: 'Blog', href: '/blog' },
   { label: 'Contacto', href: '/contacto' },
-  { label: 'Para asesorías', href: '/para-asesorias' }
+  { label: 'Para asesorías', href: '/para-asesorias' },
+  { label: 'Marca y logotipos', href: '/marca' }
 ] as const;
 
 const serviceLinks = [
@@ -84,11 +85,12 @@ export function Footer({ locale = 'es' }: { locale?: PublicShellLocale }) {
         <div>
           <Link href={href("/")} className="inline-block">
             <Image
-              src="/logos/EXPERT_logo/expert-logo-light-clean.png"
-              alt="Logo EXPERT"
-              width={220}
-              height={64}
-              className="object-contain"
+              src="/branding/expert-2026/expert-horizontal-inverse.svg"
+              alt="EXPERT Consulting"
+              width={255}
+              height={60}
+              unoptimized
+              className="h-auto max-w-[240px] object-contain"
             />
           </Link>
 

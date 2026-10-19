@@ -29,6 +29,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://expertconsulting.es'),
   manifest: '/manifest.json',
+  icons: { icon: [{ url: '/branding/expert-2026/expert-isotipo.svg', type: 'image/svg+xml' }] },
   alternates: {
     types: {
       'application/rss+xml': [

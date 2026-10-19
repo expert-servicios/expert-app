@@ -145,24 +145,17 @@ export function Header({ locale = 'es' }: { locale?: PublicShellLocale }) {
   return (
     <header className={`sticky top-0 border-b border-white/10 bg-[#0D1B2A] text-[#F8F6F1] shadow-lg shadow-[#0D1B2A]/20 ${mobileOpen ? 'z-[120]' : 'z-50'}`}>
       <div className="mx-auto flex h-[74px] max-w-7xl items-center justify-between px-4 sm:px-6">
-        {/* Logo */}
-        <Link href={href("/")} onClick={closeMobile} className="flex min-w-0 items-center gap-3">
-          <span className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden">
-            <Image
-              src="/logos/EXPERT_logo/expert-mark-light-clean.png"
-              alt=""
-              fill
-              sizes="48px"
-              priority
-              className="object-contain"
-            />
-          </span>
-          <span className="min-w-0">
-            <span className="block font-serif text-xl font-bold leading-none tracking-[0.18em] text-[#F8F6F1] sm:text-2xl">EXPERT</span>
-            <span className="hidden text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9CA3AF] sm:block">
-              HOLDED SOLUTION PARTNER
-            </span>
-          </span>
+        {/* Identidad EXPERT 2026: composición horizontal EX + texto en dos líneas. */}
+        <Link href={href("/")} onClick={closeMobile} className="flex min-w-0 shrink-0 items-center" aria-label="EXPERT Consulting — Inicio">
+          <Image
+            src="/branding/expert-2026/expert-horizontal-inverse.svg"
+            alt="EXPERT Consulting"
+            width={230}
+            height={54}
+            priority
+            unoptimized
+            className="h-[51px] w-auto max-w-[205px] object-contain sm:max-w-[214px]"
+          />
         </Link>
 
         {/* Desktop nav */}
