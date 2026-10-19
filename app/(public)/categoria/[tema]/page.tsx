@@ -2,16 +2,19 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { ArrowRight, BookOpen, Clock, GraduationCap, Newspaper } from 'lucide-react';
-import { temas, getTema, getServicesForTema, getDocsForTema, getDocCategoryName, getArticlesForTema } from '@/lib/utils/taxonomy';
+import { temas } from '@/lib/utils/taxonomy';
+import { PUBLIC_TOPIC_ROUTES, resolvePublicTopicRoute, getPublicTopicResources } from '@/lib/content/public-autogestion-resources';
 
 export function generateStaticParams() {
-  return temas.map((t) => ({ tema: t.slug }));
+  return [...new Set([...temas.map(t => t.slug), ...Object.values(PUBLIC_TOPIC_ROUTES)])].map(tema => ({ tema }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ tema: string }> }): Promise<Metadata> {
   const { tema: temaSlug } = await params;
-  const tema = getTema(temaSlug);
-  if (!tema) return {};
+  const topicId = resolvePublicTopicRoute(temaSlug);
+  if (!topicId && temaSlug !== 'formacion') return {};
+  const topic = topicId ? getPublicTopicResources(topicId) : null;
+  const tema = topic ? { slug: temaSlug, name: topic.topic.label.es, description: topic.topic.description.es } : temas.find(t => t.slug === 'formacion')!;
   const canonicalUrl = `https://expertconsulting.es/categoria/${tema.slug}`;
   return {
     title: `${tema.name} | Servicios, guías y artículos | EXPERT`,
@@ -28,13 +31,14 @@ export async function generateMetadata({ params }: { params: Promise<{ tema: str
 
 export default async function CategoriaTemaPage({ params }: { params: Promise<{ tema: string }> }) {
   const { tema: temaSlug } = await params;
-  const tema = getTema(temaSlug);
-  if (!tema) return notFound();
-
-  const serviceGroups = getServicesForTema(tema);
-  const relatedDocs = getDocsForTema(tema);
-  const docCategoryName = getDocCategoryName(tema);
-  const relatedArticles = getArticlesForTema(tema).slice(0, 6);
+  const topicId = resolvePublicTopicRoute(temaSlug);
+  if (!topicId && temaSlug !== 'formacion') return notFound();
+  const resources = topicId ? getPublicTopicResources(topicId) : null;
+  const tema = resources ? { slug: temaSlug, name: resources.topic.label.es, description: resources.topic.description.es } : temas.find(t => t.slug === 'formacion')!;
+  const serviceGroups = resources ? [{ categorySlug: 'mixed', categoryName: tema.name, services: resources.services }] : [];
+  const relatedDocs = resources?.docs ?? [];
+  const docCategoryName = tema.name;
+  const relatedArticles = resources?.articles.slice(0, 12) ?? [];
   const totalServices = serviceGroups.reduce((sum, group) => sum + group.services.length, 0);
   const categoryUrl = `https://expertconsulting.es/categoria/${tema.slug}`;
 
@@ -77,10 +81,10 @@ export default async function CategoriaTemaPage({ params }: { params: Promise<{ 
               Solicitar presupuesto
             </Link>
             <a
-              href="https://wa.me/34669045528"
+              href="/docs"
               className="inline-flex min-h-12 items-center justify-center border border-[#D4A017] px-7 py-3 text-sm font-bold uppercase tracking-wide text-[#D4A017] transition hover:bg-[#D4A017] hover:text-[#0D1B2A]"
             >
-              Consulta por WhatsApp
+              Aprender por mi cuenta
             </a>
           </div>
         </div>
@@ -127,7 +131,7 @@ export default async function CategoriaTemaPage({ params }: { params: Promise<{ 
                         {group.services.map((servicio) => (
                           <Link
                             key={servicio.slug}
-                            href={`/servicios/${group.categorySlug}/${servicio.slug}`}
+                            href={`/servicios/${servicio.categoria}/${servicio.slug}`}
                             className="group flex flex-col border border-[#D4A017]/20 bg-white p-5 shadow-[0_4px_16px_rgba(13,27,42,0.06)] transition hover:-translate-y-0.5 hover:border-[#D4A017] hover:shadow-[0_10px_28px_rgba(13,27,42,0.10)]"
                           >
                             <h4 className="font-serif text-lg font-bold text-[#0D1B2A] group-hover:text-[#D4A017]">
