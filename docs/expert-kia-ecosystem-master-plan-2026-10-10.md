@@ -1192,3 +1192,110 @@ Hero de lenguaje sencillo y pregunta concreta; qué resuelve; quién puede hacer
 ### F. Próxima ejecución recomendada
 
 Primero **WEB-P0**: inventario y matriz de clasificación (sin tocar aplicación). Seguir con WEB-P1 y WEB-P2 en PRs delimitadas. En paralelo mantener el plan E0–E6 de dashboard con su checkpoint sin cambios. **Estado hoy:** anexo preparado; no afirmar que todo WEB-P está implementado, que los idiomas están traducidos o que se ha publicado en web. Separación autorizada como planificación, ejecución del código público aún condicionada a revisión del §0.
+
+
+### WEB-P0 — Inventario de contenidos y correspondencia temática (19/10/2026)
+
+**Fuente y naturaleza de la evidencia:** lectura estática del código de `main` en `lib/utils/catalog.ts`, `lib/utils/blog.ts`, `lib/utils/docs.ts`, sus módulos importados y los generadores `service-generated-content.ts` / `service-operational-blueprints.ts`. No constituye una verificación de despliegue ni prueba de vigencia jurídica. Los borradores de #803 quedan **fuera** de este corte. Los artículos con redirección de blog a docs no cuentan como artículos listados.
+
+**Fotografía contabilizada:** **52 servicios**, **108 artículos con entrada al listado de blog**, **49 guías/entradas de conocimiento**. Incluye **11 fichas operativas que originan 33 artículos y 11 guías de forma dinámica**; no cuentan como archivos fuente independientes. Clasificación editorial propuesta y reversible: no cambia ningún slug, URL, categoría original o estado publicado.
+
+| Categoría temática de destino | Servicios | Artículos blog | Guías/docs |
+| --- | ---: | ---: | ---: |
+| Empresas y autónomos | 9 | 5 | 3 |
+| Fiscalidad y contabilidad | 10 | 12 | 6 |
+| Laboral y Seguridad Social | 4 | 8 | 1 |
+| Mercantil, notaría y registros | 6 | 0 | 0 |
+| Trámites y certificados | 8 | 23 | 9 |
+| Protección de datos | 1 | 10 | 7 |
+| Extranjería y nacionalidad | 8 | 31 | 18 |
+| Herramientas de gestión | 6 | 18 | 5 |
+| Por revisar | 0 | 1 | 0 |
+
+**Inventario de slugs agrupados por categoría de destino.** Las asignaciones temáticas son propuestas de WEB-P0, no cambios en `taxonomy.ts`. En casos transversales (ej. nóminas en Holded) la categoría principal se fija por obligación predominante y la secundaria queda para WEB-P1.
+
+#### Empresas y autónomos
+
+**Servicios (9)**: `alta-autonomo`, `baja-cese-actividad`, `constitucion-sl`, `constitucion-sl-circe`, `contabilidad-mensual`, `formacion-administraciones-publicas`, `formacion-alta-autonomo-sl`, `impuestos-trimestrales`, `nif-socio-extranjero`
+
+**Artículos (5)**: `alta-autonomo-espana`, `baja-autonomo-y-cese-actividad`, `constitucion-sociedad-limitada-espana`, `impuestos-trimestrales-autonomos`, `plan-supervision-avanzado-colaborativo-comparativa`
+
+**Guías (3)**: `alta-autonomo-guia-completa`, `conectar-google-workspace-expert`, `conectar-microsoft-365-expert`
+
+#### Fiscalidad y contabilidad
+
+**Servicios (10)**: `formacion-fiscal-contable`, `formacion-planificacion-fiscal`, `impuesto-patrimonio`, `impuesto-sociedades`, `irpf`, `iva-trimestral`, `modelo-151`, `modelo-720`, `modelos-informativos`, `no-residentes`
+
+**Artículos (12)**: `declaracion-renta-expatriados`, `donaciones-fiscalidad-espana`, `impuestos-compraventa-vivienda`, `ley-antifraude-software-contable`, `modelo-151-beckham-guia`, `modelo-720-bienes-extranjero-guia`, `no-residentes-documentos-y-errores-frecuentes`, `no-residentes-proceso-paso-a-paso`, `no-residentes-requisitos-operativos-2026`, `referencia-renta-clave-paso-a-paso`, `regularizacion-fiscal-requerimientos-hacienda`, `verifactu-facturacion-electronica`
+
+**Guías (6)**: `calendario-modelo-210-irnr-2026-2027`, `checklist-irnr-inmueble-no-residente`, `declaracion-renta-irpf-guia`, `documentos-declaracion-renta-irpf`, `irnr-no-residentes-guia`, `regimen-beckham-modelo-151-guia`
+
+#### Laboral y Seguridad Social
+
+**Servicios (4)**: `arraigo-laboral`, `formacion-laboral-rrhh`, `holded-migracion-laboral`, `holded-modulo-laboral`
+
+**Artículos (8)**: `arraigo-laboral-documentos-y-errores-frecuentes`, `arraigo-laboral-proceso-paso-a-paso`, `arraigo-laboral-requisitos-operativos-2026`, `arraigo-social-vs-sociolaboral-2026`, `certificado-digital-persona-fisica-usos-aeat-seguridad-social`, `formacion-laboral-rrhh-para-no-especialistas`, `holded-nominas-limites-seguridad-social-2026`, `seguridad-social-sepe-contratos-altas-cotizaciones-2026`
+
+**Guías (1)**: `arraigo-laboral-requisitos-checklist`
+
+#### Mercantil, notaría y registros
+
+**Servicios (6)**: `apoderamientos-mercantiles`, `compraventa-inmueble`, `cuentas-anuales`, `donacion`, `herencia`, `hipoteca-cancelacion`
+
+**Artículos (0)**: sin fichas clasificadas
+
+**Guías (0)**: sin fichas clasificadas
+
+#### Trámites y certificados
+
+**Servicios (8)**: `certificado-digital-entidad`, `certificado-digital-persona-fisica`, `certificado-digital-sin-animo-lucro`, `duplicado-permiso`, `matriculacion`, `pack-certificados-digitales`, `tramites-embarcaciones`, `transferencia-vehiculo`
+
+**Artículos (23)**: `cancelacion-hipoteca-registro-propiedad`, `certificado-digital-empresas`, `certificado-digital-entidad-cambio-administrador-revocacion`, `certificado-digital-entidad-documentos-y-errores-frecuentes`, `certificado-digital-entidad-proceso-paso-a-paso`, `certificado-digital-entidad-representante-o-sello`, `certificado-digital-entidad-requisitos-operativos-2026`, `certificado-digital-persona-fisica-documentos-y-errores-frecuentes`, `certificado-digital-persona-fisica-proceso-paso-a-paso`, `certificado-digital-persona-fisica-requisitos-operativos-2026`, `certificado-digital-persona-fisica-vs-clave-dnie`, `clave-movil-app-guia`, `como-gestionar-herencia-espana`, `como-registrarse-en-clave`, `duplicados-trafico-dgt`, `matriculacion-vehiculo-espana`, `pack-certificados-digitales-documentos-y-errores-frecuentes`, `pack-certificados-digitales-persona-empresa`, `pack-certificados-digitales-proceso-paso-a-paso`, `pack-certificados-digitales-requisitos-operativos-2026`, `que-es-clave-identificacion-electronica`, `tramites-embarcaciones-capitania-maritima`, `transferencia-vehiculo-dgt`
+
+**Guías (9)**: `certificado-digital-camerfirma-guia`, `certificado-digital-entidad-documentos-representante`, `certificado-digital-entidad-requisitos-checklist`, `certificado-digital-entidad-tipos-usos-seguridad`, `certificado-digital-persona-fisica-documentacion-instalacion`, `certificado-digital-persona-fisica-requisitos-checklist`, `certificado-digital-persona-fisica-seguridad-copia-renovacion`, `pack-certificados-digitales-checklist`, `pack-certificados-digitales-requisitos-checklist`
+
+#### Protección de datos
+
+**Servicios (1)**: `formacion-rgpd-aepd`
+
+**Artículos (10)**: `brecha-datos-personales-72-horas-aepd`, `facilita-rgpd-facilita-emprende-gestiona-rgpd-diferencias`, `familias-ucranianas-espana-proteccion-temporal-residencia-estable`, `no-hay-que-inscribir-empresa-aepd-rgpd`, `proteccion-temporal-ucrania-asilo-arraigo-diferencias-2026`, `proteccion-temporal-ucranianos-cambio-residencia-espana-2026`, `proveedores-cloud-ia-rgpd-encargados-tratamiento`, `rgpd-autonomos-pymes-espana-2026`, `rgpd-marketplaces-candidatos-datos-sensibles-responsabilidad`, `web-formularios-cookies-rgpd-lssi-espana`
+
+**Guías (7)**: `alta-inscripcion-aepd-tramites-empresa`, `checklist-rgpd-autonomos-pymes`, `formacion-rgpd-criterios-cumplimiento-y-evidencias`, `privacidad-formularios-cookies-web`, `protocolo-brechas-datos-personales-72-horas`, `registro-actividades-tratamiento-rat-pymes`, `rgpd-aepd-ruta-decisiones-para-startups`
+
+#### Extranjería y nacionalidad
+
+**Servicios (8)**: `arraigo-familiar`, `arraigo-social`, `nacionalidad-espanola`, `nacionalidad-espanola-menor-nacido-en-espana`, `nie-pasaporte`, `permiso-residencia-inicial`, `reagrupacion-familiar`, `renovacion-residencia`
+
+**Artículos (31)**: `apellidos-menor-nacionalidad-espanola-registro-civil`, `arraigo-espana-reforma-2026-tipos-requisitos`, `arraigo-familiar-documentos-y-errores-frecuentes`, `arraigo-familiar-guia`, `arraigo-familiar-proceso-paso-a-paso`, `arraigo-familiar-requisitos-operativos-2026`, `arraigo-social-2025`, `arraigo-social-documentos-y-errores-frecuentes`, `arraigo-social-proceso-paso-a-paso`, `arraigo-social-requisitos-operativos-2026`, `ciudadanos-rusos-residencia-espana-sanciones-bancarias-100000`, `documentos-permiso-residencia-espana`, `nacionalidad-espanola-documentos-y-errores-frecuentes`, `nacionalidad-espanola-menor-nacido-en-espana-documentos-y-errores-frecuentes`, `nacionalidad-espanola-menor-nacido-en-espana-proceso-paso-a-paso`, `nacionalidad-espanola-menor-nacido-en-espana-requisitos-operativos-2026`, `nacionalidad-espanola-por-residencia`, `nacionalidad-espanola-proceso-paso-a-paso`, `nacionalidad-espanola-requisitos-operativos-2026`, `nuevo-reglamento-extranjeria-cambios-2026`, `permiso-residencia-inicial-guia-2025`, `permiso-residencia-inversores`, `reagrupacion-familiar-documentos-y-errores-frecuentes`, `reagrupacion-familiar-espana`, `reagrupacion-familiar-proceso-paso-a-paso`, `reagrupacion-familiar-requisitos-operativos-2026`, `renovacion-permiso-residencia-espana`, `renovacion-residencia-documentos-y-errores-frecuentes`, `renovacion-residencia-proceso-paso-a-paso`, `renovacion-residencia-requisitos-operativos-2026`, `residencia-larga-duracion-nacional-requisitos`
+
+**Guías (18)**: `apellidos-menor-nacionalidad-registro-civil`, `arraigo-familiar-requisitos-checklist`, `arraigo-social-acreditar-dos-anos`, `arraigo-social-requisitos-checklist`, `arraigo-social-requisitos-y-proceso`, `arraigo-social-vinculos-medios-e-informe-integracion`, `documentos-nacionalidad-menor-nacido-espana`, `firmar-solicitud-nacionalidad-menor-progenitores`, `nacionalidad-espanola-menor-nacido-en-espana`, `nacionalidad-espanola-menor-nacido-en-espana-requisitos-checklist`, `nacionalidad-espanola-requisitos-checklist`, `no-residentes-requisitos-checklist`, `permiso-residencia-inicial-vias-y-documentos`, `reagrupacion-familiar-requisitos-checklist`, `renovacion-residencia-requisitos-checklist`, `renovacion-residencia-temporal-y-larga-duracion`, `residencia-larga-duracion-nacional`, `residencia-legal-menor-nacido-espana-nacionalidad`
+
+#### Herramientas de gestión
+
+**Servicios (6)**: `formacion-holded`, `holded-integraciones-api`, `holded-migracion-con-inventario`, `holded-migracion-sin-inventario`, `holded-modulo-formacion`, `holded-pack-starter`
+
+**Artículos (18)**: `ahorra-horas-ia-conectada-holded`, `casos-reales-claude-holded-facturas-tesoreria-stock`, `checklist-cierre-2t-holded-julio-2026`, `como-empezar-con-holded`, `como-empezar-con-holded-paso-a-paso`, `es-seguro-conectar-ia-contabilidad-holded`, `holded-autonomos-pequenas-empresas`, `holded-autonomos-vale-la-pena`, `holded-contabilidad-pymes`, `holded-inventario-guia-completa`, `holded-migracion-sin-inventario-guia`, `holded-modulos-autonomos-pymes`, `migracion-holded-guia-practica`, `migrar-contaplus-a-holded`, `migrar-inventario-a-holded`, `modelos-303-130-111-preparar-datos-holded`, `pack-starter-holded-vs-migracion`, `pack-starter-vs-migracion-holded`
+
+**Guías (5)**: `actualizar-permisos-token-holded-kia`, `conectar-holded-kia-token-api-v2`, `holded-conector-claude-ia-que-puede-hacer`, `novedades-holded-2026-verifactu-wallet-tpv`, `permisos-holded-kia-lectura-escritura`
+
+#### Por revisar
+
+**Servicios (0)**: sin fichas clasificadas
+
+**Artículos (1)**: `formacion-fiscal-autonomos-pymes`
+
+**Guías (0)**: sin fichas clasificadas
+
+#### Arquitectura de navegación y páginas observadas
+
+- **Catálogo actual:** 7 categorías visibles y `formacion` como categoría auxiliar; 52 fichas en la colección de servicios. **Taxonomía transversal actual:** 6 temas (`fiscalidad`, `extranjeria-nacionalidad`, `empresas`, `holded`, `tramites`, `formacion`). No hay temas transversales propios de RGPD y Laboral; el tema `tramites` agrupa varios dominios diferentes.
+- **Web pública:** `/servicios`, `/blog`, `/docs`, `/categoria/[tema]`, `/planes`, `/holded`, `/academy`; `/herramientas/rgpd` es la única ruta de herramienta concreta encontrada en el directorio público de `main`. **No hay página índice `/herramientas`** en ese árbol. La página CIRCE `/herramientas/crear-sociedad-limitada` está propuesta en #803, no publicada por este inventario.
+- **ES/RU:** existe `app/(localized)/ru`, con rutas rusas para servicios, blog, docs y RGPD. `public-shell-copy.ts` mapea solo determinadas rutas: si falta equivalencia RU conserva la URL real ES. **No asumir paridad editorial ni traducciones de todas las páginas**. Inglés es solo reserva futura, sin locale/rutas liberadas.
+- **Blog:** `/blog` usa `getPublishedBlogArticles()` y los filtros propios del componente BlogExplorer. Tres slugs legacy se filtran del listado por redirección a docs: `nacionalidad-menor-nacido-espana-requisitos`, `residencia-legal-menor-nacido-espana-nacionalidad`, `documentos-nacionalidad-menor-nacido-espana`. Las categorías de artículo no comparten un ID canónico con las categorías de servicios.
+- **Base de conocimientos:** `/docs` usa los filtros de DocsExplorer, seis categorías (`extranjeria-nacionalidad`, `fiscalidad`, `empresas`, `proteccion-datos`, `tramites`, `holded`); existe además una equivalencia legacy de `nacionalidad-menor-nacido-espana-requisitos` hacia `nacionalidad-espanola-menor-nacido-en-espana`. Verificar canónicas, canonical/hreflang y redirecciones HTTP antes de cambios de índice.
+- **Hallazgo editorial verificable:** `lib/content/fiscal-2026-blog.ts` define **3 artículos** (`modelo-210-nuevo-plazo-no-residentes-inmuebles-2026-2027`, `modelo-210-alquiler-no-residente-transicion-2026`, `impuesto-patrimonio-2025-plazo-modelo-714-2026`), pero `lib/utils/blog.ts` los **importa y no los incorpora** al array `articles`. **No contarlos como publicados**; resolver en WEB-P1/P3 con verificación de contenido, redirecciones y SEO; no activar por accidente.
+- **Seguridad de clasificación:** documentar temática principal y etiquetas secundarias sin renombrar ni reescribir rutas existentes; completar revisión manual de materias ambiguas, links/fuentes, vínculos relacionados, duplicidades semánticas y caducidad normativa antes de habilitar navegación dinámica.
+
+#### Resultado WEB-P0 y siguiente paso
+
+**Inventario estático realizado; validación de navegación real, cobertura RU, SEO y enlaces en preview pendiente.** Esta matriz alimenta exclusivamente **WEB-P1**: mapa reversible de categorías, componente común de filtros, rutas del menú desktop/móvil y contenido enlazado. No tocar dashboard E0–E6, checkout/Stripe, KIA privado, migraciones, esquemas RLS o producción. Mantener #803 como lote editorial separado sin fusionar por arrastre.
