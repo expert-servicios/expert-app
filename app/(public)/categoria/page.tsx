@@ -30,7 +30,7 @@ export default function CategoriaIndexPage() {
         <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-2">
           {PUBLIC_TOPICS.map((tema) => (
             <Link
-              key={tema.slug}
+              key={tema.id}
               href={getTopicHref(tema.id)}
               className="group flex flex-col border border-[#D4A017]/20 bg-white p-6 shadow-[0_4px_16px_rgba(13,27,42,0.06)] transition hover:-translate-y-0.5 hover:border-[#D4A017] hover:shadow-[0_10px_28px_rgba(13,27,42,0.10)]"
             >
