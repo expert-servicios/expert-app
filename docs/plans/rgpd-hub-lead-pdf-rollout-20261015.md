@@ -1,5 +1,6 @@
-# PLAN MAESTRO — EXPERT RGPD Hub + KIA · página pública, captación y PDF
+# EXPERT RGPD Hub + KIA — Especificación funcional subordinada
 Fecha de revisión: 15/10/2026 · Estado: PROPUESTA DE DESARROLLO, NO PUBLICADO.
+> **Precedencia 19/10/2026:** el único Plan Maestro rector es [EXPERT/KIA E0–E6](../expert-kia-ecosystem-master-plan-2026-10-10.md); esta ficha conserva detalle RGPD de referencia, sin autorizar publicación ni tratamiento adicional.
 Rama: `feat/rgpd-hub-leads-report-plan-20261015` (parte de `feat/rgpd-formacion-aepd-comfiqa-20261015`, PR #779; dependencia explícita).
 Página canónica: https://expertconsulting.es/herramientas/rgpd
 Caso piloto de origen: reunión con un proyecto emprendedor de marketplace, 14/10/2026. **Anonimizar todos los ejemplos públicos**. No hacer visibles los expedientes, nombres ni las respuestas particulares.
