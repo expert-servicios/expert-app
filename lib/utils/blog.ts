@@ -2,6 +2,7 @@ import { getGeneratedBatch1BlogArticles } from '@/lib/services/service-generated
 import { laborEsBlogArticles } from '@/lib/content/labor-bilingual-2026';
 import { proteccionDatosBlogArticles } from '@/lib/content/proteccion-datos-blog';
 import { rgpdAepdBlogArticles } from '@/lib/content/rgpd-aepd-training-blog';
+import { circeEditorialArticles } from '@/lib/content/circe-editorial-blog';
 import { fiscal2026BlogArticles } from '@/lib/content/fiscal-2026-blog';
 import { russianResidentBankingBlogArticles } from '@/lib/content/russian-resident-banking-blog';
 
@@ -22,6 +23,7 @@ export const articles: Article[] = [
   ...getGeneratedBatch1BlogArticles(),
   ...proteccionDatosBlogArticles,
   ...rgpdAepdBlogArticles,
+  ...circeEditorialArticles,
   ...russianResidentBankingBlogArticles,
   {
     slug: 'apellidos-menor-nacionalidad-espanola-registro-civil',
