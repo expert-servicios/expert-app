@@ -10,10 +10,11 @@
  * (catalog_services.slug, service_contents (service_id, locale),
  * commercial_offers (service_id, code)). Safe to re-run.
  *
- * Never deletes a row: a service removed from the public catalog is left
- * as-is here for a human to decide. Subscription-only services and services
- * with no fixed/floor price are archived (status "paused") rather than
- * excluded silently — see SUBSCRIPTION_ONLY_SLUGS below.
+ * Never deletes a row. The Meta-specific backfill limits what is eligible
+ * for this feed, not what EXPERT offers or sells on its public website.
+ * Subscription components and items without a usable fixed/floor price may
+ * be paused in this Meta projection (not retired commercially); recurring
+ * plan eligibility requires channel verification before direct sync.
  *
  * Usage:
  *   npx tsx scripts/backfill-meta-catalog-c2.ts            # dry run (default)

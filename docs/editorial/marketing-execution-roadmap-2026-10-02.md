@@ -70,18 +70,19 @@ La infraestructura editorial existe, pero la proyección comercial C2 todavía d
 
 ## 3. Decisiones de arquitectura vigentes
 
-### 3.1. No reintroducir suscripciones retiradas
+### 3.1. Mantener suscripciones EXPERT; publicación Meta independiente
 
-El catálogo público 2026 se centra en servicios puntuales.
+**Rectificación expresamente confirmada por Dirección el 19/10/2026:** los planes Supervisión, Avanzado y Colaborativo **no se retiraron** de EXPERT. Son ofertas recurrentes que deben seguir disponibles para consultar y contratar en /planes y sus fichas. La duda de septiembre-octubre se refería exclusivamente a su aptitud para *catálogo Meta/Commerce Manager*, no a retirarlos del catálogo interno ni de la web.
 
-No volver a introducir automáticamente en Meta:
+Meta admite vertical de **Professional Services** desde su documentación de 17/04/2026 (servicios como consultoría); esto no garantiza soporte de suscripciones de cargo recurrente en todos los formatos/superficies Commerce o Shops. Fuentes: https://developers.facebook.com/documentation/ads-commerce/catalog/get-started/supported-products-services/ y https://developers.facebook.com/documentation/ads-commerce/catalog/reference/professional-services/product-set-edge
 
-- Plan Supervisión;
-- Plan Avanzado;
-- Plan Colaborativo;
-- antiguos servicios periódicos archivados.
+Regla de canales:
+- **Oferta comercial canónica EXPERT:** mantener las ofertas periódicas activas, con periodicidad y precio derivados de los registros comerciales autorizados; no eliminar/archivar por estar excluidas de Meta.
+- **Publicidad en Meta:** se pueden crear publicaciones y anuncios de enlaces hacia /planes, sujetos a políticas aplicables, sin confundirlos con checkout en Commerce.
+- **Meta Commerce Manager y feeds:** evaluar tipo de catálogo services, campos y elegibilidad de cada oferta periódica; marcar `channel_eligibility=needs_verification` como criterio funcional documental hasta una prueba real, sin sincronización automática de planes ni afirmar soporte nativo de cobro mensual. No duplicar un precio mensual como precio único.
+- **Servicios puntuales:** continúan en catálogo EXPERT y su inclusión en Meta depende igualmente de revisión y estado operativo.
 
-Si un plan reaparece en el futuro, debe hacerlo como decisión comercial explícita, no por arrastre de scripts legacy.
+El script de backfill C2, que limita ítems para Meta, no gobierna la disponibilidad contractual de la suscripción en la web. Las limitaciones históricas de ese script no son decisiones de retirada de producto.
 
 ### 3.2. Catálogo canónico
 

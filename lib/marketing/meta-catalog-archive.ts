@@ -1,9 +1,11 @@
 import type { CategorySlug, Service } from '../utils/catalog';
 import { parseServicePrice } from './meta-catalog-pricing';
 
-// Ksenia (2026-09-22): only sold bundled into a monthly plan subscription,
-// never standalone — archived from the Meta catalog and from card
-// generation even though some of them parse to a real price.
+// Meta-only feed eligibility note (clarified by Direction 2026-10-19):
+// These are components included in subscription plans, not retired offerings.
+// Keep their standalone Meta feed entries paused while sale scope and eligibility
+// are reviewed. This filter NEVER removes monthly subscriptions from the
+// EXPERT website, its active plans, Stripe, or the canonical commercial offer.
 export const SUBSCRIPTION_ONLY_SLUGS = new Set([
   'contabilidad-mensual',
   'impuestos-trimestrales',
@@ -18,7 +20,7 @@ export const CATEGORY_OVERRIDES: Record<string, CategorySlug> = {
   'constitucion-sl-circe': 'formacion',
 };
 
-/** True when a service is excluded from the Meta catalog and from generated cards. */
+/** True only for the legacy Meta-feed/card subset; not for the EXPERT public service catalog. */
 export function isArchivedService(service: Service): boolean {
   return SUBSCRIPTION_ONLY_SLUGS.has(service.slug) || parseServicePrice(service.price).priceMode === 'quote';
 }

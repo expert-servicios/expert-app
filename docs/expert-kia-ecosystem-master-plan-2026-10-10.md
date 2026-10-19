@@ -1126,3 +1126,123 @@ En el árbol examinado **no se encontró** `AGENTS.md`, `CLAUDE.md` ni `.github/
 
 **Formato de resolución:** para cada PR/issue/documento conservar `ID + estado observado + duplicado/contradicción + motivo + propuesta de incorporar/archivar/descartar + fase del Plan Maestro + fuentes/evidencia + decisión humana cuando corresponda + validación de CI si hay código`. Este registro se actualiza **en este único Plan Maestro**; GitHub issues/PR son tickets de ejecución o evidencias, nunca un roadmap competidor.
 
+
+
+## ANEXO 19/10/2026 — Centro de ayuda CIRCE: constitución de SL en autoservicio (propuesta en revisión)
+
+**Estado:** BORRADOR NO PUBLICADO. Depende de QA jurídico-editorial, test/build/preview y autorización para fusionar. El Plan Maestro continúa como única fuente rectora; el plan auxiliar `docs/plans/circe-autogestion-centro-ayuda-20261015.md` sigue siendo histórico y subordinado.
+
+- **Página pilar gratuita:** `/herramientas/crear-sociedad-limitada`. Navegación por siete etapas, FAQ, recursos oficiales y enlace a guía de la base de conocimientos. Sin registro ni obligación de contratación.
+- **Base de conocimientos:** `/docs/constituir-sl-circe-pae-virtual`, indexada a través de `lib/content/circe-autogestion.ts` para evitar duplicar el cuerpo editorial y enlazar la página pilar.
+- **Fuentes:** guía oficial de cumplimentación DUE SRL del 27/05/2026, PAE Virtual, CIRCE, RMC, BOE; revisión y enlace vivo antes de fusionar.
+- **Criterio corregido:** CIRCE/DUE integra el proceso censal de AEAT y las gestiones iniciales de TGSS que correspondan, además de coordinación de notaría y Registro; no repetir por defecto NIF provisional, 036 ni altas después. Verificar estado y excepciones. Las obligaciones futuras subsisten.
+- **Firma:** según manual 27/05/2026, al menos una persona socia con certificado electrónico para la firma y envío del DUE de SL en PAE Virtual; Cl@ve no sustituye dicho certificado.
+- **KIA:** se ajusta conocimiento sobre firma y trámites integrados; no anunciar URL nueva como publicada hasta que pase las gates.
+- **Control comercial/SEO:** no se alteran Stripe, precios o fichas; página nueva en `noindex` hasta autorización editorial. La versión rusa debe elaborarse tras QA de la española, sin enlaces hreflang ficticios.
+- **Pendientes de QA:** enlaces oficiales activos, excepciones de DUE/AEAT/TGSS, revisión de afirmaciones sobre aranceles (60/40 no universal), contenido de capital y responsabilidad, accesibilidad móvil, TypeScript, lint, tests, Vercel en ambos proyectos, KIA con fuente, revisión experta final.
+- **Pendiente después de aprobación:** enlaces internos desde los servicios, ayuda y blog; sitemap e indexación solo cuando la página esté comprobada y habilitada. No enviar nuevos correos a usuarios antes de publicación.
+
+
+### Ampliación editorial 19/10/2026 — autónomo frente a SL y fichas de constitución
+- Inventario confirmado: artículos existentes `constitucion-sociedad-limitada-espana` y `alta-autonomo-espana`. El primero contiene simplificaciones y requiere corrección del circuito DUE/036, depósito bancario no universal y fiscalidad de operaciones societarias; **no dar por validado el artículo antiguo**.
+- Nuevos borradores registrados en `lib/content/circe-editorial-blog.ts`: `autonomo-vs-sociedad-limitada-impuestos-costes-2026` y `costes-constitucion-y-mantenimiento-sl-2026`; deben pasar revisión de tipos, condiciones fiscales y aranceles con fuentes primarias.
+- En fichas `constitucion-sl` y `constitucion-sl-circe`: doce FAQ coherentes, enlaces a la guía gratuita y artículo comparativo. El botón "Hazlo por tu cuenta" deja de enviar al usuario a un presupuesto para formación de pago en estas dos fichas.
+- Tres caminos para el usuario: autogestión gratuita, formación guiada opcional, servicio completo. Mantener precios actuales sin modificar Stripe; conflicto 490/499 pendiente de conciliación.
+- Reutilizar el componente actual de FAQ y vínculos automáticos `getDocsForService` / `getArticlesForService`; no introducir duplicados ni un CMS paralelo.
+- Estado: PR #803 borrador, sin fusión ni publicación. Gates: revisión legal/fiscal, enlaces, CI, preview, SEO ES/RU, comprobación de los cambios sobre `main`, aprobación humana.
+
+
+### Anexo 19/10/2026 — Enlace único EXPERT y calculadora de forma jurídica (diseño sujeto a aprobación)
+
+**Decisión UX solicitada:** enviar un único enlace de EXPERT por correo o chat: \`/herramientas/crear-sociedad-limitada\`. Funciona como centro de decisión y operación, no como mera landing de contratación. Mantener el acceso público sin registro y con conexión a biblioteca, DUE/PAE, asesoramiento humano opcional, Holded y catálogo. Los enlaces a organismos públicos se conservan en el contenido de EXPERT como respaldo y destino del trámite (EXPERT no firma el DUE por cuenta del visitante).
+
+**Arquitectura de página pilar (PR #803, BORRADOR):**
+1. Cuatro entradas: «¿Autónomo o SL?», «Crear SL por mi cuenta», «Leer guías y artículos», «Solicitar ayuda / Holded».
+2. Comparativa editorial de fiscalidad y costes; botón de lectura real. No mostrar una calculadora sin motor implementado ni resultados ficticios.
+3. Guía CIRCE en siete pasos, alcance de trámites integrados y enlaces al PAE Virtual, RMC, normativa y manual de referencia.
+4. Base de conocimientos y blog seleccionados: \`/docs/constituir-sl-circe-pae-virtual\`, \`/blog/autonomo-vs-sociedad-limitada-impuestos-costes-2026\`, \`/blog/costes-constitucion-y-mantenimiento-sl-2026\`, \`/blog/alta-autonomo-espana\`, y herramienta de RGPD ya existente.
+5. Vías opcionales: formación o gestión integral en ficha CIRCE; Holded mediante \`/holded\`; información sobre planes de acompañamiento únicamente previa conciliación comercial. No reactivar Checkout, Stripe o captación automática.
+6. FAQ, fuentes, fecha de revisión, accesibilidad móvil, KIA contextual y trazabilidad de origen solo cuando corresponda y sin identificar al lector anónimo.
+
+**Cuestión de canal Meta aclarada por Dirección el 19/10/2026:** la web conserva \`/planes\` con Supervisión 49, Avanzado 99 y Colaborativo 199 €/mes, pero \`docs/editorial/marketing-execution-roadmap-2026-10-02.md\` declara esos planes retirados del catálogo público 2026 y prohibe reincorporarlos automáticamente a Meta. Nueva instrucción de Dirección (19/10): contemplar CTA de «planes de suscripción» junto a Holded dentro del hub CIRCE. **Resolver antes de merge** si \`/planes\` vuelve a ser oferta activa o queda como contenido informativo, qué alcance/IVA/precios/aprobación y contratos aplican; no activar por este PR cobros ni prometer disponibilidad. El enlace propuesto es de navegación informativa, no alta automática.
+
+**Herramienta futura: "¿Me conviene autónomo o SL?" — especificación funcional, NO implementada**
+
+Objetivo: estimar comparativamente el coste fiscal, de cotización y de gestión para quien desarrolla la misma actividad como empresario individual o mediante SL, y mostrar los supuestos en los que cada alternativa mejora la renta disponible o la reinversión. Evitar recomendación jurídica individual categórica, exactitud simulada y umbrales universales de facturación. Orientación fiscal española por **ejercicio seleccionado**.
+
+**Datos de entrada MVP (sin identificar al usuario):**
+- Ejercicio fiscal, comunidad autónoma de residencia fiscal (y de la actividad si resulta relevante), naturaleza de la actividad económica y régimen fiscal, número de socios y porcentajes.
+- Ventas anuales **sin IVA** y gastos fiscalmente deducibles **sin IVA**, diferenciando costes de explotación, posibles nóminas y costes no admitidos fiscalmente; beneficio calculado = ventas − gastos, con reconciliación cuando el usuario escribe beneficio manual. No contabilizar un mismo coste dos veces.
+- Otras rentas personales, situación básica de mínimo personal/familiar y circunstancias relevantes para tramos de IRPF; cuando falten, mostrar escenarios/rangos claramente señalados, nunca cuota exacta.
+- Forma de disponer del beneficio bajo SL: retribución por trabajo/administración, dividendos y porcentaje de beneficio retenido para reinversión. Validar importes totales y régimen de deducibilidad, reteniendo gastos comunes una sola vez.
+- Situación de trabajo, funciones de administrador, control efectivo y cotización RETA/Régimen General; obtener solo un rango estimado de cuota cuando no sea posible determinarla con seguridad.
+- Costes recurrentes configurables de gestoría/contabilidad, libros, cuentas y software, tanto para autónomo como SL; coste único de constitución y horizonte 1/3/5 años. Los importes comerciales se leen de fuente canónica aprobada, nunca se fijan en varios componentes.
+- Elegibilidad del régimen de nueva creación o empresa emergente como **pregunta**: si no hay evidencia suficiente, modo "no determinado" y escenarios alternativos; no aplicar 15 % de oficio.
+
+**Motor de cálculo determinista y auditable (sin LLM calculando):**
+A. Beneficio preliminar por forma jurídica, con ajustes fiscales separados y trazables. IVA no es ingreso/gasto con carácter general en regímenes donde es recuperable; documentar las excepciones por prorrata o actividades exentas.
+B. Autónoma/o: base IRPF del negocio + otras bases personales separadas, tramos estatal/autonómico del **ejercicio** y mínimos aplicables, estimación de RETA según reglas y supuestos. Comparar **incremento de IRPF atribuible al negocio**, no IRPF total de todos los ingresos como coste exclusivo de la actividad.
+C. SL: base imponible tras remuneraciones y demás ajustes que sean fiscalmente deducibles, tipo de IS aplicable por año y requisitos (general, microempresa, ERD, nueva creación, startup); separar dividendos y su IRPF en base del ahorro, RETA u otras cotizaciones y retenciones. Evitar doble contabilización de la misma retribución en beneficios y flujos.
+D. Resultados en tres perspectivas: **dinero neto anual disponible para la persona**, **beneficio líquido retenido en el negocio**, y **coste anual total** (impuestos, cotizaciones, gastos profesionales/software). Coste inicial amortizable en el horizonte indicado como análisis de tesorería, sin atribuir deducibilidad universal.
+E. Sensibilidad de ingresos/beneficios y % de reinversión, desglose anual por escenario, punto de cruce solo si los supuestos permiten determinarlo; no emitir conclusión binaria si faltan datos críticos. Redondeos a céntimos en EUR, coma decimal, y explicación de supuestos.
+F. Salidas: tabla autónomo vs SL; gráfico de carga total y renta disponible (con advertencias), 3 escenarios (repartir/reinvertir/mixto), checklist de datos faltantes, fuentes y fecha de vigencia, enlace a artículo y «cómo constituir por CIRCE» o «cómo darse de alta como autónomo». Recomendación en lenguaje **condicional**, nunca "ahorrarás X €" sin advertencias ni "crear SL garantiza blindaje patrimonial".
+
+**Reglas jurídicas y fiscales imprescindibles:**
+- Régimen aplicable por **año de inicio del ejercicio**, no copiar porcentajes entre 2025/2026/2027; AEAT 2026 incluye 19/21 % para microempresas por tramos, ERD transitorio 23 %, general 25 %, 15 % solo si se cumplen requisitos; prevalencia y exclusiones de regímenes (art. 29 y DT 44 LIS).
+- IRPF exige tarifas estatal/CCAA y circunstancias personales, más IRPF sobre dividendos cuando proceda; ingreso de socios no equivale a beneficio retenido de sociedad.
+- Seguridad Social societaria según función/control (LGSS art. 305), con tipología de cotización documentada.
+- Actividades profesionales, tributación internacional, otras ganancias, patrimoniales, empleados y partes vinculadas deben activar "resultado limitado/revisión".
+- No comparar cuota teórica IRPF vs tipo nominal IS sin efecto de distribución, salarios y cuotas.
+
+**Privacidad, UX y explotación:**
+- Cálculo local/anónimo por defecto; **no persistir**, enviar a KIA ni a CRM datos introducidos, ni incorporar a URLs o parámetros de analítica; ningún consentimiento comercial obligatorio.
+- Guardar/exportar resultado solo a elección del usuario, con base legal, finalidad, plazo y permisos documentados; no permitir recuperar simulaciones privadas de terceros.
+- KIA puede explicar conceptos/supuestos desde fuentes, pero no inventar tipos ni alterar resultados del motor determinista. Distinguir texto editorial de simulación.
+- SEO: única página de herramienta futura con canonical propia cuando realmente funcione; página pilar enlaza en ese momento. De momento solo tarjeta "en diseño" sin ruta rota.
+- Señal de conversión útil: decisión informada, clic en manual, consulta voluntaria, sin fabricar leads a partir de entradas numéricas.
+
+**Mantenimiento y controles antes de lanzamiento:** módulo de parámetros fiscales por ejercicio/CCAA con fuente y fecha efectiva; verificación de normativa AEAT/BOE/TGSS; tablas de prueba de bordes (beneficio negativo/0, cero ventas, 49.999/50.000/50.001 de BI, microempresa vs ERD vs nueva creación, sin reparto/dividendo completo, administrador RETA, otras rentas); tests de idempotencia y no persistencia; test visual móvil, accesibilidad, ES/RU y aviso de cálculo orientativo. Gate de aprobación jurídico-contable y PR independiente posterior, **no construir el simulador en #803**.
+
+**Fuentes iniciales para el diseño:** AEAT [tipo IS por período 2026](https://sede.agenciatributaria.gob.es/Sede/impuesto-sobre-sociedades/que-base-imponible-se-determina-sociedades/tipo-impositivo.html), [Ley 27/2014](https://www.boe.es/buscar/act.php?id=BOE-A-2014-12328), [Ley IRPF](https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764), [LGSS](https://www.boe.es/buscar/act.php?id=BOE-A-2015-11724), [PAE](https://paeelectronico.es/). Cualquier tipo futuro se contrasta con fecha de eficacia antes de habilitar un selector de año.
+
+**Aclaración definitiva de Dirección (19/10/2026):** no existe retirada de planes ni de suscripciones de EXPERT. El posible filtro en Meta afecta únicamente a ese canal. La publicidad de servicios profesionales es distinta de admitir una suscripción mensual en una tienda de Meta; validar por separado. Corregido también `docs/editorial/marketing-execution-roadmap-2026-10-02.md` y comentarios del exportador Meta.
+
+**Estado de #803**: página pilar ampliada, sin calculadora ni cambios de Stripe, en **DRAFT/noindex**. Requeridos CI, QA editorial, conciliación del catálogo y aprobación de Dirección para publicar.
+
+
+## ANEXO 19/10/2026 — Modelo rector de contenidos públicos EXPERT y aprendizaje KIA
+
+**Decisión de Dirección:** convertir progresivamente expertconsulting.es en plataforma pública de conocimiento, decisiones informadas, trámites y servicios. **No crear un segundo plan maestro**: este anexo es la única fuente rectora; documentos antiguos son fuentes subordinadas, no nuevos roadmaps. La congelación E0–E6 continúa vigente; las ideas posteriores al gate se documentan sin activar funciones ajenas a E0.
+
+### Modelo único de experiencia y contenido
+
+- **Enlace canónico único por intención principal**, compartible por correo y por KIA: una página pilar EXPERT que resuelve y permite elegir sin registro obligatorio.
+- **Jerarquía editorial:** `servicio/ficha` ↔ `página pilar` ↔ `guías /docs` ↔ `artículos /blog` ↔ `herramientas` ↔ `fuente oficial`. Evitar páginas redundantes, duplicación SEO y CTA que dirigen a una opción de pago cuando el usuario ha pedido autogestión.
+- **Cuatro caminos claros:** aprender gratuitamente; realizar el trámite personalmente con el organismo oficial y guía EXPERT; recibir formación guiada; encargar la gestión profesional. Mostrar precios externos, disponibilidad, alcance y límites con transparencia.
+- **Complementarios opcionales:** certificado digital, Holded y suscripciones EXPERT ACTIVAS, sin imponerlos como requisito de acceso a información. No reactivar/retirar catálogo por decisiones del canal Meta.
+- **Componentes de página:** introducción accesible, elección de modalidad, requisitos, pasos, checklist, recursos oficiales, artículos relacionados, preguntas frecuentes, costes/tasas frente a honorarios, actualización de normativa y fuente, KIA contextual y CTA neutro. Evitar prometer trámites completos sin intervención notarial o autorizaciones.
+- **Localización ES/RU:** revisión jurídico-lingüística, enlaces pertinentes, hreflang solo para páginas existentes equivalentes, fecha/fuente por idioma; no activar traducción indiscriminada que altere contenido legal.
+- **Métricas útiles y privacidad:** navegación anónima sin perfil obligatorio, medición agregada con control de consentimiento, datos de simuladores locales por defecto, origen de lead solo tras acción voluntaria, conservación y RLS definidas.
+- **Gobernanza editorial:** responsable, norma/fuente URL, fecha de publicación, fecha de comprobación, periodo de eficacia, próxima revisión, estado `borrador/revisión/aprobado/publicado/obsoleto`, trazabilidad a PR y test; la vigilancia regulatoria existente debe disparar propuesta de revisión, nunca autopublicación jurídica.
+
+### Unificación KIA: una sola fuente coherente
+
+- KIA responde directamente a la duda y ofrece un recurso de EXPERT; cuando piden un único enlace, devuelve la página pilar en lugar de una lista de organismos. Si el usuario quiere fuente oficial, debe darla.
+- **CIRCE/SL:** verificar DUE y alcance de altas AEAT/TGSS integradas, firma electrónica requerida, escritura notarial, costes de terceros, diferencias IRPF/IS, dividendos/cotizaciones, sin umbral fiscal arbitrario ni recomendación determinista.
+- **RGPD:** herramientas AEPD como ayuda y no certificación; riesgos de plataformas, datos especiales, cookies, RAT, proveedores, minimización y posibles EIPD; misma lógica de guías gratuitas/formación/servicio, sin presentar auditoría como efectuada.
+- **Rutas de KIA:** usar los prompts curados `kia-pae-knowledge.ts` y `kia-rgpd-knowledge.ts` para el chat público cuando detecte pregunta o página pertinente. En las demás interfaces utilizar el orquestador existente, con pruebas de paridad sin un modelo paralelo.
+- **RAG y recuperación:** `search_knowledge_resources` es mecanismo a validar antes de afirmar cobertura real de nuevos artículos; verificar indexación y evidencias del documento que KIA cita, aislamiento de permisos, fechas y respuesta en ES/RU.
+- **Protocolo de precisión:** respuesta → fuente/fecha → lo que incluye y no incluye → siguientes pasos → autogestión / formación / servicio a elección. No inventar accesos, sesiones, precios o estado de publicación. Si norma o documento incierto, abstenerse de conclusión categórica.
+
+### Programa priorizado de contenidos (sin saltar gates E0–E6)
+
+1. **Lote CIRCE/SL y RGPD:** PR #803, páginas y artículos ya preparados, corregir históricos, 12 FAQ en fichas, enlaces a manuales, prueba del chat público CIRCE/RGPD en rama; cierre jurídico y de seguridad antes de aprobar publicación.
+2. **Autónomos y certificados digitales:** reutilizar servicios actuales y construir páginas únicas análogas a CIRCE tras autorización y QA.
+3. **Declaraciones e impuestos, IRNR/IRPF/IS:** guías gratuitas por trámite, calendario fiscal y simuladores explicables; separar cálculos deterministas de IA.
+4. **Notaría y registros, trámites GVA/Ayuntamientos/Tráfico, laborales:** rutas con autorizaciones, representación y formularios oficiales, según prioridades y riesgos.
+5. **Herramientas:** simulador autónomo vs SL documentado anteriormente; no afirmar que está operativo hasta completar parámetros verificables, tests de cálculo, privacidad y QA humano.
+6. **Formación y conversión:** conectar Academy, Holded y planes por CTA voluntario; preservar oferta vigente, contratos, facturación, control de permisos y asesoramiento según caso.
+
+### Gate del lote #803 y estado exacto
+
+Cambios de contenidos + integración CIRCE en chat público y suite de tests quedan EN BORRADOR. Estado sólo se eleva si se comprueban TypeScript, lint, build, tests, pruebas KIA RGPD/CIRCE, validación de páginas en dispositivos, CI y ambas previews Vercel **del último SHA**, legalidad del contenido, URLs, SEO, aprobación de Dirección y ausencia de conflicto con E0. Este anexo no permite autopublicar nuevos servicios ni alterar Stripe/Supabase/RLS/consentimientos. Merge ≠ activación. No usar el checklist anterior para afirmar que KIA ya responde con precisión de extremo a extremo.

@@ -1,4 +1,5 @@
 import type { CategorySlug } from './catalog';
+import { circeKnowledgeDocs } from '@/lib/content/circe-autogestion';
 import { getGeneratedBatch1KnowledgeDocs } from '@/lib/services/service-generated-content';
 import { proteccionDatosKnowledgeDocs } from '@/lib/content/proteccion-datos-docs';
 import { rgpdAepdTrainingDocs } from '@/lib/content/rgpd-aepd-training-docs';
@@ -55,6 +56,7 @@ Consulta la guía completa en esta misma URL. Incluye la diferencia entre repres
     `
   },
   ...getGeneratedBatch1KnowledgeDocs(),
+  ...circeKnowledgeDocs,
   ...proteccionDatosKnowledgeDocs,
   ...rgpdAepdTrainingDocs,
   ...fiscal2026KnowledgeDocs,

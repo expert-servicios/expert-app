@@ -131,7 +131,9 @@ export default async function ServicioDetallePage({
   const encodedServiceOrigin = encodeURIComponent(serviceOrigin);
   const budgetHref = `/solicitar-presupuesto?servicio=${encodedServiceSlug}&origen=${encodedServiceOrigin}`;
   const complexBudgetHref = `${budgetHref}&tipo=caso-complejo`;
-  const selfGuidedHref = `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&origen=${encodedServiceOrigin}`;
+  const selfGuidedHref = (service.slug === 'constitucion-sl' || service.slug === 'constitucion-sl-circe')
+    ? '/herramientas/crear-sociedad-limitada'
+    : `/solicitar-presupuesto?servicio=formacion-one-to-one-2h&origen=${encodedServiceOrigin}`;
   const offerPrice = service.stripePriceId
     ? service.price?.match(/(\d+[.,]\d{2}|\d+)/)?.[1]?.replace(',', '.')
     : undefined;
@@ -574,6 +576,18 @@ export default async function ServicioDetallePage({
                 </div>
               </div>
             </section>
+            )}
+
+            {(service.slug === 'constitucion-sl' || service.slug === 'constitucion-sl-circe') && (
+              <section className="border border-[#D4A017]/30 bg-white p-6">
+                <h2 className="font-serif text-2xl font-bold">Todas las opciones para crear tu SL</h2>
+                <p className="mt-3 text-sm leading-7">Puedes informarte gratuitamente y presentar el DUE por tu cuenta. También puedes elegir formación individual o encargar la gestión completa, sin obligación de contratar para consultar nuestros recursos.</p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                  <Link href="/herramientas/crear-sociedad-limitada" className="border border-[#D4A017]/40 p-4 text-sm font-semibold hover:bg-[#F8F6F1]">Guía gratuita CIRCE →</Link>
+                  <Link href="/docs/constituir-sl-circe-pae-virtual" className="border border-[#D4A017]/40 p-4 text-sm font-semibold hover:bg-[#F8F6F1]">Manual paso a paso →</Link>
+                  <Link href="/blog/autonomo-vs-sociedad-limitada-impuestos-costes-2026" className="border border-[#D4A017]/40 p-4 text-sm font-semibold hover:bg-[#F8F6F1]">Comparar autónomo y SL →</Link>
+                </div>
+              </section>
             )}
 
             {relatedArticles.length > 0 && (

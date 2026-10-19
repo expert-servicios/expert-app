@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { KIA_RGPD_KNOWLEDGE_PROMPT, isRgpdKiaTopic } from '@/lib/ai/kia/prompts/kia-rgpd-knowledge';
+import { KIA_PAE_KNOWLEDGE_PROMPT, isCirceKiaTopic } from '@/lib/ai/kia/prompts/kia-pae-knowledge';
 import { runKiaProviderRequest } from '@/lib/ai/kia/kia-provider-router';
 import { checkKiaMessageRateLimit } from '@/lib/ai/kia/kia-rate-limit';
 import { safeErrorMessage } from '@/lib/ai/kia/kia-redaction';
@@ -217,9 +218,11 @@ export async function POST(request: NextRequest) {
       { role: 'user' as const, content: currentContent },
     ];
 
+    const circeContext = isCirceKiaTopic(parsed.data.message, parsed.data.currentPage ?? '');
+    const rgpdContext = isRgpdKiaTopic(parsed.data.message, parsed.data.currentPage ?? '');
     const providerResult = await runKiaProviderRequest({
       taskType: 'chat_reply',
-      systemPrompt: [publicSystemPrompt(publicLocale), isRgpdKiaTopic(parsed.data.message, parsed.data.currentPage ?? '') ? KIA_RGPD_KNOWLEDGE_PROMPT : ''].filter(Boolean).join('\n\n'),
+      systemPrompt: [publicSystemPrompt(publicLocale), circeContext ? KIA_PAE_KNOWLEDGE_PROMPT : '', rgpdContext ? KIA_RGPD_KNOWLEDGE_PROMPT : ''].filter(Boolean).join('\n\n'),
       messages,
       effort: 'low',
       maxTokens: 700,
