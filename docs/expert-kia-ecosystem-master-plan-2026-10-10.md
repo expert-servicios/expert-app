@@ -1748,7 +1748,7 @@ Los tres documentos de referencia han de mostrar de inmediato que no son planes 
 
 ## ACTA L4 — Integridad transversal WEB-P × WORKSPACE × KIA-A (19/10/2026)
 
-**Naturaleza:** conciliación documental adicional sobre \`main\`, posterior a L1 (#801), conciliación de las tres vías (#809), L2 (#810) y L3 (#812), todas ya fusionadas. Único Plan Maestro: este archivo. Las especificaciones, evidencias y runbooks siguen subordinados; no crear nuevos planes rectores. **Sin cambios en código, permisos, datos, proveedores, pagos o despliegue.**
+**Naturaleza:** conciliación documental adicional sobre `main`, posterior a L1 (#801), conciliación de las tres vías (#809), L2 (#810) y L3 (#812), todas ya fusionadas. Único Plan Maestro: este archivo. Las especificaciones, evidencias y runbooks siguen subordinados; no crear nuevos planes rectores. **Sin cambios en código, permisos, datos, proveedores, pagos o despliegue.**
 
 **Fotografía GitHub comprobada:** 24 PR abiertas al comienzo de esta revisión; #813 es el borrador nuevo de mitigación E0. Las fotografías de 26 PR / 28 issues de C1-C4 son históricas y NO se deben usar como conteos actuales. Releer PR/issues cada vez que se planifique una fusión. **Fase activa E0, checkpoint E0-M3-06**, con E1-E6 bloqueadas, freeze intacto y V3 solo capturada; no existe acta de cierre E0.
 
@@ -1756,22 +1756,22 @@ Los tres documentos de referencia han de mostrar de inmediato que no son planes 
 
 - El §0 prevalece: ninguna línea paralela puede **implementar, fusionar o desplegar código funcional** de E1-E6 fuera de su gate, ampliar alcance, cambiar checkout, esquema de identidad, integraciones o permisos. La expresión histórica WEB-P «prepara y ejecuta independientemente» significa aquí **investigación, inventario, redacción, prototipos aislados, especificaciones, revisión y PR draft**, pero NO publicación ni fusión de runtime antes de autorización y fase habilitada. Una excepción funcional futura necesita acta expresa en este Maestro, alcance, riesgo y QA; no se presupone por abrir la PR.
 - WEB-P, WORKSPACE y KIA-A son **tres propietarios de diseño**, no calendarios de ejecución simultáneos. Solo **E0-M3-06** puede consumir trabajo correctivo actual, además del gobierno documental y mitigaciones de mantenimiento P0/P1 demostradas que no alteren la fase.
-- Los anexos antiguos de #802/#804/#808 contienen instrucciones de conciliación ya superadas por la fusión de #809. No reabrir esas PR ni aplicar sus ramas sobre \`main\`. La bitácora cronológica preserva lo sucedido y esta acta corrige el estado vigente.
+- Los anexos antiguos de #802/#804/#808 contienen instrucciones de conciliación ya superadas por la fusión de #809. No reabrir esas PR ni aplicar sus ramas sobre `main`. La bitácora cronológica preserva lo sucedido y esta acta corrige el estado vigente.
 
 ### L4.2 Interfaces obligatorias y ownership de las tres vías
 
 | Contrato | Sistema de verdad / dueño | Consumidor | Integridad y aceptación mínima |
 | --- | --- | --- | --- |
 | A. Catálogo/URL/guía/FAQ/fuente/idioma/versiones | WEB-P, contenidos revisados; normativa oficial versionada | KIA-A y WORKSPACE | URL canónica ES/RU solo si traducción real; fuente fechada; servicio opcional no se confunde con trámite oficial; no publicar cobertura ficticia |
-| B. Entrada pública en KIA | WEB-P controla widget/CTA y copy; KIA-A controla decisión y herramientas públicas | KIA-A, futuro CRM | \`sourcePage/contentId/locale\` sin PII ni privilegios, reCAPTCHA/rate limit; cookie o email sin prueba NO crea cliente ni expediente |
-| C. Identidad y selección del sujeto | WORKSPACE/Auth/relación empresa/tenant; validación de servidor y RLS | KIA-A y soporte | \`actorId, role, tenantId, subjectType, subjectId, companyId, caseId, mode\` contrastados; ausencia de empresa/expediente NO habilita inferencia; usuario multiempresa debe seleccionar alcance |
+| B. Entrada pública en KIA | WEB-P controla widget/CTA y copy; KIA-A controla decisión y herramientas públicas | KIA-A, futuro CRM | `sourcePage/contentId/locale` sin PII ni privilegios, reCAPTCHA/rate limit; cookie o email sin prueba NO crea cliente ni expediente |
+| C. Identidad y selección del sujeto | WORKSPACE/Auth/relación empresa/tenant; validación de servidor y RLS | KIA-A y soporte | `actorId, role, tenantId, subjectType, subjectId, companyId, caseId, mode` contrastados; ausencia de empresa/expediente NO habilita inferencia; usuario multiempresa debe seleccionar alcance |
 | D. Modo soporte delegado | WORKSPACE, actor original y mandato/capabilities efectivos | KIA-A e integraciones | Reutiliza panel real del cliente sin suplantar JWT; cliente no ve controles de staff; acciones sensibles con preview, aprobación, idempotencia y readback |
-| E. Decisión/respuesta/acción KIA | KIA-A orquestador único + skills + política por riesgo/canal | WEB-P y WORKSPACE | \`text, citations, sourceVersion, language, proposedActions, requiresReview, artifact\`; presentación diferenciada, no lógica ni tool paralela; no afirmar envío/escritura sin resultado |
+| E. Decisión/respuesta/acción KIA | KIA-A orquestador único + skills + política por riesgo/canal | WEB-P y WORKSPACE | `text, citations, sourceVersion, language, proposedActions, requiresReview, artifact`; presentación diferenciada, no lógica ni tool paralela; no afirmar envío/escritura sin resultado |
 | F. Hoja registral e historial | WORKSPACE E3, ledger por sujeto + eventos fuente/fecha/actor | KIA-A y operaciones E5 | Una identidad/empresa verificada; snapshot no sustituye la fuente viva; aislamiento, consentimiento, minimización, retención y auditoría |
-| G. Correos, Telegram, Google Meet/Calendar y documentos | Integraciones E5 + KIA-A, bajo autorización del actor | WORKSPACE/Admin, eventualmente web | Canal externo no equivale a sesión web; continuidad hilo-caso/tarea basada en evidencia, recepción y entrega probadas; Meet \`notes_ready\` deduplicado (#776) |
+| G. Correos, Telegram, Google Meet/Calendar y documentos | Integraciones E5 + KIA-A, bajo autorización del actor | WORKSPACE/Admin, eventualmente web | Canal externo no equivale a sesión web; continuidad hilo-caso/tarea basada en evidencia, recepción y entrega probadas; Meet `notes_ready` deduplicado (#776) |
 | H. Seguridad, costes y CI | E0 seguridad transversal; E6 gobernanza económica | Las tres | Tests negativos por rol/tenant/company/case, revocación exact-active, revisión independiente y 2 previews por HEAD; presupuestos IA sin autopermisos |
 
-**Contrato de evento común (documental, no API existente):** \`eventId\` idempotente, \`correlationId\`, \`actorId\` o visitante anónimo, \`verifiedSubjectId\` opcional, \`companyId\` y \`caseId\` opcionales solo si autorizados, \`channel\`, \`intent\`, \`sourceRef\`, \`locale\`, \`occurredAt\`, \`consentScope\`, \`riskTier\`, \`status\`, \`evidenceRef\`. No crear tablas ni transportar contenido sensible para cumplir esta especificación sin diseño y autorización de su fase.
+**Contrato de evento común (documental, no API existente):** `eventId` idempotente, `correlationId`, `actorId` o visitante anónimo, `verifiedSubjectId` opcional, `companyId` y `caseId` opcionales solo si autorizados, `channel`, `intent`, `sourceRef`, `locale`, `occurredAt`, `consentScope`, `riskTier`, `status`, `evidenceRef`. No crear tablas ni transportar contenido sensible para cumplir esta especificación sin diseño y autorización de su fase.
 
 ### L4.3 Matriz de divergencias y decisiones registradas
 
@@ -1781,10 +1781,10 @@ Los tres documentos de referencia han de mostrar de inmediato que no son planes 
 | L4-02 | Referencias antiguas #802/#804/#808 como ramas por conciliar | #809 contiene la integración ya fusionada; L2 #810 y L3 #812 también integradas, no volver a fusionar ni duplicar Plan Maestro | Resuelta |
 | L4-03 | Interfaz Admin/Cliente «la misma» puede interpretarse como suplantación o acceso a otro tenant | Una UI reutilizada, **dos permisos efectivos**; soporte delegado con actor real y scope explícito; certificación E2 pendiente | Contrato definido, no implementado |
 | L4-04 | KIA-A enumera siete perfiles y ocho skills pero su cobertura práctica no está acreditada | Reutilizar router/registry actuales, validar tool por actor/canal/empresa/riesgo; no crear un octavo subagente por contar ocho skills | Definición documentada, QA E4 pendiente |
-| L4-05 | Alcance de altas/gestión de usuarios no cerrado en E0 | #813 DRAFT: exact-active + sesión vinculada, CI y ambas previews verdes sobre SHA \`61eb025c7e60247247b45b4a20e01a2f0f1d8ac4\`; falta jerarquía, usuario-objeto/tenant, borrado Auth, concurrencia y pruebas adversariales; **NO fusionar** ni cambiar checkpoint | Bloqueo E0 P1 |
-| L4-06 | Prueba AI Gateway se confunde con llamada exitosa a proveedor | #793 con CI/previews verdes pero revisión pendiente; #794 job preflight correcto y petición sintética externa \`skipped\`, no acreditar OpenAI/Gemini operativos por ello | QA incompleta |
+| L4-05 | Alcance de altas/gestión de usuarios no cerrado en E0 | #813 DRAFT: exact-active + sesión vinculada, CI y ambas previews verdes sobre SHA `61eb025c7e60247247b45b4a20e01a2f0f1d8ac4`; falta jerarquía, usuario-objeto/tenant, borrado Auth, concurrencia y pruebas adversariales; **NO fusionar** ni cambiar checkpoint | Bloqueo E0 P1 |
+| L4-06 | Prueba AI Gateway se confunde con llamada exitosa a proveedor | #793 con CI/previews verdes pero revisión pendiente; #794 job preflight correcto y petición sintética externa `skipped`, no acreditar OpenAI/Gemini operativos por ello | QA incompleta |
 | L4-07 | Flujo de captación pública puede confundir visita/cookie/email con identidad o CRM | Consentimiento de finalidad y verificación, relación lead→usuario→empresa separada; KIA no adivina expediente; #778/#780/#782 bajo QA RGPD | Bloqueada por gate |
-| L4-08 | Traducciones RU amplias se presentan como páginas equivalentes | #805 distingue \`broader-hub\` de páginas temáticas; QA editorial ES/RU, hreflang, canonical, sitemap y rutas antes de publicar | QA WEB-P pendiente |
+| L4-08 | Traducciones RU amplias se presentan como páginas equivalentes | #805 distingue `broader-hub` de páginas temáticas; QA editorial ES/RU, hreflang, canonical, sitemap y rutas antes de publicar | QA WEB-P pendiente |
 | L4-09 | CORREO/Meet/Telegram vs KIA única e historial | #654 coordina Inbox, #134 integra Telegram, #776 agrupa notas Meet; Outlook/no-recepción y seguimiento real no se presumen por KIA-A o página de contacto | Integración E5 pendiente |
 | L4-10 | Catálogo puntual, formación, planes y suscripciones han tenido decisiones comerciales fechadas que parecen contradictorias | **No inferir catálogo contratado a partir de documentos antiguos**: comparar web/código/Stripe y aprobación comercial vigente antes de cambiar páginas o precios; contratos existentes no se cancelan por diseño | Decisión comercial de publicación pendiente |
 | L4-11 | Lectura de metadatos documentales confundida con inspección de PDF/Word o fuente oficial | #785/#786: validar descarga autorizada, contenido real, hash, página, versión, fuente y generación de artefacto, con abstención ante acceso fallido | QA y capacidades pendientes |
@@ -1792,15 +1792,15 @@ Los tres documentos de referencia han de mostrar de inmediato que no son planes 
 
 ### L4.4 Aceptación de integridad antes de un merge futuro
 
-1. **Dependencias:** todo PR funcional incluye programa \`WEB-P|WORKSPACE|KIA-A\`, fase E0-E6, propietario, contratos que consume, riesgo, datos que toca y permiso expreso si cruza superficies. PRs apiladas se integran en orden y se repiten tests en SHA final.
+1. **Dependencias:** todo PR funcional incluye programa `WEB-P|WORKSPACE|KIA-A`, fase E0-E6, propietario, contratos que consume, riesgo, datos que toca y permiso expreso si cruza superficies. PRs apiladas se integran en orden y se repiten tests en SHA final.
 2. **Identidad y privacidad:** pruebas negativas anónimo/lead/cliente/admin/tenant_admin/revocado y multiempresa; sin identificación por email o cookie, sin fuga PII, sin autopublicación ni envío al margen de la herramienta.
 3. **Fuentes/idiomas/SEO:** fuente oficial vigente, versión y localización; traducciones reales ES/RU, enlaces/canonicals, accesibilidad móvil/teclado y no duplicación editorial.
 4. **Operación:** integración KIA y documentos con readback de entrega/escritura, auditable e idempotente; sin prometer capacidad por un prompt o pantalla.
-5. **Release:** CI typecheck/lint/build/test/evals/SQL aplicables + Vercel \`app\` y \`ksenia-expert\` en último HEAD, revisión de seguridad y aprobación, sin P0/P1; acta posterior a merge sobre \`main\` y check de checkpoint. Merge documental ≠ finalización de E0 o funcionalidad publicada.
+5. **Release:** CI typecheck/lint/build/test/evals/SQL aplicables + Vercel `app` y `ksenia-expert` en último HEAD, revisión de seguridad y aprobación, sin P0/P1; acta posterior a merge sobre `main` y check de checkpoint. Merge documental ≠ finalización de E0 o funcionalidad publicada.
 
 ### L4.5 Salida autorizada de esta acta y siguiente trabajo
 
-- **Esta acta es solo documentación**: se puede fusionar separadamente de #813 para que quede en \`main\` la matriz de dependencias, riesgos y autoridad. No fusionar el código inseguro para «fusionar el plan».
+- **Esta acta es solo documentación**: se puede fusionar separadamente de #813 para que quede en `main` la matriz de dependencias, riesgos y autoridad. No fusionar el código inseguro para «fusionar el plan».
 - **Siguiente tarea de ejecución:** resolver #813 y E0-M3-06 con guardia de actor activo, autorización por usuario objeto/tenant, jerarquía de roles, borrado seguro y pruebas de concurrencia; revisar rutas hermanas de Admin usuarios/empresas. Mantener E1-E6 y V3 bloqueados.
-- **Control de integridad posterior a la fusión documental:** leer el último HEAD de \`main\` y confirmar este anexo, la cabecera de checkpoint intacta, no pérdida de L1-L3 ni de los anexos WEB-P, WORKSPACE y KIA-A, y la clasificación de PR funcionales como pendientes.
+- **Control de integridad posterior a la fusión documental:** leer el último HEAD de `main` y confirmar este anexo, la cabecera de checkpoint intacta, no pérdida de L1-L3 ni de los anexos WEB-P, WORKSPACE y KIA-A, y la clasificación de PR funcionales como pendientes.
 
