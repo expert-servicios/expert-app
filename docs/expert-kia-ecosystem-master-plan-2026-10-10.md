@@ -1474,3 +1474,233 @@ La presentación se decide mediante **dos ejes independientes**:
 | WEB-P2.G-06 | Plan E2E y medición de calidad | 0 cruces de perfiles/tenants, sin revelar nombres anónimos, origen trazable, rollback, CI/previews |
 
 **Estado:** DISEÑO DOCUMENTADO / ejecución no autorizada. PR #804 permanece en borrador y solo debe contener la propuesta de WEB-P. Los componentes, APIs, base de datos, automatizaciones, textos publicados, flags, email real, Telegram, derechos de acceso y pagos quedan intactos. Cualquier desarrollo futuro requiere PR acotado, autorización de alcance, revisión jurídica/privacidad/idiomas/SEO, validación CI y previews, y gates del Plan Maestro E0-E6.
+
+
+## Acta de conciliación documental R1 — Admin V2, KIA 2.0 y V3 (18/10/2026)
+
+**Decisión documental, sin implementación:** el Plan Maestro E0–E6 es la única fuente de prioridad, estado de tareas, autorizaciones y cierre. Los tres documentos examinados se conservan como especificaciones o banco histórico; ninguna de sus secuencias propias reemplaza E0–E6. Esta resolución no acredita que las capacidades estén activas ni aprueba nuevas propuestas.
+
+| Fuente evaluada | Resolución | Requisitos a conservar en el único Plan Maestro | Estado de ejecución |
+| --- | --- | --- | --- |
+| `docs/expert-admin-v2-plan-maestro-2026-10-09.md` | **INTEGRAR como especificación subordinada de E2/E3**; dejar sin efecto su autoridad de «plan maestro» y la propuesta de iniciar su «fase 0» independiente. | Un solo Workspace visual con rutas, actores, autorizaciones y flags separados Admin/Cliente; soporte delegado sin suplantación; Contactos/Inbox 360; adquisición `first_touch` y `last_touch` separadas de OAuth; datos Holded por empresa/integración/período; RLS, revocación y pruebas negativas; instrucciones registrales en E3. | **E2 y E3 bloqueadas**, se conserva detalle técnico como referencia. |
+| `docs/kia-2-strategy.md` | **INTEGRAR como contrato técnico de seguridad E0/E4/E5**, no como estrategia canónica paralela. | Una KIA y una jerarquía de permisos R0–R5; `permissions_enabled` y actor exact-active por encima de permisos detectados; aislamiento empresa/expediente; acciones preview→aprobación→ejecución→readback; trazas, fuente, fallback y presupuesto IA. | Solo la auditoría de seguridad dentro de E0 puede continuar; **E4/E5 bloqueadas**. |
+| `docs/expert-kia-v3-ideas-and-validation-backlog-2026-10-10.md` | **INCORPORAR la rama V3 como banco de ideas, NO como segundo backlog activo**. Mantener los 24 IDs V3-01…V3-24 y su descripción detallada en referencia histórica. | Ideas avanzadas, entre ellas archivo multiarchivo V3-23 y simulador laboral/nóminas V3-24. No confundir funciones básicas E5 con evoluciones V3, ni diagnóstico informativo H3 con nóminas. | Todas **capturadas y no aprobadas**; ningún desarrollo antes del cierre E6 y aprobación nueva. |
+
+**Contradicciones resueltas por precedencia:** (1) «listo para iniciar fase 0» en Admin V2 y «primera implementación aprobada» no permiten saltar la fase E0 del Maestro; (2) el calificativo «estrategia canónica» de KIA 2.0 deja de determinar prioridades; (3) la propuesta V3 de mantener un documento de captura separado ya no constituye un circuito decisorio independiente. Cuando se editen documentos secundarios, sustituir esos encabezados por avisos de precedencia sin alterar hechos históricos.
+
+**Verificación:** las cifras, estados «implementado», integraciones, créditos, herramientas y proveedores descritos en esas versiones de octubre **no se consideran vigentes por inferencia**. Confirmar código/CI, permisos, expediente, fuente oficial y readback antes de pasar una propuesta a ejecución.
+
+**Privacidad:** no replicar nombres, correos, identificadores o datos de casos históricos contenidos en especificaciones anteriores. Los ejemplos de QA deben ser sintéticos o mantenerse en expedientes autorizados, no en documentación pública del Maestro.
+
+**Siguiente bloque:** reconciliar los issues #775/#776 (reuniones), #654/#134 (Inbox/Telegram) y #778/#780/#770 (RGPD). No cerrar issues, PR funcionales ni cambiar prioridades de E0 antes de comparar requisitos y evidencias.
+
+**Checkpoint inalterado:** `E0-M3-06-admin-users-tenant-object-scope-audit`; E0 `IN_PROGRESS`, E1–E6 y V3 bloqueadas.
+
+
+## ANEXO KIA-A — Tercera línea coordinada de arquitectura KIA y subagentes (19/10/2026)
+
+**Mandato de Dirección 19/10/2026 — solo documentación, SIN implementación.** Organizar la transformación integral EXPERT en **tres vías coordinadas**: (A) WEB-P para la web pública de autogestión, conocimiento y consulta gratuita; (B) WORKSPACE E0–E6 para panel Admin y Cliente, modo soporte delegado y experiencia de usuario; (C) KIA-A para la arquitectura transversal de una sola KIA, subagentes/skills, razonamiento, fuentes, adaptadores, memoria autorizada, revisión y QA. Los tres workstreams son ramas documentales/de revisión separadas, NO tres cerebros ni tres planes maestros. No alterar el checkpoint E0, congelación de alcance, permisos, datos productivos ni habilitar trabajos E4/post-E6 por esta decisión.
+
+### KIA-A.1 Repositorio y coordinación sin planes duplicados
+
+| Línea | Autoridad / rama de referencia | Lo que posee | Lo que NO puede modificar autónomamente |
+| --- | --- | --- | --- |
+| WEB-P | PR #804, 'docs/web-publica-autogestion-paralela-20261019' | Narrativa, rutas públicas, búsqueda, plantillas, CTA/entrada KIA, guía y conocimiento | Motor KIA, permisos, datos de clientes, correo, RLS, checkout |
+| WORKSPACE | Plan E0–E6 de este mismo Maestro en 'main'; los documentos Admin V2 y contrato Workspace×KIA quedan como referencias, no planes rectores | Diseño Admin/Cliente, paneles, visibilidad autorizada, soporte delegado, contexto UI | Prompts globales y herramientas no aprobadas, cron, email exterior, datos ajenos |
+| KIA-A | Rama documental 'docs/kia-architecture-subagents-parallel-20261019' | Router, subagentes/skills, matriz de capacidades, política de IA, recuperación de fuentes, QA, contratos con web y dashboard | Activar agentes nuevos, cambiar IAM/RLS sin gate, ejecutar herramientas externas ni migrar base de datos |
+
+**Único registro canónico:** 'docs/expert-kia-ecosystem-master-plan-2026-10-10.md'. La rama KIA-A mantiene un anexo separado en **este mismo archivo** para revisión; una futura fusión exige reconciliar sobre 'main' el anexo WEB-P de #804 y cualquier avance WORKSPACE. No sobrescribir una rama desde otra, evitar cherry-pick a ciegas y actualizar checkpoint únicamente con evidencia de ejecución real. Referencias existentes: 'docs/kia-2-strategy.md'; 'docs/plans/kia-post-e6-subagents-audit-and-parity-2026-10-17.md' (issue #789); 'docs/kia-unified-core-attachments-document-studio-2026-10-10.md'; 'docs/workspace-v2-kia-copilot-parallel-integration-2026-10-10.md'; 'docs/kia-accounting-agent.md'. PR #707 y #708 cerradas sin fusionar, no ramas de ejecución vigentes.
+
+### KIA-A.2 Principio de orquestación
+
+**ÚNICA KIA VISIBLE:** una interfaz conversacional coherente en web pública, dashboard Cliente, Admin, soporte delegado, email y Telegram; adaptadores de canal sin duplicar el núcleo. Flujo lógico futuro:
+
+'Entrada por canal' → 'Verificación de sesión/identidad/actor y relación' → 'Resolución de contexto y permisos efectivos' → 'Clasificación de intención y sensibilidad' → 'Plan de acción mínimo' → 'Enrutamiento a skill/subagente autorizado' → 'Consulta de datos permitidos y fuentes oficiales' → 'Evaluación/confianza/consentimiento' → 'Respuesta, borrador o propuesta de acción' → 'Confirmación humana cuando proceda' → 'Ejecución idempotente permitida' → 'Readback, auditoría, continuidad y aprendizaje supervisado'.
+
+Sin agente «autónomo» que herede credenciales superiores del Admin por pertenecer al catálogo. Los prompts describen conducta, nunca elevan privilegios ni convierten una tool ausente en herramienta disponible.
+
+### KIA-A.3 Inventario verificado de reutilización y cartera funcional
+
+Lectura de 'lib/ai/kia/kia-sub-agent-router.ts', 'lib/ai/kia/kia-skill-registry.ts' y auditoría documental 17/10/2026: hay **siete perfiles de subagente en el código** ('assistant', 'fiscal', 'immigration', 'holded', 'accounting', 'labor', 'case') y **ocho skills habilitadas en el registro de código**, incluida 'operations.next_best_action' sin perfil propio. Esto no constituye prueba de ejecución satisfactoria ni de que funcionen plenamente en producción.
+
+| Unidad actual/propuesta | Objetivo y lugar de uso | Prioridad de revisión / límite |
+| --- | --- | --- |
+| 'assistant' — Comunicación y agenda | Emails, bandeja unificada, citas, cambios de tareas, correspondencia y seguimiento para Admin/Cliente | Continuidad de hilo, idempotencia, identidad y correo saliente condicionado |
+| 'fiscal' — Fiscal y normativa | Guías públicas gratuitas, IRPF/IVA/IS, tributos, interpretación documental autorizada | Recuperación normativa y vigencia reales: la skill fiscal actual no declara 'regulatory'/'knowledge' |
+| 'immigration' — Extranjería | Recursos públicos, normativa de residencia/nacionalidad y expedientes privados | Garantía de fuentes, fecha, documentos mínimos; no revelar situaciones sensibles |
+| 'holded' — Integración ERP | Conexión, readiness, permisos, migración, diagnóstico técnico | No confundir con operaciones contables ni conceder escrituras |
+| 'accounting' — Controller contable | Facturas, cobros, pagos, conciliación, anomalías, cierre y reportes | Holded por compañía; borradores/escrituras sujetos a aprobación y readback |
+| 'labor' — Laboral y Seguridad Social | Convenios, contratos, nóminas, altas, cotizaciones, guía y diagnóstico | Fuentes oficiales/tablas temporales; skill actual centrada en lectura 'holded_hr_read' |
+| 'case' — Expedientes/documentos | Checklist, documentos, estado de solicitudes y trámites, seguimiento | No equivaler metadatos de ficheros con lectura íntegra o facultad para presentar |
+| 'operations.next_best_action' — Skill transversal | Propone qué hacer a continuación sin actuar | No contar como octavo subagente |
+| Mercantil/constitución SL/notaría/registros (propuesta) | Páginas pilar CIRCE, obligaciones sociedades, DUE, gestión registral | Analizar reutilización de fiscal + case + fuentes antes de crear agente nuevo |
+| Marketing, contenidos y SEO (propuesta) | Artículos ES/RU, FAQ, bibliotecas, enlaces, oportunidades de publicación y campañas | Human-in-the-loop, origen y revisión legal, sin autopublicación |
+| Comercial y onboarding (propuesta) | Leads, consultas gratuitas, elección de autogestión/formación/servicio | Sin upsell forzado; no confundir lead y cliente, no acceder a expedientes |
+| Dev/QA y agente de desarrollo supervisado (propuesta) | Analizar PRs, tests, planes, propuestas y riesgos de código | No ejecutar cambios, merges ni despliegues sin autorización y gates; posterior a E6 salvo auditoría defensiva ya aprobada |
+| Academy/formación y operaciones de sector (propuesta) | Tutores de contenidos fiscales, laborales, trámites, gestión de inmuebles | Primero skills reutilizables; subagente independiente solo por criterios medibles |
+
+**Criterios para crear un nuevo subagente:** (i) misión separada estable; (ii) conjunto de herramientas y permisos específicos que difiere de otros; (iii) evidencias medibles de necesidad, calidad/coste/seguridad; (iv) propietario de QA y fuentes; (v) matriz de no solapamiento. Si falla alguno, proponer skill, plantilla o herramienta del orquestador común en lugar de nuevo perfil.
+
+### KIA-A.4 Contratos con WEB-P y WORKSPACE
+
+**WEB-P → KIA-A:** entrada pública anónima, pregunta libre, fuente de la guía/tema, idioma, herramientas de consulta R0 autorizadas, orientación gratuita y fuentes oficiales, con límites antiabuso y preservación de privacidad. La web no invoca directamente tools privadas; no crea historial CRM a partir de una cookie. CTA «Pregunta gratis a KIA» debe abrir el mismo widget público; email de formulario no debe presentarse como contestado automáticamente si no lo está.
+
+**WORKSPACE → KIA-A:** identidad de actor autenticado, rol/tenant, empresa seleccionada y autorizada, contexto de la pantalla, expediente explícitamente abierto, perfil y preferencias verificadas. KIA propone y ejecuta según riesgo; el modo Admin soporte conserva actor real y alcance delegado, nunca suplanta al cliente. El mensaje inicial puede dirigirse al nombre de pila verificado en ES/RU, pero no presupone razón de visita o expediente. Cliente multiempresa exige selector antes de divulgar detalles.
+
+**KIA-A → ambas:** contratos comunes de respuesta estructurada (texto natural, fuentes, versión normativa, confidence razonada, acciones sugeridas, requiere revisión, tipo de artefacto) y eventos de telemetría sin datos personales. La capa de presentación elige tarjeta web, chat, panel lateral, email, checklist, enlace oficial o documento según canal, sin dos lógicas de decisión contradictorias.
+
+**Email/Telegram:** el canal de entrada no equivale a login web; verificación/continuidad explícita. Autorespuesta por email solo tras autorización de política, contenido acotado y QA; firma/órdenes/pagos/AEAT/TGSS/Holded se tratan como herramientas de riesgo con confirmación real. Nada de envíos sin evidencia de entrega.
+
+### KIA-A.5 Matriz de capacidades por identidad, canal, riesgo y subagente
+
+- **Público anónimo:** respuesta informativa general, conocimiento público y enlaces oficiales; sin leads privados, empresas, expedientes, documentos ni herramientas de escritura.
+- **Registrado sin relación de cliente:** saludo por nombre de sesión validada y guía/consulta gratuita; no se supone empresa o expediente.
+- **Lead vinculado mediante prueba suficiente:** referencia a solicitud previa solo dentro de hilo/sesión autorizado, sin elevar privilegios por coincidencia de email o nombre.
+- **Cliente autenticado:** lectura de sus datos **únicamente** con RLS/tenant/company/case scope y fines permitidos. Riesgo creciente para escritura, envío, presentación, firma y borrado; aprobación específica, auditoría y readback.
+- **Admin/empleado:** tools internas limitadas por rol y autorización de operaciones; soporte delegado registra identidad del operador, consentimiento/mandato y empresa.
+- **Especialistas:** capacidades efectivas resultan de la intersección 'actor × canal × empresa/expediente × skill × herramienta × riesgo'; si la intersección es vacía, explicar limitación o escalar, no forzar la herramienta.
+
+**Fuente y QA:** corpus regulatorio oficial con organismo, norma/artículo, versión, vigencia, ámbito autonómico/municipal y fecha de comprobación; citar origen. Distinguir resumen de metadata y lectura exhaustiva de documento; no afirmar cumplimiento, impuestos exactos, trámites completados o documentos procesados sin evidencia.
+
+### KIA-A.6 Tres vías, un protocolo de integración y revisión
+
+| Dependencia | Dueño de la definición | Revisión cruzada obligatoria |
+| --- | --- | --- |
+| Header, navegación, contenidos, CTA público | WEB-P | KIA-A valida trigger del chat, payload noPII, acceso anónimo y fuentes |
+| Saludos y comportamiento por tipo de usuario | KIA-A | WEB-P y WORKSPACE validan diseño/copy/idiomas, Supabase/Auth controla identidad |
+| Layout Admin/Cliente, dock KIA, selector empresa | WORKSPACE | KIA-A revisa contexto y privilegios; WEB-P no toca datos privados |
+| CRM, ciclo lead → usuario → cliente, historial | WORKSPACE/data y KIA-A como consumidores | Identificación, consentimiento, vinculación trazable, borrado y no exposición |
+| Skills, agentes, herramientas y routing | KIA-A | Políticas E0–E6 y security owner; no bypass de fase |
+| Fuentes/guías y SEO | WEB-P editorial | KIA-A valida retrieval/citas, fecha, error y conocimientos desactualizados |
+| Correo/citas/Telegram y respuestas automáticas | Integraciones E5 + KIA-A | Gate identidad, entregabilidad, antiabuso, revisión humana y auditoría |
+| Evolución contable/ERP Holded | WORKSPACE/E5 + KIA-A accounting | Mandato, operación permitida, preview/confirmación, idempotencia/readback |
+| Agent Dev y QA autónomo | KIA-A como futuro | Seguridad, sandbox, coste, CI, approvals, sin merge automático |
+
+**Cadencia de coordinación documental:** un único registro de decisiones (ADR) y dependencias en este Maestro; cada propuesta indica 'owner', 'estado', 'prerequisito', 'gate E0–E6' y 'prueba de aceptación'. Tres PRs separados pueden documentar simultáneamente; ninguna ejecuta código fuera de su gate. Para integración, una PR de contrato compartido pequeña tras consenso de las tres vías; evitar modificar las mismas líneas por tres ramas.
+
+### KIA-A.7 Backlog documental y secuencia futura bloqueada
+
+| ID | Entregable | Verificación esperada |
+| --- | --- | --- |
+| KIA-A0 | Inventario de perfiles/skills/policies/tools y mapeo con canales | Diagrama + matriz de capacidades real, casos negativos, código vs producción separado |
+| KIA-A1 | Contrato de contexto/identidad (incluye lead, registrado, cliente, multiempresa, delegado) | Sin cruces de personas/empresas, saludos personalizados autorizados ES/RU |
+| KIA-A2 | Modelo de orquestación, selección de especialistas y fallbacks por intención | Tests de routing, skills efectivamente autorizadas, casos de incertidumbre |
+| KIA-A3 | Fuentes, conocimiento, versiones y generación de informes/artefactos | Fuente oficial efectiva, trazabilidad, control de caducidad y documentos |
+| KIA-A4 | Email/chat/Telegram, seguimiento, handoff humano y notificaciones | Idempotencia, continuidad verificada, estado real de respuesta |
+| KIA-A5 | UX KIA grande en web y panel lateral de Workspace | Una KIA visible, saludo adaptado, estados claros y móvil accesible |
+| KIA-A6 | Observabilidad, presupuestos, seguridad, evaluación ES/RU y QA de subagentes | Evaluaciones de regresión, no invención, costes, alertas, RLS, red-team |
+| KIA-A7 | Revisión de candidatos a nuevos subagentes y agent dev | Decisiones basadas en evidencia; no activar nuevas capacidades antes de su gate |
+
+**Gates de ejecución:** (1) primero resolver defectos bloqueantes del E0 activo si realmente pertenecen a su alcance; (2) las mejoras aprobadas que ya aparecen en E4/E5 se ejecutarán solo cuando se abran legalmente esas fases; (3) las expansiones genuinamente post-E6 (nuevos subagentes, agentes de desarrollo, autonomía ampliada) permanecerán propuestas hasta acta E6 y aprobación de Dirección. No fusionar ramas documentales en conflicto sin rebase controlado y CI; no cambiar secretos, servicios, clientes, producción, web, DB ni condiciones comerciales desde KIA-A. Las PRs de documentación no certifican trabajo implementado.
+
+
+
+
+## ACTA DE CONCILIACIÓN Y LIMPIEZA DOCUMENTAL — 19/10/2026
+
+**Decisión y límite:** Una sola fuente de planificación y estado de ejecución: este documento. Las tres vías WEB-P, WORKSPACE E0–E6 y KIA-A son ámbitos coordinados, no tres planes rectores ni autorizaciones de desarrollo simultáneo. Esta auditoría es documental, **no** autoriza implementar, fusionar código funcional, cambiar pagos, tocar datos privados, activar IA, migrar bases ni desplegar. El checkpoint E0 sigue 'IN_PROGRESS', E1–E6 bloqueadas y congelación activa. Este anexo se preparó reconciliando íntegramente los textos de las PR documentales #802, #804 y #808, en una rama independiente que conserva todas sus decisiones previas.
+
+### C1. Alcance, método y fiabilidad del inventario
+
+**Fotografía directa de la API GitHub (19/10/2026):** 'main' tiene 26 PR abiertas y 28 issues abiertas (GET /issues devuelve 54 elementos porque incluye PR), 'docs/' presenta 170 entradas de primer nivel, 'docs/plans/' nueve archivos y 'docs/archive/plans/2026-10-17/' trece archivos archivados. Son cifras de la fotografía y **no** un recuento recursivo completo de archivos del repositorio. La auditoría previa recogida en el Maestro abarcó 213 documentos bajo 'docs/' antes de archivar planes; no transferir ese recuento a otra fecha. Se inspeccionaron listados completos de las 26 PR y 28 issues, diffs relevantes de PR de gobierno, WEB-P, E0, IA, RGPD y seguridad, títulos y contenido seleccionado de issues, y cabeceras/superficies de planificación. No se ejecutó CI ni se hizo una inspección línea por línea de cada archivo recursivo; los candidatos a archivo que carezcan de análisis de referencias quedan **EN REVISIÓN**, no declarados obsoletos definitivamente.
+
+**Limpieza acreditada:** PR #801 fusionada archivó trece planes antiguos en 'docs/archive/plans/2026-10-17' y dejó stubs en rutas originales. Verificados 'docs/roadmap.md', 'docs/master-checklist.md', 'docs/implementation-plan.md', 'docs/admin-improvement-plan.md' y 'docs/kia-implementation-progress.md'. No repetir movimiento ni borrar stubs: protegen enlaces desde README, documentación y commits anteriores.
+
+**Clases canónicas de material:** (i) este Maestro = planificación, dependencias, decisiones y checkpoint; (ii) documentos secundarios de arquitectura / especificaciones / contratos = referencias técnicas subordinadas; (iii) evidencias, QA, ADR, seguridad y runbooks = documentación operativa que se conserva; (iv) históricos = archivo de solo consulta; (v) ideas V3/post-E6 = propuestas no aprobadas, sin cola de ejecución paralela. No equiparar «un solo plan» con «un solo archivo de todo el repositorio».
+
+### C2. Autoridad de las tres vías y conciliación de planes
+
+| Vía / contenido | Fuente y resolución | Dependencia y límite |
+| --- | --- | --- |
+| WEB-P / autogestión, navegación, guías, consulta gratuita, identidad del visitante, ES/RU | Texto completo incorporado de PR #804 (WEB-P0–P6, WEB-P2 y WEB-P2-G); mantener #805 → #806 → #807 como **código borrador apilado**, no publicado | SEO, copy, privacidad, disponibilidad real KIA; no modificar datos privados ni checkout por rediseñar web |
+| WORKSPACE / Admin, Cliente, soporte delegado y gestión multiempresa | E0–E6 en este Maestro. 'docs/expert-admin-v2-plan-maestro-2026-10-09.md' y 'docs/plans/admin-v2-support-and-kia-contract-pr708-consolidated-2026-10-17.md' son especificaciones subordinadas | No iniciar E2 antes del gate E0/E1; conservar actor real y permisos, ledger autorizado y expediente |
+| KIA-A / orquestador, subagentes, skills, fuentes y QA | Texto completo de PR #808 integrado; referencias 'docs/kia-2-strategy.md' y 'docs/plans/kia-post-e6-subagents-audit-and-parity-2026-10-17.md' | Siete perfiles y ocho skills registradas en código, sin presumir operación en producción. Expandir perfiles nuevos solo en fase aprobada |
+| Precedencia Admin V2, KIA 2.0 y banco V3 | Acta R1 de PR #802 incorporada íntegra | V3 es banco de ideas bloqueadas hasta E6 completada y autorización nueva |
+| Antiguas PR documentales #707, #708, #790 | Cerradas **sin fusionar**, pero su material técnico útil se conserva en el árbol main/documentos de referencia ya identificados | No reabrir «plan maestro Admin», «plan KIA 2.0» o «plan V3» por su título antiguo |
+| WEB antigua / precio, créditos, catálogo | 'docs/expert-public-web-workspace-kia-repositioning-plan-2026-10-10.md' y 'docs/expert-web-v2-navigation-knowledge-ai-credit-plans-2026-10-10.md': contexto histórico subordinado | No anunciar créditos IA ni alterar condiciones comerciales/planes vigentes basándose en una propuesta |
+| Nueve archivos bajo 'docs/plans/' | Contratos e investigaciones para CIRCE, RGPD, fiscalidad/CREA-CRECE, laboral, impacto editorial, oportunidades, soporte y subagentes | Mantener como anexos técnicos hasta analizar dependencias; no tratarlos como planes ejecutivos |
+
+**Regla de conflictos:** checkpoint del Maestro + decisiones de Dirección fechadas y alcance del gate > hechos comprobados de código/CI/deploy y normativa vigente > documentos técnicos subordinados > ideas/históricos. Las ramas #802, #804 y #808 modificaban por separado el mismo archivo Maestro partiendo de 'main': se reconcilian **sin elegir una y descartar las otras**, evitando pérdida silenciosa.
+
+### C3. Registro de las 26 PR abiertas y acción de limpieza recomendada
+
+| PR | Programa y estado documental | Salida necesaria |
+| --- | --- | --- |
+| #808 | KIA-A; duplicación documental de edición del Maestro | Requisitos integrados; marcar como sustituida **solo después** de que esta conciliación esté fusionada y verificada |
+| #807 | WEB-P1 hubs; apilada sobre #806 | Mantener borrador hasta gates WEB-P, SEO, enlaces y ES/RU |
+| #806 | WEB-P1 navegación; apilada sobre #805 | Mantener borrador; no publicar shell sin revisión |
+| #805 | WEB-P1 taxonomía; base de pila | Contrato en revisión; no confundir archivo técnico de código con plan rector |
+| #804 | WEB-P; duplicación documental | Requisitos integrados; sustituible después del merge seguro |
+| #803 | WEB-P4 CIRCE/PAE Virtual | Borrador de contenidos; revisión normativa, fuentes oficiales, costes/notaría e indexación |
+| #802 | Precedencia documental | Acta incorporada; sustituible después del merge seguro |
+| #798 | WEB-P3 herramientas gratuitas | Borrador de hub; validar que recursos existan, licencias, costes e idiomas |
+| #794 | E0 prueba sintética AI Gateway; apilada sobre #793 | Validación aislada, sin exponer credenciales ni activar proveedor |
+| #793 | E0 compatibilidad JSON Schema IA | Diagnosticar defecto real y gates de la fase actual |
+| #784 | Comunicación / E0–E5 | Riesgo de notificaciones, requerimientos, filtro spam y privacidad |
+| #782 | RGPD / leads | QA idempotencia y privacidad, no crear fichas duplicadas |
+| #779 | RGPD / formación | Revisión comercial, normativa y traducción antes de publicación |
+| #777 | KIA QA reuniones | Depende de issues #775/#776 y evidencia de acciones autorizadas |
+| #772 | WEB-P contenido SL/autónomo ES/RU | Verificar fuentes y evitar duplicar #803 |
+| #771 | WEB-P RGPD/FAQ ES/RU | Revisar paridad, exactitud y consentimientos |
+| #769 | RGPD borrador de política | No vender plantilla como conformidad jurídica garantizada |
+| #767 | Certificados digitales | Mantener contenido y límites; nunca acceder a certificados/secretos por la web |
+| #765 | Normativa traducciones ES/RU | Vigencia jurídica y revisión humana, no publicar locales incompletos |
+| #764 | E0 normativa / impacto legal | Changes API + SQL, revisión legal y autorización estricta |
+| #745 | KIA QA multimodelo | CI/AI Gateway manual y desactivado, presupuesto/gates |
+| #743 | Telegram avisos de revisión | Feature desactivada; integrar con issue #134 e identidad |
+| #742 | Agent Dev, diseños/CI/SQL draft | Post-E6 para nuevos agentes, salvo hardening E0; sin ejecución |
+| #713 | Holded empresa piloto, migración | Integridad financiera, permisos, reversibilidad y readback |
+| #705 | Persistencia KIA anónima | E1, cookies, retención, RLS, sesión ≠ persona, revisión privacidad |
+| #683 | Botones nativos de reserva | Verificar proveedor actual, móvil, confirmación y accesibilidad |
+
+**Dos pilas de dependencias detectadas:** #805 → #806 → #807 (WEB-P1) y #793 → #794 (E0 AI Gateway). No reorientar ni fusionar ciegamente; ejecutar CI final contra SHA resultante de la integración, no checks de base intermedia. **PR #801 ya fusionada** y su archivo histórico no se repite. No cerrar PR de funcionalidad por limpieza del Maestro.
+
+### C4. Matriz de las 28 issues abiertas
+
+| Responsable del requisito | Issues | Tratamiento |
+| --- | --- | --- |
+| WEB-P / conocimiento, SEO, idioma y autogestión | #797, #796, #795, #773, #770, #360, #133 | Consolidar requisitos de visibilidad, fuentes, guías, ES/RU, diagnóstico orientativo y servicio opcional |
+| WORKSPACE / CRM, operaciones, expedientes, soporte | #353, #475, #654, #180 | Diferenciar usuario/lead/cliente, dirección de caso, comunicaciones y trazabilidad; una sola cola operativa |
+| KIA-A / meeting, aprendizaje, QA | #775, #776, #774, #768 | #775 y #776 parecen duplicar disparador 'meeting.notes_ready'; revisar criterios y evidencias antes de cerrar |
+| KIA-A / documental, subagentes, normas y futuro | #789, #786, #785, #791 | No confundir 7 perfiles registrados con 7 agentes productivos; lectura integral de documentos y Agent Dev requieren gate |
+| RGPD / datos mínimos | #780, #778 | Cuidado con indicadores sensibles en query params, pdf, retención, consentimiento y leads; #782 relacionado |
+| Telegram | #134 | Subtarea de Inbox #654, sin duplicar identidad ni canales |
+| Marketing / contenido automático | #352 | Motor editorial único con autorización humana, no publicación automática |
+| Seguridad Supabase | #388 | Password protection, actualización PostgreSQL, Security Advisor, hardening E0 |
+| Laboral Holded | #279 | Smoke company-scoped, no inferir identidad de empresa por nombre |
+| Facturación, entidades y Stripe | #161, #135, #64 | Facturas históricas, un usuario/múltiples empresas, checkout único por entidad |
+
+**Posibles solapamientos que requieren una comprobación antes de cerrar:** #775/#776; #654/#134 no son idénticos (epic vs canal), #778/#780 tratan pasos distintos de RGPD, #796/#798 son diseño vs código y #785/#786 son especialidades complementarias. No cerrar por similitud semántica ni marcar «resuelto» al registrar en el Maestro.
+
+### C5. Requisitos olvidados que deben estar en las tres vías
+
+1. **Cliente sin usuario registrado:** el contacto comercial y la autorización a datos son distintos del login (Admin 360). Empresa/persona, lead y cuenta deben tener relación comprobable; un email compartido no basta (#135/#161).
+2. **Seguridad transversal Supabase y GRC:** leaked-password protection, PostgreSQL security patching, RLS/grants y Security Advisor (#388). Ningún plan visual cancela mantenimiento prioritario E0.
+3. **Privacidad del origen de lead:** no enviar resultados de cuestionario RGPD o indicadores sensibles en URL/UTM; canal de correo gratuito con consentimiento específico y datos mínimos; sin marketing obligatorio (#778/#780).
+4. **KIA verdaderamente multicanal:** mismo motor con permisos por canal; email entrante, saliente, Telegram y chat tienen autenticaciones diferentes, deben registrar origen y estado de entrega. El formulario actual alerta a Admin pero no acredita respuesta automática por email.
+5. **Traducciones completas ES/RU:** paridad jurídica, catálogo, FAQ, navegación, KIA, notificaciones y exportables; no asumir traducción en vivo ni publicar hreflang de rutas inexistentes (#360/#773/#765).
+6. **Fuentes oficiales vivas y fechas:** CRECE y CRECE vs e-factura vs VERI*FACTU, CIRCE, convenios laborales, impuestos y otras fuentes: no inventar obligación, plazo o régimen; registro de vigencia, huella y revalidación.
+7. **Lectura documental auténtica:** metadatos del expediente no equivalen al texto completo de PDF/Word; control de permisos, hash, citas página/versión y resultados reproducibles (#786/#785).
+8. **Calidad real de subagentes:** 7 perfiles, 8 skills y permisos de herramienta distintos. Una instrucción de prompt no habilita 'regulatory' si la skill fiscal/laboral no la declara. QA multicanal/idioma y fallbacks antes de prometer cobertura total (#789).
+9. **Separación Admin/Cliente dentro de una UI común:** accesibilidad, tenant/company scope, modo soporte delegado sin suplantar la identidad, auditoría de acciones Holded y selección de empresa si varias (#353/#180).
+10. **Protección de decisiones financieras:** facturas antiguas, Stripe por entidad, cartera de clientes y contratos vigentes, reintentos/idempotencia, pagos y abonos no editables por simple rediseño (#64/#135/#161/#713).
+11. **Handoff de reuniones y notas:** deduplicar trigger Google Meet/Gemini, contrastar hechos confirmados en email posterior antes de crear tareas, nada de envíos o expedientes supuestos (#775/#776/#777).
+12. **Contenidos reutilizables con IA supervisada:** una fuente oficial verificada debe alimentar respuesta KIA/guía/FAQ/SEO/oportunidad, con distintos permisos y revisión; no crear segundo motor marketing (#352/#797).
+13. **Diseño accesible y enlaces operativos:** #805–#807 exigen keyboard, mobile, ES/RU, rutas reales, canonical/301, no romper reuniones ni acceso público (#683).
+14. **PR/branch governance:** mantener un registro de 'estado/fuente/owner/dependencia/riesgo/fase/QA'. Documentación en paralelo autorizada; desarrollos E1–E6 y capacidades post-E6 bloqueados sin gate.
+
+### C6. Plan definitivo de limpieza, con puntos de parada seguros
+
+**1. Esta PR de conciliación:** registrar en un único archivo Maestro el texto de #802 + #804 + #808 y la auditoría de 26 PR / 28 issues, sin edición de código de aplicación. Al estar basada en WEB-P #804, su diff incluye ese trabajo más las otras dos adiciones.
+
+**2. Verificación previa al merge:** comparar secciones con las tres PR origen, comprobar longitud/hash, inexistencia de borrados del Maestro, links del README, plan de archivos, docs/QA y CI. Rebase/reconciliación sobre último 'main' y uso de SHA actual. NO ejecutar la fusión mientras los gates de aprobación sigan pendientes.
+
+**3. Tras merge confirmado a main:** cerrar #802, #804, #808 como PR documentales sustituidas, con referencia a la consolidación y sin borrar ramas por defecto. Las PR de contenido/código permanecen abiertas.
+
+**4. Archivo secundario en otro lote documental:** comparar semánticamente antiguos «planes» de Admin V2, KIA 2.0, web v2 y nueve referencias de 'docs/plans/'. Mantener en main documentación técnica que contenga contratos vigentes; archivar solo planes duplicados tras asegurar enlaces/stubs, jamás los runbooks operativos o historial de seguridad.
+
+**5. Dedupe de issues uno por uno:** empezar por #775/#776, después #654/#134 y #778/#780/#770; relación canónica y confirmación de criterios antes de cerrar duplicados. Las issues de producción/seguridad no se cierran solo por estar en Maestro.
+
+**6. Futuras PR por programa:** WEB-P (público), WORKSPACE (interno), KIA-A (núcleo), todas con QA de interfaz, seguridad, fuentes oficiales, RGPD, idioma, CI y previews. Un solo checkpoint rector E0–E6.
+
+**Limitación importante:** este informe constituye una clasificación y conciliación, no certifica que todo el árbol recursivo haya sido comprobado a nivel de línea o que las PR estén listas para merge. No se han modificado datos, expedientes, cobros, clientes ni despliegues.
