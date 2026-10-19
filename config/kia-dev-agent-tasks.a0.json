@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "kia-dev-agent-task-manifest/a0",
+  "executionEnabled": false,
+  "maxChangedFiles": 1,
+  "maxPatchBytes": 12000,
+  "tasks": [
+    {
+      "id": "E0-A0-SYNTHETIC-001",
+      "phase": "E0",
+      "requiredCheckpoint": "E0-M3-06-admin-users-tenant-object-scope-audit",
+      "status": "suspended",
+      "risk": "synthetic_only",
+      "title": "Prueba aislada del contrato de parches KIA",
+      "allowedPaths": [
+        "tests/fixtures/kia-dev-agent-synthetic.txt"
+      ],
+      "acceptance": [
+        "Parche textual de fichero de prueba, sin acceso real a personas ni produccion",
+        "Ningun ejecutor ni proveedor habilitado",
+        "Inspeccion negativa de rutas, tamanos, binarios y autorizacion"
+      ]
+    }
+  ]
+}
