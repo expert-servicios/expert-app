@@ -57,7 +57,7 @@ export const circeSteps = [
     actions: [
       'Valora la alternativa de emprender como persona física y las obligaciones permanentes de una sociedad.',
       'Acuerda participaciones, capital, administrador, domicilio, actividad y fecha de inicio prevista.',
-      'Si vais a utilizar estatutos tipo, comprobád su encaje; pactos especiales, inversores o actividad regulada pueden requerir revisión.',
+      'Si vais a utilizar estatutos tipo, comprueba su encaje; pactos especiales, inversores o actividad regulada pueden requerir revisión.',
     ],
   },
   {
