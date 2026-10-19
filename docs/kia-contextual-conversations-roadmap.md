@@ -1,6 +1,8 @@
-# KIA Contextual Conversations — arquitectura y roadmap
+# KIA Contextual Conversations — Contrato técnico histórico y roadmap subordinado
 
 Última revisión: 24/09/2026.
+
+> **Precedencia 19/10/2026:** conservar este documento como antecedente técnico. Solo [Plan Maestro EXPERT/KIA E0–E6](expert-kia-ecosystem-master-plan-2026-10-10.md) decide fases y permisos. Las referencias históricas a WABA/WhatsApp no implican que sea el canal público actual; KIA web, Telegram y correo requieren validar disponibilidad y autorizaciones reales.
 
 ## Actualización de continuidad desde Work
 
