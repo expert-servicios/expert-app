@@ -1745,3 +1745,146 @@ Los tres documentos de referencia han de mostrar de inmediato que no son planes 
 **Estado de issues:** #775 cerrada como duplicada, criterios incorporados a #776 que sigue abierta; #654/#134 y #778/#780/#770 continúan separados por poseer entregables distintos. No repetir cierre o producir efectos comerciales por limpieza.
 
 **Gate:** confirmar diff limitado a Markdown, CI obligatorio, previews de ambos despliegues y lectura de los cinco documentos más el Maestro en `main` después de merge. Ninguna evidencia funcional nueva se deduce de documentación.
+
+## ACTA L4 — Integridad transversal WEB-P × WORKSPACE × KIA-A (19/10/2026)
+
+**Naturaleza:** conciliación documental adicional sobre `main`, posterior a L1 (#801), conciliación de las tres vías (#809), L2 (#810) y L3 (#812), todas ya fusionadas. Único Plan Maestro: este archivo. Las especificaciones, evidencias y runbooks siguen subordinados; no crear nuevos planes rectores. **Sin cambios en código, permisos, datos, proveedores, pagos o despliegue.**
+
+**Fotografía GitHub comprobada:** 24 PR abiertas al comienzo de esta revisión; #813 es el borrador nuevo de mitigación E0. Las fotografías de 26 PR / 28 issues de C1-C4 son históricas y NO se deben usar como conteos actuales. Releer PR/issues cada vez que se planifique una fusión. **Fase activa E0, checkpoint E0-M3-06**, con E1-E6 bloqueadas, freeze intacto y V3 solo capturada; no existe acta de cierre E0.
+
+### L4.1 Orden normativo y excepción editorial bien delimitada
+
+- El §0 prevalece: ninguna línea paralela puede **implementar, fusionar o desplegar código funcional** de E1-E6 fuera de su gate, ampliar alcance, cambiar checkout, esquema de identidad, integraciones o permisos. La expresión histórica WEB-P «prepara y ejecuta independientemente» significa aquí **investigación, inventario, redacción, prototipos aislados, especificaciones, revisión y PR draft**, pero NO publicación ni fusión de runtime antes de autorización y fase habilitada. Una excepción funcional futura necesita acta expresa en este Maestro, alcance, riesgo y QA; no se presupone por abrir la PR.
+- WEB-P, WORKSPACE y KIA-A son **tres propietarios de diseño**, no calendarios de ejecución simultáneos. Solo **E0-M3-06** puede consumir trabajo correctivo actual, además del gobierno documental y mitigaciones de mantenimiento P0/P1 demostradas que no alteren la fase.
+- Los anexos antiguos de #802/#804/#808 contienen instrucciones de conciliación ya superadas por la fusión de #809. No reabrir esas PR ni aplicar sus ramas sobre `main`. La bitácora cronológica preserva lo sucedido y esta acta corrige el estado vigente.
+
+### L4.2 Interfaces obligatorias y ownership de las tres vías
+
+| Contrato | Sistema de verdad / dueño | Consumidor | Integridad y aceptación mínima |
+| --- | --- | --- | --- |
+| A. Catálogo/URL/guía/FAQ/fuente/idioma/versiones | WEB-P, contenidos revisados; normativa oficial versionada | KIA-A y WORKSPACE | URL canónica ES/RU solo si traducción real; fuente fechada; servicio opcional no se confunde con trámite oficial; no publicar cobertura ficticia |
+| B. Entrada pública en KIA | WEB-P controla widget/CTA y copy; KIA-A controla decisión y herramientas públicas | KIA-A, futuro CRM | `sourcePage/contentId/locale` sin PII ni privilegios, reCAPTCHA/rate limit; cookie o email sin prueba NO crea cliente ni expediente |
+| C. Identidad y selección del sujeto | WORKSPACE/Auth/relación empresa/tenant; validación de servidor y RLS | KIA-A y soporte | `actorId, role, tenantId, subjectType, subjectId, companyId, caseId, mode` contrastados; ausencia de empresa/expediente NO habilita inferencia; usuario multiempresa debe seleccionar alcance |
+| D. Modo soporte delegado | WORKSPACE, actor original y mandato/capabilities efectivos | KIA-A e integraciones | Reutiliza panel real del cliente sin suplantar JWT; cliente no ve controles de staff; acciones sensibles con preview, aprobación, idempotencia y readback |
+| E. Decisión/respuesta/acción KIA | KIA-A orquestador único + skills + política por riesgo/canal | WEB-P y WORKSPACE | `text, citations, sourceVersion, language, proposedActions, requiresReview, artifact`; presentación diferenciada, no lógica ni tool paralela; no afirmar envío/escritura sin resultado |
+| F. Hoja registral e historial | WORKSPACE E3, ledger por sujeto + eventos fuente/fecha/actor | KIA-A y operaciones E5 | Una identidad/empresa verificada; snapshot no sustituye la fuente viva; aislamiento, consentimiento, minimización, retención y auditoría |
+| G. Correos, Telegram, Google Meet/Calendar y documentos | Integraciones E5 + KIA-A, bajo autorización del actor | WORKSPACE/Admin, eventualmente web | Canal externo no equivale a sesión web; continuidad hilo-caso/tarea basada en evidencia, recepción y entrega probadas; Meet `notes_ready` deduplicado (#776) |
+| H. Seguridad, costes y CI | E0 seguridad transversal; E6 gobernanza económica | Las tres | Tests negativos por rol/tenant/company/case, revocación exact-active, revisión independiente y 2 previews por HEAD; presupuestos IA sin autopermisos |
+
+**Contrato de evento común (documental, no API existente):** `eventId` idempotente, `correlationId`, `actorId` o visitante anónimo, `verifiedSubjectId` opcional, `companyId` y `caseId` opcionales solo si autorizados, `channel`, `intent`, `sourceRef`, `locale`, `occurredAt`, `consentScope`, `riskTier`, `status`, `evidenceRef`. No crear tablas ni transportar contenido sensible para cumplir esta especificación sin diseño y autorización de su fase.
+
+### L4.3 Matriz de divergencias y decisiones registradas
+
+| Nº | Divergencia | Decisión segura / gate | Estado |
+| --- | --- | --- | --- |
+| L4-01 | WEB-P se describe «en paralelo» y el freeze E0-E6 prohíbe runtime adelantado | Trabajo documental simultáneo permitido; #805→#806→#807 y #803/#798 siguen PR draft funcionales, **sin merge/deploy** mientras E1 no esté habilitada | Resuelta en gobierno; implementación bloqueada |
+| L4-02 | Referencias antiguas #802/#804/#808 como ramas por conciliar | #809 contiene la integración ya fusionada; L2 #810 y L3 #812 también integradas, no volver a fusionar ni duplicar Plan Maestro | Resuelta |
+| L4-03 | Interfaz Admin/Cliente «la misma» puede interpretarse como suplantación o acceso a otro tenant | Una UI reutilizada, **dos permisos efectivos**; soporte delegado con actor real y scope explícito; certificación E2 pendiente | Contrato definido, no implementado |
+| L4-04 | KIA-A enumera siete perfiles y ocho skills pero su cobertura práctica no está acreditada | Reutilizar router/registry actuales, validar tool por actor/canal/empresa/riesgo; no crear un octavo subagente por contar ocho skills | Definición documentada, QA E4 pendiente |
+| L4-05 | Alcance de altas/gestión de usuarios no cerrado en E0 | #813 DRAFT: exact-active + sesión vinculada, CI y ambas previews verdes sobre SHA `61eb025c7e60247247b45b4a20e01a2f0f1d8ac4`; falta jerarquía, usuario-objeto/tenant, borrado Auth, concurrencia y pruebas adversariales; **NO fusionar** ni cambiar checkpoint | Bloqueo E0 P1 |
+| L4-06 | Prueba AI Gateway se confunde con llamada exitosa a proveedor | #793 con CI/previews verdes pero revisión pendiente; #794 job preflight correcto y petición sintética externa `skipped`, no acreditar OpenAI/Gemini operativos por ello | QA incompleta |
+| L4-07 | Flujo de captación pública puede confundir visita/cookie/email con identidad o CRM | Consentimiento de finalidad y verificación, relación lead→usuario→empresa separada; KIA no adivina expediente; #778/#780/#782 bajo QA RGPD | Bloqueada por gate |
+| L4-08 | Traducciones RU amplias se presentan como páginas equivalentes | #805 distingue `broader-hub` de páginas temáticas; QA editorial ES/RU, hreflang, canonical, sitemap y rutas antes de publicar | QA WEB-P pendiente |
+| L4-09 | CORREO/Meet/Telegram vs KIA única e historial | #654 coordina Inbox, #134 integra Telegram, #776 agrupa notas Meet; Outlook/no-recepción y seguimiento real no se presumen por KIA-A o página de contacto | Integración E5 pendiente |
+| L4-10 | Catálogo puntual, formación, planes y suscripciones han tenido decisiones comerciales fechadas que parecen contradictorias | **No inferir catálogo contratado a partir de documentos antiguos**: comparar web/código/Stripe y aprobación comercial vigente antes de cambiar páginas o precios; contratos existentes no se cancelan por diseño | Decisión comercial de publicación pendiente |
+| L4-11 | Lectura de metadatos documentales confundida con inspección de PDF/Word o fuente oficial | #785/#786: validar descarga autorizada, contenido real, hash, página, versión, fuente y generación de artefacto, con abstención ante acceso fallido | QA y capacidades pendientes |
+| L4-12 | Agencia de desarrollo supervisada tratada como ya ejecutora autónoma | #742/#743/#745 y #791: propuestas/laboratorio restringido; jamás auto-merge, migraciones, acciones sobre clientes, consumo no autorizado ni despliegue; gate independiente | Desactivada |
+
+### L4.4 Aceptación de integridad antes de un merge futuro
+
+1. **Dependencias:** todo PR funcional incluye programa `WEB-P|WORKSPACE|KIA-A`, fase E0-E6, propietario, contratos que consume, riesgo, datos que toca y permiso expreso si cruza superficies. PRs apiladas se integran en orden y se repiten tests en SHA final.
+2. **Identidad y privacidad:** pruebas negativas anónimo/lead/cliente/admin/tenant_admin/revocado y multiempresa; sin identificación por email o cookie, sin fuga PII, sin autopublicación ni envío al margen de la herramienta.
+3. **Fuentes/idiomas/SEO:** fuente oficial vigente, versión y localización; traducciones reales ES/RU, enlaces/canonicals, accesibilidad móvil/teclado y no duplicación editorial.
+4. **Operación:** integración KIA y documentos con readback de entrega/escritura, auditable e idempotente; sin prometer capacidad por un prompt o pantalla.
+5. **Release:** CI typecheck/lint/build/test/evals/SQL aplicables + Vercel `app` y `ksenia-expert` en último HEAD, revisión de seguridad y aprobación, sin P0/P1; acta posterior a merge sobre `main` y check de checkpoint. Merge documental ≠ finalización de E0 o funcionalidad publicada.
+
+### L4.5 Salida autorizada de esta acta y siguiente trabajo
+
+- **Esta acta es solo documentación**: se puede fusionar separadamente de #813 para que quede en `main` la matriz de dependencias, riesgos y autoridad. No fusionar el código inseguro para «fusionar el plan».
+- **Siguiente tarea de ejecución:** resolver #813 y E0-M3-06 con guardia de actor activo, autorización por usuario objeto/tenant, jerarquía de roles, borrado seguro y pruebas de concurrencia; revisar rutas hermanas de Admin usuarios/empresas. Mantener E1-E6 y V3 bloqueados.
+- **Control de integridad posterior a la fusión documental:** leer el último HEAD de `main` y confirmar este anexo, la cabecera de checkpoint intacta, no pérdida de L1-L3 ni de los anexos WEB-P, WORKSPACE y KIA-A, y la clasificación de PR funcionales como pendientes.
+
+## PROPUESTA L5 — Secuencia optimizada por recorridos completos y paralelismo controlado (19/10/2026)
+
+**Estado: PROPUESTA ARQUITECTÓNICA PARA DIRECCIÓN.** No cambia por sí misma los gates de §0 ni autoriza merges funcionales fuera de E0. **Objetivo:** minimizar retrabajo, integrar WEB-P/WORKSPACE/KIA-A con un único contrato por servicio y obtener primeras entregas E2E verificables tan pronto como el gate aplicable lo permita. Se distingue entre (a) planificación/diseño/tests sintéticos en paralelo desde ahora, (b) desarrollo funcional en ramas aisladas o detrás de flags solo tras mandato técnico explícito, y (c) fusión/despliegue secuenciales tras aprobación y QA por recorrido.
+
+### L5.1 Diagnóstico contrastado en el repositorio
+
+1. **El servicio ya tiene núcleo técnico reusable, pero disperso:** catálogo editorial en \`lib/utils/catalog.ts\`, enrutamiento de modalidad \`lib/services/service-registry.ts\`, política de facturación \`lib/payments/service-billing-scope.ts\`, blueprints en \`lib/services/service-operational-blueprints.ts\`, checklists adicionales, checkout \`app/api/services/checkout/route.ts\`, pedidos/expedientes \`lib/payments/service-order-fulfillment.ts\`, panel \`app/(protected)/dashboard/servicios/page.tsx\`, KIA \`lib/ai/kia/kia-context-builder.ts\`. **No crear un segundo catálogo comercial, un segundo checkout o un segundo motor de expedientes**: construir una capa de contratos/adaptadores y retirar duplicación por iteraciones.
+2. **Fallo de sincronización UX:** \`ServiceCatalogCtaButtons\` clasifica algunos servicios sin precio como \`direct_checkout\`, aunque su página conduce a presupuesto; separar **disponibilidad de precio** de **modalidad de prestación** y elegir CTA mediante una única función validada. No asumir que cada serviceSlug es comprable.
+3. **KIA pública ≠ KIA privada en contexto actual:** \`app/api/ai/kia/public/route.ts\` recibe \`currentPage\` e historial, no el contrato confiable de \`serviceSlug/subject/company/case\`; \`lib/ai/kia/kia-context-builder.ts\` integra perfiles, empresas, permisos, casos y servicio desde canales autenticados. El adaptador público debe usar solo contexto editorial de origen no confiable, resolver \`serviceSlug\` y fuentes en servidor y nunca leer datos privados; el adaptador de panel sí debe verificar sujeto y empresa.
+4. **Pieza base ya operativa pero no certificada de extremo a extremo:** \`docs/service-flow-audit-2026-09-23.md\` identifica cobertura heterogénea de blueprints, falta de prueba de compra real por familia y un problema de concurrencia entre reintentos de tareas; no confundir 200 de una landing o CI de mocks con viaje completo. Reutilizar su manifiesto de readiness y añadir validación por modalidad.
+5. **Academy es producto relacionado, no un servicio con idéntico cumplimiento:** \`lib/data/academy-catalog.ts\`, \`app/api/academy/checkout/route.ts\` y \`academy_enrollments\` poseen proceso propio. Integrar selección desde el servicio mediante referencia de origen, pero preservar su cumplimiento, reserva y matrícula sin duplicar precio/pedido.
+6. **Los textos históricos aún mencionan WhatsApp, WABA y rutas antiguas de venta:** revisar \`docs/service-page-template-guidelines.md\`, \`docs/case-status-workflow.md\` y copy del catálogo contra decisiones actuales y código. El canal activo previsto es KIA web + Telegram + correo; no reconstruir conectores legacy ni divulgar precios/planes obsoletos. Confirmar oferta económica aprobada antes de publicar.
+
+### L5.2 Contrato \`ServiceJourney\` (diseño lógico previo; no existe como nueva API)
+
+**Clave canónica** \`serviceSlug\` estable y \`serviceVersion\`; tipo \`service|guided_learning|academy\`; \`deliveryMode\` independiente de \`commercialFlow\`: \`self_guided\` (información y checklist), \`expert_full_service\` (prestación profesional), \`guided_training\` (acompañamiento), \`free_consultation\` (orientación), \`quote_request\` (precio variable). Un servicio puede ofrecer varias modalidades sin generar cinco productos o slugs ficticios.
+
+| Campo/decisión | Fuente autorizada | Consumidores |
+| --- | --- | --- |
+| Slug, categoría, nombre, enlaces y ES/RU | catálogo/registro canónico y localización | web, catálogo panel, KIA |
+| Modalidades disponibles, reglas de elegibilidad, pasos y requisitos | registry + blueprint versionado / reglas de revisión humana | CTA, wizard, panel, KIA |
+| Precio o cotización, IVA/suplidos, pago, mandato | servicio y política comercial verificada; Stripe solo mediante checkout servidor | web, dashboard, Academy, KIA como enlace informativo |
+| \`actorId/subjectId/companyId\` y tenant efectivos | Auth, relaciones y RLS en servidor | panel, expediente, checkout, KIA privada |
+| \`sourceKind/sourceRef/originLocale\` no sensible | página pública, artículo o guía; verificado/normalizado servidor | analítica, lead consentido, seguimiento, checkout |
+| \`journeyId\` y estado \`browse|draft|requested|awaiting_quote|awaiting_payment|paid|in_progress|submitted|closed\` | servicio/workflow servidor, distintos estados por modalidad | panel, KIA, Admin, email, historial |
+| Documentos, tareas, fuentes, evidencias y \`caseId/orderId/enrollmentId\` opcionales | blueprint, servicio/expediente/pedido/matrícula reales | Workspace, KIA, Admin |
+| Riesgo/consentimiento/autor de acción/registro de confirmación | política KIA + permisos servicio | toda interfaz; ejecución externa solo tras approval/readback |
+
+**Reglas no negociables:** \`serviceSlug\` no equivale a \`caseId\`; visitar página o iniciar autoevaluación no crea expediente ni lead forzado; cambiar modalidad mantiene origen y datos autorizados sin copiar PII a la URL; el precio se calcula en servidor y la interfaz no inventa productos; una solicitud de presupuesto no es pago; una inscripción en Academy no es encargo profesional de presentación; la presentación ante sede requiere confirmación y justificante oficiales. No usar la URL, el email o un dato de navegador como autorización.
+
+### L5.3 Camino crítico y paralelización viable
+
+**Tronco de dependencias, secuencial para integrar:** \`E0 seguridad de usuario/tenant + contratos de identidad\` → \`C0 contrato común de ServiceJourney y catálogo/CTA\` → \`C1 identidad/sujeto/empresa y sesión segura\` → \`V1 primer recorrido E2E en entorno sintético\` → \`gates de publicación por recorrido\` → \`multiplicación por familia de servicios\`.
+
+| Oleada | WEB-P (propietario público) | WORKSPACE (propietario datos/acciones) | KIA-A (propietario orquestación) | Integración / qué se bloquea |
+| --- | --- | --- | --- | --- |
+| O0 — **ahora, E0** | Inventario SEO, slugs y ofertas; PR #805→#806→#807 en preview sin merge | Resolver #813 permisos de usuarios y rutas hermanas, finalizar matriz multiempresa/tenant | Inventariar prompts, skills, herramientas y diferencias público/privado; casos negativos | Congelar contrato C0, orígenes y políticas; **solo docs/QA sin publicar**, y correcciones E0 aprobadas |
+| O1 — contrato C0 | Plantilla servicio/FAQ/guía, CTAs \`self_guided|expert|training|quote\`, i18n/SEO | Adaptador registry/blueprint comercial y \`subject/company\` + transiciones, sin cambiar ledger histórico | Resolver servicio/versión e intención por canal, resumen de fuentes, link contextual read-only | Los tres construyen **fixtures de un mismo servicio**. La integración al runtime requiere habilitación de fase/acta explícita |
+| O2 — primera vertical V1 | Servicio piloto público con recursos verificables ES/RU, CTA a guía gratuita y presupuesto | El mismo servicio visible en panel con borrador consentido, sin crear expediente, y estado verificable | KIA orienta en público (R0) y en panel (R0/R1 autorizado) sin afirmar trámite realizado | Test navegador público→login opcional→panel→KIA→CTA conservando contexto sin fuga |
+| O3 — prestación y pago V2 | CTA contratación cuando exista precio cerrado, o presupuesto si variable; checkout de fuente común | Selector empresa/pagador, \`order\`/expediente/tareas del blueprint, cancelación/reintentos e historial | KIA explica precio/requisitos y genera enlace, no cobra ni confirma ficticiamente | Stripe TEST → webhook idempotente → pedido/caso/tareas → dashboard y Admin; no publicar sin gates financieros |
+| O4 — formación V3 | Ficha 'hazlo tú mismo' con recursos y oferta de formación one-to-one/Academy | Inscripción o reserva en flujo Academy/booking canónico, estado alumno, vínculo referencial con tema del servicio | Tutor KIA informativo, deriva a humano, no otorga certificado ni reserva sin confirmación | Compra/formación es **otro tipo de cumplimiento**, comparte origen y usuario autorizado, no copia expediente |
+| O5 — tramitación asistida V4 | Guías de sedes, pasos, requisitos y fuentes fechadas; límites de responsabilidad | Checklist progresivo, adjuntos, hoja registral, consentimiento, cambios auditados, soporte delegado | KIA analiza documentación realmente accesible y propone pasos; nunca presenta ni firma sin gate | E2E de revisión, propuesta, autorización, acción externa permitida, justificante y estado |
+| O6 — expansión | Escalar categorías, traducciones, enlaces, contenido y SEO usando patrón aprobado | Plantillas por familia (fiscal, mercantil, certificados, extranjería, Holded) sin clones | Reusar skills/perfiles con policy/capabilities; nuevas skills solo si hay gap validado | Habilitar por familia tras matriz de calidad, sin lanzar 50 servicios incompletos |
+
+**Paralelo real y seguro:** editorial/SEO ES-RU, diseño de pantallas en Storybook/previews, contract tests y fixtures, inventario de blueprints, evaluación KIA con respuestas simuladas y QA legal pueden avanzar **a la vez**. **No** paralelizar modificaciones divergentes del mismo registro de servicios, esquema de Auth/RLS, checkout/webhook, modelos de expediente, KIA tool policies o contratos de API: asignar un único owner, PR pequeña, revisión cruzada y secuencia de merges.
+
+**Criterio de bloqueo:** si E0 no está cerrado, O1-O6 pueden estar definidos/prototipados, pero no fusionarse como funcionalidad productiva bajo las reglas actuales. Para permitir código futuro *behind flags* en \`main\` antes de su fase, Dirección deberá aprobar una **excepción explícita de freeze**, con revisión de seguridad y cero accesos/escrituras reales; hasta entonces, aislado en ramas.
+
+### L5.4 Tres pilotos para cubrir mecanismos, no 50 fichas sueltas
+
+| Piloto | Motivo | Objetivo medible |
+| --- | --- | --- |
+| P1 — Constitución SL / CIRCE (precio o presupuesto según fuente comercial aprobada) | Caso compuesto que exige normas oficiales, checklist, empresa todavía no constituida y decisión entre autogestión, formación y profesional | Web ES/RU → guía y preguntas KIA → solicitud/pre-caso consentido → panel → elección de modalidad sin inventar CIF ni empresa |
+| P2 — Certificado digital persona física (según oferta vigente verificada) | Recorrido más acotado de pago, identidad, privacidad y documentación | Oferta → persona correcta → Stripe TEST o presupuesto según precio validado → pedido → expediente → QA Admin → entrega trazable |
+| P3 — Formación one-to-one/Academy asociada a P1 | Demuestra que 'formación' no necesita replicar la prestación profesional | Contexto de servicio → inscripción/reserva real TEST → matrícula o reunión confirmada → visualización del estado, sin crear expediente de constitución |
+
+**Orden recomendado:** primero P1 **en modo informativo y sin contratación**, luego P2 para demostrar dinero/identidad/cumplimiento, después P3 para la bifurcación de formación; solo entonces P1 con el ciclo profesional completo. Un vertical piloto cruza WEB-P/WORKSPACE/KIA-A, por lo que ofrece más señal que finalizar todas las landings aisladas.
+
+### L5.5 Integraciones críticas y política de merges
+
+| Intersección | Orden técnico obligatorio | Fallo que evita |
+| --- | --- | --- |
+| Catálogo → panel | Definir \`ServiceJourney\` C0 → implementar selector de modalidad/CTA común → renderizar web y panel | Precios o nombres diferentes para el mismo slug; \`direct_checkout\` sin precio |
+| Panel ↔ KIA | Auth/empresa/contexto autorizados → adapter de contexto → KIA R0/R1 → acciones permitidas por riesgo | KIA ve empresa errónea, supone un expediente o concede tool de Admin |
+| Web ↔ KIA pública | \`currentPage\`/origen normalizado → mapeo de slug/fuente en servidor → retrieval público → CTA no invasivo | Inyección desde URL, chat desconectado de la ficha o exposición de datos privados |
+| Servicio ↔ formación | Definir vínculo de tema/servicio → checkout/reserva Academy existente → estado propio matrícula | Cobrar dos veces o tratar formación como expediente |
+| Pago ↔ operación | Pricing/contrato → selector pagador/empresa → checkout TEST → webhook idempotente → \`order\`/case/task/readback | Doble cobro, duplicado de tareas, expediente fantasma o suplidos mezclados |
+| Expediente ↔ autogestión | Distinguir borrador de autoservicio vs expediente profesional → consentimiento → documentos y revisión | Crear expedientes o obligaciones al hacer una consulta gratis |
+| Multicanal ↔ historial | Identidad/correlación verificada → email/Telegram/Meet adaptador → estado de entrega y dedupe | Un email de origen se asocia a cliente incorrecto o tareas duplicadas |
+
+**Regla de fusión de un vertical:** una sola PR de contrato/tipos + tests primero; PRs de presentación y adapter en paralelo con bases actualizadas; PR de integración pequeña después, sin alterar esquema financiero o datos históricos. CI completo y **ambos Vercel en el último SHA**; pruebas E2E de anónimo, lead, cliente, multiempresa, personal EXPERT, tenant_admin, revocado, estados de pago y ES/RU. Publicar un vertical solo cuando los tres owners hayan firmado evidencia y se satisfaga la fase autorizada.
+
+### L5.6 Indicadores y aceptación
+
+- **Tiempo hasta primera utilidad E2E:** primera ruta pública→KIA→panel demostrada con casos sintéticos, sin inferir tiempos calendarios.
+- **Reutilización:** para P1/P2/P3, un \`serviceSlug\`/precio/flow/version por servicio; cero catálogos paralelos nuevos y cero duplicación de checkout.
+- **Cobertura real:** seis modalidades/caminos negativos (anónimo, sin perfil, otro tenant, no pagado, pago repetido, error de proveedor), más revisión permisos y accesibilidad.
+- **Integridad económica:** Stripe TEST con idempotencia y cumplimiento por tipo de producto; pedido/caso solo en transición permitida; no modificar datos de producción.
+- **Idioma/fuentes:** ES/RU verificadas por piloto, sin presentar traducciones parciales o normas no comprobadas como completas.
+- **KIA:** no afirma capacidades inexistentes, no abre expediente al solo conversar, fuentes rastreables y aprobación antes de mutar o comunicar.
+- **Definición final del proyecto:** 100% funcional **se certifica por journeys completos**, seguridad, recuperación y evidencias en producción autorizada, nunca por porcentaje de pantallas o por tener las tres líneas codificadas por separado.
+
+**Próxima decisión propuesta a Dirección:** aprobar el contrato C0 y la estrategia de verticales como **prioridad de planificación**, manteniendo freeze actual; cualquier autorización posterior para prototipos funcionales compartidos adelantados deberá ser explícita y acotada. **Siguiente ejecución autorizada hoy:** E0-M3-06 y QA del plan L4/L5; no merge funcional E1–E6 anticipado.
+
