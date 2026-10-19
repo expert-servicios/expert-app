@@ -1891,3 +1891,39 @@ Los tres documentos de referencia han de mostrar de inmediato que no son planes 
 ### Anexo C0 — Contrato común de servicios y pilotos (19/10/2026)
 
 **Especificación subordinada:** [ServiceJourney v1 y aceptación de pilotos](contracts/service-journey-v1-pilot-acceptance-2026-10-19.md). Contrato lógico de identidad de servicio, modalidad, oferta comercial, actor/tenant/empresa, origen, expediente/pedido/matrícula y evidencias. Los tres pilotos con mejor reutilización son (A) nacionalidad española de menor nacido en España — caso real `presentado` sin cerrar, sin reutilizar datos personales; (B) certificado digital PF — manifiesto editorial `production_ready`; (C) certificado digital entidad/pack — manifiesto editorial `production_ready` y prueba multiempresa. Formación/Academy se prueba como bifurcación del primer piloto, no como expediente profesional. Los estados editoriales **no certifican** flujo completo. Trabajo actual: solo documentación y fixtures sintéticos; E0-M3-06 continúa como checkpoint y ningún código de E1–E6 se desbloquea por este anexo.
+
+
+## ACTA D0 — Preparación del agente de desarrollo bajo supervisión KIA (19/10/2026)
+
+**Mandato de Dirección:** comenzar con la infraestructura del agente de desarrollo para ejecutar progresivamente el Plan Maestro, mediante supervisión KIA y aprobación humana. La excepción acotada ya está referida en issue #742: **preparación segura en E0, sin activar agente productivo ni adelantar E1–E6**. La mejora continua del catálogo con casos reales se permite como circuito editorial humano, anonimizando evidencia, separando normativa de casuística y sin autopublicación ni reaprendizaje de datos privados.
+
+**Diagnóstico vivo:** PR #815 documental fusionada en `main` (commit `dfdee59454f39db607816e79a319582e8f88f4f8`). PR #742 permanece DRAFT, con 24 archivos de foundation, CI del antiguo SHA correcto pero rama rezagada y manifiesto `executionEnabled:false` con tarea `E0-M3-06-DOCINDEX` suspendida y checkpoint incompatible. PR #743 notificaciones Telegram opt-in DRAFT; PR #745 smoke Gateway manual DRAFT; PR #744 cerrada sin fusión. Issue #791 y `docs/audits/kia-autonomous-development-readiness-2026-10-17.md` contienen auditoría, no prueban ejecución en producción. **No fusionar #742 íntegra sin dividir, rebasar y pasar todos los gates de seguridad.**
+
+### D0.1 Roles y autoridad
+
+- **Dirección EXPERT:** fija prioridades y presupuesto; aprueba políticas, merges, despliegues, cambios de esquema y operaciones reales. Ningún modelo puede autoaprobarse.
+- **KIA supervisor:** lee checkpoint y tareas autorizadas, clasifica dependencia/impacto/alcance, prioriza incidentes P0/P1, inspecciona huellas y resultados, propone aceptación/rechazo/escalado y registra evidencia. No hereda acceso global al ERP ni credenciales personales.
+- **Ejecutor de código en sandbox (Codex o proveedor alternativo aprobado):** trabaja sobre un único ticket, SHA y allowedPaths, produce parche; sin secretos productivos ni repositorio abierto a escrituras arbitrarias.
+- **Revisores independientes Claude/Gemini:** solo diff sintético o anonimizado, mismo HEAD/digest, tareas de seguridad/calidad; fallos, omisiones o pruebas `skipped` bloquean aprobación. Su dictamen nunca sustituye revisión humana.
+- **Broker/CI:** valida lease/idempotencia, checksum, pruebas, scope, auditoría, costos y permisos de GitHub; único componente autorizado para crear PR *draft*, con identidad de bot restringida cuando se habilite; jamás merge automático.
+
+### D0.2 Orden eficiente (única cola autorizada)
+
+| Lote | Alcance inicial | Evidencia y salida |
+| --- | --- | --- |
+| A0 — contrato y lectura | Extraer #742: tipos/manifiesto/checkpoint normalizado + tests puramente de política, sin workflows que ejecuten código ni nuevas credenciales | CI exact SHA; `executionEnabled:false`; lectura del Plan Maestro; rechazar tarea no permitida |
+| A1 — sandbox cerrado | Reconciliar `kia-codex-lab` o sandbox aislado existente: una tarea sintética de edición acotada, parche como artifact, *sin push* | Límite tamaño/diff, denegación archivos prohibidos, sin secretos, costos/tiempo, validación fixture; sin datos reales |
+| A2 — broker duradero | Cola/leases/fencing/idempotency/dead-letter/log append-only en diseño aprobado; primero contrato PostgreSQL desechable, migración productiva solo tras gate separado | Prueba concurrencia/doble ejecución, revocación, expiración y cambio SHA |
+| A3 — revisión KIA | mismo patch digest a QA determinista y revisores Claude/Gemini Gateway con cuota controlada y opt-in; evitar proveedor `skipped` presentado como éxito | informe estructurado, referencia al HEAD, rechazo por CI fallida, IA indisponible o cambio del plan |
+| A4 — draft PR | permiso estrecho para crear branch/PR DRAFT únicamente, auditoría y notificación interna; aprobación humana fuera de canal Telegram | PR revisable con typecheck/lint/build/test/KIA eval + dos Vercel; **0 auto-merge y 0 despliegues** |
+| A5 — ejecución del maestro | solo después de gates anteriores, empezar con una corrección E0 pequeña y revisable; posteriormente encargos aprobados E1→E6 según checkpoint | cada ticket tiene owner, dependencia, allowedPaths, criterio de aceptación, costo máximo y evidencia |
+
+**La cola NO recorre todas las ramas:** primero obtiene una tarea canónica aprobada en el único Plan Maestro o issue vinculada, comprueba si ya está en `main`, rebase/duplicados, gating y cuenta de costos. Máximo una tarea con escritura de parche en vuelo al principio.
+
+### D0.3 Controles irrenunciables
+
+Prohibidos por defecto: lectura de clientes reales para entrenar/modelos de desarrollo; credenciales, PII, fondos y facturación; Supabase/Stripe/Holded productivo; migraciones, correos salientes, cambios de roles y tokens; `pull_request_target` ejecutando código no confiable; aprobaciones por Telegram; auto-merge y auto-deploy. La revisión humana autoriza cada privilegio adicional, y cualquier cambio de checkpoint o SHA invalida su autorización anterior.
+
+**Gate de arranque piloto:** 1 tarea sintética exitosa con parche + 1 inyección de prompt rechazada + 1 CI fallida bloqueada + 1 SHA desactualizado rechazado + 1 caducidad de aprobación + 1 intento de escritura fuera de allowlist rechazado + evidencia de gasto. Los modelos no se consideran verificados mientras smoke real no registre éxito explícito.
+
+**Siguiente cambio permitido:** PR documental de este acta; PR separada de extracción mínima A0 desde #742 con `executionEnabled:false`, sin activación ni ejecución. La limpieza y cierre de ramas originales solo después de reconciliar resultados.
