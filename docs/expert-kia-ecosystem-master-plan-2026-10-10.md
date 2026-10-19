@@ -1704,3 +1704,29 @@ Lectura de 'lib/ai/kia/kia-sub-agent-router.ts', 'lib/ai/kia/kia-skill-registry.
 **6. Futuras PR por programa:** WEB-P (público), WORKSPACE (interno), KIA-A (núcleo), todas con QA de interfaz, seguridad, fuentes oficiales, RGPD, idioma, CI y previews. Un solo checkpoint rector E0–E6.
 
 **Limitación importante:** este informe constituye una clasificación y conciliación, no certifica que todo el árbol recursivo haya sido comprobado a nivel de línea o que las PR estén listas para merge. No se han modificado datos, expedientes, cobros, clientes ni despliegues.
+
+
+## ACTA DE LIMPIEZA L2 — Precedencia y duplicados comprobados (19/10/2026)
+
+**Alcance:** documentación únicamente. No modificar código, cliente, correo, migraciones, permisos, producción ni checkpoint E0. El único documento rector sigue siendo este Plan Maestro; WORKSPACE, WEB-P y KIA-A son tres líneas coordinadas. La PR #809 ya está fusionada en main; #802, #804 y #808 están cerradas por sustitución.
+
+### Autoridad aclarada
+
+- `docs/expert-admin-v2-plan-maestro-2026-10-09.md`: se ha sustituido el título que inducía a segundo Plan Maestro y el estado histórico «listo para iniciar fase 0» por referencia subordinada a E2/E3, que siguen bloqueadas.
+- `docs/plans/admin-v2-support-and-kia-contract-pr708-consolidated-2026-10-17.md`: identificado expresamente como contrato técnico de soporte delegado/Workspace y KIA, no otro plan.
+- `docs/kia-2-strategy.md`: identificada como referencia de arquitectura, no estrategia canónica ejecutiva. Las decisiones de seguridad y herramientas siguen referenciadas sin activar nuevas funciones.
+- Conservar detalles técnicos y enlaces históricos; no borrar estos documentos, pues contienen requisitos y contratos no trasladados íntegramente al Maestro.
+
+### Conciliación detallada de issues (sin marcar capacidad implementada)
+
+**#776 = issue canónica para proceso `meeting.notes_ready`; #775 = descripción duplicada, cerrar como `duplicate` SOLO tras copiar al cuerpo de #776 sus criterios singulares.** Contrato unificado: disparador idempotente de nota Google Meet/Gemini; resolver si es persona física/autónomo o sociedad; comparar instrucciones confirmadas, correos posteriores y reuniones; registrar en hoja append-only fuente/fecha/autor; extraer acuerdos separando hechos, propuestas, obligaciones futuras y acciones revocadas; deduplicar tareas, calendario y citas; elaborar borradores email y documentación de agenda/presentación; no inferir CNAE/IAE sin fuente censal; generar oportunidades de FAQ, KB y blog solo desidentificadas y bajo QA ES/RU; revisión humana obligatoria antes de envíos, escrituras, citas irreversibles o presentación ante sede; prueba E2E de listener, idempotencia, aislamiento tenant/company, pruebas y readback. El piloto mencionado en #776 es una evidencia histórica, no una certificación de automatización general.
+
+**#654 / #134 — conservar ambas:** #654 es objetivo omnicanal Inbox 360; #134 es integración específica Telegram y smoke real pendiente. No duplicar tareas de emisión ni cerrar hasta evidencias de Telegram webhook/E2E y autenticación.
+
+**#778 / #780 / #770 — conservar:** (a) diagnóstico RGPD mínimo, privacidad de URL y minimización; (b) descarga/envío PDF, lead voluntario e idempotencia; (c) paridad editorial ES/RU y revisión legal. Son criterios distintos, no duplicados. No crear contacto/expediente ni captar marketing por responder a una autoevaluación.
+
+**#796 / PR #798 — conservar:** issue de diseño/SEO vs PR de código del hub público; no publicar hasta validar enlaces reales y RU. **#785 / #786 — conservar:** auditoría laboral específica vs recuperación documental e informes generalistas. **#789** permanece en post-E6 y no autoriza siete agentes nuevos.
+
+### Criterios para cerrar esta limpieza
+
+Los tres documentos de referencia han de mostrar de inmediato que no son planes rectores; la PR deberá cambiar solo Markdown, completar checks CI y previews, y ser leída de vuelta en main después de la fusión. Las issues no se cierran por mención documental: primero conservar criterios en el ticket superviviente y registrar vínculo de duplicado. Ningún cierre de issue equivale a trabajo funcional completado.
