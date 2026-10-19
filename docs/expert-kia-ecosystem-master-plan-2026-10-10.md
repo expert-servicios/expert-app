@@ -1394,3 +1394,83 @@ Primero **WEB-P0**: inventario y matriz de clasificación (sin tocar aplicación
 **Verificación integral obligatoria antes de publicación:** test flujo visitante sin login -> guía -> sede oficial -> KIA -> pregunta -> respuesta, formulario -> lead -> respuesta por correo/humano, seguimiento del mismo hilo, privacidad/cookies, origen atribuible, 404, mobile, ES/RU, SEO, CI y previews Vercel en mismo SHA. Restringir acciones con identidad/adjuntos privados y asegurar rol real. PRs de web pública separados por alcance, con feature flags reversibles y rollback. La presente actualización **solo documenta el diseño y su backlog** en la rama de #804; no cambia aplicación, envía correos, fusiona PR o despliega.
 
 **Coordinación con el Plan Maestro E0–E6:** WEB-P1/P2 puede avanzar en diseño, taxonomía y composición editorial; los cambios en widget KIA, API de consultas, email, CRM, RLS, consentimientos o persistencia requieren el gate de E0/seguridad correspondiente, incluso si se exponen en web pública. No abrir PR de aplicación que vulnere la congelación del §0. Proteger PR #803 CIRCE, #782 RGPD y #804 documentación como ámbitos diferenciados hasta reconciliación de dependencias.
+
+
+### WEB-P2-G — Identidad contextual, reconocimiento y recorridos de KIA por usuario (19/10/2026)
+
+**Aprobación funcional:** adaptar arquitectura, diseño, CTAs, bienvenida y conversaciones según el vínculo **verificado** del interlocutor con EXPERT. Dirección solicita expresamente documentar primero y **no implementar cambios en la aplicación, activar automatizaciones, despliegues, migraciones ni mensajes salientes** durante este paso. Mantener la misma KIA y la rama documental #804, sin crear otro plan rector.
+
+#### G1. Modelo de identidad y relación; no confundir CRM con autenticación
+
+La presentación se decide mediante **dos ejes independientes**:
+
+1. **Identidad y confianza**: visitante anónimo (sesión efímera); persona que aporta voluntariamente un canal de respuesta sin autenticar; persona autenticada en EXPERT mediante sesión validada por servidor y perfil activo; canal externo vinculado y verificado (Telegram); remitente de email comprobado en hilo, sin equipararlo a sesión privada. Una cookie del chat público, una coincidencia de nombre, email sin validación, teléfono declarado o parámetros URL NO son pruebas para abrir datos de cliente.
+2. **Relación con EXPERT**: visitante sin relación; contacto/lead en CRM; usuario con cuenta EXPERT sin empresa o servicio; cliente con permisos efectivos sobre una o varias empresas/expedientes; staff EXPERT (incluido soporte delegado). Puede existir más de un vínculo: usuario registrado y lead, cliente y antiguo lead, representante de varias empresas, staff con vista cliente. Nunca clasificar «cliente» solo porque el correo aparece en 'profiles': comprobar relación y alcance vigentes.
+
+**Prioridad de autorización:** autenticación -> perfil activo -> tenant y rol -> membresía empresa/expediente, y solo después snapshot mínimo para interfaz. «Lead conocido» es un dato de CRM, no un permiso de acceso a historial o datos privados. Resolver colisiones/duplicados/homonimias con resultado 'identity_conflict'/'needs_review', sin unir fichas ni mostrar información que confirme existencia de terceros.
+
+**Observaciones técnicas verificadas en main:** 'components/site/KiaPublicWidget.tsx' solo utiliza 'supabase.auth.getSession()' para un booleano y muestra saludo genérico; 'components/KiaCopilotWidget.tsx' ya dispone de 'contextualWelcome(context)' con 'firstName' e idioma y 'app/api/ai/kia/context/route.ts' obtiene nombre del perfil verificado; 'lib/auth/active-actor.ts' usa 'auth.getUser()' y perfil activo; 'lib/ai/kia/kia-channel-identity.ts' requiere identidad Telegram activa y verificada; 'lib/ai/kia/kia-client-ledger.ts' rechaza conflictos de identidad; 'lib/ai/kia/kia-public-web-persistence.ts' distingue sesión pública de identidad. Reutilizar contratos, no duplicar reglas.
+
+#### G2. Matriz integral de experiencias públicas y privadas
+
+| Perfil / señal autorizada | Mensaje de entrada (ES, ejemplo) | Acciones iniciales | Límites explícitos |
+| --- | --- | --- | --- |
+| Anónimo sin sesión EXPERT | «Hola, soy KIA. ¿Qué necesitas resolver hoy?» | Preguntar, buscar trámite, abrir guía, consulta escrita | Nada de nombres, historias previas ni expedientes por cookie pública |
+| Anónimo con formulario enviado | «¿Quieres resolver otra duda o consultar nuestras guías?» | Nueva pregunta; continuidad por email al remitente verificado | No anunciar «he visto tu solicitud anterior» en navegador no autenticado |
+| Usuario registrado con perfil activo, sin vínculo comercial confirmado | «Hola, {nombre}. ¿En qué puedo ayudarte hoy?» | Biblioteca, preferencias elegidas, trámites, preguntas gratuitas | No presumir que es cliente o que tiene expedientes |
+| Lead reconocido **con vínculo acreditado** a sesión/canal | «Hola, {nombre}. ¿Quieres retomar tu consulta o comenzar otra?» | Retomar conversación realmente vinculada; consultar respuesta; nueva duda | Solo historial con autorización y continuidad demostrada; no cruzar hilos por email similar |
+| Cliente con relación activa verificada | «Hola, {nombre}. ¿Quieres revisar tus gestiones o consultar otra cuestión?» | Resumen autorizado, documentos pendientes, empresa seleccionada, chat, guías | Empresa y caso expresamente validados; no inferir un expediente |
+| Cliente con varias empresas | «Hola, {nombre}. ¿Sobre cuál de tus empresas quieres consultar?» | Selector de empresas autorizadas, opción general | No mezclar datos entre empresas; no elegir automáticamente si puede causar confusión |
+| Staff EXPERT / modo soporte delegado | «Hola, {nombre}. Estás en tu espacio de gestión.» | Trabajo según rol, contexto de empresa/cliente seleccionado | Mostrar indicador de soporte delegado y registrar actor real; nunca hacerse pasar por el cliente |
+| Identidad ambigua, sesión caducada o perfil inactivo | «Hola, soy KIA. Puedo ayudarte con una consulta general.» | Información pública, iniciar sesión o verificar identidad | No revelar coincidencias ni motivo de fallo interno |
+
+**Nombres:** obtener 'preferred_name' si el usuario lo define y es válido; si no, nombre de pila seguro del perfil activo. No usar apellidos completos en chat público, datos de empresa sensibles, direcciones de correo como sustituto de nombre, ni derivar el nombre del parámetro URL; si falta nombre, bienvenida neutra. Releer identidad en servidor; inicializar la interfaz con estado «comprobando identidad» breve sin parpadeo de un nombre ajeno. Tras cierre de sesión, eliminar inmediatamente de la vista cualquier mensaje/shortcut privado. No mostrar una bienvenida nominal en terminal/dispositivo público si la sesión ha vencido.
+
+**ES/RU:** ejemplo en ruso «Здравствуйте, {имя}! Чем могу помочь?»; tratamiento natural según preferencia lingüística verificada y texto real del usuario, sin transliterar automáticamente nombres propios. Mensajes contextuales localizados y revisados, sin copiar literales españoles a RU; EN preparado pero apagado. No usar tonos excesivamente familiares en asuntos administrativos.
+
+#### G3. Flujo de entrada y enrutamiento único
+
+1. **Entrada**: página origen + acción (guía, artículo, pregunta, formulario, Telegram, email, área cliente) con referencias de contenido no sensibles.
+2. **Resolución segura**: determinar canal, sesión, perfil/rol activo si existe, relación CRM solo con enlace verificable, pertenencias a empresas y ámbitos autorizados. Evitar consultas cruzadas de datos personales mediante herramientas privilegiadas.
+3. **Contexto mínimo y explicación**: KIA recibe 'identity_status', 'relationship_status', 'locale', 'capabilities', 'authorized_company_ids' y 'origin_context' tras filtrado server-side; no enviar toda la ficha CRM ni información de expediente para una bienvenida genérica.
+4. **Presentación**: saludo una sola vez por apertura de conversación, botones y preguntas iniciales **pertinentes**; «Continuar consulta anterior» únicamente si hay hilo autorizado; «Ver expedientes» solo cuando existen y están permitidos; «Preguntar gratis» visible siempre.
+5. **Respuesta**: KIA general sin autenticación; consultas privadas tras autorización; respuesta con normativa/fuentes/fechas cuando procede; si se requiere decisión jurídica/fiscal delicada o acción sensible, revisión humana.
+6. **Seguimiento**: conversación y fuente identificadas con ids no adivinables; estado 'received' / 'kia_answered' / 'awaiting_user' / 'needs_review' / 'human_answered' / 'closed', sujeto a modelo existente. Persistir lo mínimo permitido; evitar crear expediente/cliente al saludar o preguntar.
+7. **Cambio de estado**: al iniciar/cerrar sesión, completar verificación, adquirir relación de cliente, cambiar empresa, activar soporte delegado o retirar consentimiento, invalidar contexto, volver a resolver permisos y renovar acciones.
+
+**Regla UX de bienvenida:** el saludo personalizado **no debe incluir hechos privados no solicitados** («tu deuda», «tu inspección», «tus documentos», «te escribimos por X») ni presuponer objetivo del usuario. La personalización visible se limita al nombre y a opciones útiles; un mensaje contextual de un expediente solo aparece cuando el usuario lo abre expresamente en un canal autenticado. Evitar repetición del saludo en cada página.
+
+#### G4. CTA, continuidad de canal y experiencia progresiva
+
+- **CTA global primario** «Preguntar gratis a KIA»: mismo motor público para todos, sin exigir registro. En usuario autenticado, KIA puede ofrecer «Continuar con mi cuenta» y enriquecer contexto con permisos tras confirmación.
+- **CTA contextual de contenido** «Ayúdame con este trámite»: enviar únicamente identificador público de guía/página, no contenido privado ni query con PII; KIA conoce fuente, pero no asume intención comercial.
+- **CTA de consulta escrita** «Recibir respuesta por correo»: pedir email para responder, explicar finalidad, política de privacidad y opción de consentimiento comercial separada; confirmar recepción, rastrear estado sin abrir expediente automático. No incluir detalles sensibles de preguntas en la URL.
+- **CTA «Retomar conversación»** en chat/web/Telegram/email solo si hay vínculo explícito seguro y el canal tiene derecho a ese historial. Un email entrante de una dirección conocida permite responder a ese mismo hilo bajo controles, no revelar información del área privada solo por coincidencia.
+- **CTA «Ver mis gestiones»** exclusivo de cliente autenticado con permisos: selector de empresa cuando corresponda, estado verificable y acciones por rol, sin prometer acceso desde widget público.
+- **CTA profesional** discreto y contextual; no promocionar contratación al detectar a un lead o mostrar la misma oferta en todos los niveles del embudo.
+- **Handoff**: chat -> consulta por correo -> respuesta -> posible reserva o expediente, con conservación de fuente solo cuando el usuario autorice el enlace; no importar automáticamente chats anónimos a fichas personales.
+
+**Separación de funciones:** identidad web, elegibilidad para enviar email, autorización de respuesta automática y permisos de documentos son contratos distintos. Adaptador único de KIA por canal, con límites y QA; no crear motor paralelo. El flujo actual de 'app/api/consultas-gratuitas/route.ts' almacena lead y alerta al Admin, **pero no demuestra autorrespuesta por correo**; el agente email existente tiene settings de autosend y controles, pero no se debe asumir que está habilitado o enlazado al formulario.
+
+#### G5. Componentes de diseño, estados, métricas y protección de datos
+
+**Piezas a diseñar conjuntamente (no implementar hoy):** bloque KIA grande en portada, saludo contextual con skeleton, selector de contexto (General / Mi empresa), centro unificado de recursos, preguntas sugeridas por tema, barra de consulta persistente sin interferir móvil, panel de respuesta con fuentes oficiales, aviso de IA, CTA de correo y estado de respuesta, accesos a historial privado autenticado, pantalla de verificación y perfil, switch ES/RU, estados de error/offline/limite de uso.
+
+**Estados de UI:** 'anonymous', 'identity_loading', 'authenticated_profile', 'verified_lead', 'verified_client', 'support_delegated', 'conflict', 'expired' y 'fallback_public'; no exponer una etiqueta interna 'lead' al visitante por defecto. Diferenciar «te responderá KIA» (IA) de «requiere revisión» (especialista).
+
+**Privacidad por diseño:** minimización, no revelar existencia de cuentas/expedientes mediante mensajes personalizados a identidad no verificada, no vincular por cookies de analítica, no exponer datos sensibles en bienvenida o preview de notificación, evitar persistencia por defecto del chat público, no usar consulta privada para entrenamiento sin base y consentimiento aplicable. Revisar cookies, conservación, trazabilidad, finalidad y derecho de supresión antes de enlazar canales. La calidad de identidad prevalece sobre marketing personalizado.
+
+**Control de rendimiento/negocio:** medir anónimamente tiempos de aparición del chat y resolución del estado de identidad, respuesta útil, clics en guía oficial, repetición de consultas, porcentaje de respuesta autónoma segura, escalados humanos, entregabilidad y coste IA; sin logs con PII. No dar a todos los usuarios la misma «bienvenida comercial».
+
+#### G6. Secuencia documental y gates para futura implementación
+
+| Fase | Alcance documental ahora | Prueba exigida antes de implementar/publicar |
+| --- | --- | --- |
+| WEB-P2.G-01 | Contrato de identidad de dos ejes y precedencias de confianza | Tabla de casos anónimo, registrado, lead, cliente, multiempresa, staff, homónimos, sesión caducada |
+| WEB-P2.G-02 | Biblioteca de saludos y preguntas sugeridas ES/RU | Nombre solo servidor verificado, copy jurídico/privacidad revisado, sin presunción de expediente |
+| WEB-P2.G-03 | Wireframes home + KIA grande + CTA y estados móviles | Accesibilidad, foco, overlay sin tapar contenido, navegación y ES/RU |
+| WEB-P2.G-04 | Matriz de canales y continuidad: web, email, Telegram y dashboard | Flujo autorizar/desautorizar, hilo sin mezclar, historial minimizado, fallback a revisión |
+| WEB-P2.G-05 | Mapa de módulos y reutilización del stack actual | No duplicación de motores, integraciones ni clientes; gates E0 pertinentes |
+| WEB-P2.G-06 | Plan E2E y medición de calidad | 0 cruces de perfiles/tenants, sin revelar nombres anónimos, origen trazable, rollback, CI/previews |
+
+**Estado:** DISEÑO DOCUMENTADO / ejecución no autorizada. PR #804 permanece en borrador y solo debe contener la propuesta de WEB-P. Los componentes, APIs, base de datos, automatizaciones, textos publicados, flags, email real, Telegram, derechos de acceso y pagos quedan intactos. Cualquier desarrollo futuro requiere PR acotado, autorización de alcance, revisión jurídica/privacidad/idiomas/SEO, validación CI y previews, y gates del Plan Maestro E0-E6.
