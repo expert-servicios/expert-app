@@ -1,0 +1,78 @@
+{
+  "$schemaNote": "Propuesta humana, NO vinculada a un runtime. Ningun campo de este archivo concede permisos.",
+  "schemaVersion": "kia-dev-agent-policy-proposal/1",
+  "recordedOn": "2026-10-19",
+  "approvedBy": "Direccion EXPERT (criterios de configuracion, no activacion)",
+  "lifecycle": "proposal_only",
+  "masterPlan": "docs/expert-kia-ecosystem-master-plan-2026-10-10.md",
+  "repo": "expert-servicios/expert-app",
+  "phase": "E0",
+  "requiredCheckpoint": "E0-M3-06-admin-users-tenant-object-scope-audit",
+  "featureGates": {
+    "agentEnabled": false,
+    "automaticDispatchEnabled": false,
+    "providerRequestsEnabled": false,
+    "patchGenerationEnabled": false,
+    "pullRequestCreationEnabled": false,
+    "notificationsEnabled": false,
+    "automaticMergeEnabled": false,
+    "automaticDeploymentEnabled": false,
+    "productionDataAccessEnabled": false
+  },
+  "budget": {
+    "currency": "USD",
+    "maximumTotalPerTrialPeriod": 5,
+    "trialPeriodDefinition": "one explicitly authorized pilot window (no recurring or automatic renewal)",
+    "automaticReset": false,
+    "automaticTopUp": false,
+    "requestsWithoutVerifiedRemainingBalance": "deny",
+    "budgetEnforcement": "NOT_IMPLEMENTED",
+    "requireIndependentMeterAndFailClosedGateBeforeAnyBillableExecution": true,
+    "requiresExplicitNewAuthorizationPerPeriod": true,
+    "note": "El importe documentado no establece por si solo un limite real en AI Gateway ni en proveedores."
+  },
+  "approval": {
+    "mergeRequiresExplicitHumanApproval": true,
+    "mergeApproverCannotBeAgent": true,
+    "autoApprove": false,
+    "allowAutonomousDraftPrOnlyAfterSeparateActivation": true,
+    "authorizationBoundToExactHeadShaAndPatchDigest": true,
+    "changesToCheckpointOrScopeInvalidateApproval": true,
+    "telegramChatCannotAuthorizeMergeOrDeployment": true
+  },
+  "notifications": {
+    "preference": "milestones_and_blockers_only",
+    "delivery": "NOT_CONFIGURED",
+    "enabled": false,
+    "allowedTypes": [
+      "pilot_passed",
+      "draft_pr_ready_for_human_review",
+      "phase_gate_passed",
+      "security_or_ci_blocker",
+      "budget_exhausted_or_guard_unavailable",
+      "human_approval_required"
+    ],
+    "everyAgentReply": false,
+    "everyToolCall": false,
+    "clientFacingChannelsAllowed": false,
+    "note": "Preferir notificacion interna/push Admin cuando se implemente. No activar Telegram cliente ni correo externo."
+  },
+  "initialPilot": {
+    "environment": "isolated_synthetic_sandbox_only",
+    "taskCount": 1,
+    "customerDataAllowed": false,
+    "productionCredentialsAllowed": false,
+    "productionWritesAllowed": false,
+    "githubPermissionIntent": "read_only_until_separately_approved_draft_pr_broker",
+    "mandatoryAcceptance": [
+      "synthetic_patch_verified",
+      "out_of_scope_file_change_rejected",
+      "prompt_injection_rejected",
+      "failed_ci_blocks",
+      "changed_head_sha_invalidates_approval",
+      "expired_approval_rejected",
+      "budget_fail_closed_verified",
+      "zero_auto_merge_and_zero_auto_deploy"
+    ]
+  }
+}
