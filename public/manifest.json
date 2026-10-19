@@ -8,9 +8,18 @@
   "background_color": "#0D1B2A",
   "theme_color": "#0D1B2A",
   "orientation": "portrait-primary",
-  "categories": ["finance", "business"],
+  "categories": [
+    "finance",
+    "business"
+  ],
   "lang": "es",
   "icons": [
+    {
+      "src": "/branding/expert-2026/expert-app.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/branding/expert-app-192.png",
       "sizes": "192x192",
