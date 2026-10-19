@@ -1150,3 +1150,59 @@ En el árbol examinado **no se encontró** `AGENTS.md`, `CLAUDE.md` ni `.github/
 - Tres caminos para el usuario: autogestión gratuita, formación guiada opcional, servicio completo. Mantener precios actuales sin modificar Stripe; conflicto 490/499 pendiente de conciliación.
 - Reutilizar el componente actual de FAQ y vínculos automáticos `getDocsForService` / `getArticlesForService`; no introducir duplicados ni un CMS paralelo.
 - Estado: PR #803 borrador, sin fusión ni publicación. Gates: revisión legal/fiscal, enlaces, CI, preview, SEO ES/RU, comprobación de los cambios sobre `main`, aprobación humana.
+
+
+### Anexo 19/10/2026 — Enlace único EXPERT y calculadora de forma jurídica (diseño sujeto a aprobación)
+
+**Decisión UX solicitada:** enviar un único enlace de EXPERT por correo o chat: \`/herramientas/crear-sociedad-limitada\`. Funciona como centro de decisión y operación, no como mera landing de contratación. Mantener el acceso público sin registro y con conexión a biblioteca, DUE/PAE, asesoramiento humano opcional, Holded y catálogo. Los enlaces a organismos públicos se conservan en el contenido de EXPERT como respaldo y destino del trámite (EXPERT no firma el DUE por cuenta del visitante).
+
+**Arquitectura de página pilar (PR #803, BORRADOR):**
+1. Cuatro entradas: «¿Autónomo o SL?», «Crear SL por mi cuenta», «Leer guías y artículos», «Solicitar ayuda / Holded».
+2. Comparativa editorial de fiscalidad y costes; botón de lectura real. No mostrar una calculadora sin motor implementado ni resultados ficticios.
+3. Guía CIRCE en siete pasos, alcance de trámites integrados y enlaces al PAE Virtual, RMC, normativa y manual de referencia.
+4. Base de conocimientos y blog seleccionados: \`/docs/constituir-sl-circe-pae-virtual\`, \`/blog/autonomo-vs-sociedad-limitada-impuestos-costes-2026\`, \`/blog/costes-constitucion-y-mantenimiento-sl-2026\`, \`/blog/alta-autonomo-espana\`, y herramienta de RGPD ya existente.
+5. Vías opcionales: formación o gestión integral en ficha CIRCE; Holded mediante \`/holded\`; información sobre planes de acompañamiento únicamente previa conciliación comercial. No reactivar Checkout, Stripe o captación automática.
+6. FAQ, fuentes, fecha de revisión, accesibilidad móvil, KIA contextual y trazabilidad de origen solo cuando corresponda y sin identificar al lector anónimo.
+
+**Contradicción de catálogo pendiente de decisión comercial:** la web aún conserva \`/planes\` con Supervisión 49, Avanzado 99 y Colaborativo 199 €/mes, pero \`docs/editorial/marketing-execution-roadmap-2026-10-02.md\` declara esos planes retirados del catálogo público 2026 y prohibe reincorporarlos automáticamente a Meta. Nueva instrucción de Dirección (19/10): contemplar CTA de «planes de suscripción» junto a Holded dentro del hub CIRCE. **Resolver antes de merge** si \`/planes\` vuelve a ser oferta activa o queda como contenido informativo, qué alcance/IVA/precios/aprobación y contratos aplican; no activar por este PR cobros ni prometer disponibilidad. El enlace propuesto es de navegación informativa, no alta automática.
+
+**Herramienta futura: "¿Me conviene autónomo o SL?" — especificación funcional, NO implementada**
+
+Objetivo: estimar comparativamente el coste fiscal, de cotización y de gestión para quien desarrolla la misma actividad como empresario individual o mediante SL, y mostrar los supuestos en los que cada alternativa mejora la renta disponible o la reinversión. Evitar recomendación jurídica individual categórica, exactitud simulada y umbrales universales de facturación. Orientación fiscal española por **ejercicio seleccionado**.
+
+**Datos de entrada MVP (sin identificar al usuario):**
+- Ejercicio fiscal, comunidad autónoma de residencia fiscal (y de la actividad si resulta relevante), naturaleza de la actividad económica y régimen fiscal, número de socios y porcentajes.
+- Ventas anuales **sin IVA** y gastos fiscalmente deducibles **sin IVA**, diferenciando costes de explotación, posibles nóminas y costes no admitidos fiscalmente; beneficio calculado = ventas − gastos, con reconciliación cuando el usuario escribe beneficio manual. No contabilizar un mismo coste dos veces.
+- Otras rentas personales, situación básica de mínimo personal/familiar y circunstancias relevantes para tramos de IRPF; cuando falten, mostrar escenarios/rangos claramente señalados, nunca cuota exacta.
+- Forma de disponer del beneficio bajo SL: retribución por trabajo/administración, dividendos y porcentaje de beneficio retenido para reinversión. Validar importes totales y régimen de deducibilidad, reteniendo gastos comunes una sola vez.
+- Situación de trabajo, funciones de administrador, control efectivo y cotización RETA/Régimen General; obtener solo un rango estimado de cuota cuando no sea posible determinarla con seguridad.
+- Costes recurrentes configurables de gestoría/contabilidad, libros, cuentas y software, tanto para autónomo como SL; coste único de constitución y horizonte 1/3/5 años. Los importes comerciales se leen de fuente canónica aprobada, nunca se fijan en varios componentes.
+- Elegibilidad del régimen de nueva creación o empresa emergente como **pregunta**: si no hay evidencia suficiente, modo "no determinado" y escenarios alternativos; no aplicar 15 % de oficio.
+
+**Motor de cálculo determinista y auditable (sin LLM calculando):**
+A. Beneficio preliminar por forma jurídica, con ajustes fiscales separados y trazables. IVA no es ingreso/gasto con carácter general en regímenes donde es recuperable; documentar las excepciones por prorrata o actividades exentas.
+B. Autónoma/o: base IRPF del negocio + otras bases personales separadas, tramos estatal/autonómico del **ejercicio** y mínimos aplicables, estimación de RETA según reglas y supuestos. Comparar **incremento de IRPF atribuible al negocio**, no IRPF total de todos los ingresos como coste exclusivo de la actividad.
+C. SL: base imponible tras remuneraciones y demás ajustes que sean fiscalmente deducibles, tipo de IS aplicable por año y requisitos (general, microempresa, ERD, nueva creación, startup); separar dividendos y su IRPF en base del ahorro, RETA u otras cotizaciones y retenciones. Evitar doble contabilización de la misma retribución en beneficios y flujos.
+D. Resultados en tres perspectivas: **dinero neto anual disponible para la persona**, **beneficio líquido retenido en el negocio**, y **coste anual total** (impuestos, cotizaciones, gastos profesionales/software). Coste inicial amortizable en el horizonte indicado como análisis de tesorería, sin atribuir deducibilidad universal.
+E. Sensibilidad de ingresos/beneficios y % de reinversión, desglose anual por escenario, punto de cruce solo si los supuestos permiten determinarlo; no emitir conclusión binaria si faltan datos críticos. Redondeos a céntimos en EUR, coma decimal, y explicación de supuestos.
+F. Salidas: tabla autónomo vs SL; gráfico de carga total y renta disponible (con advertencias), 3 escenarios (repartir/reinvertir/mixto), checklist de datos faltantes, fuentes y fecha de vigencia, enlace a artículo y «cómo constituir por CIRCE» o «cómo darse de alta como autónomo». Recomendación en lenguaje **condicional**, nunca "ahorrarás X €" sin advertencias ni "crear SL garantiza blindaje patrimonial".
+
+**Reglas jurídicas y fiscales imprescindibles:**
+- Régimen aplicable por **año de inicio del ejercicio**, no copiar porcentajes entre 2025/2026/2027; AEAT 2026 incluye 19/21 % para microempresas por tramos, ERD transitorio 23 %, general 25 %, 15 % solo si se cumplen requisitos; prevalencia y exclusiones de regímenes (art. 29 y DT 44 LIS).
+- IRPF exige tarifas estatal/CCAA y circunstancias personales, más IRPF sobre dividendos cuando proceda; ingreso de socios no equivale a beneficio retenido de sociedad.
+- Seguridad Social societaria según función/control (LGSS art. 305), con tipología de cotización documentada.
+- Actividades profesionales, tributación internacional, otras ganancias, patrimoniales, empleados y partes vinculadas deben activar "resultado limitado/revisión".
+- No comparar cuota teórica IRPF vs tipo nominal IS sin efecto de distribución, salarios y cuotas.
+
+**Privacidad, UX y explotación:**
+- Cálculo local/anónimo por defecto; **no persistir**, enviar a KIA ni a CRM datos introducidos, ni incorporar a URLs o parámetros de analítica; ningún consentimiento comercial obligatorio.
+- Guardar/exportar resultado solo a elección del usuario, con base legal, finalidad, plazo y permisos documentados; no permitir recuperar simulaciones privadas de terceros.
+- KIA puede explicar conceptos/supuestos desde fuentes, pero no inventar tipos ni alterar resultados del motor determinista. Distinguir texto editorial de simulación.
+- SEO: única página de herramienta futura con canonical propia cuando realmente funcione; página pilar enlaza en ese momento. De momento solo tarjeta "en diseño" sin ruta rota.
+- Señal de conversión útil: decisión informada, clic en manual, consulta voluntaria, sin fabricar leads a partir de entradas numéricas.
+
+**Mantenimiento y controles antes de lanzamiento:** módulo de parámetros fiscales por ejercicio/CCAA con fuente y fecha efectiva; verificación de normativa AEAT/BOE/TGSS; tablas de prueba de bordes (beneficio negativo/0, cero ventas, 49.999/50.000/50.001 de BI, microempresa vs ERD vs nueva creación, sin reparto/dividendo completo, administrador RETA, otras rentas); tests de idempotencia y no persistencia; test visual móvil, accesibilidad, ES/RU y aviso de cálculo orientativo. Gate de aprobación jurídico-contable y PR independiente posterior, **no construir el simulador en #803**.
+
+**Fuentes iniciales para el diseño:** AEAT [tipo IS por período 2026](https://sede.agenciatributaria.gob.es/Sede/impuesto-sobre-sociedades/que-base-imponible-se-determina-sociedades/tipo-impositivo.html), [Ley 27/2014](https://www.boe.es/buscar/act.php?id=BOE-A-2014-12328), [Ley IRPF](https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764), [LGSS](https://www.boe.es/buscar/act.php?id=BOE-A-2015-11724), [PAE](https://paeelectronico.es/). Cualquier tipo futuro se contrasta con fecha de eficacia antes de habilitar un selector de año.
+
+**Estado de #803**: página pilar ampliada, sin calculadora ni cambios de Stripe, en **DRAFT/noindex**. Requeridos CI, QA editorial, conciliación del catálogo y aprobación de Dirección para publicar.
