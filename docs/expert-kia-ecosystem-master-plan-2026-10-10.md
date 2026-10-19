@@ -1126,3 +1126,18 @@ En el árbol examinado **no se encontró** `AGENTS.md`, `CLAUDE.md` ni `.github/
 
 **Formato de resolución:** para cada PR/issue/documento conservar `ID + estado observado + duplicado/contradicción + motivo + propuesta de incorporar/archivar/descartar + fase del Plan Maestro + fuentes/evidencia + decisión humana cuando corresponda + validación de CI si hay código`. Este registro se actualiza **en este único Plan Maestro**; GitHub issues/PR son tickets de ejecución o evidencias, nunca un roadmap competidor.
 
+
+
+## ANEXO 19/10/2026 — Centro de ayuda CIRCE: constitución de SL en autoservicio (propuesta en revisión)
+
+**Estado:** BORRADOR NO PUBLICADO. Depende de QA jurídico-editorial, test/build/preview y autorización para fusionar. El Plan Maestro continúa como única fuente rectora; el plan auxiliar `docs/plans/circe-autogestion-centro-ayuda-20261015.md` sigue siendo histórico y subordinado.
+
+- **Página pilar gratuita:** `/herramientas/crear-sociedad-limitada`. Navegación por siete etapas, FAQ, recursos oficiales y enlace a guía de la base de conocimientos. Sin registro ni obligación de contratación.
+- **Base de conocimientos:** `/docs/constituir-sl-circe-pae-virtual`, indexada a través de `lib/content/circe-autogestion.ts` para evitar duplicar el cuerpo editorial y enlazar la página pilar.
+- **Fuentes:** guía oficial de cumplimentación DUE SRL del 27/05/2026, PAE Virtual, CIRCE, RMC, BOE; revisión y enlace vivo antes de fusionar.
+- **Criterio corregido:** CIRCE/DUE integra el proceso censal de AEAT y las gestiones iniciales de TGSS que correspondan, además de coordinación de notaría y Registro; no repetir por defecto NIF provisional, 036 ni altas después. Verificar estado y excepciones. Las obligaciones futuras subsisten.
+- **Firma:** según manual 27/05/2026, al menos una persona socia con certificado electrónico para la firma y envío del DUE de SL en PAE Virtual; Cl@ve no sustituye dicho certificado.
+- **KIA:** se ajusta conocimiento sobre firma y trámites integrados; no anunciar URL nueva como publicada hasta que pase las gates.
+- **Control comercial/SEO:** no se alteran Stripe, precios o fichas; página nueva en `noindex` hasta autorización editorial. La versión rusa debe elaborarse tras QA de la española, sin enlaces hreflang ficticios.
+- **Pendientes de QA:** enlaces oficiales activos, excepciones de DUE/AEAT/TGSS, revisión de afirmaciones sobre aranceles (60/40 no universal), contenido de capital y responsabilidad, accesibilidad móvil, TypeScript, lint, tests, Vercel en ambos proyectos, KIA con fuente, revisión experta final.
+- **Pendiente después de aprobación:** enlaces internos desde los servicios, ayuda y blog; sitemap e indexación solo cuando la página esté comprobada y habilitada. No enviar nuevos correos a usuarios antes de publicación.
