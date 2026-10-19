@@ -1704,3 +1704,18 @@ Lectura de 'lib/ai/kia/kia-sub-agent-router.ts', 'lib/ai/kia/kia-skill-registry.
 **6. Futuras PR por programa:** WEB-P (público), WORKSPACE (interno), KIA-A (núcleo), todas con QA de interfaz, seguridad, fuentes oficiales, RGPD, idioma, CI y previews. Un solo checkpoint rector E0–E6.
 
 **Limitación importante:** este informe constituye una clasificación y conciliación, no certifica que todo el árbol recursivo haya sido comprobado a nivel de línea o que las PR estén listas para merge. No se han modificado datos, expedientes, cobros, clientes ni despliegues.
+
+
+## ACTA DE LIMPIEZA L3 — Referencias web, RGPD, comunicaciones e IA histórica (19/10/2026)
+
+**Solo gobierno documental.** El Plan Maestro E0–E6 es único; WEB-P, WORKSPACE y KIA-A son vías de diseño coordinadas, no planes independientes. No se autoriza implementación, publicación, migración o cambio de permiso. Se conservaron los textos técnicos y se corrigieron exclusivamente encabezados/avisos de cinco referencias auxiliares.
+
+- `docs/plans/rgpd-hub-lead-pdf-rollout-20261015.md`: deja de titularse «PLAN MAESTRO». Es especificación de RGPD/lead/PDF que requiere verificación legal, consentimiento, minimización, idempotencia y QA; no certifica publicación.
+- `docs/kia-contextual-conversations-roadmap.md`: contexto histórico de canales y WABA; no convierte WhatsApp en canal público vigente ni sustituye KIA web, Telegram y correo con identidades verificadas.
+- `docs/kia-ai-architecture.md`: memoria histórica de arquitectura WABA y flags; requisitos y proveedores actuales deben verificarse en código y política de Plan Maestro.
+- `docs/expert-web-v2-navigation-knowledge-ai-credit-plans-2026-10-10.md`: investigación histórica de créditos/planes IA; ninguna cuota, monetización o nuevo checkout aprobados por su contenido.
+- `docs/expert-public-web-workspace-kia-repositioning-plan-2026-10-10.md`: referencia histórica de reposicionamiento; no precede decisiones WEB-P publicadas en este Maestro.
+
+**Estado de issues:** #775 cerrada como duplicada, criterios incorporados a #776 que sigue abierta; #654/#134 y #778/#780/#770 continúan separados por poseer entregables distintos. No repetir cierre o producir efectos comerciales por limpieza.
+
+**Gate:** confirmar diff limitado a Markdown, CI obligatorio, previews de ambos despliegues y lectura de los cinco documentos más el Maestro en `main` después de merge. Ninguna evidencia funcional nueva se deduce de documentación.
