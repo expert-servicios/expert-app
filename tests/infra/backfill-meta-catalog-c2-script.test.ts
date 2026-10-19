@@ -25,7 +25,7 @@ describe('Meta catalog C2 backfill script', () => {
     expect(script).toContain("status: isPaused ? 'paused' : 'active'");
   });
 
-  it('does not reintroduce retired monthly plans into the canonical catalog', () => {
+  it('does not invent recurring-plan entries in this Meta-specific feed before channel verification', () => {
     const script = read('scripts/backfill-meta-catalog-c2.ts');
     expect(script).not.toContain('MONTHLY_PLANS');
     expect(script).not.toContain('plan-supervision');
