@@ -1042,8 +1042,18 @@ export const services: Service[] = [
       'Obtención del NIF definitivo'
     ],
     faqs: [
-      { q: '¿Cuánto capital mínimo se necesita?', a: 'Desde 1 euro, aunque lo habitual es un capital inicial de 3.000 €.' },
-      { q: '¿Puedo constituir una SL yo solo?', a: 'Sí, se puede constituir una SL unipersonal con un único socio.' }
+      { q: '¿Puedo constituir una SL sin gestoría?', a: 'Sí. El PAE Virtual permite completar el DUE personalmente. Se pagan los gastos externos de denominación, notaría y Registro que correspondan.' },
+      { q: '¿Qué capital mínimo se necesita?', a: 'Desde 1 €, aunque por debajo de 3.000 € se aplican reglas específicas de reserva y responsabilidad en determinados supuestos.' },
+      { q: '¿Puedo crear una sociedad de un único socio?', a: 'Sí, puede constituirse una sociedad limitada unipersonal y deben cumplirse sus obligaciones de publicidad registral.' },
+      { q: '¿CIRCE también tramita Hacienda y Seguridad Social?', a: 'CIRCE integra la declaración censal y los trámites iniciales de Seguridad Social que correspondan. No deben repetirse automáticamente; antes se comprueba el estado del DUE.' },
+      { q: '¿Puedo firmar el DUE solo con Cl@ve?', a: 'La guía oficial del PAE Virtual para SL de mayo de 2026 exige certificado electrónico para firmar y enviar el DUE.' },
+      { q: '¿Necesitan todos los socios certificado digital?', a: 'El manual oficial señala el certificado electrónico de al menos una persona socia para el trámite de firma y envío; los restantes socios deben identificarse y firmar o comparecer cuando corresponda.' },
+      { q: '¿Cuándo interesa fiscalmente una SL frente a ser autónomo?', a: 'No existe un umbral de facturación universal: hay que comparar IRPF, Impuesto sobre Sociedades, retribuciones, dividendos, cotizaciones, costes y reinversión.' },
+      { q: '¿La SL paga siempre un 25 % de Impuesto sobre Sociedades?', a: 'No. El tipo depende del régimen aplicable y del ejercicio fiscal, incluidas reglas para microempresas, entidades de reducida dimensión y determinadas entidades de nueva creación.' },
+      { q: '¿Puede quedar una SL sin actividad y sin obligaciones?', a: 'Puede no facturar, pero mantiene obligaciones fiscales, contables y mercantiles que deben analizarse y cumplirse.' },
+      { q: '¿Es obligatorio contratar a EXPERT para tramitar CIRCE?', a: 'No. La guía de autogestión es gratuita; el acompañamiento formativo y el servicio integral son alternativas voluntarias.' },
+      { q: '¿La responsabilidad del administrador desaparece por constituir la SL?', a: 'No. La personalidad jurídica limita determinados riesgos de los socios, pero no elimina las responsabilidades propias del administrador.' },
+      { q: '¿Se mantienen los aranceles notariales y registrales si lo hago por mi cuenta?', a: 'Sí. Hay supuestos de aranceles reducidos con condiciones específicas; el uso del DUE no elimina los gastos oficiales aplicables.' }
     ]
   },
   {
@@ -1106,8 +1116,18 @@ export const services: Service[] = [
       'La vía CIRCE con estatutos tipo no es adecuada para estructuras societarias complejas'
     ],
     faqs: [
-      { q: '¿Qué diferencia hay entre las dos modalidades?', a: 'En el servicio completo EXPERT realiza y coordina el trámite. En la formación guiada te enseñamos a prepararlo y gestionarlo por tu cuenta; no presentamos el expediente en tu nombre.' },
-      { q: '¿Puedo usar CIRCE si hay socios extranjeros?', a: 'Sí, siempre que dispongan de la identificación fiscal necesaria. Si algún socio no dispone de NIF/NIE, ese trámite debe resolverse previamente.' }
+      { q: '¿Puedo constituir una SL sin gestoría?', a: 'Sí. El PAE Virtual permite completar el DUE personalmente. Se pagan los gastos externos de denominación, notaría y Registro que correspondan.' },
+      { q: '¿Qué capital mínimo se necesita?', a: 'Desde 1 €, aunque por debajo de 3.000 € se aplican reglas específicas de reserva y responsabilidad en determinados supuestos.' },
+      { q: '¿Puedo crear una sociedad de un único socio?', a: 'Sí, puede constituirse una sociedad limitada unipersonal y deben cumplirse sus obligaciones de publicidad registral.' },
+      { q: '¿CIRCE también tramita Hacienda y Seguridad Social?', a: 'CIRCE integra la declaración censal y los trámites iniciales de Seguridad Social que correspondan. No deben repetirse automáticamente; antes se comprueba el estado del DUE.' },
+      { q: '¿Puedo firmar el DUE solo con Cl@ve?', a: 'La guía oficial del PAE Virtual para SL de mayo de 2026 exige certificado electrónico para firmar y enviar el DUE.' },
+      { q: '¿Necesitan todos los socios certificado digital?', a: 'El manual oficial señala el certificado electrónico de al menos una persona socia para el trámite de firma y envío; los restantes socios deben identificarse y firmar o comparecer cuando corresponda.' },
+      { q: '¿Cuándo interesa fiscalmente una SL frente a ser autónomo?', a: 'No existe un umbral de facturación universal: hay que comparar IRPF, Impuesto sobre Sociedades, retribuciones, dividendos, cotizaciones, costes y reinversión.' },
+      { q: '¿La SL paga siempre un 25 % de Impuesto sobre Sociedades?', a: 'No. El tipo depende del régimen aplicable y del ejercicio fiscal, incluidas reglas para microempresas, entidades de reducida dimensión y determinadas entidades de nueva creación.' },
+      { q: '¿Puede quedar una SL sin actividad y sin obligaciones?', a: 'Puede no facturar, pero mantiene obligaciones fiscales, contables y mercantiles que deben analizarse y cumplirse.' },
+      { q: '¿Es obligatorio contratar a EXPERT para tramitar CIRCE?', a: 'No. La guía de autogestión es gratuita; el acompañamiento formativo y el servicio integral son alternativas voluntarias.' },
+      { q: '¿La responsabilidad del administrador desaparece por constituir la SL?', a: 'No. La personalidad jurídica limita determinados riesgos de los socios, pero no elimina las responsabilidades propias del administrador.' },
+      { q: '¿Se mantienen los aranceles notariales y registrales si lo hago por mi cuenta?', a: 'Sí. Hay supuestos de aranceles reducidos con condiciones específicas; el uso del DUE no elimina los gastos oficiales aplicables.' }
     ]
   },
   {
