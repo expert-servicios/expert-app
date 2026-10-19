@@ -1141,3 +1141,12 @@ En el árbol examinado **no se encontró** `AGENTS.md`, `CLAUDE.md` ni `.github/
 - **Control comercial/SEO:** no se alteran Stripe, precios o fichas; página nueva en `noindex` hasta autorización editorial. La versión rusa debe elaborarse tras QA de la española, sin enlaces hreflang ficticios.
 - **Pendientes de QA:** enlaces oficiales activos, excepciones de DUE/AEAT/TGSS, revisión de afirmaciones sobre aranceles (60/40 no universal), contenido de capital y responsabilidad, accesibilidad móvil, TypeScript, lint, tests, Vercel en ambos proyectos, KIA con fuente, revisión experta final.
 - **Pendiente después de aprobación:** enlaces internos desde los servicios, ayuda y blog; sitemap e indexación solo cuando la página esté comprobada y habilitada. No enviar nuevos correos a usuarios antes de publicación.
+
+
+### Ampliación editorial 19/10/2026 — autónomo frente a SL y fichas de constitución
+- Inventario confirmado: artículos existentes `constitucion-sociedad-limitada-espana` y `alta-autonomo-espana`. El primero contiene simplificaciones y requiere corrección del circuito DUE/036, depósito bancario no universal y fiscalidad de operaciones societarias; **no dar por validado el artículo antiguo**.
+- Nuevos borradores registrados en `lib/content/circe-editorial-blog.ts`: `autonomo-vs-sociedad-limitada-impuestos-costes-2026` y `costes-constitucion-y-mantenimiento-sl-2026`; deben pasar revisión de tipos, condiciones fiscales y aranceles con fuentes primarias.
+- En fichas `constitucion-sl` y `constitucion-sl-circe`: doce FAQ coherentes, enlaces a la guía gratuita y artículo comparativo. El botón "Hazlo por tu cuenta" deja de enviar al usuario a un presupuesto para formación de pago en estas dos fichas.
+- Tres caminos para el usuario: autogestión gratuita, formación guiada opcional, servicio completo. Mantener precios actuales sin modificar Stripe; conflicto 490/499 pendiente de conciliación.
+- Reutilizar el componente actual de FAQ y vínculos automáticos `getDocsForService` / `getArticlesForService`; no introducir duplicados ni un CMS paralelo.
+- Estado: PR #803 borrador, sin fusión ni publicación. Gates: revisión legal/fiscal, enlaces, CI, preview, SEO ES/RU, comprobación de los cambios sobre `main`, aprobación humana.
