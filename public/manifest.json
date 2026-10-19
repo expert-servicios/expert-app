@@ -15,28 +15,16 @@
   "lang": "es",
   "icons": [
     {
-      "src": "/branding/expert-2026/expert-app.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/branding/expert-app-192.png",
+      "src": "/branding/expert-approved/app-dark-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/branding/expert-app.png",
+      "src": "/branding/expert-approved/app-dark-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/branding/expert-app.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ],
   "shortcuts": [
