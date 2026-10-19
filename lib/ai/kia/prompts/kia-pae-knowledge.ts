@@ -1,7 +1,7 @@
 export const KIA_PAE_KNOWLEDGE_PROMPT = `
 <pae_knowledge>
 Conocimiento curado del PAE Electronico (Portal de la Administracion Electronica) y CIRCE para la creacion de empresas y alta de autonomo de forma online.
-Kia orienta a hacerlo solo si el cliente tiene certificado digital activo; si no, recomienda EXPERT para evitar errores y retrasos.
+Kia prioriza la ruta gratuita de autogestion. Para firmar y enviar el DUE de una SL en PAE Virtual se requiere certificado electronico de al menos una persona socia segun manual oficial 27/05/2026. Para otros tramites, verificar mecanismo de acceso vigente; nunca presentar la contratacion de EXPERT como condicion.
 PAE Electronico: https://paeelectronico.es/ | CIRCE: https://www.circe.es/
 
 <pae_que_es>
@@ -57,7 +57,7 @@ Que permite CIRCE:
 - Integra en un solo proceso: denominacion social (RMC), escritura notarial, inscripcion en Registro Mercantil, alta en Hacienda.
 
 Requisitos para hacerlo solo por CIRCE:
-- Certificado digital activo de todos los socios.
+- Certificado electronico de al menos una de las personas socias para firmar y enviar el DUE en el PAE Virtual; Cl@ve por si sola no sirve para esa operacion. Las demas personas aportan documentacion y comparecen o firman cuando corresponda.
 - Certificado de denominacion social negativa del RMC (hasta 5 nombres alternativos; plazo 3-5 dias; coste ~16 EUR).
 - Capital social: consultar SL_CAPITAL_RULES. El minimo legal puede ser inferior a 3.000 EUR, pero por debajo de ese umbral existen salvaguardas legales especificas.
 - Datos de los socios: DNI/NIE, porcentaje de participacion, domicilio.
@@ -77,7 +77,7 @@ Proceso simplificado via CIRCE:
 Limitaciones de CIRCE / estatutos tipo:
 - Los estatutos tipo son estandar y no permiten clausulas personalizadas (pactos de socios especiales, derechos de adquisicion preferente, etc.).
 - Para SL con varios socios, inversores o clausulas especiales, es mejor redactar estatutos a medida — EXPERT recomienda esto.
-- No incluye tramites posteriores: apertura de cuenta bancaria con el certificado de denominacion, inscripcion en mutua laboral, etc.
+- El DUE integra la declaracion censal y los tramites de Seguridad Social que correspondan, ademas de coordinacion notarial y registral. No recomendar duplicar modelo 036, NIF provisional ni altas iniciales sin verificar el resultado del expediente. Las obligaciones futuras y actuaciones ajenas a CIRCE continuan.
 
 Cuanto cuesta la constitucion de SL:
 - Via CIRCE con estatutos tipo: gastos notariales reducidos (~150-300 EUR) + Registro Mercantil (~100-200 EUR) + tasa denominacion (~16 EUR).
@@ -94,9 +94,9 @@ Cuando recomienda EXPERT en lugar de CIRCE:
 
 <pae_kia_rules>
 REGLAS DE KIA PARA PREGUNTAS SOBRE PAE / CIRCE:
-- Siempre preguntar primero si el cliente tiene certificado digital activo. Sin el, CIRCE y el PAE no son viables.
+- Facilitar primero guia publica de EXPERT: https://expertconsulting.es/herramientas/crear-sociedad-limitada (URL prevista; no anunciar como publicada antes de merge/QA). Para firmar el DUE de SL, certificado electronico de al menos una persona socia; puede pedirse ayuda a un PAE sin contratar gestor privado.
 - Para alta de autonomo simple (un solo epigrafe, actividad clara): Kia puede orientar a hacerlo solo via PAE si tiene certificado. Si no: svc_alta_autonomo con EXPERT.
-- Para constitucion SL: orientar sobre CIRCE si el cliente quiere hacerlo solo y tiene certificado + la SL es sencilla (1-2 socios, sin clausulas especiales). Si hay complejidad o no tiene certificado: svc_constitucion_sl con EXPERT.
+- Para constituir SL: explicar CIRCE y PAE Virtual, alcance del DUE, documentos, firma y costes ajenos. Ante complejidad, considerar estatutos personalizados, PAE o asesoramiento profesional opcional; no convertir falta de certificado en venta obligatoria.
 - No afirmar que CIRCE es "gratis": tiene costes de notaria, registro y denominacion.
 - PAE Electronico: https://paeelectronico.es/ | CIRCE: https://www.circe.es/ | RMC: https://www.rmc.es/
 </pae_kia_rules>
