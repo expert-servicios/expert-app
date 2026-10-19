@@ -1,4 +1,4 @@
-# EXPERT Web pública — Reposicionamiento hacia Workspace V2 + KIA única
+# EXPERT Web pública — Referencia histórica de reposicionamiento y Workspace V2
 
 > **Consolidación documental 17/10/2026 · propuesta histórica #709:** documento auxiliar subordinado al [Plan Maestro E0–E6](expert-kia-ecosystem-master-plan-2026-10-10.md). Sus auditorías de fechas anteriores requieren revalidación contra `main`, fuentes oficiales y estado real antes de cualquier ejecución. **No autoriza implementación, publicación, cambios comerciales ni activación de servicios o KIA.**
 
