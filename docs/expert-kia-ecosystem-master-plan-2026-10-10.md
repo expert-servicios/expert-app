@@ -1126,3 +1126,69 @@ En el árbol examinado **no se encontró** `AGENTS.md`, `CLAUDE.md` ni `.github/
 
 **Formato de resolución:** para cada PR/issue/documento conservar `ID + estado observado + duplicado/contradicción + motivo + propuesta de incorporar/archivar/descartar + fase del Plan Maestro + fuentes/evidencia + decisión humana cuando corresponda + validación de CI si hay código`. Este registro se actualiza **en este único Plan Maestro**; GitHub issues/PR son tickets de ejecución o evidencias, nunca un roadmap competidor.
 
+
+
+## ANEXO E0-WEB-P — Línea paralela de contenidos, copy y arquitectura pública de autogestión (19/10/2026)
+
+**Decisión funcional de Dirección 19/10/2026.** EXPERT se posiciona como **«Tu plataforma de autogestión inteligente»**. Mensaje principal: **«Hazlo tú mismo, aprende con nosotros o contrata ayuda profesional. Tú decides.»** Propósito: reducir dependencia de gestiones externas innecesarias, reforzar control y conocimiento del propio negocio y ofrecer transparencia de costes. No afirmar «primera plataforma de España» sin prueba objetiva de exclusividad. La oferta profesional permanece disponible por elección, nunca como requisito de acceso a recursos gratuitos.
+
+**Gobierno:** este anexo forma parte del Plan Maestro único, NO es un nuevo plan rector. La rama técnica separada de documentación es \`docs/web-publica-autogestion-paralela-20261019\`. La nueva línea **WEB-P (web pública y contenido)** se prepara y ejecuta independientemente de las pantallas, RLS, roles y migraciones del **dashboard E0–E6**, sin modificar su checkpoint ni cerrar anticipadamente hitos. Actualización de alcance **propuesta por Dirección**: se autoriza planificación y diseño editorial WEB-P en paralelo; las modificaciones a código público requieren PR propios, QA jurídico/idiomas/SEO/CI y comprobación de independencia. Los módulos compartidos (KIA, autenticación, checkout, analítica, Supabase, permisos y datos privados) siguen sujetos a los gates E0–E6 y no se tocan por esta excepción. Esta regla especial deberá integrarse en la próxima revisión de la congelación de alcance del §0; hasta entonces **no implica un desbloqueo técnico general**.
+
+### A. Inventario técnico y reutilización constatada (main, 19/10/2026)
+
+- Menús ES/RU: \`components/site/header.tsx\`, \`lib/i18n/public-shell-copy.ts\`; locales de servicios mediante \`lib/services/service-localized-content.ts\`.
+- Catálogo de servicios: \`lib/utils/catalog.ts\` (7 categorías visibles: Fiscalidad, Extranjería y Nacionalidad, Empresas y Autónomos, Holded, Certificado digital, Tráfico y Capitanía Marítima, Notaría y Propiedades; Formación actualmente auxiliar/oculta).
+- Agrupación transversal ya implementada: \`lib/utils/taxonomy.ts\` (6 temas: fiscalidad, extranjería-nacionalidad, empresas, Holded, trámites, formación).
+- Contenidos: \`lib/utils/blog.ts\`, \`lib/utils/docs.ts\`; interfaces \`/blog\`, \`/docs\`, \`/categoria/[tema]\`, fichas \`/servicios/[categoria]/[servicio]\`; FAQ y enlazado de contenidos parcialmente existentes.
+- Planes EXPERT Supervisión/Avanzado/Colaborativo permanecen **contratables**: no confundir proyección del feed de Meta con disponibilidad en la web.
+- PR #803 es el **lote CIRCE y autogestión**, con instrucciones KIA/FAQ y dos artículos en revisión; no duplicar trabajo ni prometer publicación mientras esté en borrador.
+- Documentos históricos \`docs/expert-public-web-workspace-kia-repositioning-plan-2026-10-10.md\` y \`docs/expert-web-v2-navigation-knowledge-ai-credit-plans-2026-10-10.md\` quedan como referencias de inventario subordinadas a este anexo. Sus aseveraciones de retirada de suscripciones están SUPERADAS por la aclaración expresa del 19/10/2026.
+
+### B. Arquitectura editorial definitiva de navegación (no migrar URLs)
+
+**Navegación principal objetivo ES:** Inicio · Trámites · Conocimientos · Herramientas · Formación · Servicios · Planes · KIA · Acceder. Las vistas móvil/desktop pueden agrupar opciones para usabilidad, pero las mismas áreas han de ser accesibles. **Menú RU:** Главная · Процедуры · База знаний · Инструменты · Обучение · Услуги · Тарифы · KIA · Войти. English reservado como tercer locale futuro, NO publicar páginas EN sin traducción validada.
+
+**Categoría canónica = tema legal/funcional**, no formato (blog, guía, servicio). Taxonomía conceptual aprobada, a mapear sin alterar slugs existentes:
+1. **Empresas y autónomos:** formas jurídicas, creación de SL/CIRCE, altas y bajas, socios, administración, responsabilidad, gestión propia, planes empresariales.
+2. **Fiscalidad y contabilidad:** IRPF, IS, IVA, IRNR, libros, cuentas, obligaciones periódicas, calendario, calculadoras.
+3. **Laboral y Seguridad Social:** contratos, nóminas, convenio, cotizaciones, trabajadores, RETA, bajas y trámites TGSS.
+4. **Mercantil, notaría y registros:** sociedades, poderes, acuerdos, Registro Mercantil, notarías, operaciones inmobiliarias, herencias y donaciones.
+5. **Trámites administrativos y certificados:** certificados de persona física/empresa, GVA/CCAA, ayuntamientos, SUMA, Catastro, DGT, Capitanía, otros organismos.
+6. **Protección de datos y cumplimiento:** RGPD, LOPDGDD, AEPD, formularios, cookies, RAT, EIPD, proveedores y seguridad.
+7. **Extranjería y nacionalidad:** NIE, TIE, arraigo, autorizaciones, nacionalidad, Registro Civil y asuntos de residencia.
+8. **Herramientas de gestión y digitalización:** Holded, facturación, automatización, firmas, integraciones, VeriFactu y herramientas tecnológicas.
+**Formación** es una modalidad transversal (no categoría jurídico-temática exclusiva); un curso de fiscalidad pertenece también a Fiscalidad. Admitir categoría primaria y etiquetas secundarias. No transformar una categoría comercial existente en otra sin tabla de equivalencias.
+
+**Registro de contenido estructurado a implementar:** \`content_id\`, \`canonical_slug\`, \`primary_topic\`, \`secondary_topics[]\`, \`content_type\` (landing/servicio/guía/blog/FAQ/calculadora/curso/norma/fuente), \`related_service_slugs[]\`, \`official_sources[]\` con URL y fecha de eficacia, \`reviewed_at\`, \`next_review_at\`, \`editorial_owner\`, \`locale\`, \`translation_status\`, \`legal_status\`, \`publication_status\`, \`canonical_url\`, \`content_version\`. Primero contrato documental y mapeo, después migración controlada si necesaria; no duplicar persistencia.
+
+### C. Plantilla transversal de «Página pilar del trámite»
+
+Hero de lenguaje sencillo y pregunta concreta; qué resuelve; quién puede hacerlo solo; diagnóstico orientativo sin datos personales; comparativa de alternativas; preparación y checklist; pasos y enlaces a sedes oficiales; guías y artículos con explicaciones EXPERT; preguntas frecuentes; normativa con fecha/vigencia; herramientas pertinentes; formación voluntaria; gestión profesional con precio/alcance; Holded/planes si pertinentes; KIA contextual. **Ruta de decisión:** (1) informarse gratis; (2) autogestionar; (3) formación; (4) contratar ayuda o servicio. En una comunicación basta un **enlace EXPERT**, que centraliza los demás. No hacer pasar por disponibles herramientas documentadas o recursos aún no desplegados.
+
+**SEO:** conservar enlaces existentes de /blog, /docs, /servicios; relaciones internas y canonical; redirección 301 solo con inventario y prueba; schema de FAQ sin prometer resultados enriquecidos de Google; titles/metas útiles; fuentes oficiales visibles; fechas. Evitar canibalización entre página pilar (intención de decidir) y guía (paso a paso), artículo (explicación) o ficha (contratación).
+
+### D. Plan por entregas independientes y listo para ejecución controlada
+
+| ID | Entrega | Dependencias | Aceptación |
+| --- | --- | --- | --- |
+| WEB-P0 | Inventario de páginas/menús, categorías, contenidos, URLs, idiomas y CTAs; clasificar existentes, duplicados y huecos | Lectura main y #803 | Matriz revisada ES/RU, sin cambios productivos |
+| WEB-P1 | Contrato de taxonomía con mapeo de slugs actuales y jerarquía única; bocetos navegación pública desktop/móvil | WEB-P0 | No perder enlaces; menús y filtros por mismo tema |
+| WEB-P2 | Guía de estilo y copy ES/RU; home, navegación y bloque «cuatro opciones»; revisión legal de propuestas «autogestión» | WEB-P1 | Copy validado por Dirección en ambos idiomas, sin claim «primera» |
+| WEB-P3 | Biblioteca estructurada por temas: servicios/blog/docs/normativa/herramientas; plantillas y enlaces bidireccionales | WEB-P1, revisión SEO | Relación completa y sin huérfanos; 0 enlaces inexistentes |
+| WEB-P4 | Lote pilar CIRCE #803 y RGPD existente, FAQ, decisiones, Holded opcional y KIA con fuentes | Contenidos revisados y gate KIA si cambia runtime | Respuesta y navegación coherente, QA jurídico y ES/RU |
+| WEB-P5 | Publicación iterativa por categorías (autónomos, certificados, fiscalidad, trámites, laboral, registros...) | WEB-P3/4 aprobados | Release por lote con rollback y checklist documental |
+| WEB-P6 | Calculadoras y simuladores, suscripciones futuras a uso KIA con créditos | Motor determinista, privacidad, condiciones contractuales y aprobación | NO implementar ni cobrar antes de aprobar viabilidad/reglas |
+
+**Separación de ramas:** \`docs/web-publica-autogestion-paralela-20261019\` solo documentación rectora; futuras ramas \`feat/web-pN-...\` para web pública y copy, y ramas existentes de E0–E6 solo dashboard/permisos. Dependencias transversales se registran como bloqueos acotados, nunca se asume permiso para modificar KIA core, checkout o RLS desde una PR editorial. Las PR deben pasar CI/ambas previews sobre head SHA, accesibilidad, seguridad, ES/RU, fuentes, SEO y verificación de funcionalidad real. No fusionar a ciegas.
+
+### E. Idiomas, accesibilidad y protección del usuario
+
+- ES y RU tienen la misma prioridad de calidad y actualización. Traducción jurídico-administrativa nativa revisada; conservar términos de administración española con glosas en ruso. No inferir ciudadanía ni estatus de residencia por idioma.
+- EN se deja preparado a nivel de claves y contrato de contenidos, sin rutas accesibles ni hreflang hasta revisión y aprobación.
+- Explicar los costes oficiales frente a honorarios; incluir instrucciones de verificación de expedientes y advertencias sobre errores/estafas de gestión sin acusaciones contra colectivos o profesionales.
+- Guías disponibles sin registro ni pago. Al pasar a un trámite con documentos, verificar identidad, permisos y seguridad sin recopilar datos innecesarios. KIA informa y acompaña; no ejecuta trámites con efectos jurídicos sin acceso y autorización.
+- Monetización futura de acceso ampliado a KIA mediante límites/créditos: **solo hipótesis**, sin bloquear el conocimiento público básico, añadir cuotas ni crear productos Stripe ahora.
+
+### F. Próxima ejecución recomendada
+
+Primero **WEB-P0**: inventario y matriz de clasificación (sin tocar aplicación). Seguir con WEB-P1 y WEB-P2 en PRs delimitadas. En paralelo mantener el plan E0–E6 de dashboard con su checkpoint sin cambios. **Estado hoy:** anexo preparado; no afirmar que todo WEB-P está implementado, que los idiomas están traducidos o que se ha publicado en web. Separación autorizada como planificación, ejecución del código público aún condicionada a revisión del §0.
