@@ -1,6 +1,8 @@
-# Kia AI Architecture
+# KIA — Arquitectura IA histórica (referencia técnica subordinada)
 
 Ultima revision: 2026-05-24
+
+> **Precedencia 19/10/2026:** especificación técnica histórica de la etapa WABA; no usar sus switches, proveedores o restricciones antiguas como inventario vigente. La arquitectura y los permisos efectivos se verifican en código y en el [Plan Maestro E0–E6](expert-kia-ecosystem-master-plan-2026-10-10.md). No reactivar WhatsApp/WABA por lo descrito aquí.
 
 ## Objetivo
 
