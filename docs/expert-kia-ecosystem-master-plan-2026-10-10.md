@@ -1299,3 +1299,16 @@ Primero **WEB-P0**: inventario y matriz de clasificación (sin tocar aplicación
 #### Resultado WEB-P0 y siguiente paso
 
 **Inventario estático realizado; validación de navegación real, cobertura RU, SEO y enlaces en preview pendiente.** Esta matriz alimenta exclusivamente **WEB-P1**: mapa reversible de categorías, componente común de filtros, rutas del menú desktop/móvil y contenido enlazado. No tocar dashboard E0–E6, checkout/Stripe, KIA privado, migraciones, esquemas RLS o producción. Mantener #803 como lote editorial separado sin fusionar por arrastre.
+
+
+### WEB-P1 — Taxonomía y contrato de navegación (avance 19/10/2026)
+
+**Rama técnica independiente:** `feat/web-p1-taxonomia-navegacion-contract-20261019` (parte de `main` y NO depende de #803 ni del dashboard). **Todavía no cambia menús en producción.**
+
+**Contrato creado:** `lib/content/public-autogestion-taxonomy.ts`; ocho categorías estables, con etiquetas y descripciones ES/RU y mapeadores de servicios, blog y docs. No modifica `lib/utils/catalog.ts`, `blog.ts`, `docs.ts` ni los slugs existentes. Sobrescrituras temáticas controladas para Laboral, RGPD, cuentas anuales y cursos.
+
+**Menú conceptual:** Inicio · Trámites · Conocimientos · Herramientas · Formación · Servicios · Planes · Acceder, con KIA como widget/entrada destacada. En ruso: Главная · Процедуры · Материалы · Инструменты · Обучение · Услуги · Тарифы · Войти. La llegada a una categoría/menú ahora se formula como contrato de rutas existentes (sin enlaces a índices de herramientas aún inexistentes). Algunas rutas rusas redirigen a un índice general y se identifican como `broader-hub`; no declararlas traducciones exactas ni generar `hreflang` a partir de estas equivalencias.
+
+**Gates WEB-P1 posteriores:** comprobar mapeos completos con `tests/content/public-autogestion-taxonomy.test.ts`, revisar semántica de registros transversales, adaptar menús reales desktop/móvil bajo otra PR con QA visual y accesibilidad, crear los índices temáticos/idiomas que falten, verificar SEO y fuentes, evitar reintroducir canal WhatsApp. Ningún control se declara pasado por el mero hecho de crear el test.
+
+**Estado:** contrato escrito en rama técnica, inventario WEB-P0 guardado en PR #804, publicación y navegación visual NO REALIZADAS. Los cambios de E0–E6 mantienen su checkpoint y autorización.
