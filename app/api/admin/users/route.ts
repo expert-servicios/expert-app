@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin, listAllAuthUsers } from '@/lib/integrations/supabase';
+import { requireActiveActor } from '@/lib/auth/active-actor';
 
 async function getAdminContext(request: NextRequest) {
   const supabase = createServerSupabaseClient(request);
@@ -12,18 +13,14 @@ async function getAdminContext(request: NextRequest) {
     return { error: NextResponse.json({ error: 'No autenticado' }, { status: 401 }) };
   }
 
-  const adminSupabase = getSupabaseAdmin();
-  const { data: profile } = await adminSupabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profile?.role !== 'admin' && profile?.role !== 'owner') {
+  // E0-M3-06: read fresh canonical role and exact-active status before
+  // opening the service-role client or reading Auth/user data.
+  const actor = await requireActiveActor(request, ['admin', 'owner']);
+  if (!actor || actor.userId !== user.id) {
     return { error: NextResponse.json({ error: 'No autorizado' }, { status: 403 }) };
   }
 
-  return { adminSupabase, user };
+  return { adminSupabase: getSupabaseAdmin(), user, actor };
 }
 
 async function countLinkedRows(
