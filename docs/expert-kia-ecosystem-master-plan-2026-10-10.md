@@ -1745,3 +1745,41 @@ Los tres documentos de referencia han de mostrar de inmediato que no son planes 
 **Estado de issues:** #775 cerrada como duplicada, criterios incorporados a #776 que sigue abierta; #654/#134 y #778/#780/#770 continúan separados por poseer entregables distintos. No repetir cierre o producir efectos comerciales por limpieza.
 
 **Gate:** confirmar diff limitado a Markdown, CI obligatorio, previews de ambos despliegues y lectura de los cinco documentos más el Maestro en `main` después de merge. Ninguna evidencia funcional nueva se deduce de documentación.
+
+
+## ACTA F1 — Revisión de PR funcionales y gates de aceptación (19/10/2026)
+
+**Naturaleza:** auditoría documental de GitHub, no autorización de merge funcional, migración, publicación o despliegue. Corte 19/10/2026: 23 PR abiertas y 27 issues abiertas; fase E0 continúa activa y fases siguientes bloqueadas. Estado y CI se verificaron sobre **SHA de cada PR**, no sobre una integración fresca a `main`; por tanto un CI verde antiguo es insuficiente si la rama está `behind`, `dirty` o usa base intermedia. Mantener las tres líneas WEB-P / WORKSPACE / KIA-A bajo este único Maestro.
+
+### F1.1 Orden de atención y hallazgos críticos
+
+| PR | Revisión observada | Gate pendiente / decisión |
+| --- | --- | --- |
+| #793 — E0 OpenAI strict-schema | CI obligatorio verde, previews verdes, **rama behind**, en borrador | **P0 E0**: actualizar contra main, repetir CI y regresión de esquemas sin relajar Zod/autorización; validar síntomas HTTP 400 y resolver |
+| #794 — E0 AI Gateway smoke | Apilada sobre #793, base intermedia; no se observó job obligatorio equivalente en SHA consultado | No fusionar antes que #793; workflow manual con inputs sintéticos, permisos mínimos, sin activación/proveedor accidental |
+| #784 — correo y requerimientos | CI obligatorio **failure**, rama behind/draft; Outlook/Gmail y datos de notificaciones | **P0 E0**: reparar prueba y demostrar reconocimiento del requerimiento reenviado, identidad, privacidad y envío seguro, sin exponer datos |
+| #705 — persistencia KIA web | **Conflicto dirty**, CI obligatorio **failure**, incluye migración SQL y widget | **Bloqueada**: reconcile cambios sobre main, revisar RLS/token anónimo/retención, SQL/readback y no activar flag antes de gate |
+| #764 — impacto regulatorio | CI verde y previews verdes en HEAD antiguo, rama behind, migraciones + cron + avisos | **P1 seguridad/legal**: resolver falsos impactos, revisión humana, outbox idempotente, SQL/security + CI fresco; no merge por green histórico |
+| #782 — informe RGPD/leads | CI verde histórico, behind; incluye API y datos personales | **P1 privacidad**: QA de consentimientos, retención, identidad y pruebas contra main, revisión AEPD/terceros; sin publicar ni recoger datos reales |
+| #683 — booking nativo | CI verde histórico, behind; cambio de enlaces con efecto público | **P1 UX**: rebase, comprobar proveedor actual, booking real, confirmación email/Meet, accesibilidad móvil y CI |
+| #805 — taxonomía | CI verde histórico, behind y draft; solo contrato + test | **P1 WEB-P**: candidato a avance aislado si se actualiza, revisa taxonomía y no altera rutas públicas; sigue bloqueado por decisión «diseño antes de implementación» |
+| #806 → #807 — navegación y hubs | PR apiladas sobre #805 y #806, no contra main; el job obligatorio no es evidencia independiente en #807 | No fusionar en cascada sin CI fresco por cada SHA final, paridad ES/RU, URLs, 404/SEO, teclado/móvil y revisión visual |
+| #798 — hub herramientas | **Conflicto dirty** aunque CI antiguo verde; toca header/footer/sitemap y el Maestro | Reconciliar sin sobrescribir Plan Maestro, revisar herramienta real vs propuesta, SEO y seguridad, no merge |
+| #803 — CIRCE/PAE | **Conflicto dirty** aunque CI antiguo verde; toca Maestro, editoriales y prompt KIA | Corregir fuentes, contenidos legales vigentes, notaría/Registro, fiscalidad y links; no inventar funciones ni publicar |
+| #779 — formación RGPD | **Conflicto dirty** aunque CI verde histórico; no draft | Reconciliar con #782/#769 y decisiones comerciales, revisión jurídica del contenido, traducción y CI nuevo |
+| #772 — autónomo/SL | **Conflicto dirty**, CI obligatorio **failure** | Reparar compilación/tests, evitar duplicación legal con #803, contrastar SEO y fuentes |
+| #771 — contenidos RGPD | Rama behind, CI obligatorio **failure**, draft | Corregir CI y paridad ES/RU + copia legal; dependencia de #782 |
+| #777 — QA postreunión | CI antiguo verde, behind y draft | Reconciliar código con issue canónica #776; demostrar clasificador sin escrituras, idempotencia, test E2E y seguridad |
+
+### F1.2 Reglas de decisión
+
+- **Prioridad:** P0 E0 y fallos CI/seguridad primero; PR con migraciones/RLS, correo o efectos externos exigen control de riesgo elevado. Cambios editoriales y UI en WEB-P siguen documentales hasta autorización de alcance/fase, aun si sus test pasan.
+- **`dirty` = conflicto de GitHub:** no ejecutar merge. **`behind` = desactualización respecto a base:** volver a validar en HEAD integrado con `main`. **CI antiguo success** no prueba compatibilidad ni aceptación funcional.
+- **PR #794 apilada sobre #793; #806/#807 sobre #805/#806:** mantener orden, evitar afirmar un éxito del sistema por validación de una PR dependiente.
+- **No mezclar issue cerrada #775** (duplicada) con tarea implementada: la canónica #776 está abierta, la PR #777 requiere su propia evidencia de aceptación.
+- **Control final por PR:** alcance y diff SHA, sin secretos, tests unitarios + E2E apropiados, Lint/Typecheck, previews Vercel app y ksenia-expert, SQL/RLS y seguridad si aplica, validación por propietario funcional y readback después de merge.
+- **Fuera de esta tanda:** las PR restantes (#745, #743, #742, #713, #767, #765, #769) permanecen en revisión por sus propios gates; no confundir esta tabla priorizada con auditoría completa de cada línea de código.
+
+### F1.3 Registro de resultado y siguiente lote
+
+**Acción actual:** registrar evidencia y orden en el Maestro únicamente. No fusionar las PR funcionales con conflicto, CI fallido o fase bloqueada. Para #793, siguiente control concreto es rebasar los cambios de JSON Schema sobre main y comprobar los HTTP 400 con test representativo; para #784, diagnosticar primer error CI; para #705, aislar conflicto SQL/widget y exigir RLS; WEB-P se mantiene en diseño hasta nueva autorización de implantación. Abrir PR documental de esta acta, ejecutar gates y fusionar solo la documentación una vez comprobada.
