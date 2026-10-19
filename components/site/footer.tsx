@@ -85,11 +85,12 @@ export function Footer({ locale = 'es' }: { locale?: PublicShellLocale }) {
         <div>
           <Link href={href("/")} className="inline-block">
             <Image
-              src="/logos/EXPERT_logo/expert-logo-light-clean.png"
-              alt="Logo EXPERT"
-              width={220}
+              src="/branding/expert-2026/expert-horizontal-inverse.svg"
+              alt="EXPERT Consulting"
+              width={240}
               height={64}
-              className="object-contain"
+              unoptimized
+              className="h-auto max-w-[240px] object-contain"
             />
           </Link>
 
