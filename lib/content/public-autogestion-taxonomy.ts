@@ -48,14 +48,14 @@ export const PUBLIC_TOPICS: readonly PublicTopic[] = [
     id: 'laboral-seguridad-social',
     label: { es: 'Laboral y Seguridad Social', ru: 'Трудовые вопросы и Seguridad Social' },
     description: { es: 'Contratos, nóminas, cotizaciones y trámites TGSS/SEPE', ru: 'Трудовые договоры, зарплаты, взносы и TGSS/SEPE' },
-    href: { es: '/blog', ru: '/ru/blog' },
+    href: { es: '/categoria/laboral-seguridad-social', ru: '/ru/blog' },
     ruDestinationType: 'broader-hub',
   },
   {
     id: 'mercantil-registros',
     label: { es: 'Mercantil, notaría y registros', ru: 'Корпоративное право, нотариус и реестры' },
     description: { es: 'Sociedades, escrituras, operaciones y registros públicos', ru: 'Учредительные документы, нотариат и официальные реестры' },
-    href: { es: '/servicios/notaria-propiedades', ru: '/ru/uslugi' },
+    href: { es: '/categoria/mercantil-registros', ru: '/ru/uslugi' },
     ruDestinationType: 'broader-hub',
   },
   {
@@ -69,7 +69,7 @@ export const PUBLIC_TOPICS: readonly PublicTopic[] = [
     id: 'proteccion-datos',
     label: { es: 'Protección de datos', ru: 'Защита персональных данных' },
     description: { es: 'RGPD, privacidad y recursos AEPD', ru: 'RGPD, политика конфиденциальности и инструменты AEPD' },
-    href: { es: '/herramientas/rgpd', ru: '/ru/instrumenty/rgpd' },
+    href: { es: '/categoria/proteccion-datos', ru: '/ru/instrumenty/rgpd' },
     ruDestinationType: 'subject',
   },
   {
