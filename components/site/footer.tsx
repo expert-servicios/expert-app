@@ -16,7 +16,8 @@ const quickLinks = [
   { label: 'Sobre mí', href: '/sobre-mi' },
   { label: 'Blog', href: '/blog' },
   { label: 'Contacto', href: '/contacto' },
-  { label: 'Para asesorías', href: '/para-asesorias' }
+  { label: 'Para asesorías', href: '/para-asesorias' },
+  { label: 'Marca y logotipos', href: '/marca' }
 ] as const;
 
 const serviceLinks = [
