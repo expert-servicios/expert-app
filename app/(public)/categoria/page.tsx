@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import { temas } from '@/lib/utils/taxonomy';
+import { PUBLIC_TOPICS } from '@/lib/content/public-autogestion-taxonomy';
+import { getTopicHref } from '@/lib/content/public-autogestion-resources';
 
 export const metadata: Metadata = {
   title: 'Categorías | Servicios, guías y artículos por tema | EXPERT',
   description:
-    'Explora servicios, guías de la base de conocimientos y artículos del blog agrupados por tema: fiscalidad, extranjería, empresas, Holded, trámites y formación.',
+    'Explora servicios, guías de la base de conocimientos y artículos del blog agrupados por tema: empresas, fiscalidad, laboral, mercantil, trámites, protección de datos, extranjería y digitalización.',
   alternates: { canonical: 'https://expertconsulting.es/categoria' }
 };
 
@@ -27,14 +28,14 @@ export default function CategoriaIndexPage() {
 
       <section className="px-6 py-14 md:py-18">
         <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-2">
-          {temas.map((tema) => (
+          {PUBLIC_TOPICS.map((tema) => (
             <Link
-              key={tema.slug}
-              href={`/categoria/${tema.slug}`}
+              key={tema.id}
+              href={getTopicHref(tema.id)}
               className="group flex flex-col border border-[#D4A017]/20 bg-white p-6 shadow-[0_4px_16px_rgba(13,27,42,0.06)] transition hover:-translate-y-0.5 hover:border-[#D4A017] hover:shadow-[0_10px_28px_rgba(13,27,42,0.10)]"
             >
-              <h2 className="font-serif text-xl font-bold text-[#0D1B2A] group-hover:text-[#D4A017]">{tema.name}</h2>
-              <p className="mt-3 flex-1 text-sm leading-6 text-[#23364D]">{tema.description}</p>
+              <h2 className="font-serif text-xl font-bold text-[#0D1B2A] group-hover:text-[#D4A017]">{tema.label.es}</h2>
+              <p className="mt-3 flex-1 text-sm leading-6 text-[#23364D]">{tema.description.es}</p>
               <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-[#D4A017] transition group-hover:text-[#F2C14E]">
                 Explorar
                 <ArrowRight className="h-3.5 w-3.5" />
