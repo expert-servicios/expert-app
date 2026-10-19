@@ -1745,3 +1745,16 @@ Los tres documentos de referencia han de mostrar de inmediato que no son planes 
 **Estado de issues:** #775 cerrada como duplicada, criterios incorporados a #776 que sigue abierta; #654/#134 y #778/#780/#770 continúan separados por poseer entregables distintos. No repetir cierre o producir efectos comerciales por limpieza.
 
 **Gate:** confirmar diff limitado a Markdown, CI obligatorio, previews de ambos despliegues y lectura de los cinco documentos más el Maestro en `main` después de merge. Ninguna evidencia funcional nueva se deduce de documentación.
+
+
+## BITÁCORA E0-M3-06 — Auditoría parcial de usuarios Admin (19/10/2026)
+
+**Checkpoint sin cambios:** E0 `IN_PROGRESS`; tarea siguiente `E0-M3-06-admin-users-tenant-object-scope-audit`; E1–E6 y V3 siguen bloqueadas. Ninguna función de usuario se ha certificado ni publicado por esta acta.
+
+- **Hallazgo comprobado en `main`:** `GET/PATCH/DELETE /api/admin/users` verificaban solo rol `admin/owner` y no estado exacto `active`; abrían `getSupabaseAdmin()` para agregar correos Auth, perfiles y empresas o para modificar/eliminar sujetos sin comprobación completa del objeto/tenant. No se consultaron ni modificaron usuarios productivos.
+- **PR [#813](https://github.com/expert-servicios/expert-app/pull/813) DRAFT**, lote de mitigación: reutiliza `requireActiveActor`, comprueba coincidencia de ID con la sesión antes de abrir `service_role` y conserva 401/403. Añade pruebas HTTP negativas para los tres verbos y GET legítimo. Es **revisión en rama, no garantía de seguridad total**.
+- **Pendientes obligatorios:** confirmar CI + ambos Vercel sobre HEAD final; revisar diferencias y política de control de objeto/tenant y jerarquía `owner/admin`; resolver comportamiento concurrente y alcance del DELETE de Auth; pruebas de lectura/mutación con datos sintéticos y readback. Auditar después las rutas hermanas `/api/admin/users/companies` y `/api/admin/team`, que conservan guardas locales. No eliminar cuentas hasta comprobar dependencias y autorizaciones.
+- **Limpieza de PR #683:** dos hilos P1 antiguos estaban ya corregidos en su diff y sus pruebas; se resolvieron con evidencia en la conversación de PR. CI y ambas previews estaban verdes en su HEAD; la PR sigue abierta sin autorización de merge, al ser componente de reserva pública (E1).
+- **Triangulación otros bloqueos:** PR #793 con CI y ambos Vercel verdes pero smoke real del Gateway pendiente; en #794 solo pasó preflight sintético, el job con llamadas al proveedor figura `skipped`. PR #705 presenta fallo en la fase de tests de CI; #805 pasa CI/ambas previews pero WEB-P1 continúa como código borrador por secuencia E0→E1. Estos controles **no** implican aprobación de fusión.
+
+**Siguiente avance admisible:** completar QA exact HEAD de #813 y acotar protección sobre usuario/empresa/tenant con pruebas adversariales; registrar resultado por SHA antes de plantear merge. No alterar datos, flags, conexiones Holded, pagos ni producción.
