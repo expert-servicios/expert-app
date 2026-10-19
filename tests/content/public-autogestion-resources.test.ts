@@ -13,7 +13,7 @@ describe('WEB-P1 public topic hubs', () => {
   it('keeps content identities unique and links to actual canonical service categories', () => {
     const all = PUBLIC_TOPIC_IDS.map(id => getPublicTopicResources(id));
     for (const kind of ['services','articles','docs'] as const) {
-      const items = all.flatMap(group => group[kind]);
+      const items: { slug: string }[] = all.flatMap(group => group[kind].map(item => ({ slug: item.slug })));
       expect(new Set(items.map(item => item.slug)).size).toBe(items.length);
       expect(items.length).toBeGreaterThan(0);
     }
