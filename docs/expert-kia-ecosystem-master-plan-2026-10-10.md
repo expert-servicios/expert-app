@@ -1126,3 +1126,100 @@ En el árbol examinado **no se encontró** `AGENTS.md`, `CLAUDE.md` ni `.github/
 
 **Formato de resolución:** para cada PR/issue/documento conservar `ID + estado observado + duplicado/contradicción + motivo + propuesta de incorporar/archivar/descartar + fase del Plan Maestro + fuentes/evidencia + decisión humana cuando corresponda + validación de CI si hay código`. Este registro se actualiza **en este único Plan Maestro**; GitHub issues/PR son tickets de ejecución o evidencias, nunca un roadmap competidor.
 
+
+
+## ANEXO KIA-A — Tercera línea coordinada de arquitectura KIA y subagentes (19/10/2026)
+
+**Mandato de Dirección 19/10/2026 — solo documentación, SIN implementación.** Organizar la transformación integral EXPERT en **tres vías coordinadas**: (A) WEB-P para la web pública de autogestión, conocimiento y consulta gratuita; (B) WORKSPACE E0–E6 para panel Admin y Cliente, modo soporte delegado y experiencia de usuario; (C) KIA-A para la arquitectura transversal de una sola KIA, subagentes/skills, razonamiento, fuentes, adaptadores, memoria autorizada, revisión y QA. Los tres workstreams son ramas documentales/de revisión separadas, NO tres cerebros ni tres planes maestros. No alterar el checkpoint E0, congelación de alcance, permisos, datos productivos ni habilitar trabajos E4/post-E6 por esta decisión.
+
+### KIA-A.1 Repositorio y coordinación sin planes duplicados
+
+| Línea | Autoridad / rama de referencia | Lo que posee | Lo que NO puede modificar autónomamente |
+| --- | --- | --- | --- |
+| WEB-P | PR #804, 'docs/web-publica-autogestion-paralela-20261019' | Narrativa, rutas públicas, búsqueda, plantillas, CTA/entrada KIA, guía y conocimiento | Motor KIA, permisos, datos de clientes, correo, RLS, checkout |
+| WORKSPACE | Plan E0–E6 de este mismo Maestro en 'main'; los documentos Admin V2 y contrato Workspace×KIA quedan como referencias, no planes rectores | Diseño Admin/Cliente, paneles, visibilidad autorizada, soporte delegado, contexto UI | Prompts globales y herramientas no aprobadas, cron, email exterior, datos ajenos |
+| KIA-A | Rama documental 'docs/kia-architecture-subagents-parallel-20261019' | Router, subagentes/skills, matriz de capacidades, política de IA, recuperación de fuentes, QA, contratos con web y dashboard | Activar agentes nuevos, cambiar IAM/RLS sin gate, ejecutar herramientas externas ni migrar base de datos |
+
+**Único registro canónico:** 'docs/expert-kia-ecosystem-master-plan-2026-10-10.md'. La rama KIA-A mantiene un anexo separado en **este mismo archivo** para revisión; una futura fusión exige reconciliar sobre 'main' el anexo WEB-P de #804 y cualquier avance WORKSPACE. No sobrescribir una rama desde otra, evitar cherry-pick a ciegas y actualizar checkpoint únicamente con evidencia de ejecución real. Referencias existentes: 'docs/kia-2-strategy.md'; 'docs/plans/kia-post-e6-subagents-audit-and-parity-2026-10-17.md' (issue #789); 'docs/kia-unified-core-attachments-document-studio-2026-10-10.md'; 'docs/workspace-v2-kia-copilot-parallel-integration-2026-10-10.md'; 'docs/kia-accounting-agent.md'. PR #707 y #708 cerradas sin fusionar, no ramas de ejecución vigentes.
+
+### KIA-A.2 Principio de orquestación
+
+**ÚNICA KIA VISIBLE:** una interfaz conversacional coherente en web pública, dashboard Cliente, Admin, soporte delegado, email y Telegram; adaptadores de canal sin duplicar el núcleo. Flujo lógico futuro:
+
+'Entrada por canal' → 'Verificación de sesión/identidad/actor y relación' → 'Resolución de contexto y permisos efectivos' → 'Clasificación de intención y sensibilidad' → 'Plan de acción mínimo' → 'Enrutamiento a skill/subagente autorizado' → 'Consulta de datos permitidos y fuentes oficiales' → 'Evaluación/confianza/consentimiento' → 'Respuesta, borrador o propuesta de acción' → 'Confirmación humana cuando proceda' → 'Ejecución idempotente permitida' → 'Readback, auditoría, continuidad y aprendizaje supervisado'.
+
+Sin agente «autónomo» que herede credenciales superiores del Admin por pertenecer al catálogo. Los prompts describen conducta, nunca elevan privilegios ni convierten una tool ausente en herramienta disponible.
+
+### KIA-A.3 Inventario verificado de reutilización y cartera funcional
+
+Lectura de 'lib/ai/kia/kia-sub-agent-router.ts', 'lib/ai/kia/kia-skill-registry.ts' y auditoría documental 17/10/2026: hay **siete perfiles de subagente en el código** ('assistant', 'fiscal', 'immigration', 'holded', 'accounting', 'labor', 'case') y **ocho skills habilitadas en el registro de código**, incluida 'operations.next_best_action' sin perfil propio. Esto no constituye prueba de ejecución satisfactoria ni de que funcionen plenamente en producción.
+
+| Unidad actual/propuesta | Objetivo y lugar de uso | Prioridad de revisión / límite |
+| --- | --- | --- |
+| 'assistant' — Comunicación y agenda | Emails, bandeja unificada, citas, cambios de tareas, correspondencia y seguimiento para Admin/Cliente | Continuidad de hilo, idempotencia, identidad y correo saliente condicionado |
+| 'fiscal' — Fiscal y normativa | Guías públicas gratuitas, IRPF/IVA/IS, tributos, interpretación documental autorizada | Recuperación normativa y vigencia reales: la skill fiscal actual no declara 'regulatory'/'knowledge' |
+| 'immigration' — Extranjería | Recursos públicos, normativa de residencia/nacionalidad y expedientes privados | Garantía de fuentes, fecha, documentos mínimos; no revelar situaciones sensibles |
+| 'holded' — Integración ERP | Conexión, readiness, permisos, migración, diagnóstico técnico | No confundir con operaciones contables ni conceder escrituras |
+| 'accounting' — Controller contable | Facturas, cobros, pagos, conciliación, anomalías, cierre y reportes | Holded por compañía; borradores/escrituras sujetos a aprobación y readback |
+| 'labor' — Laboral y Seguridad Social | Convenios, contratos, nóminas, altas, cotizaciones, guía y diagnóstico | Fuentes oficiales/tablas temporales; skill actual centrada en lectura 'holded_hr_read' |
+| 'case' — Expedientes/documentos | Checklist, documentos, estado de solicitudes y trámites, seguimiento | No equivaler metadatos de ficheros con lectura íntegra o facultad para presentar |
+| 'operations.next_best_action' — Skill transversal | Propone qué hacer a continuación sin actuar | No contar como octavo subagente |
+| Mercantil/constitución SL/notaría/registros (propuesta) | Páginas pilar CIRCE, obligaciones sociedades, DUE, gestión registral | Analizar reutilización de fiscal + case + fuentes antes de crear agente nuevo |
+| Marketing, contenidos y SEO (propuesta) | Artículos ES/RU, FAQ, bibliotecas, enlaces, oportunidades de publicación y campañas | Human-in-the-loop, origen y revisión legal, sin autopublicación |
+| Comercial y onboarding (propuesta) | Leads, consultas gratuitas, elección de autogestión/formación/servicio | Sin upsell forzado; no confundir lead y cliente, no acceder a expedientes |
+| Dev/QA y agente de desarrollo supervisado (propuesta) | Analizar PRs, tests, planes, propuestas y riesgos de código | No ejecutar cambios, merges ni despliegues sin autorización y gates; posterior a E6 salvo auditoría defensiva ya aprobada |
+| Academy/formación y operaciones de sector (propuesta) | Tutores de contenidos fiscales, laborales, trámites, gestión de inmuebles | Primero skills reutilizables; subagente independiente solo por criterios medibles |
+
+**Criterios para crear un nuevo subagente:** (i) misión separada estable; (ii) conjunto de herramientas y permisos específicos que difiere de otros; (iii) evidencias medibles de necesidad, calidad/coste/seguridad; (iv) propietario de QA y fuentes; (v) matriz de no solapamiento. Si falla alguno, proponer skill, plantilla o herramienta del orquestador común en lugar de nuevo perfil.
+
+### KIA-A.4 Contratos con WEB-P y WORKSPACE
+
+**WEB-P → KIA-A:** entrada pública anónima, pregunta libre, fuente de la guía/tema, idioma, herramientas de consulta R0 autorizadas, orientación gratuita y fuentes oficiales, con límites antiabuso y preservación de privacidad. La web no invoca directamente tools privadas; no crea historial CRM a partir de una cookie. CTA «Pregunta gratis a KIA» debe abrir el mismo widget público; email de formulario no debe presentarse como contestado automáticamente si no lo está.
+
+**WORKSPACE → KIA-A:** identidad de actor autenticado, rol/tenant, empresa seleccionada y autorizada, contexto de la pantalla, expediente explícitamente abierto, perfil y preferencias verificadas. KIA propone y ejecuta según riesgo; el modo Admin soporte conserva actor real y alcance delegado, nunca suplanta al cliente. El mensaje inicial puede dirigirse al nombre de pila verificado en ES/RU, pero no presupone razón de visita o expediente. Cliente multiempresa exige selector antes de divulgar detalles.
+
+**KIA-A → ambas:** contratos comunes de respuesta estructurada (texto natural, fuentes, versión normativa, confidence razonada, acciones sugeridas, requiere revisión, tipo de artefacto) y eventos de telemetría sin datos personales. La capa de presentación elige tarjeta web, chat, panel lateral, email, checklist, enlace oficial o documento según canal, sin dos lógicas de decisión contradictorias.
+
+**Email/Telegram:** el canal de entrada no equivale a login web; verificación/continuidad explícita. Autorespuesta por email solo tras autorización de política, contenido acotado y QA; firma/órdenes/pagos/AEAT/TGSS/Holded se tratan como herramientas de riesgo con confirmación real. Nada de envíos sin evidencia de entrega.
+
+### KIA-A.5 Matriz de capacidades por identidad, canal, riesgo y subagente
+
+- **Público anónimo:** respuesta informativa general, conocimiento público y enlaces oficiales; sin leads privados, empresas, expedientes, documentos ni herramientas de escritura.
+- **Registrado sin relación de cliente:** saludo por nombre de sesión validada y guía/consulta gratuita; no se supone empresa o expediente.
+- **Lead vinculado mediante prueba suficiente:** referencia a solicitud previa solo dentro de hilo/sesión autorizado, sin elevar privilegios por coincidencia de email o nombre.
+- **Cliente autenticado:** lectura de sus datos **únicamente** con RLS/tenant/company/case scope y fines permitidos. Riesgo creciente para escritura, envío, presentación, firma y borrado; aprobación específica, auditoría y readback.
+- **Admin/empleado:** tools internas limitadas por rol y autorización de operaciones; soporte delegado registra identidad del operador, consentimiento/mandato y empresa.
+- **Especialistas:** capacidades efectivas resultan de la intersección 'actor × canal × empresa/expediente × skill × herramienta × riesgo'; si la intersección es vacía, explicar limitación o escalar, no forzar la herramienta.
+
+**Fuente y QA:** corpus regulatorio oficial con organismo, norma/artículo, versión, vigencia, ámbito autonómico/municipal y fecha de comprobación; citar origen. Distinguir resumen de metadata y lectura exhaustiva de documento; no afirmar cumplimiento, impuestos exactos, trámites completados o documentos procesados sin evidencia.
+
+### KIA-A.6 Tres vías, un protocolo de integración y revisión
+
+| Dependencia | Dueño de la definición | Revisión cruzada obligatoria |
+| --- | --- | --- |
+| Header, navegación, contenidos, CTA público | WEB-P | KIA-A valida trigger del chat, payload noPII, acceso anónimo y fuentes |
+| Saludos y comportamiento por tipo de usuario | KIA-A | WEB-P y WORKSPACE validan diseño/copy/idiomas, Supabase/Auth controla identidad |
+| Layout Admin/Cliente, dock KIA, selector empresa | WORKSPACE | KIA-A revisa contexto y privilegios; WEB-P no toca datos privados |
+| CRM, ciclo lead → usuario → cliente, historial | WORKSPACE/data y KIA-A como consumidores | Identificación, consentimiento, vinculación trazable, borrado y no exposición |
+| Skills, agentes, herramientas y routing | KIA-A | Políticas E0–E6 y security owner; no bypass de fase |
+| Fuentes/guías y SEO | WEB-P editorial | KIA-A valida retrieval/citas, fecha, error y conocimientos desactualizados |
+| Correo/citas/Telegram y respuestas automáticas | Integraciones E5 + KIA-A | Gate identidad, entregabilidad, antiabuso, revisión humana y auditoría |
+| Evolución contable/ERP Holded | WORKSPACE/E5 + KIA-A accounting | Mandato, operación permitida, preview/confirmación, idempotencia/readback |
+| Agent Dev y QA autónomo | KIA-A como futuro | Seguridad, sandbox, coste, CI, approvals, sin merge automático |
+
+**Cadencia de coordinación documental:** un único registro de decisiones (ADR) y dependencias en este Maestro; cada propuesta indica 'owner', 'estado', 'prerequisito', 'gate E0–E6' y 'prueba de aceptación'. Tres PRs separados pueden documentar simultáneamente; ninguna ejecuta código fuera de su gate. Para integración, una PR de contrato compartido pequeña tras consenso de las tres vías; evitar modificar las mismas líneas por tres ramas.
+
+### KIA-A.7 Backlog documental y secuencia futura bloqueada
+
+| ID | Entregable | Verificación esperada |
+| --- | --- | --- |
+| KIA-A0 | Inventario de perfiles/skills/policies/tools y mapeo con canales | Diagrama + matriz de capacidades real, casos negativos, código vs producción separado |
+| KIA-A1 | Contrato de contexto/identidad (incluye lead, registrado, cliente, multiempresa, delegado) | Sin cruces de personas/empresas, saludos personalizados autorizados ES/RU |
+| KIA-A2 | Modelo de orquestación, selección de especialistas y fallbacks por intención | Tests de routing, skills efectivamente autorizadas, casos de incertidumbre |
+| KIA-A3 | Fuentes, conocimiento, versiones y generación de informes/artefactos | Fuente oficial efectiva, trazabilidad, control de caducidad y documentos |
+| KIA-A4 | Email/chat/Telegram, seguimiento, handoff humano y notificaciones | Idempotencia, continuidad verificada, estado real de respuesta |
+| KIA-A5 | UX KIA grande en web y panel lateral de Workspace | Una KIA visible, saludo adaptado, estados claros y móvil accesible |
+| KIA-A6 | Observabilidad, presupuestos, seguridad, evaluación ES/RU y QA de subagentes | Evaluaciones de regresión, no invención, costes, alertas, RLS, red-team |
+| KIA-A7 | Revisión de candidatos a nuevos subagentes y agent dev | Decisiones basadas en evidencia; no activar nuevas capacidades antes de su gate |
+
+**Gates de ejecución:** (1) primero resolver defectos bloqueantes del E0 activo si realmente pertenecen a su alcance; (2) las mejoras aprobadas que ya aparecen en E4/E5 se ejecutarán solo cuando se abran legalmente esas fases; (3) las expansiones genuinamente post-E6 (nuevos subagentes, agentes de desarrollo, autonomía ampliada) permanecerán propuestas hasta acta E6 y aprobación de Dirección. No fusionar ramas documentales en conflicto sin rebase controlado y CI; no cambiar secretos, servicios, clientes, producción, web, DB ni condiciones comerciales desde KIA-A. Las PRs de documentación no certifican trabajo implementado.
