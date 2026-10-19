@@ -2092,7 +2092,7 @@ Las nuevas solicitudes deben seguir el procedimiento y plazo de la autorización
     body: `
 ## ¿Qué es una Sociedad Limitada?
 
-La Sociedad Limitada (SL) es la forma jurídica más habitual para pequeñas y medianas empresas en España. Sus características principales:
+La Sociedad Limitada (SL) permite organizar una empresa con uno o varios socios y capital social dividido en participaciones. [Consulta también nuestra guía gratuita de CIRCE](https://expertconsulting.es/herramientas/crear-sociedad-limitada). Sus características principales:
 
 - **Responsabilidad limitada**: los socios solo responden con el capital aportado, no con su patrimonio personal.
 - **Capital mínimo**: desde 1 euro (aunque la práctica habitual es 3.000 € para una empresa operativa).
@@ -2105,19 +2105,19 @@ La Sociedad Limitada (SL) es la forma jurídica más habitual para pequeñas y m
 Antes de la escritura, hay que reservar el nombre de la empresa en el **Registro Mercantil Central**. El certificado acredita que la denominación no está ya en uso y tiene una validez de 6 meses.
 
 ### 2. Apertura de cuenta bancaria y depósito del capital
-El capital social inicial (mínimo 1 €, habitualmente 3.000 €) debe depositarse en una cuenta bancaria a nombre de la sociedad en constitución. El banco emite un certificado de depósito.
+Las aportaciones dinerarias pueden acreditarse mediante certificado bancario o, en los supuestos que permite el artículo 62.2 de la Ley de Sociedades de Capital, declaración de responsabilidad solidaria de los fundadores incluida en la escritura. Comprueba con la notaría el procedimiento aplicable.
 
 ### 3. Escritura pública de constitución
 La escritura incluye los **estatutos sociales** (objeto social, capital, gobierno de la sociedad, derechos de socios, etc.) y se firma ante notario. Es el acto que da vida jurídica a la sociedad.
 
 ### 4. Liquidación del Impuesto de Transmisiones Patrimoniales (TPO)
-Las constituciones de sociedades están sujetas a la modalidad de Operaciones Societarias del ITP, aunque actualmente están **exentas** (hay que presentar el modelo aunque la cuota sea cero).
+La constitución está sujeta a la modalidad de **Operaciones Societarias** del ITP-AJD, con la exención legal aplicable. Los trámites de declaración se gestionan conforme a la vía elegida y el circuito DUE cuando proceda; no presupongas una presentación independiente universal.
 
 ### 5. Inscripción en el Registro Mercantil
 La escritura se inscribe en el Registro Mercantil de la provincia del domicilio social. Desde la inscripción, la sociedad tiene personalidad jurídica plena.
 
 ### 6. Alta fiscal en Hacienda (Modelo 036)
-Una vez inscrita, se solicita el **NIF definitivo** y se realiza el alta censal en la AEAT.
+Si utilizas **CIRCE/DUE**, se coordinan los trámites censales y de identificación fiscal iniciales. Comprueba el estado del expediente y no dupliques el 036 o la solicitud de NIF. En una constitución fuera de CIRCE revisa los trámites necesarios por separado.
 
 ## Costes aproximados
 
@@ -2137,7 +2137,7 @@ El proceso completo, desde la reserva de denominación hasta la obtención del N
 
 La elección entre SL y autónomo depende del nivel de ingresos, la actividad y la estructura prevista:
 
-- **Autónomo**: más sencillo, menos costes de mantenimiento, ideal para ingresos por debajo de 40.000–50.000 €/año.
+- **Autónomo**: puede tener menor coste administrativo. No existe un umbral universal de facturación o beneficio para elegir esta forma jurídica.
 - **SL**: puede resultar adecuada cuando hay ingresos elevados, varios socios o interés en separar el patrimonio personal del profesional. La comparación fiscal exige aplicar el tipo de IS que corresponda a la entidad y compararlo con el IRPF efectivo; no debe asumirse un 25 % universal.
     `
   },
