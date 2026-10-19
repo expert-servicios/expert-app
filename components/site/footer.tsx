@@ -87,8 +87,8 @@ export function Footer({ locale = 'es' }: { locale?: PublicShellLocale }) {
             <Image
               src="/branding/expert-2026/expert-horizontal-inverse.svg"
               alt="EXPERT Consulting"
-              width={240}
-              height={64}
+              width={255}
+              height={60}
               unoptimized
               className="h-auto max-w-[240px] object-contain"
             />

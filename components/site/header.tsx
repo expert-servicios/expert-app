@@ -150,7 +150,7 @@ export function Header({ locale = 'es' }: { locale?: PublicShellLocale }) {
           <Image
             src="/branding/expert-2026/expert-horizontal-inverse.svg"
             alt="EXPERT Consulting"
-            width={214}
+            width={230}
             height={54}
             priority
             unoptimized
