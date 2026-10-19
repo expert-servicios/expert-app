@@ -119,7 +119,7 @@ export default function CirceHelpPage() {
         </Link>
         <Link href="/planes" className="border border-[#D4A017]/30 bg-white p-5 hover:bg-[#F8F6F1]">
           <h3 className="font-serif text-xl font-bold">Planes de acompañamiento</h3>
-          <p className="mt-2 text-sm leading-6">Consulta el catálogo de planes. Disponibilidad y condiciones sujetas a revisión comercial antes de publicar esta página.</p>
+          <p className="mt-2 text-sm leading-6">Descubre los planes mensuales de supervisión y acompañamiento de EXPERT, disponibles para contratar según sus condiciones vigentes.</p>
           <span className="mt-4 block text-sm font-semibold underline">Consultar opciones →</span>
         </Link>
       </div>
