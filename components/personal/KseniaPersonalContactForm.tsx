@@ -86,9 +86,9 @@ export function KseniaPersonalContactForm({ context = 'general', locale = 'es' }
         <input type="checkbox" required checked={consent} onChange={event => setConsent(event.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-[#182A32]" />
         <span>{ru ? 'Я ознакомился(-ась) с ' : 'He leído la '}<a href="https://expertconsulting.es/privacidad" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{ru ? 'политикой конфиденциальности' : 'política de privacidad'}</a>{ru ? ' и даю согласие на обработку данных для ответа на обращение.' : ' y acepto el tratamiento de mis datos para responder a esta consulta.'}</span>
       </label>
-      {error && <p role="alert" className="text-sm font-medium text-[#A12828]">{error} También puedes escribir a <a href="mailto:soy@kseniailicheva.com" className="underline">soy@kseniailicheva.com</a>.</p>}
+      {error && <p role="alert" className="text-sm font-medium text-[#A12828]">{error} {ru ? 'Также можно написать на ' : 'También puedes escribir a '}<a href="mailto:soy@kseniailicheva.com" className="underline">soy@kseniailicheva.com</a>.</p>}
       <button type="submit" disabled={status === 'submitting' || !consent} className="inline-flex min-h-12 w-full items-center justify-center gap-2 bg-[#182A32] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#30454B] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
-        <Send className="h-4 w-4" aria-hidden="true" /> {status === 'submitting' ? '{ru ? 'Отправка…' : 'Enviando…'}' : '{ru ? 'Отправить сообщение' : 'Enviar mensaje'}'}
+        <Send className="h-4 w-4" aria-hidden="true" /> {status === 'submitting' ? (ru ? 'Отправка…' : 'Enviando…') : (ru ? 'Отправить сообщение' : 'Enviar mensaje')}
       </button>
       <p className="text-xs leading-5 text-[#536167]">{ru ? 'Сообщение будет зарегистрировано в системе ' : 'Recibiré el mensaje en el sistema de gestión de '}<a href="https://expertconsulting.es" target="_blank" rel="noopener noreferrer" className="font-semibold underline decoration-[#A57931] underline-offset-4">EXPERT</a>{ru ? ' для дальнейшей работы. Подписка на рекламные рассылки не оформляется.' : ' para darle seguimiento. No se utiliza para suscribirte a comunicaciones comerciales.'}</p>
     </form>
