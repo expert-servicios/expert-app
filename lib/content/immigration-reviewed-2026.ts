@@ -157,15 +157,15 @@ export const IMMIGRATION_REVIEWED_GUIDES = [
         "id": "extraordinary",
         "es": "Arraigo extraordinario: vía incorporada en 2026",
         "ru": "Особое укоренение 2026 года (arraigo extraordinario)",
-        "pEs": "El RD 316/2026 introdujo supuestos extraordinarios con condiciones propias, desarrollados en la Hoja 28 Ter. No deben mezclarse con los requisitos de arraigo social o sociolaboral. Verifica especialmente el marco temporal, documentación y el régimen aplicable al supuesto antes de aconsejar solicitarlo.",
-        "pRu": "RD 316/2026 предусмотрел специальные основания (arraigo extraordinario), изложенные в Hoja 28 Ter, со своими условиями. Нельзя автоматически применять к ним требования arraigo social или arraigo sociolaboral. Важно отдельно проверить даты, основания и документы."
+        "pEs": "El RD 316/2026 estableció vías extraordinarias con condiciones propias, distintas del arraigo social y sociolaboral. Sus disposiciones adicionales vigésima y vigesimoprimera fijaron el 30 de junio de 2026 como último día para presentar solicitudes. A fecha de revisión (13 de octubre de 2026), no debe ofrecerse la presentación de una solicitud nueva por esas vías sin acreditar una prórroga o nueva habilitación normativa posterior. Para expedientes presentados dentro de plazo, comprobar el procedimiento y sus efectos en la fuente oficial y en el caso concreto.",
+        "pRu": "RD 316/2026 предусмотрел особые процедуры (arraigo extraordinario), отличные от arraigo social и arraigo sociolaboral. Дополнительные положения 20 и 21 установили последний день подачи заявления (presentación de solicitud) — 30 июня 2026 года. На дату проверки (13 октября 2026 года) нельзя предлагать новую подачу по этим основаниям без подтверждённого продления срока или нового нормативного основания. По заявлениям, поданным вовремя, следует проверить процессуальный статус (estado del expediente) и действующие правила в официальном источнике."
       },
       {
         "id": "documents",
         "es": "Documentos, formulario, tasas y sede de presentación",
         "ru": "Документы, заявление, госпошлины и подача",
-        "pEs": "Comprueba la hoja informativa de la vía concreta: pasaporte, acreditación del supuesto, antecedentes, documentos familiares o laborales, formularios y tasas. El EX-10 corresponde a procedimientos determinados, no a todas las autorizaciones iniciales. Los documentos extranjeros pueden requerir traducción jurada o legalización según su naturaleza. Conserva el justificante y responde a los requerimientos.",
-        "pRu": "Проверяйте официальную памятку именно по выбранному основанию (hoja informativa): паспорт, доказательства обстоятельств, справки о несудимости (antecedentes penales), документы о семье или работе, форму заявления (modelo de solicitud) и госпошлину (tasa). Форма EX-10 подходит не для всех процедур. Иностранные документы при необходимости переводятся присяжным переводчиком (traducción jurada) или легализуются (legalización). Сохраните подтверждение подачи (justificante) и отвечайте на запросы (requerimientos)."
+        "pEs": "Comprueba la hoja informativa de la vía concreta: pasaporte, acreditación del supuesto, antecedentes, documentos familiares o laborales, formularios y tasas. El EX-10 corresponde a procedimientos determinados, no a todas las autorizaciones iniciales. Los documentos extranjeros pueden requerir traducción jurada o legalización según su naturaleza. Las sentencias del Tribunal Supremo publicadas en el BOE el 22 de septiembre de 2026 declararon nulo el artículo 197.2 del RD 1155/2024 sobre la obligación general de relación electrónica: no debe afirmarse que todas las solicitudes de extranjería solo admiten presentación telemática. Verifica los canales habilitados para el procedimiento concreto; conserva el justificante y responde a los requerimientos.",
+        "pRu": "Проверяйте официальную памятку именно по выбранному основанию (hoja informativa): паспорт, доказательства обстоятельств, справки о несудимости (antecedentes penales), документы о семье или работе, форму заявления (modelo de solicitud) и госпошлину (tasa). Форма EX-10 подходит не для всех процедур. Иностранные документы при необходимости переводятся присяжным переводчиком (traducción jurada) или легализуются (legalización). Решения Верховного суда Испании (Tribunal Supremo), опубликованные 22 сентября 2026 года, признали недействительной статью 197.2 RD 1155/2024 об общей обязанности электронного взаимодействия. Нельзя утверждать, что все заявления по extranjería подаются исключительно онлайн (presentación telemática): проверяйте доступный способ подачи для конкретной процедуры. Сохраните подтверждение подачи (justificante) и отвечайте на запросы (requerimientos)."
       }
     ]
   },
@@ -247,5 +247,8 @@ export function toImmigrationGuideBody(id:ImmigrationGuideId,locale:ImmigrationL
  const sources=article.sourceIds.map(sourceId=>IMMIGRATION_REVIEWED_SOURCES.find(s=>s.id===sourceId)!).filter(Boolean);
  const sourceTitle=locale==='es'?'Fuentes oficiales y fecha de revisión':'Официальные источники и дата проверки';
  const sourceText=sources.map(s=>'- ['+s.name+']('+s.url+')').join('\n');
- return sections+'\n\n## '+sourceTitle+'\n\n'+sourceText+'\n\n'+(locale==='es'?'Revisado: ':'Проверено: ')+article.revised+'. La norma aplicable es la vigente en la fecha de presentación.';
+ const dateAndLegalWarning = locale === 'es'
+   ? 'Revisado: '+article.revised+'. La norma aplicable es la vigente en la fecha de presentación.'
+   : 'Проверено: '+article.revised+'. Применимые требования определяются законодательством, действующим на дату подачи заявления.';
+ return sections+'\n\n## '+sourceTitle+'\n\n'+sourceText+'\n\n'+dateAndLegalWarning;
 }
