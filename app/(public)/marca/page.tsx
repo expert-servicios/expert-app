@@ -7,10 +7,10 @@ export const metadata: Metadata = {
  alternates: {canonical:'https://expertconsulting.es/marca'}
 };
 const assets = [
- {title:'Logotipo sobre fondo claro',file:'horizontal-claro',wide:true,dark:false},
- {title:'Logotipo sobre fondo oscuro',file:'horizontal-oscuro',wide:true,dark:true},
- {title:'Isotipo EX sobre fondo claro',file:'isotipo-claro',wide:false,dark:false},
- {title:'Isotipo EX sobre fondo oscuro',file:'isotipo-oscuro',wide:false,dark:true},
+  { title: 'Logotipo sobre fondo claro', file: 'horizontal-claro', width: 600, height: 151, dark: false },
+  { title: 'Logotipo sobre fondo oscuro', file: 'horizontal-oscuro', width: 600, height: 149, dark: true },
+  { title: 'Isotipo EX sobre fondo claro', file: 'isotipo-claro', width: 512, height: 313, dark: false },
+  { title: 'Isotipo EX sobre fondo oscuro', file: 'isotipo-oscuro', width: 512, height: 317, dark: true },
 ] as const;
 export default function MarcaPage(){
  return <main className="min-h-screen bg-[#F8F6F1] text-[#0D1B2A]">
@@ -31,7 +31,7 @@ export default function MarcaPage(){
    <div className="mt-8 grid gap-7 md:grid-cols-2">
     {assets.map(item=><article key={item.file} className="overflow-hidden rounded-xl border border-[#D4A017]/25 bg-white shadow-sm">
       <div className={`flex h-56 items-center justify-center p-7 ${item.dark?'bg-[#0D1B2A]':'bg-[#FFFFFF]'}`}>
-       <Image src={`/branding/expert-approved/${item.file}.webp`} alt={item.title} width={item.wide?600:512} height={item.wide?150:512} unoptimized className="max-h-full w-auto object-contain"/>
+       <Image src={`/branding/expert-approved/${item.file}.webp`} alt={item.title} width={item.width} height={item.height} unoptimized className="max-h-full max-w-full h-auto w-auto object-contain"/>
       </div>
       <div className="p-5"><h3 className="font-semibold">{item.title}</h3>
        <div className="mt-4 flex gap-4 text-sm font-semibold">
