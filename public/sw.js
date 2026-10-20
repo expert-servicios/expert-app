@@ -9,7 +9,7 @@ self.addEventListener('push', (event) => {
       badge:    '/branding/expert-approved/app-dark-192.png',
       tag:      data.tag ?? 'expert-push',
       renotify: true,
-      data:     { url: data.url ?? '/admin/whatsapp' },
+      data:     { url: data.url ?? '/admin/inbox' },
     })
   );
 });
@@ -18,7 +18,7 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-      const target = event.notification.data?.url ?? '/admin/whatsapp';
+      const target = event.notification.data?.url ?? '/admin/inbox';
       for (const client of list) {
         if (client.url.includes(target) && 'focus' in client) return client.focus();
       }
