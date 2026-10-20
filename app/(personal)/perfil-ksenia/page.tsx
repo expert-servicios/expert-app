@@ -94,7 +94,7 @@ export default function KseniaPersonalHome() {
               </p>
               <p className="mt-8 max-w-xl text-lg leading-8 text-[#536167]">
                 Soy economista y asesora fiscal, contable y laboral. Llevo más de dos décadas trabajando con personas y empresas en España.
-                Hoy combino esa experiencia con la formación, la mentoría y mi proyecto EXPERT: una forma de acercar el conocimiento profesional y la tecnología.
+                Hoy combino esa experiencia con la formación, la mentoría y mi proyecto <a href="https://expertconsulting.es" target="_blank" rel="noopener noreferrer" className="font-semibold underline decoration-[#A57931] underline-offset-4 hover:text-[#A57931]">EXPERT</a>: una forma de acercar el conocimiento profesional y la tecnología.
               </p>
               <div className="mt-9 flex flex-wrap items-center gap-5">
                 <a href="#sobre-mi" className="inline-flex min-h-12 items-center gap-3 bg-[#182A32] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#30454B]">
@@ -146,7 +146,7 @@ export default function KseniaPersonalHome() {
               {trajectory.map((entry) => (
                 <li key={entry.years} className="grid gap-4 border-b border-[#182A32]/15 py-7 md:grid-cols-[190px_1fr_1.55fr] md:items-start">
                   <span className="font-serif text-2xl text-[#A57931]">{entry.years}</span>
-                  <h3 className="text-lg font-semibold">{entry.title}</h3>
+                  <h3 className="text-lg font-semibold">{entry.years === '2023–hoy' ? <a href="https://expertconsulting.es" target="_blank" rel="noopener noreferrer" className="underline decoration-[#A57931] underline-offset-4 hover:text-[#A57931]">{entry.title}</a> : entry.title}</h3>
                   <p className="text-sm leading-7 text-[#536167]">{entry.detail}</p>
                 </li>
               ))}
@@ -174,25 +174,32 @@ export default function KseniaPersonalHome() {
           <div className="mx-auto grid max-w-6xl gap-14 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
             <div>
               <Eyebrow>El proyecto que impulso</Eyebrow>
-              <h2 className="mt-6 font-serif text-5xl tracking-tight md:text-6xl">EXPERT<span className="text-[#A57931]">.</span></h2>
+              <h2 className="mt-6 font-serif text-5xl tracking-tight md:text-6xl"><a href="https://expertconsulting.es" target="_blank" rel="noopener noreferrer" aria-label="Visitar EXPERT Consulting" className="inline-block decoration-[#A57931] underline-offset-8 hover:underline">EXPERT<span className="text-[#A57931]">.</span></a></h2>
               <p className="mt-6 text-xl leading-8 text-[#33494C]">Una nueva forma de unir asesoramiento profesional, formación y tecnología.</p>
               <p className="mt-5 max-w-2xl text-base leading-8 text-[#536167]">
-                EXPERT nace de una convicción personal: los procesos administrativos y la gestión de negocios pueden ser más comprensibles y eficientes. Aplicamos automatización, herramientas de trabajo conectadas e inteligencia artificial, siempre con supervisión y criterio profesional.
+                <a href="https://expertconsulting.es" target="_blank" rel="noopener noreferrer" className="font-semibold underline decoration-[#A57931] underline-offset-4 hover:text-[#A57931]">EXPERT</a> nace de una convicción personal: los procesos administrativos y la gestión de negocios pueden ser más comprensibles y eficientes. Aplicamos automatización, herramientas de trabajo conectadas e inteligencia artificial, siempre con supervisión y criterio profesional.
               </p>
-              <p className="mt-4 max-w-2xl text-base leading-8 text-[#536167]">KIA es el asistente digital que desarrollamos para facilitar la comunicación y orientar las gestiones dentro del ecosistema EXPERT. Es parte de la evolución del proyecto, no un sustituto del trabajo humano.</p>
-              <a href="https://expertconsulting.es" target="_blank" rel="noopener noreferrer" className="mt-8 inline-flex min-h-12 items-center gap-3 bg-[#182A32] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#30454B]">
-                Conocer EXPERT CONSULTING <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-              </a>
+              <p className="mt-4 max-w-2xl text-base leading-8 text-[#536167]">KIA es el asistente digital que desarrollamos para facilitar la comunicación y orientar las gestiones dentro del ecosistema <a href="https://expertconsulting.es" target="_blank" rel="noopener noreferrer" className="font-semibold underline decoration-[#A57931] underline-offset-4 hover:text-[#A57931]">EXPERT</a>. Es parte de la evolución del proyecto, no un sustituto del trabajo humano.</p>
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <a href="https://expertconsulting.es" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-3 bg-[#182A32] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#30454B]">
+                  Visitar EXPERT CONSULTING <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                </a>
+                <a href="https://expertconsulting.es/servicios" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 border border-[#182A32]/30 px-6 py-3 text-sm font-semibold text-[#182A32] transition hover:border-[#A57931] hover:text-[#A57931]">
+                  Ver los servicios de EXPERT <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                </a>
+              </div>
             </div>
             <aside className="border border-[#CBB68F] bg-white p-8 md:p-10">
               <div className="border-b border-[#182A32]/15 pb-8">
-                <Image src="/branding/expert-approved/horizontal-claro.webp" width={600} height={151} alt="EXPERT CONSULTING" className="h-auto w-full max-w-[300px]" />
+                <a href="https://expertconsulting.es" target="_blank" rel="noopener noreferrer" className="inline-block" aria-label="Ir a la web de EXPERT CONSULTING">
+                  <Image src="/branding/expert-approved/horizontal-claro.webp" width={600} height={151} alt="EXPERT CONSULTING" className="h-auto w-full max-w-[300px]" />
+                </a>
               </div>
               <p className="mt-7 text-xs font-semibold uppercase tracking-[0.22em] text-[#A57931]">Por qué existe</p>
               <blockquote className="mt-4 font-serif text-2xl leading-snug text-[#182A32]">
                 La tecnología tiene sentido cuando nos ayuda a comprender mejor y tomar decisiones con criterio.
               </blockquote>
-              <p className="mt-5 text-sm text-[#647276]">Una convicción que guía mi manera de desarrollar EXPERT.</p>
+              <p className="mt-5 text-sm text-[#647276]">Una convicción que guía mi manera de desarrollar <a href="https://expertconsulting.es" target="_blank" rel="noopener noreferrer" className="font-semibold underline decoration-[#A57931] underline-offset-4 hover:text-[#A57931]">EXPERT</a>.</p>
             </aside>
           </div>
         </section>
@@ -215,13 +222,14 @@ export default function KseniaPersonalHome() {
           <div className="mx-auto max-w-6xl">
             <Eyebrow>Contacto personal</Eyebrow>
             <h2 className="mt-5 font-serif text-4xl md:text-5xl">Las buenas conversaciones abren caminos.</h2>
-            <p className="mt-5 max-w-3xl text-base leading-8 text-[#536167]">Puedes escribirme para colaboraciones, mentorías o propuestas profesionales. Para contratar servicios de asesoría, visita EXPERT.</p>
+            <p className="mt-5 max-w-3xl text-base leading-8 text-[#536167]">Puedes escribirme para colaboraciones, mentorías o propuestas profesionales. Para contratar servicios de asesoría, visita <a href="https://expertconsulting.es" target="_blank" rel="noopener noreferrer" className="font-semibold underline decoration-[#A57931] underline-offset-4 hover:text-[#A57931]">EXPERT CONSULTING</a>.</p>
             <div className="mt-10 grid gap-8 lg:grid-cols-[0.75fr_1.25fr]">
               <div className="space-y-5">
                 <a href="mailto:soy@kseniailicheva.com" className="flex min-h-12 items-center gap-3 border-b border-[#182A32]/20 pb-3 font-semibold"><Mail className="h-5 w-5 text-[#A57931]" aria-hidden="true" />soy@kseniailicheva.com</a>
                 <a href="tel:+34669045528" className="flex min-h-12 items-center gap-3 border-b border-[#182A32]/20 pb-3 font-semibold"><Phone className="h-5 w-5 text-[#A57931]" aria-hidden="true" />+34 669 04 55 28</a>
                 <a href="https://wa.me/34669045528" target="_blank" rel="noopener noreferrer" className="flex min-h-12 items-center gap-3 border-b border-[#182A32]/20 pb-3 font-semibold"><MessageCircle className="h-5 w-5 text-[#1E7657]" aria-hidden="true" />WhatsApp</a>
                 <a href="/reservar" className="inline-flex min-h-12 items-center gap-2 bg-[#182A32] px-6 py-3 font-semibold text-white"><CalendarDays className="h-5 w-5" aria-hidden="true" />Reservar reunión de 15 minutos</a>
+                <a href="https://expertconsulting.es/servicios" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 border-b-2 border-[#A57931] px-1 py-3 text-sm font-semibold hover:text-[#A57931]">Solicitar un servicio de EXPERT <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></a>
               </div>
               <div className="border border-[#CBB68F] bg-[#F7F4EE] p-6 md:p-8"><h3 className="mb-5 font-serif text-2xl">Envíame tu propuesta</h3><KseniaPersonalContactForm /></div>
             </div>

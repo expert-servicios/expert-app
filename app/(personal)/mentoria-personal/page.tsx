@@ -192,6 +192,19 @@ export default function MentoriasPersonalesPage() {
           </div>
         </section>
 
+        <section className="border-t border-[#182A32]/10 bg-white px-6 py-14 md:px-10">
+          <div className="mx-auto flex max-w-6xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A57931]">Servicios profesionales</p>
+              <h2 className="mt-3 font-serif text-2xl md:text-3xl">¿Necesitas asesoramiento para tu empresa?</h2>
+              <p className="mt-3 text-sm leading-7 text-[#536167]">Además de mi actividad como mentora, impulso <a href="https://expertconsulting.es" target="_blank" rel="noopener noreferrer" className="font-semibold underline decoration-[#A57931] underline-offset-4 hover:text-[#A57931]">EXPERT CONSULTING</a>, un proyecto de gestión fiscal, contable, laboral y servicios profesionales.</p>
+            </div>
+            <a href="https://expertconsulting.es/servicios" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 bg-[#182A32] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#30454B]">
+              Ver servicios de EXPERT <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+            </a>
+          </div>
+        </section>
+
         <section id="colaborar" className="scroll-mt-16 bg-[#EAE2D4] px-6 py-20 md:px-10">
           <div className="mx-auto max-w-6xl">
             <h2 className="font-serif text-3xl md:text-5xl">¿Tienes un proyecto o una propuesta?</h2>

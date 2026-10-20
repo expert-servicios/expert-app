@@ -89,7 +89,7 @@ export function KseniaPersonalContactForm({ context = 'general' }: { context?: C
       <button type="submit" disabled={status === 'submitting' || !consent} className="inline-flex min-h-12 w-full items-center justify-center gap-2 bg-[#182A32] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#30454B] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
         <Send className="h-4 w-4" aria-hidden="true" /> {status === 'submitting' ? 'Enviando…' : 'Enviar mensaje'}
       </button>
-      <p className="text-xs leading-5 text-[#536167]">Recibiré el mensaje en el sistema de gestión de EXPERT para darle seguimiento. No se utiliza para suscribirte a comunicaciones comerciales.</p>
+      <p className="text-xs leading-5 text-[#536167]">Recibiré el mensaje en el sistema de gestión de <a href="https://expertconsulting.es" target="_blank" rel="noopener noreferrer" className="font-semibold underline decoration-[#A57931] underline-offset-4">EXPERT</a> para darle seguimiento. No se utiliza para suscribirte a comunicaciones comerciales.</p>
     </form>
   );
 }

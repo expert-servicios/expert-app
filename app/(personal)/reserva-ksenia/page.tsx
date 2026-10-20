@@ -12,6 +12,7 @@ export default function ReservaKsenia() {
     <div className="mb-8 flex flex-wrap gap-5 text-sm"><span className="inline-flex items-center gap-2"><Clock3 className="h-4 w-4" /> 15 minutos</span><span className="inline-flex items-center gap-2"><CalendarDays className="h-4 w-4" /> Disponibilidad real</span><span className="inline-flex items-center gap-2"><Video className="h-4 w-4" /> Google Meet</span></div>
     <NativeBookingForm serviceKey="consulta-inicial" origin="personal:kseniailicheva.com" calendarLabel="Agenda de Ksenia Ilicheva" />
     <p className="mt-8 text-sm">¿No encuentras un horario? Escríbeme a <a href="mailto:soy@kseniailicheva.com" className="underline">soy@kseniailicheva.com</a>.</p>
+    <p className="mt-4 text-sm leading-7 text-[#536167]">Si necesitas contratar asesoramiento fiscal, contable o laboral, consulta directamente los <a href="https://expertconsulting.es/servicios" target="_blank" rel="noopener noreferrer" className="font-semibold underline decoration-[#A57931] underline-offset-4">servicios de EXPERT CONSULTING</a>.</p>
   </section>
  </main>;
 }
