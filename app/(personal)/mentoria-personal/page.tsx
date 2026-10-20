@@ -48,7 +48,7 @@ export default function MentoriasPersonalesPage() {
         <nav aria-label="Navegación personal" className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
           <a href={personalUrl} className="inline-flex min-h-11 items-center gap-3 font-serif text-xl font-semibold">
             <span className="relative h-10 w-10 overflow-hidden rounded-full border border-[#C7AC7F]">
-              <Image src="/avatars/ksenia-avatar.png" alt="" fill sizes="40px" className="object-cover object-top" />
+              <Image src="/personal/ksenia-avatar-approved.webp" alt="" fill sizes="40px" className="object-cover object-top" />
             </span>
             Ksenia Ilicheva<span className="text-[#A57931]">.</span>
           </a>
@@ -72,8 +72,8 @@ export default function MentoriasPersonalesPage() {
               </a>
             </div>
             <div className="relative mx-auto w-full max-w-[260px]">
-              <div className="relative aspect-[4/5] overflow-hidden border border-[#D3AD73]/55 bg-[#B9A48D]">
-                <Image src="/avatars/ksenia-hero-clean.png" alt="Ksenia Ilicheva" fill sizes="260px" priority className="object-cover object-top" />
+              <div className="relative aspect-square overflow-hidden border border-[#D3AD73]/55 bg-[#B9A48D]">
+                <Image src="/personal/ksenia-avatar-approved.webp" alt="Ksenia Ilicheva" fill sizes="260px" priority className="object-cover object-top" />
               </div>
               <p className="mt-3 text-center text-xs tracking-wide text-[#CED9D5]">Ksenia Ilicheva · Economista y mentora</p>
             </div>
