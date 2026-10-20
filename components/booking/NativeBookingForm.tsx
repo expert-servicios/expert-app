@@ -50,9 +50,9 @@ function redirectToLoginForEntityOnboarding(serviceKey: string, companyId?: stri
   return true;
 }
 
-function dateLabel(date: string) {
+function dateLabel(date: string, locale: 'es' | 'ru' = 'es') {
   const parsed = new Date(`${date}T12:00:00+02:00`);
-  return new Intl.DateTimeFormat('es-ES', {
+  return new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'es-ES', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
@@ -190,7 +190,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
         {selected && (
           <div className="mt-5 border border-[#D4A017]/20 bg-[#F8F6F1] p-4 text-sm">
             <p className="font-bold">{availability?.service?.label}</p>
-            <p className="mt-1 text-[#52606d]">{selected.label} · hora peninsular española</p>
+            <p className="mt-1 text-[#52606d]">{selected.label} · {ru ? 'время Испании' : 'hora peninsular española'}</p>
           </div>
         )}
         {meetingUrl && (
@@ -246,7 +246,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
                 <div key={date} className="border border-[#D4A017]/20 bg-[#F8F6F1] p-4">
                   <div className="flex items-center gap-2 text-sm font-bold capitalize text-[#0D1B2A]">
                     <CalendarDays className="h-4 w-4 text-[#D4A017]" />
-                    {dateLabel(date)}
+                    {dateLabel(date, locale)}
                   </div>
                   <div className="mt-3 grid grid-cols-3 gap-2 md:grid-cols-2 lg:grid-cols-3">
                     {slots.map((slot) => {
