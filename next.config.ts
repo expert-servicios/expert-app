@@ -59,6 +59,12 @@ const nextConfig: NextConfig = {
         { source: '/mentorias', has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }], destination: '/mentoria-personal' },
         { source: '/reservar', has: [{ type: 'host' as const, value: 'kseniailicheva.com' }], destination: '/reserva-ksenia' },
         { source: '/reservar', has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }], destination: '/reserva-ksenia' },
+        { source: '/ru', has: [{ type: 'host' as const, value: 'kseniailicheva.com' }], destination: '/perfil-ksenia-ru' },
+        { source: '/ru', has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }], destination: '/perfil-ksenia-ru' },
+        { source: '/ru/mentorias', has: [{ type: 'host' as const, value: 'kseniailicheva.com' }], destination: '/mentoria-personal-ru' },
+        { source: '/ru/mentorias', has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }], destination: '/mentoria-personal-ru' },
+        { source: '/ru/reservar', has: [{ type: 'host' as const, value: 'kseniailicheva.com' }], destination: '/reserva-ksenia-ru' },
+        { source: '/ru/reservar', has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }], destination: '/reserva-ksenia-ru' },
       ],
       afterFiles: [
         { source: '/.well-known/microsoft-identity-association.json', destination: '/api/well-known/microsoft-identity-association' },

@@ -6,6 +6,7 @@ const whatsappUrl = 'https://wa.me/34669045528?text=' + encodeURIComponent('Hola
 
 export function KseniaWhatsAppWidget() {
   const [open, setOpen] = useState(false);
+  const ru = typeof window !== 'undefined' && window.location.pathname.startsWith('/ru');
   return (
     <aside className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+1rem)] right-4 z-[90] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6" aria-label="Contacto por WhatsApp">
       {open && (
@@ -13,19 +14,19 @@ export function KseniaWhatsAppWidget() {
           <div className="flex items-center gap-3 bg-[#1E7657] px-4 py-4 text-white">
             <MessageCircle aria-hidden="true" className="h-6 w-6 shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className="font-semibold">WhatsApp de Ksenia</p>
-              <p className="mt-0.5 text-xs text-white/85">Contacto personal y profesional</p>
+              <p className="font-semibold">{ru ? 'WhatsApp Ксении' : 'WhatsApp de Ksenia'}</p>
+              <p className="mt-0.5 text-xs text-white/85">{ru ? 'Личный и профессиональный контакт' : 'Contacto personal y profesional'}</p>
             </div>
             <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar contacto por WhatsApp" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full hover:bg-white/15">
               <X className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
           <div className="p-4">
-            <p className="text-sm leading-6 text-[#48585B]">Puedes escribirme directamente al <strong>+34 669 04 55 28</strong>. Te responderé cuando esté disponible.</p>
+            <p className="text-sm leading-6 text-[#48585B]">{ru ? 'Напишите мне на номер' : 'Puedes escribirme directamente al'} <strong>+34 669 04 55 28</strong>. {ru ? 'Я отвечу, когда будет возможность.' : 'Te responderé cuando esté disponible.'}</p>
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 py-3 text-sm font-semibold text-[#113D25] transition hover:bg-[#22c25d]">
-              Abrir WhatsApp <ExternalLink className="h-4 w-4" aria-hidden="true" />
+              {ru ? 'Открыть WhatsApp' : 'Abrir WhatsApp'} <ExternalLink className="h-4 w-4" aria-hidden="true" />
             </a>
-            <p className="mt-3 text-xs leading-5 text-[#667577]">Se abrirá WhatsApp en tu dispositivo. No se envía ningún mensaje automáticamente.</p>
+            <p className="mt-3 text-xs leading-5 text-[#667577]">{ru ? 'На вашем устройстве откроется WhatsApp. Сообщение не отправляется автоматически.' : 'Se abrirá WhatsApp en tu dispositivo. No se envía ningún mensaje automáticamente.'}</p>
           </div>
         </div>
       )}
