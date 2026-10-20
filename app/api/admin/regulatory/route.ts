@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
 import {
   applyReviewedRegulatoryValueUpdates,
+  approveRegulatoryLegalReview,
   getRegulatoryPulseSummary,
+  getRegulatoryChangeForAdmin,
   resolveReviewedRegulatoryChange,
 } from '@/lib/regulatory/regulatory-values';
 import { runRegulatoryPulse } from '@/lib/regulatory/regulatory-monitor';
@@ -37,6 +39,11 @@ export async function GET(request: NextRequest) {
     getRegulatoryPulseSummary(),
     runRegulatoryHealthAudit(),
   ]);
+  const id = new URL(request.url).searchParams.get('changeId');
+  if (id) {
+    const selected = await getRegulatoryChangeForAdmin(id);
+    if (selected && !summary.pendingChanges.some(row => row.id === selected.id)) summary.pendingChanges.unshift(selected);
+  }
   return NextResponse.json({ ok: true, summary, health });
 }
 
@@ -47,7 +54,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json().catch(() => ({})) as {
-    action?: 'pulse' | 'worker' | 'apply_values' | 'resolve_change';
+    action?: 'pulse' | 'worker' | 'apply_values' | 'resolve_change' | 'approve_legal';
     authority?: string;
     sourceKey?: string;
     topic?: string;
@@ -55,7 +62,23 @@ export async function POST(request: NextRequest) {
     changeId?: string;
     resolutionNote?: string;
     resolutionEvidence?: Record<string, unknown>;
+    legalNote?: string;
+    officialSourceUrl?: string;
+    checkedAt?: string;
   };
+
+  if (body.action === 'approve_legal') {
+    if (!body.changeId || !body.legalNote || !body.officialSourceUrl || !body.checkedAt) {
+      return NextResponse.json({error:'Se requiere cambio, fuente oficial, fecha y dictamen jurídico'},{status:400});
+    }
+    return NextResponse.json({ok:true,result:await approveRegulatoryLegalReview({
+      changeId:body.changeId,
+      reviewerId:auth.userId,
+      note:body.legalNote,
+      officialSourceUrl:body.officialSourceUrl,
+      checkedAt:body.checkedAt,
+    })});
+  }
 
   if (body.action === 'apply_values') {
     if (!body.changeId) {

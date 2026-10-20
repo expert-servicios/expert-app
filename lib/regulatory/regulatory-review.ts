@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import { runKiaProviderRequest } from '@/lib/ai/kia/kia-provider-router';
-import { notifyAdminsTelegram, escapeTelegramHtml } from '@/lib/integrations/telegram';
 import { createRegulatoryProposalPullRequest } from './regulatory-github';
 import { isRulesetSchemaUnavailable } from './regulatory-schema-compat';
+import { selectConfirmedRegulatoryImpacts, requiresRegulatoryHumanReview } from './regulatory-impact';
+import { enqueueRegulatoryDevOpsReview } from './regulatory-devops-outbox';
 
 const reviewSchema = z.object({
   relevant: z.boolean(),
@@ -36,6 +37,7 @@ const reviewSchema = z.object({
     type: z.string().min(1),
     key: z.string().min(1),
     reason: z.string().min(1).max(500),
+    impacted: z.boolean(),
   })).max(30),
   proposedFiles: z.array(z.string()).max(40),
 });
@@ -84,11 +86,12 @@ const REVIEW_JSON_SCHEMA = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['type','key','reason'],
+        required: ['type','key','reason','impacted'],
         properties: {
           type: { type: 'string' },
           key: { type: 'string' },
           reason: { type: 'string' },
+          impacted: { type: 'boolean' },
         },
       },
     },
@@ -109,7 +112,8 @@ const SYSTEM_PROMPT = [
   'medium: contenido/criterio útil con impacto limitado.',
   'low/info: cambio informativo o editorial.',
   'Los valueUpdates son PROPUESTAS: solo inclúyelos cuando el nuevo valor esté explícitamente visible en la evidencia.',
-  'Para cada dependencia conocida realmente afectada, usa dependencyHints con EXACTAMENTE el mismo type y key recibido.',
+  'Para cada dependencia conocida realmente afectada, usa dependencyHints con EXACTAMENTE el mismo type y key recibido y impacted=true.',
+  'Si mencionas una dependencia que NO resulta afectada, usa impacted=false; una relación temática o ausencia de novedades NUNCA significa impacto.',
   'No marques dependencias por similitud temática si la evidencia no demuestra impacto; en caso de duda exige revisión humana.',
   'Devuelve únicamente JSON conforme al schema.',
 ].join('\n');
@@ -234,11 +238,16 @@ async function classifyOne(change: ChangeRow) {
   }
 
   const parsed = reviewSchema.parse(result.parsedJson);
+  const humanReviewRequired = requiresRegulatoryHumanReview({
+    authority: source.authority,
+    relevant: parsed.relevant,
+    severity: parsed.severity,
+    changeType: parsed.changeType,
+    modelRequestsReview: parsed.requiresHumanReview,
+  });
   const status = !parsed.relevant
     ? 'ignored'
-    : parsed.requiresHumanReview || parsed.severity === 'critical'
-      ? 'needs_review'
-      : 'classified';
+    : humanReviewRequired ? 'needs_review' : 'classified';
 
   const { error: updateError } = await admin.from('regulatory_changes').update({
     status,
@@ -247,7 +256,7 @@ async function classifyOne(change: ChangeRow) {
     change_type: parsed.changeType,
     summary: parsed.summary,
     effective_date: parsed.effectiveDate,
-    requires_human_review: parsed.requiresHumanReview || parsed.severity === 'critical',
+    requires_human_review: humanReviewRequired,
     classification_confidence: parsed.confidence,
     classified_by: 'kia',
     classification_model: result.model,
@@ -259,16 +268,14 @@ async function classifyOne(change: ChangeRow) {
 
   if (updateError) throw new Error(updateError.message);
 
-  const sourceMetadata = (source.metadata ?? {}) as Record<string, unknown>;
   const knownDependencies = dependencies ?? [];
+  const positiveHints = parsed.dependencyHints.filter((hint) => hint.impacted);
   const hinted = new Map(
-    parsed.dependencyHints.map((hint) => [`${hint.type}::${hint.key}`, hint.reason]),
+    positiveHints.map((hint) => [`${hint.type}::${hint.key}`, hint.reason]),
   );
-  const affectedDependencies = sourceMetadata.service_specific === true
-    ? knownDependencies
-    : knownDependencies.filter((dependency) =>
-        hinted.has(`${dependency.dependency_type}::${dependency.dependency_key}`),
-      );
+  const affectedDependencies = selectConfirmedRegulatoryImpacts(
+    knownDependencies, parsed.dependencyHints, parsed.relevant,
+  );
 
   if (affectedDependencies.length > 0) {
     const { error: impactError } = await admin.from('regulatory_change_dependencies').upsert(
@@ -304,23 +311,29 @@ async function classifyOne(change: ChangeRow) {
     });
 
     if (pullRequest?.url || pullRequest?.number) {
-      await admin.from('regulatory_changes').update({
-        status: 'proposal_ready',
+      const { error: proposalSaveError } = await admin.from('regulatory_changes').update({
+        // A proposal PR is NOT a legal decision. Do not bypass needs_review.
+        status: humanReviewRequired ? 'needs_review' : 'proposal_ready',
         proposal_pr_number: pullRequest.number ?? null,
         proposal_pr_url: pullRequest.url ?? null,
       }).eq('id', change.id);
+      if (proposalSaveError) throw new Error(proposalSaveError.message);
     }
 
-    await notifyAdminsTelegram([
-      '<b>KIA Regulatory Pulse</b>',
-      `Severidad: <b>${escapeTelegramHtml(parsed.severity.toUpperCase())}</b>`,
-      `Fuente: ${escapeTelegramHtml(source.authority)} · ${escapeTelegramHtml(source.title)}`,
-      escapeTelegramHtml(parsed.summary),
-      parsed.effectiveDate ? `Vigencia: ${escapeTelegramHtml(parsed.effectiveDate)}` : '',
-      `Dependencias conocidas: ${dependencies?.length ?? 0}`,
-      `Dependencias afectadas: ${affectedDependencies.length}`,
-      pullRequest?.url ? `PR de revisión: ${escapeTelegramHtml(pullRequest.url)}` : 'PR automático: no configurado o no disponible',
-    ].filter(Boolean).join('\n'));
+    // The former KIA customer/admin bot must never receive these legal review
+    // notifications. The isolated Expert DevOps channel below is opt-in.
+
+  }
+
+  // Write only a durable outbox intent. No Telegram HTTP request is made
+  // within classification, and an unavailable queue never changes the legal status.
+  if (humanReviewRequired && parsed.relevant) {
+    await enqueueRegulatoryDevOpsReview({
+      changeId: change.id,
+      snapshotId: change.current_snapshot_id,
+    }).catch(() => {
+      console.warn('[Regulatory DevOps] notification outbox unavailable; human review remains pending');
+    });
   }
 
   return {
