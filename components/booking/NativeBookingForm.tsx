@@ -19,6 +19,7 @@ interface AvailabilityResponse {
     durationMinutes: number;
   };
   timezone?: string;
+  meetingProvider?: 'teams' | 'meet';
   slots?: Slot[];
   error?: string;
 }
@@ -112,6 +113,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
     return () => media.removeEventListener('change', sync);
   }, []);
 
+  const meetingLabel = availability?.meetingProvider === 'teams' ? 'Microsoft Teams' : 'Google Meet';
   const groups = useMemo(() => groupByDate(availability?.slots ?? []), [availability?.slots]);
   const pageCount = Math.max(1, Math.ceil(groups.length / daysPerPage));
   const safeDayPage = Math.min(dayPage, pageCount - 1);
@@ -172,7 +174,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
       setStatus('success');
       setMessage(
         data.emailSent === false
-          ? (ru ? 'Встреча подтверждена, но письмо отправить не удалось. Сохраните ссылку Google Meet на этой странице.' : 'La cita está confirmada, pero no hemos podido enviar el correo de confirmación. Conserva el enlace de Google Meet que aparece aquí.')
+          ? (ru ? 'Встреча подтверждена, но письмо отправить не удалось. Сохраните ссылку на встречу на этой странице.' : 'La cita está confirmada, pero no hemos podido enviar el correo de confirmación. Conserva el enlace de la reunión que aparece aquí.')
           : (ru ? 'Встреча подтверждена. Приглашение отправлено на электронную почту.' : 'La cita está confirmada. Te hemos enviado la invitación y la confirmación por email.')
       );
     } catch (error) {
@@ -201,7 +203,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
             className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A] sm:w-auto"
           >
             <Video className="h-4 w-4" />
-            {ru ? 'Открыть Google Meet' : 'Abrir Google Meet'}
+            {ru ? 'Открыть ' + meetingLabel : 'Abrir ' + meetingLabel}
           </a>
         )}
       </div>
@@ -365,7 +367,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
                 className="mt-2 w-full border border-[#D4A017]/30 px-4 py-3 text-sm font-normal normal-case tracking-normal outline-none focus:border-[#D4A017]"
               />
               <span id="guest-emails-help" className="mt-2 block text-xs font-normal normal-case leading-5 tracking-normal text-[#52606d]">
-                Puedes añadir hasta 8 personas. Recibirán la invitación de Calendar y el enlace de Google Meet.
+                Puedes añadir hasta 8 personas. Recibirán la invitación y el enlace de la reunión.
               </span>
             </label>
           )}
@@ -399,7 +401,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
           ) : (
             <>
               <Video className="h-4 w-4" />
-              {ru ? 'Подтвердить встречу в Google Meet' : 'Confirmar cita por Google Meet'}
+              {ru ? 'Подтвердить встречу в ' + meetingLabel : 'Confirmar cita por ' + meetingLabel}
             </>
           )}
         </button>
