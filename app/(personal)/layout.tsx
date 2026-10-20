@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import Script from 'next/script';
 import { KseniaWhatsAppWidget } from '@/components/personal/KseniaWhatsAppWidget';
+import { KseniaSocialLinks } from '@/components/personal/KseniaSocialLinks';
 
 const recaptchaKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
@@ -9,6 +10,7 @@ export default function KseniaPersonalLayout({ children }: { children: ReactNode
     <>
       {recaptchaKey && <Script id="recaptcha-v3-personal" src={'https://www.google.com/recaptcha/api.js?render=' + recaptchaKey} strategy="afterInteractive" />}
       {children}
+      <div className="border-t border-[#D3AD73]/30 bg-[#182A32]"><KseniaSocialLinks /></div>
       <KseniaWhatsAppWidget />
     </>
   );

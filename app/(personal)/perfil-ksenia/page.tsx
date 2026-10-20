@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, BookOpenText, BriefcaseBusiness, CalendarDays, GraduationCap, Mail, MessageCircle, MoveUpRight, Phone, Sparkles } from 'lucide-react';
 import { KseniaPersonalContactForm } from '@/components/personal/KseniaPersonalContactForm';
+import { KSENIA_SOCIAL_PROFILES } from '@/lib/personal/ksenia-social-profiles';
 
 const personalUrl = 'https://kseniailicheva.com';
 
@@ -48,7 +49,7 @@ const personSchema = {
   description: 'Formadora, mentora y promotora del proyecto EXPERT.',
   worksFor: { '@type': 'Organization', name: 'EXPERT CONSULTING', url: 'https://expertconsulting.es' },
   knowsLanguage: ['es', 'ru'],
-  sameAs: ['https://www.linkedin.com/in/ksenia-ilicheva/', 'https://expertconsulting.es'],
+  sameAs: [...KSENIA_SOCIAL_PROFILES.map(profile => profile.url), 'https://expertconsulting.es'],
 };
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
