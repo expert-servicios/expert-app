@@ -53,6 +53,15 @@ const nextConfig: NextConfig = {
     return {
       // Host routing must run BEFORE resolving existing / and /mentorias pages.
       beforeFiles: [
+        // Dedicated Ksenia Vercel project: preview URL and production domain use personal routes.
+        ...(process.env.PERSONAL_SITE_DEPLOYMENT === 'true' ? [
+          { source: '/', destination: '/perfil-ksenia' },
+          { source: '/mentorias', destination: '/mentoria-personal' },
+          { source: '/reservar', destination: '/reserva-ksenia' },
+          { source: '/ru', destination: '/perfil-ksenia-ru' },
+          { source: '/ru/mentorias', destination: '/mentoria-personal-ru' },
+          { source: '/ru/reservar', destination: '/reserva-ksenia-ru' },
+        ] : []),
         { source: '/', has: [{ type: 'host' as const, value: 'kseniailicheva.com' }], destination: '/perfil-ksenia' },
         { source: '/', has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }], destination: '/perfil-ksenia' },
         { source: '/mentorias', has: [{ type: 'host' as const, value: 'kseniailicheva.com' }], destination: '/mentoria-personal' },
