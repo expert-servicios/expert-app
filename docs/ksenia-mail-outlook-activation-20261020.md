@@ -21,7 +21,8 @@ Estado: implantación parcial; reservas y envíos automáticos **no habilitados*
 - El código de EXPERT ya implementa `listBookingCalendarBusyWindows`, validaciones, bloqueo de citas, confirmación y cancelación con `BOOKING_CALENDAR_PROVIDER=ms365`.
 - La tabla `ms365_tokens` de la base de datos no tiene actualmente una conexión válida `id=admin`, de acuerdo con la consulta realizada.
 - En Vercel `expertapp/kseniailicheva` figuran `BOOKING_CALENDAR_PROVIDER=ms365`, `ADMIN_OWNER_EMAIL=soy@kseniailicheva.com`, `PERSONAL_SITE_DEPLOYMENT=true`. **Todavía NO** figuran las credenciales servidor `MS365_CLIENT_ID`, `MS365_CLIENT_SECRET` ni la configuración Supabase de la aplicación personal.
-- La página `/reservar` y `/ru/reservar` muestran una alternativa por correo mediante `KseniaPersonalBookingGate`; evitan ofrecer franjas inventadas.
+- La página `/reservar` y `/ru/reservar` muestran, si falta la conexión nativa, el enlace público personal de Microsoft Bookings detectado en correspondencia reciente de Outlook, y como alternativa el correo. El enlace está configurado mediante `PERSONAL_MICROSOFT_BOOKINGS_URL` solo en Vercel `kseniailicheva`, con validación estricta de dominio `bookings.cloud.microsoft`. No se incrustan páginas externas ni se muestran franjas inventadas.
+- Este Bookings externo abre su propia página y gestiona disponibilidad con Outlook. Antes de considerarlo finalizado, validar manualmente que tiene configurado el servicio de **15 minutos**, que las reservas efectivamente aparecen en el calendario principal y que el enlace de reunión generado es el deseado.
 - Los endpoints de reservas siguen necesitando secreto de base de datos y verificación antispam adecuados, siempre en variables servidor de Vercel. No duplicar las claves privadas de EXPERT sin revisión de alcance.
 
 ### Pendiente de la titular

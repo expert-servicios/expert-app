@@ -9,6 +9,10 @@ describe('Personal Outlook booking guard and provider-accurate copy', () => {
     expect(gate).toContain('isBookingCalendarConfigured()');
     expect(gate).toContain('if (ready) return <>{children}</>');
     expect(gate).toContain('soy@kseniailicheva.com');
+    expect(gate).toContain('PERSONAL_MICROSOFT_BOOKINGS_URL');
+    expect(gate).toContain("url.hostname === 'bookings.cloud.microsoft'");
+    expect(gate).toContain("url.pathname.startsWith('/bookwithme/user/')");
+    expect(gate).toContain('Consultar horarios en Microsoft Bookings');
   });
   it('keeps public ES and RU bookings isolated behind the connection gate', () => {
     const es = read('app/(personal)/reserva-ksenia/page.tsx');
