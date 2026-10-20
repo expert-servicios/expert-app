@@ -29,6 +29,7 @@ interface Props {
   companyId?: string | null;
   manageToken?: string | null;
   origin?: string | null;
+  calendarLabel?: string;
 }
 
 function groupByDate(slots: Slot[]) {
@@ -57,7 +58,7 @@ function dateLabel(date: string) {
   }).format(parsed);
 }
 
-export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageToken, origin }: Props) {
+export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageToken, origin, calendarLabel = 'Agenda EXPERT' }: Props) {
   const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
   const [availabilityError, setAvailabilityError] = useState('');
   const [loadingSlots, setLoadingSlots] = useState(true);
@@ -210,7 +211,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
       <div className="border border-[#D4A017]/25 bg-white p-6 shadow-[0_4px_24px_rgba(13,27,42,0.07)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4A017]">Agenda EXPERT</p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4A017]">{calendarLabel}</p>
             <h2 className="mt-1 font-serif text-2xl font-bold">
               {availability?.service?.label ?? 'Reserva tu cita'}
             </h2>

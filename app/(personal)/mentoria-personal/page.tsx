@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
-import { ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, CalendarDays, ClipboardList, Compass, GraduationCap, Handshake, Lightbulb, ShieldCheck, UsersRound } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, CalendarDays, ClipboardList, Compass, GraduationCap, Handshake, ShieldCheck, UsersRound } from 'lucide-react';
+import { KseniaPersonalContactForm } from '@/components/personal/KseniaPersonalContactForm';
 
 const personalUrl = 'https://kseniailicheva.com';
 const mentorsUrl = personalUrl + '/mentorias';
@@ -193,20 +194,17 @@ export default function MentoriasPersonalesPage() {
 
         <section id="colaborar" className="scroll-mt-16 bg-[#EAE2D4] px-6 py-20 md:px-10">
           <div className="mx-auto max-w-6xl">
-            <div className="flex items-center gap-3"><Handshake className="h-7 w-7 text-[#A57931]" aria-hidden="true" /><p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#A57931]">Hablemos</p></div>
-            <h2 className="mt-5 max-w-3xl font-serif text-3xl md:text-5xl">¿Quieres compartir una idea o plantear una colaboración?</h2>
-            <p className="mt-5 max-w-3xl text-base leading-8 text-[#536167]">
-              Puedes escribirme sobre una mentoría, una alianza o un proyecto emprendedor. Si solo necesitamos comprobar el encaje, una primera conversación de 15 minutos puede ser suficiente.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <a href="mailto:info@expertconsulting.es?subject=Propuesta%20personal%20de%20mentoria%20para%20Ksenia%20Ilicheva" className="inline-flex min-h-12 items-center gap-2 bg-[#182A32] px-6 py-3 text-sm font-semibold text-white hover:bg-[#30454B]">
-                Enviar una propuesta <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </a>
-              <a href="https://expertconsulting.es/cita?tipo=consulta-inicial&origen=web-personal-mentorias" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 border border-[#182A32]/40 px-6 py-3 text-sm font-semibold hover:border-[#A57931]">
-                Solicitar reunión de 15 min <CalendarDays className="h-4 w-4" aria-hidden="true" />
-              </a>
+            <h2 className="font-serif text-3xl md:text-5xl">¿Tienes un proyecto o una propuesta?</h2>
+            <p className="mt-5 text-base leading-8 text-[#536167]">Hablemos de mentoría, colaboración o emprendimiento.</p>
+            <div className="mt-8 grid gap-8 lg:grid-cols-[0.75fr_1.25fr]">
+              <div className="space-y-5">
+                <a href="mailto:soy@kseniailicheva.com" className="block border-b border-[#182A32]/20 pb-4 font-semibold">soy@kseniailicheva.com</a>
+                <a href="tel:+34669045528" className="block border-b border-[#182A32]/20 pb-4 font-semibold">+34 669 04 55 28</a>
+                <a href="https://wa.me/34669045528" target="_blank" rel="noopener noreferrer" className="block border-b border-[#182A32]/20 pb-4 font-semibold">WhatsApp personal</a>
+                <a href="/reservar" className="inline-flex min-h-12 items-center gap-2 bg-[#182A32] px-6 py-3 font-semibold text-white"><CalendarDays className="h-5 w-5" aria-hidden="true" />Reservar reunión de 15 minutos</a>
+              </div>
+              <div className="border border-[#CBB68F] bg-[#F7F4EE] p-6 md:p-8"><h3 className="mb-5 font-serif text-2xl">Enviar propuesta</h3><KseniaPersonalContactForm context="mentorias" /></div>
             </div>
-            <p className="mt-4 text-xs text-[#536167]">El contacto y la reserva se gestionan utilizando los canales profesionales de EXPERT.</p>
           </div>
         </section>
       </main>

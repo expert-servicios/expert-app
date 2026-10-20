@@ -57,6 +57,8 @@ const nextConfig: NextConfig = {
         { source: '/', has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }], destination: '/perfil-ksenia' },
         { source: '/mentorias', has: [{ type: 'host' as const, value: 'kseniailicheva.com' }], destination: '/mentoria-personal' },
         { source: '/mentorias', has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }], destination: '/mentoria-personal' },
+        { source: '/reservar', has: [{ type: 'host' as const, value: 'kseniailicheva.com' }], destination: '/reserva-ksenia' },
+        { source: '/reservar', has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }], destination: '/reserva-ksenia' },
       ],
       afterFiles: [
         { source: '/.well-known/microsoft-identity-association.json', destination: '/api/well-known/microsoft-identity-association' },

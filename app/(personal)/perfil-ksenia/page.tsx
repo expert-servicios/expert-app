@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
-import { ArrowDownRight, ArrowRight, ArrowUpRight, BookOpenText, BriefcaseBusiness, GraduationCap, Mail, MoveUpRight, Sparkles } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, ArrowUpRight, BookOpenText, BriefcaseBusiness, CalendarDays, GraduationCap, Mail, MessageCircle, MoveUpRight, Phone, Sparkles } from 'lucide-react';
+import { KseniaPersonalContactForm } from '@/components/personal/KseniaPersonalContactForm';
 
 const personalUrl = 'https://kseniailicheva.com';
 
@@ -210,21 +211,19 @@ export default function KseniaPersonalHome() {
           </div>
         </section>
 
-        <section id="contacto" className="scroll-mt-16 bg-[#EAE2D4] px-6 py-24 md:px-10">
+        <section id="contacto" className="scroll-mt-16 bg-[#EAE2D4] px-6 py-20 md:px-10">
           <div className="mx-auto max-w-6xl">
-            <Eyebrow>Sigamos conectados</Eyebrow>
-            <h2 className="mt-5 max-w-2xl font-serif text-4xl leading-tight md:text-5xl">Las buenas conversaciones abren caminos.</h2>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-[#536167]">Para propuestas de colaboración, mentoría o contacto profesional, puedes escribirme. Para contratar o consultar servicios de asesoría, visita directamente EXPERT.</p>
-            <div className="mt-9 flex flex-wrap gap-4">
-              <a href="mailto:info@expertconsulting.es?subject=Contacto%20profesional%20-%20Ksenia%20Ilicheva" className="inline-flex min-h-12 items-center gap-3 bg-[#182A32] px-6 py-3 text-sm font-semibold text-white hover:bg-[#30454B]">
-                <Mail className="h-4 w-4" aria-hidden="true" /> Escribirme
-              </a>
-              <a href="https://www.linkedin.com/in/ksenia-ilicheva/" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-3 border border-[#182A32]/30 px-6 py-3 text-sm font-semibold hover:border-[#182A32]">
-                Mi perfil profesional <MoveUpRight className="h-4 w-4" aria-hidden="true" />
-              </a>
-              <a href="https://expertconsulting.es" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-3 px-3 py-3 text-sm font-semibold hover:underline">
-                Web EXPERT <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </a>
+            <Eyebrow>Contacto personal</Eyebrow>
+            <h2 className="mt-5 font-serif text-4xl md:text-5xl">Las buenas conversaciones abren caminos.</h2>
+            <p className="mt-5 max-w-3xl text-base leading-8 text-[#536167]">Puedes escribirme para colaboraciones, mentorías o propuestas profesionales. Para contratar servicios de asesoría, visita EXPERT.</p>
+            <div className="mt-10 grid gap-8 lg:grid-cols-[0.75fr_1.25fr]">
+              <div className="space-y-5">
+                <a href="mailto:soy@kseniailicheva.com" className="flex min-h-12 items-center gap-3 border-b border-[#182A32]/20 pb-3 font-semibold"><Mail className="h-5 w-5 text-[#A57931]" aria-hidden="true" />soy@kseniailicheva.com</a>
+                <a href="tel:+34669045528" className="flex min-h-12 items-center gap-3 border-b border-[#182A32]/20 pb-3 font-semibold"><Phone className="h-5 w-5 text-[#A57931]" aria-hidden="true" />+34 669 04 55 28</a>
+                <a href="https://wa.me/34669045528" target="_blank" rel="noopener noreferrer" className="flex min-h-12 items-center gap-3 border-b border-[#182A32]/20 pb-3 font-semibold"><MessageCircle className="h-5 w-5 text-[#1E7657]" aria-hidden="true" />WhatsApp</a>
+                <a href="/reservar" className="inline-flex min-h-12 items-center gap-2 bg-[#182A32] px-6 py-3 font-semibold text-white"><CalendarDays className="h-5 w-5" aria-hidden="true" />Reservar reunión de 15 minutos</a>
+              </div>
+              <div className="border border-[#CBB68F] bg-[#F7F4EE] p-6 md:p-8"><h3 className="mb-5 font-serif text-2xl">Envíame tu propuesta</h3><KseniaPersonalContactForm /></div>
             </div>
           </div>
         </section>
