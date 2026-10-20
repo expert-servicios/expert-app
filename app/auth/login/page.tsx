@@ -157,12 +157,12 @@ function LoginForm() {
       <div className="mb-8 flex flex-col items-center gap-4">
         <Link href={homeHref} className="transition-opacity hover:opacity-80">
           <Image
-            src="/logos/EXPERT_logo/expert-logo-light-clean.png"
+            src="/branding/expert-approved/horizontal-oscuro.webp"
             alt="EXPERT"
-            width={120}
-            height={120}
+            width={288}
+            height={72}
             priority
-            className="drop-shadow-[0_4px_24px_rgba(212,160,23,0.25)]"
+            className="h-auto w-full max-w-[288px] drop-shadow-[0_4px_24px_rgba(212,160,23,0.25)]"
           />
         </Link>
         <div className="text-center">

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ShieldCheck } from 'lucide-react';
+import Image from 'next/image';
 import type { WorkspaceArea } from './WorkspaceFrame';
 
 export interface WorkspaceBrandProps {
@@ -18,8 +18,8 @@ export function WorkspaceBrand({ area, collapsed = false, className = '' }: Work
       title={collapsed ? 'EXPERT' : undefined}
       className={`flex min-w-0 items-center gap-2.5 rounded-lg text-white transition hover:text-[#f1d385] ${className}`}
     >
-      <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[var(--workspace-accent)] text-[var(--workspace-sidebar)]">
-        <ShieldCheck className="h-[17px] w-[17px]" />
+      <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#0D1B2A]">
+        <Image src="/branding/expert-approved/app-dark-192.png" alt="" width={32} height={32} unoptimized className="h-8 w-8 object-contain" />
       </span>
       {!collapsed && (
         <span className="flex min-w-0 flex-col">

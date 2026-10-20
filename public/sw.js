@@ -4,8 +4,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title ?? 'EXPERT', {
       body:     data.body ?? '',
-      icon:     '/branding/expert-app.png',
-      badge:    '/branding/expert-app.png',
+      icon:     '/branding/expert-approved/app-dark-192.png',
+      badge:    '/branding/expert-approved/app-dark-192.png',
       tag:      data.tag ?? 'expert-push',
       renotify: true,
       data:     { url: data.url ?? '/admin/whatsapp' },
@@ -27,11 +27,11 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // ── PWA cache ─────────────────────────────────────────────────
-const CACHE = 'expert-pwa-v1';
+const CACHE = 'expert-pwa-v2-brand-approved';
 
 const PRECACHE = [
   '/offline',
-  '/logos/EXPERT_logo/expert-favicon.png',
+  '/branding/expert-approved/favicon.png',
 ];
 
 self.addEventListener('install', (e) => {
@@ -64,6 +64,7 @@ self.addEventListener('fetch', (e) => {
   if (
     url.pathname.startsWith('/_next/static/') ||
     url.pathname.startsWith('/logos/') ||
+    url.pathname.startsWith('/branding/expert-approved/') ||
     url.pathname.startsWith('/icons/')
   ) {
     e.respondWith(
