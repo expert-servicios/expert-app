@@ -79,7 +79,7 @@ export function InstallPwaPrompt({ variant = 'banner' }: { variant?: 'banner' | 
       <div className="mx-auto flex max-w-lg items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/logos/EXPERT_logo/expert-isotipo.png"
+          src="/branding/expert-approved/app-dark-192.png"
           alt="EXPERT"
           className="h-10 w-10 shrink-0 rounded-xl"
         />

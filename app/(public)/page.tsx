@@ -50,13 +50,13 @@ export const metadata: Metadata = {
       'Gestión fiscal, legal y contable con IA (Kia) y equipo experto. Cuanto más te impliques en la gestión de tu empresa, menos pagas. Planes desde 49€/mes.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
     locale: 'es_ES',
-    images: [{ url: '/branding/expert%20servicios.png', width: 1200, height: 630, alt: 'EXPERT — Asesoría Fiscal y Legal' }]
+    images: [{ url: '/branding/expert-approved/og-expert-1200x630.png', width: 1200, height: 630, alt: 'EXPERT — Asesoría Fiscal y Legal' }]
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Asesoría fiscal y legal inteligente para empresas responsables | EXPERT Consulting',
     description: 'Gestión fiscal, legal y contable con IA (Kia) y equipo experto. Planes desde 49€/mes.',
-    images: ['/branding/expert%20servicios.png']
+    images: ['/branding/expert-approved/og-expert-1200x630.png']
   },
   alternates: { canonical: 'https://expertconsulting.es' }
 };
@@ -192,8 +192,8 @@ export default async function HomePage({
     '@type': 'ProfessionalService',
     name: 'EXPERT — Asesoría Fiscal y Legal',
     url: 'https://expertconsulting.es',
-    logo: 'https://expertconsulting.es/branding/expert-app.png',
-    image: 'https://expertconsulting.es/branding/expert%20servicios.png',
+    logo: 'https://expertconsulting.es/branding/expert-approved/app-dark-512.png',
+    image: 'https://expertconsulting.es/branding/expert-approved/og-expert-1200x630.png',
     description: 'Asesoría fiscal, legal y administrativa en España para empresas, autónomos y particulares. Impuestos, extranjería, trámites y gestión.',
     telephone: '+34669045528',
     email: 'info@expertconsulting.es',

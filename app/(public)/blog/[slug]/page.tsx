@@ -35,7 +35,7 @@ export async function generateMetadata({
   if (!article) return {};
   const title = `${article.title} | EXPERT Blog`;
   const canonicalUrl = `https://expertconsulting.es/blog/${slug}`;
-  const image = '/branding/expert%20servicios.png';
+  const image = '/branding/expert-approved/og-expert-1200x630.png';
   const russianTranslation = laborRuArticles.find((item) => item.esSlug === slug);
   const rgpdRuPath = resolveRgpdPairedPath('/blog/'+slug, 'ru');
 
@@ -118,7 +118,7 @@ export default async function BlogArticlePage({
       '@type': 'Organization',
       name: 'EXPERT — Asesoría Fiscal y Legal',
       url: 'https://expertconsulting.es',
-      logo: { '@type': 'ImageObject', url: 'https://expertconsulting.es/branding/expert-app.png' },
+      logo: { '@type': 'ImageObject', url: 'https://expertconsulting.es/branding/expert-approved/app-dark-512.png' },
     },
     mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
   };

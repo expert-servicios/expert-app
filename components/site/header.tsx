@@ -148,10 +148,10 @@ export function Header({ locale = 'es' }: { locale?: PublicShellLocale }) {
         {/* Identidad EXPERT 2026: composición horizontal EX + texto en dos líneas. */}
         <Link href={href("/")} onClick={closeMobile} className="flex min-w-0 shrink-0 items-center" aria-label="EXPERT Consulting — Inicio">
           <Image
-            src="/branding/expert-2026/expert-horizontal-inverse.svg"
+            src="/branding/expert-approved/horizontal-oscuro.webp"
             alt="EXPERT Consulting"
-            width={230}
-            height={54}
+            width={205}
+            height={51}
             priority
             unoptimized
             className="h-[51px] w-auto max-w-[205px] object-contain sm:max-w-[214px]"

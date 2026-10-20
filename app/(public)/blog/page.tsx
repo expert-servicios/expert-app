@@ -17,9 +17,9 @@ export const metadata: Metadata = {
       'Artículos y guías sobre fiscalidad en España, extranjería, gestión de empresas, Holded y trámites administrativos.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
     locale: 'es_ES',
-    images: [{ url: '/branding/expert%20servicios.png', width: 1200, height: 630, alt: 'Blog EXPERT — Fiscalidad y Extranjería' }]
+    images: [{ url: '/branding/expert-approved/og-expert-1200x630.png', width: 1200, height: 630, alt: 'Blog EXPERT — Fiscalidad y Extranjería' }]
   },
-  twitter: { card: 'summary_large_image', images: ['/branding/expert%20servicios.png'] },
+  twitter: { card: 'summary_large_image', images: ['/branding/expert-approved/og-expert-1200x630.png'] },
   alternates: { canonical: 'https://expertconsulting.es/blog' }
 };
 
@@ -33,7 +33,7 @@ const blogJsonLd = {
     '@type': 'Organization',
     name: 'EXPERT — Asesoría Fiscal y Legal',
     url: 'https://expertconsulting.es',
-    logo: { '@type': 'ImageObject', url: 'https://expertconsulting.es/branding/expert-app.png' },
+    logo: { '@type': 'ImageObject', url: 'https://expertconsulting.es/branding/expert-approved/app-dark-512.png' },
   },
   blogPost: getPublishedBlogArticles().map((a) => ({
     '@type': 'BlogPosting',

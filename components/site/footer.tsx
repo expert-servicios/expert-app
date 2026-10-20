@@ -85,9 +85,9 @@ export function Footer({ locale = 'es' }: { locale?: PublicShellLocale }) {
         <div>
           <Link href={href("/")} className="inline-block">
             <Image
-              src="/branding/expert-2026/expert-horizontal-inverse.svg"
+              src="/branding/expert-approved/horizontal-oscuro.webp"
               alt="EXPERT Consulting"
-              width={255}
+              width={240}
               height={60}
               unoptimized
               className="h-auto max-w-[240px] object-contain"

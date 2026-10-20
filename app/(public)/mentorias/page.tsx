@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     description: 'Acompañamiento práctico para convertir hipótesis empresariales en decisiones, ejecución y evidencia.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
     locale: 'es_ES',
-    images: [{ url: '/branding/expert%20servicios.png', width: 1200, height: 630, alt: 'Mentorías EXPERT' }],
+    images: [{ url: '/branding/expert-approved/og-expert-1200x630.png', width: 1200, height: 630, alt: 'Mentorías EXPERT' }],
   },
 };
 
