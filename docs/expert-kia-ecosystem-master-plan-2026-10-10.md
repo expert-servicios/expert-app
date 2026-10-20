@@ -1950,7 +1950,7 @@ Dirección aclara que **no debe actuar como revisora de código**: KIA coordinar
 
 **Estado: DISEÑO DOCUMENTADO / EJECUCIÓN BLOQUEADA por congelación E0–E6.** Petición de Dirección: preparar la especificación de blog personal bilingüe, sin autorizar implementación de runtime ni modificaciones de Supabase de producción. La PR #824 (sitio personal) permanece DRAFT; su CI y sus dos despliegues estaban verdes para el HEAD consultado el 20/10/2026, pero no se ha fusionado. Esta propuesta no la modifica ni cambia el checkpoint E0.
 
-**Especificación subordinada:** [Contrato de blog personal ES/RU](contracts/ksenia-personal-blog-bilingual-v1-2026-10-20.md). No es otro plan maestro.
+**Especificación subordinada:** [Contrato de blog personal ES/RU](contracts/ksenia-personal-blog-bilingual-v1-2026-10-20.md). **Primer lote editorial (borradores, no publicados):** [Tres primeros artículos ES/RU](editorial/ksenia-blog-first-three-articles-2026-10-20.md). No es otro plan maestro.
 
 | ID candidato, no activado | Trabajo propuesto | Dependencia / criterio de salida |
 | --- | --- | --- |
