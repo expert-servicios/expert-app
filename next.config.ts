@@ -51,6 +51,18 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
+      // The personal domain shares the EXPERT codebase but has its own editorial homepage.
+      // The live domain must NOT have a Vercel-level redirect to expertconsulting.es.
+      {
+        source: '/',
+        has: [{ type: 'host' as const, value: 'kseniailicheva.com' }],
+        destination: '/perfil-ksenia',
+      },
+      {
+        source: '/',
+        has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }],
+        destination: '/perfil-ksenia',
+      },
       {
         source: '/.well-known/microsoft-identity-association.json',
         destination: '/api/well-known/microsoft-identity-association',
