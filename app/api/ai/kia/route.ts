@@ -699,6 +699,7 @@ export async function POST(request: NextRequest) {
       body: dashboardOperationalTask.title.slice(0, 220),
       url: contextualCaseId ? `/admin/expedientes/${contextualCaseId}` : '/admin/tareas',
       tag: `kia-dashboard-task-${dashboardOperationalTask.id}`,
+        source: 'kia',
     }).catch(() => {});
   }
 

@@ -1,14 +1,15 @@
 // ── Push notifications ────────────────────────────────────────
 self.addEventListener('push', (event) => {
   const data = event.data?.json() ?? {};
+  const kia = data.source === 'kia';
   event.waitUntil(
     self.registration.showNotification(data.title ?? 'EXPERT', {
       body:     data.body ?? '',
-      icon:     '/branding/expert-approved/app-dark-192.png',
+      icon:     kia ? '/avatars/kia/kia-bienvenida.webp' : '/branding/expert-approved/app-dark-192.png',
       badge:    '/branding/expert-approved/app-dark-192.png',
       tag:      data.tag ?? 'expert-push',
       renotify: true,
-      data:     { url: data.url ?? '/admin/whatsapp' },
+      data:     { url: data.url ?? '/admin/inbox' },
     })
   );
 });
@@ -17,7 +18,7 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
-      const target = event.notification.data?.url ?? '/admin/whatsapp';
+      const target = event.notification.data?.url ?? '/admin/inbox';
       for (const client of list) {
         if (client.url.includes(target) && 'focus' in client) return client.focus();
       }

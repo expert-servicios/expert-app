@@ -54,6 +54,7 @@ export async function notifyKiaAdminEscalation(input: {
     body,
     url: absoluteUrl,
     tag: `kia-escalation-${createHash('sha256').update(input.eventRef).digest('hex').slice(0, 20)}`,
+        source: 'kia',
   });
 }
 

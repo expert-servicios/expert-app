@@ -234,7 +234,7 @@ function buildEmailHtml(p: {
 <html lang="es">
 <head><meta charset="UTF-8"><title>Evaluación de viabilidad</title></head>
 <body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a1a;">
-  <img src="https://expertconsulting.es/logo.png" alt="EXPERT" style="height:40px;margin-bottom:24px;" />
+  <img src="https://expertconsulting.es/branding/expert-approved/horizontal-claro.png" alt="EXPERT" style="height:40px;margin-bottom:24px;" />
   <h1 style="font-size:20px;margin-bottom:4px;">Evaluación de viabilidad</h1>
   <p style="color:#555;margin-top:0;">${p.serviceName}</p>
 

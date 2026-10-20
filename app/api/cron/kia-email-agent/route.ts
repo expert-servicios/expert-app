@@ -757,6 +757,7 @@ export async function GET(request: NextRequest) {
           body: `${senderDisplayName(latest)} · ${latest.subject || 'Sin asunto'}`.slice(0, 240),
           url: `/admin/leads?focus=${identity.leadId}`,
           tag: `kia-email-new-lead-${identity.leadId}`,
+        source: 'kia',
         }).catch(() => {});
       }
 
@@ -877,6 +878,7 @@ export async function GET(request: NextRequest) {
           body: `${createdTask.title} · ${senderDisplayName(latest)}`.slice(0, 240),
           url: identity.caseId ? `/admin/expedientes/${identity.caseId}` : '/admin/tareas',
           tag: `kia-email-task-${createdTask.id}`,
+        source: 'kia',
         }).catch(() => {});
       }
 
@@ -1083,6 +1085,7 @@ export async function GET(request: NextRequest) {
           ].filter(Boolean).join(' · ').slice(0, 240),
           url: adminThreadUrl(row.thread_id),
           tag: `kia-important-${createHash('sha256').update(latest.id).digest('hex').slice(0, 20)}`,
+        source: 'kia',
         }).catch(() => {});
       }
 
