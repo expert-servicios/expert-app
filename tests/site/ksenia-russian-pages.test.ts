@@ -9,6 +9,6 @@ for(const target of ['/perfil-ksenia-ru','/mentoria-personal-ru','/reserva-kseni
 });
 it('supports Russian contact form and WhatsApp',()=>{
 expect(read('components/personal/KseniaPersonalContactForm.tsx')).toContain("locale?: 'es' | 'ru'");
-expect(read('components/personal/KseniaWhatsAppWidget.tsx')).toContain("location.pathname.startsWith('/ru')");
+expect(read('components/personal/KseniaWhatsAppWidget.tsx')).toContain("path.startsWith('/ru')");
 });
 });
