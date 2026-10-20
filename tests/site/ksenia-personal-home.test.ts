@@ -16,7 +16,7 @@ describe('Separate Ksenia personal site', () => {
     expect(page).toContain("metadataBase: new URL(personalUrl)");
     expect(page).toContain('https://expertconsulting.es');
     expect(page).toContain('https://www.linkedin.com/in/ksenia-ilicheva/');
-    expect(page).toContain('/personal/ksenia-retrato.webp');
+    expect(page).toContain('/avatars/ksenia-hero-clean.png');
     expect(page).toContain('/branding/expert-approved/horizontal-claro.webp');
     expect(page).toContain('/personal/ksenia-favicon.png');
   });
