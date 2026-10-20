@@ -29,9 +29,9 @@ export const metadata: Metadata = {
       'Fiscalidad, extranjería, empresa, trámites mercantiles, certificado digital, Holded, tráfico, embarcaciones, notaría y propiedades.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
     locale: 'es_ES',
-    images: [{ url: '/branding/expert%20servicios.png', width: 1200, height: 630, alt: 'EXPERT — Servicios profesionales' }]
+    images: [{ url: '/branding/expert-approved/og-expert-1200x630.png', width: 1200, height: 630, alt: 'EXPERT — Servicios profesionales' }]
   },
-  twitter: { card: 'summary_large_image', images: ['/branding/expert%20servicios.png'] },
+  twitter: { card: 'summary_large_image', images: ['/branding/expert-approved/og-expert-1200x630.png'] },
   alternates: { canonical: 'https://expertconsulting.es/servicios' }
 };
 
