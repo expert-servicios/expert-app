@@ -13,7 +13,7 @@ const quickLinks = [
   { label: 'Planes', href: '/planes' },
   { label: 'Servicios', href: '/servicios' },
   { label: 'Holded', href: '/holded' },
-  { label: 'Sobre mí', href: '/sobre-mi' },
+  { label: 'Ksenia Ilicheva', href: 'https://kseniailicheva.com' },
   { label: 'Blog', href: '/blog' },
   { label: 'Contacto', href: '/contacto' },
   { label: 'Para asesorías', href: '/para-asesorias' },

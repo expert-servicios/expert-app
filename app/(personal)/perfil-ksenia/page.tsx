@@ -70,6 +70,7 @@ export default function KseniaPersonalHome() {
           <nav aria-label="Navegación personal" className="hidden items-center gap-7 text-xs font-medium uppercase tracking-widest text-[#49575B] md:flex">
             <a href="#sobre-mi" className="hover:text-[#A57931]">Sobre mí</a>
             <a href="#trayectoria" className="hover:text-[#A57931]">Trayectoria</a>
+            <a href="/mentorias" className="hover:text-[#A57931]">Mentorías</a>
             <a href="#expert" className="hover:text-[#A57931]">EXPERT</a>
           </nav>
           <a href="#contacto" className="inline-flex min-h-10 items-center gap-2 border border-[#182A32]/20 px-4 py-2 text-xs font-semibold transition hover:border-[#A57931] hover:text-[#A57931]">
@@ -195,13 +196,17 @@ export default function KseniaPersonalHome() {
           </div>
         </section>
 
-        <section className="border-t border-[#182A32]/10 bg-white px-6 py-20 md:px-10">
-          <div className="mx-auto grid max-w-6xl items-center gap-8 md:grid-cols-[0.9fr_1.1fr]">
+        <section id="mentoria" className="scroll-mt-16 border-t border-[#182A32]/10 bg-white px-6 py-20 md:px-10">
+          <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
             <div className="flex items-start gap-4">
               <GraduationCap className="mt-2 h-9 w-9 shrink-0 text-[#A57931]" strokeWidth={1.4} aria-hidden="true" />
-              <div><Eyebrow>Formación y mentoría</Eyebrow><h2 className="mt-3 font-serif text-3xl">Aprender también es compartir.</h2></div>
+              <div><Eyebrow>Mi actividad como mentora</Eyebrow><h2 className="mt-3 font-serif text-3xl md:text-4xl">Aprender también es compartir.</h2></div>
             </div>
-            <p className="text-base leading-8 text-[#536167]">Participo en programas de mentoría y acompaño a profesionales y emprendedores en materias de gestión, fiscalidad y digitalización. Mi experiencia con mentorDay y CiberEmprende forma parte de esa vocación por compartir conocimiento.</p>
+            <div>
+              <p className="text-base leading-8 text-[#536167]">Participo en mentorDay, Mentor Tips y programas como CiberEmprende. Trabajo con personas emprendedoras para analizar la viabilidad de sus proyectos, ordenar prioridades y convertir las decisiones en acciones verificables.</p>
+              <p className="mt-4 text-sm leading-7 text-[#536167]">En mi espacio personal encontrarás mis acreditaciones, los formatos de acompañamiento, mi método y ejemplos de iniciativas públicas, diferenciando los proyectos revisados de las mentorías individuales.</p>
+              <a href="/mentorias" className="mt-6 inline-flex min-h-12 items-center gap-2 border-b-2 border-[#A57931] text-sm font-semibold text-[#182A32] hover:text-[#A57931]">Conocer mi actividad como mentora <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></a>
+            </div>
           </div>
         </section>
 

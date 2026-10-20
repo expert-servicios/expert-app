@@ -1,7 +1,7 @@
 # Inicio (Home)
 
 ## Menú
-Inicio | Holded | Servicios | Mentorías | Formación | Contacto | Descargar CV
+Inicio | Holded | Servicios | Formación | Contacto
 
 ## Header (contacto visible)
 - Email: soy@kseniailicheva.com
@@ -11,19 +11,19 @@ Inicio | Holded | Servicios | Mentorías | Formación | Contacto | Descargar CV
 ## Hero
 **Pon orden en tu empresa. Controla caja, impuestos y operaciones con Holded.**
 
-Implementación y migración en Holded + asesoramiento integral (fiscal, contable, mercantil y laboral) + mentorías y formación para autogestión.
+Implementación y migración en Holded + asesoramiento integral (fiscal, contable, mercantil y laboral) + formación para autogestión.
 
 **CTA principal:** Solicitar una llamada → [URL_RESERVA]
 
 **CTA secundario:** Ver Holded
 
-*Mentora en MentorDay | Especialista en Implementación y Migraciones Holded*
+*Especialista en Implementación y Migraciones Holded*
 
 ## Lo que hago (4 cards)
 - Implementación Holded
 - Migración a Holded
 - Asesoramiento integral de empresas
-- Mentorías + Formación para autogestión
+- Formación para autogestión
 
 ## Por qué
 No se trata de delegar tu negocio. Se trata de entenderlo y gestionarlo con un sistema.
@@ -42,9 +42,9 @@ Yo te monto la estructura y te enseño a llevarla.
 - Cumplimiento, estructura, contratos y calendario fiscal-laboral.
 - CTA: Ver servicios
 
-**Mentorías y formación**
-- Sesiones prácticas con plan de 30 días.
-- CTA: Reservar mentoría
+**Formación para autogestión**
+- Formación práctica para trabajar con tus herramientas de gestión.
+- CTA: Ver formación
 
 ## Cómo trabajo (4 pasos)
 1) Diagnóstico (estado, riesgos, objetivos)
@@ -81,7 +81,7 @@ Sí. Formo a responsables y equipo para que el sistema funcione.
 **Formulario:**
 - Nombre y empresa
 - Email y teléfono
-- Qué necesitas (implementación, migración, asesoramiento, mentoría, formación)
+- Qué necesitas (implementación, migración, asesoramiento, formación)
 
 **Email:** soy@kseniailicheva.com
 **Tel/WhatsApp:** +34 669 04 55 28
@@ -97,6 +97,6 @@ Sí. Formo a responsables y equipo para que el sistema funcione.
 ## SEO
 **Título SEO:** Implementación y Migración Holded | Asesoramiento Fiscal y Contable | Ksenia Ilicheva
 
-**Meta description:** Implementación y migración a Holded. Asesoramiento integral fiscal, contable, mercantil y laboral. Mentorías y formación para autogestión.
+**Meta description:** Implementación y migración a Holded. Asesoramiento integral fiscal, contable, mercantil y laboral. Formación para autogestión.
 
-**Keywords:** implementación Holded, migración Holded, asesoría fiscal, asesoría contable, mentoría startups, formación Holded
+**Keywords:** implementación Holded, migración Holded, asesoría fiscal, asesoría contable, formación Holded

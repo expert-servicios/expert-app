@@ -33,7 +33,6 @@ const planesLinks = [
 ];
 
 const recursosLinks = [
-  { label: 'Mentorías', href: '/mentorias' },
   { label: 'Blog', href: '/blog' },
   { label: 'Base de conocimientos', href: '/docs' },
   { label: 'Autoimplantación RGPD', href: '/herramientas/rgpd' },
