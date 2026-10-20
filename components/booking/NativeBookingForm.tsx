@@ -30,6 +30,7 @@ interface Props {
   manageToken?: string | null;
   origin?: string | null;
   calendarLabel?: string;
+  locale?: 'es' | 'ru';
 }
 
 function groupByDate(slots: Slot[]) {
@@ -58,7 +59,8 @@ function dateLabel(date: string) {
   }).format(parsed);
 }
 
-export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageToken, origin, calendarLabel = 'Agenda EXPERT' }: Props) {
+export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageToken, origin, calendarLabel = 'Agenda EXPERT', locale = 'es' }: Props) {
+  const ru = locale === 'ru';
   const [availability, setAvailability] = useState<AvailabilityResponse | null>(null);
   const [availabilityError, setAvailabilityError] = useState('');
   const [loadingSlots, setLoadingSlots] = useState(true);
@@ -84,14 +86,14 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
       });
       const data = (await res.json()) as AvailabilityResponse;
       if (res.status === 401 && redirectToLoginForEntityOnboarding(serviceKey, companyId)) return;
-      if (!res.ok) throw new Error(data.error ?? 'No se pudo consultar la agenda.');
+      if (!res.ok) throw new Error(data.error ?? (ru ? 'Не удалось загрузить расписание.' : 'No se pudo consultar la agenda.'));
       setAvailability(data);
       setDayPage(0);
       setSelected((current) =>
         current && data.slots?.some((slot) => slot.start === current.start) ? current : null
       );
     } catch (error) {
-      setAvailabilityError(error instanceof Error ? error.message : 'No se pudo consultar la agenda.');
+      setAvailabilityError(error instanceof Error ? error.message : (ru ? 'Не удалось загрузить расписание.' : 'No se pudo consultar la agenda.'));
     } finally {
       setLoadingSlots(false);
     }
@@ -131,7 +133,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
     event.preventDefault();
     if (!selected) {
       setStatus('error');
-      setMessage('Selecciona primero un horario.');
+      setMessage((ru ? 'Сначала выберите время.' : 'Selecciona primero un horario.'));
       return;
     }
 
@@ -163,19 +165,19 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
       if (!res.ok) {
         if (res.status === 401 && redirectToLoginForEntityOnboarding(serviceKey, companyId)) return;
         if (res.status === 409) await loadAvailability();
-        throw new Error(data.error ?? 'No se pudo completar la reserva.');
+        throw new Error(data.error ?? (ru ? 'Не удалось завершить бронирование.' : 'No se pudo completar la reserva.'));
       }
 
       setMeetingUrl(data.meetingUrl ?? null);
       setStatus('success');
       setMessage(
         data.emailSent === false
-          ? 'La cita está confirmada, pero no hemos podido enviar el correo de confirmación. Conserva el enlace de Google Meet que aparece aquí.'
-          : 'La cita está confirmada. Te hemos enviado la invitación y la confirmación por email.'
+          ? (ru ? 'Встреча подтверждена, но письмо отправить не удалось. Сохраните ссылку Google Meet на этой странице.' : 'La cita está confirmada, pero no hemos podido enviar el correo de confirmación. Conserva el enlace de Google Meet que aparece aquí.')
+          : (ru ? 'Встреча подтверждена. Приглашение отправлено на электронную почту.' : 'La cita está confirmada. Te hemos enviado la invitación y la confirmación por email.')
       );
     } catch (error) {
       setStatus('error');
-      setMessage(error instanceof Error ? error.message : 'No se pudo completar la reserva.');
+      setMessage(error instanceof Error ? error.message : (ru ? 'Не удалось завершить бронирование.' : 'No se pudo completar la reserva.'));
     }
   }
 
@@ -183,7 +185,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
     return (
       <div className="border border-[#D4A017]/25 bg-white p-8 shadow-[0_4px_24px_rgba(13,27,42,0.07)]">
         <CheckCircle2 className="h-12 w-12 text-[#D4A017]" />
-        <h2 className="mt-4 font-serif text-2xl font-bold">Cita confirmada</h2>
+        <h2 className="mt-4 font-serif text-2xl font-bold">{ru ? 'Встреча подтверждена' : 'Cita confirmada'}</h2>
         <p className="mt-3 text-sm leading-6 text-[#374151]">{message}</p>
         {selected && (
           <div className="mt-5 border border-[#D4A017]/20 bg-[#F8F6F1] p-4 text-sm">
@@ -199,7 +201,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
             className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 bg-[#D4A017] px-5 py-3 text-sm font-bold text-[#0D1B2A] sm:w-auto"
           >
             <Video className="h-4 w-4" />
-            Abrir Google Meet
+            {ru ? 'Открыть Google Meet' : 'Abrir Google Meet'}
           </a>
         )}
       </div>
@@ -227,7 +229,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
         {loadingSlots ? (
           <div className="flex min-h-48 items-center justify-center gap-2 text-sm text-[#52606d]">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Consultando disponibilidad...
+            {ru ? 'Проверяем свободное время...' : 'Consultando disponibilidad...'}
           </div>
         ) : availabilityError ? (
           <div className="mt-6 border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -235,7 +237,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
           </div>
         ) : groups.length === 0 ? (
           <div className="mt-6 border border-[#D4A017]/20 bg-[#F8F6F1] p-5 text-sm text-[#52606d]">
-            No hay huecos disponibles en los próximos 14 días. Puedes volver a comprobarlo más tarde.
+            {ru ? 'В ближайшие 14 дней свободных слотов нет. Попробуйте позднее.' : 'No hay huecos disponibles en los próximos 14 días. Puedes volver a comprobarlo más tarde.'}
           </div>
         ) : (
           <div className="mt-6">
@@ -277,7 +279,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
                   disabled={safeDayPage === 0}
                   className="min-h-11 border border-[#D4A017]/30 px-3 py-2 text-xs font-bold text-[#23364D] disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
                 >
-                  Anterior
+                  {ru ? 'Назад' : 'Anterior'}
                 </button>
                 <span className="text-center text-xs font-semibold text-[#52606d]">
                   {safeDayPage + 1} / {pageCount}
@@ -288,7 +290,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
                   disabled={safeDayPage >= pageCount - 1}
                   className="min-h-11 border border-[#D4A017]/30 px-3 py-2 text-xs font-bold text-[#23364D] disabled:cursor-not-allowed disabled:opacity-40 sm:px-4"
                 >
-                  Siguiente
+                  {ru ? 'Далее' : 'Siguiente'}
                 </button>
               </div>
             )}
@@ -307,18 +309,18 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
           autoComplete="off"
         />
 
-        <h3 className="font-serif text-xl font-bold">Tus datos</h3>
+        <h3 className="font-serif text-xl font-bold">{ru ? 'Ваши данные' : 'Tus datos'}</h3>
         {selected ? (
           <p className="mt-2 text-sm text-[#52606d]">
-            Horario seleccionado: <strong>{selected.label}</strong>
+            {ru ? 'Выбранное время:' : 'Horario seleccionado:'} <strong>{selected.label}</strong>
           </p>
         ) : (
-          <p className="mt-2 text-sm text-[#52606d]">Selecciona un horario antes de confirmar.</p>
+          <p className="mt-2 text-sm text-[#52606d]">{ru ? 'Перед подтверждением выберите время.' : 'Selecciona un horario antes de confirmar.'}</p>
         )}
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <label className="text-xs font-bold uppercase tracking-wide">
-            Nombre *
+            {ru ? 'Имя *' : 'Nombre *'}
             <input
               name="name"
               value={form.name}
@@ -329,7 +331,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
             />
           </label>
           <label className="text-xs font-bold uppercase tracking-wide">
-            Email *
+            {ru ? 'Электронная почта *' : 'Email *'}
             <input
               type="email"
               name="email"
@@ -340,7 +342,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
             />
           </label>
           <label className="text-xs font-bold uppercase tracking-wide sm:col-span-2">
-            Teléfono *
+            {ru ? 'Телефон *' : 'Teléfono *'}
             <input
               type="tel"
               name="phone"
@@ -368,7 +370,7 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
             </label>
           )}
           <label className="text-xs font-bold uppercase tracking-wide sm:col-span-2">
-            Comentario opcional
+            {ru ? 'Комментарий (необязательно)' : 'Comentario opcional'}
             <textarea
               name="notes"
               value={form.notes}
@@ -392,12 +394,12 @@ export function NativeBookingForm({ serviceKey, bookingAuth, companyId, manageTo
           {status === 'submitting' ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Confirmando...
+              {ru ? 'Подтверждаем...' : 'Confirmando...'}
             </>
           ) : (
             <>
               <Video className="h-4 w-4" />
-              Confirmar cita por Google Meet
+              {ru ? 'Подтвердить встречу в Google Meet' : 'Confirmar cita por Google Meet'}
             </>
           )}
         </button>
