@@ -6,16 +6,16 @@ const personalUrl = 'https://kseniailicheva.com';
 
 export const metadata: Metadata = {
   metadataBase: new URL(personalUrl),
-  title: 'Ksenia Ilicheva | Trayectoria, visión y proyecto EXPERT',
+  title: 'Ksenia Ilicheva | Economista, mentora y creadora de EXPERT',
   description:
-    'Conoce a Ksenia Ilicheva: economista, asesora fiscal, contable y laboral, formadora y mentora. Mi trayectoria en España y el proyecto EXPERT.',
+    'Soy Ksenia Ilicheva: economista, asesora fiscal, laboral y contable, formadora y mentora. Mi trayectoria, mis valores y el proyecto EXPERT.',
   alternates: { canonical: personalUrl },
   robots: { index: true, follow: true },
   openGraph: {
     type: 'profile',
     url: personalUrl,
     siteName: 'Ksenia Ilicheva',
-    title: 'Ksenia Ilicheva — Persona, trayectoria y EXPERT',
+    title: 'Ksenia Ilicheva | Trayectoria profesional y proyecto EXPERT',
     description: 'Más de dos décadas de experiencia en gestión profesional y una visión de la asesoría conectada con la tecnología.',
     locale: 'es_ES',
     images: [{ url: '/avatars/ksenia-hero-clean.png', alt: 'Ksenia Ilicheva' }],
@@ -59,8 +59,13 @@ export default function KseniaPersonalHome() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }} />
 
       <header className="border-b border-[#182A32]/10 bg-[#F7F4EE]/95">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-6 py-5 md:px-10">
-          <a href="#inicio" aria-label="Volver al inicio" className="font-serif text-lg font-semibold tracking-tight sm:text-xl">Ksenia Ilicheva<span className="text-[#B5894B]">.</span></a>
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-6 py-4 md:px-10">
+          <a href="#inicio" aria-label="Ksenia Ilicheva · volver al inicio" className="inline-flex items-center gap-3 font-serif text-base font-semibold tracking-tight sm:text-xl">
+            <span className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-full border-2 border-[#C7AC7F] bg-[#E8E3D9]">
+              <Image src="/avatars/ksenia-avatar.png" alt="" fill sizes="44px" className="object-cover object-top" />
+            </span>
+            <span>Ksenia Ilicheva<span className="text-[#B5894B]">.</span></span>
+          </a>
           <nav aria-label="Navegación personal" className="hidden items-center gap-7 text-xs font-medium uppercase tracking-widest text-[#49575B] md:flex">
             <a href="#sobre-mi" className="hover:text-[#A57931]">Sobre mí</a>
             <a href="#trayectoria" className="hover:text-[#A57931]">Trayectoria</a>
@@ -77,14 +82,16 @@ export default function KseniaPersonalHome() {
           <div aria-hidden="true" className="pointer-events-none absolute -left-40 top-20 h-96 w-96 rounded-full bg-[#E2D0B2]/30 blur-3xl" />
           <div className="mx-auto grid max-w-7xl gap-14 px-6 pb-20 pt-14 md:px-10 md:pb-28 md:pt-20 lg:grid-cols-[1.03fr_0.97fr] lg:items-center">
             <div className="relative z-10">
-              <Eyebrow>Una trayectoria, una visión</Eyebrow>
-              <h1 className="mt-7 max-w-2xl font-serif text-[clamp(3.3rem,7vw,6.9rem)] font-medium leading-[1.03] tracking-[-0.045em]">
-                Lo profesional también es <em className="font-normal text-[#A57931]">personal.</em>
+              <Eyebrow>Economista · asesora · formadora · mentora</Eyebrow>
+              <h1 className="mt-7 max-w-2xl font-serif text-[clamp(3.3rem,7vw,6.7rem)] font-medium leading-[1.03] tracking-[-0.045em]">
+                Soy Ksenia <em className="font-normal text-[#A57931]">Ilicheva.</em>
               </h1>
+              <p className="mt-5 max-w-xl font-serif text-2xl leading-snug text-[#30454B] md:text-3xl">
+                Experiencia profesional que mira hacia adelante.
+              </p>
               <p className="mt-8 max-w-xl text-lg leading-8 text-[#536167]">
-                Soy Ksenia Ilicheva. Economista, asesora, formadora y mentora.
-                Llevo más de dos décadas acompañando a personas y empresas en España.
-                Hoy reúno esa experiencia con mi apuesta por una forma más humana e inteligente de trabajar.
+                Soy economista y asesora fiscal, contable y laboral. Llevo más de dos décadas trabajando con personas y empresas en España.
+                Hoy combino esa experiencia con la formación, la mentoría y mi proyecto EXPERT: una forma de acercar el conocimiento profesional y la tecnología.
               </p>
               <div className="mt-9 flex flex-wrap items-center gap-5">
                 <a href="#sobre-mi" className="inline-flex min-h-12 items-center gap-3 bg-[#182A32] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#30454B]">
@@ -101,7 +108,7 @@ export default function KseniaPersonalHome() {
             <div className="relative">
               <div aria-hidden="true" className="absolute -right-5 -top-5 h-full w-full border border-[#C2A477]/70 md:-right-7 md:-top-7" />
               <div className="relative aspect-[4/5] overflow-hidden bg-[#E8E3D9] shadow-[0_30px_65px_rgba(24,42,50,0.13)]">
-                <Image src="/avatars/ksenia-hero-clean.png" alt="Retrato de Ksenia Ilicheva" fill priority sizes="(max-width: 1024px) 100vw, 45vw" className="object-cover object-center" />
+                <Image src="/avatars/ksenia-hero-clean.png" alt="Ksenia Ilicheva, economista y creadora del proyecto EXPERT" fill priority sizes="(max-width: 1024px) 100vw, 45vw" className="object-cover object-top" />
               </div>
               <div className="absolute -bottom-6 left-4 max-w-[85%] bg-[#FFFFFF] px-6 py-4 shadow-lg md:-bottom-7 md:left-8">
                 <span className="block font-serif text-xl text-[#182A32]">Rigor. Cercanía. Evolución.</span>
@@ -118,7 +125,7 @@ export default function KseniaPersonalHome() {
               <h2 className="mt-5 font-serif text-4xl leading-tight tracking-tight md:text-5xl">Una vida entre personas, empresas y cambios.</h2>
             </div>
             <div className="space-y-6 text-base leading-8 text-[#536167] md:text-lg">
-              <p>Me formé en Economía en San Petersburgo y vivo en España desde el año 2000. Mi recorrido profesional me ha llevado de la gestión financiera e inmobiliaria al asesoramiento fiscal, contable y laboral, y de la dirección de equipos a la creación de nuevos proyectos.</p>
+              <p>Estudié Economía en la Universidad de Economía y Finanzas de San Petersburgo y vivo en España desde el año 2000. Mi recorrido profesional me ha llevado de la gestión financiera e inmobiliaria al asesoramiento fiscal, contable y laboral, y de la dirección de equipos a la creación de nuevos proyectos.</p>
               <p>Entiendo la asesoría como una profesión que exige escuchar, comprender el contexto y explicar bien las decisiones. Por eso también disfruto enseñando, formando a profesionales y acompañando a emprendedores en sus primeros pasos.</p>
               <p>No concibo la experiencia como algo estático. Sigo aprendiendo y explorando cómo aplicar la tecnología sin perder el criterio profesional ni el trato personal.</p>
             </div>
@@ -180,9 +187,9 @@ export default function KseniaPersonalHome() {
               </div>
               <p className="mt-7 text-xs font-semibold uppercase tracking-[0.22em] text-[#A57931]">Por qué existe</p>
               <blockquote className="mt-4 font-serif text-2xl leading-snug text-[#182A32]">
-                «La tecnología debería ayudarnos a tomar mejores decisiones, no alejarnos de las personas».
+                La tecnología tiene sentido cuando nos ayuda a comprender mejor y tomar decisiones con criterio.
               </blockquote>
-              <p className="mt-5 text-sm text-[#647276]">La idea que orienta mi trabajo en EXPERT.</p>
+              <p className="mt-5 text-sm text-[#647276]">Una convicción que guía mi manera de desarrollar EXPERT.</p>
             </aside>
           </div>
         </section>
