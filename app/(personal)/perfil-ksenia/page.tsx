@@ -11,6 +11,7 @@ export const metadata: Metadata = {
     'Soy Ksenia Ilicheva: economista, asesora fiscal, laboral y contable, formadora y mentora. Mi trayectoria, mis valores y el proyecto EXPERT.',
   alternates: { canonical: personalUrl },
   robots: { index: true, follow: true },
+  icons: { icon: [{ url: '/personal/ksenia-retrato.webp', type: 'image/webp', sizes: 'any' }], shortcut: '/personal/ksenia-retrato.webp', apple: '/personal/ksenia-retrato.webp' },
   openGraph: {
     type: 'profile',
     url: personalUrl,
@@ -18,9 +19,9 @@ export const metadata: Metadata = {
     title: 'Ksenia Ilicheva | Trayectoria profesional y proyecto EXPERT',
     description: 'Más de dos décadas de experiencia en gestión profesional y una visión de la asesoría conectada con la tecnología.',
     locale: 'es_ES',
-    images: [{ url: '/avatars/ksenia-hero-clean.png', alt: 'Ksenia Ilicheva' }],
+    images: [{ url: '/personal/ksenia-retrato.webp', alt: 'Ksenia Ilicheva' }],
   },
-  twitter: { card: 'summary_large_image', title: 'Ksenia Ilicheva | Proyecto EXPERT', images: ['/avatars/ksenia-hero-clean.png'] },
+  twitter: { card: 'summary_large_image', title: 'Ksenia Ilicheva | Proyecto EXPERT', images: ['/personal/ksenia-retrato.webp'] },
 };
 
 const trajectory = [
@@ -41,7 +42,7 @@ const personSchema = {
   '@type': 'Person',
   name: 'Ksenia Ilicheva',
   url: personalUrl,
-  image: personalUrl + '/avatars/ksenia-hero-clean.png',
+  image: personalUrl + '/personal/ksenia-retrato.webp',
   jobTitle: 'Economista y asesora fiscal, laboral y contable',
   description: 'Formadora, mentora y promotora del proyecto EXPERT.',
   worksFor: { '@type': 'Organization', name: 'EXPERT CONSULTING', url: 'https://expertconsulting.es' },
@@ -62,7 +63,7 @@ export default function KseniaPersonalHome() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-6 py-4 md:px-10">
           <a href="#inicio" aria-label="Ksenia Ilicheva · volver al inicio" className="inline-flex items-center gap-3 font-serif text-base font-semibold tracking-tight sm:text-xl">
             <span className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-full border-2 border-[#C7AC7F] bg-[#E8E3D9]">
-              <Image src="/avatars/ksenia-avatar.png" alt="" fill sizes="44px" className="object-cover object-top" />
+              <Image src="/personal/ksenia-retrato.webp" alt="" fill sizes="44px" className="object-cover object-top" />
             </span>
             <span>Ksenia Ilicheva<span className="text-[#B5894B]">.</span></span>
           </a>
@@ -108,7 +109,7 @@ export default function KseniaPersonalHome() {
             <div className="relative">
               <div aria-hidden="true" className="absolute -right-5 -top-5 h-full w-full border border-[#C2A477]/70 md:-right-7 md:-top-7" />
               <div className="relative aspect-[4/5] overflow-hidden bg-[#E8E3D9] shadow-[0_30px_65px_rgba(24,42,50,0.13)]">
-                <Image src="/avatars/ksenia-hero-clean.png" alt="Ksenia Ilicheva, economista y creadora del proyecto EXPERT" fill priority sizes="(max-width: 1024px) 100vw, 45vw" className="object-cover object-top" />
+                <Image src="/personal/ksenia-retrato.webp" alt="Ksenia Ilicheva, economista y creadora del proyecto EXPERT" fill priority sizes="(max-width: 1024px) 100vw, 45vw" className="object-cover object-top" />
               </div>
               <div className="absolute -bottom-6 left-4 max-w-[85%] bg-[#FFFFFF] px-6 py-4 shadow-lg md:-bottom-7 md:left-8">
                 <span className="block font-serif text-xl text-[#182A32]">Rigor. Cercanía. Evolución.</span>
