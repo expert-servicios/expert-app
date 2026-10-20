@@ -13,11 +13,11 @@ export const metadata: Metadata = {
       'Solicita un presupuesto personalizado para servicios de asesoría fiscal, extranjería, empresas y autónomos. Respuesta en menos de 24 horas hábiles.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
     locale: 'es_ES',
-    images: [{ url: '/branding/expert%20servicios.png', width: 1200, height: 630, alt: 'EXPERT Asesoría' }]
+    images: [{ url: '/branding/expert-approved/og-expert-1200x630.png', width: 1200, height: 630, alt: 'EXPERT Asesoría' }]
   },
   twitter: {
     card: 'summary_large_image',
-    images: ['/branding/expert%20servicios.png']
+    images: ['/branding/expert-approved/og-expert-1200x630.png']
   },
   alternates: { canonical: 'https://expertconsulting.es/solicitar-presupuesto' }
 };
