@@ -29,7 +29,7 @@ function base(title: string, body: string, brand?: TenantBrand): string {
 <tr><td>
 <table width="600" cellpadding="0" cellspacing="0" align="center" style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #d8cbb5;">
   <tr><td style="background:#07111d;padding:32px 40px;text-align:center;">
-    <p style="margin:0;font-size:26px;font-weight:bold;color:${brandColor};letter-spacing:5px;font-family:Georgia,serif;">${brandName}</p>
+    <img src="https://expertconsulting.es/branding/expert-approved/horizontal-oscuro.png" width="280" alt="EXPERT Consulting" style="display:block;width:280px;max-width:100%;height:auto;margin:0 auto 10px;border:0;">
     <p style="margin:6px 0 0;font-size:11px;color:#8899aa;letter-spacing:3px;text-transform:uppercase;">${brandTagline}</p>
   </td></tr>
   <tr><td style="padding:40px;">

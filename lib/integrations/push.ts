@@ -8,6 +8,7 @@ export interface PushPayload {
   body:  string;
   url?:  string;
   tag?:  string;
+  source?: 'expert' | 'kia';
 }
 
 let vapidReady = false;

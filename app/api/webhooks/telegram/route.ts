@@ -566,6 +566,7 @@ async function handleTelegramUpdate(request: NextRequest) {
           body: operationalTask.title.slice(0, 220),
           url: '/admin/tareas',
           tag: `kia-telegram-task-${operationalTask.id}`,
+        source: 'kia',
         }).catch(() => {});
       }
 
@@ -1145,6 +1146,7 @@ async function handleTelegramUpdate(request: NextRequest) {
         body: privateOperationalTask.title.slice(0, 220),
         url: caseContext?.caseId ? `/admin/expedientes/${caseContext.caseId}` : '/admin/tareas',
         tag: `kia-telegram-task-${privateOperationalTask.id}`,
+        source: 'kia',
       }).catch(() => {});
     }
 

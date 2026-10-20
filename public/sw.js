@@ -1,10 +1,11 @@
 // ── Push notifications ────────────────────────────────────────
 self.addEventListener('push', (event) => {
   const data = event.data?.json() ?? {};
+  const kia = data.source === 'kia';
   event.waitUntil(
     self.registration.showNotification(data.title ?? 'EXPERT', {
       body:     data.body ?? '',
-      icon:     '/branding/expert-approved/app-dark-192.png',
+      icon:     kia ? '/avatars/kia/kia-bienvenida.webp' : '/branding/expert-approved/app-dark-192.png',
       badge:    '/branding/expert-approved/app-dark-192.png',
       tag:      data.tag ?? 'expert-push',
       renotify: true,

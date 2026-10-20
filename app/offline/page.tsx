@@ -3,7 +3,7 @@
 export default function OfflinePage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-[#07111d] px-6 text-center">
-      <p className="font-serif text-2xl font-bold text-[#d7a33a]">EXPERT</p>
+      <img src="/branding/expert-approved/horizontal-oscuro.webp" alt="EXPERT Consulting" width="280" height="70" className="h-auto w-[240px] object-contain" />
       <p className="mt-4 text-sm font-semibold text-white">Sin conexión</p>
       <p className="mt-2 max-w-xs text-xs text-white/50">
         Comprueba tu conexión a internet e inténtalo de nuevo.

@@ -130,6 +130,7 @@ export async function ensureBookingAdminTask(input: BookingTaskInput) {
       body: `Reunión: ${input.serviceLabel} · ${input.name} · ${input.localDate} ${input.localTime}${input.contentOrigin ? ` · ${input.contentOrigin}` : ''}`.slice(0, 240),
       url: input.caseId ? `/admin/expedientes/${input.caseId}` : '/admin/tareas',
       tag: `booking-task-${data.id}`,
+        source: 'kia',
     }).catch(() => {});
     return data.id;
   }
