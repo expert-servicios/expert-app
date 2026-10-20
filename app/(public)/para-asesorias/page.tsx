@@ -25,9 +25,9 @@ export const metadata: Metadata = {
       'Plataforma en desarrollo para asesorías, gestorías y despachos. Centraliza clientes, expedientes, documentos y pagos.',
     siteName: 'EXPERT — Asesoría Fiscal y Legal',
     locale: 'es_ES',
-    images: [{ url: '/branding/expert%20servicios.png', width: 1200, height: 630, alt: 'EXPERT — Sistema para asesorías' }]
+    images: [{ url: '/branding/expert-approved/og-expert-1200x630.png', width: 1200, height: 630, alt: 'EXPERT — Sistema para asesorías' }]
   },
-  twitter: { card: 'summary_large_image', images: ['/branding/expert%20servicios.png'] },
+  twitter: { card: 'summary_large_image', images: ['/branding/expert-approved/og-expert-1200x630.png'] },
   alternates: { canonical: 'https://expertconsulting.es/para-asesorias' }
 };
 
