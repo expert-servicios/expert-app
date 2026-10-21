@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, BookOpenText, BriefcaseBusiness, CalendarDays, GraduationCap, Mail, MessageCircle, MoveUpRight, Phone, Sparkles } from 'lucide-react';
-import { KseniaPersonalContactForm } from '@/components/personal/KseniaPersonalContactForm';
+import { KseniaPersonalContactGate } from '@/components/personal/KseniaPersonalContactGate';
 import { KSENIA_SOCIAL_PROFILES } from '@/lib/personal/ksenia-social-profiles';
 
 const personalUrl = 'https://kseniailicheva.com';
@@ -232,7 +232,7 @@ export default function KseniaPersonalHome() {
                 <a href="/reservar" className="inline-flex min-h-12 items-center gap-2 bg-[#182A32] px-6 py-3 font-semibold text-white"><CalendarDays className="h-5 w-5" aria-hidden="true" />Reservar reunión de 15 minutos</a>
                 <a href="https://expertconsulting.es/servicios" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 border-b-2 border-[#A57931] px-1 py-3 text-sm font-semibold hover:text-[#A57931]">Solicitar un servicio de EXPERT <ArrowUpRight className="h-4 w-4" aria-hidden="true" /></a>
               </div>
-              <div className="border border-[#CBB68F] bg-[#F7F4EE] p-6 md:p-8"><h3 className="mb-5 font-serif text-2xl">Envíame tu propuesta</h3><KseniaPersonalContactForm /></div>
+              <div className="border border-[#CBB68F] bg-[#F7F4EE] p-6 md:p-8"><h3 className="mb-5 font-serif text-2xl">Envíame tu propuesta</h3><KseniaPersonalContactGate /></div>
             </div>
           </div>
         </section>
