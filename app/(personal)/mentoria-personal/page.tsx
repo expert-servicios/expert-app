@@ -1,3 +1,4 @@
+import { KseniaPersonalCTASection } from '@/components/personal/KseniaPersonalCTASection';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, CalendarDays, ClipboardList, Compass, GraduationCap, Handshake, ShieldCheck, UsersRound } from 'lucide-react';
@@ -205,6 +206,7 @@ export default function MentoriasPersonalesPage() {
           </div>
         </section>
 
+        <KseniaPersonalCTASection locale="es" context="mentorias" />
         <section id="colaborar" className="scroll-mt-16 bg-[#EAE2D4] px-6 py-20 md:px-10">
           <div className="mx-auto max-w-6xl">
             <h2 className="font-serif text-3xl md:text-5xl">¿Tienes un proyecto o una propuesta?</h2>
