@@ -92,7 +92,6 @@ export async function resolvePersonalCalBookingUrlByApi(): Promise<string | null
 
   const headers = {
     Authorization: `Bearer ${key}`,
-    'cal-api-version': '2026-06-12',
     Accept: 'application/json',
   };
 
