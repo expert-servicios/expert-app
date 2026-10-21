@@ -55,12 +55,12 @@ describe('KIA operator lessons and email duplicate guard', () => {
     expect(isRoiKnowledgeRequest('Solicitar ROI y validar NIF-IVA en VIES')).toBe(true);
     expect(isRoiKnowledgeRequest('Как получить VIES для фирмы?')).toBe(true);
     expect(isRoiKnowledgeRequest('¿Cuánto cuesta una consulta?')).toBe(false);
-    const withRoi = selectKiaOperatorLessons(rows, 'web', 'Necesito darme de alta en el ROI', 12);
+    const withRoi = selectKiaOperatorLessons(rows, 'dashboard', 'Necesito darme de alta en el ROI', 12);
     expect(withRoi[0].lessonKey).toBe('roi_036_kb_submission_guide_20261021');
     expect(withRoi[1].lessonKey).toBe('roi_aeat_kb_response_guide_20261021');
     expect(withRoi).toHaveLength(12);
     expect(withRoi.some((x) => x.lessonKey.includes('evidencia_20261021'))).toBe(false);
-    const normal = selectKiaOperatorLessons(rows, 'web', 'Quiero información sobre IRPF', 12);
+    const normal = selectKiaOperatorLessons(rows, 'dashboard', 'Quiero información sobre IRPF', 12);
     expect(normal.some((x) => x.lessonKey.startsWith('roi_'))).toBe(false);
   });
 
