@@ -79,7 +79,8 @@ export default function KseniaPersonalHome() {
             <a href="/mentorias" className="hover:text-[#A57931]">Mentorías</a>
             <a href="#expert" className="hover:text-[#A57931]">EXPERT</a>
           </nav>
-          <a href="#contacto" className="inline-flex min-h-10 items-center gap-2 border border-[#182A32]/20 px-4 py-2 text-xs font-semibold transition hover:border-[#A57931] hover:text-[#A57931]">
+          <a href="/ru" lang="ru" aria-label="Версия на русском" className="inline-flex min-h-10 items-center px-2 text-xs font-semibold underline underline-offset-4">RU</a>
+          <a href="#contacto" className="hidden min-h-10 sm:inline-flex items-center gap-2 border border-[#182A32]/20 px-4 py-2 text-xs font-semibold transition hover:border-[#A57931] hover:text-[#A57931]">
             Contacto <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
           </a>
         </div>
