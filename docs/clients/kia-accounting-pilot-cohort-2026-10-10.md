@@ -105,3 +105,9 @@ Cuenta Stripe conectada en vivo: **Expert Consulting**, `[account ID: consultar 
 - Para INVERSIONES PASO SEGURO, leer una muestra acotada de diario y nóminas, verificar empresa y alcance, y anonimizar los casos de prueba. Evitar volcar datos personales de empleados a repositorio o prompts.
 - Para DGM y ALVILS, reparar primero el mapeo Stripe→company_id y registrar estado legacy sin afectar estado de facturación en Stripe.
 - Mantener el programa subordinado al Plan Maestro EXPERT KIA fase E0: la documentación piloto no habilita herramientas nuevas ni altera secuencia E0→E6.
+
+## Registro documental de ALVILS — 21/10/2026
+
+Por petición de Dirección se incorpora el [registro del traspaso y aprendizaje contable](alvils-holded-migration-record-2026-10-21.md). Registra el procedimiento realmente aplicado, las decisiones de preservación del ejercicio, los controles financieros y documentales, las mejoras y los límites de ejecución. La bitácora íntegra y las cifras se conservan en el expediente privado bajo `ALVILS-TRASPASO-20261021`.
+
+Esta actualización no convierte la fotografía de integración del 10/10 en prueba de lectura actual del conector ni declara `kia_case_validated` o `approved_for_write`. La revisión manual de Holded, la actualización de la hoja registral, la publicación de instrucciones y la validación real de KIA tienen evidencias y estados separados. No cambia las suscripciones legacy, las integraciones ni los permisos.
