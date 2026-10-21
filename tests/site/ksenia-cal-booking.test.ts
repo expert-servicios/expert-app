@@ -23,7 +23,18 @@ describe('Personal Cal.com booking — safe opt-in reactivation', () => {
     expect(gate).toContain('parsePersonalCalBookingUrl');
     expect(gate).toContain('<KseniaCalBookingEmbed');
     expect(gate).toContain('isBookingCalendarConfigured()');
-    expect(gate.indexOf('if (calUrl)')).toBeLessThan(gate.indexOf('isBookingCalendarConfigured()'));
+    expect(gate).toContain('resolvePersonalCalBookingUrlByApi()');
+    expect(gate.indexOf('if (calUrl || apiCalUrl)')).toBeLessThan(gate.indexOf('isBookingCalendarConfigured()'));
+  });
+
+  it('keeps credentials server-only, selects an explicit event and does not write to Cal.com', () => {
+    const api = read('lib/personal/ksenia-calcom-api.ts');
+    expect(api).toContain("import 'server-only'");
+    expect(api).toContain('process.env.CAL_API_KEY');
+    expect(api).toContain('process.env.PERSONAL_CALCOM_EVENT_TYPE_ID');
+    expect(api).toContain("method: 'GET'");
+    expect(api).toContain('https://api.cal.com/v2/event-types');
+    expect(api).not.toContain("method: 'POST'");
   });
 
   it('does not load Cal.com before the visitor clicks and serves ES and RU', () => {
