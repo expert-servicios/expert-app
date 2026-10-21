@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: 'Наставничество и mentorDay | Ксения Ильичева',
   description: 'Мой опыт в программах mentorDay, Mentor Tips, CiberEmprende: форматы наставничества, методы, проекты и обратная связь.',
   alternates: { canonical: 'https://kseniailicheva.com/ru/mentorias', languages: { es: 'https://kseniailicheva.com/mentorias', ru: 'https://kseniailicheva.com/ru/mentorias' } },
-  openGraph: { type: 'article', locale: 'ru_RU', url:'https://kseniailicheva.com/ru/mentorias', title: 'Наставничество | Ксения Ильичева', images: ['/avatars/ksenia-hero-clean.png'] }, icons: { icon: '/personal/ksenia-favicon.png' },
+  openGraph: { type: 'article', locale: 'ru_RU', url:'https://kseniailicheva.com/ru/mentorias', title: 'Наставничество | Ксения Ильичева', images: ['/personal/ksenia-hero-approved.webp'] }, icons: { icon: '/personal/ksenia-favicon.png' },
 };
 const types=[
  ['Speed Mentoring','Mentor Tips · mentorDay','Короткие целевые встречи: определяем основное препятствие, выделяем приоритеты и намечаем конкретное следующее действие.'],
