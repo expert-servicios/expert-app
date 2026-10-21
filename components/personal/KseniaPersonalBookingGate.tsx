@@ -26,8 +26,12 @@ export async function KseniaPersonalBookingGate({
   locale: 'es' | 'ru';
   children: ReactNode;
 }) {
-  // Use the existing Cal.com account only when an event-specific URL is configured.\n  const calUrl = parsePersonalCalBookingUrl(process.env.PERSONAL_CALCOM_BOOKING_URL);\n  const apiCalUrl = calUrl ? null : await resolvePersonalCalBookingUrlByApi();
-  if (calUrl || apiCalUrl) return <KseniaCalBookingEmbed url={(calUrl || apiCalUrl)!} locale={locale} />;\n\n  // Never expose apparently available slots when the dedicated calendar is not connected.
+  // Use the existing Cal.com account only when an event-specific URL is configured.
+  const calUrl = parsePersonalCalBookingUrl(process.env.PERSONAL_CALCOM_BOOKING_URL);
+  const apiCalUrl = calUrl ? null : await resolvePersonalCalBookingUrlByApi();
+  if (calUrl || apiCalUrl) return <KseniaCalBookingEmbed url={(calUrl || apiCalUrl)!} locale={locale} />;
+
+  // Never expose apparently available slots when the dedicated calendar is not connected.
   const ready = await isBookingCalendarConfigured().catch(() => false);
   if (ready) return <>{children}</>;
 
