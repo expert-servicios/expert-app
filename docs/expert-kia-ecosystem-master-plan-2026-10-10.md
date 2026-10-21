@@ -734,6 +734,35 @@ Inventario realizado sobre árbol `main` (238 `page.tsx`, 139 páginas/plantilla
 - [ ] Crear/editar solo borradores con revisión jurídica/editorial/comercial; no autopublicar ni inventar importes o normativas.
 - [ ] Tras publicar páginas aprobadas, pasar obligatoriamente test SEO/sitemap y actualizar interlinking.
 
+### Subrama documental H4-036 — Biblioteca progresiva de trámites del modelo 036 (decisión de Dirección, 21/10/2026)
+
+**Estado:** `IDEA DOCUMENTADA / VERIFICAR INVENTARIO`. **Fases vinculadas:** E1-M2 (blog, guías, FAQ, SEO y ES/RU) + E4-M2 (KIA y fuentes autorizadas). **Bloqueo de ejecución:** mantener gates del Plan Maestro E0–E6; esto **no** abre fase nueva ni autoriza publicación, cambios en runtime, nueva automatización o trámites en AEAT. **Responsable funcional:** Dirección EXPERT; revisión jurídica/fiscal antes de cada promoción; implementación futura por equipo técnico supervisado.
+
+**Decisión de producto:** el modelo 036 contiene numerosas causas, casillas y procedimientos censales, no solo el ROI. Construir **progresivamente una biblioteca canónica por trámite/objetivo del contribuyente**, con guías prácticas y recuperables por KIA. Evitar una única respuesta global «modelo 036» que derive indiscriminadamente a ROI, así como un artículo redundante por cada casilla. Primero confirmar el inventario oficial y los flujos reales de la sede vigente; no asumir que esta lista ejemplificativa es exhaustiva ni que todos los supuestos se tramitan del mismo modo.
+
+**Catálogo inicial de familias que requieren inventario y contraste oficial** (solo candidatos, sin considerarlos guías terminadas):
+- Alta censal e inicio de actividad; alta, modificación y baja por cese; situación de personas jurídicas, autónomos, representantes y otros sujetos según su caso.
+- Identificación/NIF y datos censales; domicilio fiscal o de actividad, locales, establecimientos, representantes y datos de contacto.
+- Actividades económicas, epígrafes IAE/CNAE cuando corresponda y cambios de actividades.
+- Obligaciones y regímenes fiscales de IVA, IRPF/IS y retenciones, así como cambios, renuncias u opciones que procedan.
+- ROI/NIF-IVA/VIES y operaciones intracomunitarias como **primer caso piloto**: solicitud, aportación voluntaria con justificante, requerimiento, propuesta de denegación, comprobaciones censales, resolución y seguimiento.
+- Otras causas y páginas/casillas oficiales que aparezcan al revisar el formulario y sus instrucciones actualizadas; distinguir trámites excluidos, alternativos o desplazados a otras declaraciones.
+
+**Ficha obligatoria por cada guía futura**:
+1. Pregunta/objetivo en lenguaje de usuario, perfil/forma jurídica, requisitos y casos donde **no** corresponde usar el 036; alta inicial vs modificación vs baja.
+2. Casillas, página y fecha/versión del formulario; verificadas **para ese supuesto** contra AEAT/BOE. No trasladar casillas del ROI a otros procedimientos.
+3. Documentos, pruebas de actividad/representación, firma/certificado y anexos; separar documentos obligatorios, aconsejables y condicionales.
+4. **Pasos reales de sede electrónica**, URL oficial, selección de trámite, validación, firma/envío, número de justificante, CSV y conservación del resguardo; advertencia si una pantalla puede variar.
+5. Procedimiento específico para documentación complementaria voluntaria, requerimiento, audiencia/alegaciones, denegación definitiva, recurso y seguimiento **solo cuando corresponda**; distinguir el justificante del 036 del CSV de una notificación.
+6. Errores frecuentes, plazos y efectos, qué verificar antes de asegurar inscripción/alta; cautela respecto a fiscalidad/IVA y comprobaciones presenciales con garantías de domicilio protegido.
+7. Contenido operativo KIA (ES/RU), artículo de blog o actualización de URL existente, guía de KB/FAQ, SEO/enlaces a servicios reales y casos sintéticos de evaluación. Sin exponer expedientes ni datos de clientes.
+
+**Despliegue progresivo y orden de trabajo:** (A) **inventariar y deduplicar** páginas, artículos, casillas, guías, FAQ y documentación AEAT vigentes; (B) consolidar ROI como ejemplo ya documentado en borradores, sin declarar publicada la versión ES ni crear equivalencia RU ficticia; (C) seleccionar lotes pequeños a partir de demanda real de consultas, riesgo jurídico y reutilización; (D) redactar y revisar ES primero, traducción RU con glosario verificado, respuestas KIA y pruebas adversariales que impidan mezclar trámites; (E) publicar solo tras revisión profesional, QA de enlaces/SEO/hreflang y gate de fase; (F) mantenimiento por cambios normativos o de pantallas, con trazabilidad de fuentes y vigencia.
+
+**Primeros criterios de aceptación pendientes:** una consulta genérica sobre «modelo 036» no presupone ROI; KIA pide o infiere de forma fundada el **motivo censal** antes de dar casillas; la consulta específica sobre ROI recupera la guía pertinente; ninguna respuesta inventa documentos, plazos, CSV ni presenta borradores como publicaciones. Fuentes, instrucciones y ejemplos deben ser públicos o sintéticos y respetar contexto/tenant.
+
+**Evidencia inicial:** borradores `blog_posts` de «Cómo solicitar el ROI…» y «Requerimiento o denegación del ROI…», siete FAQ de categoría `Fiscal - ROI` aún ocultas y lecciones de `kia_operator_lessons` relativas al ROI (21/10/2026); la [PR #828](https://github.com/expert-servicios/expert-app/pull/828) mejora la recuperación contextual y no acredita por sí sola publicación o despliegue. **No crear backlog/plan rector separado.**
+
 ### Rama H5 — Agente autónomo de desarrollo seguro (issue #791)
 
 - [ ] Al crear/modificar ruta pública, calcular manifest de URLs **indexables** y actualizar sitemap en la misma PR. No añadir por el mero hecho de existir `page.tsx`.
