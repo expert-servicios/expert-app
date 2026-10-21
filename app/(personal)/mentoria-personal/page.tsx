@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, CalendarDays, ClipboardList, Compass, GraduationCap, Handshake, ShieldCheck, UsersRound } from 'lucide-react';
-import { KseniaPersonalContactForm } from '@/components/personal/KseniaPersonalContactForm';
+import { KseniaPersonalContactGate } from '@/components/personal/KseniaPersonalContactGate';
 
 const personalUrl = 'https://kseniailicheva.com';
 const mentorsUrl = personalUrl + '/mentorias';
@@ -216,7 +216,7 @@ export default function MentoriasPersonalesPage() {
                 <a href="https://wa.me/34669045528" target="_blank" rel="noopener noreferrer" className="block border-b border-[#182A32]/20 pb-4 font-semibold">WhatsApp personal</a>
                 <a href="/reservar" className="inline-flex min-h-12 items-center gap-2 bg-[#182A32] px-6 py-3 font-semibold text-white"><CalendarDays className="h-5 w-5" aria-hidden="true" />Reservar reunión de 15 minutos</a>
               </div>
-              <div className="border border-[#CBB68F] bg-[#F7F4EE] p-6 md:p-8"><h3 className="mb-5 font-serif text-2xl">Enviar propuesta</h3><KseniaPersonalContactForm context="mentorias" /></div>
+              <div className="border border-[#CBB68F] bg-[#F7F4EE] p-6 md:p-8"><h3 className="mb-5 font-serif text-2xl">Enviar propuesta</h3><KseniaPersonalContactGate context="mentorias" /></div>
             </div>
           </div>
         </section>
