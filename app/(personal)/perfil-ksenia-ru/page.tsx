@@ -29,7 +29,7 @@ export default function PersonalRussianHome(){
 return <div lang="ru" className="min-h-screen bg-[#F7F4EE] text-[#182A32]">
 <header className="border-b border-[#182A32]/10 px-6 py-5"><div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
 <Link href="/ru" className="font-serif text-xl font-semibold">Ксения Ильичева<span className="text-[#A57931]">.</span></Link>
-<nav aria-label="Навигация" className="order-3 flex w-full flex-wrap gap-x-4 gap-y-2 text-sm sm:order-none sm:w-auto"><a href="#obo-mne">Обо мне</a><a href="#put">Опыт</a><Link href="/ru/mentorias">Наставничество</Link><a href="#expert">EXPERT</a><a href="#contact">Контакты</a></nav>
+<nav aria-label="Навигация" className="hidden items-center gap-4 text-sm md:flex"><a href="#obo-mne">Обо мне</a><a href="#put">Опыт</a><Link href="/ru/mentorias">Наставничество</Link><a href="#expert">EXPERT</a><a href="#contact">Контакты</a></nav>
 <div className="flex gap-2 text-sm"><Link href="/" lang="es" className="underline underline-offset-4">ES</Link><span aria-hidden="true">/</span><span lang="ru" aria-current="page" className="font-bold">RU</span></div>
 </div><KseniaPersonalMobileNav locale="ru" /></header>
 <main>
