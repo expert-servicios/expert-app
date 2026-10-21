@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     type: 'article', url: mentorsUrl, siteName: 'Ksenia Ilicheva', locale: 'es_ES',
     title: 'Mentorías para emprendedores | Ksenia Ilicheva',
     description: 'MentorDay, Mentor Tips, CiberEmprende y una metodología práctica centrada en decisiones verificables.',
-    images: [{ url: '/avatars/ksenia-hero-clean.png', alt: 'Ksenia Ilicheva, mentora' }],
+    images: [{ url: '/personal/ksenia-hero-approved.webp', alt: 'Ksenia Ilicheva, mentora' }],
   },
   robots: { index: true, follow: true },
   icons: { icon: '/personal/ksenia-favicon.png', shortcut: '/personal/ksenia-favicon.png', apple: '/personal/ksenia-favicon.png' },
