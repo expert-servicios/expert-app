@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(personalUrl),
   title: 'Mentorías y mentorDay | Ksenia Ilicheva',
   description: 'Mi actividad como mentora de emprendedores: mentorDay, Mentor Tips, CiberEmprende, formatos de acompañamiento, metodología y proyectos revisados.',
-  alternates: { canonical: mentorsUrl },
+  alternates: { canonical: mentorsUrl, languages: { es: mentorsUrl, ru: personalUrl + '/ru/mentorias' } },
   openGraph: {
     type: 'article', url: mentorsUrl, siteName: 'Ksenia Ilicheva', locale: 'es_ES',
     title: 'Mentorías para emprendedores | Ksenia Ilicheva',
