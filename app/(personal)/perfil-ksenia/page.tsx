@@ -1,3 +1,6 @@
+import { KseniaPersonalMobileNav } from '@/components/personal/KseniaPersonalMobileNav';
+import { KseniaPersonalFAQ } from '@/components/personal/KseniaPersonalFAQ';
+import { KseniaPersonalEditorialNotes } from '@/components/personal/KseniaPersonalEditorialNotes';
 import { KseniaPersonalCTASection } from '@/components/personal/KseniaPersonalCTASection';
 import type { Metadata } from 'next';
 import Image from 'next/image';
@@ -80,6 +83,7 @@ export default function KseniaPersonalHome() {
             Contacto <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
           </a>
         </div>
+        <KseniaPersonalMobileNav locale="es" />
       </header>
 
       <main id="inicio">
@@ -221,6 +225,8 @@ export default function KseniaPersonalHome() {
           </div>
         </section>
 
+        <KseniaPersonalEditorialNotes locale="es" />
+        <KseniaPersonalFAQ locale="es" />
         <section id="contacto" className="scroll-mt-16 bg-[#EAE2D4] px-6 py-20 md:px-10">
           <div className="mx-auto max-w-6xl">
             <Eyebrow>Contacto personal</Eyebrow>
