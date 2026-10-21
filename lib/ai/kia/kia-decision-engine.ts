@@ -91,7 +91,7 @@ export async function runKiaDecision(input: {
   const fewShotBlock = await getKiaFewShotExamples({ taskType: input.taskType, limit: 3 })
     .then(formatFewShotExamples)
     .catch(() => '');
-  const operatorLessonsBlock = await loadKiaOperatorLessons(input.channel)
+  const operatorLessonsBlock = await loadKiaOperatorLessons(input.channel, 12, `${input.message} ${input.contextInput.serviceSlug ?? ''} ${input.contextInput.currentPage ?? ''}`)
     .then(formatKiaOperatorLessons)
     .catch((err) => {
       console.error('[KiaDecision] operator lessons load failed:', safeErrorMessage(err));
