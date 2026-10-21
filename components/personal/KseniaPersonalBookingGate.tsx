@@ -1,3 +1,4 @@
+import { resolvePersonalCalBookingUrlByApi } from '@/lib/personal/ksenia-calcom-api';
 import { KseniaCalBookingEmbed } from '@/components/personal/KseniaCalBookingEmbed';
 import { parsePersonalCalBookingUrl } from '@/lib/personal/ksenia-cal-booking-url';
 import type { ReactNode } from 'react';
@@ -25,7 +26,8 @@ export async function KseniaPersonalBookingGate({
   locale: 'es' | 'ru';
   children: ReactNode;
 }) {
-  // Use the existing Cal.com account only when an event-specific URL is configured.\n  const calUrl = parsePersonalCalBookingUrl(process.env.PERSONAL_CALCOM_BOOKING_URL);\n  if (calUrl) return <KseniaCalBookingEmbed url={calUrl} locale={locale} />;\n\n  // Never expose apparently available slots when the dedicated calendar is not connected.
+  // Use the existing Cal.com account only when an event-specific URL is configured.\n  const calUrl = parsePersonalCalBookingUrl(process.env.PERSONAL_CALCOM_BOOKING_URL);\n  const apiCalUrl = calUrl ? null : await resolvePersonalCalBookingUrlByApi();
+  if (calUrl || apiCalUrl) return <KseniaCalBookingEmbed url={(calUrl || apiCalUrl)!} locale={locale} />;\n\n  // Never expose apparently available slots when the dedicated calendar is not connected.
   const ready = await isBookingCalendarConfigured().catch(() => false);
   if (ready) return <>{children}</>;
 
