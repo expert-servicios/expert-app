@@ -11,7 +11,7 @@ export default function KseniaPersonalLayout({ children }: { children: ReactNode
     <>
       {recaptchaKey && <Script id="recaptcha-v3-personal" src={'https://www.google.com/recaptcha/api.js?render=' + recaptchaKey} strategy="afterInteractive" />}
       {process.env.PERSONAL_WEB_ANALYTICS_ENABLED === 'true' && <Script src="/_vercel/insights/script.js" strategy="afterInteractive" />}
-      <KseniaPersonalCTAAnalytics />
+      {process.env.PERSONAL_WEB_ANALYTICS_ENABLED === 'true' && <KseniaPersonalCTAAnalytics />}
       {children}
       <div className="border-t border-[#D3AD73]/30 bg-[#182A32]"><KseniaSocialLinks /></div>
       <KseniaWhatsAppWidget />
