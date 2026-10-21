@@ -1960,3 +1960,22 @@ Dirección EXPERT autoriza preparar la **configuración propuesta**, pero **no a
 ### D0.5 — Revisión técnica delegada y escalado a Dirección (19/10/2026)
 
 Dirección aclara que **no debe actuar como revisora de código**: KIA coordinará pruebas deterministas y revisores técnicos independientes, y solo trasladará a Dirección decisiones funcionales/comerciales/jurídicas, presupuesto o riesgos extraordinarios en lenguaje comprensible. Objetivo futuro: **aprobación técnica automática por niveles de riesgo**, evitando intervención humana rutinaria en tareas preautorizadas y de bajo impacto. Esta preferencia **sustituye el criterio organizativo de que Dirección revise todas las PR**, pero NO habilita todavía fusiones automáticas: el gate de merge humano sigue activo mientras no se apruebe e implemente una política concreta de bajo riesgo, con protección de ramas, controles independientes y piloto sintético superado. Los cambios de identidad, RLS, dinero, datos de clientes, migraciones y producción exigen aprobación de un revisor técnico humano cualificado independiente y, cuando proceda, decisión de Dirección. Ningún agente se concede permisos ni se autoaprueba. Ver `config/kia-dev-agent-policy.proposal.json` apartado `supervisionDelegation`.
+
+
+## Propuesta documental — Ksenia Blog ES/RU (20/10/2026)
+
+**Estado: DISEÑO DOCUMENTADO / EJECUCIÓN BLOQUEADA por congelación E0–E6.** Petición de Dirección: preparar la especificación de blog personal bilingüe, sin autorizar implementación de runtime ni modificaciones de Supabase de producción. La PR #824 (sitio personal) permanece DRAFT; su CI y sus dos despliegues estaban verdes para el HEAD consultado el 20/10/2026, pero no se ha fusionado. Esta propuesta no la modifica ni cambia el checkpoint E0.
+
+**Especificación subordinada:** [Contrato de blog personal ES/RU](contracts/ksenia-personal-blog-bilingual-v1-2026-10-20.md). **Primer lote editorial (borradores, no publicados):** [Tres primeros artículos ES/RU](editorial/ksenia-blog-first-three-articles-2026-10-20.md). No es otro plan maestro.
+
+| ID candidato, no activado | Trabajo propuesto | Dependencia / criterio de salida |
+| --- | --- | --- |
+| KB-B0 | Inventario vivo de `blog_posts`, contenido hardcoded de EXPERT, rutas, RLS, editorial y sitemap | Diffs y readback sin escrituras; preservar 9 registros históricos (5 publicados / 4 borradores, lectura a fecha 20/10/2026) |
+| KB-B1 | Diseñar migración backward-compatible de sitio, localizaciones, releases inmutables, aprobación y auditoría | SQL bajo revisión, constraints/RLS verificadas con fixtures, migración real solo tras autorización independiente |
+| KB-B2 | Diseñar lectura pública personal y rewrites ES/RU sin afectar a EXPERT | Pruebas de host, HTTP, canonical, noindex, sitemap, cambio de idioma y regresiones |
+| KB-B3 | Diseñar panel dentro del Editorial Hub actual, roles y estados | Pruebas de usuario anónimo/editor/admin, tenant y revocación; jamás depender solo de email |
+| KB-B4 | Diseñar traducción ES⇄RU con correspondencia a revisión original | Cobertura de campos, glosario, QA legal y edición humana; bloqueo si traducción stale |
+| KB-B5 | Diseñar publicación transaccional de release ES/RU y programación | Idempotencia, concurrencia, rollback, cero publicación parcial y gate humano explícito |
+| KB-B6 | Diseñar SEO, imágenes sociales, distribución y analíticas opt-in | OG, hreflang, URL públicas 200, consentimiento de terceros; difusión no se activa automáticamente |
+
+**Próxima acción autorizada:** revisión de contrato, modelos y criterios de aceptación; no abrir PR funcional ni desplegar tablas/servicios de blog hasta excepción de alcance por Dirección, cierre de dependencias y gate del Plan Maestro.
