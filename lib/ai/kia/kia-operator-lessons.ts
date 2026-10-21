@@ -9,7 +9,58 @@ export type KiaOperatorLesson = {
   priority: number;
 };
 
-export async function loadKiaOperatorLessons(channel: KiaChannel, limit = 12): Promise<KiaOperatorLesson[]> {
+type KiaOperatorLessonRow = {
+  lesson_key: string;
+  domain: string;
+  title: string;
+  instruction: string;
+  priority: number;
+  applies_to_channels?: string[] | null;
+};
+
+// The full ROI guides are available in the database but can be pushed beyond
+// the global 12-lesson prompt limit. Load them only for an actual ROI query.
+// Do not globally inject private case-derived ROI lessons into anonymous chat.
+const ROI_GUIDE_KEYS = [
+  'roi_036_kb_submission_guide_20261021',
+  'roi_aeat_kb_response_guide_20261021',
+] as const;
+
+export function isRoiKnowledgeRequest(text: string): boolean {
+  return /\b(?:roi|vies|nif[\s-]?iva|operadores?\s+intracomunitarios?|operaciones?\s+intracomunitarias?|alta\s+intracomunitaria)\b/i.test(text)
+    || /(?:виеc|виес|vies|внутрисоюзн|внутрисообщественн|реестр\s+операторов\s+ес|номер\s+ндс\s+ес)/i.test(text);
+}
+
+export function selectKiaOperatorLessons(
+  rows: KiaOperatorLessonRow[],
+  channel: KiaChannel,
+  topicText = '',
+  limit = 12,
+): KiaOperatorLesson[] {
+  const allowed = rows.filter((row) => {
+    const channels = Array.isArray(row.applies_to_channels) ? row.applies_to_channels : [];
+    return channels.length === 0 || channels.includes(channel);
+  });
+  const generic = allowed.filter((row) => !row.lesson_key.startsWith('roi_'));
+  const roiGuides = isRoiKnowledgeRequest(topicText)
+    ? ROI_GUIDE_KEYS.flatMap((key) => allowed.filter((row) => row.lesson_key === key))
+    : [];
+  return [...roiGuides, ...generic]
+    .slice(0, Math.max(0, limit))
+    .map((row) => ({
+      lessonKey: String(row.lesson_key),
+      domain: String(row.domain),
+      title: String(row.title),
+      instruction: String(row.instruction),
+      priority: Number(row.priority),
+    }));
+}
+
+export async function loadKiaOperatorLessons(
+  channel: KiaChannel,
+  limit = 12,
+  topicText = '',
+): Promise<KiaOperatorLesson[]> {
   const admin = getSupabaseAdmin();
   const { data, error } = await admin
     .from('kia_operator_lessons')
@@ -19,19 +70,7 @@ export async function loadKiaOperatorLessons(channel: KiaChannel, limit = 12): P
     .limit(50);
   if (error) throw error;
 
-  return (data ?? [])
-    .filter((row) => {
-      const channels = Array.isArray(row.applies_to_channels) ? row.applies_to_channels : [];
-      return channels.length === 0 || channels.includes(channel);
-    })
-    .slice(0, limit)
-    .map((row) => ({
-      lessonKey: String(row.lesson_key),
-      domain: String(row.domain),
-      title: String(row.title),
-      instruction: String(row.instruction),
-      priority: Number(row.priority),
-    }));
+  return selectKiaOperatorLessons(data ?? [], channel, topicText, limit);
 }
 
 export function formatKiaOperatorLessons(lessons: KiaOperatorLesson[]): string {
