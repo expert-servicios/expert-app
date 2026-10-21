@@ -25,9 +25,9 @@ export const metadata: Metadata = {
     title: 'Ksenia Ilicheva | Trayectoria profesional y proyecto EXPERT',
     description: 'Más de dos décadas de experiencia en gestión profesional y una visión de la asesoría conectada con la tecnología.',
     locale: 'es_ES',
-    images: [{ url: '/avatars/ksenia-hero-clean.png', alt: 'Ksenia Ilicheva' }],
+    images: [{ url: '/personal/ksenia-hero-approved.webp', alt: 'Ksenia Ilicheva' }],
   },
-  twitter: { card: 'summary_large_image', title: 'Ksenia Ilicheva | Proyecto EXPERT', images: ['/avatars/ksenia-hero-clean.png'] },
+  twitter: { card: 'summary_large_image', title: 'Ksenia Ilicheva | Proyecto EXPERT', images: ['/personal/ksenia-hero-approved.webp'] },
 };
 
 const trajectory = [
