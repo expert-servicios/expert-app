@@ -55,6 +55,8 @@ describe('KIA operator lessons and email duplicate guard', () => {
     expect(isRoiKnowledgeRequest('Solicitar ROI y validar NIF-IVA en VIES')).toBe(true);
     expect(isRoiKnowledgeRequest('Как получить VIES для фирмы?')).toBe(true);
     expect(isRoiKnowledgeRequest('¿Cuánto cuesta una consulta?')).toBe(false);
+    expect(isRoiKnowledgeRequest('¿Cómo cambio el domicilio fiscal con el modelo 036?')).toBe(false);
+    expect(isRoiKnowledgeRequest('¿Cómo solicitar el ROI con el modelo 036?')).toBe(true);
     const withRoi = selectKiaOperatorLessons(rows, 'dashboard', 'Necesito darme de alta en el ROI', 12);
     expect(withRoi[0].lessonKey).toBe('roi_036_kb_submission_guide_20261021');
     expect(withRoi[1].lessonKey).toBe('roi_aeat_kb_response_guide_20261021');
