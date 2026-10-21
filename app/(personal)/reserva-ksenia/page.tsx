@@ -3,10 +3,10 @@ import { ArrowLeft, CalendarDays, Clock3, Video } from 'lucide-react';
 import { NativeBookingForm } from '@/components/booking/NativeBookingForm';
 import { KseniaPersonalBookingGate } from '@/components/personal/KseniaPersonalBookingGate';
 export const dynamic = 'force-dynamic';
-export const metadata: Metadata = { metadataBase: new URL('https://kseniailicheva.com'), title: 'Reservar reunión | Ksenia Ilicheva', description: 'Reserva una reunión inicial de 15 minutos con Ksenia Ilicheva.', alternates: { canonical: 'https://kseniailicheva.com/reservar' }, icons: { icon: '/personal/ksenia-favicon.png' } };
+export const metadata: Metadata = { metadataBase: new URL('https://kseniailicheva.com'), title: 'Reservar reunión | Ksenia Ilicheva', description: 'Reserva una reunión inicial de 15 minutos con Ksenia Ilicheva.', alternates: { canonical: 'https://kseniailicheva.com/reservar', languages: { es: 'https://kseniailicheva.com/reservar', ru: 'https://kseniailicheva.com/ru/reservar' } }, icons: { icon: '/personal/ksenia-favicon.png' } };
 export default function ReservaKsenia() {
  return <main className="min-h-screen bg-[#F7F4EE] text-[#182A32]">
-  <header className="border-b border-[#182A32]/15 px-6 py-5"><a href="https://kseniailicheva.com" className="inline-flex items-center gap-2 font-semibold"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver a la web personal</a></header>
+  <header className="border-b border-[#182A32]/15 px-6 py-5"><a href="/" className="inline-flex items-center gap-2 font-semibold"><ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver a la web personal</a><a href="/ru/reservar" lang="ru" className="ml-5 text-sm font-semibold underline underline-offset-4">RU</a></header>
   <section className="mx-auto max-w-5xl px-6 py-14">
     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#A57931]">Agenda personal</p>
     <h1 className="mt-5 font-serif text-4xl md:text-5xl">Reservar una reunión conmigo</h1>
