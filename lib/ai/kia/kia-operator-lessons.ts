@@ -27,7 +27,7 @@ const ROI_GUIDE_KEYS = [
 ] as const;
 
 export function isRoiKnowledgeRequest(text: string): boolean {
-  return /\b(?:roi|vies|nif[\s-]?iva|operadores?\s+intracomunitarios?|operaciones?\s+intracomunitarias?|alta\s+intracomunitaria)\b/i.test(text)
+  return /\b(?:roi|vies|nif[\s-]?iva|operadores?\s+intracomunitarios?|operaciones?\s+intracomunitarias?|alta\s+intracomunitaria|modelo\s*036)\b/i.test(text)
     || /(?:виеc|виес|vies|внутрисоюзн|внутрисообщественн|реестр\s+операторов\s+ес|номер\s+ндс\s+ес)/i.test(text);
 }
 
