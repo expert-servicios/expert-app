@@ -28,6 +28,17 @@ function parseArticleDate(dateStr: string): Date {
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
+  if (process.env.PERSONAL_SITE_DEPLOYMENT === 'true') {
+    const personal = 'https://kseniailicheva.com';
+    return [
+      { url: personal, lastModified: now, changeFrequency: 'monthly', priority: 1, alternates: { languages: { es: personal, ru: personal + '/ru' } } },
+      { url: personal + '/ru', lastModified: now, changeFrequency: 'monthly', priority: 0.9, alternates: { languages: { es: personal, ru: personal + '/ru' } } },
+      { url: personal + '/mentorias', lastModified: now, changeFrequency: 'monthly', priority: 0.8, alternates: { languages: { es: personal + '/mentorias', ru: personal + '/ru/mentorias' } } },
+      { url: personal + '/ru/mentorias', lastModified: now, changeFrequency: 'monthly', priority: 0.75, alternates: { languages: { es: personal + '/mentorias', ru: personal + '/ru/mentorias' } } },
+      { url: personal + '/reservar', lastModified: now, changeFrequency: 'monthly', priority: 0.6, alternates: { languages: { es: personal + '/reservar', ru: personal + '/ru/reservar' } } },
+      { url: personal + '/ru/reservar', lastModified: now, changeFrequency: 'monthly', priority: 0.55, alternates: { languages: { es: personal + '/reservar', ru: personal + '/ru/reservar' } } },
+    ];
+  }
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: BASE,                                      changeFrequency: 'weekly',  priority: 1.0, lastModified: now },
