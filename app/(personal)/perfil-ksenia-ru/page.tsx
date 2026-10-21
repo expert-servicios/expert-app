@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: 'Ксения Ильичева | Экономист, наставник и основатель проекта EXPERT',
   description: 'О Ксении Ильичевой: более 20 лет профессионального опыта в Испании, образование, наставничество mentorDay и CiberEmprende, проект EXPERT и KIA.',
   alternates: { canonical: 'https://kseniailicheva.com/ru', languages: { es: 'https://kseniailicheva.com', ru: 'https://kseniailicheva.com/ru' } },
-  openGraph: { type: 'profile', url: 'https://kseniailicheva.com/ru', locale: 'ru_RU', title: 'Ксения Ильичева — опыт, наставничество и EXPERT', images: ['/avatars/ksenia-hero-clean.png'] },
+  openGraph: { type: 'profile', url: 'https://kseniailicheva.com/ru', locale: 'ru_RU', title: 'Ксения Ильичева — опыт, наставничество и EXPERT', images: ['/personal/ksenia-hero-approved.webp'] },
   icons: { icon: '/personal/ksenia-favicon.png' },
 };
 
