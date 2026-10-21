@@ -18,3 +18,11 @@
 
 ## Rollback
 Quitar `PERSONAL_CALCOM_BOOKING_URL` o dejarla vacía, redeplegar y se conserva el flujo anterior `KseniaPersonalBookingGate` (nativo cuando está conectado, Microsoft Bookings verificado en caso contrario).
+
+## Ruta alternativa: API v2 de Cal.com (preparada, sin credencial activa)
+
+Cuando no exista `PERSONAL_CALCOM_BOOKING_URL`, la web personal puede obtener el enlace de reserva desde la API con **dos variables del proyecto `kseniailicheva`**: `CAL_API_KEY` (**Secret**, sólo en servidor) y `PERSONAL_CALCOM_EVENT_TYPE_ID` (**Config**, id numérico de la consulta de 15 minutos). Ambas son obligatorias. El selector es explícito: jamás elige el primer evento disponible. Usa peticiones GET a `https://api.cal.com/v2/event-types` y, cuando se necesite, `https://api.cal.com/v2/me`. Si la cuenta o el tipo de evento no quedan validados, mantiene el flujo de respaldo anterior.
+
+**No se ha encontrado `CAL_API_KEY` en Vercel**, por lo que no existe autorización técnica para probar la cuenta ni configurar la variable con un valor supuesto. Guardarla sólo mediante Vercel Secret en proyecto personal, sin introducirla en GitHub ni en el chat.
+
+Esta fase no crea ni cancela reservas mediante la API, no registra webhooks y no conecta por sí misma las reuniones nuevas con EXPERT/KIA. La sincronización y el uso MCP deberán validarse de manera separada en una PR posterior; el webhook histórico de EXPERT no se reutiliza sin pruebas de seguridad.
