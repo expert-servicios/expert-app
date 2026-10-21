@@ -1,6 +1,7 @@
 import { KseniaPersonalCTASection } from '@/components/personal/KseniaPersonalCTASection';
 import type { Metadata } from 'next';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, CalendarDays, ClipboardList, Compass, GraduationCap, Handshake, ShieldCheck, UsersRound } from 'lucide-react';
 import { KseniaPersonalContactGate } from '@/components/personal/KseniaPersonalContactGate';
 
@@ -47,16 +48,16 @@ export default function MentoriasPersonalesPage() {
     <div className="min-h-screen bg-[#F7F4EE] text-[#182A32]">
       <header className="border-b border-[#182A32]/10 px-6 py-5 md:px-10">
         <nav aria-label="Navegación personal" className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
-          <a href="/" className="inline-flex min-h-11 items-center gap-3 font-serif text-xl font-semibold">
+          <Link href="/" className="inline-flex min-h-11 items-center gap-3 font-serif text-xl font-semibold">
             <span className="relative h-10 w-10 overflow-hidden rounded-full border border-[#C7AC7F]">
               <Image src="/personal/ksenia-avatar-approved.webp" alt="" fill sizes="40px" className="object-cover object-top" />
             </span>
             Ksenia Ilicheva<span className="text-[#A57931]">.</span>
-          </a>
-          <a href="/ru/mentorias" lang="ru" className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4">RU</a>
-          <a href="/" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium hover:text-[#A57931]">
+          </Link>
+          <Link href="/ru/mentorias" lang="ru" className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4">RU</Link>
+          <Link href="/" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium hover:text-[#A57931]">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver a mi web personal
-          </a>
+          </Link>
         </nav>
       </header>
 
@@ -228,7 +229,7 @@ export default function MentoriasPersonalesPage() {
       <footer className="bg-[#182A32] px-6 py-8 text-[#F7F4EE] md:px-10">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
           <span className="font-serif text-lg">Ksenia Ilicheva.</span>
-          <a href="/" className="text-sm underline underline-offset-4">Volver al perfil personal</a>
+          <Link href="/" className="text-sm underline underline-offset-4">Volver al perfil personal</Link>
           <a href="https://expertconsulting.es" className="text-sm underline underline-offset-4">EXPERT CONSULTING</a>
         </div>
       </footer>
