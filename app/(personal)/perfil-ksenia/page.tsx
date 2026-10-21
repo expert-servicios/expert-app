@@ -1,3 +1,4 @@
+import { KseniaPersonalCTASection } from '@/components/personal/KseniaPersonalCTASection';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, BookOpenText, BriefcaseBusiness, CalendarDays, GraduationCap, Mail, MessageCircle, MoveUpRight, Phone, Sparkles } from 'lucide-react';
@@ -205,6 +206,7 @@ export default function KseniaPersonalHome() {
           </div>
         </section>
 
+        <KseniaPersonalCTASection locale="es" />
         <section id="mentoria" className="scroll-mt-16 border-t border-[#182A32]/10 bg-white px-6 py-20 md:px-10">
           <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
             <div className="flex items-start gap-4">
