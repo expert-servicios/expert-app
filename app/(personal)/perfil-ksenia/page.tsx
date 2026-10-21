@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: 'Ksenia Ilicheva | Economista, mentora y creadora de EXPERT',
   description:
     'Soy Ksenia Ilicheva: economista, asesora fiscal, laboral y contable, formadora y mentora. Mi trayectoria, mis valores y el proyecto EXPERT.',
-  alternates: { canonical: personalUrl },
+  alternates: { canonical: personalUrl, languages: { es: personalUrl, ru: personalUrl + '/ru' } },
   robots: { index: true, follow: true },
   icons: { icon: [{ url: '/personal/ksenia-favicon.png', type: 'image/png', sizes: '48x48' }], shortcut: '/personal/ksenia-favicon.png', apple: '/personal/ksenia-favicon.png' },
   openGraph: {
