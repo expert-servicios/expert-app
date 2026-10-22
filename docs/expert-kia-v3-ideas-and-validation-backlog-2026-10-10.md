@@ -148,6 +148,42 @@ Para cada propuesta utilizar:
 
 **Gobierno y posición:** `CAPTURADA`, **NO APROBADA**, **IMPLEMENTACIÓN BLOQUEADA** mientras el Plan Maestro E0–E6 siga en ejecución. V3-24 se evalúa tras acta E6 COMPLETADA, auditoría de capacidades existentes y aprobación explícita de Dirección; V3-02 sigue como simulador de impactos financieros general. Cualquier defecto P0/P1 en el diagnóstico laboral actual se corrige dentro de la fase aprobada, no por adelantar V3-24.
 
+### V3-G — Preferencias de informes contables y conciliación por usuario (petición Dirección 21/10/2026)
+
+#### V3-25 — Horarios configurables y alcance de KIA Contable por empresa
+
+- **Captura:** 2026-10-21; origen: DIRECCIÓN. Motivación: muchos clientes trabajan por cuenta ajena y revisan sus facturas o banco fuera del horario laboral, especialmente a partir de las 20:00.
+- **Problema / beneficiario:** los resúmenes con horario fijo de despacho no sirven a cada cliente y los avisos de conciliación pueden resultar intrusivos o imposibles si no existe integración bancaria. Cada titular o usuario autorizado debe decidir qué recibe, de qué empresa, a través de qué canal y a qué hora local.
+- **Deslinde de alcance:** el piloto de contabilidad EXPERT en modo lectura y su horario directivo de **08:00 Europe/Madrid por Telegram** se registran como especificación en el Plan Maestro canónico. La **configuración personalizada, auto-servicio, multiempresa y multicanal para terceros** es V3-25, **CAPTURADA y NO APROBADA**, posterior a E6. No adelantar a E0 ni confundir especificación con producción.
+
+**Contrato funcional de las preferencias (sin implementación):**
+
+| Campo | Opciones / efecto | Regla de seguridad o validación |
+| --- | --- | --- |
+| Entidad | Elegir empresa autorizada; opcional vista consolidada solo de entidades con acceso verificado | Vincular por `profile_id + tenant_id + company_id` y rol/permisos; nunca confiar en empresa de un payload de Telegram ni filtrar datos entre entidades |
+| Qué revisar | `invoices_only` = facturas emitidas/recibidas, vencimientos y cobros documentados; `invoices_and_bank_reconciliation` = anterior + propuestas de emparejamiento factura/cobro/movimiento y anomalías | Conciliación bancaria requiere conexión real, legitimación y permisos; selección no concede `accounting_write` ni acceso a datos bancarios |
+| Integraciones y estado | Comprobar al configurar y antes de cada run: Holded/ERP, Stripe cuando aplique, banco/tesorería y permisos por compañía | Mostrar estados `connected`, `missing`, `degraded`, `not_authorized`; si falta banco: CTA seguro en EXPERT para vincular, conservar si procede facturación, no afirmar conciliación ni pedir tokens por Telegram |
+| Horario de entrega | Presets `08:00`, `14:00`, `18:00`, `20:00`, `21:00`, `22:00`; entrada manual de hora local HH:mm, con validación de producto | La franja **tarde/noche 20:00 en adelante** debe ser visible y usable, sin imponer un límite a las 19:00; respetar preferencias de silencio salvo entrega nocturna solicitada expresamente |
+| Zona horaria | Selección explícita IANA (`Europe/Madrid` para península de forma predeterminada donde corresponda) | Convertir a UTC por fecha local, soportar cambios CET/CEST y zonas de Canarias o internacionales; no fijar UTC como si fuera hora local |
+| Cadencia | Diario, o solo cambios/incidencias; opción de pausar y reactivar | Sin informe vacío o alerta por respuesta rutinaria; cambios relevantes y decisiones pendientes agrupados y deduplicados |
+| Canal | Telegram privado verificado, notificación push de la app; correo electrónico como canal opcional sujeto a identidad y consentimiento | Comprobar vinculación/autorización por canal y destino antes de mostrar datos financieros; sin grupos ni datos sensibles en push; enlaces a panel autenticado |
+| Preguntas y aprobaciones | Respuestas preparadas: `Ver detalle`, `Confirmar concepto`, `Solicitar justificante`, `Revisar`, `Rechazar` | Decisiones financieras solo tras aprobación autenticada ligada a huella de propuesta; una pulsación de teclado no contabiliza ni hace pagos; trazabilidad de actor y resultado |
+| Disponibilidad | Resumen con corte de las fuentes y marca de conciliación total/parcial/no disponible | Ante fuentes retrasadas no ocultar error: ofrecer informe limitado y situación `pending_connection`, evitando falsas cifras conciliadas |
+
+**Experiencia de configuración sugerida, coherente con EXPERT Workspace:**
+1. Pantalla `Preferencias > KIA Contable > Avisos y conciliación` para elegir empresas, alcance, canales, cadencia, zona y hora; vista previa del próximo envío en hora local con un ejemplo seguro/sintético. En móvil las opciones 20:00/21:00/22:00 aparecen tan visibles como las matinales.
+2. Al optar por conciliación, inspeccionar exclusivamente conexiones ya autorizadas y mostrar pasos para conectar banco y/o Holded si faltan. No enlazar automáticamente proveedores, no generar cargo ni ampliar suscripción por seleccionar una preferencia. Si requiere un servicio comercial adicional, pedir información/consentimiento explícitos antes de contratar.
+3. En una plataforma multiusuario, respetar preferencias **por destinatario y empresa**; propietario/asesoría puede tener una preferencia distinta del empleado delegado. Comprobar disponibilidad y permisos cada envío; revocar/pausar automáticamente ante pérdida de acceso, sin divulgar datos en la notificación de error.
+4. Reutilizar `AutomationSettingsPanel`, `automation_settings` (interruptores globales, **no** preferencias individuales), `profile_companies`, `client_integrations`, `kia_channel_identities`, `push_subscriptions`, centro Admin/Cliente, subagente accounting, bandeja de propuestas y motor de envíos existente. La persistencia individual necesitará un contrato y controles RLS revisados; no alterar tablas en esta captura documental.
+5. **Programación:** una cola/despachador centralizado sobre Supabase pg_cron, con evaluación de destinatarios vencidos según `timezone + local_date + HH:mm + company_id + channel`, en vez de un cron individual por usuario; preprocesar fuentes de manera independiente, no ejecutar un sync remoto completo por cada envío. Claves de idempotencia y recuperación de reintentos sin repetir mensajes; registrar `due_at_utc`, corte de datos, estado del proveedor, aceptación/envío efectivo. Elegir frecuencia de despacho según precisión y coste reales.
+6. Respetar prioridad de alertas legales/seguridad si son independientes de la suscripción opcional; **no** convertir las opciones de resumen en consentimiento para marketing o mensajes no solicitados. Dar opción de desactivación y modificar horario desde panel autenticado.
+
+**Pruebas de validación futuras:** usuario A 08:00 y usuario B 21:00 reciben cada uno únicamente su empresa; simulación de cambio de hora marzo/octubre sin enviar doble; cliente en Canarias recibe su hora local; usuario solo facturas no inicia lectura del banco; con conciliación pero banco desconectado no aparecen emparejamientos ficticios; cambio de preferencia tras encolado cancela el envío obsoleto; canal Telegram no verificado no revela importes; aprobaciones no autorizadas/dobles no escriben en Holded; reintentos de proveedor no duplican avisos; móvil accesible ES/RU; notificaciones tardías identifican su corte de datos.
+
+**Coste, privacidad, y dependencias:** POR ESTUDIAR. Confirmar límites de pg_cron/pg_net, coste de lectura bancaria, derechos por cliente y proveedor, privacidad, retención y consentimiento antes de aprobar. **Relación con V3-01:** V3-01 define la conciliación asistida multiempresa; V3-25 define cómo el usuario la solicita y cuándo recibe un resumen. No crear un segundo motor de conciliación.
+
+**Estado: CAPTURADA — NO APROBADA / SIN RUNTIME / SIN CRON NUEVO / SIN CAMBIOS EN DATOS.**
+
 ## 3. Distinguir lo ya aprobado de una propuesta verdaderamente V3
 
 | Tema detectado durante auditoría | ¿Dónde debe vivir? | Regla para evitar duplicidades |
@@ -192,11 +228,18 @@ Cada vez que aparezca una idea:
 
 ## 5. Índice de estado y bitácora V3
 
-- **Propuestas iniciales:** V3-01 … V3-22 (22). **Todas `CAPTURADAS`, ninguna autorizada para desarrollo.** V3-23 y V3-24 están capturadas a 17/10/2026; al registrar una nueva usar V3-25 en adelante sin renumerar las existentes.
+- **Propuestas iniciales:** V3-01 … V3-22 (22). **Todas `CAPTURADAS`, ninguna autorizada para desarrollo.** V3-23 y V3-24 quedaron capturadas a 17/10/2026; **V3-25** recoge preferencias de KIA Contable (21/10/2026), también capturada y sin aprobación. Para nuevas capturas usar V3-26 en adelante, sin renumerar las anteriores.
 - **Duplicados absorbidos en el plan activo:** no marcados todavía; revisar solo al cierre de E6 o si una comparación objetiva demuestra solapamiento exacto.
 - **Ideas descartadas:** ninguna.
 - **Siguiente acción en este documento:** **solo registrar nuevas oportunidades con su evidencia**; ninguna validación/implementación V3 en fase E0.
 - **Siguiente acción del proyecto principal (NO cambia):** continuar `E0-M3-06-admin-users-tenant-object-scope-audit` (GET/PATCH/DELETE `/api/admin/users`, control de actor activo, tenant, objeto y pruebas negativas), según el checkpoint más reciente del Plan Maestro. E0 continúa `IN_PROGRESS`; E1–E6 y toda V3 permanecen bloqueadas.
+
+### 2026-10-21 — Preferencias contables por usuario V3-25
+
+- Dirección solicita que los usuarios puedan elegir **solo facturas** o **facturas y conciliación bancaria**, el canal, la hora local de entrega y la cadencia, con opciones vespertinas/nocturnas **desde las 20:00** para quienes trabajan por cuenta ajena.
+- El horario individual de EXPERT **08:00 Europe/Madrid, Telegram** no cambia; permanece como especificación del piloto interno del Plan Maestro. Autogestión multiusuario queda documentada como V3-25, pendiente después de E6.
+- Confirmado por código que `AutomationSettingsPanel` y `automation_settings` son ajustes globales; no guardan horario o alcance por usuario. Es necesario contrato de preferencias y control por empresa, no crear crons por destinatario.
+- **Cero cambios productivos, conectores, permisos, migraciones o cron.**
 
 ### 2026-10-17 — Consolidación documental V3-23/V3-24
 
