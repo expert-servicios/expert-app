@@ -43,6 +43,9 @@ jobs:
       - name: Production build
         run: npm run build
 
+      - name: RGPD isolated real HTTP smoke (flags forced OFF)
+        run: node scripts/rgpd-isolated-http-smoke.mjs
+
       - name: Install MCP server dependencies
         run: npm ci --prefix apps/holded-mcp
 
@@ -54,6 +57,9 @@ jobs:
 
       - name: Supabase migration baseline check
         run: npm run check:supabase-migrations
+
+      - name: Install Poppler for PDF text and font validation
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends poppler-utils
 
       - name: Tests
         run: npm test
@@ -184,6 +190,9 @@ jobs:
         run: |
           set -euo pipefail
           psql "$DB_URL" -v ON_ERROR_STOP=1 -f tests/db/kia_public_web_persistence_integration.sql
+
+      - name: RGPD source-key PostgreSQL concurrency race
+        run: bash tests/db/rgpd_source_key_race_integration.sh
 
   kia-work-active-scope-db:
     name: KIA Work PostgreSQL active-scope integration
