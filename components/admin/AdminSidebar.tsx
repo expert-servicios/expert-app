@@ -115,6 +115,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Kia Health", href: "/admin/kia-health" },
       { label: "Kia Métricas", href: "/admin/kia-metrics" },
       { label: "Kia Feedback", href: "/admin/kia-feedback" },
+      { label: "Revisión postreunión", href: "/admin/kia-postreunion" },
       { label: "Kia Auditor", href: "/admin/kia-auditor" },
       { label: "Reportes", href: "/admin/reportes" },
       { label: "Seguridad MCP", href: "/admin/seguridad" },
