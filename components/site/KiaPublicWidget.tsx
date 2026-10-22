@@ -100,6 +100,7 @@ export function KiaPublicWidget() {
   const [voiceTranscribing, setVoiceTranscribing] = useState(false);
   const [attachmentLoading, setAttachmentLoading] = useState(false);
   const [attachment, setAttachment] = useState<PublicAttachment | null>(null);
+  const identityScopeRef = useRef<string | null>(null);
   const [identity, setIdentity] = useState<{ authenticated: boolean; firstName?: string | null; role?: string; preferredLanguage?: 'es' | 'ru' } | null>(null);
   const loggedIn = identity?.authenticated === true;
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -133,6 +134,15 @@ export function KiaPublicWidget() {
         if (!mounted) return;
         if (!response.ok) return;
         const next = data.authenticated === true ? data : { authenticated: false };
+        const nextScope = next.authenticated ? String(data.identityKey ?? '') : null;
+        if (identityScopeRef.current !== nextScope && identityScopeRef.current !== null) {
+          setMessages([{ id: 'welcome', role: 'assistant', text: 'Soy KIA, asistente de EXPERT. ¿En qué puedo ayudarte?' }]);
+          setQuickReplies([]);
+          setArtifacts([]);
+          setActionCta(null);
+          setAttachment(null);
+        }
+        identityScopeRef.current = nextScope;
         setIdentity(next);
         if (next.authenticated && typeof next.firstName !== 'undefined') {
           const name = next.firstName ? `, ${next.firstName}` : '';
@@ -232,12 +242,15 @@ export function KiaPublicWidget() {
         signal: controller.signal,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: clean,
+          message: loggedIn && attachment
+            ? `${clean}\n\n[Resumen de adjunto sin verificar: ${attachment.fileName}]\n${attachment.analysis.slice(0, 1600)}`.slice(0, 3800)
+            : clean,
           currentPage: window.location.pathname,
           history,
           ...(loggedIn ? { currentTask: 'public_site_assistance' } : { attachment: attachment ?? undefined, recaptchaToken }),
         }),
       });
+      if (loggedIn && response.status === 401) throw new Error('session_expired');
       const data = await response.json().catch(() => ({})) as PublicKiaResponse;
       const reply = data.reply?.trim()
         || 'Ahora mismo no he podido completar la respuesta. Puedes intentarlo de nuevo o abrir KIA en Telegram.';
@@ -253,7 +266,9 @@ export function KiaPublicWidget() {
       setAttachment(null);
     } catch (error) {
       const reason = error instanceof Error ? error.message : '';
-      const text = reason === 'recaptcha_unavailable'
+      const text = reason === 'session_expired'
+        ? 'Tu sesión ha caducado. Identifícate de nuevo para consultar datos privados.'
+        : reason === 'recaptcha_unavailable'
         ? 'No he podido completar la verificación segura del chat. Recarga la página o abre KIA en Telegram.'
         : error instanceof DOMException && error.name === 'AbortError'
           ? 'La respuesta está tardando demasiado. Puedes intentarlo de nuevo o continuar ahora mismo en Telegram.'
