@@ -49,8 +49,8 @@ describe('KIA guarded email agent', () => {
     expect(route).toContain('isSafeUnknownProspect');
     expect(route).toContain('explicitCommercialRequest');
     expect(route).toContain('expertServiceIntent');
-    expect(route).toContain('wasKnownContact ? KNOWN_CONTACT_TOOLS : PUBLIC_PROSPECT_TOOLS');
-    expect(route).toContain('(wasKnownContact || (safeUnknownProspect && newLeadAutoSend))');
+    expect(route).toContain('mayUsePrivateKiaEmailTools(contactGroup) ? KNOWN_CONTACT_TOOLS : PUBLIC_PROSPECT_TOOLS');
+    expect(route).toContain('canAutoReplyToKiaContact({ group: contactGroup, safeUnknownProspect, newLeadAutoSend })');
     expect(route).toContain('KIA_EMAIL_PROSPECT_MIN_CONFIDENCE');
     expect(route).toContain("'kia.email_new_lead_auto_send'");
     expect(route).toContain('new_lead_approval_required');
@@ -95,8 +95,18 @@ describe('KIA guarded email agent', () => {
 
   it('does not upgrade a newly-created lead to trusted private context', () => {
     expect(route).toContain('const wasKnownContact = Boolean(identity.clientId || identity.leadId)');
-    expect(route).toContain('wasKnownContact ? KNOWN_CONTACT_TOOLS : PUBLIC_PROSPECT_TOOLS');
-    expect(route).toContain('confidenceFloor = wasKnownContact ? minConfidence : prospectMinConfidence');
+    expect(route).toContain('mayUsePrivateKiaEmailTools(contactGroup) ? KNOWN_CONTACT_TOOLS : PUBLIC_PROSPECT_TOOLS');
+    expect(route).toContain('confidenceFloor = mayUsePrivateKiaEmailTools(contactGroup) ? minConfidence : prospectMinConfidence');
+  });
+
+  it('assigns contact group before lead creation and restricts leads to public tools', () => {
+    const resolvedIndex = route.indexOf('const contactGroup = resolveKiaContactGroup(identity)');
+    const createdIndex = route.indexOf('const leadId = await ensureEmailLead');
+    expect(resolvedIndex).toBeGreaterThan(0);
+    expect(createdIndex).toBeGreaterThan(resolvedIndex);
+    expect(route).toContain('mayUsePrivateKiaEmailTools(contactGroup) ? KNOWN_CONTACT_TOOLS : PUBLIC_PROSPECT_TOOLS');
+    expect(route).toContain('canAutoReplyToKiaContact({ group: contactGroup, safeUnknownProspect, newLeadAutoSend })');
+    expect(route).toContain('contactGroup !== \'verified_client\' && !newLeadAutoSend');
   });
 
   it('keeps email tools scoped and allows only the guarded booking external action', () => {

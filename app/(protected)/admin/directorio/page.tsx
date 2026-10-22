@@ -218,6 +218,7 @@ export default function AdminDirectoryPage() {
 
                 <div className="mt-4 flex flex-wrap gap-1.5">
                   {item.kind === 'lead' && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-800">Lead · sin acceso al portal</span>}
+                  {item.kind === 'lead' && <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-700">KIA · guías y seguimiento, sin datos privados</span>}
                   {item.isClient && <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-700">Cliente</span>}
                   {item.hasPortalAccess && <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-700">Acceso portal</span>}
                   {item.kind === 'company' && item.linkedPeople === 0 && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-800">Sin persona vinculada</span>}
