@@ -160,6 +160,8 @@ function welcomeMessage(returning = false, adminMode = false): ChatMessage {
   };
 }
 
+const KIA_CHAT_TIMEOUT_MS = 45_000;
+
 function useKiaChat(
   pathname: string,
   contextToken?: string,
@@ -176,9 +178,11 @@ function useKiaChat(
   const [staffPreview, setStaffPreview] = useState(false);
   const [uiLocale, setUiLocale] = useState<'es' | 'ru'>('es');
   const contextGenerationRef = useRef(0);
+  const inFlightControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     contextGenerationRef.current += 1;
+    inFlightControllerRef.current?.abort('context_changed');
   }, [companyId, contextToken, pathname]);
 
   useEffect(() => {
@@ -228,6 +232,8 @@ function useKiaChat(
 
   useEffect(() => {
     const handleCompanyChanged = () => {
+      contextGenerationRef.current += 1;
+      inFlightControllerRef.current?.abort('context_changed');
       setContextSummary(null);
       setContextLoading(false);
       setMessages([welcomeMessage(true, adminMode)]);
@@ -259,9 +265,17 @@ function useKiaChat(
     if (!options.silentUser) setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
     const requestGeneration = contextGenerationRef.current;
+    const controller = new AbortController();
+    inFlightControllerRef.current = controller;
+    let timedOut = false;
+    const timeoutId = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort('request_timeout');
+    }, KIA_CHAT_TIMEOUT_MS);
 
     try {
       const res = await fetch('/api/ai/kia', {
+        signal: controller.signal,
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body   : JSON.stringify({
@@ -302,14 +316,26 @@ function useKiaChat(
         {
           id  : crypto.randomUUID(),
           role: 'assistant',
-          text: kiaFriendlyError('network_error', uiLocale),
+          text: controller.signal.reason === 'user_cancelled'
+            ? (uiLocale === 'ru' ? 'Запрос остановлен. Вы можете отправить другой вопрос.' : 'Consulta cancelada. Puedes enviar otra pregunta.')
+            : timedOut
+              ? (uiLocale === 'ru' ? 'Ответ занял слишком много времени. Повторите запрос.' : 'KIA ha tardado demasiado en responder. Puedes volver a intentarlo.')
+              : kiaFriendlyError('network_error', uiLocale),
           avatarState: 'aviso',
         },
       ]);
     } finally {
-      setLoading(false);
+      window.clearTimeout(timeoutId);
+      if (inFlightControllerRef.current === controller) {
+        inFlightControllerRef.current = null;
+        setLoading(false);
+      }
     }
   }, [adminMode, companyId, contextLoading, contextSummary, contextToken, loading, messages, pageData, pathname, sessionId, uiLocale]);
+
+  const cancel = useCallback(() => {
+    inFlightControllerRef.current?.abort('user_cancelled');
+  }, []);
 
   const rate = useCallback(async (messageId: string, rating: 'positive' | 'negative') => {
     const target = messages.find((message) => message.id === messageId);
@@ -346,7 +372,7 @@ function useKiaChat(
     }]);
   }, []);
 
-  return { messages, loading, contextLoading, send, rate, reset, appendAssistantMessage, staffPreview, uiLocale };
+  return { messages, loading, contextLoading, send, cancel, rate, reset, appendAssistantMessage, staffPreview, uiLocale };
 }
 
 function KiaMessageArtifacts({ artifacts }: { artifacts: KiaCopilotArtifact[] }) {
@@ -493,7 +519,7 @@ export default function KiaCopilotWidget({ embedded = false, active = true }: { 
     return () => window.cancelAnimationFrame(frame);
   }, [adminMode, explicitPageContext, pathname, searchParams]);
 
-  const { messages, loading, contextLoading, send, rate, reset, appendAssistantMessage, staffPreview, uiLocale } = useKiaChat(
+  const { messages, loading, contextLoading, send, cancel, rate, reset, appendAssistantMessage, staffPreview, uiLocale } = useKiaChat(
     pathname,
     contextToken,
     adminCompanyId,
@@ -509,25 +535,6 @@ export default function KiaCopilotWidget({ embedded = false, active = true }: { 
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
   const speechAbortRef = useRef<AbortController | null>(null);
   const discardRecordingRef = useRef(false);
-  const reviewedAdminPagesRef = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (!adminMode || !panelVisible || !adminPageData || loading || contextLoading) return;
-    if (adminPageData.path !== pathname) return;
-    const reviewKey = `${pathname}?${searchParams.toString()}|${String(adminPageData.activeTab ?? '')}`;
-    if (reviewedAdminPagesRef.current.has(reviewKey)) return;
-
-    const timer = window.setTimeout(() => {
-      if (reviewedAdminPagesRef.current.has(reviewKey)) return;
-      reviewedAdminPagesRef.current.add(reviewKey);
-      void send(
-        'Revisa el contexto de esta pantalla Admin. Si detectas un pendiente, riesgo, incoherencia o siguiente paso útil, indícamelo de forma concreta. Si no hay suficiente contexto, dime brevemente qué puedes revisar aquí. No muestres un menú de opciones.',
-        { silentUser: true, currentTask: 'admin_page_review' },
-      );
-    }, 450);
-
-    return () => window.clearTimeout(timer);
-  }, [adminMode, adminPageData, contextLoading, loading, panelVisible, pathname, searchParams, send]);
 
   useEffect(() => {
     return () => {
@@ -626,9 +633,17 @@ export default function KiaCopilotWidget({ embedded = false, active = true }: { 
     setOpen(false);
   }
 
+  function handleReviewCurrentPage() {
+    if (!adminMode || loading || contextLoading || !adminPageData || adminPageData.path !== pathname) return;
+    void send(
+      'Revisa el contexto de esta pantalla Admin. Si detectas un pendiente, riesgo, incoherencia o siguiente paso útil, indícamelo de forma concreta. Si no hay suficiente contexto, dime brevemente qué puedes revisar aquí. No muestres un menú de opciones.',
+      { silentUser: true, currentTask: 'admin_page_review' },
+    );
+  }
+
   function handleSend() {
     const text = input.trim();
-    if (!text) return;
+    if (!text || loading || contextLoading) return;
     setInput('');
     send(text);
   }
@@ -999,6 +1014,25 @@ export default function KiaCopilotWidget({ embedded = false, active = true }: { 
           <div ref={messagesEndRef} />
         </div>
 
+        {(adminMode || loading) ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#e8e0d4] px-3 py-2">
+            {adminMode ? (
+              <button
+                type="button"
+                onClick={handleReviewCurrentPage}
+                disabled={loading || contextLoading || !adminPageData || adminPageData.path !== pathname}
+                className="rounded-lg border border-[#e8e0d4] px-3 py-1.5 text-xs font-medium text-[#0D1B2A] disabled:opacity-40"
+              >
+                {uiLocale === 'ru' ? 'Проверить эту страницу' : 'Revisar esta pantalla'}
+              </button>
+            ) : null}
+            {loading ? (
+              <button type="button" onClick={cancel} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-700">
+                {uiLocale === 'ru' ? 'Остановить запрос' : 'Cancelar consulta'}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         <div
           className="flex items-end gap-2 px-3 py-3"
           style={{ borderTop: '1px solid #e8e0d4' }}
@@ -1029,8 +1063,7 @@ export default function KiaCopilotWidget({ embedded = false, active = true }: { 
             placeholder={uiLocale === 'ru' ? 'Напишите ваш вопрос…' : 'Escribe tu consulta…'}
             aria-label={uiLocale === 'ru' ? 'Напишите вопрос KIA' : 'Escribe tu consulta a KIA'}
             rows={1}
-            disabled={loading}
-            className="flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none transition-colors focus:border-[#0D1B2A] disabled:opacity-50"
+            className="min-w-0 flex-1 resize-none rounded-xl border px-3 py-2 text-sm outline-none transition-colors focus:border-[#0D1B2A]"
             style={{
               borderColor: '#e8e0d4',
               maxHeight  : '96px',
