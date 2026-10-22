@@ -175,7 +175,8 @@ describe('KIA guarded email agent', () => {
     expect(sync).toContain("heartbeatValue?.status === 'ok'");
     expect(sync).toContain('heartbeatAgeMs <= 20 * 60_000');
     expect(sync).toContain('KIA de correo no está confirmada como saludable');
-    expect(sync).toContain('email-unread-fallback');
+    expect(sync).toContain('email-relevant-fallback');
+    expect(sync).toContain('shouldNotifyEmailSyncFallback');
   });
 
   it('strips quoted reply history before consequential booking checks', () => {

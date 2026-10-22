@@ -567,6 +567,18 @@ export async function GET(request: NextRequest) {
     if ((page ?? []).length < pageSize) break;
   }
 
+  // Prioritize potentially actionable messages before spending the fixed live-read
+  // budget. Otherwise hundreds of GitHub CI messages can hide a tax notice.
+  const pendingRelevance = (row: (typeof inbox)[number]) => {
+    const subject = (row.subject ?? '').toLowerCase();
+    const sender = (row.from_email ?? '').toLowerCase();
+    const legal = /(?:requerimiento|subsanaci[oó]n|notificaci[oó]n|alegaciones|hacienda|agencia tributaria|налогов|налогов[а-яё]*|требовани[ея])/i.test(subject);
+    const providerNoise = /@(?:github\.com|vercel\.com|resend\.com)$/i.test(sender);
+    return legal ? 3 : row.case_id ? 2 : providerNoise ? 0 : 1;
+  };
+  inbox.sort((left, right) => pendingRelevance(right) - pendingRelevance(left) ||
+    Date.parse(right.date) - Date.parse(left.date));
+
   let evaluated = 0;
   let sent = 0;
   let skipped = 0;
@@ -892,6 +904,7 @@ export async function GET(request: NextRequest) {
         && !externalCommunicationBlocked
         && envelope.recipientPurpose !== 'noreply'
         && !hasAttachments
+        && !envelope.requiresAttention
         && !result.usedFallback
         && !result.decision.requiresManualReview
         && result.decision.nextAction !== 'needs_review'
@@ -1034,6 +1047,7 @@ export async function GET(request: NextRequest) {
         else if (replyToMismatch) blockReason = 'reply_to_requires_review';
         else if (envelope.recipientPurpose === 'noreply') blockReason = 'noreply_recipient';
         else if (hasAttachments) blockReason = 'attachment_requires_review';
+        else if (envelope.requiresAttention) blockReason = 'formal_notice_requires_review';
         else if (result.usedFallback) blockReason = 'provider_fallback';
         else if (result.decision.requiresManualReview) blockReason = 'manual_review';
         else if (result.decision.nextAction === 'needs_review') blockReason = 'needs_review';
@@ -1056,7 +1070,7 @@ export async function GET(request: NextRequest) {
         createdTask: Boolean(createdTask),
         sent: sentNow,
       });
-      const interventionRequired = result.decision.requiresManualReview
+      const interventionRequired = envelope.requiresAttention || result.decision.requiresManualReview
         || result.decision.nextAction === 'needs_review'
         || ['orchestration_requires_review', 'ambiguous_case', 'linked_case_sender_mismatch', 'reply_to_requires_review', 'attachment_requires_review', 'provider_fallback']
           .includes(blockReason ?? '');
