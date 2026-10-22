@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
     && profile
     && isStaffRole(profile.role)
     && profile.status === 'active'
-    && currentPage?.startsWith('/admin'),
+    && (currentPage?.startsWith('/admin') || currentTask === 'public_site_assistance'),
   );
   const adminClientPageMatch = adminCopilotMode
     ? /^\/admin\/clientes\/([0-9a-f-]{36})(?:\/|$)/i.exec(currentPage ?? '')
