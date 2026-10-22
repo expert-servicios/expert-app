@@ -5,6 +5,7 @@ import type { KiaToolCall, KiaToolDefinition } from "./kia-tool-definitions";
 import { extractJsonObject } from "./kia-output-schema";
 import { redactJson, safeErrorMessage } from "./kia-redaction";
 import { getKiaAiBudgetGuard } from "./kia-ai-budget";
+import { isStrictOpenAiSchema, openAiChatResponseFormat, useStrictOpenAiTool } from "./kia-openai-schema-compat";
 
 export type KiaAiProvider = "anthropic" | "openai" | "google";
 export type KiaEffort = "low" | "medium" | "high" | "xhigh";
@@ -463,6 +464,9 @@ async function callGateway(
     role: "system" | WabaAiMessage["role"];
     content: string;
   }> = [{ role: "system", content: request.systemPrompt }, ...request.messages];
+  if (request.responseSchema && !isStrictOpenAiSchema(request.responseSchema)) {
+    messages[0].content += "\n\nDevuelve exclusivamente un objeto JSON válido, sin Markdown ni texto adicional.";
+  }
 
   // modelOverride is legacy direct-provider routing unless it is already a
   // fully-qualified AI Gateway model id. This prevents old Claude defaults
@@ -480,16 +484,8 @@ async function callGateway(
     messages,
   };
 
-  if (request.responseSchema) {
-    body.response_format = {
-      type: "json_schema",
-      json_schema: {
-        name: "kia_decision",
-        strict: true,
-        schema: request.responseSchema,
-      },
-    };
-  }
+  const openAiFormat = openAiChatResponseFormat(request.responseSchema);
+  if (openAiFormat) body.response_format = openAiFormat;
 
   if (request.tools?.length) {
     body.tools = request.tools.map((tool) => ({
@@ -498,7 +494,7 @@ async function callGateway(
         name: tool.name,
         description: tool.description,
         parameters: tool.input_schema,
-        strict: tool.strict === true,
+        strict: useStrictOpenAiTool(tool),
       },
     }));
   }
@@ -638,6 +634,9 @@ async function callOpenAiCompatible(
     role: "system" | WabaAiMessage["role"];
     content: string;
   }> = [{ role: "system", content: request.systemPrompt }, ...request.messages];
+  if (providerName === "openai" && request.responseSchema && !isStrictOpenAiSchema(request.responseSchema)) {
+    messages[0].content += "\n\nDevuelve exclusivamente un objeto JSON válido, sin Markdown ni texto adicional.";
+  }
 
   const isGemini38 =
     providerName === "google" && /^gemini-3\.8(?:-|$)/i.test(provider.model);
@@ -655,16 +654,19 @@ async function callOpenAiCompatible(
   }
 
   if (request.responseSchema) {
-    body.response_format = {
-      type: "json_schema",
-      json_schema: {
-        name: "kia_decision",
-        strict: true,
-        schema: providerName === "google"
-          ? normalizeGeminiJsonSchema(request.responseSchema)
-          : request.responseSchema,
-      },
-    };
+    if (providerName === "google") {
+      body.response_format = {
+        type: "json_schema",
+        json_schema: {
+          name: "kia_decision",
+          strict: true,
+          schema: normalizeGeminiJsonSchema(request.responseSchema),
+        },
+      };
+    } else {
+      const openAiFormat = openAiChatResponseFormat(request.responseSchema);
+      if (openAiFormat) body.response_format = openAiFormat;
+    }
   }
 
   if (request.tools?.length) {
@@ -677,7 +679,7 @@ async function callOpenAiCompatible(
           providerName === "google"
             ? normalizeGeminiJsonSchema(tool.input_schema)
             : tool.input_schema,
-        ...(providerName === "openai" && tool.strict === true ? { strict: true } : {}),
+        ...(providerName === "openai" ? { strict: useStrictOpenAiTool(tool) } : {}),
       },
     }));
   }
