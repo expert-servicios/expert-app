@@ -134,7 +134,7 @@ export function KiaPublicWidget() {
         if (!mounted) return;
         if (!response.ok) return;
         const next = data.authenticated === true ? data : { authenticated: false };
-        const nextScope = next.authenticated ? String(data.identityKey ?? '') : null;
+        const nextScope = next.authenticated ? String(data.identityKey ?? '') : 'guest';
         if (identityScopeRef.current !== nextScope && identityScopeRef.current !== null) {
           setMessages([{ id: 'welcome', role: 'assistant', text: 'Soy KIA, asistente de EXPERT. ¿En qué puedo ayudarte?' }]);
           setQuickReplies([]);
