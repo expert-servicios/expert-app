@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
       ? profile.full_name.trim().split(/\s+/)[0]?.slice(0, 60) || null : null;
     return NextResponse.json({
       authenticated: true,
+      identityKey: user.id,
       firstName,
       role: profile.role,
       preferredLanguage: profile.preferred_language === 'ru' ? 'ru' : 'es',
