@@ -8,6 +8,8 @@
 
 ## 0. Mandato aprobado y reglas innegociables
 
+**Registro documental 23/10/2026 — PR #836:** procedimiento operativo de contestación de requerimientos tributarios en `docs/kia-tax-requirement-presentation-runbook.md`, enlazado desde KIA–Work. Reúne aprobación de versión, cotejo de anexos, intervención profesional en sede, justificante, hoja registral y tareas; facturación/notificación dependen del mandato vigente. No incorpora datos privados, modifica runtime ni acredita actuaciones reales. Estado: preparado para revisión; checkpoint E0 y flags sin cambios. La validación y los checks corresponden al HEAD de la PR; no es cierre de módulo o fase.
+
 Dirección EXPERT autoriza la ejecución progresiva del ecosistema aprobado, **E0 → E1 → E2 → E3 → E4 → E5 → E6**, sin abrir funcionalidades, líneas de trabajo o rediseños ajenos. Cada fase se subdivide en módulos verificables. **No iniciar desarrollo de la siguiente fase hasta que la actual esté finalizada, auditada, probada, con evidencias y cierre registrado en este archivo.** Las PRs documentales previas no equivalen a funcionalidades entregadas.
 
 **Reglas de gobierno:**
