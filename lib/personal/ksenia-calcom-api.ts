@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { parsePersonalCalBookingUrl } from '@/lib/personal/ksenia-cal-booking-url';
+import { parsePersonalCalEventsResponse, type PersonalCalEvent } from '@/lib/personal/ksenia-calcom-events';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -134,5 +135,30 @@ export async function resolvePersonalCalBookingUrlByApi(): Promise<string | null
       : null;
   } catch {
     return null;
+  }
+}
+
+/** Read existing Cal.com meeting types without creating, updating or deleting any. */
+export async function listPersonalCalEventsByApi(): Promise<PersonalCalEvent[]> {
+  const key = process.env.CAL_API_KEY?.trim() || process.env.cal_ksenia?.trim();
+  if (!key) return [];
+  const headers = { Authorization: `Bearer ${key}`, Accept: 'application/json' };
+  try {
+    const meResponse = await fetch('https://api.cal.com/v2/me', {
+      method: 'GET', headers, cache: 'no-store', signal: AbortSignal.timeout(6000),
+    });
+    if (!meResponse.ok) return [];
+    const me = asRecord(await meResponse.json() as unknown);
+    if (me?.status !== 'success') return [];
+    const username = validCalSlug(asRecord(me.data)?.username);
+    if (!username) return [];
+
+    const eventResponse = await fetch('https://api.cal.com/v2/event-types', {
+      method: 'GET', headers, cache: 'no-store', signal: AbortSignal.timeout(6000),
+    });
+    if (!eventResponse.ok) return [];
+    return parsePersonalCalEventsResponse(await eventResponse.json() as unknown, username);
+  } catch {
+    return [];
   }
 }
