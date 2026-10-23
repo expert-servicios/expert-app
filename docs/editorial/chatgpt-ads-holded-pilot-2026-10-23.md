@@ -285,6 +285,48 @@ Empieza con Holded por tu cuenta o apóyate en EXPERT para revisar y organizar l
 
 **Estado:** borradores y conceptos; **sin landing creada, imágenes creadas, anuncios configurados, precios alterados, publicaciones, tareas ni gastos**.
 
+### 5 bis.6 Calendario estacional, duración y variaciones creativas — valoración, no aprobación (23/10/2026)
+
+**Estado: SIN FECHAS APROBADAS Y SIN ANUNCIOS CREADOS.** A fecha de revisión, viernes 23/10/2026, Halloween es el **sábado 31/10/2026**. No asumir lanzamiento inmediato porque la landing única todavía **no existe**, y la cuenta EXPERT requiere completar pasos de facturación, logotipo y revisión, más verificación de URL/traducción/formularios y derechos de marca. Las fechas siguientes son **escenarios hipotéticos**, no programación.
+
+| Escenario | Fechas de ejemplo (ambas incluidas) | Días | Balance |
+| --- | --- | --- | --- |
+| **S1 — Terminar en Halloween** | 25/10/2026–31/10/2026 | 7 | Coherente para creatividad «sin sustos», pero menos días de observación y preparación acelerada; solo si todo está listo y aprobado. |
+| **S2 — Alargar al 1 de noviembre** | 25/10/2026–01/11/2026 | 8 | Un día extra, pero Halloween pasa: **no compensa por sí solo**; mejor cerrar 31/10 o cambiar a creatividades atemporales. |
+| **S3 — Completar 10 días** | 25/10/2026–03/11/2026 | 10 | Más días para aprender con el mismo máximo global de 150 €, pero **requiere sustituir/desactivar el reclamo estacional a partir del 01/11** y mantener un mensaje permanente. Plan preferible solo si la landing, cuenta y revisión estuvieran ya listos sin precipitación. |
+
+**Recomendación prioritaria:** no adelantar la publicación para «llegar» al 31/10. Si la cuenta y landing no están completamente aprobadas antes del período, **posponer el piloto** y lanzar una campaña atemporal de duración a definir. No aumentar el gasto por urgencia. «10 días» es duración máxima propuesta, **no obligación**. Mantener **150,00 EUR como presupuesto TOTAL de campaña**, no como presupuesto diario ni como depósito obligatorio. Mínimo diario documentado en EUR: **15 EUR**; verificar en UI combinaciones reales de presupuesto-total y fechas. El presupuesto total es el control más estricto del gasto acumulado, pero no garantiza consumo completo ni clics/leads.
+
+**Fuentes del producto vigentes al documentar:**
+- https://help.openai.com/en/articles/20001210-create-campaigns-for-chatgpt — fechas, presupuesto total vs diario y mínimo EUR.
+- https://help.openai.com/en/articles/20001212-create-ads-for-chatgpt — recomienda varias creatividades con enfoques distintos y texto claro.
+- https://help.openai.com/en/articles/20001214-measure-results — impresiones, clics, CTR, CPC, gasto y conversiones por anuncio; medir conversiones solo si existe configuración validada.
+
+#### Conceptos de titulares que Dirección quiere comparar (5 propuestas, **no anuncios activos**)
+
+El lema amplio de la landing e imagen puede ser **«Que tu contabilidad no te dé sustos»**. Como encabezado corto de anuncios conviene **«Contabilidad sin sustos»**. La idea «No tengas miedo y pásate a autogestión» se transforma en **«Autogestión sin miedo»** para comunicar confianza sin desalentar al público que prefiere asesoría acompañada.
+
+| Nº | Titular propuesto (caracteres) | Texto propuesto (caracteres) | Uso |
+| --- | --- | --- | --- |
+| 1 | **Contabilidad sin sustos** (23) | Organiza tus facturas con Holded. EXPERT te acompaña. (53) | Halloween · dos vías |
+| 2 | **Holded sin sustos** (17) | Solicita una prueba de 14 días a través de EXPERT. (50) | Halloween · autogestión |
+| 3 | **Autogestión sin miedo** (21) | Lleva tu negocio con Holded. EXPERT te ayuda a empezar. (55) | Halloween · autogestión |
+| 4 | **Tu empresa, bajo control** (24) | Gestiona con Holded o cuenta con asesoría EXPERT. (49) | Permanente · dos vías |
+| 5 | **Holded con EXPERT** (17) | Elige autogestión o acompañamiento profesional. (47) | Permanente · dos vías |
+
+**Límites de publicación:** título **máximo 50 caracteres** (recomendación 16–24), descripción **máximo 100** (recomendación 32–48), JPG/PNG cuadrada hasta 1200×1200, una landing por anuncio. Los ejemplos anteriores caben en máximos, pero su texto e imagen aún requieren revisión comercial/legal y, en RU/UK, localización natural y nuevo conteo. No sugerir «oferta Halloween» si la oferta real es la prueba ordinaria de 14 días.
+
+#### Prueba creativa realista con presupuesto muy pequeño
+
+- **Sí se permiten varios anuncios/títulos en una misma campaña**, organizados dentro de los dos grupos actuales: **A autogestión** y **B gestión acompañada**. La cifra de cinco es **un banco creativo, no un compromiso de publicar cinco simultáneamente**.
+- Con solo 150 EUR, se propone **2 variantes iniciales por grupo (4 anuncios en total)** si existe volumen suficiente; el quinto se reserva para sustitución durante el piloto o posterior. Se pueden usar imágenes iguales para aislar variable título, o imágenes distintas para probar concepto completo, pero no afirmar que sea un A/B test aleatorio ni reparto igual.
+- **Creatividad A1** «Holded sin sustos» (solo hasta 31/10), **A2** «Autogestión sin miedo» (solo hasta 31/10); **B1** «Contabilidad sin sustos» (solo hasta 31/10), **B2** «Tu empresa, bajo control» (atemporal). **Reserva** «Holded con EXPERT» (atemporal). Si campaña continúa el 01/11, retirar **todas** las variantes Halloween y entrar con las permanentes; no presuponer que editar un anuncio conserve medición comparable, usar IDs distintos si corresponde.
+- Todas las variantes destinan a la **misma futura landing única** EXPERT, con ancla o query por modalidad verificada, UTM de variante y formulario único; **no redirigir a Holded directamente**.
+- **KIA informa por anuncio**: impresiones, clics, CTR, CPC, gasto y, de forma separada, formularios válidos, citas, pruebas activadas y clientes Holded confirmados / suscripciones EXPERT. **Las visualizaciones solas no identifican el ganador**: elegir por clics cualificados y conversiones cuando haya datos reales. Muestras pequeñas no justifican conclusiones firmes; evitar proclamar ganador tras pocas impresiones.
+- Programación/cambio de variantes, gastos, alertas, rotación, scoring y automatización KIA quedan **sin implementar** hasta aprobación expresa y verificación de condiciones de Ads Manager. No asumir rotación equitativa ni reasignación automática correcta entre grupos; documentar decisiones y resultados solo cuando existan.
+
+**Criterio de decisión final:** primero readiness real de cuenta + landing + validación de idioma, revisión marca y aprobación humana; después escoger fechas reales y presupuesto total; por último seleccionar de 3 a 5 conceptos preparados solo los anuncios que sean útiles y medibles. No activar campaña en esta revisión.
+
 ## 6. Flujo futuro KIA/Work (propuesta, no implementación)
 
 | Paso | Acción/estado | Límite |
@@ -360,6 +402,8 @@ Canales propuestos: resumen en Admin y envío consolidado a Dirección por el ca
 - [ ] Comprobar si `campaign-total=150,00 EUR` / 10 días es aceptado por el flujo real y que el resultado queda inicialmente **pausado**.
 - [ ] Definir detección y alertas de coste por campaña; comprobar que no existen otras campañas que compartan un riesgo de gasto fuera del piloto.
 - [ ] Aprobar imagen/branding por escrito, definir creatividades y revisión del anunciante.
+- [ ] Decidir entre S1 hasta 31/10, S2 hasta 01/11 y S3 hasta 03/11 únicamente después de que landing y cuenta estén listas; preparar variantes atemporales desde 01/11 si aplica.
+- [ ] Revisar 5 títulos propuestos y seleccionar un número reducido de anuncios por grupo, medir CTR y conversión a lead válido sin confundir impresiones con ventas.
 - [ ] Autorizar por separado activación, gasto y calendario de la campaña. **No está otorgada.**
 - [ ] Revisar y aprobar matriz de intención B2B y context hints por grupo; verificar controles de targeting disponibles, ubicación España, páginas de destino y tasa real de leads particulares; no declarar exclusiones no soportadas.
 - [ ] Validar informes de KIA diario/semanal/final, estados atendidos/cancelados/anulados, cálculo sin duplicados, **clientes Holded distintos de suscripciones EXPERT y desglose A/B**, canal de entrega y horarios aprobados.
@@ -369,6 +413,8 @@ Canales propuestos: resumen en Admin y envío consolidado a Dirección por el ca
 **Owner funcional:** Dirección EXPERT. **KIA:** coordinadora documental y futura operadora por permisos, no ejecutora actual. **Work:** herramienta futura a formar/validar. **Gates de producto:** se mantienen E0→E6; ninguna tarea de KIA nueva se adelanta por la prueba comercial.
 
 ## 8. Bitácora
+
+- **23/10/2026 — valoración adicional de Dirección:** reconsiderar fin en 31/10, 01/11 o 03/11; seleccionar 3–5 titulares creativos desde «Que tu contabilidad no te dé sustos» y «Autogestión sin miedo», con variantes comparables y métricas por anuncio. **Solo documentación y borradores; fechas, anuncios y gasto sin autorizar.**
 
 - **23/10/2026 — petición de Dirección:** borrador documental de una landing única EXPERT + Holded con autogestión y gestión acompañada, CTAs para prueba, demo y planes; propuesta de creatividad Halloween «Que tu contabilidad no te dé sustos» sin descuento nuevo. Solo contenido, ninguna creación de página ni cambio publicitario.
 
