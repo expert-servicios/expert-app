@@ -31,6 +31,8 @@ describe('Personal Cal.com booking — safe opt-in reactivation', () => {
     const api = read('lib/personal/ksenia-calcom-api.ts');
     expect(api).toContain("import 'server-only'");
     expect(api).toContain('process.env.CAL_API_KEY');
+    expect(api).toContain('process.env.cal_ksenia');
+    expect(api).toContain('process.env.CAL_API_KEY?.trim() || process.env.cal_ksenia?.trim()');
     expect(api).toContain('process.env.PERSONAL_CALCOM_EVENT_TYPE_ID');
     expect(api).toContain("method: 'GET'");
     expect(api).toContain('https://api.cal.com/v2/event-types');
