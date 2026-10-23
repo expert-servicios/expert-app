@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
 import {
-  ArrowRight, Bot, CheckCircle2, ClipboardCheck, FileText,
-  LifeBuoy, RefreshCcw, ShieldCheck, Sparkles, Users,
+  ArrowRight, Bot, CheckCircle2, FileText,
+  RefreshCcw, ShieldCheck, Sparkles, Users,
   CalendarDays, ExternalLink
 } from 'lucide-react';
 
