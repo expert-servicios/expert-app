@@ -48,10 +48,11 @@ describe('Personal Cal.com booking — safe opt-in reactivation', () => {
       { id: 14, title: 'De otra persona', bookingUrl: 'https://cal.com/otro/evento' },
       { id: 15, title: 'Mentoría', lengthInMinutes: 60, bookingUrl: 'https://cal.com/ksenia/mentoria' },
     ] };
-    const result = parsePersonalCalEventsResponse(response, 'ksenia');
+    const result = parsePersonalCalEventsResponse({ ...response, data: response.data.map(event => ({ ...event, slug: event.bookingUrl?.split('/').pop() })) }, 'ksenia');
     expect(result.map(event => event.id)).toEqual([12, 15]);
     expect(result[0].durationMinutes).toBe(15);
     expect(parsePersonalCalEventsResponse(response, 'otro')).toEqual([]);
+    expect(parsePersonalCalEventsResponse({ status: 'success', data: { eventTypeGroups: [{ profile: { slug: 'ksenia' }, eventTypes: [{ id: 16, title: 'Formación', slug: 'formacion', length: 90 }] }] } }, 'ksenia')).toEqual([{ id: 16, title: 'Formación', durationMinutes: 90, bookingUrl: 'https://cal.com/ksenia/formacion' }]);
   });
 
   it('does not load Cal.com before the visitor clicks and serves ES and RU', () => {
