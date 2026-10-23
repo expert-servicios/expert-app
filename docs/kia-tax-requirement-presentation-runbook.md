@@ -14,6 +14,8 @@ Preservar el PDF original y los adjuntos privados con procedencia e integridad. 
 
 Cotejar el índice contra los archivos reales y su contenido. Una factura no es un libro registro; un formulario de fianza no acredita por sí solo el ingreso; una reconstrucción posterior no es el libro histórico del transmitente. Cuando un anexo cite un documento pendiente que ya se ha localizado, conciliar esa discrepancia antes de adjuntarlo. No fabricar libros, justificantes ni hechos. Ante una carencia material, preparar la relación concreta para decisión profesional sobre subsanación o presentación del conjunto disponible; no describir el conjunto como completo.
 
+Si el operador autoriza expresamente presentar con la documentación disponible tras una búsqueda adicional, registrar esa nueva decisión sin borrar la instrucción previa. Adaptar las afirmaciones probatorias y el índice a los archivos que realmente se aportan, conservando los fundamentos y peticiones aprobados salvo nueva autorización. Identificar las carencias y cualquier cuadro reconstruido; no anunciar documentos pendientes como adjuntos ni convertir un asiento contable en resguardo de pago.
+
 ## Presentación
 
 Verificar la ruta oficial vigente del organismo. Para ATV, localizar «Contestar requerimientos o efectuar alegaciones» en la sede GVA y cotejar el procedimiento con el requerimiento. Usar Chrome y la identidad de la entidad autorizada; ceder al operador la selección de certificado, identificación, firma y presentación definitiva cuando requieran intervención humana. No utilizar otro certificado por disponibilidad ni eludir avisos de seguridad.
@@ -21,6 +23,8 @@ Verificar la ruta oficial vigente del organismo. Para ATV, localizar «Contestar
 Antes de presentar, dejar revisables formulario, escrito y relación exacta de anexos, con referencias y huellas. Después, descargar y abrir el justificante oficial. Verificar titular, referencia, fecha/hora, asiento y CSV cuando lo emita el organismo, junto con la relación de documentos registrados. Distinguir el CSV del requerimiento, el de un anexo tributario previo y el de la nueva presentación. Sin justificante verificado, el estado sigue pendiente o en verificación.
 
 Ante timeout, consultar el resultado existente antes de repetir la actuación. Conservar identificador de operación y evidencia; evitar una segunda presentación accidental.
+
+En la carga de anexos, un porcentaje del 100 % solo acredita la transferencia mostrada por el gestor. Comprobar que cada archivo aparece en la lista de documentos anexados y en el resumen previo al registro. Si la incorporación de un archivo comprimido no se confirma, revisar la lista antes de aportar los documentos individualmente. Conservar los originales firmados sin alterarlos y evitar duplicados. No pasar a registro con un índice que enumere anexos ausentes.
 
 ## Hoja registral y tareas
 
