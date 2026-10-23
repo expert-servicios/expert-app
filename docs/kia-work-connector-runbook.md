@@ -31,6 +31,8 @@ Cada política incluye `dependencies`, UUID de tareas del mismo expediente. Se r
 
 ## Resultados y recuperación
 
+Para requerimientos tributarios, aplicar también el [procedimiento de aprobación, documentación, presentación y registro](kia-tax-requirement-presentation-runbook.md). La documentación del repositorio no equivale a una actualización del ledger productivo ni acredita una presentación.
+
 El evento incluye `schema_version:1`, `event_id` UUID estable, `task_id`, `run_id`, `claim_version`, `occurred_at` ISO con zona horaria y `result`. `succeeded` exige `evidence`; `blocked`, `failed` y `cancelled` exigen `reason`. Los eventos nuevos deben tener menos de 15 minutos. Un evento ya aplicado puede repetirse mientras la conexión siga autorizada.
 
 Un timeout no acredita ni niega una actuación. Conservar el fichero y repetir el **mismo resultado**, nunca la actuación externa. La migración `20260924171500_kia_work_result_inbox.sql` añade recepción durable antes de verificar, reservas de procesamiento de dos minutos y un máximo de cinco intentos ante errores temporales. El cron autenticado `/api/cron/kia-work-results` se programa cada cinco minutos y solo trabaja con el conector activado. Verifica resultados; no reenvía correos ni repite actuaciones.
