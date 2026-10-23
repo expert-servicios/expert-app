@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import type { PersonalCalEvent } from '@/lib/personal/ksenia-calcom-events';
 
 interface Props {
-  url: string;
+  url?: string;
+  events?: PersonalCalEvent[];
   locale: 'es' | 'ru';
 }
 
@@ -12,10 +14,11 @@ interface Props {
  * The remote event type must be configured with the owner's Outlook calendar
  * (and any other conflict calendars) within the existing Cal.com account.
  */
-export function KseniaCalBookingEmbed({ url, locale }: Props) {
+export function KseniaCalBookingEmbed({ url, events = [], locale }: Props) {
   const [loaded, setLoaded] = useState(false);
+  const [selectedUrl, setSelectedUrl] = useState(url ?? events[0]?.bookingUrl ?? '');
   const ru = locale === 'ru';
-  const iframeUrl = new URL(url);
+  const iframeUrl = new URL(selectedUrl);
   iframeUrl.searchParams.set('embed', 'true');
   iframeUrl.searchParams.set('layout', 'month_view');
   iframeUrl.searchParams.set('lang', locale);
@@ -30,6 +33,14 @@ export function KseniaCalBookingEmbed({ url, locale }: Props) {
           ? 'Расписание откроется после вашего согласия загрузить внешний сервис Cal.com. Доступность определяется подключёнными в Cal.com календарями.'
           : 'La agenda se cargará cuando decidas abrir el servicio externo Cal.com. Los horarios dependen de los calendarios conectados a esa cuenta.'}
       </p>
+      {events.length > 1 && (
+        <div className="mt-5 space-y-3">
+          <label htmlFor="personal-cal-event" className="block text-sm font-semibold">{ru ? 'Тип встречи' : 'Tipo de reunión'}</label>
+          <select id="personal-cal-event" value={selectedUrl} onChange={event => { setSelectedUrl(event.target.value); setLoaded(false); }} className="min-h-12 w-full border border-[#CBB68F] p-3">
+            {events.map(event => <option key={event.id} value={event.bookingUrl}>{event.title}{event.durationMinutes ? ` · ${event.durationMinutes} min` : ''}</option>)}
+          </select>
+        </div>
+      )}
       {!loaded ? (
         <button
           type="button"
@@ -41,6 +52,7 @@ export function KseniaCalBookingEmbed({ url, locale }: Props) {
       ) : (
         <iframe
           title={ru ? 'Календарь Ксении в Cal.com' : 'Agenda de Ksenia en Cal.com'}
+          key={selectedUrl}
           src={iframeUrl.toString()}
           loading="lazy"
           referrerPolicy="strict-origin-when-cross-origin"
@@ -50,7 +62,7 @@ export function KseniaCalBookingEmbed({ url, locale }: Props) {
       )}
       <div className="mt-5">
         <a
-          href={url}
+          href={selectedUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex min-h-11 items-center text-sm font-semibold text-[#765322] underline underline-offset-4"
