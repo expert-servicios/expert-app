@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { parsePersonalCalBookingUrl } from '@/lib/personal/ksenia-cal-booking-url';
+import { parsePersonalCalEventsResponse } from '@/lib/personal/ksenia-calcom-events';
 
 const read = (path: string) => readFileSync(path, 'utf8');
 
@@ -24,6 +25,7 @@ describe('Personal Cal.com booking — safe opt-in reactivation', () => {
     expect(gate).toContain('<KseniaCalBookingEmbed');
     expect(gate).toContain('isBookingCalendarConfigured()');
     expect(gate).toContain('resolvePersonalCalBookingUrlByApi()');
+    expect(gate).toContain('listPersonalCalEventsByApi()');
     expect(gate.indexOf('if (calUrl || apiCalUrl)')).toBeLessThan(gate.indexOf('isBookingCalendarConfigured()'));
   });
 
@@ -39,6 +41,19 @@ describe('Personal Cal.com booking — safe opt-in reactivation', () => {
     expect(api).not.toContain("method: 'POST'");
   });
 
+  it('lists only public authenticated-owner existing meeting types', () => {
+    const response = { status: 'success', data: [
+      { id: 12, title: 'Consulta', lengthInMinutes: 15, bookingUrl: 'https://cal.com/ksenia/consulta' },
+      { id: 13, title: 'Oculto', hidden: true, bookingUrl: 'https://cal.com/ksenia/oculto' },
+      { id: 14, title: 'De otra persona', bookingUrl: 'https://cal.com/otro/evento' },
+      { id: 15, title: 'Mentoría', lengthInMinutes: 60, bookingUrl: 'https://cal.com/ksenia/mentoria' },
+    ] };
+    const result = parsePersonalCalEventsResponse(response, 'ksenia');
+    expect(result.map(event => event.id)).toEqual([12, 15]);
+    expect(result[0].durationMinutes).toBe(15);
+    expect(parsePersonalCalEventsResponse(response, 'otro')).toEqual([]);
+  });
+
   it('does not load Cal.com before the visitor clicks and serves ES and RU', () => {
     const embed = read('components/personal/KseniaCalBookingEmbed.tsx');
     expect(embed).toContain('useState(false)');
@@ -48,5 +63,6 @@ describe('Personal Cal.com booking — safe opt-in reactivation', () => {
     expect(embed).toContain("iframeUrl.searchParams.set('lang', locale)");
     expect(embed).toContain('Показать свободное время');
     expect(embed).toContain('Mostrar horarios disponibles');
+    expect(embed).toContain('events.map(event =>');
   });
 });
