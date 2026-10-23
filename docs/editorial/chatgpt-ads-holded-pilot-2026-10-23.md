@@ -353,6 +353,30 @@ El lema amplio de la landing e imagen puede ser **«Que tu contabilidad no te d�
 - **Navidad 2026 / inicio 2027:** idea posterior de incentivo por empezar el nuevo ejercicio con software bien configurado, explorando beneficio de configuración inicial o formación todavía sin concretar. **No afirmar que una sociedad existente no necesite ninguna migración o saldos de apertura**.
 - **Secuencia condicionada:** solo valorar la siguiente campaña tras comprobar datos reales y revisión de Dirección; cada fecha, promoción, imagen, condiciones comerciales y presupuesto necesita **aprobación independiente**. No presupuestar ni ejecutar una campaña futura desde este documento.
 
+### 5 bis.8. Tres creatividades de integración Holded + ChatGPT: brief y ensayo visual (23/10/2026)
+
+> **Solo propuestas de imagen, no anuncios reales ni creatividades validadas para publicación.** Dirección aprueba generar **tres opciones de boceto** y desea icono de Holded + signo «+» + icono de ChatGPT, con EXPERT como marca del anunciante discreta. El contenido base es evergreen (sin Halloween). Se conservan sin cambios el presupuesto tentativo y el requisito de landing única, todavía no construida.
+
+**Propuesta de dirección artística común:** cuadrado 1:1 (preferible 1200×1200 px cuando se exporte), blanco o negro de fondo plano, tipografía sin remates, mucho espacio vacío, composición muy legible en formato pequeño, **Holded + ChatGPT** como relación de integración técnica autorizable, y firma **EXPERT · Solution Partner de Holded** secundaria pero visible para que no se confunda el anunciante. No fingir que Holded y OpenAI son coproductores de un nuevo software, ni respaldos oficiales de EXPERT por parte de OpenAI. Reemplazar cualquier dibujo aproximado por los **logos oficiales exactos** antes de publicación y verificar que EXPERT tenga visibilidad suficiente conforme a condiciones de marcas; se requiere validar derechos de uso de **ambos logotipos** y política de Ads.
+
+**Variantes de boceto a generar, no aprobadas como creatividades finales:**
+
+1. **V1 clara:** fondo blanco; marcas reconocibles Holded + ChatGPT en composición horizontal, integradas sin fusionar ni modificar los iconos; jerarquía visual minimalista. Idea del anuncio: «Conecta Holded con ChatGPT»; el título estructurado del chat card complementa la imagen.
+2. **V2 oscura:** fondo negro; composición idéntica a V1 salvo contraste/fondo y el tratamiento de marca oficial autorizado. Ideal para **comparación A/B del fondo** manteniendo texto, landing, puja y contexto idénticos.
+3. **V3 alternativa:** fondo blanco o marfil claro, mayor espacio negativo y composición vertical muy simple, manteniendo los mismos símbolos con «+». Mensaje estructurado: «Autogestiona tu empresa» o «Empieza por tu cuenta», sin pretender que la imagen por sí sola exponga condiciones legales.
+
+**Experimento y rotación (por decidir cuando se lance):**
+- La preferencia metodológica es **crear anuncios independientes por variante y dejarlos competir en paralelo** bajo el mismo presupuesto **TOTAL de campaña**, sin duplicarlo, con la misma landing e indicaciones de contexto. La plataforma no garantiza reparto equitativo de impresiones. Si se quiere aislar exclusivamente el efecto de color, V1/V2 deben usar **exactamente el mismo layout, texto estructurado, logos oficiales y destino** salvo fondo/contraste.
+- Alternar 1 día cada versión aumenta confusión por variaciones diarias/horarias del tráfico, y cambiar cada 3 días con presupuesto de 150 EUR puede dejar muestras escasas. Ambas son propuestas operativas posibles mediante gestión manual/estados si se permite, **no un calendario automático configurado ni una capacidad de rotación garantizada**. Es preferible observar impresiones, clics, CTR, CPC y **leads cualificados reales**, no solo visitas; no declarar ganador sin volumen suficiente.
+- Si las tres imágenes tienen titulares distintos, será una **prueba de conceptos**, no una prueba controlada solo del fondo. Para separar variables, comparar V1 contra V2 primero y usar V3 como idea alternativa después.
+- Las **tres imágenes** se generan como candidatos en la conversación, **no deben considerarse assets persistidos, oficiales, subidos a Ads Manager, guardados en el repositorio ni aprobados para anuncio** hasta que se comprueben sus archivos, logos y especificaciones.
+- En anuncios estándar, el **título y descripción son campos fuera de la imagen**; el trabajo visual debe evitar saturación y no imitar una tarjeta publicitaria de ChatGPT dentro de la imagen.
+
+**Condiciones de marca y procedencia:**
+- [Guía oficial OpenAI/ChatGPT](https://openai.com/brand/): requiere respetar marcas sin alterarlas, evitar sugerir patrocinio/aprobación por OpenAI, no dar a su marca más protagonismo que al anunciante y, en materiales de co-marca, tramitar validación necesaria.
+- Las normas de Holded Partner para usar su símbolo y denominación deben confirmarse antes de publicación. No simular ser cuenta oficial de Holded; el anunciante debe identificarse como EXPERT Solution Partner.
+- [ChatGPT Ads: Create Ads](https://help.openai.com/en/articles/20001212-create-ads-for-chatgpt) y [Launch Campaigns](https://help.openai.com/en/articles/20001209-launch-campaigns): imagen estática clara PNG/JPG, cuadrada y máximo 1200×1200 en guía de carga masiva; un destino por anuncio. **No activar, cargar, rotar ni desplegar** con esta decisión.
+
 ## 6. Flujo futuro KIA/Work (propuesta, no implementación)
 
 | Paso | Acción/estado | Límite |
@@ -441,6 +465,8 @@ Canales propuestos: resumen en Admin y envío consolidado a Dirección por el ca
 **Owner funcional:** Dirección EXPERT. **KIA:** coordinadora documental y futura operadora por permisos, no ejecutora actual. **Work:** herramienta futura a formar/validar. **Gates de producto:** se mantienen E0→E6; ninguna tarea de KIA nueva se adelanta por la prueba comercial.
 
 ## 8. Bitácora
+
+- **23/10/2026 — aprobación conceptual visual:** Dirección pide **tres bocetos minimalistas** (blanco, negro y opción alternativa) centrados en **Holded + ChatGPT**, signo más y marca EXPERT discreta. Se prefiere comparar anuncios en paralelo, no alternar diariamente sin medición; falta verificar logos oficiales y permisos de co-branding. Ningún anuncio creado, subido o activado.
 
 - **23/10/2026 — ampliación de portafolio estacional por Dirección:** descuento de hasta el **50 % sobre todo el precio del paquete de migración elegible**, no solo coste de datos; idea de campaña posterior **Black Friday** con regalo de migración condicionado a contratar **Avanzado o Colaborativo**; idea **Navidad/inicio 2027** con nuevos incentivos de arranque. Se documenta en [ficha de campañas estacionales](holded-campanas-estacionales-2026-2027-propuesta.md), sin publicar descuentos, activar promociones, cambiar precios ni abrir páginas.
 
