@@ -26,3 +26,10 @@ Cuando no exista `PERSONAL_CALCOM_BOOKING_URL`, la web personal puede obtener el
 **Hallazgo 23/10/2026:** la clave está almacenada bajo `cal_ksenia`, y el código la admite ahora como alias de servidor. No se ha verificado su autenticación ante Cal.com. Falta identificar de forma inequívoca `PERSONAL_CALCOM_EVENT_TYPE_ID` o configurar el enlace público `PERSONAL_CALCOM_BOOKING_URL`. Hasta entonces permanece el fallback, sin seleccionar automáticamente un evento de otra actividad. Nunca copiar el valor del secreto en GitHub ni en el chat.
 
 Esta fase no crea ni cancela reservas mediante la API, no registra webhooks y no conecta por sí misma las reuniones nuevas con EXPERT/KIA. La sincronización y el uso MCP deberán validarse de manera separada en una PR posterior; el webhook histórico de EXPERT no se reutiliza sin pruebas de seguridad.
+
+## Recuperación automática de reuniones existentes (23/10/2026)
+- La web personal consulta la identidad de la cuenta (`GET /v2/me`) y los tipos de reunión guardados (`GET /v2/event-types`) con `cal_ksenia` desde el servidor.
+- Cuando no existe una URL ni un ID preferente, ofrece los eventos públicos cuyo enlace pertenece inequívocamente al usuario autenticado. Conserva títulos, duración y enlaces del proveedor; no crea reuniones nuevas.
+- Descarta eventos ocultos, URLs de terceros, equipos y datos sin enlace público verificable. No expone la clave ni altera la agenda EXPERT.
+- La conexión con Outlook y la sincronización de nuevas reservas hacia EXPERT/KIA no se pueden certificar únicamente con el listado de eventos: requieren prueba operativa posterior.
+- Si la API falla o no devuelve eventos públicos verificados, permanece el sistema de respaldo. No inferir que una cita de 15 minutos existe si la API no lo confirma.
