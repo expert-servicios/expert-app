@@ -76,15 +76,18 @@ export function resolvePersonalCalEventFromResponse(
 }
 
 /**
- * Server-side, read-only API v2 lookup. Requires both CAL_API_KEY (Secret)
- * and an explicitly selected PERSONAL_CALCOM_EVENT_TYPE_ID (Config).
+ * Server-side, read-only API v2 lookup. Reuses the existing project-only
+ * `cal_ksenia` secret (or CAL_API_KEY) and an explicitly selected
+ * PERSONAL_CALCOM_EVENT_TYPE_ID (Config).
  *
  * An API key alone must never cause the first/any event to be published.
  * There are no mutations and no exposure of the token in browser code,
  * page source, errors, URLs or logs.
  */
 export async function resolvePersonalCalBookingUrlByApi(): Promise<string | null> {
-  const key = process.env.CAL_API_KEY?.trim();
+  // Vercel personal project already stores this credential as `cal_ksenia`.
+  // Prefer a canonical future CAL_API_KEY, but never require copying the secret.
+  const key = process.env.CAL_API_KEY?.trim() || process.env.cal_ksenia?.trim();
   const rawId = process.env.PERSONAL_CALCOM_EVENT_TYPE_ID?.trim();
   if (!key || !rawId || !/^\d{1,12}$/.test(rawId)) return null;
   const eventTypeId = Number(rawId);
