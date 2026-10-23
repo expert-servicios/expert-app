@@ -3,7 +3,7 @@
 **Alcance:** sólo el flujo público personal ES/RU de la rama `feat/ksenia-personal-site-20261020`. No cambiar el proveedor nativo de EXPERT, las citas históricas ni los webhooks de producción.
 
 ## Preflight observado
-- Proyecto Vercel `kseniailicheva`: configuradas `PERSONAL_MICROSOFT_BOOKINGS_URL` y `BOOKING_CALENDAR_PROVIDER`; sin variables `PERSONAL_CALCOM_BOOKING_URL` ni clave de Cal.com en el proyecto consultado.
+- Proyecto Vercel `kseniailicheva`: ya existe la variable cifrada `cal_ksenia` para Preview y Production (23/10/2026). No se ha leído ni verificado su valor. Siguen sin constar `PERSONAL_CALCOM_BOOKING_URL` ni `PERSONAL_CALCOM_EVENT_TYPE_ID`.
 - Proyecto Vercel `ksenia-expert`: permanece una variable antigua `NEXT_PUBLIC_CAL_FORMACION_LINK`, pero su valor no es una URL pública verificable; **no reutilizar** como enlace personal.
 - Código heredado `app/api/webhooks/cal/route.ts`: **LEGACY BOOKING COMPATIBILITY ONLY**. No abrir ese webhook para reservas nuevas sin prueba de end-to-end, identidad, firma e idempotencia.
 - Dominio `kseniailicheva.com`: todavía asignado a proyecto/redirección EXPERT; la nueva web personal está en preview. El cambio del dominio requiere revisión independiente.
@@ -21,8 +21,8 @@ Quitar `PERSONAL_CALCOM_BOOKING_URL` o dejarla vacía, redeplegar y se conserva 
 
 ## Ruta alternativa: API v2 de Cal.com (preparada, sin credencial activa)
 
-Cuando no exista `PERSONAL_CALCOM_BOOKING_URL`, la web personal puede obtener el enlace de reserva desde la API con **dos variables del proyecto `kseniailicheva`**: `CAL_API_KEY` (**Secret**, sólo en servidor) y `PERSONAL_CALCOM_EVENT_TYPE_ID` (**Config**, id numérico de la consulta de 15 minutos). Ambas son obligatorias. El selector es explícito: jamás elige el primer evento disponible. Usa peticiones GET a `https://api.cal.com/v2/event-types` y, cuando se necesite, `https://api.cal.com/v2/me`. Si la cuenta o el tipo de evento no quedan validados, mantiene el flujo de respaldo anterior.
+Cuando no exista `PERSONAL_CALCOM_BOOKING_URL`, la web personal puede obtener el enlace de reserva desde la API usando la variable cifrada **ya existente** `cal_ksenia` (o, si se configura expresamente, `CAL_API_KEY`; ambas sólo en servidor), más `PERSONAL_CALCOM_EVENT_TYPE_ID` (**Config**, id numérico de la consulta personal de 15 minutos). Son obligatorios una credencial válida y el ID explícito. No es necesario duplicar la credencial. El selector es explícito: jamás elige el primer evento disponible. Usa peticiones GET a `https://api.cal.com/v2/event-types` y, cuando se necesite, `https://api.cal.com/v2/me`. Si la cuenta o el tipo de evento no quedan validados, mantiene el flujo de respaldo anterior.
 
-**No se ha encontrado `CAL_API_KEY` en Vercel**, por lo que no existe autorización técnica para probar la cuenta ni configurar la variable con un valor supuesto. Guardarla sólo mediante Vercel Secret en proyecto personal, sin introducirla en GitHub ni en el chat.
+**Hallazgo 23/10/2026:** la clave está almacenada bajo `cal_ksenia`, y el código la admite ahora como alias de servidor. No se ha verificado su autenticación ante Cal.com. Falta identificar de forma inequívoca `PERSONAL_CALCOM_EVENT_TYPE_ID` o configurar el enlace público `PERSONAL_CALCOM_BOOKING_URL`. Hasta entonces permanece el fallback, sin seleccionar automáticamente un evento de otra actividad. Nunca copiar el valor del secreto en GitHub ni en el chat.
 
 Esta fase no crea ni cancela reservas mediante la API, no registra webhooks y no conecta por sí misma las reuniones nuevas con EXPERT/KIA. La sincronización y el uso MCP deberán validarse de manera separada en una PR posterior; el webhook histórico de EXPERT no se reutiliza sin pruebas de seguridad.
