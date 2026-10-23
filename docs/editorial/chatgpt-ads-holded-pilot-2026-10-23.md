@@ -52,6 +52,54 @@
 - Creatividades: título, texto e imagen por anuncio sujetos a revisión de claims, marca Holded y condiciones de Solution Partner. Mensajes no deben atribuir a EXPERT la fabricación del software ni garantizar resultados.
 - El idioma del texto o de una landing **no constituye un control técnico que garantice segmentación por idioma del chat**. Confirmar capacidades de segmentación reales en plataforma y política de anuncios antes de aprobar destino geográfico (España propuesto, por resolver).
 
+## 4 bis. Selección contextual B2B y control de relevancia (propuesta 23/10/2026)
+
+> **SOLO DISEÑO.** Dirección desea priorizar conversaciones de negocio que puedan necesitar un programa de facturación, contabilidad o ERP y reducir exposición a consultas particulares sin actividad económica. No existe autorización para activar segmentación ni campaña.
+
+### 4 bis.1 Lo que permite realmente ChatGPT Ads
+
+- La entrega de anuncios tiene en cuenta la intención y el contexto de la conversación actual, junto con texto del anuncio, landing y señales contextuales del anunciante. Referencia: [Ads in ChatGPT: The Basics](https://help.openai.com/en/articles/20001207-ads-in-chatgpt-the-basics).
+- Los **context hints** a nivel de grupo de anuncios describen conversaciones y necesidades relacionadas con la oferta. **No son keywords de coincidencia exacta, segmentación obligatoria, negativas, exclusiones de usuarios particulares ni garantía de aparecer solamente en chats concretos**. Referencia: [Create Ad Groups for ChatGPT](https://help.openai.com/en/articles/20001211-create-ad-groups-for-chatgpt).
+- Controles estrictos documentados de campaña: ubicaciones geográficas elegibles, plataformas y, cuando proceda, audiencias personalizadas; **no hay control documentado de 'solo chats de empresas' o 'excluir todas las conversaciones privadas'**. Para cuentas orientadas al EEE o Suiza, la documentación desaconseja audiencias personalizadas mientras no haya personalización de anuncios disponible. Referencia: [Create Campaigns for ChatGPT Ads](https://help.openai.com/en/articles/20001210-create-campaigns-for-chatgpt-ads).
+- Geografía propuesta España, pendiente de aprobación y compatibilidad real con la cuenta. El idioma del anuncio RU/UK/ES no confirma segmentación por idioma de chat. No dirigir por nacionalidad, procedencia exsoviética, etnia, religión ni datos personales sensibles; la segmentación se centra únicamente en la necesidad de negocio y el idioma de comunicación elegido.
+
+### 4 bis.2 Matriz de intención y elegibilidad comercial
+
+| Intención visible de la conversación | Uso recomendado | Encaje con Holded |
+| --- | --- | --- |
+| Alta de autónomo con primeras facturas y necesidad de gestionar cobros/gastos | Priorizar propuesta de prueba de 14 días | Alto |
+| Constitución de SL y búsqueda de software para emitir facturas o llevar cuentas | Priorizar prueba/demo | Alto |
+| Sustitución de programa de facturación, ERP o gestión contable | Priorizar demo o prueba según etapa de decisión | Alto |
+| Gestión de clientes, presupuestos, facturas, ventas y cobros de una actividad | Priorizar software si se confirma actividad | Alto |
+| Búsqueda general de asesoría, gestoría, alta RETA o trámite empresarial sin mención a facturación | Solo oportunidad condicional: adaptar el mensaje a necesidad real; no forzar Holded | Medio/por verificar |
+| Pregunta fiscal aislada (modelos, plazos, tasas) sin intención de usar software | No es contexto prioritario para anuncio de licencia | Bajo |
+| Declaración IRPF personal, trámites familiares, salud, ocio, recetas u otros asuntos privados sin necesidad empresarial | No deseado; el matching contextual debería restar relevancia, **sin garantía de exclusión técnica** | Fuera de foco |
+
+### 4 bis.3 Borradores de pistas contextuales (relevancia, no exclusión)
+
+**Grupo A, prueba gratuita 14 días** (usar solo descripciones verdaderas y adicionales al texto/landing):
+
+- «Persona que está comenzando una actividad económica en España y necesita organizar las primeras facturas, clientes y gastos de su negocio».
+- «Autónomo o pequeña empresa que compara opciones de software de facturación y contabilidad antes de comenzar a utilizar una herramienta».
+- «Empresa que quiere dejar las hojas de cálculo para registrar facturas, presupuestos y cobros con una herramienta de gestión».
+
+**Grupo B, demostración**:
+
+- «Responsable de una pequeña empresa que evalúa sustituir su programa actual de facturación o conectar procesos de venta y contabilidad».
+- «Empresa que busca conocer en una demostración cómo un ERP de gestión se adaptaría a sus procesos de facturas, gastos y clientes».
+
+Estas pistas son borradores orientativos, no requisitos de exact-match ni instrucción de revelar datos privados del usuario. Evitar listas largas de keywords, referencias a perfiles sensibles y afirmaciones de funciones o precios sin verificar. Un grupo no debe mezclar la venta de ERP con gestoría general o trámites que no requieran software.
+
+### 4 bis.4 Defensa económica y cualificación de leads
+
+1. Primera prueba como campaña de **clics (CPC)** propuesta, de forma que se cobre por clic válido y no por mera impresión; el CPC no impide que alguien sin necesidad empresarial haga clic. Conservar el **presupuesto total propuesto de 150 EUR** y máximo 10 días, pendiente de autorización. No prometer reparto ni conversión.
+2. Cada enlace lleva al formulario de EXPERT del idioma confirmado. A modo de cualificación, preguntar de forma breve y opcional por situación: autónomo/empresa/por constituir, si ya emite o prevé emitir facturas, software actual, prioridad (prueba o demo) e idioma de atención. No pedir NIF o datos financieros sensibles si no son imprescindibles en esta etapa.
+3. KIA clasifica **lead válido con necesidad de software**, solicitud meramente fiscal/gestoría, duplicado/anulado, demo, prueba, licencia contratada, sin decidir automáticamente que todos los formularios son candidatos a Holded.
+4. Reportes diarios y semanales separarán clics, formularios recibidos, leads empresariales válidos, demos, pruebas reales y licencias; medir coste por lead cualificado y cliente, y tasa de solicitudes particulares irrelevantes. No inferir conversaciones de ChatGPT a partir del UTM: solo registrar origen del anuncio y datos voluntarios del formulario.
+5. Revisión humana del texto y de la adecuación comercial antes de lanzar. Si los primeros resultados muestran demasiados particulares, reconsiderar textos, páginas y pistas de contexto, pausar con autorización y no ampliar gasto automáticamente.
+
+**Criterio de aceptación de esta sección:** anuncio de EXPERT coherente con facturación/ERP; landings ES/RU/UK efectivamente comprobadas; pistas específicas por grupo; límites estrictos reales separados de pistas blandas; segmentación geográfica válida; medición del porcentaje de leads no empresariales; sin prometer exclusión exacta de usuarios particulares. **Pendiente de aprobación y sin ejecución.**
+
 ### Copy conceptual — NO ANUNCIO COMPLETO
 
 - ES: **Prueba Holded 14 días** — Solicítala a EXPERT y te ayudamos con los primeros pasos.
@@ -142,6 +190,7 @@ Canales propuestos: resumen en Admin y envío consolidado a Dirección por el ca
 - [ ] Definir detección y alertas de coste por campaña; comprobar que no existen otras campañas que compartan un riesgo de gasto fuera del piloto.
 - [ ] Aprobar imagen/branding por escrito, definir creatividades y revisión del anunciante.
 - [ ] Autorizar por separado activación, gasto y calendario de la campaña. **No está otorgada.**
+- [ ] Revisar y aprobar matriz de intención B2B y context hints por grupo; verificar controles de targeting disponibles, ubicación España, páginas de destino y tasa real de leads particulares; no declarar exclusiones no soportadas.
 - [ ] Validar informes de KIA diario/semanal/final, estados atendidos/cancelados/anulados, cálculo sin duplicados, canal de entrega y horarios aprobados.
 - [ ] Validar agenda demostraciones, disponibilidad/confirmación/cancelación en proveedor autorizado, tareas vinculadas, cierres evidenciados y eliminación de obsoletas.
 - [ ] Tras campaña, conciliar gasto facturado (cargos por umbral) con inversión real; registrar solicitudes válidas, pruebas verificadas, demostraciones y clientes reales.
@@ -149,6 +198,8 @@ Canales propuestos: resumen en Admin y envío consolidado a Dirección por el ca
 **Owner funcional:** Dirección EXPERT. **KIA:** coordinadora documental y futura operadora por permisos, no ejecutora actual. **Work:** herramienta futura a formar/validar. **Gates de producto:** se mantienen E0→E6; ninguna tarea de KIA nueva se adelanta por la prueba comercial.
 
 ## 8. Bitácora
+
+- **23/10/2026 — nueva petición de Dirección:** afinar relevancia B2B de anuncios Holded para actividad empresarial, constitución de autónomos/SL y búsqueda de software/asesoría cuando exista necesidad de gestión; reducir consultas particulares sin prometer exclusión exacta. **Solo estudio y especificación.**
 
 - **23/10/2026 — nueva decisión de Dirección:** incluir resúmenes KIA diarios, semanales y cierre de campaña (atendidos, cancelados, anulados) y gestión de tareas/agenda de demostraciones Holded. **Solo registrado en el documento; sin programaciones ni envíos activados.**
 
