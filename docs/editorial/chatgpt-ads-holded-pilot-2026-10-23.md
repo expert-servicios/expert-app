@@ -13,6 +13,7 @@
 5. Idiomas de comunicación previstos: **español, ruso y ucraniano**, priorizando necesidades de empresarios que prefieren ruso en España, sin inferir nacionalidad, origen étnico u otras categorías protegidas. La compatibilidad y disponibilidad real de landings por idioma se validan antes de publicar.
 6. Las suscripciones mensuales de EXPERT **siguen comercialmente vigentes**, por decisión expresa de Dirección el 23/10/2026. Su página de referencia es https://expertconsulting.es/planes; la **licencia Holded es un coste separado** de la cuota EXPERT. Cualquier referencia histórica a retirada queda superada en lo comercial; la elegibilidad de suscripciones en catálogos automatizados Meta/ChatGPT sigue pendiente de validación por canal.
 7. Este es un **piloto externo de marketing propuesto**, no un nuevo módulo del producto; todas las ampliaciones de KIA/CRM/Work respetarán el Plan Maestro y sus fases/gates.
+8. **Tercera vía comercial complementaria:** la migración desde un software anterior a Holded se ofrece junto a A o B, no reemplaza esas modalidades. Dirección permite **diseñar hasta un 50 % de descuento sobre el precio TOTAL del paquete de migración elegible**, condicionado a aprobación de bases de promoción; no publicar rebaja todavía. Las próximas campañas **Black Friday (migración gratuita con ciertos planes) y Navidad/inicio 2027** quedan solo como ideas documentadas.
 
 ## 2. Cuenta y readiness a 23/10/2026
 
@@ -44,9 +45,9 @@
 
 **Contabilidad:** verificar entidad fiscal, domicilio, NIF/IVA, receptor de factura, justificantes y tratamiento tributario cuando existan documentos reales; no inventar condiciones de IVA ni emitir asiento anticipado.
 
-## 4. Estructura publicitaria revisada: dos modalidades comerciales (23/10/2026)
+## 4. Estructura publicitaria revisada: dos modalidades + tercera vía migración (23/10/2026)
 
-**Cambio de propuesta:** el objeto de la campaña no es simplemente vender la licencia o el clic a la demo. **EXPERT actúa simultáneamente como Solution Partner de Holded y como asesoría/gestoría especializada en Holded.** El cliente elige cuánto trabajo quiere asumir; **la prueba de 14 días y la demostración son entradas transversales**, no la definición primaria de los grupos de anuncios.
+**Cambio de propuesta:** el objeto de la campaña no es simplemente vender la licencia o el clic a la demo. **EXPERT actúa simultáneamente como Solution Partner de Holded y como asesoría/gestoría especializada en Holded.** El cliente elige cuánto trabajo quiere asumir entre autogestión (A) y gestión acompañada (B); **migración profesional (C) es un tercer servicio que puede añadirse a cualquiera de las dos modalidades**. La prueba de 14 días y la demostración son entradas transversales, no la definición primaria de los grupos de anuncios.
 
 ### 4.1. Dos vías, precios separados y promesas verificables
 
@@ -75,10 +76,11 @@ Existe MCP remoto oficial de Holded: https://mcp.holded.com/mcp. [Documentación
 
 ### 4.3. Jerarquía inicial recomendada y economía del piloto
 
-**Una sola campaña estándar EXPERT · Holded — Elige cómo gestionar tu negocio**, objetivo inicial CPC propuesto, **presupuesto total compartido hasta 150,00 EUR / 10 días** como hipótesis para aprobación futura. Separar por distinta necesidad, no crear campañas independientes ni repartir dos presupuestos completos sin nuevos datos.
+**Una sola campaña estándar EXPERT · Holded — Elige cómo gestionar tu negocio**, objetivo inicial CPC propuesto, **presupuesto total compartido hasta 150,00 EUR y máximo 10 días** como hipótesis para aprobación futura. Presentar tres vías en una sola landing, pero diferenciar el reclamo de cada anuncio; un anuncio estándar no lleva tres URLs ni requiere contar A/B/C en sus 100 caracteres. No crear tres campañas independientes ni multiplicar el presupuesto.
 
 - **Grupo A — Holded autogestión:** utilidad del software, facturación propia, conexión MCP oficial a ChatGPT; CTA principal «Solicitar prueba gratis 14 días», secundario «Solicitar demostración». **Destino publicitario previsto: la misma landing única futura** que el Grupo B, con sección de autogestión identificable, previa verificación de publicación. Mientras no exista, **no crear anuncio activo**.
 - **Grupo B — Holded + asesoría EXPERT:** ayuda del equipo humano con revisión fiscal/contable graduada y KIA, elección de grado de implicación; CTA principal «Comparar planes y solicitar orientación», secundario «Solicitar demostración». **Destino publicitario previsto: la misma landing única futura** que el Grupo A, con sección de gestión acompañada, enlazando a los planes existentes dentro de la propia página. No crear anuncio activo antes de verificarla.
+- **Grupo C — Migración a Holded (candidato adicional):** empresa con programa anterior y necesidad de exportación/puesta en marcha; CTA «Solicitar migración online». **Misma landing futura** con sección de migración. El descuento de **hasta 50 % sobre el pack completo elegible** se publicaría solo tras aprobar condiciones, precio de referencia y vigencia. Dado el presupuesto total reducido, validar si un tercer grupo simultáneo dispersa demasiado las impresiones; puede comenzar con anuncios más generales y medir los clics al CTA de migración dentro de la landing.
 - **Demostraciones** pueden proceder de cualquiera de los grupos; registrarlas con la modalidad de origen. Únicamente valorar un tercer grupo de demos si después existen volumen e inversión suficientes para justificarlo.
 - **Creatividades:** propuestas diferenciadas por beneficio (autonomía/control frente a acompañamiento profesional), idioma ES/RU/UK y CTA; verificación de marca Holded/partner. No anunciar que los planes de asesoría son gratis, ni que la licencia está incluida en 49 €.
 - **Contexto geográfico propuesto:** empresas y autónomos que operan en España, sujeción a controles reales de Ads Manager; idiomas por variantes y páginas verificadas, sin garantía de segmentación exacta del idioma del chat.
@@ -91,6 +93,12 @@ Existe MCP remoto oficial de Holded: https://mcp.holded.com/mcp. [Documentación
 - B / RU: **«Holded с поддержкой EXPERT»** — «Работайте сами или с бухгалтерской поддержкой. Узнайте о тарифах EXPERT».
 
 Estos ejemplos son **copy de planificación**, no anuncios completos ni previsualizaciones; carecen de imagen aprobada, página RU/UK verificada y control de longitud/claims. La revisión final de ES/RU/UK se hará por profesional competente y con el texto exacto y landing coherente.
+
+### 4.5. Tercera vía de ingresos: migración profesional a Holded
+
+La migración de software no implica necesariamente gestión tutorizada: puede ser un **servicio único** para un cliente de autogestión o una prestación adicional para quien contrata una suscripción EXPERT. La oferta comercial de Halloween podrá expresar **«Hasta 50 % de descuento en paquetes completos de migración solicitados online»**, **solo después** de aprobar las condiciones y mostrar precio habitual y reducido conforme corresponda. El descuento no se limita a un componente de traslado de datos. La automatización con IA reduce trabajo, pero la importación sigue precisando revisión proporcional y comprobación de integridad de datos, facturas, saldos e inventario cuando proceda.
+
+La [cartera estacional 2026/2027](holded-campanas-estacionales-2026-2027-propuesta.md) desarrolla los tres escenarios —Halloween, Black Friday, Navidad— y deja explícito que los regalos futuros **no son ofertas activas**.
 
 ## 4 bis. Selección contextual B2B y control de relevancia (propuesta 23/10/2026)
 
@@ -157,7 +165,7 @@ Estas pistas son borradores orientativos, no requisitos de exact-match ni instru
 
 ### 5 bis.1 Concepto y nomenclatura
 
-**Nombre de campaña/landing para visitantes:** **«Holded para tu empresa, a tu manera»**.
+**Concepto permanente de marca:** **«Holded para tu empresa, a tu manera»**. **Titular grande de la versión Halloween (borrador): «No tengas miedo de autogestionar tu empresa. Con Holded es posible».** La línea complementaria recuerda que EXPERT también ofrece gestión acompañada y migración.
 
 **Modalidades de la landing (conceptos de orientación, no nombres nuevos de planes):**
 - **A. Autogestión:** «Gestiona tu empresa a tu manera». El cliente lleva la gestión en Holded, sin obligación de cuota EXPERT. Puede conectar el MCP oficial Holded–ChatGPT **si cumple requisitos técnicos y de suscripción**.
@@ -171,9 +179,9 @@ Estas pistas son borradores orientativos, no requisitos de exact-match ni instru
 
 **Eyebrow:** EXPERT · Holded Solution Partner · Asesoría especializada
 
-# Holded para tu empresa, a tu manera
+# No tengas miedo de autogestionar tu empresa. Con Holded es posible
 
-Facturación, organización y gestión empresarial desde un mismo punto de partida. **Tú eliges:** llevar tu negocio directamente con Holded o contar con la revisión y el acompañamiento de EXPERT.
+**Que tu contabilidad no te dé sustos.** Con Holded puedes organizar tu facturación y controlar la actividad de tu empresa. **Tú eliges:** autogestionar tu negocio, apoyarte en la asesoría especializada de EXPERT o pedirnos una migración de tu software anterior a Holded. EXPERT es **Solution Partner de Holded y asesoría especializada**.
 
 Si todavía no utilizas Holded, **solicita una prueba gratuita de 14 días**. También puedes reservar una demostración y descubrir qué modalidad se adapta mejor a tu actividad.
 
@@ -211,9 +219,18 @@ Puedes elegir el nivel de participación de EXPERT según tus necesidades:
 
 **Importante:** todos los planes EXPERT con Holded requieren **licencia Holded contratada aparte**. Las cuotas de asesoría son independientes del precio del software, y el servicio incluido depende del contrato y de la preparación de la cuenta. KIA solo realizará funciones efectivamente habilitadas.
 
-#### ¿Ya tienes Holded?
+#### C. Migración a Holded: cambia de programa sin sustos
 
-No necesitas solicitar una segunda prueba. Cuéntanos qué utilizas hoy y si buscas mejorar tu configuración, migrar datos, conectar IA o recibir una revisión profesional. Podemos valorar **implantación, migración y formación** como servicios puntuales independientes.
+¿Ya tienes un programa de gestión y estás pensando en cambiar? EXPERT puede ayudarte a revisar la situación de partida, preparar los datos, configurar Holded y validar el resultado. **La migración es un servicio puntual** compatible tanto con autogestión como con asesoría mensual, según la situación de cada empresa.
+
+**Propuesta de campaña Halloween, PENDIENTE DE BASES Y PUBLICACIÓN:** «Hasta un 50 % de descuento sobre el precio completo de los paquetes de migración elegibles si solicitas el servicio exclusivamente online durante la promoción». Aplicaría al total del paquete seleccionado, no únicamente al traspaso técnico. Las condiciones, packs admitidos, fecha y precio final deberán figurar de forma accesible antes de publicar.
+
+**CTA:** «Consultar migración y promoción online» (formulario EXPERT con origen de campaña).
+**Enlace informativo:** «Ver servicios de migración y configuración» (catálogo activo EXPERT, validar ruta real en web).
+
+#### ¿Ya utilizas Holded?
+
+No necesitas solicitar una segunda prueba. Puedes contratar ayuda puntual de configuración, formación, migración de datos o un plan mensual según tus necesidades. **El precio de la licencia Holded es independiente** de estos servicios.
 
 **CTA:** «Ver implantación y formación» (enlaza a /holded).
 
@@ -248,7 +265,7 @@ Empieza con Holded por tu cuenta o apóyate en EXPERT para revisar y organizar l
 
 **Título del bloque:** «Cuéntanos cómo quieres trabajar con Holded».
 
-**Campos propuestos mínimos:** nombre, email, empresa o actividad (si la hay), situación «autónomo / sociedad / voy a empezar», «ya tengo Holded: sí/no», modalidad «autogestión / gestión acompañada / necesito orientación», intención «prueba / demostración / planes», idioma preferido ES/RU/UK; teléfono y mensaje opcionales. No pedir API key, contraseña ni datos bancarios. Consentimiento y política de privacidad claros, diferenciando atención a solicitud de futuras comunicaciones comerciales.
+**Campos propuestos mínimos:** nombre, email, empresa o actividad (si la hay), situación «autónomo / sociedad / voy a empezar», «ya tengo Holded: sí/no», modalidad «autogestión / gestión acompañada / necesito orientación», intención «prueba / demostración / planes / migración», en migraciones «software de origen» y volumen orientativo opcional; idioma preferido ES/RU/UK; teléfono y mensaje opcionales. No pedir API key, contraseña ni datos bancarios. Consentimiento y política de privacidad claros, diferenciando atención a solicitud de futuras comunicaciones comerciales.
 
 **Tras enviar:** «Hemos recibido tu solicitud. EXPERT la revisará y te comunicará los siguientes pasos. El envío del formulario no activa automáticamente una prueba ni confirma una reunión».
 
@@ -263,7 +280,7 @@ Empieza con Holded por tu cuenta o apóyate en EXPERT para revisar y organizar l
 - Texto orientado a empresas que facturan o van a comenzar, no a usuarios particulares sin actividad. Las variantes RU/UK deberán ser traducidas y revisadas; no inventar slugs ni declarar páginas publicadas.
 - Comprobar accesibilidad, contraste, móvil, velocidad, enlaces, crawlers y analítica antes de cualquier publicación. No modificar la web existente ni introducir la landing hasta autorización y gates del Plan Maestro.
 
-### 5 bis.5 Halloween 2026: campaña creativa opcional, **sin promoción económica inventada**
+### 5 bis.5 Halloween 2026: campaña creativa con **posible descuento real pendiente de bases**
 
 **Valoración:** sí a una **variante creativa ligera** (no como posicionamiento de marca). Halloween es el **31/10/2026** y la idea puede resultar oportuna en una campaña iniciada cerca de esa fecha, pero no debe contaminar la landing permanente, distraer del uso B2B o presentarse como descuento inexistente.
 
@@ -279,7 +296,7 @@ Empieza con Holded por tu cuenta o apóyate en EXPERT para revisar y organizar l
 - Texto: «Tú gestionas; EXPERT revisa. Planes desde 49 € + IVA, Holded aparte».
 - Destino: la **misma landing única futura**, ancla de gestión acompañada validada.
 
-**Condiciones estrictas:** no anunciar «oferta de Halloween» ni «descuento especial» si no existe autorización comercial específica; no insinuar que los 14 días terminan el 31/10; el reclamo estacional solo debe mostrarse antes del 31/10/2026 y, si se aprueba posteriormente una campaña de 10 días que continúe en noviembre, usar **creatividades atemporales** desde el 01/11. Separar variantes evergreen/Halloween para identificar resultados; respetar límites de Ads Manager (título hasta 50, cuerpo hasta 100, imagen JPG/PNG cuadrada máximo 1200×1200). El presupuesto total **permanece propuesto en 150 €**, no se duplica por añadir anuncios.
+**Condiciones estrictas:** Dirección permite diseñar **hasta 50 % sobre el paquete completo de migración elegible**, pero no anunciarlo ni aplicarlo a pedidos mientras no se aprueben públicamente sus bases (packs incluidos, habitual/reducido, solicitud online, fechas, IVA y límites legítimos). No insinuar que los 14 días terminan el 31/10; el reclamo estacional solo debe mostrarse antes del 31/10/2026 y, si se aprueba posteriormente una campaña de 10 días que continúe en noviembre, usar **creatividades atemporales** desde el 01/11. Separar variantes evergreen/Halloween para identificar resultados; respetar límites de Ads Manager (título hasta 50, cuerpo hasta 100, imagen JPG/PNG cuadrada máximo 1200×1200). El presupuesto total **permanece propuesto en 150 €**, no se duplica por añadir anuncios.
 
 **Opinión comercial registrada:** priorizar el enfoque permanente «Holded para tu empresa, a tu manera» y experimentar con la frase «sin sustos» solo si no retrasa la preparación ni la aprobación; mejor no lanzar precipitadamente antes de Halloween para aprovechar un motivo temporal.
 
@@ -326,6 +343,15 @@ El lema amplio de la landing e imagen puede ser **«Que tu contabilidad no te d�
 - Programación/cambio de variantes, gastos, alertas, rotación, scoring y automatización KIA quedan **sin implementar** hasta aprobación expresa y verificación de condiciones de Ads Manager. No asumir rotación equitativa ni reasignación automática correcta entre grupos; documentar decisiones y resultados solo cuando existan.
 
 **Criterio de decisión final:** primero readiness real de cuenta + landing + validación de idioma, revisión marca y aprobación humana; después escoger fechas reales y presupuesto total; por último seleccionar de 3 a 5 conceptos preparados solo los anuncios que sean útiles y medibles. No activar campaña en esta revisión.
+
+### 5 bis.7. Portafolio secuencial Halloween → Black Friday → Navidad
+
+**Documento operativo de propuestas futuras:** [EXPERT + Holded: campañas estacionales 2026/2027](holded-campanas-estacionales-2026-2027-propuesta.md). Es documentación subordinada, no un segundo plan maestro.
+
+- **Halloween 2026:** probar el mensaje «Sin sustos» y captar A autogestión, B acompañamiento y C migración; **posible descuento de hasta 50 % sobre la tarifa completa del paquete elegible**, condicionado a bases, fechas y autorización posteriores. Presupuesto publicitario propuesto de 150 EUR no autoriza gasto.
+- **Black Friday, 27/11/2026:** idea a evaluar tras resultados del primer piloto: **migración gratuita** en condiciones que se definan para quien contrate suscripción EXPERT **Avanzado o Colaborativo**. El regalo no está aprobado para publicar, se desconoce alcance/cupos y no incluye por defecto la licencia Holded.
+- **Navidad 2026 / inicio 2027:** idea posterior de incentivo por empezar el nuevo ejercicio con software bien configurado, explorando beneficio de configuración inicial o formación todavía sin concretar. **No afirmar que una sociedad existente no necesite ninguna migración o saldos de apertura**.
+- **Secuencia condicionada:** solo valorar la siguiente campaña tras comprobar datos reales y revisión de Dirección; cada fecha, promoción, imagen, condiciones comerciales y presupuesto necesita **aprobación independiente**. No presupuestar ni ejecutar una campaña futura desde este documento.
 
 ## 6. Flujo futuro KIA/Work (propuesta, no implementación)
 
@@ -406,13 +432,17 @@ Canales propuestos: resumen en Admin y envío consolidado a Dirección por el ca
 - [ ] Revisar 5 títulos propuestos y seleccionar un número reducido de anuncios por grupo, medir CTR y conversión a lead válido sin confundir impresiones con ventas.
 - [ ] Autorizar por separado activación, gasto y calendario de la campaña. **No está otorgada.**
 - [ ] Revisar y aprobar matriz de intención B2B y context hints por grupo; verificar controles de targeting disponibles, ubicación España, páginas de destino y tasa real de leads particulares; no declarar exclusiones no soportadas.
-- [ ] Validar informes de KIA diario/semanal/final, estados atendidos/cancelados/anulados, cálculo sin duplicados, **clientes Holded distintos de suscripciones EXPERT y desglose A/B**, canal de entrega y horarios aprobados.
+- [ ] Revisar reglas de migración C, paquetes completos elegibles, cálculo del descuento máximo de 50 % sobre el total, base de precio verificable y definición de solicitud online; **no activar precios reducidos** antes de aprobación.
+- [ ] Someter por separado a revisión posterior los regalos de migración Black Friday con Avanzado/Colaborativo y el incentivo de Navidad/inicio 2027. Mantenerlos como ideas sin vigencia comercial.
+- [ ] Validar informes de KIA diario/semanal/final, estados atendidos/cancelados/anulados, cálculo sin duplicados, **clientes Holded distintos de suscripciones EXPERT y desglose A/B/C**, canal de entrega y horarios aprobados.
 - [ ] Validar agenda demostraciones, disponibilidad/confirmación/cancelación en proveedor autorizado, tareas vinculadas, cierres evidenciados y eliminación de obsoletas.
 - [ ] Tras campaña, conciliar gasto facturado (cargos por umbral) con inversión real; registrar solicitudes válidas, pruebas verificadas, demostraciones y clientes reales.
 
 **Owner funcional:** Dirección EXPERT. **KIA:** coordinadora documental y futura operadora por permisos, no ejecutora actual. **Work:** herramienta futura a formar/validar. **Gates de producto:** se mantienen E0→E6; ninguna tarea de KIA nueva se adelanta por la prueba comercial.
 
 ## 8. Bitácora
+
+- **23/10/2026 — ampliación de portafolio estacional por Dirección:** descuento de hasta el **50 % sobre todo el precio del paquete de migración elegible**, no solo coste de datos; idea de campaña posterior **Black Friday** con regalo de migración condicionado a contratar **Avanzado o Colaborativo**; idea **Navidad/inicio 2027** con nuevos incentivos de arranque. Se documenta en [ficha de campañas estacionales](holded-campanas-estacionales-2026-2027-propuesta.md), sin publicar descuentos, activar promociones, cambiar precios ni abrir páginas.
 
 - **23/10/2026 — valoración adicional de Dirección:** reconsiderar fin en 31/10, 01/11 o 03/11; seleccionar 3–5 titulares creativos desde «Que tu contabilidad no te dé sustos» y «Autogestión sin miedo», con variantes comparables y métricas por anuncio. **Solo documentación y borradores; fechas, anuncios y gasto sin autorizar.**
 
