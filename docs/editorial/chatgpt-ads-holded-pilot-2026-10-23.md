@@ -77,8 +77,8 @@ Existe MCP remoto oficial de Holded: https://mcp.holded.com/mcp. [Documentación
 
 **Una sola campaña estándar EXPERT · Holded — Elige cómo gestionar tu negocio**, objetivo inicial CPC propuesto, **presupuesto total compartido hasta 150,00 EUR / 10 días** como hipótesis para aprobación futura. Separar por distinta necesidad, no crear campañas independientes ni repartir dos presupuestos completos sin nuevos datos.
 
-- **Grupo A — Holded autogestión:** utilidad del software, facturación propia, conexión MCP oficial a ChatGPT; CTA principal «Solicitar prueba gratis 14 días», secundario «Solicitar demostración». Destino EXPERT https://expertconsulting.es/planes/gratuito o página Holded propia validada.
-- **Grupo B — Holded + asesoría EXPERT:** ayuda del equipo humano con revisión fiscal/contable graduada y KIA, elección de grado de implicación; CTA principal «Comparar planes y solicitar orientación», secundario «Solicitar demostración». Destino EXPERT https://expertconsulting.es/planes o ficha de plan vigente.
+- **Grupo A — Holded autogestión:** utilidad del software, facturación propia, conexión MCP oficial a ChatGPT; CTA principal «Solicitar prueba gratis 14 días», secundario «Solicitar demostración». **Destino publicitario previsto: la misma landing única futura** que el Grupo B, con sección de autogestión identificable, previa verificación de publicación. Mientras no exista, **no crear anuncio activo**.
+- **Grupo B — Holded + asesoría EXPERT:** ayuda del equipo humano con revisión fiscal/contable graduada y KIA, elección de grado de implicación; CTA principal «Comparar planes y solicitar orientación», secundario «Solicitar demostración». **Destino publicitario previsto: la misma landing única futura** que el Grupo A, con sección de gestión acompañada, enlazando a los planes existentes dentro de la propia página. No crear anuncio activo antes de verificarla.
 - **Demostraciones** pueden proceder de cualquiera de los grupos; registrarlas con la modalidad de origen. Únicamente valorar un tercer grupo de demos si después existen volumen e inversión suficientes para justificarlo.
 - **Creatividades:** propuestas diferenciadas por beneficio (autonomía/control frente a acompañamiento profesional), idioma ES/RU/UK y CTA; verificación de marca Holded/partner. No anunciar que los planes de asesoría son gratis, ni que la licencia está incluida en 49 €.
 - **Contexto geográfico propuesto:** empresas y autónomos que operan en España, sujeción a controles reales de Ads Manager; idiomas por variantes y páginas verificadas, sin garantía de segmentación exacta del idioma del chat.
@@ -151,6 +151,140 @@ Estas pistas son borradores orientativos, no requisitos de exact-match ni instru
 
 **Atribución propuesta:** `utm_source=chatgpt`, `utm_medium=paid`, `utm_campaign=expert_holded_piloto_2026`, y un identificador de variante/campaña de origen compatible con el sistema actual y consentimiento. Guardar idioma preferido, fecha, landing, **modalidad comercial elegida (autogestión/tutorizada/sin decidir),** intención (trial/demo/plan/consulta), estado, evento y vínculo a ficha/hoja registral cuando exista identidad verificable. No guardar texto del chat de terceros ni segmentar por origen nacional real o inferido.
 
+## 5 bis. Landing única EXPERT + Holded: borrador editorial y UX (23/10/2026)
+
+> **DOCUMENTACIÓN EXCLUSIVAMENTE.** No se ha creado página, ruta, componente, formulario, imagen, traducción, oferta ni evento de analítica. Este bloque es un borrador de copy y estructura visual para una **futura landing pública única**, que sustituiría las páginas dispersas como destino de **esta campaña** (las páginas de catálogo existentes siguen vigentes). Ninguna modificación comercial ni aprobación de publicación.
+
+### 5 bis.1 Concepto y nomenclatura
+
+**Nombre de campaña/landing para visitantes:** **«Holded para tu empresa, a tu manera»**.
+
+**Modalidades de la landing (conceptos de orientación, no nombres nuevos de planes):**
+- **A. Autogestión:** «Gestiona tu empresa a tu manera». El cliente lleva la gestión en Holded, sin obligación de cuota EXPERT. Puede conectar el MCP oficial Holded–ChatGPT **si cumple requisitos técnicos y de suscripción**.
+- **B. Gestión acompañada:** «Tú decides cuánto hacer. EXPERT te acompaña». El cliente utiliza Holded y EXPERT + KIA acompañan con intervención profesional según **Supervisión, Avanzado, Colaborativo o Personalizado**. Preferimos «gestión acompañada» a «controlada»: no implica que el despacho se haga cargo de todo por cualquier cuota.
+
+**URL futura:** por decidir tras revisar arquitectura SEO y slug existente; **NO asignar una URL como si ya existiera**. Una sola URL publicada para los anuncios de ambas modalidades con UTM por campaña y grupo; se pueden usar anclas de sección si se comprueba su funcionamiento y rastreo (ej. #autogestion / #acompanada); cada anuncio tendrá una sola URL de destino, aunque la propia landing contenga varios botones a rutas de EXPERT.
+
+**UX sugerida:** portada de marca EXPERT + «Solution Partner Holded», subtítulo B2B, dos tarjetas visibles A/B en escritorio y apiladas en móvil; comparación sucinta de responsabilidades; planes y detalles accesibles; sección conector MCP real; CTA de prueba y demo; bloque de confianza; FAQ; formulario simplificado y privacidad. Mantener primer CTA visible en móvil y un CTA secundario sin generar cinco opciones competidoras en el hero.
+
+### 5 bis.2 Copy ES — PROPUESTA, no texto aprobado
+
+**Eyebrow:** EXPERT · Holded Solution Partner · Asesoría especializada
+
+# Holded para tu empresa, a tu manera
+
+Facturación, organización y gestión empresarial desde un mismo punto de partida. **Tú eliges:** llevar tu negocio directamente con Holded o contar con la revisión y el acompañamiento de EXPERT.
+
+Si todavía no utilizas Holded, **solicita una prueba gratuita de 14 días**. También puedes reservar una demostración y descubrir qué modalidad se adapta mejor a tu actividad.
+
+**Botones de portada:** «Solicitar prueba de 14 días» | «Ver modalidades» (desplazar a comparación). **Enlace adicional discretamente visible:** «Solicitar demostración».
+
+#### A. Autogestión: tú llevas las riendas
+
+Para autónomos y empresas que prefieren organizar directamente sus facturas, contactos, compras y cobros.
+
+- Trabaja por tu cuenta en Holded con la licencia adecuada para tu negocio.
+- Si tu cuenta dispone de acceso API y los requisitos de ChatGPT lo permiten, conecta **el MCP oficial de Holded** para consultar información autorizada en lenguaje natural, respetando los permisos que concedas.
+- Sin obligación de contratar una suscripción de asesoría EXPERT.
+- Si quieres ayuda para arrancar, puedes contratar aparte configuración, migración o formación con EXPERT.
+
+**CTA:** «Quiero probar Holded» (enlaza al formulario EXPERT de prueba de 14 días).
+**Secundario:** «Solicitar demostración».
+
+**Nota de claridad:** el conector de Holded con ChatGPT no sustituye tus obligaciones ni convierte por sí solo en automáticos todos los procesos fiscales o contables. El acceso depende del plan, la API, los permisos y las funciones disponibles.
+
+#### B. Gestión acompañada: tu negocio, con respaldo profesional
+
+Para quienes quieren seguir teniendo visibilidad sobre sus números, pero prefieren contar con **personas expertas y apoyo de KIA** para revisar, validar y organizar parte de la gestión.
+
+Puedes elegir el nivel de participación de EXPERT según tus necesidades:
+
+| Plan EXPERT existente | Precio mensual indicado | Qué distingue la modalidad |
+| --- | --- | --- |
+| **Supervisión** | **49 € + IVA** | Tú llevas Holded y EXPERT realiza revisión mensual básica; no incluye impuestos ni contabilidad delegada. |
+| **Avanzado** | **99 € + IVA** | Revisión y preparación fiscal periódica básica según alcance; sin nóminas/laboral por defecto. |
+| **Colaborativo** | **199 € + IVA** | Tú organizas y EXPERT revisa/valida mensualmente; fiscalidad e informes según alcance; alto volumen y nóminas requieren presupuesto. |
+| **Personalizado** | **A consultar** | Intervención adaptada a varias empresas, volumen elevado, laboral u operativa compleja, previo presupuesto. |
+
+**CTA:** «Comparar planes de EXPERT» (enlaza a /planes).
+**Secundario:** «Quiero asesoramiento sobre mi caso» (formulario EXPERT o reserva confirmada).
+
+**Importante:** todos los planes EXPERT con Holded requieren **licencia Holded contratada aparte**. Las cuotas de asesoría son independientes del precio del software, y el servicio incluido depende del contrato y de la preparación de la cuenta. KIA solo realizará funciones efectivamente habilitadas.
+
+#### ¿Ya tienes Holded?
+
+No necesitas solicitar una segunda prueba. Cuéntanos qué utilizas hoy y si buscas mejorar tu configuración, migrar datos, conectar IA o recibir una revisión profesional. Podemos valorar **implantación, migración y formación** como servicios puntuales independientes.
+
+**CTA:** «Ver implantación y formación» (enlaza a /holded).
+
+#### Pruébalo antes de decidir
+
+**14 días gratuitos de Holded, sin tarjeta de crédito**, según las condiciones publicadas de la prueba. Presenta tu solicitud en EXPERT; nuestro equipo la revisa y gestiona **manualmente** el alta desde la cuenta de Solution Partner. **No se activa de forma automática al enviar el formulario.**
+
+**CTA principal:** «Solicitar prueba gratuita».
+**CTA alternativo:** «Reservar demostración de 30 minutos».
+
+#### Preguntas frecuentes breves
+
+**¿Puedo utilizar solo Holded sin asesoría EXPERT?** Sí. Puedes gestionar el negocio por tu cuenta; la contratación de acompañamiento profesional es opcional.
+
+**¿La licencia Holded está incluida en los 49 €, 99 € o 199 € mensuales?** No. Es una contratación aparte de la suscripción de asesoría EXPERT.
+
+**¿Puedo hablar con mis datos de Holded mediante ChatGPT?** Hay un conector MCP oficial de Holded compatible con asistentes que admiten MCP remoto. Requiere cuenta con acceso a la API y autorización; sus posibilidades dependen de permisos y plan. No compartir credenciales por formulario ni por chat.
+
+**¿Quién activa mi prueba?** EXPERT revisa la solicitud y tramita manualmente el alta cuando corresponda. Te confirmaremos cuándo esté realmente activa.
+
+**¿Y si no sé qué modalidad necesito?** Reserva una demostración o una consulta y te orientaremos sin contratar automáticamente servicios.
+
+#### Cierre
+
+**Da el siguiente paso sin complicaciones.**
+
+Empieza con Holded por tu cuenta o apóyate en EXPERT para revisar y organizar la gestión de tu empresa.
+
+**Botones:** «Probar Holded 14 días» | «Solicitar demostración» | «Comparar planes».
+
+### 5 bis.3 Microcopy del formulario y responsabilidades
+
+**Título del bloque:** «Cuéntanos cómo quieres trabajar con Holded».
+
+**Campos propuestos mínimos:** nombre, email, empresa o actividad (si la hay), situación «autónomo / sociedad / voy a empezar», «ya tengo Holded: sí/no», modalidad «autogestión / gestión acompañada / necesito orientación», intención «prueba / demostración / planes», idioma preferido ES/RU/UK; teléfono y mensaje opcionales. No pedir API key, contraseña ni datos bancarios. Consentimiento y política de privacidad claros, diferenciando atención a solicitud de futuras comunicaciones comerciales.
+
+**Tras enviar:** «Hemos recibido tu solicitud. EXPERT la revisará y te comunicará los siguientes pasos. El envío del formulario no activa automáticamente una prueba ni confirma una reunión».
+
+**Reglas técnicas futuras (no ejecutar):** el formulario nuevo debe **reutilizar** la captación canónica EXPERT, KIA, trazabilidad/UTM, protección antispam, consentimiento, ledger y agenda autorizada. Enviar al cliente y al administrador una confirmación solo después de aceptación del proveedor de correo. Una reserva únicamente se considera confirmada tras su lectura posterior en el calendario real. No se crean tareas, citas ni leads por redactar este documento.
+
+### 5 bis.4 Recomendaciones SEO y visuales para una aprobación posterior
+
+- **Title SEO tentativo:** «Holded con EXPERT | Autogestión o asesoría acompañada».
+- **Meta descripción tentativa:** «Prueba Holded 14 días con EXPERT Solution Partner. Gestiona tu empresa por tu cuenta o elige un plan de asesoría y revisión profesional. Licencia aparte».
+- **H1:** «Holded para tu empresa, a tu manera».
+- Identidad EXPERT **azul marino/dorado**; logo EXPERT oficial y uso del logo Holded solo conforme a su política de marca. Captura o ilustración de software legible con apariencia realista, no pantallas que prometan funciones inexistentes. No generar ni subir imágenes en esta PR.
+- Texto orientado a empresas que facturan o van a comenzar, no a usuarios particulares sin actividad. Las variantes RU/UK deberán ser traducidas y revisadas; no inventar slugs ni declarar páginas publicadas.
+- Comprobar accesibilidad, contraste, móvil, velocidad, enlaces, crawlers y analítica antes de cualquier publicación. No modificar la web existente ni introducir la landing hasta autorización y gates del Plan Maestro.
+
+### 5 bis.5 Halloween 2026: campaña creativa opcional, **sin promoción económica inventada**
+
+**Valoración:** sí a una **variante creativa ligera** (no como posicionamiento de marca). Halloween es el **31/10/2026** y la idea puede resultar oportuna en una campaña iniciada cerca de esa fecha, pero no debe contaminar la landing permanente, distraer del uso B2B o presentarse como descuento inexistente.
+
+**Concepto elegido:** **«Que tu contabilidad no te dé sustos»**. Puede ser una pequeña franja temporal de campaña/creatividad (no un lanzamiento de funcionalidad ni oferta adicional), donde aparecen facturas en orden, un entorno de negocio tranquilo y un acento naranja discreto sobre los colores corporativos. Sin brujas, monstruos invasivos ni miedo real a sanciones.
+
+**Variante A — Autogestión (conceptual):**
+- Título: «Holded sin sustos».
+- Texto: «Organiza tus facturas. Solicita 14 días gratis con EXPERT».
+- Destino: la **misma landing única futura**, ancla de autogestión validada.
+
+**Variante B — Gestión acompañada (conceptual):**
+- Título: «Cuentas sin sustos».
+- Texto: «Tú gestionas; EXPERT revisa. Planes desde 49 € + IVA, Holded aparte».
+- Destino: la **misma landing única futura**, ancla de gestión acompañada validada.
+
+**Condiciones estrictas:** no anunciar «oferta de Halloween» ni «descuento especial» si no existe autorización comercial específica; no insinuar que los 14 días terminan el 31/10; el reclamo estacional solo debe mostrarse antes del 31/10/2026 y, si se aprueba posteriormente una campaña de 10 días que continúe en noviembre, usar **creatividades atemporales** desde el 01/11. Separar variantes evergreen/Halloween para identificar resultados; respetar límites de Ads Manager (título hasta 50, cuerpo hasta 100, imagen JPG/PNG cuadrada máximo 1200×1200). El presupuesto total **permanece propuesto en 150 €**, no se duplica por añadir anuncios.
+
+**Opinión comercial registrada:** priorizar el enfoque permanente «Holded para tu empresa, a tu manera» y experimentar con la frase «sin sustos» solo si no retrasa la preparación ni la aprobación; mejor no lanzar precipitadamente antes de Halloween para aprovechar un motivo temporal.
+
+**Estado:** borradores y conceptos; **sin landing creada, imágenes creadas, anuncios configurados, precios alterados, publicaciones, tareas ni gastos**.
+
 ## 6. Flujo futuro KIA/Work (propuesta, no implementación)
 
 | Paso | Acción/estado | Límite |
@@ -219,6 +353,8 @@ Canales propuestos: resumen en Admin y envío consolidado a Dirección por el ca
 - [ ] Validar condiciones contractuales de publicidad/marca Holded para Solution Partners.
 - [ ] Verificar en las condiciones del partner la venta asistida de licencias en ambos recorridos, y comprobar que cada CTA, precio y formulario diferencia **licencia Holded aparte** de **cuota EXPERT con IVA**.
 - [ ] Validar el conector oficial MCP Holded para ChatGPT con cuenta autorizada y acceso API; documentar permisos/limitaciones y no prometer escrituras ni automatización fiscal total.
+- [ ] Revisar y aprobar el borrador de landing única A/B con copy/UX, marca, precios, CTAs, formulario y anclas; crear la página solo en una fase expresamente autorizada.
+- [ ] Aprobar o descartar la creatividad temporal Halloween 2026 sin cambiar precios ni afirmar descuento inexistente; no usar después del 31/10/2026.
 - [ ] Verificar landing y formulario ES; descubrir y probar realmente landings/formularios RU y UK.
 - [ ] Test sintético de envío de formularios y de demos, CRM, KIA, permisos/RGPD, duplicados, confirmaciones y agenda sin producir altas reales.
 - [ ] Comprobar si `campaign-total=150,00 EUR` / 10 días es aceptado por el flujo real y que el resultado queda inicialmente **pausado**.
@@ -233,6 +369,8 @@ Canales propuestos: resumen en Admin y envío consolidado a Dirección por el ca
 **Owner funcional:** Dirección EXPERT. **KIA:** coordinadora documental y futura operadora por permisos, no ejecutora actual. **Work:** herramienta futura a formar/validar. **Gates de producto:** se mantienen E0→E6; ninguna tarea de KIA nueva se adelanta por la prueba comercial.
 
 ## 8. Bitácora
+
+- **23/10/2026 — petición de Dirección:** borrador documental de una landing única EXPERT + Holded con autogestión y gestión acompañada, CTAs para prueba, demo y planes; propuesta de creatividad Halloween «Que tu contabilidad no te dé sustos» sin descuento nuevo. Solo contenido, ninguna creación de página ni cambio publicitario.
 
 - **23/10/2026 — corrección comercial esencial de Dirección:** EXPERT es **Solution Partner Holded y asesoría de Holded**; se aprueban para **estudio**, no lanzamiento, dos **modalidades A autogestión con MCP oficial Holded-ChatGPT y B gestión tutorizada EXPERT + KIA/equipo humano con planes mensuales vigentes**. Las CTAs de prueba 14 días y demo son transversales. Licencia Holded aparte de cuota EXPERT y medición diferenciada de clientes partner vs suscriptores. No se cambia precio, cuenta publicitaria ni producción.
 
