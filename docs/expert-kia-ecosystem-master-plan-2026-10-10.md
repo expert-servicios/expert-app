@@ -6,6 +6,9 @@
 
 <!-- ECOSYSTEM_CHECKPOINT phase=E0 phase_status=IN_PROGRESS next=E0-M3-06-admin-users-tenant-object-scope-audit closed_phase=NONE scope_frozen=true production_flags=UNCHANGED -->
 
+> **Registro comercial externo 23/10/2026 — ChatGPT Ads / Holded (SOLO PROPUESTA).** Se documenta la [ficha subordinada del piloto EXPERT–Holded](editorial/chatgpt-ads-holded-pilot-2026-10-23.md), con presupuesto total propuesto de **150 EUR** y duración máxima **10 días**, sujeto a verificación de producto y aprobación posterior. Dirección **no autoriza** crear/activar campañas ni gastos, conectar KIA/Work a publicidad o generar altas reales de prueba. El flujo futuro llevará todos los anuncios a formularios propios EXPERT, con ES/RU/UK verificables, revisión humana y activación manual en portal Partner; registrar la meta de 20 clientes Holded hasta el 31/12/2026 como objetivo comercial, no resultado. **Corrección de vigencia comercial:** Dirección confirma que las suscripciones mensuales EXPERT continúan en vigor; las referencias históricas a retirada no deben usarse para inferir su baja actual. No cambia E0, el freeze, la cola de tareas ni los gates E0→E6.
+
+
 ## 0. Mandato aprobado y reglas innegociables
 
 Dirección EXPERT autoriza la ejecución progresiva del ecosistema aprobado, **E0 → E1 → E2 → E3 → E4 → E5 → E6**, sin abrir funcionalidades, líneas de trabajo o rediseños ajenos. Cada fase se subdivide en módulos verificables. **No iniciar desarrollo de la siguiente fase hasta que la actual esté finalizada, auditada, probada, con evidencias y cierre registrado en este archivo.** Las PRs documentales previas no equivalen a funcionalidades entregadas.
