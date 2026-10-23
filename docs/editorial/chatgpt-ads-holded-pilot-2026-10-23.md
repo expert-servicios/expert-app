@@ -85,6 +85,51 @@ Estos son ejemplos editoriales pendientes de revisión, **sin destino por idioma
 
 La **futura automatización casi integral** depende de formación humana a Work, capacidad verificable de interfaz, permisos de servicio, MFA/CAPTCHA, términos del proveedor, auditoría, seguridad y control de costes. Si falla cualquier paso o se requiere autorización, detener y escalar; nunca simular alta ni enviar confirmación falsa.
 
+## 6 bis. Operativa de KIA: informes periódicos, agenda y tareas (PROPUESTA 23/10/2026)
+
+> **SOLO DISEÑO: no se han programado ni activado informes, notificaciones, tareas, eventos, cron ni operaciones de Work.** Reutilizar una sola KIA, CRM y atribución, citas, tareas e historial existentes y sujetos a permisos. No abrir otro CRM, agenda, bot o scheduler paralelo.
+
+### 6 bis.1 Estados de solicitudes y definiciones para reporting
+
+Cada solicitud conserva identificador estable, origen/campaña/anuncio, idioma preferido, tipo (prueba/demostración), fecha, contacto y empresa verificados, consentimiento y eventos de evolución, con zona horaria Europe/Madrid. Los cambios de estado llevan actor, fuente y timestamp; no duplicar contactos por mera coincidencia de nombre ni abrir expedientes por una solicitud.
+
+- **Recibida:** formulario registrado sin confirmar todavía la atención. **Pendiente de revisión:** requiere validar datos, acción o autorización.
+- **Atendida:** existe respuesta sustantiva realmente entregada, llamada realizada o actuación humana contrastable; un acuse automático, borrador o mensaje no entregado no computan.
+- **Cancelada:** el interesado o EXPERT retira una solicitud válida o cancela una reunión; conservar motivo y quién la canceló. Una demo reprogramada no equivale a un lead definitivamente cancelado.
+- **Anulada:** solicitud inválida, spam o duplicado acreditado, o registro corregido por el administrador; conservar únicamente la trazabilidad legítima según política de retención. No computa como lead válido.
+- **Descartada/no interesada:** cierre comercial sin venta, diferente de anulada/cancelada.
+- **Demostración:** solicitada, pendiente de confirmación, confirmada, realizada, reprogramada, cancelada o no-show, independiente del estado comercial del lead.
+- **Prueba gratuita:** solicitada, aprobada por Dirección, alta manual pendiente, activada con evidencia del portal Solution Partner, vencida o finalizada. No considerar prueba activada por una simple solicitud.
+- **Convertida:** licencia o cliente contratado y acreditado, diferente de lead, demo o prueba. **Bloqueada/sin verificar:** mantener pendiente y no inventar cierre.
+
+El panel mostrará una sola categoría de **estado actual por lead único** más las **transiciones ocurridas en cada período**; no duplicar al mismo lead por pasar de recibido a atendido o convertido.
+
+### 6 bis.2 Resúmenes que KIA enviará a Dirección tras autorización y QA
+
+| Entrega | Periodo | Datos y decisiones |
+| --- | --- | --- |
+| **Diaria** | Día natural Europe/Madrid, horario configurable | Leads nuevos únicos, atendidos, pendientes, cancelados, anulados, descartados y convertidos; solicitudes de demo y reuniones confirmadas, realizadas, aplazadas, canceladas y no-show; pruebas autorizadas y realmente activadas; gasto si existe dato del proveedor. Incluir **solo tareas pendientes exigibles hoy** y por separado propuesta de tareas para mañana con sus prioridades. |
+| **Semanal** | Semana ISO, hora configurable | Acumulados conciliados, evolución por campaña/anuncio e idioma de preferencia, calidad de leads, motivos de cancelación/anulación, reuniones, pruebas y conversiones, vencimientos, pendientes reales y bloqueos; coste por lead válido y cliente **solo cuando haya cifras fiables**. |
+| **Fin de campaña** | Desde inicio real hasta cierre comprobado, y corrección posterior si se regulariza gasto o conversión | Comparación de inversión real con tope autorizado de 150 EUR; impresiones/clics si reportados; leads válidos únicos, atendidos, cancelados, anulados, descartados, demos, pruebas activadas, clientes efectivos; coste y resultados por idioma y oferta; pendientes abiertos, incidencias y recomendación de siguiente acción. |
+
+Todos los informes incluirán fecha de corte, fuente de datos y vínculo al panel/registro. Para fuentes que falten, escribir **sin datos verificados** y no declarar cero. Si no hubo solicitudes, consignar 0 sin inventar trabajo. Las cancelaciones y anulaciones son eventos de histórico, **no tareas pendientes**. La campaña puede terminar antes de que venzan todas las pruebas: el informe final recogerá los seguimientos posteriores sin cerrar leads ni atribuir ventas sin evidencia; emitir conciliación adicional de resultados si procede.
+
+Canales propuestos: resumen en Admin y envío consolidado a Dirección por el canal configurado, con push **solo por reuniones nuevas, bloqueos o decisiones urgentes**. Canal exacto y horarios diarios/semanales deben aprobarse antes de activar; evitar duplicar avisos de KIA. Un cierre de campaña debe basarse en su estado verificado, no en una fecha estimada. No se ha programado nada.
+
+### 6 bis.3 Agenda personal de demostraciones Holded
+
+1. KIA recibe la solicitud desde formulario EXPERT, vincula el lead existente si la identidad es inequívoca, recoge idioma, disponibilidad y motivo aportado por el usuario. No presupone el motivo del contacto.
+2. Elegir y verificar el **proveedor de agenda realmente operativo** (Google Calendar/Meet, Microsoft Outlook o Cal.com, según configuración final y permisos), sin inferir operatividad del código. Consultar disponibilidad real y conflictos en calendarios autorizados; usar Europe/Madrid y comprobar horario de verano, duración y márgenes de preparación.
+3. Mostrar al usuario franjas libres. Una cita solo será **confirmada** si el proveedor devuelve ID de reserva/evento; registrar enlace de videollamada cuando exista y confirmar envío al interesado y a Dirección, incluidos cambios y cancelación verificable.
+4. Crear **una tarea interna asociada a lead y reunión** para preparar la demostración y otra de seguimiento posterior con responsable, fecha límite, prioridad, siguiente acción y fuente. El evento calendario representa disponibilidad real; la tarea representa trabajo y **no debe crear otro evento por defecto**. Bloques de preparación solo bajo política aprobada.
+5. Ante cancelación, no-show o cambio de fecha: actualizar evento y tareas coherentemente, cancelar recordatorios previos y no generar duplicados. Vincular respuesta y asistencia reales al estado de la demo; el seguimiento comercial se propone con respeto al consentimiento.
+6. Antes del resumen diario, **revisar citas, correo enviado, tareas registradas y hoja registral**; marcar hecha solo la tarea con evidencia; archivar/anular duplicadas u obsoletas con motivo. No resucitar tareas vencidas ya terminadas ni volver a consultarlas. Mostrar únicamente tareas realmente pendientes hoy y una **propuesta** de posponer otras para mañana, sin reprogramar unilateralmente.
+7. Tras la demo, proponer la prueba de 14 días o siguiente acción. La creación de la prueba sigue siendo **manual, supervisada y autorizada** en Holded Partner; Work futuro solo si se comprueba permiso y lectura posterior del resultado.
+
+**Pruebas/gates antes de cualquier activación:** envío sintético ES/RU (UK solo cuando el contenido exista), deduplicación y anulación, permisos por tenant y actor, cita confirmada/no confirmada, conflicto de agenda, cancelación y reprogramación, DST, proveedor caído, recordatorios obsoletos, conteos por período, ausencia de conversiones sin prueba, consentimiento y tratamiento de datos, entrega efectiva de informes, seguridad, coste e idempotencia.
+
+**Correspondencia con fases del único Plan Maestro:** E2 (CRM, tareas y agenda), E3 (hoja registral), E4 (KIA y resúmenes), E5 (integraciones de calendario/correo/Work y confirmaciones). E0 continúa congelada: esta especificación no autoriza ejecución ni abre fase adicional.
+
 ## 7. Gates de aceptación y responsabilidades
 
 - [ ] Dirección aprueba oficialmente alcance, presupuesto **total**, período, países, idioma, identidad de anunciante y textos; no autoriza hoy.
@@ -97,11 +142,15 @@ La **futura automatización casi integral** depende de formación humana a Work,
 - [ ] Definir detección y alertas de coste por campaña; comprobar que no existen otras campañas que compartan un riesgo de gasto fuera del piloto.
 - [ ] Aprobar imagen/branding por escrito, definir creatividades y revisión del anunciante.
 - [ ] Autorizar por separado activación, gasto y calendario de la campaña. **No está otorgada.**
+- [ ] Validar informes de KIA diario/semanal/final, estados atendidos/cancelados/anulados, cálculo sin duplicados, canal de entrega y horarios aprobados.
+- [ ] Validar agenda demostraciones, disponibilidad/confirmación/cancelación en proveedor autorizado, tareas vinculadas, cierres evidenciados y eliminación de obsoletas.
 - [ ] Tras campaña, conciliar gasto facturado (cargos por umbral) con inversión real; registrar solicitudes válidas, pruebas verificadas, demostraciones y clientes reales.
 
 **Owner funcional:** Dirección EXPERT. **KIA:** coordinadora documental y futura operadora por permisos, no ejecutora actual. **Work:** herramienta futura a formar/validar. **Gates de producto:** se mantienen E0→E6; ninguna tarea de KIA nueva se adelanta por la prueba comercial.
 
 ## 8. Bitácora
+
+- **23/10/2026 — nueva decisión de Dirección:** incluir resúmenes KIA diarios, semanales y cierre de campaña (atendidos, cancelados, anulados) y gestión de tareas/agenda de demostraciones Holded. **Solo registrado en el documento; sin programaciones ni envíos activados.**
 
 - **23/10/2026 — análisis read-only:** cuenta accesible EUR y sin campañas; faltan facturación, logotipo y revisión aprobada; límites globales de gasto no habilitados; oferta de prueba y demo referenciadas en web EXPERT; vista previa de anuncio no guardada; sin publicación, cargos, automatizaciones, leads reales ni creación de pruebas.
 - **23/10/2026 — decisión de Dirección:** **solo planteamiento** y conservación en Git; tope comercial deseado **150 EUR**, duración máxima 10 días, captación siempre en EXPERT, idioma de landing coherente, autorización humana previa a altas de prueba y entrenamiento posterior de Work.
