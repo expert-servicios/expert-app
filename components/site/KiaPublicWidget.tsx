@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ExternalLink, FileText, Loader2, MessageCircle, Mic, Paperclip, Send, Square, Volume2, X } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
 import { KiaAvatar } from '@/components/kia/KiaAvatar';
 import { KiaReadableMessage } from '@/components/kia/KiaReadableMessage';
 import { chooseKiaBrowserVoice, kiaTextForSpeech, kiaVoiceLocale } from '@/lib/ai/kia/kia-voice-presentation';
@@ -39,7 +38,7 @@ type PublicKiaQuickReply = {
 
 type PublicKiaResponse = {
   reply?: string;
-  quickReplies?: PublicKiaQuickReply[];
+  quickReplies?: Array<PublicKiaQuickReply | string>;
   intent?: string;
   nextAction?: string;
   requiresMeeting?: boolean;
@@ -101,7 +100,9 @@ export function KiaPublicWidget() {
   const [voiceTranscribing, setVoiceTranscribing] = useState(false);
   const [attachmentLoading, setAttachmentLoading] = useState(false);
   const [attachment, setAttachment] = useState<PublicAttachment | null>(null);
-  const [loggedIn, setLoggedIn] = useState(false);
+  const identityScopeRef = useRef<string | null>(null);
+  const [identity, setIdentity] = useState<{ authenticated: boolean; firstName?: string | null; role?: string; preferredLanguage?: 'es' | 'ru' } | null>(null);
+  const loggedIn = identity?.authenticated === true;
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
@@ -125,11 +126,44 @@ export function KiaPublicWidget() {
   const discardRecordingRef = useRef(false);
 
   useEffect(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !key) return;
-    const supabase = createBrowserClient(url, key);
-    void supabase.auth.getSession().then(({ data }) => setLoggedIn(Boolean(data.session)));
+    let mounted = true;
+    async function verifyIdentity() {
+      try {
+        const response = await fetch('/api/ai/kia/public/identity', { cache: 'no-store', credentials: 'same-origin' });
+        const data = await response.json();
+        if (!mounted) return;
+        if (!response.ok) return;
+        const next = data.authenticated === true ? data : { authenticated: false };
+        const nextScope = next.authenticated ? String(data.identityKey ?? '') : 'guest';
+        if (identityScopeRef.current !== nextScope && identityScopeRef.current !== null) {
+          setMessages([{ id: 'welcome', role: 'assistant', text: 'Soy KIA, asistente de EXPERT. ¿En qué puedo ayudarte?' }]);
+          setQuickReplies([]);
+          setArtifacts([]);
+          setActionCta(null);
+          setAttachment(null);
+        }
+        identityScopeRef.current = nextScope;
+        setIdentity(next);
+        if (next.authenticated && typeof next.firstName !== 'undefined') {
+          const name = next.firstName ? `, ${next.firstName}` : '';
+          const staff = next.role === 'admin' || next.role === 'owner';
+          const text = next.preferredLanguage === 'ru'
+            ? `Здравствуйте${name}! Я KIA, ваш помощник EXPERT. Вы вошли в свой профиль. Чем могу помочь?`
+            : staff
+              ? `¡Hola${name}! Soy KIA, tu copiloto EXPERT. Te reconozco por tu sesión. ¿Qué necesitas revisar?`
+              : `¡Hola${name}! Me alegra verte de nuevo en EXPERT. ¿En qué puedo ayudarte?`;
+          setMessages((current) => current.length === 1 && current[0]?.id === 'welcome'
+            ? [{ id: 'welcome', role: 'assistant', text }] : current);
+          setQuickReplies([]);
+        }
+      } catch {
+        if (mounted) setIdentity({ authenticated: false });
+      }
+    }
+    void verifyIdentity();
+    const onFocus = () => { void verifyIdentity(); };
+    window.addEventListener('focus', onFocus);
+    return () => { mounted = false; window.removeEventListener('focus', onFocus); };
   }, []);
 
   useEffect(() => {
@@ -178,7 +212,7 @@ export function KiaPublicWidget() {
 
   const sendMessage = useCallback(async (message: string, displayText?: string) => {
     const clean = message.trim();
-    if (!clean || loading) return;
+    if (!clean || loading || !identity) return;
 
     setInput('');
     setLoading(true);
@@ -193,8 +227,8 @@ export function KiaPublicWidget() {
     const timeout = window.setTimeout(() => controller.abort(), PUBLIC_CHAT_TIMEOUT_MS);
 
     try {
-      const recaptchaToken = await getRecaptchaToken('kia_public_chat');
-      if (!recaptchaToken) {
+      const recaptchaToken = loggedIn ? '' : await getRecaptchaToken('kia_public_chat');
+      if (!loggedIn && !recaptchaToken) {
         throw new Error('recaptcha_unavailable');
       }
 
@@ -203,30 +237,38 @@ export function KiaPublicWidget() {
       timers.push(window.setTimeout(() => setThinkingStage('composing'), isRegulatory ? 5_500 : 3_500));
       timers.push(window.setTimeout(() => setThinkingStage('slow'), isRegulatory ? 12_000 : 9_000));
 
-      const response = await fetch('/api/ai/kia/public', {
+      const response = await fetch(loggedIn ? '/api/ai/kia' : '/api/ai/kia/public', {
         method: 'POST',
         signal: controller.signal,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: clean,
+          message: loggedIn && attachment
+            ? `${clean}\n\n[Resumen de adjunto sin verificar: ${attachment.fileName}]\n${attachment.analysis.slice(0, 1600)}`.slice(0, 3800)
+            : clean,
           currentPage: window.location.pathname,
           history,
-          attachment: attachment ?? undefined,
-          recaptchaToken,
+          ...(loggedIn ? { currentTask: 'public_site_assistance' } : { attachment: attachment ?? undefined, recaptchaToken }),
         }),
       });
+      if (loggedIn && response.status === 401) throw new Error('session_expired');
       const data = await response.json().catch(() => ({})) as PublicKiaResponse;
       const reply = data.reply?.trim()
         || 'Ahora mismo no he podido completar la respuesta. Puedes intentarlo de nuevo o abrir KIA en Telegram.';
 
       setMessages((current) => [...current, { id: crypto.randomUUID(), role: 'assistant', text: reply }]);
-      setQuickReplies((data.quickReplies ?? []).slice(0, 12));
+      setQuickReplies((data.quickReplies ?? []).flatMap((item): PublicKiaQuickReply[] =>
+        typeof item === 'string'
+          ? [{ label: item, action: 'message', kind: 'other', message: item }]
+          : item && typeof item.label === 'string' ? [item] : []
+      ).slice(0, 12));
       setArtifacts((data.artifacts ?? []).filter((artifact) => artifact.type === 'link').slice(0, 4));
-      setActionCta(commercialCta(data));
+      setActionCta(loggedIn ? null : commercialCta(data));
       setAttachment(null);
     } catch (error) {
       const reason = error instanceof Error ? error.message : '';
-      const text = reason === 'recaptcha_unavailable'
+      const text = reason === 'session_expired'
+        ? 'Tu sesión ha caducado. Identifícate de nuevo para consultar datos privados.'
+        : reason === 'recaptcha_unavailable'
         ? 'No he podido completar la verificación segura del chat. Recarga la página o abre KIA en Telegram.'
         : error instanceof DOMException && error.name === 'AbortError'
           ? 'La respuesta está tardando demasiado. Puedes intentarlo de nuevo o continuar ahora mismo en Telegram.'
@@ -242,7 +284,7 @@ export function KiaPublicWidget() {
       timers.forEach((timer) => clearTimeout(timer));
       setLoading(false);
     }
-  }, [attachment, history, loading]);
+  }, [attachment, history, loading, loggedIn, identity]);
 
   const transcribeRecordedAudio = useCallback(async (blob: Blob) => {
     if (!blob.size) return;
@@ -435,7 +477,7 @@ export function KiaPublicWidget() {
             <KiaAvatar state={loading ? "pensando" : "ayuda"} size="sm" priority animateOnChange />
             <div>
               <p className="text-sm font-semibold text-white">KIA · EXPERT</p>
-              <p className="text-xs text-white/60">Chat web · fuentes oficiales · Telegram</p>
+              <p className="text-xs text-white/60">{loggedIn ? 'Sesión verificada · KIA personalizada' : 'Chat web · fuentes oficiales · Telegram'}</p>
             </div>
           </div>
           <button
@@ -605,7 +647,7 @@ export function KiaPublicWidget() {
             <button
               type="button"
               onClick={() => void sendMessage(input)}
-              disabled={loading || !input.trim()}
+              disabled={loading || !identity || !input.trim()}
               aria-label="Enviar a KIA"
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#0D1B2A] text-white disabled:opacity-40 sm:h-9 sm:w-9"
             >

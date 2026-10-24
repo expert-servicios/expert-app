@@ -16,8 +16,22 @@ describe('KIA public widget', () => {
     expect(layout).not.toContain('WhatsAppChatWidget');
   });
 
+  it('verifies identity on the server and retains the public widget for authenticated users', () => {
+    const identity = source('app/api/ai/kia/public/identity/route.ts');
+    const protectedRoute = source('app/api/ai/kia/route.ts');
+    expect(identity).toContain('supabase.auth.getUser()');
+    expect(identity).toContain("profile.status !== 'active'");
+    expect(identity).toContain("private, no-store");
+    expect(widget).toContain("fetch('/api/ai/kia/public/identity'");
+    expect(widget).toContain("loggedIn ? '/api/ai/kia' : '/api/ai/kia/public'");
+    expect(widget).toContain('identityScopeRef');
+    expect(widget).toContain('firstName');
+    expect(protectedRoute).toContain("currentTask === 'public_site_assistance'");
+    expect(protectedRoute).toContain('isStaffRole(profile.role)');
+  });
+
   it('offers web chat, Telegram and an informational meeting without dashboard noise', () => {
-    expect(widget).toContain("fetch('/api/ai/kia/public'");
+    expect(widget).toContain("loggedIn ? '/api/ai/kia' : '/api/ai/kia/public'");
     expect(widget).toContain("https://t.me/kia_expert_bot");
     expect(widget).toContain("fetch('/api/ai/kia/telegram-link'");
     expect(widget).toContain('Pedir reunión informativa');
