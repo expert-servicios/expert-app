@@ -3,6 +3,7 @@ import type { getSupabaseAdmin } from '@/lib/integrations/supabase';
 import type { KiaContext } from './kia-context-builder';
 import type { KiaToolResult } from './kia-tool-definitions';
 import { redactJson } from './kia-redaction';
+import { getKiaDevAgentStatus, previewKiaDevAgentTask } from './kia-dev-agent-read-model';
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
 
@@ -10,13 +11,17 @@ export type KiaAdminOfficeToolName =
   | 'get_admin_inbox_summary'
   | 'get_admin_agenda'
   | 'get_admin_pending_tasks'
-  | 'get_admin_attention_queue';
+  | 'get_admin_attention_queue'
+  | 'get_admin_dev_agent_status'
+  | 'preview_admin_dev_agent_task';
 
 export const KIA_ADMIN_OFFICE_TOOL_NAMES = new Set<KiaAdminOfficeToolName>([
   'get_admin_inbox_summary',
   'get_admin_agenda',
   'get_admin_pending_tasks',
   'get_admin_attention_queue',
+  'get_admin_dev_agent_status',
+  'preview_admin_dev_agent_task',
 ]);
 
 type PageResult<T> = {
@@ -374,6 +379,12 @@ export async function executeKiaAdminOfficeTool(
   if (scopeError) return scopeError;
 
   try {
+    if (toolName === 'get_admin_dev_agent_status') {
+      return ok(toolName, getKiaDevAgentStatus());
+    }
+    if (toolName === 'preview_admin_dev_agent_task') {
+      return ok(toolName, previewKiaDevAgentTask(String(args.taskId), context.actor));
+    }
     if (toolName === 'get_admin_inbox_summary') {
       const result = await loadInbox(admin, context, args);
       return ok(toolName, {

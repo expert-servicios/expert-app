@@ -1,0 +1,32 @@
+name: KIA Dev Agent (disabled foundation)
+on:
+  workflow_dispatch:
+    inputs:
+      task_id:
+        description: 'Exact approved task ID'
+        required: true
+        type: choice
+        options:
+          - E0-M3-06-DOCINDEX
+permissions:
+  contents: read
+concurrency:
+  group: kia-dev-agent-foundation
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Validate policy and fixed checkpoint without agent execution
+        env:
+          KIA_TASK_ID: ${{ inputs.task_id }}
+        run: node scripts/kia-dev-agent.mjs lint-policy
+      - name: Assert execution remains disabled
+        run: |
+          node -e "const p=require('./config/kia-dev-agent-tasks.json');if(p.executionEnabled !== false) process.exit(1)"
+          echo "KIA dev agent foundation is disabled. No coding, PR, deployment or write."

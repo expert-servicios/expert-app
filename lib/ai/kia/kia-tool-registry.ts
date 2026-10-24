@@ -108,6 +108,8 @@ const POLICY_BY_TOOL: Record<string, Omit<KiaToolPolicy, 'name' | 'description'>
   get_admin_agenda:                     { ...policy('R1', 'read', 'administration'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
   get_admin_pending_tasks:              { ...policy('R1', 'read', 'administration'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
   get_admin_attention_queue:            { ...policy('R1', 'read', 'administration'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
+  get_admin_dev_agent_status:            { ...policy('R1', 'read', 'administration'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
+  preview_admin_dev_agent_task:          { ...policy('R1', 'read', 'administration'), allowedChannels: ['admin'], allowedRoles: [ROLES.ADMIN, ROLES.OWNER] },
   create_booking_meeting:               policy('R2', 'external_action', 'calendar'),
   upsert_recurring_meeting_series:       { ...policy('R2', 'external_action', 'calendar', true), allowedChannels: ['admin'] },
 };
