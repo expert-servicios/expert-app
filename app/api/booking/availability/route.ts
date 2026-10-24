@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getSupabaseAdmin } from '@/lib/integrations/supabase';
-import { listBookingCalendarBusyWindows } from '@/lib/booking/calendar-provider';
+import { getConfiguredBookingCalendarProvider, listBookingCalendarBusyWindows } from '@/lib/booking/calendar-provider';
 import { verifyPrivateBookingAuthorization } from '@/lib/booking/private-booking-authorization';
 import { verifyBookingManagementToken } from '@/lib/booking/booking-management-token';
 import {
@@ -91,6 +91,7 @@ export async function GET(request: NextRequest) {
         durationMinutes: service.durationMinutes,
       },
       timezone: 'Europe/Madrid',
+      meetingProvider: getConfiguredBookingCalendarProvider() === 'ms365' ? 'teams' : 'meet',
       slots,
     });
   } catch (error) {

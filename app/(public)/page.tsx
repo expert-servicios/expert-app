@@ -207,7 +207,7 @@ export default async function HomePage({
       areaServed: 'ES',
       availableLanguage: ['Spanish', 'Russian', 'English']
     },
-    founder: { '@type': 'Person', name: 'Ksenia Ilicheva', url: 'https://expertconsulting.es/sobre-mi' },
+    founder: { '@type': 'Person', name: 'Ksenia Ilicheva', url: 'https://kseniailicheva.com' },
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
       name: 'Servicios de asesoría',

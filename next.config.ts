@@ -50,12 +50,36 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    return [
-      {
-        source: '/.well-known/microsoft-identity-association.json',
-        destination: '/api/well-known/microsoft-identity-association',
-      },
-    ];
+    return {
+      // Host routing must run BEFORE resolving existing / and /mentorias pages.
+      beforeFiles: [
+        // Dedicated Ksenia Vercel project: preview URL and production domain use personal routes.
+        ...(process.env.PERSONAL_SITE_DEPLOYMENT === 'true' ? [
+          { source: '/', destination: '/perfil-ksenia' },
+          { source: '/mentorias', destination: '/mentoria-personal' },
+          { source: '/reservar', destination: '/reserva-ksenia' },
+          { source: '/ru', destination: '/perfil-ksenia-ru' },
+          { source: '/ru/mentorias', destination: '/mentoria-personal-ru' },
+          { source: '/ru/reservar', destination: '/reserva-ksenia-ru' },
+        ] : []),
+        { source: '/', has: [{ type: 'host' as const, value: 'kseniailicheva.com' }], destination: '/perfil-ksenia' },
+        { source: '/', has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }], destination: '/perfil-ksenia' },
+        { source: '/mentorias', has: [{ type: 'host' as const, value: 'kseniailicheva.com' }], destination: '/mentoria-personal' },
+        { source: '/mentorias', has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }], destination: '/mentoria-personal' },
+        { source: '/reservar', has: [{ type: 'host' as const, value: 'kseniailicheva.com' }], destination: '/reserva-ksenia' },
+        { source: '/reservar', has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }], destination: '/reserva-ksenia' },
+        { source: '/ru', has: [{ type: 'host' as const, value: 'kseniailicheva.com' }], destination: '/perfil-ksenia-ru' },
+        { source: '/ru', has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }], destination: '/perfil-ksenia-ru' },
+        { source: '/ru/mentorias', has: [{ type: 'host' as const, value: 'kseniailicheva.com' }], destination: '/mentoria-personal-ru' },
+        { source: '/ru/mentorias', has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }], destination: '/mentoria-personal-ru' },
+        { source: '/ru/reservar', has: [{ type: 'host' as const, value: 'kseniailicheva.com' }], destination: '/reserva-ksenia-ru' },
+        { source: '/ru/reservar', has: [{ type: 'host' as const, value: 'www.kseniailicheva.com' }], destination: '/reserva-ksenia-ru' },
+      ],
+      afterFiles: [
+        { source: '/.well-known/microsoft-identity-association.json', destination: '/api/well-known/microsoft-identity-association' },
+      ],
+      fallback: [],
+    };
   },
   async redirects() {
     return [

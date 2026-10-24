@@ -1,7 +1,7 @@
 # Servicios
 
 ## Menú
-Inicio | Holded | Servicios | Mentorías | Formación | Contacto | Descargar CV
+Inicio | Holded | Servicios | Formación | Contacto
 
 ## Servicios principales
 
@@ -22,11 +22,6 @@ Inicio | Holded | Servicios | Mentorías | Formación | Contacto | Descargar CV
 - Calendario de obligaciones y control de riesgos
 - Estructura y cumplimiento
 **CTA:** Solicitar una llamada → [URL_RESERVA]
-
-### Mentorías
-- MentorDay y mentorías privadas
-- Plan de 30 días y decisiones claras
-**CTA:** Reservar mentoría
 
 ### Formación personalizada para autogestión
 - Formación por módulos y por nivel

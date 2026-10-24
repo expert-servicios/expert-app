@@ -2,10 +2,10 @@
 
 ## Objetivo
 
-Integrar la actividad de mentoring de Ksenia Ilicheva en EXPERT con dos capas estrictamente separadas:
+Gestionar la actividad de mentoring personal de Ksenia Ilicheva con dos capas estrictamente separadas:
 
-1. **Workspace privado** para gestionar contactos, sesiones, documentación, evidencia, decisiones y seguimiento.
-2. **Capa pública** en expertconsulting.es para explicar metodología y publicar aprendizajes o casos únicamente cuando estén suficientemente documentados y exista autorización.
+1. **Workspace privado** mantenido en EXPERT para gestionar contactos, sesiones, documentación, evidencia, decisiones y seguimiento.
+2. **Capa pública** en kseniailicheva.com para explicar metodología y publicar aprendizajes o casos únicamente cuando estén suficientemente documentados y exista autorización.
 
 ## Principios
 
@@ -92,7 +92,7 @@ Si faltan resultados verificables, publicar como **aprendizaje de mentoring**, n
 
 ## Landing pública
 
-Ruta: `/mentorias`
+Ruta canónica: `https://kseniailicheva.com/mentorias`. La URL anterior `https://expertconsulting.es/mentorias` redirige a esta página.
 
 Bloques:
 

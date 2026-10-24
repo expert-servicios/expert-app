@@ -17,8 +17,9 @@ describe('booking final UX', () => {
     expect(form).toContain('min-h-11');
   });
 
-  it('keeps Google Meet visible after booking and in both confirmation emails', () => {
-    expect(form).toContain('Abrir Google Meet');
+  it('shows provider-appropriate meeting links after booking and in both confirmation emails', () => {
+    expect(form).toContain("availability?.meetingProvider === 'teams' ? 'Microsoft Teams' : 'Google Meet'");
+    expect(form).toContain("'Abrir ' + meetingLabel");
     expect(template).toContain('Unirme a la reunión');
     expect(template).toContain('Enlace de reunión');
     expect(route).toContain('const clientTemplate = citaConfirmed(');
