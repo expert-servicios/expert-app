@@ -9,7 +9,7 @@ Este directorio es un inventario de trabajo de las imagenes de la campana evergr
 - Coleccion adicional de servicios: prueba 14 dias, demostracion, migracion con/sin inventario, implantacion, formacion/soporte, integracion y asesoramiento, en ES/RU cuando exista.
 - Originales generados con IA y referencias de marca.
 
-**Material binario:** los PNG/JPG originales se conservan en el pack ZIP `EXPERT_Holded_ChatGPT_Archivo_Completo_20261024.zip`, archivado en la biblioteca privada `/EXPERT/Marketing/ChatGPT-Ads-Holded/`. **NO se han transferido imagenes binarias a GitHub** desde el conector de esta sesion. No apuntar desde codigo a rutas de imagen del repo hasta confirmar su inclusion y verificar su hash.
+**Material binario:** los PNG/JPG originales se conservan en el pack ZIP `EXPERT_Holded_ChatGPT_Archivo_Completo_20261024.zip`, archivado en la biblioteca privada `/EXPERT/Marketing/ChatGPT-Ads-Holded/`. **DECISION DE DIRECCION (24/10/2026): no subir las imagenes generadas a GitHub; en el repositorio se conservaran unicamente codigo, documentacion e instrucciones.** Los archivos binarios permanecen en el archivo privado fuera del repositorio. No apuntar desde codigo a rutas de imagen del repo que no existan.
 
 ## Script reproducible
 `python scripts/generate_holded_assets.py --source path/a/original.png --output carpeta/salida`
@@ -22,6 +22,6 @@ Requiere Pillow. Emplea escalado *contain*, no *cover*: nunca se cortan textos n
 3. Revisar ortografia del texto en ES/RU y margenes de seguridad en cada dimension. Evitar recortes de cabeceras.
 4. Verificar claims de seguridad, IA, conexion, acciones permitidas por el MCP y la prueba de 14 dias. No prometer presentacion automatica de impuestos.
 5. No incluir descuentos estacionales no aprobados. Algunos originales antiguos contienen afirmaciones no validadas: material de trabajo, no creatividades listas para anuncios.
-6. Cuando los PNG finales hayan pasado control de calidad, incorporarlos al repo o al CDN y ajustar OG de la landing exclusivamente con ruta de archivo real.
+6. Mantener los PNG/JPG fuera de GitHub incluso cuando se aprueben. Si se decide publicarlos en un CDN o en la web, hacerlo mediante un flujo de publicacion independiente y autorizado, y ajustar el OG de la landing solo a una URL real y verificada.
 
 Relacionadas: [PR #838](https://github.com/expert-servicios/expert-app/pull/838) landing y [PR #837](https://github.com/expert-servicios/expert-app/pull/837) plan de campana.
