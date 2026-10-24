@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { HoldedChatGPTPreview } from '@/components/holded/HoldedChatGPTPreview';
 import {
   ArrowRight, Bot, CheckCircle2, FileText,
   RefreshCcw, ShieldCheck, Sparkles, Users,
@@ -74,19 +75,7 @@ export default function HoldedChatGPTLandingPage() {
               La prueba se tramita por EXPERT y no se activa automáticamente. La conexión requiere acceso a la API de Holded y un plan compatible de ChatGPT.
             </p>
           </div>
-          <div className="rounded-3xl border border-white/15 bg-white/[0.07] p-7 shadow-2xl md:p-9">
-            <p className="mb-6 text-sm font-medium tracking-wide text-white/60">LA CONEXIÓN, SIN COMPLICACIONES</p>
-            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-5">
-              <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-white text-xl font-extrabold text-[#FF5454] shadow-xl sm:h-28 sm:w-28">Holded</div>
-              <span className="text-4xl font-light text-[#F2C14E]" aria-hidden>+</span>
-              <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-white px-3 text-xl font-semibold text-[#0D1B2A] shadow-xl sm:h-28 sm:w-28">ChatGPT</div>
-            </div>
-            <div className="mt-7 flex items-start gap-3 rounded-xl bg-white/10 p-4 text-sm leading-6 text-white/80">
-              <Bot className="mt-1 shrink-0 text-[#F2C14E]" size={19} aria-hidden />
-              <p>Conector MCP oficial de Holded. La autorización y los permisos los controla el titular de cada cuenta.</p>
-            </div>
-            <p className="mt-5 text-center text-xs text-white/60">EXPERT es Solution Partner de Holded. No es el desarrollador del conector ni representa a OpenAI.</p>
-          </div>
+          <HoldedChatGPTPreview />
         </div>
       </section>
 
