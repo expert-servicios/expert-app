@@ -43,12 +43,15 @@ describe('KIA Admin Copilot mode', () => {
     expect(route).toContain('const proactiveSuggestions = adminCopilotMode');
   });
 
-  it('passes live Admin page context and performs a silent proactive review', () => {
+  it('passes live Admin page context and makes page review explicit', () => {
     const widget = source('components/KiaCopilotWidget.tsx');
     expect(widget).toContain("surface: 'admin'");
     expect(widget).toContain("currentTask: options.currentTask ?? (adminMode ? 'admin_operator' : undefined)");
     expect(widget).toContain("currentTask: 'admin_page_review'");
     expect(widget).toContain('silentUser: true');
+    expect(widget).toContain('onClick={handleReviewCurrentPage}');
+    expect(widget).not.toContain('reviewedAdminPagesRef');
+    expect(widget).not.toContain('}, 450);');
     expect(widget).toContain("!adminMode && msg.role === 'assistant' && msg.quickReplies?.length");
     expect(widget).toContain("!adminMode && msg.role === 'assistant' && msg.proactiveSuggestions?.length");
   });

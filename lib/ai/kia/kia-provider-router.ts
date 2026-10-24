@@ -628,6 +628,27 @@ function normalizeGeminiJsonSchema(value: unknown): unknown {
   return normalized;
 }
 
+export function isOpenAiStrictToolSchema(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const schema = value as Record<string, unknown>;
+  if (schema.type === 'object') {
+    if (schema.additionalProperties !== false) return false;
+    const properties = schema.properties && typeof schema.properties === 'object' && !Array.isArray(schema.properties)
+      ? schema.properties as Record<string, unknown> : {};
+    const required = Array.isArray(schema.required) ? schema.required : [];
+    if (!Object.keys(properties).every((key) => required.includes(key))) return false;
+    if (!Object.values(properties).every(isOpenAiStrictToolSchema)) return false;
+  }
+  if (schema.type === 'array' && schema.items && !isOpenAiStrictToolSchema(schema.items)) return false;
+  for (const unionKey of ['anyOf', 'oneOf', 'allOf'] as const) {
+    const items = schema[unionKey];
+    if (Array.isArray(items) && !items.every(isOpenAiStrictToolSchema)) return false;
+  }
+  if (schema.$defs && typeof schema.$defs === 'object' && !Array.isArray(schema.$defs)
+      && !Object.values(schema.$defs).every(isOpenAiStrictToolSchema)) return false;
+  return true;
+}
+
 async function callOpenAiCompatible(
   provider: ProviderConfig,
   request: KiaProviderRequest,
@@ -677,7 +698,8 @@ async function callOpenAiCompatible(
           providerName === "google"
             ? normalizeGeminiJsonSchema(tool.input_schema)
             : tool.input_schema,
-        ...(providerName === "openai" && tool.strict === true ? { strict: true } : {}),
+        ...(providerName === "openai" && tool.strict === true && isOpenAiStrictToolSchema(tool.input_schema)
+          ? { strict: true } : {}),
       },
     }));
   }
